@@ -1,7 +1,7 @@
 Falcon
 ======
 
-<img align="right" style="padding-left: 20px" src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/Brown-Falcon%2C-Vic%2C-3.1.2008.jpg/160px-Brown-Falcon%2C-Vic%2C-3.1.2008.jpg" alt="falcon picture" />
+<img align="right" style="padding-left: 10px" src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/Brown-Falcon%2C-Vic%2C-3.1.2008.jpg/160px-Brown-Falcon%2C-Vic%2C-3.1.2008.jpg" alt="falcon picture" />
 
 **[Experimental/Alpha]**
 
@@ -11,7 +11,7 @@ Falcon is a swift, light-weight framework for building cloud APIs. It focuses on
 
 ### Design ###
 
-**Light-weight.** Only the essentials are included, with few dependencies. We work to keep the code lean-and-mean, making Falcon easier to test, optimize, and deploy. 
+**Light-weight.** Only the essentials are included, with few dependencies. We work to keep the code lean-n-mean, making Falcon easier to test, optimize, and deploy. 
 
 **Surprisingly agile.** Although light-weight, Falcon is surprisingly effective. Getting started with the framework is easy. Common web API idioms are supported out of the box without getting in your way. This is a framework designed for journeyman web developers and master craftsman alike.
 
