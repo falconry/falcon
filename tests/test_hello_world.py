@@ -67,7 +67,7 @@ class TestHelloWorld(testtools.TestCase):
             self.assertTrue(isinstance(header[0], basestring))
             self.assertTrue(isinstance(header[1], basestring))
 
-    def test_add_route(self):
+    def test_hello_route(self):
         # todo: add a single "hello world" route, make sure it responds well,
         # and that the framework automatically adds appropriate headers
         api = falcon.Api()
@@ -84,7 +84,6 @@ class TestHelloWorld(testtools.TestCase):
         self.assertFalse(on_hello.context)
 
         # TODO: Check for 404 not found response status with bad path shown (?)
-        # TODO: Refactor this test - maybe put into other classes
 
         # Simulate a request to the attached route
         api(helpers.create_environ(test_route), mock)
@@ -92,6 +91,10 @@ class TestHelloWorld(testtools.TestCase):
 
         self.assertThat(ctx.resp_status, Equals(on_hello.sample_status))
         self.assertThat(ctx.resp_body, Equals(on_hello.sample_body))
+
+        #
+        # TODO: Refactor most of the following into other classes
+        #
 
         # TODO: Test correct content length is set
         # TODO: Test throwing an exception from within a handler
