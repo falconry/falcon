@@ -5,7 +5,7 @@ Falcon
 
 **[Experimental]**
 
-Falcon is a swift, light-weight framework for building cloud APIs. It focuses on doing one thing (web APIs), and doing it right. Falcon's design philosophy is borrowed from a passage in Antoine de Saint-Exupéry's book, *Wind, Sand, and Stars*:
+Falcon is a swift, light-weight framework for building cloud APIs. It tries to do as little as possible while remaining highly effective. Antoine de Saint-Exupéry explains in *Wind, Sand, and Stars*:
 
 >Perfection is finally attained not when there is no longer anything to add, but when there is no longer anything to take away.
 
