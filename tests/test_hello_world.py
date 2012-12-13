@@ -96,6 +96,7 @@ class TestHelloWorld(testtools.TestCase):
         # TODO: Refactor most of the following into other classes
         #
 
+        # TODO: Test setting different routes for different verbs
         # TODO: Test correct content length is set
         # TODO: Test throwing an exception from within a handler
         # TODO: Test neglecting to set a body
