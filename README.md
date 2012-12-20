@@ -17,3 +17,18 @@ Falcon is a swift, light-weight framework for building cloud APIs. It tries to d
 
 **Cloud-friendly.** Falcon uses the web-friendly Python language, and speaks WSGI, so you can deploy it on your favorite stack. The framework is designed from the ground up to embrace HTTP, not work against it. Plus, diagnostics are built right in to make it easier to track down sneaky bugs and frustrating performance problems. 
 
+### Assumptions ###
+
+(Work in progress.)
+
+In order to stay lean and fast, Falcon makes several assumptions.
+
+First of all, Falcon assumes that request handlers will (for the most part) do the right thing. In other words, Falcon doesn't try very hard to protect handler code from itself. 
+
+This requires some discipline on the part of the developer.
+
+1. Request handlers will set response variables to sane values. This includes setting *status* to a valid HTTP status code and string (just use the provided constants), setting *headers* to a collection of tuples, and setting *body* (if not desired to be empty) to either a string or an iterable.  
+1. The application won't add extra junk to req and resp dicts (use the ctx instead)
+1. Request handlers are well-tested with high code coverage. It's not Falcon's job to babysit your code once it leaves the nest.
+1. ...
+

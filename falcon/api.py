@@ -1,13 +1,8 @@
-from default_request_handlers import *
-from status_codes import *
+from falcon.default_request_handlers import *
+from falcon.status_codes import *
 
 # TODO: __slots__
 # TODO: log exceptions, trace execution, etc.
-
-class Context:
-    """Request context for passing around the request state"""
-    def __init__(self, environ):
-        self.req_path = environ['PATH_INFO']
 
 class Api:
     """WSGI application implementing a Falcon web API"""
@@ -16,20 +11,39 @@ class Api:
         self.routes = {}
 
     def __call__(self, environ, start_response):
-        ctx = Context(environ)
+        # PERF: Use literal constructor for dicts
+        ctx, req, resp = {}, {}, {} 
 
+        # TODO: What other things does req need?
+        req['path'] = path = environ['PATH_INFO']
+
+
+        # TODO 
+        # ctx.update(global_ctx_for_route)
+
+        # PERF: Use try...except blocks when errors are rare (otherwise use in)
         try:
-            handler = self.routes[ctx.req_path]
+            # TODO: Figure out a way to use codegen to make a state machine, 
+            #       may have to in order to support URI templates.
+            handler = self.routes[path]
         except KeyError:
             handler = path_not_found_handler
 
         try:
-            handler(ctx)
+            handler(ctx, req, resp)
         except:
+            # TODO
             pass
 
-        start_response(ctx.resp_status, [('Content-Type', 'text/plain')])
-        return [ctx.resp_body]
+        try:
+            start_response(resp['status'], [('Content-Type', 'text/plain')])
+        except:
+            # TODO
+            pass
+
+        # PERF: Can't predict ratio of empty body to nonempty, so use
+        #       "in" which is a good all-around performer. 
+        return [resp['body']] if 'body' in resp else []
 
     def add_route(self, uri_template, handler):
         self.routes[uri_template] = handler

@@ -1,3 +1,18 @@
+class StartResponseMock:
+    def __init__(self):
+        self._called = 0
+        self.status = None
+        self.headers = None
+    
+    def __call__(self, status, headers):
+        self._called += 1
+        self.status = status
+        self.headers = headers
+
+    def call_count(self):
+        return self._called
+
+
 def create_environ(path='/', query_string=''):
     return {
         'SERVER_SOFTWARE': 'WSGIServer/0.1 Python/2.7.3',
