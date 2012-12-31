@@ -12,18 +12,21 @@ class Api:
 
     def __call__(self, environ, start_response):
         # PERF: Use literal constructor for dicts
-        ctx, req, resp = {}, {}, {} 
+        # PERF: Don't use multi-assignment
+        ctx = {}
+        req = {}
+        resp = {}
 
         # TODO: What other things does req need?
         req['path'] = path = environ['PATH_INFO']
 
 
-        # TODO 
+        # TODO
         # ctx.update(global_ctx_for_route)
 
-        # PERF: Use try...except blocks when errors are rare (otherwise use in)
+        # PERF: Use try...except blocks when the key usually exists
         try:
-            # TODO: Figure out a way to use codegen to make a state machine, 
+            # TODO: Figure out a way to use codegen to make a state machine,
             #       may have to in order to support URI templates.
             handler = self.routes[path]
         except KeyError:
@@ -42,7 +45,7 @@ class Api:
             pass
 
         # PERF: Can't predict ratio of empty body to nonempty, so use
-        #       "in" which is a good all-around performer. 
+        #       "in" which is a good all-around performer.
         return [resp['body']] if 'body' in resp else []
 
     def add_route(self, uri_template, handler):

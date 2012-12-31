@@ -23,21 +23,11 @@ class RequestHandler:
         resp['status'] = falcon.HTTP_200
         resp['body'] = self.sample_body
 
-class TestHeaders(testtools.TestCase):
+class TestHeaders(helpers.TestSuite):
 
-    # TODO: Figure out a way to DRY this statement - maybe via subclassing
-    def setUp(self):
-        super(TestHeaders, self).setUp()
-        self.api = falcon.Api()
-        self.srmock = helpers.StartResponseMock()
-        self.test_route = '/' + self.getUniqueString()
-
+    def prepare(self):
         self.on_hello = RequestHandler()
         self.api.add_route(self.test_route, self.on_hello)
 
-
     def test_auto_headers(self):
-        # TODO: Figure out a way to DRY this statement
-        self.api(helpers.create_environ(self.test_route), self.srmock)
-
-        pass
+        self._simulate_request(self.test_route)

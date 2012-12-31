@@ -1,9 +1,14 @@
+import inspect
+import testtools
+
+import falcon
+
 class StartResponseMock:
     def __init__(self):
         self._called = 0
         self.status = None
         self.headers = None
-    
+
     def __call__(self, status, headers):
         self._called += 1
         self.status = status
@@ -12,6 +17,20 @@ class StartResponseMock:
     def call_count(self):
         return self._called
 
+class TestSuite(testtools.TestCase):
+
+    def setUp(self):
+        super(TestSuite, self).setUp()
+        self.api = falcon.Api()
+        self.srmock = StartResponseMock()
+        self.test_route = '/' + self.getUniqueString()
+
+        prepare = getattr(self, 'prepare', None)
+        if hasattr(prepare, '__call__'):
+            prepare()
+
+    def _simulate_request(self, path):
+        self.api(create_environ(path), self.srmock)
 
 def create_environ(path='/', query_string=''):
     return {

@@ -20,28 +20,22 @@ class HelloRequestHandler:
         resp['body'] = self.sample_body
 
 
-class TestHelloWorld(testtools.TestCase):
+class TestHelloWorld(helpers.TestSuite):
 
-    def setUp(self):
-        super(TestHelloWorld, self).setUp()
-        self.api = falcon.Api()
-        self.start_resp = helpers.StartResponseMock()
-        self.test_route = '/hello'
-
+    def prepare(self):
         self.on_hello = HelloRequestHandler()
         self.api.add_route(self.test_route, self.on_hello)
 
     def test_hello_route_negative(self):
         bogus_route = self.test_route + 'x'
-        self.api(helpers.create_environ(bogus_route), self.start_resp)
+        self._simulate_request(bogus_route)
 
         # Ensure the request was NOT routed to on_hello
         self.assertFalse(self.on_hello.called)
-        self.assertThat(self.start_resp.status, Equals(falcon.HTTP_404))
+        self.assertThat(self.srmock.status, Equals(falcon.HTTP_404))
 
     def test_hello_route(self):
-        # Simulate a request to the attached route
-        self.api(helpers.create_environ(self.test_route), self.start_resp)
+        self._simulate_request(self.test_route)
         resp = self.on_hello.resp
 
         self.assertTrue('status' in resp)
@@ -49,20 +43,3 @@ class TestHelloWorld(testtools.TestCase):
 
         self.assertTrue('body' in resp)
         self.assertThat(resp['body'], Equals(self.on_hello.sample_body))
-
-        # TODO: Test compiling routes, throwing on invalid routes (such as missing initial forward slash or non-ascii)
-        # TODO: Test setting the body to a stream, rather than a string (and content-length set to chunked?)
-        # TODO: Test custom error handlers - customizing error document at least
-        # TODO: Test async middleware ala rproxy
-        # TODO: Test setting different routes for different verbs
-        # TODO: Test throwing an exception from within a handler
-        # TODO: Test neglecting to set a body
-        # TODO: Test neglecting to set a status
-        # TODO: Test passing bad arguments to add_route
-        # TODO: Test other kinds of routes - empty, root, multiple levels
-        # TODO: Test URI-template parsing (precompile)
-        # TODO: Test passing a shared dict to each mock call (e.g., db connections, config)
-        #       ...and that it is passed to the request handler correctly
-        # TODO: Test pre/post filters
-        # TODO: Test error handling with standard response (for all error classes?)
-        pass
