@@ -1,3 +1,4 @@
+
 def application(environ, start_response):
     start_response("200 OK", [('Content-Type', 'text/plain')])
 
@@ -10,7 +11,9 @@ def application(environ, start_response):
 
     return body
 
-import gevent, gevent.wsgi
 
-server = gevent.wsgi.WSGIServer(('localhost', 8000), application)
-server.serve_forever()
+if __name__ == '__main__':
+    from wsgiref.simple_server import make_server
+
+    server = make_server('localhost', 8000, application)
+    server.serve_forever()

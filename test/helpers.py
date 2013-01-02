@@ -31,8 +31,9 @@ class TestSuite(testtools.TestCase):
         if hasattr(prepare, '__call__'):
             prepare()
 
-    def _simulate_request(self, path):
-        self.api(create_environ(path), self.srmock)
+    def _simulate_request(self, path, protocol='HTTP/1.1', headers=None):
+        self.api(create_environ(path=path, protocol=protocol, headers=headers),
+                 self.srmock)
 
 class RandChars:
     _chars = 'abcdefghijklqmnopqrstuvwxyz0123456789 \n\t!@#$%^&*()-_=+`~<>,.?/'
@@ -54,12 +55,12 @@ class RandChars:
 def rand_string(min, max):
     return ''.join([c for c in RandChars(min, max)])
 
-def create_environ(path='/', query_string=''):
-    return {
+def create_environ(path='/', query_string='', protocol='HTTP/1.1', headers=None):
+    env = {
         'SERVER_SOFTWARE': 'WSGIServer/0.1 Python/2.7.3',
         'TERM_PROGRAM_VERSION': '309',
         'REQUEST_METHOD': 'GET',
-        'SERVER_PROTOCOL': 'HTTP/1.1',
+        'SERVER_PROTOCOL': protocol,
         'HOME': '/Users/kurt',
         'DISPLAY': '/tmp/launch-j5GrQm/org.macosforge.xquartz:0',
         'TERM_PROGRAM': 'Apple_Terminal',
@@ -100,3 +101,9 @@ def create_environ(path='/', query_string=''):
         'REMOTE_HOST': '1.0.0.127.in-addr.arpa',
         'COMMAND_MODE': 'unix2003'
     }
+
+    if headers is not None:
+        for name, value in headers.iteritems():
+            env['HTTP_' + name.upper()] = value.strip()
+
+    return env

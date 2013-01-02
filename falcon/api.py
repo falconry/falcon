@@ -13,7 +13,7 @@ class Api:
     def __init__(self):
         self.routes = {}
 
-    def __call__(self, environ, start_response):
+    def __call__(self, env, start_response):
         """WSGI protocol handler"""
 
         # PERF: Use literal constructor for dicts
@@ -22,51 +22,27 @@ class Api:
         # TODO
         # ctx.update(global_ctx_for_route)
 
-        path = environ['PATH_INFO']
-        req = Request(path)
-
+        req = Request(env)
         resp = Response()
 
         # PERF: Use try...except blocks when the key usually exists
         try:
             # TODO: Figure out a way to use codegen to make a state machine,
             #       may have to in order to support URI templates.
-            handler = self.routes[path]
+            handler = self.routes[req.path]
         except KeyError:
             handler = path_not_found_handler
 
-        try:
-            handler(ctx, req, resp)
-        except Exception as ex:
-            # TODO
-            pass
+        handler(ctx, req, resp)
 
-        resp.set_header('Content-Type', 'text/plain')
+        #
+        # Set status and headers
+        #
+        self._set_auto_resp_headers(env, req, resp)
+        start_response(resp.status, resp._wsgi_headers())
 
-        # Consider refactoring into functions, but be careful since that can 
-        # affect performance...
-
-        body = resp.body
-        content_length = 0
-        try:
-            if body is not None:
-                content_length = len(body)
-        except Exception as ex:
-            #TODO
-            pass
-
-        resp.set_header('Content-Length', content_length)
-        headers = resp._wsgi_headers()
-
-        try:
-            start_response(resp.status, headers)
-        except Exception as ex:
-            # TODO
-            pass
-
-        # PERF: Can't predict ratio of empty body to nonempty, so use
-        #       "in" which is a good all-around performer.
-        return [body] if body is not None else []
+        # Return an iterable for the body, per the WSGI spec
+        return [resp.body] if resp.body is not None else []
 
     def add_route(self, uri_template, handler):
         self.routes[uri_template] = handler
@@ -75,5 +51,28 @@ class Api:
     # -------------------------------------------------------------------------
     # Helpers
     # -------------------------------------------------------------------------
+
+    def _set_auto_resp_headers(self, env, req, resp):
+        resp.set_header('Content-Type', 'text/plain')
+
+        # Set Content-Length when given a fully-buffered body
+        if resp.body is not None:
+            resp.set_header('Content-Length', len(resp.body))
+        elif resp.stream is not None:
+            # TODO: Transfer-Encoding: chunked
+            # TODO: if resp.stream_len is not None, don't use chunked
+            pass
+        else:
+            resp.set_header('Content-Length', 0)
+
+
+        # Enable Keep-Alive when appropriate
+        if env['SERVER_PROTOCOL'] != 'HTTP/1.0':
+            if req.get_header('Connection') == 'close':
+                connection = 'close'
+            else:
+                connection = 'Keep-Alive'
+
+            resp.set_header('Connection', connection)
 
 
