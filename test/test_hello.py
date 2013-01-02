@@ -16,8 +16,8 @@ class HelloRequestHandler:
 
         self.ctx, self.req, self.resp = ctx, req, resp
 
-        resp['status'] = falcon.HTTP_200
-        resp['body'] = self.sample_body
+        resp.status = falcon.HTTP_200
+        resp.body = self.sample_body
 
 
 class TestHelloWorld(helpers.TestSuite):
@@ -38,8 +38,6 @@ class TestHelloWorld(helpers.TestSuite):
         self._simulate_request(self.test_route)
         resp = self.on_hello.resp
 
-        self.assertTrue('status' in resp)
-        self.assertThat(resp['status'], Equals(self.on_hello.sample_status))
+        self.assertThat(resp.status, Equals(self.on_hello.sample_status))
 
-        self.assertTrue('body' in resp)
-        self.assertThat(resp['body'], Equals(self.on_hello.sample_body))
+        self.assertThat(resp.body, Equals(self.on_hello.sample_body))

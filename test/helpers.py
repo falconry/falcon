@@ -1,4 +1,6 @@
 import inspect
+import random
+
 import testtools
 
 import falcon
@@ -31,6 +33,26 @@ class TestSuite(testtools.TestCase):
 
     def _simulate_request(self, path):
         self.api(create_environ(path), self.srmock)
+
+class RandChars:
+    _chars = 'abcdefghijklqmnopqrstuvwxyz0123456789 \n\t!@#$%^&*()-_=+`~<>,.?/'
+
+    def __init__(self, min, max):
+        self.target = random.randint(min, max)
+        self.counter = 0
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        if self.counter < self.target:
+            self.counter += 1
+            return self._chars[random.randint(0, len(self._chars)-1)]
+        else:
+            raise StopIteration
+
+def rand_string(min, max):
+    return ''.join([c for c in RandChars(min, max)])
 
 def create_environ(path='/', query_string=''):
     return {
