@@ -8,7 +8,6 @@ import test.helpers as helpers
 
 
 # TODO: Automatically set text encoding to UTF-8 for plaintext (?)
-# TODO: Chunked when streams are set
 # TODO: Test setting various headers, and seeing that Falcon doesn't override custom ones, but will set them if not present (or not?)
 # TODO: Test correct content length is set
 # TODO: Test calling set_header with bogus arguments

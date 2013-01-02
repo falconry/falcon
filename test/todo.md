@@ -4,7 +4,7 @@ Functionality
 * Test sending/receiving various status codes
 * Chunked transfer encoding, streaming 0, some, and lots of bytes
   * Add tips to NOTES.md
-  * Framework should automatically set content-length for smaller streams, and only enable chunked encoding for really big ones AND when *not* using HTTP/1.0.
+  * Check that Transfer-Encoding is set unless stream\_len is specified. In the latter case, Content-Length must be tested and found to be equal to stream\_len
 * Ensure req dict has things the app needs, including path, user agent, various headers.
 * Test default http status code (200 OK?)
 * Test compiling routes, throwing on invalid routes (such as missing initial forward slash or non-ascii)
@@ -21,7 +21,9 @@ Functionality
 * Test passing a shared dict to each mock call (e.g., db connections, config)...and that it is passed to the request handler correctly
 * Test pre/post filters
 * Test error handling with standard response (for all error classes?)
-* Test passing bogus data to create_api and/or add_route
+* Test passing bogus data to create\_api and/or add_route
+* Validation helpers that throw appropriate HTTP exceptions for URI params as well as body (validate XML, JSON) (free functions available by the apps to KISS, or something more clever - way to specify when adding routes). Start with KISS - free functions.
+* HTTP exceptions class for easy error responses
 
 Performance
 
