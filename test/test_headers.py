@@ -6,19 +6,6 @@ from testtools.matchers import Equals, MatchesRegex, Contains, Not
 import falcon
 import test.helpers as helpers
 
-
-# TODO: Automatically set text encoding to UTF-8 for plaintext (?)
-# TODO: Test setting various headers, and seeing that Falcon doesn't override custom ones, but will set them if not present (or not?)
-# TODO: Test correct content length is set
-# TODO: Test calling set_header with bogus arguments
-# TODO: The order in which header fields with differing field names are received is not significant. However, it is "good practice" to send general-header fields first, followed by request-header or response- header fields, and ending with the entity-header fields.
-# TODO: Helper functions for getting and setting common headers
-# TODO: Any default headers, such as content-type?
-# TODO: if status is 1xx, 204, or 404 ignore body, don't set content-length
-# TODO: Test passing through all headers in req object (HTTP_* in WSGI env) - better to do lazy eval
-# TODO: Header names must be lower-case on lookup - test bogus, defaults
-# TODO: HTTP_HOST, if present, should be used in preference to SERVER_NAME
-
 class RequestHandler:
     sample_status = "200 OK"
     sample_body = helpers.rand_string(0, 128 * 1024)
