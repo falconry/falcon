@@ -2,9 +2,7 @@
 Functionality
 
 * Test sending/receiving various status codes
-* Chunked transfer encoding, streaming 0, some, and lots of bytes
-  * Add tips to NOTES.md
-  * Check that Transfer-Encoding is set unless stream\_len is specified. In the latter case, Content-Length must be tested and found to be equal to stream\_len
+transfer encoding
 * Ensure req dict has things the app needs, including path, user agent, various headers.
 * Test default http status code (200 OK?)
 * Test compiling routes, throwing on invalid routes (such as missing initial forward slash or non-ascii)
@@ -29,4 +27,5 @@ Performance
 
 * Test inlining functions, maybe make a tool that does this automatically
 * Try using a closure to generate the WSGI request handler (vs. a class)
+
   

@@ -1,6 +1,7 @@
 
 def application(environ, start_response):
-    start_response("200 OK", [('Content-Type', 'text/plain')])
+    start_response("200 OK", [
+        ('Content-Type', 'text/plain')])
 
     body = '\n{\n'
     for key, value in environ.items():
@@ -9,8 +10,9 @@ def application(environ, start_response):
 
     body += '}\n\n'
 
-    return body
+    return [body]
 
+app = application
 
 if __name__ == '__main__':
     from wsgiref.simple_server import make_server

@@ -57,22 +57,10 @@ class Api:
 
         # Set Content-Length when given a fully-buffered body
         if resp.body is not None:
-            resp.set_header('Content-Length', len(resp.body))
+            resp.set_header('Content-Length', str(len(resp.body)))
         elif resp.stream is not None:
-            # TODO: Transfer-Encoding: chunked
             # TODO: if resp.stream_len is not None, don't use chunked
             pass
         else:
             resp.set_header('Content-Length', 0)
-
-
-        # Enable Keep-Alive when appropriate
-        if env['SERVER_PROTOCOL'] != 'HTTP/1.0':
-            if req.get_header('Connection') == 'close':
-                connection = 'close'
-            else:
-                connection = 'Keep-Alive'
-
-            resp.set_header('Connection', connection)
-
 

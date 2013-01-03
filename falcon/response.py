@@ -13,7 +13,5 @@ class Response:
     def set_header(self, name, value):
         self._headers[name] = str(value)
 
-    #TODO: Add some helper functions and test them
-
     def _wsgi_headers(self):
-        return [t for t in self._headers.items()]
+        return self._headers.items()

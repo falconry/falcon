@@ -49,39 +49,3 @@ class TestHeaders(helpers.TestSuite):
         content_length = str(len(self.on_hello.sample_body))
         content_length_header = ('Content-Length', content_length)
         self.assertThat(headers, Contains(content_length_header))
-
-    def test_keep_alive_http_1_1(self):
-        self._simulate_request(self.test_route, protocol='HTTP/1.1')
-        headers = self.srmock.headers
-
-        # Test Keep-Alive assumed on by default (HTTP/1.1)
-        connection_header = ('Connection', 'Keep-Alive')
-        self.assertThat(headers, Contains(connection_header))
-
-    def test_no_keep_alive_http_1_1(self):
-        req_headers = {'Connection': 'close'}
-        self._simulate_request(self.test_route, protocol='HTTP/1.1',
-                               headers=req_headers)
-        headers = self.srmock.headers
-
-        # Test Keep-Alive assumed on by default (HTTP/1.1)
-        connection_header = ('Connection', 'Keep-Alive')
-        self.assertThat(headers, Not(Contains(connection_header)))
-
-    def test_no_implicit_keep_alive_http_1_0(self):
-        self._simulate_request(self.test_route, protocol='HTTP/1.0')
-        headers = self.srmock.headers
-
-        # Test Keep-Alive assumed on by default (HTTP/1.1)
-        connection_header = ('Connection', 'Keep-Alive')
-        self.assertThat(headers, Not(Contains(connection_header)))
-
-    def test_no_explicit_keep_alive_http_1_0(self):
-        req_headers = {'Connection': 'Keep-Alive'}
-        self._simulate_request(self.test_route, protocol='HTTP/1.0',
-                               headers=req_headers)
-        headers = self.srmock.headers
-
-        # Test Keep-Alive assumed on by default (HTTP/1.1)
-        connection_header = ('Connection', 'Keep-Alive')
-        self.assertThat(headers, Not(Contains(connection_header)))
