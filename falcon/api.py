@@ -38,11 +38,19 @@ class Api:
         #
         # Set status and headers
         #
-        self._set_auto_resp_headers(env, req, resp)
+        use_body = not self._should_ignore_body(resp.status)
+        if use_body:
+            self._set_content_length(env, req, resp)
+
         start_response(resp.status, resp._wsgi_headers())
 
         # Return an iterable for the body, per the WSGI spec
-        return [resp.body] if resp.body is not None else []
+        if use_body:
+            return [resp.body] if resp.body is not None else []
+
+        # Ignore body based on status code
+        return []
+
 
     def add_route(self, uri_template, handler):
         self.routes[uri_template] = handler
@@ -52,13 +60,18 @@ class Api:
     # Helpers
     # -------------------------------------------------------------------------
 
-    def _set_auto_resp_headers(self, env, req, resp):
-        # Set Content-Length when given a fully-buffered body
+    def _should_ignore_body(self, status):
+        return (status.startswith('204') or
+                status.startswith('1') or
+                status.startswith('304'))
+
+    def _set_content_length(self, env, req, resp):
+
+        # Set Content-Length when given a fully-buffered body or stream length
         if resp.body is not None:
             resp.set_header('Content-Length', str(len(resp.body)))
-        elif resp.stream is not None:
-            # TODO: if resp.stream_len is not None, don't use chunked
-            pass
+        elif resp.stream_len is not None:
+            resp.set_header('Content-Length', resp.stream_len)
         else:
             resp.set_header('Content-Length', 0)
 

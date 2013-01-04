@@ -1,6 +1,8 @@
 """Defines common HTTP status codes"""
 
 HTTP_100 = '100 Continue'
+HTTP_101 = '101 Switching Protocols'
+HTTP_102 = '102 Processing'
 
 HTTP_200 = '200 OK'
 HTTP_201 = '201 Created'
@@ -12,6 +14,7 @@ HTTP_206 = '206 Partial Content'
 HTTP_226 = '226 IM Used'
 
 # TODO: 3xx
+HTTP_304 = '304 Not Modified'
 
 # TODO: 4xx
 HTTP_404 = '404 Not Found'

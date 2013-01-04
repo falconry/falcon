@@ -27,6 +27,17 @@ class RequestHandler:
         resp.body = self.sample_body
         resp.set_headers(self.resp_headers)
 
+class RequestHandlerTestStatus:
+    sample_body = helpers.rand_string(0, 128 * 1024)
+
+    def __init__(self, status):
+        self.status = status
+
+    def __call__(self, ctx, req, resp):
+        resp.status = self.status
+        resp.body = self.sample_body
+
+
 class TestHeaders(helpers.TestSuite):
 
     def prepare(self):
@@ -42,6 +53,46 @@ class TestHeaders(helpers.TestSuite):
         content_length = str(len(self.on_hello.sample_body))
         content_length_header = ('Content-Length', content_length)
         self.assertThat(headers, Contains(content_length_header))
+
+    def test_no_body_on_1xx(self):
+        self.request_handler = RequestHandlerTestStatus(falcon.HTTP_102)
+        self.api.add_route('/1xx', self.request_handler)
+
+        body = self._simulate_request('/1xx')
+        self.assertThat(self.srmock.headers_dict,
+                        Not(Contains('Content-Length')))
+
+        self.assertThat(body, Equals([]))
+
+    def test_no_body_on_101(self):
+        self.request_handler = RequestHandlerTestStatus(falcon.HTTP_101)
+        self.api.add_route('/1xx', self.request_handler)
+
+        body = self._simulate_request('/1xx')
+        self.assertThat(self.srmock.headers_dict,
+                        Not(Contains('Content-Length')))
+
+        self.assertThat(body, Equals([]))
+
+    def test_no_body_on_204(self):
+        self.request_handler = RequestHandlerTestStatus(falcon.HTTP_204)
+        self.api.add_route('/204', self.request_handler)
+
+        body = self._simulate_request('/204')
+        self.assertThat(self.srmock.headers_dict,
+                        Not(Contains('Content-Length')))
+
+        self.assertThat(body, Equals([]))
+
+    def test_no_body_on_304(self):
+        self.request_handler = RequestHandlerTestStatus(falcon.HTTP_304)
+        self.api.add_route('/304', self.request_handler)
+
+        body = self._simulate_request('/304')
+        self.assertThat(self.srmock.headers_dict,
+                        Not(Contains('Content-Length')))
+
+        self.assertThat(body, Equals([]))
 
     def test_passthrough_req_headers(self):
         req_headers = {

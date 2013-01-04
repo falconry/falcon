@@ -15,6 +15,7 @@ class StartResponseMock:
         self._called += 1
         self.status = status
         self.headers = headers
+        self.headers_dict = dict(headers)
 
     def call_count(self):
         return self._called
@@ -32,7 +33,7 @@ class TestSuite(testtools.TestCase):
             prepare()
 
     def _simulate_request(self, path, protocol='HTTP/1.1', headers=None):
-        self.api(create_environ(path=path, protocol=protocol, headers=headers),
+        return self.api(create_environ(path=path, protocol=protocol, headers=headers),
                  self.srmock)
 
 class RandChars:
