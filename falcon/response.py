@@ -13,5 +13,8 @@ class Response:
     def set_header(self, name, value):
         self._headers[name] = str(value)
 
+    def set_headers(self, headers_by_name):
+        self._headers.update(headers_by_name)
+
     def _wsgi_headers(self):
         return self._headers.items()

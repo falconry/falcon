@@ -8,7 +8,7 @@ class Request:
         # Extract HTTP headers
         for key in env:
             if key.startswith('HTTP_'):
-                headers[key[5:]] =  env[key]
+                headers[key[5:]] = env[key]
 
     def get_header(self, name, default=None):
         """Return a header value as a string

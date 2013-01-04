@@ -53,8 +53,6 @@ class Api:
     # -------------------------------------------------------------------------
 
     def _set_auto_resp_headers(self, env, req, resp):
-        resp.set_header('Content-Type', 'text/plain')
-
         # Set Content-Length when given a fully-buffered body
         if resp.body is not None:
             resp.set_header('Content-Length', str(len(resp.body)))

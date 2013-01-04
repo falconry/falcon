@@ -1,5 +1,6 @@
 * Keep-Alive is intentially disabled for HTTP/1.0 clients to mitigate problems with proxies. See also http://tools.ietf.org/html/rfc2616#section-19.6.2
 * resp.set_header assumes second param is a string. App may crash otherwise. 
+* If you have several headers to set, consider using set_headers to avoid function call overhead
 * Don't set content-length. It will only be overridden.
 * Header names are case-insensitive in req.get_header
 * Set body to a byte string, as per PEP 333 - http://www.python.org/dev/peps/pep-0333/#unicode-issues - if it is textual, it's up to the app to set the proper media type
