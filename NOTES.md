@@ -1,7 +1,8 @@
 * Keep-Alive is intentially disabled for HTTP/1.0 clients to mitigate problems with proxies. See also http://tools.ietf.org/html/rfc2616#section-19.6.2
-* resp.set_header assumes second param is a string. App may crash otherwise. 
+* resp.set_header assumes both params are strings. App may crash otherwise. Falcon trusts the caller. You *are* testing all your code paths, aren't you?
 * If you have several headers to set, consider using set_headers to avoid function call overhead
 * Don't set content-length. It will only be overridden.
+* The order in which header fields are sent in the response is undefined. Headers are not grouped according to the recommendation in [RFC 2616](http://tools.ietf.org/html/rfc2616#section-4.2) in order to generate responses as quickly as possible.
 * Header names are case-insensitive in req.get_header
 * Set body to a byte string, as per PEP 333 - http://www.python.org/dev/peps/pep-0333/#unicode-issues - if it is textual, it's up to the app to set the proper media type
 * If both body and stream are set, body will be used
