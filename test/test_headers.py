@@ -6,6 +6,7 @@ from testtools.matchers import Equals, MatchesRegex, Contains, Not
 import falcon
 import test.helpers as helpers
 
+
 class RequestHandler:
     sample_status = "200 OK"
     sample_body = helpers.rand_string(0, 128 * 1024)
@@ -26,6 +27,7 @@ class RequestHandler:
         resp.status = falcon.HTTP_200
         resp.body = self.sample_body
         resp.set_headers(self.resp_headers)
+
 
 class RequestHandlerTestStatus:
     sample_body = helpers.rand_string(0, 128 * 1024)

@@ -4,6 +4,7 @@ from testtools.matchers import Equals, MatchesRegex
 import falcon
 import test.helpers as helpers
 
+
 class HelloRequestHandler:
     sample_status = "200 OK"
     sample_body = "Hello World!"

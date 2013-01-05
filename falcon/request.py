@@ -25,4 +25,3 @@ class Request:
             return headers[name.upper()]
         except KeyError as e:
             return default
-
