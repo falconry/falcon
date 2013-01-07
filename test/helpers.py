@@ -74,7 +74,7 @@ def create_environ(path='/', query_string='',
         "PATH_INFO": path,
         "QUERY_STRING": query_string,
         "HTTP_ACCEPT": "*/*",
-        "HTTP_USER_AGENT": ("curl/7.24.0 (x86_64-apple-darwin12.0)"
+        "HTTP_USER_AGENT": ("curl/7.24.0 (x86_64-apple-darwin12.0) "
                             "libcurl/7.24.0 OpenSSL/0.9.8r zlib/1.2.5"),
         "REMOTE_PORT": "65133",
         "RAW_URI": "/",
