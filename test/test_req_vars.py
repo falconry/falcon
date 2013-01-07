@@ -1,7 +1,6 @@
 import testtools
 from testtools.matchers import Equals, MatchesRegex, Contains, Not
 
-import falcon
 from falcon.request import Request
 import test.helpers as helpers
 

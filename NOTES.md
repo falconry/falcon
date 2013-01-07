@@ -1,3 +1,5 @@
+* Falcon doesn't officially support Python 3; it's on our TODO list.
+* Falcon is based on byte strings, and does no conversions to UTF-16 (for example). If your app needs to use wide strings, you'll need to do the conversion manually. However, we recommend just keeping everything UTF-8 to avoid writing extra code and spinning CPU cycles.
 * Keep-Alive is intentially disabled for HTTP/1.0 clients to mitigate problems with proxies. See also http://tools.ietf.org/html/rfc2616#section-19.6.2
 * resp.set_header assumes both params are strings. App may crash otherwise. Falcon trusts the caller. You *are* testing all your code paths, aren't you?
 * If the WSGI server passes an empty path, Falcon will force it to '/', so you don't have to test for the empty string in your app.
