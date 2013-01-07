@@ -1,3 +1,7 @@
+import re
+
+QS_PATTERN = re.compile(r'([a-zA-Z_]+)=([^&]+)')
+
 class Request:
     __slots__ = ('app', '_headers', 'method',
                  '_params', 'path', 'query_string')
@@ -6,12 +10,16 @@ class Request:
         self.method = env['REQUEST_METHOD']
         self.path = env['PATH_INFO'] or '/'
         self.app = env['SCRIPT_NAME']
-        self.query_string = env['QUERY_STRING']
+        self.query_string = query_string = env['QUERY_STRING']
 
-        # Will be filled in by caller
-        self._params = {}
+        # Parse query string
+        # PERF: use for loop in lieu of the dict constructor
+        self._params = params = {}
+        for k, v in QS_PATTERN.findall(query_string):
+            if ',' in v:
+                v = v.split(',')
 
-        #
+            params[k] = v
 
         # Extract HTTP headers
         self._headers = _headers = {}
