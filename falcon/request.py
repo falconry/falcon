@@ -10,6 +10,15 @@ class Request:
             if key.startswith('HTTP_'):
                 headers[key[5:]] = env[key]
 
+        if 'HOST' not in headers:
+            host = env['SERVER_NAME']
+            port = env['SERVER_PORT']
+
+            if port != '80':
+                host = ''.join([host, ':', port])
+
+            headers['HOST'] = host
+
     def get_header(self, name, default=None):
         """Return a header value as a string
 

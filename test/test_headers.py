@@ -54,6 +54,30 @@ class TestHeaders(helpers.TestSuite):
         content_length_header = ('Content-Length', content_length)
         self.assertThat(headers, Contains(content_length_header))
 
+    def test_prefer_host_header(self):
+        self._simulate_request(self.test_route)
+
+        # Make sure we picked up host from HTTP_HOST, not SERVER_NAME
+        host = self.on_hello.req.get_header('host')
+        self.assertThat(host, Equals('falconer'))
+
+    def test_host_fallback(self):
+        # Set protocol to 1.0 so that we won't get a host header
+        self._simulate_request(self.test_route, protocol='HTTP/1.0')
+
+        # Make sure we picked up host from HTTP_HOST, not SERVER_NAME
+        host = self.on_hello.req.get_header('host')
+        self.assertThat(host, Equals('localhost'))
+
+    def test_host_fallback_port8000(self):
+        # Set protocol to 1.0 so that we won't get a host header
+        self._simulate_request(self.test_route, protocol='HTTP/1.0',
+                               port='8000')
+
+        # Make sure we picked up host from HTTP_HOST, not SERVER_NAME
+        host = self.on_hello.req.get_header('host')
+        self.assertThat(host, Equals('localhost:8000'))
+
     def test_no_body_on_1xx(self):
         self.request_handler = RequestHandlerTestStatus(falcon.HTTP_102)
         self.api.add_route('/1xx', self.request_handler)
