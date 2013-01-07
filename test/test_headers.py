@@ -1,6 +1,4 @@
 import testtools
-import random
-
 from testtools.matchers import Equals, MatchesRegex, Contains, Not
 
 import falcon

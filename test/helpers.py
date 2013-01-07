@@ -57,12 +57,12 @@ def rand_string(min, max):
     return ''.join([c for c in RandChars(min, max)])
 
 def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
-                   headers=None):
+                   headers=None, script=''):
 
     env = {
         'SERVER_PROTOCOL': protocol,
         'SERVER_SOFTWARE': 'gunicorn/0.17.0',
-        'SCRIPT_NAME': '',
+        'SCRIPT_NAME': script,
         'REQUEST_METHOD': 'GET',
         'PATH_INFO': path,
         'QUERY_STRING': query_string,
@@ -81,6 +81,13 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
 
     if headers is not None:
         for name, value in headers.iteritems():
-            env['HTTP_' + name.upper()] = value.strip()
+            name = name.upper().replace('-', '_')
+
+            if name == 'CONTENT_TYPE':
+                env[name] = value.strip()
+            elif name == 'CONTENT_LENGTH':
+                env[name] = value.strip()
+            else:
+                env['HTTP_' + name.upper()] = value.strip()
 
     return env
