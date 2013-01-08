@@ -19,4 +19,9 @@ Falcon is a fast, light-weight framework for building cloud APIs. It tries to do
 
 **Cloud-friendly.** Falcon uses the web-friendly Python language, and speaks WSGI, so you can deploy it on your favorite stack. The framework is designed from the ground up to embrace HTTP, not work against it. Plus, diagnostics are built right in to make it easier to track down sneaky bugs and frustrating performance problems. 
 
+### Contributing ###
+
+Pull requests are welcome. Just make sure you follow PEP 8 and your commit messages are formatted using [AngularJS conventions][ajs] (one-liners are OK for now but body and footer may be required as the project matures.)
+
+[ajs]: http://goo.gl/QpbS7
 
