@@ -9,6 +9,7 @@ from falcon.status_codes import *
 # TODO: __slots__
 # TODO: log exceptions, trace execution, etc.
 
+
 class Api:
     """Provides routing and such for building a web service application"""
 
@@ -54,7 +55,6 @@ class Api:
         # Ignore body based on status code
         return []
 
-
     def add_route(self, uri_template, handler):
         if not hasattr(handler, '__call__'):
             raise TypeError('handler is not callable')
@@ -94,5 +94,3 @@ class Api:
         pattern = re.sub(r'{([a-zA-Z][a-zA-Z_]*)}', r'(?P<\1>[^/]+)', template)
         pattern = r'\A' + pattern + r'\Z'
         return re.compile(pattern, re.IGNORECASE)
-
-

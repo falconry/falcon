@@ -1,6 +1,7 @@
 """A fast micro-framework for building cloud APIs."""
 version_tuple = (0, 0, 1, '-dev')
 
+
 def get_version_string():
     if isinstance(version_tuple[-1], basestring):
         return '.'.join(map(str, version_tuple[:-1])) + version_tuple[-1]
