@@ -21,13 +21,14 @@ class TestReqVars(helpers.TestSuite):
     def test_reconstruct_url(self):
         req = self.req
 
+        scheme = req.protocol
         host = req.get_header('host')
         app = req.app
         path = req.path
         query_string = req.query_string
 
         expected_url = 'http://falconer/test/hello?marker=deadbeef&limit=10'
-        actual_url = ''.join(['http://', host, app, path, query_string])
+        actual_url = ''.join([scheme, '://', host, app, path, query_string])
         self.assertThat(actual_url, Equals(expected_url))
 
     def test_empty_path(self):

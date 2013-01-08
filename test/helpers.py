@@ -1,5 +1,6 @@
 import inspect
 import random
+from io import BytesIO
 
 import testtools
 
@@ -74,11 +75,14 @@ class TestSuite(testtools.TestCase):
             prepare()
 
     def _simulate_request(self, path, **kwargs):
+        if not path:
+            path = '/'
+
         return self.api(create_environ(path=path, **kwargs),
                  self.srmock)
 
 def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
-                   headers=None, script=''):
+                   headers=None, script='', body=''):
 
     env = {
         'SERVER_PROTOCOL': protocol,
@@ -92,9 +96,11 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
         'REMOTE_PORT': '65133',
         'RAW_URI': '/',
         'REMOTE_ADDR': '127.0.0.1',
-        'wsgi_url_scheme': 'http',
         'SERVER_NAME': 'localhost',
         'SERVER_PORT': port,
+
+        'wsgi.url_scheme': 'http',
+        'wsgi.input': BytesIO(body)
     }
 
     if protocol != 'HTTP/1.0':

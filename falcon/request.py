@@ -3,13 +3,23 @@ import re
 QS_PATTERN = re.compile(r'([a-zA-Z_]+)=([^&]+)')
 
 class Request:
-    __slots__ = ('app', '_headers', 'method',
-                 '_params', 'path', 'query_string')
+    __slots__ = (
+        'app',
+        'body',
+        '_headers',
+        'method',
+        '_params',
+        'path',
+        'protocol',
+        'query_string'
+    )
 
     def __init__(self, env):
+        self.app = env['SCRIPT_NAME']
+        self.body = env['wsgi.input']
         self.method = env['REQUEST_METHOD']
         self.path = env['PATH_INFO'] or '/'
-        self.app = env['SCRIPT_NAME']
+        self.protocol = env['wsgi.url_scheme']
         self.query_string = query_string = env['QUERY_STRING']
 
         # Parse query string

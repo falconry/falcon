@@ -59,6 +59,9 @@ class Api:
         if not hasattr(handler, '__call__'):
             raise TypeError('handler is not callable')
 
+        if not uri_template:
+            uri_template = '/'
+
         path_template = self._compile_uri_template(uri_template)
         self.routes.append((path_template, handler))
 

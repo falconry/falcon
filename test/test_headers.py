@@ -36,7 +36,7 @@ class TestHeaders(helpers.TestSuite):
 
         # Make sure we picked up host from HTTP_HOST, not SERVER_NAME
         host = self.reqhandler.req.get_header('host')
-        self.assertThat(host, Equals('falconer'))
+        self.assertEquals(host, 'falconer')
 
     def test_host_fallback(self):
         # Set protocol to 1.0 so that we won't get a host header
@@ -44,7 +44,7 @@ class TestHeaders(helpers.TestSuite):
 
         # Make sure we picked up host from HTTP_HOST, not SERVER_NAME
         host = self.reqhandler.req.get_header('host')
-        self.assertThat(host, Equals('localhost'))
+        self.assertEquals(host, 'localhost')
 
     def test_host_fallback_port8000(self):
         # Set protocol to 1.0 so that we won't get a host header
@@ -53,7 +53,7 @@ class TestHeaders(helpers.TestSuite):
 
         # Make sure we picked up host from HTTP_HOST, not SERVER_NAME
         host = self.reqhandler.req.get_header('host')
-        self.assertThat(host, Equals('localhost:8000'))
+        self.assertEquals(host, 'localhost:8000')
 
     def test_no_body_on_1xx(self):
         self.request_handler = RequestHandlerTestStatus(falcon.HTTP_102)
@@ -63,7 +63,7 @@ class TestHeaders(helpers.TestSuite):
         self.assertThat(self.srmock.headers_dict,
                         Not(Contains('Content-Length')))
 
-        self.assertThat(body, Equals([]))
+        self.assertEquals(body, [])
 
     def test_no_body_on_101(self):
         self.request_handler = RequestHandlerTestStatus(falcon.HTTP_101)
@@ -73,7 +73,7 @@ class TestHeaders(helpers.TestSuite):
         self.assertThat(self.srmock.headers_dict,
                         Not(Contains('Content-Length')))
 
-        self.assertThat(body, Equals([]))
+        self.assertEquals(body, [])
 
     def test_no_body_on_204(self):
         self.request_handler = RequestHandlerTestStatus(falcon.HTTP_204)
@@ -83,7 +83,7 @@ class TestHeaders(helpers.TestSuite):
         self.assertThat(self.srmock.headers_dict,
                         Not(Contains('Content-Length')))
 
-        self.assertThat(body, Equals([]))
+        self.assertEquals(body, [])
 
     def test_no_body_on_304(self):
         self.request_handler = RequestHandlerTestStatus(falcon.HTTP_304)
@@ -93,7 +93,7 @@ class TestHeaders(helpers.TestSuite):
         self.assertThat(self.srmock.headers_dict,
                         Not(Contains('Content-Length')))
 
-        self.assertThat(body, Equals([]))
+        self.assertEquals(body, [])
 
     def test_passthrough_req_headers(self):
         req_headers = {
@@ -104,7 +104,7 @@ class TestHeaders(helpers.TestSuite):
 
         for name, expected_value in req_headers.iteritems():
             actual_value = self.reqhandler.req.get_header(name)
-            self.assertThat(actual_value, Equals(expected_value))
+            self.assertEquals(actual_value, expected_value)
 
     def test_passthrough_resp_headers(self):
         self._simulate_request(self.test_route)
