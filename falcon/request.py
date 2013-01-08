@@ -2,6 +2,7 @@ import re
 
 QS_PATTERN = re.compile(r'([a-zA-Z_]+)=([^&]+)')
 
+
 class Request:
     __slots__ = ('app', '_headers', 'method',
                  '_params', 'path', 'query_string')
@@ -77,5 +78,3 @@ class Request:
             return self._params[name]
 
         return default
-
-
