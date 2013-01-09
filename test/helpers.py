@@ -1,9 +1,17 @@
-import inspect
 import random
+from io import BytesIO
 
 import testtools
 
 import falcon
+
+
+def rand_string(min, max):
+    int_gen = random.randint
+    string_length = int_gen(min, max)
+    return ''.join([chr(int_gen(9, 126))
+                    for i in range(string_length)])
+
 
 class StartResponseMock:
     def __init__(self):
@@ -20,6 +28,29 @@ class StartResponseMock:
     def call_count(self):
         return self._called
 
+
+class RequestHandler:
+    sample_status = "200 OK"
+    sample_body = rand_string(0, 128 * 1024)
+    resp_headers = {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'ETag': '10d4555ebeb53b30adf724ca198b32a2',
+        'X-Hello': 'OH HAI'
+    }
+
+    def __init__(self):
+        self.called = False
+
+    def on_get(self, ctx, req, resp):
+        self.called = True
+
+        self.ctx, self.req, self.resp = ctx, req, resp
+
+        resp.status = falcon.HTTP_200
+        resp.body = self.sample_body
+        resp.set_headers(self.resp_headers)
+
+
 class TestSuite(testtools.TestCase):
 
     def setUp(self):
@@ -33,34 +64,34 @@ class TestSuite(testtools.TestCase):
             prepare()
 
     def _simulate_request(self, path, **kwargs):
-        return self.api(create_environ(path=path, **kwargs),
-                 self.srmock)
+        if not path:
+            path = '/'
 
-def rand_string(min, max):
-    int_gen = random.randint
-    string_length = int_gen(min, max)
-    return ''.join([chr(int_gen(9, 126))
-                    for i in range(string_length)])
+        return self.api(create_environ(path=path, **kwargs),
+                        self.srmock)
 
 
 def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
-                   headers=None):
+                   headers=None, script='', body='', method='GET'):
 
     env = {
         'SERVER_PROTOCOL': protocol,
         'SERVER_SOFTWARE': 'gunicorn/0.17.0',
-        'SCRIPT_NAME': '',
-        'REQUEST_METHOD': 'GET',
+        'SCRIPT_NAME': script,
+        'REQUEST_METHOD': method,
         'PATH_INFO': path,
         'QUERY_STRING': query_string,
         'HTTP_ACCEPT': '*/*',
-        'HTTP_USER_AGENT': 'curl/7.24.0 (x86_64-apple-darwin12.0) libcurl/7.24.0 OpenSSL/0.9.8r zlib/1.2.5',
+        'HTTP_USER_AGENT': ('curl/7.24.0 (x86_64-apple-darwin12.0) '
+                            'libcurl/7.24.0 OpenSSL/0.9.8r zlib/1.2.5'),
         'REMOTE_PORT': '65133',
         'RAW_URI': '/',
         'REMOTE_ADDR': '127.0.0.1',
-        'wsgi_url_scheme': 'http',
         'SERVER_NAME': 'localhost',
         'SERVER_PORT': port,
+
+        'wsgi.url_scheme': 'http',
+        'wsgi.input': BytesIO(body)
     }
 
     if protocol != 'HTTP/1.0':
@@ -68,6 +99,13 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
 
     if headers is not None:
         for name, value in headers.iteritems():
-            env['HTTP_' + name.upper()] = value.strip()
+            name = name.upper().replace('-', '_')
+
+            if name == 'CONTENT_TYPE':
+                env[name] = value.strip()
+            elif name == 'CONTENT_LENGTH':
+                env[name] = value.strip()
+            else:
+                env['HTTP_' + name.upper()] = value.strip()
 
     return env

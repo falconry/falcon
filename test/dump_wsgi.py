@@ -1,12 +1,13 @@
 
+
 def application(environ, start_response):
     start_response("200 OK", [
         ('Content-Type', 'text/plain')])
 
     body = '\n{\n'
     for key, value in environ.items():
-        if isinstance(value, basestring):
-            body += '    "{0}": "{1}",\n'.format(key, value)
+        #if isinstance(value, basestring):
+        body += '    "{0}": "{1}",\n'.format(key, value)
 
     body += '}\n\n'
 
