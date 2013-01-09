@@ -1,6 +1,4 @@
-import re
-
-QS_PATTERN = re.compile(r'([a-zA-Z_]+)=([^&]+)')
+from request_helpers import *
 
 
 class Request:
@@ -22,39 +20,8 @@ class Request:
         self.path = env['PATH_INFO'] or '/'
         self.protocol = env['wsgi.url_scheme']
         self.query_string = query_string = env['QUERY_STRING']
-
-        # Parse query string
-        # PERF: use for loop in lieu of the dict constructor
-        self._params = params = {}
-        for k, v in QS_PATTERN.findall(query_string):
-            if ',' in v:
-                v = v.split(',')
-
-            params[k] = v
-
-        # Extract HTTP headers
-        self._headers = _headers = {}
-        for key in env:
-            if key.startswith('HTTP_'):
-                _headers[key[5:]] = env[key]
-
-        # Per the WSGI spec, Content-Type is not under HTTP_*
-        if 'CONTENT_TYPE' in env:
-            _headers['CONTENT_TYPE'] = env['CONTENT_TYPE']
-
-        # Per the WSGI spec, Content-Length is not under HTTP_*
-        if 'CONTENT_LENGTH' in env:
-            _headers['CONTENT_LENGTH'] = env['CONTENT_LENGTH']
-
-        # Fallback to SERVER_* vars if host header not specified
-        if 'HOST' not in _headers:
-            host = env['SERVER_NAME']
-            port = env['SERVER_PORT']
-
-            if port != '80':
-                host = ''.join([host, ':', port])
-
-            _headers['HOST'] = host
+        self._params = parse_query_string(query_string)
+        self._headers = parse_headers(env)
 
     def try_get_header(self, name, default=None):
         """Return a header value as a string
