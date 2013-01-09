@@ -11,7 +11,7 @@ Falcon is a fast, light-weight framework for building cloud APIs. It tries to do
 >
 > *- Antoine de Saint-Exupéry*
 
-### Design ###
+### Design Goals ###
 
 **Light-weight.** Only the essentials are included, with few dependencies. We work to keep the code lean-n-mean, making Falcon easier to test, optimize, and deploy. 
 
@@ -19,18 +19,9 @@ Falcon is a fast, light-weight framework for building cloud APIs. It tries to do
 
 **Cloud-friendly.** Falcon uses the web-friendly Python language, and speaks WSGI, so you can deploy it on your favorite stack. The framework is designed from the ground up to embrace HTTP, not work against it. Plus, diagnostics are built right in to make it easier to track down sneaky bugs and frustrating performance problems. 
 
-### Assumptions ###
+### Contributing ###
 
-(Work in progress.)
+Pull requests are welcome. Just make sure you follow PEP 8 and your commit messages are formatted using [AngularJS conventions][ajs] (one-liners are OK for now but body and footer may be required as the project matures).
 
-In order to stay lean and fast, Falcon makes several assumptions.
-
-First of all, Falcon assumes that request handlers will (for the most part) do the right thing. In other words, Falcon doesn't try very hard to protect handler code from itself. 
-
-This requires some discipline on the part of the developer.
-
-1. Request handlers will set response variables to sane values. This includes setting *status* to a valid HTTP status code and string (just use the provided constants), setting *headers* to a collection of tuples, and setting *body* (if not desired to be empty) to either a string or an iterable.  
-1. The application won't add extra junk to req and resp dicts (use the ctx instead)
-1. Request handlers are well-tested with high code coverage. It's not Falcon's job to babysit your code once it leaves the nest.
-1. ...
+[ajs]: http://goo.gl/QpbS7
 

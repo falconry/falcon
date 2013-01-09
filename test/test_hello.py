@@ -2,7 +2,7 @@ import testtools
 from testtools.matchers import Equals, MatchesRegex
 
 import falcon
-import test.helpers as helpers
+import helpers
 
 
 class HelloRequestHandler:
@@ -26,6 +26,13 @@ class TestHelloWorld(helpers.TestSuite):
     def prepare(self):
         self.on_hello = HelloRequestHandler()
         self.api.add_route(self.test_route, self.on_hello)
+
+        self.root_reqhandler = helpers.RequestHandler()
+        self.api.add_route('', self.root_reqhandler)
+
+    def test_empty_route(self):
+        self._simulate_request('')
+        self.assertTrue(self.root_reqhandler.called)
 
     def test_hello_route_negative(self):
         bogus_route = self.test_route + 'x'

@@ -1,3 +1,5 @@
+import re
+
 from falcon.request import Request
 from falcon.response import Response
 
@@ -12,7 +14,7 @@ class Api:
     """Provides routing and such for building a web service application"""
 
     def __init__(self):
-        self.routes = {}
+        self.routes = []
 
     def __call__(self, env, start_response):
         """WSGI protocol handler"""
@@ -26,12 +28,13 @@ class Api:
         req = Request(env)
         resp = Response()
 
-        # PERF: Use try...except blocks when the key usually exists
-        try:
-            # TODO: Figure out a way to use codegen to make a state machine,
-            #       may have to in order to support URI templates.
-            handler = self.routes[req.path]
-        except KeyError:
+        path = req.path
+        for path_template, handler in self.routes:
+            m = path_template.match(path)
+            if m:
+                req._params.update(m.groupdict())
+                break
+        else:
             handler = path_not_found_handler
 
         handler(ctx, req, resp)
@@ -53,8 +56,14 @@ class Api:
         return []
 
     def add_route(self, uri_template, handler):
-        self.routes[uri_template] = handler
-        pass
+        if not hasattr(handler, '__call__'):
+            raise TypeError('handler is not callable')
+
+        if not uri_template:
+            uri_template = '/'
+
+        path_template = self._compile_uri_template(uri_template)
+        self.routes.append((path_template, handler))
 
     # -------------------------------------------------------------------------
     # Helpers
@@ -74,3 +83,17 @@ class Api:
             resp.set_header('Content-Length', resp.stream_len)
         else:
             resp.set_header('Content-Length', 0)
+
+    def _compile_uri_template(self, template):
+        """Compile the given URI template string into path and query string
+        regex-based templates.
+
+        See also: http://tools.ietf.org/html/rfc6570
+        """
+        if not isinstance(template, str):
+            raise TypeError('uri_template is not a byte string')
+
+        # Convert Level 1 var patterns to equivalent named regex groups
+        pattern = re.sub(r'{([a-zA-Z][a-zA-Z_]*)}', r'(?P<\1>[^/]+)', template)
+        pattern = r'\A' + pattern + r'\Z'
+        return re.compile(pattern, re.IGNORECASE)
