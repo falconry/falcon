@@ -1,4 +1,4 @@
-from request_helpers import *
+from falcon.request_helpers import *
 
 
 class Request:

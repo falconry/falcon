@@ -15,6 +15,7 @@ def parse_query_string(query_string):
 
     return params
 
+
 def parse_headers(env):
     # Parse HTTP_*
     headers = {}
@@ -41,4 +42,3 @@ def parse_headers(env):
         headers['HOST'] = host
 
     return headers
-
