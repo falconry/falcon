@@ -1,5 +1,3 @@
-import testtools
-
 import test.helpers as helpers
 
 
@@ -25,12 +23,21 @@ class TestQueryParams(helpers.TestSuite):
         self.assertEquals(req.try_get_param('marker'), 'deadbeef')
         self.assertEquals(req.try_get_param('limit'), '25')
 
+    def test_int(self):
+        query_string = 'marker=deadbeef&limit=25'
+        self._simulate_request('/', query_string=query_string)
+
+        req = self.reqhandler.req
+        self.assertEquals(req.try_get_param_as_int('marker'), None)
+        self.assertEquals(req.try_get_param_as_int('limit'), 25)
+
     def test_list_type(self):
         query_string = 'colors=red,green,blue&limit=1'
         self._simulate_request('/', query_string=query_string)
 
         req = self.reqhandler.req
-        self.assertEquals(req.try_get_param('colors'), ['red', 'green', 'blue'])
+        self.assertEquals(req.try_get_param('colors'),
+                          ['red', 'green', 'blue'])
         self.assertEquals(req.try_get_param('limit'), '1')
 
     def test_bogus_input(self):

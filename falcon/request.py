@@ -41,11 +41,11 @@ class Request:
             return default
 
     def try_get_param(self, name, default=None):
-        """Return a URI parameter value as a string
+        """Return a query string parameter value as a string
 
         name -- Parameter name as specified in the route template. Note that
                 names are case-sensitive (e.g., 'Id' != 'id').
-        default -- Value to return in case the header is not found
+        default -- Value to return in case the parameter is not found
 
         """
 
@@ -53,5 +53,25 @@ class Request:
         #       know how likely params are to be specified by clients.
         if name in self._params:
             return self._params[name]
+
+        return default
+
+    def try_get_param_as_int(self, name, default=None):
+        """Return a query string parameter value as an integer
+
+        name -- Parameter name, case-sensitive.
+        default -- Value to return in case the param is not found, or is not
+                   an integer.
+
+        """
+
+        # PERF: Use if..in since it is a good all-around performer; we don't
+        #       know how likely params are to be specified by clients.
+        if name in self._params:
+            val = self._params[name]
+            try:
+                return int(val)
+            except ValueError:
+                pass
 
         return default
