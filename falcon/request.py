@@ -1,5 +1,5 @@
 from falcon.request_helpers import *
-
+from falcon.exceptions import *
 
 class Request:
     __slots__ = (
@@ -23,13 +23,19 @@ class Request:
         self._params = parse_query_string(query_string)
         self._headers = parse_headers(env)
 
-    def try_get_header(self, name, default=None):
+    def get_header(self, name, default=None, required=False):
         """Return a header value as a string
 
-        name -- Header name, case-insensitive (e.g., 'Content-Type')
-        default -- Value to return in case the header is not found
+        name     -- Header name, case-insensitive (e.g., 'Content-Type')
+        default  -- Value to return in case the header is not
+                    found (default None)
+        required -- Set to True to raise HttpBadRequest instead
+                    of returning gracefully when the header is not
+                    found (default False)
 
         """
+
+
 
         # Use try..except to optimize for the header existing in most cases
         try:
@@ -38,14 +44,21 @@ class Request:
             # up only once, and not all headers will be requested.
             return self._headers[name.upper().replace('-', '_')]
         except KeyError:
-            return default
+            if not required:
+                return default
 
-    def try_get_param(self, name, default=None):
-        """Return a query string parameter value as a string
+            raise HTTPBadRequest('Missing header',
+                                 'The "' + name + '" header is required.')
 
-        name -- Parameter name as specified in the route template. Note that
-                names are case-sensitive (e.g., 'Id' != 'id').
-        default -- Value to return in case the parameter is not found
+    def get_param(self, name, default=None, required=False):
+        """Return the value of a query string parameter as a string
+
+        name     -- Parameter name, case-sensitive (e.g., 'sort')
+        default  -- Value to return in case the parameter is not
+                    found in the query string (default None)
+        required -- Set to True to raise HttpBadRequest instead
+                    of returning gracefully when the parameter is not
+                    found (default False)
 
         """
 
@@ -54,14 +67,22 @@ class Request:
         if name in self._params:
             return self._params[name]
 
-        return default
+        if not required:
+            return default
 
-    def try_get_param_as_int(self, name, default=None):
-        """Return a query string parameter value as an integer
+        raise HTTPBadRequest('Missing query parameter',
+                             'The "' + name + '" query parameter is required.')
 
-        name -- Parameter name, case-sensitive.
-        default -- Value to return in case the param is not found, or is not
-                   an integer.
+    def get_param_as_int(self, name, default=None, required=False):
+        """Return the value of a query string parameter as an int
+
+        name     -- Parameter name, case-sensitive (e.g., 'limit')
+        default  -- Value to return in case the parameter is not
+                    found in the query string, or it is not an
+                    integer (default None)
+        required -- Set to True to raise HttpBadRequest instead
+                    of returning gracefully when the parameter is not
+                    found or is not an integer (default False)
 
         """
 
@@ -74,4 +95,8 @@ class Request:
             except ValueError:
                 pass
 
-        return default
+        if not required:
+            return default
+
+        raise HTTPBadRequest('Missing query parameter',
+                             'The "' + name + '" query parameter is required.')

@@ -13,7 +13,7 @@ class TestUriTemplates(helpers.TestSuite):
         self.assertTrue(self.reqhandler.called)
         req = self.reqhandler.req
 
-        self.assertEquals(req.try_get_param('id'), None)
+        self.assertEquals(req.get_param('id'), None)
 
     def test_no_vars(self):
         self.api.add_route('/hello/world', self.reqhandler)
@@ -22,7 +22,7 @@ class TestUriTemplates(helpers.TestSuite):
         self.assertTrue(self.reqhandler.called)
         req = self.reqhandler.req
 
-        self.assertEquals(req.try_get_param('world'), None)
+        self.assertEquals(req.get_param('world'), None)
 
     def test_single(self):
         self.api.add_route('/widgets/{id}', self.reqhandler)
@@ -31,8 +31,8 @@ class TestUriTemplates(helpers.TestSuite):
         self.assertTrue(self.reqhandler.called)
 
         req = self.reqhandler.req
-        self.assertEquals(req.try_get_param('id'), '123')
-        self.assertEquals(req.try_get_param('Id'), None)
+        self.assertEquals(req.get_param('id'), '123')
+        self.assertEquals(req.get_param('Id'), None)
 
     def test_single_trailing_slash(self):
         self.api.add_route('/widgets/{id}/', self.reqhandler)
@@ -44,7 +44,7 @@ class TestUriTemplates(helpers.TestSuite):
         self.assertTrue(self.reqhandler.called)
 
         req = self.reqhandler.req
-        self.assertEquals(req.try_get_param('id'), '123')
+        self.assertEquals(req.get_param('id'), '123')
 
     def test_multiple(self):
         self.api.add_route('/messages/{Id}/names/{Name}', self.reqhandler)
@@ -56,6 +56,6 @@ class TestUriTemplates(helpers.TestSuite):
         self.assertTrue(self.reqhandler.called)
 
         req = self.reqhandler.req
-        self.assertEquals(req.try_get_param('Id'), test_id)
-        self.assertEquals(req.try_get_param('Name'), test_name)
-        self.assertEquals(req.try_get_param('name'), None)
+        self.assertEquals(req.get_param('Id'), test_id)
+        self.assertEquals(req.get_param('Name'), test_name)
+        self.assertEquals(req.get_param('name'), None)

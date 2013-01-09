@@ -35,7 +35,7 @@ class TestHeaders(helpers.TestSuite):
         self._simulate_request(self.test_route)
 
         # Make sure we picked up host from HTTP_HOST, not SERVER_NAME
-        host = self.reqhandler.req.try_get_header('host')
+        host = self.reqhandler.req.get_header('host')
         self.assertEquals(host, 'falconer')
 
     def test_host_fallback(self):
@@ -43,7 +43,7 @@ class TestHeaders(helpers.TestSuite):
         self._simulate_request(self.test_route, protocol='HTTP/1.0')
 
         # Make sure we picked up host from HTTP_HOST, not SERVER_NAME
-        host = self.reqhandler.req.try_get_header('host')
+        host = self.reqhandler.req.get_header('host')
         self.assertEquals(host, 'localhost')
 
     def test_host_fallback_port8000(self):
@@ -52,7 +52,7 @@ class TestHeaders(helpers.TestSuite):
                                port='8000')
 
         # Make sure we picked up host from HTTP_HOST, not SERVER_NAME
-        host = self.reqhandler.req.try_get_header('host')
+        host = self.reqhandler.req.get_header('host')
         self.assertEquals(host, 'localhost:8000')
 
     def test_no_body_on_1xx(self):
@@ -103,7 +103,7 @@ class TestHeaders(helpers.TestSuite):
         self._simulate_request(self.test_route, headers=req_headers)
 
         for name, expected_value in req_headers.iteritems():
-            actual_value = self.reqhandler.req.try_get_header(name)
+            actual_value = self.reqhandler.req.get_header(name)
             self.assertEquals(actual_value, expected_value)
 
     def test_passthrough_resp_headers(self):
