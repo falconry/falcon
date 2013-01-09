@@ -1,6 +1,8 @@
 import helpers
 import falcon
 
+from testtools.matchers import Contains
+
 HTTP_METHODS = (
     'CONNECT',
     'DELETE',
@@ -76,6 +78,12 @@ class TestHttpMethodRouting(helpers.TestSuite):
             self._simulate_request('/get', method=method)
 
             self.assertFalse(self.reqhandler_get.called)
+            self.assertEquals(self.srmock.status, '405 Method Not Allowed')
+
+            headers = self.srmock.headers
+            allow_header = ('Allow', 'GET')
+
+            self.assertThat(headers, Contains(allow_header))
 
     def test_bogus_method(self):
         self._simulate_request('/get', method=self.getUniqueString())

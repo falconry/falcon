@@ -1,6 +1,3 @@
-import testtools
-from testtools.matchers import Equals, Contains, Not
-
 import test.helpers as helpers
 
 
@@ -16,7 +13,7 @@ class TestUriTemplates(helpers.TestSuite):
         self.assertTrue(self.reqhandler.called)
         req = self.reqhandler.req
 
-        self.assertThat(req.get_param('id'), Equals(None))
+        self.assertEquals(req.get_param('id'), None)
 
     def test_no_vars(self):
         self.api.add_route('/hello/world', self.reqhandler)
@@ -25,7 +22,7 @@ class TestUriTemplates(helpers.TestSuite):
         self.assertTrue(self.reqhandler.called)
         req = self.reqhandler.req
 
-        self.assertThat(req.get_param('world'), Equals(None))
+        self.assertEquals(req.get_param('world'), None)
 
     def test_single(self):
         self.api.add_route('/widgets/{id}', self.reqhandler)
@@ -34,8 +31,8 @@ class TestUriTemplates(helpers.TestSuite):
         self.assertTrue(self.reqhandler.called)
 
         req = self.reqhandler.req
-        self.assertThat(req.get_param('id'), Equals('123'))
-        self.assertThat(req.get_param('Id'), Equals(None))
+        self.assertEquals(req.get_param('id'), '123')
+        self.assertEquals(req.get_param('Id'), None)
 
     def test_single_trailing_slash(self):
         self.api.add_route('/widgets/{id}/', self.reqhandler)
@@ -47,7 +44,7 @@ class TestUriTemplates(helpers.TestSuite):
         self.assertTrue(self.reqhandler.called)
 
         req = self.reqhandler.req
-        self.assertThat(req.get_param('id'), Equals('123'))
+        self.assertEquals(req.get_param('id'), '123')
 
     def test_multiple(self):
         self.api.add_route('/messages/{Id}/names/{Name}', self.reqhandler)
@@ -59,6 +56,6 @@ class TestUriTemplates(helpers.TestSuite):
         self.assertTrue(self.reqhandler.called)
 
         req = self.reqhandler.req
-        self.assertThat(req.get_param('Id'), Equals(test_id))
-        self.assertThat(req.get_param('Name'), Equals(test_name))
-        self.assertThat(req.get_param('name'), Equals(None))
+        self.assertEquals(req.get_param('Id'), test_id)
+        self.assertEquals(req.get_param('Name'), test_name)
+        self.assertEquals(req.get_param('name'), None)
