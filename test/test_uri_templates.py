@@ -3,6 +3,7 @@ from testtools.matchers import Equals, Contains, Not
 
 import test.helpers as helpers
 
+
 class TestUriTemplates(helpers.TestSuite):
 
     def prepare(self):

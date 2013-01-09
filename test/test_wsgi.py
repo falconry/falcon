@@ -4,6 +4,7 @@ from testtools.matchers import Equals, MatchesRegex
 import falcon
 import test.helpers as helpers
 
+
 def _is_iterable(thing):
     try:
         for i in thing:
@@ -12,6 +13,7 @@ def _is_iterable(thing):
         return True
     except:
         return False
+
 
 class TestWsgi(testtools.TestCase):
 

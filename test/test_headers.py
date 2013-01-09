@@ -4,6 +4,7 @@ from testtools.matchers import Equals, MatchesRegex, Contains, Not
 import falcon
 import test.helpers as helpers
 
+
 class RequestHandlerTestStatus:
     sample_body = helpers.rand_string(0, 128 * 1024)
 

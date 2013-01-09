@@ -4,6 +4,7 @@ from testtools.matchers import Equals, MatchesRegex, Contains, Not
 from falcon.request import Request
 import test.helpers as helpers
 
+
 class TestReqVars(helpers.TestSuite):
 
     def prepare(self):
@@ -44,6 +45,4 @@ class TestReqVars(helpers.TestSuite):
                         Equals('4829'))
 
     def test_http_request_method(self):
-       self.assertThat(self.req.method, Equals('GET'))
-
-
+        self.assertThat(self.req.method, Equals('GET'))
