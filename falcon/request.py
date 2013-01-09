@@ -56,7 +56,7 @@ class Request:
 
             _headers['HOST'] = host
 
-    def get_header(self, name, default=None):
+    def try_get_header(self, name, default=None):
         """Return a header value as a string
 
         name -- Header name, case-insensitive (e.g., 'Content-Type')
@@ -70,10 +70,10 @@ class Request:
             # This will be faster, assuming that most headers are looked
             # up only once, and not all headers will be requested.
             return self._headers[name.upper().replace('-', '_')]
-        except KeyError as e:
+        except KeyError:
             return default
 
-    def get_param(self, name, default=None):
+    def try_get_param(self, name, default=None):
         """Return a URI parameter value as a string
 
         name -- Parameter name as specified in the route template. Note that

@@ -34,7 +34,7 @@ class TestRequestBody(helpers.TestSuite):
 
         self._simulate_request('', body=expected_body, headers=headers)
 
-        content_len = self.reqhandler.req.get_header('content-length')
+        content_len = self.reqhandler.req.try_get_header('content-length')
         self.assertEqual(content_len, str(expected_len))
 
         stream = self.reqhandler.req.body

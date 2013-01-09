@@ -20,7 +20,7 @@ class TestReqVars(helpers.TestSuite):
         req = self.req
 
         scheme = req.protocol
-        host = req.get_header('host')
+        host = req.try_get_header('host')
         app = req.app
         path = req.path
         query_string = req.query_string
@@ -40,7 +40,7 @@ class TestReqVars(helpers.TestSuite):
         self.assertEquals(self.req.path, '/')
 
     def test_content_type(self):
-        self.assertEquals(self.req.get_header('content-type'), 'text/plain')
+        self.assertEquals(self.req.try_get_header('content-type'), 'text/plain')
 
     def test_content_length(self):
-        self.assertEquals(self.req.get_header('content-length'), '4829')
+        self.assertEquals(self.req.try_get_header('content-length'), '4829')
