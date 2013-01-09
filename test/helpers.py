@@ -1,4 +1,3 @@
-import inspect
 import random
 from io import BytesIO
 
@@ -57,7 +56,7 @@ class RequestHandler:
     def __init__(self):
         self.called = False
 
-    def __call__(self, ctx, req, resp):
+    def on_get(self, ctx, req, resp):
         self.called = True
 
         self.ctx, self.req, self.resp = ctx, req, resp
@@ -88,13 +87,13 @@ class TestSuite(testtools.TestCase):
 
 
 def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
-                   headers=None, script='', body=''):
+                   headers=None, script='', body='', method='GET'):
 
     env = {
         'SERVER_PROTOCOL': protocol,
         'SERVER_SOFTWARE': 'gunicorn/0.17.0',
         'SCRIPT_NAME': script,
-        'REQUEST_METHOD': 'GET',
+        'REQUEST_METHOD': method,
         'PATH_INFO': path,
         'QUERY_STRING': query_string,
         'HTTP_ACCEPT': '*/*',

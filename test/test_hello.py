@@ -1,6 +1,3 @@
-import testtools
-from testtools.matchers import Equals, MatchesRegex
-
 import falcon
 import helpers
 
@@ -12,7 +9,7 @@ class HelloRequestHandler:
     def __init__(self):
         self.called = False
 
-    def __call__(self, ctx, req, resp):
+    def on_get(self, ctx, req, resp):
         self.called = True
 
         self.ctx, self.req, self.resp = ctx, req, resp
@@ -40,12 +37,12 @@ class TestHelloWorld(helpers.TestSuite):
 
         # Ensure the request was NOT routed to on_hello
         self.assertFalse(self.on_hello.called)
-        self.assertThat(self.srmock.status, Equals(falcon.HTTP_404))
+        self.assertEquals(self.srmock.status, falcon.HTTP_404)
 
     def test_hello_route(self):
         self._simulate_request(self.test_route)
         resp = self.on_hello.resp
 
-        self.assertThat(resp.status, Equals(self.on_hello.sample_status))
+        self.assertEquals(resp.status, self.on_hello.sample_status)
 
-        self.assertThat(resp.body, Equals(self.on_hello.sample_body))
+        self.assertEquals(resp.body, self.on_hello.sample_body)

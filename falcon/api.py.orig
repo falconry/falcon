@@ -2,25 +2,16 @@ import re
 
 from falcon.request import Request
 from falcon.response import Response
-import falcon.responders as responders
+
+from falcon.default_request_handlers import *
 from falcon.status_codes import *
 
-HTTP_METHODS = (
-    'CONNECT',
-    'DELETE',
-    'GET',
-    'HEAD',
-    'OPTIONS',
-    'POST',
-    'PUT',
-    'TRACE'
-)
+# TODO: __slots__
+# TODO: log exceptions, trace execution, etc.
 
 
 class Api:
     """Provides routing and such for building a web service application"""
-
-    __slots__ = ('routes')
 
     def __init__(self):
         self.routes = []
@@ -38,18 +29,13 @@ class Api:
         resp = Response()
 
         path = req.path
-        for path_template, method_map in self.routes:
+        for path_template, handler in self.routes:
             m = path_template.match(path)
             if m:
                 req._params.update(m.groupdict())
-                try:
-                    handler = method_map[req.method]
-                except KeyError:
-                    handler = responders.bad_request
-                else:
-                    break
+                break
         else:
-            handler = responders.path_not_found
+            handler = path_not_found_handler
 
         handler(ctx, req, resp)
 
@@ -70,13 +56,14 @@ class Api:
         return []
 
     def add_route(self, uri_template, handler):
+        if not hasattr(handler, '__call__'):
+            raise TypeError('handler is not callable')
+
         if not uri_template:
             uri_template = '/'
 
         path_template = self._compile_uri_template(uri_template)
-        method_map = self._create_http_method_map(handler)
-
-        self.routes.append((path_template, method_map))
+        self.routes.append((path_template, handler))
 
     # -------------------------------------------------------------------------
     # Helpers
@@ -110,27 +97,11 @@ class Api:
         pattern = re.sub(r'{([a-zA-Z][a-zA-Z_]*)}', r'(?P<\1>[^/]+)', template)
         pattern = r'\A' + pattern + r'\Z'
         return re.compile(pattern, re.IGNORECASE)
+<<<<<<< Updated upstream
+=======
 
-    def _create_http_method_map(self, handler):
-        method_map = {}
+    def _get_handler_http_methods(self, handler):
+        pass
 
-        for method in HTTP_METHODS:
-            try:
-                func = getattr(handler, 'on_' + method.lower())
-            except AttributeError:
-                # Handler does not implement this method
-                pass
-            else:
-                # Usually expect a method, but any callable will do
-                if hasattr(func, '__call__'):
-                    method_map[method] = func
 
-        # Attach a handler for unsupported HTTP methods
-        allowed_methods = method_map.keys()
-        func = responders.create_method_not_allowed(allowed_methods)
-
-        for method in HTTP_METHODS:
-            if method not in allowed_methods:
-                method_map[method] = func
-
-        return method_map
+>>>>>>> Stashed changes

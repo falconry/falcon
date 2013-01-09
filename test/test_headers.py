@@ -1,5 +1,4 @@
-import testtools
-from testtools.matchers import Equals, MatchesRegex, Contains, Not
+from testtools.matchers import Contains, Not
 
 import falcon
 import test.helpers as helpers
@@ -11,7 +10,7 @@ class RequestHandlerTestStatus:
     def __init__(self, status):
         self.status = status
 
-    def __call__(self, ctx, req, resp):
+    def on_get(self, ctx, req, resp):
         resp.status = self.status
         resp.body = self.sample_body
 

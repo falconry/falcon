@@ -21,7 +21,7 @@ Falcon is a fast, light-weight framework for building cloud APIs. It tries to do
 
 ### Contributing ###
 
-Pull requests are welcome. Just make sure you follow PEP 8 and your commit messages are formatted using [AngularJS conventions][ajs] (one-liners are OK for now but body and footer may be required as the project matures).
+Pull requests are welcome. Just make sure to include tests and follow PEP 8 and your commit messages are formatted using [AngularJS conventions][ajs] (one-liners are OK for now but body and footer may be required as the project matures).
 
 [ajs]: http://goo.gl/QpbS7
 
