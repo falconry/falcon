@@ -2,6 +2,7 @@ import testtools
 
 import helpers
 
+
 class TestRequestBody(helpers.TestSuite):
 
     def prepare(self):
@@ -29,7 +30,7 @@ class TestRequestBody(helpers.TestSuite):
     def test_read_body(self):
         expected_body = helpers.rand_string(2, 1 * 1024 * 1024)
         expected_len = len(expected_body)
-        headers = {'Content-Length': str(expected_len) }
+        headers = {'Content-Length': str(expected_len)}
 
         self._simulate_request('', body=expected_body, headers=headers)
 
@@ -45,5 +46,3 @@ class TestRequestBody(helpers.TestSuite):
         self.assertEquals(stream.tell(), expected_len)
 
         self.assertEquals(stream.tell(), expected_len)
-
-

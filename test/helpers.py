@@ -6,6 +6,7 @@ import testtools
 
 import falcon
 
+
 class RandChars:
     _chars = 'abcdefghijklqmnopqrstuvwxyz0123456789 \n\t!@#$%^&*()-_=+`~<>,.?/'
 
@@ -19,12 +20,14 @@ class RandChars:
     def next(self):
         if self.counter < self.target:
             self.counter += 1
-            return self._chars[random.randint(0, len(self._chars)-1)]
+            return self._chars[random.randint(0, len(self._chars) - 1)]
         else:
             raise StopIteration
 
+
 def rand_string(min, max):
     return ''.join([c for c in RandChars(min, max)])
+
 
 class StartResponseMock:
     def __init__(self):
@@ -40,6 +43,7 @@ class StartResponseMock:
 
     def call_count(self):
         return self._called
+
 
 class RequestHandler:
     sample_status = "200 OK"
@@ -62,6 +66,7 @@ class RequestHandler:
         resp.body = self.sample_body
         resp.set_headers(self.resp_headers)
 
+
 class TestSuite(testtools.TestCase):
 
     def setUp(self):
@@ -79,7 +84,8 @@ class TestSuite(testtools.TestCase):
             path = '/'
 
         return self.api(create_environ(path=path, **kwargs),
-                 self.srmock)
+                        self.srmock)
+
 
 def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
                    headers=None, script='', body=''):
@@ -92,7 +98,8 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
         'PATH_INFO': path,
         'QUERY_STRING': query_string,
         'HTTP_ACCEPT': '*/*',
-        'HTTP_USER_AGENT': 'curl/7.24.0 (x86_64-apple-darwin12.0) libcurl/7.24.0 OpenSSL/0.9.8r zlib/1.2.5',
+        'HTTP_USER_AGENT': ('curl/7.24.0 (x86_64-apple-darwin12.0) '
+                            'libcurl/7.24.0 OpenSSL/0.9.8r zlib/1.2.5'),
         'REMOTE_PORT': '65133',
         'RAW_URI': '/',
         'REMOTE_ADDR': '127.0.0.1',

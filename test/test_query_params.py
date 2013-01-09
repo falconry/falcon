@@ -2,6 +2,7 @@ import testtools
 
 import test.helpers as helpers
 
+
 class TestQueryParams(helpers.TestSuite):
 
     def prepare(self):
@@ -40,4 +41,3 @@ class TestQueryParams(helpers.TestSuite):
         self.assertEquals(req.get_param('colors'), ['red', 'green', ''])
         self.assertEquals(req.get_param('limit'), '1')
         self.assertEquals(req.get_param('pickle'), None)
-
