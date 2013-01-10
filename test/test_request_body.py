@@ -6,12 +6,12 @@ import helpers
 class TestRequestBody(helpers.TestSuite):
 
     def prepare(self):
-        self.reqhandler = helpers.RequestHandler()
-        self.api.add_route('/', self.reqhandler)
+        self.resource = helpers.TestResource()
+        self.api.add_route('/', self.resource)
 
     def test_empty_body(self):
         self._simulate_request('/', body='')
-        stream = self.reqhandler.req.body
+        stream = self.resource.req.body
 
         stream.seek(0, 2)
         self.assertEquals(stream.tell(), 0)
@@ -19,7 +19,7 @@ class TestRequestBody(helpers.TestSuite):
     def test_tiny_body(self):
         expected_body = '.'
         self._simulate_request('', body=expected_body)
-        stream = self.reqhandler.req.body
+        stream = self.resource.req.body
 
         actual_body = stream.read(1)
         self.assertEquals(actual_body, expected_body)
@@ -34,10 +34,10 @@ class TestRequestBody(helpers.TestSuite):
 
         self._simulate_request('', body=expected_body, headers=headers)
 
-        content_len = self.reqhandler.req.get_header('content-length')
+        content_len = self.resource.req.get_header('content-length')
         self.assertEqual(content_len, str(expected_len))
 
-        stream = self.reqhandler.req.body
+        stream = self.resource.req.body
 
         actual_body = stream.read()
         self.assertEquals(actual_body, expected_body)

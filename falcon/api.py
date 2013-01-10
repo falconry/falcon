@@ -42,15 +42,15 @@ class Api:
             if m:
                 req._params.update(m.groupdict())
                 try:
-                    handler = method_map[req.method]
+                    responder = method_map[req.method]
                 except KeyError:
-                    handler = responders.bad_request
+                    responder = responders.bad_request
                 else:
                     break
         else:
-            handler = responders.path_not_found
+            responder = responders.path_not_found
 
-        handler(ctx, req, resp)
+        responder(ctx, req, resp)
 
         #
         # Set status and headers
@@ -68,11 +68,11 @@ class Api:
         # Ignore body based on status code
         return []
 
-    def add_route(self, uri_template, handler):
+    def add_route(self, uri_template, resource):
         if not uri_template:
             uri_template = '/'
 
         path_template = compile_uri_template(uri_template)
-        method_map = create_http_method_map(handler)
+        method_map = create_http_method_map(resource)
 
         self.routes.append((path_template, method_map))

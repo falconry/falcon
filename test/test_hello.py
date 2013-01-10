@@ -2,7 +2,7 @@ import falcon
 import helpers
 
 
-class HelloRequestHandler:
+class HelloResource:
     sample_status = "200 OK"
     sample_body = "Hello World!"
 
@@ -21,28 +21,28 @@ class HelloRequestHandler:
 class TestHelloWorld(helpers.TestSuite):
 
     def prepare(self):
-        self.on_hello = HelloRequestHandler()
-        self.api.add_route(self.test_route, self.on_hello)
+        self.resource = HelloResource()
+        self.api.add_route(self.test_route, self.resource)
 
-        self.root_reqhandler = helpers.RequestHandler()
-        self.api.add_route('', self.root_reqhandler)
+        self.root_resource = helpers.TestResource()
+        self.api.add_route('', self.root_resource)
 
     def test_empty_route(self):
         self._simulate_request('')
-        self.assertTrue(self.root_reqhandler.called)
+        self.assertTrue(self.root_resource.called)
 
     def test_hello_route_negative(self):
         bogus_route = self.test_route + 'x'
         self._simulate_request(bogus_route)
 
-        # Ensure the request was NOT routed to on_hello
-        self.assertFalse(self.on_hello.called)
+        # Ensure the request was NOT routed to resource
+        self.assertFalse(self.resource.called)
         self.assertEquals(self.srmock.status, falcon.HTTP_404)
 
     def test_hello_route(self):
         self._simulate_request(self.test_route)
-        resp = self.on_hello.resp
+        resp = self.resource.resp
 
-        self.assertEquals(resp.status, self.on_hello.sample_status)
+        self.assertEquals(resp.status, self.resource.sample_status)
 
-        self.assertEquals(resp.body, self.on_hello.sample_body)
+        self.assertEquals(resp.body, self.resource.sample_body)

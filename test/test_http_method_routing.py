@@ -15,18 +15,7 @@ HTTP_METHODS = (
 )
 
 
-class RequestHandlerWithGet:
-    def __init__(self):
-        self.called = False
-
-    def on_get(self, ctx, req, resp):
-        self.called = True
-
-        self.ctx, self.req, self.resp = ctx, req, resp
-        resp.status = falcon.HTTP_200
-
-
-class RequestHandlerMisc:
+class ResourceMisc:
     def __init__(self):
         self.called = False
 
@@ -52,32 +41,32 @@ class RequestHandlerMisc:
 class TestHttpMethodRouting(helpers.TestSuite):
 
     def prepare(self):
-        self.reqhandler_get = RequestHandlerWithGet()
-        self.api.add_route('/get', self.reqhandler_get)
+        self.resource_get = helpers.TestResource()
+        self.api.add_route('/get', self.resource_get)
 
-        self.reqhandler_misc = RequestHandlerMisc()
-        self.api.add_route('/misc', self.reqhandler_misc)
+        self.resource_misc = ResourceMisc()
+        self.api.add_route('/misc', self.resource_misc)
 
     def test_get(self):
         self._simulate_request('/get')
-        self.assertTrue(self.reqhandler_get.called)
+        self.assertTrue(self.resource_get.called)
 
     def test_misc(self):
         for method in ['GET', 'HEAD', 'PUT']:
-            self.reqhandler_misc.called = False
+            self.resource_misc.called = False
             self._simulate_request('/misc', method=method)
-            self.assertTrue(self.reqhandler_misc.called)
-            self.assertEquals(self.reqhandler_misc.req.method, method)
+            self.assertTrue(self.resource_misc.called)
+            self.assertEquals(self.resource_misc.req.method, method)
 
     def test_method_not_allowed(self):
         for method in HTTP_METHODS:
             if method == 'GET':
                 continue
 
-            self.reqhandler_get.called = False
+            self.resource_get.called = False
             self._simulate_request('/get', method=method)
 
-            self.assertFalse(self.reqhandler_get.called)
+            self.assertFalse(self.resource_get.called)
             self.assertEquals(self.srmock.status, '405 Method Not Allowed')
 
             headers = self.srmock.headers
@@ -87,4 +76,4 @@ class TestHttpMethodRouting(helpers.TestSuite):
 
     def test_bogus_method(self):
         self._simulate_request('/get', method=self.getUniqueString())
-        self.assertFalse(self.reqhandler_get.called)
+        self.assertFalse(self.resource_get.called)

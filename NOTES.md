@@ -2,18 +2,17 @@
 
 In order to stay lean and fast, Falcon makes several assumptions.
 
-First, Falcon assumes that request handlers will (for the most part) do the right thing. In other words, Falcon doesn't try very hard to protect handler code from itself. 
+First, Falcon assumes that resource responders will (for the most part) do the right thing. In other words, Falcon doesn't try very hard to protect responder code from itself. 
 
 This requires some discipline on the part of the developer.
 
-1. Request handlers will set response variables to sane values.
-1. The application won't add extra junk to req and resp dicts (use the ctx instead)
-1. Request handlers are well-tested with high code coverage. It's not Falcon's job to babysit your code once it leaves the nest.
-1. ...
+1. Resource responders set response variables to sane values.
+1. All code is well-tested, with high code coverage. It's not Falcon's job to babysit.
+1. Anticipate and handle exceptions. Falcon only expects HTTPError exception types to be thrown from responders.
 
 ### Misc. ###
 
-* Falcon probably isn't thread-safe; don't try it. Run multiple worker processes, each with a non-blocking I/O loop instead.
+* Falcon probably isn't thread-safe, so don't try it. Run multiple worker processes, each with a non-blocking I/O loop instead.
 * Falcon doesn't officially support Python 3; it's on our TODO list.
 * Falcon is based on byte strings, and does no conversions to UTF-16 (for example). If your app needs to use wide strings, you'll need to do the conversion manually. However, we recommend just keeping everything UTF-8 to avoid writing extra code and spinning CPU cycles.
 * resp.set_header assumes both params are strings. App may crash otherwise. Falcon trusts the caller. You *are* testing all your code paths, aren't you?

@@ -44,7 +44,7 @@ class StartResponseMock:
         return self._called
 
 
-class RequestHandler:
+class TestResource:
     sample_status = "200 OK"
     sample_body = rand_string(0, 128 * 1024)
     resp_headers = {
