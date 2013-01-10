@@ -15,3 +15,4 @@ version = get_version_string()
 from api import API
 from status_codes import *
 from exceptions import *
+from http_error import HTTPError

@@ -1,4 +1,4 @@
-from falcon.status_codes import *
+from .status_codes import *
 
 
 def path_not_found(req, resp):

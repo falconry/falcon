@@ -1,8 +1,8 @@
-from falcon.request import Request
-from falcon.response import Response
-from falcon import responders
-from falcon.status_codes import *
-from falcon.api_helpers import *
+from .request import Request
+from .response import Response
+from . import responders
+from .status_codes import *
+from .api_helpers import *
 
 HTTP_METHODS = (
     'CONNECT',

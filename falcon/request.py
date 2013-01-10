@@ -1,5 +1,5 @@
-from falcon.request_helpers import *
-from falcon.exceptions import *
+from .request_helpers import *
+from .exceptions import *
 
 class Request:
     __slots__ = (
