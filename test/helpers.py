@@ -6,26 +6,11 @@ import testtools
 import falcon
 
 
-class RandChars:
-    _chars = 'abcdefghijklqmnopqrstuvwxyz0123456789 \n\t!@#$%^&*()-_=+`~<>,.?/'
-
-    def __init__(self, min, max):
-        self.target = random.randint(min, max)
-        self.counter = 0
-
-    def __iter__(self):
-        return self
-
-    def next(self):
-        if self.counter < self.target:
-            self.counter += 1
-            return self._chars[random.randint(0, len(self._chars) - 1)]
-        else:
-            raise StopIteration
-
-
 def rand_string(min, max):
-    return ''.join([c for c in RandChars(min, max)])
+    int_gen = random.randint
+    string_length = int_gen(min, max)
+    return ''.join([chr(int_gen(ord('\t'), ord('~')))
+                    for i in range(string_length)])
 
 
 class StartResponseMock:
