@@ -3,6 +3,7 @@ from .response import Response
 from . import responders
 from .status_codes import *
 from .api_helpers import *
+from .http_error import HTTPError
 
 HTTP_METHODS = (
     'CONNECT',
@@ -49,7 +50,13 @@ class API:
         else:
             responder = responders.path_not_found
 
-        responder(req, resp)
+        try:
+            responder(req, resp)
+        except HTTPError as ex:
+            resp.status = ex.status
+
+            if req.client_accepts_json():
+                resp.body = ex.json()
 
         #
         # Set status and headers

@@ -1,4 +1,4 @@
-"""Defines common HTTP status codes"""
+"""Defines HTTP status codes"""
 
 HTTP_100 = '100 Continue'
 HTTP_101 = '101 Switching Protocols'
@@ -107,7 +107,7 @@ HTTP_785 = '785 TPS Cover Sheet not attached'
 HTTP_786 = '786 Try it now'
 
 # 79X - Internet crashed
-HTTP_791 = '791 The Internet shut down due to copyright restrictions.'
+HTTP_791 = '791 The Internet shut down due to copyright restrictions'
 HTTP_792 = '792 Climate change driven catastrophic weather event'
 HTTP_797 = '797 This is the last page of the Internet. Go back'
 HTTP_799 = '799 End of the world'

@@ -1,5 +1,3 @@
-import json
-
 from .status_codes import *
 
 
@@ -26,23 +24,36 @@ class HTTPError(Exception):
         if href:
             self.link = {
                 'href': href,
-                'rel': href_rel or 'help',
+                'rel': href_rel or 'doc',
                 'text': href_text or 'API documention for this error'
             }
         else:
             self.link = None
 
     def json(self):
-        obj = {
-            'title': self.title,
-            'description': self.description,
-        }
+        # Serialize by hand to make it nice for humans to read
+        obj = (
+            '{\n'
+            '    "title": "%s",\n'
+            '    "description": "%s"'
+        ) % (self.title, self.description)
 
         if self.code:
-            obj['code'] = self.code
+            obj += (
+                ',\n'
+                '    "code": "%s"'
+            ) % self.code
 
         if self.link:
-            obj['link'] = self.link
+            obj += (
+                ',\n'
+                '    "link":  {\n'
+                '        "text": "%s",\n'
+                '        "href": "%s",\n'
+                '        "rel": "%s"\n'
+                '    }'
+            ) % (self.link['text'], self.link['href'], self.link['rel'])
 
-        return json.dumps(obj)
+        obj += '\n}'
 
+        return obj

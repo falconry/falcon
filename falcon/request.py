@@ -1,6 +1,7 @@
 from .request_helpers import *
 from .exceptions import *
 
+
 class Request:
     __slots__ = (
         'app',
@@ -23,6 +24,15 @@ class Request:
         self._params = parse_query_string(query_string)
         self._headers = parse_headers(env)
 
+    def client_accepts_json(self):
+        """Return True if the Accept header indicates JSON support"""
+
+        accept = self.get_header('Accept')
+        if accept is not None:
+            return ('application/json' in accept) or ('*/*' in accept)
+
+        return False
+
     def get_header(self, name, default=None, required=False):
         """Return a header value as a string
 
@@ -34,8 +44,6 @@ class Request:
                     found (default False)
 
         """
-
-
 
         # Use try..except to optimize for the header existing in most cases
         try:
