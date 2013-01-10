@@ -41,11 +41,12 @@ class TestResource:
     def __init__(self):
         self.called = False
 
-    def on_get(self, ctx, req, resp):
+    def on_get(self, req, resp):
+        # Don't try this at home - classes aren't recreated
+        # for every request
+        self.req, self.resp = req, resp
+
         self.called = True
-
-        self.ctx, self.req, self.resp = ctx, req, resp
-
         resp.status = falcon.HTTP_200
         resp.body = self.sample_body
         resp.set_headers(self.resp_headers)

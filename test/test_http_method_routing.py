@@ -19,22 +19,22 @@ class ResourceMisc:
     def __init__(self):
         self.called = False
 
-    def on_get(self, ctx, req, resp):
+    def on_get(self, req, resp):
         self.called = True
 
-        self.ctx, self.req, self.resp = ctx, req, resp
+        self.req, self.resp = req, resp
         resp.status = falcon.HTTP_204
 
-    def on_head(self, ctx, req, resp):
+    def on_head(self, req, resp):
         self.called = True
 
-        self.ctx, self.req, self.resp = ctx, req, resp
+        self.req, self.resp = req, resp
         resp.status = falcon.HTTP_204
 
-    def on_put(self, ctx, req, resp):
+    def on_put(self, req, resp):
         self.called = True
 
-        self.ctx, self.req, self.resp = ctx, req, resp
+        self.req, self.resp = req, resp
         resp.status = falcon.HTTP_400
 
 
@@ -77,3 +77,4 @@ class TestHttpMethodRouting(helpers.TestSuite):
     def test_bogus_method(self):
         self._simulate_request('/get', method=self.getUniqueString())
         self.assertFalse(self.resource_get.called)
+        self.assertEquals(self.srmock.status, falcon.HTTP_400)

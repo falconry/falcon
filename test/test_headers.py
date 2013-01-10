@@ -10,7 +10,7 @@ class StatusTestResource:
     def __init__(self, status):
         self.status = status
 
-    def on_get(self, ctx, req, resp):
+    def on_get(self, req, resp):
         resp.status = self.status
         resp.body = self.sample_body
 

@@ -25,13 +25,11 @@ class Api:
         self.routes = []
 
     def __call__(self, env, start_response):
-        """WSGI protocol handler"""
+        """WSGI "app" method
 
-        # PERF: Use literal constructor for dicts
-        ctx = {}
+        Makes instances of API callable by any WSGI server. See also PEP 333.
 
-        # TODO
-        # ctx.update(global_ctx_for_route)
+        """
 
         req = Request(env)
         resp = Response()
@@ -41,16 +39,17 @@ class Api:
             m = path_template.match(path)
             if m:
                 req._params.update(m.groupdict())
+
                 try:
                     responder = method_map[req.method]
                 except KeyError:
                     responder = responders.bad_request
-                else:
-                    break
+
+                break
         else:
             responder = responders.path_not_found
 
-        responder(ctx, req, resp)
+        responder(req, resp)
 
         #
         # Set status and headers
@@ -65,10 +64,22 @@ class Api:
         if use_body:
             return [resp.body] if resp.body is not None else []
 
-        # Ignore body based on status code
+        # Ignore body on 1xx, 204, and 304
         return []
 
     def add_route(self, uri_template, resource):
+        """Associate a URI path with a resource
+
+        uri_template -- Relative URI template. Currently only Level 1 templates
+                        are supported. See also RFC 6570.
+        resource     -- Object which represents an HTTP/REST "resource". Falcon
+                        will pass "GET" requests to on_get, "PUT" requests to
+                        on_put, etc. If any HTTP methods are not supported by
+                        your resource, simply don't define the corresponding
+                        request handlers, and Falcon will do the right thing.
+
+        """
+
         if not uri_template:
             uri_template = '/'
 
