@@ -16,7 +16,7 @@ HTTP_METHODS = (
 )
 
 
-class Api:
+class API:
     """Provides routing and such for building a web service application"""
 
     __slots__ = ('routes')

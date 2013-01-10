@@ -18,7 +18,7 @@ def _is_iterable(thing):
 class TestWsgi(testtools.TestCase):
 
     def test_pep333(self):
-        api = falcon.Api()
+        api = falcon.API()
         mock = helpers.StartResponseMock()
 
         # Simulate a web request (normally done though a WSGI server)

@@ -12,6 +12,6 @@ version = get_version_string()
 """Current version of Falcon."""
 
 # Hoist classes and functions into the falcon namespace
-from api import Api
+from api import API
 from status_codes import *
 from exceptions import *

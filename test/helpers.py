@@ -56,7 +56,7 @@ class TestSuite(testtools.TestCase):
 
     def setUp(self):
         super(TestSuite, self).setUp()
-        self.api = falcon.Api()
+        self.api = falcon.API()
         self.srmock = StartResponseMock()
         self.test_route = '/' + self.getUniqueString()
 
