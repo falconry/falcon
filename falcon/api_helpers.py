@@ -60,7 +60,7 @@ def create_http_method_map(handler):
                 method_map[method] = func
 
     # Attach a handler for unsupported HTTP methods
-    allowed_methods = method_map.keys()
+    allowed_methods = list(method_map.keys())
     func = responders.create_method_not_allowed(allowed_methods)
 
     for method in HTTP_METHODS:

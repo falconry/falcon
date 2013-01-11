@@ -1,7 +1,8 @@
-import helpers
-import falcon
-
 from testtools.matchers import Contains
+
+import falcon
+from . import helpers
+
 
 HTTP_METHODS = (
     'CONNECT',
@@ -13,6 +14,17 @@ HTTP_METHODS = (
     'PUT',
     'TRACE'
 )
+
+
+class ResourceGet:
+    def __init__(self):
+        self.called = False
+
+    def on_get(self, req, resp):
+        self.called = True
+
+        self.req, self.resp = req, resp
+        resp.status = falcon.HTTP_204
 
 
 class ResourceMisc:
@@ -41,7 +53,7 @@ class ResourceMisc:
 class TestHttpMethodRouting(helpers.TestSuite):
 
     def prepare(self):
-        self.resource_get = helpers.TestResource()
+        self.resource_get = ResourceGet()
         self.api.add_route('/get', self.resource_get)
 
         self.resource_misc = ResourceMisc()

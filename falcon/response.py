@@ -17,4 +17,5 @@ class Response:
         self._headers.update(headers_by_name)
 
     def _wsgi_headers(self):
-        return self._headers.items()
+        # Pass through list for Python 3 compatibility
+        return list(self._headers.items())

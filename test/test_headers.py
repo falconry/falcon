@@ -1,7 +1,7 @@
 from testtools.matchers import Contains, Not
 
 import falcon
-import test.helpers as helpers
+from . import helpers
 
 
 class StatusTestResource:
@@ -102,7 +102,7 @@ class TestHeaders(helpers.TestSuite):
         }
         self._simulate_request(self.test_route, headers=req_headers)
 
-        for name, expected_value in req_headers.iteritems():
+        for name, expected_value in req_headers.items():
             actual_value = self.resource.req.get_header(name)
             self.assertEquals(actual_value, expected_value)
 
@@ -111,5 +111,5 @@ class TestHeaders(helpers.TestSuite):
 
         resp_headers = self.srmock.headers
 
-        for h in self.resource.resp_headers.iteritems():
+        for h in self.resource.resp_headers.items():
             self.assertThat(resp_headers, Contains(h))

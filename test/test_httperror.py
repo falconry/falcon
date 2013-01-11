@@ -1,8 +1,9 @@
+import json
+
 from testtools.matchers import raises, Not
 
-import helpers
+from . import helpers
 import falcon
-import json
 
 
 class FaultyResource:

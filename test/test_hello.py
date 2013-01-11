@@ -1,5 +1,5 @@
 import falcon
-import helpers
+from . import helpers
 
 
 class HelloResource:

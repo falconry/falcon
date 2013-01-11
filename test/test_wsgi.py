@@ -29,7 +29,7 @@ class TestWsgi(testtools.TestCase):
 
         # Make sure start_response was passed a valid status string
         self.assertIs(mock.call_count(), 1)
-        self.assertTrue(isinstance(mock.status, basestring))
+        self.assertTrue(isinstance(mock.status, str))
         self.assertThat(mock.status, MatchesRegex('^\d+[a-zA-Z\s]+$'))
 
         # Verify headers is a list of tuples, each containing a pair of strings
@@ -38,5 +38,5 @@ class TestWsgi(testtools.TestCase):
             header = mock.headers[0]
             self.assertTrue(isinstance(header, tuple))
             self.assertThat(len(header), Equals(2))
-            self.assertTrue(isinstance(header[0], basestring))
-            self.assertTrue(isinstance(header[1], basestring))
+            self.assertTrue(isinstance(header[0], str))
+            self.assertTrue(isinstance(header[1], str))

@@ -92,14 +92,14 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
         'SERVER_PORT': port,
 
         'wsgi.url_scheme': 'http',
-        'wsgi.input': BytesIO(body)
+        'wsgi.input': BytesIO(body.encode('utf-8'))
     }
 
     if protocol != 'HTTP/1.0':
         env['HTTP_HOST'] = 'falconer'
 
     if headers is not None:
-        for name, value in headers.iteritems():
+        for name, value in headers.items():
             name = name.upper().replace('-', '_')
 
             if name == 'CONTENT_TYPE':

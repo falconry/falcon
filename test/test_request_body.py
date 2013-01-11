@@ -1,6 +1,4 @@
-import testtools
-
-import helpers
+from . import helpers
 
 
 class TestRequestBody(helpers.TestSuite):
@@ -22,7 +20,7 @@ class TestRequestBody(helpers.TestSuite):
         stream = self.resource.req.body
 
         actual_body = stream.read(1)
-        self.assertEquals(actual_body, expected_body)
+        self.assertEquals(actual_body, expected_body.encode('utf-8'))
 
         stream.seek(0, 2)
         self.assertEquals(stream.tell(), 1)
@@ -40,7 +38,7 @@ class TestRequestBody(helpers.TestSuite):
         stream = self.resource.req.body
 
         actual_body = stream.read()
-        self.assertEquals(actual_body, expected_body)
+        self.assertEquals(actual_body, expected_body.encode('utf-8'))
 
         stream.seek(0, 2)
         self.assertEquals(stream.tell(), expected_len)
