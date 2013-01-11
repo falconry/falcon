@@ -69,9 +69,12 @@ class API:
 
         # Return an iterable for the body, per the WSGI spec
         if use_body:
-            return [resp.body] if resp.body is not None else []
+            if resp.body is not None:
+                return [resp.body]
+            elif resp.stream is not None:
+                return resp.stream
 
-        # Ignore body on 1xx, 204, and 304
+        # Default to returning an empty body
         return []
 
     def add_route(self, uri_template, resource):

@@ -20,13 +20,21 @@ def should_ignore_body(status):
 
 
 def set_content_length(env, req, resp):
+    """Set Content-Length when given a fully-buffered body or stream length"""
 
-    # Set Content-Length when given a fully-buffered body or stream length
     if resp.body is not None:
+        # Since body is assumed to be a byte string (str in Python 2, bytes in
+        # Python 3), figure out the length using standard functions.
         resp.set_header('Content-Length', str(len(resp.body)))
-    elif resp.stream_len is not None:
-        resp.set_header('Content-Length', resp.stream_len)
+    elif resp.stream is not None:
+        if resp.stream_len is not None:
+            # Total stream length is known in advance (e.g., streaming a file)
+            resp.set_header('Content-Length', resp.stream_len)
+        else:
+            # Stream given, but length is unknown (dynamically-generated body)
+            pass
     else:
+        # No body given
         resp.set_header('Content-Length', 0)
 
 
