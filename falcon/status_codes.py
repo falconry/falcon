@@ -67,7 +67,7 @@ HTTP_723 = '723 Tricky'
 HTTP_724 = '724 This line should be unreachable'
 HTTP_725 = '725 It works on my machine'
 HTTP_726 = "726 It's a feature, not a bug"
-HTTP_727 = '727 32 bits in plenty'
+HTTP_727 = '727 32 bits is plenty'
 
 # 74X - Meme Driven
 HTTP_740 = '740 Computer says no'

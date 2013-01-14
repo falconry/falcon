@@ -1,48 +1,12 @@
-Falcon
-======
+import json
+import logging
 
-<img align="right" style="padding-left: 10px" src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/Brown-Falcon%2C-Vic%2C-3.1.2008.jpg/160px-Brown-Falcon%2C-Vic%2C-3.1.2008.jpg" alt="falcon picture" />
+import falcon
 
-**[Experimental]**
+class StorageEngine:
+    pass
 
-Falcon is a fast, light-weight framework for building cloud APIs. It tries to do as little as possible while remaining highly effective. 
 
-> Perfection is finally attained not when there is no longer anything to add, but when there is no longer anything to take away. 
->
-> *- Antoine de Saint-Exupéry*
-
-### Design Goals ###
-
-**Light-weight.** Only the essentials are included, with few dependencies. We work to keep the code lean-n-mean, making Falcon easier to test, optimize, and deploy. 
-
-**Surprisingly agile.** Although light-weight, Falcon is surprisingly effective. Getting started with the framework is easy. Common web API idioms are supported out of the box without getting in your way. This is a framework designed for journeyman web developers and master craftsman alike.
-
-**Cloud-friendly.** Falcon uses the web-friendly Python language, and speaks WSGI, so you can deploy it on your favorite stack. The framework is designed from the ground up to embrace HTTP, not work against it. Plus, diagnostics are built right in to make it easier to track down sneaky bugs and frustrating performance problems. 
-
-### Usage ###
-
-More/better docs are on our TODO list, but in the meantime, here is a simple example showing how to create a Falcon API.
-
-```python
-class ThingsResource:
-    def on_get(self, req, resp):
-        """Handles GET requests"""
-        resp.status = falcon.HTTP_200
-        resp.body = 'Hello world!'
-
-# falcon.API instances are callable WSGI apps
-wsgi_app = api = falcon.API()
-
-# Resources are represented by long-lived class instances
-things = ThingsResource()
-
-# things will handle all requests to the '/things' URL path
-api.add_route('/things', things)
-```
-
-Here is a more involved example, demonstrating getting headers and query parameters, handling errors, and reading/writing message bodies. 
-
-```python
 class ThingsResource:
 
     def __init__(self, db):
@@ -114,12 +78,3 @@ wsgi_app = api = falcon.API()
 db = StorageEngine()
 things = ThingsResource(db)
 api.add_route('/{user_id}/things', things)
-
-```
-
-### Contributing ###
-
-Pull requests are welcome. Just make sure to include tests and follow PEP 8 and your commit messages are formatted using [AngularJS conventions][ajs] (one-liners are OK for now but body and footer may be required as the project matures).
-
-[ajs]: http://goo.gl/QpbS7
-
