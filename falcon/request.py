@@ -1,8 +1,28 @@
+"""Defines the Request class.
+
+Copyright 2013 by Rackspace Hosting, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+"""
+
 from .request_helpers import *
 from .exceptions import *
 
 
 class Request:
+    """Represents a client's HTTP request"""
+
     __slots__ = (
         'app',
         'body',
@@ -15,6 +35,16 @@ class Request:
     )
 
     def __init__(self, env):
+        """Initialize attributes based on a WSGI environment dict
+
+        Note: Request is not meant to be instantiated directory by responders.
+
+        Args:
+            env: A WSGI environment dict passed in from the server. See also
+                the PEP-333 spec.
+
+        """
+
         self.app = env['SCRIPT_NAME']
         self.body = env['wsgi.input']
         self.method = env['REQUEST_METHOD']
@@ -36,12 +66,13 @@ class Request:
     def get_header(self, name, default=None, required=False):
         """Return a header value as a string
 
-        name     -- Header name, case-insensitive (e.g., 'Content-Type')
-        default  -- Value to return in case the header is not
-                    found (default None)
-        required -- Set to True to raise HttpBadRequest instead
-                    of returning gracefully when the header is not
-                    found (default False)
+        Args:
+            name: Header name, case-insensitive (e.g., 'Content-Type')
+            default: Value to return in case the header is not
+              found (default None)
+            required: Set to True to raise HttpBadRequest instead
+              of returning gracefully when the header is not found
+              (default False)
 
         """
 
@@ -61,12 +92,20 @@ class Request:
     def get_param(self, name, default=None, required=False):
         """Return the value of a query string parameter as a string
 
-        name     -- Parameter name, case-sensitive (e.g., 'sort')
-        default  -- Value to return in case the parameter is not
-                    found in the query string (default None)
-        required -- Set to True to raise HttpBadRequest instead
-                    of returning gracefully when the parameter is not
-                    found (default False)
+        Args:
+            name: Parameter name, case-sensitive (e.g., 'sort')
+            default: Value to return in case the parameter is not found in the
+                query string (default None)
+            required: Set to True to raise HTTPBadRequest instead of returning
+                gracefully when the parameter is not found (default False)
+
+        Returns:
+            The value of the param as a byte string, or the default value if
+            param is not found and is not required.
+
+        Raises
+            HTTPBadRequest: The param was not found in the request, but was
+                required.
 
         """
 
@@ -84,13 +123,22 @@ class Request:
     def get_param_as_int(self, name, default=None, required=False):
         """Return the value of a query string parameter as an int
 
-        name     -- Parameter name, case-sensitive (e.g., 'limit')
-        default  -- Value to return in case the parameter is not
-                    found in the query string, or it is not an
-                    integer (default None)
-        required -- Set to True to raise HttpBadRequest instead
-                    of returning gracefully when the parameter is not
-                    found or is not an integer (default False)
+        Args:
+            name: Parameter name, case-sensitive (e.g., 'limit')
+            default: Value to return in case the parameter is not found in the
+                query string, or it is not an integer (default None)
+            required: Set to True to raise HTTPBadRequest instead of returning
+                gracefully when the parameter is not found or is not an
+                integer (default False)
+
+        Returns:
+            The value of the param if it is found and can be converted to an
+            integer. Otherwise, returns the default value unless required is
+            True.
+
+        Raises
+            HTTPBadRequest: The param was not found in the request, but was
+                required.
 
         """
 

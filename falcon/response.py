@@ -1,7 +1,30 @@
+"""Defines the Response class
+
+Copyright 2013 by Rackspace Hosting, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+"""
+
+
 class Response:
+    """Represents an HTTP response to a client request"""
+
     __slots__ = ('status', '_headers', 'body', 'stream', 'stream_len')
 
     def __init__(self):
+        """Initialize response attributes to default values"""
+
         self.status = None
 
         self._headers = {}
@@ -11,11 +34,44 @@ class Response:
         self.stream_len = None
 
     def set_header(self, name, value):
-        self._headers[name] = str(value)
+        """Set a header for this response to a given value.
 
-    def set_headers(self, headers_by_name):
-        self._headers.update(headers_by_name)
+        Warning: Overwrites the existing value, if any.
+
+        Args:
+            name: Header name to set. Must be of type str or StringType, and
+                only character values 0x00 through 0xFF may be used on
+                platforms that use wide characters.
+            value: Value for the header. Must be of type str or StringType, and
+                only character values 0x00 through 0xFF may be used on
+                platforms that use wide characters.
+
+        """
+
+        # TODO: Do we need to use a different conversion for Python 3 compat?
+        self._headers[name] = value
+
+    def set_headers(self, headers):
+        """Set several headers at once. May be faster than set_header().
+
+        Warning: Overwrites existing values, if any.
+
+        Args:
+            headers: A dict containing header names and values to set. Both
+                names and values must be of type str or StringType, and
+                only character values 0x00 through 0xFF may be used on
+                platforms that use wide characters.
+
+        Raises:
+            ValueError: headers was not a dictionary or list of tuples.
+
+        """
+
+        # TODO: Do we need to use a different conversion for Python 3 compat?
+        self._headers.update(headers)
 
     def _wsgi_headers(self):
+        """Convert headers into the format expected by WSGI servers"""
+
         # Pass through list for Python 3 compatibility
         return list(self._headers.items())

@@ -1,3 +1,21 @@
+"""Defines the API class.
+
+Copyright 2013 by Rackspace Hosting, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+"""
+
 from .request import Request
 from .response import Response
 from . import responders
@@ -18,17 +36,28 @@ HTTP_METHODS = (
 
 
 class API:
-    """Provides routing and such for building a web service application"""
+    """Provides routing and such for building a web service application
 
-    __slots__ = ('routes')
+    This class is the main entry point into a Falcon-based app. It provides a
+    callable WSGI interface and a simple routing engine based on URI templates.
+
+    """
+
+    __slots__ = ('_routes')
 
     def __init__(self):
-        self.routes = []
+        """Initialize default values"""
+        self._routes = []
 
     def __call__(self, env, start_response):
         """WSGI "app" method
 
         Makes instances of API callable by any WSGI server. See also PEP 333.
+
+        Args:
+            env: A WSGI environment dictionary
+            start_response: A WSGI helper method for setting status and headers
+                on a response.
 
         """
 
@@ -36,7 +65,7 @@ class API:
         resp = Response()
 
         path = req.path
-        for path_template, method_map in self.routes:
+        for path_template, method_map in self._routes:
             m = path_template.match(path)
             if m:
                 req._params.update(m.groupdict())
@@ -80,13 +109,14 @@ class API:
     def add_route(self, uri_template, resource):
         """Associate a URI path with a resource
 
-        uri_template -- Relative URI template. Currently only Level 1 templates
-                        are supported. See also RFC 6570.
-        resource     -- Object which represents an HTTP/REST "resource". Falcon
-                        will pass "GET" requests to on_get, "PUT" requests to
-                        on_put, etc. If any HTTP methods are not supported by
-                        your resource, simply don't define the corresponding
-                        request handlers, and Falcon will do the right thing.
+        Args:
+            uri_template: Relative URI template. Currently only Level 1
+                templates are supported. See also RFC 6570.
+            resource: Object which represents an HTTP/REST "resource". Falcon
+                will pass "GET" requests to on_get, "PUT" requests to on_put,
+                etc. If any HTTP methods are not supported by your resource,
+                simply don't define the corresponding request handlers, and
+                Falcon will do the right thing.
 
         """
 
@@ -96,4 +126,4 @@ class API:
         path_template = compile_uri_template(uri_template)
         method_map = create_http_method_map(resource)
 
-        self.routes.append((path_template, method_map))
+        self._routes.append((path_template, method_map))

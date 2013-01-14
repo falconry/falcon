@@ -1,4 +1,4 @@
-
+import wsgiref
 
 def application(environ, start_response):
     start_response("200 OK", [
@@ -7,7 +7,7 @@ def application(environ, start_response):
     body = '\n{\n'
     for key, value in environ.items():
         if isinstance(value, str):
-        body += '    "{0}": "{1}",\n'.format(key, value)
+            body += '    "{0}": "{1}",\n'.format(key, value)
 
     body += '}\n\n'
 
