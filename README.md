@@ -50,14 +50,25 @@ class ThingsResource:
         self.logger = logging.getLogger('thingsapi.' + __name__)
 
     def on_get(self, req, resp):
-        token = req.get_header('X-Auth-Token', required=True)
-
-        # Alternatively, do this in middleware
-
-
         user_id = req.get_param('user_id', required=True)
         marker = req.get_param('marker', default='')
         limit = req.get_param('limit', default=50)
+
+        # Alternatively, do this in middleware
+        token = req.get_header('X-Auth-Token')
+
+        if token is None:
+            raise falcon.HTTPUnauthorized('Auth token required',
+                                          'Please provide an auth token as '
+                                          'part of the request',
+                                          'http://docs.example.com/auth')
+
+        if not token_is_valid(token, user_id):
+            raise falcon.HTTPUnauthorized('Authentication required',
+                                          'The provided auth token is not '
+                                          'valid. Please request a new token '
+                                          'and try again.',
+                                          'http://docs.example.com/auth')
 
         # Alternatively, do this in middleware
         if not req.client_accepts_json():

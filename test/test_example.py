@@ -14,29 +14,40 @@ class ThingsResource:
         self.logger = logging.getLogger('thingsapi.' + __name__)
 
     def on_get(self, req, resp):
-        token = req.get_header('X-Auth-Token', required=True)
-
-        # Alternatively, do this in middleware
-
-
         user_id = req.get_param('user_id', required=True)
         marker = req.get_param('marker', default='')
         limit = req.get_param('limit', default=50)
+
+        # Alternatively, do this in middleware
+        token = req.get_header('X-Auth-Token')
+
+        if token is None:
+            raise falcon.HTTPUnauthorized('Auth token required',
+                                          'Please provide an auth token as '
+                                          'part of the request',
+                                          'http://docs.example.com/auth')
+
+        if not token_is_valid(token, user_id):
+            raise falcon.HTTPUnauthorized('Authentication required',
+                                          'The provided auth token is not '
+                                          'valid. Please request a new token '
+                                          'and try again.',
+                                          'http://docs.example.com/auth')
 
         # Alternatively, do this in middleware
         if not req.client_accepts_json():
             raise falcon.HTTPUnsupportedMediaType(
                 'Media Type not Supported',
                 'This API only supports the JSON media type.',
-                'http://docs.examples.com/api/json')
+                'http://docs.example.com/json')
 
         try:
             result = self.db.get_things(marker, limit)
         except Exception as ex:
             self.logger.error(ex)
 
-            description = ('Aliens have attacked our base. We will be back'
-                           'as soon as we fight them off. We appreciate your'
+            description = ('Aliens have attacked our base. We will be back '
+                           'as soon as we fight them off. We appreciate your '
                            'patience.')
 
             raise falcon.HTTPServiceUnavailable('Service Outage', description)
