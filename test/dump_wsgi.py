@@ -1,5 +1,3 @@
-import wsgiref
-
 def application(environ, start_response):
     start_response("200 OK", [
         ('Content-Type', 'text/plain')])
@@ -16,6 +14,7 @@ def application(environ, start_response):
 app = application
 
 if __name__ == '__main__':
+    import wsgiref
     from wsgiref.simple_server import make_server
 
     server = make_server('localhost', 8000, application)
