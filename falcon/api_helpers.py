@@ -46,7 +46,7 @@ def should_ignore_body(status):
             status.startswith('304'))
 
 
-def set_content_length(env, req, resp):
+def set_content_length(resp):
     """Set Content-Length when given a fully-buffered body or stream length
 
     Pre:

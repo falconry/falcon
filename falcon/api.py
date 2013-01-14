@@ -92,7 +92,7 @@ class API:
         #
         use_body = not should_ignore_body(resp.status)
         if use_body:
-            set_content_length(env, req, resp)
+            set_content_length(resp)
 
         start_response(resp.status, resp._wsgi_headers())
 
