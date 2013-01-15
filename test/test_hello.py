@@ -32,6 +32,12 @@ class HelloResource:
             resp.body = self.sample_body
 
 
+class NoStatusResource:
+    def on_get(self, req, resp):
+        resp.body = 'Oops'
+        pass
+
+
 class TestHelloWorld(helpers.TestSuite):
 
     def prepare(self):
@@ -43,6 +49,9 @@ class TestHelloWorld(helpers.TestSuite):
 
         self.stream_resource = HelloResource('stream, stream_len')
         self.api.add_route('/stream', self.stream_resource)
+
+        self.no_status_resource = NoStatusResource()
+        self.api.add_route('/nostatus', self.no_status_resource)
 
         self.root_resource = helpers.TestResource()
         self.api.add_route('', self.root_resource)
@@ -94,3 +103,9 @@ class TestHelloWorld(helpers.TestSuite):
 
         self.assertEqual(dest.getvalue().encode('utf-8'),
                          self.chunked_resource.sample_body.encode('utf-8'))
+
+    def test_status_not_set(self):
+        body = self._simulate_request('/nostatus')
+
+        self.assertEqual(body, [])
+        self.assertEqual(self.srmock.status, falcon.HTTP_500)

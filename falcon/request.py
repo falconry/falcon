@@ -60,13 +60,25 @@ class Request:
         self._wsgierrors = env['wsgi.errors']
 
     def log_error(self, message):
+        """Log an error to wsgi.error
+
+        Prepends timestamp and request info to message, and writes the result
+        out to the WSGI server's error stream (wsgi.error).
+
+        Args:
+            message: A string describing the problem. If a byte-string and
+                running under Python 2, the string is assumed to be encoded
+                as UTF-8.
+
+        """
+
         if sys.version_info[0] == 2 and isinstance(message, str):
             unicode_message = message.decode('utf-8')
         else:
             unicode_message = message
 
         log_line = (
-            u'{0:%Y:%m:%d %H:%M:%S} [FALCON] [ERROR] {1} {2}?{3} => {4}'.
+            u'{0:%Y:%m:%d %H:%M:%S} [FALCON] [ERROR] {1} {2}?{3} => {4}\n'.
             format(datetime.now(), self.method, self.path, self.query_string,
                    unicode_message)
         )
