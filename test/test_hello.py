@@ -32,7 +32,7 @@ class HelloResource:
             resp.body = self.sample_body
 
     def on_head(self, req, resp):
-        on_get(self, req, resp)
+        self.on_get(req, resp)
 
 
 class NoStatusResource:
@@ -83,6 +83,7 @@ class TestHelloWorld(helpers.TestSuite):
     def test_no_body_on_head(self):
         body = self._simulate_request(self.test_route, method='HEAD')
         self.assertEquals(body, [])
+        self.assertEquals(self.srmock.status, falcon.HTTP_200)
 
     def test_stream_chunked(self):
         src = self._simulate_request('/chunked-stream')

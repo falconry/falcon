@@ -78,7 +78,7 @@ class Request:
             unicode_message = message
 
         log_line = (
-            u'{0:%Y:%m:%d %H:%M:%S} [FALCON] [ERROR] {1} {2}?{3} => {4}\n'.
+            u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR] {1} {2}?{3} => {4}\n'.
             format(datetime.now(), self.method, self.path, self.query_string,
                    unicode_message)
         )
