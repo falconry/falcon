@@ -72,6 +72,8 @@ class API:
 
         except HTTPError as ex:
             resp.status = ex.status
+            if ex.headers is not None:
+                resp.set_headers(ex.headers)
 
             if req.client_accepts_json():
                 resp.body = ex.json()

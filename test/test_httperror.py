@@ -21,7 +21,7 @@ class FaultyResource:
             'You do not have write permissions for this queue',
             href='http://example.com/api/rbac')
 
-    def on_head(self, req, resp):
+    def on_put(self, req, resp):
         raise falcon.HTTPError(
             falcon.HTTP_792,
             'Internet crashed',
@@ -29,6 +29,13 @@ class FaultyResource:
             href='http://example.com/api/climate',
             href_rel='oops',
             href_text='Drill baby drill!')
+
+
+class UnauthorizedResource:
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPUnauthorized('Token', 'Authentication Required',
+                                      'Missing or invalid token header.')
 
 
 class TestHTTPError(helpers.TestSuite):
@@ -123,7 +130,14 @@ class TestHTTPError(helpers.TestSuite):
             '}'
         ]
 
-        body = self._simulate_request('/fail', headers=headers, method='HEAD')
+        body = self._simulate_request('/fail', headers=headers, method='PUT')
         self.assertEqual(self.srmock.status, falcon.HTTP_792)
         self.assertThat(lambda: json.loads(body[0]), Not(raises(ValueError)))
         self.assertEqual(body, expected_body)
+
+    def test_401(self):
+        self.api.add_route('/401', UnauthorizedResource())
+        self._simulate_request('/401')
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_401)
+        self.assertIn(('WWW-Authenticate', 'Token'), self.srmock.headers)

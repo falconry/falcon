@@ -14,6 +14,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
+Class docstrings were copied from RFC 2616 where noted, and are not covered
+by the above copyright.
+
 """
 
 from .http_error import HTTPError
@@ -22,7 +25,13 @@ from .status_codes import *
 
 # 400 Bad Request
 class HTTPBadRequest(HTTPError):
-    """A more readable version of HTTPError(HTTP_400, ...)"""
+    """400 Bad Request
+
+    The request could not be understood by the server due to malformed
+    syntax. The client SHOULD NOT repeat the request without
+    modifications. (RFC 2616)
+
+    """
 
     def __init__(self, title, description, **kwargs):
         HTTPError.__init__(self, HTTP_400, title, description, **kwargs)
@@ -30,20 +39,32 @@ class HTTPBadRequest(HTTPError):
 
 # 401 Unauthorized
 class HTTPUnauthorized(HTTPError):
-    """A more readable version of HTTPError(HTTP_401, ...)
+    """401 Unauthorized
 
     Use when authentication is required, and the provided credentials are
-    not valid.
+    not valid, or no credentials were provided in the first place.
+
+    Args:
+        scheme: Authentication scheme to use as the value of the
+            WWW-Authenticate header in the response.
+        title: Human-friendly error title
+        description: Human-friendly description of the error, along with a
+            helpful suggestion or two.
+
+    The remaining (optional) args are the same as for HTTPError.
+
 
     """
 
-    def __init__(self, title, description, **kwargs):
+    def __init__(self, scheme, title, description, **kwargs):
+        headers = kwargs.setdefault('headers', {})
+        headers['WWW-Authenticate'] = scheme
         HTTPError.__init__(self, HTTP_401, title, description, **kwargs)
 
 
 # 403 Forbidden
 class HTTPForbidden(HTTPError):
-    """A more readable version of HTTPError(HTTP_403, ...)
+    """403 Forbidden
 
     Use when the client's credentials are good, but they do not have permission
     to access the requested resource.

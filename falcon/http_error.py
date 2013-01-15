@@ -28,11 +28,17 @@ class HTTPError(Exception):
 
     """
 
-    __slots__ = ('status', 'title', 'description', 'href', 'code')
+    __slots__ = (
+        'status',
+        'title',
+        'description',
+        'headers',
+        'link',
+        'code'
+    )
 
-    def __init__(self, status, title, description,
-                 href=None, href_rel=None, href_text=None,
-                 code=None):
+    def __init__(self, status, title, description, headers=None,
+                 href=None, href_rel=None, href_text=None, code=None):
         """Initialize with information that can be reported to the client
 
         Falcon will catch instances of HTTPError (and subclasses), then use
@@ -41,17 +47,23 @@ class HTTPError(Exception):
         Args:
             status: HTTP status code and text, such as "400 Bad Request"
             title: Human-friendly error title
-            description: Human-friendly description of the error, which a
+            description: Human-friendly description of the error, along with a
                 helpful suggestion or two.
+            headers: A dictionary of extra headers to return in the
+                response to the client (default None).
             href: A URL someone can visit to find out more information
-                (defaults to None)
+                (default None).
             href_rel: If href is given, this is value to use for the rel
-                attribute (defaults to 'doc')
+                attribute (default 'doc').
             href_text: Friendly title/description for the link (defaults to
-                "API documentation for this error")
+                "API documentation for this error").
+            code: An internal code that customers can reference in their
+                support request or to help them when searching for knowledge
+                base articles related to this error.
 
         """
 
+        self.headers = headers
         self.status = status
         self.title = title
         self.description = description
