@@ -31,17 +31,19 @@ HTTP_METHODS = (
 )
 
 
-def should_ignore_body(status):
-    """Return True if the status is 1xx, 204, or 304 per RFC 2616
+def should_ignore_body(status, method):
+    """Return True if the status or method indicates no body, per RFC 2616
 
     Args:
         status: An HTTP status line, e.g., "204 No Content"
 
     Returns:
-        True if the status is 1xx, 204, or 304; False otherwise.
+        True if method is HEAD, or the status is 1xx, 204, or 304; returns
+        False otherwise.
 
     """
-    return (status.startswith('204') or
+    return (method == 'HEAD' or
+            status.startswith('204') or
             status.startswith('1') or
             status.startswith('304'))
 

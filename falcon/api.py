@@ -101,7 +101,7 @@ class API:
             resp = Response()
             responders.server_error(req, resp)
 
-        use_body = not should_ignore_body(resp.status)
+        use_body = not should_ignore_body(resp.status, req.method)
         if use_body:
             set_content_length(resp)
 
