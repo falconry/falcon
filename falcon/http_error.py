@@ -46,9 +46,13 @@ class HTTPError(Exception):
 
         Args:
             status: HTTP status code and text, such as "400 Bad Request"
-            title: Human-friendly error title
+            title: Human-friendly error title. Set to None if you wish Falcon
+                to return an empty response body (all remaining args will
+                be ignored.) Do this only when you don't wish to disclose
+                sensitive information about why a request was refused.
             description: Human-friendly description of the error, along with a
-                helpful suggestion or two.
+                helpful suggestion or two. Must be set to None if title is
+                set to None.
             headers: A dictionary of extra headers to return in the
                 response to the client (default None).
             href: A URL someone can visit to find out more information
@@ -84,7 +88,14 @@ class HTTPError(Exception):
         Note: Excludes the HTTP status line, since the results of this call
         are meant to be returned in the body of an HTTP response.
 
+        Returns:
+            A JSON representation of the exception except the status line, or
+            NONE if title was set to None.
+
         """
+
+        if self.title is None:
+            return None
 
         # Serialize by hand to enforce ordering, making it nice for humans
         obj = (

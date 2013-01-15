@@ -1,5 +1,6 @@
 import random
 import io
+import sys
 
 import testtools
 
@@ -94,7 +95,7 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
 
         'wsgi.url_scheme': 'http',
         'wsgi.input': io.BytesIO(body.encode('utf-8')),
-        'wsgi.errors': wsgierrors or io.StringIO()
+        'wsgi.errors': wsgierrors or sys.stderr
     }
 
     if protocol != 'HTTP/1.0':

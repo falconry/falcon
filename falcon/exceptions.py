@@ -27,9 +27,9 @@ from .status_codes import *
 class HTTPBadRequest(HTTPError):
     """400 Bad Request
 
-    The request could not be understood by the server due to malformed
+    "The request could not be understood by the server due to malformed
     syntax. The client SHOULD NOT repeat the request without
-    modifications. (RFC 2616)
+    modifications." (RFC 2616)
 
     """
 
@@ -69,6 +69,14 @@ class HTTPForbidden(HTTPError):
     Use when the client's credentials are good, but they do not have permission
     to access the requested resource.
 
+    Note from RFC 2616:
+
+    "If the request method was not HEAD and the server wishes to make
+    public why the request has not been fulfilled, it SHOULD describe the
+    reason for the refusal in the entity.  If the server does not wish to
+    make this information available to the client, the status code 404
+    (Not Found) can be used instead."
+
     """
 
     def __init__(self, title, description, **kwargs):
@@ -77,9 +85,14 @@ class HTTPForbidden(HTTPError):
 
 # 404 Not Found
 class HTTPNotFound(HTTPError):
-    """A more readable version of HTTPError(HTTP_404, ...)"""
-    def __init__(self, title, description, **kwargs):
-        HTTPError.__init__(self, HTTP_404, title, description, **kwargs)
+    """404 Not Found
+
+    Use this when the URL path does not map to an existing resource, or you
+    do not wish to disclose exactly why a request was refused.
+
+    """
+    def __init__(self):
+        HTTPError.__init__(self, HTTP_404, None, None)
 
 
 # 405 Method Not Allowed

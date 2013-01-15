@@ -37,6 +37,10 @@ class UnauthorizedResource:
         raise falcon.HTTPUnauthorized('Token', 'Authentication Required',
                                       'Missing or invalid token header.')
 
+class NotFoundResource:
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPNotFound()
 
 class TestHTTPError(helpers.TestSuite):
 
@@ -141,3 +145,10 @@ class TestHTTPError(helpers.TestSuite):
 
         self.assertEqual(self.srmock.status, falcon.HTTP_401)
         self.assertIn(('WWW-Authenticate', 'Token'), self.srmock.headers)
+
+    def test_404(self):
+        self.api.add_route('/404', NotFoundResource())
+        body = self._simulate_request('/404')
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_404)
+        self.assertEqual(body, [])

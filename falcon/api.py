@@ -16,6 +16,9 @@ limitations under the License.
 
 """
 
+import sys
+import traceback
+
 from .request import Request
 from .response import Response
 from . import responders
@@ -83,13 +86,18 @@ class API:
             req = Request(env)
             resp = Response()
 
-            message = 'Responder raised ' + ex.__class__.__name__
+            message = ['Responder raised ', ex.__class__.__name__]
 
             details = str(ex)
             if details:
-                message = ': '.join([message, details])
+                message.append(': ')
+                message.append(details)
 
-            req.log_error(message)
+            stack = traceback.format_exc(sys.exc_info()[2])
+            message.append('\n')
+            message.append(stack)
+
+            req.log_error(''.join(message))
             responders.server_error(req, resp)
 
         #
@@ -109,7 +117,7 @@ class API:
 
         # Return an iterable for the body, per the WSGI spec
         if use_body:
-            if resp.body is not None:
+            if resp.body:
                 return [resp.body]
             elif resp.stream is not None:
                 return resp.stream
