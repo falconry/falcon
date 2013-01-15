@@ -64,28 +64,31 @@ class API:
         req = Request(env)
         resp = Response()
 
-        path = req.path
-        for path_template, method_map in self._routes:
-            m = path_template.match(path)
-            if m:
-                req._params.update(m.groupdict())
-
-                try:
-                    responder = method_map[req.method]
-                except KeyError:
-                    responder = responders.bad_request
-
-                break
-        else:
-            responder = responders.path_not_found
+        responder, params = self._get_responder(req.path, req.method)
+        req._params.update(params)
 
         try:
             responder(req, resp)
+
         except HTTPError as ex:
             resp.status = ex.status
 
             if req.client_accepts_json():
                 resp.body = ex.json()
+
+        except Exception as ex:
+            # Reset to a known state and respond with a generic error
+            req = Request(env)
+            resp = Response()
+
+            message = 'Responder raised ' + ex.__class__.__name__
+
+            details = str(ex)
+            if details:
+                message = ': '.join([message, details])
+
+            req.log_error(message)
+            responders.server_error(req, resp)
 
         #
         # Set status and headers
@@ -127,3 +130,33 @@ class API:
         method_map = create_http_method_map(resource)
 
         self._routes.append((path_template, method_map))
+
+    def _get_responder(self, path, method):
+        """Searches routes for a matching responder
+
+        Args:
+            path: URI path to search (without query stirng)
+            method: HTTP method (uppercase) requested
+        Returns:
+            A 2-member tuple, containing a responder callable and a dict
+            containing parsed path fields, if any were specified in
+            the matching route's URI template
+
+        """
+
+        params = {}
+        for path_template, method_map in self._routes:
+            m = path_template.match(path)
+            if m:
+                params.update(m.groupdict())
+
+                try:
+                    responder = method_map[method]
+                except KeyError:
+                    responder = responders.bad_request
+
+                break
+        else:
+            responder = responders.path_not_found
+
+        return (responder, params)

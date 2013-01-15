@@ -16,6 +16,9 @@ limitations under the License.
 
 """
 
+import sys
+from datetime import datetime
+
 from .request_helpers import *
 from .exceptions import *
 
@@ -31,7 +34,8 @@ class Request:
         '_params',
         'path',
         'protocol',
-        'query_string'
+        'query_string',
+        '_wsgierrors'
     )
 
     def __init__(self, env):
@@ -53,6 +57,21 @@ class Request:
         self.query_string = query_string = env['QUERY_STRING']
         self._params = parse_query_string(query_string)
         self._headers = parse_headers(env)
+        self._wsgierrors = env['wsgi.errors']
+
+    def log_error(self, message):
+        if sys.version_info[0] == 2 and isinstance(message, str):
+            unicode_message = message.decode('utf-8')
+        else:
+            unicode_message = message
+
+        log_line = (
+            u'{0:%Y:%m:%d %H:%M:%S} [FALCON] [ERROR] {1} {2}?{3} => {4}'.
+            format(datetime.now(), self.method, self.path, self.query_string,
+                   unicode_message)
+        )
+
+        self._wsgierrors.write(log_line)
 
     def client_accepts_json(self):
         """Return True if the Accept header indicates JSON support"""

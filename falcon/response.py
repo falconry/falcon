@@ -16,6 +16,8 @@ limitations under the License.
 
 """
 
+import sys
+
 
 class Response:
     """Represents an HTTP response to a client request"""
@@ -23,10 +25,14 @@ class Response:
     __slots__ = ('status', '_headers', 'body', 'stream', 'stream_len')
 
     def __init__(self):
-        """Initialize response attributes to default values"""
+        """Initialize response attributes to default values
+
+        Args:
+            wsgierrors: File-like stream for logging errors
+
+        """
 
         self.status = None
-
         self._headers = {}
 
         self.body = None

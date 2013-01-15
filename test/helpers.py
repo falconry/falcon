@@ -1,5 +1,5 @@
 import random
-from io import BytesIO
+import io
 
 import testtools
 
@@ -73,7 +73,8 @@ class TestSuite(testtools.TestCase):
 
 
 def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
-                   headers=None, script='', body='', method='GET'):
+                   headers=None, script='', body='', method='GET',
+                   wsgierrors=None):
 
     env = {
         'SERVER_PROTOCOL': protocol,
@@ -92,7 +93,8 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
         'SERVER_PORT': port,
 
         'wsgi.url_scheme': 'http',
-        'wsgi.input': BytesIO(body.encode('utf-8'))
+        'wsgi.input': io.BytesIO(body.encode('utf-8')),
+        'wsgi.errors': wsgierrors or io.StringIO()
     }
 
     if protocol != 'HTTP/1.0':
