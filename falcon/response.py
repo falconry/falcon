@@ -32,7 +32,7 @@ class Response:
 
         """
 
-        self.status = None
+        self.status = '200 OK'
         self._headers = {}
 
         self.body = None
