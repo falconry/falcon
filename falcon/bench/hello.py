@@ -28,7 +28,8 @@ def create_flask(body, headers):
 
     @flask_app.route('/')
     def hello():
-        return flask.Response(headers=headers, data=body)
+        return flask.Response(data=body, headers=headers,
+                              mimetype='text/plain')
 
     return flask_app
 
@@ -36,7 +37,8 @@ def create_flask(body, headers):
 def create_werkzeug(body, headers):
     @werkzeug.Request.application
     def hello(request):
-        return werkzeug.Response(body, headers=headers)
+        return werkzeug.Response(body, headers=headers,
+                                 mimetype='text/plain')
 
     return hello
 
