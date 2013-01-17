@@ -1,5 +1,5 @@
 from falcon.request import Request
-import test.helpers as helpers
+from . import helpers
 
 
 class TestReqVars(helpers.TestSuite):

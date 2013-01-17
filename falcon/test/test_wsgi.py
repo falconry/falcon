@@ -2,7 +2,7 @@ import testtools
 from testtools.matchers import Equals, MatchesRegex
 
 import falcon
-import test.helpers as helpers
+from . import helpers
 
 
 def _is_iterable(thing):

@@ -1,4 +1,4 @@
-import test.helpers as helpers
+from . import helpers
 
 
 class TestQueryParams(helpers.TestSuite):

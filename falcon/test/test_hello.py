@@ -37,7 +37,6 @@ class HelloResource:
 
 class NoStatusResource:
     def on_get(self, req, resp):
-        resp.body = 'Oops'
         pass
 
 
@@ -117,4 +116,4 @@ class TestHelloWorld(helpers.TestSuite):
         body = self._simulate_request('/nostatus')
 
         self.assertEqual(body, [])
-        self.assertEqual(self.srmock.status, falcon.HTTP_500)
+        self.assertEqual(self.srmock.status, falcon.HTTP_200)
