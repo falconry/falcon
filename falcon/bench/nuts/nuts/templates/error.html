@@ -1,0 +1,12 @@
+<%inherit file="layout.html" />
+
+## provide definitions for blocks we want to redefine
+<%def name="title()">
+    Server Error ${status}
+</%def>
+
+## now define the body of the template
+    <header>
+      <h1>Server Error ${status}</h1>
+    </header>
+    <p>${message}</p>

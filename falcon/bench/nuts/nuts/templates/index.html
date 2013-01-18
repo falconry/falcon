@@ -1,0 +1,34 @@
+<%inherit file="layout.html" />
+
+## provide definitions for blocks we want to redefine
+<%def name="title()">
+    Welcome to Pecan!
+</%def>
+
+## now define the body of the template
+    <header>
+      <h1><img src="/images/logo.png" /></h1>
+    </header>
+
+    <div id="content">
+
+      <p>This is a sample Pecan project.</p>
+
+      <p>
+        Instructions for getting started can be found online at <a
+          href="http://pecanpy.org" target="window">pecanpy.org</a>
+      </p>
+      
+      <p>
+        ...or you can search the documentation here:
+      </p>
+      
+      <form method="POST" action="/">
+        <fieldset>
+          <input name="q" />
+          <input type="submit" value="Search" />
+        <fieldset>
+        <small>Enter search terms or a module, class or function name.</small>
+      </form>
+
+    </div>

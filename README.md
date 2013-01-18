@@ -5,7 +5,7 @@ Falcon
 
 **[Experimental]**
 
-Falcon is a fast, light-weight framework for building cloud APIs. It tries to do as little as possible while remaining highly effective. 
+Falcon is a *really* fast, light-weight framework for building cloud APIs. It tries to do as little as possible while remaining highly effective. 
 
 > Perfection is finally attained not when there is no longer anything to add, but when there is no longer anything to take away. 
 >
@@ -13,15 +13,15 @@ Falcon is a fast, light-weight framework for building cloud APIs. It tries to do
 
 ### Design Goals ###
 
-**Light-weight.** Only the essentials are included, with few dependencies. We work to keep the code lean-n-mean, making Falcon easier to test, optimize, and deploy. 
+**Light-weight.** Only the essentials are included, with zero dependencies beyond the standard library. We work to keep the code lean-n-mean, making Falcon easier to test, optimize, and deploy. 
 
-**Surprisingly agile.** Although light-weight, Falcon is surprisingly effective. Getting started with the framework is easy. Common web API idioms are supported out of the box without getting in your way. This is a framework designed for journeyman web developers and master craftsman alike.
+**Fast.** Cloud APIs need to turn around requests quickly, and make efficient use of hardware. Falcon processes requests several times faster than other popular web frameworks.
 
 **Cloud-friendly.** Falcon uses the web-friendly Python language, and speaks WSGI, so you can deploy it on your favorite stack. The framework is designed from the ground up to embrace HTTP, not work against it. Plus, diagnostics are built right in to make it easier to track down sneaky bugs and frustrating performance problems. 
 
 ### Usage ###
 
-More/better docs are on our TODO list, but in the meantime, here is a simple example showing how to create a Falcon API.
+More/better docs are on our TODO list, but in the meantime, here is a simple example showing how to create a Falcon-based API.
 
 ```python
 class ThingsResource:

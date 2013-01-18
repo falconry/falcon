@@ -16,8 +16,6 @@ limitations under the License.
 
 """
 
-import sys
-
 
 class Response(object):
     """Represents an HTTP response to a client request"""
@@ -33,7 +31,7 @@ class Response(object):
         """
 
         self.status = '200 OK'
-        self._headers = {}
+        self._headers = []
 
         self.body = None
         self.stream = None
@@ -55,7 +53,7 @@ class Response(object):
         """
 
         # TODO: Do we need to use a different conversion for Python 3 compat?
-        self._headers[name] = value
+        self._headers.append((name, value))
 
     def set_headers(self, headers):
         """Set several headers at once. May be faster than set_header().
@@ -73,11 +71,10 @@ class Response(object):
 
         """
 
-        # TODO: Do we need to use a different conversion for Python 3 compat?
-        self._headers.update(headers)
+        self._headers.extend(headers.items())
 
     def _wsgi_headers(self):
         """Convert headers into the format expected by WSGI servers"""
 
         # Pass through list for Python 3 compatibility
-        return list(self._headers.items())
+        return self._headers
