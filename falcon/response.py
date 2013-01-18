@@ -19,7 +19,7 @@ limitations under the License.
 import sys
 
 
-class Response:
+class Response(object):
     """Represents an HTTP response to a client request"""
 
     __slots__ = ('status', '_headers', 'body', 'stream', 'stream_len')

@@ -38,7 +38,7 @@ HTTP_METHODS = (
 )
 
 
-class API:
+class API(object):
     """Provides routing and such for building a web service application
 
     This class is the main entry point into a Falcon-based app. It provides a

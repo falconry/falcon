@@ -23,7 +23,7 @@ from .request_helpers import *
 from .exceptions import *
 
 
-class Request:
+class Request(object):
     """Represents a client's HTTP request"""
 
     __slots__ = (
