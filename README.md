@@ -130,7 +130,7 @@ api.add_route('/{user_id}/things', things)
 
 ### Contributing ###
 
-Pull requests are welcome. Just make sure to include tests and follow PEP 8 and your commit messages are formatted using [AngularJS conventions][ajs] (one-liners are OK for now but body and footer may be required as the project matures). Comments follow [Google's style guide][goog-style-comments].
+Pull requests are welcome. Just make sure to include tests and follow PEP 8. Commit messages should be formatted using [AngularJS conventions][ajs] (one-liners are OK for now but body and footer may be required as the project matures). Comments follow [Google's style guide][goog-style-comments].
 
 [ajs]: http://goo.gl/QpbS7
 [goog-style-comments]: http://google-styleguide.googlecode.com/svn/trunk/pyguide.html#Comments
