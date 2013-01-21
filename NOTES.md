@@ -15,6 +15,7 @@ This requires some discipline on the part of the developer.
 * Falcon probably isn't thread-safe, so don't try it. Run multiple worker processes, each with a non-blocking I/O loop instead.
 * Falcon doesn't officially support Python 3; it's on our TODO list.
 * Falcon is based on byte strings (str in Python 2, bytes in Python 3), and does no conversions to UTF-16 (for example). If your app needs to use wide strings, you'll need to do the conversion manually. However, we recommend just keeping everything UTF-8 as much as possible for efficiency's sake.
+* Default content type for responses is 'application/json; charset=utf-8', and the default status is '200 OK.'
 * resp.set_header assumes both params are strings. App may crash otherwise. Falcon trusts the caller. You *are* testing all your code paths, aren't you?
 * If you need the protocol (http vs https) to construct hrefs in your responses (hypermedia is good, trust me), you can get it from req.scheme
 * URI template and query string field names must include only ASCII a-z, A-Z, and the underscore '_' character. Try it; you'll like it. This simplifies parsing and helps speed things up a bit. 

@@ -16,6 +16,11 @@ limitations under the License.
 
 """
 
+import re
+
+DEFAULT_CONTENT_TYPE = 'application/json; charset=utf-8'
+CONTENT_TYPE_NAMES = set(['Content-Type', 'content-type', 'CONTENT-TYPE'])
+
 
 class Response(object):
     """Represents an HTTP response to a client request"""
@@ -52,7 +57,6 @@ class Response(object):
 
         """
 
-        # TODO: Do we need to use a different conversion for Python 3 compat?
         self._headers.append((name, value))
 
     def set_headers(self, headers):
@@ -76,5 +80,12 @@ class Response(object):
     def _wsgi_headers(self):
         """Convert headers into the format expected by WSGI servers"""
 
-        # Pass through list for Python 3 compatibility
+        if (self.body is not None) or (self.stream is not None):
+            headers = self._headers
+            for name, value in headers:
+                if name in CONTENT_TYPE_NAMES:
+                    break
+            else:
+                self._headers.append(('Content-Type', DEFAULT_CONTENT_TYPE))
+
         return self._headers

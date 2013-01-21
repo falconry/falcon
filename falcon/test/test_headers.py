@@ -15,6 +15,23 @@ class StatusTestResource:
         resp.body = self.sample_body
 
 
+class XmlResource:
+    def __init__(self, content_type):
+        self.content_type = content_type
+
+    def on_get(self, req, resp):
+        resp.set_header('Content-Type', self.content_type)
+
+
+class DefaultContentTypeResource:
+    def __init__(self, body=None):
+        self.body = body
+
+    def on_get(self, req, resp):
+        if self.body is not None:
+            resp.body = self.body
+
+
 class TestHeaders(helpers.TestSuite):
 
     def prepare(self):
@@ -113,3 +130,27 @@ class TestHeaders(helpers.TestSuite):
 
         for h in self.resource.resp_headers.items():
             self.assertThat(resp_headers, Contains(h))
+
+    def test_default_content_type(self):
+        self.resource = DefaultContentTypeResource('Hello world!')
+        self.api.add_route(self.test_route, self.resource)
+        self._simulate_request(self.test_route)
+
+        content_type = 'application/json; charset=utf-8'
+        self.assertIn(('Content-Type', content_type), self.srmock.headers)
+
+    def test_no_content_type(self):
+        self.resource = DefaultContentTypeResource()
+        self.api.add_route(self.test_route, self.resource)
+        self._simulate_request(self.test_route)
+
+        content_type = 'application/json; charset=utf-8'
+        self.assertNotIn(('Content-Type', content_type), self.srmock.headers)
+
+    def test_custom_content_type(self):
+        content_type = 'application/xml; charset=utf-8'
+        self.resource = XmlResource(content_type)
+        self.api.add_route(self.test_route, self.resource)
+
+        self._simulate_request(self.test_route)
+        self.assertIn(('Content-Type', content_type), self.srmock.headers)

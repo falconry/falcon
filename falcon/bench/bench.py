@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+import random
 from timeit import repeat
 
 from create import *
@@ -43,17 +44,15 @@ def create_bench(name):
 
 
 if __name__ == '__main__':
+    frameworks = [
+        'Wheezy', 'Flask', 'Werkzeug', 'Falcon', 'Pecan', 'Bottle'
+    ]
+
+    random.shuffle(frameworks)
+
     sys.stdout.write('\nBenchmarking')
     sys.stdout.flush()
-    results = [bench(framework) for framework in [
-        'Wheezy', 'Flask', 'Werkzeug', 'Falcon', 'Pecan', 'Bottle']
-    ]
-    """
-    results = [bench(framework) for framework in [
-        'Falcon']
-    ]
-    """
-
+    results = [bench(framework) for framework in frameworks]
     print('done.\n')
 
     results = sorted(results, key=lambda r: r[1])

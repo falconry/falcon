@@ -138,7 +138,9 @@ class API(object):
         path_template = compile_uri_template(uri_template)
         method_map = create_http_method_map(resource)
 
-        self._routes.append((path_template, method_map))
+        # Insert at the head of the list in case we get duplicate
+        # adds (will cause the last one to win).
+        self._routes.insert(0, (path_template, method_map))
 
     def _get_responder(self, path, method):
         """Searches routes for a matching responder
