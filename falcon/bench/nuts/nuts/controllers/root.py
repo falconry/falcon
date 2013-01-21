@@ -12,11 +12,20 @@ def rand_string(min, max):
 
 body = rand_string(10240, 10240)
 
-class HelloController(object):
+class TestController(object):
+    def __init__(self, account_id):
+        self.account_id = account_id
+
     @expose(content_type='text/plain')
     def test(self):
         response.headers['X-Test'] = 'Funky Chicken'
         return body
+
+
+class HelloController(object):
+    @expose()
+    def _lookup(self, account_id, *remainder):
+        return TestController(account_id), remainder
 
 
 class RootController(object):
