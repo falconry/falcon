@@ -24,6 +24,19 @@ class TestUriTemplates(helpers.TestSuite):
 
         self.assertEquals(req.get_param('world'), None)
 
+    def test_special_chars(self):
+        self.api.add_route('/hello/world.json', self.resource)
+        self.api.add_route('/hello(world)', self.resource)
+
+        self._simulate_request('/hello/world_json')
+        self.assertFalse(self.resource.called)
+
+        self._simulate_request('/helloworld')
+        self.assertFalse(self.resource.called)
+
+        self._simulate_request('/hello/world.json')
+        self.assertTrue(self.resource.called)
+
     def test_single(self):
         self.api.add_route('/widgets/{id}', self.resource)
 

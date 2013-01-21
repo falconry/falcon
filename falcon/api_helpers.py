@@ -93,11 +93,13 @@ def compile_uri_template(template):
 
     """
     if not isinstance(template, str):
-        raise TypeError('uri_template is not a byte string')
+        raise TypeError('uri_template is not a string')
 
     # Convert Level 1 var patterns to equivalent named regex groups
-    pattern = re.sub(r'{([a-zA-Z][a-zA-Z_]*)}', r'(?P<\1>[^/]+)', template)
+    escaped = re.sub(r'([\.\(\)\[\]\?\*\+\^\|])', r'\.', template)
+    pattern = re.sub(r'{([a-zA-Z][a-zA-Z_]*)}', r'(?P<\1>[^/]+)', escaped)
     pattern = r'\A' + pattern + r'\Z'
+
     return re.compile(pattern, re.IGNORECASE)
 
 
