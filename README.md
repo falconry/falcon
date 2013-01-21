@@ -49,8 +49,7 @@ class ThingsResource:
         self.db = db
         self.logger = logging.getLogger('thingsapi.' + __name__)
 
-    def on_get(self, req, resp):
-        user_id = req.get_param('user_id', required=True)
+    def on_get(self, req, resp, user_id):
         marker = req.get_param('marker', default='')
         limit = req.get_param('limit', default=50)
 

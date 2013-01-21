@@ -42,10 +42,10 @@ class TestResource:
     def __init__(self):
         self.called = False
 
-    def on_get(self, req, resp):
+    def on_get(self, req, resp, **kwargs):
         # Don't try this at home - classes aren't recreated
         # for every request
-        self.req, self.resp = req, resp
+        self.req, self.resp, self.kwargs = req, resp, kwargs
 
         self.called = True
         resp.status = falcon.HTTP_200

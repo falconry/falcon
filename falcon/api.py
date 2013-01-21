@@ -68,10 +68,9 @@ class API(object):
         resp = Response()
 
         responder, params = self._get_responder(req.path, req.method)
-        req._params.update(params)
 
         try:
-            responder(req, resp)
+            responder(req, resp, **params)
 
         except HTTPError as ex:
             resp.status = ex.status
@@ -154,11 +153,10 @@ class API(object):
 
         """
 
-        params = {}
         for path_template, method_map in self._routes:
             m = path_template.match(path)
             if m:
-                params.update(m.groupdict())
+                params = m.groupdict()
 
                 try:
                     responder = method_map[method]
@@ -168,5 +166,6 @@ class API(object):
                 break
         else:
             responder = responders.path_not_found
+            params = {}
 
         return (responder, params)

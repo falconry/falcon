@@ -1,6 +1,18 @@
 from . import helpers
 
 
+class IDResource(object):
+    def __init__(self):
+        self.id = None
+        self.name = None
+        self.called = False
+
+    def on_get(self, req, resp, id, name=None):
+        self.id = id
+        self.name = name
+        self.called = True
+
+
 class TestUriTemplates(helpers.TestSuite):
 
     def prepare(self):
@@ -44,31 +56,33 @@ class TestUriTemplates(helpers.TestSuite):
         self.assertTrue(self.resource.called)
 
         req = self.resource.req
-        self.assertEquals(req.get_param('id'), '123')
-        self.assertEquals(req.get_param('Id'), None)
+        kwargs = self.resource.kwargs
+        self.assertEquals(kwargs['id'], '123')
+        self.assertNotIn(kwargs, 'Id')
+        self.assertEquals(req.get_param('id'), None)
 
     def test_single_trailing_slash(self):
-        self.api.add_route('/widgets/{id}/', self.resource)
+        resource = IDResource()
+        self.api.add_route('/widgets/{id}/', resource)
 
         self._simulate_request('/widgets/123')
-        self.assertFalse(self.resource.called)
+        self.assertFalse(resource.called)
 
         self._simulate_request('/widgets/123/')
-        self.assertTrue(self.resource.called)
+        self.assertTrue(resource.called)
 
-        req = self.resource.req
-        self.assertEquals(req.get_param('id'), '123')
+        self.assertEquals(resource.id, '123')
+        self.assertEquals(resource.name, None)
 
     def test_multiple(self):
-        self.api.add_route('/messages/{Id}/names/{Name}', self.resource)
+        resource = IDResource()
+        self.api.add_route('/messages/{id}/names/{name}', resource)
 
         test_id = self.getUniqueString()
         test_name = self.getUniqueString()
         path = '/messages/' + test_id + '/names/' + test_name
         self._simulate_request(path)
-        self.assertTrue(self.resource.called)
+        self.assertTrue(resource.called)
 
-        req = self.resource.req
-        self.assertEquals(req.get_param('Id'), test_id)
-        self.assertEquals(req.get_param('Name'), test_name)
-        self.assertEquals(req.get_param('name'), None)
+        self.assertEquals(resource.id, test_id)
+        self.assertEquals(resource.name, test_name)
