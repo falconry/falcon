@@ -7,9 +7,9 @@ here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.md')).read()
 NEWS = open(os.path.join(here, 'NEWS.md')).read()
 
-install_requires = [
-    'python-statsd>=1.5.7'
-]
+# install_requires = [
+#     'python-statsd>=1.5.7'
+# ]
 
 setup(
     name='falcon',
@@ -33,5 +33,5 @@ setup(
     package_dir={'': 'falcon'},
     include_package_data=True,
     zip_safe=False,
-    install_requires=install_requires
+    install_requires=[]
 )
