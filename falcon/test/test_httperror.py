@@ -38,7 +38,6 @@ class UnauthorizedResource:
                                       'Missing or invalid token header.',
                                       'Token')
 
-
 class NotFoundResource:
 
     def on_get(self, req, resp):
@@ -48,6 +47,13 @@ class MethodNotAllowedResource:
 
     def on_get(self, req, resp):
         raise falcon.HTTPMethodNotAllowed(['PUT'])
+
+
+class InternalServerErrorResource:
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPInternalServerError('Excuse Us', 'Something went'
+                                             'boink!')
 
 
 class TestHTTPError(helpers.TestSuite):
@@ -168,3 +174,9 @@ class TestHTTPError(helpers.TestSuite):
         self.assertEqual(self.srmock.status, falcon.HTTP_405)
         self.assertEqual(body, [])
         self.assertIn(('Allow', 'PUT'), self.srmock.headers)
+
+    def test_500(self):
+        self.api.add_route('/500', InternalServerErrorResource())
+        body = self._simulate_request('/500')
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_500)

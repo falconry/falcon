@@ -48,6 +48,12 @@ class TestHeaders(helpers.TestSuite):
         content_length_header = ('Content-Length', content_length)
         self.assertThat(headers, Contains(content_length_header))
 
+    def test_default_value(self):
+        self._simulate_request(self.test_route)
+
+        value = self.resource.req.get_header('X-Not-Found', '876')
+        self.assertEquals(value, '876')
+
     def test_prefer_host_header(self):
         self._simulate_request(self.test_route)
 
