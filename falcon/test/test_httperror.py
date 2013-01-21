@@ -37,10 +37,12 @@ class UnauthorizedResource:
         raise falcon.HTTPUnauthorized('Token', 'Authentication Required',
                                       'Missing or invalid token header.')
 
+
 class NotFoundResource:
 
     def on_get(self, req, resp):
         raise falcon.HTTPNotFound()
+
 
 class TestHTTPError(helpers.TestSuite):
 
@@ -103,7 +105,7 @@ class TestHTTPError(helpers.TestSuite):
             '    "title": "Request denied",\n'
             '    "description": "You do not have write permissions for this '
             'queue",\n'
-            '    "link":  {\n'
+            '    "link": {\n'
             '        "text": "API documention for this error",\n'
             '        "href": "http://example.com/api/rbac",\n'
             '        "rel": "doc"\n'
@@ -126,7 +128,7 @@ class TestHTTPError(helpers.TestSuite):
             '    "title": "Internet crashed",\n'
             '    "description": "Climate change driven catastrophic weather '
             'event",\n'
-            '    "link":  {\n'
+            '    "link": {\n'
             '        "text": "Drill baby drill!",\n'
             '        "href": "http://example.com/api/climate",\n'
             '        "rel": "oops"\n'

@@ -16,7 +16,10 @@ limitations under the License.
 
 """
 
+from collections import OrderedDict
+
 from .status_codes import *
+import json
 
 
 class HTTPError(Exception):
@@ -37,7 +40,7 @@ class HTTPError(Exception):
         'code'
     )
 
-    def __init__(self, status, title, description, headers=None,
+    def __init__(self, status, title, description=None, headers=None,
                  href=None, href_rel=None, href_text=None, code=None):
         """Initialize with information that can be reported to the client
 
@@ -51,34 +54,34 @@ class HTTPError(Exception):
                 be ignored.) Do this only when you don't wish to disclose
                 sensitive information about why a request was refused.
             description: Human-friendly description of the error, along with a
-                helpful suggestion or two. Must be set to None if title is
-                set to None.
+                helpful suggestion or two (default None).
             headers: A dictionary of extra headers to return in the
                 response to the client (default None).
             href: A URL someone can visit to find out more information
                 (default None).
-            href_rel: If href is given, this is value to use for the rel
+            href_rel: If href is given, use this value for the rel
                 attribute (default 'doc').
-            href_text: Friendly title/description for the link (defaults to
-                "API documentation for this error").
+            href_text: If href is given, use this as the friendly
+                title/description for the link (defaults to "API documentation
+                for this error").
             code: An internal code that customers can reference in their
                 support request or to help them when searching for knowledge
                 base articles related to this error.
 
         """
 
-        self.headers = headers
         self.status = status
         self.title = title
         self.description = description
+        self.headers = headers
         self.code = code
 
         if href:
-            self.link = {
-                'href': href,
-                'rel': href_rel or 'doc',
-                'text': href_text or 'API documention for this error'
-            }
+            self.link = OrderedDict(
+                text=(href_text or 'API documention for this error'),
+                href=href,
+                rel=(href_rel or 'doc')
+            )
         else:
             self.link = None
 
@@ -97,29 +100,16 @@ class HTTPError(Exception):
         if self.title is None:
             return None
 
-        # Serialize by hand to enforce ordering, making it nice for humans
-        obj = (
-            '{\n'
-            '    "title": "%s",\n'
-            '    "description": "%s"'
-        ) % (self.title, self.description)
+        obj = OrderedDict()
+        obj['title'] = self.title
+
+        if self.description:
+            obj['description'] = self.description
 
         if self.code:
-            obj += (
-                ',\n'
-                '    "code": "%s"'
-            ) % self.code
+            obj['code'] = self.code
 
         if self.link:
-            obj += (
-                ',\n'
-                '    "link":  {\n'
-                '        "text": "%s",\n'
-                '        "href": "%s",\n'
-                '        "rel": "%s"\n'
-                '    }'
-            ) % (self.link['text'], self.link['href'], self.link['rel'])
+            obj['link'] = self.link
 
-        obj += '\n}'
-
-        return obj
+        return json.dumps(obj, indent=4, separators=(',', ': '))
