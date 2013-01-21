@@ -23,9 +23,8 @@ def create_falcon(body, headers):
     falcon_app = falcon.API()
 
     class HelloResource:
-        def on_get(self, req, resp):
+        def on_get(self, req, resp, account_id):
             limit = req.get_param('limit', '10')
-            account_id = req.get_param('account_id', required=True)
             resp.body = body
             resp.set_header('Content-Type', 'text/plain')
             resp.set_headers(headers)
@@ -59,7 +58,9 @@ def create_wheezy(body, headers):
     def router(request, following):
         match = matcher.match(request.path)
         if match:
+            # A real router would probably have to get all named params
             params = match.groupdict()
+
             response = hello(request, **params)
         else:
             response = wheezy.not_found()
