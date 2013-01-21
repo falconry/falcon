@@ -121,12 +121,12 @@ class Request(object):
                                  'The "' + name + '" header is required.')
 
     def get_param(self, name, default=None, required=False):
-        """Return the value of a query string parameter as a string
+        """Return the value of a path or query string parameter as a string
 
         Args:
             name: Parameter name, case-sensitive (e.g., 'sort')
             default: Value to return in case the parameter is not found in the
-                query string (default None)
+                query string or path (default None)
             required: Set to True to raise HTTPBadRequest instead of returning
                 gracefully when the parameter is not found (default False)
 
