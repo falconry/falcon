@@ -19,7 +19,7 @@ def bench(name):
 
     func = create_bench(name)
     results = repeat(func, number=iterations)
-list([iterable])
+
     sec_per_req = avg(results) / iterations
 
     sys.stdout.write('.')
