@@ -51,8 +51,9 @@ class HTTPError(Exception):
             status: HTTP status code and text, such as "400 Bad Request"
             title: Human-friendly error title. Set to None if you wish Falcon
                 to return an empty response body (all remaining args will
-                be ignored.) Do this only when you don't wish to disclose
-                sensitive information about why a request was refused.
+                be ignored except for headers.) Do this only when you don't
+                wish to disclose sensitive information about why a request was
+                refused, or if the status and headers are self-descriptive.
             description: Human-friendly description of the error, along with a
                 helpful suggestion or two (default None).
             headers: A dictionary of extra headers to return in the

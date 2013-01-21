@@ -16,8 +16,6 @@ limitations under the License.
 
 """
 
-import re
-
 DEFAULT_CONTENT_TYPE = 'application/json; charset=utf-8'
 CONTENT_TYPE_NAMES = set(['Content-Type', 'content-type', 'CONTENT-TYPE'])
 

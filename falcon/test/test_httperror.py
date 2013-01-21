@@ -34,14 +34,20 @@ class FaultyResource:
 class UnauthorizedResource:
 
     def on_get(self, req, resp):
-        raise falcon.HTTPUnauthorized('Token', 'Authentication Required',
-                                      'Missing or invalid token header.')
+        raise falcon.HTTPUnauthorized('Authentication Required',
+                                      'Missing or invalid token header.',
+                                      'Token')
 
 
 class NotFoundResource:
 
     def on_get(self, req, resp):
         raise falcon.HTTPNotFound()
+
+class MethodNotAllowedResource:
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPMethodNotAllowed(['PUT'])
 
 
 class TestHTTPError(helpers.TestSuite):
@@ -154,3 +160,11 @@ class TestHTTPError(helpers.TestSuite):
 
         self.assertEqual(self.srmock.status, falcon.HTTP_404)
         self.assertEqual(body, [])
+
+    def test_405(self):
+        self.api.add_route('/405', MethodNotAllowedResource())
+        body = self._simulate_request('/405')
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_405)
+        self.assertEqual(body, [])
+        self.assertIn(('Allow', 'PUT'), self.srmock.headers)
