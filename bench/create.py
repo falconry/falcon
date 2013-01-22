@@ -13,7 +13,7 @@ sys.path.append('./nuts/nuts')
 import app as nuts
 del sys.path[-1]
 
-sys.path.append('../..')
+sys.path.append('..')
 import falcon
 del sys.path[-1]
 

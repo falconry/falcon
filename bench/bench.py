@@ -6,8 +6,8 @@ from timeit import repeat
 
 from create import *
 
-sys.path.append('../..')
-import falcon.test.helpers as helpers
+sys.path.append('..')
+import tests.helpers as helpers
 del sys.path[-1]
 
 
@@ -16,7 +16,7 @@ def avg(array):
 
 
 def bench(name):
-    iterations = 10000
+    iterations = 100000
 
     func = create_bench(name)
     results = repeat(func, number=iterations)
@@ -63,7 +63,7 @@ if __name__ == '__main__':
         ms_per_req = sec_per_req * 1000
         factor = int(baseline / sec_per_req)
 
-        print('{3}. {0:.<15s}{1:.>06,.0f} req/sec or {2:0.2f} ms/req ({4}x)'.
+        print('{3}. {0:.<15s}{1:.>06,.0f} req/sec or {2:0.3f} ms/req ({4}x)'.
               format(name, req_per_sec, ms_per_req, i + 1, factor))
 
     print('')

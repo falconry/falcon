@@ -16,10 +16,10 @@ limitations under the License.
 
 """
 
+import json
 from collections import OrderedDict
 
-from .status_codes import *
-import json
+from falcon.status_codes import *
 
 
 class HTTPError(Exception):

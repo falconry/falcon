@@ -19,8 +19,8 @@ by the above copyright.
 
 """
 
-from .http_error import HTTPError
-from .status_codes import *
+from falcon.http_error import HTTPError
+from falcon.status_codes import *
 
 
 class HTTPBadRequest(HTTPError):

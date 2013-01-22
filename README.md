@@ -19,6 +19,25 @@ Falcon is a *really* fast, light-weight framework for building cloud APIs. It tr
 
 **Cloud-friendly.** Falcon uses the web-friendly Python language, and speaks WSGI, so you can deploy it on your favorite stack. The framework is designed from the ground up to embrace HTTP, not work against it. Plus, diagnostics are built right in to make it easier to track down sneaky bugs and frustrating performance problems. 
 
+
+### Install ###
+
+```bash
+$ pip install falcon
+```
+
+### Test ###
+
+```bash
+$ python setup.py test
+```
+
+To test across all supported Python versions:
+
+```bash
+$ pip install tox && tox
+```
+
 ### Usage ###
 
 More/better docs are on our TODO list, but in the meantime, here is a simple example showing how to create a Falcon-based API.

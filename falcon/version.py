@@ -1,4 +1,4 @@
-"""Falcon is a fast micro-framework for building cloud APIs.
+"""Falcon version
 
 Copyright 2013 by Rackspace Hosting, Inc.
 
@@ -16,9 +16,7 @@ limitations under the License.
 
 """
 
-# Hoist classes and functions into the falcon namespace
-from falcon.version import version
-from falcon.api import API
-from falcon.status_codes import *
-from falcon.exceptions import *
-from falcon.http_error import HTTPError
+VERSION_TUPLE = (0, 0, 1, '-dev')
+
+version = '.'.join(map(str, VERSION_TUPLE[:-1])) + VERSION_TUPLE[-1]
+"""Current version of Falcon."""

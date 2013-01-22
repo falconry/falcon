@@ -19,8 +19,8 @@ limitations under the License.
 import sys
 from datetime import datetime
 
-from .request_helpers import *
-from .exceptions import *
+from falcon.request_helpers import *
+from falcon.exceptions import *
 
 
 class Request(object):
