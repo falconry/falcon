@@ -40,7 +40,7 @@ $ pip install tox && tox
 
 ### Usage ###
 
-More/better docs are on our TODO list, but in the meantime, here is a simple example showing how to create a Falcon-based API.
+More/better docs are on the way, but in the meantime, here is a simple example showing how to create a Falcon-based API.
 
 ```python
 class ThingsResource:
