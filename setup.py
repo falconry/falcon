@@ -31,7 +31,7 @@ setup(
     packages=find_packages(exclude=['bench', 'tests']),
     include_package_data=True,
     zip_safe=False,
-    install_requires=[],
+    install_requires=['six'],
 
     test_suite='nose.collector',
     tests_require='nose'

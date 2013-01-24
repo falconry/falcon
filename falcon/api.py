@@ -92,7 +92,7 @@ class API(object):
                 message.append(': ')
                 message.append(details)
 
-            stack = traceback.format_exc(sys.exc_info()[2])
+            stack = traceback.format_exc()
             message.append('\n')
             message.append(stack)
 
