@@ -81,6 +81,8 @@ class ThingsResource:
                                           'part of the request',
                                           'http://docs.example.com/auth')
 
+        # Note: token_is_valid is used as an example
+        # and does not actually exist
         if not token_is_valid(token, user_id):
             raise falcon.HTTPUnauthorized('Authentication required',
                                           'The provided auth token is not '
@@ -112,7 +114,7 @@ class ThingsResource:
 
     def on_post(self, req, resp):
         try:
-            raw_json = req.body.readall()
+            raw_json = req.body.read()
         except Exception:
             raise falcon.HTTPError(falcon.HTTP_748,
                                    'Read Error',
@@ -120,7 +122,7 @@ class ThingsResource:
                                    "it's them ponies again.")
 
         try:
-            thing = json.loads(raw_json.decode('utf-8'))
+            thing = json.loads(raw_json, 'utf-8')
         except ValueError:
             raise falcon.HTTPError(falcon.HTTP_753,
                                    'Malformed JSON',
@@ -129,6 +131,8 @@ class ThingsResource:
 
         try:
             proper_thing = self.db.add_thing(thing)
+        # Note: StorageError is used as an example
+        # and does not actually exist
         except StorageError:
             raise falcon.HTTPError(falcon.HTTP_725,
                                    'Database Error',
