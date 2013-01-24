@@ -1,5 +1,3 @@
-import io
-
 from testtools.matchers import Contains
 
 import falcon
@@ -23,7 +21,7 @@ class HelloResource:
 
         if 'stream' in self.mode:
             raw_body = self.sample_body.encode('utf-8')
-            resp.stream = io.BytesIO(raw_body)
+            resp.stream = bytearray(raw_body)
 
             if 'stream_len' in self.mode:
                 resp.stream_len = len(raw_body)
@@ -87,11 +85,11 @@ class TestHelloWorld(helpers.TestSuite):
     def test_stream_chunked(self):
         src = self._simulate_request('/chunked-stream')
 
-        dest = io.BytesIO()
+        dest = bytearray()
         for chunk in src:
-            dest.write(chunk)
+            dest.append(chunk)
 
-        self.assertEqual(dest.getvalue().encode('utf-8'),
+        self.assertEqual(dest,
                          self.chunked_resource.sample_body.encode('utf-8'))
 
         for header in self.srmock.headers:
@@ -100,16 +98,16 @@ class TestHelloWorld(helpers.TestSuite):
     def test_stream_known_len(self):
         src = self._simulate_request('/stream')
 
-        dest = io.BytesIO()
+        dest = bytearray()
         for chunk in src:
-            dest.write(chunk)
+            dest.append(chunk)
 
         expected_len = self.stream_resource.resp.stream_len
         content_length = ('Content-Length', str(expected_len))
         self.assertThat(self.srmock.headers, Contains(content_length))
-        self.assertEqual(dest.tell(), expected_len)
+        self.assertEqual(len(dest), expected_len)
 
-        self.assertEqual(dest.getvalue().encode('utf-8'),
+        self.assertEqual(dest,
                          self.chunked_resource.sample_body.encode('utf-8'))
 
     def test_status_not_set(self):
