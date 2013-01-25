@@ -11,7 +11,7 @@ class FunctionalTest(TestCase):
     Used for functional tests where you need to test your
     literal application and its integration with the framework.
     """
-    
+
     def setUp(self):
         self.app = load_test_app(os.path.join(
             os.path.dirname(__file__),
