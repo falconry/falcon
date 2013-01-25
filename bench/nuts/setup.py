@@ -7,16 +7,16 @@ except ImportError:
     from setuptools import setup, find_packages
 
 setup(
-    name = 'nuts',
-    version = '0.1',
-    description = '',
-    author = '',
-    author_email = '',
-    install_requires = [
+    name='nuts',
+    version='0.1',
+    description='',
+    author='',
+    author_email='',
+    install_requires=[
         "pecan",
     ],
-    test_suite = 'nuts',
-    zip_safe = False,
-    include_package_data = True,
-    packages = find_packages(exclude=['ez_setup'])
+    test_suite='nuts',
+    zip_safe=False,
+    include_package_data=True,
+    packages=find_packages(exclude=['ez_setup'])
 )
