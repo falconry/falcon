@@ -1,3 +1,5 @@
+from functools import wraps
+
 from testtools.matchers import Contains
 
 import falcon
@@ -12,11 +14,12 @@ HTTP_METHODS = (
     'OPTIONS',
     'POST',
     'PUT',
-    'TRACE'
+    'TRACE',
+    'PATCH'
 )
 
 
-class ResourceGet:
+class ResourceGet(object):
     def __init__(self):
         self.called = False
 
@@ -27,27 +30,35 @@ class ResourceGet:
         resp.status = falcon.HTTP_204
 
 
-class ResourceMisc:
+def capture(func):
+    @wraps(func)
+    def with_capture(*args, **kwargs):
+        self = args[0]
+        self.called = True
+        self.req, self.resp = args[1:]
+
+    return with_capture
+
+
+class ResourceMisc(object):
     def __init__(self):
         self.called = False
 
+    @capture
     def on_get(self, req, resp):
-        self.called = True
-
-        self.req, self.resp = req, resp
         resp.status = falcon.HTTP_204
 
+    @capture
     def on_head(self, req, resp):
-        self.called = True
-
-        self.req, self.resp = req, resp
         resp.status = falcon.HTTP_204
 
+    @capture
     def on_put(self, req, resp):
-        self.called = True
-
-        self.req, self.resp = req, resp
         resp.status = falcon.HTTP_400
+
+    @capture
+    def on_patch(self, req, resp):
+        pass
 
 
 class TestHttpMethodRouting(helpers.TestSuite):
@@ -64,7 +75,7 @@ class TestHttpMethodRouting(helpers.TestSuite):
         self.assertTrue(self.resource_get.called)
 
     def test_misc(self):
-        for method in ['GET', 'HEAD', 'PUT']:
+        for method in ['GET', 'HEAD', 'PUT', 'PATCH']:
             self.resource_misc.called = False
             self._simulate_request('/misc', method=method)
             self.assertTrue(self.resource_misc.called)

@@ -13,6 +13,8 @@ This requires some discipline on the part of the developer.
 ### Misc. ###
 
 * Falcon probably isn't thread-safe, so don't try it. Run multiple worker processes, each with a non-blocking I/O loop instead.
+* Python automagically converts comma-delimited query param values to lists
+* For 204, just set the status and no body. Falcon will ignore the body even if you set it.
 * Falcon doesn't officially support Python 3; it's on our TODO list.
 * Falcon is based on byte strings (str in Python 2, bytes in Python 3), and does no conversions to UTF-16 (for example). If your app needs to use wide strings, you'll need to do the conversion manually. However, we recommend just keeping everything UTF-8 as much as possible for efficiency's sake.
 * Default content type for responses is 'application/json; charset=utf-8', and the default status is '200 OK.'
