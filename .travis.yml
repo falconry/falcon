@@ -4,7 +4,7 @@ python:
 install:
   - pip install -r requirements.txt --use-mirrors
   - python setup.py install
-script: nosetests --with-progressive
+script: nosetests
 notifications:
   email:
     - kurt.griffiths@rackspace.com
