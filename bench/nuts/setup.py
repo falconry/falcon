@@ -12,9 +12,7 @@ setup(
     description='',
     author='',
     author_email='',
-    install_requires=[
-        "pecan",
-    ],
+    install_requires=[ 'pecan' ],
     test_suite='nuts',
     zip_safe=False,
     include_package_data=True,
