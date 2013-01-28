@@ -19,7 +19,7 @@ app = {
 
 logging = {
     'loggers': {
-        'root' : {'level': 'INFO', 'handlers': ['console']},
+        'root': {'level': 'INFO', 'handlers': ['console']},
         'nuts': {'level': 'DEBUG', 'handlers': ['console']}
     },
     'handlers': {

@@ -38,10 +38,12 @@ class UnauthorizedResource:
                                       'Missing or invalid token header.',
                                       'Token')
 
+
 class NotFoundResource:
 
     def on_get(self, req, resp):
         raise falcon.HTTPNotFound()
+
 
 class MethodNotAllowedResource:
 

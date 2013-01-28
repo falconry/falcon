@@ -27,7 +27,8 @@ HTTP_METHODS = (
     'OPTIONS',
     'POST',
     'PUT',
-    'TRACE'
+    'TRACE',
+    'PATCH'
 )
 
 

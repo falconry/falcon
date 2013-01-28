@@ -26,17 +26,6 @@ from .status_codes import *
 from .api_helpers import *
 from .http_error import HTTPError
 
-HTTP_METHODS = (
-    'CONNECT',
-    'DELETE',
-    'GET',
-    'HEAD',
-    'OPTIONS',
-    'POST',
-    'PUT',
-    'TRACE'
-)
-
 
 class API(object):
     """Provides routing and such for building a web service application
