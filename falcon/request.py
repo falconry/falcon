@@ -72,12 +72,12 @@ class Request(object):
                 as UTF-8.
 
         """
+        u = six.text_type
         log_line = (
-            '{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR] {1} {2}?{3} => {4}\n'.
+            u('{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR] {1} {2}?{3} => {4}\n').
             format(datetime.now(), self.method, self.path, self.query_string,
                    message)
         )
-        log_line = six.text_type(log_line)
 
         self._wsgierrors.write(log_line)
 
