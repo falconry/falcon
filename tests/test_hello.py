@@ -1,8 +1,7 @@
-import io
-
 from testtools.matchers import Contains
 
 import falcon
+import io
 from . import helpers
 
 
@@ -91,8 +90,8 @@ class TestHelloWorld(helpers.TestSuite):
         for chunk in src:
             dest.write(chunk)
 
-        self.assertEqual(dest.getvalue().encode('utf-8'),
-                         self.chunked_resource.sample_body.encode('utf-8'))
+        self.assertEqual(dest.getvalue().decode('utf-8'),
+                         self.chunked_resource.sample_body)
 
         for header in self.srmock.headers:
             self.assertNotEqual(header[0].lower(), 'content-length')
@@ -109,8 +108,8 @@ class TestHelloWorld(helpers.TestSuite):
         self.assertThat(self.srmock.headers, Contains(content_length))
         self.assertEqual(dest.tell(), expected_len)
 
-        self.assertEqual(dest.getvalue().encode('utf-8'),
-                         self.chunked_resource.sample_body.encode('utf-8'))
+        self.assertEqual(dest.getvalue().decode('utf-8'),
+                         self.chunked_resource.sample_body)
 
     def test_status_not_set(self):
         body = self._simulate_request('/nostatus')

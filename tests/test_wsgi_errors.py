@@ -31,18 +31,18 @@ class TestWSGIError(helpers.TestSuite):
         self._simulate_request('/bomb', wsgierrors=self.wsgierrors)
         log = self.wsgierrors.getvalue()
 
-        self.assertIn(u'IOError', log)
+        self.assertIn('IOError', log)
 
     def test_exception_logged_with_details(self):
         self._simulate_request('/bomb', wsgierrors=self.wsgierrors,
                                method='HEAD')
         log = self.wsgierrors.getvalue()
 
-        self.assertIn(u'MemoryError', log)
-        self.assertIn(u'remember a thing', log)
+        self.assertIn('MemoryError', log)
+        self.assertIn('remember a thing', log)
 
     def test_responder_logged(self):
         self._simulate_request('/logger', wsgierrors=self.wsgierrors)
         log = self.wsgierrors.getvalue()
 
-        self.assertIn(u'Internet crashed\n', log)
+        self.assertIn('Internet crashed\n', log)
