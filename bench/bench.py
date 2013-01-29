@@ -4,7 +4,7 @@ import sys
 import random
 from timeit import repeat
 
-from create import *
+from .create import *
 
 sys.path.append('..')
 import tests.helpers as helpers

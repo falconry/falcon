@@ -21,6 +21,7 @@ from datetime import datetime
 
 from falcon.request_helpers import *
 from falcon.exceptions import *
+import six
 
 
 class Request(object):
@@ -71,16 +72,11 @@ class Request(object):
                 as UTF-8.
 
         """
-
-        if sys.version_info[0] == 2 and isinstance(message, str):
-            unicode_message = message.decode('utf-8')
-        else:
-            unicode_message = message
-
+        u = six.text_type
         log_line = (
-            u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR] {1} {2}?{3} => {4}\n'.
+            u('{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR] {1} {2}?{3} => {4}\n').
             format(datetime.now(), self.method, self.path, self.query_string,
-                   unicode_message)
+                   message)
         )
 
         self._wsgierrors.write(log_line)
