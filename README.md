@@ -11,6 +11,16 @@ Falcon is a *really* fast, light-weight framework for building cloud APIs. It tr
 >
 > *- Antoine de Saint-Exupéry*
 
+### Why use Falcon instead of X? ###
+
+X is cool, and everyone is using it, so why mess with a good thing?
+
+1. Unlike other Python web frameworks, Falcon won't be a bottleneck in your API's performance. Most frameworks max out at serving simple "hello world" requests at a few thousand req/sec, while Falcon can easily serve 10 times as many on the same hardware. Even Bottle, one of the fastest frameworks we tested, takes twice as long to serve requests compared to Falcon.
+2. Falcon isn't very opinionated. In other words, the framework leaves a lot of decisions and implementation details to you, the API developer, which means you will need to use your head a little more than other frameworks, and probably write a little more code. On the other hand, this gives you a lot of freedom to customize and tune your implementation in order to create a solution that stands out from the crowd. 
+3. I have no idea what you're talking about, but [here's a bunny][bunny] with a pancake on its head.
+
+[bunny]: http://www.thepartyanimal-blog.org/wp-content/uploads/2012/04/pancake_bunny.jpg
+
 ### Design Goals ###
 
 **Light-weight.** Only the essentials are included, with zero dependencies beyond the standard library. We work to keep the code lean-n-mean, making Falcon easier to test, optimize, and deploy.
@@ -152,7 +162,13 @@ api.add_route('/{user_id}/things', things)
 
 ### Contributing ###
 
-Pull requests are welcome. Just make sure to include tests and follow PEP 8. Commit messages should be formatted using [AngularJS conventions][ajs] (one-liners are OK for now but body and footer may be required as the project matures). Comments follow [Google's style guide][goog-style-comments].
+Kurt Griffiths (kgriffs) is the creator and current maintainer of the Falcon framework. Pull requests are always welcome. 
+
+Before submitting a pull request, please ensure you have added/updated the appropriate tests (and that all existing tests still pass with your changes), and that your coding style follows PEP 8. 
+
+Commit messages should be formatted using [AngularJS conventions][ajs] (one-liners are OK for now but body and footer may be required as the project matures). 
+
+Comments follow [Google's style guide][goog-style-comments].
 
 [ajs]: http://goo.gl/QpbS7
 [goog-style-comments]: http://google-styleguide.googlecode.com/svn/trunk/pyguide.html#Comments
