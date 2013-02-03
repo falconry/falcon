@@ -23,11 +23,11 @@ X is cool, and everyone is using it, so why mess with a good thing?
 
 ### Design Goals ###
 
-**Light-weight.** Only the essentials are included, with zero dependencies beyond the standard library. We work to keep the code lean-n-mean, making Falcon easier to test, optimize, and deploy.
-
 **Fast.** Cloud APIs need to turn around requests quickly, and make efficient use of hardware. Falcon processes requests several times faster than other popular web frameworks.
 
-**Cloud-friendly.** Falcon uses the web-friendly Python language, and speaks WSGI, so you can deploy it on your favorite stack. The framework is designed from the ground up to embrace HTTP, not work against it. Plus, diagnostics are built right in to make it easier to track down sneaky bugs and frustrating performance problems.
+**Light.** Only the essentials are included, with the "six" Python 3 compatibility module being the only dependency outside the standard library. We work to keep the code lean and mean, making Falcon easier to test, optimize, and deploy. 
+
+**Cloudy.** Falcon uses the web-friendly Python language, and speaks WSGI, so you can deploy it on your favorite stack. The framework is designed from the ground up to embrace HTTP, not work against it. Plus, diagnostics are built right in to make it easier to track down bugs and bottlenecks.
 
 
 ### Install ###
