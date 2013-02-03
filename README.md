@@ -15,7 +15,7 @@ Falcon is a *really* fast, light-weight framework for building cloud APIs. It tr
 
 X is cool, and everyone is using it, so why mess with a good thing?
 
-1. Unlike other Python web frameworks, Falcon won't be a bottleneck in your API's performance. Most frameworks max out at serving simple "hello world" requests at a few thousand req/sec, while Falcon can easily serve 10 times as many on the same hardware. Even Bottle, one of the fastest frameworks we tested, takes twice as long to serve requests compared to Falcon.
+1. Unlike other Python web frameworks, Falcon won't bottleneck your API's performance. Most frameworks max out at serving simple "hello world" requests at a few thousand req/sec, while Falcon can easily serve 10 times as many on the same hardware. Even Bottle, one of the fastest frameworks we tested, takes twice as long to serve requests compared to Falcon.
 2. Falcon isn't very opinionated. In other words, the framework leaves a lot of decisions and implementation details to you, the API developer, which means you will need to use your head a little more than other frameworks, and probably write a little more code. On the other hand, this gives you a lot of freedom to customize and tune your implementation in order to create a solution that stands out from the crowd. 
 3. I have no idea what you're talking about, but [here's a bunny][bunny] with a pancake on its head.
 
