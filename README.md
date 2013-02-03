@@ -27,8 +27,7 @@ X is cool, and everyone is using it, so why mess with a good thing?
 
 **Light.** Only the essentials are included, with the "six" Python 3 compatibility module being the only dependency outside the standard library. We work to keep the code lean and mean, making Falcon easier to test, optimize, and deploy. 
 
-**Cloudy.** Falcon uses the web-friendly Python language, and speaks WSGI, so you can deploy it on your favorite stack. The framework is designed from the ground up to embrace HTTP, not work against it. Plus, diagnostics are built right in to make it easier to track down bugs and bottlenecks.
-
+**Cloudy.** Falcon uses the web-friendly Python language and speaks WSGI. Built-in diagnostics facilitate monitoring and debugging of production systems.
 
 ### Install ###
 
