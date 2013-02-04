@@ -16,7 +16,6 @@ limitations under the License.
 
 """
 
-import sys
 import traceback
 
 from .request import Request
@@ -24,6 +23,7 @@ from .response import Response
 from . import responders
 from .status_codes import *
 from .api_helpers import *
+
 from .http_error import HTTPError
 
 

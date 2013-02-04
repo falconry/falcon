@@ -8,6 +8,7 @@ from . import helpers
 class HelloResource:
     sample_status = '200 OK'
     sample_body = 'Hello World! ' + helpers.rand_string(0, 256 * 1024)
+    raw_body = sample_body.encode('utf-8')
 
     def __init__(self, mode):
         self.called = False
@@ -21,11 +22,10 @@ class HelloResource:
         resp.status = falcon.HTTP_200
 
         if 'stream' in self.mode:
-            raw_body = self.sample_body.encode('utf-8')
-            resp.stream = io.BytesIO(raw_body)
+            resp.stream = io.BytesIO(self.raw_body)
 
             if 'stream_len' in self.mode:
-                resp.stream_len = len(raw_body)
+                resp.stream_len = len(self.raw_body)
 
         if 'body' in self.mode:
             resp.body = self.sample_body
