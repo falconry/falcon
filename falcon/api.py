@@ -16,8 +16,6 @@ limitations under the License.
 
 """
 
-import traceback
-
 from .request import Request
 from .response import Response
 from . import responders
@@ -68,25 +66,6 @@ class API(object):
 
             if req.client_accepts_json():
                 resp.body = ex.json()
-
-        except Exception as ex:
-            # Reset to a known state and respond with a generic error
-            req = Request(env)
-            resp = Response()
-
-            message = ['Responder raised ', ex.__class__.__name__]
-
-            details = str(ex)
-            if details:
-                message.append(': ')
-                message.append(details)
-
-            stack = traceback.format_exc()
-            message.append('\n')
-            message.append(stack)
-
-            req.log_error(''.join(message))
-            responders.server_error(req, resp)
 
         #
         # Set status and headers
