@@ -78,11 +78,10 @@ class HTTPError(Exception):
         self.code = code
 
         if href:
-            self.link = OrderedDict(
-                text=(href_text or 'API documention for this error'),
-                href=href,
-                rel=(href_rel or 'doc')
-            )
+            link = self.link = OrderedDict()
+            link['text'] = (href_text or 'API documention for this error')
+            link['href'] = href
+            link['rel'] = (href_rel or 'doc')
         else:
             self.link = None
 
