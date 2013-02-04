@@ -18,7 +18,7 @@ limitations under the License.
 
 # Hoist classes and functions into the falcon namespace
 from falcon.version import version
-from falcon.api import API
+from falcon.api import API, DEFAULT_MEDIA_TYPE
 from falcon.status_codes import *
 from falcon.exceptions import *
 from falcon.http_error import HTTPError
