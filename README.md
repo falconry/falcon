@@ -123,7 +123,7 @@ class ThingsResource:
 
     def on_post(self, req, resp):
         try:
-            raw_json = req.body.read()
+            raw_json = req.stream.read()
         except Exception:
             raise falcon.HTTPError(falcon.HTTP_748,
                                    'Read Error',
