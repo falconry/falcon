@@ -23,7 +23,7 @@ CONTENT_TYPE_NAMES = set(['Content-Type', 'content-type', 'CONTENT-TYPE'])
 class Response(object):
     """Represents an HTTP response to a client request"""
 
-    __slots__ = ('status', '_headers', 'body', 'stream', 'stream_len')
+    __slots__ = ('status', '_headers', 'body', 'data', 'stream', 'stream_len')
 
     def __init__(self):
         """Initialize response attributes to default values
@@ -37,6 +37,7 @@ class Response(object):
         self._headers = []
 
         self.body = None
+        self.data = None
         self.stream = None
         self.stream_len = None
 

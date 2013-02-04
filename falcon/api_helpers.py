@@ -17,6 +17,7 @@ limitations under the License.
 """
 
 import re
+
 from falcon import responders
 
 HTTP_METHODS = (
@@ -81,6 +82,37 @@ def set_content_length(resp):
     else:
         # No body given
         resp.set_header('Content-Length', '0')
+
+
+def prepare_wsgi_content(resp):
+    """Converts resp content into an iterable as required by PEP 333
+
+    Args:
+        resp: Instance of falcon.Response
+
+    Returns:
+        * If resp.body is not None, returns [resp.body], encoded as UTF-8.
+        * If resp.data is not None, returns [resp.data]
+        * If resp.stream is not None, returns resp.stream
+        * Otherwise, returns []
+
+    """
+
+    body = resp.body
+
+    if body is not None:
+        try:
+            return [body.encode('utf-8')]
+        except UnicodeDecodeError:
+            return [body]
+
+    elif resp.data is not None:
+        return [resp.data]
+
+    elif resp.stream is not None:
+        return resp.stream
+
+    return []
 
 
 def compile_uri_template(template):

@@ -1,17 +1,19 @@
 import sys
 import re
+import six
 
 import wheezy.http as wheezy
 from wheezy.core.collections import last_item_adapter
 import bottle
 
-import flask
-import werkzeug.wrappers as werkzeug
-from werkzeug.routing import Map, Rule
+if not six.PY3:
+    import flask
+    import werkzeug.wrappers as werkzeug
+    from werkzeug.routing import Map, Rule
 
-sys.path.append('./nuts/nuts')
-import app as nuts
-del sys.path[-1]
+    sys.path.append('./nuts/nuts')
+    import app as nuts
+    del sys.path[-1]
 
 sys.path.append('..')
 import falcon
@@ -25,7 +27,11 @@ def create_falcon(body, headers):
     class HelloResource:
         def on_get(self, req, resp, account_id):
             limit = req.get_param('limit', '10')
-            resp.body = body
+            if six.PY3:
+                resp.body = body
+            else:
+                resp.data = body
+
             resp.set_header('Content-Type', 'text/plain')
             resp.set_headers(headers)
 
