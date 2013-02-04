@@ -17,7 +17,6 @@ limitations under the License.
 """
 
 import re
-import six
 
 from falcon import responders
 
@@ -84,6 +83,7 @@ def set_content_length(resp):
         # No body given
         resp.set_header('Content-Length', '0')
 
+
 def prepare_wsgi_content(resp):
     """Converts resp content into an iterable as required by PEP 333
 
@@ -113,6 +113,7 @@ def prepare_wsgi_content(resp):
         return resp.stream
 
     return []
+
 
 def compile_uri_template(template):
     """Compile the given URI template string into a pattern matcher.
