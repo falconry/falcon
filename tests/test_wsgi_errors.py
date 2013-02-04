@@ -10,15 +10,6 @@ else:
     str_message = 'UTF-8: \xc2\x80'
 
 
-class BombResource:
-
-    def on_get(self, req, resp):
-        raise IOError()
-
-    def on_head(self, req, resp):
-        raise MemoryError("I can't remember a thing.")
-
-
 class LoggerResource:
 
     def on_get(self, req, resp):
@@ -31,10 +22,8 @@ class LoggerResource:
 class TestWSGIError(helpers.TestSuite):
 
     def prepare(self):
-        self.tehbomb = BombResource()
         self.tehlogger = LoggerResource()
 
-        self.api.add_route('/bomb', self.tehbomb)
         self.api.add_route('/logger', self.tehlogger)
 
         self.wsgierrors_buffer = io.BytesIO()
@@ -47,21 +36,6 @@ class TestWSGIError(helpers.TestSuite):
             # WSGI servers typically present an open file object,
             # with undefined encoding, so do the encoding manually.
             self.wsgierrors = self.wsgierrors_buffer
-
-    def test_exception_logged(self):
-        self._simulate_request('/bomb', wsgierrors=self.wsgierrors)
-
-        log = self.wsgierrors_buffer.getvalue()
-        self.assertIn(b'IOError', log)
-
-    def test_exception_logged_with_details(self):
-        self._simulate_request('/bomb', wsgierrors=self.wsgierrors,
-                               method='HEAD')
-
-        log = self.wsgierrors_buffer.getvalue()
-
-        self.assertIn(b'MemoryError', log)
-        self.assertIn(b'remember a thing', log)
 
     def test_responder_logged_unicode(self):
         self._simulate_request('/logger', wsgierrors=self.wsgierrors)
