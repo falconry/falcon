@@ -2,7 +2,7 @@ import json
 
 from testtools.matchers import raises, Not
 
-from . import helpers
+import falcon.testsuite as testsuite
 import falcon
 
 
@@ -58,7 +58,7 @@ class InternalServerErrorResource:
                                              'boink!')
 
 
-class TestHTTPError(helpers.TestSuite):
+class TestHTTPError(testsuite.TestSuite):
 
     def prepare(self):
         self.resource = FaultyResource()

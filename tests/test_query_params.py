@@ -1,10 +1,10 @@
-from . import helpers
+import falcon.testsuite as testsuite
 
 
-class TestQueryParams(helpers.TestSuite):
+class TestQueryParams(testsuite.TestSuite):
 
     def prepare(self):
-        self.resource = helpers.TestResource()
+        self.resource = testsuite.TestResource()
         self.api.add_route('/', self.resource)
 
     def test_none(self):

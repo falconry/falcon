@@ -1,10 +1,10 @@
-from . import helpers
+import falcon.testsuite as testsuite
 
 
-class TestRequestBody(helpers.TestSuite):
+class TestRequestBody(testsuite.TestSuite):
 
     def prepare(self):
-        self.resource = helpers.TestResource()
+        self.resource = testsuite.TestResource()
         self.api.add_route('/', self.resource)
 
     def test_empty_body(self):
@@ -26,7 +26,7 @@ class TestRequestBody(helpers.TestSuite):
         self.assertEquals(stream.tell(), 1)
 
     def test_read_body(self):
-        expected_body = helpers.rand_string(2, 1 * 1024 * 1024)
+        expected_body = testsuite.rand_string(2, 1 * 1024 * 1024)
         expected_len = len(expected_body)
         headers = {'Content-Length': str(expected_len)}
 

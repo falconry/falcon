@@ -1,5 +1,5 @@
 import io
-from . import helpers
+import falcon.testsuite as testsuite
 
 
 class BombResource:
@@ -17,7 +17,7 @@ class LoggerResource:
         req.log_error('Internet crashed')
 
 
-class TestWSGIError(helpers.TestSuite):
+class TestWSGIError(testsuite.TestSuite):
 
     def prepare(self):
         self.tehbomb = BombResource()

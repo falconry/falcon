@@ -54,6 +54,10 @@ class TestResource:
 
 
 class TestSuite(testtools.TestCase):
+    """
+    Creates a basic TestSuite for testing an
+    API endpoint.
+    """
 
     def setUp(self):
         super(TestSuite, self).setUp()
@@ -66,6 +70,10 @@ class TestSuite(testtools.TestCase):
             prepare()
 
     def _simulate_request(self, path, **kwargs):
+        """
+        Simulates a request to the specified path using
+        a varible arugment list.
+        """
         if not path:
             path = '/'
 
@@ -76,6 +84,20 @@ class TestSuite(testtools.TestCase):
 def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
                    headers=None, script='', body='', method='GET',
                    wsgierrors=None):
+
+    """
+    Creates a 'mock' environment suitable for testing.
+
+    Args:
+        path: The path for the request.
+        query_string: The query string to simulate
+        protocol: The HTTP protocol to simulate
+        port: The TCP port to simulate
+        headers: Optional headers to set
+        script:
+        method: The HTTP method to use
+        wsgierrors: The stream to send wsgierrors to
+    """
 
     env = {
         'SERVER_PROTOCOL': protocol,

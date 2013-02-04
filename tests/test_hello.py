@@ -2,12 +2,12 @@ from testtools.matchers import Contains
 
 import falcon
 import io
-from . import helpers
+import falcon.testsuite as testsuite
 
 
 class HelloResource:
     sample_status = '200 OK'
-    sample_body = 'Hello World! ' + helpers.rand_string(0, 256 * 1024)
+    sample_body = 'Hello World! ' + testsuite.rand_string(0, 256 * 1024)
 
     def __init__(self, mode):
         self.called = False
@@ -39,7 +39,7 @@ class NoStatusResource:
         pass
 
 
-class TestHelloWorld(helpers.TestSuite):
+class TestHelloWorld(testsuite.TestSuite):
 
     def prepare(self):
         self.resource = HelloResource('body')
@@ -54,7 +54,7 @@ class TestHelloWorld(helpers.TestSuite):
         self.no_status_resource = NoStatusResource()
         self.api.add_route('/nostatus', self.no_status_resource)
 
-        self.root_resource = helpers.TestResource()
+        self.root_resource = testsuite.TestResource()
         self.api.add_route('', self.root_resource)
 
     def test_empty_route(self):
