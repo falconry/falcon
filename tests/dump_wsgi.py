@@ -1,4 +1,11 @@
+import pdb
+from wsgiref.simple_server import make_server
+
+
 def application(environ, start_response):
+    wsgi_errors = environ['wsgi.errors']
+    pdb.set_trace()
+
     start_response("200 OK", [
         ('Content-Type', 'text/plain')])
 
@@ -13,9 +20,7 @@ def application(environ, start_response):
 
 app = application
 
-if __name__ == '__main__':
-    import wsgiref
-    from wsgiref.simple_server import make_server
 
+if __name__ == '__main__':
     server = make_server('localhost', 8000, application)
     server.serve_forever()
