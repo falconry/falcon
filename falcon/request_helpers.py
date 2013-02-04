@@ -44,9 +44,6 @@ def parse_query_string(query_string):
     # PERF: use for loop in lieu of the dict constructor
     params = {}
     for k, v in QS_PATTERN.findall(query_string):
-        if ',' in v:
-            v = v.split(',')
-
         params[k] = v
 
     return params

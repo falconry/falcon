@@ -36,15 +36,18 @@ class TestQueryParams(helpers.TestSuite):
         self._simulate_request('/', query_string=query_string)
 
         req = self.resource.req
-        self.assertEquals(req.get_param('colors'),
+        self.assertEquals(req.get_param('colors'), 'red,green,blue')
+        self.assertEquals(req.get_param_as_list('colors'),
                           ['red', 'green', 'blue'])
-        self.assertEquals(req.get_param('limit'), '1')
+        self.assertEquals(req.get_param_as_list('limit'), ['1'])
+        self.assertEquals(req.get_param_as_list('marker'), None)
 
     def test_bogus_input(self):
         query_string = 'colors=red,green,&limit=1&pickle'
         self._simulate_request('/', query_string=query_string)
 
         req = self.resource.req
-        self.assertEquals(req.get_param('colors'), ['red', 'green', ''])
+        self.assertEquals(req.get_param_as_list('colors'),
+                          ['red', 'green', ''])
         self.assertEquals(req.get_param('limit'), '1')
         self.assertEquals(req.get_param('pickle'), None)
