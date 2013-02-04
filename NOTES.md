@@ -16,7 +16,7 @@ This requires some discipline on the part of the developer.
 * Python automagically converts comma-delimited query param values to lists
 * For 204, just set the status and no body. Falcon will ignore the body even if you set it.
 * Falcon doesn't officially support Python 3; it's on our TODO list.
-* Falcon is based on byte strings (str in Python 2, bytes in Python 3), and does no conversions to UTF-16 (for example). If your app needs to use wide strings, you'll need to do the conversion manually. However, we recommend just keeping everything UTF-8 as much as possible for efficiency's sake.
+* If you set resp.body to a Unicode string, Falcon will encode it as UTF-8 before sending the content to the WSGI server (as required by PEP-333). If you already have encoded data (or it's a binary blob), use resp.data instead.
 * Default content type for responses is 'application/json; charset=utf-8', and the default status is '200 OK.'
 * resp.set_header assumes both params are strings. App may crash otherwise. Falcon trusts the caller. You *are* testing all your code paths, aren't you?
 * If you need the protocol (http vs https) to construct hrefs in your responses (hypermedia is good, trust me), you can get it from req.scheme
@@ -28,7 +28,6 @@ This requires some discipline on the part of the developer.
 * Don't set content-length. It will only be overridden.
 * The order in which header fields are sent in the response is undefined. Headers are not grouped according to the recommendation in [RFC 2616](http://tools.ietf.org/html/rfc2616#section-4.2) in order to generate responses as quickly as possible.
 * Header names are case-insensitive in req.get_header
-* Set body to a byte string, as per PEP 333 - http://www.python.org/dev/peps/pep-0333/#unicode-issues - if it is textual, it's up to the app to set the proper media type
 * For streaming large items, assign a generator or IO object to resp.stream. If you know the file size in advance, assign it to stream\_len. For dynamically-generated content, leave off stream\_len, and Falcon will then leave off the Content-Length header, and hopefully your WSGI server will do the right thing, assuming you've told it to enable keep-alive (PEP-333 prohibits apps from setting hop-by-hop headers itself, such as Transfer-Encoding).
 
 

@@ -17,6 +17,8 @@ limitations under the License.
 """
 
 import re
+import six
+
 from falcon import responders
 
 HTTP_METHODS = (
@@ -81,6 +83,38 @@ def set_content_length(resp):
     else:
         # No body given
         resp.set_header('Content-Length', '0')
+
+if six.PY3:
+    def encode_body(body):
+        """Encodes body to a byte string, as required by PEP 333
+
+        Args:
+            body: A Unicode string
+
+        Returns:
+            Body encoded as UTF-8
+
+        """
+
+        return body.encode('utf-8')
+else:
+    def encode_body(body):
+        """Encodes body to a byte string, as required by PEP 333
+
+        Args:
+            body: String to encode
+
+        Returns:
+            If body was a Unicode string, returns the string encoded as
+            UTF-8. On the other hand, if body is already a byte string, no
+            encoding is performed and the string is returned as-is.
+
+        """
+
+        if isinstance(body, unicode):
+            body = body.encode('utf-8')
+
+        return body
 
 
 def compile_uri_template(template):

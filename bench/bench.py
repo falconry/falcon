@@ -31,7 +31,7 @@ def bench(name, iterations=10000):
 def create_bench(name):
     srmock = helpers.StartResponseMock()
     env = helpers.create_environ('/hello/584/test', query_string='limit=10')
-    body = helpers.rand_string(10240, 10240)
+    body = helpers.rand_string(0, 10240)
     headers = {'X-Test': 'Funky Chicken'}
 
     app = eval('create_{0}(body, headers)'.format(name.lower()))
@@ -55,6 +55,9 @@ if __name__ == '__main__':
 
     if args.frameworks:
         frameworks = args.frameworks
+    else:
+        # wheezy.http isn't really a framework - doesn't even have a router
+        del frameworks[frameworks.index('Wheezy')]
 
     random.shuffle(frameworks)
 
