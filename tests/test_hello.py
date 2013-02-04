@@ -37,6 +37,9 @@ class HelloResource:
             else:
                 resp.body = self.sample_unicode
 
+        if 'data' in self.mode:
+            resp.data = self.sample_utf8
+
     def on_head(self, req, resp):
         self.on_get(req, resp)
 
@@ -54,6 +57,9 @@ class TestHelloWorld(helpers.TestSuite):
 
         self.bytes_resource = HelloResource('body, bytes')
         self.api.add_route('/bytes', self.bytes_resource)
+
+        self.data_resource = HelloResource('data')
+        self.api.add_route('/data', self.data_resource)
 
         self.chunked_resource = HelloResource('stream')
         self.api.add_route('/chunked-stream', self.chunked_resource)
@@ -88,13 +94,25 @@ class TestHelloWorld(helpers.TestSuite):
         self.assertEquals(resp.body, self.resource.sample_unicode)
         self.assertEquals(body, [self.resource.sample_utf8])
 
-    def test_body_bytes(self):
-        body = self._simulate_request('/bytes')
-        resp = self.bytes_resource.resp
+    if not six.PY3:
+        # On Python 3, strings are always Unicode,
+        # so only perform this test under Python 2.
+        def test_body_bytes(self):
+            body = self._simulate_request('/bytes')
+            resp = self.bytes_resource.resp
+
+            self.assertEquals(self.srmock.status, self.resource.sample_status)
+            self.assertEquals(resp.status, self.resource.sample_status)
+            self.assertEquals(resp.body, self.resource.sample_utf8)
+            self.assertEquals(body, [self.resource.sample_utf8])
+
+    def test_data(self):
+        body = self._simulate_request('/data')
+        resp = self.data_resource.resp
 
         self.assertEquals(self.srmock.status, self.resource.sample_status)
         self.assertEquals(resp.status, self.resource.sample_status)
-        self.assertEquals(resp.body, self.resource.sample_utf8)
+        self.assertEquals(resp.data, self.resource.sample_utf8)
         self.assertEquals(body, [self.resource.sample_utf8])
 
     def test_no_body_on_head(self):

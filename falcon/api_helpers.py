@@ -84,38 +84,35 @@ def set_content_length(resp):
         # No body given
         resp.set_header('Content-Length', '0')
 
-if six.PY3:
-    def encode_body(body):
-        """Encodes body to a byte string, as required by PEP 333
+def prepare_wsgi_content(resp):
+    """Converts resp content into an iterable as required by PEP 333
 
-        Args:
-            body: A Unicode string
+    Args:
+        resp: Instance of falcon.Response
 
-        Returns:
-            Body encoded as UTF-8
+    Returns:
+        * If resp.body is not None, returns [resp.body], encoded as UTF-8.
+        * If resp.data is not None, returns [resp.data]
+        * If resp.stream is not None, returns resp.stream
+        * Otherwise, returns []
 
-        """
+    """
 
-        return body.encode('utf-8')
-else:
-    def encode_body(body):
-        """Encodes body to a byte string, as required by PEP 333
+    body = resp.body
 
-        Args:
-            body: String to encode
+    if body is not None:
+        try:
+            return [body.encode('utf-8')]
+        except UnicodeDecodeError:
+            return [body]
 
-        Returns:
-            If body was a Unicode string, returns the string encoded as
-            UTF-8. On the other hand, if body is already a byte string, no
-            encoding is performed and the string is returned as-is.
+    elif resp.data is not None:
+        return [resp.data]
 
-        """
+    elif resp.stream is not None:
+        return resp.stream
 
-        if isinstance(body, unicode):
-            body = body.encode('utf-8')
-
-        return body
-
+    return []
 
 def compile_uri_template(template):
     """Compile the given URI template string into a pattern matcher.

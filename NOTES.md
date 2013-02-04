@@ -16,7 +16,7 @@ This requires some discipline on the part of the developer.
 * Python automagically converts comma-delimited query param values to lists
 * For 204, just set the status and no body. Falcon will ignore the body even if you set it.
 * Falcon doesn't officially support Python 3; it's on our TODO list.
-* If you set resp.body to a Unicode string, Falcon will encode it as UTF-8 before sending the content to the WSGI server (as required by PEP-333). If you already have encoded data (or it's a binary blob), use resp.data instead.
+* If you set resp.body to a Unicode string, Falcon will attempt to encode it as UTF-8 before sending the content to the WSGI server (as required by PEP-333). If you already have encoded data (or it's a binary blob), use resp.data instead (it's faster).
 * Default content type for responses is 'application/json; charset=utf-8', and the default status is '200 OK.'
 * resp.set_header assumes both params are strings. App may crash otherwise. Falcon trusts the caller. You *are* testing all your code paths, aren't you?
 * If you need the protocol (http vs https) to construct hrefs in your responses (hypermedia is good, trust me), you can get it from req.scheme

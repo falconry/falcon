@@ -99,14 +99,7 @@ class API(object):
 
         # Return an iterable for the body, per the WSGI spec
         if use_body:
-            body = resp.body
-
-            if body is not None:
-                return [encode_body(body)]
-            elif resp.data is not None:
-                return [resp.data]
-            elif resp.stream is not None:
-                return resp.stream
+            return prepare_wsgi_content(resp)
 
         # Default: return an empty body
         return []
