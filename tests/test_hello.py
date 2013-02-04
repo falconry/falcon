@@ -4,11 +4,15 @@ import falcon
 import io
 from . import helpers
 
+import six
+
 
 class HelloResource:
     sample_status = '200 OK'
-    sample_body = 'Hello World! ' + helpers.rand_string(0, 256 * 1024)
-    raw_body = sample_body.encode('utf-8')
+    sample_unicode = (u'Hello World! \x80' +
+                      six.text_type(helpers.rand_string(0, 0)))
+
+    sample_utf8 = sample_unicode.encode('utf-8')
 
     def __init__(self, mode):
         self.called = False
@@ -22,13 +26,19 @@ class HelloResource:
         resp.status = falcon.HTTP_200
 
         if 'stream' in self.mode:
-            resp.stream = io.BytesIO(self.raw_body)
+            resp.stream = io.BytesIO(self.sample_utf8)
 
             if 'stream_len' in self.mode:
-                resp.stream_len = len(self.raw_body)
+                resp.stream_len = len(self.sample_utf8)
 
         if 'body' in self.mode:
-            resp.body = self.sample_body
+            if 'bytes' in self.mode:
+                resp.body = self.sample_utf8
+            else:
+                resp.body = self.sample_unicode
+
+        if 'data' in self.mode:
+            resp.data = self.sample_utf8
 
     def on_head(self, req, resp):
         self.on_get(req, resp)
@@ -44,6 +54,12 @@ class TestHelloWorld(helpers.TestSuite):
     def prepare(self):
         self.resource = HelloResource('body')
         self.api.add_route(self.test_route, self.resource)
+
+        self.bytes_resource = HelloResource('body, bytes')
+        self.api.add_route('/bytes', self.bytes_resource)
+
+        self.data_resource = HelloResource('data')
+        self.api.add_route('/data', self.data_resource)
 
         self.chunked_resource = HelloResource('stream')
         self.api.add_route('/chunked-stream', self.chunked_resource)
@@ -75,8 +91,29 @@ class TestHelloWorld(helpers.TestSuite):
 
         self.assertEquals(self.srmock.status, self.resource.sample_status)
         self.assertEquals(resp.status, self.resource.sample_status)
-        self.assertEquals(resp.body, self.resource.sample_body)
-        self.assertEquals(body, [self.resource.sample_body])
+        self.assertEquals(resp.body, self.resource.sample_unicode)
+        self.assertEquals(body, [self.resource.sample_utf8])
+
+    if not six.PY3:
+        # On Python 3, strings are always Unicode,
+        # so only perform this test under Python 2.
+        def test_body_bytes(self):
+            body = self._simulate_request('/bytes')
+            resp = self.bytes_resource.resp
+
+            self.assertEquals(self.srmock.status, self.resource.sample_status)
+            self.assertEquals(resp.status, self.resource.sample_status)
+            self.assertEquals(resp.body, self.resource.sample_utf8)
+            self.assertEquals(body, [self.resource.sample_utf8])
+
+    def test_data(self):
+        body = self._simulate_request('/data')
+        resp = self.data_resource.resp
+
+        self.assertEquals(self.srmock.status, self.resource.sample_status)
+        self.assertEquals(resp.status, self.resource.sample_status)
+        self.assertEquals(resp.data, self.resource.sample_utf8)
+        self.assertEquals(body, [self.resource.sample_utf8])
 
     def test_no_body_on_head(self):
         body = self._simulate_request(self.test_route, method='HEAD')
@@ -90,8 +127,7 @@ class TestHelloWorld(helpers.TestSuite):
         for chunk in src:
             dest.write(chunk)
 
-        self.assertEqual(dest.getvalue().decode('utf-8'),
-                         self.chunked_resource.sample_body)
+        self.assertEqual(dest.getvalue(), self.chunked_resource.sample_utf8)
 
         for header in self.srmock.headers:
             self.assertNotEqual(header[0].lower(), 'content-length')
@@ -108,8 +144,7 @@ class TestHelloWorld(helpers.TestSuite):
         self.assertThat(self.srmock.headers, Contains(content_length))
         self.assertEqual(dest.tell(), expected_len)
 
-        self.assertEqual(dest.getvalue().decode('utf-8'),
-                         self.chunked_resource.sample_body)
+        self.assertEqual(dest.getvalue(), self.chunked_resource.sample_utf8)
 
     def test_status_not_set(self):
         body = self._simulate_request('/nostatus')
