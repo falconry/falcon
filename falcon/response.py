@@ -16,7 +16,6 @@ limitations under the License.
 
 """
 
-DEFAULT_CONTENT_TYPE = 'application/json; charset=utf-8'
 CONTENT_TYPE_NAMES = set(['Content-Type', 'content-type', 'CONTENT-TYPE'])
 
 
@@ -76,7 +75,7 @@ class Response(object):
 
         self._headers.extend(headers.items())
 
-    def _wsgi_headers(self):
+    def _wsgi_headers(self, default_media_type):
         """Convert headers into the format expected by WSGI servers"""
 
         if (self.body is not None) or (self.stream is not None):
@@ -85,6 +84,6 @@ class Response(object):
                 if name in CONTENT_TYPE_NAMES:
                     break
             else:
-                self._headers.append(('Content-Type', DEFAULT_CONTENT_TYPE))
+                self._headers.append(('Content-Type', default_media_type))
 
         return self._headers

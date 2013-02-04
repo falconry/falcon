@@ -24,6 +24,8 @@ from .api_helpers import *
 
 from .http_error import HTTPError
 
+DEFAULT_MEDIA_TYPE = 'application/json; charset=utf-8'
+
 
 class API(object):
     """Provides routing and such for building a web service application
@@ -33,11 +35,12 @@ class API(object):
 
     """
 
-    __slots__ = ('_routes')
+    __slots__ = ('_media_type', '_routes')
 
-    def __init__(self):
+    def __init__(self, media_type=DEFAULT_MEDIA_TYPE):
         """Initialize default values"""
         self._routes = []
+        self._media_type = media_type
 
     def __call__(self, env, start_response):
         """WSGI "app" method
@@ -74,7 +77,7 @@ class API(object):
         if use_body:
             set_content_length(resp)
 
-        start_response(resp.status, resp._wsgi_headers())
+        start_response(resp.status, resp._wsgi_headers(self._media_type))
 
         # Return an iterable for the body, per the WSGI spec
         if use_body:
