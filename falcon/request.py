@@ -190,3 +190,36 @@ class Request(object):
 
         raise HTTPBadRequest('Missing query parameter',
                              'The "' + name + '" query parameter is required.')
+
+    def get_param_as_list(self, name, default=None, required=False):
+        """Return the value of a query string parameter as an int
+
+        Args:
+            name: Parameter name, case-sensitive (e.g., 'limit')
+            default: Value to return in case the parameter is not found in the
+                query string, or it is not an integer (default None)
+            required: Set to True to raise HTTPBadRequest instead of returning
+                gracefully when the parameter is not found or is not an
+                integer (default False)
+
+        Returns:
+            The value of the param if it is found and can be converted to an
+            integer. Otherwise, returns the default value unless required is
+            True.
+
+        Raises
+            HTTPBadRequest: The param was not found in the request, but was
+                required.
+
+        """
+
+        # PERF: Use if..in since it is a good all-around performer; we don't
+        #       know how likely params are to be specified by clients.
+        if name in self._params:
+            return self._params[name].split(',')
+
+        if not required:
+            return default
+
+        raise HTTPBadRequest('Missing query parameter',
+                             'The "' + name + '" query parameter is required.')
