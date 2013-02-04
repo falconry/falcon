@@ -137,12 +137,21 @@ class TestHeaders(helpers.TestSuite):
         for h in self.resource.resp_headers.items():
             self.assertThat(resp_headers, Contains(h))
 
-    def test_default_content_type(self):
+    def test_default_media_type(self):
         self.resource = DefaultContentTypeResource('Hello world!')
         self.api.add_route(self.test_route, self.resource)
         self._simulate_request(self.test_route)
 
-        content_type = 'application/json; charset=utf-8'
+        content_type = falcon.DEFAULT_MEDIA_TYPE
+        self.assertIn(('Content-Type', content_type), self.srmock.headers)
+
+    def test_custom_media_type(self):
+        self.resource = DefaultContentTypeResource('Hello world!')
+        self.api = falcon.API(media_type='application/atom+xml')
+        self.api.add_route(self.test_route, self.resource)
+        self._simulate_request(self.test_route)
+
+        content_type = 'application/atom+xml'
         self.assertIn(('Content-Type', content_type), self.srmock.headers)
 
     def test_no_content_type(self):
@@ -150,7 +159,7 @@ class TestHeaders(helpers.TestSuite):
         self.api.add_route(self.test_route, self.resource)
         self._simulate_request(self.test_route)
 
-        content_type = 'application/json; charset=utf-8'
+        content_type = falcon.DEFAULT_MEDIA_TYPE
         self.assertNotIn(('Content-Type', content_type), self.srmock.headers)
 
     def test_custom_content_type(self):
