@@ -31,6 +31,8 @@ HTTP_METHODS = (
     'PATCH'
 )
 
+IGNORE_BODY_PATTERN = re.compile('[213]')
+
 
 def should_ignore_body(status, method):
     """Return True if the status or method indicates no body, per RFC 2616
@@ -43,10 +45,7 @@ def should_ignore_body(status, method):
         False otherwise.
 
     """
-    return (method == 'HEAD' or
-            status.startswith('204') or
-            status.startswith('1') or
-            status.startswith('304'))
+    return (method == 'HEAD' or IGNORE_BODY_PATTERN.match(status))
 
 
 def set_content_length(resp):

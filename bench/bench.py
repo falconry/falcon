@@ -4,7 +4,7 @@ import sys
 import random
 from timeit import repeat
 
-from .create import *
+from create import *
 
 sys.path.append('..')
 import tests.helpers as helpers
@@ -16,7 +16,7 @@ def avg(array):
 
 
 def bench(name):
-    iterations = 100000
+    iterations = 10000
 
     func = create_bench(name)
     results = repeat(func, number=iterations)
