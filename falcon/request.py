@@ -32,13 +32,13 @@ class Request(object):
 
     __slots__ = (
         'app',
-        'body',
         '_headers',
         'method',
         '_params',
         'path',
         'protocol',
         'query_string',
+        'stream',
         '_wsgierrors'
     )
 
@@ -54,7 +54,7 @@ class Request(object):
         """
 
         self._wsgierrors = env['wsgi.errors']
-        self.body = env['wsgi.input']
+        self.stream = env['wsgi.input']
 
         self.protocol = env['wsgi.url_scheme']
         self.app = env['SCRIPT_NAME']
