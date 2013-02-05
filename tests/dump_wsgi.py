@@ -4,7 +4,6 @@ from wsgiref.simple_server import make_server
 
 def application(environ, start_response):
     wsgi_errors = environ['wsgi.errors']
-    pdb.set_trace()
 
     start_response("200 OK", [
         ('Content-Type', 'text/plain')])

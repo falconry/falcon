@@ -192,6 +192,23 @@ class HTTPUnsupportedMediaType(HTTPError):
                            description, **kwargs)
 
 
+class HTTPUpgradeRequired(HTTPError):
+    """426 Upgrade Required
+
+    Sets title to "Upgrade Required".
+
+    Args:
+        description: Human-friendly description of the error, along with a
+            helpful suggestion or two.
+
+    The remaining (optional) args are the same as for HTTPError.
+
+    """
+    def __init__(self, description, **kwargs):
+        HTTPError.__init__(self, HTTP_426, 'Upgrade Required',
+                           description, **kwargs)
+
+
 class HTTPInternalServerError(HTTPError):
     """500 Internal Server Error
 
@@ -218,8 +235,30 @@ class HTTPServiceUnavailable(HTTPError):
     """503 Service Unavailable
 
     Args:
-        Same as for HTTPError, exept status is set for you.
+        title: Human-friendly error title. Set to None if you wish Falcon
+            to return an empty response body (all remaining args will
+            be ignored except for headers.) Do this only when you don't
+            wish to disclose sensitive information about why a request was
+            refused, or if the status and headers are self-descriptive.
+        description: Human-friendly description of the error, along with a
+            helpful suggestion or two (default None).
+        retry_after: Value for the Retry-After header. If a date object, will
+            serialize as an HTTP date. Otherwise, a non-negative int is
+            expected, representing the number of seconds to wait. See
+            also: http://goo.gl/DIrWr
+        headers: A dictionary of extra headers to return in the
+            response to the client (default None).
+        href: A URL someone can visit to find out more information
+            (default None).
+        href_rel: If href is given, use this value for the rel
+            attribute (default 'doc').
+        href_text: If href is given, use this as the friendly
+            title/description for the link (defaults to "API documentation
+            for this error").
+        code: An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error.
 
     """
-    def __init__(self, title, description, **kwargs):
+    def __init__(self, title, description, retry_after, **kwargs):
         HTTPError.__init__(self, HTTP_503, title, description, **kwargs)
