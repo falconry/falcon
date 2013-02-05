@@ -16,12 +16,15 @@ limitations under the License.
 
 """
 
-import sys
 from datetime import datetime
+
+import six
 
 from falcon.request_helpers import *
 from falcon.exceptions import *
-import six
+
+DEFAULT_ERROR_LOG_FORMAT = ('{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
+                            ' {1} {2}?{3} => {4}\n')
 
 
 class Request(object):
@@ -29,13 +32,13 @@ class Request(object):
 
     __slots__ = (
         'app',
-        'body',
         '_headers',
         'method',
         '_params',
         'path',
         'protocol',
         'query_string',
+        'stream',
         '_wsgierrors'
     )
 
@@ -50,21 +53,23 @@ class Request(object):
 
         """
 
+        self._wsgierrors = env['wsgi.errors']
+        self.stream = env['wsgi.input']
+
+        self.protocol = env['wsgi.url_scheme']
         self.app = env['SCRIPT_NAME']
-        self.body = env['wsgi.input']
         self.method = env['REQUEST_METHOD']
         self.path = env['PATH_INFO'] or '/'
-        self.protocol = env['wsgi.url_scheme']
         self.query_string = query_string = env['QUERY_STRING']
+
         self._params = parse_query_string(query_string)
         self._headers = parse_headers(env)
-        self._wsgierrors = env['wsgi.errors']
 
     def log_error(self, message):
         """Log an error to wsgi.error
 
-        Prepends timestamp and request info to message, and writes the result
-        out to the WSGI server's error stream (wsgi.error).
+        Prepends timestamp and request info to message, and writes the
+        result out to the WSGI server's error stream (wsgi.error).
 
         Args:
             message: A string describing the problem. If a byte-string and
@@ -72,11 +77,13 @@ class Request(object):
                 as UTF-8.
 
         """
-        u = six.text_type
+        if not six.PY3 and isinstance(message, unicode):
+            message = message.encode('utf-8')
+
         log_line = (
-            u('{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR] {1} {2}?{3} => {4}\n').
-            format(datetime.now(), self.method, self.path, self.query_string,
-                   message)
+            DEFAULT_ERROR_LOG_FORMAT.
+            format(datetime.now(), self.method, self.path,
+                   self.query_string, message)
         )
 
         self._wsgierrors.write(log_line)
@@ -177,6 +184,39 @@ class Request(object):
                 return int(val)
             except ValueError:
                 pass
+
+        if not required:
+            return default
+
+        raise HTTPBadRequest('Missing query parameter',
+                             'The "' + name + '" query parameter is required.')
+
+    def get_param_as_list(self, name, default=None, required=False):
+        """Return the value of a query string parameter as an int
+
+        Args:
+            name: Parameter name, case-sensitive (e.g., 'limit')
+            default: Value to return in case the parameter is not found in the
+                query string, or it is not an integer (default None)
+            required: Set to True to raise HTTPBadRequest instead of returning
+                gracefully when the parameter is not found or is not an
+                integer (default False)
+
+        Returns:
+            The value of the param if it is found and can be converted to an
+            integer. Otherwise, returns the default value unless required is
+            True.
+
+        Raises
+            HTTPBadRequest: The param was not found in the request, but was
+                required.
+
+        """
+
+        # PERF: Use if..in since it is a good all-around performer; we don't
+        #       know how likely params are to be specified by clients.
+        if name in self._params:
+            return self._params[name].split(',')
 
         if not required:
             return default

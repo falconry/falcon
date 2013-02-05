@@ -16,15 +16,15 @@ limitations under the License.
 
 """
 
-import sys
-import traceback
-
 from .request import Request
 from .response import Response
 from . import responders
 from .status_codes import *
 from .api_helpers import *
+
 from .http_error import HTTPError
+
+DEFAULT_MEDIA_TYPE = 'application/json; charset=utf-8'
 
 
 class API(object):
@@ -35,11 +35,12 @@ class API(object):
 
     """
 
-    __slots__ = ('_routes')
+    __slots__ = ('_media_type', '_routes')
 
-    def __init__(self):
+    def __init__(self, media_type=DEFAULT_MEDIA_TYPE):
         """Initialize default values"""
         self._routes = []
+        self._media_type = media_type
 
     def __call__(self, env, start_response):
         """WSGI "app" method
@@ -69,25 +70,6 @@ class API(object):
             if req.client_accepts_json():
                 resp.body = ex.json()
 
-        except Exception as ex:
-            # Reset to a known state and respond with a generic error
-            req = Request(env)
-            resp = Response()
-
-            message = ['Responder raised ', ex.__class__.__name__]
-
-            details = str(ex)
-            if details:
-                message.append(': ')
-                message.append(details)
-
-            stack = traceback.format_exc()
-            message.append('\n')
-            message.append(stack)
-
-            req.log_error(''.join(message))
-            responders.server_error(req, resp)
-
         #
         # Set status and headers
         #
@@ -95,16 +77,13 @@ class API(object):
         if use_body:
             set_content_length(resp)
 
-        start_response(resp.status, resp._wsgi_headers())
+        start_response(resp.status, resp._wsgi_headers(self._media_type))
 
         # Return an iterable for the body, per the WSGI spec
         if use_body:
-            if resp.body:
-                return [resp.body]
-            elif resp.stream is not None:
-                return resp.stream
+            return prepare_wsgi_content(resp)
 
-        # Default to returning an empty body
+        # Default: return an empty body
         return []
 
     def add_route(self, uri_template, resource):

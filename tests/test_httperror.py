@@ -74,11 +74,11 @@ class TestHTTPError(testsuite.TestSuite):
         }
 
         expected_body = [
-            '{\n'
-            '    "title": "Storage service down",\n'
-            '    "description": "The configured storage service is not '
-            'responding to requests. Please contact your service provider"\n'
-            '}'
+            b'{\n'
+            b'    "title": "Storage service down",\n'
+            b'    "description": "The configured storage service is not '
+            b'responding to requests. Please contact your service provider"\n'
+            b'}'
         ]
 
         # Try it with Accept: */*
@@ -115,16 +115,16 @@ class TestHTTPError(testsuite.TestSuite):
         }
 
         expected_body = [
-            '{\n'
-            '    "title": "Request denied",\n'
-            '    "description": "You do not have write permissions for this '
-            'queue",\n'
-            '    "link": {\n'
-            '        "text": "API documention for this error",\n'
-            '        "href": "http://example.com/api/rbac",\n'
-            '        "rel": "doc"\n'
-            '    }\n'
-            '}'
+            b'{\n'
+            b'    "title": "Request denied",\n'
+            b'    "description": "You do not have write permissions for this '
+            b'queue",\n'
+            b'    "link": {\n'
+            b'        "text": "API documention for this error",\n'
+            b'        "href": "http://example.com/api/rbac",\n'
+            b'        "rel": "doc"\n'
+            b'    }\n'
+            b'}'
         ]
 
         body = self._simulate_request('/fail', headers=headers, method='POST')
@@ -138,16 +138,16 @@ class TestHTTPError(testsuite.TestSuite):
         }
 
         expected_body = [
-            '{\n'
-            '    "title": "Internet crashed",\n'
-            '    "description": "Climate change driven catastrophic weather '
-            'event",\n'
-            '    "link": {\n'
-            '        "text": "Drill baby drill!",\n'
-            '        "href": "http://example.com/api/climate",\n'
-            '        "rel": "oops"\n'
-            '    }\n'
-            '}'
+            b'{\n'
+            b'    "title": "Internet crashed",\n'
+            b'    "description": "Climate change driven catastrophic weather '
+            b'event",\n'
+            b'    "link": {\n'
+            b'        "text": "Drill baby drill!",\n'
+            b'        "href": "http://example.com/api/climate",\n'
+            b'        "rel": "oops"\n'
+            b'    }\n'
+            b'}'
         ]
 
         body = self._simulate_request('/fail', headers=headers, method='PUT')
