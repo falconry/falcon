@@ -6,6 +6,8 @@ import testtools
 
 import falcon
 
+import six
+
 
 def rand_string(min, max):
     int_gen = random.randint
@@ -99,6 +101,9 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
         wsgierrors: The stream to send wsgierrors to
     """
 
+    body = io.BytesIO(body.encode('utf-8')
+                      if six.text_type == type(body) else body)
+
     env = {
         'SERVER_PROTOCOL': protocol,
         'SERVER_SOFTWARE': 'gunicorn/0.17.0',
@@ -116,7 +121,7 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
         'SERVER_PORT': port,
 
         'wsgi.url_scheme': 'http',
-        'wsgi.input': io.BytesIO(body.encode('utf-8')),
+        'wsgi.input': body,
         'wsgi.errors': wsgierrors or sys.stderr
     }
 
