@@ -1,4 +1,4 @@
-"""Falcon is a fast micro-framework for building cloud APIs.
+"""Defines Falcon utility functions
 
 Copyright 2013 by Rackspace Hosting, Inc.
 
@@ -16,10 +16,18 @@ limitations under the License.
 
 """
 
-# Hoist classes and functions into the falcon namespace
-from falcon.version import version
-from falcon.api import API, DEFAULT_MEDIA_TYPE
-from falcon.status_codes import *
-from falcon.exceptions import *
-from falcon.http_error import HTTPError
-from falcon.util import dt_to_http
+
+def dt_to_http(dt):
+    """Converts a datetime instance to an HTTP date string.
+
+    Args:
+        dt: A datetime object, assumed to be UTC
+
+    Returns:
+        An HTTP date string, e.g., "Tue, 15 Nov 1994 12:45:26 GMT". See
+        also: http://goo.gl/R7So4
+
+    """
+
+    # Tue, 15 Nov 1994 12:45:26 GMT
+    return dt.strftime('%a, %d %b %Y %H:%M:%S GMT')
