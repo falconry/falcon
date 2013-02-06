@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from testtools.matchers import Contains, Not
 
 import falcon.testing as testing
@@ -34,6 +36,12 @@ class DefaultContentTypeResource:
 
 class HeaderHelpersResource:
 
+    def __init__(self, last_modified=None):
+        if last_modified is not None:
+            self.last_modified = last_modified
+        else:
+            self.last_modified = datetime.utcnow()
+
     def on_get(self, req, resp):
         resp.body = "{}"
         resp.content_type = 'x-falcon/peregrine'
@@ -43,21 +51,31 @@ class HeaderHelpersResource:
         ]
 
         resp.etag = 'fa0d1a60ef6616bb28038515c8ea4cb2'
-        # resp.set_last_modified()  # http://goo.gl/M9Fs9
-        # resp.set_retry_after()  # http://goo.gl/DIrWr
-        # resp.set_vary()  # http://goo.gl/wyI7d
+        resp.last_modified = self.last_modified
+        resp.retry_after = 3601
 
-        # # Relative URI's are OK per http://goo.gl/DbVqR
-        # resp.set_location('/things/87')
+        # Relative URI's are OK per http://goo.gl/DbVqR
+        resp.location = '/things/87'
+        resp.content_location = '/things/78'
 
         # bytes 0-499/10240
-        # resp.set_content_range(0, 499, 10 * 1024)
+        resp.content_range = (0, 499, 10 * 1024)
 
     def on_head(self, req, resp):
         # Alias of set_media_type
         resp.content_type = 'x-falcon/peregrine'
 
         resp.cache_control = ['no-store']
+
+
+class VaryHeaderResource:
+
+    def __init__(self, vary):
+        self.vary = vary
+
+    def on_get(self, req, resp):
+        resp.body = "{}"
+        resp.vary = self.vary
 
 
 class TestHeaders(testing.TestSuite):
@@ -183,7 +201,8 @@ class TestHeaders(testing.TestSuite):
         self.assertIn(('Content-Type', content_type), self.srmock.headers)
 
     def test_response_header_helpers_on_get(self):
-        self.resource = HeaderHelpersResource()
+        last_modified = datetime(2013, 1, 1, 10, 30, 30)
+        self.resource = HeaderHelpersResource(last_modified)
         self.api.add_route(self.test_route, self.resource)
         self._simulate_request(self.test_route)
 
@@ -199,6 +218,16 @@ class TestHeaders(testing.TestSuite):
         etag = 'fa0d1a60ef6616bb28038515c8ea4cb2'
         self.assertIn(('ETag', etag), self.srmock.headers)
 
+        last_modified_http_date = 'Tue, 01 Jan 2013 10:30:30 GMT'
+        self.assertIn(('Last-Modified', last_modified_http_date),
+                      self.srmock.headers)
+
+        self.assertIn(('Retry-After', '3601'), self.srmock.headers)
+        self.assertIn(('Location', '/things/87'), self.srmock.headers)
+        self.assertIn(('Content-Location', '/things/78'), self.srmock.headers)
+        self.assertIn(('Content-Range', 'bytes 0-499/10240'),
+                      self.srmock.headers)
+
     def test_response_header_helpers_on_head(self):
         self.resource = HeaderHelpersResource()
         self.api.add_route(self.test_route, self.resource)
@@ -208,6 +237,28 @@ class TestHeaders(testing.TestSuite):
         self.assertNotIn(('Content-Type', content_type), self.srmock.headers)
 
         self.assertIn(('Cache-Control', 'no-store'), self.srmock.headers)
+
+    def test_vary_star(self):
+        self.resource = VaryHeaderResource(['*'])
+        self.api.add_route(self.test_route, self.resource)
+        self._simulate_request(self.test_route)
+
+        self.assertIn(('Vary', '*'), self.srmock.headers)
+
+    def test_vary_header(self):
+        self.resource = VaryHeaderResource(['accept-encoding'])
+        self.api.add_route(self.test_route, self.resource)
+        self._simulate_request(self.test_route)
+
+        self.assertIn(('Vary', 'accept-encoding'), self.srmock.headers)
+
+    def test_vary_headers(self):
+        self.resource = VaryHeaderResource(['accept-encoding', 'x-auth-token'])
+        self.api.add_route(self.test_route, self.resource)
+        self._simulate_request(self.test_route)
+
+        vary = 'accept-encoding, x-auth-token'
+        self.assertIn(('Vary', vary), self.srmock.headers)
 
     def test_no_content_type(self):
         self.resource = DefaultContentTypeResource()

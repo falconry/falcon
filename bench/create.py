@@ -22,17 +22,18 @@ del sys.path[-1]
 
 def create_falcon(body, headers):
     path = '/hello/{account_id}/test'
-    falcon_app = falcon.API()
+    falcon_app = falcon.API('text/plain')
 
     class HelloResource:
         def on_get(self, req, resp, account_id):
-            limit = req.get_param('limit', '10')
+            limit = req.get_param('limit', '10')  # NOQA
             if six.PY3:
                 resp.body = body
             else:
                 resp.data = body
 
-            resp.set_header('Content-Type', 'text/plain')
+            resp.vary = ['accept-encoding', 'x-auth-token']
+            resp.content_range = (0, 499, 10240)
             resp.set_headers(headers)
 
     falcon_app.add_route(path, HelloResource())
@@ -47,7 +48,7 @@ def create_wheezy(body, headers):
         try:
             limit = query['limit']
         except KeyError:
-            limit = '10'
+            limit = '10'  # NOQA
 
         response = wheezy.HTTPResponse(content_type='text/plain')
         response.write_bytes(body)
@@ -97,7 +98,7 @@ def create_bottle(body, headers):
 
     @bottle.route(path)
     def hello(account_id):
-        limit = bottle.request.query.limit or '10'
+        limit = bottle.request.query.limit or '10'  # NOQA
         return bottle.Response(body, headers=headers)
 
     return bottle.default_app()
@@ -109,7 +110,7 @@ def create_werkzeug(body, headers):
 
     @werkzeug.Request.application
     def hello(request):
-        limit = request.args.get('limit', '10')
+        limit = request.args.get('limit', '10')  # NOQA
         adapter = url_map.bind_to_environ(request.environ)
         endpoint, values = adapter.match()
         return werkzeug.Response(body, headers=headers,
