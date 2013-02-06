@@ -1,11 +1,11 @@
 from testtools.matchers import Contains, Not
 
 import falcon
-import falcon.testsuite as testsuite
+import falcon.testing as testing
 
 
 class StatusTestResource:
-    sample_body = testsuite.rand_string(0, 128 * 1024)
+    sample_body = testing.rand_string(0, 128 * 1024)
 
     def __init__(self, status):
         self.status = status
@@ -32,10 +32,10 @@ class DefaultContentTypeResource:
             resp.body = self.body
 
 
-class TestHeaders(testsuite.TestSuite):
+class TestHeaders(testing.TestSuite):
 
     def prepare(self):
-        self.resource = testsuite.TestResource()
+        self.resource = testing.TestResource()
         self.api.add_route(self.test_route, self.resource)
 
     def test_content_length(self):

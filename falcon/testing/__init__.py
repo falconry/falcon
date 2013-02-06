@@ -18,4 +18,4 @@ limitations under the License.
 """
 
 # Hoist classes and functions into the falcon namespace
-from falcon.testsuite.helpers import *
+from falcon.testing.helpers import *

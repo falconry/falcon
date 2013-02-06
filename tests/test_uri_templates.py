@@ -1,4 +1,4 @@
-import falcon.testsuite as testsuite
+import falcon.testing as testing
 
 
 class IDResource(object):
@@ -13,10 +13,10 @@ class IDResource(object):
         self.called = True
 
 
-class TestUriTemplates(testsuite.TestSuite):
+class TestUriTemplates(testing.TestSuite):
 
     def prepare(self):
-        self.resource = testsuite.TestResource()
+        self.resource = testing.TestResource()
 
     def test_root_path(self):
         self.api.add_route('/', self.resource)

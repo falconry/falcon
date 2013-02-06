@@ -54,10 +54,7 @@ class TestResource:
 
 
 class TestSuite(testtools.TestCase):
-    """
-    Creates a basic TestSuite for testing an
-    API endpoint.
-    """
+    """ Creates a basic TestSuite for testing an API endpoint. """
 
     def setUp(self):
         super(TestSuite, self).setUp()
@@ -85,8 +82,7 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
                    headers=None, script='', body='', method='GET',
                    wsgierrors=None):
 
-    """
-    Creates a 'mock' environment suitable for testing.
+    """ Creates a 'mock' environment suitable for testing.
 
     Args:
         path: The path for the request.
