@@ -80,8 +80,8 @@ class TestHttpMethodRouting(helpers.TestSuite):
         self.api.add_route('/misc', self.resource_misc)
 
         self.resource_get_with_param = ResourceGetWithParam()
-        self.api.add_route(
-            '/get_with_param/{param}', self.resource_get_with_param)
+        self.api.add_route('/get_with_param/{param}',
+                           self.resource_get_with_param)
 
     def test_get(self):
         self._simulate_request('/get')
