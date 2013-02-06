@@ -20,11 +20,40 @@ CONTENT_TYPE_NAMES = set(['Content-Type', 'content-type', 'CONTENT-TYPE'])
 
 
 class Response(object):
-    """Represents an HTTP response to a client request"""
+    """Represents an HTTP response to a client request
 
-    __slots__ = ('status', '_headers', 'body', 'data', 'stream', 'stream_len')
 
-    def __init__(self):
+    Attributes:
+        status: HTTP status code, such as "200 OK" (see also falcon.HTTP_*)
+        body: String representing response content. If Unicode, Falcon will
+            encode as UTF-8 in the response. If data is already a byte string,
+            use the data attribute instead (it's faster).
+        data: Byte string representing response content.
+        stream: Iterable stream-like object, representing response content.
+        stream_len: Expected length of stream (e.g., file size).
+        content_type: Value for the Content-Type header
+        etag: Value for the ETag header
+        cache_control: An array of cache directives (see http://goo.gl/fILS5
+            and http://goo.gl/sM9Xx for a good description.) The array will be
+            joined with ', ' to produce the value for the Cache-Control
+            header.
+
+
+    """
+
+    __slots__ = (
+        'body',
+        'cache_control',
+        'content_type',
+        'data',
+        'etag',
+        '_headers',
+        'status',
+        'stream',
+        'stream_len'
+    )
+
+    def __init__(self, default_media_type):
         """Initialize response attributes to default values
 
         Args:
@@ -33,12 +62,16 @@ class Response(object):
         """
 
         self.status = '200 OK'
-        self._headers = []
+        self._headers = [('Content-Type', default_media_type)]
 
         self.body = None
         self.data = None
         self.stream = None
         self.stream_len = None
+
+        self.content_type = None
+        self.etag = None
+        self.cache_control = None
 
     def set_header(self, name, value):
         """Set a header for this response to a given value.
@@ -75,15 +108,24 @@ class Response(object):
 
         self._headers.extend(headers.items())
 
-    def _wsgi_headers(self, default_media_type):
-        """Convert headers into the format expected by WSGI servers"""
+    def _wsgi_headers(self, set_content_type):
+        """Convert headers into the format expected by WSGI servers
 
-        if (self.body is not None) or (self.stream is not None):
-            headers = self._headers
-            for name, value in headers:
-                if name in CONTENT_TYPE_NAMES:
-                    break
-            else:
-                self._headers.append(('Content-Type', default_media_type))
+        WARNING: Only call once! Not idempotent.
 
-        return self._headers
+        """
+
+        headers = self._headers
+
+        if not set_content_type:
+            del headers[0]
+        elif self.content_type is not None:
+            headers.append(('Content-Type', self.content_type))
+
+        if self.etag is not None:
+            headers.append(('ETag', self.etag))
+
+        if self.cache_control is not None:
+            headers.append(('Cache-Control', ', '.join(self.cache_control)))
+
+        return headers

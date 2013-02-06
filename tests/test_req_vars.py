@@ -12,9 +12,9 @@ class TestReqVars(testing.TestSuite):
         }
 
         self.req = Request(testing.create_environ(script='/test',
-                                                    path='/hello',
-                                                    query_string=qs,
-                                                    headers=headers))
+                                                  path='/hello',
+                                                  query_string=qs,
+                                                  headers=headers))
 
     def test_reconstruct_url(self):
         req = self.req

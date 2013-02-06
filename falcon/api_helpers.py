@@ -36,8 +36,8 @@ IGNORE_BODY_STATUS_CODES = set([
     '204 No Content',
     '304 Not Modified',
     '100 Continue',
-    '101 Switching Protocols',
-    '102 Processing'])
+    '101 Switching Protocols'
+])
 
 
 def should_ignore_body(status, method):
@@ -67,21 +67,23 @@ def set_content_length(resp):
         resp: The response object on which to set the content length.
 
     """
+    content_length = 0
 
     if resp.body is not None:
         # Since body is assumed to be a byte string (str in Python 2, bytes in
         # Python 3), figure out the length using standard functions.
-        resp.set_header('Content-Length', str(len(resp.body)))
+        content_length = len(resp.body)
     elif resp.stream is not None:
         if resp.stream_len is not None:
             # Total stream length is known in advance (e.g., streaming a file)
-            resp.set_header('Content-Length', str(resp.stream_len))
+            content_length = resp.stream_len
         else:
             # Stream given, but length is unknown (dynamically-generated body)
-            pass
-    else:
-        # No body given
-        resp.set_header('Content-Length', '0')
+            # ...do not set the header.
+            return -1
+
+    resp.set_header('Content-Length', str(content_length))
+    return content_length
 
 
 def prepare_wsgi_content(resp):

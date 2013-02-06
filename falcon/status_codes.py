@@ -18,7 +18,6 @@ limitations under the License.
 
 HTTP_100 = '100 Continue'
 HTTP_101 = '101 Switching Protocols'
-HTTP_102 = '102 Processing'
 
 HTTP_200 = '200 OK'
 HTTP_201 = '201 Created'
@@ -51,11 +50,12 @@ HTTP_409 = '409 Conflict'
 HTTP_410 = '410 Gone'
 HTTP_411 = '411 Length Required'
 HTTP_412 = '412 Precondition Failed'
-HTTP_413 = '413 Request Entity Too Large'
-HTTP_414 = '414 Request-URI Too Large'
+HTTP_413 = '413 Payload Too Large'
+HTTP_414 = '414 URI Too Long'
 HTTP_415 = '415 Unsupported Media Type'
-HTTP_416 = '416 Requested range not satisfiable'
+HTTP_416 = '416 Range Not Satisfiable'
 HTTP_417 = '417 Expectation Failed'
+HTTP_426 = '426 Upgrade Required'
 
 HTTP_500 = '500 Internal Server Error'
 HTTP_501 = '501 Not Implemented'

@@ -1,7 +1,7 @@
 from testtools.matchers import Contains, Not
 
-import falcon
 import falcon.testing as testing
+import falcon
 
 
 class StatusTestResource:
@@ -30,6 +30,34 @@ class DefaultContentTypeResource:
     def on_get(self, req, resp):
         if self.body is not None:
             resp.body = self.body
+
+
+class HeaderHelpersResource:
+
+    def on_get(self, req, resp):
+        resp.body = "{}"
+        resp.content_type = 'x-falcon/peregrine'
+        resp.cache_control = [
+            'public', 'private', 'no-cache', 'no-store', 'must-revalidate',
+            'proxy-revalidate', 'max-age=3600', 's-maxage=60', 'no-transform'
+        ]
+
+        resp.etag = 'fa0d1a60ef6616bb28038515c8ea4cb2'
+        # resp.set_last_modified()  # http://goo.gl/M9Fs9
+        # resp.set_retry_after()  # http://goo.gl/DIrWr
+        # resp.set_vary()  # http://goo.gl/wyI7d
+
+        # # Relative URI's are OK per http://goo.gl/DbVqR
+        # resp.set_location('/things/87')
+
+        # bytes 0-499/10240
+        # resp.set_content_range(0, 499, 10 * 1024)
+
+    def on_head(self, req, resp):
+        # Alias of set_media_type
+        resp.content_type = 'x-falcon/peregrine'
+
+        resp.cache_control = ['no-store']
 
 
 class TestHeaders(testing.TestSuite):
@@ -78,8 +106,8 @@ class TestHeaders(testing.TestSuite):
         host = self.resource.req.get_header('host')
         self.assertEquals(host, 'localhost:8000')
 
-    def test_no_body_on_1xx(self):
-        self.resource = StatusTestResource(falcon.HTTP_102)
+    def test_no_body_on_100(self):
+        self.resource = StatusTestResource(falcon.HTTP_100)
         self.api.add_route('/1xx', self.resource)
 
         body = self._simulate_request('/1xx')
@@ -153,6 +181,33 @@ class TestHeaders(testing.TestSuite):
 
         content_type = 'application/atom+xml'
         self.assertIn(('Content-Type', content_type), self.srmock.headers)
+
+    def test_response_header_helpers_on_get(self):
+        self.resource = HeaderHelpersResource()
+        self.api.add_route(self.test_route, self.resource)
+        self._simulate_request(self.test_route)
+
+        content_type = 'x-falcon/peregrine'
+        self.assertIn(('Content-Type', content_type), self.srmock.headers)
+
+        cache_control = ('public, private, no-cache, no-store, '
+                         'must-revalidate, proxy-revalidate, max-age=3600, '
+                         's-maxage=60, no-transform')
+
+        self.assertIn(('Cache-Control', cache_control), self.srmock.headers)
+
+        etag = 'fa0d1a60ef6616bb28038515c8ea4cb2'
+        self.assertIn(('ETag', etag), self.srmock.headers)
+
+    def test_response_header_helpers_on_head(self):
+        self.resource = HeaderHelpersResource()
+        self.api.add_route(self.test_route, self.resource)
+        self._simulate_request(self.test_route, method="HEAD")
+
+        content_type = 'x-falcon/peregrine'
+        self.assertNotIn(('Content-Type', content_type), self.srmock.headers)
+
+        self.assertIn(('Cache-Control', 'no-store'), self.srmock.headers)
 
     def test_no_content_type(self):
         self.resource = DefaultContentTypeResource()

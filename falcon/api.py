@@ -55,7 +55,7 @@ class API(object):
         """
 
         req = Request(env)
-        resp = Response()
+        resp = Response(self._media_type)
 
         responder, params = self._get_responder(req.path, req.method)
 
@@ -75,9 +75,12 @@ class API(object):
         #
         use_body = not should_ignore_body(resp.status, req.method)
         if use_body:
-            set_content_length(resp)
+            content_length = set_content_length(resp)
+        else:
+            content_length = 0
 
-        start_response(resp.status, resp._wsgi_headers(self._media_type))
+        set_content_type = (content_length != 0)
+        start_response(resp.status, resp._wsgi_headers(set_content_type))
 
         # Return an iterable for the body, per the WSGI spec
         if use_body:
