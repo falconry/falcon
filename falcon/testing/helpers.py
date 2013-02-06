@@ -67,10 +67,14 @@ class TestSuite(testtools.TestCase):
             prepare()
 
     def _simulate_request(self, path, **kwargs):
+        """ Simulates a request.
+
+        Simulates a request to the API for testing purposes.
+
+        See: create_environ() for suitable arguments
+        a variable length argument list. See create_environ()
         """
-        Simulates a request to the specified path using
-        a varible arugment list.
-        """
+
         if not path:
             path = '/'
 
@@ -82,7 +86,7 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
                    headers=None, script='', body='', method='GET',
                    wsgierrors=None):
 
-    """ Creates a 'mock' environment suitable for testing.
+    """ Creates a 'mock' environment for testing
 
     Args:
         path: The path for the request.
