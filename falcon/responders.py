@@ -43,7 +43,7 @@ def create_method_not_allowed(allowed_methods):
 
     """
 
-    def method_not_allowed(req, resp):
+    def method_not_allowed(req, resp, **params):
         resp.status = HTTP_405
         resp.set_header('Allow', ', '.join(allowed_methods))
 
