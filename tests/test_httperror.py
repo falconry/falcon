@@ -2,7 +2,7 @@ import json
 
 from testtools.matchers import raises, Not
 
-from . import helpers
+import falcon.testing as testing
 import falcon
 
 
@@ -67,7 +67,7 @@ class RangeNotSatisfiableResource:
         raise falcon.HTTPRangeNotSatisfiable(123456, 'x-falcon/peregrine')
 
 
-class TestHTTPError(helpers.TestSuite):
+class TestHTTPError(testing.TestSuite):
 
     def prepare(self):
         self.resource = FaultyResource()

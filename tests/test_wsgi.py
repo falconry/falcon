@@ -2,7 +2,7 @@ import testtools
 from testtools.matchers import Equals, MatchesRegex
 
 import falcon
-from . import helpers
+import falcon.testing as testing
 
 
 def _is_iterable(thing):
@@ -19,10 +19,10 @@ class TestWsgi(testtools.TestCase):
 
     def test_pep333(self):
         api = falcon.API()
-        mock = helpers.StartResponseMock()
+        mock = testing.StartResponseMock()
 
         # Simulate a web request (normally done though a WSGI server)
-        response = api(helpers.create_environ(), mock)
+        response = api(testing.create_environ(), mock)
 
         # Verify that the response is iterable
         self.assertTrue(_is_iterable(response))
