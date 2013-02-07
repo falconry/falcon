@@ -115,11 +115,11 @@ class TestHttpMethodRouting(helpers.TestSuite):
             if method == 'GET':
                 continue
 
-            self.resource_get.called = False
+            self.resource_get_with_param.called = False
             self._simulate_request(
                 '/get_with_param/bogus_param', method=method)
 
-            self.assertFalse(self.resource_get.called)
+            self.assertFalse(self.resource_get_with_param.called)
             self.assertEquals(self.srmock.status, '405 Method Not Allowed')
 
             headers = self.srmock.headers
