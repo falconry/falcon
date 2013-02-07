@@ -91,18 +91,19 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
     """ Creates a 'mock' environment for testing
 
     Args:
-        path: The path for the request.
-        query_string: The query string to simulate
-        protocol: The HTTP protocol to simulate
-        port: The TCP port to simulate
-        headers: Optional headers to set
-        script:
-        method: The HTTP method to use
-        wsgierrors: The stream to send wsgierrors to
+        path: The path for the request (default '/')
+        query_string: The query string to simulate (default '')
+        protocol: The HTTP protocol to simulate (default 'HTTP/1.1')
+        port: The TCP port to simulate (default '80')
+        headers: Optional headers to set (default None)
+        script: The WSGI script name (default '')
+        body: The body of the request (default '')
+        method: The HTTP method to use (default 'GET')
+        wsgierrors: The stream to use as wsgierrors (default sys.stderr)
     """
 
     body = io.BytesIO(body.encode('utf-8')
-                      if six.text_type == type(body) else body)
+                      if isinstance(body, six.text_type) else body)
 
     env = {
         'SERVER_PROTOCOL': protocol,
