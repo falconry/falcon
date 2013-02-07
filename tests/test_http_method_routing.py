@@ -3,8 +3,7 @@ from functools import wraps
 from testtools.matchers import Contains
 
 import falcon
-from . import helpers
-
+import falcon.testing as testing
 
 HTTP_METHODS = (
     'CONNECT',
@@ -70,7 +69,7 @@ class ResourceGetWithParam(object):
         resp.status = falcon.HTTP_204
 
 
-class TestHttpMethodRouting(helpers.TestSuite):
+class TestHttpMethodRouting(testing.TestSuite):
 
     def prepare(self):
         self.resource_get = ResourceGet()

@@ -1,6 +1,7 @@
 import io
+
+import falcon.testing as testing
 import six
-from . import helpers
 
 unicode_message = u'Unicode: \x80'
 
@@ -19,7 +20,7 @@ class LoggerResource:
         req.log_error(str_message)
 
 
-class TestWSGIError(helpers.TestSuite):
+class TestWSGIError(testing.TestSuite):
 
     def prepare(self):
         self.tehlogger = LoggerResource()

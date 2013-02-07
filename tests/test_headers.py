@@ -2,12 +2,12 @@ from datetime import datetime
 
 from testtools.matchers import Contains, Not
 
+import falcon.testing as testing
 import falcon
-from . import helpers
 
 
 class StatusTestResource:
-    sample_body = helpers.rand_string(0, 128 * 1024)
+    sample_body = testing.rand_string(0, 128 * 1024)
 
     def __init__(self, status):
         self.status = status
@@ -78,10 +78,10 @@ class VaryHeaderResource:
         resp.vary = self.vary
 
 
-class TestHeaders(helpers.TestSuite):
+class TestHeaders(testing.TestSuite):
 
     def prepare(self):
-        self.resource = helpers.TestResource()
+        self.resource = testing.TestResource()
         self.api.add_route(self.test_route, self.resource)
 
     def test_content_length(self):
