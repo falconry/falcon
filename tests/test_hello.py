@@ -2,7 +2,7 @@ from testtools.matchers import Contains
 
 import falcon
 import io
-from . import helpers
+import falcon.testing as testing
 
 import six
 
@@ -10,7 +10,7 @@ import six
 class HelloResource:
     sample_status = '200 OK'
     sample_unicode = (u'Hello World! \x80' +
-                      six.text_type(helpers.rand_string(0, 0)))
+                      six.text_type(testing.rand_string(0, 0)))
 
     sample_utf8 = sample_unicode.encode('utf-8')
 
@@ -49,7 +49,7 @@ class NoStatusResource:
         pass
 
 
-class TestHelloWorld(helpers.TestSuite):
+class TestHelloWorld(testing.TestSuite):
 
     def prepare(self):
         self.resource = HelloResource('body')
@@ -70,7 +70,7 @@ class TestHelloWorld(helpers.TestSuite):
         self.no_status_resource = NoStatusResource()
         self.api.add_route('/nostatus', self.no_status_resource)
 
-        self.root_resource = helpers.TestResource()
+        self.root_resource = testing.TestResource()
         self.api.add_route('', self.root_resource)
 
     def test_empty_route(self):

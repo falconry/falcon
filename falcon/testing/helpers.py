@@ -6,6 +6,8 @@ import testtools
 
 import falcon
 
+import six
+
 
 def rand_string(min, max):
     int_gen = random.randint
@@ -54,6 +56,7 @@ class TestResource:
 
 
 class TestSuite(testtools.TestCase):
+    """ Creates a basic TestSuite for testing an API endpoint. """
 
     def setUp(self):
         super(TestSuite, self).setUp()
@@ -66,6 +69,14 @@ class TestSuite(testtools.TestCase):
             prepare()
 
     def _simulate_request(self, path, **kwargs):
+        """ Simulates a request.
+
+        Simulates a request to the API for testing purposes.
+
+        See: create_environ() for suitable arguments
+        a variable length argument list. See create_environ()
+        """
+
         if not path:
             path = '/'
 
@@ -76,6 +87,23 @@ class TestSuite(testtools.TestCase):
 def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
                    headers=None, script='', body='', method='GET',
                    wsgierrors=None):
+
+    """ Creates a 'mock' environment for testing
+
+    Args:
+        path: The path for the request (default '/')
+        query_string: The query string to simulate (default '')
+        protocol: The HTTP protocol to simulate (default 'HTTP/1.1')
+        port: The TCP port to simulate (default '80')
+        headers: Optional headers to set (default None)
+        script: The WSGI script name (default '')
+        body: The body of the request (default '')
+        method: The HTTP method to use (default 'GET')
+        wsgierrors: The stream to use as wsgierrors (default sys.stderr)
+    """
+
+    body = io.BytesIO(body.encode('utf-8')
+                      if isinstance(body, six.text_type) else body)
 
     env = {
         'SERVER_PROTOCOL': protocol,
@@ -94,7 +122,7 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
         'SERVER_PORT': port,
 
         'wsgi.url_scheme': 'http',
-        'wsgi.input': io.BytesIO(body.encode('utf-8')),
+        'wsgi.input': body,
         'wsgi.errors': wsgierrors or sys.stderr
     }
 

@@ -1,8 +1,8 @@
 from falcon.request import Request
-from . import helpers
+import falcon.testing as testing
 
 
-class TestReqVars(helpers.TestSuite):
+class TestReqVars(testing.TestSuite):
 
     def prepare(self):
         qs = '?marker=deadbeef&limit=10'
@@ -11,7 +11,7 @@ class TestReqVars(helpers.TestSuite):
             'Content-Length': '4829'
         }
 
-        self.req = Request(helpers.create_environ(script='/test',
+        self.req = Request(testing.create_environ(script='/test',
                                                   path='/hello',
                                                   query_string=qs,
                                                   headers=headers))
@@ -32,11 +32,11 @@ class TestReqVars(helpers.TestSuite):
     def test_method(self):
         self.assertEquals(self.req.method, 'GET')
 
-        self.req = Request(helpers.create_environ(path='', method='HEAD'))
+        self.req = Request(testing.create_environ(path='', method='HEAD'))
         self.assertEquals(self.req.method, 'HEAD')
 
     def test_empty_path(self):
-        self.req = Request(helpers.create_environ(path=''))
+        self.req = Request(testing.create_environ(path=''))
         self.assertEquals(self.req.path, '/')
 
     def test_content_type(self):

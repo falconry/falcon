@@ -36,3 +36,5 @@ nosetests.xml
 # System
 .DS_Store
 
+# VIM swap files
+.*.swp
