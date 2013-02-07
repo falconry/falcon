@@ -19,7 +19,7 @@ limitations under the License.
 from .request import Request
 from .response import Response
 from . import responders
-from .status_codes import *
+from .status_codes import HTTP_416
 from .api_helpers import *
 
 from .http_error import HTTPError
@@ -79,7 +79,8 @@ class API(object):
         else:
             content_length = 0
 
-        set_content_type = (content_length != 0)
+        set_content_type = ((content_length != 0) or
+                            resp.status == HTTP_416)
         start_response(resp.status, resp._wsgi_headers(set_content_type))
 
         # Return an iterable for the body, per the WSGI spec

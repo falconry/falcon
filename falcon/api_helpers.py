@@ -19,6 +19,7 @@ limitations under the License.
 import re
 
 from falcon import responders
+import falcon.status_codes as status
 
 HTTP_METHODS = (
     'CONNECT',
@@ -32,12 +33,13 @@ HTTP_METHODS = (
     'PATCH'
 )
 
-IGNORE_BODY_STATUS_CODES = set([
-    '204 No Content',
-    '304 Not Modified',
-    '100 Continue',
-    '101 Switching Protocols'
-])
+IGNORE_BODY_STATUS_CODES = {
+    status.HTTP_100,
+    status.HTTP_101,
+    status.HTTP_204,
+    status.HTTP_416,
+    status.HTTP_304
+}
 
 
 def should_ignore_body(status, method):

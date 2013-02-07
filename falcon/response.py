@@ -18,7 +18,7 @@ limitations under the License.
 
 import falcon
 
-CONTENT_TYPE_NAMES = set(['Content-Type', 'content-type', 'CONTENT-TYPE'])
+CONTENT_TYPE_NAMES = {'Content-Type', 'content-type', 'CONTENT-TYPE'}
 
 
 class Response(object):
