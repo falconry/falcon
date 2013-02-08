@@ -1,12 +1,16 @@
 import random
 import io
 import sys
+from datetime import datetime
 
 import testtools
+import six
 
 import falcon
 
-import six
+
+def httpnow():
+    return falcon.dt_to_http(datetime.utcnow())
 
 
 def rand_string(min, max):

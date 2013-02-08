@@ -28,7 +28,39 @@ DEFAULT_ERROR_LOG_FORMAT = ('{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
 
 
 class Request(object):
-    """Represents a client's HTTP request"""
+    """Represents a client's HTTP request
+
+    Attributes:
+        url: The fully-qualified request URL
+        protocol: Will be either 'http' or 'https'.
+        app: Name of the WSGI app (if using WSGI's notion of virtual hosting).
+        method: HTTP method requested (e.g., GET, POST, etc.)
+        path: Path portion of the request URL (not including query string).
+        query_string: Query string portion of the request URL.
+        stream: Stream-like object for reading the body of the request, if any.
+
+        accept: Value of the Accept header, or None if not found.
+        auth: Value of the Authorization header, or None if not found.
+        content_length: Value of the Content-Length header, or None if missing.
+        content_type: Value of the Content-Type header, or None if not found.
+        date: Value of the Date header, or None if missing.
+        expect: Value of the Expect header, or None if missing.
+        if_match: Value of the If-Match header, or None if missing.
+        if_none_match: Value of the If-None-Match header, or None if missing.
+        if_modified_since: Value of the If-Modified-Since header, or None if
+            missing.
+        if_unmodified_since: Value of the If-Unmodified-Since header, or None
+            if missing.
+        if_range: Value of the If-Range header, or None if missing.
+        range: A dict representing the value of the Range header, or None if
+            missing. The dict consists of two fields, 'first' and 'last',
+            corresponding to the first byte position and last byte position
+            of the requested resource, inclusive. Negative indices indicate
+            offset from the end of the resource, similar to standard Python
+            ranges.
+        user_agent: Value of the User-Agent string, or None if not found.
+
+    """
 
     __slots__ = (
         'app',
@@ -95,6 +127,87 @@ class Request(object):
         return ((accept is not None) and
                 (('application/json' in accept) or ('*/*' in accept)))
 
+    @property
+    def url(self):
+        return ''.join([
+            self.protocol,
+            '://',
+            self.get_header('host'),
+            self.app,
+            self.path,
+            self.query_string
+        ])
+
+    @property
+    def accept(self):
+        return self._get_header_by_wsgi_name('ACCEPT')
+
+    @property
+    def auth(self):
+        return self._get_header_by_wsgi_name('AUTHORIZATION')
+
+    @property
+    def content_length(self):
+        return self._get_header_by_wsgi_name('CONTENT_LENGTH')
+
+    @property
+    def content_type(self):
+        return self._get_header_by_wsgi_name('CONTENT_TYPE')
+
+    @property
+    def date(self):
+        return self._get_header_by_wsgi_name('DATE')
+
+    @property
+    def expect(self):
+        return self._get_header_by_wsgi_name('EXPECT')
+
+    @property
+    def if_match(self):
+        return self._get_header_by_wsgi_name('IF_MATCH')
+
+    @property
+    def if_none_match(self):
+        return self._get_header_by_wsgi_name('IF_NONE_MATCH')
+
+    @property
+    def if_modified_since(self):
+        return self._get_header_by_wsgi_name('IF_MODIFIED_SINCE')
+
+    @property
+    def if_unmodified_since(self):
+        return self._get_header_by_wsgi_name('IF_UNMODIFIED_SINCE')
+
+    @property
+    def if_range(self):
+        return self._get_header_by_wsgi_name('IF_RANGE')
+
+    @property
+    def range(self):
+        value = self._get_header_by_wsgi_name('RANGE')
+        if (value is None) or ('-' not in value):
+            return None
+
+        try:
+            first, last = value.split('-')
+        except ValueError:
+            return None
+
+        if first:
+            if not last:
+                last = -1
+
+            return {'first': int(first), 'last': int(last)}
+
+        elif last:
+            return {'first': -int(last), 'last': -1}
+
+        return None
+
+    @property
+    def user_agent(self):
+        return self._get_header_by_wsgi_name('USER_AGENT')
+
     def get_header(self, name, default=None, required=False):
         """Return a header value as a string
 
@@ -105,6 +218,14 @@ class Request(object):
             required: Set to True to raise HttpBadRequest instead
               of returning gracefully when the header is not found
               (default False)
+
+        Returns:
+            The value of the specified header if it exists, or the default
+            value if the header is not found and is not required.
+
+        Raises:
+            HTTPBadRequest: The header was not found in the request, but
+                it was required.
 
         """
 
@@ -132,10 +253,10 @@ class Request(object):
                 gracefully when the parameter is not found (default False)
 
         Returns:
-            The value of the param as a byte string, or the default value if
+            The value of the param as a string, or the default value if
             param is not found and is not required.
 
-        Raises
+        Raises:
             HTTPBadRequest: The param was not found in the request, but was
                 required.
 
@@ -221,3 +342,22 @@ class Request(object):
 
         raise HTTPBadRequest('Missing query parameter',
                              'The "' + name + '" query parameter is required.')
+
+    # -------------------------------------------------------------------------
+    # Helpers
+    # -------------------------------------------------------------------------
+
+    def _get_header_by_wsgi_name(self, name):
+        """Looks up a header, assuming name is already UPPERCASE_UNDERSCORE
+
+        Args:
+            name: Name of the header, already uppercased, and underscored
+
+        Returns:
+            Value of the specified header, or None if not found
+
+        """
+        try:
+            return self._headers[name]
+        except KeyError:
+            return None

@@ -29,6 +29,9 @@ class TestUriTemplates(testing.TestSuite):
 
     def test_not_str(self):
         self.assertRaises(TypeError, self.api.add_route, {}, self.resource)
+        self.assertRaises(TypeError, self.api.add_route, [], self.resource)
+        self.assertRaises(TypeError, self.api.add_route, set(), self.resource)
+        self.assertRaises(TypeError, self.api.add_route, self, self.resource)
 
     def test_no_vars(self):
         self.api.add_route('/hello/world', self.resource)
