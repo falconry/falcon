@@ -52,12 +52,11 @@ class Request(object):
         if_unmodified_since: Value of the If-Unmodified-Since header, or None
             if missing.
         if_range: Value of the If-Range header, or None if missing.
-        range: A dict representing the value of the Range header, or None if
-            missing. The dict consists of two fields, 'first' and 'last',
-            corresponding to the first byte position and last byte position
-            of the requested resource, inclusive. Negative indices indicate
-            offset from the end of the resource, similar to standard Python
-            ranges.
+        range: A 2-member tuple representing the value of the Range header, or
+            None if missing. The two members correspond to first and last byte
+            positions of the requested resource, inclusive. Negative indices
+            indicate offset from the end of the resource, where -1 is the last
+            byte, -2 is the second-to-last byte, and so forth.
         user_agent: Value of the User-Agent string, or None if not found.
 
     """
@@ -197,10 +196,10 @@ class Request(object):
             if not last:
                 last = -1
 
-            return {'first': int(first), 'last': int(last)}
+            return (int(first), int(last))
 
         elif last:
-            return {'first': -int(last), 'last': -1}
+            return (-int(last), -1)
 
         return None
 

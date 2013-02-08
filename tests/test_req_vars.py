@@ -36,15 +36,15 @@ class TestReqVars(testing.TestSuite):
     def test_range(self):
         headers = {'Range': '10-'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEquals({'first': 10, 'last': -1}, req.range)
+        self.assertEquals((10, -1), req.range)
 
         headers = {'Range': '10-20'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEquals({'first': 10, 'last': 20}, req.range)
+        self.assertEquals((10, 20), req.range)
 
         headers = {'Range': '-10240'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEquals({'first': -10240, 'last': -1}, req.range)
+        self.assertEquals((-10240, -1), req.range)
 
         headers = {'Range': '10240'}
         req = Request(testing.create_environ(headers=headers))
