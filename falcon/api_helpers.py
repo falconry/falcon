@@ -119,7 +119,7 @@ def prepare_wsgi_content(resp):
     return []
 
 
-def compile_uri_template(template):
+def compile_uri_template(template=None):
     """Compile the given URI template string into a pattern matcher.
 
     Currently only recognizes Level 1 URI templates, and only for the path
@@ -128,13 +128,15 @@ def compile_uri_template(template):
     See also: http://tools.ietf.org/html/rfc6570
 
     Args:
-        template: A Level 1 URI template. Method responders can retrieve values
-            for the fields specified as part of the template path by calling
-            req.get_param(field_name)
+        template: A Level 1 URI template. Method responders must accept, as
+        arguments, all fields specified in the template (default '/').
 
     """
     if not isinstance(template, str):
         raise TypeError('uri_template is not a string')
+
+    if not template:
+        template = '/'
 
     # Convert Level 1 var patterns to equivalent named regex groups
     escaped = re.sub(r'([\.\(\)\[\]\?\*\+\^\|])', r'\.', template)

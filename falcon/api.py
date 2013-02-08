@@ -104,9 +104,6 @@ class API(object):
 
         """
 
-        if not uri_template:
-            uri_template = '/'
-
         path_template = compile_uri_template(uri_template)
         method_map = create_http_method_map(resource)
 

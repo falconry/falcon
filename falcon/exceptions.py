@@ -33,7 +33,7 @@ class HTTPBadRequest(HTTPError):
     modifications."
 
     Args:
-        Same as for HTTPError, exept status is set for you.
+        Same as for HTTPError, except status is set for you.
 
     """
 
@@ -74,7 +74,7 @@ class HTTPForbidden(HTTPError):
     to access the requested resource.
 
     Args:
-        Same as for HTTPError, exept status is set for you.
+        Same as for HTTPError, except status is set for you.
 
     Note from RFC 2616:
 
@@ -149,7 +149,7 @@ class HTTPConflict(HTTPError):
     Content-Type."
 
     Args:
-        Same as for HTTPError, exept status is set for you.
+        Same as for HTTPError, except status is set for you.
 
     """
     def __init__(self, title, description, **kwargs):
@@ -168,7 +168,7 @@ class HTTPPreconditionFailed(HTTPError):
     method from being applied to a resource other than the one intended."
 
     Args:
-        Same as for HTTPError, exept status is set for you.
+        Same as for HTTPError, except status is set for you.
 
     """
     def __init__(self, title, description, **kwargs):
@@ -215,16 +215,11 @@ class HTTPRangeNotSatisfiable(HTTPError):
 class HTTPUpgradeRequired(HTTPError):
     """426 Upgrade Required
 
-    Sets title to "Upgrade Required".
-
     Args:
-        description: Human-friendly description of the error, along with a
-            helpful suggestion or two.
-
-    The remaining (optional) args are the same as for HTTPError.
+        Same as for HTTPError, except status is set for you.
 
     """
-    def __init__(self, description, **kwargs):
+    def __init__(self, title, description, **kwargs):
         HTTPError.__init__(self, status.HTTP_426, 'Upgrade Required',
                            description, **kwargs)
 
@@ -233,7 +228,7 @@ class HTTPInternalServerError(HTTPError):
     """500 Internal Server Error
 
     Args:
-        Same as for HTTPError, exept status is set for you.
+        Same as for HTTPError, except status is set for you.
 
     """
     def __init__(self, title, description, **kwargs):
@@ -244,7 +239,7 @@ class HTTPBadGateway(HTTPError):
     """502 Bad Gateway
 
     Args:
-        Same as for HTTPError, exept status is set for you.
+        Same as for HTTPError, except status is set for you.
 
     """
     def __init__(self, title, description, **kwargs):
@@ -281,4 +276,6 @@ class HTTPServiceUnavailable(HTTPError):
 
     """
     def __init__(self, title, description, retry_after, **kwargs):
+        headers = kwargs.setdefault('headers', {})
+        headers['Retry-After'] = str(retry_after)
         HTTPError.__init__(self, status.HTTP_503, title, description, **kwargs)

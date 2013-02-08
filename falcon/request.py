@@ -92,10 +92,8 @@ class Request(object):
         """Return True if the Accept header indicates JSON support"""
 
         accept = self.get_header('Accept')
-        if accept is not None:
-            return ('application/json' in accept) or ('*/*' in accept)
-
-        return False
+        return ((accept is not None) and
+                (('application/json' in accept) or ('*/*' in accept)))
 
     def get_header(self, name, default=None, required=False):
         """Return a header value as a string

@@ -12,8 +12,9 @@ class FaultyResource:
         status = req.get_header('X-Error-Status')
         title = req.get_header('X-Error-Title')
         description = req.get_header('X-Error-Description')
+        code = 10042
 
-        raise falcon.HTTPError(status, title, description)
+        raise falcon.HTTPError(status, title, description, code=code)
 
     def on_post(self, req, resp):
         raise falcon.HTTPForbidden(
@@ -28,6 +29,19 @@ class FaultyResource:
             'Climate change driven catastrophic weather event',
             href='http://example.com/api/climate',
             href_text='Drill baby drill!')
+
+
+class MiscErrorsResource:
+
+    def __init__(self, exception, needs_title):
+        self.needs_title = needs_title
+        self._exception = exception
+
+    def on_get(self, req, resp):
+        if self.needs_title:
+            raise self._exception('Excuse Us', 'Something went boink!')
+        else:
+            raise self._exception('Something went boink!')
 
 
 class UnauthorizedResource:
@@ -50,13 +64,6 @@ class MethodNotAllowedResource:
         raise falcon.HTTPMethodNotAllowed(['PUT'])
 
 
-class InternalServerErrorResource:
-
-    def on_get(self, req, resp):
-        raise falcon.HTTPInternalServerError('Excuse Us', 'Something went'
-                                             'boink!')
-
-
 class RangeNotSatisfiableResource:
 
     def on_get(self, req, resp):
@@ -66,11 +73,23 @@ class RangeNotSatisfiableResource:
         raise falcon.HTTPRangeNotSatisfiable(123456, 'x-falcon/peregrine')
 
 
+class ServiceUnavailableResource:
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPServiceUnavailable('Oops', 'Stand by...', 60)
+
+
 class TestHTTPError(testing.TestSuite):
 
     def prepare(self):
         self.resource = FaultyResource()
         self.api.add_route('/fail', self.resource)
+
+    def _misc_test(self, exception, status, needs_title=True):
+        self.api.add_route('/misc', MiscErrorsResource(exception, needs_title))
+
+        self._simulate_request('/misc')
+        self.assertEqual(self.srmock.status, status)
 
     def test_base_class(self):
         headers = {
@@ -85,7 +104,8 @@ class TestHTTPError(testing.TestSuite):
             b'{\n'
             b'    "title": "Storage service down",\n'
             b'    "description": "The configured storage service is not '
-            b'responding to requests. Please contact your service provider"\n'
+            b'responding to requests. Please contact your service provider",\n'
+            b'    "code": 10042\n'
             b'}'
         ]
 
@@ -94,7 +114,7 @@ class TestHTTPError(testing.TestSuite):
         body = self._simulate_request('/fail', headers=headers)
         self.assertEqual(self.srmock.status, headers['X-Error-Status'])
         self.assertThat(lambda: json.loads(body[0]), Not(raises(ValueError)))
-        self.assertEqual(body, expected_body)
+        self.assertEqual(expected_body, body)
 
         # Now try it with application/json
         headers['Accept'] = 'application/json'
@@ -106,6 +126,20 @@ class TestHTTPError(testing.TestSuite):
     def test_client_does_not_accept_json(self):
         headers = {
             'Accept': 'application/soap+xml',
+            'X-Error-Title': 'Storage service down',
+            'X-Error-Description': ('The configured storage service is not '
+                                    'responding to requests. Please contact '
+                                    'your service provider'),
+            'X-Error-Status': falcon.HTTP_503
+        }
+
+        body = self._simulate_request('/fail', headers=headers)
+        self.assertEqual(self.srmock.status, headers['X-Error-Status'])
+        self.assertEqual(body, [])
+
+    def test_client_does_not_accept_anything(self):
+        headers = {
+            'Accept': None,
             'X-Error-Title': 'Storage service down',
             'X-Error-Description': ('The configured storage service is not '
                                     'responding to requests. Please contact '
@@ -207,8 +241,23 @@ class TestHTTPError(testing.TestSuite):
         self.assertIn(('Content-Type', 'x-falcon/peregrine'),
                       self.srmock.headers)
 
-    def test_500(self):
-        self.api.add_route('/500', InternalServerErrorResource())
-        self._simulate_request('/500')
+    def test_503(self):
+        self.api.add_route('/503', ServiceUnavailableResource())
+        body = self._simulate_request('/503')
 
-        self.assertEqual(self.srmock.status, falcon.HTTP_500)
+        expected_body = (b'{\n    "title": "Oops",\n    "description": '
+                         b'"Stand by..."\n}')
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_503)
+        self.assertEqual(body, [expected_body])
+        self.assertIn(('Retry-After', '60'), self.srmock.headers)
+
+    def test_misc(self):
+        self._misc_test(falcon.HTTPBadRequest, falcon.HTTP_400)
+        self._misc_test(falcon.HTTPConflict, falcon.HTTP_409)
+        self._misc_test(falcon.HTTPPreconditionFailed, falcon.HTTP_412)
+        self._misc_test(falcon.HTTPUnsupportedMediaType, falcon.HTTP_415,
+                        needs_title=False)
+        self._misc_test(falcon.HTTPUpgradeRequired, falcon.HTTP_426)
+        self._misc_test(falcon.HTTPInternalServerError, falcon.HTTP_500)
+        self._misc_test(falcon.HTTPBadGateway, falcon.HTTP_502)

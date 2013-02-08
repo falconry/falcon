@@ -29,11 +29,6 @@ def bad_request(req, resp):
     resp.status = HTTP_400
 
 
-def server_error(req, resp):
-    """Sets response to "500 Internal Server Error", no body."""
-    resp.status = HTTP_500
-
-
 def create_method_not_allowed(allowed_methods):
     """Creates a responder for "405 Method Not Allowed".ipyth
 

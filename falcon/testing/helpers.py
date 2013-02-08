@@ -133,6 +133,12 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
         for name, value in headers.items():
             name = name.upper().replace('-', '_')
 
+            if value is None:
+                if name == 'ACCEPT' or name == 'USER_AGENT':
+                    del env['HTTP_' + name]
+
+                continue
+
             if name == 'CONTENT_TYPE':
                 env[name] = value.strip()
             elif name == 'CONTENT_LENGTH':
