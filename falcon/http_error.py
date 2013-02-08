@@ -41,7 +41,7 @@ class HTTPError(Exception):
     )
 
     def __init__(self, status, title, description=None, headers=None,
-                 href=None, href_rel=None, href_text=None, code=None):
+                 href=None, href_text=None, code=None):
         """Initialize with information that can be reported to the client
 
         Falcon will catch instances of HTTPError (and subclasses), then use
@@ -60,8 +60,6 @@ class HTTPError(Exception):
                 response to the client (default None).
             href: A URL someone can visit to find out more information
                 (default None).
-            href_rel: If href is given, use this value for the rel
-                attribute (default 'doc').
             href_text: If href is given, use this as the friendly
                 title/description for the link (defaults to "API documentation
                 for this error").
@@ -81,7 +79,7 @@ class HTTPError(Exception):
             link = self.link = OrderedDict()
             link['text'] = (href_text or 'API documention for this error')
             link['href'] = href
-            link['rel'] = (href_rel or 'doc')
+            link['rel'] = 'help'
         else:
             self.link = None
 

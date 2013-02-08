@@ -27,7 +27,6 @@ class FaultyResource:
             'Internet crashed',
             'Climate change driven catastrophic weather event',
             href='http://example.com/api/climate',
-            href_rel='oops',
             href_text='Drill baby drill!')
 
 
@@ -131,7 +130,7 @@ class TestHTTPError(testing.TestSuite):
             b'    "link": {\n'
             b'        "text": "API documention for this error",\n'
             b'        "href": "http://example.com/api/rbac",\n'
-            b'        "rel": "doc"\n'
+            b'        "rel": "help"\n'
             b'    }\n'
             b'}'
         ]
@@ -154,7 +153,7 @@ class TestHTTPError(testing.TestSuite):
             b'    "link": {\n'
             b'        "text": "Drill baby drill!",\n'
             b'        "href": "http://example.com/api/climate",\n'
-            b'        "rel": "oops"\n'
+            b'        "rel": "help"\n'
             b'    }\n'
             b'}'
         ]
