@@ -88,7 +88,7 @@ class TestHTTPError(testing.TestSuite):
     def _misc_test(self, exception, status, needs_title=True):
         self.api.add_route('/misc', MiscErrorsResource(exception, needs_title))
 
-        self._simulate_request('/misc')
+        self.simulate_request('/misc')
         self.assertEqual(self.srmock.status, status)
 
     def test_base_class(self):
@@ -111,14 +111,14 @@ class TestHTTPError(testing.TestSuite):
 
         # Try it with Accept: */*
         headers['Accept'] = '*/*'
-        body = self._simulate_request('/fail', headers=headers)
+        body = self.simulate_request('/fail', headers=headers)
         self.assertEqual(self.srmock.status, headers['X-Error-Status'])
         self.assertThat(lambda: json.loads(body[0]), Not(raises(ValueError)))
         self.assertEqual(expected_body, body)
 
         # Now try it with application/json
         headers['Accept'] = 'application/json'
-        body = self._simulate_request('/fail', headers=headers)
+        body = self.simulate_request('/fail', headers=headers)
         self.assertEqual(self.srmock.status, headers['X-Error-Status'])
         self.assertThat(lambda: json.loads(body[0]), Not(raises(ValueError)))
         self.assertEqual(body, expected_body)
@@ -133,7 +133,7 @@ class TestHTTPError(testing.TestSuite):
             'X-Error-Status': falcon.HTTP_503
         }
 
-        body = self._simulate_request('/fail', headers=headers)
+        body = self.simulate_request('/fail', headers=headers)
         self.assertEqual(self.srmock.status, headers['X-Error-Status'])
         self.assertEqual(body, [])
 
@@ -147,7 +147,7 @@ class TestHTTPError(testing.TestSuite):
             'X-Error-Status': falcon.HTTP_503
         }
 
-        body = self._simulate_request('/fail', headers=headers)
+        body = self.simulate_request('/fail', headers=headers)
         self.assertEqual(self.srmock.status, headers['X-Error-Status'])
         self.assertEqual(body, [])
 
@@ -169,7 +169,7 @@ class TestHTTPError(testing.TestSuite):
             b'}'
         ]
 
-        body = self._simulate_request('/fail', headers=headers, method='POST')
+        body = self.simulate_request('/fail', headers=headers, method='POST')
         self.assertEqual(self.srmock.status, falcon.HTTP_403)
         self.assertThat(lambda: json.loads(body[0]), Not(raises(ValueError)))
         self.assertEqual(body, expected_body)
@@ -192,28 +192,28 @@ class TestHTTPError(testing.TestSuite):
             b'}'
         ]
 
-        body = self._simulate_request('/fail', headers=headers, method='PUT')
+        body = self.simulate_request('/fail', headers=headers, method='PUT')
         self.assertEqual(self.srmock.status, falcon.HTTP_792)
         self.assertThat(lambda: json.loads(body[0]), Not(raises(ValueError)))
         self.assertEqual(body, expected_body)
 
     def test_401(self):
         self.api.add_route('/401', UnauthorizedResource())
-        self._simulate_request('/401')
+        self.simulate_request('/401')
 
         self.assertEqual(self.srmock.status, falcon.HTTP_401)
         self.assertIn(('WWW-Authenticate', 'Token'), self.srmock.headers)
 
     def test_404(self):
         self.api.add_route('/404', NotFoundResource())
-        body = self._simulate_request('/404')
+        body = self.simulate_request('/404')
 
         self.assertEqual(self.srmock.status, falcon.HTTP_404)
         self.assertEqual(body, [])
 
     def test_405(self):
         self.api.add_route('/405', MethodNotAllowedResource())
-        body = self._simulate_request('/405')
+        body = self.simulate_request('/405')
 
         self.assertEqual(self.srmock.status, falcon.HTTP_405)
         self.assertEqual(body, [])
@@ -222,7 +222,7 @@ class TestHTTPError(testing.TestSuite):
     def test_416_default_media_type(self):
         self.api = falcon.API('application/xml')
         self.api.add_route('/416', RangeNotSatisfiableResource())
-        body = self._simulate_request('/416')
+        body = self.simulate_request('/416')
 
         self.assertEqual(self.srmock.status, falcon.HTTP_416)
         self.assertEqual(body, [])
@@ -232,7 +232,7 @@ class TestHTTPError(testing.TestSuite):
 
     def test_416_custom_media_type(self):
         self.api.add_route('/416', RangeNotSatisfiableResource())
-        body = self._simulate_request('/416', method='PUT')
+        body = self.simulate_request('/416', method='PUT')
 
         self.assertEqual(self.srmock.status, falcon.HTTP_416)
         self.assertEqual(body, [])
@@ -243,7 +243,7 @@ class TestHTTPError(testing.TestSuite):
 
     def test_503(self):
         self.api.add_route('/503', ServiceUnavailableResource())
-        body = self._simulate_request('/503')
+        body = self.simulate_request('/503')
 
         expected_body = (b'{\n    "title": "Oops",\n    "description": '
                          b'"Stand by..."\n}')

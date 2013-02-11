@@ -8,7 +8,7 @@ class TestRequestBody(testing.TestSuite):
         self.api.add_route('/', self.resource)
 
     def test_empty_body(self):
-        self._simulate_request('/', body='')
+        self.simulate_request('/', body='')
         stream = self.resource.req.stream
 
         stream.seek(0, 2)
@@ -16,7 +16,7 @@ class TestRequestBody(testing.TestSuite):
 
     def test_tiny_body(self):
         expected_body = '.'
-        self._simulate_request('', body=expected_body)
+        self.simulate_request('', body=expected_body)
         stream = self.resource.req.stream
 
         actual_body = stream.read(1)
@@ -30,7 +30,7 @@ class TestRequestBody(testing.TestSuite):
         expected_len = len(expected_body)
         headers = {'Content-Length': str(expected_len)}
 
-        self._simulate_request('', body=expected_body, headers=headers)
+        self.simulate_request('', body=expected_body, headers=headers)
 
         content_len = self.resource.req.get_header('content-length')
         self.assertEqual(content_len, str(expected_len))

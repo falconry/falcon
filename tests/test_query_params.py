@@ -10,7 +10,7 @@ class TestQueryParams(testing.TestSuite):
 
     def test_none(self):
         query_string = ''
-        self._simulate_request('/', query_string=query_string)
+        self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
         self.assertEquals(req.get_param('marker'), None)
@@ -18,7 +18,7 @@ class TestQueryParams(testing.TestSuite):
 
     def test_simple(self):
         query_string = 'marker=deadbeef&limit=25'
-        self._simulate_request('/', query_string=query_string)
+        self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
         self.assertEquals(req.get_param('marker'), 'deadbeef')
@@ -26,7 +26,7 @@ class TestQueryParams(testing.TestSuite):
 
     def test_required(self):
         query_string = ''
-        self._simulate_request('/', query_string=query_string)
+        self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
         self.assertRaises(falcon.HTTPBadRequest, req.get_param,
@@ -38,7 +38,7 @@ class TestQueryParams(testing.TestSuite):
 
     def test_int(self):
         query_string = 'marker=deadbeef&limit=25'
-        self._simulate_request('/', query_string=query_string)
+        self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
         self.assertEquals(req.get_param_as_int('marker'), None)
@@ -46,7 +46,7 @@ class TestQueryParams(testing.TestSuite):
 
     def test_list_type(self):
         query_string = 'colors=red,green,blue&limit=1'
-        self._simulate_request('/', query_string=query_string)
+        self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
         self.assertEquals(req.get_param('colors'), 'red,green,blue')
@@ -57,7 +57,7 @@ class TestQueryParams(testing.TestSuite):
 
     def test_bogus_input(self):
         query_string = 'colors=red,green,&limit=1&pickle'
-        self._simulate_request('/', query_string=query_string)
+        self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
         self.assertEquals(req.get_param_as_list('colors'),

@@ -72,7 +72,7 @@ class TestSuite(testtools.TestCase):
         if hasattr(prepare, '__call__'):
             prepare()
 
-    def _simulate_request(self, path, **kwargs):
+    def simulate_request(self, path, **kwargs):
         """ Simulates a request.
 
         Simulates a request to the API for testing purposes.

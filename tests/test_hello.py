@@ -74,19 +74,19 @@ class TestHelloWorld(testing.TestSuite):
         self.api.add_route('', self.root_resource)
 
     def test_empty_route(self):
-        self._simulate_request('')
+        self.simulate_request('')
         self.assertTrue(self.root_resource.called)
 
     def test_route_negative(self):
         bogus_route = self.test_route + 'x'
-        self._simulate_request(bogus_route)
+        self.simulate_request(bogus_route)
 
         # Ensure the request was NOT routed to resource
         self.assertFalse(self.resource.called)
         self.assertEquals(self.srmock.status, falcon.HTTP_404)
 
     def test_body(self):
-        body = self._simulate_request(self.test_route)
+        body = self.simulate_request(self.test_route)
         resp = self.resource.resp
 
         self.assertEquals(self.srmock.status, self.resource.sample_status)
@@ -98,7 +98,7 @@ class TestHelloWorld(testing.TestSuite):
         # On Python 3, strings are always Unicode,
         # so only perform this test under Python 2.
         def test_body_bytes(self):
-            body = self._simulate_request('/bytes')
+            body = self.simulate_request('/bytes')
             resp = self.bytes_resource.resp
 
             self.assertEquals(self.srmock.status, self.resource.sample_status)
@@ -107,7 +107,7 @@ class TestHelloWorld(testing.TestSuite):
             self.assertEquals(body, [self.resource.sample_utf8])
 
     def test_data(self):
-        body = self._simulate_request('/data')
+        body = self.simulate_request('/data')
         resp = self.data_resource.resp
 
         self.assertEquals(self.srmock.status, self.resource.sample_status)
@@ -116,12 +116,12 @@ class TestHelloWorld(testing.TestSuite):
         self.assertEquals(body, [self.resource.sample_utf8])
 
     def test_no_body_on_head(self):
-        body = self._simulate_request(self.test_route, method='HEAD')
+        body = self.simulate_request(self.test_route, method='HEAD')
         self.assertEquals(body, [])
         self.assertEquals(self.srmock.status, falcon.HTTP_200)
 
     def test_stream_chunked(self):
-        src = self._simulate_request('/chunked-stream')
+        src = self.simulate_request('/chunked-stream')
 
         dest = io.BytesIO()
         for chunk in src:
@@ -133,7 +133,7 @@ class TestHelloWorld(testing.TestSuite):
             self.assertNotEqual(header[0].lower(), 'content-length')
 
     def test_stream_known_len(self):
-        src = self._simulate_request('/stream')
+        src = self.simulate_request('/stream')
 
         dest = io.BytesIO()
         for chunk in src:
@@ -147,7 +147,7 @@ class TestHelloWorld(testing.TestSuite):
         self.assertEqual(dest.getvalue(), self.chunked_resource.sample_utf8)
 
     def test_status_not_set(self):
-        body = self._simulate_request('/nostatus')
+        body = self.simulate_request('/nostatus')
 
         self.assertEqual(body, [])
         self.assertEqual(self.srmock.status, falcon.HTTP_200)

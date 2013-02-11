@@ -39,13 +39,13 @@ class TestWSGIError(testing.TestSuite):
             self.wsgierrors = self.wsgierrors_buffer
 
     def test_responder_logged_unicode(self):
-        self._simulate_request('/logger', wsgierrors=self.wsgierrors)
+        self.simulate_request('/logger', wsgierrors=self.wsgierrors)
 
         log = self.wsgierrors_buffer.getvalue()
         self.assertIn(unicode_message.encode('utf-8'), log)
 
     def test_responder_logged_str(self):
-        self._simulate_request('/logger', wsgierrors=self.wsgierrors,
+        self.simulate_request('/logger', wsgierrors=self.wsgierrors,
                                method='HEAD')
 
         log = self.wsgierrors_buffer.getvalue()

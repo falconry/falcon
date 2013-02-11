@@ -83,13 +83,13 @@ class TestHttpMethodRouting(testing.TestSuite):
                            self.resource_get_with_param)
 
     def test_get(self):
-        self._simulate_request('/get')
+        self.simulate_request('/get')
         self.assertTrue(self.resource_get.called)
 
     def test_misc(self):
         for method in ['GET', 'HEAD', 'PUT', 'PATCH']:
             self.resource_misc.called = False
-            self._simulate_request('/misc', method=method)
+            self.simulate_request('/misc', method=method)
             self.assertTrue(self.resource_misc.called)
             self.assertEquals(self.resource_misc.req.method, method)
 
@@ -99,7 +99,7 @@ class TestHttpMethodRouting(testing.TestSuite):
                 continue
 
             self.resource_get.called = False
-            self._simulate_request('/get', method=method)
+            self.simulate_request('/get', method=method)
 
             self.assertFalse(self.resource_get.called)
             self.assertEquals(self.srmock.status, '405 Method Not Allowed')
@@ -115,7 +115,7 @@ class TestHttpMethodRouting(testing.TestSuite):
                 continue
 
             self.resource_get_with_param.called = False
-            self._simulate_request(
+            self.simulate_request(
                 '/get_with_param/bogus_param', method=method)
 
             self.assertFalse(self.resource_get_with_param.called)
@@ -127,6 +127,6 @@ class TestHttpMethodRouting(testing.TestSuite):
             self.assertThat(headers, Contains(allow_header))
 
     def test_bogus_method(self):
-        self._simulate_request('/get', method=self.getUniqueString())
+        self.simulate_request('/get', method=self.getUniqueString())
         self.assertFalse(self.resource_get.called)
         self.assertEquals(self.srmock.status, falcon.HTTP_400)

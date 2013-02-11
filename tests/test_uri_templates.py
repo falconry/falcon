@@ -20,7 +20,7 @@ class TestUriTemplates(testing.TestSuite):
 
     def test_root_path(self):
         self.api.add_route('/', self.resource)
-        self._simulate_request('/')
+        self.simulate_request('/')
 
         self.assertTrue(self.resource.called)
         req = self.resource.req
@@ -35,7 +35,7 @@ class TestUriTemplates(testing.TestSuite):
 
     def test_no_vars(self):
         self.api.add_route('/hello/world', self.resource)
-        self._simulate_request('/hello/world')
+        self.simulate_request('/hello/world')
 
         self.assertTrue(self.resource.called)
         req = self.resource.req
@@ -46,19 +46,19 @@ class TestUriTemplates(testing.TestSuite):
         self.api.add_route('/hello/world.json', self.resource)
         self.api.add_route('/hello(world)', self.resource)
 
-        self._simulate_request('/hello/world_json')
+        self.simulate_request('/hello/world_json')
         self.assertFalse(self.resource.called)
 
-        self._simulate_request('/helloworld')
+        self.simulate_request('/helloworld')
         self.assertFalse(self.resource.called)
 
-        self._simulate_request('/hello/world.json')
+        self.simulate_request('/hello/world.json')
         self.assertTrue(self.resource.called)
 
     def test_single(self):
         self.api.add_route('/widgets/{id}', self.resource)
 
-        self._simulate_request('/widgets/123')
+        self.simulate_request('/widgets/123')
         self.assertTrue(self.resource.called)
 
         req = self.resource.req
@@ -71,10 +71,10 @@ class TestUriTemplates(testing.TestSuite):
         resource = IDResource()
         self.api.add_route('/widgets/{id}/', resource)
 
-        self._simulate_request('/widgets/123')
+        self.simulate_request('/widgets/123')
         self.assertFalse(resource.called)
 
-        self._simulate_request('/widgets/123/')
+        self.simulate_request('/widgets/123/')
         self.assertTrue(resource.called)
 
         self.assertEquals(resource.id, '123')
@@ -87,7 +87,7 @@ class TestUriTemplates(testing.TestSuite):
         test_id = self.getUniqueString()
         test_name = self.getUniqueString()
         path = '/messages/' + test_id + '/names/' + test_name
-        self._simulate_request(path)
+        self.simulate_request(path)
         self.assertTrue(resource.called)
 
         self.assertEquals(resource.id, test_id)
