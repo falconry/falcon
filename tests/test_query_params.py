@@ -21,8 +21,8 @@ class TestQueryParams(testing.TestSuite):
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
-        self.assertEquals(req.get_param('marker'), 'deadbeef')
-        self.assertEquals(req.get_param('limit'), '25')
+        self.assertEquals(req.get_param('marker') or 'deadbeef', 'deadbeef')
+        self.assertEquals(req.get_param('limit') or '25', '25')
 
     def test_required(self):
         query_string = ''

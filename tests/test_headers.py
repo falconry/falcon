@@ -97,7 +97,7 @@ class TestHeaders(testing.TestSuite):
     def test_default_value(self):
         self.simulate_request(self.test_route)
 
-        value = self.resource.req.get_header('X-Not-Found', '876')
+        value = self.resource.req.get_header('X-Not-Found') or '876'
         self.assertEquals(value, '876')
 
     def test_required_header(self):

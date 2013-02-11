@@ -207,20 +207,18 @@ class Request(object):
     def user_agent(self):
         return self._get_header_by_wsgi_name('USER_AGENT')
 
-    def get_header(self, name, default=None, required=False):
+    def get_header(self, name, required=False):
         """Return a header value as a string
 
         Args:
             name: Header name, case-insensitive (e.g., 'Content-Type')
-            default: Value to return in case the header is not
-              found (default None)
             required: Set to True to raise HttpBadRequest instead
               of returning gracefully when the header is not found
               (default False)
 
         Returns:
-            The value of the specified header if it exists, or the default
-            value if the header is not found and is not required.
+            The value of the specified header if it exists, or None if the
+            header is not found and is not required.
 
         Raises:
             HTTPBadRequest: The header was not found in the request, but
@@ -236,24 +234,22 @@ class Request(object):
             return self._headers[name.upper().replace('-', '_')]
         except KeyError:
             if not required:
-                return default
+                return None
 
             description = 'The "' + name + '" header is required.'
             raise HTTPBadRequest('Missing header', description)
 
-    def get_param(self, name, default=None, required=False):
+    def get_param(self, name, required=False):
         """Return the value of a query string parameter as a string
 
         Args:
             name: Parameter name, case-sensitive (e.g., 'sort')
-            default: Value to return in case the parameter is not found in the
-                query string (default None)
             required: Set to True to raise HTTPBadRequest instead of returning
                 gracefully when the parameter is not found (default False)
 
         Returns:
-            The value of the param as a string, or the default value if
-            param is not found and is not required.
+            The value of the param as a string, or None if param is not found
+            and is not required.
 
         Raises:
             HTTPBadRequest: The param was not found in the request, but was
@@ -267,26 +263,23 @@ class Request(object):
             return self._params[name]
 
         if not required:
-            return default
+            return None
 
         message = 'The "' + name + '" query parameter is required.'
         raise HTTPBadRequest('Missing query parameter', message)
 
-    def get_param_as_int(self, name, default=None, required=False):
+    def get_param_as_int(self, name, required=False):
         """Return the value of a query string parameter as an int
 
         Args:
             name: Parameter name, case-sensitive (e.g., 'limit')
-            default: Value to return in case the parameter is not found in the
-                query string, or it is not an integer (default None)
             required: Set to True to raise HTTPBadRequest instead of returning
                 gracefully when the parameter is not found or is not an
                 integer (default False)
 
         Returns:
             The value of the param if it is found and can be converted to an
-            integer. Otherwise, returns the default value unless required is
-            True.
+            integer. Otherwise, returns None unless required is True.
 
         Raises
             HTTPBadRequest: The param was not found in the request, but was
@@ -304,26 +297,23 @@ class Request(object):
                 pass
 
         if not required:
-            return default
+            return None
 
         message = 'The "' + name + '" query parameter is required.'
         raise HTTPBadRequest('Missing query parameter', message)
 
-    def get_param_as_list(self, name, default=None, required=False):
+    def get_param_as_list(self, name, required=False):
         """Return the value of a query string parameter as an int
 
         Args:
             name: Parameter name, case-sensitive (e.g., 'limit')
-            default: Value to return in case the parameter is not found in the
-                query string, or it is not an integer (default None)
             required: Set to True to raise HTTPBadRequest instead of returning
                 gracefully when the parameter is not found or is not an
                 integer (default False)
 
         Returns:
             The value of the param if it is found and can be converted to an
-            integer. Otherwise, returns the default value unless required is
-            True.
+            integer. Otherwise, returns None unless required is True.
 
         Raises
             HTTPBadRequest: The param was not found in the request, but was
@@ -337,7 +327,7 @@ class Request(object):
             return self._params[name].split(',')
 
         if not required:
-            return default
+            return None
 
         raise HTTPBadRequest('Missing query parameter',
                              'The "' + name + '" query parameter is required.')
