@@ -1,7 +1,7 @@
+<img style="float:right" src="https://raw.github.com/racker/falcon/master/falcon.png" alt="Falcon picture" />
+
 Falcon [![Build Status](https://travis-ci.org/racker/falcon.png)](https://travis-ci.org/racker/falcon)
 ======
-
-<img align="right" style="padding-left: 10px" src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/Brown-Falcon%2C-Vic%2C-3.1.2008.jpg/160px-Brown-Falcon%2C-Vic%2C-3.1.2008.jpg" alt="falcon picture" />
 
 **[Experimental]**
 
@@ -174,3 +174,20 @@ Comments follow [Google's style guide][goog-style-comments].
 [ajs]: http://goo.gl/QpbS7
 [goog-style-comments]: http://google-styleguide.googlecode.com/svn/trunk/pyguide.html#Comments
 
+### Legal ###
+
+Copyright 2013 by Rackspace Hosting, Inc.
+
+Falcon image courtesy of [John O'Neill][https://commons.wikimedia.org/wiki/File:Brown-Falcon,-Vic,-3.1.2008.jpg]
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
