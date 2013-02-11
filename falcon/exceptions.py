@@ -32,12 +32,15 @@ class HTTPBadRequest(HTTPError):
     syntax. The client SHOULD NOT repeat the request without
     modifications."
 
-    Args:
-        Same as for HTTPError, except status is set for you.
-
     """
 
     def __init__(self, title, description, **kwargs):
+        """Initialize
+
+        Args:
+            Same as for HTTPError, except status is set for you.
+
+        """
         HTTPError.__init__(self, status.HTTP_400, title, description, **kwargs)
 
 
@@ -60,6 +63,19 @@ class HTTPUnauthorized(HTTPError):
     """
 
     def __init__(self, title, description, scheme=None, **kwargs):
+        """Initialize
+
+        Args:
+            title: Human-friendly error title
+            description: Human-friendly description of the error, along with a
+                helpful suggestion or two.
+            scheme: Authentication scheme to use as the value of the
+                WWW-Authenticate header in the response (default None).
+
+        The remaining (optional) args are the same as for HTTPError.
+
+
+        """
         headers = kwargs.setdefault('headers', {})
         if scheme is not None:
             headers['WWW-Authenticate'] = scheme
@@ -73,9 +89,6 @@ class HTTPForbidden(HTTPError):
     Use when the client's credentials are good, but they do not have permission
     to access the requested resource.
 
-    Args:
-        Same as for HTTPError, except status is set for you.
-
     Note from RFC 2616:
 
     "If the request method was not HEAD and the server wishes to make
@@ -87,6 +100,13 @@ class HTTPForbidden(HTTPError):
     """
 
     def __init__(self, title, description, **kwargs):
+        """Initialize
+
+        Args:
+            Same as for HTTPError, except status is set for you.
+
+        """
+
         HTTPError.__init__(self, status.HTTP_403, title, description, **kwargs)
 
 
@@ -98,6 +118,8 @@ class HTTPNotFound(HTTPError):
 
     """
     def __init__(self):
+        """Initialize"""
+
         HTTPError.__init__(self, status.HTTP_404, None, None)
 
 
@@ -111,14 +133,17 @@ class HTTPMethodNotAllowed(HTTPError):
     Allow header containing a list of valid methods for the requested
     resource."
 
-    Args:
-        allowed_methods: A list of allowed HTTP methods for this resource,
-            such as ['GET', 'POST', 'HEAD'].
-
-    The remaining (optional) args are the same as for HTTPError.
-
     """
     def __init__(self, allowed_methods, **kwargs):
+        """Initilize with allowed methods
+
+        Args:
+            allowed_methods: A list of allowed HTTP methods for this resource,
+                such as ['GET', 'POST', 'HEAD'].
+
+        The remaining (optional) args are the same as for HTTPError.
+
+        """
         headers = kwargs.setdefault('headers', {})
         headers['Allow'] = ', '.join(allowed_methods)
 
@@ -148,11 +173,16 @@ class HTTPConflict(HTTPError):
     between the two versions in a format defined by the response
     Content-Type."
 
-    Args:
-        Same as for HTTPError, except status is set for you.
-
     """
+
     def __init__(self, title, description, **kwargs):
+        """Initialize
+
+        Args:
+            Same as for HTTPError, except status is set for you.
+
+        """
+
         HTTPError.__init__(self, status.HTTP_409, title, description, **kwargs)
 
 
@@ -167,11 +197,16 @@ class HTTPPreconditionFailed(HTTPError):
     metainformation (header field data) and thus prevent the requested
     method from being applied to a resource other than the one intended."
 
-    Args:
-        Same as for HTTPError, except status is set for you.
-
     """
+
     def __init__(self, title, description, **kwargs):
+        """Initialize
+
+        Args:
+            Same as for HTTPError, except status is set for you.
+
+        """
+
         HTTPError.__init__(self, status.HTTP_412, title, description, **kwargs)
 
 
@@ -180,14 +215,19 @@ class HTTPUnsupportedMediaType(HTTPError):
 
     Sets title to "Unsupported media type".
 
-    Args:
-        description: Human-friendly description of the error, along with a
-            helpful suggestion or two.
-
-    The remaining (optional) args are the same as for HTTPError.
-
     """
+
     def __init__(self, description, **kwargs):
+        """Initialize
+
+        Args:
+            description: Human-friendly description of the error, along with a
+                helpful suggestion or two.
+
+        The remaining (optional) args are the same as for HTTPError.
+
+        """
+
         HTTPError.__init__(self, status.HTTP_415, 'Unsupported media type',
                            description, **kwargs)
 
@@ -204,7 +244,19 @@ class HTTPRangeNotSatisfiable(HTTPError):
             header, or None to use the default passed to the API initializer.
 
     """
+
     def __init__(self, resource_length, media_type=None):
+        """Initialize
+
+        Args:
+            resource_length: The maximum value for the last-byte-pos of a
+                range request. Used to set the Content-Range header.
+            media_type: Media type to use as the value of the Content-Type
+                header, or None to use the default passed to the API
+                initializer.
+
+        """
+
         headers = {'Content-Range': 'bytes */' + str(resource_length)}
         if media_type is not None:
             headers['Content-Type'] = media_type
@@ -213,68 +265,79 @@ class HTTPRangeNotSatisfiable(HTTPError):
 
 
 class HTTPUpgradeRequired(HTTPError):
-    """426 Upgrade Required
+    """426 Upgrade Required"""
 
-    Args:
-        Same as for HTTPError, except status is set for you.
-
-    """
     def __init__(self, title, description, **kwargs):
+        """Initialize
+
+        Args:
+            Same as for HTTPError, except status is set for you.
+
+        """
+
         HTTPError.__init__(self, status.HTTP_426, title, description, **kwargs)
 
 
 class HTTPInternalServerError(HTTPError):
-    """500 Internal Server Error
+    """500 Internal Server Error"""
 
-    Args:
-        Same as for HTTPError, except status is set for you.
-
-    """
     def __init__(self, title, description, **kwargs):
+        """Initialize
+
+        Args:
+            Same as for HTTPError, except status is set for you.
+
+        """
+
         HTTPError.__init__(self, status.HTTP_500, title, description, **kwargs)
 
 
 class HTTPBadGateway(HTTPError):
-    """502 Bad Gateway
+    """502 Bad Gateway"""
 
-    Args:
-        Same as for HTTPError, except status is set for you.
-
-    """
     def __init__(self, title, description, **kwargs):
+        """Initialize
+
+        Args:
+            Same as for HTTPError, except status is set for you.
+
+        """
+
         HTTPError.__init__(self, status.HTTP_502, title, description, **kwargs)
 
 
 class HTTPServiceUnavailable(HTTPError):
-    """503 Service Unavailable
+    """503 Service Unavailable"""
 
-    Args:
-        title: Human-friendly error title. Set to None if you wish Falcon
-            to return an empty response body (all remaining args will
-            be ignored except for headers.) Do this only when you don't
-            wish to disclose sensitive information about why a request was
-            refused, or if the status and headers are self-descriptive.
-        description: Human-friendly description of the error, along with a
-            helpful suggestion or two (default None).
-        retry_after: Value for the Retry-After header. If a date object, will
-            serialize as an HTTP date. Otherwise, a non-negative int is
-            expected, representing the number of seconds to wait. See
-            also: http://goo.gl/DIrWr
-        headers: A dictionary of extra headers to return in the
-            response to the client (default None).
-        href: A URL someone can visit to find out more information
-            (default None).
-        href_rel: If href is given, use this value for the rel
-            attribute (default 'doc').
-        href_text: If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
-        code: An internal code that customers can reference in their
-            support request or to help them when searching for knowledge
-            base articles related to this error.
-
-    """
     def __init__(self, title, description, retry_after, **kwargs):
+        """Initialize
+
+        Args:
+            title: Human-friendly error title. Set to None if you wish Falcon
+                to return an empty response body (all remaining args will
+                be ignored except for headers.) Do this only when you don't
+                wish to disclose sensitive information about why a request was
+                refused, or if the status and headers are self-descriptive.
+            description: Human-friendly description of the error, along with a
+                helpful suggestion or two (default None).
+            retry_after: Value for the Retry-After header. If a date object,
+                will serialize as an HTTP date. Otherwise, a non-negative int
+                is expected, representing the number of seconds to wait. See
+                also: http://goo.gl/DIrWr
+            headers: A dictionary of extra headers to return in the
+                response to the client (default None).
+            href: A URL someone can visit to find out more information
+                (default None).
+            href_rel: If href is given, use this value for the rel
+                attribute (default 'doc').
+            href_text: If href is given, use this as the friendly
+                title/description for the link (defaults to "API documentation
+                for this error").
+            code: An internal code that customers can reference in their
+                support request or to help them when searching for knowledge
+                base articles related to this error.
+        """
+
         headers = kwargs.setdefault('headers', {})
         headers['Retry-After'] = str(retry_after)
         HTTPError.__init__(self, status.HTTP_503, title, description, **kwargs)

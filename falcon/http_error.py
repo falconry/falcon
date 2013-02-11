@@ -29,6 +29,15 @@ class HTTPError(Exception):
     error responses (with an appropriate HTTP status code) to the client
     when something goes wrong.
 
+    Attributes:
+        status: HTTP status line, such as "748 Confounded by Ponies".
+        title: Error title to send to the client.
+        description: Description of the error to send to the client.
+        headers: A dictionary of extra headers to add to the response.
+        link: An href that the client can provide to the user for getting help.
+        code: An internal application code that a user can reference when
+            requesting support for the error.
+
     """
 
     __slots__ = (

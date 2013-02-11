@@ -10,10 +10,26 @@ import falcon
 
 
 def httpnow():
+    """Returns the current UTC time as an HTTP date
+
+    Returns:
+        An HTTP date string, e.g., "Tue, 15 Nov 1994 12:45:26 GMT". See
+        also: http://goo.gl/R7So4
+
+    """
+
     return falcon.dt_to_http(datetime.utcnow())
 
 
 def rand_string(min, max):
+    """Returns a randomly-generated string, of a random length
+
+    Args:
+        min: Minimum string length to return, inclusive
+        max: Maximum string length to return, inclusive
+
+    """
+
     int_gen = random.randint
     string_length = int_gen(min, max)
     return ''.join([chr(int_gen(ord('\t'), ord('~')))
@@ -21,22 +37,55 @@ def rand_string(min, max):
 
 
 class StartResponseMock:
+    """Mock object that represents a WSGI start_response callable
+
+    Attributes:
+        call_count: Number of times start_response was called.
+        status: HTTP status line, e.g. "785 TPS Cover Sheet not attached".
+        headers: Headers array passed to start_response, per PEP-333
+        headers_dict: Headers array parsed into a dict to facilitate lookups
+
+    """
+
     def __init__(self):
+        """Initialize attributes to default values"""
+
         self._called = 0
         self.status = None
         self.headers = None
 
     def __call__(self, status, headers):
+        """Implements the PEP-333 start_response protocol"""
+
         self._called += 1
         self.status = status
         self.headers = headers
         self.headers_dict = dict(headers)
 
+    @property
     def call_count(self):
         return self._called
 
 
 class TestResource:
+    """Falcon test resource.
+
+    Implements on_get only, and captures request data, as well as
+    sets resp body and some sample headers.
+
+    Attributes:
+        sample_status: HTTP status set on the response
+        sample_body: Random body string set on the response
+        resp_headers: Sample headers set on the response
+
+        req: Request passed into the on_get responder
+        resp: Response passed into the on_get responder
+        kwargs: Keyword arguments (URI fields) passed into the on_get responder
+        called: True if on_get was ever called; False otherwise
+
+
+    """
+
     sample_status = "200 OK"
     sample_body = rand_string(0, 128 * 1024)
     resp_headers = {
@@ -46,9 +95,22 @@ class TestResource:
     }
 
     def __init__(self):
+        """Initializes called to False"""
+
         self.called = False
 
     def on_get(self, req, resp, **kwargs):
+        """GET responder
+
+        Captures req, resp, and kwargs. Also sets up a sample response.
+
+        Args:
+            req: Falcon Request instance
+            resp: Falcon Response instance
+            kwargs: URI template name=value pairs
+
+        """
+
         # Don't try this at home - classes aren't recreated
         # for every request
         self.req, self.resp, self.kwargs = req, resp, kwargs
@@ -60,9 +122,25 @@ class TestResource:
 
 
 class TestSuite(testtools.TestCase):
-    """ Creates a basic TestSuite for testing an API endpoint. """
+    """ Creates a basic TestSuite for testing an API endpoint.
+
+    Inherit from this and write your test methods. If the child class defines
+    a prepare(self) method, this method will be called before executing each
+    test method.
+
+    Attributes:
+        api: falcon.API instance used in simulating requests.
+        srmock: falcon.testing.StartResponseMock instance used in
+            simulating requests.
+        test_route: Randomly-generated route string (path) that tests can
+            use when wiring up resources.
+
+
+    """
 
     def setUp(self):
+        """Initializer, unittest-style"""
+
         super(TestSuite, self).setUp()
         self.api = falcon.API()
         self.srmock = StartResponseMock()
@@ -77,8 +155,10 @@ class TestSuite(testtools.TestCase):
 
         Simulates a request to the API for testing purposes.
 
-        See: create_environ() for suitable arguments
-        a variable length argument list. See create_environ()
+        Args:
+            path: Request path for the desired resource
+            kwargs: Same as falcon.testing.create_environ()
+
         """
 
         if not path:
@@ -92,7 +172,7 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
                    headers=None, script='', body='', method='GET',
                    wsgierrors=None):
 
-    """ Creates a 'mock' environment for testing
+    """ Creates a 'mock' PEP-333 environ dict for simulating WSGI requests
 
     Args:
         path: The path for the request (default '/')
@@ -104,6 +184,7 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
         body: The body of the request (default '')
         method: The HTTP method to use (default 'GET')
         wsgierrors: The stream to use as wsgierrors (default sys.stderr)
+
     """
 
     body = io.BytesIO(body.encode('utf-8')

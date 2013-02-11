@@ -53,6 +53,7 @@ def should_ignore_body(status, method):
         False otherwise.
 
     """
+
     return (method == 'HEAD' or status in IGNORE_BODY_STATUS_CODES)
 
 
@@ -69,6 +70,7 @@ def set_content_length(resp):
         resp: The response object on which to set the content length.
 
     """
+
     content_length = 0
 
     if resp.body is not None:
@@ -132,6 +134,7 @@ def compile_uri_template(template=None):
         arguments, all fields specified in the template (default '/').
 
     """
+
     if not isinstance(template, str):
         raise TypeError('uri_template is not a string')
 
@@ -156,6 +159,7 @@ def create_http_method_map(resource):
            on_get(self, req, resp) and on_post(self,req,resp).
 
     """
+
     method_map = {}
 
     for method in HTTP_METHODS:

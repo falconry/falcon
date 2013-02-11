@@ -28,7 +28,7 @@ class TestWsgi(testtools.TestCase):
         self.assertTrue(_is_iterable(response))
 
         # Make sure start_response was passed a valid status string
-        self.assertIs(mock.call_count(), 1)
+        self.assertIs(mock.call_count, 1)
         self.assertTrue(isinstance(mock.status, str))
         self.assertThat(mock.status, MatchesRegex('^\d+[a-zA-Z\s]+$'))
 
