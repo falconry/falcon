@@ -1,3 +1,4 @@
+import falcon
 import falcon.testing as testing
 
 
@@ -22,6 +23,18 @@ class TestQueryParams(testing.TestSuite):
         req = self.resource.req
         self.assertEquals(req.get_param('marker'), 'deadbeef')
         self.assertEquals(req.get_param('limit'), '25')
+
+    def test_required(self):
+        query_string = ''
+        self._simulate_request('/', query_string=query_string)
+
+        req = self.resource.req
+        self.assertRaises(falcon.HTTPBadRequest, req.get_param,
+                          'marker', required=True)
+        self.assertRaises(falcon.HTTPBadRequest, req.get_param_as_int,
+                          'marker', required=True)
+        self.assertRaises(falcon.HTTPBadRequest, req.get_param_as_list,
+                          'marker', required=True)
 
     def test_int(self):
         query_string = 'marker=deadbeef&limit=25'

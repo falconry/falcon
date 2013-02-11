@@ -178,7 +178,7 @@ class HTTPPreconditionFailed(HTTPError):
 class HTTPUnsupportedMediaType(HTTPError):
     """415 Unsupported Media Type
 
-    Sets title to "Unsupported Media Type".
+    Sets title to "Unsupported media type".
 
     Args:
         description: Human-friendly description of the error, along with a
@@ -188,7 +188,7 @@ class HTTPUnsupportedMediaType(HTTPError):
 
     """
     def __init__(self, description, **kwargs):
-        HTTPError.__init__(self, status.HTTP_415, 'Unsupported Media Type',
+        HTTPError.__init__(self, status.HTTP_415, 'Unsupported media type',
                            description, **kwargs)
 
 
@@ -220,8 +220,7 @@ class HTTPUpgradeRequired(HTTPError):
 
     """
     def __init__(self, title, description, **kwargs):
-        HTTPError.__init__(self, status.HTTP_426, 'Upgrade Required',
-                           description, **kwargs)
+        HTTPError.__init__(self, status.HTTP_426, title, description, **kwargs)
 
 
 class HTTPInternalServerError(HTTPError):

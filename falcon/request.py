@@ -238,8 +238,8 @@ class Request(object):
             if not required:
                 return default
 
-            raise HTTPBadRequest('Missing header',
-                                 'The "' + name + '" header is required.')
+            description = 'The "' + name + '" header is required.'
+            raise HTTPBadRequest('Missing header', description)
 
     def get_param(self, name, default=None, required=False):
         """Return the value of a query string parameter as a string
@@ -269,8 +269,8 @@ class Request(object):
         if not required:
             return default
 
-        raise HTTPBadRequest('Missing query parameter',
-                             'The "' + name + '" query parameter is required.')
+        message = 'The "' + name + '" query parameter is required.'
+        raise HTTPBadRequest('Missing query parameter', message)
 
     def get_param_as_int(self, name, default=None, required=False):
         """Return the value of a query string parameter as an int
@@ -306,8 +306,8 @@ class Request(object):
         if not required:
             return default
 
-        raise HTTPBadRequest('Missing query parameter',
-                             'The "' + name + '" query parameter is required.')
+        message = 'The "' + name + '" query parameter is required.'
+        raise HTTPBadRequest('Missing query parameter', message)
 
     def get_param_as_list(self, name, default=None, required=False):
         """Return the value of a query string parameter as an int

@@ -100,6 +100,13 @@ class TestHeaders(testing.TestSuite):
         value = self.resource.req.get_header('X-Not-Found', '876')
         self.assertEquals(value, '876')
 
+    def test_required_header(self):
+        self._simulate_request(self.test_route)
+
+        self.assertRaises(falcon.HTTPBadRequest,
+                          self.resource.req.get_header, 'X-Not-Found',
+                          required=True)
+
     def test_prefer_host_header(self):
         self._simulate_request(self.test_route)
 
