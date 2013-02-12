@@ -18,9 +18,9 @@ Falcon is a [high-performance Python framework][home] for building cloud APIs. I
 
 **Fast.** Cloud APIs need to turn around requests quickly, and make efficient use of hardware. Falcon processes requests several times faster than other popular web frameworks.
 
-**Light.** Only the essentials are included, with the "six" Python 3 compatibility module being the only dependency outside the standard library. We work to keep the code lean and mean, making Falcon easier to test, optimize, and deploy. 
+**Light.** Only the essentials are included, with *six* and *testtools* being the only two dependencies outside the standard library. We work to keep the code lean, making Falcon easier to test, optimize, and deploy. 
 
-**Flexible.** Falcon uses the web-friendly Python language and speaks WSGI. Built-in diagnostics facilitate monitoring and debugging of production systems.
+**Flexible.** Falcon can be deployed in a variety of ways, depending on your needs. The framework speaks WSGI, and works great with Python 2.7, PyPy, and Python 3.3. There's no tight coupling with any async framework, leaving you free to mix-and-match what you need.
 
 ### Install ###
 
