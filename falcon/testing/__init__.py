@@ -1,5 +1,4 @@
-"""Test Suite and helper functions for unit testing API's
-implemented on top of Falcon.
+"""Helper classes and functions for unit-testing API's implemented on Falcon.
 
 Copyright 2013 by Rackspace Hosting, Inc.
 
@@ -17,5 +16,8 @@ limitations under the License.
 
 """
 
-# Hoist classes and functions into the falcon namespace
-from falcon.testing.helpers import *
+# Hoist classes and functions into the falcon.testing namespace
+from falcon.testing.helpers import *  # NOQA
+from falcon.testing.srmock import StartResponseMock  # NOQA
+from falcon.testing.test_resource import TestResource  # NOQA
+from falcon.testing.test_suite import TestSuite  # NOQA
