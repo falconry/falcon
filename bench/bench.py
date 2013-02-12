@@ -9,7 +9,7 @@ import timeit
 from create import *
 
 sys.path.append('..')
-import tests.helpers as helpers
+import falcon.testing as helpers
 del sys.path[-1]
 
 

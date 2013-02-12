@@ -19,9 +19,12 @@ setup(
         'Operating System :: Microsoft :: Windows',
         'Operating System :: POSIX',
         'Topic :: Internet :: WWW/HTTP :: WSGI',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 2.7',
         'Topic :: Software Development :: Libraries :: Application Frameworks'
+        'Programming Language :: Python',
+        'Programming Language :: Python :: Implementation :: CPython',
+        'Programming Language :: Python :: Implementation :: PyPy',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.3',
     ],
     keywords='wsgi web api framework rest http cloud',
     author='Kurt Griffiths',
@@ -31,8 +34,5 @@ setup(
     packages=find_packages(exclude=['bench', 'tests']),
     include_package_data=True,
     zip_safe=False,
-    install_requires=['six'],
-
-    test_suite='nose.collector',
-    tests_require='nose'
+    install_requires=['six', 'testtools'],
 )
