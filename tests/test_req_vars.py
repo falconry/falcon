@@ -13,7 +13,7 @@ class TestReqVars(testing.TestSuite):
         }
 
         self.url = 'http://falconer/test/hello?marker=deadbeef&limit=10'
-        self.req = Request(testing.create_environ(script='/test',
+        self.req = Request(testing.create_environ(app='/test',
                                                   path='/hello',
                                                   query_string=qs,
                                                   headers=headers))

@@ -169,7 +169,7 @@ class TestSuite(testtools.TestCase):
 
 
 def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
-                   headers=None, script='', body='', method='GET',
+                   headers=None, app='', body='', method='GET',
                    wsgierrors=None):
 
     """ Creates a 'mock' PEP-333 environ dict for simulating WSGI requests
@@ -180,7 +180,11 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
         protocol: The HTTP protocol to simulate (default 'HTTP/1.1')
         port: The TCP port to simulate (default '80')
         headers: Optional headers to set (default None)
-        script: The WSGI script name (default '')
+        app: Value for the SCRIPT_NAME environ variable, described in
+            PEP-333: 'The initial portion of the request URL's "path" that
+            corresponds to the application object, so that the application
+            knows its virtual "location". This may be an empty string, if the
+            application corresponds to the "root" of the server.' (default '')
         body: The body of the request (default '')
         method: The HTTP method to use (default 'GET')
         wsgierrors: The stream to use as wsgierrors (default sys.stderr)
@@ -193,7 +197,7 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
     env = {
         'SERVER_PROTOCOL': protocol,
         'SERVER_SOFTWARE': 'gunicorn/0.17.0',
-        'SCRIPT_NAME': script,
+        'SCRIPT_NAME': app,
         'REQUEST_METHOD': method,
         'PATH_INFO': path,
         'QUERY_STRING': query_string,
