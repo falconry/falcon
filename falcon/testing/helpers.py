@@ -1,9 +1,26 @@
+"""Defines helper functions for unit testing.
+
+Copyright 2013 by Rackspace Hosting, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+"""
+
 import random
 import io
 import sys
 from datetime import datetime
 
-import testtools
 import six
 
 import falcon
@@ -34,138 +51,6 @@ def rand_string(min, max):
     string_length = int_gen(min, max)
     return ''.join([chr(int_gen(ord('\t'), ord('~')))
                     for i in range(string_length)])
-
-
-class StartResponseMock:
-    """Mock object that represents a WSGI start_response callable
-
-    Attributes:
-        call_count: Number of times start_response was called.
-        status: HTTP status line, e.g. "785 TPS Cover Sheet not attached".
-        headers: Headers array passed to start_response, per PEP-333
-        headers_dict: Headers array parsed into a dict to facilitate lookups
-
-    """
-
-    def __init__(self):
-        """Initialize attributes to default values"""
-
-        self._called = 0
-        self.status = None
-        self.headers = None
-
-    def __call__(self, status, headers):
-        """Implements the PEP-333 start_response protocol"""
-
-        self._called += 1
-        self.status = status
-        self.headers = headers
-        self.headers_dict = dict(headers)
-
-    @property
-    def call_count(self):
-        return self._called
-
-
-class TestResource:
-    """Falcon test resource.
-
-    Implements on_get only, and captures request data, as well as
-    sets resp body and some sample headers.
-
-    Attributes:
-        sample_status: HTTP status set on the response
-        sample_body: Random body string set on the response
-        resp_headers: Sample headers set on the response
-
-        req: Request passed into the on_get responder
-        resp: Response passed into the on_get responder
-        kwargs: Keyword arguments (URI fields) passed into the on_get responder
-        called: True if on_get was ever called; False otherwise
-
-
-    """
-
-    sample_status = "200 OK"
-    sample_body = rand_string(0, 128 * 1024)
-    resp_headers = {
-        'Content-Type': 'text/plain; charset=utf-8',
-        'ETag': '10d4555ebeb53b30adf724ca198b32a2',
-        'X-Hello': 'OH HAI'
-    }
-
-    def __init__(self):
-        """Initializes called to False"""
-
-        self.called = False
-
-    def on_get(self, req, resp, **kwargs):
-        """GET responder
-
-        Captures req, resp, and kwargs. Also sets up a sample response.
-
-        Args:
-            req: Falcon Request instance
-            resp: Falcon Response instance
-            kwargs: URI template name=value pairs
-
-        """
-
-        # Don't try this at home - classes aren't recreated
-        # for every request
-        self.req, self.resp, self.kwargs = req, resp, kwargs
-
-        self.called = True
-        resp.status = falcon.HTTP_200
-        resp.body = self.sample_body
-        resp.set_headers(self.resp_headers)
-
-
-class TestSuite(testtools.TestCase):
-    """ Creates a basic TestSuite for testing an API endpoint.
-
-    Inherit from this and write your test methods. If the child class defines
-    a prepare(self) method, this method will be called before executing each
-    test method.
-
-    Attributes:
-        api: falcon.API instance used in simulating requests.
-        srmock: falcon.testing.StartResponseMock instance used in
-            simulating requests.
-        test_route: Randomly-generated route string (path) that tests can
-            use when wiring up resources.
-
-
-    """
-
-    def setUp(self):
-        """Initializer, unittest-style"""
-
-        super(TestSuite, self).setUp()
-        self.api = falcon.API()
-        self.srmock = StartResponseMock()
-        self.test_route = '/' + self.getUniqueString()
-
-        prepare = getattr(self, 'prepare', None)
-        if hasattr(prepare, '__call__'):
-            prepare()
-
-    def simulate_request(self, path, **kwargs):
-        """ Simulates a request.
-
-        Simulates a request to the API for testing purposes.
-
-        Args:
-            path: Request path for the desired resource
-            kwargs: Same as falcon.testing.create_environ()
-
-        """
-
-        if not path:
-            path = '/'
-
-        return self.api(create_environ(path=path, **kwargs),
-                        self.srmock)
 
 
 def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
