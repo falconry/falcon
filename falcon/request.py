@@ -38,10 +38,12 @@ class Request(object):
         path: Path portion of the request URL (not including query string).
         query_string: Query string portion of the request URL.
         stream: Stream-like object for reading the body of the request, if any.
+        ext: A dict that hooks can use to extend the request with custom data
 
         accept: Value of the Accept header, or None if not found.
         auth: Value of the Authorization header, or None if not found.
-        content_length: Value of the Content-Length header, or None if missing.
+        content_length: Value of the Content-Length header, converted to an
+            int, or None if missing or not an integer.
         content_type: Value of the Content-Type header, or None if not found.
         date: Value of the Date header, or None if missing.
         expect: Value of the Expect header, or None if missing.
@@ -63,6 +65,7 @@ class Request(object):
 
     __slots__ = (
         'app',
+        'ext',
         '_headers',
         'method',
         '_params',
@@ -95,6 +98,8 @@ class Request(object):
 
         self._params = parse_query_string(query_string)
         self._headers = parse_headers(env)
+
+        self.ext = {}
 
     def log_error(self, message):
         """Log an error to wsgi.error
@@ -147,7 +152,14 @@ class Request(object):
 
     @property
     def content_length(self):
-        return self._get_header_by_wsgi_name('CONTENT_LENGTH')
+        value = self._get_header_by_wsgi_name('CONTENT_LENGTH')
+        if value is not None:
+            try:
+                return int(value)
+            except ValueError:
+                pass
+
+        return None
 
     @property
     def content_type(self):

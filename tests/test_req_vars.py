@@ -82,6 +82,23 @@ class TestReqVars(testing.TestSuite):
         req = Request(testing.create_environ(headers=headers))
         self.assertEqual(None, req.range)
 
+    def test_missing_attribute_header(self):
+        req = Request(testing.create_environ())
+        self.assertEquals(None, req.range)
+
+        req = Request(testing.create_environ())
+        self.assertEquals(None, req.content_length)
+
+    def test_content_length(self):
+        headers = {'content-length': '5656'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertEquals(5656, req.content_length)
+
+    def test_bogus_content_length(self):
+        headers = {'content-length': 'fuzzy-bunnies'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertEquals(None, req.content_length)
+
     def test_attribute_headers(self):
         date = testing.httpnow()
         hash = 'fa0d1a60ef6616bb28038515c8ea4cb2'
@@ -92,7 +109,6 @@ class TestReqVars(testing.TestSuite):
 
         self._test_attribute_header('Authorization', auth, 'auth')
 
-        self._test_attribute_header('Content-Length', '4829', 'content_length')
         self._test_attribute_header('Content-Type', 'text/plain',
                                     'content_type')
         self._test_attribute_header('Expect', '100-continue', 'expect')

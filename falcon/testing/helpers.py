@@ -103,21 +103,31 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
     if protocol != 'HTTP/1.0':
         env['HTTP_HOST'] = 'falconer'
 
+    content_length = body.seek(0, 2)
+    body.seek(0)
+
+    if content_length != 0:
+        env['CONTENT_LENGTH'] = content_length
+
     if headers is not None:
-        for name, value in headers.items():
-            name = name.upper().replace('-', '_')
-
-            if value is None:
-                if name == 'ACCEPT' or name == 'USER_AGENT':
-                    del env['HTTP_' + name]
-
-                continue
-
-            if name == 'CONTENT_TYPE':
-                env[name] = value.strip()
-            elif name == 'CONTENT_LENGTH':
-                env[name] = value.strip()
-            else:
-                env['HTTP_' + name.upper()] = value.strip()
+        _add_headers_to_environ(env, headers)
 
     return env
+
+
+def _add_headers_to_environ(env, headers):
+    for name, value in headers.items():
+        name = name.upper().replace('-', '_')
+
+        if value is None:
+            if name == 'ACCEPT' or name == 'USER_AGENT':
+                del env['HTTP_' + name]
+
+            continue
+
+        if name == 'CONTENT_TYPE':
+            env[name] = value.strip()
+        elif name == 'CONTENT_LENGTH':
+            env[name] = value.strip()
+        else:
+            env['HTTP_' + name.upper()] = value.strip()
