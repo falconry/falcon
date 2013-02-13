@@ -97,7 +97,10 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
 
         'wsgi.url_scheme': 'http',
         'wsgi.input': body,
-        'wsgi.errors': wsgierrors or sys.stderr
+        'wsgi.errors': wsgierrors or sys.stderr,
+        'wsgi.multithread': False,
+        'wsgi.multiprocess': True,
+        'wsgi.run_once': False
     }
 
     if protocol != 'HTTP/1.0':
