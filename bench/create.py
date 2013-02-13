@@ -2,26 +2,12 @@ import sys
 import re
 import six
 
-import wheezy.http as wheezy
-from wheezy.core.collections import last_item_adapter
-import bottle
-import cherrypy
-
-if not six.PY3:
-    import flask
-    import werkzeug.wrappers as werkzeug
-    from werkzeug.routing import Map, Rule
-
-    sys.path.append('./nuts/nuts')
-    import app as nuts
-    del sys.path[-1]
-
-sys.path.append('..')
-import falcon
-del sys.path[-1]
-
 
 def create_falcon(body, headers):
+    sys.path.append('..')
+    import falcon
+    del sys.path[-1]
+
     path = '/hello/{account_id}/test'
     falcon_app = falcon.API('text/plain')
 
@@ -49,6 +35,9 @@ def create_falcon(body, headers):
 
 
 def create_wheezy(body, headers):
+    import wheezy.http as wheezy
+    from wheezy.core.collections import last_item_adapter
+
     def hello(request, account_id):
         query = last_item_adapter(request.query)
 
@@ -87,6 +76,8 @@ def create_wheezy(body, headers):
 
 
 def create_flask(body, headers):
+    import flask
+
     path = '/hello/<account_id>/test'
     flask_app = flask.Flask('hello')
 
@@ -103,6 +94,7 @@ def create_flask(body, headers):
 
 
 def create_bottle(body, headers):
+    import bottle
     path = '/hello/<account_id>/test'
 
     @bottle.route(path)
@@ -116,6 +108,9 @@ def create_bottle(body, headers):
 
 
 def create_werkzeug(body, headers):
+    import werkzeug.wrappers as werkzeug
+    from werkzeug.routing import Map, Rule
+
     path = '/hello/<account_id>/test'
     url_map = Map([Rule(path, endpoint='hello')])
 
@@ -133,20 +128,41 @@ def create_werkzeug(body, headers):
 
 
 def create_cherrypy(body, headers):
-    class Hello(object):
-        @cherrypy.expose
-        def index(self, account_id, test):
-            print account_id, test
+    import cherrypy
+
+    # Disable logging
+    cherrypy.config.update({'environment': 'embedded'})
+
+    class HelloResource(object):
+
+        exposed = True
+
+        def GET(self, account_id, test, limit=8):
+            user_agent = cherrypy.request.headers['User-Agent']  # NOQA
+            for name, value in headers.items():
+                cherrypy.response.headers[name] = value
+
             return body
 
     class Root(object):
-        hello = Hello()
+        pass
 
-    app = cherrypy.tree.mount(Root())
-    import pdb
-    pdb.set_trace()
+    root = Root()
+    root.hello = HelloResource()
+
+    conf = {
+        '/': {
+            'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+        }
+    }
+
+    app = cherrypy.tree.mount(root, '/', conf)
     return app
 
 
 def create_pecan(body, headers):
+    sys.path.append('./nuts/nuts')
+    import app as nuts
+    del sys.path[-1]
+
     return nuts.create()

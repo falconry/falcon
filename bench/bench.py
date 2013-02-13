@@ -52,7 +52,7 @@ if __name__ == '__main__':
     parser.add_argument('-b', '--benchmark', type=str, action='append',
                         choices=frameworks, dest='frameworks')
     parser.add_argument('-i', '--iterations', type=int, default=100000)
-    parser.add_argument('-r', '--repetitions', type=int, default=10)
+    parser.add_argument('-r', '--repetitions', type=int, default=5)
     args = parser.parse_args()
 
     if args.frameworks:
