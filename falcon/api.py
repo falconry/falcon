@@ -23,8 +23,7 @@ from .status_codes import HTTP_416
 from .api_helpers import *
 
 from .http_error import HTTPError
-
-DEFAULT_MEDIA_TYPE = 'application/json; charset=utf-8'
+from falcon import DEFAULT_MEDIA_TYPE
 
 
 class API(object):
@@ -35,12 +34,17 @@ class API(object):
 
     """
 
-    __slots__ = ('_media_type', '_routes')
+    __slots__ = ('_before', '_media_type', '_routes')
 
-    def __init__(self, media_type=DEFAULT_MEDIA_TYPE):
-        """Initialize default values"""
+    def __init__(self, media_type=DEFAULT_MEDIA_TYPE, before=None):
+        """Initialize attributes"""
+
+        if not (before is None or hasattr(before, '__call__')):
+            raise TypeError('before must be callable')
+
         self._routes = []
         self._media_type = media_type
+        self._before = before
 
     def __call__(self, env, start_response):
         """WSGI "app" method
@@ -105,7 +109,7 @@ class API(object):
         """
 
         path_template = compile_uri_template(uri_template)
-        method_map = create_http_method_map(resource)
+        method_map = create_http_method_map(resource, self._before)
 
         # Insert at the head of the list in case we get duplicate
         # adds (will cause the last one to win).

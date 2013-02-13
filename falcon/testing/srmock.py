@@ -34,14 +34,16 @@ class StartResponseMock:
         self._called = 0
         self.status = None
         self.headers = None
+        self.exc_info = None
 
-    def __call__(self, status, headers):
-        """Implements the PEP-333 start_response protocol"""
+    def __call__(self, status, headers, exc_info=None):
+        """Implements the PEP-3333 start_response protocol"""
 
         self._called += 1
         self.status = status
         self.headers = headers
         self.headers_dict = dict(headers)
+        self.exc_info = exc_info
 
     @property
     def call_count(self):

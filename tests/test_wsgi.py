@@ -1,3 +1,5 @@
+import sys
+
 import testtools
 from testtools.matchers import Equals, MatchesRegex
 
@@ -17,7 +19,20 @@ def _is_iterable(thing):
 
 class TestWsgi(testtools.TestCase):
 
-    def test_pep333(self):
+    def test_srmock(self):
+        mock = testing.StartResponseMock()
+        mock(falcon.HTTP_200, ())
+
+        self.assertEqual(falcon.HTTP_200, mock.status)
+        self.assertEqual(None, mock.exc_info)
+
+        mock = testing.StartResponseMock()
+        exc_info = sys.exc_info()
+        mock(falcon.HTTP_200, (), exc_info)
+
+        self.assertEqual(exc_info, mock.exc_info)
+
+    def test_pep3333(self):
         api = falcon.API()
         mock = testing.StartResponseMock()
 

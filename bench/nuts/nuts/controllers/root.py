@@ -1,6 +1,6 @@
 import random
 
-from pecan import expose, response
+from pecan import expose, response, request
 
 
 def rand_string(min, max):
@@ -19,7 +19,10 @@ class TestController(object):
 
     @expose(content_type='text/plain')
     def test(self):
+        user_agent = request.headers['User-Agent']  # NOQA
+        limit = request.params['limit']  # NOQA
         response.headers['X-Test'] = 'Funky Chicken'
+
         return body
 
 

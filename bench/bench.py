@@ -32,8 +32,8 @@ def bench(name, iterations=10000, repeat=5):
 def create_bench(name):
     srmock = helpers.StartResponseMock()
     env = helpers.create_environ('/hello/584/test', query_string='limit=10')
-    body = helpers.rand_string(0, 10240)
-    headers = {'X-Test': 'Funky Chicken'}
+    body = helpers.rand_string(0, 10240)  # NOQA
+    headers = {'X-Test': 'Funky Chicken'}  # NOQA
 
     app = eval('create_{0}(body, headers)'.format(name.lower()))
 
@@ -45,7 +45,7 @@ def create_bench(name):
 
 if __name__ == '__main__':
     frameworks = [
-        'Wheezy', 'Flask', 'Werkzeug', 'Falcon', 'Pecan', 'Bottle'
+        'Wheezy', 'Flask', 'Werkzeug', 'Falcon', 'Pecan', 'Bottle', 'CherryPy'
     ]
 
     parser = argparse.ArgumentParser(description="Falcon benchmark runner")

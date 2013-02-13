@@ -17,21 +17,12 @@ limitations under the License.
 """
 
 import re
+from functools import wraps
 
-from falcon import responders
+from falcon import responders, HTTP_METHODS
+
 import falcon.status_codes as status
 
-HTTP_METHODS = (
-    'CONNECT',
-    'DELETE',
-    'GET',
-    'HEAD',
-    'OPTIONS',
-    'POST',
-    'PUT',
-    'TRACE',
-    'PATCH'
-)
 
 IGNORE_BODY_STATUS_CODES = {
     status.HTTP_100,
@@ -149,7 +140,7 @@ def compile_uri_template(template=None):
     return re.compile(pattern, re.IGNORECASE)
 
 
-def create_http_method_map(resource):
+def create_http_method_map(resource, before):
     """Maps HTTP methods (such as GET and POST) to methods of resource object
 
     Args:
@@ -164,21 +155,49 @@ def create_http_method_map(resource):
 
     for method in HTTP_METHODS:
         try:
-            func = getattr(resource, 'on_' + method.lower())
+            responder = getattr(resource, 'on_' + method.lower())
         except AttributeError:
             # resource does not implement this method
             pass
         else:
             # Usually expect a method, but any callable will do
-            if hasattr(func, '__call__'):
-                method_map[method] = func
+            if hasattr(responder, '__call__'):
+                if before is not None:
+                    responder = _wrap_with_before(before, responder)
+
+                method_map[method] = responder
 
     # Attach a resource for unsupported HTTP methods
     allowed_methods = list(method_map.keys())
-    func = responders.create_method_not_allowed(allowed_methods)
+    responder = responders.create_method_not_allowed(allowed_methods)
 
     for method in HTTP_METHODS:
         if method not in allowed_methods:
-            method_map[method] = func
+            method_map[method] = responder
 
     return method_map
+
+
+#-----------------------------------------------------------------------------
+# Helpers
+#-----------------------------------------------------------------------------
+
+
+def _wrap_with_before(action, responder):
+    """Execute the given action function before a bound responder.
+
+    Args:
+        action: A function with the same signature as a resource responder
+        method, taking (req, resp, **kwargs), where kwargs can be a specific
+        list of URI template field names. For example:
+
+        def validate(req, resp, id)
+
+    """
+
+    @wraps(responder)
+    def do_before(req, resp, **kwargs):
+        action(req, resp, **kwargs)
+        responder(req, resp, **kwargs)
+
+    return do_before

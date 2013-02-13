@@ -5,6 +5,7 @@ import six
 import wheezy.http as wheezy
 from wheezy.core.collections import last_item_adapter
 import bottle
+import cherrypy
 
 if not six.PY3:
     import flask
@@ -24,10 +25,13 @@ def create_falcon(body, headers):
     path = '/hello/{account_id}/test'
     falcon_app = falcon.API('text/plain')
 
+    def ask(req, resp, account_id):
+        req.ext['answer'] = 42
+
+    # @falcon.before(ask)
     class HelloResource:
         def on_get(self, req, resp, account_id):
             user_agent = req.user_agent  # NOQA
-
             limit = req.get_param('limit', '10')  # NOQA
             if six.PY3:
                 resp.body = body
@@ -36,6 +40,7 @@ def create_falcon(body, headers):
 
             resp.vary = ['accept-encoding', 'x-auth-token']
             #resp.content_range = (0, 499, 10240)
+
             resp.set_headers(headers)
 
     falcon_app.add_route(path, HelloResource())
@@ -69,7 +74,6 @@ def create_wheezy(body, headers):
         if match:
             # A real router would probably have to get all named params
             params = match.groupdict()
-
             response = hello(request, **params)
         else:
             response = wheezy.not_found()
@@ -88,7 +92,10 @@ def create_flask(body, headers):
 
     @flask_app.route(path)
     def hello(account_id):
-        flask.request.args.get('limit', '10')
+        request = flask.request
+        user_agent = request.headers['User-Agent']  # NOQA
+        limit = request.args.get('limit', '10')  # NOQA
+
         return flask.Response(body, headers=headers,
                               mimetype='text/plain')
 
@@ -100,7 +107,9 @@ def create_bottle(body, headers):
 
     @bottle.route(path)
     def hello(account_id):
+        user_agent = bottle.request.headers['User-Agent']  # NOQA
         limit = bottle.request.query.limit or '10'  # NOQA
+
         return bottle.Response(body, headers=headers)
 
     return bottle.default_app()
@@ -112,13 +121,31 @@ def create_werkzeug(body, headers):
 
     @werkzeug.Request.application
     def hello(request):
+        user_agent = request.headers['User-Agent']  # NOQA
         limit = request.args.get('limit', '10')  # NOQA
-        adapter = url_map.bind_to_environ(request.environ)
-        endpoint, values = adapter.match()
+        adapter = url_map.bind_to_environ(request.environ)  # NOQA
+        endpoint, values = adapter.match()  # NOQA
+
         return werkzeug.Response(body, headers=headers,
                                  mimetype='text/plain')
 
     return hello
+
+
+def create_cherrypy(body, headers):
+    class Hello(object):
+        @cherrypy.expose
+        def index(self, account_id, test):
+            print account_id, test
+            return body
+
+    class Root(object):
+        hello = Hello()
+
+    app = cherrypy.tree.mount(Root())
+    import pdb
+    pdb.set_trace()
+    return app
 
 
 def create_pecan(body, headers):
