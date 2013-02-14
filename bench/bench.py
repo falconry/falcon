@@ -2,9 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import gc
 import random
 import argparse
 import timeit
+from decimal import Decimal
 
 from create import *
 
@@ -17,11 +19,13 @@ def avg(array):
     return sum(array) / len(array)
 
 
-def bench(name, iterations=10000, repeat=5):
+def bench(name, iterations=10000):
     func = create_bench(name)
-    results = timeit.repeat(func, number=iterations, repeat=repeat)
 
-    sec_per_req = avg(results) / iterations
+    gc.collect()
+    total_sec = timeit.timeit(func, setup=gc.enable, number=iterations)
+
+    sec_per_req = Decimal(total_sec) / Decimal(iterations)
 
     sys.stdout.write('.')
     sys.stdout.flush()
@@ -43,6 +47,22 @@ def create_bench(name):
     return bench
 
 
+def consolidate_datasets(datasets):
+    results = {}
+    for dataset in datasets:
+        for name, sec_per_req in dataset:
+            if name in results:
+                results[name].append(sec_per_req)
+            else:
+                results[name] = []
+
+    return [(name, min(vector)) for name, vector in results.items()]
+
+
+def round_to_int(dec):
+    return int(dec.to_integral_value())
+
+
 if __name__ == '__main__':
     frameworks = [
         'Wheezy', 'Flask', 'Werkzeug', 'Falcon', 'Pecan', 'Bottle', 'CherryPy'
@@ -51,7 +71,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Falcon benchmark runner")
     parser.add_argument('-b', '--benchmark', type=str, action='append',
                         choices=frameworks, dest='frameworks')
-    parser.add_argument('-i', '--iterations', type=int, default=100000)
+    parser.add_argument('-i', '--iterations', type=int, default=10000)
     parser.add_argument('-r', '--repetitions', type=int, default=5)
     args = parser.parse_args()
 
@@ -61,23 +81,33 @@ if __name__ == '__main__':
         # wheezy.http isn't really a framework - doesn't even have a router
         del frameworks[frameworks.index('Wheezy')]
 
-    random.shuffle(frameworks)
+    print('')
 
-    sys.stdout.write('\nBenchmarking')
-    sys.stdout.flush()
-    results = [bench(framework, args.iterations, args.repetitions)
-               for framework in frameworks]
-    print('done.\n')
+    datasets = []
+    for r in range(args.repetitions):
+        random.shuffle(frameworks)
 
-    results = sorted(results, key=lambda r: r[1])
-    baseline = results[-1][1]
+        sys.stdout.write('Benchmarking, Round %d of %d' %
+                         (r + 1, args.repetitions))
+        sys.stdout.flush()
+        dataset = [bench(framework, args.iterations)
+                   for framework in frameworks]
 
-    for i, (name, sec_per_req) in enumerate(results):
-        req_per_sec = 1 / sec_per_req
-        ms_per_req = sec_per_req * 1000
-        factor = int(baseline / sec_per_req + 0.1)
+        datasets.append(dataset)
+        print('done.')
 
-        print('{3}. {0:.<15s}{1:.>06,.0f} req/sec or {2:0.1f} μs/req ({4}x)'.
-              format(name, req_per_sec, ms_per_req * 1000, i + 1, factor))
+    dataset = consolidate_datasets(datasets)
+    dataset = sorted(dataset, key=lambda r: r[1])
+    baseline = dataset[-1][1]
+
+    print('\nResults:\n')
+
+    for i, (name, sec_per_req) in enumerate(dataset):
+        req_per_sec = round_to_int(Decimal(1) / sec_per_req)
+        us_per_req = round_to_int(sec_per_req * Decimal(10 ** 6))
+        factor = round_to_int(baseline / sec_per_req)
+
+        print('{3}. {0:.<15s}{1:.>06,d} req/sec or {2: >03d} μs/req ({4}x)'.
+              format(name, req_per_sec, us_per_req, i + 1, factor))
 
     print('')
