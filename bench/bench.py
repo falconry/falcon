@@ -19,7 +19,7 @@ def avg(array):
     return sum(array) / len(array)
 
 
-def bench(name, iterations=10000):
+def bench(name, iterations):
     func = create_bench(name)
 
     gc.collect()
@@ -54,7 +54,7 @@ def consolidate_datasets(datasets):
             if name in results:
                 results[name].append(sec_per_req)
             else:
-                results[name] = []
+                results[name] = [sec_per_req]
 
     return [(name, min(vector)) for name, vector in results.items()]
 
@@ -71,8 +71,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Falcon benchmark runner")
     parser.add_argument('-b', '--benchmark', type=str, action='append',
                         choices=frameworks, dest='frameworks')
-    parser.add_argument('-i', '--iterations', type=int, default=10000)
-    parser.add_argument('-r', '--repetitions', type=int, default=5)
+    parser.add_argument('-i', '--iterations', type=int, default=50000)
+    parser.add_argument('-r', '--repetitions', type=int, default=3)
     args = parser.parse_args()
 
     if args.frameworks:

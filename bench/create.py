@@ -11,8 +11,8 @@ def create_falcon(body, headers):
     path = '/hello/{account_id}/test'
     falcon_app = falcon.API('text/plain')
 
-    def ask(req, resp, account_id):
-        req.ext['answer'] = 42
+    def ask(req, resp, params):
+        params['answer'] = 42
 
     # @falcon.before(ask)
     class HelloResource:
