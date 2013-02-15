@@ -27,10 +27,18 @@ def before(action):
 
     Args:
         action: A function with the same signature as a resource responder
-        method, taking (req, resp, **kwargs), where kwargs can be a specific
-        list of URI template field names. For example:
+        method, taking (req, resp, params), where params includes values for
+        URI template field names, if any. Hooks may also add pseudo-params
+        of their own. For example:
 
-        def validate(req, resp, id)
+            def do_something(req, resp, params):
+                try:
+                    params['id'] = int(params['id'])
+                except ValueError:
+                    raise falcon.HTTPBadRequest('Invalid ID',
+                                                'ID was not valid.')
+
+                params['answer'] = 42
 
     """
 
@@ -50,11 +58,11 @@ def before(action):
                     # Usually expect a method, but any callable will do
                     if hasattr(responder, '__call__'):
                         @wraps(responder)
-                        def do_before(self, req, resp, **kwargs):
-                            action(req, resp, **kwargs)
+                        def do_before_all(self, req, resp, **kwargs):
+                            action(req, resp, kwargs)
                             responder(self, req, resp, **kwargs)
 
-                        setattr(resource, responder_name, do_before)
+                        setattr(resource, responder_name, do_before_all)
 
             return resource
 
@@ -62,10 +70,10 @@ def before(action):
             responder = responder_or_resource
 
             @wraps(responder)
-            def do_before(self, req, resp, **kwargs):
-                action(req, resp, **kwargs)
+            def do_before_one(self, req, resp, **kwargs):
+                action(req, resp, kwargs)
                 responder(self, req, resp, **kwargs)
 
-            return do_before
+            return do_before_one
 
     return _before

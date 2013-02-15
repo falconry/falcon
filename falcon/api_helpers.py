@@ -148,6 +148,8 @@ def create_http_method_map(resource, before):
            correspond to each method the resource supports. For example, if a
            resource supports GET and POST, it should define
            on_get(self, req, resp) and on_post(self,req,resp).
+        before: An action hooks or list of hooks to be called before each
+           on_* responder defined by the resource.
 
     """
 
@@ -163,7 +165,10 @@ def create_http_method_map(resource, before):
             # Usually expect a method, but any callable will do
             if hasattr(responder, '__call__'):
                 if before is not None:
-                    responder = _wrap_with_before(before, responder)
+                    # Wrap in reversed order to achieve natural (first...last)
+                    # execution order.
+                    for action in reversed(before):
+                        responder = _wrap_with_before(action, responder)
 
                 method_map[method] = responder
 
@@ -197,7 +202,7 @@ def _wrap_with_before(action, responder):
 
     @wraps(responder)
     def do_before(req, resp, **kwargs):
-        action(req, resp, **kwargs)
+        action(req, resp, kwargs)
         responder(req, resp, **kwargs)
 
     return do_before

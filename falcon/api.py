@@ -37,13 +37,29 @@ class API(object):
     __slots__ = ('_before', '_media_type', '_routes')
 
     def __init__(self, media_type=DEFAULT_MEDIA_TYPE, before=None):
-        """Initialize attributes"""
+        """Initialize a new Falcon API instances
 
-        if not (before is None or hasattr(before, '__call__')):
-            raise TypeError('before must be callable')
+        Args:
+            media_type: Default media type to use as the value for the
+                Content-Type header on responses. (default 'application/json')
+            before: A global action hook (or list of hooks) to call before
+                each on_* responders, for all resources. Similar to the
+                'falcon.before' decorator, but applies to the entire API.
+
+        """
 
         self._routes = []
         self._media_type = media_type
+
+        if before is not None:
+            if not hasattr(before, '__iter__'):
+                before = [before]
+
+            for action in before:
+                if not hasattr(action, '__call__'):
+                    raise TypeError('One or more before hooks '
+                                    'are not callable')
+
         self._before = before
 
     def __call__(self, env, start_response):
