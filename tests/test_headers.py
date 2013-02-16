@@ -63,6 +63,9 @@ class HeaderHelpersResource:
         resp.content_range = (0, 499, 10 * 1024)
 
     def on_head(self, req, resp):
+        resp.set_header('Content-Type', 'x-swallow/unladen')
+        resp.set_header('X-Auth-Token', 'setecastronomy')
+        resp.set_header('X-Auth-Token', 'toomanysecrets')
         resp.content_type = 'x-falcon/peregrine'
         resp.cache_control = ['no-store']
 
@@ -248,6 +251,13 @@ class TestHeaders(testing.TestSuite):
         content_type = 'x-falcon/peregrine'
         self.assertIn(('Content-Type', content_type), self.srmock.headers)
         self.assertIn(('Cache-Control', 'no-store'), self.srmock.headers)
+        self.assertIn(('X-Auth-Token', 'toomanysecrets'), self.srmock.headers)
+
+        # Check for duplicate headers
+        hist = defaultdict(lambda: 0)
+        for name, value in self.srmock.headers:
+            hist[name] += 1
+            self.assertEqual(1, hist[name])
 
     def test_vary_star(self):
         self.resource = VaryHeaderResource(['*'])
