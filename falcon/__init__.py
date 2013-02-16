@@ -39,3 +39,5 @@ from falcon.exceptions import *  # NOQA
 from falcon.http_error import HTTPError  # NOQA
 from falcon.util import dt_to_http  # NOQA
 from falcon.hooks import before  # NOQA
+from falcon.request import Request  # NOQA
+from falcon.response import Response  # NOQA

@@ -24,7 +24,7 @@ def create_falcon(body, headers):
             else:
                 resp.data = body
 
-            resp.vary = ['accept-encoding', 'x-auth-token']
+            # resp.vary = ['accept-encoding', 'x-auth-token']
             #resp.content_range = (0, 499, 10240)
 
             resp.set_headers(headers)

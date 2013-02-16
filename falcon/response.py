@@ -16,7 +16,8 @@ limitations under the License.
 
 """
 
-import falcon
+from .util import dt_to_http
+from .response_helpers import *  # NOQA
 
 
 class Response(object):
@@ -35,8 +36,8 @@ class Response(object):
 
         content_type: Value for the Content-Type header
         etag: Value for the ETag header
-        cache_control: An array of cache directives (see http://goo.gl/fILS5
-            and http://goo.gl/sM9Xx for a good description.) The array will be
+        cache_control: A list of cache directives (see http://goo.gl/fILS5
+            and http://goo.gl/sM9Xx for a good description.) The list will be
             joined with ', ' to produce the value for the Cache-Control
             header.
         last_modified: A datetime (UTC) instance to use as the Last-Modified
@@ -50,8 +51,8 @@ class Response(object):
             whether the cached response can be used rather than requesting a
             fresh one from the origin server." See also: http://goo.gl/NGHdL
 
-            Assumed to be an array of values. For a single asterisk or field
-            value, simply pass a single-element array.
+            Assumed to be a list of values. For a single asterisk or field
+            value, simply pass a single-element list.
         location: Value for the Location header. Note that relative URIs are
             OK per http://goo.gl/DbVqR
         content_location: Value for the Content-Location header. See
@@ -72,21 +73,12 @@ class Response(object):
     """
 
     __slots__ = (
-        'body',
-        'cache_control',
-        'content_location',
-        'content_range',
-        'content_type',
+        'body',  # Stuff
         'data',
-        'etag',
         '_headers',
-        'last_modified',
-        'location',
-        'retry_after',
         'status',
         'stream',
-        'stream_len',
-        'vary'
+        'stream_len'
     )
 
     def __init__(self):
@@ -104,16 +96,6 @@ class Response(object):
         self.data = None
         self.stream = None
         self.stream_len = None
-
-        self.content_type = None
-        self.etag = None
-        self.cache_control = None
-        self.last_modified = None
-        self.retry_after = None
-        self.vary = None
-        self.location = None
-        self.content_location = None
-        self.content_range = None
 
     def set_header(self, name, value):
         """Set a header for this response to a given value.
@@ -150,38 +132,39 @@ class Response(object):
 
         self._headers.update(headers)
 
-    def _append_attribute_headers(self, headers):  # NOQA
-        if self.etag is not None:
-            headers['ETag'] = self.etag
+    cache_control = header_property('Cache-Control',
+                                    ('A list of cache directives to use as '
+                                     'the value of the Cache-Control header.'),
+                                    lambda v: ', '.join(v))
 
-        if self.cache_control is not None:
-            headers['Cache-Control'] = ', '.join(self.cache_control)
+    content_location = header_property('Content-Location',
+                                       'Sets the Content-Location header.')
 
-        if self.last_modified is not None:
-            headers['Last-Modified'] = falcon.dt_to_http(self.last_modified)
+    content_range = header_property('Content-Range',
+                                    ('Sets the Content-Range header. Value '
+                                     'is assumed to be a tuple.'),
+                                    format_range)
 
-        if self.retry_after is not None:
-            headers['Retry-After'] = str(self.retry_after)
+    content_type = header_property('Content-Type',
+                                   'Sets the Content-Type header.')
 
-        if self.vary is not None:
-            headers['Vary'] = ', '.join(self.vary)
+    etag = header_property('ETag',
+                           'Sets the ETag header.')
 
-        if self.location is not None:
-            headers['Location'] = self.location
+    last_modified = header_property('Last-Modified',
+                                    'Sets the Last-Modified header.',
+                                    dt_to_http)
 
-        if self.content_location is not None:
-            headers['Content-Location'] = self.content_location
+    location = header_property('Location',
+                               'Sets the Location header.')
 
-        content_range = self.content_range
-        if content_range is not None:
-            # PERF: Concatenation is faster than % string formatting as well
-            #       as ''.join() in this case.
-            formatted_range = ('bytes ' +
-                               str(content_range[0]) + '-' +
-                               str(content_range[1]) + '/' +
-                               str(content_range[2]))
+    retry_after = header_property('Retry-After',
+                                  'Sets the Retry-After header.',
+                                  str)
 
-            headers['Content-Range'] = formatted_range
+    vary = header_property('Vary',
+                           'A list of header names to use for the Vary header',
+                           lambda v: ', '.join(v))
 
     def _wsgi_headers(self, media_type=None):
         """Convert headers into the format expected by WSGI servers
@@ -193,12 +176,6 @@ class Response(object):
         """
 
         headers = self._headers
-
-        if self.content_type is not None:
-            headers['Content-Type'] = self.content_type
-
-        self._append_attribute_headers(headers)
-
         set_content_type = (media_type is not None and
                             'Content-Type' not in headers and
                             'content-type' not in headers)

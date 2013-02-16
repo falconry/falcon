@@ -62,12 +62,19 @@ class HeaderHelpersResource:
         # bytes 0-499/10240
         resp.content_range = (0, 499, 10 * 1024)
 
+        self.resp = resp
+
     def on_head(self, req, resp):
         resp.set_header('Content-Type', 'x-swallow/unladen')
         resp.set_header('X-Auth-Token', 'setecastronomy')
         resp.set_header('X-Auth-Token', 'toomanysecrets')
         resp.content_type = 'x-falcon/peregrine'
         resp.cache_control = ['no-store']
+
+        resp.location = '/things/87'
+        del resp.location
+
+        self.resp = resp
 
 
 class VaryHeaderResource:
@@ -215,25 +222,38 @@ class TestHeaders(testing.TestSuite):
         self.api.add_route(self.test_route, self.resource)
         self.simulate_request(self.test_route)
 
+        resp = self.resource.resp
+
         content_type = 'x-falcon/peregrine'
+        self.assertEqual(content_type, resp.content_type)
         self.assertIn(('Content-Type', content_type), self.srmock.headers)
 
         cache_control = ('public, private, no-cache, no-store, '
                          'must-revalidate, proxy-revalidate, max-age=3600, '
                          's-maxage=60, no-transform')
 
+        self.assertEqual(cache_control, resp.cache_control)
         self.assertIn(('Cache-Control', cache_control), self.srmock.headers)
 
         etag = 'fa0d1a60ef6616bb28038515c8ea4cb2'
+        self.assertEqual(etag, resp.etag)
         self.assertIn(('ETag', etag), self.srmock.headers)
 
         last_modified_http_date = 'Tue, 01 Jan 2013 10:30:30 GMT'
+        self.assertEqual(last_modified_http_date, resp.last_modified)
         self.assertIn(('Last-Modified', last_modified_http_date),
                       self.srmock.headers)
 
+        self.assertEqual('3601', resp.retry_after)
         self.assertIn(('Retry-After', '3601'), self.srmock.headers)
+
+        self.assertEqual('/things/87', resp.location)
         self.assertIn(('Location', '/things/87'), self.srmock.headers)
+
+        self.assertEqual('/things/78', resp.content_location)
         self.assertIn(('Content-Location', '/things/78'), self.srmock.headers)
+
+        self.assertEqual('bytes 0-499/10240', resp.content_range)
         self.assertIn(('Content-Range', 'bytes 0-499/10240'),
                       self.srmock.headers)
 
@@ -252,6 +272,8 @@ class TestHeaders(testing.TestSuite):
         self.assertIn(('Content-Type', content_type), self.srmock.headers)
         self.assertIn(('Cache-Control', 'no-store'), self.srmock.headers)
         self.assertIn(('X-Auth-Token', 'toomanysecrets'), self.srmock.headers)
+
+        self.assertEqual(None, self.resource.resp.location)
 
         # Check for duplicate headers
         hist = defaultdict(lambda: 0)
