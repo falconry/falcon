@@ -7,6 +7,7 @@ import random
 import argparse
 import timeit
 from decimal import Decimal
+from collections import defaultdict
 
 from create import *
 
@@ -48,13 +49,10 @@ def create_bench(name):
 
 
 def consolidate_datasets(datasets):
-    results = {}
+    results = defaultdict(list)
     for dataset in datasets:
         for name, sec_per_req in dataset:
-            if name in results:
-                results[name].append(sec_per_req)
-            else:
-                results[name] = [sec_per_req]
+            results[name].append(sec_per_req)
 
     return [(name, min(vector)) for name, vector in results.items()]
 
