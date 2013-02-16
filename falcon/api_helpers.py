@@ -81,7 +81,7 @@ def set_content_length(resp):
     return content_length
 
 
-def prepare_wsgi_content(resp):
+def get_body(resp):
     """Converts resp content into an iterable as required by PEP 333
 
     Args:

@@ -75,7 +75,7 @@ class API(object):
         """
 
         req = Request(env)
-        resp = Response(self._media_type)
+        resp = Response()
 
         responder, params = self._get_responder(req.path, req.method)
 
@@ -95,20 +95,27 @@ class API(object):
         #
         use_body = not should_ignore_body(resp.status, req.method)
         if use_body:
-            content_length = set_content_length(resp)
+            set_content_length(resp)
+            body = get_body(resp)
         else:
-            content_length = 0
+            # Default: return an empty body
+            body = []
 
-        set_content_type = ((content_length != 0) or
+        # Set content type if needed
+        use_content_type = (body or
+                            req.method == 'HEAD' or
                             resp.status == HTTP_416)
-        start_response(resp.status, resp._wsgi_headers(set_content_type))
 
-        # Return an iterable for the body, per the WSGI spec
-        if use_body:
-            return prepare_wsgi_content(resp)
+        if use_content_type:
+            media_type = self._media_type
+        else:
+            media_type = None
 
-        # Default: return an empty body
-        return []
+        headers = resp._wsgi_headers(media_type)
+
+        # Return the response per the WSGI spec
+        start_response(resp.status, headers)
+        return body
 
     def add_route(self, uri_template, resource):
         """Associate a URI path with a resource

@@ -18,8 +18,6 @@ limitations under the License.
 
 import falcon
 
-CONTENT_TYPE_NAMES = {'Content-Type', 'content-type', 'CONTENT-TYPE'}
-
 
 class Response(object):
     """Represents an HTTP response to a client request
@@ -91,7 +89,7 @@ class Response(object):
         'vary'
     )
 
-    def __init__(self, default_media_type):
+    def __init__(self):
         """Initialize response attributes to default values
 
         Args:
@@ -100,7 +98,7 @@ class Response(object):
         """
 
         self.status = '200 OK'
-        self._headers = [('Content-Type', default_media_type)]
+        self._headers = {}
 
         self.body = None
         self.data = None
@@ -132,7 +130,7 @@ class Response(object):
 
         """
 
-        self._headers.append((name, value))
+        self._headers[name] = value
 
     def set_headers(self, headers):
         """Set several headers at once. May be faster than set_header().
@@ -150,30 +148,29 @@ class Response(object):
 
         """
 
-        self._headers.extend(headers.items())
+        self._headers.update(headers)
 
     def _append_attribute_headers(self, headers):  # NOQA
         if self.etag is not None:
-            headers.append(('ETag', self.etag))
+            headers['ETag'] = self.etag
 
         if self.cache_control is not None:
-            headers.append(('Cache-Control', ', '.join(self.cache_control)))
+            headers['Cache-Control'] = ', '.join(self.cache_control)
 
         if self.last_modified is not None:
-            headers.append(('Last-Modified',
-                            falcon.dt_to_http(self.last_modified)))
+            headers['Last-Modified'] = falcon.dt_to_http(self.last_modified)
 
         if self.retry_after is not None:
-            headers.append(('Retry-After', str(self.retry_after)))
+            headers['Retry-After'] = str(self.retry_after)
 
         if self.vary is not None:
-            headers.append(('Vary', ', '.join(self.vary)))
+            headers['Vary'] = ', '.join(self.vary)
 
         if self.location is not None:
-            headers.append(('Location', self.location))
+            headers['Location'] = self.location
 
         if self.content_location is not None:
-            headers.append(('Content-Location', self.content_location))
+            headers['Content-Location'] = self.content_location
 
         content_range = self.content_range
         if content_range is not None:
@@ -184,22 +181,29 @@ class Response(object):
                                str(content_range[1]) + '/' +
                                str(content_range[2]))
 
-            headers.append(('Content-Range', formatted_range))
+            headers['Content-Range'] = formatted_range
 
-    def _wsgi_headers(self, set_content_type):
+    def _wsgi_headers(self, media_type=None):
         """Convert headers into the format expected by WSGI servers
 
-        WARNING: Only call once! Not idempotent.
+        Args:
+            media_type: Default media type to use for the Content-Type
+                header if the header was not set explicitly. (default None)
 
         """
 
         headers = self._headers
 
-        if not set_content_type:
-            del headers[0]
-        elif self.content_type is not None:
-            headers.append(('Content-Type', self.content_type))
+        if self.content_type is not None:
+            headers['Content-Type'] = self.content_type
 
         self._append_attribute_headers(headers)
 
-        return headers
+        set_content_type = (media_type is not None and
+                            'Content-Type' not in headers and
+                            'content-type' not in headers)
+
+        if set_content_type:
+            headers['Content-Type'] = media_type
+
+        return list(headers.items())

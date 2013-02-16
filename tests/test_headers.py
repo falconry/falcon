@@ -1,4 +1,5 @@
 from datetime import datetime
+from collections import defaultdict
 
 from testtools.matchers import Contains, Not
 
@@ -62,9 +63,7 @@ class HeaderHelpersResource:
         resp.content_range = (0, 499, 10 * 1024)
 
     def on_head(self, req, resp):
-        # Alias of set_media_type
         resp.content_type = 'x-falcon/peregrine'
-
         resp.cache_control = ['no-store']
 
 
@@ -125,7 +124,7 @@ class TestHeaders(testing.TestSuite):
     def test_host_fallback_port8000(self):
         # Set protocol to 1.0 so that we won't get a host header
         self.simulate_request(self.test_route, protocol='HTTP/1.0',
-                               port='8000')
+                              port='8000')
 
         # Make sure we picked up host from HTTP_HOST, not SERVER_NAME
         host = self.resource.req.get_header('host')
@@ -235,14 +234,19 @@ class TestHeaders(testing.TestSuite):
         self.assertIn(('Content-Range', 'bytes 0-499/10240'),
                       self.srmock.headers)
 
+        # Check for duplicate headers
+        hist = defaultdict(lambda: 0)
+        for name, value in self.srmock.headers:
+            hist[name] += 1
+            self.assertEqual(1, hist[name])
+
     def test_response_header_helpers_on_head(self):
         self.resource = HeaderHelpersResource()
         self.api.add_route(self.test_route, self.resource)
         self.simulate_request(self.test_route, method="HEAD")
 
         content_type = 'x-falcon/peregrine'
-        self.assertNotIn(('Content-Type', content_type), self.srmock.headers)
-
+        self.assertIn(('Content-Type', content_type), self.srmock.headers)
         self.assertIn(('Cache-Control', 'no-store'), self.srmock.headers)
 
     def test_vary_star(self):
@@ -272,8 +276,7 @@ class TestHeaders(testing.TestSuite):
         self.api.add_route(self.test_route, self.resource)
         self.simulate_request(self.test_route)
 
-        content_type = falcon.DEFAULT_MEDIA_TYPE
-        self.assertNotIn(('Content-Type', content_type), self.srmock.headers)
+        self.assertNotIn('Content-Type', self.srmock.headers_dict)
 
     def test_custom_content_type(self):
         content_type = 'application/xml; charset=utf-8'
