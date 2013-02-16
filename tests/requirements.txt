@@ -2,3 +2,4 @@ nose
 nose-progressive
 testtools
 six
+cython

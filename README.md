@@ -1,4 +1,4 @@
-<img align="right" src="https://raw.github.com/racker/falcon/master/falcon.png" alt="Falcon picture" />
+<img align="right" src="http://c420059.r59.cf1.rackcdn.com/assets/images/falcon.png" alt="Falcon picture" />
 
 Falcon [![Build Status](https://travis-ci.org/racker/falcon.png)](https://travis-ci.org/racker/falcon)
 ======

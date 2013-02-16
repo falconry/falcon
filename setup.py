@@ -1,6 +1,36 @@
-from setuptools import setup, find_packages
+from os import path
+from setuptools import setup, find_packages, Extension
 
 import falcon.version
+
+try:
+    from Cython.Distutils import build_ext
+    with_cython = True
+except ImportError:
+    print('\nWARNING: Cython not installed. '
+          'Falcon modules WILL NOT be compiled.\n')
+    with_cython = False
+
+if with_cython:
+    ext_names = (
+        'api',
+        'api_helpers',
+        'request',
+        'request_helpers',
+        'response',
+        'response_helpers',
+        'responders',
+        'http_error',
+        'exceptions'
+    )
+
+    cmdclass = {'build_ext': build_ext}
+    ext_modules = [
+        Extension('falcon.' + ext, [path.join('falcon', ext + '.py')])
+        for ext in ext_names]
+else:
+    cmdclass = {}
+    ext_modules = []
 
 
 setup(
@@ -35,4 +65,6 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=['six', 'testtools'],
+    cmdclass=cmdclass,
+    ext_modules=ext_modules
 )

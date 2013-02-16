@@ -2,14 +2,19 @@ from distutils.core import setup
 from distutils.extension import Extension
 from Cython.Distutils import build_ext
 
-ext_modules = [
-    Extension('api', ['api.py']),
-    Extension('api_helpers', ['api_helpers.py']),
-    Extension('request', ['request.py']),
-    Extension('request_helpers', ['request_helpers.py']),
-    Extension('response', ['response.py']),
-    Extension('responders', ['responders.py'])
-]
+module_names = (
+    'api',
+    'api_helpers',
+    'request',
+    'request_helpers',
+    'response',
+    'response_helpers',
+    'responders',
+    'http_error',
+    'exceptions'
+)
+
+ext_modules = [Extension(m, [m + '.py']) for m in module_names]
 
 setup(
     name='Falcon',
