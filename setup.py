@@ -1,7 +1,13 @@
 from os import path
 from setuptools import setup, find_packages, Extension
 
-import falcon.version
+try:
+    with open(path.join(path.dirname(__file__),
+                        "falcon",
+                        "version.py")) as version_file:
+        exec(version_file.read())
+except IOError:
+    print('\nWARNING: version.py file is missing.\n')
 
 try:
     from Cython.Distutils import build_ext
@@ -35,7 +41,7 @@ else:
 
 setup(
     name='falcon',
-    version=falcon.version,
+    version=version,
     description='A fast micro-framework for building cloud APIs.',
     long_description=None,
     classifiers=[
