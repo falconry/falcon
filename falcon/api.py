@@ -34,33 +34,30 @@ class API(object):
 
     """
 
-    __slots__ = ('_before', '_media_type', '_routes')
+    __slots__ = ('_after', '_before', '_media_type', '_routes')
 
-    def __init__(self, media_type=DEFAULT_MEDIA_TYPE, before=None):
+    def __init__(self, media_type=DEFAULT_MEDIA_TYPE, before=None, after=None):
         """Initialize a new Falcon API instances
 
         Args:
             media_type: Default media type to use as the value for the
                 Content-Type header on responses. (default 'application/json')
             before: A global action hook (or list of hooks) to call before
-                each on_* responders, for all resources. Similar to the
-                'falcon.before' decorator, but applies to the entire API.
+                each on_* responder, for all resources. Similar to the
+                'falcon.before' decorator, but applies to the entire API. When
+                more than one action function is given, they will be executed
+                in natural order (starting with the first in the list).
+            after: A global action hook (or list of hooks) to call after each
+                on_* responder, for all resources. Similar to the 'after'
+                decorator, but applies to the entire API.
 
         """
 
         self._routes = []
         self._media_type = media_type
 
-        if before is not None:
-            if not hasattr(before, '__iter__'):
-                before = [before]
-
-            for action in before:
-                if not hasattr(action, '__call__'):
-                    raise TypeError('One or more before hooks '
-                                    'are not callable')
-
-        self._before = before
+        self._before = prepare_global_hooks(before)
+        self._after = prepare_global_hooks(after)
 
     def __call__(self, env, start_response):
         """WSGI "app" method
@@ -132,11 +129,16 @@ class API(object):
         """
 
         path_template = compile_uri_template(uri_template)
-        method_map = create_http_method_map(resource, self._before)
+        method_map = create_http_method_map(resource,
+                                            self._before, self._after)
 
         # Insert at the head of the list in case we get duplicate
         # adds (will cause the last one to win).
         self._routes.insert(0, (path_template, method_map))
+
+#-----------------------------------------------------------------------------
+# Helpers
+#----------------------------------------------------------------------------
 
     def _get_responder(self, path, method):
         """Searches routes for a matching responder

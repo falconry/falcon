@@ -34,7 +34,9 @@ def bunnies(req, resp, params):
 
 
 def frogs(req, resp, params):
-    params['bunnies'] = 'fluffy'
+    if 'bunnies' in params:
+        params['bunnies'] = 'fluffy'
+
     params['frogs'] = 'not fluffy'
 
 
@@ -102,13 +104,15 @@ class TestHooks(testing.TestSuite):
         self.api.add_route('/wrapped', self.wrapped_resource)
 
     def test_global_hook(self):
+        self.assertRaises(TypeError, falcon.API, None, 0)
+        self.assertRaises(TypeError, falcon.API, None, {})
+
         self.api = falcon.API(before=bunnies)
         zoo_resource = BunnyResource()
 
         self.api.add_route(self.test_route, zoo_resource)
 
         self.simulate_request(self.test_route)
-        self.assertTrue(zoo_resource)
         self.assertEqual('fuzzy', zoo_resource.bunnies)
 
     def test_multiple_global_hook(self):
@@ -118,7 +122,6 @@ class TestHooks(testing.TestSuite):
         self.api.add_route(self.test_route, zoo_resource)
 
         self.simulate_request(self.test_route)
-        self.assertTrue(zoo_resource)
         self.assertEqual('fluffy', zoo_resource.bunnies)
         self.assertEqual('not fluffy', zoo_resource.frogs)
 
@@ -150,6 +153,10 @@ class TestHooks(testing.TestSuite):
 
     def test_wrapped_resource(self):
         self.simulate_request('/wrapped', query_string='?limit=10')
+        self.assertEqual(falcon.HTTP_200, self.srmock.status)
+        self.assertEqual('fuzzy', self.wrapped_resource.bunnies)
+
+        self.simulate_request('/wrapped', method='HEAD')
         self.assertEqual(falcon.HTTP_200, self.srmock.status)
         self.assertEqual('fuzzy', self.wrapped_resource.bunnies)
 

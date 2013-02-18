@@ -38,6 +38,6 @@ from .status_codes import *  # NOQA
 from .exceptions import *  # NOQA
 from .http_error import HTTPError  # NOQA
 from .util import dt_to_http  # NOQA
-from .hooks import before  # NOQA
+from .hooks import before, after  # NOQA
 from .request import Request  # NOQA
 from .response import Response  # NOQA

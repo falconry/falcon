@@ -33,6 +33,18 @@ IGNORE_BODY_STATUS_CODES = {
 }
 
 
+def prepare_global_hooks(hooks):
+    if hooks is not None:
+        if not isinstance(hooks, list):
+            hooks = [hooks]
+
+        for action in hooks:
+            if not hasattr(action, '__call__'):
+                raise TypeError('One or more hooks are not callable')
+
+    return hooks
+
+
 def should_ignore_body(status, method):
     """Return True if the status or method indicates no body, per RFC 2616
 
@@ -56,7 +68,7 @@ def set_content_length(resp):
     Post:
         resp contains a "Content-Length" header unless a stream is given, but
         resp.stream_len is not set (in which case, the length cannot be
-        derived reliably).
+            derived reliably).
     Args:
         resp: The response object on which to set the content length.
 
@@ -140,7 +152,7 @@ def compile_uri_template(template=None):
     return re.compile(pattern, re.IGNORECASE)
 
 
-def create_http_method_map(resource, before):
+def create_http_method_map(resource, before, after):
     """Maps HTTP methods (such as GET and POST) to methods of resource object
 
     Args:
@@ -164,12 +176,7 @@ def create_http_method_map(resource, before):
         else:
             # Usually expect a method, but any callable will do
             if hasattr(responder, '__call__'):
-                if before is not None:
-                    # Wrap in reversed order to achieve natural (first...last)
-                    # execution order.
-                    for action in reversed(before):
-                        responder = _wrap_with_before(action, responder)
-
+                responder = _wrap_with_hooks(before, after, responder)
                 method_map[method] = responder
 
     # Attach a resource for unsupported HTTP methods
@@ -188,15 +195,27 @@ def create_http_method_map(resource, before):
 #-----------------------------------------------------------------------------
 
 
+def _wrap_with_hooks(before, after, responder):
+    if after is not None:
+        for action in after:
+            responder = _wrap_with_after(action, responder)
+
+    if before is not None:
+        # Wrap in reversed order to achieve natural (first...last)
+        # execution order.
+        for action in reversed(before):
+            responder = _wrap_with_before(action, responder)
+
+    return responder
+
+
 def _wrap_with_before(action, responder):
     """Execute the given action function before a bound responder.
 
     Args:
-        action: A function with the same signature as a resource responder
-        method, taking (req, resp, **kwargs), where kwargs can be a specific
-        list of URI template field names. For example:
-
-        def validate(req, resp, id)
+        action: A function with a similar signature to a resource responder
+            method, taking (req, resp, params).
+        responder: The bound responder to wrap.
 
     """
 
@@ -206,3 +225,21 @@ def _wrap_with_before(action, responder):
         responder(req, resp, **kwargs)
 
     return do_before
+
+
+def _wrap_with_after(action, responder):
+    """Execute the given action function after a bound responder.
+
+    Args:
+        action: A function with a signature similar to a resource responder
+            method, taking (req, resp).
+        responder: The bound responder to wrap.
+
+    """
+
+    @wraps(responder)
+    def do_after(req, resp, **kwargs):
+        responder(req, resp, **kwargs)
+        action(req, resp)
+
+    return do_after

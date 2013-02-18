@@ -23,10 +23,10 @@ from falcon import HTTP_METHODS
 
 
 def before(action):
-    """Property to execute the given action function before the responder.
+    """Decorator to execute the given action function *before* the responder.
 
     Args:
-        action: A function with the same signature as a resource responder
+        action: A function with a similar signature to a resource responder
         method, taking (req, resp, params), where params includes values for
         URI template field names, if any. Hooks may also add pseudo-params
         of their own. For example:
@@ -77,3 +77,49 @@ def before(action):
             return do_before_one
 
     return _before
+
+
+def after(action):
+    """Decorator to execute the given action function *after* the responder.
+
+    Args:
+        action: A function with a similar signature to a resource responder
+        method, taking (req, resp).
+
+    """
+
+    def _after(responder_or_resource):
+        if isinstance(responder_or_resource, six.class_types):
+            resource = responder_or_resource
+
+            for method in HTTP_METHODS:
+                responder_name = 'on_' + method.lower()
+
+                try:
+                    responder = getattr(resource, responder_name)
+                except AttributeError:
+                    # resource does not implement this method
+                    pass
+                else:
+                    # Usually expect a method, but any callable will do
+                    if hasattr(responder, '__call__'):
+                        @wraps(responder)
+                        def do_after_all(self, req, resp, **kwargs):
+                            responder(self, req, resp, **kwargs)
+                            action(req, resp)
+
+                        setattr(resource, responder_name, do_after_all)
+
+            return resource
+
+        else:
+            responder = responder_or_resource
+
+            @wraps(responder)
+            def do_after_one(self, req, resp, **kwargs):
+                responder(self, req, resp, **kwargs)
+                action(req, resp)
+
+            return do_after_one
+
+    return _after
