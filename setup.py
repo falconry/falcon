@@ -1,7 +1,9 @@
+import imp
 from os import path
 from setuptools import setup, find_packages, Extension
 
-import falcon.version
+version = imp.load_source('version', path.join('.', 'falcon', 'version.py'))
+version = version.version
 
 try:
     from Cython.Distutils import build_ext
@@ -35,7 +37,7 @@ else:
 
 setup(
     name='falcon',
-    version=falcon.version,
+    version=version,
     description='A fast micro-framework for building cloud APIs.',
     long_description=None,
     classifiers=[
@@ -49,7 +51,7 @@ setup(
         'Operating System :: Microsoft :: Windows',
         'Operating System :: POSIX',
         'Topic :: Internet :: WWW/HTTP :: WSGI',
-        'Topic :: Software Development :: Libraries :: Application Frameworks'
+        'Topic :: Software Development :: Libraries :: Application Frameworks',
         'Programming Language :: Python',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
