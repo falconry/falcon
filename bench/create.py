@@ -160,6 +160,21 @@ def create_cherrypy(body, headers):
     return app
 
 
+# def create_wsme(body, headers):
+#     import wsme
+
+#     class HelloService(wsme.WSRoot):
+
+#         @wsme.expose(str, str)
+#         def hello(self, limit='10'):
+#             import pdb
+#             pdb.set_trace()
+#             return body
+
+#     ws = HelloService(protocols=['restjson'])
+#     return ws.wsgiapp()
+
+
 def create_pecan(body, headers):
     sys.path.append('./nuts/nuts')
     import app as nuts
