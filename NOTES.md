@@ -22,7 +22,8 @@ This requires some discipline on the part of the developer.
 * URI template and query string field names must include only ASCII a-z, A-Z, and the underscore '_' character. Try it; you'll like it. This simplifies parsing and helps speed things up a bit. 
 * Query params must have a value. In other words, 'foo' or 'foo=' will result in the parameter being ignored.
 * If the WSGI server passes an empty path, Falcon will force it to '/', so you don't have to test for the empty string in your app.
-* If you are hosting multiple apps with a single WSGI server, the SCRIPT_NAME variable can read from req.app
+* The routes '/foo/bar' and '/foo/bar/' are identical as far as Falcon is concerned. Requests coming in for either will be sent to the same resource.
+* If you are hosting multiple apps with a single WSGI server, the SCRIPT_NAME variable can be read from req.app
 * If you have several headers to set, consider using set_headers to avoid function call overhead
 * Don't set content-length. It will only be overridden.
 * The order in which header fields are sent in the response is undefined. Headers are not grouped according to the recommendation in [RFC 2616](http://tools.ietf.org/html/rfc2616#section-4.2) in order to generate responses as quickly as possible.

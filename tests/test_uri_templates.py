@@ -68,17 +68,29 @@ class TestUriTemplates(testing.TestSuite):
         self.assertEquals(req.get_param('id'), None)
 
     def test_single_trailing_slash(self):
-        resource = IDResource()
-        self.api.add_route('/widgets/{id}/', resource)
+        resource1 = IDResource()
+        self.api.add_route('/1/{id}/', resource1)
 
-        self.simulate_request('/widgets/123')
-        self.assertFalse(resource.called)
+        self.simulate_request('/1/123')
+        self.assertTrue(resource1.called)
+        self.assertEquals(resource1.id, '123')
+        self.assertEquals(resource1.name, None)
 
-        self.simulate_request('/widgets/123/')
-        self.assertTrue(resource.called)
+        resource2 = IDResource()
+        self.api.add_route('/2/{id}/', resource2)
 
-        self.assertEquals(resource.id, '123')
-        self.assertEquals(resource.name, None)
+        self.simulate_request('/2/123/')
+        self.assertTrue(resource2.called)
+        self.assertEquals(resource2.id, '123')
+        self.assertEquals(resource2.name, None)
+
+        resource3 = IDResource()
+        self.api.add_route('/3/{id}', resource3)
+
+        self.simulate_request('/3/123/')
+        self.assertTrue(resource3.called)
+        self.assertEquals(resource3.id, '123')
+        self.assertEquals(resource3.name, None)
 
     def test_multiple(self):
         resource = IDResource()
