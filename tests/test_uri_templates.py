@@ -13,7 +13,7 @@ class IDResource(object):
         self.called = True
 
 
-class TestUriTemplates(testing.TestSuite):
+class TestUriTemplates(testing.TestBase):
 
     def before(self):
         self.resource = testing.TestResource()

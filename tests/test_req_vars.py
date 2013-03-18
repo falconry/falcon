@@ -2,7 +2,7 @@ from falcon.request import Request
 import falcon.testing as testing
 
 
-class TestReqVars(testing.TestSuite):
+class TestReqVars(testing.TestBase):
 
     def before(self):
         qs = '?marker=deadbeef&limit=10'

@@ -87,7 +87,7 @@ class VaryHeaderResource:
         resp.vary = self.vary
 
 
-class TestHeaders(testing.TestSuite):
+class TestHeaders(testing.TestBase):
 
     def before(self):
         self.resource = testing.TestResource()

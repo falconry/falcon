@@ -2,7 +2,7 @@ import falcon
 import falcon.testing as testing
 
 
-class TestQueryParams(testing.TestSuite):
+class TestQueryParams(testing.TestBase):
 
     def before(self):
         self.resource = testing.TestResource()

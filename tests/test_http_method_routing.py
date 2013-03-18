@@ -69,7 +69,7 @@ class ResourceGetWithParam(object):
         resp.status = falcon.HTTP_204
 
 
-class TestHttpMethodRouting(testing.TestSuite):
+class TestHttpMethodRouting(testing.TestBase):
 
     def before(self):
         self.resource_get = ResourceGet()

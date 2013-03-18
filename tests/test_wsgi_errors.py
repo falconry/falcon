@@ -20,7 +20,7 @@ class LoggerResource:
         req.log_error(str_message)
 
 
-class TestWSGIError(testing.TestSuite):
+class TestWSGIError(testing.TestBase):
 
     def before(self):
         self.tehlogger = LoggerResource()

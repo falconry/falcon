@@ -1,7 +1,7 @@
 import falcon.testing as testing
 
 
-class TestRequestBody(testing.TestSuite):
+class TestRequestBody(testing.TestBase):
 
     def before(self):
         self.resource = testing.TestResource()

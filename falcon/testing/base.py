@@ -19,11 +19,11 @@ limitations under the License.
 import testtools
 
 import falcon
-from .srmock import StartResponseMock
-from .helpers import create_environ
+from falcon.testing.srmock import StartResponseMock
+from falcon.testing.helpers import create_environ
 
 
-class TestSuite(testtools.TestCase):
+class TestBase(testtools.TestCase):
     """Scaffolding around testtools.TestCase for testing a Falcon API endpoint.
 
     Inherit from this and write your test methods. If the child class defines
@@ -44,7 +44,7 @@ class TestSuite(testtools.TestCase):
     def setUp(self):
         """Initializer, unittest-style"""
 
-        super(TestSuite, self).setUp()
+        super(TestBase, self).setUp()
         self.api = falcon.API()
         self.srmock = StartResponseMock()
         self.test_route = '/' + self.getUniqueString()
@@ -60,7 +60,7 @@ class TestSuite(testtools.TestCase):
         if hasattr(after, '__call__'):
             after()
 
-        super(TestSuite, self).tearDown()
+        super(TestBase, self).tearDown()
 
     def simulate_request(self, path, **kwargs):
         """ Simulates a request.

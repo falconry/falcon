@@ -49,7 +49,7 @@ class NoStatusResource:
         pass
 
 
-class TestHelloWorld(testing.TestSuite):
+class TestHelloWorld(testing.TestBase):
 
     def before(self):
         self.resource = HelloResource('body')

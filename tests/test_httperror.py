@@ -79,7 +79,7 @@ class ServiceUnavailableResource:
         raise falcon.HTTPServiceUnavailable('Oops', 'Stand by...', 60)
 
 
-class TestHTTPError(testing.TestSuite):
+class TestHTTPError(testing.TestBase):
 
     def before(self):
         self.resource = FaultyResource()

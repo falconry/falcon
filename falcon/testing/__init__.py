@@ -20,4 +20,4 @@ limitations under the License.
 from falcon.testing.helpers import *  # NOQA
 from falcon.testing.srmock import StartResponseMock  # NOQA
 from falcon.testing.test_resource import TestResource  # NOQA
-from falcon.testing.test_suite import TestSuite  # NOQA
+from falcon.testing.base import TestBase  # NOQA

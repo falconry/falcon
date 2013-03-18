@@ -91,7 +91,7 @@ class ZooResource(object):
         self.frogs = frogs
 
 
-class TestHooks(testing.TestSuite):
+class TestHooks(testing.TestBase):
 
     def before(self):
         self.resource = WrappedRespondersResource()
