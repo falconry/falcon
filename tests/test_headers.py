@@ -89,7 +89,7 @@ class VaryHeaderResource:
 
 class TestHeaders(testing.TestSuite):
 
-    def prepare(self):
+    def before(self):
         self.resource = testing.TestResource()
         self.api.add_route(self.test_route, self.resource)
 

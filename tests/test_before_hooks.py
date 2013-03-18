@@ -93,7 +93,7 @@ class ZooResource(object):
 
 class TestHooks(testing.TestSuite):
 
-    def prepare(self):
+    def before(self):
         self.resource = WrappedRespondersResource()
         self.api.add_route(self.test_route, self.resource)
 

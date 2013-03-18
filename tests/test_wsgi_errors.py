@@ -22,7 +22,7 @@ class LoggerResource:
 
 class TestWSGIError(testing.TestSuite):
 
-    def prepare(self):
+    def before(self):
         self.tehlogger = LoggerResource()
 
         self.api.add_route('/logger', self.tehlogger)

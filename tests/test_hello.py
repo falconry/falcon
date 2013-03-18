@@ -51,7 +51,7 @@ class NoStatusResource:
 
 class TestHelloWorld(testing.TestSuite):
 
-    def prepare(self):
+    def before(self):
         self.resource = HelloResource('body')
         self.api.add_route(self.test_route, self.resource)
 
@@ -72,6 +72,9 @@ class TestHelloWorld(testing.TestSuite):
 
         self.root_resource = testing.TestResource()
         self.api.add_route('', self.root_resource)
+
+    def after(self):
+        pass
 
     def test_empty_route(self):
         self.simulate_request('')

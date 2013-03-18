@@ -4,7 +4,7 @@ import falcon.testing as testing
 
 class TestReqVars(testing.TestSuite):
 
-    def prepare(self):
+    def before(self):
         qs = '?marker=deadbeef&limit=10'
 
         headers = {

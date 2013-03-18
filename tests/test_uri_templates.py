@@ -15,7 +15,7 @@ class IDResource(object):
 
 class TestUriTemplates(testing.TestSuite):
 
-    def prepare(self):
+    def before(self):
         self.resource = testing.TestResource()
 
     def test_root_path(self):

@@ -71,7 +71,7 @@ class ResourceGetWithParam(object):
 
 class TestHttpMethodRouting(testing.TestSuite):
 
-    def prepare(self):
+    def before(self):
         self.resource_get = ResourceGet()
         self.api.add_route('/get', self.resource_get)
 

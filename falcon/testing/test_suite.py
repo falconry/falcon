@@ -27,8 +27,9 @@ class TestSuite(testtools.TestCase):
     """Scaffolding around testtools.TestCase for testing a Falcon API endpoint.
 
     Inherit from this and write your test methods. If the child class defines
-    a prepare(self) method, this method will be called before executing each
-    test method.
+    a before(self) method, this method will be called before executing each
+    test method. Likewise, child classes may define an after(self) method to
+    execute actions after each test method returns.
 
     Attributes:
         api: falcon.API instance used in simulating requests.
@@ -48,9 +49,18 @@ class TestSuite(testtools.TestCase):
         self.srmock = StartResponseMock()
         self.test_route = '/' + self.getUniqueString()
 
-        prepare = getattr(self, 'prepare', None)
-        if hasattr(prepare, '__call__'):
-            prepare()
+        before = getattr(self, 'before', None)
+        if hasattr(before, '__call__'):
+            before()
+
+    def tearDown(self):
+        """Destructor, unittest-style"""
+
+        after = getattr(self, 'after', None)
+        if hasattr(after, '__call__'):
+            after()
+
+        super(TestSuite, self).tearDown()
 
     def simulate_request(self, path, **kwargs):
         """ Simulates a request.

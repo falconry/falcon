@@ -4,7 +4,7 @@ import falcon.testing as testing
 
 class TestQueryParams(testing.TestSuite):
 
-    def prepare(self):
+    def before(self):
         self.resource = testing.TestResource()
         self.api.add_route('/', self.resource)
 

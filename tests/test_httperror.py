@@ -81,7 +81,7 @@ class ServiceUnavailableResource:
 
 class TestHTTPError(testing.TestSuite):
 
-    def prepare(self):
+    def before(self):
         self.resource = FaultyResource()
         self.api.add_route('/fail', self.resource)
 
