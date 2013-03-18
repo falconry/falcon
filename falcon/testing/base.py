@@ -16,15 +16,20 @@ limitations under the License.
 
 """
 
-import testtools
+try:
+    import testtools as unittest
+except ImportError:
+    import unittest
 
 import falcon
 from falcon.testing.srmock import StartResponseMock
 from falcon.testing.helpers import create_environ
 
 
-class TestBase(testtools.TestCase):
+class TestBase(unittest.TestCase):
     """Scaffolding around testtools.TestCase for testing a Falcon API endpoint.
+
+    Note: If testtools is not available, falls back to using unittest.
 
     Inherit from this and write your test methods. If the child class defines
     a before(self) method, this method will be called before executing each

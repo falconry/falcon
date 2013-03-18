@@ -1,6 +1,5 @@
-nose
-nose-progressive
-testtools
-six
 cython
+nose
 ordereddict
+six
+testtools

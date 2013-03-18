@@ -6,7 +6,7 @@ from setuptools import setup, find_packages, Extension
 VERSION = imp.load_source('version', path.join('.', 'falcon', 'version.py'))
 VERSION = VERSION.version
 
-REQUIRES = ['six', 'testtools']
+REQUIRES = ['six']
 if sys.version_info < (2, 7):
     REQUIRES.append('ordereddict')
 

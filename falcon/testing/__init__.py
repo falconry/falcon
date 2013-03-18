@@ -19,5 +19,5 @@ limitations under the License.
 # Hoist classes and functions into the falcon.testing namespace
 from falcon.testing.helpers import *  # NOQA
 from falcon.testing.srmock import StartResponseMock  # NOQA
-from falcon.testing.test_resource import TestResource  # NOQA
+from falcon.testing.resource import TestResource  # NOQA
 from falcon.testing.base import TestBase  # NOQA
