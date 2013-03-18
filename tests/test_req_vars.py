@@ -18,6 +18,14 @@ class TestReqVars(testing.TestSuite):
                                                   query_string=qs,
                                                   headers=headers))
 
+    def test_missing_qs(self):
+        env = testing.create_environ()
+        if 'QUERY_STRING' in env:
+            del env['QUERY_STRING']
+
+        # Should not cause an exception when Request instantiated
+        req = Request(env)
+
     def test_reconstruct_url(self):
         req = self.req
 
