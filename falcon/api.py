@@ -16,13 +16,13 @@ limitations under the License.
 
 """
 
-from .request import Request
-from .response import Response
-from . import responders
-from .status_codes import HTTP_416
-from .api_helpers import *
+from falcon.request import Request
+from falcon.response import Response
+import falcon.responders
+from falcon.status_codes import HTTP_416
+from falcon.api_helpers import *
 
-from .http_error import HTTPError
+from falcon.http_error import HTTPError
 from falcon import DEFAULT_MEDIA_TYPE
 
 
@@ -136,7 +136,7 @@ class API(object):
         # adds (will cause the last one to win).
         self._routes.insert(0, (path_template, method_map))
 
-#-----------------------------------------------------------------------------
+#----------------------------------------------------------------------------
 # Helpers
 #----------------------------------------------------------------------------
 
@@ -161,11 +161,11 @@ class API(object):
                 try:
                     responder = method_map[method]
                 except KeyError:
-                    responder = responders.bad_request
+                    responder = falcon.responders.bad_request
 
                 break
         else:
-            responder = responders.path_not_found
+            responder = falcon.responders.path_not_found
             params = {}
 
         return (responder, params)

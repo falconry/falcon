@@ -24,13 +24,13 @@ from falcon import responders, HTTP_METHODS
 import falcon.status_codes as status
 
 
-IGNORE_BODY_STATUS_CODES = {
+IGNORE_BODY_STATUS_CODES = set([
     status.HTTP_100,
     status.HTTP_101,
     status.HTTP_204,
     status.HTTP_416,
     status.HTTP_304
-}
+])
 
 
 def prepare_global_hooks(hooks):

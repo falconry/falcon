@@ -1,9 +1,14 @@
 import imp
+import sys
 from os import path
 from setuptools import setup, find_packages, Extension
 
-version = imp.load_source('version', path.join('.', 'falcon', 'version.py'))
-version = version.version
+VERSION = imp.load_source('version', path.join('.', 'falcon', 'version.py'))
+VERSION = VERSION.version
+
+REQUIRES = ['six', 'testtools']
+if sys.version_info < (2, 7):
+    REQUIRES.append('ordereddict')
 
 try:
     from Cython.Distutils import build_ext
@@ -37,7 +42,7 @@ else:
 
 setup(
     name='falcon',
-    version=version,
+    version=VERSION,
     description='A fast micro-framework for building cloud APIs.',
     long_description=None,
     classifiers=[
@@ -55,6 +60,7 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
+        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.3',
     ],
@@ -66,7 +72,7 @@ setup(
     packages=find_packages(exclude=['bench', 'tests']),
     include_package_data=True,
     zip_safe=False,
-    install_requires=['six', 'testtools'],
+    install_requires=REQUIRES,
     cmdclass=cmdclass,
     ext_modules=ext_modules
 )
