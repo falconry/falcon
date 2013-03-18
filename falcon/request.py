@@ -92,7 +92,8 @@ class Request(object):
         self.app = env['SCRIPT_NAME']
         self.method = env['REQUEST_METHOD']
         self.path = env['PATH_INFO'] or '/'
-        # QUERY_STRING isn't required to be in env so lets check
+
+        # QUERY_STRING isn't required to be in env, so let's check
         if 'QUERY_STRING' in env:
             self.query_string = query_string = env['QUERY_STRING']
         else:

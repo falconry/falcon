@@ -22,10 +22,9 @@ class TestReqVars(testing.TestSuite):
         env = testing.create_environ()
         if 'QUERY_STRING' in env:
             del env['QUERY_STRING']
-        # should not cause an exception when Request instantiated
+
+        # Should not cause an exception when Request instantiated
         req = Request(env)
-        # just make sure we don't cause regression
-        self.assertIsNone(req.get_param("foo"))
 
     def test_reconstruct_url(self):
         req = self.req
