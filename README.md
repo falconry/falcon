@@ -18,9 +18,9 @@ Falcon is a [high-performance Python framework][home] for building cloud APIs. I
 
 **Fast.** Cloud APIs need to turn around requests quickly, and make efficient use of hardware. Falcon processes requests [several times faster][bench] than other popular web frameworks.
 
-**Light.** Only the essentials are included, with *six* and *testtools* being the only two dependencies outside the standard library. We work to keep the code lean, making Falcon easier to test, optimize, and deploy. 
+**Light.** Only the essentials are included, with *six* and *testtools* being the only two dependencies outside the standard library. We work to keep the code lean, making Falcon easier to test, optimize, and deploy.
 
-**Flexible.** Falcon can be deployed in a variety of ways, depending on your needs. The framework speaks WSGI, and works great with [Python 2.7, PyPy, and Python 3.3][ci]. There's no tight coupling with any async framework, leaving you free to mix-and-match what you need.
+**Flexible.** Falcon can be deployed in a variety of ways, depending on your needs. The framework speaks WSGI, and works great with [Python 2.6 and 2.7, PyPy, and Python 3.3][ci]. There's no tight coupling with any async framework, leaving you free to mix-and-match what you need.
 
 [bench]: http://falconframework.org/#Metrics
 [ci]: https://travis-ci.org/racker/falcon
@@ -176,11 +176,11 @@ api.add_route('/{user_id}/things', things)
 
 ### Contributing ###
 
-Kurt Griffiths (kgriffs) is the creator and current maintainer of the Falcon framework. Pull requests are always welcome. 
+Kurt Griffiths (kgriffs) is the creator and current maintainer of the Falcon framework. Pull requests are always welcome.
 
-Before submitting a pull request, please ensure you have added/updated the appropriate tests (and that all existing tests still pass with your changes), and that your coding style follows PEP 8. 
+Before submitting a pull request, please ensure you have added/updated the appropriate tests (and that all existing tests still pass with your changes), and that your coding style follows PEP 8.
 
-Commit messages should be formatted using [AngularJS conventions][ajs] (one-liners are OK for now but body and footer may be required as the project matures). 
+Commit messages should be formatted using [AngularJS conventions][ajs] (one-liners are OK for now but body and footer may be required as the project matures).
 
 Comments follow [Google's style guide][goog-style-comments].
 
