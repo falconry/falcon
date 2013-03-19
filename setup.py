@@ -46,7 +46,7 @@ setup(
     description='A fast micro-framework for building cloud APIs.',
     long_description=None,
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
         'Natural Language :: English',
         'Intended Audience :: Developers',
