@@ -3,8 +3,6 @@
 Falcon [![Build Status](https://travis-ci.org/racker/falcon.png)](https://travis-ci.org/racker/falcon)
 ======
 
-**[Experimental]**
-
 Falcon is a [high-performance Python framework][home] for building cloud APIs. It tries to do as little as possible while remaining [highly effective][benefits].
 
 > Perfection is finally attained not when there is no longer anything to add, but when there is no longer anything to take away.
@@ -16,7 +14,7 @@ Falcon is a [high-performance Python framework][home] for building cloud APIs. I
 
 ### Design Goals ###
 
-**Fast.** Cloud APIs need to turn around requests quickly, and make efficient use of hardware. Falcon processes requests [several times faster][bench] than other popular web frameworks.
+**Fast.** Cloud APIs need to turn around requests quickly, and make efficient use of hardware. This is particularly important when serving many concurrent requests. Falcon processes requests [several times faster][bench] than other popular web frameworks.
 
 **Light.** Only the essentials are included, with *six* being the only dependency outside the standard library. We work to keep the code lean, making Falcon easier to test, optimize, and deploy.
 
@@ -24,6 +22,17 @@ Falcon is a [high-performance Python framework][home] for building cloud APIs. I
 
 [bench]: http://falconframework.org/#Metrics
 [ci]: https://travis-ci.org/racker/falcon
+
+### Features ###
+
+* Intuitive routing via URI templates and resource classes
+* Easy access to headers and bodies through request and response classes
+* Idiomatic HTTP error responses via a handy exception base class
+* DRY request processing using global, resource, and method hooks
+* Snappy unit testing through WSGI helpers and mocks
+* 20% speed boost when Cython is available
+* Python 2.6, Python 2.7, PyPy and Python 3.3 support
+* Speed, speed, and more speed!
 
 ### Install ###
 
@@ -45,7 +54,9 @@ $ pip install tox && tox
 
 ### Usage ###
 
-More/better docs are on the way, but in the meantime, here is a simple example showing how to create a Falcon-based API.
+Read the source, Luke!
+
+Docstrings can be found throughout the Falcon code base for your learning pleasure. Better docs are on the way, but in the meantime, here is a simple example showing how to create a Falcon-based API.
 
 ```python
 class ThingsResource:
@@ -178,7 +189,7 @@ api.add_route('/{user_id}/things', things)
 
 Kurt Griffiths (kgriffs) is the creator and current maintainer of the Falcon framework. Pull requests are always welcome.
 
-Before submitting a pull request, please ensure you have added/updated the appropriate tests (and that all existing tests still pass with your changes), and that your coding style follows PEP 8.
+Before submitting a pull request, please ensure you have added/updated the appropriate tests (and that all existing tests still pass with your changes), and that your coding style follows PEP 8 and doesn't cause pyflakes to complain.
 
 Commit messages should be formatted using [AngularJS conventions][ajs] (one-liners are OK for now but body and footer may be required as the project matures).
 
