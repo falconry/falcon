@@ -44,6 +44,13 @@ class WrappedRespondersResource(object):
 @falcon.after(fluffiness)
 class WrappedClassResource(object):
 
+    # Test that the decorator skips non-callables
+    on_post = False
+
+    def __init__(self):
+        # Test that the decorator skips non-callables
+        self.on_patch = []
+
     def on_get(self, req, resp):
         self.req = req
         self.resp = resp
@@ -110,3 +117,9 @@ class TestHooks(testing.TestBase):
         self.simulate_request('/wrapped', method='HEAD')
         self.assertEqual(falcon.HTTP_200, self.srmock.status)
         self.assertEqual(expected, self.wrapped_resource.resp.body)
+
+        self.simulate_request('/wrapped', method='POST')
+        self.assertEqual(falcon.HTTP_405, self.srmock.status)
+
+        self.simulate_request('/wrapped', method='PATCH')
+        self.assertEqual(falcon.HTTP_405, self.srmock.status)

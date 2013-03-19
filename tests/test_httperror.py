@@ -19,16 +19,19 @@ class FaultyResource:
     def on_post(self, req, resp):
         raise falcon.HTTPForbidden(
             'Request denied',
-            'You do not have write permissions for this queue',
+            'You do not have write permissions for this queue.',
             href='http://example.com/api/rbac')
 
     def on_put(self, req, resp):
         raise falcon.HTTPError(
             falcon.HTTP_792,
             'Internet crashed',
-            'Climate change driven catastrophic weather event',
+            'Catastrophic weather event due to climate change.',
             href='http://example.com/api/climate',
             href_text='Drill baby drill!')
+
+    def on_patch(self, req, resp):
+        raise falcon.HTTPError(falcon.HTTP_400, 'No-can-do')
 
 
 class MiscErrorsResource:
@@ -51,6 +54,11 @@ class UnauthorizedResource:
                                       'Missing or invalid token header.',
                                       'Token')
 
+class UnauthorizedResourceSchemaless:
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPUnauthorized('Authentication Required',
+                                      'Missing or invalid token header.')
 
 class NotFoundResource:
 
@@ -123,6 +131,11 @@ class TestHTTPError(testing.TestBase):
         self.assertThat(lambda: json.loads(body[0]), Not(raises(ValueError)))
         self.assertEqual(body, expected_body)
 
+    def test_no_description(self):
+        body = self.simulate_request('/fail', method='PATCH')
+        self.assertEqual(self.srmock.status, falcon.HTTP_400)
+        self.assertEqual(body, [b'{\n    "title": "No-can-do"\n}'])
+
     def test_client_does_not_accept_json(self):
         headers = {
             'Accept': 'application/soap+xml',
@@ -160,7 +173,7 @@ class TestHTTPError(testing.TestBase):
             b'{\n'
             b'    "title": "Request denied",\n'
             b'    "description": "You do not have write permissions for this '
-            b'queue",\n'
+            b'queue.",\n'
             b'    "link": {\n'
             b'        "text": "API documention for this error",\n'
             b'        "href": "http://example.com/api/rbac",\n'
@@ -182,8 +195,8 @@ class TestHTTPError(testing.TestBase):
         expected_body = [
             b'{\n'
             b'    "title": "Internet crashed",\n'
-            b'    "description": "Climate change driven catastrophic weather '
-            b'event",\n'
+            b'    "description": "Catastrophic weather event due to climate '
+            b'change.",\n'
             b'    "link": {\n'
             b'        "text": "Drill baby drill!",\n'
             b'        "href": "http://example.com/api/climate",\n'
@@ -203,6 +216,13 @@ class TestHTTPError(testing.TestBase):
 
         self.assertEqual(self.srmock.status, falcon.HTTP_401)
         self.assertIn(('WWW-Authenticate', 'Token'), self.srmock.headers)
+
+    def test_401_schemaless(self):
+        self.api.add_route('/401', UnauthorizedResourceSchemaless())
+        self.simulate_request('/401')
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_401)
+        self.assertNotIn(('WWW-Authenticate', 'Token'), self.srmock.headers)
 
     def test_404(self):
         self.api.add_route('/404', NotFoundResource())

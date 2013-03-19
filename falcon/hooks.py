@@ -57,12 +57,20 @@ def before(action):
                 else:
                     # Usually expect a method, but any callable will do
                     if hasattr(responder, '__call__'):
-                        @wraps(responder)
-                        def do_before_all(self, req, resp, **kwargs):
-                            action(req, resp, kwargs)
-                            responder(self, req, resp, **kwargs)
+                        # This pattern is necessary to capture the current
+                        # value of responder in the do_before_all closure;
+                        # otherwise, they will capture the same responder
+                        # variable that is shared between iterations of the
+                        # for loop, above.
+                        def let(responder=responder):
+                            @wraps(responder)
+                            def do_before_all(self, req, resp, **kwargs):
+                                action(req, resp, kwargs)
+                                responder(self, req, resp, **kwargs)
 
-                        setattr(resource, responder_name, do_before_all)
+                            setattr(resource, responder_name, do_before_all)
+
+                        let()
 
             return resource
 
@@ -103,12 +111,15 @@ def after(action):
                 else:
                     # Usually expect a method, but any callable will do
                     if hasattr(responder, '__call__'):
-                        @wraps(responder)
-                        def do_after_all(self, req, resp, **kwargs):
-                            responder(self, req, resp, **kwargs)
-                            action(req, resp)
+                        def let(responder=responder):
+                            @wraps(responder)
+                            def do_after_all(self, req, resp, **kwargs):
+                                responder(self, req, resp, **kwargs)
+                                action(req, resp)
 
-                        setattr(resource, responder_name, do_after_all)
+                            setattr(resource, responder_name, do_after_all)
+
+                        let()
 
             return resource
 

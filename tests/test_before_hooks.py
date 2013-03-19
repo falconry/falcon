@@ -58,6 +58,9 @@ class WrappedRespondersResource(object):
 @falcon.before(bunnies)
 class WrappedClassResource(object):
 
+    # Test non-callable should be skipped by decorator
+    on_patch = {}
+
     @falcon.before(validate_param)
     def on_get(self, req, resp, bunnies):
         self.req = req
@@ -152,6 +155,9 @@ class TestHooks(testing.TestBase):
         self.assertEqual(self.resource.doc, {'animal': 'falcon'})
 
     def test_wrapped_resource(self):
+        self.simulate_request('/wrapped', method='PATCH')
+        self.assertEqual(falcon.HTTP_405, self.srmock.status)
+
         self.simulate_request('/wrapped', query_string='?limit=10')
         self.assertEqual(falcon.HTTP_200, self.srmock.status)
         self.assertEqual('fuzzy', self.wrapped_resource.bunnies)

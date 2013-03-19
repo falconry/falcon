@@ -22,6 +22,9 @@ class ResourceGet(object):
     def __init__(self):
         self.called = False
 
+        # Test non-callable attribute
+        self.on_post = {}
+
     def on_get(self, req, resp):
         self.called = True
 
