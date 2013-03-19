@@ -1,3 +1,23 @@
+# v0.1.2 #
+
+## Fixed ##
+
+* Falcon requires QUERY_STRING in WSGI environ, but PEP-333 does not require it
+* Hook decorators can overwrite eachother's actions
+* Test coverage is not 100% when branch coverage is enabled
+
+## Breaking Changes ##
+
+* Renamed falcon.testing.TestSuite to TestBase
+* Renamed TestBase.prepare hook to TestBase.before
+
+## New ##
+
+* Python 2.6 support
+* Added TestBase.after hook
+* Made testtools dependency optional (falls back to unittest if import fails)
+* Trailing slashes in routes and request paths are ignored, so you no longer need to add two routes for each resource
+
 # v0.1.1 #
 
 ## Fixed ##
