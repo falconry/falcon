@@ -43,7 +43,7 @@ else:
 setup(
     name='falcon',
     version=VERSION,
-    description='A fast micro-framework for building cloud APIs.',
+    description='A supersonic micro-framework for building cloud APIs.',
     long_description=None,
     classifiers=[
         'Development Status :: 4 - Beta',
@@ -67,7 +67,7 @@ setup(
     keywords='wsgi web api framework rest http cloud',
     author='Kurt Griffiths',
     author_email='mail@kgriffs.com',
-    url='https://github.com/racker/falcon',
+    url='http://falconframework.org',
     license='Apache 2.0',
     packages=find_packages(exclude=['bench', 'tests']),
     include_package_data=True,
