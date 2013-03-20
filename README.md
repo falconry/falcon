@@ -56,7 +56,9 @@ $ pip install tox && tox
 
 Read the source, Luke!
 
-Docstrings can be found throughout the Falcon code base for your learning pleasure. Better docs are on the way, but in the meantime, here is a simple example showing how to create a Falcon-based API.
+Docstrings can be found throughout the Falcon code base for your learning pleasure. You can also ask questions in #falconframework on freenode. We are planning on having real docs eventually; if you need them right away, consider sending a pull request. ;)
+
+Here is a simple example showing how to create a Falcon-based API.
 
 ```python
 class ThingsResource:
