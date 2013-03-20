@@ -46,7 +46,7 @@ class TestWSGIError(testing.TestBase):
 
     def test_responder_logged_str(self):
         self.simulate_request('/logger', wsgierrors=self.wsgierrors,
-                               method='HEAD')
+                              method='HEAD')
 
         log = self.wsgierrors_buffer.getvalue()
 

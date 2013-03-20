@@ -1,5 +1,6 @@
 cython
 nose
 ordereddict
+flake8
 six
 testtools

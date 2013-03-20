@@ -23,8 +23,8 @@ class TestReqVars(testing.TestBase):
         if 'QUERY_STRING' in env:
             del env['QUERY_STRING']
 
-        # Should not cause an exception when Request instantiated
-        req = Request(env)
+        # Should not cause an exception when Request is instantiated
+        Request(env)
 
     def test_reconstruct_url(self):
         req = self.req

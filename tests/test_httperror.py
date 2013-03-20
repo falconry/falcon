@@ -54,11 +54,13 @@ class UnauthorizedResource:
                                       'Missing or invalid token header.',
                                       'Token')
 
+
 class UnauthorizedResourceSchemaless:
 
     def on_get(self, req, resp):
         raise falcon.HTTPUnauthorized('Authentication Required',
                                       'Missing or invalid token header.')
+
 
 class NotFoundResource:
 
