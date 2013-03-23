@@ -16,11 +16,13 @@ limitations under the License.
 
 """
 
+import inspect
+
 from falcon.request import Request
 from falcon.response import Response
 import falcon.responders
 from falcon.status_codes import HTTP_416
-from falcon.api_helpers import *
+from falcon import api_helpers as helpers
 
 from falcon.http_error import HTTPError
 from falcon import DEFAULT_MEDIA_TYPE
@@ -56,8 +58,8 @@ class API(object):
         self._routes = []
         self._media_type = media_type
 
-        self._before = prepare_global_hooks(before)
-        self._after = prepare_global_hooks(after)
+        self._before = helpers.prepare_global_hooks(before)
+        self._after = helpers.prepare_global_hooks(after)
 
     def __call__(self, env, start_response):
         """WSGI "app" method
@@ -74,7 +76,8 @@ class API(object):
         req = Request(env)
         resp = Response()
 
-        responder, params = self._get_responder(req.path, req.method)
+        responder, params, na_responder = self._get_responder(
+            req.path, req.method)
 
         try:
             responder(req, resp, **params)
@@ -87,13 +90,41 @@ class API(object):
             if req.client_accepts_json():
                 resp.body = ex.json()
 
+        except TypeError as ex:
+            # See if the method doesn't support the given route's params, to
+            # support assigning multiple routes to the same resource.
+            try:
+                argspec = responder.wrapped_argspec
+            except AttributeError:
+                argspec = inspect.getargspec(responder)
+
+            # First three args should be (self, req, resp)
+            if argspec.args[0] == 'self':
+                offset = 3
+            else:
+                offset = 2
+
+            args_needed = set(argspec.args[offset:])
+            args_given = set(params.keys())
+
+            # Reset the response
+            resp = Response()
+
+            # Does the responder require more or fewer args than given?
+            if args_needed > args_given or args_needed < args_given:
+                na_responder(req, resp)
+            else:
+                # Error caused by something else
+                req.log_error('Responder raised TypeError: %s' % ex)
+                falcon.responders.internal_server_error(req, resp)
+
         #
         # Set status and headers
         #
-        use_body = not should_ignore_body(resp.status, req.method)
+        use_body = not helpers.should_ignore_body(resp.status, req.method)
         if use_body:
-            set_content_length(resp)
-            body = get_body(resp)
+            helpers.set_content_length(resp)
+            body = helpers.get_body(resp)
         else:
             # Default: return an empty body
             body = []
@@ -117,6 +148,42 @@ class API(object):
     def add_route(self, uri_template, resource):
         """Associate a URI path with a resource
 
+        A resource is an instance of a class that defines various on_*
+        "responder" methods, one for each HTTP method the resource
+        allows. For example, to support GET, simply define an "on_get"
+        responder. If a client requests an unsupported method, Falcon
+        will respond with "405 Method not allowed".
+
+        Responders must always define at least two arguments to receive
+        request and response objects, respectively. For example:
+
+            def on_post(self, req, resp):
+                pass
+
+        In addition, if the route's uri template contains field
+        expressions, any responders that desires to receive requests
+        for that route must accept arguments named after the respective
+        field names defined in the template. For example, given the
+        following uri template:
+
+            /das/{thing}
+
+        A PUT request to "/das/code" would be routed to:
+
+            def on_put(self, req, resp, thing):
+                pass
+
+        If, on the other hand, the responder had been defined thus:
+
+            def on_put(self, req, resp):
+                pass
+
+        Falcon would respond to the client's request with "405 Method
+        not allowed." This allows you to define multiple routes to the
+        same resource, e.g., in order to support GET for "/widget/1234"
+        and POST to "/widgets". In this last example, a POST to
+        "/widget/5000" would result in a 405 response.
+
         Args:
             uri_template: Relative URI template. Currently only Level 1
                 templates are supported. See also RFC 6570.
@@ -128,13 +195,13 @@ class API(object):
 
         """
 
-        path_template = compile_uri_template(uri_template)
-        method_map = create_http_method_map(resource,
-                                            self._before, self._after)
+        uri_fields, path_template = helpers.compile_uri_template(uri_template)
+        method_map, na_responder = helpers.create_http_method_map(
+            resource, uri_fields, self._before, self._after)
 
         # Insert at the head of the list in case we get duplicate
         # adds (will cause the last one to win).
-        self._routes.insert(0, (path_template, method_map))
+        self._routes.insert(0, (path_template, method_map, na_responder))
 
 #----------------------------------------------------------------------------
 # Helpers
@@ -144,7 +211,7 @@ class API(object):
         """Searches routes for a matching responder
 
         Args:
-            path: URI path to search (without query stirng)
+            path: URI path to search (without query string)
             method: HTTP method (uppercase) requested
         Returns:
             A 2-member tuple, containing a responder callable and a dict
@@ -153,7 +220,8 @@ class API(object):
 
         """
 
-        for path_template, method_map in self._routes:
+        for route in self._routes:
+            path_template, method_map, na_responder = route
             m = path_template.match(path)
             if m:
                 params = m.groupdict()
@@ -167,5 +235,6 @@ class API(object):
         else:
             responder = falcon.responders.path_not_found
             params = {}
+            na_responder = falcon.responders.create_method_not_allowed([])
 
-        return (responder, params)
+        return (responder, params, na_responder)

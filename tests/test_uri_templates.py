@@ -1,3 +1,4 @@
+import falcon
 import falcon.testing as testing
 
 
@@ -7,7 +8,18 @@ class IDResource(object):
         self.name = None
         self.called = False
 
-    def on_get(self, req, resp, id, name=None):
+    def on_get(self, req, resp, id):
+        self.id = id
+        self.called = True
+
+
+class NameResource(object):
+    def __init__(self):
+        self.id = None
+        self.name = None
+        self.called = False
+
+    def on_get(self, req, resp, id, name):
         self.id = id
         self.name = name
         self.called = True
@@ -72,6 +84,7 @@ class TestUriTemplates(testing.TestBase):
         self.api.add_route('/1/{id}/', resource1)
 
         self.simulate_request('/1/123')
+        self.assertEquals(self.srmock.status, falcon.HTTP_200)
         self.assertTrue(resource1.called)
         self.assertEquals(resource1.id, '123')
         self.assertEquals(resource1.name, None)
@@ -93,7 +106,7 @@ class TestUriTemplates(testing.TestBase):
         self.assertEquals(resource3.name, None)
 
     def test_multiple(self):
-        resource = IDResource()
+        resource = NameResource()
         self.api.add_route('/messages/{id}/names/{name}', resource)
 
         test_id = self.getUniqueString()

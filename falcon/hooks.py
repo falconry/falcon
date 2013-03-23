@@ -16,8 +16,9 @@ limitations under the License.
 
 """
 
-import six
 from functools import wraps
+import inspect
+import six
 
 from falcon import HTTP_METHODS
 
@@ -68,6 +69,8 @@ def before(action):
                                 action(req, resp, kwargs)
                                 responder(self, req, resp, **kwargs)
 
+                            argspec = inspect.getargspec(responder)
+                            do_before_all.wrapped_argspec = argspec
                             setattr(resource, responder_name, do_before_all)
 
                         let()
@@ -117,6 +120,8 @@ def after(action):
                                 responder(self, req, resp, **kwargs)
                                 action(req, resp)
 
+                            argspec = inspect.getargspec(responder)
+                            do_after_all.wrapped_argspec = argspec
                             setattr(resource, responder_name, do_after_all)
 
                         let()

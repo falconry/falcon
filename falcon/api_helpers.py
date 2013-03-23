@@ -136,6 +136,9 @@ def compile_uri_template(template=None):
         template: A Level 1 URI template. Method responders must accept, as
         arguments, all fields specified in the template (default '/').
 
+    Returns:
+        (template_field_names, template_regex)
+
     """
 
     if not isinstance(template, str):
@@ -146,24 +149,37 @@ def compile_uri_template(template=None):
     elif template != '/' and template.endswith('/'):
         template = template[:-1]
 
+    expression_pattern = r'{([a-zA-Z][a-zA-Z_]*)}'
+
+    # Get a list of field names
+    fields = set(re.findall(expression_pattern, template))
+
     # Convert Level 1 var patterns to equivalent named regex groups
-    escaped = re.sub(r'([\.\(\)\[\]\?\*\+\^\|])', r'\.', template)
-    pattern = re.sub(r'{([a-zA-Z][a-zA-Z_]*)}', r'(?P<\1>[^/]+)', escaped)
+    escaped = re.sub(r'[\.\(\)\[\]\?\*\+\^\|]', r'\\\g<0>', template)
+    pattern = re.sub(expression_pattern, r'(?P<\1>[^/]+)', escaped)
     pattern = r'\A' + pattern + r'/?\Z'
 
-    return re.compile(pattern, re.IGNORECASE)
+    return fields, re.compile(pattern, re.IGNORECASE)
 
 
-def create_http_method_map(resource, before, after):
+def create_http_method_map(resource, uri_fields, before, after):
     """Maps HTTP methods (such as GET and POST) to methods of resource object
 
     Args:
         resource: An object with "responder" methods, starting with on_*, that
-           correspond to each method the resource supports. For example, if a
-           resource supports GET and POST, it should define
-           on_get(self, req, resp) and on_post(self,req,resp).
-        before: An action hooks or list of hooks to be called before each
-           on_* responder defined by the resource.
+            correspond to each method the resource supports. For example, if a
+            resource supports GET and POST, it should define
+            on_get(self, req, resp) and on_post(self,req,resp).
+        uri_fields: A set of field names from the route's URI template that
+            a responder must support in order to avoid "method not allowed".
+        before: An action hook or list of hooks to be called before each
+            on_* responder defined by the resource.
+        after: An action hook or list of hooks to be called after each on_*
+            responder defined by the resource.
+
+    Returns:
+        A tuple containing a dict mapping HTTP methods to responders, and
+        the method-not-allowed responder.
 
     """
 
@@ -182,14 +198,14 @@ def create_http_method_map(resource, before, after):
                 method_map[method] = responder
 
     # Attach a resource for unsupported HTTP methods
-    allowed_methods = list(method_map.keys())
-    responder = responders.create_method_not_allowed(allowed_methods)
+    allowed_methods = sorted(list(method_map.keys()))
+    na_responder = responders.create_method_not_allowed(allowed_methods)
 
     for method in HTTP_METHODS:
         if method not in allowed_methods:
-            method_map[method] = responder
+            method_map[method] = na_responder
 
-    return method_map
+    return method_map, na_responder
 
 
 #-----------------------------------------------------------------------------

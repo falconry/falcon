@@ -19,14 +19,19 @@ limitations under the License.
 from falcon.status_codes import *
 
 
-def path_not_found(req, resp):
+def path_not_found(req, resp, **kwargs):
     """Simply sets responseto "404 Not Found", no body."""
     resp.status = HTTP_404
 
 
-def bad_request(req, resp):
+def bad_request(req, resp, **kwargs):
     """Sets response to "400 Bad Request", no body."""
     resp.status = HTTP_400
+
+
+def internal_server_error(req, resp, **kwargs):
+    """Sets response to "500 Internal Server Error", no body."""
+    resp.status = HTTP_500
 
 
 def create_method_not_allowed(allowed_methods):
@@ -38,7 +43,7 @@ def create_method_not_allowed(allowed_methods):
 
     """
 
-    def method_not_allowed(req, resp, **params):
+    def method_not_allowed(req, resp, **kwargs):
         resp.status = HTTP_405
         resp.set_header('Allow', ', '.join(allowed_methods))
 

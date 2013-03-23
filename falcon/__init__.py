@@ -22,10 +22,10 @@ HTTP_METHODS = (
     'GET',
     'HEAD',
     'OPTIONS',
+    'PATCH',
     'POST',
     'PUT',
     'TRACE',
-    'PATCH'
 )
 
 DEFAULT_MEDIA_TYPE = 'application/json; charset=utf-8'

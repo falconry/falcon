@@ -18,18 +18,32 @@ HTTP_METHODS = (
 )
 
 
-class ResourceGet(object):
+class ThingsResource(object):
     def __init__(self):
         self.called = False
 
         # Test non-callable attribute
-        self.on_post = {}
+        self.on_patch = {}
 
-    def on_get(self, req, resp):
+    # Field names ordered differently than in uri template
+    def on_get(self, req, resp, sid, id):
         self.called = True
 
         self.req, self.resp = req, resp
         resp.status = falcon.HTTP_204
+
+    # Field names ordered the same as in uri template
+    def on_head(self, req, resp, id, sid):
+        self.called = True
+
+        self.req, self.resp = req, resp
+        resp.status = falcon.HTTP_204
+
+    def on_post(self, req, resp):
+        self.called = True
+
+        self.req, self.resp = req, resp
+        resp.status = falcon.HTTP_201
 
 
 def capture(func):
@@ -38,11 +52,19 @@ def capture(func):
         self = args[0]
         self.called = True
         self.req, self.resp = args[1:]
+        func(*args, **kwargs)
 
     return with_capture
 
 
-class ResourceMisc(object):
+def selfless_decorator(func):
+    def faulty(req, resp, foo, bar):
+        pass
+
+    return faulty
+
+
+class MiscResource(object):
     def __init__(self):
         self.called = False
 
@@ -63,7 +85,7 @@ class ResourceMisc(object):
         pass
 
 
-class ResourceGetWithParam(object):
+class GetWithFaultyPutResource(object):
     def __init__(self):
         self.called = False
 
@@ -71,23 +93,50 @@ class ResourceGetWithParam(object):
     def on_get(self, req, resp):
         resp.status = falcon.HTTP_204
 
+    def on_put(self, req, resp, param):
+        raise TypeError()
+
+
+class FaultyDecoratedResource(object):
+
+    @selfless_decorator
+    def on_get(self, req, resp):
+        pass
+
 
 class TestHttpMethodRouting(testing.TestBase):
 
     def before(self):
-        self.resource_get = ResourceGet()
-        self.api.add_route('/get', self.resource_get)
+        self.resource_things = ThingsResource()
+        self.api.add_route('/things', self.resource_things)
+        self.api.add_route('/things/{id}/stuff/{sid}', self.resource_things)
 
-        self.resource_misc = ResourceMisc()
+        self.resource_misc = MiscResource()
         self.api.add_route('/misc', self.resource_misc)
 
-        self.resource_get_with_param = ResourceGetWithParam()
+        self.resource_get_with_faulty_put = GetWithFaultyPutResource()
         self.api.add_route('/get_with_param/{param}',
-                           self.resource_get_with_param)
+                           self.resource_get_with_faulty_put)
 
     def test_get(self):
-        self.simulate_request('/get')
-        self.assertTrue(self.resource_get.called)
+        self.simulate_request('/things/42/stuff/57')
+        self.assertEquals(self.srmock.status, falcon.HTTP_204)
+        self.assertTrue(self.resource_things.called)
+
+    def test_get_not_allowed(self):
+        self.simulate_request('/things')
+        self.assertEquals(self.srmock.status, falcon.HTTP_405)
+        self.assertFalse(self.resource_things.called)
+
+    def test_post(self):
+        self.simulate_request('/things', method='POST')
+        self.assertEquals(self.srmock.status, falcon.HTTP_201)
+        self.assertTrue(self.resource_things.called)
+
+    def test_post_not_allowed(self):
+        self.simulate_request('/things/42/stuff/57', method='POST')
+        self.assertEquals(self.srmock.status, falcon.HTTP_405)
+        self.assertFalse(self.resource_things.called)
 
     def test_misc(self):
         for method in ['GET', 'HEAD', 'PUT', 'PATCH']:
@@ -98,38 +147,49 @@ class TestHttpMethodRouting(testing.TestBase):
 
     def test_method_not_allowed(self):
         for method in HTTP_METHODS:
-            if method == 'GET':
+            if method in ('GET', 'POST', 'HEAD'):
                 continue
 
-            self.resource_get.called = False
-            self.simulate_request('/get', method=method)
+            self.resource_things.called = False
+            self.simulate_request('/things/84/stuff/65', method=method)
 
-            self.assertFalse(self.resource_get.called)
-            self.assertEquals(self.srmock.status, '405 Method Not Allowed')
+            self.assertFalse(self.resource_things.called)
+            self.assertEquals(self.srmock.status, falcon.HTTP_405)
 
             headers = self.srmock.headers
-            allow_header = ('Allow', 'GET')
+            allow_header = ('Allow', 'GET, HEAD, POST')
 
             self.assertThat(headers, Contains(allow_header))
 
     def test_method_not_allowed_with_param(self):
         for method in HTTP_METHODS:
-            if method == 'GET':
+            if method == 'GET' or method == 'PUT':
                 continue
 
-            self.resource_get_with_param.called = False
+            self.resource_get_with_faulty_put.called = False
             self.simulate_request(
                 '/get_with_param/bogus_param', method=method)
 
-            self.assertFalse(self.resource_get_with_param.called)
-            self.assertEquals(self.srmock.status, '405 Method Not Allowed')
+            self.assertFalse(self.resource_get_with_faulty_put.called)
+            self.assertEquals(self.srmock.status, falcon.HTTP_405)
 
             headers = self.srmock.headers
-            allow_header = ('Allow', 'GET')
+            allow_header = ('Allow', 'GET, PUT')
 
             self.assertThat(headers, Contains(allow_header))
 
+    def test_unexpected_type_error(self):
+        self.simulate_request(
+            '/get_with_param/bogus_param', method='PUT')
+
+        self.assertEquals(self.srmock.status, falcon.HTTP_500)
+
+    def test_type_error(self):
+        self.api.add_route('/faulty', FaultyDecoratedResource())
+        self.simulate_request('/faulty')
+        self.assertEquals(self.srmock.status, falcon.HTTP_405)
+
     def test_bogus_method(self):
-        self.simulate_request('/get', method=self.getUniqueString())
-        self.assertFalse(self.resource_get.called)
+        self.simulate_request('/things', method=self.getUniqueString())
+        self.assertFalse(self.resource_things.called)
         self.assertEquals(self.srmock.status, falcon.HTTP_400)
