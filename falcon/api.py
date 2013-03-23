@@ -111,7 +111,7 @@ class API(object):
             resp = Response()
 
             # Does the responder require more or fewer args than given?
-            if args_needed > args_given or args_needed < args_given:
+            if args_needed != args_given:
                 na_responder(req, resp)
             else:
                 # Error caused by something else
