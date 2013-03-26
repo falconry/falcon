@@ -31,44 +31,19 @@ class Request(object):
     """Represents a client's HTTP request
 
     Attributes:
-        url: The fully-qualified request URL
-        protocol: Will be either 'http' or 'https'.
-        app: Name of the WSGI app (if using WSGI's notion of virtual hosting).
         method: HTTP method requested (e.g., GET, POST, etc.)
         path: Path portion of the request URL (not including query string).
         query_string: Query string portion of the request URL.
         stream: Stream-like object for reading the body of the request, if any.
 
-        accept: Value of the Accept header, or None if not found.
-        auth: Value of the Authorization header, or None if not found.
-        content_length: Value of the Content-Length header, converted to an
-            int, or None if missing or not an integer.
-        content_type: Value of the Content-Type header, or None if not found.
-        date: Value of the Date header, or None if missing.
-        expect: Value of the Expect header, or None if missing.
-        if_match: Value of the If-Match header, or None if missing.
-        if_none_match: Value of the If-None-Match header, or None if missing.
-        if_modified_since: Value of the If-Modified-Since header, or None if
-            missing.
-        if_unmodified_since: Value of the If-Unmodified-Since header, or None
-            if missing.
-        if_range: Value of the If-Range header, or None if missing.
-        range: A 2-member tuple representing the value of the Range header, or
-            None if missing. The two members correspond to first and last byte
-            positions of the requested resource, inclusive. Negative indices
-            indicate offset from the end of the resource, where -1 is the last
-            byte, -2 is the second-to-last byte, and so forth.
-        user_agent: Value of the User-Agent string, or None if not found.
-
     """
 
     __slots__ = (
-        'app',
+        'env',
         '_headers',
         'method',
         '_params',
         'path',
-        'protocol',
         'query_string',
         'stream',
         '_wsgierrors'
@@ -85,11 +60,11 @@ class Request(object):
 
         """
 
+        self.env = env
+
         self._wsgierrors = env['wsgi.errors']
         self.stream = env['wsgi.input']
 
-        self.protocol = env['wsgi.url_scheme']
-        self.app = env['SCRIPT_NAME']
         self.method = env['REQUEST_METHOD']
         self.path = env['PATH_INFO'] or '/'
 
@@ -114,6 +89,7 @@ class Request(object):
                 as UTF-8.
 
         """
+
         if not six.PY3 and isinstance(message, unicode):
             message = message.encode('utf-8')
 
@@ -133,26 +109,31 @@ class Request(object):
                 (('application/json' in accept) or ('*/*' in accept)))
 
     @property
-    def url(self):
-        return ''.join([
-            self.protocol,
-            '://',
-            self.get_header('host'),
-            self.app,
-            self.path,
-            self.query_string
-        ])
-
-    @property
     def accept(self):
+        """Value of the Accept header, or None if not found."""
         return self._get_header_by_wsgi_name('ACCEPT')
 
     @property
+    def app(self):
+        """Name of the WSGI app (if using WSGI's notion of virtual hosting)."""
+        return self.env['SCRIPT_NAME']
+
+    @property
     def auth(self):
+        """Value of the Authorization header, or None if not found."""
         return self._get_header_by_wsgi_name('AUTHORIZATION')
 
     @property
     def content_length(self):
+        """Value of the Content-Length header
+
+        Returns:
+            Value converted to an int, or None if missing.
+
+        Raises:
+            HTTPBadRequest: The header had a value, but it wasn't
+                formatted correctly.
+        """
         value = self._get_header_by_wsgi_name('CONTENT_LENGTH')
         if value is not None:
             try:
@@ -164,38 +145,61 @@ class Request(object):
 
     @property
     def content_type(self):
+        """Value of the Content-Type header, or None if not found."""
         return self._get_header_by_wsgi_name('CONTENT_TYPE')
 
     @property
     def date(self):
+        """Value of the Date header, or None if missing."""
         return self._get_header_by_wsgi_name('DATE')
 
     @property
     def expect(self):
+        """Value of the Expect header, or None if missing."""
         return self._get_header_by_wsgi_name('EXPECT')
 
     @property
     def if_match(self):
+        """Value of the If-Match header, or None if missing."""
         return self._get_header_by_wsgi_name('IF_MATCH')
 
     @property
     def if_none_match(self):
+        """Value of the If-None-Match header, or None if missing."""
         return self._get_header_by_wsgi_name('IF_NONE_MATCH')
 
     @property
     def if_modified_since(self):
+        """Value of the If-Modified-Since header, or None if missing."""
         return self._get_header_by_wsgi_name('IF_MODIFIED_SINCE')
 
     @property
     def if_unmodified_since(self):
+        """Value of the If-Unmodified-Since header, or None if missing."""
         return self._get_header_by_wsgi_name('IF_UNMODIFIED_SINCE')
 
     @property
     def if_range(self):
+        """Value of the If-Range header, or None if missing."""
         return self._get_header_by_wsgi_name('IF_RANGE')
 
     @property
+    def protocol(self):
+        """Will be either 'http' or 'https'."""
+        return self.env['wsgi.url_scheme']
+
+    @property
     def range(self):
+        """A 2-member tuple representing the value of the Range header.
+
+        The two members correspond to first and last byte positions of the
+        requested resource, inclusive. Negative indices indicate offset
+        from the end of the resource, where -1 is the last byte, -2 is the
+        second-to-last byte, and so forth.
+
+        Returns:
+            Parse range value, or None if the header is not present.
+        """
         value = self._get_header_by_wsgi_name('RANGE')
         if (value is None) or ('-' not in value):
             return None
@@ -217,7 +221,25 @@ class Request(object):
         return None
 
     @property
+    def uri(self):
+        """The fully-qualified URI for the request."""
+        return ''.join([
+            self.protocol,
+            '://',
+            self.get_header('host'),
+            self.app,
+            self.path,
+            self.query_string
+        ])
+
+    @property
+    def url(self):
+        """Alias of Request.uri"""
+        return self.uri
+
+    @property
     def user_agent(self):
+        """Value of the User-Agent string, or None if missing."""
         return self._get_header_by_wsgi_name('USER_AGENT')
 
     def get_header(self, name, required=False):
