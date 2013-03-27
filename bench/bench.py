@@ -38,11 +38,11 @@ def create_bench(name):
     srmock = helpers.StartResponseMock()
 
     request_headers = {'Content-Type': 'application/json'}
-    # env = helpers.create_environ('/hello/584/test', query_string='limit=10',
-    #                              headers=request_headers)
-
-    env = helpers.create_environ('/hello', query_string='limit=10',
+    env = helpers.create_environ('/hello/584/test', query_string='limit=10',
                                  headers=request_headers)
+
+    # env = helpers.create_environ('/hello', query_string='limit=10',
+    #                              headers=request_headers)
 
     body = helpers.rand_string(0, 10240)  # NOQA
     headers = {'X-Test': 'Funky Chicken'}  # NOQA

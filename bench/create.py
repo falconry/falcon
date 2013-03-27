@@ -1,6 +1,6 @@
 import sys
 import re
-import six
+# import six
 
 
 def create_falcon(body, headers):
@@ -19,10 +19,11 @@ def create_falcon(body, headers):
         def on_get(self, req, resp, account_id):
             user_agent = req.user_agent  # NOQA
             limit = req.get_param('limit', '10')  # NOQA
-            if six.PY3:
-                resp.body = body
-            else:
-                resp.data = body
+            resp.data = body
+            # if six.PY3:
+            #     resp.body = body
+            # else:
+            #     resp.data = body
 
             # resp.vary = ['accept-encoding', 'x-auth-token']
             #resp.content_range = (0, 499, 10240)
@@ -120,6 +121,7 @@ def create_werkzeug(body, headers):
         limit = request.args.get('limit', '10')  # NOQA
         adapter = url_map.bind_to_environ(request.environ)  # NOQA
         endpoint, values = adapter.match()  # NOQA
+        aid = values['account_id']  # NOQA
 
         return werkzeug.Response(body, headers=headers,
                                  mimetype='text/plain')
