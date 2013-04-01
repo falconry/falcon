@@ -55,6 +55,7 @@ HTTP_414 = '414 URI Too Long'
 HTTP_415 = '415 Unsupported Media Type'
 HTTP_416 = '416 Range Not Satisfiable'
 HTTP_417 = '417 Expectation Failed'
+HTTP_418 = "418 I'm a teapot"
 HTTP_426 = '426 Upgrade Required'
 
 HTTP_500 = '500 Internal Server Error'
