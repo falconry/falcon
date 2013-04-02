@@ -20,7 +20,7 @@ from datetime import datetime
 
 import six
 
-from falcon.request_helpers import *
+from falcon import request_helpers as helpers
 from falcon.exceptions import *
 
 DEFAULT_ERROR_LOG_FORMAT = ('{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
@@ -86,8 +86,8 @@ class Request(object):
         else:
             self.query_string = query_string = ''
 
-        self._params = parse_query_string(query_string)
-        self._headers = parse_headers(env)
+        self._params = helpers.parse_query_string(query_string)
+        self._headers = helpers.parse_headers(env)
 
     def log_error(self, message):
         """Log an error to wsgi.error
