@@ -76,6 +76,10 @@ class TestHelloWorld(testing.TestBase):
     def after(self):
         pass
 
+    def test_env_headers_list_of_tuples(self):
+        env = testing.create_environ(headers=[('User-Agent', 'Falcon-Test')])
+        self.assertEquals(env['HTTP_USER_AGENT'], 'Falcon-Test')
+
     def test_empty_route(self):
         self.simulate_request('')
         self.assertTrue(self.root_resource.called)

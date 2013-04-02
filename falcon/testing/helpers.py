@@ -67,7 +67,8 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
         query_string: The query string to simulate (default '')
         protocol: The HTTP protocol to simulate (default 'HTTP/1.1')
         port: The TCP port to simulate (default '80')
-        headers: Optional headers to set (default None)
+        headers: Optional headers to set as a dict or an iterable of tuples
+            that can be converted to a dict (default None)
         app: Value for the SCRIPT_NAME environ variable, described in
             PEP-333: 'The initial portion of the request URL's "path" that
             corresponds to the application object, so that the application
@@ -122,6 +123,10 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
 
 
 def _add_headers_to_environ(env, headers):
+    if not isinstance(headers, dict):
+        # Try to convert
+        headers = dict(headers)
+
     for name, value in headers.items():
         name = name.upper().replace('-', '_')
 
