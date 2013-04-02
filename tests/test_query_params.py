@@ -16,6 +16,13 @@ class TestQueryParams(testing.TestBase):
         self.assertEquals(req.get_param('marker'), None)
         self.assertEquals(req.get_param('limit'), None)
 
+    def test_blank(self):
+        query_string = 'marker='
+        self.simulate_request('/', query_string=query_string)
+
+        req = self.resource.req
+        self.assertEquals(req.get_param('marker'), None)
+
     def test_simple(self):
         query_string = 'marker=deadbeef&limit=25'
         self.simulate_request('/', query_string=query_string)
@@ -41,7 +48,8 @@ class TestQueryParams(testing.TestBase):
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
-        self.assertEquals(req.get_param_as_int('marker'), None)
+        self.assertRaises(falcon.HTTPBadRequest, req.get_param_as_int,
+                          'marker')
         self.assertEquals(req.get_param_as_int('limit'), 25)
 
     def test_list_type(self):
@@ -54,6 +62,17 @@ class TestQueryParams(testing.TestBase):
                           ['red', 'green', 'blue'])
         self.assertEquals(req.get_param_as_list('limit'), ['1'])
         self.assertEquals(req.get_param_as_list('marker'), None)
+
+    # def test_list_transformer(self):
+    #     query_string = 'coord=1.4,13,15.1&limit=100'
+    #     self.simulate_request('/', query_string=query_string)
+
+    #     req = self.resource.req
+    #     self.assertEquals(req.get_param('coord'), '1.4,13,15.1')
+
+    #     expected = [1.4, 13.0, 15.1]
+    #     actual = eq.get_param_as_list('coord', transform=float)
+    #     self.assertEquals(actual, expected)
 
     def test_bogus_input(self):
         query_string = 'colors=red,green,&limit=1&pickle'

@@ -1,5 +1,7 @@
 from functools import wraps
+import io
 
+import six
 from testtools.matchers import Contains
 
 import falcon
@@ -179,8 +181,10 @@ class TestHttpMethodRouting(testing.TestBase):
             self.assertThat(headers, Contains(allow_header))
 
     def test_unexpected_type_error(self):
+        # Suppress logging
+        stream = io.StringIO() if six.PY3 else io.BytesIO()
         self.simulate_request(
-            '/get_with_param/bogus_param', method='PUT')
+            '/get_with_param/bogus_param', method='PUT', wsgierrors=stream)
 
         self.assertEquals(self.srmock.status, falcon.HTTP_500)
 
