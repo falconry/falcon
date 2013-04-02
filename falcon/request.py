@@ -333,8 +333,8 @@ class Request(object):
         if not required:
             return None
 
-        message = 'The "' + name + '" query parameter is required.'
-        raise HTTPBadRequest('Missing query parameter', message)
+        description = 'The "' + name + '" query parameter is required.'
+        raise HTTPBadRequest('Missing query parameter', description)
 
     def get_param_as_int(self, name, required=False):
         """Return the value of a query string parameter as an int
@@ -362,23 +362,26 @@ class Request(object):
             try:
                 return int(val)
             except ValueError:
-                msg = ('The value of the "' + name + '" query parameter must '
-                       'be an integer.')
-                raise InvalidHeaderValueError(msg)
+                description = ('The value of the "' + name + '" query '
+                               'parameter must be an integer.')
+                raise InvalidHeaderValueError(description)
 
         if not required:
             return None
 
-        message = 'The "' + name + '" query parameter is required.'
-        raise HTTPBadRequest('Missing query parameter', message)
+        description = 'The "' + name + '" query parameter is required.'
+        raise HTTPBadRequest('Missing query parameter', description)
 
-    def get_param_as_list(self, name, required=False):
+    def get_param_as_list(self, name, transform=None, required=False):
         """Return the value of a query string parameter as a list
 
         Note that list items must be comma-separated.
 
         Args:
             name: Parameter name, case-sensitive (e.g., 'limit')
+            transform: An optional transform function that takes as input
+                each element in the list as a string and outputs a transformed
+                element for inclusion in the list that will be returned.
             required: Set to True to raise HTTPBadRequest instead of returning
                 gracefully when the parameter is not found or is not an
                 integer (default False)
@@ -396,7 +399,16 @@ class Request(object):
         # PERF: Use if..in since it is a good all-around performer; we don't
         #       know how likely params are to be specified by clients.
         if name in self._params:
-            return self._params[name].split(',')
+            items = self._params[name].split(',')
+            if transform is not None:
+                try:
+                    items = [transform(x) for x in items]
+                except ValueError:
+                    desc = ('The value of the "' + name + '" query parameter '
+                            'is not formatted correctly.')
+                    raise HTTPBadRequest('Invalid query parameter', desc)
+
+            return items
 
         if not required:
             return None
