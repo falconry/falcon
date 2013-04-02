@@ -1,3 +1,4 @@
+import falcon
 from falcon.request import Request
 import falcon.testing as testing
 
@@ -8,11 +9,14 @@ class TestReqVars(testing.TestBase):
         qs = '?marker=deadbeef&limit=10'
 
         headers = {
+            'Host': 'falcon.example.com',
             'Content-Type': 'text/plain',
             'Content-Length': '4829',
+            'Authorization': ''
         }
 
-        self.url = 'http://falconer/test/hello?marker=deadbeef&limit=10'
+        self.relative_uri = '/test/hello?marker=deadbeef&limit=10'
+        self.uri = 'http://falcon.example.com' + self.relative_uri
         self.req = Request(testing.create_environ(app='/test',
                                                   path='/hello',
                                                   query_string=qs,
@@ -26,6 +30,9 @@ class TestReqVars(testing.TestBase):
         # Should not cause an exception when Request is instantiated
         Request(env)
 
+    def test_empty(self):
+        self.assertIs(self.req.auth, None)
+
     def test_reconstruct_url(self):
         req = self.req
 
@@ -36,76 +43,122 @@ class TestReqVars(testing.TestBase):
         query_string = req.query_string
 
         actual_url = ''.join([scheme, '://', host, app, path, query_string])
-        self.assertEquals(self.url, actual_url)
+        self.assertEquals(actual_url, self.uri)
 
     def test_url(self):
-        self.assertEquals(self.url, self.req.url)
+        self.assertEquals(self.req.url, self.uri)
+        self.assertEquals(self.req.uri, self.uri)
+
+    # def test_relative_url(self):
+    #     self.assertEqual(self.req.relative_uri, self.relative_uri)
 
     def test_range(self):
         headers = {'Range': '10-'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEquals((10, -1), req.range)
+        self.assertEquals(req.range, (10, -1))
 
         headers = {'Range': '10-20'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEquals((10, 20), req.range)
+        self.assertEquals(req.range, (10, 20))
 
         headers = {'Range': '-10240'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEquals((-10240, -1), req.range)
-
-        headers = {'Range': '10240'}
-        req = Request(testing.create_environ(headers=headers))
-        self.assertEqual(None, req.range)
+        self.assertEquals(req.range, (-10240, -1))
 
         headers = {'Range': ''}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEqual(None, req.range)
-
-        headers = {'Range': '-'}
-        req = Request(testing.create_environ(headers=headers))
-        self.assertEqual(None, req.range)
-
-        headers = {'Range': '--'}
-        req = Request(testing.create_environ(headers=headers))
-        self.assertEqual(None, req.range)
-
-        headers = {'Range': '-3-'}
-        req = Request(testing.create_environ(headers=headers))
-        self.assertEqual(None, req.range)
-
-        headers = {'Range': '-3-4'}
-        req = Request(testing.create_environ(headers=headers))
-        self.assertEqual(None, req.range)
-
-        headers = {'Range': '3-3-4'}
-        req = Request(testing.create_environ(headers=headers))
-        self.assertEqual(None, req.range)
-
-        headers = {'Range': '3-3-'}
-        req = Request(testing.create_environ(headers=headers))
-        self.assertEqual(None, req.range)
+        self.assertEqual(req.range, None)
 
         headers = {'Range': None}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEqual(None, req.range)
+        self.assertEqual(req.range, None)
+
+    def test_range_invalid(self):
+        headers = {'Range': '10240'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+
+        headers = {'Range': '-'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+
+        headers = {'Range': '--'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+
+        headers = {'Range': '-3-'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+
+        headers = {'Range': '-3-4'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+
+        headers = {'Range': '3-3-4'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+
+        headers = {'Range': '3-3-'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+
+        headers = {'Range': '3-3- '}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+
+        headers = {'Range': 'fizbit'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+
+        headers = {'Range': 'a-'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+
+        headers = {'Range': 'a-3'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+
+        headers = {'Range': '-b'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+
+        headers = {'Range': '3-b'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+
+        headers = {'Range': 'x-y'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+
+        headers = {'Range': 'bytes=0-0,-1'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
 
     def test_missing_attribute_header(self):
         req = Request(testing.create_environ())
-        self.assertEquals(None, req.range)
+        self.assertEquals(req.range, None)
 
         req = Request(testing.create_environ())
-        self.assertEquals(None, req.content_length)
+        self.assertEquals(req.content_length, None)
 
     def test_content_length(self):
         headers = {'content-length': '5656'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEquals(5656, req.content_length)
+        self.assertEquals(req.content_length, 5656)
 
-    def test_bogus_content_length(self):
+        headers = {'content-length': ''}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertEquals(req.content_length, None)
+
+    def test_bogus_content_length_nan(self):
         headers = {'content-length': 'fuzzy-bunnies'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEquals(None, req.content_length)
+        self.assertRaises(falcon.HTTPBadRequest, lambda: req.content_length)
+
+    def test_bogus_content_length_neg(self):
+        headers = {'content-length': '-1'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertRaises(falcon.HTTPBadRequest, lambda: req.content_length)
 
     def test_attribute_headers(self):
         date = testing.httpnow()
@@ -155,8 +208,8 @@ class TestReqVars(testing.TestBase):
     def _test_attribute_header(self, name, value, attr):
         headers = {name: value}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEquals(value, getattr(req, attr))
+        self.assertEquals(getattr(req, attr), value)
 
         headers = {name: None}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEqual(None, getattr(req, attr))
+        self.assertEqual(getattr(req, attr), None)

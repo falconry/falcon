@@ -121,7 +121,7 @@ class TestHeaders(testing.TestBase):
 
         # Make sure we picked up host from HTTP_HOST, not SERVER_NAME
         host = self.resource.req.get_header('host')
-        self.assertEquals(host, 'falconer')
+        self.assertEquals(host, testing.DEFAULT_HOST)
 
     def test_host_fallback(self):
         # Set protocol to 1.0 so that we won't get a host header

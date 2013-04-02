@@ -25,6 +25,9 @@ import six
 
 import falcon
 
+# Constants
+DEFAULT_HOST = 'falconframework.org'
+
 
 def httpnow():
     """Returns the current UTC time as an HTTP date
@@ -104,7 +107,7 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
     }
 
     if protocol != 'HTTP/1.0':
-        env['HTTP_HOST'] = 'falconer'
+        env['HTTP_HOST'] = DEFAULT_HOST
 
     content_length = body.seek(0, 2)
     body.seek(0)

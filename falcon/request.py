@@ -27,6 +27,12 @@ DEFAULT_ERROR_LOG_FORMAT = ('{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
                             ' {1} {2}?{3} => {4}\n')
 
 
+class InvalidHeaderValueError(HTTPBadRequest):
+    def __init__(self, msg, href=None, href_text=None):
+        super(InvalidHeaderValueError, self).__init__(
+            'Invalid header value', msg, href=href, href_text=None)
+
+
 class Request(object):
     """Represents a client's HTTP request
 
@@ -132,16 +138,25 @@ class Request(object):
 
         Raises:
             HTTPBadRequest: The header had a value, but it wasn't
-                formatted correctly.
+                formatted correctly or was a negative number.
         """
         value = self._get_header_by_wsgi_name('CONTENT_LENGTH')
-        if value is not None:
+        if value:
             try:
-                return int(value)
+                value_as_int = int(value)
             except ValueError:
-                pass
+                msg = ('The value of the content-length header must be '
+                       'a number.')
+                raise InvalidHeaderValueError(msg)
 
-        return None
+            if value_as_int < 0:
+                msg = ('The value of the content-length header must be '
+                       'a positive number.')
+                raise InvalidHeaderValueError(msg)
+            else:
+                return value_as_int
+
+        # implicit return None
 
     @property
     def content_type(self):
@@ -197,28 +212,44 @@ class Request(object):
         from the end of the resource, where -1 is the last byte, -2 is the
         second-to-last byte, and so forth.
 
+        Only continous ranges are supported (e.g., "bytes=0-0,-1" would
+        result in an HTTPBadRequest exception.)
+
         Returns:
             Parse range value, or None if the header is not present.
+
+        Raises:
+            HTTPBadRequest: The header had a value, but it wasn't
+                formatted correctly.
         """
+
         value = self._get_header_by_wsgi_name('RANGE')
-        if (value is None) or ('-' not in value):
-            return None
 
-        try:
-            first, last = value.split('-')
-        except ValueError:
-            return None
+        if value:
+            if ',' in value:
+                raise InvalidHeaderValueError('Only continuous byte ranges '
+                                              'are supported.')
 
-        if first:
-            if not last:
-                last = -1
+            try:
+                first, last = value.split('-')
 
-            return (int(first), int(last))
+                if first:
+                    return (int(first), int(last or -1))
+                elif last:
+                    return (-int(last), -1)
+                else:
+                    raise InvalidHeaderValueError(
+                        'Range value is missing offsets')
 
-        elif last:
-            return (-int(last), -1)
+            except ValueError:
+                href = 'http://goo.gl/zZ6Ey'
+                href_text = 'HTTP/1.1 Range Requests'
+                raise InvalidHeaderValueError('Range string must be formatted '
+                                              'according to RFC 2616.',
+                                              href=href,
+                                              href_text=href_text)
 
-        return None
+     # implicit return None
 
     @property
     def uri(self):
@@ -232,10 +263,8 @@ class Request(object):
             self.query_string
         ])
 
-    @property
-    def url(self):
-        """Alias of Request.uri"""
-        return self.uri
+    url = uri
+    """Alias for uri"""
 
     @property
     def user_agent(self):
@@ -317,8 +346,8 @@ class Request(object):
             integer. Otherwise, returns None unless required is True.
 
         Raises
-            HTTPBadRequest: The param was not found in the request, but was
-                required.
+            HTTPBadRequest: The param was not found in the request, even though
+                it was required to be there.
 
         """
 
@@ -329,7 +358,9 @@ class Request(object):
             try:
                 return int(val)
             except ValueError:
-                pass
+                msg = ('The value of the "' + name + '" query parameter must '
+                       'be an integer.')
+                raise InvalidHeaderValueError(msg)
 
         if not required:
             return None
@@ -338,7 +369,9 @@ class Request(object):
         raise HTTPBadRequest('Missing query parameter', message)
 
     def get_param_as_list(self, name, required=False):
-        """Return the value of a query string parameter as an int
+        """Return the value of a query string parameter as a list
+
+        Note that list items must be comma-separated.
 
         Args:
             name: Parameter name, case-sensitive (e.g., 'limit')
@@ -347,8 +380,8 @@ class Request(object):
                 integer (default False)
 
         Returns:
-            The value of the param if it is found and can be converted to an
-            integer. Otherwise, returns None unless required is True.
+            The value of the param if it is found. Otherwise, returns None
+            unless required is True.
 
         Raises
             HTTPBadRequest: The param was not found in the request, but was
@@ -378,10 +411,11 @@ class Request(object):
             name: Name of the header, already uppercased, and underscored
 
         Returns:
-            Value of the specified header, or None if not found
+            Value of the specified header, or None if the header was not
+            found. Also returns None if the value of the header was blank.
 
         """
         try:
-            return self._headers[name]
+            return self._headers[name] or None
         except KeyError:
             return None
