@@ -15,6 +15,9 @@ class TestQueryParams(testing.TestBase):
         req = self.resource.req
         self.assertEquals(req.get_param('marker'), None)
         self.assertEquals(req.get_param('limit'), None)
+        self.assertEquals(req.get_param_as_int('limit'), None)
+        self.assertEquals(req.get_param_as_bool('limit'), None)
+        self.assertEquals(req.get_param_as_list('limit'), None)
 
     def test_blank(self):
         query_string = 'marker='
@@ -40,6 +43,8 @@ class TestQueryParams(testing.TestBase):
                           'marker', required=True)
         self.assertRaises(falcon.HTTPBadRequest, req.get_param_as_int,
                           'marker', required=True)
+        self.assertRaises(falcon.HTTPBadRequest, req.get_param_as_bool,
+                          'marker', required=True)
         self.assertRaises(falcon.HTTPBadRequest, req.get_param_as_list,
                           'marker', required=True)
 
@@ -51,6 +56,19 @@ class TestQueryParams(testing.TestBase):
         self.assertRaises(falcon.HTTPBadRequest, req.get_param_as_int,
                           'marker')
         self.assertEquals(req.get_param_as_int('limit'), 25)
+
+    def test_boolean(self):
+        query_string = 'echo=true&doit=false&bogus=0&bogus2=1'
+        self.simulate_request('/', query_string=query_string)
+
+        req = self.resource.req
+        self.assertRaises(falcon.HTTPBadRequest, req.get_param_as_bool,
+                          'bogus')
+        self.assertRaises(falcon.HTTPBadRequest, req.get_param_as_bool,
+                          'bogus2')
+
+        self.assertEquals(req.get_param_as_bool('echo'), True)
+        self.assertEquals(req.get_param_as_bool('doit'), False)
 
     def test_list_type(self):
         query_string = 'colors=red,green,blue&limit=1'

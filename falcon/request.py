@@ -33,6 +33,12 @@ class InvalidHeaderValueError(HTTPBadRequest):
             'Invalid header value', msg, href=href, href_text=None)
 
 
+class InvalidParamValueError(HTTPBadRequest):
+    def __init__(self, msg, href=None, href_text=None):
+        super(InvalidParamValueError, self).__init__(
+            'Invalid query parameter', msg, href=href, href_text=None)
+
+
 class Request(object):
     """Represents a client's HTTP request
 
@@ -347,7 +353,8 @@ class Request(object):
 
         Returns:
             The value of the param if it is found and can be converted to an
-            integer. Otherwise, returns None unless required is True.
+            integer. If the param is not found, returns None, unless
+            unless required is True.
 
         Raises
             HTTPBadRequest: The param was not found in the request, even though
@@ -364,7 +371,46 @@ class Request(object):
             except ValueError:
                 description = ('The value of the "' + name + '" query '
                                'parameter must be an integer.')
-                raise InvalidHeaderValueError(description)
+                raise InvalidParamValueError(description)
+
+        if not required:
+            return None
+
+        description = 'The "' + name + '" query parameter is required.'
+        raise HTTPBadRequest('Missing query parameter', description)
+
+    def get_param_as_bool(self, name, required=False):
+        """Return the value of a query string parameter as a boolean
+
+        Args:
+            name: Parameter name, case-sensitive (e.g., 'limit')
+            required: Set to True to raise HTTPBadRequest instead of returning
+                gracefully when the parameter is not found or is not one of
+                ['true', 'false'] (default False)
+
+        Returns:
+            The value of the param if it is found and can be converted to a
+            boolean (must be in ['true', 'false']. If the param is not found,
+            returns None unless required is True
+
+        Raises
+            HTTPBadRequest: The param was not found in the request, even though
+                it was required to be there.
+
+        """
+
+        # PERF: Use if..in since it is a good all-around performer; we don't
+        #       know how likely params are to be specified by clients.
+        if name in self._params:
+            val = self._params[name]
+            if val == 'true':
+                return True
+            elif val == 'false':
+                return False
+            else:
+                description = ('The value of the "' + name + '" query '
+                               'parameter must be "true" or "false".')
+                raise InvalidParamValueError(description)
 
         if not required:
             return None
@@ -406,7 +452,7 @@ class Request(object):
                 except ValueError:
                     desc = ('The value of the "' + name + '" query parameter '
                             'is not formatted correctly.')
-                    raise HTTPBadRequest('Invalid query parameter', desc)
+                    raise InvalidParamValueError(desc)
 
             return items
 

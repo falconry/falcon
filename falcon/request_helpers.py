@@ -18,7 +18,7 @@ limitations under the License.
 
 import re
 
-QS_PATTERN = re.compile(r'([a-zA-Z_]+)=([^&]+)')
+QS_PATTERN = re.compile(r'([a-zA-Z][a-zA-Z_0-9\-]*)=([^&]+)')
 
 
 def parse_query_string(query_string):
