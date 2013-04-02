@@ -16,8 +16,8 @@ limitations under the License.
 
 """
 
-from .util import dt_to_http
-from .response_helpers import *  # NOQA
+from falcon.response_helpers import header_property, format_range
+from falcon.util import dt_to_http
 
 
 class Response(object):
@@ -33,43 +33,6 @@ class Response(object):
         data: Byte string representing response content.
         stream: Iterable stream-like object, representing response content.
         stream_len: Expected length of stream (e.g., file size).
-
-        content_type: Value for the Content-Type header
-        etag: Value for the ETag header
-        cache_control: A list of cache directives (see http://goo.gl/fILS5
-            and http://goo.gl/sM9Xx for a good description.) The list will be
-            joined with ', ' to produce the value for the Cache-Control
-            header.
-        last_modified: A datetime (UTC) instance to use as the Last-Modified
-            header. Falcon will format the datetime as an HTTP date. See
-            also: http://goo.gl/R7So4
-        retry_after: Number of seconds to use as the value for the Retry-After
-            header. Note that the HTTP-date option is not supported. See
-            also: http://goo.gl/DIrWr
-        vary: Value to use for the Vary header. From Wikipedia: "Tells
-            downstream proxies how to match future request headers to decide
-            whether the cached response can be used rather than requesting a
-            fresh one from the origin server." See also: http://goo.gl/NGHdL
-
-            Assumed to be a list of values. For a single asterisk or field
-            value, simply pass a single-element list.
-        location: Value for the Location header. Note that relative URIs are
-            OK per http://goo.gl/DbVqR
-        content_location: Value for the Content-Location header. See
-            also: http://goo.gl/1slsA
-        content_range: A tuple to use in constructing a value for the
-            Content-Range header. The tuple has the form (start, end, length),
-            where start and end is the inclusive byte range, and length is the
-            total number of bytes, or '*' if unknown.
-
-            Note: You only need to use the alternate form, "bytes */1234", for
-            responses that use the status "416 Range Not Satisfiable". In this
-            case, raising falcon.HTTPRangeNotSatisfiable will do the right
-            thing.
-
-            See also: http://goo.gl/Iglhp
-
-
     """
 
     __slots__ = (
@@ -132,39 +95,83 @@ class Response(object):
 
         self._headers.update(headers)
 
-    cache_control = header_property('Cache-Control',
-                                    ('A list of cache directives to use as '
-                                     'the value of the Cache-Control header.'),
-                                    lambda v: ', '.join(v))
+    cache_control = header_property(
+        'Cache-Control',
+        """Sets the Cache-Control header.
 
-    content_location = header_property('Content-Location',
-                                       'Sets the Content-Location header.')
+        Used to set a list of cache directives to use as the value of the
+        Cache-Control header. The list will be joined with ", " to produce
+        the value for the header.
+        """,
+        lambda v: ', '.join(v))
 
-    content_range = header_property('Content-Range',
-                                    ('Sets the Content-Range header. Value '
-                                     'is assumed to be a tuple.'),
-                                    format_range)
+    content_location = header_property(
+        'Content-Location',
+        'Sets the Content-Location header.')
 
-    content_type = header_property('Content-Type',
-                                   'Sets the Content-Type header.')
+    content_range = header_property(
+        'Content-Range',
+        """A tuple to use in constructing a value for the Content-Range header.
 
-    etag = header_property('ETag',
-                           'Sets the ETag header.')
+        The tuple has the form (start, end, length), where start and end is
+        the inclusive byte range, and length is the total number of bytes, or
+        '*' if unknown.
 
-    last_modified = header_property('Last-Modified',
-                                    'Sets the Last-Modified header.',
-                                    dt_to_http)
+        Note: You only need to use the alternate form, "bytes */1234", for
+        responses that use the status "416 Range Not Satisfiable". In this
+        case, raising falcon.HTTPRangeNotSatisfiable will do the right
+        thing.
 
-    location = header_property('Location',
-                               'Sets the Location header.')
+        See also: http://goo.gl/Iglhp)
+        """,
+        format_range)
 
-    retry_after = header_property('Retry-After',
-                                  'Sets the Retry-After header.',
-                                  str)
+    content_type = header_property(
+        'Content-Type',
+        'Sets the Content-Type header.')
 
-    vary = header_property('Vary',
-                           'A list of header names to use for the Vary header',
-                           lambda v: ', '.join(v))
+    etag = header_property(
+        'ETag',
+        'Sets the ETag header.')
+
+    last_modified = header_property(
+        'Last-Modified',
+        """Sets the Last-Modified header. Set to a datetime (UTC) instance.
+
+        Note: Falcon will format the datetime as an HTTP date.
+        """,
+        dt_to_http)
+
+    location = header_property(
+        'Location',
+        'Sets the Location header.')
+
+    retry_after = header_property(
+        'Retry-After',
+        """Sets the Retry-After header.
+
+        The expected value is an integral number of seconds to use as the
+        value for the header. The HTTP-date syntax is not supported.
+        """,
+        str)
+
+    vary = header_property(
+        'Vary',
+        """Value to use for the Vary header.
+
+        From Wikipedia:
+
+            "Tells downstream proxies how to match future request headers
+            to decide whether the cached response can be used rather than
+            requesting a fresh one from the origin server."
+
+            See also: http://goo.gl/NGHdL
+
+         Set this property to an iterable list of header names. For a
+         single asterisk or field value, simply pass a single-element
+         list.
+         """,
+        lambda v: ', '.join(v))
 
     def _wsgi_headers(self, media_type=None):
         """Convert headers into the format expected by WSGI servers
