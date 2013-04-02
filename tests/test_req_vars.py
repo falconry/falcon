@@ -6,21 +6,22 @@ import falcon.testing as testing
 class TestReqVars(testing.TestBase):
 
     def before(self):
-        qs = '?marker=deadbeef&limit=10'
+        self.qs = '?marker=deadbeef&limit=10'
 
-        headers = {
+        self.headers = {
             'Host': 'falcon.example.com',
             'Content-Type': 'text/plain',
             'Content-Length': '4829',
             'Authorization': ''
         }
 
-        self.relative_uri = '/test/hello?marker=deadbeef&limit=10'
-        self.uri = 'http://falcon.example.com' + self.relative_uri
-        self.req = Request(testing.create_environ(app='/test',
+        self.app = '/test'
+        self.relative_uri = '/hello?marker=deadbeef&limit=10'
+        self.uri = 'http://falcon.example.com' + self.app + self.relative_uri
+        self.req = Request(testing.create_environ(app=self.app,
                                                   path='/hello',
-                                                  query_string=qs,
-                                                  headers=headers))
+                                                  query_string=self.qs,
+                                                  headers=self.headers))
 
     def test_missing_qs(self):
         env = testing.create_environ()
@@ -45,12 +46,19 @@ class TestReqVars(testing.TestBase):
         actual_url = ''.join([scheme, '://', host, app, path, query_string])
         self.assertEquals(actual_url, self.uri)
 
-    def test_url(self):
+    def test_uri(self):
         self.assertEquals(self.req.url, self.uri)
         self.assertEquals(self.req.uri, self.uri)
 
-    # def test_relative_url(self):
-    #     self.assertEqual(self.req.relative_uri, self.relative_uri)
+    def test_relative_uri(self):
+        self.assertEqual(self.req.relative_uri, self.app + self.relative_uri)
+
+        req2 = Request(testing.create_environ(
+            path='/hello',
+            query_string=self.qs,
+            headers=self.headers))
+
+        self.assertEqual(req2.relative_uri, self.relative_uri)
 
     def test_range(self):
         headers = {'Range': '10-'}

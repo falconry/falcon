@@ -254,17 +254,21 @@ class Request(object):
     @property
     def uri(self):
         """The fully-qualified URI for the request."""
-        return ''.join([
-            self.protocol,
-            '://',
-            self.get_header('host'),
-            self.app,
-            self.path,
-            self.query_string
-        ])
+
+        # PERF: For small numbers of items, '+' is faster than ''.join(...)
+        return (self.protocol + '://' +
+                self.get_header('host') +
+                self.app +
+                self.path +
+                self.query_string)
 
     url = uri
     """Alias for uri"""
+
+    @property
+    def relative_uri(self):
+        """The path + query string portion of the full URI."""
+        return self.app + self.path + self.query_string
 
     @property
     def user_agent(self):
