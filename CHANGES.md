@@ -1,3 +1,9 @@
+# v0.1.4 #
+
+## Fixed ##
+
+* req.path now strips trailing slashes in keeping with the design decision in v0.1.2 to abstract those away from the app.
+
 # v0.1.3 #
 
 ## Fixed ##

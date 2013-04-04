@@ -16,7 +16,7 @@ limitations under the License.
 
 """
 
-VERSION_TUPLE = (0, 1, 4, '-dev')
+VERSION_TUPLE = (0, 1, 4, '')
 
 version = '.'.join(map(str, VERSION_TUPLE[:-1])) + VERSION_TUPLE[-1]
 """Current version of Falcon."""
