@@ -46,7 +46,8 @@ class Request(object):
     Attributes:
         method: HTTP method requested (e.g., GET, POST, etc.)
         path: Path portion of the request URL (not including query string).
-        query_string: Query string portion of the request URL.
+        query_string: Query string portion of the request URL, without
+            the preceding '?' character.
         stream: Stream-like object for reading the body of the request, if any.
 
     """

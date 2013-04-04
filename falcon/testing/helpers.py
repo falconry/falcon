@@ -60,11 +60,12 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
                    headers=None, app='', body='', method='GET',
                    wsgierrors=None):
 
-    """ Creates a 'mock' PEP-333 environ dict for simulating WSGI requests
+    """ Creates a 'mock' PEP-3333 environ dict for simulating WSGI requests
 
     Args:
         path: The path for the request (default '/')
-        query_string: The query string to simulate (default '')
+        query_string: The query string to simulate, without a
+            leading '?' (default '')
         protocol: The HTTP protocol to simulate (default 'HTTP/1.1')
         port: The TCP port to simulate (default '80')
         headers: Optional headers to set as a dict or an iterable of tuples
