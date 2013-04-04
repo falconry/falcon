@@ -11,6 +11,7 @@ class IDResource(object):
     def on_get(self, req, resp, id):
         self.id = id
         self.called = True
+        self.req = req
 
 
 class NameResource(object):
@@ -88,6 +89,7 @@ class TestUriTemplates(testing.TestBase):
         self.assertTrue(resource1.called)
         self.assertEquals(resource1.id, '123')
         self.assertEquals(resource1.name, None)
+        self.assertEquals(resource1.req.path, '/1/123')
 
         resource2 = IDResource()
         self.api.add_route('/2/{id}/', resource2)
@@ -96,6 +98,7 @@ class TestUriTemplates(testing.TestBase):
         self.assertTrue(resource2.called)
         self.assertEquals(resource2.id, '123')
         self.assertEquals(resource2.name, None)
+        self.assertEquals(resource2.req.path, '/2/123')
 
         resource3 = IDResource()
         self.api.add_route('/3/{id}', resource3)
@@ -104,6 +107,7 @@ class TestUriTemplates(testing.TestBase):
         self.assertTrue(resource3.called)
         self.assertEquals(resource3.id, '123')
         self.assertEquals(resource3.name, None)
+        self.assertEquals(resource3.req.path, '/3/123')
 
     def test_multiple(self):
         resource = NameResource()

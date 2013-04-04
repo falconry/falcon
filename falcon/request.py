@@ -80,7 +80,16 @@ class Request(object):
         self.stream = env['wsgi.input']
 
         self.method = env['REQUEST_METHOD']
-        self.path = env['PATH_INFO'] or '/'
+
+        # Normalize path
+        path = env['PATH_INFO']
+        if path:
+            if len(path) != 1 and path.endswith('/'):
+                self.path = path[:-1]
+            else:
+                self.path = path
+        else:
+            self.path = '/'
 
         # QUERY_STRING isn't required to be in env, so let's check
         # PERF: if...in is faster than using env.get(...)

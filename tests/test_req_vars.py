@@ -76,6 +76,13 @@ class TestReqVars(testing.TestBase):
 
         self.assertEqual(req_noapp.relative_uri, self.relative_uri)
 
+        req_noapp = Request(testing.create_environ(
+            path='/hello/',
+            query_string=self.qs,
+            headers=self.headers))
+
+        self.assertEqual(req_noapp.relative_uri, self.relative_uri)
+
     def test_accept_xml(self):
         headers = {'Accept': 'application/xml'}
         req = Request(testing.create_environ(headers=headers))

@@ -157,7 +157,7 @@ def compile_uri_template(template=None):
     # Convert Level 1 var patterns to equivalent named regex groups
     escaped = re.sub(r'[\.\(\)\[\]\?\*\+\^\|]', r'\\\g<0>', template)
     pattern = re.sub(expression_pattern, r'(?P<\1>[^/]+)', escaped)
-    pattern = r'\A' + pattern + r'/?\Z'
+    pattern = r'\A' + pattern + r'\Z'
 
     return fields, re.compile(pattern, re.IGNORECASE)
 
