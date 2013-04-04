@@ -355,7 +355,7 @@ class Request(object):
         description = 'The "' + name + '" query parameter is required.'
         raise HTTPBadRequest('Missing query parameter', description)
 
-    def get_param_as_int(self, name, required=False):
+    def get_param_as_int(self, name, required=False, min=None, max=None):
         """Return the value of a query string parameter as an int
 
         Args:
@@ -363,6 +363,11 @@ class Request(object):
             required: Set to True to raise HTTPBadRequest instead of returning
                 gracefully when the parameter is not found or is not an
                 integer (default False)
+            min: Set to the minimum value allowed for this param. If the param
+                is found and it is less than min, an HTTPError is raised.
+            max: Set to the maximum value allowed for this param. If the param
+                is found and its value is greater than max, an HTTPError is
+                raised.
 
         Returns:
             The value of the param if it is found and can be converted to an
@@ -371,7 +376,9 @@ class Request(object):
 
         Raises
             HTTPBadRequest: The param was not found in the request, even though
-                it was required to be there.
+                it was required to be there. Also raised if the param's value
+                falls outside the given interval, i.e., the value must be in
+                the interval: min <= value <= max to avoid triggering an error.
 
         """
 
@@ -380,11 +387,23 @@ class Request(object):
         if name in self._params:
             val = self._params[name]
             try:
-                return int(val)
+                val = int(val)
             except ValueError:
                 description = ('The value of the "' + name + '" query '
                                'parameter must be an integer.')
                 raise InvalidParamValueError(description)
+
+            if min is not None and val < min:
+                description = ('The value of the "' + name + '" query '
+                               'parameter must be at least %d') % min
+                raise InvalidHeaderValueError(description)
+
+            if max is not None and max < val:
+                description = ('The value of the "' + name + '" query '
+                               'parameter may not exceed %d') % max
+                raise InvalidHeaderValueError(description)
+
+            return val
 
         if not required:
             return None

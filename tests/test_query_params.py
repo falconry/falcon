@@ -71,6 +71,75 @@ class TestQueryParams(testing.TestBase):
                           'marker')
         self.assertEquals(req.get_param_as_int('limit'), 25)
 
+        self.assertEquals(
+            req.get_param_as_int('limit', min=1, max=50), 25)
+
+        self.assertRaises(
+            falcon.HTTPBadRequest,
+            req.get_param_as_int, 'limit', min=0, max=10)
+
+        self.assertRaises(
+            falcon.HTTPBadRequest,
+            req.get_param_as_int, 'limit', min=0, max=24)
+
+        self.assertRaises(
+            falcon.HTTPBadRequest,
+            req.get_param_as_int, 'limit', min=30, max=24)
+
+        self.assertRaises(
+            falcon.HTTPBadRequest,
+            req.get_param_as_int, 'limit', min=30, max=50)
+
+        self.assertEquals(
+            req.get_param_as_int('limit', min=1), 25)
+
+        self.assertEquals(
+            req.get_param_as_int('limit', max=50), 25)
+
+        self.assertEquals(
+            req.get_param_as_int('limit', max=25), 25)
+
+        self.assertEquals(
+            req.get_param_as_int('limit', max=26), 25)
+
+        self.assertEquals(
+            req.get_param_as_int('limit', min=25), 25)
+
+        self.assertEquals(
+            req.get_param_as_int('limit', min=24), 25)
+
+        self.assertEquals(
+            req.get_param_as_int('limit', min=-24), 25)
+
+    def test_int_neg(self):
+        query_string = 'marker=deadbeef&pos=-7'
+        self.simulate_request('/', query_string=query_string)
+
+        req = self.resource.req
+        self.assertEquals(req.get_param_as_int('pos'), -7)
+
+        self.assertEquals(
+            req.get_param_as_int('pos', min=-10, max=10), -7)
+
+        self.assertEquals(
+            req.get_param_as_int('pos', max=10), -7)
+
+        self.assertRaises(
+            falcon.HTTPBadRequest,
+            req.get_param_as_int, 'pos', min=-6, max=0)
+
+        self.assertRaises(
+            falcon.HTTPBadRequest,
+            req.get_param_as_int, 'pos', min=-6)
+
+        self.assertRaises(
+            falcon.HTTPBadRequest,
+            req.get_param_as_int, 'pos', min=0, max=10)
+
+        self.assertRaises(
+            falcon.HTTPBadRequest,
+            req.get_param_as_int, 'pos', min=0, max=10)
+
     def test_boolean(self):
         query_string = 'echo=true&doit=false&bogus=0&bogus2=1'
         self.simulate_request('/', query_string=query_string)
