@@ -81,12 +81,14 @@ class Request(object):
         self.path = env['PATH_INFO'] or '/'
 
         # QUERY_STRING isn't required to be in env, so let's check
+        # PERF: if...in is faster than using env.get(...)
         if 'QUERY_STRING' in env:
-            self.query_string = query_string = env['QUERY_STRING']
+            self.query_string = env['QUERY_STRING']
         else:
-            self.query_string = query_string = ''
+            self.query_string = ''
 
-        self._params = helpers.parse_query_string(query_string)
+        #if query_string
+        self._params = helpers.parse_query_string(self.query_string)
         self._headers = helpers.parse_headers(env)
 
     def log_error(self, message):
