@@ -18,7 +18,7 @@ def create_falcon(body, headers):
     class HelloResource:
         def on_get(self, req, resp, account_id):
             user_agent = req.user_agent  # NOQA
-            limit = req.get_param('limit', '10')  # NOQA
+            limit = req.get_param('limit') or '10'  # NOQA
             resp.data = body
             # if six.PY3:
             #     resp.body = body
