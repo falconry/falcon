@@ -31,3 +31,35 @@ def dt_to_http(dt):
 
     # Tue, 15 Nov 1994 12:45:26 GMT
     return dt.strftime('%a, %d %b %Y %H:%M:%S GMT')
+
+
+def to_query_str(params):
+    """Converts a dict of params to an actual query string.
+
+    Args:
+        params: dict of simple key-value types, where key is a string and
+            value is a string or something that can be converted into a
+            string.
+
+    Returns:
+        A URI query string starting with '?', or and empty string if there
+        are no params (the dict is empty).
+
+    """
+    if not params:
+        return ''
+
+    # PERF: This is faster than a list comprehension and join, mainly
+    # because it allows us to inline the value transform.
+    query_str = '?'
+    for k, v in params.items():
+        if v is True:
+            v = 'true'
+        elif v is False:
+            v = 'false'
+        else:
+            v = str(v)
+
+        query_str += k + '=' + v + '&'
+
+    return query_str[:-1]
