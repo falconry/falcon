@@ -74,6 +74,23 @@ class TestReqVars(testing.TestBase):
 
         self.assertEqual(req_noapp.relative_uri, self.relative_uri)
 
+    def test_accept_xml(self):
+        headers = {'Accept': 'application/xml'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertTrue(req.client_accepts_xml)
+
+        headers = {'Accept': '*/*'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertTrue(req.client_accepts_xml)
+
+        headers = {'Accept': 'application/json'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertFalse(req.client_accepts_xml)
+
+        headers = {'Accept': 'application/xm'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertFalse(req.client_accepts_xml)
+
     def test_range(self):
         headers = {'Range': '10-'}
         req = Request(testing.create_environ(headers=headers))
@@ -89,11 +106,11 @@ class TestReqVars(testing.TestBase):
 
         headers = {'Range': ''}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEqual(req.range, None)
+        self.assertIs(req.range, None)
 
         headers = {'Range': None}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEqual(req.range, None)
+        self.assertIs(req.range, None)
 
     def test_range_invalid(self):
         headers = {'Range': '10240'}

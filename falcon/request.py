@@ -20,8 +20,9 @@ from datetime import datetime
 
 import six
 
-from falcon import request_helpers as helpers
 from falcon.exceptions import *
+from falcon import util
+from falcon import request_helpers as helpers
 
 DEFAULT_ERROR_LOG_FORMAT = ('{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
                             ' {1} {2}?{3} => {4}\n')
@@ -119,12 +120,21 @@ class Request(object):
 
         self._wsgierrors.write(log_line)
 
+    @property
     def client_accepts_json(self):
-        """Return True if the Accept header indicates JSON support"""
+        """Return True if the Accept header indicates JSON support."""
 
-        accept = self.get_header('Accept')
+        accept = self._get_header_by_wsgi_name('ACCEPT')
         return ((accept is not None) and
                 (('application/json' in accept) or ('*/*' in accept)))
+
+    @property
+    def client_accepts_xml(self):
+        """Return True if the Accept header indicates XML support."""
+
+        accept = self._get_header_by_wsgi_name('ACCEPT')
+        return ((accept is not None) and
+                (('application/xml' in accept) or ('*/*' in accept)))
 
     @property
     def accept(self):
