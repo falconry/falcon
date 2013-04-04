@@ -268,11 +268,15 @@ class Request(object):
         """The fully-qualified URI for the request."""
 
         # PERF: For small numbers of items, '+' is faster than ''.join(...)
-        return (self.protocol + '://' +
-                self.get_header('host') +
-                self.app +
-                self.path +
-                self.query_string)
+        value = (self.protocol + '://' +
+                 self.get_header('host') +
+                 self.app +
+                 self.path)
+
+        if self.query_string:
+            value = value + '?' + self.query_string
+
+        return value
 
     url = uri
     """Alias for uri"""
@@ -280,7 +284,10 @@ class Request(object):
     @property
     def relative_uri(self):
         """The path + query string portion of the full URI."""
-        return self.app + self.path + self.query_string
+        if self.query_string:
+            return self.app + self.path + '?' + self.query_string
+
+        return self.app + self.path
 
     @property
     def user_agent(self):

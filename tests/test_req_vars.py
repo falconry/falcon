@@ -6,7 +6,7 @@ import falcon.testing as testing
 class TestReqVars(testing.TestBase):
 
     def before(self):
-        self.qs = '?marker=deadbeef&limit=10'
+        self.qs = 'marker=deadbeef&limit=10'
 
         self.headers = {
             'Host': 'falcon.example.com',
@@ -16,12 +16,21 @@ class TestReqVars(testing.TestBase):
         }
 
         self.app = '/test'
-        self.relative_uri = '/hello?marker=deadbeef&limit=10'
+        self.path = '/hello'
+        self.relative_uri = self.path + '?' + self.qs
         self.uri = 'http://falcon.example.com' + self.app + self.relative_uri
-        self.req = Request(testing.create_environ(app=self.app,
-                                                  path='/hello',
-                                                  query_string=self.qs,
-                                                  headers=self.headers))
+        self.uri_noqs = 'http://falcon.example.com' + self.app + self.path
+
+        self.req = Request(testing.create_environ(
+            app=self.app,
+            path='/hello',
+            query_string=self.qs,
+            headers=self.headers))
+
+        self.req_noqs = Request(testing.create_environ(
+            app=self.app,
+            path='/hello',
+            headers=self.headers))
 
     def test_missing_qs(self):
         env = testing.create_environ()
@@ -43,22 +52,27 @@ class TestReqVars(testing.TestBase):
         path = req.path
         query_string = req.query_string
 
-        actual_url = ''.join([scheme, '://', host, app, path, query_string])
+        actual_url = ''.join([scheme, '://', host, app, path,
+                              '?', query_string])
         self.assertEquals(actual_url, self.uri)
 
     def test_uri(self):
         self.assertEquals(self.req.url, self.uri)
+
         self.assertEquals(self.req.uri, self.uri)
+        self.assertEquals(self.req_noqs.uri, self.uri_noqs)
 
     def test_relative_uri(self):
         self.assertEqual(self.req.relative_uri, self.app + self.relative_uri)
+        self.assertEqual(
+            self.req_noqs.relative_uri, self.app + self.path)
 
-        req2 = Request(testing.create_environ(
+        req_noapp = Request(testing.create_environ(
             path='/hello',
             query_string=self.qs,
             headers=self.headers))
 
-        self.assertEqual(req2.relative_uri, self.relative_uri)
+        self.assertEqual(req_noapp.relative_uri, self.relative_uri)
 
     def test_range(self):
         headers = {'Range': '10-'}
