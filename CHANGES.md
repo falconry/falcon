@@ -1,3 +1,25 @@
+# v0.1.3 #
+
+## Fixed ##
+
+* Moved property descriptions out of class docstrings into the property docstrings themselves so they show up in help().
+* on_* responder methods in a resource class must define all URI template field names for any route attached to that resource. If they do not, Falcon will return "405 Method not allowed". This lets you add multiple routes to the same resource, in order to serve, for example, POST requests to "/super" and GET requests to "/super/{name}". In this example, a POST request to "/super/man" would result in a 405 response to the client, since the responder method does not define a "name" argument.
+
+## Breaking Changes ##
+
+* req.date now returns a datetime instance, and raises HTTPBadRequest if the value of the Date header does not conform to RFC 1123.
+* Query string parsing is now a little stricter regarding what kinds of field names it will accept. Generally, you will be safe if you stick with letters, numbers, dashes, and/or underscores.
+* Header and query parsing is more strict now. Instead of returning None when a value cannot be parsed, Request will raise HTTPBadRequest.
+
+## New ##
+
+* Added min and max arguments to req.get_param_as_int() to help with input validation.
+* Added transform argument to req.get_param_as_list for supplying a converter function for list elements.
+* Added req.get_param_as_bool() for automagically converting from "true" and "false" to True and False, respectively.
+* Added the req.relative_uri property which will return app + path + query string.
+* Added falcon.to_query_str() to provide an optimized query string generator that apps can use when generating href's.
+* Improved performance when no query string is present in the request URI.
+
 # v0.1.2 #
 
 ## Fixed ##
