@@ -87,8 +87,11 @@ class Request(object):
         else:
             self.query_string = ''
 
-        #if query_string
-        self._params = helpers.parse_query_string(self.query_string)
+        if self.query_string:
+            self._params = helpers.parse_query_string(self.query_string)
+        else:
+            self._params = {}
+
         self._headers = helpers.parse_headers(env)
 
     def log_error(self, message):
