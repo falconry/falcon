@@ -1,3 +1,5 @@
+import datetime
+
 import falcon
 from falcon.request import Request
 import falcon.testing as testing
@@ -199,6 +201,17 @@ class TestReqVars(testing.TestBase):
         req = Request(testing.create_environ(headers=headers))
         self.assertRaises(falcon.HTTPBadRequest, lambda: req.content_length)
 
+    def test_date(self):
+        date = datetime.datetime(2013, 4, 4, 5, 19, 18)
+        headers = {'date': 'Thu, 04 Apr 2013 05:19:18 GMT'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertEquals(req.date, date)
+
+    def test_date_invalid(self):
+        headers = {'date': 'Thu, 04 Apr 2013'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertRaises(falcon.HTTPBadRequest, lambda: req.date)
+
     def test_attribute_headers(self):
         date = testing.httpnow()
         hash = 'fa0d1a60ef6616bb28038515c8ea4cb2'
@@ -212,7 +225,6 @@ class TestReqVars(testing.TestBase):
         self._test_attribute_header('Content-Type', 'text/plain',
                                     'content_type')
         self._test_attribute_header('Expect', '100-continue', 'expect')
-        self._test_attribute_header('Date', date, 'date')
 
         self._test_attribute_header('If-Match', hash, 'if_match')
         self._test_attribute_header('If-Modified-Since', date,

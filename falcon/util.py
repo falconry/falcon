@@ -16,6 +16,8 @@ limitations under the License.
 
 """
 
+import datetime
+
 
 def dt_to_http(dt):
     """Converts a datetime instance to an HTTP date string.
@@ -31,6 +33,11 @@ def dt_to_http(dt):
 
     # Tue, 15 Nov 1994 12:45:26 GMT
     return dt.strftime('%a, %d %b %Y %H:%M:%S GMT')
+
+
+def http_date_to_dt(http_date):
+    return datetime.datetime.strptime(
+        http_date, '%a, %d %b %Y %H:%M:%S %Z')
 
 
 def to_query_str(params):

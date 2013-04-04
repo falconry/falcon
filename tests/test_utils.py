@@ -15,6 +15,15 @@ class TestFalconUtils(testtools.TestCase):
             falcon.dt_to_http(datetime(2013, 4, 4, 10, 28, 54)),
             'Thu, 04 Apr 2013 10:28:54 GMT')
 
+    def test_http_date_to_dt(self):
+        self.assertEquals(
+            falcon.http_date_to_dt('Thu, 04 Apr 2013 00:00:00 GMT'),
+            datetime(2013, 4, 4))
+
+        self.assertEquals(
+            falcon.http_date_to_dt('Thu, 04 Apr 2013 10:28:54 GMT'),
+            datetime(2013, 4, 4, 10, 28, 54))
+
     def test_pack_query_params_none(self):
         self.assertEquals(
             falcon.to_query_str({}),

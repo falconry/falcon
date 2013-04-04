@@ -187,8 +187,26 @@ class Request(object):
 
     @property
     def date(self):
-        """Value of the Date header, or None if missing."""
-        return self._get_header_by_wsgi_name('DATE')
+        """Value of the Date header, converted to a datetime instance.
+
+        Returns:
+            An instance of datetime.datetime representing the value of
+            the Date header, or None if the Date header is not present
+            in the request.
+
+        Raises:
+            HTTPBadRequest: The date value could not be parsed, likely
+                because it does not confrom to RFC 1123.
+
+        """
+
+        http_date = self._get_header_by_wsgi_name('DATE')
+        try:
+            return util.http_date_to_dt(http_date)
+        except ValueError:
+            msg = ('The value of the Date header could not be parsed. It '
+                   'must be formatted according to RFC 1123.')
+            raise InvalidHeaderValueError(msg)
 
     @property
     def expect(self):
