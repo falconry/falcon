@@ -1,18 +1,16 @@
+import os
 import sys
-import re
 # import six
 
 
-def create_falcon(body, headers):
-    sys.path.append('..')
+def falcon(body, headers):
     import falcon
-    del sys.path[-1]
 
     path = '/hello/{account_id}/test'
     falcon_app = falcon.API('text/plain')
 
-    def ask(req, resp, params):
-        params['answer'] = 42
+    # def ask(req, resp, params):
+    #     params['answer'] = 42
 
     # @falcon.before(ask)
     class HelloResource:
@@ -35,48 +33,7 @@ def create_falcon(body, headers):
     return falcon_app
 
 
-def create_wheezy(body, headers):
-    import wheezy.http as wheezy
-    from wheezy.core.collections import last_item_adapter
-
-    def hello(request, account_id):
-        query = last_item_adapter(request.query)
-
-        try:
-            limit = query['limit']
-        except KeyError:
-            limit = '10'  # NOQA
-
-        response = wheezy.HTTPResponse(content_type='text/plain')
-        response.write_bytes(body)
-        response.headers.extend(headers.items())
-
-        return response
-
-    # Convert Level 1 var patterns to equivalent named regex groups
-    path = '/hello/{account_id}/test'
-    pattern = re.sub(r'{([a-zA-Z][a-zA-Z_]*)}', r'(?P<\1>[^/]+)', path)
-    pattern = r'\A' + pattern + r'\Z'
-    matcher = re.compile(pattern, re.IGNORECASE)
-
-    def router(request, following):
-        match = matcher.match(request.path)
-        if match:
-            # A real router would probably have to get all named params
-            params = match.groupdict()
-            response = hello(request, **params)
-        else:
-            response = wheezy.not_found()
-
-        return response
-
-    return wheezy.WSGIApplication([
-        wheezy.bootstrap_http_defaults,
-        lambda ignore: router
-    ], {})
-
-
-def create_flask(body, headers):
+def flask(body, headers):
     import flask
 
     path = '/hello/<account_id>/test'
@@ -94,7 +51,7 @@ def create_flask(body, headers):
     return flask_app
 
 
-def create_bottle(body, headers):
+def bottle(body, headers):
     import bottle
     path = '/hello/<account_id>/test'
 
@@ -108,7 +65,7 @@ def create_bottle(body, headers):
     return bottle.default_app()
 
 
-def create_werkzeug(body, headers):
+def werkzeug(body, headers):
     import werkzeug.wrappers as werkzeug
     from werkzeug.routing import Map, Rule
 
@@ -129,7 +86,7 @@ def create_werkzeug(body, headers):
     return hello
 
 
-def create_cherrypy(body, headers):
+def cherrypy(body, headers):
     import cherrypy
 
     # Disable logging
@@ -162,7 +119,7 @@ def create_cherrypy(body, headers):
     return app
 
 
-# def create_wsme(body, headers):
+# def wsme(body, headers):
 #     import wsme
 
 #     class HelloService(wsme.WSRoot):
@@ -177,9 +134,11 @@ def create_cherrypy(body, headers):
 #     return ws.wsgiapp()
 
 
-def create_pecan(body, headers):
-    sys.path.append('./nuts/nuts')
-    import app as nuts
+def pecan(body, headers):
+    import falcon.bench.nuts.nuts.app as nuts
+
+    sys.path.append(os.path.dirname(nuts.__file__))
+    app = nuts.create()
     del sys.path[-1]
 
-    return nuts.create()
+    return app

@@ -15,7 +15,7 @@ try:
     with_cython = True
 except ImportError:
     print('\nWARNING: Cython not installed. '
-          'Falcon modules WILL NOT be compiled.\n')
+          'Falcon modules WILL NOT be compiled with Cython.\n')
     with_cython = False
 
 if with_cython:
@@ -69,10 +69,14 @@ setup(
     author_email='mail@kgriffs.com',
     url='http://falconframework.org',
     license='Apache 2.0',
-    packages=find_packages(exclude=['bench', 'tests']),
+    packages=find_packages(exclude=['*.tests']),
     include_package_data=True,
     zip_safe=False,
     install_requires=REQUIRES,
     cmdclass=cmdclass,
-    ext_modules=ext_modules
+    ext_modules=ext_modules,
+    entry_points={
+        'console_scripts':
+            ['falcon-bench = falcon.bin.bench:run']
+    }
 )

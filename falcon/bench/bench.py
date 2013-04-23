@@ -9,11 +9,9 @@ import timeit
 from decimal import Decimal
 from collections import defaultdict
 
-from create import *
+import create  # NOQA
 
-sys.path.append('..')
 import falcon.testing as helpers
-del sys.path[-1]
 
 
 def avg(array):
@@ -47,7 +45,7 @@ def create_bench(name):
     body = helpers.rand_string(0, 10240)  # NOQA
     headers = {'X-Test': 'Funky Chicken'}  # NOQA
 
-    app = eval('create_{0}(body, headers)'.format(name.lower()))
+    app = eval('create.{0}(body, headers)'.format(name.lower()))
 
     def bench():
         app(env, srmock)
@@ -68,10 +66,10 @@ def round_to_int(dec):
     return int(dec.to_integral_value())
 
 
-if __name__ == '__main__':
+def run():
     frameworks = [
-        'Wheezy', 'Flask', 'Werkzeug', 'Falcon',
-        'Pecan', 'Bottle', 'CherryPy'  # , 'WSME'
+        'flask', 'werkzeug', 'falcon',
+        'pecan', 'bottle', 'cherrypy'
     ]
 
     parser = argparse.ArgumentParser(description="Falcon benchmark runner")
@@ -83,11 +81,20 @@ if __name__ == '__main__':
 
     if args.frameworks:
         frameworks = args.frameworks
-    else:
-        # wheezy.http isn't really a framework - doesn't even have a router
-        del frameworks[frameworks.index('Wheezy')]
+
+    # Skip any frameworks that are not installed
+    for name in frameworks:
+        try:
+            create_bench(name)
+        except ImportError:
+            print('Skipping missing library: ' + name)
+            del frameworks[frameworks.index(name)]
 
     print('')
+
+    if not frameworks:
+        print('Nothing to do.\n')
+        return
 
     datasets = []
     for r in range(args.repetitions):
