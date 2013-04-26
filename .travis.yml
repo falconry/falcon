@@ -6,8 +6,10 @@ python:
   - pypy
 install:
   - pip install -r tools/test-requires --use-mirrors
+  - pip install coveralls
   - python setup.py install
 script: nosetests
+after_success: coveralls
 notifications:
   email:
     - kurt.griffiths@rackspace.com

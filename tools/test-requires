@@ -1,6 +1,7 @@
+coverage
 cython
+flake8
 nose
 ordereddict
-flake8
 six
 testtools
