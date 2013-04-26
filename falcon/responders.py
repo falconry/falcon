@@ -16,7 +16,10 @@ limitations under the License.
 
 """
 
-from falcon.status_codes import *
+from falcon.status_codes import HTTP_400
+from falcon.status_codes import HTTP_404
+from falcon.status_codes import HTTP_405
+from falcon.status_codes import HTTP_500
 
 
 def path_not_found(req, resp, **kwargs):
