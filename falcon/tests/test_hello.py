@@ -71,7 +71,7 @@ class TestHelloWorld(testing.TestBase):
         self.api.add_route('/nostatus', self.no_status_resource)
 
         self.root_resource = testing.TestResource()
-        self.api.add_route('', self.root_resource)
+        self.api.add_route('/', self.root_resource)
 
     def after(self):
         pass
