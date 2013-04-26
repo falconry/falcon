@@ -3,6 +3,8 @@
 Falcon [![Build Status](https://travis-ci.org/racker/falcon.png)](https://travis-ci.org/racker/falcon)
 ======
 
+:runner: Come hang out with us in **#falconframework** on freenode.
+
 Falcon is a [high-performance Python framework][home] for building cloud APIs. It tries to do as little as possible while remaining [highly effective][benefits].
 
 > Perfection is finally attained not when there is no longer anything to add, but when there is no longer anything to take away.
@@ -56,7 +58,7 @@ $ pip install tox && tox
 
 Read the source, Luke!
 
-Docstrings can be found throughout the Falcon code base for your learning pleasure. You can also ask questions in #falconframework on freenode. We are planning on having real docs eventually; if you need them right away, consider sending a pull request. ;)
+Docstrings can be found throughout the Falcon code base for your learning pleasure. You can also ask questions in **#falconframework** on freenode. We are planning on having real docs eventually; if you need them right away, consider sending a pull request. ;)
 
 Here is a simple example showing how to create a Falcon-based API.
 
