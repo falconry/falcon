@@ -124,7 +124,7 @@ def get_body(resp):
     return []
 
 
-def compile_uri_template(template=None):
+def compile_uri_template(template):
     """Compile the given URI template string into a pattern matcher.
 
     Currently only recognizes Level 1 URI templates, and only for the path
@@ -144,9 +144,13 @@ def compile_uri_template(template=None):
     if not isinstance(template, str):
         raise TypeError('uri_template is not a string')
 
-    if not template:
-        template = '/'
-    elif template != '/' and template.endswith('/'):
+    if not template.startswith('/'):
+        raise ValueError("uri_template must start with '/'")
+
+    if '//' in template:
+        raise ValueError("uri_template may not contain '//'")
+
+    if template != '/' and template.endswith('/'):
         template = template[:-1]
 
     expression_pattern = r'{([a-zA-Z][a-zA-Z_]*)}'

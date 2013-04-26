@@ -121,3 +121,26 @@ class TestUriTemplates(testing.TestBase):
 
         self.assertEquals(resource.id, test_id)
         self.assertEquals(resource.name, test_name)
+
+    def test_empty_path_component(self):
+        self.assertRaises(ValueError, self.api.add_route,
+                          '//', self.resource)
+
+        self.assertRaises(ValueError, self.api.add_route,
+                          '//begin', self.resource)
+
+        self.assertRaises(ValueError, self.api.add_route,
+                          '/end//', self.resource)
+
+        self.assertRaises(ValueError, self.api.add_route,
+                          '/in//side', self.resource)
+
+    def test_relative_path(self):
+        self.assertRaises(ValueError, self.api.add_route,
+                          '', self.resource)
+
+        self.assertRaises(ValueError, self.api.add_route,
+                          'no', self.resource)
+
+        self.assertRaises(ValueError, self.api.add_route,
+                          'no/leading_slash', self.resource)
