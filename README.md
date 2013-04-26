@@ -133,7 +133,7 @@ class ThingsResource:
 
     def on_get(self, req, resp, user_id):
         marker = req.get_param('marker', default='')
-        limit = req.get_param('limit', default=50)
+        limit = req.get_param_as_int('limit', default=50)
 
         try:
             result = self.db.get_things(marker, limit)
