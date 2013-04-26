@@ -38,3 +38,6 @@ htmlcov
 
 # VIM swap files
 .*.swp
+
+# VIM temp files
+*~
