@@ -19,8 +19,9 @@ limitations under the License.
 import re
 from functools import wraps
 
-from falcon import responders, HTTP_METHODS
+import six
 
+from falcon import responders, HTTP_METHODS
 import falcon.status_codes as status
 
 
@@ -100,7 +101,8 @@ def get_body(resp):
         resp: Instance of falcon.Response
 
     Returns:
-        * If resp.body is not None, returns [resp.body], encoded as UTF-8.
+        * If resp.body is not None, returns [resp.body], encoded as UTF-8 if
+          it is a Unicode string. Bytestrings are returned as-is.
         * If resp.data is not None, returns [resp.data]
         * If resp.stream is not None, returns resp.stream
         * Otherwise, returns []
@@ -110,9 +112,9 @@ def get_body(resp):
     body = resp.body
 
     if body is not None:
-        try:
+        if isinstance(body, six.text_type):
             return [body.encode('utf-8')]
-        except UnicodeDecodeError:
+        else:
             return [body]
 
     elif resp.data is not None:

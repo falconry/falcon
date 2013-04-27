@@ -24,8 +24,8 @@ from falcon.exceptions import *
 from falcon import util
 from falcon import request_helpers as helpers
 
-DEFAULT_ERROR_LOG_FORMAT = ('{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
-                            ' {1} {2}?{3} => {4}\n')
+DEFAULT_ERROR_LOG_FORMAT = (u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
+                            u' {1} {2}?{3} => ')
 
 
 class InvalidHeaderValueError(HTTPBadRequest):
@@ -106,29 +106,32 @@ class Request(object):
 
         self._headers = helpers.parse_headers(env)
 
-    def log_error(self, message):
+    def log_error(self, message):  # pragma: no cover
         """Log an error to wsgi.error
 
         Prepends timestamp and request info to message, and writes the
         result out to the WSGI server's error stream (wsgi.error).
 
         Args:
-            message: A string describing the problem. If a byte-string and
-                running under Python 2, the string is assumed to be encoded
-                as UTF-8.
+            message: A string describing the problem. If a byte-string it is
+                simply written out as-is. Unicode strings will be converted
+                to UTF-8.
 
         """
 
-        if not six.PY3 and isinstance(message, unicode):
-            message = message.encode('utf-8')
-
         log_line = (
             DEFAULT_ERROR_LOG_FORMAT.
-            format(datetime.now(), self.method, self.path,
-                   self.query_string, message)
+            format(datetime.now(), self.method, self.path, self.query_string)
         )
 
-        self._wsgierrors.write(log_line)
+        if six.PY3:
+            self._wsgierrors.write(log_line + message + '\n')
+        else:
+            if isinstance(message, unicode):
+                message = message.encode('utf-8')
+
+            self._wsgierrors.write(log_line.encode('utf-8'))
+            self._wsgierrors.write(message + '\n')
 
     @property
     def client_accepts_json(self):

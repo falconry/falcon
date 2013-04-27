@@ -5,11 +5,6 @@ import six
 
 unicode_message = u'Unicode: \x80'
 
-if six.PY3:
-    str_message = 'Unicode all the way: \x80'
-else:
-    str_message = 'UTF-8: \xc2\x80'
-
 
 class LoggerResource:
 
@@ -17,7 +12,7 @@ class LoggerResource:
         req.log_error(unicode_message)
 
     def on_head(self, req, resp):
-        req.log_error(str_message)
+        req.log_error(unicode_message.encode('utf-8'))
 
 
 class TestWSGIError(testing.TestBase):
@@ -38,19 +33,19 @@ class TestWSGIError(testing.TestBase):
             # with undefined encoding, so do the encoding manually.
             self.wsgierrors = self.wsgierrors_buffer
 
-    def test_responder_logged_unicode(self):
+    def test_responder_logged_bytestring(self):
         self.simulate_request('/logger', wsgierrors=self.wsgierrors)
 
         log = self.wsgierrors_buffer.getvalue()
+
         self.assertIn(unicode_message.encode('utf-8'), log)
 
-    def test_responder_logged_str(self):
+    def test_responder_logged_unicode(self):
+        if six.PY3:
+            self.skipTest('Test only applies to Python 2')
+
         self.simulate_request('/logger', wsgierrors=self.wsgierrors,
                               method='HEAD')
 
         log = self.wsgierrors_buffer.getvalue()
-
-        if six.PY3:
-            self.assertIn(str_message.encode('utf-8'), log)
-        else:
-            self.assertIn(str_message, log)
+        self.assertIn(unicode_message, log.decode('utf-8'))
