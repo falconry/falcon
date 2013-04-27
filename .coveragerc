@@ -1,4 +1,4 @@
 [run]
 branch = True
 source = falcon
-omit = *falcon/tests*
+omit = falcon/tests*,falcon/bin*,falcon/bench*

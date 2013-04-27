@@ -18,7 +18,7 @@ limitations under the License.
 
 try:
     import testtools as unittest
-except ImportError:
+except ImportError:  # pragma: nocover
     import unittest
 
 import falcon
