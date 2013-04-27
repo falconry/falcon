@@ -1,6 +1,6 @@
 <img align="right" src="http://c420059.r59.cf1.rackcdn.com/assets/images/falcon.png" alt="Falcon picture" />
 
-Falcon [![Build Status](https://travis-ci.org/racker/falcon.png)](https://travis-ci.org/racker/falcon)
+Falcon [![Build Status](https://travis-ci.org/racker/falcon.png)](https://travis-ci.org/racker/falcon) [![Coverage Status](https://coveralls.io/repos/racker/falcon/badge.png?branch=master)](https://coveralls.io/r/racker/falcon)
 ======
 
 :runner: Come hang out with us in **#falconframework** on freenode.
