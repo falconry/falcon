@@ -101,17 +101,14 @@ class TestHelloWorld(testing.TestBase):
         self.assertEquals(resp.body, self.resource.sample_unicode)
         self.assertEquals(body, [self.resource.sample_utf8])
 
-    if not six.PY3:
-        # On Python 3, strings are always Unicode,
-        # so only perform this test under Python 2.
-        def test_body_bytes(self):
-            body = self.simulate_request('/bytes')
-            resp = self.bytes_resource.resp
+    def test_body_bytes(self):
+        body = self.simulate_request('/bytes')
+        resp = self.bytes_resource.resp
 
-            self.assertEquals(self.srmock.status, self.resource.sample_status)
-            self.assertEquals(resp.status, self.resource.sample_status)
-            self.assertEquals(resp.body, self.resource.sample_utf8)
-            self.assertEquals(body, [self.resource.sample_utf8])
+        self.assertEquals(self.srmock.status, self.resource.sample_status)
+        self.assertEquals(resp.status, self.resource.sample_status)
+        self.assertEquals(resp.body, self.resource.sample_utf8)
+        self.assertEquals(body, [self.resource.sample_utf8])
 
     def test_data(self):
         body = self.simulate_request('/data')
