@@ -144,3 +144,50 @@ class TestUriTemplates(testing.TestBase):
 
         self.assertRaises(ValueError, self.api.add_route,
                           'no/leading_slash', self.resource)
+
+    def test_bad_syntax(self):
+        self.assertRaises(ValueError, self.api.add_route,
+                          '/{id/stats}', self.resource)
+
+        self.assertRaises(ValueError, self.api.add_route,
+                          '/{id}/{id}', self.resource)
+
+        self.assertRaises(ValueError, self.api.add_route,
+                          '/pre{fix}', self.resource)
+
+        self.assertRaises(ValueError, self.api.add_route,
+                          '/{not an id}', self.resource)
+
+    def test_conflicts(self):
+        # not a conflict
+        self.api.add_route('/', self.resource)
+        self.api.add_route('/dev', self.resource)
+
+        self.assertRaises(LookupError, self.api.add_route,
+                          '/{mount_point}', self.resource)
+
+        # not a conflict
+        self.api.add_route('/dev/{name}', self.resource)
+        self.api.add_route('/dev/{name}/ok', self.resource)
+
+        self.assertRaises(LookupError, self.api.add_route,
+                          '/dev/{id}/ok', self.resource)
+
+        self.assertRaises(LookupError, self.api.add_route,
+                          '/dev/random', self.resource)
+
+    def test_case_sensitivity(self):
+        resource1 = IDResource()
+        resource2 = IDResource()
+        self.api.add_route('/a/{id}', resource1)
+        self.api.add_route('/A/{id}', resource2)
+
+        self.simulate_request('/a/1')
+        self.assertTrue(resource1.called)
+
+        self.simulate_request('/A/1')
+        self.assertTrue(resource2.called)
+
+        self.api.add_route('/b/{ID}', resource2)
+        self.simulate_request('/b/1')
+        self.assertEquals(self.srmock.status, falcon.HTTP_405)
