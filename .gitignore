@@ -38,3 +38,5 @@ htmlcov
 
 # VIM swap files
 .*.swp
+#Python bytecode
+*.pyc
