@@ -38,3 +38,5 @@ htmlcov
 
 # VIM swap files
 .*.swp
+#Text editor's backup file
+*~
