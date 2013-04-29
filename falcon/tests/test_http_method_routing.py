@@ -48,6 +48,10 @@ class ThingsResource(object):
         resp.status = falcon.HTTP_201
 
 
+class Stonewall(object):
+    pass
+
+
 def capture(func):
     @wraps(func)
     def with_capture(*args, **kwargs):
@@ -109,6 +113,8 @@ class FaultyDecoratedResource(object):
 class TestHttpMethodRouting(testing.TestBase):
 
     def before(self):
+        self.api.add_route('/stonewall', Stonewall())
+
         self.resource_things = ThingsResource()
         self.api.add_route('/things', self.resource_things)
         self.api.add_route('/things/{id}/stuff/{sid}', self.resource_things)
@@ -147,7 +153,12 @@ class TestHttpMethodRouting(testing.TestBase):
             self.assertTrue(self.resource_misc.called)
             self.assertEquals(self.resource_misc.req.method, method)
 
-    def test_method_not_allowed(self):
+    def test_methods_not_allowed_simple(self):
+        for method in ['GET', 'HEAD', 'PUT', 'PATCH']:
+            self.simulate_request('/stonewall', method=method)
+            self.assertEquals(self.srmock.status, falcon.HTTP_405)
+
+    def test_methods_not_allowed_complex(self):
         for method in HTTP_METHODS:
             if method in ('GET', 'POST', 'HEAD'):
                 continue
