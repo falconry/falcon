@@ -38,7 +38,7 @@ def internal_server_error(req, resp, **kwargs):
 
 
 def create_method_not_allowed(allowed_methods):
-    """Creates a responder for "405 Method Not Allowed".ipyth
+    """Creates a responder for "405 Method Not Allowed"
 
     Args:
         allowed_methods: A list of HTTP methods (uppercase) that should be
