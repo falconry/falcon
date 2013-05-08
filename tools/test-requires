@@ -1,6 +1,5 @@
 coverage
 cython
-flake8
 nose
 ordereddict
 six

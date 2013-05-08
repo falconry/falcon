@@ -186,6 +186,27 @@ class HTTPConflict(HTTPError):
         HTTPError.__init__(self, status.HTTP_409, title, description, **kwargs)
 
 
+class HTTPLengthRequired(HTTPError):
+    """411 Length Required
+
+    From RFC 2616:
+
+    "The server refuses to accept the request without a defined
+   Content- Length. The client MAY repeat the request if it adds a
+   valid Content-Length header field containing the length of the
+   message-body in the request message."
+
+    """
+    def __init__(self, title, description, **kwargs):
+        """Initialize
+
+        Args:
+            Same as for HTTPError, except status is set for you.
+
+        """
+        HTTPError.__init__(self, status.HTTP_411, title, description, **kwargs)
+
+
 class HTTPPreconditionFailed(HTTPError):
     """412 Precondition Failed
 
