@@ -250,12 +250,11 @@ class TestHTTPError(testing.TestBase):
     def test_411(self):
         self.api.add_route('/411', LengthRequiredResource())
         body = self.simulate_request('/411')
-        parsed_body = json.loads(body[0])
+        parsed_body = json.loads(body[0].decode())
 
         self.assertEqual(self.srmock.status, falcon.HTTP_411)
         self.assertEqual(parsed_body['title'], 'title')
         self.assertEqual(parsed_body['description'], 'description')
-
 
     def test_416_default_media_type(self):
         self.api = falcon.API('application/xml')
