@@ -134,8 +134,8 @@ class ThingsResource:
         self.logger = logging.getLogger('thingsapi.' + __name__)
 
     def on_get(self, req, resp, user_id):
-        marker = req.get_param('marker', default='')
-        limit = req.get_param_as_int('limit', default=50)
+        marker = req.get_param('marker') or ''
+        limit = req.get_param_as_int('limit') or 50
 
         try:
             result = self.db.get_things(marker, limit)
