@@ -412,8 +412,8 @@ class Request(object):
 
         Returns:
             The value of the param if it is found and can be converted to an
-            integer. If the param is not found, returns None, unless
-            unless required is True.
+            integer. If the param is not found, returns None, unless required
+            is True.
 
         Raises
             HTTPBadRequest: The param was not found in the request, even though
