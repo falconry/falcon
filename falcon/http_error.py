@@ -24,8 +24,6 @@ if sys.version_info < (2, 7):  # pragma: no cover
 else:  # pragma: no cover
     from collections import OrderedDict
 
-from falcon.status_codes import *
-
 
 class HTTPError(Exception):
     """Represents a generic HTTP error.

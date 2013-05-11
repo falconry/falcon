@@ -20,7 +20,7 @@ from datetime import datetime
 
 import six
 
-from falcon.exceptions import *
+from falcon.exceptions import HTTPBadRequest
 from falcon import util
 from falcon import request_helpers as helpers
 
