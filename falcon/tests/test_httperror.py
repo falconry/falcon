@@ -34,6 +34,21 @@ class FaultyResource:
         raise falcon.HTTPError(falcon.HTTP_400, 'No-can-do')
 
 
+class UnicodeFaultyResource(object):
+
+    def __init__(self):
+        self.called = False
+
+    def on_get(self, req, resp):
+        self.called = True
+        raise falcon.HTTPError(
+            falcon.HTTP_792,
+            u'Internet \xe7rashed!',
+            u'\xc7atastrophic weather event',
+            href=u'http://example.com/api/\xe7limate',
+            href_text=u'Drill b\xe1by drill!')
+
+
 class MiscErrorsResource:
 
     def __init__(self, exception, needs_title):
@@ -211,6 +226,27 @@ class TestHTTPError(testing.TestBase):
         self.assertEqual(self.srmock.status, falcon.HTTP_792)
         self.assertThat(lambda: json.loads(body[0]), Not(raises(ValueError)))
         self.assertEqual(body, expected_body)
+
+    def test_unicode(self):
+        unicode_resource = UnicodeFaultyResource()
+        expected_body = [
+            b'{\n'
+            b'    "title": "Internet \xc3\xa7rashed!",\n'
+            b'    "description": "\xc3\x87atastrophic weather event",\n'
+            b'    "link": {\n'
+            b'        "text": "Drill b\xc3\xa1by drill!",\n'
+            b'        "href": "http://example.com/api/%C3%A7limate",\n'
+            b'        "rel": "help"\n'
+            b'    }\n'
+            b'}'
+        ]
+
+        self.api.add_route('/unicode', unicode_resource)
+        body = self.simulate_request('/unicode')
+
+        self.assertTrue(unicode_resource.called)
+        #self.assertEqual(self.srmock.status, falcon.HTTP_792)
+        self.assertEquals(expected_body, body)
 
     def test_401(self):
         self.api.add_route('/401', UnauthorizedResource())
