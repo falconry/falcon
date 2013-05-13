@@ -367,13 +367,15 @@ class Request(object):
             description = 'The "' + name + '" header is required.'
             raise HTTPBadRequest('Missing header', description)
 
-    def get_param(self, name, required=False):
+    def get_param(self, name, required=False, store=None):
         """Return the value of a query string parameter as a string
 
         Args:
             name: Parameter name, case-sensitive (e.g., 'sort')
             required: Set to True to raise HTTPBadRequest instead of returning
                 gracefully when the parameter is not found (default False)
+            store: A dict-like object in which to place the value of the
+                param, but only if the param is found.
 
         Returns:
             The value of the param as a string, or None if param is not found
@@ -388,6 +390,9 @@ class Request(object):
         # PERF: Use if..in since it is a good all-around performer; we don't
         #       know how likely params are to be specified by clients.
         if name in self._params:
+            if store is not None:
+                store[name] = self._params[name]
+
             return self._params[name]
 
         if not required:
@@ -396,7 +401,8 @@ class Request(object):
         description = 'The "' + name + '" query parameter is required.'
         raise HTTPBadRequest('Missing query parameter', description)
 
-    def get_param_as_int(self, name, required=False, min=None, max=None):
+    def get_param_as_int(self, name,
+                         required=False, min=None, max=None, store=None):
         """Return the value of a query string parameter as an int
 
         Args:
@@ -409,6 +415,8 @@ class Request(object):
             max: Set to the maximum value allowed for this param. If the param
                 is found and its value is greater than max, an HTTPError is
                 raised.
+            store: A dict-like object in which to place the value of the
+                param, but only if the param is found (default None)
 
         Returns:
             The value of the param if it is found and can be converted to an
@@ -444,6 +452,9 @@ class Request(object):
                                'parameter may not exceed %d') % max
                 raise InvalidHeaderValueError(description)
 
+            if store is not None:
+                store[name] = val
+
             return val
 
         if not required:
@@ -452,7 +463,7 @@ class Request(object):
         description = 'The "' + name + '" query parameter is required.'
         raise HTTPBadRequest('Missing query parameter', description)
 
-    def get_param_as_bool(self, name, required=False):
+    def get_param_as_bool(self, name, required=False, store=None):
         """Return the value of a query string parameter as a boolean
 
         Args:
@@ -460,6 +471,8 @@ class Request(object):
             required: Set to True to raise HTTPBadRequest instead of returning
                 gracefully when the parameter is not found or is not one of
                 ['true', 'false'] (default False)
+            store: A dict-like object in which to place the value of the
+                param, but only if the param is found (default None)
 
         Returns:
             The value of the param if it is found and can be converted to a
@@ -477,13 +490,18 @@ class Request(object):
         if name in self._params:
             val = self._params[name]
             if val == 'true':
-                return True
+                val = True
             elif val == 'false':
-                return False
+                val = False
             else:
                 description = ('The value of the "' + name + '" query '
                                'parameter must be "true" or "false".')
                 raise InvalidParamValueError(description)
+
+            if store is not None:
+                store[name] = val
+
+            return val
 
         if not required:
             return None
@@ -491,7 +509,8 @@ class Request(object):
         description = 'The "' + name + '" query parameter is required.'
         raise HTTPBadRequest('Missing query parameter', description)
 
-    def get_param_as_list(self, name, transform=None, required=False):
+    def get_param_as_list(self, name,
+                          transform=None, required=False, store=None):
         """Return the value of a query string parameter as a list
 
         Note that list items must be comma-separated.
@@ -504,6 +523,8 @@ class Request(object):
             required: Set to True to raise HTTPBadRequest instead of returning
                 gracefully when the parameter is not found or is not an
                 integer (default False)
+            store: A dict-like object in which to place the value of the
+                param, but only if the param is found (default None)
 
         Returns:
             The value of the param if it is found. Otherwise, returns None
@@ -526,6 +547,9 @@ class Request(object):
                     desc = ('The value of the "' + name + '" query parameter '
                             'is not formatted correctly.')
                     raise InvalidParamValueError(desc)
+
+            if store is not None:
+                store[name] = items
 
             return items
 
