@@ -13,8 +13,10 @@ class TestQueryParams(testing.TestBase):
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
+        store = {}
         self.assertIs(req.get_param('marker'), None)
-        self.assertIs(req.get_param('limit'), None)
+        self.assertIs(req.get_param('limit', store), None)
+        self.assertNotIn('limit', store)
         self.assertIs(req.get_param_as_int('limit'), None)
         self.assertIs(req.get_param_as_bool('limit'), None)
         self.assertIs(req.get_param_as_list('limit'), None)
@@ -26,13 +28,22 @@ class TestQueryParams(testing.TestBase):
         req = self.resource.req
         self.assertIs(req.get_param('marker'), None)
 
+        store = {}
+        self.assertIs(req.get_param('marker', store=store), None)
+        self.assertNotIn('marker', store)
+
     def test_simple(self):
         query_string = 'marker=deadbeef&limit=25'
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
-        self.assertEquals(req.get_param('marker') or 'deadbeef', 'deadbeef')
-        self.assertEquals(req.get_param('limit') or '25', '25')
+        store = {}
+        self.assertEquals(req.get_param('marker', store=store) or 'nada',
+                          'deadbeef')
+        self.assertEquals(req.get_param('limit', store=store) or '0', '25')
+
+        self.assertEquals(store['marker'], 'deadbeef')
+        self.assertEquals(store['limit'], '25')
 
     def test_allowed_names(self):
         query_string = ('p=0&p1=23&2p=foo&some-thing=that&blank=&some_thing=x&'
@@ -69,7 +80,12 @@ class TestQueryParams(testing.TestBase):
         req = self.resource.req
         self.assertRaises(falcon.HTTPBadRequest, req.get_param_as_int,
                           'marker')
+
         self.assertEquals(req.get_param_as_int('limit'), 25)
+
+        store = {}
+        self.assertEquals(req.get_param_as_int('limit', store=store), 25)
+        self.assertEquals(store['limit'], 25)
 
         self.assertEquals(
             req.get_param_as_int('limit', min=1, max=50), 25)
@@ -153,6 +169,10 @@ class TestQueryParams(testing.TestBase):
         self.assertEquals(req.get_param_as_bool('echo'), True)
         self.assertEquals(req.get_param_as_bool('doit'), False)
 
+        store = {}
+        self.assertEquals(req.get_param_as_bool('echo', store=store), True)
+        self.assertEquals(store['echo'], True)
+
     def test_list_type(self):
         query_string = 'colors=red,green,blue&limit=1'
         self.simulate_request('/', query_string=query_string)
@@ -163,6 +183,10 @@ class TestQueryParams(testing.TestBase):
                           ['red', 'green', 'blue'])
         self.assertEquals(req.get_param_as_list('limit'), ['1'])
         self.assertIs(req.get_param_as_list('marker'), None)
+
+        store = {}
+        self.assertEquals(req.get_param_as_list('limit', store=store), ['1'])
+        self.assertEquals(store['limit'], ['1'])
 
     def test_list_transformer(self):
         query_string = 'coord=1.4,13,15.1&limit=100'
