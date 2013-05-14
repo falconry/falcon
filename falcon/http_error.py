@@ -24,9 +24,8 @@ if sys.version_info < (2, 7):  # pragma: no cover
 else:  # pragma: no cover
     from collections import OrderedDict
 
-import six
-
 from falcon.status_codes import *
+from falcon import util
 
 
 class HTTPError(Exception):
@@ -94,7 +93,7 @@ class HTTPError(Exception):
         if href:
             link = self.link = OrderedDict()
             link['text'] = (href_text or 'API documention for this error')
-            link['href'] = _percent_escape(href)
+            link['href'] = util.percent_escape(href)
             link['rel'] = 'help'
         else:
             self.link = None
@@ -128,20 +127,3 @@ class HTTPError(Exception):
 
         return json.dumps(obj, indent=4, separators=(',', ': '),
                           ensure_ascii=False)
-
-if six.PY3:  # pragma nocover
-    from urllib.parse import quote as url_quote
-
-    def _percent_escape(url):
-        return url_quote(url, safe='/:')
-
-else:  # pragma nocover
-    from urllib import quote as url_quote
-
-    def _percent_escape(url):
-        # Convert the string so that urllib.quote does not complain
-        # if it actually has Unicode chars in it.
-        if isinstance(url, unicode):
-            url = url.encode('utf-8')
-
-        return url_quote(url, safe='/:')
