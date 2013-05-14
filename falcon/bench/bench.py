@@ -1,17 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
+from __future__ import print_function
+
+import argparse
+from collections import defaultdict
+from decimal import Decimal
 import gc
 import random
-import argparse
+import sys
 import timeit
-from decimal import Decimal
-from collections import defaultdict
-
-import create  # NOQA
 
 import falcon.testing as helpers
+
+from falcon.bench import create  # NOQA
 
 
 def avg(array):
