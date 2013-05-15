@@ -26,13 +26,14 @@ def fail(returncode, e):
     sys.exit(returncode)
 
 
-def run():
+def main():
     try:
-        bench.run()
+        bench.main()
     except KeyboardInterrupt:
         fail(1, 'Interrupted, terminating benchmark')
     except RuntimeError as e:
         fail(1, e)
 
+
 if __name__ == '__main__':
-    run()
+    main()

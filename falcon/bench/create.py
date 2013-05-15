@@ -1,6 +1,5 @@
 import os
 import sys
-# import six
 
 
 def falcon(body, headers):
@@ -18,19 +17,16 @@ def falcon(body, headers):
             user_agent = req.user_agent  # NOQA
             limit = req.get_param('limit') or '10'  # NOQA
             resp.data = body
-            # if six.PY3:
-            #     resp.body = body
-            # else:
-            #     resp.data = body
-
-            # resp.vary = ['accept-encoding', 'x-auth-token']
-            #resp.content_range = (0, 499, 10240)
-
             resp.set_headers(headers)
 
     falcon_app.add_route(path, HelloResource())
 
     return falcon_app
+
+
+def falcon_ext(body, headers):
+    from falcon.bench.queues import api
+    return api.create(body, headers)
 
 
 def flask(body, headers):

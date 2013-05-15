@@ -16,12 +16,8 @@ import falcon.testing as helpers
 from falcon.bench import create  # NOQA
 
 
-def avg(array):
-    return sum(array) / len(array)
-
-
-def bench(name, iterations):
-    func = create_bench(name)
+def bench(name, iterations, env):
+    func = create_bench(name, env)
 
     gc.collect()
     total_sec = timeit.timeit(func, setup=gc.enable, number=iterations)
@@ -34,12 +30,8 @@ def bench(name, iterations):
     return (name, sec_per_req)
 
 
-def create_bench(name):
+def create_bench(name, env):
     srmock = helpers.StartResponseMock()
-
-    request_headers = {'Content-Type': 'application/json'}
-    env = helpers.create_environ('/hello/584/test', query_string='limit=10',
-                                 headers=request_headers)
 
     # env = helpers.create_environ('/hello', query_string='limit=10',
     #                              headers=request_headers)
@@ -47,10 +39,13 @@ def create_bench(name):
     body = helpers.rand_string(0, 10240)  # NOQA
     headers = {'X-Test': 'Funky Chicken'}  # NOQA
 
-    app = eval('create.{0}(body, headers)'.format(name.lower()))
+    function = name.lower().replace('-', '_')
+    app = eval('create.{0}(body, headers)'.format(function))
 
     def bench():
         app(env, srmock)
+        if srmock.status != '200 OK':
+            raise AssertionError(srmock.status + ' != 200 OK')
 
     return bench
 
@@ -68,10 +63,67 @@ def round_to_int(dec):
     return int(dec.to_integral_value())
 
 
-def run():
+def avg(array):
+    return sum(array) / len(array)
+
+
+def hello_env():
+    request_headers = {'Content-Type': 'application/json'}
+    return helpers.create_environ('/hello/584/test',
+                                  query_string='limit=10',
+                                  headers=request_headers)
+
+
+def queues_env():
+    request_headers = {'Content-Type': 'application/json'}
+    path = ('/v1/852809/queues/0fd4c8c6-bd72-11e2-8e47-db5ebd4c8125'
+            '/claims/db5ebd4c8125')
+
+    return helpers.create_environ(path, query_string='limit=10',
+                                  headers=request_headers)
+
+
+def get_env(framework):
+    return queues_env() if framework == 'falcon-ext' else hello_env()
+
+
+def run(frameworks, repetitions, iterations):
+    # Skip any frameworks that are not installed
+    for name in frameworks:
+        try:
+            create_bench(name, hello_env())
+        except ImportError:
+            print('Skipping missing library: ' + name)
+            del frameworks[frameworks.index(name)]
+
+    print()
+
+    if not frameworks:
+        print('Nothing to do.\n')
+        return
+
+    datasets = []
+    for r in range(repetitions):
+        random.shuffle(frameworks)
+
+        sys.stdout.write('Benchmarking, Round %d of %d' %
+                         (r + 1, repetitions))
+        sys.stdout.flush()
+
+        dataset = [bench(framework, iterations, get_env(framework))
+                   for framework in frameworks]
+
+        datasets.append(dataset)
+        print('done.')
+
+    return datasets
+
+
+def main():
     frameworks = [
         'flask', 'werkzeug', 'falcon',
-        'pecan', 'bottle', 'cherrypy'
+        'pecan', 'bottle', 'falcon-ext'
+
     ]
 
     parser = argparse.ArgumentParser(description="Falcon benchmark runner")
@@ -84,32 +136,7 @@ def run():
     if args.frameworks:
         frameworks = args.frameworks
 
-    # Skip any frameworks that are not installed
-    for name in frameworks:
-        try:
-            create_bench(name)
-        except ImportError:
-            print('Skipping missing library: ' + name)
-            del frameworks[frameworks.index(name)]
-
-    print('')
-
-    if not frameworks:
-        print('Nothing to do.\n')
-        return
-
-    datasets = []
-    for r in range(args.repetitions):
-        random.shuffle(frameworks)
-
-        sys.stdout.write('Benchmarking, Round %d of %d' %
-                         (r + 1, args.repetitions))
-        sys.stdout.flush()
-        dataset = [bench(framework, args.iterations)
-                   for framework in frameworks]
-
-        datasets.append(dataset)
-        print('done.')
+    datasets = run(frameworks, args.repetitions, args.iterations)
 
     dataset = consolidate_datasets(datasets)
     dataset = sorted(dataset, key=lambda r: r[1])
@@ -119,10 +146,10 @@ def run():
 
     for i, (name, sec_per_req) in enumerate(dataset):
         req_per_sec = round_to_int(Decimal(1) / sec_per_req)
-        us_per_req = round_to_int(sec_per_req * Decimal(10 ** 6))
+        us_per_req = (sec_per_req * Decimal(10 ** 6))
         factor = round_to_int(baseline / sec_per_req)
 
-        print('{3}. {0:.<15s}{1:.>06,d} req/sec or {2: >03d} μs/req ({4}x)'.
+        print('{3}. {0:.<15s}{1:.>06,d} req/sec or {2: >3.2f} μs/req ({4}x)'.
               format(name, req_per_sec, us_per_req, i + 1, factor))
 
     print('')

@@ -1,3 +1,3 @@
 """Falcon benchmarks"""
 
-from bench import run  # NOQA
+from bench import main  # NOQA

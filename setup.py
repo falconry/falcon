@@ -79,6 +79,6 @@ setup(
     ext_modules=ext_modules,
     entry_points={
         'console_scripts':
-            ['falcon-bench = falcon.bin.bench:run']
+            ['falcon-bench = falcon.cmd.bench:main']
     }
 )
