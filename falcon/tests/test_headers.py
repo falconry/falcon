@@ -1,10 +1,11 @@
-from datetime import datetime
 from collections import defaultdict
+from datetime import datetime
 
+import six
 from testtools.matchers import Contains, Not
 
-import falcon.testing as testing
 import falcon
+import falcon.testing as testing
 
 
 class StatusTestResource:
@@ -75,6 +76,20 @@ class HeaderHelpersResource:
         del resp.location
 
         self.resp = resp
+
+
+class LocationHeaderUnicodeResource:
+
+    URL1 = u'/\u00e7runchy/bacon'
+    URL2 = u'ab\u00e7' if six.PY3 else 'ab\xc3\xa7'
+
+    def on_get(self, req, resp):
+        resp.location = self.URL1
+        resp.content_location = self.URL2
+
+    def on_head(self, req, resp):
+        resp.location = self.URL2
+        resp.content_location = self.URL1
 
 
 class VaryHeaderResource:
@@ -262,6 +277,25 @@ class TestHeaders(testing.TestBase):
         for name, value in self.srmock.headers:
             hist[name] += 1
             self.assertEqual(1, hist[name])
+
+    def test_unicode_location_headers(self):
+        self.api.add_route(self.test_route, LocationHeaderUnicodeResource())
+        self.simulate_request(self.test_route)
+
+        location = ('Location', '/%C3%A7runchy/bacon')
+        self.assertIn(location, self.srmock.headers)
+
+        content_location = ('Content-Location', 'ab%C3%A7')
+        self.assertIn(content_location, self.srmock.headers)
+
+        # Test with the values swapped
+        self.simulate_request(self.test_route, method='HEAD')
+
+        location = ('Location', 'ab%C3%A7')
+        self.assertIn(location, self.srmock.headers)
+
+        content_location = ('Content-Location', '/%C3%A7runchy/bacon')
+        self.assertIn(content_location, self.srmock.headers)
 
     def test_response_header_helpers_on_head(self):
         self.resource = HeaderHelpersResource()

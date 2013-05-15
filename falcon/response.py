@@ -17,7 +17,7 @@ limitations under the License.
 """
 
 from falcon.response_helpers import header_property, format_range
-from falcon.util import dt_to_http
+from falcon.util import dt_to_http, percent_escape
 
 
 class Response(object):
@@ -107,7 +107,8 @@ class Response(object):
 
     content_location = header_property(
         'Content-Location',
-        'Sets the Content-Location header.')
+        'Sets the Content-Location header.',
+        percent_escape)
 
     content_range = header_property(
         'Content-Range',
@@ -144,7 +145,8 @@ class Response(object):
 
     location = header_property(
         'Location',
-        'Sets the Location header.')
+        'Sets the Location header.',
+        percent_escape)
 
     retry_after = header_property(
         'Retry-After',
@@ -174,7 +176,10 @@ class Response(object):
         lambda v: ', '.join(v))
 
     def _wsgi_headers(self, media_type=None):
-        """Convert headers into the format expected by WSGI servers
+        """Convert headers into the format expected by WSGI servers.
+
+        Note: URLs are percent-escaped automatically if they contain Unicode
+        characters.
 
         Args:
             media_type: Default media type to use for the Content-Type
