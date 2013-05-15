@@ -10,6 +10,8 @@ REQUIRES = ['six']
 if sys.version_info < (2, 7):
     REQUIRES.append('ordereddict')
 
+#if 'develop' not in sys.argv
+
 try:
     from Cython.Distutils import build_ext
     with_cython = True
