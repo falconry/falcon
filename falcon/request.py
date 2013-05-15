@@ -27,6 +27,9 @@ from falcon import request_helpers as helpers
 DEFAULT_ERROR_LOG_FORMAT = (u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
                             u' {1} {2}?{3} => ')
 
+TRUE_STRINGS = ('true', 'True', 'yes')
+FALSE_STRINGS = ('false', 'False', 'no')
+
 
 class InvalidHeaderValueError(HTTPBadRequest):
     def __init__(self, msg, href=None, href_text=None):
@@ -466,17 +469,22 @@ class Request(object):
     def get_param_as_bool(self, name, required=False, store=None):
         """Return the value of a query string parameter as a boolean
 
+        The following bool-ish strings are supported:
+
+            True: ('true', 'True', 'yes')
+            False: ('false', 'False', 'no')
+
         Args:
             name: Parameter name, case-sensitive (e.g., 'limit')
             required: Set to True to raise HTTPBadRequest instead of returning
-                gracefully when the parameter is not found or is not one of
-                ['true', 'false'] (default False)
+                gracefully when the parameter is not found or is not a
+                recognized bool-ish string (default False).
             store: A dict-like object in which to place the value of the
                 param, but only if the param is found (default None)
 
         Returns:
             The value of the param if it is found and can be converted to a
-            boolean (must be in ['true', 'false']. If the param is not found,
+            boolean. If the param is not found,
             returns None unless required is True
 
         Raises
@@ -489,9 +497,9 @@ class Request(object):
         #       know how likely params are to be specified by clients.
         if name in self._params:
             val = self._params[name]
-            if val == 'true':
+            if val in TRUE_STRINGS:
                 val = True
-            elif val == 'false':
+            elif val in FALSE_STRINGS:
                 val = False
             else:
                 description = ('The value of the "' + name + '" query '
