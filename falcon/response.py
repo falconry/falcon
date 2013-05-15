@@ -169,9 +169,9 @@ class Response(object):
 
             See also: http://goo.gl/NGHdL
 
-         Set this property to an iterable list of header names. For a
-         single asterisk or field value, simply pass a single-element
-         list.
+         Set this property to an iterable of header names. For a single
+         asterisk or field value, simply pass a single-element list or
+         tuple.
          """,
         lambda v: ', '.join(v))
 

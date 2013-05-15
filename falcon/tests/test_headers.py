@@ -337,6 +337,14 @@ class TestHeaders(testing.TestBase):
         vary = 'accept-encoding, x-auth-token'
         self.assertIn(('Vary', vary), self.srmock.headers)
 
+    def test_vary_headers_tuple(self):
+        self.resource = VaryHeaderResource(('accept-encoding', 'x-auth-token'))
+        self.api.add_route(self.test_route, self.resource)
+        self.simulate_request(self.test_route)
+
+        vary = 'accept-encoding, x-auth-token'
+        self.assertIn(('Vary', vary), self.srmock.headers)
+
     def test_no_content_type(self):
         self.resource = DefaultContentTypeResource()
         self.api.add_route(self.test_route, self.resource)
