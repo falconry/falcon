@@ -55,7 +55,7 @@ def http_date_to_dt(http_date):
 
 
 def to_query_str(params):
-    """Converts a dict of params to an actual query string.
+    """Converts a dict of params to afaln actual query string.
 
     Args:
         params: dict of simple key-value types, where key is a string and
