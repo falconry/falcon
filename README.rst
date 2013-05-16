@@ -242,11 +242,3 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 
-.. |Build Status| image:: https://travis-ci.org/racker/falcon.png
-   :target: https://travis-ci.org/racker/falcon
-.. |Coverage Status| image:: https://coveralls.io/repos/racker/falcon/badge.png?branch=master
-   :target: https://coveralls.io/r/racker/falcon
-.. |Runner Emoji| image:: https://a248.e.akamai.net/assets.github.com/images/icons/emoji/runner.png
-   :height: 20
-   :width: 20
-   :align: middle
