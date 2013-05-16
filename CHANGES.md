@@ -1,3 +1,9 @@
+# 0.1.6 #
+
+## Fixed ##
+
+* Don't percent-escape common query chars!
+
 # 0.1.5 #
 
 ## Fixed ##
