@@ -1,5 +1,3 @@
-<img align="right" src="http://c420059.r59.cf1.rackcdn.com/assets/images/falcon.png" alt="Falcon picture" />
-
 Falcon [![Build Status](https://travis-ci.org/racker/falcon.png)](https://travis-ci.org/racker/falcon) [![Coverage Status](https://coveralls.io/repos/racker/falcon/badge.png?branch=master)](https://coveralls.io/r/racker/falcon)
 ======
 
@@ -13,6 +11,8 @@ Falcon is a [high-performance Python framework][home] for building cloud APIs. I
 
 [home]: http://falconframework.org/index.html
 [benefits]: http://falconframework.org/index.html#Benefits
+
+<img align="right" src="http://falconframework.org/img/falcon.png" alt="Falcon picture" />
 
 ### Design Goals ###
 
