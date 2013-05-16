@@ -45,7 +45,7 @@ setup(
     name='falcon',
     version=VERSION,
     description='A supersonic micro-framework for building cloud APIs.',
-    long_description=None,
+    long_description=open('README.rst', 'r').read(),
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
