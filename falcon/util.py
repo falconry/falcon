@@ -25,6 +25,9 @@ else:  # pragma nocover
     from urllib import quote as url_quote
 
 
+__all__ = ('dt_to_http', 'http_date_to_dt', 'to_query_str', 'percent_escape')
+
+
 def dt_to_http(dt):
     """Converts a datetime instance to an HTTP date string.
 
@@ -104,4 +107,4 @@ def percent_escape(url):
     if not six.PY3 and isinstance(url, six.text_type):  # pragma nocover
         url = url.encode('utf-8')
 
-    return url_quote(url, safe='/:,')
+    return url_quote(url, safe='/:,=?&-_')

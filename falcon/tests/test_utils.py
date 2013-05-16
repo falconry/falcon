@@ -59,3 +59,11 @@ class TestFalconUtils(testtools.TestCase):
             'doit': 'false'}
 
         self.assertEquals(expected, garbage_out)
+
+    def test_percent_escape(self):
+        url = 'http://example.com/v1/fizbit/messages?limit=3&echo=true'
+        self.assertEquals(falcon.percent_escape(url), url)
+
+        url2a = u'http://example.com/v1/fizbit/messages?limit=3&e\u00e7ho=true'
+        url2b = 'http://example.com/v1/fizbit/messages?limit=3&e%C3%A7ho=true'
+        self.assertEquals(falcon.percent_escape(url2a), url2b)
