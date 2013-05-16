@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-git checkout gh-pages
+git
 rm -rf css
 rm -rf img
 rm -rf js
