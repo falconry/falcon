@@ -5,6 +5,7 @@ from __future__ import print_function
 
 import argparse
 from collections import defaultdict
+import cProfile
 from decimal import Decimal
 import gc
 import random
@@ -28,6 +29,28 @@ def bench(name, iterations, env):
     sys.stdout.flush()
 
     return (name, sec_per_req)
+
+
+def profile(name, env, output=None):
+    if output:
+        filename = name + '-' + output
+        print('Profiling %s ==> %s' %(name, filename))
+
+    else:
+        filename = None
+
+        title = name + ' profile'
+        print()
+        print('=' * len(title))
+        print(title)
+        print('=' * len(title))
+
+    func = create_bench(name, env)
+
+    gc.collect()
+    code = 'for x in xrange(10000): func()'
+    cProfile.runctx(code, locals(), globals(),
+                    sort='tottime', filename=filename)
 
 
 def create_bench(name, env):
@@ -121,9 +144,12 @@ def run(frameworks, repetitions, iterations):
 
 def main():
     frameworks = [
-        'flask', 'werkzeug', 'falcon',
-        'pecan', 'bottle', 'falcon-ext'
-
+        'bottle',
+        'falcon',
+        'falcon-ext',
+        'flask',
+        'pecan',
+        'werkzeug'
     ]
 
     parser = argparse.ArgumentParser(description="Falcon benchmark runner")
@@ -131,25 +157,32 @@ def main():
                         choices=frameworks, dest='frameworks')
     parser.add_argument('-i', '--iterations', type=int, default=50000)
     parser.add_argument('-r', '--repetitions', type=int, default=3)
+    parser.add_argument('-p', '--profile', action='store_true')
+    parser.add_argument('-o', '--profile-output', type=str, default=None)
     args = parser.parse_args()
 
     if args.frameworks:
         frameworks = args.frameworks
 
-    datasets = run(frameworks, args.repetitions, args.iterations)
+    if args.profile:
+        for name in frameworks:
+            profile(name, get_env(name), args.profile_output)
 
-    dataset = consolidate_datasets(datasets)
-    dataset = sorted(dataset, key=lambda r: r[1])
-    baseline = dataset[-1][1]
+    else:
+        datasets = run(frameworks, args.repetitions, args.iterations)
 
-    print('\nResults:\n')
+        dataset = consolidate_datasets(datasets)
+        dataset = sorted(dataset, key=lambda r: r[1])
+        baseline = dataset[-1][1]
 
-    for i, (name, sec_per_req) in enumerate(dataset):
-        req_per_sec = round_to_int(Decimal(1) / sec_per_req)
-        us_per_req = (sec_per_req * Decimal(10 ** 6))
-        factor = round_to_int(baseline / sec_per_req)
+        print('\nResults:\n')
 
-        print('{3}. {0:.<15s}{1:.>06,d} req/sec or {2: >3.2f} μs/req ({4}x)'.
-              format(name, req_per_sec, us_per_req, i + 1, factor))
+        for i, (name, sec_per_req) in enumerate(dataset):
+            req_per_sec = round_to_int(Decimal(1) / sec_per_req)
+            us_per_req = (sec_per_req * Decimal(10 ** 6))
+            factor = round_to_int(baseline / sec_per_req)
 
-    print('')
+            print('{3}. {0:.<15s}{1:.>06,d} req/sec or {2: >3.2f} μs/req ({4}x)'.
+                  format(name, req_per_sec, us_per_req, i + 1, factor))
+
+    print()

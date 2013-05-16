@@ -41,7 +41,6 @@ else:
     cmdclass = {}
     ext_modules = []
 
-
 setup(
     name='falcon',
     version=VERSION,
@@ -77,8 +76,10 @@ setup(
     install_requires=REQUIRES,
     cmdclass=cmdclass,
     ext_modules=ext_modules,
+    setup_requires=[],
     entry_points={
-        'console_scripts':
-            ['falcon-bench = falcon.cmd.bench:main']
+        'console_scripts': [
+            'falcon-bench = falcon.cmd.bench:main'
+        ]
     }
 )
