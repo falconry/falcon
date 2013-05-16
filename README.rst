@@ -1,7 +1,5 @@
-Falcon |Build Status| |Coverage Status|
-=======================================
-
-|Runner Emoji| Come hang out with us in **#falconframework** on freenode.
+Falcon
+======
 
 Falcon is a `high-performance Python
 framework <http://falconframework.org/index.html>`__ for building cloud
