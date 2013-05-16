@@ -1,10 +1,28 @@
-# v0.1.4 #
+# 0.1.5 #
 
 ## Fixed ##
 
-* req.path now strips trailing slashes in keeping with the design decision in v0.1.2 to abstract those away from the app.
+* Unicode characters in HTTPError body strings are now encoded properly to UTF-8.
+* Unicode characters in resp.location and resp.content_location now are now percent-escaped.
+* Tox environments no longer issue warnings/errors re incompatible cythoned files.
 
-# v0.1.3 #
+## New ##
+
+* req.get_param and friends now accepts an optional param, "store", that takes a dict-like object. The value for the specified param, if found, will be inserted into the store, i.e., store[param] = value. Useful for building up kwargs.
+* req.get_param_as_bool now accepts capitalized booleans as well as 'yes' and 'no'.
+* Extended "falcon-ext" benchmark added to falcon-bench for testing more taxing, wost-case requests.
+* cProfile enabled for tests.
+* cProfile option added to falcon-bench.
+* Experimental memory profiling added to falcon-bench.
+* py3kwarn env added to tox (run manually).
+
+# 0.1.4 #
+
+## Fixed ##
+
+* req.path now strips trailing slashes in keeping with the design decision in 0.1.2 to abstract those away from the app.
+
+# 0.1.3 #
 
 ## Fixed ##
 
@@ -26,12 +44,12 @@
 * Added falcon.to_query_str() to provide an optimized query string generator that apps can use when generating href's.
 * Improved performance when no query string is present in the request URI.
 
-# v0.1.2 #
+# 0.1.2 #
 
 ## Fixed ##
 
 * Falcon requires QUERY_STRING in WSGI environ, but PEP-333 does not require it
-* Hook decorators can overwrite eachother's actions
+* Hook decorators can overwrite each other's actions
 * Test coverage is not 100% when branch coverage is enabled
 
 ## Breaking Changes ##
@@ -46,7 +64,7 @@
 * Made testtools dependency optional (falls back to unittest if import fails)
 * Trailing slashes in routes and request paths are ignored, so you no longer need to add two routes for each resource
 
-# v0.1.1 #
+# 0.1.1 #
 
 ## Fixed ##
 
@@ -64,6 +82,6 @@
 * PyPy and Python 3.3 support
 * Vastly improved docstrings
 
-# v0.1.0 #
+# 0.1.0 #
 
 Initial release.
