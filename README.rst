@@ -1,6 +1,13 @@
 Falcon
 ======
 
+|Build Status| |Coverage Status|
+
+Overview
+~~~~~~~~
+
+|Runner| Come hang out with us in **#falconframework** on freenode.
+
 Falcon is a `high-performance Python
 framework <http://falconframework.org/index.html>`__ for building cloud
 APIs. It tries to do as little as possible while remaining `highly
@@ -26,7 +33,7 @@ making Falcon easier to test, optimize, and deploy.
 
 **Flexible.** Falcon can be deployed in a variety of ways, depending on
 your needs. The framework speaks WSGI, and works great with `Python 2.6
-and 2.7, PyPy, and Python 3.3 <hbttps://travis-ci.org/racker/falcon>`__.
+and 2.7, PyPy, and Python 3.3 <https://travis-ci.org/racker/falcon>`__.
 There's no tight coupling with any async framework, leaving you free to
 mix-and-match what you need.
 
@@ -46,20 +53,20 @@ Features
 Install
 ~~~~~~~
 
-.. code::
+.. code:: bash
 
     $ pip install cython falcon
 
 Test
 ~~~~
 
-.. code::
+.. code:: bash
 
     $ pip install nose && nosetests
 
 To test across all supported Python versions:
 
-.. code::
+.. code:: bash
 
     $ pip install tox && tox
 
@@ -73,9 +80,9 @@ learning pleasure. You can also ask questions in **#falconframework** on
 freenode. We are planning on having real docs eventually; if you need
 them right away, consider sending a pull request. ;)
 
-Here is a simple example showing how to create a Falcon-based API.
+Here is a simple example showing how to create a Falcon-based API
 
-.. code::
+.. code:: python
 
     class ThingsResource:
         def on_get(self, req, resp):
@@ -95,8 +102,7 @@ Here is a simple example showing how to create a Falcon-based API.
 Here is a more involved example, demonstrating getting headers and query
 parameters, handling errors, and reading/writing message bodies.
 
-.. code::
-
+.. code:: python
 
     import json
     import logging
@@ -230,9 +236,7 @@ O'Neill <https://commons.wikimedia.org/wiki/File:Brown-Falcon,-Vic,-3.1.2008.jpg
 
 Licensed under the Apache License, Version 2.0 (the "License"); you
 may not use this file except in compliance with the License. You may
-obtain a copy of the License at
-
-::
+obtain a copy of the License at::
 
     http://www.apache.org/licenses/LICENSE-2.0
 
@@ -242,3 +246,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 
+.. |Runner| image:: https://a248.e.akamai.net/assets.github.com/images/icons/emoji/runner.png
+    :width: 20
+    :height: 20
+.. |Build Status| image:: https://travis-ci.org/racker/falcon.png
+   :target: https://travis-ci.org/racker/falcon
+.. |Coverage Status| image:: https://coveralls.io/repos/racker/falcon/badge.png?branch=master
+   :target: https://coveralls.io/r/racker/falcon

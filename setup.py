@@ -74,9 +74,10 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=REQUIRES,
+    setup_requires=[],
     cmdclass=cmdclass,
     ext_modules=ext_modules,
-    setup_requires=[],
+    test_suite='nose.collector',
     entry_points={
         'console_scripts': [
             'falcon-bench = falcon.cmd.bench:main'
