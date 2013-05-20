@@ -46,20 +46,20 @@ Features
 Install
 ~~~~~~~
 
-.. code:: bash
+.. code::
 
     $ pip install cython falcon
 
 Test
 ~~~~
 
-.. code:: bash
+.. code::
 
     $ pip install nose && nosetests
 
 To test across all supported Python versions:
 
-.. code:: bash
+.. code::
 
     $ pip install tox && tox
 
@@ -75,7 +75,7 @@ them right away, consider sending a pull request. ;)
 
 Here is a simple example showing how to create a Falcon-based API.
 
-.. code:: python
+.. code::
 
     class ThingsResource:
         def on_get(self, req, resp):
@@ -95,7 +95,7 @@ Here is a simple example showing how to create a Falcon-based API.
 Here is a more involved example, demonstrating getting headers and query
 parameters, handling errors, and reading/writing message bodies.
 
-.. code:: python
+.. code::
 
 
     import json
