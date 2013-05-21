@@ -10,8 +10,9 @@ Overview
 
 Falcon is a `high-performance Python
 framework <http://falconframework.org/index.html>`__ for building cloud
-APIs. It tries to do as little as possible while remaining `highly
-effective <http://falconframework.org/index.html#Benefits>`__.
+APIs. It encourages the REST architectural style, and tries to do
+as little as possible while remaining `highly effective
+<http://falconframework.org/index.html#Benefits>`__.
 
     Perfection is finally attained not when there is no longer anything
     to add, but when there is no longer anything to take away.
@@ -80,24 +81,53 @@ learning pleasure. You can also ask questions in **#falconframework** on
 freenode. We are planning on having real docs eventually; if you need
 them right away, consider sending a pull request. ;)
 
-Here is a simple example showing how to create a Falcon-based API
+Here is a simple example showing how to create a Falcon-based API.
 
 .. code:: python
 
+    # things.py
+
+    # Let's get this party started
+    import falcon
+
+
+    # Falcon follows the REST architectural style, meaning (among
+    # other things) that you think in terms of resources and state
+    # transitions, which map to HTTP verbs.
     class ThingsResource:
         def on_get(self, req, resp):
             """Handles GET requests"""
-            resp.status = falcon.HTTP_200
-            resp.body = 'Hello world!'
+            resp.status = falcon.HTTP_200  # This is the default status
+            resp.body = ('\nTwo things awe me most, the starry sky '
+                         'above me and the moral law within me.\n'
+                         '\n'
+                         '    ~ Immanuel Kant\n\n')
 
     # falcon.API instances are callable WSGI apps
-    wsgi_app = api = falcon.API()
+    app = api = falcon.API()
 
     # Resources are represented by long-lived class instances
     things = ThingsResource()
 
     # things will handle all requests to the '/things' URL path
     api.add_route('/things', things)
+
+You can run the above example using any WSGI server, such as uWSGI or
+Gunicorn. For example:
+
+.. code:: bash
+
+    $ pip install gunicorn
+    $ gunicorn things:app
+
+Then, in another terminal:
+
+.. code:: bash
+
+    $ curl localhost:8000/things
+
+More Cowbell
+~~~~~~~~~~~~
 
 Here is a more involved example, demonstrating getting headers and query
 parameters, handling errors, and reading/writing message bodies.
