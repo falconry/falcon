@@ -73,10 +73,9 @@ class Request(object):
 
         Args:
             env: A WSGI environment dict passed in from the server. See also
-                the PEP-333 spec.
+                the PEP-3333 spec.
 
         """
-
         self.env = env
 
         self._wsgierrors = env['wsgi.errors']

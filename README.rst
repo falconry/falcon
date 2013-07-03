@@ -129,8 +129,7 @@ Then, in another terminal:
 More Cowbell
 ~~~~~~~~~~~~
 
-Here is a more involved example, demonstrating getting headers and query
-parameters, handling errors, and reading/writing message bodies.
+Here is a more involved example that demonstrates reading headers and query parameters, handling errors, and working with request and response bodies.
 
 .. code:: python
 
