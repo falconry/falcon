@@ -87,7 +87,7 @@ class API(object):
             if ex.headers is not None:
                 resp.set_headers(ex.headers)
 
-            if req.client_accepts_json:
+            if req.client_accepts('application/json'):
                 resp.body = ex.json()
 
         except TypeError as ex:
