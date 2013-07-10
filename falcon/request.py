@@ -135,21 +135,12 @@ class Request(object):
             self._wsgierrors.write(log_line.encode('utf-8'))
             self._wsgierrors.write(message + '\n')
 
-    @property
-    def client_accepts_json(self):
-        """Return True if the Accept header indicates JSON support."""
+    def client_accepts(self, media_type):
+        """Return True if the Accept header indicates a media type support."""
 
         accept = self._get_header_by_wsgi_name('ACCEPT')
         return ((accept is not None) and
-                (('application/json' in accept) or ('*/*' in accept)))
-
-    @property
-    def client_accepts_xml(self):
-        """Return True if the Accept header indicates XML support."""
-
-        accept = self._get_header_by_wsgi_name('ACCEPT')
-        return ((accept is not None) and
-                (('application/xml' in accept) or ('*/*' in accept)))
+                ((media_type in accept) or ('*/*' in accept)))
 
     @property
     def accept(self):
