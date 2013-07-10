@@ -150,6 +150,34 @@ class HTTPMethodNotAllowed(HTTPError):
         HTTPError.__init__(self, status.HTTP_405, None, **kwargs)
 
 
+class HTTPNotAcceptable(HTTPError):
+    """406 Not Acceptable
+
+    Use this to reject the clients without a specific media type
+    support in their Accept headers.
+
+    From RFC 2616:
+
+    "The resource identified by the request is only capable of generating
+    response entities which have content characteristics not acceptable
+    according to the accept headers sent in the request."
+
+    """
+    def __init__(self, description, **kwargs):
+        """Initialize
+
+        Args:
+            description: Human-friendly description of the error, along with a
+                helpful suggestion or two.
+
+        The remaining (optional) args are the same as for HTTPError.
+
+        """
+
+        HTTPError.__init__(self, status.HTTP_406, 'Media type not acceptable',
+                           description, **kwargs)
+
+
 class HTTPConflict(HTTPError):
     """409 Conflict
 

@@ -312,6 +312,8 @@ class TestHTTPError(testing.TestBase):
 
     def test_misc(self):
         self._misc_test(falcon.HTTPBadRequest, falcon.HTTP_400)
+        self._misc_test(falcon.HTTPNotAcceptable, falcon.HTTP_406,
+                        needs_title=False)
         self._misc_test(falcon.HTTPConflict, falcon.HTTP_409)
         self._misc_test(falcon.HTTPPreconditionFailed, falcon.HTTP_412)
         self._misc_test(falcon.HTTPUnsupportedMediaType, falcon.HTTP_415,
