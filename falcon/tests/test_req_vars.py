@@ -100,6 +100,13 @@ class TestReqVars(testing.TestBase):
         req = Request(testing.create_environ(headers=headers))
         self.assertFalse(req.client_accepts('application/xml'))
 
+    def test_client_accepts_props(self):
+        headers = {'Accept': 'application/xml'}
+        req = Request(testing.create_environ(headers=headers))
+
+        self.assertTrue(req.client_accepts_xml)
+        self.assertFalse(req.client_accepts_json)
+
     def test_range(self):
         headers = {'Range': '10-'}
         req = Request(testing.create_environ(headers=headers))

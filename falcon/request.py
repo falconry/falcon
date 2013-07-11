@@ -135,6 +135,16 @@ class Request(object):
             self._wsgierrors.write(log_line.encode('utf-8'))
             self._wsgierrors.write(message + '\n')
 
+    @property
+    def client_accepts_json(self):
+        """Return True if the Accept header indicates JSON support."""
+        return self.client_accepts('application/json')
+
+    @property
+    def client_accepts_xml(self):
+        """Return True if the Accept header indicates XML support."""
+        return self.client_accepts('application/xml')
+
     def client_accepts(self, media_type):
         """Return True if the Accept header indicates a media type support."""
 
