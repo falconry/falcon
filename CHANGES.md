@@ -1,3 +1,15 @@
+# 0.1.6.post2 #
+
+## Fixed ##
+
+* testtools is no longer a required dependency (cabrera)
+
+## New ##
+
+* Add HTTPNotAcceptable for responding with HTTP status code 406 (lichray)
+* Add HTTPLenghRequired for responding with HTTP status code 411 (cabrera)
+* Add generic req.client_accepts() method (lichray)
+
 # 0.1.6 #
 
 ## Fixed ##
