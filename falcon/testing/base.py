@@ -15,6 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 """
+import itertools
 
 try:
     import testtools as unittest
@@ -50,9 +51,10 @@ class TestBase(unittest.TestCase):
         """Initializer, unittest-style"""
 
         super(TestBase, self).setUp()
+        self._id = itertools.count(0)
         self.api = falcon.API()
         self.srmock = StartResponseMock()
-        self.test_route = '/' + self.getUniqueString()
+        self.test_route = '/{0}'.format(next(self._id))
 
         before = getattr(self, 'before', None)
         if hasattr(before, '__call__'):
