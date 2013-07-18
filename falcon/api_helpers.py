@@ -99,6 +99,9 @@ def set_content_length(resp):
 def get_body(resp):
     """Converts resp content into an iterable as required by PEP 333
 
+    Post:
+        If resp.body is set, it'll be encoded.
+
     Args:
         resp: Instance of falcon.Response
 
@@ -115,7 +118,8 @@ def get_body(resp):
 
     if body is not None:
         if isinstance(body, six.text_type):
-            return [body.encode('utf-8')]
+            resp.body = body.encode('utf-8')
+            return [resp.body]
         else:
             return [body]
 

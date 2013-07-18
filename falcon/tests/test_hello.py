@@ -101,7 +101,7 @@ class TestHelloWorld(testing.TestBase):
 
         self.assertEquals(self.srmock.status, self.resource.sample_status)
         self.assertEquals(resp.status, self.resource.sample_status)
-        self.assertEquals(resp.body, self.resource.sample_unicode)
+        self.assertEquals(resp.body, self.resource.sample_utf8)
         self.assertEquals(body, [self.resource.sample_utf8])
 
     def test_body_bytes(self):

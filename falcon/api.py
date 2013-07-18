@@ -123,8 +123,12 @@ class API(object):
         #
         use_body = not helpers.should_ignore_body(resp.status, req.method)
         if use_body:
-            helpers.set_content_length(resp)
+            # get_body must be called before
+            # set_content_length so that all
+            # encodings and transformations
+            # on the body can be applied first.
             body = helpers.get_body(resp)
+            helpers.set_content_length(resp)
         else:
             # Default: return an empty body
             body = []
