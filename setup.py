@@ -4,7 +4,7 @@ from os import path
 from setuptools import setup, find_packages, Extension
 
 VERSION = imp.load_source('version', path.join('.', 'falcon', 'version.py'))
-VERSION = VERSION.version
+VERSION = VERSION.__version__
 
 REQUIRES = ['six']
 if sys.version_info < (2, 7):

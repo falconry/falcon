@@ -32,7 +32,7 @@ DEFAULT_MEDIA_TYPE = 'application/json; charset=utf-8'
 
 
 # Hoist classes and functions into the falcon namespace
-from falcon.version import version  # NOQA
+from falcon.version import __version__  # NOQA
 from falcon.api import API, DEFAULT_MEDIA_TYPE  # NOQA
 from falcon.status_codes import *  # NOQA
 from falcon.exceptions import *  # NOQA
