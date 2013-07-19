@@ -81,6 +81,8 @@ def set_content_length(resp):
         # Since body is assumed to be a byte string (str in Python 2, bytes in
         # Python 3), figure out the length using standard functions.
         content_length = len(resp.body)
+    elif resp.data is not None:
+        content_length = len(resp.data)
     elif resp.stream is not None:
         if resp.stream_len is not None:
             # Total stream length is known in advance (e.g., streaming a file)

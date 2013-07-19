@@ -96,6 +96,9 @@ class TestHelloWorld(testing.TestBase):
         body = self.simulate_request(self.test_route)
         resp = self.resource.resp
 
+        content_length = int(self.srmock.headers_dict['Content-Length'])
+        self.assertEquals(content_length, len(self.resource.sample_unicode))
+
         self.assertEquals(self.srmock.status, self.resource.sample_status)
         self.assertEquals(resp.status, self.resource.sample_status)
         self.assertEquals(resp.body, self.resource.sample_unicode)
@@ -105,6 +108,9 @@ class TestHelloWorld(testing.TestBase):
         body = self.simulate_request('/bytes')
         resp = self.bytes_resource.resp
 
+        content_length = int(self.srmock.headers_dict['Content-Length'])
+        self.assertEquals(content_length, len(self.resource.sample_utf8))
+
         self.assertEquals(self.srmock.status, self.resource.sample_status)
         self.assertEquals(resp.status, self.resource.sample_status)
         self.assertEquals(resp.body, self.resource.sample_utf8)
@@ -113,6 +119,9 @@ class TestHelloWorld(testing.TestBase):
     def test_data(self):
         body = self.simulate_request('/data')
         resp = self.data_resource.resp
+
+        content_length = int(self.srmock.headers_dict['Content-Length'])
+        self.assertEquals(content_length, len(self.resource.sample_utf8))
 
         self.assertEquals(self.srmock.status, self.resource.sample_status)
         self.assertEquals(resp.status, self.resource.sample_status)
