@@ -85,7 +85,7 @@ class TestHooks(testing.TestBase):
         self.api.add_route(self.test_route, zoo_resource)
 
         self.simulate_request(self.test_route)
-        self.assertEqual(b'fluffy', zoo_resource.resp.body)
+        self.assertEqual(b'fluffy', zoo_resource.resp.body_encoded)
 
     def test_multiple_global_hook(self):
         self.api = falcon.API(after=[fluffiness, cuteness])
@@ -94,17 +94,17 @@ class TestHooks(testing.TestBase):
         self.api.add_route(self.test_route, zoo_resource)
 
         self.simulate_request(self.test_route)
-        self.assertEqual(b'fluffy and cute', zoo_resource.resp.body)
+        self.assertEqual(b'fluffy and cute', zoo_resource.resp.body_encoded)
 
     def test_output_validator(self):
         self.simulate_request(self.test_route)
         self.assertEqual(falcon.HTTP_723, self.srmock.status)
-        self.assertEqual(None, self.resource.resp.body)
+        self.assertEqual(None, self.resource.resp.body_encoded)
 
     def test_serializer(self):
         self.simulate_request(self.test_route, method='PUT')
 
-        actual_body = self.resource.resp.body
+        actual_body = self.resource.resp.body_encoded
         self.assertEqual(b'{"animal": "falcon"}', actual_body)
 
     def test_wrapped_resource(self):
@@ -112,7 +112,7 @@ class TestHooks(testing.TestBase):
 
         self.simulate_request('/wrapped')
         self.assertEqual(falcon.HTTP_200, self.srmock.status)
-        self.assertEqual(expected, self.wrapped_resource.resp.body)
+        self.assertEqual(expected, self.wrapped_resource.resp.body_encoded)
 
         self.simulate_request('/wrapped', method='HEAD')
         self.assertEqual(falcon.HTTP_200, self.srmock.status)

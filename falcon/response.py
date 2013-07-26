@@ -16,6 +16,8 @@ limitations under the License.
 
 """
 
+import six
+
 from falcon.response_helpers import header_property, format_range
 from falcon.util import dt_to_http, percent_escape
 
@@ -36,7 +38,8 @@ class Response(object):
     """
 
     __slots__ = (
-        'body',  # Stuff
+        '_body',  # Stuff
+        '_body_encoded',  # Stuff
         'data',
         '_headers',
         'status',
@@ -55,10 +58,40 @@ class Response(object):
         self.status = '200 OK'
         self._headers = {}
 
-        self.body = None
+        self._body = None
+        self._body_encoded = None
         self.data = None
         self.stream = None
         self.stream_len = None
+
+    def _get_body(self):
+        return self._body
+
+    def _set_body(self, value):
+        self._body = value
+        self._body_encoded = None
+
+    # NOTE(flaper87): Lets use a property
+    # for the body in case its content was
+    # encoded and then modified.
+    body = property(_get_body, _set_body)
+
+    @property
+    def body_encoded(self):
+        # NOTE(flaper87): Notice this property
+        # is not thread-safe. If body is modified
+        # before this property returns, we might
+        # end up returning None.
+        body = self._body
+        if body and not self._body_encoded:
+
+            # NOTE(flaper87): Assume it is an
+            # encoded str, then check and encode
+            # if it isn't.
+            self._body_encoded = body
+            if isinstance(body, six.text_type):
+                self._body_encoded = body.encode('utf-8')
+        return self._body_encoded
 
     def set_header(self, name, value):
         """Set a header for this response to a given value.

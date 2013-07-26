@@ -19,8 +19,6 @@ limitations under the License.
 import re
 from functools import wraps
 
-import six
-
 from falcon import responders, HTTP_METHODS
 import falcon.status_codes as status
 
@@ -77,10 +75,10 @@ def set_content_length(resp):
 
     content_length = 0
 
-    if resp.body is not None:
+    if resp.body_encoded is not None:
         # Since body is assumed to be a byte string (str in Python 2, bytes in
         # Python 3), figure out the length using standard functions.
-        content_length = len(resp.body)
+        content_length = len(resp.body_encoded)
     elif resp.data is not None:
         content_length = len(resp.data)
     elif resp.stream is not None:
@@ -99,9 +97,6 @@ def set_content_length(resp):
 def get_body(resp):
     """Converts resp content into an iterable as required by PEP 333
 
-    Post:
-        If resp.body is set, it'll be encoded.
-
     Args:
         resp: Instance of falcon.Response
 
@@ -114,14 +109,10 @@ def get_body(resp):
 
     """
 
-    body = resp.body
+    body = resp.body_encoded
 
     if body is not None:
-        if isinstance(body, six.text_type):
-            resp.body = body.encode('utf-8')
-            return [resp.body]
-        else:
-            return [body]
+        return [body]
 
     elif resp.data is not None:
         return [resp.data]
