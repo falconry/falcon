@@ -65,9 +65,11 @@ class Response(object):
         self.stream_len = None
 
     def _get_body(self):
+        """Returns the body as-is."""
         return self._body
 
     def _set_body(self, value):
+        """Sets the body and clears the encoded cache."""
         self._body = value
         self._body_encoded = None
 
@@ -78,12 +80,18 @@ class Response(object):
 
     @property
     def body_encoded(self):
+        """Encode the body and return it
+
+        This property will encode `_body` and
+        cache the result in the `_body_encoded`
+        attribute.
+        """
         # NOTE(flaper87): Notice this property
         # is not thread-safe. If body is modified
         # before this property returns, we might
         # end up returning None.
         body = self._body
-        if body and not self._body_encoded:
+        if body and self._body_encoded is None:
 
             # NOTE(flaper87): Assume it is an
             # encoded str, then check and encode
@@ -91,6 +99,7 @@ class Response(object):
             self._body_encoded = body
             if isinstance(body, six.text_type):
                 self._body_encoded = body.encode('utf-8')
+
         return self._body_encoded
 
     def set_header(self, name, value):
