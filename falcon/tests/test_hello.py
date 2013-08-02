@@ -97,7 +97,7 @@ class TestHelloWorld(testing.TestBase):
         resp = self.resource.resp
 
         content_length = int(self.srmock.headers_dict['Content-Length'])
-        self.assertEquals(content_length, len(self.resource.sample_unicode))
+        self.assertEquals(content_length, len(self.resource.sample_utf8))
 
         self.assertEquals(self.srmock.status, self.resource.sample_status)
         self.assertEquals(resp.status, self.resource.sample_status)
