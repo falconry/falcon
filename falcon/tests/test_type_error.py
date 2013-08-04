@@ -11,7 +11,7 @@ def teh_wrapper(req, resp, params):
     pass
 
 
-class TypeErrornator(object):
+class TypeErrornatorResource(object):
 
     def on_get(self, req, resp):
         silly = True
@@ -27,17 +27,58 @@ class TypeErrornator(object):
         # Responder has incorrect args
         pass
 
+    @falcon.after(teh_wrapper)
+    @falcon.after(teh_wrapper)
     def on_post(self, req, resp, user_id):
         # Responder has incorrect args
         Thinger()
+
+    @falcon.before(teh_wrapper)
+    @falcon.before(teh_wrapper)
+    def on_delete(self, req, resp, user_id):
+        # Responder has incorrect args
+        Thinger()
+
+
+@falcon.before(teh_wrapper)
+@falcon.before(teh_wrapper)
+class ClassBeforeWrapperResouce(object):
+
+    def on_get(self, req, resp, user_id):
+        silly = True
+
+        # Call an uncallable
+        return silly()
+
+
+@falcon.after(teh_wrapper)
+@falcon.after(teh_wrapper)
+class ClassAfterWrapperResouce(object):
+
+    def on_get(self, req, resp, user_id):
+        silly = True
+
+        # Call an uncallable
+        return silly()
+
+
+@falcon.before(teh_wrapper)
+@falcon.after(teh_wrapper)
+class ClassMixedWrapperResouce(object):
+
+    def on_get(self, req, resp, user_id):
+        silly = True
+
+        # Call an uncallable
+        return silly()
 
 
 class TestTypeError(testing.TestBase):
 
     def before(self):
         self.api = falcon.API(before=teh_wrapper)
-        self.api.add_route('/typeerror', TypeErrornator())
-        self.api.add_route('/{user_id}/thingy', TypeErrornator())
+        self.api.add_route('/typeerror', TypeErrornatorResource())
+        self.api.add_route('/{user_id}/thingy', TypeErrornatorResource())
 
     def test_not_callable(self):
         self.simulate_request('/typeerror')
@@ -55,18 +96,54 @@ class TestTypeError(testing.TestBase):
         self.simulate_request('/123/thingy', method='POST')
         self.assertEquals(self.srmock.status, falcon.HTTP_500)
 
+    def test_wrapped_after_not_enough_init_args(self):
+        self.api = falcon.API(after=[teh_wrapper, teh_wrapper])
+        self.api.add_route('/{user_id}/thingy', TypeErrornatorResource())
+
+        self.simulate_request('/123/thingy', method='POST')
+        self.assertEquals(self.srmock.status, falcon.HTTP_500)
+
     def test_double_wrapped_not_enough_init_args(self):
         self.api = falcon.API(before=[teh_wrapper, teh_wrapper])
-        self.api.add_route('/typeerror', TypeErrornator())
-        self.api.add_route('/{user_id}/thingy', TypeErrornator())
+        self.api.add_route('/{user_id}/thingy', TypeErrornatorResource())
 
         self.simulate_request('/123/thingy', method='POST')
         self.assertEquals(self.srmock.status, falcon.HTTP_500)
 
     def test_triple_wrapped_not_enough_init_args(self):
         self.api = falcon.API(before=[teh_wrapper, teh_wrapper, teh_wrapper])
-        self.api.add_route('/typeerror', TypeErrornator())
-        self.api.add_route('/{user_id}/thingy', TypeErrornator())
+        self.api.add_route('/{user_id}/thingy', TypeErrornatorResource())
 
         self.simulate_request('/123/thingy', method='POST')
+        self.assertEquals(self.srmock.status, falcon.HTTP_500)
+
+    def test_local_wrapped_not_enough_init_args(self):
+        self.api = falcon.API()
+        self.api.add_route('/{user_id}/thingy', TypeErrornatorResource())
+
+        self.simulate_request('/123/thingy', method='POST')
+        self.assertEquals(self.srmock.status, falcon.HTTP_500)
+
+        self.simulate_request('/123/thingy', method='DELETE')
+        self.assertEquals(self.srmock.status, falcon.HTTP_500)
+
+    def test_class_before_wrapper_type_not_callable(self):
+        self.api = falcon.API()
+        self.api.add_route('/{user_id}/thingy', ClassBeforeWrapperResouce())
+
+        self.simulate_request('/123/thingy')
+        self.assertEquals(self.srmock.status, falcon.HTTP_500)
+
+    def test_class_after_wrapper_type_not_callable(self):
+        self.api = falcon.API()
+        self.api.add_route('/{user_id}/thingy', ClassAfterWrapperResouce())
+
+        self.simulate_request('/123/thingy')
+        self.assertEquals(self.srmock.status, falcon.HTTP_500)
+
+    def test_class_mixed_wrapper_type_not_callable(self):
+        self.api = falcon.API()
+        self.api.add_route('/{user_id}/thingy', ClassMixedWrapperResouce())
+
+        self.simulate_request('/123/thingy')
         self.assertEquals(self.srmock.status, falcon.HTTP_500)
