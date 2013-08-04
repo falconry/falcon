@@ -17,6 +17,7 @@ limitations under the License.
 """
 
 import inspect
+import traceback
 
 from falcon.request import Request
 from falcon.response import Response
@@ -91,6 +92,11 @@ class API(object):
                 resp.body = ex.json()
 
         except TypeError as ex:
+            # NOTE(kgriffs): Get the stack trace up here since we can just
+            # use this convenience function which graps the last raised
+            # exception context.
+            stack_trace = traceback.format_exc()
+
             # See if the method doesn't support the given route's params, to
             # support assigning multiple routes to the same resource.
             try:
@@ -112,10 +118,13 @@ class API(object):
 
             # Does the responder require more or fewer args than given?
             if args_needed != args_given:
+                req.log_error('A responder method could not be found with the '
+                              'correct arguments.')
                 na_responder(req, resp)
             else:
                 # Error caused by something else
-                req.log_error('Responder raised TypeError: %s' % ex)
+                req.log_error('A responder method (on_*) raised TypeError. %s'
+                              % stack_trace)
                 falcon.responders.internal_server_error(req, resp)
 
         #

@@ -25,7 +25,7 @@ from falcon import util
 from falcon import request_helpers as helpers
 
 DEFAULT_ERROR_LOG_FORMAT = (u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
-                            u' {1} {2}?{3} => ')
+                            u' {1} {2}{3} => ')
 
 TRUE_STRINGS = ('true', 'True', 'yes')
 FALSE_STRINGS = ('false', 'False', 'no')
@@ -121,9 +121,15 @@ class Request(object):
 
         """
 
+        if self.query_string:
+            query_string_formatted = '?' + self.query_string
+        else:
+            query_string_formatted = ''
+
         log_line = (
             DEFAULT_ERROR_LOG_FORMAT.
-            format(datetime.now(), self.method, self.path, self.query_string)
+            format(datetime.now(), self.method, self.path,
+                   query_string_formatted)
         )
 
         if six.PY3:

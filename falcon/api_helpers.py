@@ -16,6 +16,7 @@ limitations under the License.
 
 """
 
+import inspect
 import re
 from functools import wraps
 
@@ -230,6 +231,13 @@ def _wrap_with_hooks(before, after, responder):
     return responder
 
 
+def _propagate_argspec(wrapper, responder):
+    if hasattr(responder, 'wrapped_argspec'):
+        wrapper.wrapped_argspec = responder.wrapped_argspec
+    else:
+        wrapper.wrapped_argspec = inspect.getargspec(responder)
+
+
 def _wrap_with_before(action, responder):
     """Execute the given action function before a bound responder.
 
@@ -244,6 +252,8 @@ def _wrap_with_before(action, responder):
     def do_before(req, resp, **kwargs):
         action(req, resp, kwargs)
         responder(req, resp, **kwargs)
+
+    _propagate_argspec(do_before, responder)
 
     return do_before
 
@@ -262,5 +272,7 @@ def _wrap_with_after(action, responder):
     def do_after(req, resp, **kwargs):
         responder(req, resp, **kwargs)
         action(req, resp)
+
+    _propagate_argspec(do_after, responder)
 
     return do_after
