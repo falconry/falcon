@@ -135,6 +135,7 @@ Here is a more involved example that demonstrates reading headers and query para
 
     import json
     import logging
+    from wsgiref import simple_server
 
     import falcon
 
@@ -170,7 +171,7 @@ Here is a more involved example that demonstrates reading headers and query para
 
 
     def check_media_type(req, resp, params):
-        if not req.client_accepts_json():
+        if not req.client_accepts_json:
             raise falcon.HTTPUnsupportedMediaType(
                 'Media Type not Supported',
                 'This API only supports the JSON media type.',
@@ -196,7 +197,10 @@ Here is a more involved example that demonstrates reading headers and query para
                                'be back as soon as we fight them off. '
                                'We appreciate your patience.')
 
-                raise falcon.HTTPServiceUnavailable('Service Outage', description)
+                raise falcon.HTTPServiceUnavailable(
+                  'Service Outage',
+                  description,
+                  30)
 
             resp.set_header('X-Powered-By', 'Donuts')
             resp.status = falcon.HTTP_200
@@ -236,6 +240,14 @@ Here is a more involved example that demonstrates reading headers and query para
     db = StorageEngine()
     things = ThingsResource(db)
     api.add_route('/{user_id}/things', things)
+
+    app = application = api
+
+    # Useful for debugging problems in your API; works with pdb.set_trace()
+    if __name__ == '__main__':
+      httpd = simple_server.make_server('127.0.0.1', 8000, app)
+      httpd.serve_forever()
+
 
 Contributing
 ~~~~~~~~~~~~
