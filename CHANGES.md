@@ -1,3 +1,11 @@
+# 0.1.6.post3 #
+
+## Fixed ##
+
+* Content-Length is now calculated correctly for Unicode bodies (flaper87)
+* Status code 500 is now returned for type errors raised within responders,
+even when wrapped by several hooks.
+
 # 0.1.6.post2 #
 
 ## Fixed ##
