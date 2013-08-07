@@ -127,17 +127,18 @@ def get_body(resp):
 def compile_uri_template(template):
     """Compile the given URI template string into a pattern matcher.
 
-    Currently only recognizes Level 1 URI templates, and only for the path
-    portion of the URI.
+    A URI template is a URI path with parameterized components, which are
+    Python identifiers enclosed by braces.  For example:
 
-    See also: http://tools.ietf.org/html/rfc6570
+        /path/to/{user}/directory
+
 
     Args:
-        template: A Level 1 URI template. Method responders must accept, as
-        arguments, all fields specified in the template (default '/').
+        template: A URI template. Method responders must accept, as
+            arguments, all fields specified in the template.
 
     Returns:
-        (template_field_names, template_regex)
+        (template_field_names, component_list)
 
     """
 
@@ -153,17 +154,23 @@ def compile_uri_template(template):
     if template != '/' and template.endswith('/'):
         template = template[:-1]
 
-    expression_pattern = r'{([a-zA-Z][a-zA-Z_]*)}'
+    template_field_names = set()
+    component_list = split(template)
 
-    # Get a list of field names
-    fields = set(re.findall(expression_pattern, template))
+    for component in component_list:
+        if '{' in component:
+            rst = re.match(r'{(\w+)}', component)
+            if rst is None:
+                raise ValueError('not a parameterized component: %r' %
+                                 component)
 
-    # Convert Level 1 var patterns to equivalent named regex groups
-    escaped = re.sub(r'[\.\(\)\[\]\?\*\+\^\|]', r'\\\g<0>', template)
-    pattern = re.sub(expression_pattern, r'(?P<\1>[^/]+)', escaped)
-    pattern = r'\A' + pattern + r'\Z'
+            field_name = rst.group(1)
+            if field_name in template_field_names:
+                raise ValueError('duplicate fields: ' + field_name)
 
-    return fields, re.compile(pattern, re.IGNORECASE)
+            template_field_names.add(field_name)
+
+    return template_field_names, component_list
 
 
 def create_http_method_map(resource, uri_fields, before, after):
@@ -210,6 +217,11 @@ def create_http_method_map(resource, uri_fields, before, after):
             method_map[method] = na_responder
 
     return method_map, na_responder
+
+
+def split(endpoint):
+    assert endpoint.startswith('/'), 'endpoint must be absolute'
+    return [] if endpoint == '/' else endpoint[1:].split('/')
 
 
 #-----------------------------------------------------------------------------

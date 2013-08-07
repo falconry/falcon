@@ -56,7 +56,7 @@ class API(object):
 
         """
 
-        self._routes = []
+        self._routes = {}
         self._media_type = media_type
 
         self._before = helpers.prepare_global_hooks(before)
@@ -169,8 +169,8 @@ class API(object):
             def on_post(self, req, resp):
                 pass
 
-        In addition, if the route's uri template contains field
-        expressions, any responders that desires to receive requests
+        In addition, if the route's uri template contains parameterized
+        path components, any responders that desires to receive requests
         for that route must accept arguments named after the respective
         field names defined in the template. For example, given the
         following uri template:
@@ -193,9 +193,26 @@ class API(object):
         and POST to "/widgets". In this last example, a POST to
         "/widget/5000" would result in a 405 response.
 
+        Among all the routes being added, if two routes share a same
+        prefix, the succeeding path components which are different must
+        be both literals or both parameterized with a same field name.
+        For example, a parameterized component
+
+            /dev/{name}
+
+        can not coexist with an unparameterized one,
+
+            /dev/random
+
+        or a parameterized one named differently:
+
+            /dev/{id}/stats
+
+        If two routes are same, the later added one overwrite the previously
+        added one.
+
         Args:
-            uri_template: Relative URI template. Currently only Level 1
-                templates are supported. See also RFC 6570.
+            uri_template: A /URI/path/with/{parameterized}/components
             resource: Object which represents an HTTP/REST "resource". Falcon
                 will pass "GET" requests to on_get, "PUT" requests to on_put,
                 etc. If any HTTP methods are not supported by your resource,
@@ -204,13 +221,37 @@ class API(object):
 
         """
 
-        uri_fields, path_template = helpers.compile_uri_template(uri_template)
+        uri_fields, component_list = helpers.compile_uri_template(uri_template)
         method_map, na_responder = helpers.create_http_method_map(
             resource, uri_fields, self._before, self._after)
 
-        # Insert at the head of the list in case we get duplicate
-        # adds (will cause the last one to win).
-        self._routes.insert(0, (path_template, method_map, na_responder))
+        route = self._routes
+        for component in component_list:
+            if component[0] == '{':
+                field_name = component[1:-1]
+
+                if None not in route:
+                    if len([k for k in route if k != '/']) != 0:
+                        raise LookupError('can not be parameterized')
+
+                    route[None] = component[1:-1]
+                    route['*'] = {}
+
+                elif route[None] != field_name:
+                    raise LookupError('parameterized with a different name')
+
+                route = route['*']
+
+            else:
+                if None in route:
+                    raise LookupError('already parameterized')
+
+                if component not in route:
+                    route[component] = {}
+
+                route = route[component]
+
+        route['/'] = (method_map, na_responder)
 
 #----------------------------------------------------------------------------
 # Helpers
@@ -229,21 +270,29 @@ class API(object):
 
         """
 
-        for route in self._routes:
-            path_template, method_map, na_responder = route
-            m = path_template.match(path)
-            if m:
-                params = m.groupdict()
+        params = {}
+        component_list = helpers.split(path)
+        route = self._routes
 
-                try:
-                    responder = method_map[method]
-                except KeyError:
-                    responder = falcon.responders.bad_request
+        try:
+            for component in component_list:
+                # reached a parameterized component
+                if None in route:
+                    params[route[None]] = component
+                    route = route['*']
 
-                break
-        else:
-            responder = falcon.responders.path_not_found
-            params = {}
-            na_responder = falcon.responders.create_method_not_allowed([])
+                # component literally matched
+                else:
+                    route = route[component]
 
-        return (responder, params, na_responder)
+            # full path matched
+            method_map, na_responder = route['/']
+            return (method_map[method] if method in method_map
+                    else falcon.responders.bad_request,
+                    params,
+                    na_responder)
+        
+        except KeyError:
+            return (falcon.responders.path_not_found,
+                    {},
+                    falcon.responders.create_method_not_allowed([]))
