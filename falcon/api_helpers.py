@@ -203,6 +203,14 @@ def create_http_method_map(resource, uri_fields, before, after):
 
     # Attach a resource for unsupported HTTP methods
     allowed_methods = sorted(list(method_map.keys()))
+
+    if 'OPTIONS' not in method_map:
+        # OPTIONS itself is intentionally excluded from the Allow header
+        # This default responder does not run the hooks
+        method_map['OPTIONS'] = responders.create_default_options(
+            allowed_methods)
+        allowed_methods.append('OPTIONS')
+
     na_responder = responders.create_method_not_allowed(allowed_methods)
 
     for method in HTTP_METHODS:

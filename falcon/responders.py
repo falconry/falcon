@@ -16,6 +16,7 @@ limitations under the License.
 
 """
 
+from falcon.status_codes import HTTP_204
 from falcon.status_codes import HTTP_400
 from falcon.status_codes import HTTP_404
 from falcon.status_codes import HTTP_405
@@ -45,9 +46,27 @@ def create_method_not_allowed(allowed_methods):
             returned in the Allow header.
 
     """
+    allowed = ', '.join(allowed_methods)
 
     def method_not_allowed(req, resp, **kwargs):
         resp.status = HTTP_405
-        resp.set_header('Allow', ', '.join(allowed_methods))
+        resp.set_header('Allow', allowed)
 
     return method_not_allowed
+
+
+def create_default_options(allowed_methods):
+    """Creates a default responder for the OPTIONS method
+
+    Args:
+        allowed_methods: A list of HTTP methods (uppercase) that should be
+            returned in the Allow header.
+
+    """
+    allowed = ', '.join(allowed_methods)
+
+    def on_options(req, resp, **kwargs):
+        resp.status = HTTP_204
+        resp.set_header('Allow', allowed)
+
+    return on_options

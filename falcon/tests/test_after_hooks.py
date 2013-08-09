@@ -66,6 +66,12 @@ class ZooResource(object):
         self.resp = resp
 
 
+class SingleResource(object):
+
+    def on_options(self, req, resp):
+        resp.status = falcon.HTTP_501
+
+
 class TestHooks(testing.TestBase):
 
     def before(self):
@@ -86,6 +92,11 @@ class TestHooks(testing.TestBase):
 
         self.simulate_request(self.test_route)
         self.assertEqual(b'fluffy', zoo_resource.resp.body_encoded)
+
+        # hook does not affect the default on_options
+        body = self.simulate_request(self.test_route, method='OPTIONS')
+        self.assertEqual(falcon.HTTP_204, self.srmock.status)
+        self.assertEqual([], body)
 
     def test_multiple_global_hook(self):
         self.api = falcon.API(after=[fluffiness, cuteness])
@@ -122,3 +133,18 @@ class TestHooks(testing.TestBase):
 
         self.simulate_request('/wrapped', method='PATCH')
         self.assertEqual(falcon.HTTP_405, self.srmock.status)
+
+        # decorator does not affect the default on_options
+        body = self.simulate_request('/wrapped', method='OPTIONS')
+        self.assertEqual(falcon.HTTP_204, self.srmock.status)
+        self.assertEqual([], body)
+
+    def test_customized_options(self):
+        self.api = falcon.API(after=fluffiness)
+
+        self.api.add_route('/one', SingleResource())
+
+        body = self.simulate_request('/one', method='OPTIONS')
+        self.assertEqual(falcon.HTTP_501, self.srmock.status)
+        self.assertEqual([b'fluffy'], body)
+        self.assertNotIn('Allow', self.srmock.headers_dict)
