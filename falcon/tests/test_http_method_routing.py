@@ -160,7 +160,7 @@ class TestHttpMethodRouting(testing.TestBase):
 
     def test_methods_not_allowed_complex(self):
         for method in HTTP_METHODS:
-            if method in ('GET', 'POST', 'HEAD'):
+            if method in ('GET', 'POST', 'HEAD', 'OPTIONS'):
                 continue
 
             self.resource_things.called = False
@@ -170,13 +170,13 @@ class TestHttpMethodRouting(testing.TestBase):
             self.assertEquals(self.srmock.status, falcon.HTTP_405)
 
             headers = self.srmock.headers
-            allow_header = ('Allow', 'GET, HEAD, POST')
+            allow_header = ('Allow', 'GET, HEAD, POST, OPTIONS')
 
             self.assertThat(headers, Contains(allow_header))
 
     def test_method_not_allowed_with_param(self):
         for method in HTTP_METHODS:
-            if method == 'GET' or method == 'PUT':
+            if method in ('GET', 'PUT', 'OPTIONS'):
                 continue
 
             self.resource_get_with_faulty_put.called = False
@@ -187,9 +187,18 @@ class TestHttpMethodRouting(testing.TestBase):
             self.assertEquals(self.srmock.status, falcon.HTTP_405)
 
             headers = self.srmock.headers
-            allow_header = ('Allow', 'GET, PUT')
+            allow_header = ('Allow', 'GET, PUT, OPTIONS')
 
             self.assertThat(headers, Contains(allow_header))
+
+    def test_default_on_options(self):
+        self.simulate_request('/things/84/stuff/65', method='OPTIONS')
+        self.assertEquals(self.srmock.status, falcon.HTTP_204)
+
+        headers = self.srmock.headers
+        allow_header = ('Allow', 'GET, HEAD, POST')
+
+        self.assertThat(headers, Contains(allow_header))
 
     def test_unexpected_type_error(self):
         # Suppress logging
