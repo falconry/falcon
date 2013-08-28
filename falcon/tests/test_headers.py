@@ -206,6 +206,14 @@ class TestHeaders(testing.TestBase):
             actual_value = self.resource.req.get_header(name)
             self.assertEquals(actual_value, expected_value)
 
+        self.simulate_request(self.test_route,
+                              headers=self.resource.req.headers)
+
+        # Compare the request HTTP headers with the original headers
+        for name, expected_value in req_headers.items():
+            actual_value = self.resource.req.get_header(name)
+            self.assertEquals(actual_value, expected_value)
+
     def test_passthrough_resp_headers(self):
         self.simulate_request(self.test_route)
 
