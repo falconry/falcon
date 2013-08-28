@@ -239,10 +239,12 @@ class API(object):
         Args:
             path: URI path to search (without query string)
             method: HTTP method (uppercase) requested
+
         Returns:
-            A 2-member tuple, containing a responder callable and a dict
-            containing parsed path fields, if any were specified in
-            the matching route's URI template
+            A 3-member tuple, containing a responder callable, a dict
+            containing parsed path fields (if any were specified in
+            the matching route's URI template), and a reference to
+            the "method not allowed" responder for the resource.
 
         """
 
