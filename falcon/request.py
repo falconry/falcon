@@ -344,6 +344,22 @@ class Request(object):
         """Value of the User-Agent string, or None if missing."""
         return self._get_header_by_wsgi_name('USER_AGENT')
 
+    @property
+    def headers(self):
+        """Get HTTP headers
+
+        Build a temporary dictionary of dash-separated HTTP headers,
+        which can be used as a whole, like, to perform an HTTP request.
+
+        If you want to lookup a header, please use `get_header` instead.
+
+        Returns:
+            A dictionary of HTTP headers.
+
+        """
+        return dict((k.lower().replace('_', '-'), v)
+                    for k, v in self._headers.items())
+
     def get_header(self, name, required=False):
         """Return a header value as a string
 
