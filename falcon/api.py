@@ -37,7 +37,8 @@ class API(object):
 
     """
 
-    __slots__ = ('_after', '_before', '_media_type', '_routes')
+    __slots__ = ('_after', '_before', '_media_type', '_routes',
+                 '_default_route')
 
     def __init__(self, media_type=DEFAULT_MEDIA_TYPE, before=None, after=None):
         """Initialize a new Falcon API instances
@@ -57,6 +58,7 @@ class API(object):
         """
 
         self._routes = []
+        self._default_route = None
         self._media_type = media_type
 
         self._before = helpers.prepare_global_hooks(before)
@@ -212,6 +214,21 @@ class API(object):
         # adds (will cause the last one to win).
         self._routes.insert(0, (path_template, method_map, na_responder))
 
+    def set_default_route(self, default_resource):
+        """Route all the unrouted requests to a default resource
+
+        Args:
+            default_resource: Object which works like an HTTP/REST resource.
+                Falcon will pass "GET" requests to on_get, "PUT" requests to
+                on_put, etc. If you want to exclude some HTTP method from the
+                default routing, just simply don't define the corresponding
+                request handlers.
+
+        """
+
+        self._default_route = helpers.create_http_method_map(
+            default_resource, set(), self._before, self._after)
+
 #----------------------------------------------------------------------------
 # Helpers
 #----------------------------------------------------------------------------
@@ -242,8 +259,18 @@ class API(object):
 
                 break
         else:
-            responder = falcon.responders.path_not_found
             params = {}
-            na_responder = falcon.responders.create_method_not_allowed([])
+
+            if self._default_route is not None:
+                method_map, na_responder = self._default_route
+
+                try:
+                    responder = method_map[method]
+                except KeyError:
+                    responder = falcon.responders.bad_request
+
+            else:
+                responder = falcon.responders.path_not_found
+                na_responder = falcon.responders.create_method_not_allowed([])
 
         return (responder, params, na_responder)
