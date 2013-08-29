@@ -19,7 +19,7 @@ limitations under the License.
 import re
 
 
-QS_PATTERN = re.compile(r'(?<![0-9])([a-zA-Z][a-zA-Z_0-9\-]*)=([^&]+)')
+QS_PATTERN = re.compile(r'(?<![0-9])([a-zA-Z][a-zA-Z_0-9\-.]*)=([^&]+)')
 """Match query string fields that have names which start with a letter."""
 
 

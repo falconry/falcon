@@ -47,7 +47,7 @@ class TestQueryParams(testing.TestBase):
 
     def test_allowed_names(self):
         query_string = ('p=0&p1=23&2p=foo&some-thing=that&blank=&some_thing=x&'
-                        '-bogus=foo')
+                        '-bogus=foo&more.things=blah')
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
@@ -58,6 +58,7 @@ class TestQueryParams(testing.TestBase):
         self.assertIs(req.get_param('blank'), None)
         self.assertEquals(req.get_param('some_thing'), 'x')
         self.assertIs(req.get_param('-bogus'), None)
+        self.assertEquals(req.get_param('more.things'), 'blah')
 
     def test_required(self):
         query_string = ''
