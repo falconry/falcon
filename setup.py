@@ -15,7 +15,7 @@ PYPY = True
 with_cython = False
 try:
     sys.pypy_version_info
-except NameError:
+except AttributeError:
     PYPY = False
 
 if not PYPY:
