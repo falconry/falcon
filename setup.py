@@ -10,9 +10,8 @@ REQUIRES = ['six']
 if sys.version_info < (2, 7):
     REQUIRES.append('ordereddict')
 
-#if 'develop' not in sys.argv
 PYPY = True
-with_cython = False
+CYTHON = False
 try:
     sys.pypy_version_info
 except AttributeError:
@@ -21,13 +20,13 @@ except AttributeError:
 if not PYPY:
     try:
         from Cython.Distutils import build_ext
-        with_cython = True
+        CYTHON = True
     except ImportError:
         print('\nWARNING: Cython not installed. '
               'Falcon modules WILL NOT be compiled with Cython.\n')
-        with_cython = False
+        CYTHON = False
 
-if with_cython:
+if CYTHON:
     ext_names = (
         'api',
         'api_helpers',
