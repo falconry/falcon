@@ -2,7 +2,7 @@ import falcon
 import falcon.testing as testing
 
 
-class TestQueryParams(testing.TestBase):
+class _TestQueryParams(testing.TestBase):
 
     def before(self):
         self.resource = testing.TestResource()
@@ -218,3 +218,13 @@ class TestQueryParams(testing.TestBase):
                           ['red', 'green', ''])
         self.assertEquals(req.get_param('limit'), '1')
         self.assertIs(req.get_param('pickle'), None)
+
+class PostQueryParams(_TestQueryParams):
+    def simulate_request(self, path, query_string):
+        headers = {"Content-Type": "application/x-www-form-urlencoded"}
+        super(PostQueryParams, self).simulate_request(path, body=query_string,
+                                                      headers=headers)
+
+class GetQueryParams(_TestQueryParams):
+    def simulate_request(self, path, query_string):
+        super(GetQueryParams, self).simulate_request(path, query_string=query_string)
