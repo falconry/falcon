@@ -100,13 +100,18 @@ class Request(object):
         else:
             self.query_string = ''
 
+        self._headers = helpers.parse_headers(env)
+
         # PERF: Don't parse it if we don't have to!
         if self.query_string:
             self._params = helpers.parse_query_string(self.query_string)
         else:
             self._params = {}
 
-        self._headers = helpers.parse_headers(env)
+        if (self.content_type and
+            self.content_type.split(';')[0] == 'application/x-www-form-urlencoded'):
+            body = self.stream.read(self.content_length)
+            self._params.update(helpers.parse_query_string(body))
 
     def log_error(self, message):  # pragma: no cover
         """Log an error to wsgi.error
