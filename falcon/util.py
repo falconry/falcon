@@ -63,7 +63,8 @@ def to_query_str(params):
     Args:
         params: dict of simple key-value types, where key is a string and
             value is a string or something that can be converted into a
-            string.
+            string. If value is a list, it will be converted to a comma-
+            delimited string (e.g., thing=1,2,3)
 
     Returns:
         A URI query string starting with '?', or and empty string if there
@@ -81,6 +82,8 @@ def to_query_str(params):
             v = 'true'
         elif v is False:
             v = 'false'
+        elif isinstance(v, list):
+            v = ','.join([str(i) for i in v])
         else:
             v = str(v)
 
