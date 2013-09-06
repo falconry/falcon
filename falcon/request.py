@@ -18,6 +18,7 @@ limitations under the License.
 
 from datetime import datetime
 
+import mimeparse
 import six
 
 from falcon.exceptions import HTTPBadRequest
@@ -29,6 +30,8 @@ DEFAULT_ERROR_LOG_FORMAT = (u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
 
 TRUE_STRINGS = ('true', 'True', 'yes')
 FALSE_STRINGS = ('false', 'False', 'no')
+
+MEDIA_TYPES_XML = ('application/xml', 'text/xml')
 
 
 class InvalidHeaderValueError(HTTPBadRequest):
@@ -149,19 +152,73 @@ class Request(object):
     @property
     def client_accepts_xml(self):
         """Return True if the Accept header indicates XML support."""
-        return self.client_accepts('application/xml')
+        return self.client_accepts(MEDIA_TYPES_XML)
 
-    def client_accepts(self, media_type):
-        """Return True if the Accept header indicates a media type support."""
+    def client_accepts(self, media_types):
+        """Returns the client's preferred media type.
 
-        accept = self._get_header_by_wsgi_name('ACCEPT')
-        return ((accept is not None) and
-                ((media_type in accept) or ('*/*' in accept)))
+        Args:
+            media_types: One or more media types. May be a single string (
+                of type str), or an iterable collection of strings.
+
+        Returns:
+            True IFF the client has indicated in the Accept header that
+            they accept at least one of the specified media types.
+        """
+
+        accept = self.accept
+
+        # PERF(kgriffs): Usually the following will be true, so
+        # try it first.
+        if isinstance(media_types, str):
+            if (accept == media_types) or (accept == '*/*'):
+                return accept
+
+            # NOTE(kgriffs): Convert to a collection to be compatible
+            # with mimeparse.best_matchapplication/xhtml+xml
+            media_types = (media_types,)
+
+        # NOTE(kgriffs): Heuristic to quickly check another common case. If
+        # accept is a single type, and it is found in media_types verbatim,
+        # return the media type immediately.
+        elif accept in media_types:
+            return accept
+
+        # Fall back to full-blown parsing
+        preferred_type = self.client_prefers(media_types)
+        return preferred_type is not None
+
+    def client_prefers(self, media_types):
+        """Returns the client's preferred media type given several choices.
+
+        Args:
+            media_types: One or more media types from which to choose the
+                client's preferred type. This value MUST be an iterable
+                collection of strings.
+
+        Returns:
+            The client's preferred media type, based on the Accept header,
+            or None if the client does not accept any of the specified
+            types.
+        """
+
+        try:
+            # NOTE(kgriffs): best_match will return '' if no match is found
+            preferred_type = mimeparse.best_match(media_types, self.accept)
+        except ValueError:
+            # Value for the accept header was not formatted correctly
+            preferred_type = ''
+
+        return (preferred_type if preferred_type else None)
 
     @property
     def accept(self):
-        """Value of the Accept header, or None if not found."""
-        return self._get_header_by_wsgi_name('ACCEPT')
+        """Value of the Accept header, or */* if not found per RFC."""
+        accept = self._get_header_by_wsgi_name('ACCEPT')
+
+        # NOTE(kgriffs): Per RFC, missing accept header is
+        # equivalent to '*/*'
+        return '*/*' if accept is None else accept
 
     @property
     def app(self):
