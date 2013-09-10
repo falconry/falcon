@@ -549,7 +549,9 @@ class Request(object):
             name: Parameter name, case-sensitive (e.g., 'limit')
             transform: An optional transform function that takes as input
                 each element in the list as a string and outputs a transformed
-                element for inclusion in the list that will be returned.
+                element for inclusion in the list that will be returned. For
+                example, passing the int function will transform list items
+                into numbers.
             required: Set to True to raise HTTPBadRequest instead of returning
                 gracefully when the parameter is not found or is not an
                 integer (default False)
@@ -558,21 +560,43 @@ class Request(object):
 
         Returns:
             The value of the param if it is found. Otherwise, returns None
-            unless required is True.
+            unless required is True. for partial lists, None will be returned
+            as a placeholder. For example:
+
+                things=1,,3
+
+            would be returned as:
+
+                ['1', None, '3']
+
+            while this:
+
+                things=,,,
+
+            would just be retured as:
+
+                [None, None, None, None]
 
         Raises
             HTTPBadRequest: The param was not found in the request, but was
                 required.
-
         """
 
         # PERF: Use if..in since it is a good all-around performer; we don't
         #       know how likely params are to be specified by clients.
         if name in self._params:
             items = self._params[name].split(',')
-            if transform is not None:
+
+            # PERF(kgriffs): Use if-else rather than a DRY approach
+            # that sets transform to a passthrough function; avoids
+            # function calling overhead.
+            if transform is None:
+                items = [i if i != '' else None
+                         for i in items]
+            else:
                 try:
-                    items = [transform(x) for x in items]
+                    items = [transform(i) if i != '' else None
+                             for i in items]
                 except ValueError:
                     desc = ('The value of the "' + name + '" query parameter '
                             'is not formatted correctly.')
