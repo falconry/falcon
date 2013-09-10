@@ -181,7 +181,9 @@ class TestQueryParams(testing.TestBase):
         self.assertEquals(store['echo'], True)
 
     def test_list_type(self):
-        query_string = 'colors=red,green,blue&limit=1'
+        query_string = ('colors=red,green,blue&limit=1'
+                        '&list-ish1=f,,x&list-ish2=,0&list-ish3=a,,,b'
+                        '&empty1=&empty2=,&empty3=,,')
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
@@ -191,12 +193,27 @@ class TestQueryParams(testing.TestBase):
         self.assertEquals(req.get_param_as_list('limit'), ['1'])
         self.assertIs(req.get_param_as_list('marker'), None)
 
+        self.assertEquals(req.get_param_as_list('empty1'), None)
+        self.assertEquals(req.get_param_as_list('empty2'), [None, None])
+        self.assertEquals(req.get_param_as_list('empty3'), [None, None, None])
+
+        self.assertEquals(req.get_param_as_list('list-ish1'),
+                          ['f', None, 'x'])
+
+        # Ensure that '0' doesn't get translated to None
+        self.assertEquals(req.get_param_as_list('list-ish2'),
+                          [None, '0'])
+
+        # Ensure that '0' doesn't get translated to None
+        self.assertEquals(req.get_param_as_list('list-ish3'),
+                          ['a', None, None, 'b'])
+
         store = {}
         self.assertEquals(req.get_param_as_list('limit', store=store), ['1'])
         self.assertEquals(store['limit'], ['1'])
 
     def test_list_transformer(self):
-        query_string = 'coord=1.4,13,15.1&limit=100'
+        query_string = 'coord=1.4,13,15.1&limit=100&things=4,,1'
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
@@ -206,15 +223,13 @@ class TestQueryParams(testing.TestBase):
         actual = req.get_param_as_list('coord', transform=float)
         self.assertEquals(actual, expected)
 
+        expected = ['4', None, '1']
+        actual = req.get_param_as_list('things', transform=str)
+        self.assertEquals(actual, expected)
+
+        expected = [4, None, 1]
+        actual = req.get_param_as_list('things', transform=int)
+        self.assertEquals(actual, expected)
+
         self.assertRaises(falcon.HTTPBadRequest,
                           req.get_param_as_list, 'coord', transform=int)
-
-    def test_bogus_input(self):
-        query_string = 'colors=red,green,&limit=1&pickle'
-        self.simulate_request('/', query_string=query_string)
-
-        req = self.resource.req
-        self.assertEquals(req.get_param_as_list('colors'),
-                          ['red', 'green', ''])
-        self.assertEquals(req.get_param('limit'), '1')
-        self.assertIs(req.get_param('pickle'), None)
