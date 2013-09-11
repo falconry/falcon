@@ -175,7 +175,7 @@ class TestHTTPError(testing.TestBase):
 
     def test_client_does_not_accept_anything(self):
         headers = {
-            'Accept': None,
+            'Accept': '45087gigo;;;;',
             'X-Error-Title': 'Storage service down',
             'X-Error-Description': ('The configured storage service is not '
                                     'responding to requests. Please contact '

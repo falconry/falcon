@@ -28,9 +28,9 @@ many concurrent requests. Falcon processes requests `several times
 faster <http://falconframework.org/#Metrics>`__ than other popular web
 frameworks.
 
-**Light.** Only the essentials are included, with *six* being the only
-dependency outside the standard library. We work to keep the code lean,
-making Falcon easier to test, optimize, and deploy.
+**Light.** Only the essentials are included, with *six* and *mimeparse*
+being the only dependencies outside the standard library. We work to keep
+the code lean, making Falcon easier to test, optimize, and deploy.
 
 **Flexible.** Falcon can be deployed in a variety of ways, depending on
 your needs. The framework speaks WSGI, and works great with `Python 2.6

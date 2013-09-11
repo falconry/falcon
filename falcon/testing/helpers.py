@@ -91,9 +91,7 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
         'REQUEST_METHOD': method,
         'PATH_INFO': path,
         'QUERY_STRING': query_string,
-        'HTTP_ACCEPT': '*/*',
-        'HTTP_USER_AGENT': ('curl/7.24.0 (x86_64-apple-darwin12.0) '
-                            'libcurl/7.24.0 OpenSSL/0.9.8r zlib/1.2.5'),
+        'HTTP_USER_AGENT': 'curl/7.24.0 (x86_64-apple-darwin12.0)',
         'REMOTE_PORT': '65133',
         'RAW_URI': '/',
         'REMOTE_ADDR': '127.0.0.1',
@@ -130,12 +128,6 @@ def _add_headers_to_environ(env, headers):
 
     for name, value in headers.items():
         name = name.upper().replace('-', '_')
-
-        if value is None:
-            if name == 'ACCEPT' or name == 'USER_AGENT':
-                del env['HTTP_' + name]
-
-            continue
 
         if name == 'CONTENT_TYPE':
             env[name] = value.strip()

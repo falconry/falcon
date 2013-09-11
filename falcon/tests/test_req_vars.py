@@ -87,25 +87,106 @@ class TestReqVars(testing.TestBase):
         headers = {'Accept': 'application/xml'}
         req = Request(testing.create_environ(headers=headers))
         self.assertTrue(req.client_accepts('application/xml'))
+        self.assertTrue(req.client_accepts(['application/xml']))
 
         headers = {'Accept': '*/*'}
         req = Request(testing.create_environ(headers=headers))
+        self.assertTrue(req.client_accepts(['application/xml']))
+
+        headers = {}  # NOTE(kgriffs): Equivalent to '*/*' per RFC
+        req = Request(testing.create_environ(headers=headers))
         self.assertTrue(req.client_accepts('application/xml'))
+        self.assertTrue(req.client_accepts(['application/xml']))
 
         headers = {'Accept': 'application/json'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertFalse(req.client_accepts('application/xml'))
+        self.assertFalse(req.client_accepts(['application/xml']))
 
         headers = {'Accept': 'application/xm'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertFalse(req.client_accepts('application/xml'))
+        self.assertFalse(req.client_accepts(['application/xml']))
+
+        headers = {'Accept': 'application/*'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertTrue(req.client_accepts(['application/json']))
+        self.assertTrue(req.client_accepts(['application/xml']))
+        self.assertTrue(req.client_accepts(['application/json',
+                                            'application/xml']))
+
+        headers = {'Accept': 'text/*'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertTrue(req.client_accepts('text/plain'))
+        self.assertTrue(req.client_accepts('text/csv'))
+        self.assertFalse(req.client_accepts('application/xhtml+xml'))
+
+        headers = {'Accept': 'text/*, application/xhtml+xml; q=0.0'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertTrue(req.client_accepts('text/plain'))
+        self.assertTrue(req.client_accepts('text/csv'))
+        self.assertTrue(req.client_accepts('application/xhtml+xml'))
+        self.assertTrue(req.client_accepts(('application/xhtml+xml',
+                                            'text/plain',
+                                            'text/csv')))
+
+        headers = {'Accept': 'text/*; q=0.1, application/xhtml+xml; q=0.5'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertTrue(req.client_accepts('text/plain'))
+
+        headers = {'Accept': 'text/*,         application/*'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertTrue(req.client_accepts('text/plain'))
+        self.assertTrue(req.client_accepts('application/json'))
+
+        headers = {'Accept': 'text/*,application/*'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertTrue(req.client_accepts('text/plain'))
+        self.assertTrue(req.client_accepts('application/json'))
 
     def test_client_accepts_props(self):
         headers = {'Accept': 'application/xml'}
         req = Request(testing.create_environ(headers=headers))
-
         self.assertTrue(req.client_accepts_xml)
         self.assertFalse(req.client_accepts_json)
+
+        headers = {'Accept': 'text/xml'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertTrue(req.client_accepts_xml)
+
+        headers = {'Accept': 'text/*'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertTrue(req.client_accepts_xml)
+
+        headers = {'Accept': 'text/xml, application/xml'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertTrue(req.client_accepts_xml)
+
+        headers = {'Accept': 'application/json'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertFalse(req.client_accepts_xml)
+        self.assertTrue(req.client_accepts_json)
+
+        headers = {'Accept': 'application/json, application/xml'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertTrue(req.client_accepts_xml)
+        self.assertTrue(req.client_accepts_json)
+
+    def test_client_prefers(self):
+        headers = {'Accept': 'application/xml'}
+        req = Request(testing.create_environ(headers=headers))
+        preferred_type = req.client_prefers(['application/xml'])
+        self.assertEquals(preferred_type, 'application/xml')
+
+        headers = {'Accept': '*/*'}
+        preferred_type = req.client_prefers(('application/xml',
+                                             'application/json'))
+
+        # NOTE(kgriffs): If client doesn't care, "preferr" the first one
+        self.assertEquals(preferred_type, 'application/xml')
+
+        headers = {'Accept': 'text/*; q=0.1, application/xhtml+xml; q=0.5'}
+        req = Request(testing.create_environ(headers=headers))
+        preferred_type = req.client_prefers(['application/xhtml+xml'])
+        self.assertEquals(preferred_type, 'application/xhtml+xml')
 
     def test_range(self):
         headers = {'Range': '10-'}
@@ -124,8 +205,7 @@ class TestReqVars(testing.TestBase):
         req = Request(testing.create_environ(headers=headers))
         self.assertIs(req.range, None)
 
-        headers = {'Range': None}
-        req = Request(testing.create_environ(headers=headers))
+        req = Request(testing.create_environ())
         self.assertIs(req.range, None)
 
     def test_range_invalid(self):
@@ -230,9 +310,11 @@ class TestReqVars(testing.TestBase):
         date = testing.httpnow()
         hash = 'fa0d1a60ef6616bb28038515c8ea4cb2'
         auth = 'HMAC_SHA1 c590afa9bb59191ffab30f223791e82d3fd3e3af'
-        agent = 'curl/7.24.0 (x86_64-apple-darwin12.0)'
+        agent = 'testing/1.0.1'
+        default_agent = 'curl/7.24.0 (x86_64-apple-darwin12.0)'
 
-        self._test_attribute_header('Accept', 'x-falcon', 'accept')
+        self._test_attribute_header('Accept', 'x-falcon', 'accept',
+                                    default='*/*')
 
         self._test_attribute_header('Authorization', auth, 'auth')
 
@@ -248,7 +330,8 @@ class TestReqVars(testing.TestBase):
         self._test_attribute_header('If-Unmodified-Since', date,
                                     'if_unmodified_since')
 
-        self._test_attribute_header('User-Agent', agent, 'user_agent')
+        self._test_attribute_header('User-Agent', agent, 'user_agent',
+                                    default=default_agent)
 
     def test_method(self):
         self.assertEquals(self.req.method, 'GET')
@@ -270,11 +353,10 @@ class TestReqVars(testing.TestBase):
     # Helpers
     # -------------------------------------------------------------------------
 
-    def _test_attribute_header(self, name, value, attr):
+    def _test_attribute_header(self, name, value, attr, default=None):
         headers = {name: value}
         req = Request(testing.create_environ(headers=headers))
         self.assertEquals(getattr(req, attr), value)
 
-        headers = {name: None}
-        req = Request(testing.create_environ(headers=headers))
-        self.assertEqual(getattr(req, attr), None)
+        req = Request(testing.create_environ())
+        self.assertEqual(getattr(req, attr), default)
