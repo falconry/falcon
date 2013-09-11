@@ -31,8 +31,6 @@ DEFAULT_ERROR_LOG_FORMAT = (u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
 TRUE_STRINGS = ('true', 'True', 'yes')
 FALSE_STRINGS = ('false', 'False', 'no')
 
-MEDIA_TYPES_XML = ('application/xml', 'text/xml')
-
 
 class InvalidHeaderValueError(HTTPBadRequest):
     def __init__(self, msg, href=None, href_text=None):
@@ -152,14 +150,13 @@ class Request(object):
     @property
     def client_accepts_xml(self):
         """Return True if the Accept header indicates XML support."""
-        return self.client_accepts(MEDIA_TYPES_XML)
+        return self.client_accepts('application/xml')
 
-    def client_accepts(self, media_types):
+    def client_accepts(self, media_type):
         """Returns the client's preferred media type.
 
         Args:
-            media_types: One or more media types. May be a single string (
-                of type str), or an iterable collection of strings.
+            media_type: Media type to check
 
         Returns:
             True IFF the client has indicated in the Accept header that
@@ -170,23 +167,14 @@ class Request(object):
 
         # PERF(kgriffs): Usually the following will be true, so
         # try it first.
-        if isinstance(media_types, str):
-            if (accept == media_types) or (accept == '*/*'):
-                return accept
-
-            # NOTE(kgriffs): Convert to a collection to be compatible
-            # with mimeparse.best_matchapplication/xhtml+xml
-            media_types = (media_types,)
-
-        # NOTE(kgriffs): Heuristic to quickly check another common case. If
-        # accept is a single type, and it is found in media_types verbatim,
-        # return the media type immediately.
-        elif accept in media_types:
-            return accept
+        if (accept == media_type) or (accept == '*/*'):
+            return True
 
         # Fall back to full-blown parsing
-        preferred_type = self.client_prefers(media_types)
-        return preferred_type is not None
+        try:
+            return mimeparse.quality(media_type, accept) != 0.0
+        except ValueError:
+            return False
 
     def client_prefers(self, media_types):
         """Returns the client's preferred media type given several choices.
