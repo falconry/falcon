@@ -6,7 +6,9 @@ from setuptools import setup, find_packages, Extension
 VERSION = imp.load_source('version', path.join('.', 'falcon', 'version.py'))
 VERSION = VERSION.__version__
 
-REQUIRES = ['six']
+# NOTE(kgriffs): python-mimeparse is newer than mimeparse, supports Py3
+# TODO(kgriffs): Fork and optimize/modernize python-mimeparse
+REQUIRES = ['six', 'python-mimeparse']
 if sys.version_info < (2, 7):
     REQUIRES.append('ordereddict')
 
