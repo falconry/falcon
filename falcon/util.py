@@ -83,7 +83,9 @@ def to_query_str(params):
         elif v is False:
             v = 'false'
         elif isinstance(v, list):
-            v = ','.join([str(i) for i in v])
+            # PERF(kgriffs): map is faster than list comprehension in
+            # py26 and py33. No significant different in py27
+            v = ','.join(map(str, v))
         else:
             v = str(v)
 
