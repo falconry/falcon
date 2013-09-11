@@ -34,6 +34,18 @@ class TestFalconUtils(testtools.TestCase):
             falcon.to_query_str({'limit': 10}),
             '?limit=10')
 
+        self.assertEquals(
+            falcon.to_query_str({'things': [1, 2, 3]}),
+            '?things=1,2,3')
+
+        self.assertEquals(
+            falcon.to_query_str({'things': ['a']}),
+            '?things=a')
+
+        self.assertEquals(
+            falcon.to_query_str({'things': ['a', 'b']}),
+            '?things=a,b')
+
     def test_pack_query_params_several(self):
         garbage_in = {
             'limit': 17,
