@@ -11,7 +11,7 @@ def application(environ, start_response):
 
     body += '}\n\n'
 
-    return [body]
+    return [body.encode('utf-8')]
 
 app = application
 
