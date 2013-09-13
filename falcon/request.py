@@ -18,6 +18,18 @@ limitations under the License.
 
 from datetime import datetime
 
+try:
+    # NOTE(kgrifs): In Python 2.6 and 2.7, socket._fileobject is a
+    # standard way of exposing a socket as a file-like object, and
+    # is used by wsgiref for wsgi.input.
+    import socket
+    NativeStream = socket._fileobject
+except AttributeError:  # pragma nocover
+    # NOTE(kgriffs): In Python 3.3, wsgiref implements wsgi.input
+    # using _io.BufferedReader which is an alias of io.BufferedReader
+    import io
+    NativeStream = io.BufferedReader
+
 import mimeparse
 import six
 
@@ -81,7 +93,6 @@ class Request(object):
 
         self._wsgierrors = env['wsgi.errors']
         self.stream = env['wsgi.input']
-
         self.method = env['REQUEST_METHOD']
 
         # Normalize path
@@ -109,6 +120,14 @@ class Request(object):
 
         self._headers = helpers.parse_headers(env)
 
+        # NOTE(kgriffs): Wrap wsgi.input if needed to make read() more robust,
+        # normalizing semantics between, e.g., gunicorn and wsgiref.
+        if isinstance(self.stream, NativeStream):  # pragma: nocover
+            # NOTE(kgriffs): coverage can't detect that this *is* actually
+            # covered since the test that does so uses multiprocessing.
+            self.stream = helpers.Body(self.stream, self.content_length)
+
+    # TODO(kgriffs): Use the nocover pragma only for the six.PY3 if..else
     def log_error(self, message):  # pragma: no cover
         """Log an error to wsgi.error
 
