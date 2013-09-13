@@ -1,3 +1,34 @@
+# 0.1.7 #
+
+## Breaking Changes ##
+
+* req.get_params_as_list now inserts None as a placeholder for missing
+elements, and returns None all by itself if the param is present in the
+query string, but has an empty string as its value. (kgriffs)
+
+## Fixed ##
+
+* req.client_accepts does not handle media type ranges. (kgriffs)
+* req.stream semantics must be special-cased based on WSGI server. (kgriffs)
+
+## New ##
+
+* A default (catch-all) route can now be set, to provide a resource for
+handling requests that would otherwise result in a 404 status code being
+returned to the client. This feature is esp. useful when implementing
+reverse proxies with Falcon. See also falcon.API.set_default_route(). (lichray)
+* OPTIONS method requests are now automatically handled based on the
+responders defined by the resources attached to the target route. (lichray)
+* Responders can now use the req.headers property to obtain a copy of
+all headers received from the client. Useful for custom header parsing
+and/or request forwarding. (lichray)
+* Query param names may now contain dots. (sorenh)
+* Falcon no longer warns about Cython when installing under PyPy. (cabrera)
+* A client's preferred media type can be determined via a new method,
+req.client_prefers(). (kgriffs)
+* util.to_query_str now recognizes lists, and serializes them as a comma-
+delimited list, passing each element through str(). (kgriffs)
+
 # 0.1.6.post3 #
 
 ## Fixed ##
