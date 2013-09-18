@@ -214,6 +214,50 @@ class API(object):
         # adds (will cause the last one to win).
         self._routes.insert(0, (path_template, method_map, na_responder))
 
+    def add_proxy(self, uri_template, responder, allow=None):
+        """Associate a URI path with one responder
+
+        A proxy is one single callable object, aka responder, which
+        handles all the HTTP methods the URI allows. The allowed methods
+        can be specified via the `allow` parameter in a list of method
+        names. For example,
+
+            api.add_proxy('/lang/{opts}', LangOpts, allow=['GET, PUT'])
+
+        , where `LangOpts` is the responder defined as a function
+
+            def LangOpts(req, resp, opts):
+                // ...
+
+        If the `allow` parameter is left out, all HTTP methods are
+        accepted; otherwise, if a client requests an unsupported method,
+        Falcon will respond with "405 Method not allowed".
+
+        The `req` and `resp` parameters above receive request and response
+        objects, respectively. In addition, if the route's uri template
+        contains field expressions, like '{opts}' in the example, any
+        responders that desires to receive requests for that route must
+        accept arguments named after the respective field names defined in
+        the template.
+
+        The "before" and the "after" hooks do not run along with proxies.
+
+        Args:
+            uri_template: Relative URI template. Currently only Level 1
+                templates are supported. See also RFC 6570.
+            responder: Callable object which represents an HTTP/REST
+                "resource" and accepts multiple HTTP methods.
+            allow: A list of allowed HTTP methods; defaults to allowing
+                any methods.
+
+        """
+
+        uri_fields, path_template = helpers.compile_uri_template(uri_template)
+        method_map, na_responder = helpers.create_http_method_proxy(
+            responder, allow, uri_fields)
+
+        self._routes.insert(0, (path_template, method_map, na_responder))
+
     def set_default_route(self, default_resource):
         """Route all the unrouted requests to a default resource
 

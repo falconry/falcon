@@ -220,6 +220,33 @@ def create_http_method_map(resource, uri_fields, before, after):
     return method_map, na_responder
 
 
+def create_http_method_proxy(responder, allow, uri_fields):
+    """Maps HTTP methods (such as GET and POST) to a responder
+
+    Args:
+        responder: A callable object.
+        allow: A list of allowed HTTP methods. Pass None to allow
+            any methods.
+        uri_fields: A set of field names from the route's URI template that
+            a responder must support in order to avoid "method not allowed".
+
+    Returns:
+        A tuple containing a dict mapping HTTP methods to the responder, and
+        a method-not-allowed responder.
+
+    """
+
+    allowed_methods = (sorted(allow) if allow is not None
+                       else HTTP_METHODS)
+    na_responder = responders.create_method_not_allowed(allowed_methods)
+    method_map = dict((method,
+                       responder if method in allowed_methods
+                       else na_responder)
+                      for method in HTTP_METHODS)
+
+    return method_map, na_responder
+
+
 #-----------------------------------------------------------------------------
 # Helpers
 #-----------------------------------------------------------------------------
