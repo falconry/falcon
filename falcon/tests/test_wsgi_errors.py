@@ -27,7 +27,8 @@ class TestWSGIError(testing.TestBase):
         if six.PY3:
             # Simulate Gunicorn's behavior under Python 3
             self.wsgierrors = io.TextIOWrapper(self.wsgierrors_buffer,
-                                               line_buffering=True)
+                                               line_buffering=True,
+                                               encoding='utf-8')
         else:
             # WSGI servers typically present an open file object,
             # with undefined encoding, so do the encoding manually.
