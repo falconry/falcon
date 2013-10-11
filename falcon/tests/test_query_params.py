@@ -45,6 +45,14 @@ class TestQueryParams(testing.TestBase):
         self.assertEquals(store['marker'], 'deadbeef')
         self.assertEquals(store['limit'], '25')
 
+    def test_percent_encoded(self):
+        query_string = 'id=23%2c42&q=%e8%b1%86+%e7%93%a3'
+        self.simulate_request('/', query_string=query_string)
+
+        req = self.resource.req
+        self.assertEquals(req.get_param('id'), u'23,42')
+        self.assertEquals(req.get_param('q'), u'\u8c46 \u74e3')
+
     def test_allowed_names(self):
         query_string = ('p=0&p1=23&2p=foo&some-thing=that&blank=&some_thing=x&'
                         '-bogus=foo&more.things=blah')
