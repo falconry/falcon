@@ -166,7 +166,8 @@ def compile_uri_template(template):
     return fields, re.compile(pattern, re.IGNORECASE)
 
 
-def create_http_method_map(resource, uri_fields, before, after):
+def create_http_method_map(resource, uri_fields, before, after,
+                           map_uri_fields=False):
     """Maps HTTP methods (such as GET and POST) to methods of resource object
 
     Args:
@@ -180,6 +181,10 @@ def create_http_method_map(resource, uri_fields, before, after):
             on_* responder defined by the resource.
         after: An action hook or list of hooks to be called after each on_*
             responder defined by the resource.
+        map_url_fields: If set to True, map a route to a responder within a
+            resource based on the uri fields in the route.  A route of
+            '/test/{user}/{show}' would translate to a get method of
+            'on_get_user_show(self, req, resp, user, show)'.
 
     Returns:
         A tuple containing a dict mapping HTTP methods to responders, and
@@ -190,8 +195,19 @@ def create_http_method_map(resource, uri_fields, before, after):
     method_map = {}
 
     for method in HTTP_METHODS:
+        field_string = ''
+        if map_uri_fields:
+            try:
+                field_string = "_".join(uri_fields)
+            except:
+                pass
+
         try:
-            responder = getattr(resource, 'on_' + method.lower())
+            if map_uri_fields:
+                responder = getattr(resource, 'on_' + method.lower() +
+                                    '_' + field_string)
+            else:
+                responder = getattr(resource, 'on_' + method.lower())
         except AttributeError:
             # resource does not implement this method
             pass
