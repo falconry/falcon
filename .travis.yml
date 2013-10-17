@@ -13,3 +13,5 @@ after_success: coveralls
 notifications:
   email:
     - kurt.griffiths@rackspace.com
+  irc:
+    - "chat.freenode.net#falconframework"
