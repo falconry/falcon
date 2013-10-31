@@ -104,13 +104,13 @@ Here is a simple example showing how to create a Falcon-based API.
                          '    ~ Immanuel Kant\n\n')
 
     # falcon.API instances are callable WSGI apps
-    app = api = falcon.API()
+    app = falcon.API()
 
     # Resources are represented by long-lived class instances
     things = ThingsResource()
 
     # things will handle all requests to the '/things' URL path
-    api.add_route('/things', things)
+    app.add_route('/things', things)
 
 You can run the above example using any WSGI server, such as uWSGI or
 Gunicorn. For example:
@@ -182,7 +182,7 @@ Here is a more involved example that demonstrates reading headers and query para
 
         def __init__(self, db):
             self.db = db
-            self.logger = logging.getLogger('thingsapi.' + __name__)
+            self.logger = logging.getLogger('thingsapp.' + __name__)
 
         def on_get(self, req, resp, user_id):
             marker = req.get_param('marker') or ''
@@ -235,13 +235,12 @@ Here is a more involved example that demonstrates reading headers and query para
             resp.status = falcon.HTTP_201
             resp.location = '/%s/things/%s' % (user_id, proper_thing.id)
 
-    wsgi_app = api = falcon.API(before=[auth, check_media_type])
+    # Configure your WSGI server to load "things.app" (app is a WSGI callable)
+    app = falcon.API(before=[auth, check_media_type])
 
     db = StorageEngine()
     things = ThingsResource(db)
-    api.add_route('/{user_id}/things', things)
-
-    app = application = api
+    app.add_route('/{user_id}/things', things)
 
     # Useful for debugging problems in your API; works with pdb.set_trace()
     if __name__ == '__main__':
@@ -253,7 +252,7 @@ Contributing
 ~~~~~~~~~~~~
 
 Kurt Griffiths (kgriffs) is the creator and current maintainer of the
-Falcon framework. Pull requests are always welcome.
+Falcon framework, with the generous help of a number of contributors. Pull requests are always welcome.
 
 Before submitting a pull request, please ensure you have added/updated
 the appropriate tests (and that all existing tests still pass with your
