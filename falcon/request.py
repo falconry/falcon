@@ -421,8 +421,8 @@ class Request(object):
             A dictionary of HTTP headers.
 
         """
-        return dict((k.lower().replace('_', '-'), v)
-                    for k, v in self._headers.items())
+        return dict([(k.replace('_', '-'), v)
+                    for k, v in self._headers.items()])
 
     def get_header(self, name, required=False):
         """Return a header value as a string
