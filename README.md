@@ -138,22 +138,21 @@ def auth(req, resp, params):
     if token is None:
         raise falcon.HTTPUnauthorized('Auth token required',
                                       'Please provide an auth token '
-                                      'as part of the request',
+                                      'as part of the request'
                                       'http://docs.example.com/auth')
 
     if not token_is_valid(token, params['user_id']):
         raise falcon.HTTPUnauthorized('Authentication required',
                                       'The provided auth token is '
                                       'not valid. Please request a '
-                                      'new token and try again.',
+                                      'new token and try again.'
                                       'http://docs.example.com/auth')
 
 
 def check_media_type(req, resp, params):
     if not req.client_accepts_json:
         raise falcon.HTTPUnsupportedMediaType(
-            'Media Type not Supported',
-            'This API only supports the JSON media type.',
+            'This API only supports the JSON media type.'
             'http://docs.examples.com/api/json')
 
 
