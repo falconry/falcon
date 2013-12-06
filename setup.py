@@ -1,4 +1,5 @@
 import imp
+import io
 import sys
 from os import path
 from setuptools import setup, find_packages, Extension
@@ -53,7 +54,7 @@ setup(
     name='falcon',
     version=VERSION,
     description='A supersonic micro-framework for building cloud APIs.',
-    long_description=open('README.rst', 'rb').read().decode('utf-8', 'ignore'),
+    long_description=io.open('README.rst', 'r', encoding='utf-8').read(),
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
