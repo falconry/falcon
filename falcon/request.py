@@ -18,8 +18,6 @@ limitations under the License.
 
 from datetime import datetime
 
-import six
-
 try:
     # NOTE(kgrifs): In Python 2.6 and 2.7, socket._fileobject is a
     # standard way of exposing a socket as a file-like object, and
