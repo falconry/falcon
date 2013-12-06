@@ -20,9 +20,9 @@ import datetime
 import six
 
 if six.PY3:  # pragma nocover
-    from urllib.parse import quote as url_quote
+    import urllib.parse as urllib
 else:  # pragma nocover
-    from urllib import quote as url_quote
+    import urllib
 
 
 __all__ = ('dt_to_http', 'http_date_to_dt', 'to_query_str', 'percent_escape')
@@ -112,4 +112,19 @@ def percent_escape(url):
     if not six.PY3 and isinstance(url, six.text_type):  # pragma nocover
         url = url.encode('utf-8')
 
-    return url_quote(url, safe='/:,=?&-_')
+    return urllib.quote(url, safe='/:,=?&-_')
+
+
+def percent_unescape(nstr):
+    """Percent-unescape an input native string into a url.
+
+    Args:
+        nstr: A URL in native string (\u0000 - \u00FF).
+
+    Returns:
+        A URL as a python string, decoded as UTF-8.
+    """
+
+    s = urllib.unquote_plus(nstr)
+
+    return s if six.PY3 else s.decode('utf-8', 'replace')
