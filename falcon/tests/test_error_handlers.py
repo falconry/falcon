@@ -33,12 +33,7 @@ class ErroredClassResource(object):
 
 class TestErrorHandler(testing.TestBase):
 
-    def before(self):
-        self.resource = ErroredClassResource()
-        self.api.add_route(self.test_route, self.resource)
-
     def test_caught_error(self):
-        self.api = falcon.API()
         self.api.add_error_handler(Exception, capture_error)
 
         self.api.add_route(self.test_route, ErroredClassResource())
@@ -51,7 +46,6 @@ class TestErrorHandler(testing.TestBase):
         self.assertEqual([], body)
 
     def test_uncaught_error(self):
-        self.api = falcon.API()
         self.api.add_error_handler(CustomException, capture_error)
 
         self.api.add_route(self.test_route, ErroredClassResource())
@@ -60,7 +54,6 @@ class TestErrorHandler(testing.TestBase):
                           self.simulate_request, self.test_route)
 
     def test_subclass_error(self):
-        self.api = falcon.API()
         self.api.add_error_handler(CustomBaseException, capture_error)
 
         self.api.add_route(self.test_route, ErroredClassResource())
@@ -70,8 +63,6 @@ class TestErrorHandler(testing.TestBase):
         self.assertEqual([b'error: CustomException'], body)
 
     def test_error_order(self):
-        self.api = falcon.API()
-
         self.api.add_error_handler(Exception, capture_error)
         self.api.add_error_handler(Exception, handle_error_first)
 
