@@ -20,7 +20,6 @@ from falcon.status_codes import HTTP_204
 from falcon.status_codes import HTTP_400
 from falcon.status_codes import HTTP_404
 from falcon.status_codes import HTTP_405
-from falcon.status_codes import HTTP_500
 
 
 def path_not_found(req, resp, **kwargs):
@@ -31,11 +30,6 @@ def path_not_found(req, resp, **kwargs):
 def bad_request(req, resp, **kwargs):
     """Sets response to "400 Bad Request", no body."""
     resp.status = HTTP_400
-
-
-def internal_server_error(req, resp, **kwargs):
-    """Sets response to "500 Internal Server Error", no body."""
-    resp.status = HTTP_500
 
 
 def create_method_not_allowed(allowed_methods):

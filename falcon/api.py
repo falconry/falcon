@@ -16,9 +16,6 @@ limitations under the License.
 
 """
 
-import inspect
-import traceback
-
 from falcon.request import Request
 from falcon.response import Response
 import falcon.responders
@@ -92,42 +89,6 @@ class API(object):
 
             if req.client_accepts('application/json'):
                 resp.body = ex.json()
-
-        except TypeError as ex:
-            # NOTE(kgriffs): Get the stack trace up here since we can just
-            # use this convenience function which graps the last raised
-            # exception context.
-            stack_trace = traceback.format_exc()
-
-            # See if the method doesn't support the given route's params, to
-            # support assigning multiple routes to the same resource.
-            try:
-                argspec = responder.wrapped_argspec
-            except AttributeError:
-                argspec = inspect.getargspec(responder)
-
-            # First three args should be (self, req, resp)
-            if argspec.args[0] == 'self':
-                offset = 3
-            else:
-                offset = 2
-
-            args_needed = set(argspec.args[offset:])
-            args_given = set(params.keys())
-
-            # Reset the response
-            resp = Response()
-
-            # Does the responder require more or fewer args than given?
-            if args_needed != args_given:
-                req.log_error('A responder method could not be found with the '
-                              'correct arguments.')
-                na_responder(req, resp)
-            else:
-                # Error caused by something else
-                req.log_error('A responder method (on_*) raised TypeError. %s'
-                              % stack_trace)
-                falcon.responders.internal_server_error(req, resp)
 
         #
         # Set status and headers
