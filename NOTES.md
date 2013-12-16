@@ -12,14 +12,14 @@ This requires some discipline on the part of the developer.
 
 ### Misc. ###
 
-* Falcon probably isn't thread-safe, so don't try it. Run multiple worker processes, each with a non-blocking I/O loop instead.
+* Falcon is probably thread-safe, but this has yet to be verified. Caveat emptor.
 * For 204, just set the status and no body. Falcon will ignore the body even if you set it.
 * If you set resp.body to a Unicode string, Falcon will attempt to encode it as UTF-8 before sending the content to the WSGI server (as required by PEP-333). If you already have encoded data (or it's a binary blob), use resp.data instead (it's faster).
 * Default media type (returned as the value of the 'Content-Type' header) for responses is 'application/json; charset=utf-8' (falcon.DEFAULT\_MEDIA\_TYPE), and the default status is '200 OK.' You can set a custom media type in the API constructor to save yourself from having to always set Content-Type for each request.
 * resp.set_header assumes both params are strings. App may crash otherwise. Falcon trusts the caller. You *are* testing all your code paths, aren't you?
 * If you need the protocol (http vs https) to construct hrefs in your responses (hypermedia is good, trust me), you can get it from req.scheme
 * URI template and query string field names must include only ASCII a-z, A-Z, and the underscore '_' character. Try it; you'll like it. This simplifies parsing and helps speed things up a bit.
-* on_* responder methods in a resource class must define all URI template field names for any route attached to that resource. If they do not, Falcon will return "405 Method not allowed". This allows you to add multiple routes to the same resource, in order to serve, for example, POST requests to "/super" and GET requests to "/super/{name}". In this example, a POST request to "/super/"
+* on_* responder methods in a resource class must define all URI template field names for any route attached to that resource. If they do not, Falcon will raise an error. You might see this if you attempt to have a single OxResource that you try to overload to respond to both, e.g., "PUT /oxen/old-ben" and "GET /oxen". Resist the temptation to overload your resources; instead, create OxResource and OxenResource. It is common to put these two classes in the same module.
 * Query params must have a value. In other words, 'foo' or 'foo=' will result in the parameter being ignored.
 * If the WSGI server passes an empty path, Falcon will force it to '/', so you don't have to test for the empty string in your app.
 * The routes '/foo/bar' and '/foo/bar/' are identical as far as Falcon is concerned. Requests coming in for either will be sent to the same resource.
