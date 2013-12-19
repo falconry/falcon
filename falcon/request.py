@@ -107,7 +107,7 @@ class Request(object):
 
         # QUERY_STRING isn't required to be in env, so let's check
         # PERF: if...in is faster than using env.get(...)
-        if 'QUERY_STRING' in env:
+        if 'QUERY_STRING' in env and env['QUERY_STRING']:
             self.query_string = util.percent_unescape(env['QUERY_STRING'])
         else:
             self.query_string = six.text_type()
