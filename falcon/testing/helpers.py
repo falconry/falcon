@@ -84,6 +84,9 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
     body = io.BytesIO(body.encode('utf-8')
                       if isinstance(body, six.text_type) else body)
 
+    if six.PY2 and isinstance(path, unicode):
+        path = path.encode('utf-8')
+
     env = {
         'SERVER_PROTOCOL': protocol,
         'SERVER_SOFTWARE': 'gunicorn/0.17.0',
