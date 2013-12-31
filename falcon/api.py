@@ -92,10 +92,10 @@ class API(object):
             if req.client_accepts('application/json'):
                 resp.body = ex.json()
 
-        except Exception as e:
+        except Exception as ex:
             for err_type, err_handler in self._error_handlers:
-                if isinstance(e, err_type):
-                    err_handler(e, req, resp, params)
+                if isinstance(ex, err_type):
+                    err_handler(ex, req, resp, params)
                     break
             else:
                 raise

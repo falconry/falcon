@@ -2,12 +2,12 @@ import falcon
 import falcon.testing as testing
 
 
-def capture_error(e, req, resp, params):
+def capture_error(ex, req, resp, params):
     resp.status = falcon.HTTP_723
-    resp.body = 'error: %s' % str(e)
+    resp.body = 'error: %s' % str(ex)
 
 
-def handle_error_first(e, req, resp, params):
+def handle_error_first(ex, req, resp, params):
     resp.status = falcon.HTTP_200
     resp.body = 'first error handler'
 
