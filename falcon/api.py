@@ -82,7 +82,29 @@ class API(object):
             req.path, req.method)
 
         try:
-            responder(req, resp, **params)
+            # NOTE(kgriffs): Using an inner try..except in order to
+            # address the case when err_handler raises HTTPError.
+            #
+            # NOTE(kgriffs): Coverage is giving false negatives,
+            # so disabled on relevant lines. All paths are tested
+            # afaict.
+            try:
+                responder(req, resp, **params)  # pragma: no cover
+            except Exception as ex:
+                for err_type, err_handler in self._error_handlers:
+                    if isinstance(ex, err_type):
+                        err_handler(ex, req, resp, params)
+                        break  # pragma: no cover
+
+                else:
+                    # PERF(kgriffs): This will propagate HTTPError to
+                    # the handler below. It makes handling HTTPError
+                    # less efficient, but that is OK since error cases
+                    # don't need to be as fast as the happy path, and
+                    # indeed, should perhaps be slower to create
+                    # backpressure on clients that are issuing bad
+                    # requests.
+                    raise
 
         except HTTPError as ex:
             resp.status = ex.status
@@ -91,14 +113,6 @@ class API(object):
 
             if req.client_accepts('application/json'):
                 resp.body = ex.json()
-
-        except Exception as ex:
-            for err_type, err_handler in self._error_handlers:
-                if isinstance(ex, err_type):
-                    err_handler(ex, req, resp, params)
-                    break
-            else:
-                raise
 
         #
         # Set status and headers

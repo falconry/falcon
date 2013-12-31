@@ -1,3 +1,5 @@
+import json
+
 import falcon
 import falcon.testing as testing
 
@@ -17,7 +19,15 @@ class CustomBaseException(Exception):
 
 
 class CustomException(CustomBaseException):
-    pass
+
+    @staticmethod
+    def handle(ex, req, resp, params):
+        raise falcon.HTTPError(
+            falcon.HTTP_792,
+            u'Internet crashed!',
+            u'Catastrophic weather event',
+            href=u'http://example.com/api/inconvenient-truth',
+            href_text=u'Drill, baby drill!')
 
 
 class ErroredClassResource(object):
@@ -52,6 +62,23 @@ class TestErrorHandler(testing.TestBase):
 
         self.assertRaises(Exception,
                           self.simulate_request, self.test_route)
+
+    def test_uncaught_error_else(self):
+        self.api.add_route(self.test_route, ErroredClassResource())
+
+        self.assertRaises(Exception,
+                          self.simulate_request, self.test_route)
+
+    def test_converted_error(self):
+        self.api.add_error_handler(CustomException, CustomException.handle)
+
+        self.api.add_route(self.test_route, ErroredClassResource())
+
+        body = self.simulate_request(self.test_route, method='DELETE')
+        self.assertEqual(falcon.HTTP_792, self.srmock.status)
+
+        info = json.loads(body[0].decode())
+        self.assertEqual('Internet crashed!', info['title'])
 
     def test_subclass_error(self):
         self.api.add_error_handler(CustomBaseException, capture_error)

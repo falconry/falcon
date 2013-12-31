@@ -124,7 +124,14 @@ class StorageEngine:
 
 
 class StorageError(Exception):
-    pass
+    @staticmethod
+    def handle(ex, req, resp, params):
+        description = ('Sorry, couldn\'t write your thing to the '
+                       'database. It worked on my box.')
+
+        raise falcon.HTTPError(falcon.HTTP_725,
+                               'Database Error',
+                               description)
 
 
 def token_is_valid(token, user_id):
@@ -136,8 +143,8 @@ def auth(req, resp, params):
     token = req.get_header('X-Auth-Token')
 
     if token is None:
-        description = 'Please provide an auth token '
-                      'as part of the request.'
+        description = ('Please provide an auth token '
+                       'as part of the request.')
 
         raise falcon.HTTPUnauthorized('Auth token required',
                                       description,
@@ -145,20 +152,20 @@ def auth(req, resp, params):
                                       href='http://docs.example.com/auth')
 
     if not token_is_valid(token, params['user_id']):
-        description = 'The provided auth token is not valid. '
-                      'Please request a new token and try again.'
+        description = ('The provided auth token is not valid. '
+                       'Please request a new token and try again.')
 
         raise falcon.HTTPUnauthorized('Authentication required',
                                       description,
-                                      scheme=None
+                                      scheme=None,
                                       href='http://docs.example.com/auth')
 
 
 def check_media_type(req, resp, params):
     if not req.client_accepts_json:
         raise falcon.HTTPUnsupportedMediaType(
-          'This API only supports the JSON media type.',
-          href='http://docs.examples.com/api/json')
+            'This API only supports the JSON media type.',
+            href='http://docs.examples.com/api/json')
 
 
 class ThingsResource:
@@ -181,9 +188,9 @@ class ThingsResource:
                            'We appreciate your patience.')
 
             raise falcon.HTTPServiceUnavailable(
-              'Service Outage',
-              description,
-              30)
+                'Service Outage',
+                description,
+                30)
 
         resp.set_header('X-Powered-By', 'Donuts')
         resp.status = falcon.HTTP_200
@@ -206,14 +213,7 @@ class ThingsResource:
                                    'Could not decode the request body. The '
                                    'JSON was incorrect.')
 
-        try:
-            proper_thing = self.db.add_thing(thing)
-
-        except StorageError:
-            raise falcon.HTTPError(falcon.HTTP_725,
-                                   'Database Error',
-                                   "Sorry, couldn't write your thing to the "
-                                   'database. It worked on my machine.')
+        proper_thing = self.db.add_thing(thing)
 
         resp.status = falcon.HTTP_201
         resp.location = '/%s/things/%s' % (user_id, proper_thing.id)
@@ -225,10 +225,15 @@ db = StorageEngine()
 things = ThingsResource(db)
 app.add_route('/{user_id}/things', things)
 
+# If a responder ever raised an instance of StorageError, pass control to
+# the given handler.
+app.add_error_handler(StorageError, StorageError.handle)
+
 # Useful for debugging problems in your API; works with pdb.set_trace()
 if __name__ == '__main__':
-  httpd = simple_server.make_server('127.0.0.1', 8000, app)
-  httpd.serve_forever()
+    httpd = simple_server.make_server('127.0.0.1', 8000, app)
+    httpd.serve_forever()
+
 
 ```
 
