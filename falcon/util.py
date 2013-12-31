@@ -17,7 +17,10 @@ limitations under the License.
 """
 
 import datetime
+import functools
 import six
+import inspect
+import warnings
 
 if six.PY3:  # pragma nocover
     import urllib.parse as urllib
@@ -25,7 +28,52 @@ else:  # pragma nocover
     import urllib
 
 
-__all__ = ('dt_to_http', 'http_date_to_dt', 'to_query_str', 'percent_escape')
+__all__ = (
+    'deprecated',
+    'dt_to_http',
+    'http_date_to_dt',
+    'to_query_str',
+    'percent_escape')
+
+
+# NOTE(kgriffs): We don't want our deprecations to be ignored by default,
+# so create our own type.
+#
+# TODO(kgriffs): Revisit this decision if users complain.
+class DeprecatedWarning(UserWarning):
+    pass
+
+
+def deprecated(instructions):
+    """Flags a method as deprecated.
+
+    Args:
+        instructions: A human-friendly string of instructions, such
+            as: 'Please migrate to add_proxy(...) ASAP.'
+    """
+
+    def decorator(func):
+        '''This is a decorator which can be used to mark functions
+        as deprecated. It will result in a warning being emitted
+        when the function is used.'''
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            message = 'Call to deprecated function {0}(...). {1}'.format(
+                func.__name__,
+                instructions)
+
+            frame = inspect.currentframe().f_back
+
+            warnings.warn_explicit(message,
+                                   category=DeprecatedWarning,
+                                   filename=inspect.getfile(frame.f_code),
+                                   lineno=frame.f_lineno)
+
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
 
 
 def dt_to_http(dt):

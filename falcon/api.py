@@ -16,11 +16,14 @@ limitations under the License.
 
 """
 
+import re
+
+from falcon import api_helpers as helpers
 from falcon.request import Request
 from falcon.response import Response
 import falcon.responders
 from falcon.status_codes import HTTP_416
-from falcon import api_helpers as helpers
+from falcon import util
 
 from falcon.http_error import HTTPError
 from falcon import DEFAULT_MEDIA_TYPE
@@ -35,7 +38,7 @@ class API(object):
     """
 
     __slots__ = ('_after', '_before', '_error_handlers', '_media_type',
-                 '_routes', '_default_route')
+                 '_routes', '_default_route', '_sinks')
 
     def __init__(self, media_type=DEFAULT_MEDIA_TYPE, before=None, after=None):
         """Initialize a new Falcon API instances
@@ -55,6 +58,7 @@ class API(object):
         """
 
         self._routes = []
+        self._sinks = []
         self._default_route = None
         self._media_type = media_type
 
@@ -78,7 +82,7 @@ class API(object):
         req = Request(env)
         resp = Response()
 
-        responder, params, na_responder = self._get_responder(
+        responder, params = self._get_responder(
             req.path, req.method)
 
         try:
@@ -146,7 +150,7 @@ class API(object):
 
         A resource is an instance of a class that defines various on_*
         "responder" methods, one for each HTTP method the resource
-        allows. For example, to support GET, simply define an "on_get"
+        allows. For example, to support GET, simply define an `on_get`
         responder. If a client requests an unsupported method, Falcon
         will respond with "405 Method not allowed".
 
@@ -157,7 +161,7 @@ class API(object):
                 pass
 
         In addition, if the route's uri template contains field
-        expressions, any responders that desires to receive requests
+        expressions, any responder that desires to receive requests
         for that route must accept arguments named after the respective
         field names defined in the template. For example, given the
         following uri template:
@@ -174,15 +178,11 @@ class API(object):
             def on_put(self, req, resp):
                 pass
 
-        Falcon would respond to the client's request with "405 Method
-        not allowed." This allows you to define multiple routes to the
-        same resource, e.g., in order to support GET for "/widget/1234"
-        and POST to "/widgets". In this last example, a POST to
-        "/widget/5000" would result in a 405 response.
-
         Args:
             uri_template: Relative URI template. Currently only Level 1
-                templates are supported. See also RFC 6570.
+                templates are supported. See also RFC 6570. Care must be
+                taken to ensure the template does not mask any sink
+                patterns (see also add_sink).
             resource: Object which represents an HTTP/REST "resource". Falcon
                 will pass "GET" requests to on_get, "PUT" requests to on_put,
                 etc. If any HTTP methods are not supported by your resource,
@@ -192,15 +192,54 @@ class API(object):
         """
 
         uri_fields, path_template = helpers.compile_uri_template(uri_template)
-        method_map, na_responder = helpers.create_http_method_map(
+        method_map = helpers.create_http_method_map(
             resource, uri_fields, self._before, self._after)
 
         # Insert at the head of the list in case we get duplicate
         # adds (will cause the last one to win).
-        self._routes.insert(0, (path_template, method_map, na_responder))
+        self._routes.insert(0, (path_template, method_map))
 
+    def add_sink(self, sink, prefix=r'/'):
+        """Add a "sink" responder to the API.
+
+        If no route matches a request, but the path in the requested URI
+        matches the specified prefix, Falcon will pass control to the
+        given sink, regardless of the HTTP method requested.
+
+        Args:
+            sink: A callable of the form:
+
+                 func(req, resp)
+
+            prefix: A regex string, typically starting with '/', which
+                will trigger the sink if it matches the path portion of the
+                request's URI. Both strings and precompiled regex objects
+                may be specified. Characters are matched starting at the
+                beginning of the URI path.
+
+                Named groups are converted to kwargs and passed to
+                the sink as such.
+
+                If the route collides with a route's URI template, the
+                route will mask the sink (see also add_route).
+
+        """
+
+        if not hasattr(prefix, 'match'):
+            # Assume it is a string
+            prefix = re.compile(prefix)
+
+        # NOTE(kgriffs): Insert at the head of the list such that
+        # in the case of a duplicate prefix, the last one added
+        # is preferred.
+        self._sinks.insert(0, (prefix, sink))
+
+    # TODO(kgriffs): Remove this functionality in Falcon version 0.2.0
+    @util.deprecated('Please migrate to add_sink(...) ASAP.')
     def set_default_route(self, default_resource):
-        """Route all the unrouted requests to a default resource
+        """DEPRECATED: Route all the unrouted requests to a default resource
+
+        NOTE: If a default route is defined, all sinks are ignored.
 
         Args:
             default_resource: Object which works like an HTTP/REST resource.
@@ -225,6 +264,7 @@ class API(object):
                 when there is a matching exception when handling a request.
 
         """
+
         # Insert at the head of the list in case we get duplicate
         # adds (will cause the last one to win).
         self._error_handlers.insert(0, (exception, handler))
@@ -249,7 +289,7 @@ class API(object):
         """
 
         for route in self._routes:
-            path_template, method_map, na_responder = route
+            path_template, method_map = route
             m = path_template.match(path)
             if m:
                 params = m.groupdict()
@@ -263,16 +303,24 @@ class API(object):
         else:
             params = {}
 
-            if self._default_route is not None:
-                method_map, na_responder = self._default_route
+            if self._default_route is None:
+
+                for pattern, sink in self._sinks:
+                    m = pattern.match(path)
+                    if m:
+                        params = m.groupdict()
+                        responder = sink
+
+                        break
+                else:
+                    responder = falcon.responders.path_not_found
+
+            else:
+                method_map = self._default_route
 
                 try:
                     responder = method_map[method]
                 except KeyError:
                     responder = falcon.responders.bad_request
 
-            else:
-                responder = falcon.responders.path_not_found
-                na_responder = falcon.responders.create_method_not_allowed([])
-
-        return (responder, params, na_responder)
+        return (responder, params)

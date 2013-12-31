@@ -217,7 +217,7 @@ def create_http_method_map(resource, uri_fields, before, after):
         if method not in allowed_methods:
             method_map[method] = na_responder
 
-    return method_map, na_responder
+    return method_map
 
 
 #-----------------------------------------------------------------------------
