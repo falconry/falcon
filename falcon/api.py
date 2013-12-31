@@ -141,7 +141,7 @@ class API(object):
         start_response(resp.status, headers)
         return body
 
-    def add_route(self, uri_template, resource):
+    def add_route(self, uri_template, resource, map_uri_fields=False):
         """Associate a URI path with a resource
 
         A resource is an instance of a class that defines various on_*
@@ -174,6 +174,18 @@ class API(object):
             def on_put(self, req, resp):
                 pass
 
+        If map_uri_fields in enabled, a responder is selected based
+        on the fields in the uri template.  This allows for multiple
+        responders with different signatures withing the same resource.
+        A template like so:
+
+           /das/{thing}
+
+        Would map to a responder like so:
+
+           def on_put_thing(self, req, resp, thing):
+              pass
+
         Falcon would respond to the client's request with "405 Method
         not allowed." This allows you to define multiple routes to the
         same resource, e.g., in order to support GET for "/widget/1234"
@@ -188,12 +200,13 @@ class API(object):
                 etc. If any HTTP methods are not supported by your resource,
                 simply don't define the corresponding request handlers, and
                 Falcon will do the right thing.
-
+            map_uri_fields: Boolean flag to enable mapping parsed uri fields
+                to different responders within the same resource.
         """
 
         uri_fields, path_template = helpers.compile_uri_template(uri_template)
         method_map, na_responder = helpers.create_http_method_map(
-            resource, uri_fields, self._before, self._after)
+            resource, uri_fields, self._before, self._after, map_uri_fields)
 
         # Insert at the head of the list in case we get duplicate
         # adds (will cause the last one to win).
