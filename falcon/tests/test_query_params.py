@@ -51,6 +51,7 @@ class TestQueryParams(testing.TestBase):
 
         req = self.resource.req
         self.assertEqual(req.get_param('id'), u'23,42')
+        self.assertEqual(req.get_param_as_list('id', int), [23, 42])
         self.assertEqual(req.get_param('q'), u'\u8c46 \u74e3')
 
     def test_allowed_names(self):
