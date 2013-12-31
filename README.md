@@ -136,25 +136,29 @@ def auth(req, resp, params):
     token = req.get_header('X-Auth-Token')
 
     if token is None:
+        description = 'Please provide an auth token '
+                      'as part of the request.'
+
         raise falcon.HTTPUnauthorized('Auth token required',
-                                      'Please provide an auth token '
-                                      'as part of the request',
-                                      'http://docs.example.com/auth')
+                                      description,
+                                      scheme=None,
+                                      href='http://docs.example.com/auth')
 
     if not token_is_valid(token, params['user_id']):
+        description = 'The provided auth token is not valid. '
+                      'Please request a new token and try again.'
+
         raise falcon.HTTPUnauthorized('Authentication required',
-                                      'The provided auth token is '
-                                      'not valid. Please request a '
-                                      'new token and try again.',
-                                      'http://docs.example.com/auth')
+                                      description,
+                                      scheme=None
+                                      href='http://docs.example.com/auth')
 
 
 def check_media_type(req, resp, params):
     if not req.client_accepts_json:
         raise falcon.HTTPUnsupportedMediaType(
-            'Media Type not Supported',
-            'This API only supports the JSON media type.',
-            'http://docs.examples.com/api/json')
+          'This API only supports the JSON media type.',
+          href='http://docs.examples.com/api/json')
 
 
 class ThingsResource:
