@@ -34,8 +34,8 @@ class API(object):
 
     """
 
-    __slots__ = ('_after', '_before', '_media_type', '_routes',
-                 '_default_route')
+    __slots__ = ('_after', '_before', '_error_handlers', '_media_type',
+                 '_routes', '_default_route')
 
     def __init__(self, media_type=DEFAULT_MEDIA_TYPE, before=None, after=None):
         """Initialize a new Falcon API instances
@@ -60,6 +60,8 @@ class API(object):
 
         self._before = helpers.prepare_global_hooks(before)
         self._after = helpers.prepare_global_hooks(after)
+
+        self._error_handlers = []
 
     def __call__(self, env, start_response):
         """WSGI "app" method
@@ -89,6 +91,14 @@ class API(object):
 
             if req.client_accepts('application/json'):
                 resp.body = ex.json()
+
+        except Exception as e:
+            for err_type, err_handler in self._error_handlers:
+                if isinstance(e, err_type):
+                    err_handler(e, req, resp, params)
+                    break
+            else:
+                raise
 
         #
         # Set status and headers
@@ -189,6 +199,21 @@ class API(object):
 
         self._default_route = helpers.create_http_method_map(
             default_resource, set(), self._before, self._after)
+
+    def add_error_handler(self, exception, handler):
+        """Adds a handler for a given exception type
+
+        Args:
+            exception: Whenever an exception occurs when handling a request
+                that is an instance of this exception class, the given handler
+                callable will be used to handle the exception.
+            handler: Callable that gets called with (ex, req, resp, params)
+                when there is a matching exception when handling a request.
+
+        """
+        # Insert at the head of the list in case we get duplicate
+        # adds (will cause the last one to win).
+        self._error_handlers.insert(0, (exception, handler))
 
 #----------------------------------------------------------------------------
 # Helpers
