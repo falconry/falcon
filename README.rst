@@ -169,7 +169,6 @@ Here is a more involved example that demonstrates reading headers and query para
 
             raise falcon.HTTPUnauthorized('Auth token required',
                                           description,
-                                          scheme=None,
                                           href='http://docs.example.com/auth')
 
         if not token_is_valid(token, params['user_id']):
@@ -178,8 +177,8 @@ Here is a more involved example that demonstrates reading headers and query para
 
             raise falcon.HTTPUnauthorized('Authentication required',
                                           description,
-                                          scheme=None,
-                                          href='http://docs.example.com/auth')
+                                          href='http://docs.example.com/auth',
+                                          scheme='Token; UUID')
 
 
     def check_media_type(req, resp, params):
