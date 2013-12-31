@@ -23,7 +23,7 @@ import inspect
 import warnings
 
 if six.PY3:  # pragma nocover
-    import urllib.parse as urllib
+    import urllib.parse as urllib  # pylint: disable=E0611
 else:  # pragma nocover
     import urllib
 

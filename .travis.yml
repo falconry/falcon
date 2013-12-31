@@ -6,6 +6,7 @@ env:
   - TOX_ENV=py33
   - TOX_ENV=pypy
   - TOX_ENV=pep8
+  - TOX_ENV=pylint
 
 script: tox -e $TOX_ENV
 after_success: coveralls
