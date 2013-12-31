@@ -38,7 +38,7 @@ class TestUriTemplates(testing.TestBase):
         self.assertTrue(self.resource.called)
         req = self.resource.req
 
-        self.assertEquals(req.get_param('id'), None)
+        self.assertEqual(req.get_param('id'), None)
 
     def test_not_str(self):
         self.assertRaises(TypeError, self.api.add_route, {}, self.resource)
@@ -53,7 +53,7 @@ class TestUriTemplates(testing.TestBase):
         self.assertTrue(self.resource.called)
         req = self.resource.req
 
-        self.assertEquals(req.get_param('world'), None)
+        self.assertEqual(req.get_param('world'), None)
 
     def test_special_chars(self):
         self.api.add_route('/hello/world.json', self.resource)
@@ -76,38 +76,38 @@ class TestUriTemplates(testing.TestBase):
 
         req = self.resource.req
         kwargs = self.resource.kwargs
-        self.assertEquals(kwargs['id'], '123')
+        self.assertEqual(kwargs['id'], '123')
         self.assertNotIn(kwargs, 'Id')
-        self.assertEquals(req.get_param('id'), None)
+        self.assertEqual(req.get_param('id'), None)
 
     def test_single_trailing_slash(self):
         resource1 = IDResource()
         self.api.add_route('/1/{id}/', resource1)
 
         self.simulate_request('/1/123')
-        self.assertEquals(self.srmock.status, falcon.HTTP_200)
+        self.assertEqual(self.srmock.status, falcon.HTTP_200)
         self.assertTrue(resource1.called)
-        self.assertEquals(resource1.id, '123')
-        self.assertEquals(resource1.name, None)
-        self.assertEquals(resource1.req.path, '/1/123')
+        self.assertEqual(resource1.id, '123')
+        self.assertEqual(resource1.name, None)
+        self.assertEqual(resource1.req.path, '/1/123')
 
         resource2 = IDResource()
         self.api.add_route('/2/{id}/', resource2)
 
         self.simulate_request('/2/123/')
         self.assertTrue(resource2.called)
-        self.assertEquals(resource2.id, '123')
-        self.assertEquals(resource2.name, None)
-        self.assertEquals(resource2.req.path, '/2/123')
+        self.assertEqual(resource2.id, '123')
+        self.assertEqual(resource2.name, None)
+        self.assertEqual(resource2.req.path, '/2/123')
 
         resource3 = IDResource()
         self.api.add_route('/3/{id}', resource3)
 
         self.simulate_request('/3/123/')
         self.assertTrue(resource3.called)
-        self.assertEquals(resource3.id, '123')
-        self.assertEquals(resource3.name, None)
-        self.assertEquals(resource3.req.path, '/3/123')
+        self.assertEqual(resource3.id, '123')
+        self.assertEqual(resource3.name, None)
+        self.assertEqual(resource3.req.path, '/3/123')
 
     def test_multiple(self):
         resource = NameResource()
@@ -119,8 +119,8 @@ class TestUriTemplates(testing.TestBase):
         self.simulate_request(path)
         self.assertTrue(resource.called)
 
-        self.assertEquals(resource.id, test_id)
-        self.assertEquals(resource.name, test_name)
+        self.assertEqual(resource.id, test_id)
+        self.assertEqual(resource.name, test_name)
 
     def test_empty_path_component(self):
         self.assertRaises(ValueError, self.api.add_route,

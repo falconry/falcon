@@ -22,7 +22,7 @@ class TestRequestBody(testing.TestBase):
         stream = self.resource.req.stream
 
         stream.seek(0, 2)
-        self.assertEquals(stream.tell(), 0)
+        self.assertEqual(stream.tell(), 0)
 
     def test_tiny_body(self):
         expected_body = '.'
@@ -30,10 +30,10 @@ class TestRequestBody(testing.TestBase):
         stream = self.resource.req.stream
 
         actual_body = stream.read(1)
-        self.assertEquals(actual_body, expected_body.encode('utf-8'))
+        self.assertEqual(actual_body, expected_body.encode('utf-8'))
 
         stream.seek(0, 2)
-        self.assertEquals(stream.tell(), 1)
+        self.assertEqual(stream.tell(), 1)
 
     def test_tiny_body_overflow(self):
         expected_body = '.'
@@ -42,7 +42,7 @@ class TestRequestBody(testing.TestBase):
 
         # Read too many bytes; shouldn't block
         actual_body = stream.read(len(expected_body) + 1)
-        self.assertEquals(actual_body, expected_body.encode('utf-8'))
+        self.assertEqual(actual_body, expected_body.encode('utf-8'))
 
     def test_read_body(self):
         expected_body = testing.rand_string(SIZE_1_KB / 2, SIZE_1_KB)
@@ -57,12 +57,12 @@ class TestRequestBody(testing.TestBase):
         stream = self.resource.req.stream
 
         actual_body = stream.read()
-        self.assertEquals(actual_body, expected_body.encode('utf-8'))
+        self.assertEqual(actual_body, expected_body.encode('utf-8'))
 
         stream.seek(0, 2)
-        self.assertEquals(stream.tell(), expected_len)
+        self.assertEqual(stream.tell(), expected_len)
 
-        self.assertEquals(stream.tell(), expected_len)
+        self.assertEqual(stream.tell(), expected_len)
 
     def test_read_socket_body(self):
         expected_body = testing.rand_string(SIZE_1_KB / 2, SIZE_1_KB)
@@ -96,10 +96,10 @@ class TestRequestBody(testing.TestBase):
 
         url = 'http://127.0.0.1:8989/echo'
         resp = requests.post(url, data=expected_body)
-        self.assertEquals(resp.text, expected_body)
+        self.assertEqual(resp.text, expected_body)
 
         resp = requests.put(url, data=expected_body)
-        self.assertEquals(resp.text, expected_body)
+        self.assertEqual(resp.text, expected_body)
 
         process.terminate()
 
@@ -119,29 +119,29 @@ class TestRequestBody(testing.TestBase):
 
         stream = io.BytesIO(expected_body)
         body = request_helpers.Body(stream, expected_len)
-        self.assertEquals(body.read(), expected_body)
+        self.assertEqual(body.read(), expected_body)
 
         stream = io.BytesIO(expected_body)
         body = request_helpers.Body(stream, expected_len)
-        self.assertEquals(body.read(2), expected_body[0:2])
+        self.assertEqual(body.read(2), expected_body[0:2])
 
         stream = io.BytesIO(expected_body)
         body = request_helpers.Body(stream, expected_len)
-        self.assertEquals(body.read(expected_len + 1), expected_body)
+        self.assertEqual(body.read(expected_len + 1), expected_body)
 
         stream = io.BytesIO(expected_body)
         body = request_helpers.Body(stream, expected_len)
-        self.assertEquals(body.readline(), expected_lines[0])
+        self.assertEqual(body.readline(), expected_lines[0])
 
         stream = io.BytesIO(expected_body)
         body = request_helpers.Body(stream, expected_len)
-        self.assertEquals(body.readlines(), expected_lines)
+        self.assertEqual(body.readlines(), expected_lines)
 
         stream = io.BytesIO(expected_body)
         body = request_helpers.Body(stream, expected_len)
-        self.assertEquals(next(body), expected_lines[0])
+        self.assertEqual(next(body), expected_lines[0])
 
         stream = io.BytesIO(expected_body)
         body = request_helpers.Body(stream, expected_len)
         for i, line in enumerate(body):
-            self.assertEquals(line, expected_lines[i])
+            self.assertEqual(line, expected_lines[i])

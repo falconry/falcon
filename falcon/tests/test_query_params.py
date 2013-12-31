@@ -38,20 +38,20 @@ class TestQueryParams(testing.TestBase):
 
         req = self.resource.req
         store = {}
-        self.assertEquals(req.get_param('marker', store=store) or 'nada',
-                          'deadbeef')
-        self.assertEquals(req.get_param('limit', store=store) or '0', '25')
+        self.assertEqual(req.get_param('marker', store=store) or 'nada',
+                         'deadbeef')
+        self.assertEqual(req.get_param('limit', store=store) or '0', '25')
 
-        self.assertEquals(store['marker'], 'deadbeef')
-        self.assertEquals(store['limit'], '25')
+        self.assertEqual(store['marker'], 'deadbeef')
+        self.assertEqual(store['limit'], '25')
 
     def test_percent_encoded(self):
         query_string = 'id=23%2c42&q=%e8%b1%86+%e7%93%a3'
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
-        self.assertEquals(req.get_param('id'), u'23,42')
-        self.assertEquals(req.get_param('q'), u'\u8c46 \u74e3')
+        self.assertEqual(req.get_param('id'), u'23,42')
+        self.assertEqual(req.get_param('q'), u'\u8c46 \u74e3')
 
     def test_allowed_names(self):
         query_string = ('p=0&p1=23&2p=foo&some-thing=that&blank=&some_thing=x&'
@@ -59,14 +59,14 @@ class TestQueryParams(testing.TestBase):
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
-        self.assertEquals(req.get_param('p'), '0')
-        self.assertEquals(req.get_param('p1'), '23')
+        self.assertEqual(req.get_param('p'), '0')
+        self.assertEqual(req.get_param('p1'), '23')
         self.assertIs(req.get_param('2p'), None)
-        self.assertEquals(req.get_param('some-thing'), 'that')
+        self.assertEqual(req.get_param('some-thing'), 'that')
         self.assertIs(req.get_param('blank'), None)
-        self.assertEquals(req.get_param('some_thing'), 'x')
+        self.assertEqual(req.get_param('some_thing'), 'x')
         self.assertIs(req.get_param('-bogus'), None)
-        self.assertEquals(req.get_param('more.things'), 'blah')
+        self.assertEqual(req.get_param('more.things'), 'blah')
 
     def test_required(self):
         query_string = ''
@@ -90,13 +90,13 @@ class TestQueryParams(testing.TestBase):
         self.assertRaises(falcon.HTTPBadRequest, req.get_param_as_int,
                           'marker')
 
-        self.assertEquals(req.get_param_as_int('limit'), 25)
+        self.assertEqual(req.get_param_as_int('limit'), 25)
 
         store = {}
-        self.assertEquals(req.get_param_as_int('limit', store=store), 25)
-        self.assertEquals(store['limit'], 25)
+        self.assertEqual(req.get_param_as_int('limit', store=store), 25)
+        self.assertEqual(store['limit'], 25)
 
-        self.assertEquals(
+        self.assertEqual(
             req.get_param_as_int('limit', min=1, max=50), 25)
 
         self.assertRaises(
@@ -115,25 +115,25 @@ class TestQueryParams(testing.TestBase):
             falcon.HTTPBadRequest,
             req.get_param_as_int, 'limit', min=30, max=50)
 
-        self.assertEquals(
+        self.assertEqual(
             req.get_param_as_int('limit', min=1), 25)
 
-        self.assertEquals(
+        self.assertEqual(
             req.get_param_as_int('limit', max=50), 25)
 
-        self.assertEquals(
+        self.assertEqual(
             req.get_param_as_int('limit', max=25), 25)
 
-        self.assertEquals(
+        self.assertEqual(
             req.get_param_as_int('limit', max=26), 25)
 
-        self.assertEquals(
+        self.assertEqual(
             req.get_param_as_int('limit', min=25), 25)
 
-        self.assertEquals(
+        self.assertEqual(
             req.get_param_as_int('limit', min=24), 25)
 
-        self.assertEquals(
+        self.assertEqual(
             req.get_param_as_int('limit', min=-24), 25)
 
     def test_int_neg(self):
@@ -141,12 +141,12 @@ class TestQueryParams(testing.TestBase):
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
-        self.assertEquals(req.get_param_as_int('pos'), -7)
+        self.assertEqual(req.get_param_as_int('pos'), -7)
 
-        self.assertEquals(
+        self.assertEqual(
             req.get_param_as_int('pos', min=-10, max=10), -7)
 
-        self.assertEquals(
+        self.assertEqual(
             req.get_param_as_int('pos', max=10), -7)
 
         self.assertRaises(
@@ -176,17 +176,17 @@ class TestQueryParams(testing.TestBase):
         self.assertRaises(falcon.HTTPBadRequest, req.get_param_as_bool,
                           'bogus2')
 
-        self.assertEquals(req.get_param_as_bool('echo'), True)
-        self.assertEquals(req.get_param_as_bool('doit'), False)
+        self.assertEqual(req.get_param_as_bool('echo'), True)
+        self.assertEqual(req.get_param_as_bool('doit'), False)
 
-        self.assertEquals(req.get_param_as_bool('t1'), True)
-        self.assertEquals(req.get_param_as_bool('t2'), True)
-        self.assertEquals(req.get_param_as_bool('f1'), False)
-        self.assertEquals(req.get_param_as_bool('f2'), False)
+        self.assertEqual(req.get_param_as_bool('t1'), True)
+        self.assertEqual(req.get_param_as_bool('t2'), True)
+        self.assertEqual(req.get_param_as_bool('f1'), False)
+        self.assertEqual(req.get_param_as_bool('f2'), False)
 
         store = {}
-        self.assertEquals(req.get_param_as_bool('echo', store=store), True)
-        self.assertEquals(store['echo'], True)
+        self.assertEqual(req.get_param_as_bool('echo', store=store), True)
+        self.assertEqual(store['echo'], True)
 
     def test_list_type(self):
         query_string = ('colors=red,green,blue&limit=1'
@@ -195,49 +195,49 @@ class TestQueryParams(testing.TestBase):
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
-        self.assertEquals(req.get_param('colors'), 'red,green,blue')
-        self.assertEquals(req.get_param_as_list('colors'),
-                          ['red', 'green', 'blue'])
-        self.assertEquals(req.get_param_as_list('limit'), ['1'])
+        self.assertEqual(req.get_param('colors'), 'red,green,blue')
+        self.assertEqual(req.get_param_as_list('colors'),
+                         ['red', 'green', 'blue'])
+        self.assertEqual(req.get_param_as_list('limit'), ['1'])
         self.assertIs(req.get_param_as_list('marker'), None)
 
-        self.assertEquals(req.get_param_as_list('empty1'), None)
-        self.assertEquals(req.get_param_as_list('empty2'), [None, None])
-        self.assertEquals(req.get_param_as_list('empty3'), [None, None, None])
+        self.assertEqual(req.get_param_as_list('empty1'), None)
+        self.assertEqual(req.get_param_as_list('empty2'), [None, None])
+        self.assertEqual(req.get_param_as_list('empty3'), [None, None, None])
 
-        self.assertEquals(req.get_param_as_list('list-ish1'),
-                          ['f', None, 'x'])
-
-        # Ensure that '0' doesn't get translated to None
-        self.assertEquals(req.get_param_as_list('list-ish2'),
-                          [None, '0'])
+        self.assertEqual(req.get_param_as_list('list-ish1'),
+                         ['f', None, 'x'])
 
         # Ensure that '0' doesn't get translated to None
-        self.assertEquals(req.get_param_as_list('list-ish3'),
-                          ['a', None, None, 'b'])
+        self.assertEqual(req.get_param_as_list('list-ish2'),
+                         [None, '0'])
+
+        # Ensure that '0' doesn't get translated to None
+        self.assertEqual(req.get_param_as_list('list-ish3'),
+                         ['a', None, None, 'b'])
 
         store = {}
-        self.assertEquals(req.get_param_as_list('limit', store=store), ['1'])
-        self.assertEquals(store['limit'], ['1'])
+        self.assertEqual(req.get_param_as_list('limit', store=store), ['1'])
+        self.assertEqual(store['limit'], ['1'])
 
     def test_list_transformer(self):
         query_string = 'coord=1.4,13,15.1&limit=100&things=4,,1'
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
-        self.assertEquals(req.get_param('coord'), '1.4,13,15.1')
+        self.assertEqual(req.get_param('coord'), '1.4,13,15.1')
 
         expected = [1.4, 13.0, 15.1]
         actual = req.get_param_as_list('coord', transform=float)
-        self.assertEquals(actual, expected)
+        self.assertEqual(actual, expected)
 
         expected = ['4', None, '1']
         actual = req.get_param_as_list('things', transform=str)
-        self.assertEquals(actual, expected)
+        self.assertEqual(actual, expected)
 
         expected = [4, None, 1]
         actual = req.get_param_as_list('things', transform=int)
-        self.assertEquals(actual, expected)
+        self.assertEqual(actual, expected)
 
         self.assertRaises(falcon.HTTPBadRequest,
                           req.get_param_as_list, 'coord', transform=int)

@@ -122,7 +122,7 @@ class TestHeaders(testing.TestBase):
         self.simulate_request(self.test_route)
 
         value = self.resource.req.get_header('X-Not-Found') or '876'
-        self.assertEquals(value, '876')
+        self.assertEqual(value, '876')
 
     def test_required_header(self):
         self.simulate_request(self.test_route)
@@ -136,7 +136,7 @@ class TestHeaders(testing.TestBase):
 
         # Make sure we picked up host from HTTP_HOST, not SERVER_NAME
         host = self.resource.req.get_header('host')
-        self.assertEquals(host, testing.DEFAULT_HOST)
+        self.assertEqual(host, testing.DEFAULT_HOST)
 
     def test_host_fallback(self):
         # Set protocol to 1.0 so that we won't get a host header
@@ -144,7 +144,7 @@ class TestHeaders(testing.TestBase):
 
         # Make sure we picked up host from HTTP_HOST, not SERVER_NAME
         host = self.resource.req.get_header('host')
-        self.assertEquals(host, 'localhost')
+        self.assertEqual(host, 'localhost')
 
     def test_host_fallback_port8000(self):
         # Set protocol to 1.0 so that we won't get a host header
@@ -153,7 +153,7 @@ class TestHeaders(testing.TestBase):
 
         # Make sure we picked up host from HTTP_HOST, not SERVER_NAME
         host = self.resource.req.get_header('host')
-        self.assertEquals(host, 'localhost:8000')
+        self.assertEqual(host, 'localhost:8000')
 
     def test_no_body_on_100(self):
         self.resource = StatusTestResource(falcon.HTTP_100)
@@ -163,7 +163,7 @@ class TestHeaders(testing.TestBase):
         self.assertThat(self.srmock.headers_dict,
                         Not(Contains('Content-Length')))
 
-        self.assertEquals(body, [])
+        self.assertEqual(body, [])
 
     def test_no_body_on_101(self):
         self.resource = StatusTestResource(falcon.HTTP_101)
@@ -173,7 +173,7 @@ class TestHeaders(testing.TestBase):
         self.assertThat(self.srmock.headers_dict,
                         Not(Contains('Content-Length')))
 
-        self.assertEquals(body, [])
+        self.assertEqual(body, [])
 
     def test_no_body_on_204(self):
         self.resource = StatusTestResource(falcon.HTTP_204)
@@ -183,7 +183,7 @@ class TestHeaders(testing.TestBase):
         self.assertThat(self.srmock.headers_dict,
                         Not(Contains('Content-Length')))
 
-        self.assertEquals(body, [])
+        self.assertEqual(body, [])
 
     def test_no_body_on_304(self):
         self.resource = StatusTestResource(falcon.HTTP_304)
@@ -193,7 +193,7 @@ class TestHeaders(testing.TestBase):
         self.assertThat(self.srmock.headers_dict,
                         Not(Contains('Content-Length')))
 
-        self.assertEquals(body, [])
+        self.assertEqual(body, [])
 
     def test_passthrough_req_headers(self):
         req_headers = {
@@ -204,7 +204,7 @@ class TestHeaders(testing.TestBase):
 
         for name, expected_value in req_headers.items():
             actual_value = self.resource.req.get_header(name)
-            self.assertEquals(actual_value, expected_value)
+            self.assertEqual(actual_value, expected_value)
 
         self.simulate_request(self.test_route,
                               headers=self.resource.req.headers)
@@ -212,7 +212,7 @@ class TestHeaders(testing.TestBase):
         # Compare the request HTTP headers with the original headers
         for name, expected_value in req_headers.items():
             actual_value = self.resource.req.get_header(name)
-            self.assertEquals(actual_value, expected_value)
+            self.assertEqual(actual_value, expected_value)
 
     def test_passthrough_resp_headers(self):
         self.simulate_request(self.test_route)

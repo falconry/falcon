@@ -27,26 +27,26 @@ class TestDefaultRouting(testing.TestBase):
         self.api.set_default_route(self.default_resource)
 
         self.simulate_request('/')
-        self.assertEquals(self.srmock.status, falcon.HTTP_200)
+        self.assertEqual(self.srmock.status, falcon.HTTP_200)
 
         self.simulate_request('/any')
-        self.assertEquals(self.srmock.status, falcon.HTTP_200)
+        self.assertEqual(self.srmock.status, falcon.HTTP_200)
 
     def test_routing_prioritise(self):
         self.api.set_default_route(self.default_resource)
         self.api.add_route('/people/{name}', self.resource)
 
         self.simulate_request('/people/asuka')
-        self.assertEquals(self.srmock.status, falcon.HTTP_402)
+        self.assertEqual(self.srmock.status, falcon.HTTP_402)
 
         self.simulate_request('/person/asuka')
-        self.assertEquals(self.srmock.status, falcon.HTTP_200)
+        self.assertEqual(self.srmock.status, falcon.HTTP_200)
 
         self.simulate_request('/people/asuka', method='DELETE')
-        self.assertEquals(self.srmock.status, falcon.HTTP_204)
+        self.assertEqual(self.srmock.status, falcon.HTTP_204)
 
         self.simulate_request('/person/asuka', method='DELETE')
-        self.assertEquals(self.srmock.status, falcon.HTTP_405)
+        self.assertEqual(self.srmock.status, falcon.HTTP_405)
 
         headers = self.srmock.headers
         allow_header = ('Allow', 'GET, OPTIONS')
@@ -54,4 +54,4 @@ class TestDefaultRouting(testing.TestBase):
         self.assertThat(headers, Contains(allow_header))
 
         self.simulate_request('/person/asuka', method=self.getUniqueString())
-        self.assertEquals(self.srmock.status, falcon.HTTP_400)
+        self.assertEqual(self.srmock.status, falcon.HTTP_400)

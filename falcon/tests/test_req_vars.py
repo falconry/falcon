@@ -56,13 +56,13 @@ class TestReqVars(testing.TestBase):
 
         actual_url = ''.join([scheme, '://', host, app, path,
                               '?', query_string])
-        self.assertEquals(actual_url, self.uri)
+        self.assertEqual(actual_url, self.uri)
 
     def test_uri(self):
-        self.assertEquals(self.req.url, self.uri)
+        self.assertEqual(self.req.url, self.uri)
 
-        self.assertEquals(self.req.uri, self.uri)
-        self.assertEquals(self.req_noqs.uri, self.uri_noqs)
+        self.assertEqual(self.req.uri, self.uri)
+        self.assertEqual(self.req_noqs.uri, self.uri_noqs)
 
     def test_relative_uri(self):
         self.assertEqual(self.req.relative_uri, self.app + self.relative_uri)
@@ -159,37 +159,37 @@ class TestReqVars(testing.TestBase):
         headers = {'Accept': 'application/xml'}
         req = Request(testing.create_environ(headers=headers))
         preferred_type = req.client_prefers(['application/xml'])
-        self.assertEquals(preferred_type, 'application/xml')
+        self.assertEqual(preferred_type, 'application/xml')
 
         headers = {'Accept': '*/*'}
         preferred_type = req.client_prefers(('application/xml',
                                              'application/json'))
 
         # NOTE(kgriffs): If client doesn't care, "preferr" the first one
-        self.assertEquals(preferred_type, 'application/xml')
+        self.assertEqual(preferred_type, 'application/xml')
 
         headers = {'Accept': 'text/*; q=0.1, application/xhtml+xml; q=0.5'}
         req = Request(testing.create_environ(headers=headers))
         preferred_type = req.client_prefers(['application/xhtml+xml'])
-        self.assertEquals(preferred_type, 'application/xhtml+xml')
+        self.assertEqual(preferred_type, 'application/xhtml+xml')
 
         headers = {'Accept': '3p12845j;;;asfd;'}
         req = Request(testing.create_environ(headers=headers))
         preferred_type = req.client_prefers(['application/xhtml+xml'])
-        self.assertEquals(preferred_type, None)
+        self.assertEqual(preferred_type, None)
 
     def test_range(self):
         headers = {'Range': '10-'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEquals(req.range, (10, -1))
+        self.assertEqual(req.range, (10, -1))
 
         headers = {'Range': '10-20'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEquals(req.range, (10, 20))
+        self.assertEqual(req.range, (10, 20))
 
         headers = {'Range': '-10240'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEquals(req.range, (-10240, -1))
+        self.assertEqual(req.range, (-10240, -1))
 
         headers = {'Range': ''}
         req = Request(testing.create_environ(headers=headers))
@@ -261,19 +261,19 @@ class TestReqVars(testing.TestBase):
 
     def test_missing_attribute_header(self):
         req = Request(testing.create_environ())
-        self.assertEquals(req.range, None)
+        self.assertEqual(req.range, None)
 
         req = Request(testing.create_environ())
-        self.assertEquals(req.content_length, None)
+        self.assertEqual(req.content_length, None)
 
     def test_content_length(self):
         headers = {'content-length': '5656'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEquals(req.content_length, 5656)
+        self.assertEqual(req.content_length, 5656)
 
         headers = {'content-length': ''}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEquals(req.content_length, None)
+        self.assertEqual(req.content_length, None)
 
     def test_bogus_content_length_nan(self):
         headers = {'content-length': 'fuzzy-bunnies'}
@@ -289,7 +289,7 @@ class TestReqVars(testing.TestBase):
         date = datetime.datetime(2013, 4, 4, 5, 19, 18)
         headers = {'date': 'Thu, 04 Apr 2013 05:19:18 GMT'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEquals(req.date, date)
+        self.assertEqual(req.date, date)
 
     def test_date_invalid(self):
         headers = {'date': 'Thu, 04 Apr 2013'}
@@ -324,20 +324,20 @@ class TestReqVars(testing.TestBase):
                                     default=default_agent)
 
     def test_method(self):
-        self.assertEquals(self.req.method, 'GET')
+        self.assertEqual(self.req.method, 'GET')
 
         self.req = Request(testing.create_environ(path='', method='HEAD'))
-        self.assertEquals(self.req.method, 'HEAD')
+        self.assertEqual(self.req.method, 'HEAD')
 
     def test_empty_path(self):
         self.req = Request(testing.create_environ(path=''))
-        self.assertEquals(self.req.path, '/')
+        self.assertEqual(self.req.path, '/')
 
     def test_content_type_method(self):
-        self.assertEquals(self.req.get_header('content-type'), 'text/plain')
+        self.assertEqual(self.req.get_header('content-type'), 'text/plain')
 
     def test_content_length_method(self):
-        self.assertEquals(self.req.get_header('content-length'), '4829')
+        self.assertEqual(self.req.get_header('content-length'), '4829')
 
     # -------------------------------------------------------------------------
     # Helpers
@@ -346,7 +346,7 @@ class TestReqVars(testing.TestBase):
     def _test_attribute_header(self, name, value, attr, default=None):
         headers = {name: value}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEquals(getattr(req, attr), value)
+        self.assertEqual(getattr(req, attr), value)
 
         req = Request(testing.create_environ())
         self.assertEqual(getattr(req, attr), default)

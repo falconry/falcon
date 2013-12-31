@@ -14,4 +14,4 @@ class TestResponseBody(testing.TestBase):
             resp.body += token
             resp.body += " "
 
-        self.assertEquals(resp.body, text)
+        self.assertEqual(resp.body, text)

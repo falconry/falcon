@@ -252,7 +252,7 @@ class TestHTTPError(testing.TestBase):
 
         self.assertTrue(unicode_resource.called)
         #self.assertEqual(self.srmock.status, falcon.HTTP_792)
-        self.assertEquals(expected_body, body)
+        self.assertEqual(expected_body, body)
 
     def test_401(self):
         self.api.add_route('/401', UnauthorizedResource())

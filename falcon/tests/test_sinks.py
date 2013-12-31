@@ -37,32 +37,32 @@ class TestDefaultRouting(testing.TestBase):
         self.api.add_sink(self.sink)
 
         self.simulate_request('/')
-        self.assertEquals(self.srmock.status, falcon.HTTP_503)
+        self.assertEqual(self.srmock.status, falcon.HTTP_503)
 
     def test_single_simple_pattern(self):
         self.api.add_sink(self.sink, r'/foo')
 
         self.simulate_request('/foo/bar')
-        self.assertEquals(self.srmock.status, falcon.HTTP_503)
+        self.assertEqual(self.srmock.status, falcon.HTTP_503)
 
     def test_single_compiled_pattern(self):
         self.api.add_sink(self.sink, re.compile(r'/foo'))
 
         self.simulate_request('/foo/bar')
-        self.assertEquals(self.srmock.status, falcon.HTTP_503)
+        self.assertEqual(self.srmock.status, falcon.HTTP_503)
 
         self.simulate_request('/auth')
-        self.assertEquals(self.srmock.status, falcon.HTTP_404)
+        self.assertEqual(self.srmock.status, falcon.HTTP_404)
 
     def test_named_groups(self):
         self.api.add_sink(self.sink, r'/user/(?P<id>\d+)')
 
         self.simulate_request('/user/309')
-        self.assertEquals(self.srmock.status, falcon.HTTP_503)
-        self.assertEquals(self.sink.kwargs['id'], '309')
+        self.assertEqual(self.srmock.status, falcon.HTTP_503)
+        self.assertEqual(self.sink.kwargs['id'], '309')
 
         self.simulate_request('/user/sally')
-        self.assertEquals(self.srmock.status, falcon.HTTP_404)
+        self.assertEqual(self.srmock.status, falcon.HTTP_404)
 
     def test_multiple_patterns(self):
         self.api.add_sink(self.sink, r'/foo')
@@ -71,10 +71,10 @@ class TestDefaultRouting(testing.TestBase):
         self.api.add_sink(self.sink, r'/katza')
 
         self.simulate_request('/foo/bar')
-        self.assertEquals(self.srmock.status, falcon.HTTP_781)
+        self.assertEqual(self.srmock.status, falcon.HTTP_781)
 
         self.simulate_request('/katza')
-        self.assertEquals(self.srmock.status, falcon.HTTP_503)
+        self.assertEqual(self.srmock.status, falcon.HTTP_503)
 
     def test_with_route(self):
         self.api.add_route('/books', self.resource)
@@ -82,11 +82,11 @@ class TestDefaultRouting(testing.TestBase):
 
         self.simulate_request('/proxy/books')
         self.assertFalse(self.resource.called)
-        self.assertEquals(self.srmock.status, falcon.HTTP_503)
+        self.assertEqual(self.srmock.status, falcon.HTTP_503)
 
         self.simulate_request('/books')
         self.assertTrue(self.resource.called)
-        self.assertEquals(self.srmock.status, falcon.HTTP_200)
+        self.assertEqual(self.srmock.status, falcon.HTTP_200)
 
     def test_route_precedence(self):
         # NOTE(kgriffs): In case of collision, the route takes precedence.
@@ -95,7 +95,7 @@ class TestDefaultRouting(testing.TestBase):
 
         self.simulate_request('/books')
         self.assertTrue(self.resource.called)
-        self.assertEquals(self.srmock.status, falcon.HTTP_200)
+        self.assertEqual(self.srmock.status, falcon.HTTP_200)
 
     def test_route_precedence_with_id(self):
         # NOTE(kgriffs): In case of collision, the route takes precedence.
@@ -104,7 +104,7 @@ class TestDefaultRouting(testing.TestBase):
 
         self.simulate_request('/books')
         self.assertFalse(self.resource.called)
-        self.assertEquals(self.srmock.status, falcon.HTTP_503)
+        self.assertEqual(self.srmock.status, falcon.HTTP_503)
 
     def test_route_precedence_with_both_id(self):
         # NOTE(kgriffs): In case of collision, the route takes precedence.
@@ -113,4 +113,4 @@ class TestDefaultRouting(testing.TestBase):
 
         self.simulate_request('/books/123')
         self.assertTrue(self.resource.called)
-        self.assertEquals(self.srmock.status, falcon.HTTP_200)
+        self.assertEqual(self.srmock.status, falcon.HTTP_200)
