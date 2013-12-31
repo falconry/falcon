@@ -50,19 +50,9 @@ class HTTPUnauthorized(HTTPError):
     Use when authentication is required, and the provided credentials are
     not valid, or no credentials were provided in the first place.
 
-    Args:
-        title: Human-friendly error title
-        description: Human-friendly description of the error, along with a
-            helpful suggestion or two.
-        scheme: Authentication scheme to use as the value of the
-            WWW-Authenticate header in the response (default None).
-
-    The remaining (optional) args are the same as for HTTPError.
-
-
     """
 
-    def __init__(self, title, description, scheme=None, **kwargs):
+    def __init__(self, title, description, **kwargs):
         """Initialize
 
         Args:
@@ -77,6 +67,8 @@ class HTTPUnauthorized(HTTPError):
 
         """
         headers = kwargs.setdefault('headers', {})
+
+        scheme = kwargs.pop('scheme', None)
         if scheme is not None:
             headers['WWW-Authenticate'] = scheme
 

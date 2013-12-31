@@ -67,7 +67,7 @@ class UnauthorizedResource:
     def on_get(self, req, resp):
         raise falcon.HTTPUnauthorized('Authentication Required',
                                       'Missing or invalid token header.',
-                                      'Token')
+                                      scheme='Token; UUID')
 
 
 class UnauthorizedResourceSchemaless:
@@ -259,7 +259,8 @@ class TestHTTPError(testing.TestBase):
         self.simulate_request('/401')
 
         self.assertEqual(self.srmock.status, falcon.HTTP_401)
-        self.assertIn(('WWW-Authenticate', 'Token'), self.srmock.headers)
+        self.assertIn(('WWW-Authenticate', 'Token; UUID'),
+                      self.srmock.headers)
 
     def test_401_schemaless(self):
         self.api.add_route('/401', UnauthorizedResourceSchemaless())
