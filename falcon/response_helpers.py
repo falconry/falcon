@@ -29,21 +29,23 @@ def header_property(name, doc, transform=None):
             as the value of the header (default None)
 
     """
+    normalized_name = name.lower()
+
     def fget(self):
         try:
-            return self._headers[name]
+            return self._headers[normalized_name]
         except KeyError:
             return None
 
     if transform is None:
         def fset(self, value):
-            self._headers[name] = value
+            self._headers[normalized_name] = value
     else:
         def fset(self, value):
-            self._headers[name] = transform(value)
+            self._headers[normalized_name] = transform(value)
 
     def fdel(self):
-        del self._headers[name]
+        del self._headers[normalized_name]
 
     return property(fget, fset, fdel, doc)
 

@@ -147,4 +147,4 @@ class TestHooks(testing.TestBase):
         body = self.simulate_request('/one', method='OPTIONS')
         self.assertEqual(falcon.HTTP_501, self.srmock.status)
         self.assertEqual([b'fluffy'], body)
-        self.assertNotIn('Allow', self.srmock.headers_dict)
+        self.assertNotIn('allow', self.srmock.headers_dict)

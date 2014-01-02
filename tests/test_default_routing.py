@@ -49,7 +49,7 @@ class TestDefaultRouting(testing.TestBase):
         self.assertEqual(self.srmock.status, falcon.HTTP_405)
 
         headers = self.srmock.headers
-        allow_header = ('Allow', 'GET, OPTIONS')
+        allow_header = ('allow', 'GET, OPTIONS')
 
         self.assertThat(headers, Contains(allow_header))
 

@@ -96,7 +96,7 @@ class TestHelloWorld(testing.TestBase):
         body = self.simulate_request(self.test_route)
         resp = self.resource.resp
 
-        content_length = int(self.srmock.headers_dict['Content-Length'])
+        content_length = int(self.srmock.headers_dict['content-length'])
         self.assertEqual(content_length, len(self.resource.sample_utf8))
 
         self.assertEqual(self.srmock.status, self.resource.sample_status)
@@ -108,7 +108,7 @@ class TestHelloWorld(testing.TestBase):
         body = self.simulate_request('/bytes')
         resp = self.bytes_resource.resp
 
-        content_length = int(self.srmock.headers_dict['Content-Length'])
+        content_length = int(self.srmock.headers_dict['content-length'])
         self.assertEqual(content_length, len(self.resource.sample_utf8))
 
         self.assertEqual(self.srmock.status, self.resource.sample_status)
@@ -120,7 +120,7 @@ class TestHelloWorld(testing.TestBase):
         body = self.simulate_request('/data')
         resp = self.data_resource.resp
 
-        content_length = int(self.srmock.headers_dict['Content-Length'])
+        content_length = int(self.srmock.headers_dict['content-length'])
         self.assertEqual(content_length, len(self.resource.sample_utf8))
 
         self.assertEqual(self.srmock.status, self.resource.sample_status)
@@ -153,7 +153,7 @@ class TestHelloWorld(testing.TestBase):
             dest.write(chunk)
 
         expected_len = self.stream_resource.resp.stream_len
-        content_length = ('Content-Length', str(expected_len))
+        content_length = ('content-length', str(expected_len))
         self.assertThat(self.srmock.headers, Contains(content_length))
         self.assertEqual(dest.tell(), expected_len)
 

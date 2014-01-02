@@ -163,7 +163,7 @@ class TestHttpMethodRouting(testing.TestBase):
             self.assertEqual(self.srmock.status, falcon.HTTP_405)
 
             headers = self.srmock.headers
-            allow_header = ('Allow', 'GET, HEAD, PUT, OPTIONS')
+            allow_header = ('allow', 'GET, HEAD, PUT, OPTIONS')
 
             self.assertThat(headers, Contains(allow_header))
 
@@ -180,7 +180,7 @@ class TestHttpMethodRouting(testing.TestBase):
             self.assertEqual(self.srmock.status, falcon.HTTP_405)
 
             headers = self.srmock.headers
-            allow_header = ('Allow', 'GET, PUT, OPTIONS')
+            allow_header = ('allow', 'GET, PUT, OPTIONS')
 
             self.assertThat(headers, Contains(allow_header))
 
@@ -189,7 +189,7 @@ class TestHttpMethodRouting(testing.TestBase):
         self.assertEqual(self.srmock.status, falcon.HTTP_204)
 
         headers = self.srmock.headers
-        allow_header = ('Allow', 'GET, HEAD, PUT')
+        allow_header = ('allow', 'GET, HEAD, PUT')
 
         self.assertThat(headers, Contains(allow_header))
 

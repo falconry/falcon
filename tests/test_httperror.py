@@ -259,7 +259,7 @@ class TestHTTPError(testing.TestBase):
         self.simulate_request('/401')
 
         self.assertEqual(self.srmock.status, falcon.HTTP_401)
-        self.assertIn(('WWW-Authenticate', 'Token; UUID'),
+        self.assertIn(('www-authenticate', 'Token; UUID'),
                       self.srmock.headers)
 
     def test_401_schemaless(self):
@@ -267,7 +267,7 @@ class TestHTTPError(testing.TestBase):
         self.simulate_request('/401')
 
         self.assertEqual(self.srmock.status, falcon.HTTP_401)
-        self.assertNotIn(('WWW-Authenticate', 'Token'), self.srmock.headers)
+        self.assertNotIn(('www-authenticate', 'Token'), self.srmock.headers)
 
     def test_404(self):
         self.api.add_route('/404', NotFoundResource())
@@ -282,7 +282,7 @@ class TestHTTPError(testing.TestBase):
 
         self.assertEqual(self.srmock.status, falcon.HTTP_405)
         self.assertEqual(body, [])
-        self.assertIn(('Allow', 'PUT'), self.srmock.headers)
+        self.assertIn(('allow', 'PUT'), self.srmock.headers)
 
     def test_411(self):
         self.api.add_route('/411', LengthRequiredResource())
@@ -300,9 +300,9 @@ class TestHTTPError(testing.TestBase):
 
         self.assertEqual(self.srmock.status, falcon.HTTP_416)
         self.assertEqual(body, [])
-        self.assertIn(('Content-Range', 'bytes */123456'), self.srmock.headers)
-        self.assertIn(('Content-Type', 'application/xml'), self.srmock.headers)
-        self.assertNotIn(('Content-Length', '0'), self.srmock.headers)
+        self.assertIn(('content-range', 'bytes */123456'), self.srmock.headers)
+        self.assertIn(('content-type', 'application/xml'), self.srmock.headers)
+        self.assertNotIn(('content-length', '0'), self.srmock.headers)
 
     def test_416_custom_media_type(self):
         self.api.add_route('/416', RangeNotSatisfiableResource())
@@ -310,9 +310,9 @@ class TestHTTPError(testing.TestBase):
 
         self.assertEqual(self.srmock.status, falcon.HTTP_416)
         self.assertEqual(body, [])
-        self.assertIn(('Content-Range', 'bytes */123456'),
+        self.assertIn(('content-range', 'bytes */123456'),
                       self.srmock.headers)
-        self.assertIn(('Content-Type', 'x-falcon/peregrine'),
+        self.assertIn(('content-type', 'x-falcon/peregrine'),
                       self.srmock.headers)
 
     def test_503(self):
@@ -324,7 +324,7 @@ class TestHTTPError(testing.TestBase):
 
         self.assertEqual(self.srmock.status, falcon.HTTP_503)
         self.assertEqual(body, [expected_body])
-        self.assertIn(('Retry-After', '60'), self.srmock.headers)
+        self.assertIn(('retry-after', '60'), self.srmock.headers)
 
     def test_misc(self):
         self._misc_test(falcon.HTTPBadRequest, falcon.HTTP_400)

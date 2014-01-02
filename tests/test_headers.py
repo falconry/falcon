@@ -24,7 +24,7 @@ class XmlResource:
         self.content_type = content_type
 
     def on_get(self, req, resp):
-        resp.set_header('Content-Type', self.content_type)
+        resp.set_header('content-type', self.content_type)
 
 
 class DefaultContentTypeResource:
@@ -43,6 +43,10 @@ class HeaderHelpersResource:
             self.last_modified = last_modified
         else:
             self.last_modified = datetime.utcnow()
+
+    def _overwrite_headers(self, req, resp):
+        resp.content_type = 'x-falcon/peregrine'
+        resp.cache_control = ['no-store']
 
     def on_get(self, req, resp):
         resp.body = "{}"
@@ -68,12 +72,33 @@ class HeaderHelpersResource:
     def on_head(self, req, resp):
         resp.set_header('Content-Type', 'x-swallow/unladen')
         resp.set_header('X-Auth-Token', 'setecastronomy')
-        resp.set_header('X-Auth-Token', 'toomanysecrets')
-        resp.content_type = 'x-falcon/peregrine'
-        resp.cache_control = ['no-store']
+        resp.set_header('X-AUTH-TOKEN', 'toomanysecrets')
 
         resp.location = '/things/87'
         del resp.location
+
+        self._overwrite_headers(req, resp)
+
+        self.resp = resp
+
+    def on_post(self, req, resp):
+        resp.set_headers([
+            ('CONTENT-TYPE', 'x-swallow/unladen'),
+            ('X-Auth-Token', 'setecastronomy'),
+            ('X-AUTH-TOKEN', 'toomanysecrets')
+        ])
+
+        self._overwrite_headers(req, resp)
+
+        self.resp = resp
+
+    def on_put(self, req, resp):
+        resp.set_headers({
+            'CONTENT-TYPE': 'x-swallow/unladen',
+            'X-aUTH-tOKEN': 'toomanysecrets'
+        })
+
+        self._overwrite_headers(req, resp)
 
         self.resp = resp
 
@@ -115,7 +140,7 @@ class TestHeaders(testing.TestBase):
 
         # Test Content-Length header set
         content_length = str(len(self.resource.sample_body))
-        content_length_header = ('Content-Length', content_length)
+        content_length_header = ('content-length', content_length)
         self.assertThat(headers, Contains(content_length_header))
 
     def test_default_value(self):
@@ -219,8 +244,9 @@ class TestHeaders(testing.TestBase):
 
         resp_headers = self.srmock.headers
 
-        for h in self.resource.resp_headers.items():
-            self.assertThat(resp_headers, Contains(h))
+        for name, value in self.resource.resp_headers.items():
+            expected = (name.lower(), value)
+            self.assertThat(resp_headers, Contains(expected))
 
     def test_default_media_type(self):
         self.resource = DefaultContentTypeResource('Hello world!')
@@ -228,7 +254,7 @@ class TestHeaders(testing.TestBase):
         self.simulate_request(self.test_route)
 
         content_type = falcon.DEFAULT_MEDIA_TYPE
-        self.assertIn(('Content-Type', content_type), self.srmock.headers)
+        self.assertIn(('content-type', content_type), self.srmock.headers)
 
     def test_custom_media_type(self):
         self.resource = DefaultContentTypeResource('Hello world!')
@@ -237,7 +263,7 @@ class TestHeaders(testing.TestBase):
         self.simulate_request(self.test_route)
 
         content_type = 'application/atom+xml'
-        self.assertIn(('Content-Type', content_type), self.srmock.headers)
+        self.assertIn(('content-type', content_type), self.srmock.headers)
 
     def test_response_header_helpers_on_get(self):
         last_modified = datetime(2013, 1, 1, 10, 30, 30)
@@ -249,35 +275,35 @@ class TestHeaders(testing.TestBase):
 
         content_type = 'x-falcon/peregrine'
         self.assertEqual(content_type, resp.content_type)
-        self.assertIn(('Content-Type', content_type), self.srmock.headers)
+        self.assertIn(('content-type', content_type), self.srmock.headers)
 
         cache_control = ('public, private, no-cache, no-store, '
                          'must-revalidate, proxy-revalidate, max-age=3600, '
                          's-maxage=60, no-transform')
 
         self.assertEqual(cache_control, resp.cache_control)
-        self.assertIn(('Cache-Control', cache_control), self.srmock.headers)
+        self.assertIn(('cache-control', cache_control), self.srmock.headers)
 
         etag = 'fa0d1a60ef6616bb28038515c8ea4cb2'
         self.assertEqual(etag, resp.etag)
-        self.assertIn(('ETag', etag), self.srmock.headers)
+        self.assertIn(('etag', etag), self.srmock.headers)
 
         last_modified_http_date = 'Tue, 01 Jan 2013 10:30:30 GMT'
         self.assertEqual(last_modified_http_date, resp.last_modified)
-        self.assertIn(('Last-Modified', last_modified_http_date),
+        self.assertIn(('last-modified', last_modified_http_date),
                       self.srmock.headers)
 
         self.assertEqual('3601', resp.retry_after)
-        self.assertIn(('Retry-After', '3601'), self.srmock.headers)
+        self.assertIn(('retry-after', '3601'), self.srmock.headers)
 
         self.assertEqual('/things/87', resp.location)
-        self.assertIn(('Location', '/things/87'), self.srmock.headers)
+        self.assertIn(('location', '/things/87'), self.srmock.headers)
 
         self.assertEqual('/things/78', resp.content_location)
-        self.assertIn(('Content-Location', '/things/78'), self.srmock.headers)
+        self.assertIn(('content-location', '/things/78'), self.srmock.headers)
 
         self.assertEqual('bytes 0-499/10240', resp.content_range)
-        self.assertIn(('Content-Range', 'bytes 0-499/10240'),
+        self.assertIn(('content-range', 'bytes 0-499/10240'),
                       self.srmock.headers)
 
         # Check for duplicate headers
@@ -290,52 +316,55 @@ class TestHeaders(testing.TestBase):
         self.api.add_route(self.test_route, LocationHeaderUnicodeResource())
         self.simulate_request(self.test_route)
 
-        location = ('Location', '/%C3%A7runchy/bacon')
+        location = ('location', '/%C3%A7runchy/bacon')
         self.assertIn(location, self.srmock.headers)
 
-        content_location = ('Content-Location', 'ab%C3%A7')
+        content_location = ('content-location', 'ab%C3%A7')
         self.assertIn(content_location, self.srmock.headers)
 
         # Test with the values swapped
         self.simulate_request(self.test_route, method='HEAD')
 
-        location = ('Location', 'ab%C3%A7')
+        location = ('location', 'ab%C3%A7')
         self.assertIn(location, self.srmock.headers)
 
-        content_location = ('Content-Location', '/%C3%A7runchy/bacon')
+        content_location = ('content-location', '/%C3%A7runchy/bacon')
         self.assertIn(content_location, self.srmock.headers)
 
-    def test_response_header_helpers_on_head(self):
+    def test_response_set_header(self):
         self.resource = HeaderHelpersResource()
         self.api.add_route(self.test_route, self.resource)
-        self.simulate_request(self.test_route, method="HEAD")
 
-        content_type = 'x-falcon/peregrine'
-        self.assertIn(('Content-Type', content_type), self.srmock.headers)
-        self.assertIn(('Cache-Control', 'no-store'), self.srmock.headers)
-        self.assertIn(('X-Auth-Token', 'toomanysecrets'), self.srmock.headers)
+        for method in ('HEAD', 'POST', 'PUT'):
+            self.simulate_request(self.test_route, method=method)
 
-        self.assertEqual(None, self.resource.resp.location)
+            content_type = 'x-falcon/peregrine'
+            self.assertIn(('content-type', content_type), self.srmock.headers)
+            self.assertIn(('cache-control', 'no-store'), self.srmock.headers)
+            self.assertIn(('x-auth-token', 'toomanysecrets'),
+                          self.srmock.headers)
 
-        # Check for duplicate headers
-        hist = defaultdict(lambda: 0)
-        for name, value in self.srmock.headers:
-            hist[name] += 1
-            self.assertEqual(1, hist[name])
+            self.assertEqual(None, self.resource.resp.location)
+
+            # Check for duplicate headers
+            hist = defaultdict(lambda: 0)
+            for name, value in self.srmock.headers:
+                hist[name] += 1
+                self.assertEqual(1, hist[name])
 
     def test_vary_star(self):
         self.resource = VaryHeaderResource(['*'])
         self.api.add_route(self.test_route, self.resource)
         self.simulate_request(self.test_route)
 
-        self.assertIn(('Vary', '*'), self.srmock.headers)
+        self.assertIn(('vary', '*'), self.srmock.headers)
 
     def test_vary_header(self):
         self.resource = VaryHeaderResource(['accept-encoding'])
         self.api.add_route(self.test_route, self.resource)
         self.simulate_request(self.test_route)
 
-        self.assertIn(('Vary', 'accept-encoding'), self.srmock.headers)
+        self.assertIn(('vary', 'accept-encoding'), self.srmock.headers)
 
     def test_vary_headers(self):
         self.resource = VaryHeaderResource(['accept-encoding', 'x-auth-token'])
@@ -343,7 +372,7 @@ class TestHeaders(testing.TestBase):
         self.simulate_request(self.test_route)
 
         vary = 'accept-encoding, x-auth-token'
-        self.assertIn(('Vary', vary), self.srmock.headers)
+        self.assertIn(('vary', vary), self.srmock.headers)
 
     def test_vary_headers_tuple(self):
         self.resource = VaryHeaderResource(('accept-encoding', 'x-auth-token'))
@@ -351,14 +380,14 @@ class TestHeaders(testing.TestBase):
         self.simulate_request(self.test_route)
 
         vary = 'accept-encoding, x-auth-token'
-        self.assertIn(('Vary', vary), self.srmock.headers)
+        self.assertIn(('vary', vary), self.srmock.headers)
 
     def test_no_content_type(self):
         self.resource = DefaultContentTypeResource()
         self.api.add_route(self.test_route, self.resource)
         self.simulate_request(self.test_route)
 
-        self.assertNotIn('Content-Type', self.srmock.headers_dict)
+        self.assertNotIn('content-type', self.srmock.headers_dict)
 
     def test_custom_content_type(self):
         content_type = 'application/xml; charset=utf-8'
@@ -366,4 +395,4 @@ class TestHeaders(testing.TestBase):
         self.api.add_route(self.test_route, self.resource)
 
         self.simulate_request(self.test_route)
-        self.assertIn(('Content-Type', content_type), self.srmock.headers)
+        self.assertIn(('content-type', content_type), self.srmock.headers)
