@@ -17,7 +17,7 @@ limitations under the License.
 """
 
 
-def header_property(name, doc, transform=lambda v: v):
+def header_property(name, doc, transform=None):
     """Creates a header getter/setter.
 
     Args:
@@ -26,7 +26,7 @@ def header_property(name, doc, transform=lambda v: v):
         transform: Transformation function to use when setting the
             property. The value will be passed to the function, and
             the function should return the transformed value to use
-            as the value of the header (default lambda v: v)
+            as the value of the header (default None)
 
     """
     def fget(self):
@@ -35,8 +35,12 @@ def header_property(name, doc, transform=lambda v: v):
         except KeyError:
             return None
 
-    def fset(self, value):
-        self._headers[name] = transform(value)
+    if transform is None:
+        def fset(self, value):
+            self._headers[name] = value
+    else:
+        def fset(self, value):
+            self._headers[name] = transform(value)
 
     def fdel(self):
         del self._headers[name]
