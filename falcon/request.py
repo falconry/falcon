@@ -476,13 +476,15 @@ class Request(object):
 
         """
 
+        params = self._params
+
         # PERF: Use if..in since it is a good all-around performer; we don't
         #       know how likely params are to be specified by clients.
-        if name in self._params:
+        if name in params:
             if store is not None:
-                store[name] = self._params[name]
+                store[name] = params[name]
 
-            return self._params[name]
+            return params[name]
 
         if not required:
             return None
@@ -520,10 +522,12 @@ class Request(object):
 
         """
 
+        params = self._params
+
         # PERF: Use if..in since it is a good all-around performer; we don't
         #       know how likely params are to be specified by clients.
-        if name in self._params:
-            val = self._params[name]
+        if name in params:
+            val = params[name]
             try:
                 val = int(val)
             except ValueError:
@@ -579,10 +583,12 @@ class Request(object):
 
         """
 
+        params = self._params
+
         # PERF: Use if..in since it is a good all-around performer; we don't
         #       know how likely params are to be specified by clients.
-        if name in self._params:
-            val = self._params[name]
+        if name in params:
+            val = params[name]
             if val in TRUE_STRINGS:
                 val = True
             elif val in FALSE_STRINGS:
@@ -646,10 +652,12 @@ class Request(object):
                 required.
         """
 
+        params = self._params
+
         # PERF: Use if..in since it is a good all-around performer; we don't
         #       know how likely params are to be specified by clients.
-        if name in self._params:
-            items = self._params[name].split(',')
+        if name in params:
+            items = params[name].split(',')
 
             # PERF(kgriffs): Use if-else rather than a DRY approach
             # that sets transform to a passthrough function; avoids
