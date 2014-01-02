@@ -1,7 +1,5 @@
 language: python
 install: pip install tox --use-mirrors
-python:
-  - pypy
 env:
   - TOX_ENV=py26
   - TOX_ENV=py27
