@@ -73,19 +73,34 @@ class TestFalconUtils(testtools.TestCase):
 
         self.assertEqual(expected, garbage_out)
 
-    def test_percent_escape(self):
+    def test_uri_encode(self):
         url = 'http://example.com/v1/fizbit/messages?limit=3&echo=true'
-        self.assertEqual(falcon.percent_escape(url), url)
+        self.assertEqual(uri.encode(url), url)
 
-        url2a = u'http://example.com/v1/fizbit/messages?limit=3&e\u00e7ho=true'
-        url2b = 'http://example.com/v1/fizbit/messages?limit=3&e%C3%A7ho=true'
-        self.assertEqual(falcon.percent_escape(url2a), url2b)
+        url = 'http://example.com/v1/fiz bit/messages'
+        expected = 'http://example.com/v1/fiz%20bit/messages'
+        self.assertEqual(uri.encode(url), expected)
 
-    def test_decode_value(self):
+        url = u'http://example.com/v1/fizbit/messages?limit=3&e\u00e7ho=true'
+        expected = ('http://example.com/v1/fizbit/messages'
+                    '?limit=3&e%C3%A7ho=true')
+        self.assertEqual(uri.encode(url), expected)
+
+    def test_uri_encode_value(self):
         self.assertEqual(uri.encode_value('abcd'), 'abcd')
         self.assertEqual(uri.encode_value(u'abcd'), u'abcd')
         self.assertEqual(uri.encode_value(u'ab cd'), u'ab%20cd')
-        self.assertEqual(uri.encode_value(u'\u00e7'), u'%C3%A7')
+        self.assertEqual(uri.encode_value(u'\u00e7'), '%C3%A7')
         self.assertEqual(uri.encode_value('ab/cd'), 'ab%2Fcd')
         self.assertEqual(uri.encode_value('ab+cd=42,9'),
                          'ab%2Bcd%3D42%2C9')
+
+    def test_uri_decode(self):
+        self.assertEqual(uri.decode('abcd'), 'abcd')
+        self.assertEqual(uri.decode(u'abcd'), u'abcd')
+        self.assertEqual(uri.decode(u'ab%20cd'), u'ab cd')
+        self.assertEqual(uri.decode('%C3%A7'), u'\u00e7')
+        self.assertEqual(uri.decode('ab%2Fcd'), 'ab/cd')
+
+        self.assertEqual(uri.decode('http://example.com?x=ab%2Bcd%3D42%2C9'),
+                         'http://example.com?x=ab+cd=42,9')

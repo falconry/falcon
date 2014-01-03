@@ -18,6 +18,11 @@ limitations under the License.
 
 import six
 
+if six.PY3:  # pragma nocover
+    import urllib.parse as urllib  # pylint: disable=E0611
+else:  # pragma nocover
+    import urllib
+
 
 # NOTE(kgriffs): See also RFC 3986
 _UNRESERVED = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -134,3 +139,57 @@ Returns:
     have been percent-encoded.
 
 """
+
+
+def decode(uri):
+    """Decode any percent-encoded characters in a URI or query string.
+
+    Args:
+        uri: An encoded URI (full or partial). If of type str on Python 2,
+            UTF-8 is assumed.
+
+    Returns:
+        A decoded URL. Will be of type `unicode` on Python 2 IFF `uri`
+        contains percent-encoded chars (in which case there is a chance
+        they might contain multibyte Unicode sequences).
+
+    """
+
+    encoded_uri = uri
+
+    #
+    # TODO(kgriffs): urllib is broken when it comes to decoding
+    # non-ASCII strings on Python 2. The problem is, if you pass
+    # it a str type, it doesn't even try to decode the character
+    # set. On the other hand, if you pass it a unicode type, urllib
+    # simply decodes code points as latin1 (not exactly a sensible
+    # default, eh?).
+    #
+    # So, we could just let urllib do its thing and after the fact
+    # decode the result like so:
+    #
+    # if six.PY2 and isinstance(encoded_uri, str):  # pragma nocover
+    #     encoded_uri = encoded_uri.decode('utf-8', 'replace')
+    #
+    # However, that adds several microseconds and will rarely be
+    # needed by the caller who is probably just decoding a query
+    # string, and it is not common to put non-ASCII characters in
+    # a cloud API's query string (please contact me if I am wrong!).
+    #
+
+    # PERF(kgriffs): unquote_plus can do this, but if there are
+    # *only* plusses in the string, no '%', we can save a lot of
+    # time!
+    if '+' in encoded_uri:
+        encoded_uri = encoded_uri.replace('+', ' ')
+
+    if '%' in encoded_uri:
+        encoded_uri = urllib.unquote(encoded_uri)
+
+        # PERF(kgriffs): Only spend the time to do this if there
+        # is a chance there were multibyte, UTF-8 encoded
+        # sequences that were percent-encoded.
+        if six.PY2 and isinstance(encoded_uri, str):  # pragma nocover
+            encoded_uri = encoded_uri.decode('utf-8', 'replace')
+
+    return encoded_uri

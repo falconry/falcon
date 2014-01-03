@@ -18,14 +18,8 @@ limitations under the License.
 
 import datetime
 import functools
-import six
 import inspect
 import warnings
-
-if six.PY3:  # pragma nocover
-    import urllib.parse as urllib  # pylint: disable=E0611
-else:  # pragma nocover
-    import urllib
 
 from falcon.util import uri
 
@@ -149,18 +143,5 @@ def to_query_str(params):
 # TODO(kgriffs): Remove this alias in Falcon v0.2.0
 percent_escape = uri.encode
 
-
-# TODO(kgriffs): Move this to falcon.uri.decode in Falcon v0.2.0
-def percent_unescape(nstr):
-    """Percent-unescape an input native string into a url.
-
-    Args:
-        nstr: A URL in native string (\u0000 - \u00FF).
-
-    Returns:
-        A URL as a python string, decoded as UTF-8.
-    """
-
-    s = urllib.unquote_plus(nstr)
-
-    return s if six.PY3 else s.decode('utf-8', 'replace')
+# TODO(kgriffs): Remove this alias in Falcon v0.2.0
+percent_unescape = uri.decode

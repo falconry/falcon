@@ -35,7 +35,9 @@ import six
 
 from falcon.exceptions import HTTPBadRequest
 from falcon import util
+from falcon.util import uri
 from falcon import request_helpers as helpers
+
 
 DEFAULT_ERROR_LOG_FORMAT = (u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
                             u' {1} {2}{3} => ')
@@ -108,7 +110,18 @@ class Request(object):
         # QUERY_STRING isn't required to be in env, so let's check
         # PERF: if...in is faster than using env.get(...)
         if 'QUERY_STRING' in env and env['QUERY_STRING']:
-            self.query_string = util.percent_unescape(env['QUERY_STRING'])
+
+            # TODO(kgriffs): Should this escape individual values instead
+            # of the entire string? The way it is now, this:
+            #
+            #   x=ab%2Bcd%3D42%2C9
+            #
+            # becomes this:
+            #
+            #   x=ab+cd=42,9
+            #
+            self.query_string = uri.decode(env['QUERY_STRING'])
+
         else:
             self.query_string = six.text_type()
 
