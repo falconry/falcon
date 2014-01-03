@@ -70,7 +70,7 @@ class Request(object):
 
     __slots__ = (
         'env',
-        '_headers',
+        '_cached_headers',
         'method',
         '_params',
         'path',
@@ -118,7 +118,8 @@ class Request(object):
         else:
             self._params = {}
 
-        self._headers = helpers.parse_headers(env)
+        helpers.normalize_headers(env)
+        self._cached_headers = {}
 
         # NOTE(kgriffs): Wrap wsgi.input if needed to make read() more robust,
         # normalizing semantics between, e.g., gunicorn and wsgiref.
@@ -221,7 +222,7 @@ class Request(object):
     @property
     def accept(self):
         """Value of the Accept header, or */* if not found per RFC."""
-        accept = self._get_header_by_wsgi_name('ACCEPT')
+        accept = self._get_header_by_wsgi_name('HTTP_ACCEPT')
 
         # NOTE(kgriffs): Per RFC, missing accept header is
         # equivalent to '*/*'
@@ -235,7 +236,7 @@ class Request(object):
     @property
     def auth(self):
         """Value of the Authorization header, or None if not found."""
-        return self._get_header_by_wsgi_name('AUTHORIZATION')
+        return self._get_header_by_wsgi_name('HTTP_AUTHORIZATION')
 
     @property
     def content_length(self):
@@ -248,7 +249,7 @@ class Request(object):
             HTTPBadRequest: The header had a value, but it wasn't
                 formatted correctly or was a negative number.
         """
-        value = self._get_header_by_wsgi_name('CONTENT_LENGTH')
+        value = self._get_header_by_wsgi_name('HTTP_CONTENT_LENGTH')
         if value:
             try:
                 value_as_int = int(value)
@@ -269,7 +270,7 @@ class Request(object):
     @property
     def content_type(self):
         """Value of the Content-Type header, or None if not found."""
-        return self._get_header_by_wsgi_name('CONTENT_TYPE')
+        return self._get_header_by_wsgi_name('HTTP_CONTENT_TYPE')
 
     @property
     def date(self):
@@ -286,7 +287,7 @@ class Request(object):
 
         """
 
-        http_date = self._get_header_by_wsgi_name('DATE')
+        http_date = self._get_header_by_wsgi_name('HTTP_DATE')
         try:
             return util.http_date_to_dt(http_date)
         except ValueError:
@@ -297,32 +298,32 @@ class Request(object):
     @property
     def expect(self):
         """Value of the Expect header, or None if missing."""
-        return self._get_header_by_wsgi_name('EXPECT')
+        return self._get_header_by_wsgi_name('HTTP_EXPECT')
 
     @property
     def if_match(self):
         """Value of the If-Match header, or None if missing."""
-        return self._get_header_by_wsgi_name('IF_MATCH')
+        return self._get_header_by_wsgi_name('HTTP_IF_MATCH')
 
     @property
     def if_none_match(self):
         """Value of the If-None-Match header, or None if missing."""
-        return self._get_header_by_wsgi_name('IF_NONE_MATCH')
+        return self._get_header_by_wsgi_name('HTTP_IF_NONE_MATCH')
 
     @property
     def if_modified_since(self):
         """Value of the If-Modified-Since header, or None if missing."""
-        return self._get_header_by_wsgi_name('IF_MODIFIED_SINCE')
+        return self._get_header_by_wsgi_name('HTTP_IF_MODIFIED_SINCE')
 
     @property
     def if_unmodified_since(self):
         """Value of the If-Unmodified-Since header, or None if missing."""
-        return self._get_header_by_wsgi_name('IF_UNMODIFIED_SINCE')
+        return self._get_header_by_wsgi_name('HTTP_IF_UNMODIFIED_SINCE')
 
     @property
     def if_range(self):
         """Value of the If-Range header, or None if missing."""
-        return self._get_header_by_wsgi_name('IF_RANGE')
+        return self._get_header_by_wsgi_name('HTTP_IF_RANGE')
 
     @property
     def protocol(self):
@@ -349,7 +350,7 @@ class Request(object):
                 formatted correctly.
         """
 
-        value = self._get_header_by_wsgi_name('RANGE')
+        value = self._get_header_by_wsgi_name('HTTP_RANGE')
 
         if value:
             if ',' in value:
@@ -406,11 +407,11 @@ class Request(object):
     @property
     def user_agent(self):
         """Value of the User-Agent string, or None if missing."""
-        return self._get_header_by_wsgi_name('USER_AGENT')
+        return self._get_header_by_wsgi_name('HTTP_USER_AGENT')
 
     @property
     def headers(self):
-        """Get HTTP headers
+        """Get raw HTTP headers
 
         Build a temporary dictionary of dash-separated HTTP headers,
         which can be used as a whole, like, to perform an HTTP request.
@@ -418,11 +419,24 @@ class Request(object):
         If you want to lookup a header, please use `get_header` instead.
 
         Returns:
-            A dictionary of HTTP headers.
+            A new dictionary of HTTP headers.
 
         """
-        return dict([(k.replace('_', '-'), v)
-                    for k, v in self._headers.items()])
+
+        # NOTE(kgriffs: First time here will cache the dict so all we
+        # have to do is clone it in the future.
+        if not self._cached_headers:
+            headers = self._cached_headers
+
+            env = self.env
+            for name, value in env.items():
+                if name.startswith('HTTP_'):
+                    # NOTE(kgriffs): Don't take the time to fix the case
+                    # since headers are supposed to be case-sensitive
+                    # anyway.
+                    headers[name[5:].replace('_', '-')] = value
+
+        return self._cached_headers.copy()
 
     def get_header(self, name, required=False):
         """Return a header value as a string
@@ -448,7 +462,7 @@ class Request(object):
             # Don't take the time to cache beforehand, using HTTP naming.
             # This will be faster, assuming that most headers are looked
             # up only once, and not all headers will be requested.
-            return self._headers[name.upper().replace('-', '_')]
+            return self.env['HTTP_' + name.upper().replace('-', '_')]
         except KeyError:
             if not required:
                 return None
@@ -701,6 +715,6 @@ class Request(object):
 
         """
         try:
-            return self._headers[name] or None
+            return self.env[name] or None
         except KeyError:
             return None
