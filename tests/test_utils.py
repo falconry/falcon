@@ -2,6 +2,7 @@ from datetime import datetime
 import testtools
 
 import falcon
+from falcon.util import uri
 
 
 class TestFalconUtils(testtools.TestCase):
@@ -79,3 +80,12 @@ class TestFalconUtils(testtools.TestCase):
         url2a = u'http://example.com/v1/fizbit/messages?limit=3&e\u00e7ho=true'
         url2b = 'http://example.com/v1/fizbit/messages?limit=3&e%C3%A7ho=true'
         self.assertEqual(falcon.percent_escape(url2a), url2b)
+
+    def test_decode_value(self):
+        self.assertEqual(uri.encode_value('abcd'), 'abcd')
+        self.assertEqual(uri.encode_value(u'abcd'), u'abcd')
+        self.assertEqual(uri.encode_value(u'ab cd'), u'ab%20cd')
+        self.assertEqual(uri.encode_value(u'\u00e7'), u'%C3%A7')
+        self.assertEqual(uri.encode_value('ab/cd'), 'ab%2Fcd')
+        self.assertEqual(uri.encode_value('ab+cd=42,9'),
+                         'ab%2Bcd%3D42%2C9')
