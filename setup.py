@@ -53,7 +53,7 @@ else:
 setup(
     name='falcon',
     version=VERSION,
-    description='A supersonic micro-framework for building cloud APIs.',
+    description='An unladen web framework for building cloud APIs and app backends.',
     long_description=io.open('README.rst', 'r', encoding='utf-8').read(),
     classifiers=[
         'Development Status :: 4 - Beta',
