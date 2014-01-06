@@ -19,7 +19,7 @@ limitations under the License.
 import six
 
 from falcon.response_helpers import header_property, format_range
-from falcon.util import dt_to_http, percent_escape
+from falcon.util import dt_to_http, uri
 
 
 class Response(object):
@@ -159,7 +159,7 @@ class Response(object):
     content_location = header_property(
         'Content-Location',
         'Sets the Content-Location header.',
-        percent_escape)
+        uri.encode)
 
     content_range = header_property(
         'Content-Range',
@@ -197,7 +197,7 @@ class Response(object):
     location = header_property(
         'Location',
         'Sets the Location header.',
-        percent_escape)
+        uri.encode)
 
     retry_after = header_property(
         'Retry-After',

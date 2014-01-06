@@ -18,14 +18,10 @@ limitations under the License.
 
 import datetime
 import functools
-import six
 import inspect
 import warnings
 
-if six.PY3:  # pragma nocover
-    import urllib.parse as urllib  # pylint: disable=E0611
-else:  # pragma nocover
-    import urllib
+from falcon.util import uri
 
 
 __all__ = (
@@ -33,7 +29,9 @@ __all__ = (
     'dt_to_http',
     'http_date_to_dt',
     'to_query_str',
-    'percent_escape')
+    'percent_escape',
+    'percent_unescape',
+)
 
 
 # NOTE(kgriffs): We don't want our deprecations to be ignored by default,
@@ -142,37 +140,8 @@ def to_query_str(params):
     return query_str[:-1]
 
 
-def percent_escape(url):
-    """Percent-escape reserved characters in the given url.
+# TODO(kgriffs): Remove this alias in Falcon v0.2.0
+percent_escape = uri.encode
 
-    Args:
-        url: A full or relative URL.
-
-    Returns:
-        An escaped version of the URL, excluding '/', ',' and ':'
-        characters. In Python 2, unicode URL strings will be first
-        encoded to a UTF-8 byte string to work around a urllib
-        bug.
-    """
-
-    # Convert the string so that urllib.quote does not complain
-    # if it actually has Unicode chars in it.
-    if not six.PY3 and isinstance(url, six.text_type):  # pragma nocover
-        url = url.encode('utf-8')
-
-    return urllib.quote(url, safe='/:,=?&-_')
-
-
-def percent_unescape(nstr):
-    """Percent-unescape an input native string into a url.
-
-    Args:
-        nstr: A URL in native string (\u0000 - \u00FF).
-
-    Returns:
-        A URL as a python string, decoded as UTF-8.
-    """
-
-    s = urllib.unquote_plus(nstr)
-
-    return s if six.PY3 else s.decode('utf-8', 'replace')
+# TODO(kgriffs): Remove this alias in Falcon v0.2.0
+percent_unescape = uri.decode
