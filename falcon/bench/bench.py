@@ -122,7 +122,7 @@ def get_env(framework):
     return queues_env() if framework == 'falcon-ext' else hello_env()
 
 
-def run(frameworks, repetitions, iterations, stat_memory):
+def run(frameworks, trials, iterations, stat_memory):
     # Skip any frameworks that are not installed
     for name in frameworks:
         try:
@@ -138,11 +138,11 @@ def run(frameworks, repetitions, iterations, stat_memory):
         return
 
     datasets = []
-    for r in range(repetitions):
+    for r in range(trials):
         random.shuffle(frameworks)
 
-        sys.stdout.write('Benchmarking, Round %d of %d' %
-                         (r + 1, repetitions))
+        sys.stdout.write('Benchmarking, Trial %d of %d' %
+                         (r + 1, trials))
         sys.stdout.flush()
 
         dataset = [bench(framework, iterations,
@@ -169,7 +169,7 @@ def main():
     parser.add_argument('-b', '--benchmark', type=str, action='append',
                         choices=frameworks, dest='frameworks')
     parser.add_argument('-i', '--iterations', type=int, default=50000)
-    parser.add_argument('-r', '--repetitions', type=int, default=3)
+    parser.add_argument('-t', '--trials', type=int, default=3)
     parser.add_argument('-p', '--profile', action='store_true')
     parser.add_argument('-o', '--profile-output', type=str, default=None)
     parser.add_argument('-m', '--stat-memory', action='store_true')
@@ -190,7 +190,7 @@ def main():
         return
 
     # Otherwise, benchmark
-    datasets = run(frameworks, args.repetitions, args.iterations,
+    datasets = run(frameworks, args.trials, args.iterations,
                    args.stat_memory)
 
     dataset = consolidate_datasets(datasets)
