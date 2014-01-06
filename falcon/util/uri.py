@@ -187,9 +187,12 @@ def decode(uri):
         encoded_uri = urllib.unquote(encoded_uri)
 
         # PERF(kgriffs): Only spend the time to do this if there
-        # is a chance there were multibyte, UTF-8 encoded
-        # sequences that were percent-encoded.
+        # were multibyte, UTF-8 encoded sequences that were
+        # percent-encoded.
         if six.PY2 and isinstance(encoded_uri, str):  # pragma nocover
-            encoded_uri = encoded_uri.decode('utf-8', 'replace')
+            for byte in bytearray(encoded_uri):
+                if byte > 127:
+                    encoded_uri = encoded_uri.decode('utf-8', 'replace')
+                    break
 
     return encoded_uri
