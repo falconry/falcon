@@ -239,6 +239,18 @@ class TestHeaders(testing.TestBase):
             actual_value = self.resource.req.get_header(name)
             self.assertEqual(actual_value, expected_value)
 
+    def test_get_raw_headers(self):
+        headers = [
+            ('Client-ID', '692ba466-74bb-11e3-bf3f-7567c531c7ca'),
+            ('Accept', 'audio/*; q=0.2, audio/basic')
+        ]
+
+        environ = testing.create_environ(headers=headers)
+        req = falcon.Request(environ)
+
+        for name, value in headers:
+            self.assertIn((name.upper(), value), req.headers.items())
+
     def test_passthrough_resp_headers(self):
         self.simulate_request(self.test_route)
 

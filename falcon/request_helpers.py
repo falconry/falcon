@@ -51,14 +51,11 @@ def parse_query_string(query_string):
     return params
 
 
-def parse_headers(env):
-    """Parse HTTP headers out of a WSGI environ dictionary
+def normalize_headers(env):
+    """Normalize HTTP headers in an WSGI environ dictionary.
 
     Args:
-        env: A WSGI environ dictionary
-
-    Returns:
-        A dict containing (name, value) pairs, one per HTTP header
+        env: A WSGI environ dictionary to normalize (in-place)
 
     Raises:
         KeyError: The env dictionary did not contain a key that is required by
@@ -66,34 +63,27 @@ def parse_headers(env):
         TypeError: env is not dictionary-like. In other words, it has no
             attribute '__getitem__'.
 
-
     """
 
-    # Parse HTTP_*
-    headers = {}
-    for key in env:
-        if key.startswith('HTTP_'):
-            headers[key[5:]] = env[key]
+    # NOTE(kgriffs): Per the WSGI spec, HOST, Content-Type, and
+    # CONTENT_LENGTH are not under HTTP_* and so we normalize
+    # that here.
 
-    # Per the WSGI spec, Content-Type is not under HTTP_*
     if 'CONTENT_TYPE' in env:
-        headers['CONTENT_TYPE'] = env['CONTENT_TYPE']
+        env['HTTP_CONTENT_TYPE'] = env['CONTENT_TYPE']
 
-    # Per the WSGI spec, Content-Length is not under HTTP_*
     if 'CONTENT_LENGTH' in env:
-        headers['CONTENT_LENGTH'] = env['CONTENT_LENGTH']
+        env['HTTP_CONTENT_LENGTH'] = env['CONTENT_LENGTH']
 
     # Fallback to SERVER_* vars if the Host header isn't specified
-    if 'HOST' not in headers:
+    if 'HTTP_HOST' not in env:
         host = env['SERVER_NAME']
         port = env['SERVER_PORT']
 
         if port != '80':
             host = ''.join([host, ':', port])
 
-        headers['HOST'] = host
-
-    return headers
+        env['HTTP_HOST'] = host
 
 
 class Body(object):
