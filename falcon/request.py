@@ -432,7 +432,7 @@ class Request(object):
             for name, value in env.items():
                 if name.startswith('HTTP_'):
                     # NOTE(kgriffs): Don't take the time to fix the case
-                    # since headers are supposed to be case-sensitive
+                    # since headers are supposed to be case-insensitive
                     # anyway.
                     headers[name[5:].replace('_', '-')] = value
 
