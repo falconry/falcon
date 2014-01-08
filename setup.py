@@ -53,10 +53,10 @@ else:
 setup(
     name='falcon',
     version=VERSION,
-    description='An unladen web framework for building cloud APIs and app backends.',
+    description='An unladen web framework for building APIs and app backends.',
     long_description=io.open('README.rst', 'r', encoding='utf-8').read(),
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Environment :: Web Environment',
         'Natural Language :: English',
         'Intended Audience :: Developers',
