@@ -1,11 +1,30 @@
 from datetime import datetime
+import functools
+import random
+
 import testtools
+import six
 
 import falcon
 from falcon.util import uri
 
 
+def _arbitrary_uris(count, length):
+    return (
+        u''.join(
+            [random.choice(uri._ALL_ALLOWED)
+             for _ in range(length)]
+        ) for __ in range(count)
+    )
+
+
 class TestFalconUtils(testtools.TestCase):
+
+    def setUp(self):
+        super(TestFalconUtils, self).setUp()
+        # NOTE(cabrera): for DRYness - used in uri.[de|en]code tests
+        # below.
+        self.uris = _arbitrary_uris(count=100, length=32)
 
     def test_dt_to_http(self):
         self.assertEqual(
@@ -104,3 +123,28 @@ class TestFalconUtils(testtools.TestCase):
 
         self.assertEqual(uri.decode('http://example.com?x=ab%2Bcd%3D42%2C9'),
                          'http://example.com?x=ab+cd=42,9')
+
+    def test_prop_uri_encode_models_stdlib_quote(self):
+        equiv_quote = functools.partial(
+            six.moves.urllib.parse.quote, safe=uri._ALL_ALLOWED
+        )
+        for case in self.uris:
+            expect = equiv_quote(case)
+            actual = uri.encode(case)
+            self.assertEqual(expect, actual)
+
+    def test_prop_uri_encode_value_models_stdlib_quote_safe_tilde(self):
+        equiv_quote = functools.partial(
+            six.moves.urllib.parse.quote, safe="~"
+        )
+        for case in self.uris:
+            expect = equiv_quote(case)
+            actual = uri.encode_value(case)
+            self.assertEqual(expect, actual)
+
+    def test_prop_uri_decode_models_stdlib_unquote_plus(self):
+        stdlib_unquote = six.moves.urllib.parse.unquote_plus
+        for case in self.uris:
+            expect = stdlib_unquote(case)
+            actual = uri.decode(case)
+            self.assertEqual(expect, actual)

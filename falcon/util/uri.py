@@ -119,6 +119,8 @@ This function is faster in the average case than the similar
 `quote` function found in urlib. It also strives to be easier
 to use by assuming a sensible default of allowed characters.
 
+This models urllib.parse.quote(safe="~").
+
 RFC 3986 defines a set of "unreserved" characters as well as a
 set of "reserved" characters used as delimiters.
 
@@ -143,6 +145,9 @@ Returns:
 
 def decode(uri):
     """Decode any percent-encoded characters in a URI or query string.
+
+    uri.decode intends to model the behavior of
+    urllib.parse.unquote_plus.
 
     Args:
         uri: An encoded URI (full or partial). If of type str on Python 2,
