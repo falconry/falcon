@@ -99,7 +99,7 @@ def after(action):
 
     Args:
         action: A function with a similar signature to a resource responder
-        method, taking (req, resp).
+            method, taking (req, resp).
 
     """
 

@@ -61,7 +61,10 @@ class TestReqVars(testing.TestBase):
     def test_uri(self):
         self.assertEqual(self.req.url, self.uri)
 
+        # NOTE(kgriffs): Call twice to check caching works
         self.assertEqual(self.req.uri, self.uri)
+        self.assertEqual(self.req.uri, self.uri)
+
         self.assertEqual(self.req_noqs.uri, self.uri_noqs)
 
     def test_relative_uri(self):
@@ -81,6 +84,8 @@ class TestReqVars(testing.TestBase):
             query_string=self.qs,
             headers=self.headers))
 
+        # NOTE(kgriffs): Call twice to check caching works
+        self.assertEqual(req_noapp.relative_uri, self.relative_uri)
         self.assertEqual(req_noapp.relative_uri, self.relative_uri)
 
     def test_client_accepts(self):

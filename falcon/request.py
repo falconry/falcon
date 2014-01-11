@@ -71,8 +71,10 @@ class Request(object):
     """
 
     __slots__ = (
-        'env',
         '_cached_headers',
+        '_cached_uri',
+        '_cached_relative_uri',
+        'env',
         'method',
         '_params',
         'path',
@@ -133,6 +135,9 @@ class Request(object):
 
         helpers.normalize_headers(env)
         self._cached_headers = {}
+
+        self._cached_uri = None
+        self._cached_relative_uri = None
 
         # NOTE(kgriffs): Wrap wsgi.input if needed to make read() more robust,
         # normalizing semantics between, e.g., gunicorn and wsgiref.
@@ -278,7 +283,7 @@ class Request(object):
             else:
                 return value_as_int
 
-        # implicit return None
+        return None
 
     @property
     def content_type(self):
@@ -395,16 +400,21 @@ class Request(object):
     def uri(self):
         """The fully-qualified URI for the request."""
 
-        # PERF: For small numbers of items, '+' is faster than ''.join(...)
-        value = (self.protocol + '://' +
-                 self.get_header('host') +
-                 self.app +
-                 self.path)
+        if self._cached_uri is None:
+            # PERF: For small numbers of items, '+' is faster
+            # than ''.join(...). Concatenation is also generally
+            # faster than formatting.
+            value = (self.protocol + '://' +
+                     self.get_header('host') +
+                     self.app +
+                     self.path)
 
-        if self.query_string:
-            value = value + '?' + self.query_string
+            if self.query_string:
+                value = value + '?' + self.query_string
 
-        return value
+            self._cached_uri = value
+
+        return self._cached_uri
 
     url = uri
     """Alias for uri"""
@@ -412,10 +422,15 @@ class Request(object):
     @property
     def relative_uri(self):
         """The path + query string portion of the full URI."""
-        if self.query_string:
-            return self.app + self.path + '?' + self.query_string
 
-        return self.app + self.path
+        if self._cached_relative_uri is None:
+            if self.query_string:
+                self._cached_relative_uri = (self.app + self.path + '?' +
+                                             self.query_string)
+            else:
+                self._cached_relative_uri = self.app + self.path
+
+        return self._cached_relative_uri
 
     @property
     def user_agent(self):

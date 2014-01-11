@@ -74,8 +74,8 @@ class API(object):
 
         Args:
             env: A WSGI environment dictionary
-            start_response: A WSGI helper method for setting status and headers
-                on a response.
+            start_response: A WSGI helper method for setting status and
+                headers on a response.
 
         """
 
