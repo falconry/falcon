@@ -60,7 +60,10 @@ Read the source, Luke!
 
 Docstrings can be found throughout the Falcon code base for your learning pleasure. You can also ask questions in **#falconframework** on freenode. We are planning on having real docs eventually; if you need them right away, consider sending a pull request. ;)
 
-Here is a simple example showing how to create a Falcon-based API.
+You can also check out [Marconi's WSGI driver](https://github.com/openstack/marconi/tree/master/marconi/queues/transport/wsgi) to get a feel for how you might
+leverage Falcon in a real-world app.
+
+Here is a simple, contrived example showing how to create a Falcon-based API.
 
 ```python
 # things.py

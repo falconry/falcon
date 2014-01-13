@@ -81,7 +81,10 @@ learning pleasure. You can also ask questions in **#falconframework** on
 freenode. We are planning on having real docs eventually; if you need
 them right away, consider sending a pull request. ;)
 
-Here is a simple example showing how to create a Falcon-based API.
+You can also check out `Marconi's WSGI driver <https://github.com/openstack/marconi/tree/master/marconi/queues/transport/wsgi>`__ to get a feel for how you might
+leverage Falcon in a real-world app.
+
+Here is a simple, contrived example showing how to create a Falcon-based API.
 
 .. code:: python
 
