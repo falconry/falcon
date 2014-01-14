@@ -190,21 +190,20 @@ if six.PY2:  # pragma: no cover
             # do, let's encode in a non-lossy format.
             decoded_uri = decoded_uri.encode('utf-8')
 
-        # PERF(kgriffs): Use a closure instead of a class.
-        only_ascii = [True]
+        only_ascii = True
 
-        def unescape(matchobj):
-            # NOTE(kgriffs): Strip '%' and convert the hex number
-            char, byte = _HEX_TO_BYTE[matchobj.group(0)[1:]]
-            only_ascii[0] = only_ascii[0] and (byte <= _UTF8_MAX)
+        tokens = decoded_uri.split('%')
+        decoded_uri = tokens[0]
+        for token in tokens[1:]:
+            char, byte = _HEX_TO_BYTE[token[:2]]
+            decoded_uri += char + token[2:]
 
-            return char
-
-        decoded_uri = _ESCAPE_SEQUENCE.sub(unescape, decoded_uri)
+            if only_ascii:
+                only_ascii = (byte <= 127)
 
         # PERF(kgriffs): Only spend the time to do this if there
         # were non-ascii bytes found in the string.
-        if not only_ascii[0]:
+        if not only_ascii:
             decoded_uri = decoded_uri.decode('utf-8', 'replace')
 
         return decoded_uri
@@ -253,10 +252,14 @@ else:  # pragma: no cover
         # do, let's encode into a non-lossy format.
         decoded_uri = decoded_uri.encode('utf-8')
 
-        # Replace escape sequences
-        decoded_uri = _ESCAPE_SEQUENCE.sub(_unescape, decoded_uri)
+        # PERF(kgriffs): This was found to be faster than using
+        # a regex sub call or list comprehension with a join.
+        tokens = decoded_uri.split(b'%')
+        decoded_uri = tokens[0]
+        for token in tokens[1:]:
+            decoded_uri += _HEX_TO_BYTE[token[:2]] + token[2:]
 
-        # Back to str
+        # Convert back to str
         return decoded_uri.decode('utf-8', 'replace')
 
 

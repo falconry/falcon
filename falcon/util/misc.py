@@ -104,7 +104,7 @@ def http_date_to_dt(http_date):
 
 
 def to_query_str(params):
-    """Converts a dict of params to afaln actual query string.
+    """Converts a dict of params to an actual query string.
 
     Args:
         params: dict of simple key-value types, where key is a string and
@@ -129,8 +129,6 @@ def to_query_str(params):
         elif v is False:
             v = 'false'
         elif isinstance(v, list):
-            # PERF(kgriffs): map is faster than list comprehension in
-            # py26 and py33. No significant different in py27
             v = ','.join(map(str, v))
         else:
             v = str(v)
