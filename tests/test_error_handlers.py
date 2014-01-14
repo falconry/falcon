@@ -70,7 +70,7 @@ class TestErrorHandler(testing.TestBase):
                           self.simulate_request, self.test_route)
 
     def test_converted_error(self):
-        self.api.add_error_handler(CustomException, CustomException.handle)
+        self.api.add_error_handler(CustomException)
 
         self.api.add_route(self.test_route, ErroredClassResource())
 
@@ -79,6 +79,10 @@ class TestErrorHandler(testing.TestBase):
 
         info = json.loads(body[0].decode())
         self.assertEqual('Internet crashed!', info['title'])
+
+    def test_handle_not_defined(self):
+        self.assertRaises(AttributeError,
+                          self.api.add_error_handler, CustomBaseException)
 
     def test_subclass_error(self):
         self.api.add_error_handler(CustomBaseException, capture_error)

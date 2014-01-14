@@ -253,17 +253,34 @@ class API(object):
         self._default_route = helpers.create_http_method_map(
             default_resource, set(), self._before, self._after)
 
-    def add_error_handler(self, exception, handler):
+    def add_error_handler(self, exception, handler=None):
         """Adds a handler for a given exception type
 
         Args:
             exception: Whenever an exception occurs when handling a request
-                that is an instance of this exception class, the given handler
-                callable will be used to handle the exception.
+                that is an instance of this exception class, the given
+                handler callable will be used to handle the exception.
             handler: Callable that gets called with (ex, req, resp, params)
-                when there is a matching exception when handling a request.
+                when there is a matching exception when handling a
+                request. If not specified, the handler will default to
+                exception.handle, in which case the method is expected to
+                be static (i.e., decorated with @staticmethod) and take
+                the same params described above.
+
+                Note: A handler can either raise an instance of HTTPError
+                or modify resp manually in order to communicate information
+                about the issue to the client.
 
         """
+
+        if handler is None:
+            try:
+                handler = exception.handle
+            except AttributeError:
+                raise AttributeError('handler must either be specified '
+                                     'explicitly or defined as a static'
+                                     'method named "handle" that is a '
+                                     'member of the given exception class.')
 
         # Insert at the head of the list in case we get duplicate
         # adds (will cause the last one to win).
