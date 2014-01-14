@@ -30,9 +30,7 @@ _UNRESERVED = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 _DELIMITERS = ":/?#[]@!$&'()*+,;="
 _ALL_ALLOWED = _UNRESERVED + _DELIMITERS
 
-_ESCAPE_SEQUENCE = re.compile(b'%..')
 _HEX_DIGITS = '0123456789ABCDEFabcdef'
-_UTF8_MAX = 127
 
 # NOTE(kgriffs): Match query string fields that have names that
 # start with a letter.
