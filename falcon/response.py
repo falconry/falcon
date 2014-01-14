@@ -229,9 +229,6 @@ class Response(object):
     def _wsgi_headers(self, media_type=None):
         """Convert headers into the format expected by WSGI servers.
 
-        Note: URLs are percent-escaped automatically if they contain Unicode
-        characters.
-
         Args:
             media_type: Default media type to use for the Content-Type
                 header if the header was not set explicitly (default None).
@@ -248,4 +245,9 @@ class Response(object):
         if set_content_type:
             headers['content-type'] = media_type
 
-        return list(headers.items())
+        if six.PY2:  # pragma: no cover
+            # PERF(kgriffs): Don't create an extra list object if
+            # it isn't needed.
+            return headers.items()
+
+        return list(headers.items())  # pragma: no cover
