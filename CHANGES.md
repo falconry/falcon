@@ -1,3 +1,53 @@
+# 0.1.8 #
+
+## Breaking Changes ##
+
+* srmock.headers have been normalized such that header names are always
+lowercase. This was done to make tests that rely on srmock less
+fragile.
+* Falcon now sends response headers as all lower-case ala node.js. This
+will not break well-behaved clients, since HTTP specifies that header
+names are case-insensitive.
+* The 'scheme' argument to HTTPUnauthorized can no longer be passed
+positionally; it must be a named argument.
+* You can no longer overload a single resource class to respond to multiple
+routes that differ by URI template params. This has come to be viewed as an
+anti-pattern, and so it will no longer be supported. If you attempt to have
+a single `OxResource` that you try to overload to respond to both, e.g.,
+`PUT /oxen/old-ben` and `GET /oxen`, it will no longer work. Developers
+should be advised to resist the temptation to overload their resources;
+instead, create multiple resources, i.e., `OxResource` and `OxenResource`.
+It is common to put these two classes in the same module.
+
+## Fixed ##
+
+* srmock.headers_dict is now implemented using a case-insensitive dict
+* Per RFC 3986, Falcon now decodes escaped characters in the query
+string, plus convert '+' -> ' '. Also, Falcon now decodes multi-byte
+UTF-8 sequences after they have been unescaped.
+
+## New ##
+
+* Custom error handlers can be registered via a new API.add_error_handler
+method. You can use this to DRY your error handling logic by registering
+handlers that will get called whenever a given exception type is raised.
+* Support for "request sinks" was added to falcon.API. If no route matches
+a request, but the path in the requested URI matches a given prefix,
+Falcon will pass control to the given sink, regardless of the HTTP method
+requested.
+* uri module added to falcon.util which includes utilities for encoding
+and decoding URIs, as well as parsing a query string into a dict. This
+methods are more robust and more performant than their counterparts in
+urllib.
+* Subsequent calls to req.uri are now faster since the property now
+clones a cached dict instead of building a new one from scratch each time.
+* falcon.util now includes a case-insensitive dict borrowed from
+the Requests library. It isn't particularly fast, but is there in
+case you want to use it for anything.
+* Misc. performance optimizations to offset the impact of supporting
+case-sensitive headers and rigorous URI encoding/decoding.
+* Py33 performance improvements
+
 # 0.1.7 #
 
 ## Breaking Changes ##

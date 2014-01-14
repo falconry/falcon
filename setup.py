@@ -26,7 +26,8 @@ if not PYPY:
         CYTHON = True
     except ImportError:
         print('\nWARNING: Cython not installed. '
-              'Falcon modules WILL NOT be compiled with Cython.\n')
+              'Falcon modules will still work fine, but will run '
+              'a bit slower.\n')
         CYTHON = False
 
 if CYTHON:
