@@ -110,6 +110,8 @@ class TestFalconUtils(testtools.TestCase):
         self.assertEqual(uri.encode_value(u'abcd'), u'abcd')
         self.assertEqual(uri.encode_value(u'ab cd'), u'ab%20cd')
         self.assertEqual(uri.encode_value(u'\u00e7'), '%C3%A7')
+        self.assertEqual(uri.encode_value(u'\u00e7\u20ac'),
+                         '%C3%A7%E2%82%AC')
         self.assertEqual(uri.encode_value('ab/cd'), 'ab%2Fcd')
         self.assertEqual(uri.encode_value('ab+cd=42,9'),
                          'ab%2Bcd%3D42%2C9')
@@ -118,7 +120,13 @@ class TestFalconUtils(testtools.TestCase):
         self.assertEqual(uri.decode('abcd'), 'abcd')
         self.assertEqual(uri.decode(u'abcd'), u'abcd')
         self.assertEqual(uri.decode(u'ab%20cd'), u'ab cd')
-        self.assertEqual(uri.decode('%C3%A7'), u'\u00e7')
+
+        self.assertEqual(uri.decode('This thing is %C3%A7'),
+                         u'This thing is \u00e7')
+
+        self.assertEqual(uri.decode('This thing is %C3%A7%E2%82%AC'),
+                         u'This thing is \u00e7\u20ac')
+
         self.assertEqual(uri.decode('ab%2Fcd'), 'ab/cd')
 
         self.assertEqual(uri.decode('http://example.com?x=ab%2Bcd%3D42%2C9'),
@@ -145,6 +153,8 @@ class TestFalconUtils(testtools.TestCase):
     def test_prop_uri_decode_models_stdlib_unquote_plus(self):
         stdlib_unquote = six.moves.urllib.parse.unquote_plus
         for case in self.uris:
+            case = uri.encode_value(case)
+
             expect = stdlib_unquote(case)
             actual = uri.decode(case)
             self.assertEqual(expect, actual)

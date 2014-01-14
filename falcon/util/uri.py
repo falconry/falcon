@@ -16,13 +16,9 @@ limitations under the License.
 
 """
 
+import re
+
 import six
-
-if six.PY3:  # pragma nocover
-    import urllib.parse as urllib  # pylint: disable=E0611
-else:  # pragma nocover
-    import urllib
-
 
 # NOTE(kgriffs): See also RFC 3986
 _UNRESERVED = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -32,8 +28,11 @@ _UNRESERVED = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 # NOTE(kgriffs): See also RFC 3986
 _DELIMITERS = ":/?#[]@!$&'()*+,;="
-
 _ALL_ALLOWED = _UNRESERVED + _DELIMITERS
+
+_ESCAPE_SEQUENCE = re.compile(b'%..')
+_HEX_DIGITS = '0123456789ABCDEFabcdef'
+_UTF8_MAX = 127
 
 
 def _create_char_encoder(allowed_chars):
@@ -142,62 +141,114 @@ Returns:
 
 """
 
+# NOTE(kgriffs): This is actually covered, but not in py33; hence the pragma
+if six.PY2:  # pragma: no cover
 
-def decode(uri):
-    """Decode any percent-encoded characters in a URI or query string.
+    # This map construction is based on urllib
+    _HEX_TO_BYTE = dict((a + b, (chr(int(a + b, 16)), int(a + b, 16)))
+                        for a in _HEX_DIGITS
+                        for b in _HEX_DIGITS)
 
-    uri.decode intends to model the behavior of
-    urllib.parse.unquote_plus.
+    def decode(encoded_uri):
+        """Decodes percent-encoded characters in a URI or query string.
 
-    Args:
-        uri: An encoded URI (full or partial). If of type str on Python 2,
-            UTF-8 is assumed.
+        This function models the behavior of urllib.parse.unquote_plus, but
+        is faster. It is also more robust, in that it will decode escaped
+        UTF-8 mutibyte sequences.
 
-    Returns:
-        A decoded URL. Will be of type `unicode` on Python 2 IFF `uri`
-        contains percent-encoded chars (in which case there is a chance
-        they might contain multibyte Unicode sequences).
+        Args:
+            encoded_uri: An encoded URI (full or partial).
 
-    """
+        Returns:
+            A decoded URL. Will be of type `unicode` on Python 2 IFF the
+            URL contained escaped non-ASCII characters, in which case UTF-8
+            is assumed per RFC 3986.
 
-    encoded_uri = uri
+        """
 
-    #
-    # TODO(kgriffs): urllib is broken when it comes to decoding
-    # non-ASCII strings on Python 2. The problem is, if you pass
-    # it a str type, it doesn't even try to decode the character
-    # set. On the other hand, if you pass it a unicode type, urllib
-    # simply decodes code points as latin1 (not exactly a sensible
-    # default, eh?).
-    #
-    # So, we could just let urllib do its thing and after the fact
-    # decode the result like so:
-    #
-    # if six.PY2 and isinstance(encoded_uri, str):  # pragma nocover
-    #     encoded_uri = encoded_uri.decode('utf-8', 'replace')
-    #
-    # However, that adds several microseconds and will rarely be
-    # needed by the caller who is probably just decoding a query
-    # string, and it is not common to put non-ASCII characters in
-    # a cloud API's query string (please contact me if I am wrong!).
-    #
+        decoded_uri = encoded_uri
 
-    # PERF(kgriffs): unquote_plus can do this, but if there are
-    # *only* plusses in the string, no '%', we can save a lot of
-    # time!
-    if '+' in encoded_uri:
-        encoded_uri = encoded_uri.replace('+', ' ')
+        # PERF(kgriffs): Don't take the time to instantiate a new
+        # string unless we have to.
+        if '+' in decoded_uri:
+            decoded_uri = decoded_uri.replace('+', ' ')
 
-    if '%' in encoded_uri:
-        encoded_uri = urllib.unquote(encoded_uri)
+        # Short-circuit if we can
+        if '%' not in decoded_uri:
+            return decoded_uri
+
+        # Convert to bytes because we are about to replace chars and we
+        # don't want Python to mistakenly interpret any high bits.
+        if not isinstance(decoded_uri, str):
+            # NOTE(kgriffs): Clients should never submit a URI that has
+            # unescaped non-ASCII chars in them, but just in case they
+            # do, let's encode in a non-lossy format.
+            decoded_uri = decoded_uri.encode('utf-8')
+
+        # PERF(kgriffs): Use a closure instead of a class.
+        only_ascii = [True]
+
+        def unescape(matchobj):
+            # NOTE(kgriffs): Strip '%' and convert the hex number
+            char, byte = _HEX_TO_BYTE[matchobj.group(0)[1:]]
+            only_ascii[0] = only_ascii[0] and (byte <= _UTF8_MAX)
+
+            return char
+
+        decoded_uri = _ESCAPE_SEQUENCE.sub(unescape, decoded_uri)
 
         # PERF(kgriffs): Only spend the time to do this if there
-        # were multibyte, UTF-8 encoded sequences that were
-        # percent-encoded.
-        if six.PY2 and isinstance(encoded_uri, str):  # pragma nocover
-            for byte in bytearray(encoded_uri):
-                if byte > 127:
-                    encoded_uri = encoded_uri.decode('utf-8', 'replace')
-                    break
+        # were non-ascii bytes found in the string.
+        if not only_ascii[0]:
+            decoded_uri = decoded_uri.decode('utf-8', 'replace')
 
-    return encoded_uri
+        return decoded_uri
+
+# NOTE(kgriffs): This is actually covered, but not in py2x; hence the pragma
+else:  # pragma: no cover
+
+    # This map construction is based on urllib
+    _HEX_TO_BYTE = dict(((a + b).encode(), bytes([int(a + b, 16)]))
+                        for a in _HEX_DIGITS
+                        for b in _HEX_DIGITS)
+
+    def _unescape(matchobj):
+        # NOTE(kgriffs): Strip '%' and convert the hex number
+        return _HEX_TO_BYTE[matchobj.group(0)[1:]]
+
+    def decode(encoded_uri):
+        """Decodes percent-encoded characters in a URI or query string.
+
+        This function models the behavior of urllib.parse.unquote_plus,
+        albeit in a faster, more straightforward manner.
+
+        Args:
+            encoded_uri: An encoded URI (full or partial).
+
+        Returns:
+            A decoded URL. If the URL contains escaped non-ASCII
+            characters, UTF-8 is assumed per RFC 3986.
+
+        """
+
+        decoded_uri = encoded_uri
+
+        # PERF(kgriffs): Don't take the time to instantiate a new
+        # string unless we have to.
+        if '+' in decoded_uri:
+            decoded_uri = decoded_uri.replace('+', ' ')
+
+        # Short-circuit if we can
+        if '%' not in decoded_uri:
+            return decoded_uri
+
+        # NOTE(kgriffs): Clients should never submit a URI that has
+        # unescaped non-ASCII chars in them, but just in case they
+        # do, let's encode into a non-lossy format.
+        decoded_uri = decoded_uri.encode('utf-8')
+
+        # Replace escape sequences
+        decoded_uri = _ESCAPE_SEQUENCE.sub(_unescape, decoded_uri)
+
+        # Back to str
+        return decoded_uri.decode('utf-8', 'replace')

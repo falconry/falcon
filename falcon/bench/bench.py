@@ -105,7 +105,7 @@ def avg(array):
 def hello_env():
     request_headers = {'Content-Type': 'application/json'}
     return helpers.create_environ('/hello/584/test',
-                                  query_string='limit=10&thing=a%20b',
+                                  query_string='limit=10&thing=ab',
                                   headers=request_headers)
 
 
@@ -127,7 +127,8 @@ def run(frameworks, trials, iterations, stat_memory):
     for name in frameworks:
         try:
             create_bench(name, hello_env())
-        except ImportError:
+        except ImportError as ex:
+            print(ex)
             print('Skipping missing library: ' + name)
             del frameworks[frameworks.index(name)]
 
@@ -167,7 +168,7 @@ def main():
 
     parser = argparse.ArgumentParser(description="Falcon benchmark runner")
     parser.add_argument('-b', '--benchmark', type=str, action='append',
-                        choices=frameworks, dest='frameworks')
+                        choices=frameworks, dest='frameworks', nargs='+')
     parser.add_argument('-i', '--iterations', type=int, default=50000)
     parser.add_argument('-t', '--trials', type=int, default=3)
     parser.add_argument('-p', '--profile', action='store_true')
@@ -180,6 +181,16 @@ def main():
 
     if args.frameworks:
         frameworks = args.frameworks
+
+    # Normalize frameworks type
+    normalized_frameworks = []
+    for one_or_many in frameworks:
+        if isinstance(one_or_many, list):
+            normalized_frameworks.extend(one_or_many)
+        else:
+            normalized_frameworks.append(one_or_many)
+
+    frameworks = normalized_frameworks
 
     # Profile?
     if args.profile:

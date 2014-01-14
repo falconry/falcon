@@ -1,6 +1,6 @@
 from pecan import make_app
 
-import controllers.root
+# from .controllers import root
 
 
 def create():
