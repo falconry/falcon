@@ -19,6 +19,11 @@ except ImportError:
 else:
     heapy = guppy.hpy()
 
+try:
+    import pprofile
+except ImportError:
+    pprofile = None
+
 from falcon.bench import create  # NOQA
 import falcon.testing as helpers
 
@@ -45,9 +50,9 @@ def bench(name, iterations, env, stat_memory):
     return (name, sec_per_req, heap_diff)
 
 
-def profile(name, env, output=None):
-    if output:
-        filename = name + '-' + output
+def profile(name, env, filename=None, verbose=False):
+    if filename:
+        filename = name + '-' + filename
         print('Profiling %s ==> %s' % (name, filename))
 
     else:
@@ -63,8 +68,17 @@ def profile(name, env, output=None):
 
     gc.collect()
     code = 'for x in xrange(10000): func()'
-    cProfile.runctx(code, locals(), globals(),
-                    sort='tottime', filename=filename)
+
+    if verbose:
+        if pprofile is None:
+            print('pprofile not found. Please install pprofile and try again.')
+            return
+
+        pprofile.runctx(code, locals(), globals(), filename=filename)
+
+    else:
+        cProfile.runctx(code, locals(), globals(),
+                        sort='tottime', filename=filename)
 
 
 BODY = helpers.rand_string(10240, 10240)  # NOQA
@@ -171,7 +185,8 @@ def main():
                         choices=frameworks, dest='frameworks', nargs='+')
     parser.add_argument('-i', '--iterations', type=int, default=50000)
     parser.add_argument('-t', '--trials', type=int, default=3)
-    parser.add_argument('-p', '--profile', action='store_true')
+    parser.add_argument('-p', '--profile', type=str,
+                        choices=['standard', 'verbose'])
     parser.add_argument('-o', '--profile-output', type=str, default=None)
     parser.add_argument('-m', '--stat-memory', action='store_true')
     args = parser.parse_args()
@@ -195,7 +210,9 @@ def main():
     # Profile?
     if args.profile:
         for name in frameworks:
-            profile(name, get_env(name), args.profile_output)
+            profile(name, get_env(name),
+                    filename=args.profile_output,
+                    verbose=(args.profile == 'verbose'))
 
         print()
         return

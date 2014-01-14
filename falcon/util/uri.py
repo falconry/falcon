@@ -34,6 +34,10 @@ _ESCAPE_SEQUENCE = re.compile(b'%..')
 _HEX_DIGITS = '0123456789ABCDEFabcdef'
 _UTF8_MAX = 127
 
+# NOTE(kgriffs): Match query string fields that have names that
+# start with a letter.
+_QS_PATTERN = re.compile(r'(?<![0-9])([a-zA-Z][a-zA-Z_0-9\-.]*)=([^&]+)')
+
 
 def _create_char_encoder(allowed_chars):
 
@@ -142,6 +146,7 @@ Returns:
 """
 
 # NOTE(kgriffs): This is actually covered, but not in py33; hence the pragma
+
 if six.PY2:  # pragma: no cover
 
     # This map construction is based on urllib
@@ -205,6 +210,7 @@ if six.PY2:  # pragma: no cover
         return decoded_uri
 
 # NOTE(kgriffs): This is actually covered, but not in py2x; hence the pragma
+
 else:  # pragma: no cover
 
     # This map construction is based on urllib
@@ -252,3 +258,32 @@ else:  # pragma: no cover
 
         # Back to str
         return decoded_uri.decode('utf-8', 'replace')
+
+
+def parse_query_string(query_string):
+    """Parse a query string into a dict
+
+    Query string parameters are assumed to use standard form-encoding. Only
+    parameters with values are parsed. for example, given "foo=bar&flag",
+    this function would ignore "flag".
+
+    Args:
+        query_string: The query string to parse
+
+    Returns:
+        A dict containing (name, value) pairs, one per query parameter. Note
+        that value will be a string, and that name is case-sensitive, both
+        copied directly from the query string.
+
+    Raises:
+        TypeError: query_string was not a string or buffer
+
+    """
+
+    # PERF(kgriffs): A for loop is faster than using array or dict
+    # comprehensions (tested under py27, py33). Go figure!
+    params = {}
+    for k, v in _QS_PATTERN.findall(query_string):
+        params[k] = v
+
+    return params

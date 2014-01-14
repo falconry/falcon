@@ -129,7 +129,7 @@ class Request(object):
 
         # PERF: Don't parse it if we don't have to!
         if self.query_string:
-            self._params = helpers.parse_query_string(self.query_string)
+            self._params = uri.parse_query_string(self.query_string)
         else:
             self._params = {}
 

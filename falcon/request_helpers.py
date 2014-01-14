@@ -16,40 +16,6 @@ limitations under the License.
 
 """
 
-import re
-
-
-QS_PATTERN = re.compile(r'(?<![0-9])([a-zA-Z][a-zA-Z_0-9\-.]*)=([^&]+)')
-"""Match query string fields that have names which start with a letter."""
-
-
-def parse_query_string(query_string):
-    """Parse a query string into a dict
-
-    Query string parameters are assumed to use standard form-encoding. Only
-    parameters with values are parsed. for example, given "foo=bar&flag",
-    this function would ignore "flag".
-
-    Args:
-        query_string: The query string to parse
-
-    Returns:
-        A dict containing (name, value) pairs, one per query parameter. Note
-        that value will be a string, and that name is case-sensitive, both
-        copied directly from the query string.
-
-    Raises:
-        TypeError: query_string was not a string or buffer
-
-    """
-
-    # PERF: use for loop in lieu of the dict constructor
-    params = {}
-    for k, v in QS_PATTERN.findall(query_string):
-        params[k] = v
-
-    return params
-
 
 def normalize_headers(env):
     """Normalize HTTP headers in an WSGI environ dictionary.
