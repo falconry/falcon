@@ -16,5 +16,5 @@ limitations under the License.
 
 """
 
-__version__ = '0.1.8rc3'
+__version__ = '0.1.8'
 """Current version of Falcon."""
