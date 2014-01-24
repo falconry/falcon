@@ -57,7 +57,7 @@ def before(action):
                     pass
                 else:
                     # Usually expect a method, but any callable will do
-                    if hasattr(responder, '__call__'):
+                    if callable(responder):
                         # This pattern is necessary to capture the current
                         # value of responder in the do_before_all closure;
                         # otherwise, they will capture the same responder
@@ -117,7 +117,7 @@ def after(action):
                     pass
                 else:
                     # Usually expect a method, but any callable will do
-                    if hasattr(responder, '__call__'):
+                    if callable(responder):
                         def let(responder=responder):
                             @wraps(responder)
                             def do_after_all(self, req, resp, **kwargs):
