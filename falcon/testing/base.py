@@ -57,14 +57,14 @@ class TestBase(unittest.TestCase):
         self.test_route = '/{0}'.format(next(self._id))
 
         before = getattr(self, 'before', None)
-        if hasattr(before, '__call__'):
+        if callable(before):
             before()
 
     def tearDown(self):
         """Destructor, unittest-style"""
 
         after = getattr(self, 'after', None)
-        if hasattr(after, '__call__'):
+        if callable(after):
             after()
 
         super(TestBase, self).tearDown()

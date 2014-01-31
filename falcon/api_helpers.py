@@ -39,7 +39,7 @@ def prepare_global_hooks(hooks):
             hooks = [hooks]
 
         for action in hooks:
-            if not hasattr(action, '__call__'):
+            if not callable(action):
                 raise TypeError('One or more hooks are not callable')
 
     return hooks
@@ -197,7 +197,7 @@ def create_http_method_map(resource, uri_fields, before, after):
             pass
         else:
             # Usually expect a method, but any callable will do
-            if hasattr(responder, '__call__'):
+            if callable(responder):
                 responder = _wrap_with_hooks(before, after, responder)
                 method_map[method] = responder
 
