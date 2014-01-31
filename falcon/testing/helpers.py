@@ -132,9 +132,14 @@ def _add_headers_to_environ(env, headers):
     for name, value in headers.items():
         name = name.upper().replace('-', '_')
 
-        if name == 'CONTENT_TYPE':
-            env[name] = value.strip()
-        elif name == 'CONTENT_LENGTH':
-            env[name] = value.strip()
+        if value is None:
+            value = ''
         else:
-            env['HTTP_' + name.upper()] = value.strip()
+            value = value.strip()
+
+        if name == 'CONTENT_TYPE':
+            env[name] = value
+        elif name == 'CONTENT_LENGTH':
+            env[name] = value
+        else:
+            env['HTTP_' + name.upper()] = value
