@@ -158,12 +158,27 @@ Here is a more involved example that demonstrates reading headers and query para
                                    description)
 
 
+    class Proxy(object):
+        def forward(self, req):
+            return falcon.HTTP_503
+
+
+    class SinkAdapter(object):
+
+        def __init__(self):
+            self._proxy = Proxy()
+
+        def __call__(self, req, resp, **kwargs):
+            resp.status = self._proxy.forward(req)
+            self.kwargs = kwargs
+
+
     def token_is_valid(token, user_id):
         return True  # Suuuuuure it's valid...
 
 
     def auth(req, resp, params):
-        # Alternatively, do this in middleware
+        # Alternatively, use Talons or do this in WSGI middleware...
         token = req.get_header('X-Auth-Token')
 
         if token is None:
@@ -251,6 +266,12 @@ Here is a more involved example that demonstrates reading headers and query para
     # If a responder ever raised an instance of StorageError, pass control to
     # the given handler.
     app.add_error_handler(StorageError, StorageError.handle)
+
+    # Proxy some things to another service. This example shows how you might
+    # send parts of an API off to a legacy system that hasn't been upgraded
+    # yet, or perhaps is a single cluster that all datacenters have to share.
+    sink = SinkAdapter()
+    app.add_sink(sink, r'/v1/[charts|inventory]')
 
     # Useful for debugging problems in your API; works with pdb.set_trace()
     if __name__ == '__main__':
