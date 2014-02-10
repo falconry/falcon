@@ -298,11 +298,19 @@ class API(object):
             method: HTTP method (uppercase) requested
 
         Returns:
-            A 3-member tuple, containing a responder callable, a dict
-            containing parsed path fields (if any were specified in
-            the matching route's URI template), and a reference to
-            the "method not allowed" responder for the resource.
+            A 2-member tuple consisting of a responder callable and
+            a dict containing parsed path fields (if any were specified in
+            the matching route's URI template).
 
+        Note:
+            If a responder was matched to the given URI, but the HTTP
+            method was not found in the method_map for the responder,
+            the responder callable element of the returned tuple will be
+            `falcon.responder.bad_request`.
+
+            Likewise, if no responder was matched for the given URI, then
+            the responder callable element of the returned tuple will be
+            `falcon.responder.path_not_found`
         """
 
         for route in self._routes:
