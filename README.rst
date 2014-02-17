@@ -233,15 +233,15 @@ Here is a more involved example that demonstrates reading headers and query para
 
         def on_post(self, req, resp, user_id):
             try:
-                raw_json = req.stream.read()
-            except Exception:
-                raise falcon.HTTPError(falcon.HTTP_748,
-                                       'Read Error',
-                                       'Could not read the request body. Must be '
-                                       'them ponies again.')
+                # req.stream corresponds to the WSGI wsgi.input environ variable,
+                # and allows you to read bytes from the request body.
+                #
+                # json.load assumes the input stream is encoded at utf-8 if the
+                # encoding is not specified explicitly.
+                #
+                # See also: PEP 3333
+                thing = json.load(req.stream, 'utf-8')
 
-            try:
-                thing = json.loads(raw_json, 'utf-8')
             except ValueError:
                 raise falcon.HTTPError(falcon.HTTP_753,
                                        'Malformed JSON',
