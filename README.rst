@@ -126,8 +126,8 @@ Then, in another terminal:
 
     $ curl localhost:8000/things
 
-More Cowbell
-~~~~~~~~~~~~
+A More Complex Example
+~~~~~~~~~~~~~~~~~~~~~~
 
 Here is a more involved example that demonstrates reading headers and query parameters, handling errors, and working with request and response bodies.
 
