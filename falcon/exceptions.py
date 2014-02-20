@@ -382,3 +382,37 @@ class HTTPServiceUnavailable(HTTPError):
         headers = kwargs.setdefault('headers', {})
         headers['Retry-After'] = str(retry_after)
         HTTPError.__init__(self, status.HTTP_503, title, description, **kwargs)
+
+
+class InvalidHeader(HTTPBadRequest):
+    """HTTP header is invalid.
+
+    Args:
+        msg (str): A description of why the value is invalid.
+        value (str): The value that is given to the header.
+        header_name (str): The name of the header.
+        kwargs (optional): Optional args to include more information.
+        """
+
+    def __init__(self, msg, value, header_name, **kwargs):
+        description = ('The value "{0}" given for the {1} header is invalid. '
+                       '{2}').format(value, header_name, msg)
+
+        super(InvalidHeader, self).__init__('Invalid header value',
+                                            description, **kwargs)
+
+
+class InvalidParam(HTTPBadRequest):
+    """HTTP parameter is invalid
+
+    Args:
+        msg (str): A description of the invalid parameter.
+        param_name (str): The name of the paramameter.
+        kwargs (optional): Optional args to include more information.
+        """
+
+    def __init__(self, msg, param_name, **kwargs):
+        description = 'The {0} parameter is invalid. {1}'.format(param_name,
+                                                                 msg)
+        super(InvalidParam, self).__init__('Invalid query parameter',
+                                           description, **kwargs)
