@@ -56,10 +56,14 @@ $ pip install tox && tox
 
 ### Usage ###
 
-Docstrings can be found throughout the Falcon code base for your learning pleasure. You can also ask questions in **#falconframework** on freenode. We are planning on having real docs eventually and would of course greatly appreciate pull requests to help accelerate that.
+We have started documenting the library at http://falcon.readthedocs.org and we would of course greatly appreciate pull requests to help accelerate that effort.
+
+The docstrings in the Falcon code base are quite extensive, and we recommend keeping a REPL running while learning the framework so that you can query the various modules and classes as you have questions.
 
 You can also check out [Marconi's WSGI driver](https://github.com/openstack/marconi/tree/master/marconi/queues/transport/wsgi) to get a feel for how you might
 leverage Falcon in a real-world app.
+
+Finally, you can always ask questions in **#falconframework** on freenode. The community is very friendly and helpful.
 
 Here is a simple, contrived example showing how to create a Falcon-based API.
 
