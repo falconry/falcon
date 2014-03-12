@@ -19,7 +19,7 @@ Using something that already exists is obviously ideal. However, sometimes the w
 How is Falcon different?
 ------------------------
 
-First, Falcon is one of the fastest WSGI frameworks on the planet, and we are always trying to make it perform even better. When there is a conflict between saving the developer a few keystrokes and saving a few microseconds to serve a request, Falcon is strongly biased toward the latter. Falcon strives to strike a good balance between usability and close-to-the-metal speed.
+First, Falcon is one of the fastest WSGI frameworks on the planet, and we are always trying to make it perform even better. When there is a conflict between saving the developer a few keystrokes and saving a few microseconds to serve a request, Falcon is strongly biased toward the latter. Falcon strives to strike a good balance between usability and speed.
 
 Second, Falcon is lean. It doesn't try to be everything to everyone, focusing instead on a single use case: HTTP APIs. Falcon doesn't include a template engine, form helpers, or an ORM (although those are easy enough to add yourself). When you sit down to write a web service with Falcon, you choose your own adventure in terms of async I/O, serialization, data access, etc. In fact, the only dependencies Falcon takes is on six, to make it easier to support both Python 2 and 3, and on mimeparse for handling complex Accept headers.
 
