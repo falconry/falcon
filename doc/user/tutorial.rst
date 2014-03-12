@@ -30,7 +30,7 @@ Next, let's create a new file that will be the entry point into your app:
 
 Open that file in your favorite text editor and add the following lines:
 
-..code:: python
+.. code:: python
 
     import falcon
 
@@ -46,14 +46,14 @@ protocol. Let's take a look at the falcon.API class.
 
 First, install IPython (if you don't already have it), and fire it up:
 
-..code:: bash
+.. code:: bash
 
     $ pip install ipython
     $ ipython
 
 Now, type the following to introspect the falcon.API callable:
 
-..code:: bash
+.. code:: bash
 
     In [1]: import falcon
 
@@ -61,7 +61,7 @@ Now, type the following to introspect the falcon.API callable:
 
 Alternatively, you can use the built-in `help` function:
 
-..code:: bash
+.. code:: bash
 
     In [3]: help(falcon.API.__call__)
 
@@ -81,14 +81,14 @@ Now that you have a simple Falcon app, you can take it for a spin with
 a WSGI server. Python includes a reference server for self-hosting, but
 let's use something that you would actually deploy in production.
 
-..code:: bash
+.. code:: bash
 
     $ pip install gunicorn
     $ gunicorn app
 
 Now try querying it with curl:
 
-..code:: bash
+.. code:: bash
 
     $ curl localhost:8000 -v
 
@@ -99,7 +99,7 @@ will fire for any requested path that doesn't match any routes.
 Curl is a bit of a pain to use, so let's install
 `HTTPie <https://github.com/jkbr/httpie>`_ and use it from now on.
 
-..code:: bash
+.. code:: bash
 
     $ pip install --upgrade httpie
     $ http localhost:8000
@@ -124,7 +124,7 @@ Since we are building an image-sharing API, let's create an "images"
 resource. Create a new file, `images.py` within your project directory,
 and add the following to it:
 
-..code:: python
+.. code:: python
 
     import falcon
 
@@ -154,7 +154,7 @@ Right now, the image resource responds to GET requests with a simple
 `200 OK` and a JSON body. Falcon's Internet media type defaults to
 `application/json` but you can set it to whatever you like. For example:
 
-..code:: python
+.. code:: python
 
     def on_get(self, req, resp):
         resp.data = msgpack.packb({'message': 'Hello world!''})
@@ -168,7 +168,7 @@ get a little performance boost by assigning directly to `resp.data`.
 OK, so now let's wire up this resource and see it in action. Go back to
 `app.py` and modify it so it looks something like this:
 
-..code:: python
+.. code:: python
 
     import falcon
 
@@ -186,7 +186,7 @@ HTTP method.
 
 Restart gunicorn, and then try sending a GET request to the resource:
 
-..code:: bash
+.. code:: bash
 
     $ http GET localhost:8000/images
 
@@ -198,7 +198,7 @@ Each responder in a resource receives a request object that can be used to
 read the headers, query parameters, and body of the request. You can use
 the help function mentioned earlier to list the Request class members:
 
-..code:: bash
+.. code:: bash
 
     In [1]: import falcon
 
@@ -208,7 +208,7 @@ Each responder also receives a response object that can be used for setting
 the status code, headers, and body of the response. You can list the
 Response class members using the same technique used above:
 
-..code:: bash
+.. code:: bash
 
     In [3]: help(falcon.Response)
 
@@ -219,7 +219,7 @@ storage service instead, such as Cloud Files or S3).
 
 Edit your `images.py` file and add the following to the resource:
 
-..code:: python
+.. code:: python
 
     def __init__(self, storage_path):
         self.storage_path = storage_path
@@ -227,11 +227,11 @@ Edit your `images.py` file and add the following to the resource:
 Next, edit `app.py` and pass in a path to the resource initializer. For now,
 it's just fine to hard-code the string.
 
-..code:: python
+.. code:: python
 
 Now, let's implement the POST responder:
 
-..code:: python
+.. code:: python
 
     import os
     import time
@@ -280,7 +280,7 @@ access to the incoming binary stream provided by the WSGI server.
 Note that we are setting the status to '201 Created'. For a full list of
 predefined status strings, simply call `help` on `falcon.status_codes`:
 
-..code:: bash
+.. code:: bash
 
     In [4]: help(falcon.status_codes)
 
@@ -294,7 +294,7 @@ methods.
 Restart gunicorn, and then try sending a POST request to the resource
 (substituting test.jpg for a path to any JPEG you like.)
 
-..code:: bash
+.. code:: bash
 
     $ http POST localhost:8000/images Content-Type:image/jpeg < test.jpg
 
@@ -310,7 +310,7 @@ to get them back out! What we want to do is return an image when it is
 requested using the path that we returned in the Location header when that
 image was originally POSTed. Something like this:
 
-..code:: bash
+.. code:: bash
 
     $ http GET localhost:8000/images/87db45ff42
 
@@ -326,7 +326,7 @@ to the new class.
 
 Edit your `images.py` file to look something like this:
 
-..code:: python
+.. code:: python
 
     import os
     import time
@@ -404,7 +404,7 @@ exactly what we want for the `on_get` responder.
 Now, let's see this in action. First, we need to edit `app.py` to wire up the
 new resource:
 
-..code:: python
+.. code:: python
 
     import falcon
 
@@ -423,14 +423,14 @@ new resource:
 
 Now, restart gunicorn and post another picture to the service:
 
-..code:: bash
+.. code:: bash
 
     $ http POST localhost:8000/images Content-Type:image/jpeg < test.jpg
 
 Make a note of the path returned in the Location header, and use it to
 try GETing the image:
 
-..code:: bash
+.. code:: bash
 
     $ http localhost:8000/images/6daa465b7b.jpeg
 
