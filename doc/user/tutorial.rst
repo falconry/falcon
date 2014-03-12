@@ -11,6 +11,7 @@ quick overview of the WSGI standard.
 .. introduce talons, etc.
 .. also create a separate FAQ
 
+
 First Steps
 -----------
 
@@ -453,6 +454,7 @@ Finishing Touches
 ..
 
 .. talk about list vs. single, DRY things with hooks (show before and after) and mention Talons
+
 
 What Now?
 ---------

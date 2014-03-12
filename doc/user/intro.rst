@@ -5,6 +5,7 @@ Introduction
 
 Falcon is a minimalist, high-performance web framework for building web services and app backends with Python. It's WSGI-based, and works great with Python 2.6, Python 2.7, Python 3.3, and PyPy, giving you a wide variety of deployment options.
 
+
 Yet Another Framework
 ---------------------
 
@@ -13,6 +14,7 @@ Using something that already exists is obviously ideal. However, sometimes the w
 - Python web frameworks often perform rather poorly under load. At high concurrency, using async IO, API servers can become CPU-bound. When that happens, every microsecond counts.
 - Most web frameworks come with a lot of HTML-centric tooling that is fantastic if you are developing a web app, but quite useless for building an API. In that case, all they do is waste RAM, increase your chance of a security exploit, and generally make a nuisance of themselves.
 - Many frameworks try too hard, in our opinion, to abstract away what's going on under the hood, making it difficult to reason about the river of HTTP flowing in and out of your API. Magic is wonderful at development time, but a nightmare when it comes time to debug a hairy production issue.
+
 
 How is Falcon different?
 ------------------------
@@ -23,7 +25,6 @@ Second, Falcon is lean. It doesn't try to be everything to everyone, focusing in
 
 Third, Falcon eschews magic. When you use the framework, it's pretty obvious which inputs lead to which outputs. Also, it's blatantly obvious where variables originate. All this makes it easier for you and your posterity to reason about your code, even months (or years) after you wrote it.
 
-.. _`apache2`:
 
 About Apache 2.0
 ----------------
@@ -38,4 +39,4 @@ Now, if you do make changes to Falcon itself, please consider contributing your 
 Falcon License
 --------------
 
-    .. include:: ../../../LICENSE
+    .. include:: ../../LICENSE

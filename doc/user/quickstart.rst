@@ -8,6 +8,7 @@ provide a quick overview of how to get started with Falcon.
 
 Before continuing, be sure you've got Falcon :ref:`installed <install>`.
 
+
 Learning by Example
 -------------------
 
