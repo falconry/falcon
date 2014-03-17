@@ -54,6 +54,21 @@ To test across all supported Python versions:
 $ pip install tox && tox
 ```
 
+### Install OSX Mavericks and Xcode 5.1 ###
+
+Xcode Command Line Tools are required to compile cython, Install with this command
+```bash
+$ xcode-select --install
+```
+
+Xcode 5.1 CLang compiler now treats unrecognized command-line options as errors, to compile you must silence warnings for unused driver arguments
+
+```bash
+$ export CFLAGS=-Qunused-arguments
+$ export CPPFLAGS=-Qunused-arguments
+$ pip install cython falcon
+```
+
 ### Usage ###
 
 We have started documenting the library at http://falcon.readthedocs.org and we would of course greatly appreciate pull requests to help accelerate that effort.
