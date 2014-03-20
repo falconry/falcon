@@ -40,6 +40,14 @@ def frogs(req, resp, params):
     params['frogs'] = 'not fluffy'
 
 
+def bunnies_in_the_head(req, resp, params):
+    resp.set_header('X-Bunnies', 'fluffy')
+
+
+def frogs_in_the_head(req, resp, params):
+    resp.set_header('X-Frogs', 'not fluffy')
+
+
 class WrappedRespondersResource(object):
 
     @falcon.before(validate_param)
@@ -127,6 +135,48 @@ class TestHooks(testing.TestBase):
         self.simulate_request(self.test_route)
         self.assertEqual('fluffy', zoo_resource.bunnies)
         self.assertEqual('not fluffy', zoo_resource.frogs)
+
+    def test_global_hook_wrap_default_on_options(self):
+        self.api = falcon.API(before=frogs_in_the_head)
+        bunny_resource = BunnyResource()
+
+        self.api.add_route(self.test_route, bunny_resource)
+
+        self.simulate_request(self.test_route, method='OPTIONS')
+        self.assertEqual(falcon.HTTP_204, self.srmock.status)
+        self.assertEqual('not fluffy', self.srmock.headers_dict['X-Frogs'])
+
+    def test_global_hook_wrap_default_405(self):
+        self.api = falcon.API(before=[frogs_in_the_head])
+        bunny_resource = BunnyResource()
+
+        self.api.add_route(self.test_route, bunny_resource)
+
+        # on_post is not defined in ZooResource
+        self.simulate_request(self.test_route, method='POST')
+        self.assertEqual(falcon.HTTP_405, self.srmock.status)
+        self.assertEqual('not fluffy', self.srmock.headers_dict['X-Frogs'])
+
+    def test_multiple_global_hooks_wrap_default_on_options(self):
+        self.api = falcon.API(before=[frogs_in_the_head, bunnies_in_the_head])
+        bunny_resource = BunnyResource()
+
+        self.api.add_route(self.test_route, bunny_resource)
+
+        self.simulate_request(self.test_route, method='OPTIONS')
+        self.assertEqual('not fluffy', self.srmock.headers_dict['X-Frogs'])
+        self.assertEqual('fluffy', self.srmock.headers_dict['X-Bunnies'])
+
+    def test_multiple_global_hooks_wrap_default_405(self):
+        self.api = falcon.API(before=[frogs_in_the_head, bunnies_in_the_head])
+        bunny_resource = BunnyResource()
+
+        self.api.add_route(self.test_route, bunny_resource)
+
+        # on_post is not defined in ZooResource
+        self.simulate_request(self.test_route, method='POST')
+        self.assertEqual('not fluffy', self.srmock.headers_dict['X-Frogs'])
+        self.assertEqual('fluffy', self.srmock.headers_dict['X-Bunnies'])
 
     def test_input_validator(self):
         self.simulate_request(self.test_route, method='PUT')
