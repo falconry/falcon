@@ -101,7 +101,6 @@ class TestHooks(testing.TestBase):
         self.simulate_request(self.test_route)
         self.assertEqual(b'fluffy', zoo_resource.resp.body_encoded)
 
-
     def test_multiple_global_hook(self):
         self.api = falcon.API(after=[fluffiness, cuteness])
         zoo_resource = ZooResource()
@@ -158,7 +157,6 @@ class TestHooks(testing.TestBase):
         self.assertEqual(falcon.HTTP_405, self.srmock.status)
         self.assertEqual('fluffy', self.srmock.headers_dict['X-Fluffiness'])
         self.assertEqual('cute', self.srmock.headers_dict['X-Cuteness'])
-
 
     def test_output_validator(self):
         self.simulate_request(self.test_route)
