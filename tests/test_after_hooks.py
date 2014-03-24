@@ -25,6 +25,14 @@ def cuteness(req, resp):
         resp.body += ' and cute'
 
 
+def fluffiness_in_the_head(req, resp):
+    resp.set_header('X-Fluffiness', 'fluffy')
+
+
+def cuteness_in_the_head(req, resp):
+    resp.set_header('X-Cuteness', 'cute')
+
+
 class WrappedRespondersResource(object):
 
     @falcon.after(serialize_body)
@@ -93,11 +101,6 @@ class TestHooks(testing.TestBase):
         self.simulate_request(self.test_route)
         self.assertEqual(b'fluffy', zoo_resource.resp.body_encoded)
 
-        # hook does not affect the default on_options
-        body = self.simulate_request(self.test_route, method='OPTIONS')
-        self.assertEqual(falcon.HTTP_204, self.srmock.status)
-        self.assertEqual([], body)
-
     def test_multiple_global_hook(self):
         self.api = falcon.API(after=[fluffiness, cuteness])
         zoo_resource = ZooResource()
@@ -106,6 +109,54 @@ class TestHooks(testing.TestBase):
 
         self.simulate_request(self.test_route)
         self.assertEqual(b'fluffy and cute', zoo_resource.resp.body_encoded)
+
+    def test_global_hook_wrap_default_on_options(self):
+        self.api = falcon.API(after=fluffiness_in_the_head)
+        zoo_resource = ZooResource()
+
+        self.api.add_route(self.test_route, zoo_resource)
+
+        self.simulate_request(self.test_route, method='OPTIONS')
+
+        self.assertEqual(falcon.HTTP_204, self.srmock.status)
+        self.assertEqual('fluffy', self.srmock.headers_dict['X-Fluffiness'])
+
+    def test_global_hook_wrap_default_405(self):
+        self.api = falcon.API(after=fluffiness_in_the_head)
+        zoo_resource = ZooResource()
+
+        self.api.add_route(self.test_route, zoo_resource)
+
+        self.simulate_request(self.test_route, method='POST')
+
+        self.assertEqual(falcon.HTTP_405, self.srmock.status)
+        self.assertEqual('fluffy', self.srmock.headers_dict['X-Fluffiness'])
+
+    def test_multiple_global_hooks_wrap_default_on_options(self):
+        self.api = falcon.API(after=[fluffiness_in_the_head,
+                                     cuteness_in_the_head])
+        zoo_resource = ZooResource()
+
+        self.api.add_route(self.test_route, zoo_resource)
+
+        self.simulate_request(self.test_route, method='OPTIONS')
+
+        self.assertEqual(falcon.HTTP_204, self.srmock.status)
+        self.assertEqual('fluffy', self.srmock.headers_dict['X-Fluffiness'])
+        self.assertEqual('cute', self.srmock.headers_dict['X-Cuteness'])
+
+    def test_multiple_global_hooks_wrap_default_405(self):
+        self.api = falcon.API(after=[fluffiness_in_the_head,
+                                     cuteness_in_the_head])
+        zoo_resource = ZooResource()
+
+        self.api.add_route(self.test_route, zoo_resource)
+
+        self.simulate_request(self.test_route, method='POST')
+
+        self.assertEqual(falcon.HTTP_405, self.srmock.status)
+        self.assertEqual('fluffy', self.srmock.headers_dict['X-Fluffiness'])
+        self.assertEqual('cute', self.srmock.headers_dict['X-Cuteness'])
 
     def test_output_validator(self):
         self.simulate_request(self.test_route)
