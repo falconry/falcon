@@ -84,7 +84,10 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
     body = io.BytesIO(body.encode('utf-8')
                       if isinstance(body, six.text_type) else body)
 
-    if six.PY2 and isinstance(path, unicode):
+    # NOTE(kgriffs): nocover since this branch will never be
+    # taken in Python3. However, the branch is tested under Py2,
+    # in test_utils.TestFalconTesting.test_unicode_path_in_create_environ
+    if six.PY2 and isinstance(path, unicode):  # pragma: nocover
         path = path.encode('utf-8')
 
     env = {
