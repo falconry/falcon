@@ -42,8 +42,9 @@ variable names you like, but we'll use ``application`` since that is what
 Gunicorn expects it to be called, by default.
 
 A WSGI application is just a callable with a well-defined signature so that
-you can host the application with any web server that understands the
-protocol. Let's take a look at the falcon.API class.
+you can host the application with any web server that understands the `WSGI
+protocol <http://legacy.python.org/dev/peps/pep-3333/>`_. Let's take a look
+at the falcon.API class.
 
 First, install IPython (if you don't already have it), and fire it up:
 
