@@ -72,8 +72,9 @@ WSGI params. Falcon adds a thin abstraction on top of these params
 so you don't have to interact with them directly.
 
 The Falcon framework contains extensive inline documentation that you can
-query using the above technique. The docstrings have been optimized for
-human-readability, and contain no silly markup to get in your way.
+query using the above technique. The team has worked hard to optimize
+the docstrings for readability, so that you can quickly scan them and find
+what you need.
 
 
 Hosting Your App
@@ -167,7 +168,7 @@ Note the use of ``resp.data`` in lieu of ``resp.body``. If you assign a
 bytestring to the latter, Falcon will figure it out, but you can
 get a little performance boost by assigning directly to ``resp.data``.
 
-OK, so now let's wire up this resource and see it in action. Go back to
+OK, now let's wire up this resource and see it in action. Go back to
 ``app.py`` and modify it so it looks something like this:
 
 .. code:: python
@@ -308,9 +309,8 @@ Serving Images
 --------------
 
 Now that we have a way of getting images into the service, we need a way
-to get them back out! What we want to do is return an image when it is
-requested using the path that we returned in the Location header when that
-image was originally POSTed. Something like this:
+to get them back out. What we want to do is return an image when it is
+requested using the path that came back in the Location header, like so:
 
 .. code:: bash
 
@@ -318,15 +318,15 @@ image was originally POSTed. Something like this:
 
 Now, we could add an ``on_get`` responder to our images resource, and that is
 fine for simple resources like this, but that approach can lead to problems
-when you need to respond differently to the same HTTP method (e.g., GET,
-POST, etc.) depending on whether the user wants to interact with a collection
+when you need to respond differently to the same HTTP method (e.g., GET),
+depending on whether the user wants to interact with a collection
 of things, or a single thing.
 
 With that in mind, let's create a separate class to represent a single image,
 as opposed to a collection of images. We will then add an ``on_get`` responder
 to the new class.
 
-Edit your ``images.py`` file to look something like this:
+Go ahead and edit your ``images.py`` file to look something like this:
 
 .. code:: python
 
@@ -387,24 +387,27 @@ Edit your ``images.py`` file to look something like this:
             resp.stream_len = os.path.getsize(image_path)
 
 As you can see, we renamed ``Resource`` to ``Collection`` and added a new ``Item``
-class to represent a single image resource. Inside the ``on_get`` responder,
+class to represent a single image resource. Also, note the ``name`` parameter
+for the ``on_get`` responder. Any URI parameters that you specify in your routes
+will be turned into corresponding kwargs and passed into the target responder as
+such. We'll see how to specify URI parameters in a moment.
+
+Inside the ``on_get`` responder,
 we set the Content-Type header based on the filename extension, and then
 stream out the image directly from an open file handle. Note the use of
 ``resp.stream_len``. Whenever using ``resp.stream`` instead of ``resp.body`` or
 ``resp.data``, you have to also specify the expected length of the stream so
 that the web client knows how much data to read from the response.
 
-..note::
-
-    If you do not know the size of the stream in advance, you can work around
-    that by using chunked encoding, but that is beyond the scope of this
-    tutorial.
+.. note:: If you do not know the size of the stream in advance, you can work around
+   that by using chunked encoding, but that's beyond the scope of this
+   tutorial.
 
 If ``resp.status`` is not set explicitly, it defaults to ``200 OK``, which is
-exactly what we want for the ``on_get`` responder.
+exactly what we want the ``on_get`` responder to do.
 
-Now, let's see this in action. First, we need to edit `app.py`` to wire up the
-new resource:
+Now, let's wire things up and give this a try. Go ahead and edit ``app.py`` to
+look something like this:
 
 .. code:: python
 
@@ -422,6 +425,16 @@ new resource:
 
     api.add_route('/images', image_collection)
     api.add_route('/images/{name}', image)
+
+As you can see, we specified a new route, ``/images/{name}``. This causes
+Falcon to expect all associated responders to accept a ``name``
+argument.
+
+.. note::
+
+    Falcon currently supports Level 1
+    `URI templates <https://tools.ietf.org/html/rfc6570>`_, and support for
+    higher levels is planned.
 
 Now, restart gunicorn and post another picture to the service:
 
@@ -441,23 +454,214 @@ headers were set correctly. Just for fun, go ahead and paste the above URI
 into your web browser. The image should display correctly.
 
 
-Finishing Touches
+Query Strings
+-------------
+
+*Coming soon...*
+
+
+Introducing Hooks
 -----------------
 
-*Coming soon*
+At this point you should have a pretty good understanding of the basic parts
+that make up a Falcon-based API. Before we finish up, let's just take a few
+minutes to clean up the code and add some error handling.
 
-.. resp.stream - using wsgi.file_wrapper
-.. verify content-type on message post (DRY with hooks, show before and after)
-.. handle image name not found in the "get"
-.. validate image name format
-.. ensure client accepts the image type that will be returned
-.. mention Talons
-..
+First of all, let's check the incoming media type when something is posted
+to make sure it is a common image type. We'll do this by using a Falcon
+``before`` hook.
 
-.. talk about list vs. single, DRY things with hooks (show before and after) and mention Talons
+First, let's define a list of media types our service will accept. Place this
+constant near the top, just after the import statements in ``images.py``:
 
+.. code:: python
+
+    ALLOWED_IMAGE_TYPES = (
+        'image/gif',
+        'image/jpeg',
+        'image/png',
+    )
+
+The idea here is to only accept GIF, JPEG, and PNG images. You can add others
+to the list if you like.
+
+Next, let's create a hook that will run before each request to post a
+message. Add this method below the definition of ``ALLOWED_IMAGE_TYPES``:
+
+.. code:: python
+
+    def validate_image_type(req, resp, params):
+        if req.content_type not in ALLOWED_IMAGE_TYPES:
+            msg = 'Image type not allowed. Must be PNG, JPEG, or GIF'
+            raise falcon.HTTPBadRequest('Bad request', msg)
+
+And then attach the hook to the ``on_post`` responder like so:
+
+.. code:: python
+
+    @falcon.before(validate_image_type)
+    def on_post(self, req, resp):
+
+Now, before every call to that responder, Falcon will first invoke the
+``validate_image_type`` method. There isn't anything special about that
+method, other than it must accept three arguments. Every hook takes, as its
+first two arguments, a reference to the same ``req`` and ``resp`` objects
+that are passed into responders. The third argument, named ``params`` by
+convention, is a reference to the kwarg dictionary Falcon creates for each
+request. ``params`` will contain the route's URI template params and their
+values, if any.
+
+As you can see in the example above, you can use ``req`` to get information
+about the incoming request. However, you can also use ``resp`` to play with
+the HTTP response as needed, and you can even inject extra kwargs for
+responders in a DRY way, e.g.,:
+
+.. code:: python
+
+    def extract_project_id(req, resp, params):
+        """Adds `project_id` to the list of params for all responders.
+
+        Meant to be used as a `before` hook.
+        """
+        params['project_id'] = req.get_header('X-PROJECT-ID')
+
+Now, you can imagine that such a hook should apply to all responders for
+a resource, or even globally to all resources. You can apply hooks to an
+entire resource like so:
+
+.. code:: python
+
+    @falcon.before(extract_project_id)
+    class Message(object):
+
+        # ...
+
+And you can apply hooks globally by passing them into the API class
+initializer:
+
+.. code:: python
+
+    falcon.API(before=[extract_project_id])
+
+To learn more about hooks, take a look at the docstring for the ``API`` class,
+as well the docstrings for the ``falcon.before`` and ``falcon.after`` decorators.
+
+Now that you've added a hook to validate the media type on post, you can see
+it in action by passing in something nefarious:
+
+.. code:: bash
+
+    $ http POST localhost:8000/images Content-Type:image/jpx < test.jpx
+
+That should return a ``400 Bad Request`` status and a nicely structured
+error body. When something goes wrong, you usually want to give your users
+some info to help them resolve the issue. The exception to this rule is when
+an error occurs because the user is requested something they are not
+authorized to access. In that case, you may wish to simply return
+``404 Not Found`` with an empty body, in case a malicious user is fishing
+for information that will help them crack your API.
+
+.. note:: Please take a look at our new sister project,
+   `Talons <https://github.com/talons/talons>`_, for a collection of
+   useful Falcon hooks contributed by the community. If you create a
+   nifty hook that you think others could use, please consider helping your
+   fellow Falconers out by submitting a
+   `Talons <https://github.com/talons/talons>`_ pull request.
+
+Error Handling
+--------------
+
+When something goes horribly (or mildly) wrong, you *could* manually set the
+error status, appropriate response headers, and even an error body using the
+``resp`` object. However, Falcon tries to make things a bit easier by
+providing a set of exceptions you can raise when something goes wrong. In fact,
+if Falcon catches any exception your responder throws that inherits from
+``falcon.HTTPError``, the framework will convert that exception to an
+appropriate HTTP error response.
+
+You may raise an instance of ``falcon.HTTPError``, or use any one
+of a number of predefined error classes that try to do "the right thing" in
+setting appropriate headers and bodies. Have a look at the docstrings for
+any of the following to get more information on how you can use them in your
+API:
+
+.. code:: python
+
+    falcon.HTTPBadGateway
+    falcon.HTTPBadRequest
+    falcon.HTTPConflict
+    falcon.HTTPError
+    falcon.HTTPForbidden
+    falcon.HTTPInternalServerError
+    falcon.HTTPLengthRequired
+    falcon.HTTPMethodNotAllowed
+    falcon.HTTPNotAcceptable
+    falcon.HTTPNotFound
+    falcon.HTTPPreconditionFailed
+    falcon.HTTPRangeNotSatisfiable
+    falcon.HTTPServiceUnavailable
+    falcon.HTTPUnauthorized
+    falcon.HTTPUnsupportedMediaType
+    falcon.HTTPUpgradeRequired
+
+For example, you could handle a missing image file like this:
+
+.. code:: python
+
+    try:
+        resp.stream = open(image_path, 'rb')
+    except IOError:
+        raise falcon.HTTPNotFound()
+
+Or you could handle a bogus filename like this:
+
+.. code:: python
+
+    VALID_IMAGE_NAME = re.compile(r'[a-f0-9]{10}\.(jpeg|gif|png)$')
+
+    # ...
+
+    class Item(object):
+
+        def __init__(self, storage_path):
+            self.storage_path = storage_path
+
+        def on_get(self, req, resp, name):
+            if not VALID_IMAGE_NAME.match(name):
+                raise falcon.HTTPNotFound()
+
+Sometimes you don't have much control over the type of exceptions that get
+raised. To address this, Falcon lets you create custom handlers for any type
+of error. For example, if your database throws exceptions that inherit from
+NiftyDBError, you can install a special error handler just for NiftyDBError,
+so you don't have to copy-paste your handler code across multiple responders.
+
+Have a look at the docstring for ``falcon.API.add_error_handler`` for more
+information on using this feature to DRY up your code:
+
+.. code:: python
+
+    In [71]: help(falcon.API.add_error_handler)
 
 What Now?
 ---------
 
-*Coming soon*
+As mentioned previously, Falcon's docstrings are quite extensive, and so you
+can learn a lot just by poking around Falcon's modules from a Python REPL,
+such as `IPython <http://ipython.org/>`_.
+
+Also, don't be shy about pulling up Falcon's source code on GitHub or in your
+favorite text editor. The team has tried to make the code as straightforward
+and readable as possible; where other documentation may fall short, the code basically
+"can't be wrong."
+
+As you play around with Falcon and become more familiar with it, please join
+the **#falconframework** IRC channel on
+`Freenode <https://en.wikipedia.org/wiki/Freenode>`_. It's a great place to
+ask questions, share ideas, and get the scoop on updates to the Falcon
+web framework itself.
+
+Finally, if you run into something that is harder to use than it should be,
+or you find that something is slow or completely broken, please let the crew
+know in **#falconframework** and/or by
+`submitting an issue <https://github.com/racker/falcon/issues>`_.
