@@ -37,8 +37,8 @@ Open that file in your favorite text editor and add the following lines:
 
     api = application = falcon.API()
 
-That creates your WSGI application and aliases it as `api`. You can use any
-variable names you like, but we'll use `application` since that is what
+That creates your WSGI application and aliases it as ``api``. You can use any
+variable names you like, but we'll use ``application`` since that is what
 Gunicorn expects it to be called, by default.
 
 A WSGI application is just a callable with a well-defined signature so that
@@ -60,13 +60,13 @@ Now, type the following to introspect the falcon.API callable:
 
     In [2]: falcon.API.__call__?
 
-Alternatively, you can use the built-in `help` function:
+Alternatively, you can use the built-in ``help`` function:
 
 .. code:: bash
 
     In [3]: help(falcon.API.__call__)
 
-Note the method signature. `env` and `start_response` are standard
+Note the method signature. ``env`` and ``start_response`` are standard
 WSGI params. Falcon adds a thin abstraction on top of these params
 so you don't have to interact with them directly.
 
@@ -122,7 +122,7 @@ an action that the API client can request be performed in order to fetch
 or transform the resource in question.
 
 Since we are building an image-sharing API, let's create an "images"
-resource. Create a new file, `images.py` within your project directory,
+resource. Create a new file, ``images.py`` within your project directory,
 and add the following to it:
 
 .. code:: python
@@ -136,24 +136,24 @@ and add the following to it:
             resp.body = '{"message": "Hello world!"}'
             resp.status = falcon.HTTP_200
 
-As you can see, `Resource` is just a regular class. You can name the
+As you can see, ``Resource`` is just a regular class. You can name the
 class anything you like. Falcon uses duck-typing, so you don't need to
 inherit from any sort of special base class.
 
-The image resource above defines a single method, `on_get`. For any
-HTTP method you want your resource to support, simply add an `on_x`
-class method to the resource, where `x` is any one of the standard
-HTTP methods, lowercased (e.g., `on_get`, `on_put`, `on_head`, etc.).
+The image resource above defines a single method, ``on_get``. For any
+HTTP method you want your resource to support, simply add an ``on_x``
+class method to the resource, where ``x`` is any one of the standard
+HTTP methods, lowercased (e.g., ``on_get``, ``on_put``, ``on_head``, etc.).
 
 We call these well-known methods "responders". Each responder takes (at
 least) two params, one representing the HTTP request, and one representing
 the HTTP response to that request. By convention, these are called
-`req` and `resp`, respectively. Route templates and hooks can inject extra
+``req`` and ``resp``, respectively. Route templates and hooks can inject extra
 params, as we shall see later on.
 
 Right now, the image resource responds to GET requests with a simple
-`200 OK` and a JSON body. Falcon's Internet media type defaults to
-`application/json` but you can set it to whatever you like. For example:
+``200 OK`` and a JSON body. Falcon's Internet media type defaults to
+``application/json`` but you can set it to whatever you like. For example:
 
 .. code:: python
 
@@ -162,12 +162,12 @@ Right now, the image resource responds to GET requests with a simple
         resp.content_type = 'application/msgpack'
         resp.status = falcon.HTTP_200
 
-Note the use of `resp.data` in lieu of `resp.body`. If you assign a
+Note the use of ``resp.data`` in lieu of ``resp.body``. If you assign a
 bytestring to the latter, Falcon will figure it out, but you can
-get a little performance boost by assigning directly to `resp.data`.
+get a little performance boost by assigning directly to ``resp.data``.
 
 OK, so now let's wire up this resource and see it in action. Go back to
-`app.py` and modify it so it looks something like this:
+``app.py`` and modify it so it looks something like this:
 
 .. code:: python
 
@@ -218,14 +218,14 @@ want to create a new image resource. First, we'll need to specify where the
 images will be saved (for a real service, you would want to use an object
 storage service instead, such as Cloud Files or S3).
 
-Edit your `images.py` file and add the following to the resource:
+Edit your ``images.py`` file and add the following to the resource:
 
 .. code:: python
 
     def __init__(self, storage_path):
         self.storage_path = storage_path
 
-Next, edit `app.py` and pass in a path to the resource initializer. For now,
+Next, edit ``app.py`` and pass in a path to the resource initializer. For now,
 it's just fine to hard-code the string.
 
 .. code:: python
@@ -273,23 +273,23 @@ Now, let's implement the POST responder:
             resp.location = '/images/' + image_id
 
 As you can see, we generate a unique ID and filename for the new image, and
-then write it out by reading from `req.stream`. It's called `stream` instead
-of `body` to emphasize the fact that you are really reading from an input
+then write it out by reading from ``req.stream``. It's called ``stream`` instead
+of ``body`` to emphasize the fact that you are really reading from an input
 stream; Falcon never spools or decodes request data, instead giving you direct
 access to the incoming binary stream provided by the WSGI server.
 
 Note that we are setting the status to '201 Created'. For a full list of
-predefined status strings, simply call `help` on `falcon.status_codes`:
+predefined status strings, simply call ``help`` on ``falcon.status_codes``:
 
 .. code:: bash
 
     In [4]: help(falcon.status_codes)
 
-The last line in the `on_post` responder sets the Location header for the
+The last line in the ``on_post`` responder sets the Location header for the
 newly created resource. (We will create a route for that path in just a
 minute.) Note that the Request and Response classes contain convenience
 attributes for reading and setting common headers, but you can always
-access any header by name with the `req.get_header` and `resp.set_header`
+access any header by name with the ``req.get_header`` and ``resp.set_header``
 methods.
 
 Restart gunicorn, and then try sending a POST request to the resource
@@ -315,17 +315,17 @@ image was originally POSTed. Something like this:
 
     $ http GET localhost:8000/images/87db45ff42
 
-Now, we could add an `on_get` responder to our images resource, and that is
+Now, we could add an ``on_get`` responder to our images resource, and that is
 fine for simple resources like this, but that approach can lead to problems
 when you need to respond differently to the same HTTP method (e.g., GET,
 POST, etc.) depending on whether the user wants to interact with a collection
 of things, or a single thing.
 
 With that in mind, let's create a separate class to represent a single image,
-as opposed to a collection of images. We will then add an `on_get` responder
+as opposed to a collection of images. We will then add an ``on_get`` responder
 to the new class.
 
-Edit your `images.py` file to look something like this:
+Edit your ``images.py`` file to look something like this:
 
 .. code:: python
 
@@ -385,12 +385,12 @@ Edit your `images.py` file to look something like this:
             resp.stream = open(image_path, 'rb')
             resp.stream_len = os.path.getsize(image_path)
 
-As you can see, we renamed `Resource` to `Collection` and added a new `Item`
-class to represent a single image resource. Inside the `on_get` responder,
+As you can see, we renamed ``Resource`` to ``Collection`` and added a new ``Item``
+class to represent a single image resource. Inside the ``on_get`` responder,
 we set the Content-Type header based on the filename extension, and then
 stream out the image directly from an open file handle. Note the use of
-`resp.stream_len`. Whenever using `resp.stream` instead of `resp.body` or
-`resp.data`, you have to also specify the expected length of the stream so
+``resp.stream_len``. Whenever using ``resp.stream`` instead of ``resp.body`` or
+``resp.data``, you have to also specify the expected length of the stream so
 that the web client knows how much data to read from the response.
 
 ..note::
@@ -399,10 +399,10 @@ that the web client knows how much data to read from the response.
     that by using chunked encoding, but that is beyond the scope of this
     tutorial.
 
-If `resp.status` is not set explicitly, it defaults to `200 OK`, which is
-exactly what we want for the `on_get` responder.
+If ``resp.status`` is not set explicitly, it defaults to ``200 OK``, which is
+exactly what we want for the ``on_get`` responder.
 
-Now, let's see this in action. First, we need to edit `app.py` to wire up the
+Now, let's see this in action. First, we need to edit `app.py`` to wire up the
 new resource:
 
 .. code:: python
