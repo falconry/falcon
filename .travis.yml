@@ -1,5 +1,5 @@
 language: python
-install: pip install tox --use-mirrors
+install: pip install tox coveralls --use-mirrors
 env:
   - TOX_ENV=py26
   - TOX_ENV=py27
