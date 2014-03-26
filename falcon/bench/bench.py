@@ -42,7 +42,7 @@ def bench(name, iterations, env, stat_memory):
     if heapy and stat_memory:
         heap_diff = heapy.heap() - heap_before
 
-    sec_per_req = Decimal(total_sec) / Decimal(iterations)
+    sec_per_req = Decimal(str(total_sec)) / Decimal(str(iterations))
 
     sys.stdout.write('.')
     sys.stdout.flush()
