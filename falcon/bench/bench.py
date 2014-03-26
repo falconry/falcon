@@ -236,7 +236,6 @@ def main():
         print('{3}. {0:.<15s}{1:.>06d} req/sec or {2: >3.2f} μs/req ({4}x)'.
               format(name, req_per_sec, us_per_req, i + 1, factor))
 
-
     if heapy and args.stat_memory:
         print()
 
