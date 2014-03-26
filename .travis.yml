@@ -6,6 +6,7 @@ env:
   - TOX_ENV=py27_cython
   - TOX_ENV=py33
   - TOX_ENV=py33_cython
+  - TOX_ENV=pypy
   - TOX_ENV=pep8
   - TOX_ENV=pylint
 
