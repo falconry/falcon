@@ -20,7 +20,6 @@ from functools import wraps
 import six
 
 from falcon import HTTP_METHODS
-from falcon import api_helpers
 
 
 def before(action):
@@ -69,10 +68,6 @@ def before(action):
                                 action(req, resp, kwargs)
                                 responder(self, req, resp, **kwargs)
 
-                            api_helpers._propagate_argspec(
-                                do_before_all,
-                                responder)
-
                             setattr(resource, responder_name, do_before_all)
 
                         let()
@@ -86,8 +81,6 @@ def before(action):
             def do_before_one(self, req, resp, **kwargs):
                 action(req, resp, kwargs)
                 responder(self, req, resp, **kwargs)
-
-            api_helpers._propagate_argspec(do_before_one, responder)
 
             return do_before_one
 
@@ -124,10 +117,6 @@ def after(action):
                                 responder(self, req, resp, **kwargs)
                                 action(req, resp)
 
-                            api_helpers._propagate_argspec(
-                                do_after_all,
-                                responder)
-
                             setattr(resource, responder_name, do_after_all)
 
                         let()
@@ -141,8 +130,6 @@ def after(action):
             def do_after_one(self, req, resp, **kwargs):
                 responder(self, req, resp, **kwargs)
                 action(req, resp)
-
-            api_helpers._propagate_argspec(do_after_one, responder)
 
             return do_after_one
 
