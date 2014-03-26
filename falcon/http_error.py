@@ -20,7 +20,9 @@ import json
 import sys
 
 if sys.version_info < (2, 7):  # pragma: no cover
-    from ordereddict import OrderedDict
+    # NOTE(kgriffs): We could use the module from PyPI, but ordering isn't
+    # critical in JSON, and Falcon eschews dependencies.
+    OrderedDict = dict
 else:  # pragma: no cover
     from collections import OrderedDict
 

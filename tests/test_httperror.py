@@ -127,32 +127,35 @@ class TestHTTPError(testing.TestBase):
             'X-Error-Title': 'Storage service down',
             'X-Error-Description': ('The configured storage service is not '
                                     'responding to requests. Please contact '
-                                    'your service provider'),
+                                    'your service provider.'),
             'X-Error-Status': falcon.HTTP_503
         }
 
-        expected_body = [
-            b'{\n'
-            b'    "title": "Storage service down",\n'
-            b'    "description": "The configured storage service is not '
-            b'responding to requests. Please contact your service provider",\n'
-            b'    "code": 10042\n'
-            b'}'
-        ]
+        expected_body = {
+            'title': 'Storage service down',
+            'description': ('The configured storage service is not '
+                            'responding to requests. Please contact '
+                            'your service provider.'),
+            'code': 10042,
+        }
 
         # Try it with Accept: */*
         headers['Accept'] = '*/*'
         body = self.simulate_request('/fail', headers=headers)
+        body = body[0]
+
         self.assertEqual(self.srmock.status, headers['X-Error-Status'])
-        self.assertThat(lambda: json.loads(body[0]), Not(raises(ValueError)))
-        self.assertEqual(expected_body, body)
+        self.assertThat(lambda: json.loads(body), Not(raises(ValueError)))
+        self.assertEqual(expected_body, json.loads(body))
 
         # Now try it with application/json
         headers['Accept'] = 'application/json'
         body = self.simulate_request('/fail', headers=headers)
+        body = body[0]
+
         self.assertEqual(self.srmock.status, headers['X-Error-Status'])
-        self.assertThat(lambda: json.loads(body[0]), Not(raises(ValueError)))
-        self.assertEqual(body, expected_body)
+        self.assertThat(lambda: json.loads(body), Not(raises(ValueError)))
+        self.assertEqual(json.loads(body), expected_body)
 
     def test_no_description(self):
         body = self.simulate_request('/fail', method='PATCH')
@@ -192,67 +195,66 @@ class TestHTTPError(testing.TestBase):
             'Accept': 'application/json'
         }
 
-        expected_body = [
-            b'{\n'
-            b'    "title": "Request denied",\n'
-            b'    "description": "You do not have write permissions for this '
-            b'queue.",\n'
-            b'    "link": {\n'
-            b'        "text": "API documention for this error",\n'
-            b'        "href": "http://example.com/api/rbac",\n'
-            b'        "rel": "help"\n'
-            b'    }\n'
-            b'}'
-        ]
+        expected_body = {
+            'title': 'Request denied',
+            'description': ('You do not have write permissions for this '
+                            'queue.'),
+            'link': {
+                'text': 'API documention for this error',
+                'href': 'http://example.com/api/rbac',
+                'rel': 'help',
+            },
+        }
 
         body = self.simulate_request('/fail', headers=headers, method='POST')
+        body = body[0]
+
         self.assertEqual(self.srmock.status, falcon.HTTP_403)
-        self.assertThat(lambda: json.loads(body[0]), Not(raises(ValueError)))
-        self.assertEqual(body, expected_body)
+        self.assertThat(lambda: json.loads(body), Not(raises(ValueError)))
+        self.assertEqual(json.loads(body), expected_body)
 
     def test_epic_fail(self):
         headers = {
             'Accept': 'application/json'
         }
 
-        expected_body = [
-            b'{\n'
-            b'    "title": "Internet crashed",\n'
-            b'    "description": "Catastrophic weather event due to climate '
-            b'change.",\n'
-            b'    "link": {\n'
-            b'        "text": "Drill baby drill!",\n'
-            b'        "href": "http://example.com/api/climate",\n'
-            b'        "rel": "help"\n'
-            b'    }\n'
-            b'}'
-        ]
+        expected_body = {
+            'title': 'Internet crashed',
+            'description': 'Catastrophic weather event due to climate change.',
+            'link': {
+                'text': 'Drill baby drill!',
+                'href': 'http://example.com/api/climate',
+                'rel': 'help',
+            },
+        }
 
         body = self.simulate_request('/fail', headers=headers, method='PUT')
+        body = body[0]
+
         self.assertEqual(self.srmock.status, falcon.HTTP_792)
-        self.assertThat(lambda: json.loads(body[0]), Not(raises(ValueError)))
-        self.assertEqual(body, expected_body)
+        self.assertThat(lambda: json.loads(body), Not(raises(ValueError)))
+        self.assertEqual(json.loads(body), expected_body)
 
     def test_unicode(self):
         unicode_resource = UnicodeFaultyResource()
-        expected_body = [
-            b'{\n'
-            b'    "title": "Internet \xc3\xa7rashed!",\n'
-            b'    "description": "\xc3\x87atastrophic weather event",\n'
-            b'    "link": {\n'
-            b'        "text": "Drill b\xc3\xa1by drill!",\n'
-            b'        "href": "http://example.com/api/%C3%A7limate",\n'
-            b'        "rel": "help"\n'
-            b'    }\n'
-            b'}'
-        ]
+
+        expected_body = {
+            'title': u'Internet \xe7rashed!',
+            'description': u'\xc7atastrophic weather event',
+            'link': {
+                'text': u'Drill b\xe1by drill!',
+                'href': 'http://example.com/api/%C3%A7limate',
+                'rel': 'help',
+            },
+        }
 
         self.api.add_route('/unicode', unicode_resource)
         body = self.simulate_request('/unicode')
+        body = body[0]
 
         self.assertTrue(unicode_resource.called)
         self.assertEqual(self.srmock.status, falcon.HTTP_792)
-        self.assertEqual(expected_body, body)
+        self.assertEqual(expected_body, json.loads(body, 'utf-8'))
 
     def test_401(self):
         self.api.add_route('/401', UnauthorizedResource())
@@ -318,12 +320,15 @@ class TestHTTPError(testing.TestBase):
     def test_503(self):
         self.api.add_route('/503', ServiceUnavailableResource())
         body = self.simulate_request('/503')
+        body = body[0]
 
-        expected_body = (b'{\n    "title": "Oops",\n    "description": '
-                         b'"Stand by..."\n}')
+        expected_body = {
+            'title': 'Oops',
+            'description': 'Stand by...',
+        }
 
         self.assertEqual(self.srmock.status, falcon.HTTP_503)
-        self.assertEqual(body, [expected_body])
+        self.assertEqual(json.loads(body), expected_body)
         self.assertIn(('retry-after', '60'), self.srmock.headers)
 
     def test_misc(self):
