@@ -233,8 +233,9 @@ def main():
         us_per_req = (sec_per_req * Decimal(10 ** 6))
         factor = round_to_int(baseline / sec_per_req)
 
-        print('{3}. {0:.<15s}{1:.>06,d} req/sec or {2: >3.2f} μs/req ({4}x)'.
+        print('{3}. {0:.<15s}{1:.>06d} req/sec or {2: >3.2f} μs/req ({4}x)'.
               format(name, req_per_sec, us_per_req, i + 1, factor))
+
 
     if heapy and args.stat_memory:
         print()
