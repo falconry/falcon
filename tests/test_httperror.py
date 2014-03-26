@@ -251,7 +251,7 @@ class TestHTTPError(testing.TestBase):
         body = self.simulate_request('/unicode')
 
         self.assertTrue(unicode_resource.called)
-        #self.assertEqual(self.srmock.status, falcon.HTTP_792)
+        self.assertEqual(self.srmock.status, falcon.HTTP_792)
         self.assertEqual(expected_body, body)
 
     def test_401(self):

@@ -286,9 +286,9 @@ class API(object):
         # adds (will cause the last one to win).
         self._error_handlers.insert(0, (exception, handler))
 
-#----------------------------------------------------------------------------
-# Helpers
-#----------------------------------------------------------------------------
+    # ------------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------------
 
     def _get_responder(self, path, method):
         """Searches routes for a matching responder
