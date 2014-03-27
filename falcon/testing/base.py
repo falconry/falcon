@@ -69,13 +69,17 @@ class TestBase(unittest.TestCase):
 
         super(TestBase, self).tearDown()
 
-    def simulate_request(self, path, **kwargs):
+    def simulate_request(self, path, decode=None, **kwargs):
         """ Simulates a request.
 
         Simulates a request to the API for testing purposes.
 
         Args:
             path: Request path for the desired resource
+            decode: If set to a character encoding, such as 'utf-8',
+                the method will assume the response is a single
+                byte string and will decode it and return a single
+                wide string instead of the raw WSGI response iterable.
             kwargs: Same as falcon.testing.create_environ()
 
         """
@@ -83,5 +87,13 @@ class TestBase(unittest.TestCase):
         if not path:
             path = '/'
 
-        return self.api(create_environ(path=path, **kwargs),
-                        self.srmock)
+        result = self.api(create_environ(path=path, **kwargs),
+                          self.srmock)
+
+        if decode is not None:
+            if not result:
+                return ''
+
+            return result[0].decode(decode)
+
+        return result

@@ -163,7 +163,7 @@ class TestFalconUtils(testtools.TestCase):
             self.assertEqual(expect, actual)
 
 
-class TestFalconTesting(testtools.TestCase):
+class TestFalconTesting(falcon.testing.TestBase):
     """Catch some uncommon branches not covered elsewhere."""
 
     def test_unicode_path_in_create_environ(self):
@@ -179,3 +179,7 @@ class TestFalconTesting(testtools.TestCase):
     def test_none_header_value_in_create_environ(self):
         env = falcon.testing.create_environ('/', headers={'X-Foo': None})
         self.assertEqual(env['HTTP_X_FOO'], '')
+
+    def test_decode_empty_result(self):
+        body = self.simulate_request('/', decode='utf-8')
+        self.assertEqual(body, '')

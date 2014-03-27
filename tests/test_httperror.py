@@ -141,8 +141,7 @@ class TestHTTPError(testing.TestBase):
 
         # Try it with Accept: */*
         headers['Accept'] = '*/*'
-        body = self.simulate_request('/fail', headers=headers)
-        body = body[0]
+        body = self.simulate_request('/fail', headers=headers, decode='utf-8')
 
         self.assertEqual(self.srmock.status, headers['X-Error-Status'])
         self.assertThat(lambda: json.loads(body), Not(raises(ValueError)))
@@ -150,8 +149,7 @@ class TestHTTPError(testing.TestBase):
 
         # Now try it with application/json
         headers['Accept'] = 'application/json'
-        body = self.simulate_request('/fail', headers=headers)
-        body = body[0]
+        body = self.simulate_request('/fail', headers=headers, decode='utf-8')
 
         self.assertEqual(self.srmock.status, headers['X-Error-Status'])
         self.assertThat(lambda: json.loads(body), Not(raises(ValueError)))
@@ -206,8 +204,8 @@ class TestHTTPError(testing.TestBase):
             },
         }
 
-        body = self.simulate_request('/fail', headers=headers, method='POST')
-        body = body[0]
+        body = self.simulate_request('/fail', headers=headers, method='POST',
+                                     decode='utf-8')
 
         self.assertEqual(self.srmock.status, falcon.HTTP_403)
         self.assertThat(lambda: json.loads(body), Not(raises(ValueError)))
@@ -228,8 +226,8 @@ class TestHTTPError(testing.TestBase):
             },
         }
 
-        body = self.simulate_request('/fail', headers=headers, method='PUT')
-        body = body[0]
+        body = self.simulate_request('/fail', headers=headers, method='PUT',
+                                     decode='utf-8')
 
         self.assertEqual(self.srmock.status, falcon.HTTP_792)
         self.assertThat(lambda: json.loads(body), Not(raises(ValueError)))
@@ -249,12 +247,11 @@ class TestHTTPError(testing.TestBase):
         }
 
         self.api.add_route('/unicode', unicode_resource)
-        body = self.simulate_request('/unicode')
-        body = body[0]
+        body = self.simulate_request('/unicode', decode='utf-8')
 
         self.assertTrue(unicode_resource.called)
         self.assertEqual(self.srmock.status, falcon.HTTP_792)
-        self.assertEqual(expected_body, json.loads(body, 'utf-8'))
+        self.assertEqual(expected_body, json.loads(body))
 
     def test_401(self):
         self.api.add_route('/401', UnauthorizedResource())
@@ -319,8 +316,7 @@ class TestHTTPError(testing.TestBase):
 
     def test_503(self):
         self.api.add_route('/503', ServiceUnavailableResource())
-        body = self.simulate_request('/503')
-        body = body[0]
+        body = self.simulate_request('/503', decode='utf-8')
 
         expected_body = {
             'title': 'Oops',
