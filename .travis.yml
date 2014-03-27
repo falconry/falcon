@@ -9,6 +9,8 @@ env:
   - TOX_ENV=pypy
   - TOX_ENV=pep8
   - TOX_ENV=pylint
+  - TOX_ENV=py27_smoke
+  - TOX_ENV=py27_smoke_cython
 
 script: tox -e $TOX_ENV
 after_success: coveralls
