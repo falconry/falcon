@@ -81,8 +81,14 @@ Community Guide
 API Documentation
 -----------------
 
-*Coming soon*
+.. toctree::
+   :maxdepth: 2
 
+   api/api
+   api/hooks
+   api/request_and_response
+   api/status_and_errors
+   api/util
 
 Contributor Guide
 -----------------
