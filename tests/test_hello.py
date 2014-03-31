@@ -7,7 +7,22 @@ import falcon.testing as testing
 import six
 
 
-class HelloResource:
+# NOTE(kgriffs): Concept from Gunicorn's source (wsgi.py)
+class FileWrapper(object):
+
+    def __init__(self, file_like, block_size=8192):
+        self.file_like = file_like
+        self.block_size = block_size
+
+    def __getitem__(self, key):
+        data = self.file_like.read(self.block_size)
+        if data:
+            return data
+
+        raise IndexError
+
+
+class HelloResource(object):
     sample_status = '200 OK'
     sample_unicode = (u'Hello World! \x80' +
                       six.text_type(testing.rand_string(0, 0)))
@@ -26,7 +41,10 @@ class HelloResource:
         resp.status = falcon.HTTP_200
 
         if 'stream' in self.mode:
-            resp.stream = io.BytesIO(self.sample_utf8)
+            if 'filelike' in self.mode:
+                resp.stream = io.BytesIO(self.sample_utf8)
+            else:
+                resp.stream = [self.sample_utf8]
 
             if 'stream_len' in self.mode:
                 resp.stream_len = len(self.sample_utf8)
@@ -44,7 +62,7 @@ class HelloResource:
         self.on_get(req, resp)
 
 
-class NoStatusResource:
+class NoStatusResource(object):
     def on_get(self, req, resp):
         pass
 
@@ -66,6 +84,9 @@ class TestHelloWorld(testing.TestBase):
 
         self.stream_resource = HelloResource('stream, stream_len')
         self.api.add_route('/stream', self.stream_resource)
+
+        self.filelike_resource = HelloResource('stream, stream_len, filelike')
+        self.api.add_route('/filelike', self.filelike_resource)
 
         self.no_status_resource = NoStatusResource()
         self.api.add_route('/nostatus', self.no_status_resource)
@@ -147,6 +168,7 @@ class TestHelloWorld(testing.TestBase):
 
     def test_stream_known_len(self):
         src = self.simulate_request('/stream')
+        self.assertTrue(self.stream_resource.called)
 
         dest = io.BytesIO()
         for chunk in src:
@@ -157,7 +179,24 @@ class TestHelloWorld(testing.TestBase):
         self.assertThat(self.srmock.headers, Contains(content_length))
         self.assertEqual(dest.tell(), expected_len)
 
-        self.assertEqual(dest.getvalue(), self.chunked_resource.sample_utf8)
+        self.assertEqual(dest.getvalue(),
+                         self.chunked_resource.sample_utf8)
+
+    def test_filelike(self):
+        for file_wrapper in (None, FileWrapper):
+            url = '/filelike'
+
+            src = self.simulate_request(url, file_wrapper=file_wrapper)
+            self.assertTrue(self.filelike_resource.called)
+
+            dest = io.BytesIO()
+            for chunk in src:
+                dest.write(chunk)
+
+            expected_len = self.filelike_resource.resp.stream_len
+            content_length = ('content-length', str(expected_len))
+            self.assertThat(self.srmock.headers, Contains(content_length))
+            self.assertEqual(dest.tell(), expected_len)
 
     def test_status_not_set(self):
         body = self.simulate_request('/nostatus')

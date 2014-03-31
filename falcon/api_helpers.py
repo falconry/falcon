@@ -18,6 +18,7 @@ from functools import wraps
 from falcon import responders, HTTP_METHODS
 import falcon.status_codes as status
 
+STREAM_BLOCK_SIZE = 8 * 1024  # 8 KiB
 
 IGNORE_BODY_STATUS_CODES = set([
     status.HTTP_100,
@@ -90,17 +91,21 @@ def set_content_length(resp):
     return content_length
 
 
-def get_body(resp):
+def get_body(resp, wsgi_file_wrapper=None):
     """Converts resp content into an iterable as required by PEP 333
 
     Args:
         resp: Instance of falcon.Response
+        wsgi_file_wrapper: Reference to wsgi.file_wrapper from the
+            WSGI environ dict, if provided by the WSGI server. Used
+            when resp.stream is a file-like object (default None).
 
     Returns:
         * If resp.body is not *None*, returns [resp.body], encoded as UTF-8 if
           it is a Unicode string. Bytestrings are returned as-is.
         * If resp.data is not *None*, returns [resp.data]
         * If resp.stream is not *None*, returns resp.stream
+          iterable using wsgi.file_wrapper, if possible.
         * Otherwise, returns []
 
     """
@@ -114,6 +119,23 @@ def get_body(resp):
         return [resp.data]
 
     elif resp.stream is not None:
+        stream = resp.stream
+
+        # NOTE(kgriffs): Heuristic to quickly check if
+        # stream is file-like. Not perfect, but should be
+        # good enough until proven otherwise.
+        if hasattr(stream, 'read'):
+            if wsgi_file_wrapper is not None:
+                # TODO(kgriffs): Make block size configurable at the
+                # global level, pending experimentation to see how
+                # useful that would be.
+                #
+                # See also the discussion on the PR: http://goo.gl/XGrtDz
+                return wsgi_file_wrapper(stream, STREAM_BLOCK_SIZE)
+            else:
+                return iter(lambda: stream.read(STREAM_BLOCK_SIZE),
+                            b'')
+
         return resp.stream
 
     return []

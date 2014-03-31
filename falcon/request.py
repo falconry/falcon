@@ -46,7 +46,7 @@ class Request(object):
     """Represents a client's HTTP request.
 
     Note:
-        Request is not meant to be instantiated directly by responders.
+        `Request` is not meant to be instantiated directly by responders.
 
     Args:
         env (dict): A WSGI environment dict passed in from the server. See
@@ -80,7 +80,7 @@ class Request(object):
             the header is missing.
         content_length (int): Value of the Content-Length header converted
             to an int, or *None* if the header is missing.
-        stream (io): File-like object for reading the body of the request, if
+        stream: File-like object for reading the body of the request, if any.
             any.
         date (datetime): Value of the Date header, converted to a
             `datetime.datetime` instance. The header value is assumed to
