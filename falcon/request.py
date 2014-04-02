@@ -62,9 +62,10 @@ class Request(object):
     """Represents a client's HTTP request
 
     Attributes:
-        method: HTTP method requested (e.g., GET, POST, etc.)
-        path: Path portion of the request URL (not including query string).
-        query_string: Query string portion of the request URL, without
+        method (str): HTTP method requested (e.g., GET, POST, etc.)
+        path (str): Path portion of the request URL (not including query
+            string).
+        query_string (str): Query string portion of the request URL, without
             the preceding '?' character.
         stream: Stream-like object for reading the body of the request, if any.
 
@@ -89,8 +90,8 @@ class Request(object):
         Note: Request is not meant to be instantiated directory by responders.
 
         Args:
-            env: A WSGI environment dict passed in from the server. See also
-                the PEP-3333 spec.
+            env (dict): A WSGI environment dict passed in from the server. See
+                also the PEP-3333 spec.
 
         """
         self.env = env
@@ -154,9 +155,9 @@ class Request(object):
         result out to the WSGI server's error stream (wsgi.error).
 
         Args:
-            message: A string describing the problem. If a byte-string it is
-                simply written out as-is. Unicode strings will be converted
-                to UTF-8.
+            message (str): A string describing the problem. If a byte-string
+                it is simply written out as-is. Unicode strings will be
+                converted to UTF-8.
 
         """
 
@@ -194,10 +195,10 @@ class Request(object):
         """Returns the client's preferred media type.
 
         Args:
-            media_type: Media type to check
+            media_type (str): Media type to check
 
         Returns:
-            True IFF the client has indicated in the Accept header that
+            bool: True IFF the client has indicated in the Accept header that
             they accept at least one of the specified media types.
         """
 
@@ -218,14 +219,14 @@ class Request(object):
         """Returns the client's preferred media type given several choices.
 
         Args:
-            media_types: One or more media types from which to choose the
-                client's preferred type. This value MUST be an iterable
-                collection of strings.
+            media_types (iterable): One or more media types from which to
+                choose the client's preferred type. This value MUST be an
+                iterable collection of strings.
 
         Returns:
-            The client's preferred media type, based on the Accept header,
-            or None if the client does not accept any of the specified
-            types.
+            str: The client's preferred media type, based on the Accept header,
+                or None if the client does not accept any of the specified
+                types.
         """
 
         try:
@@ -261,7 +262,7 @@ class Request(object):
         """Value of the Content-Length header
 
         Returns:
-            Value converted to an int, or None if missing.
+            int: Value converted to an int, or None if missing.
 
         Raises:
             HTTPBadRequest: The header had a value, but it wasn't
@@ -295,9 +296,9 @@ class Request(object):
         """Value of the Date header, converted to a datetime instance.
 
         Returns:
-            An instance of datetime.datetime representing the value of
-            the Date header, or None if the Date header is not present
-            in the request.
+            datetime.datetime: An instance of datetime.datetime representing
+                the value of the Date header, or None if the Date header is
+                not present in the request.
 
         Raises:
             HTTPBadRequest: The date value could not be parsed, likely
@@ -361,7 +362,7 @@ class Request(object):
         result in an HTTPBadRequest exception.)
 
         Returns:
-            Parse range value, or None if the header is not present.
+            int: Parse range value, or None if the header is not present.
 
         Raises:
             HTTPBadRequest: The header had a value, but it wasn't
@@ -447,7 +448,7 @@ class Request(object):
         If you want to lookup a header, please use `get_header` instead.
 
         Returns:
-            A new dictionary of HTTP headers.
+            dict: A new dictionary of HTTP headers.
 
         """
 
@@ -470,14 +471,14 @@ class Request(object):
         """Return a header value as a string
 
         Args:
-            name: Header name, case-insensitive (e.g., 'Content-Type')
-            required: Set to True to raise HttpBadRequest instead
-              of returning gracefully when the header is not found
-              (default False)
+            name (str): Header name, case-insensitive (e.g., 'Content-Type')
+            required (bool, optional): Set to True to raise HttpBadRequest
+                instead of returning gracefully when the header is not found
+                (default False)
 
         Returns:
-            The value of the specified header if it exists, or None if the
-            header is not found and is not required.
+            str: The value of the specified header if it exists, or None if
+                the header is not found and is not required.
 
         Raises:
             HTTPBadRequest: The header was not found in the request, but
@@ -502,15 +503,16 @@ class Request(object):
         """Return the value of a query string parameter as a string
 
         Args:
-            name: Parameter name, case-sensitive (e.g., 'sort')
-            required: Set to True to raise HTTPBadRequest instead of returning
-                gracefully when the parameter is not found (default False)
-            store: A dict-like object in which to place the value of the
-                param, but only if the param is found.
+            name (str): Parameter name, case-sensitive (e.g., 'sort')
+            required (bool, optional): Set to True to raise HTTPBadRequest
+                instead of returning gracefully when the parameter is not
+                found (default False)
+            store (dict, optional): A dict-like object in which to place the
+                value of the param, but only if the param is found.
 
         Returns:
-            The value of the param as a string, or None if param is not found
-            and is not required.
+            string: The value of the param as a string, or None if param is
+                not found and is not required.
 
         Raises:
             HTTPBadRequest: The param was not found in the request, but was
@@ -539,22 +541,24 @@ class Request(object):
         """Return the value of a query string parameter as an int
 
         Args:
-            name: Parameter name, case-sensitive (e.g., 'limit')
-            required: Set to True to raise HTTPBadRequest instead of returning
-                gracefully when the parameter is not found or is not an
-                integer (default False)
-            min: Set to the minimum value allowed for this param. If the param
-                is found and it is less than min, an HTTPError is raised.
-            max: Set to the maximum value allowed for this param. If the param
-                is found and its value is greater than max, an HTTPError is
-                raised.
-            store: A dict-like object in which to place the value of the
-                param, but only if the param is found (default None)
+            name (str): Parameter name, case-sensitive (e.g., 'limit')
+            required (bool, optional): Set to True to raise HTTPBadRequest
+                instead of returning gracefully when the parameter is not
+                found or is not an integer (default False)
+            min (int, optional): Set to the minimum value allowed for this
+                param. If the param is found and it is less than min, an
+                HTTPError is raised.
+            max (int, optional): Set to the maximum value allowed for this
+                param. If the param is found and its value is greater than
+                max, an HTTPError is raised.
+            store (dict, optional): A dict-like object in which to place the
+                value of the param, but only if the param is found (default
+                None)
 
         Returns:
-            The value of the param if it is found and can be converted to an
-            integer. If the param is not found, returns None, unless required
-            is True.
+            int: The value of the param if it is found and can be converted to
+                an integer. If the param is not found, returns None, unless
+                required is True.
 
         Raises
             HTTPBadRequest: The param was not found in the request, even though
@@ -607,17 +611,18 @@ class Request(object):
             False: ('false', 'False', 'no')
 
         Args:
-            name: Parameter name, case-sensitive (e.g., 'limit')
-            required: Set to True to raise HTTPBadRequest instead of returning
-                gracefully when the parameter is not found or is not a
-                recognized bool-ish string (default False).
-            store: A dict-like object in which to place the value of the
-                param, but only if the param is found (default None)
+            name (str): Parameter name, case-sensitive (e.g., 'limit')
+            required (bool, optional): Set to True to raise HTTPBadRequest
+                instead of returning gracefully when the parameter is not
+                found or is not a recognized bool-ish string (default False).
+            store (dict, optional): A dict-like object in which to place the
+                value of the param, but only if the param is found (default
+                None)
 
         Returns:
-            The value of the param if it is found and can be converted to a
-            boolean. If the param is not found,
-            returns None unless required is True
+            bool: The value of the param if it is found and can be converted
+            to a boolean. If the param is not found, returns None unless
+            required is True
 
         Raises
             HTTPBadRequest: The param was not found in the request, even though
@@ -658,22 +663,23 @@ class Request(object):
         Note that list items must be comma-separated.
 
         Args:
-            name: Parameter name, case-sensitive (e.g., 'limit')
-            transform: An optional transform function that takes as input
-                each element in the list as a string and outputs a transformed
-                element for inclusion in the list that will be returned. For
-                example, passing the int function will transform list items
-                into numbers.
-            required: Set to True to raise HTTPBadRequest instead of returning
-                gracefully when the parameter is not found or is not an
-                integer (default False)
-            store: A dict-like object in which to place the value of the
-                param, but only if the param is found (default None)
+            name (str): Parameter name, case-sensitive (e.g., 'limit')
+            transform (callable, optional): An optional transform function
+                that takes as input each element in the list as a string and
+                outputs a transformed element for inclusion in the list that
+                will be returned. For example, passing the int function will
+                transform list items into numbers.
+            required (bool, optional): Set to True to raise HTTPBadRequest
+                instead of returning gracefully when the parameter is not
+                found or is not an integer (default False)
+            store (dict, optional): A dict-like object in which to place the
+                value of the param, but only if the param is found (default
+                None)
 
         Returns:
-            The value of the param if it is found. Otherwise, returns None
-            unless required is True. for partial lists, None will be returned
-            as a placeholder. For example:
+            list: The value of the param if it is found. Otherwise, returns
+            None unless required is True. for partial lists, None will be
+            returned as a placeholder. For example:
 
                 things=1,,3
 
@@ -735,10 +741,11 @@ class Request(object):
         """Looks up a header, assuming name is already UPPERCASE_UNDERSCORE
 
         Args:
-            name: Name of the header, already uppercased, and underscored
+            name (str): Name of the header, already uppercased, and
+                underscored
 
         Returns:
-            Value of the specified header, or None if the header was not
+            str: Value of the specified header, or None if the header was not
             found. Also returns None if the value of the header was blank.
 
         """
