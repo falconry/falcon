@@ -30,9 +30,9 @@ WSGI Server
 -----------
 
 Falcon speaks WSGI. If you want to actually serve a Falcon app, you will
-want a good WSGI server. I like Gunicorn and uWSGI, but anything that can
-load a WSGI app will do. Gevent is an async library that works well with
-both Gunicorn and uWSGI.
+want a good WSGI server. Gunicorn and uWSGI are some of the more popular
+ones out there, but anything that can load a WSGI app will do. Gevent is
+an async library that works well with both Gunicorn and uWSGI.
 
 .. code:: bash
 
@@ -42,7 +42,7 @@ both Gunicorn and uWSGI.
 Source Code
 -----------
 
-Falcon `lives on GitHub <https://github.com/racker/falcon>`_., making the
+Falcon `lives on GitHub <https://github.com/racker/falcon>`_, making the
 code easy to browse, download, fork, etc. Pull requests are always welcome! Also,
 please remember to star the project if it makes you happy.
 
