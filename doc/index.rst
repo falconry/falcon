@@ -35,7 +35,8 @@ Python developers around the world enjoy using Falcon at home and at work.
 
    TODO: When we confirm enough of these, publish the list.
 
-   IBM, Red Hat, Marchex, Rackspace
+   Confirmed: IBM, Red Hat, Rackspace
+   Unconfirmed: AT&T, Marchex
 
 **S. Magrí**
     I feel like I'm just talking HTTP at last... with nothing in the
