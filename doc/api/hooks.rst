@@ -3,7 +3,7 @@
 Hooks
 =====
 
-Falcon support *before* and *after* hooks. You install a hook simply by
+Falcon supports both **before** and **after** hooks. You install a hook simply by
 applying one of the decorators below either to an individual responder or
 to an entire resource.
 
@@ -22,6 +22,7 @@ You would attach the hook to an ``on_post`` responder like so:
 
     @falcon.before(validate_image_type)
     def on_post(self, req, resp):
+        pass
 
 Or, if you had a hook that you would like to applied to *all*
 responders for a given resource, you could install the hook like this:
@@ -30,8 +31,7 @@ responders for a given resource, you could install the hook like this:
 
     @falcon.before(extract_project_id)
     class Message(object):
-
-        # ...
+        pass
 
 And you can apply hooks globally by passing them into the API class
 initializer (note that this does not require the use of a decorator):
