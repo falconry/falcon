@@ -280,7 +280,8 @@ of ``body`` to emphasize the fact that you are really reading from an input
 stream; Falcon never spools or decodes request data, instead giving you direct
 access to the incoming binary stream provided by the WSGI server.
 
-Note that we are setting the status to '201 Created'. For a full list of
+Note that we are setting the
+`HTTP response status code <http://httpstatus.es>`_ to "201 Created". For a full list of
 predefined status strings, simply call ``help`` on ``falcon.status_codes``:
 
 .. code:: bash
