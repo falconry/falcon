@@ -28,6 +28,9 @@ nosetests.xml
 htmlcov
 *.dat
 
+# Docs
+doc/_build
+
 # Translations
 *.mo
 

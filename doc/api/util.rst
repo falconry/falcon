@@ -1,7 +1,7 @@
 .. _util:
 
-Miscellaneous Utilities
-=======================
+Utilities
+=========
 
 URI Functions
 -------------
@@ -10,11 +10,22 @@ URI Functions
     :members:
     :undoc-members:
 
-Data Structures
----------------
+Testing
+-------
 
-.. automodule:: falcon.util.structures
+.. autoclass:: falcon.testing.TestBase
     :members:
+    :undoc-members:
+
+.. autoclass:: falcon.testing.TestResource
+    :members:
+
+.. autoclass:: falcon.testing.StartResponseMock
+    :members:
+    :undoc-members:
+
+.. automodule:: falcon.testing
+    :members: httpnow, rand_string, create_environ
     :undoc-members:
 
 Miscellaneous

@@ -65,7 +65,7 @@ Falcon tries to do as little as possible while remaining highly effective.
 - Minimal attack surface for writing secure APIs
 - 100% code coverage with a comprehensive test suite
 - Only depends on six and mimeparse
-- Python 2.6, 2.7, 3.3 + PyPy
+- Python 2.6, 2.7, 3.3, 3.4 + PyPy
 
 
 User Guide
@@ -80,16 +80,16 @@ User Guide
    user/tutorial
 
 
-Community Guide
------------------
+.. Community Guide
+.. -----------------
 
-*Coming soon*
+.. *Coming soon*
 
 
-Contributor Guide
------------------
+.. Contributor Guide
+.. -----------------
 
-*Coming soon*
+.. *Coming soon*
 
 
 API Documentation
@@ -99,8 +99,9 @@ API Documentation
    :maxdepth: 2
 
    api/api
-   api/hooks
    api/request_and_response
-   api/status_and_errors
+   api/status
+   api/errors
+   api/hooks
    api/util
 

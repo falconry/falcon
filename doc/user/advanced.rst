@@ -5,3 +5,4 @@
 .. error responses for auth - 404 ?
 .. error hooks
 .. document all the individual error classes?
+.. stacked hooks

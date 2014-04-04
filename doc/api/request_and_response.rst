@@ -1,19 +1,33 @@
-.. _request_and_response:
+.. _request:
 
-Request and Response
-====================
+Req & Resp
+==========
 
-Request
--------
+Instances of the Request and Response classes are passed into responders as the second
+and third arguments, respectively.
 
-.. automodule:: falcon.request
+.. code:: python
+
+    import falcon
+
+
+    class Resource(object):
+
+        def on_get(self, req, resp):
+            resp.body = '{"message": "Hello world!"}'
+            resp.status = falcon.HTTP_200
+
+Request Class
+-------------
+
+.. autoclass:: falcon.Request
     :members:
-    :undoc-members:
 
-Response
---------
+Response Class
+--------------
 
-.. automodule:: falcon.response
+.. autoclass:: falcon.Response
     :members:
-    :undoc-members:
+
+
 
