@@ -8,7 +8,7 @@ Falcon: The Unladen WSGI Framework
 
 Release v\ |version|. (:ref:`Installation <install>`)
 
-Falcon is a minimalist WSGI library for building fast web APIs and app backends.
+Falcon is a minimalist WSGI library for building speedy web APIs and app backends.
 
 When it comes to building HTTP APIs, other frameworks weigh you down with tons of dependencies and unnecessary abstractions. Falcon cuts to the chase with a clean design that embraces HTTP. We like to think of Falcon as the Dieter Rams of web frameworks; functional, simple, and elegant.
 
@@ -26,16 +26,23 @@ When it comes to building HTTP APIs, other frameworks weigh you down with tons o
     app.add_route('/items/{id}', CatalogItem())
 
 
-Testimonials
-------------
+Developer Joy
+-------------
+
+Python developers around the world enjoy using Falcon at home and at work.
+
+.. Who's using Falcon?
+
+   TODO: When we confirm enough of these, publish the list.
+
+   IBM, Red Hat, Marchex, Rackspace
 
 **S. Magrí**
     I feel like I'm just talking HTTP at last... with nothing in the
     middle... Falcon seems like the 'requests' of backend.
 
 **K. Conway**
-    Needed to roll a REST API in a hurry for a project. Falcon proved
-    fast and effective.
+    What other framework has integrated support for HTTP 786 'TRY IT NOW'?
 
 **jlegler**
     The source code for falcon is so good, I almost prefer it to
@@ -78,6 +85,12 @@ Community Guide
 *Coming soon*
 
 
+Contributor Guide
+-----------------
+
+*Coming soon*
+
+
 API Documentation
 -----------------
 
@@ -90,7 +103,3 @@ API Documentation
    api/status_and_errors
    api/util
 
-Contributor Guide
------------------
-
-*Coming soon*
