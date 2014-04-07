@@ -335,6 +335,5 @@ class TestHTTPError(testing.TestBase):
         self._misc_test(falcon.HTTPPreconditionFailed, falcon.HTTP_412)
         self._misc_test(falcon.HTTPUnsupportedMediaType, falcon.HTTP_415,
                         needs_title=False)
-        self._misc_test(falcon.HTTPUpgradeRequired, falcon.HTTP_426)
         self._misc_test(falcon.HTTPInternalServerError, falcon.HTTP_500)
         self._misc_test(falcon.HTTPBadGateway, falcon.HTTP_502)
