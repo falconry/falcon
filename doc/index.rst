@@ -92,8 +92,8 @@ User Guide
 .. *Coming soon*
 
 
-API Documentation
------------------
+Classes and Functions
+---------------------
 
 .. toctree::
    :maxdepth: 2

@@ -20,11 +20,9 @@ Base Class
 
 .. autoclass:: falcon.HTTPError
     :members:
-    :undoc-members:
 
 Predefined Errors
 -----------------
 
 .. automodule:: falcon.exceptions
     :members:
-    :undoc-members:

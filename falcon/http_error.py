@@ -33,14 +33,33 @@ class HTTPError(Exception):
     when something goes wrong.
 
     Attributes:
-        status: HTTP status line, such as "748 Confounded by Ponies".
-        title: Error title to send to the client.
-        description: Description of the error to send to the client.
-        headers: A dictionary of extra headers to add to the response.
-        link: An href that the client can provide to the user for getting help.
-        code: An internal application code that a user can reference when
+        status (str): HTTP status line, such as "748 Confounded by Ponies".
+        title (str): Error title to send to the client.
+        description (str): Description of the error to send to the client.
+        headers (dict): Extra headers to add to the response.
+        link (str): An href that the client can provide to the user for getting help.
+        code (int): An internal application code that a user can reference when
             requesting support for the error.
 
+    Args:
+        status (str): HTTP status code and text, such as "400 Bad Request"
+        title (str): Human-friendly error title. Set to None if you wish Falcon
+            to return an empty response body (all remaining args will
+            be ignored except for headers.) Do this only when you don't
+            wish to disclose sensitive information about why a request was
+            refused, or if the status and headers are self-descriptive.
+        description (str): Human-friendly description of the error, along with
+            a helpful suggestion or two (default None).
+        headers (dict): Extra headers to return in the
+            response to the client (default None).
+        href (str): A URL someone can visit to find out more information
+            (default None). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (defaults to "API documentation
+            for this error").
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error.
     """
 
     __slots__ = (
@@ -54,33 +73,6 @@ class HTTPError(Exception):
 
     def __init__(self, status, title, description=None, headers=None,
                  href=None, href_text=None, code=None):
-        """Initialize with information that can be reported to the client
-
-        Falcon will catch instances of HTTPError (and subclasses), then use
-        the associated information to generate a nice response for the client.
-
-        Args:
-            status: HTTP status code and text, such as "400 Bad Request"
-            title: Human-friendly error title. Set to None if you wish Falcon
-                to return an empty response body (all remaining args will
-                be ignored except for headers.) Do this only when you don't
-                wish to disclose sensitive information about why a request was
-                refused, or if the status and headers are self-descriptive.
-            description: Human-friendly description of the error, along with a
-                helpful suggestion or two (default None).
-            headers: A dictionary of extra headers to return in the
-                response to the client (default None).
-            href: A URL someone can visit to find out more information
-                (default None). Unicode characters are percent-encoded.
-            href_text: If href is given, use this as the friendly
-                title/description for the link (defaults to "API documentation
-                for this error").
-            code: An internal code that customers can reference in their
-                support request or to help them when searching for knowledge
-                base articles related to this error.
-
-        """
-
         self.status = status
         self.title = title
         self.description = description
@@ -98,8 +90,9 @@ class HTTPError(Exception):
     def json(self):
         """Returns a pretty JSON-encoded version of the exception
 
-        Note: Excludes the HTTP status line, since the results of this call
-        are meant to be returned in the body of an HTTP response.
+        Note:
+            Excludes the HTTP status line, since the results of this call
+            are meant to be returned in the body of an HTTP response.
 
         Returns:
             A JSON representation of the exception except the status line, or

@@ -1,7 +1,7 @@
 .. _request:
 
-Req & Resp
-==========
+Objects
+=======
 
 Instances of the Request and Response classes are passed into responders as the second
 and third arguments, respectively.
@@ -17,14 +17,14 @@ and third arguments, respectively.
             resp.body = '{"message": "Hello world!"}'
             resp.status = falcon.HTTP_200
 
-Request Class
--------------
+Request
+-------
 
 .. autoclass:: falcon.Request
     :members:
 
-Response Class
---------------
+Response
+--------
 
 .. autoclass:: falcon.Response
     :members:
