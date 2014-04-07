@@ -37,7 +37,8 @@ class HTTPError(Exception):
         title (str): Error title to send to the client.
         description (str): Description of the error to send to the client.
         headers (dict): Extra headers to add to the response.
-        link (str): An href that the client can provide to the user for getting help.
+        link (str): An href that the client can provide to the user for
+            getting help.
         code (int): An internal application code that a user can reference when
             requesting support for the error.
 

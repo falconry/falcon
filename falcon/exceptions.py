@@ -291,7 +291,8 @@ class HTTPBadGateway(HTTPError):
     """502 Bad Gateway
 
     Args:
-        title (str): Error title, for example: 'Upstream Server is Unavailable'.
+        title (str): Error title, for
+            example: 'Upstream Server is Unavailable'.
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         kwargs (optional): Same as for ``HTTPError``.
