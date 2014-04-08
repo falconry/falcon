@@ -3,7 +3,7 @@
 API Class
 =========
 
-Falcon's API class is a WSGI callable "application" that you can host with any
+Falcon's API class is a WSGI "application" that you can host with any
 standard-compliant WSGI server.
 
 .. code:: python

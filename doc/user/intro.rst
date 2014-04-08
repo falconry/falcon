@@ -3,7 +3,7 @@
 Introduction
 ============
 
-Falcon is a minimalist, high-performance web framework for building web services and app backends with Python. It's WSGI-based, and works great with Python 2.6, Python 2.7, Python 3.3, and PyPy, giving you a wide variety of deployment options.
+Falcon is a minimalist, high-performance web framework for building web services and app backends with Python. It's WSGI-based, and works great with Python 2.6, Python 2.7, Python 3.3, Python 3.4 and PyPy, giving you a wide variety of deployment options.
 
 
 Yet Another Framework

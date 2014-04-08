@@ -8,9 +8,13 @@ Falcon: The Unladen WSGI Framework
 
 Release v\ |version|. (:ref:`Installation <install>`)
 
-Falcon is a minimalist WSGI library for building speedy web APIs and app backends.
+Falcon is a minimalist WSGI library for building speedy web APIs and app
+backends.
 
-When it comes to building HTTP APIs, other frameworks weigh you down with tons of dependencies and unnecessary abstractions. Falcon cuts to the chase with a clean design that embraces HTTP. We like to think of Falcon as the Dieter Rams of web frameworks; functional, simple, and elegant.
+When it comes to building HTTP APIs, other frameworks weigh you down with tons
+of dependencies and unnecessary abstractions. Falcon cuts to the chase with a
+clean design that `embraces` HTTP. We like to think of Falcon as the Dieter
+Rams of web frameworks; functional, simple, and elegant.
 
 .. code:: python
 

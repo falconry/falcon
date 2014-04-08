@@ -46,7 +46,7 @@ class HTTPUnauthorized(HTTPError):
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         scheme (str): Authentication scheme to use as the value of the
-            WWW-Authenticate header in the response (default None).
+            WWW-Authenticate header in the response (default *None*).
         kwargs (optional): Same as for ``HTTPError``.
 
     """
@@ -92,6 +92,7 @@ class HTTPNotFound(HTTPError):
     do not wish to disclose exactly why a request was refused.
 
     """
+
     def __init__(self):
         HTTPError.__init__(self, status.HTTP_404, None, None)
 
@@ -110,6 +111,7 @@ class HTTPMethodNotAllowed(HTTPError):
         kwargs (optional): Same as for ``HTTPError``.
 
     """
+
     def __init__(self, allowed_methods, **kwargs):
         headers = kwargs.setdefault('headers', {})
         headers['Allow'] = ', '.join(allowed_methods)
@@ -134,6 +136,7 @@ class HTTPNotAcceptable(HTTPError):
         kwargs (optional): Same as for ``HTTPError``.
 
     """
+
     def __init__(self, description, **kwargs):
         HTTPError.__init__(self, status.HTTP_406, 'Media type not acceptable',
                            description, **kwargs)
@@ -242,7 +245,8 @@ class HTTPRangeNotSatisfiable(HTTPError):
         resource_length: The maximum value for the last-byte-pos of a range
             request. Used to set the Content-Range header.
         media_type: Media type to use as the value of the Content-Type
-            header, or None to use the default passed to the API initializer.
+            header, or *None* to use the default passed to the API
+            initializer.
 
     """
 

@@ -55,16 +55,80 @@ class InvalidParamValueError(HTTPBadRequest):
 
 
 class Request(object):
-    """Represents a client's HTTP request
+    """Represents a client's HTTP request.
+
+    Note:
+        Request is not meant to be instantiated directory by responders.
+
+    Args:
+        env (dict): A WSGI environment dict passed in from the server. See
+            also the PEP-3333 spec.
 
     Attributes:
+        protocol (str): Either 'http' or 'https'.
         method (str): HTTP method requested (e.g., GET, POST, etc.)
+        user_agent (str): Value of the User-Agent header, or *None* if the
+            header is missing.
+        app (str): Name of the WSGI app (if using WSGI's notion of virtual
+            hosting).
+        env (dict): Reference to the WSGI *environ* dict passed in from the
+            server. See also PEP-3333.
+        uri (str): The fully-qualified URI for the request.
+        url (str): alias for ``uri``.
+        relative_uri (str): The path + query string portion of the full URI.
         path (str): Path portion of the request URL (not including query
             string).
         query_string (str): Query string portion of the request URL, without
             the preceding '?' character.
-        stream: Stream-like object for reading the body of the request, if any.
+        accept (str): Value of the Accept header, or '*/*' if the header is
+            missing.
+        auth (str): Value of the Authorization header, or *None* if the header
+            is missing.
+        client_accepts_json (bool): True if the Accept header includes JSON,
+            otherwise False.
+        client_accepts_xml (bool): True if the Accept header includes XML,
+            otherwise False.
+        content_type (str): Value of the Content-Type header, or *None* if
+            the header is missing.
+        content_length (int): Value of the Content-Length header converted
+            to an int, or *None* if the header is missing.
+        stream (io): File-like object for reading the body of the request, if
+            any.
+        date (datetime): Value of the Date header, converted to a
+            `datetime.datetime` instance. The header value is assumed to
+            conform to RFC 1123.
+        expect (str): Value of the Expect header, or *None* if the
+            header is missing.
+        range (tuple of int): A 2-member tuple parsed from the value of the
+            Range header.
 
+            The two members correspond to the first and last byte
+            positions of the requested resource, inclusive. Negative
+            indices indicate offset from the end of the resource,
+            where -1 is the last byte, -2 is the second-to-last byte,
+            and so forth.
+
+            Only continous ranges are supported (e.g., "bytes=0-0,-1" would
+            result in an HTTPBadRequest exception when the attribute is
+            accessed.)
+        if_match (str): Value of the If-Match header, or *None* if the
+            header is missing.
+        if_none_match (str): Value of the If-None-Match header, or *None*
+            if the header is missing.
+        if_modified_since (str): Value of the If-Modified-Since header, or
+            None if the header is missing.
+        if_unmodified_since (str): Value of the If-Unmodified-Sinc header,
+            or *None* if the header is missing.
+        if_range (str): Value of the If-Range header, or *None* if the
+            header is missing.
+
+        headers (dict): Raw HTTP headers from the request with
+            canonical dash-separated names. Parsing all the headers
+            to create this dict is done the first time this attribute
+            is accessed. This parsing can be costly, so unless you
+            need all the headers in this format, you should use the
+            ``get_header`` method or one of the convenience attributes
+            instead, to get a value for a specific header.
     """
 
     __slots__ = (
@@ -81,15 +145,6 @@ class Request(object):
     )
 
     def __init__(self, env):
-        """Initialize attributes based on a WSGI environment dict
-
-        Note: Request is not meant to be instantiated directory by responders.
-
-        Args:
-            env (dict): A WSGI environment dict passed in from the server. See
-                also the PEP-3333 spec.
-
-        """
         self.env = env
 
         self._wsgierrors = env['wsgi.errors']
@@ -143,100 +198,20 @@ class Request(object):
             # covered since the test that does so uses multiprocessing.
             self.stream = helpers.Body(self.stream, self.content_length)
 
-    # TODO(kgriffs): Use the nocover pragma only for the six.PY3 if..else
-    def log_error(self, message):  # pragma: no cover
-        """Log an error to wsgi.error
-
-        Prepends timestamp and request info to message, and writes the
-        result out to the WSGI server's error stream (wsgi.error).
-
-        Args:
-            message (str): A string describing the problem. If a byte-string
-                it is simply written out as-is. Unicode strings will be
-                converted to UTF-8.
-
-        """
-
-        if self.query_string:
-            query_string_formatted = '?' + self.query_string
-        else:
-            query_string_formatted = ''
-
-        log_line = (
-            DEFAULT_ERROR_LOG_FORMAT.
-            format(datetime.now(), self.method, self.path,
-                   query_string_formatted)
-        )
-
-        if six.PY3:
-            self._wsgierrors.write(log_line + message + '\n')
-        else:
-            if isinstance(message, unicode):
-                message = message.encode('utf-8')
-
-            self._wsgierrors.write(log_line.encode('utf-8'))
-            self._wsgierrors.write(message + '\n')
+    # ------------------------------------------------------------------------
+    # Properties
+    # ------------------------------------------------------------------------
 
     @property
     def client_accepts_json(self):
-        """Return True if the Accept header indicates JSON support."""
         return self.client_accepts('application/json')
 
     @property
     def client_accepts_xml(self):
-        """Return True if the Accept header indicates XML support."""
         return self.client_accepts('application/xml')
-
-    def client_accepts(self, media_type):
-        """Returns the client's preferred media type.
-
-        Args:
-            media_type (str): Media type to check
-
-        Returns:
-            bool: True IFF the client has indicated in the Accept header that
-            they accept at least one of the specified media types.
-        """
-
-        accept = self.accept
-
-        # PERF(kgriffs): Usually the following will be true, so
-        # try it first.
-        if (accept == media_type) or (accept == '*/*'):
-            return True
-
-        # Fall back to full-blown parsing
-        try:
-            return mimeparse.quality(media_type, accept) != 0.0
-        except ValueError:
-            return False
-
-    def client_prefers(self, media_types):
-        """Returns the client's preferred media type given several choices.
-
-        Args:
-            media_types (iterable): One or more media types from which to
-                choose the client's preferred type. This value MUST be an
-                iterable collection of strings.
-
-        Returns:
-            str: The client's preferred media type, based on the Accept header,
-                or None if the client does not accept any of the specified
-                types.
-        """
-
-        try:
-            # NOTE(kgriffs): best_match will return '' if no match is found
-            preferred_type = mimeparse.best_match(media_types, self.accept)
-        except ValueError:
-            # Value for the accept header was not formatted correctly
-            preferred_type = ''
-
-        return (preferred_type if preferred_type else None)
 
     @property
     def accept(self):
-        """Value of the Accept header, or */* if not found per RFC."""
         accept = self._get_header_by_wsgi_name('HTTP_ACCEPT')
 
         # NOTE(kgriffs): Per RFC, missing accept header is
@@ -244,26 +219,15 @@ class Request(object):
         return '*/*' if accept is None else accept
 
     @property
-    def app(self):
-        """Name of the WSGI app (if using WSGI's notion of virtual hosting)."""
-        return self.env['SCRIPT_NAME']
+    def user_agent(self):
+        return self._get_header_by_wsgi_name('HTTP_USER_AGENT')
 
     @property
     def auth(self):
-        """Value of the Authorization header, or None if not found."""
         return self._get_header_by_wsgi_name('HTTP_AUTHORIZATION')
 
     @property
     def content_length(self):
-        """Value of the Content-Length header
-
-        Returns:
-            int: Value converted to an int, or None if missing.
-
-        Raises:
-            HTTPBadRequest: The header had a value, but it wasn't
-                formatted correctly or was a negative number.
-        """
         value = self._get_header_by_wsgi_name('HTTP_CONTENT_LENGTH')
         if value:
             try:
@@ -284,24 +248,10 @@ class Request(object):
 
     @property
     def content_type(self):
-        """Value of the Content-Type header, or None if not found."""
         return self._get_header_by_wsgi_name('HTTP_CONTENT_TYPE')
 
     @property
     def date(self):
-        """Value of the Date header, converted to a datetime instance.
-
-        Returns:
-            datetime.datetime: An instance of datetime.datetime representing
-                the value of the Date header, or None if the Date header is
-                not present in the request.
-
-        Raises:
-            HTTPBadRequest: The date value could not be parsed, likely
-                because it does not confrom to RFC 1123.
-
-        """
-
         http_date = self._get_header_by_wsgi_name('HTTP_DATE')
         try:
             return util.http_date_to_dt(http_date)
@@ -312,59 +262,30 @@ class Request(object):
 
     @property
     def expect(self):
-        """Value of the Expect header, or None if missing."""
         return self._get_header_by_wsgi_name('HTTP_EXPECT')
 
     @property
     def if_match(self):
-        """Value of the If-Match header, or None if missing."""
         return self._get_header_by_wsgi_name('HTTP_IF_MATCH')
 
     @property
     def if_none_match(self):
-        """Value of the If-None-Match header, or None if missing."""
         return self._get_header_by_wsgi_name('HTTP_IF_NONE_MATCH')
 
     @property
     def if_modified_since(self):
-        """Value of the If-Modified-Since header, or None if missing."""
         return self._get_header_by_wsgi_name('HTTP_IF_MODIFIED_SINCE')
 
     @property
     def if_unmodified_since(self):
-        """Value of the If-Unmodified-Since header, or None if missing."""
         return self._get_header_by_wsgi_name('HTTP_IF_UNMODIFIED_SINCE')
 
     @property
     def if_range(self):
-        """Value of the If-Range header, or None if missing."""
         return self._get_header_by_wsgi_name('HTTP_IF_RANGE')
 
     @property
-    def protocol(self):
-        """Will be either 'http' or 'https'."""
-        return self.env['wsgi.url_scheme']
-
-    @property
     def range(self):
-        """A 2-member tuple representing the value of the Range header.
-
-        The two members correspond to first and last byte positions of the
-        requested resource, inclusive. Negative indices indicate offset
-        from the end of the resource, where -1 is the last byte, -2 is the
-        second-to-last byte, and so forth.
-
-        Only continous ranges are supported (e.g., "bytes=0-0,-1" would
-        result in an HTTPBadRequest exception.)
-
-        Returns:
-            int: Parse range value, or None if the header is not present.
-
-        Raises:
-            HTTPBadRequest: The header had a value, but it wasn't
-                formatted correctly.
-        """
-
         value = self._get_header_by_wsgi_name('HTTP_RANGE')
 
         if value:
@@ -394,9 +315,15 @@ class Request(object):
         return None
 
     @property
-    def uri(self):
-        """The fully-qualified URI for the request."""
+    def app(self):
+        return self.env['SCRIPT_NAME']
 
+    @property
+    def protocol(self):
+        return self.env['wsgi.url_scheme']
+
+    @property
+    def uri(self):
         if self._cached_uri is None:
             # PERF: For small numbers of items, '+' is faster
             # than ''.join(...). Concatenation is also generally
@@ -414,12 +341,9 @@ class Request(object):
         return self._cached_uri
 
     url = uri
-    """Alias for uri"""
 
     @property
     def relative_uri(self):
-        """The path + query string portion of the full URI."""
-
         if self._cached_relative_uri is None:
             if self.query_string:
                 self._cached_relative_uri = (self.app + self.path + '?' +
@@ -430,24 +354,7 @@ class Request(object):
         return self._cached_relative_uri
 
     @property
-    def user_agent(self):
-        """Value of the User-Agent string, or None if missing."""
-        return self._get_header_by_wsgi_name('HTTP_USER_AGENT')
-
-    @property
     def headers(self):
-        """Get raw HTTP headers
-
-        Build a temporary dictionary of dash-separated HTTP headers,
-        which can be used as a whole, like, to perform an HTTP request.
-
-        If you want to lookup a header, please use `get_header` instead.
-
-        Returns:
-            dict: A new dictionary of HTTP headers.
-
-        """
-
         # NOTE(kgriffs: First time here will cache the dict so all we
         # have to do is clone it in the future.
         if not self._cached_headers:
@@ -463,17 +370,69 @@ class Request(object):
 
         return self._cached_headers.copy()
 
+    # ------------------------------------------------------------------------
+    # Methods
+    # ------------------------------------------------------------------------
+
+    def client_accepts(self, media_type):
+        """Determines whether or not the client accepts a given media type.
+
+        Args:
+            media_type (str): An Internet media type to check.
+
+        Returns:
+            bool: True if the client has indicated in the Accept header that
+                it accepts the specified media type. Otherwise, returns
+                False.
+        """
+
+        accept = self.accept
+
+        # PERF(kgriffs): Usually the following will be true, so
+        # try it first.
+        if (accept == media_type) or (accept == '*/*'):
+            return True
+
+        # Fall back to full-blown parsing
+        try:
+            return mimeparse.quality(media_type, accept) != 0.0
+        except ValueError:
+            return False
+
+    def client_prefers(self, media_types):
+        """Returns the client's preferred media type given several choices.
+
+        Args:
+            media_types (iterable of str): One or more Internet media types
+                from which to choose the client's preferred type. This value
+                **must** be an iterable collection of strings.
+
+        Returns:
+            str: The client's preferred media type, based on the Accept
+                header. Returns *None* if the client does not accept any
+                of the given types.
+        """
+
+        try:
+            # NOTE(kgriffs): best_match will return '' if no match is found
+            preferred_type = mimeparse.best_match(media_types, self.accept)
+        except ValueError:
+            # Value for the accept header was not formatted correctly
+            preferred_type = ''
+
+        return (preferred_type if preferred_type else None)
+
     def get_header(self, name, required=False):
-        """Return a header value as a string
+        """Return a header value as a string.
 
         Args:
             name (str): Header name, case-insensitive (e.g., 'Content-Type')
             required (bool, optional): Set to True to raise HttpBadRequest
                 instead of returning gracefully when the header is not found
-                (default False)
+                (default False).
 
         Returns:
-            str: The value of the specified header if it exists, or None if
+            str: The value of the specified header if it exists, or *None* if
                 the header is not found and is not required.
 
         Raises:
@@ -496,7 +455,7 @@ class Request(object):
             raise HTTPBadRequest('Missing header', description)
 
     def get_param(self, name, required=False, store=None):
-        """Return the value of a query string parameter as a string
+        """Return the value of a query string parameter as a string.
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'sort')
@@ -507,7 +466,7 @@ class Request(object):
                 value of the param, but only if the param is found.
 
         Returns:
-            string: The value of the param as a string, or None if param is
+            string: The value of the param as a string, or *None* if param is
                 not found and is not required.
 
         Raises:
@@ -534,13 +493,13 @@ class Request(object):
 
     def get_param_as_int(self, name,
                          required=False, min=None, max=None, store=None):
-        """Return the value of a query string parameter as an int
+        """Return the value of a query string parameter as an int.
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'limit')
             required (bool, optional): Set to True to raise HTTPBadRequest
                 instead of returning gracefully when the parameter is not
-                found or is not an integer (default False)
+                found or is not an integer (default False).
             min (int, optional): Set to the minimum value allowed for this
                 param. If the param is found and it is less than min, an
                 HTTPError is raised.
@@ -549,12 +508,12 @@ class Request(object):
                 max, an HTTPError is raised.
             store (dict, optional): A dict-like object in which to place the
                 value of the param, but only if the param is found (default
-                None)
+                *None*).
 
         Returns:
             int: The value of the param if it is found and can be converted to
-                an integer. If the param is not found, returns None, unless
-                required is True.
+                an integer. If the param is not found, returns *None*, unless
+                ``required`` is True.
 
         Raises
             HTTPBadRequest: The param was not found in the request, even though
@@ -601,10 +560,10 @@ class Request(object):
     def get_param_as_bool(self, name, required=False, store=None):
         """Return the value of a query string parameter as a boolean
 
-        The following bool-ish strings are supported:
+        The following bool-like strings are supported::
 
-            True: ('true', 'True', 'yes')
-            False: ('false', 'False', 'no')
+            TRUE_STRINGS = ('true', 'True', 'yes')
+            FALSE_STRINGS = ('false', 'False', 'no')
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'limit')
@@ -613,12 +572,12 @@ class Request(object):
                 found or is not a recognized bool-ish string (default False).
             store (dict, optional): A dict-like object in which to place the
                 value of the param, but only if the param is found (default
-                None)
+                *None*).
 
         Returns:
             bool: The value of the param if it is found and can be converted
-            to a boolean. If the param is not found, returns None unless
-            required is True
+            to a boolean. If the param is not found, returns *None* unless
+            required is True.
 
         Raises
             HTTPBadRequest: The param was not found in the request, even though
@@ -654,7 +613,7 @@ class Request(object):
 
     def get_param_as_list(self, name,
                           transform=None, required=False, store=None):
-        """Return the value of a query string parameter as a list
+        """Return the value of a query string parameter as a list.
 
         Note that list items must be comma-separated.
 
@@ -670,24 +629,24 @@ class Request(object):
                 found or is not an integer (default False)
             store (dict, optional): A dict-like object in which to place the
                 value of the param, but only if the param is found (default
-                None)
+                *None*).
 
         Returns:
             list: The value of the param if it is found. Otherwise, returns
-            None unless required is True. for partial lists, None will be
-            returned as a placeholder. For example:
+            *None* unless required is True. for partial lists, *None* will be
+            returned as a placeholder. For example::
 
                 things=1,,3
 
-            would be returned as:
+            would be returned as::
 
                 ['1', None, '3']
 
-            while this:
+            while this::
 
                 things=,,,
 
-            would just be retured as:
+            would just be retured as::
 
                 [None, None, None, None]
 
@@ -729,9 +688,43 @@ class Request(object):
         raise HTTPBadRequest('Missing query parameter',
                              'The "' + name + '" query parameter is required.')
 
-    # -------------------------------------------------------------------------
+    # TODO(kgriffs): Use the nocover pragma only for the six.PY3 if..else
+    def log_error(self, message):  # pragma: no cover
+        """Write an error message to the server's log.
+
+        Prepends timestamp and request info to message, and writes the
+        result out to the WSGI server's error stream (`wsgi.error`).
+
+        Args:
+            message (str): A string describing the problem. If a byte-string
+                it is simply written out as-is. Unicode strings will be
+                converted to UTF-8.
+
+        """
+
+        if self.query_string:
+            query_string_formatted = '?' + self.query_string
+        else:
+            query_string_formatted = ''
+
+        log_line = (
+            DEFAULT_ERROR_LOG_FORMAT.
+            format(datetime.now(), self.method, self.path,
+                   query_string_formatted)
+        )
+
+        if six.PY3:
+            self._wsgierrors.write(log_line + message + '\n')
+        else:
+            if isinstance(message, unicode):
+                message = message.encode('utf-8')
+
+            self._wsgierrors.write(log_line.encode('utf-8'))
+            self._wsgierrors.write(message + '\n')
+
+    # ------------------------------------------------------------------------
     # Helpers
-    # -------------------------------------------------------------------------
+    # ------------------------------------------------------------------------
 
     def _get_header_by_wsgi_name(self, name):
         """Looks up a header, assuming name is already UPPERCASE_UNDERSCORE
@@ -741,8 +734,8 @@ class Request(object):
                 underscored
 
         Returns:
-            str: Value of the specified header, or None if the header was not
-            found. Also returns None if the value of the header was blank.
+            str: Value of the specified header, or *None* if the header was not
+            found. Also returns *None* if the value of the header was blank.
 
         """
         try:

@@ -97,10 +97,10 @@ def get_body(resp):
         resp: Instance of falcon.Response
 
     Returns:
-        * If resp.body is not None, returns [resp.body], encoded as UTF-8 if
+        * If resp.body is not *None*, returns [resp.body], encoded as UTF-8 if
           it is a Unicode string. Bytestrings are returned as-is.
-        * If resp.data is not None, returns [resp.data]
-        * If resp.stream is not None, returns resp.stream
+        * If resp.data is not *None*, returns [resp.data]
+        * If resp.stream is not *None*, returns resp.stream
         * Otherwise, returns []
 
     """
