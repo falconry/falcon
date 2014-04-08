@@ -4,7 +4,7 @@ API Class
 =========
 
 Falcon's API class is a WSGI callable "application" that you can host with any
-of a number of WSGI servers.
+standard-compliant WSGI server.
 
 .. code:: python
 
