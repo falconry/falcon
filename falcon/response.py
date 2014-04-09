@@ -23,13 +23,18 @@ class Response(object):
 
 
     Attributes:
-        status: HTTP status code, such as "200 OK" (see also falcon.HTTP_*)
+        status (str): HTTP status line, such as "200 OK"
 
-        body: String representing response content. If Unicode, Falcon will
+            Note:
+                Falcon provides a number of constants for common status
+                codes. They all start with the ``HTTP_`` prefix, as in:
+                ``falcon.HTTP_204``.
+
+        body (str or unicode): String representing response content. If Unicode, Falcon will
             encode as UTF-8 in the response. If data is already a byte string,
             use the data attribute instead (it's faster).
-        body_encoded: Returns a UTF-8 encoded version of `body`.
-        data: Byte string representing response content.
+        body_encoded (bytes): Returns a UTF-8 encoded version of `body`.
+        data (bytes): Byte string representing response content.
 
             Note:
                 Under Python 2.x, if your content is of type *str*, setting
@@ -44,11 +49,11 @@ class Response(object):
                 ensure Unicode characters are properly encoded in the
                 response body.
 
-        stream: File-like object, representing response content.
+        stream (io): File-like object, representing response content.
             Use this in lieu of *body* or *data* when you want to stream
             out the response body without having to buffer the entire thing
             in memory first.
-        stream_len: Expected length of *stream* (e.g., file size).
+        stream_len (int): Expected length of *stream* (e.g., file size).
     """
 
     __slots__ = (
@@ -72,11 +77,9 @@ class Response(object):
         self.stream_len = None
 
     def _get_body(self):
-        """Returns the body as-is."""
         return self._body
 
     def _set_body(self, value):
-        """Sets the body and clears the encoded cache."""
         self._body = value
         self._body_encoded = None
 
