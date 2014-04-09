@@ -72,6 +72,12 @@ Falcon tries to do as little as possible while remaining highly effective.
 - Python 2.6, 2.7, 3.3, 3.4 + PyPy
 
 
+Resources
+---------
+
+- `The Definitive Introduction to Falcon <https://speakerdeck.com/cabrera/the-definitive-introduction-to-falcon>`_
+
+
 User Guide
 ----------
 
