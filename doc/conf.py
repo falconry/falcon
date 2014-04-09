@@ -15,6 +15,9 @@
 import sys
 import os
 
+# on_rtd is whether we are on readthedocs.org
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -101,13 +104,17 @@ pygments_style = 'sphinx'
 
 # -- Options for HTML output ----------------------------------------------
 
-try:
-  import sphinx_rtd_theme
+html_theme = 'default'
 
-  html_theme = "sphinx_rtd_theme"
-  html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-except ImportError:
-  html_theme = 'default'
+if not on_rtd:
+  # Use the RTD theme explicitly if it is available
+  try:
+    import sphinx_rtd_theme
+
+    html_theme = "sphinx_rtd_theme"
+    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+  except ImportError:
+    pass
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
