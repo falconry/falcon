@@ -25,7 +25,8 @@ img.logo {
 
 h1.logo-text {
     font-family:"Amethysta";
-    text-shadow: 1px 1px #ddd;
+    text-shadow: 0 1px #ddd;
+    color: #333;
     position: absolute;
     z-index: 10;
     top: 17px;
