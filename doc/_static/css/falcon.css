@@ -1,7 +1,33 @@
+/*
+
+These are needed if using the RTD theme.
+
 .property {
     margin-left: 1em;
 }
 
 em {
     margin-right: 0.15em;
+}
+
+*/
+
+/* The following are used for the KR theme. */
+
+div.sphinxsidebarwrapper {
+    margin-right: 1.5em;
+}
+
+img.logo {
+    margin-right: 0;
+    padding-left: 7px;
+}
+
+h1.logo-text {
+    font-family:"Amethysta";
+    text-shadow: 1px 1px #ddd;
+    position: absolute;
+    z-index: 10;
+    top: 17px;
+    font-size: 18pt;
 }

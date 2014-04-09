@@ -23,6 +23,9 @@ on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('..'))
 
+# Path to custom themes
+sys.path.append(os.path.abspath('_themes'))
+
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -93,7 +96,7 @@ exclude_patterns = ['_build']
 #show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = 'flask_theme_support.FlaskyStyle'
 
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
@@ -104,25 +107,26 @@ pygments_style = 'sphinx'
 
 # -- Options for HTML output ----------------------------------------------
 
-html_theme = 'default'
+# Add any paths that contain custom themes here, relative to this directory.
+html_theme_path = ['_themes']
+html_theme = 'kr'
 
-if not on_rtd:
-  # Use the RTD theme explicitly if it is available
-  try:
-    import sphinx_rtd_theme
+# html_theme = 'default'
 
-    html_theme = "sphinx_rtd_theme"
-    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-  except ImportError:
-    pass
+# if not on_rtd:
+#   # Use the RTD theme explicitly if it is available
+#   try:
+#     import sphinx_rtd_theme
+
+#     html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+#     html_theme = "sphinx_rtd_theme"
+#   except ImportError:
+#     pass
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #html_theme_options = {}
-
-# Add any paths that contain custom themes here, relative to this directory.
-#html_theme_path = []
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
@@ -133,12 +137,12 @@ if not on_rtd:
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-#html_logo = None
+# html_logo = '../falcon.png'
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-#html_favicon = None
+html_favicon = '_static/img/favicon.ico'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -159,7 +163,11 @@ html_static_path = ['_static']
 #html_use_smartypants = True
 
 # Custom sidebar templates, maps document names to template names.
-#html_sidebars = {}
+html_sidebars = {
+    'index':    ['side-primary.html', 'searchbox.html'],
+    '**':       ['side-secondary.html', 'localtoc.html',
+                 'relations.html', 'searchbox.html']
+}
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
