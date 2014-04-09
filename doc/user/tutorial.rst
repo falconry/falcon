@@ -227,12 +227,9 @@ Edit your ``images.py`` file and add the following to the resource:
     def __init__(self, storage_path):
         self.storage_path = storage_path
 
-Next, edit ``app.py`` and pass in a path to the resource initializer. For now,
-it's just fine to hard-code the string.
+Then, edit ``app.py`` and pass in a path to the resource initializer.
 
-.. code:: python
-
-Now, let's implement the POST responder:
+Next, let's implement the POST responder:
 
 .. code:: python
 
