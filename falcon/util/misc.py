@@ -41,15 +41,16 @@ class DeprecatedWarning(UserWarning):
 def deprecated(instructions):
     """Flags a method as deprecated.
 
+    This function returns a decorator which can be used to mark deprecated
+    functions. Applying this decorator will result in a warning being
+    emitted when the function is used.
+
     Args:
-        instructions: A human-friendly string of instructions, such
-            as: 'Please migrate to add_proxy(...) ASAP.'
+        instructions (str): Specific guidance for the developer, e.g.:
+            "Please migrate to add_proxy(...)"
     """
 
     def decorator(func):
-        '''This is a decorator which can be used to mark functions
-        as deprecated. It will result in a warning being emitted
-        when the function is used.'''
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             message = 'Call to deprecated function {0}(...). {1}'.format(
@@ -74,11 +75,12 @@ def dt_to_http(dt):
     """Converts a datetime instance to an HTTP date string.
 
     Args:
-        dt: A datetime object, assumed to be UTC
+        dt (datetime): A *datetime.datetime* instance, assumed to be UTC.
 
     Returns:
-        An HTTP date string, e.g., "Tue, 15 Nov 1994 12:45:26 GMT". See
-        also: http://goo.gl/R7So4
+        str: An RFC 1123 date string, e.g.:
+            "Tue, 15 Nov 1994 12:45:26 GMT".
+
     """
 
     # Tue, 15 Nov 1994 12:45:26 GMT
@@ -89,10 +91,12 @@ def http_date_to_dt(http_date):
     """Converts an HTTP date string to a datetime instance.
 
     Args:
-        http_date: An HTTP date string, e.g., "Tue, 15 Nov 1994 12:45:26 GMT".
+        http_date (str): An RFC 1123 date string, e.g.:
+            "Tue, 15 Nov 1994 12:45:26 GMT".
 
     Returns:
-        A UTC datetime instance corresponding to the given HTTP date.
+        datetime: A UTC datetime instance corresponding to the given
+            HTTP date.
     """
 
     return datetime.datetime.strptime(
@@ -100,17 +104,18 @@ def http_date_to_dt(http_date):
 
 
 def to_query_str(params):
-    """Converts a dict of params to an actual query string.
+    """Converts a dict of params to a query string.
 
     Args:
-        params: dict of simple key-value types, where key is a string and
-            value is a string or something that can be converted into a
-            string. If value is a list, it will be converted to a comma-
-            delimited string (e.g., thing=1,2,3)
+        params (dict): A dictionary of parameters, where each key is a
+            parameter name, and each value is either a string or
+            something that can be converted into a string. If `params`
+            is a list, it will be converted to a comma-delimited string
+            of values (e.g., "thing=1,2,3")
 
     Returns:
-        A URI query string starting with '?', or and empty string if there
-        are no params (the dict is empty).
+        str: A URI query string including the "?" prefix, or an empty string
+            if no params are given (the dict is empty).
     """
 
     if not params:

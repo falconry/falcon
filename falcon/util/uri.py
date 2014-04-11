@@ -82,25 +82,24 @@ encode = _create_str_encoder(False)
 encode.__name__ = 'encode'
 encode.__doc__ = """Encodes a full or relative URI according to RFC 3986.
 
-Escapes disallowed characters by percent-encoding them according
-to RFC 3986.
-
-This function is faster in the average case than the similar
-`quote` function found in urlib. It also strives to be easier
-to use by assuming a sensible default of allowed characters.
-
 RFC 3986 defines a set of "unreserved" characters as well as a
-set of "reserved" characters used as delimiters.
+set of "reserved" characters used as delimiters. This function escapes
+all other "disallowed" characters by percent-encoding them.
+
+Note:
+    This utility is faster in the average case than the similar
+    `quote` function found in urlib. It also strives to be easier
+    to use by assuming a sensible default of allowed characters.
 
 Args:
-    uri: URI or part of a URI to encode. If this is a wide
-        string (i.e., six.text_type), it will be encoded to
+    uri (str): URI or part of a URI to encode. If this is a wide
+        string (i.e., *six.text_type*), it will be encoded to
         a UTF-8 byte array and any multibyte sequences will
         be percent-encoded as-is.
 
 Returns:
-    An escaped version of `uri`, where all disallowed characters
-    have been percent-encoded.
+    str: An escaped version of `uri`, where all disallowed characters
+        have been percent-encoded.
 
 """
 
@@ -109,38 +108,34 @@ encode_value = _create_str_encoder(True)
 encode_value.name = 'encode_value'
 encode_value.__doc__ = """Encodes a value string according to RFC 3986.
 
-Escapes disallowed characters by percent-encoding them according
-to RFC 3986.
+Disallowed characters are percent-encoded in a way that models
+``urllib.parse.quote(safe="~")``. However, the Falcon function is faster
+in the average case than the similar `quote` function found in urlib.
+It also strives to be easier to use by assuming a sensible default
+of allowed characters.
 
-This function is faster in the average case than the similar
-`quote` function found in urlib. It also strives to be easier
-to use by assuming a sensible default of allowed characters.
+All reserved characters are lumped together into a single set of
+"delimiters", and everything in that set is escaped.
 
-This models urllib.parse.quote(safe="~").
-
-RFC 3986 defines a set of "unreserved" characters as well as a
-set of "reserved" characters used as delimiters.
-
-This function keeps things simply by lumping all reserved
-characters into a single set of "delimiters", and everything in
-that set is escaped.
+Note:
+    RFC 3986 defines a set of "unreserved" characters as well as a
+    set of "reserved" characters used as delimiters.
 
 Args:
-    uri: Value to encode. It is assumed not to cross delimiter
+    uri (str): URI fragment to encode. It is assumed not to cross delimiter
         boundaries, and so any reserved URI delimiter characters
         included in it will be escaped. If `value` is a wide
-        string (i.e., six.text_type), it will be encoded to
+        string (i.e., *six.text_type*), it will be encoded to
         a UTF-8 byte array and any multibyte sequences will
         be percent-encoded as-is.
 
 Returns:
-    An escaped version of `value`, where all disallowed characters
-    have been percent-encoded.
+    str: An escaped version of `uri`, where all disallowed characters
+        have been percent-encoded.
 
 """
 
 # NOTE(kgriffs): This is actually covered, but not in py33; hence the pragma
-
 if six.PY2:  # pragma: no cover
 
     # This map construction is based on urllib
@@ -156,12 +151,12 @@ if six.PY2:  # pragma: no cover
         UTF-8 mutibyte sequences.
 
         Args:
-            encoded_uri: An encoded URI (full or partial).
+            encoded_uri (str): An encoded URI (full or partial).
 
         Returns:
-            A decoded URL. Will be of type `unicode` on Python 2 IFF the
-            URL contained escaped non-ASCII characters, in which case UTF-8
-            is assumed per RFC 3986.
+            str: A decoded URL. Will be of type *unicode* on Python 2 IFF the
+                URL contained escaped non-ASCII characters, in which case
+                UTF-8 is assumed per RFC 3986.
 
         """
 
@@ -218,14 +213,14 @@ else:  # pragma: no cover
     def decode(encoded_uri):
         """Decodes percent-encoded characters in a URI or query string.
 
-        This function models the behavior of urllib.parse.unquote_plus,
+        This function models the behavior of `urllib.parse.unquote_plus`,
         albeit in a faster, more straightforward manner.
 
         Args:
-            encoded_uri: An encoded URI (full or partial).
+            encoded_uri (str): An encoded URI (full or partial).
 
         Returns:
-            A decoded URL. If the URL contains escaped non-ASCII
+            str: A decoded URL. If the URL contains escaped non-ASCII
             characters, UTF-8 is assumed per RFC 3986.
 
         """
@@ -258,19 +253,19 @@ else:  # pragma: no cover
 
 
 def parse_query_string(query_string):
-    """Parse a query string into a dict
+    """Parse a query string into a dict.
 
     Query string parameters are assumed to use standard form-encoding. Only
     parameters with values are parsed. for example, given "foo=bar&flag",
     this function would ignore "flag".
 
     Args:
-        query_string: The query string to parse
+        query_string (str): The query string to parse
 
     Returns:
-        A dict containing (name, value) pairs, one per query parameter. Note
-        that value will be a string, and that name is case-sensitive, both
-        copied directly from the query string.
+        dict: A dict containing ``(name, value)`` tuples, one per query
+            parameter. Note that *value* will be a string, and that *name* is
+            case-sensitive, both copied directly from the query string.
 
     Raises:
         TypeError: query_string was not a string or buffer

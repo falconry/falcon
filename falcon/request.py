@@ -58,7 +58,7 @@ class Request(object):
     """Represents a client's HTTP request.
 
     Note:
-        Request is not meant to be instantiated directory by responders.
+        Request is not meant to be instantiated directly by responders.
 
     Args:
         env (dict): A WSGI environment dict passed in from the server. See
