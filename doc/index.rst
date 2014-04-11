@@ -29,10 +29,8 @@ clean design that embraces HTTP and the REST architectural style.
     app.add_route('/items/{id}', CatalogItem())
 
 
-Developer Joy
--------------
-
-Python developers around the world enjoy using Falcon at home and at work.
+Testimonials
+------------
 
 .. Who's using Falcon?
 
@@ -45,12 +43,12 @@ Python developers around the world enjoy using Falcon at home and at work.
     I feel like I'm just talking HTTP at last... with nothing in the
     middle... Falcon seems like the 'requests' of backend.
 
-**K. Conway**
-    What other framework has integrated support for HTTP 786 'TRY IT NOW'?
-
-**jlegler**
+**J. Legler**
     The source code for falcon is so good, I almost prefer it to
     documentation. It basically can't be wrong.
+
+**K. Conway**
+    What other framework has integrated support for "786 TRY IT NOW"?
 
 
 Features
