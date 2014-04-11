@@ -40,8 +40,8 @@ Testimonials
    Unconfirmed: AT&T, Marchex
 
 **S. Magrí**
-    I feel like I'm just talking HTTP at last... with nothing in the
-    middle... Falcon seems like the 'requests' of backend.
+    I feel like I'm just talking HTTP at last, with nothing in the
+    middle. Falcon seems like the *requests* of backend.
 
 **J. Legler**
     The source code for falcon is so good, I almost prefer it to
