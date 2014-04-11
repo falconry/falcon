@@ -25,23 +25,25 @@ from falcon.testing.helpers import create_environ
 
 
 class TestBase(unittest.TestCase):
-    """Scaffolding around testtools.TestCase for testing a Falcon API endpoint.
+    """Extends *testtools.TestCase* to support WSGI integration testing.
 
-    Note: If testtools is not available, falls back to using unittest.
+    `TestBase` provides a base class that provides some extra plumbing to
+    help simulate WSGI calls without having to actually host your API
+    in a server.
 
-    Inherit from this and write your test methods. If the child class defines
-    a before(self) method, this method will be called before executing each
-    test method. Likewise, child classes may define an after(self) method to
-    execute actions after each test method returns.
+    Note:
+        If *testtools* is not available, *unittest* is used instead.
 
     Attributes:
-        api: falcon.API instance used in simulating requests.
-        srmock: falcon.testing.StartResponseMock instance used in
-            simulating requests.
-        test_route: Randomly-generated route string (path) that tests can
-            use when wiring up resources.
-
-
+        api (falcon.API): An API instance to target when simulating
+            requests. Defaults to ``falcon.API()``.
+        srmock (falcon.testing.StartResponseMock): Provides a callable
+            that simulates the behavior of the *start_response* argument
+            that the server would normally pass into the WSGI app. The
+            mock object captures various information from the app's
+            response to the simulated request.
+        test_route (str): A simple, generated path that a test
+            can use to add a route to the API.
     """
 
     def setUp(self):
@@ -67,17 +69,17 @@ class TestBase(unittest.TestCase):
         super(TestBase, self).tearDown()
 
     def simulate_request(self, path, decode=None, **kwargs):
-        """ Simulates a request.
-
-        Simulates a request to the API for testing purposes.
+        """Simulates a request to `self.api`.
 
         Args:
-            path: Request path for the desired resource
-            decode: If set to a character encoding, such as 'utf-8',
-                the method will assume the response is a single
-                byte string and will decode it and return a single
-                wide string instead of the raw WSGI response iterable.
-            kwargs: Same as falcon.testing.create_environ()
+            path (str): The path to request.
+            decode (str, optional): If this is set to a character encoding,
+                such as "utf-8", `simulate_request` will assume the
+                response is a single byte string, and will decode it as the
+                result of the request, rather than simply returning the
+                standard WSGI iterable.
+            kwargs (optional): Same as those defined for
+                `falcon.testing.create_environ`.
 
         """
 

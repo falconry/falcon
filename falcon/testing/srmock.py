@@ -16,26 +16,24 @@ from falcon import util
 
 
 class StartResponseMock:
-    """Mock object that represents a WSGI start_response callable
+    """Mock object that represents a WSGI `start_response` callable.
 
     Attributes:
-        call_count: Number of times start_response was called.
-        status: HTTP status line, e.g. "785 TPS Cover Sheet not attached".
-        headers: Headers array passed to start_response, per PEP-333
-        headers_dict: Headers array parsed into a dict to facilitate lookups
+        call_count (int): Number of times `start_response` was called.
+        status (str): HTTP status line, e.g. "785 TPS Cover Sheet not attached".
+        headers (list): Headers list passed to `start_response`, per PEP-333
+        headers_dict (dict): Headers as a dict instead of a list.
 
     """
 
     def __init__(self):
-        """Initialize attributes to default values"""
-
         self._called = 0
         self.status = None
         self.headers = None
         self.exc_info = None
 
     def __call__(self, status, headers, exc_info=None):
-        """Implements the PEP-3333 start_response protocol"""
+        """Implements the PEP-3333 `start_response` protocol."""
 
         self._called += 1
         self.status = status

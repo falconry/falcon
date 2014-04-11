@@ -26,11 +26,10 @@ DEFAULT_HOST = 'falconframework.org'
 
 
 def httpnow():
-    """Returns the current UTC time as an HTTP date
+    """Returns the current UTC time as an RFC 1123 date.
 
     Returns:
-        An HTTP date string, e.g., "Tue, 15 Nov 1994 12:45:26 GMT". See
-        also: http://goo.gl/R7So4
+        str: An HTTP date string, e.g., "Tue, 15 Nov 1994 12:45:26 GMT".
 
     """
 
@@ -38,11 +37,11 @@ def httpnow():
 
 
 def rand_string(min, max):
-    """Returns a randomly-generated string, of a random length
+    """Returns a randomly-generated string, of a random length.
 
     Args:
-        min: Minimum string length to return, inclusive
-        max: Maximum string length to return, inclusive
+        min (int): Minimum string length to return, inclusive
+        max (int): Maximum string length to return, inclusive
 
     """
 
@@ -56,24 +55,25 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
                    headers=None, app='', body='', method='GET',
                    wsgierrors=None):
 
-    """ Creates a 'mock' PEP-3333 environ dict for simulating WSGI requests
+    """Creates a mock PEP-3333 environ dict for simulating WSGI requests.
 
     Args:
-        path: The path for the request (default '/')
-        query_string: The query string to simulate, without a
+        path (str, optional): The path for the request (default '/')
+        query_string (str, optional): The query string to simulate, without a
             leading '?' (default '')
-        protocol: The HTTP protocol to simulate (default 'HTTP/1.1')
-        port: The TCP port to simulate (default '80')
-        headers: Optional headers to set as a dict or an iterable of tuples
-            that can be converted to a dict (default None)
-        app: Value for the SCRIPT_NAME environ variable, described in
+        protocol (str, optional): The HTTP protocol to simulate
+            (default 'HTTP/1.1')
+        port (str, optional): The TCP port to simulate (default '80')
+        headers (dict or list, optional): Headers as a dict or an
+            iterable collection of ``(key, value)`` tuples
+        app (str): Value for the SCRIPT_NAME environ variable, described in
             PEP-333: 'The initial portion of the request URL's "path" that
             corresponds to the application object, so that the application
             knows its virtual "location". This may be an empty string, if the
             application corresponds to the "root" of the server.' (default '')
-        body: The body of the request (default '')
-        method: The HTTP method to use (default 'GET')
-        wsgierrors: The stream to use as wsgierrors (default sys.stderr)
+        body (str or unicode): The body of the request (default '')
+        method (str): The HTTP method to use (default 'GET')
+        wsgierrors (io): The stream to use as wsgierrors (default sys.stderr)
 
     """
 
