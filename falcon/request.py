@@ -123,13 +123,14 @@ class Request(object):
         '_cached_headers',
         '_cached_uri',
         '_cached_relative_uri',
+        'content_type',
         'env',
         'method',
         '_params',
         'path',
         'query_string',
         'stream',
-        '_wsgierrors'
+        '_wsgierrors',
     )
 
     def __init__(self, env):
@@ -179,12 +180,34 @@ class Request(object):
         self._cached_uri = None
         self._cached_relative_uri = None
 
+        self.content_type = self._get_header_by_wsgi_name('HTTP_CONTENT_TYPE')
+
         # NOTE(kgriffs): Wrap wsgi.input if needed to make read() more robust,
         # normalizing semantics between, e.g., gunicorn and wsgiref.
         if isinstance(self.stream, NativeStream):  # pragma: nocover
             # NOTE(kgriffs): coverage can't detect that this *is* actually
             # covered since the test that does so uses multiprocessing.
             self.stream = helpers.Body(self.stream, self.content_length)
+
+        # PERF(kgriffs): Technically, we should spend a few more
+        # cycles and parse the content type for real, but
+        # this heuristic will work virtually all the time.
+        if (self.content_type and
+                'application/x-www-form-urlencoded' in self.content_type):
+
+            # NOTE(kgriffs): This assumes self.stream has been patched
+            # above in the case of wsgiref, so that self.content_length
+            # is not needed. Normally we just avoid accessing
+            # self.content_length, because it is a little expensive
+            # to call. We could cache self.content_length, but the
+            # overhead to do that won't usually be helpful, since
+            # content length will only ever be read once per
+            # request in most cases.
+            body = self.stream.read()
+            body = body.decode('ascii')
+
+            extra_params = uri.parse_query_string(uri.decode(body))
+            self._params.update(extra_params)
 
     # ------------------------------------------------------------------------
     # Properties
@@ -232,10 +255,6 @@ class Request(object):
                 return value_as_int
 
         return None
-
-    @property
-    def content_type(self):
-        return self._get_header_by_wsgi_name('HTTP_CONTENT_TYPE')
 
     @property
     def date(self):
