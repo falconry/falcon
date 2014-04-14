@@ -120,7 +120,7 @@ class API(object):
         use_body = not helpers.should_ignore_body(resp.status, req.method)
         if use_body:
             helpers.set_content_length(resp)
-            body = helpers.get_body(resp)
+            body = helpers.get_body(resp, env.get('wsgi.file_wrapper'))
         else:
             # Default: return an empty body
             body = []

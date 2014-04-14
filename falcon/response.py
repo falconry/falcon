@@ -19,8 +19,10 @@ from falcon.util import dt_to_http, uri
 
 
 class Response(object):
-    """Represents an HTTP response to a client request
+    """Represents an HTTP response to a client request.
 
+    Note:
+        `Response` is not meant to be instantiated directly by responders.
 
     Attributes:
         status (str): HTTP status line, such as "200 OK"
@@ -39,8 +41,6 @@ class Response(object):
 
             Note:
                 Under Python 2.x, if your content is of type *str*, setting
-                the `data` attribute will short-circuit the encoding check
-                used for `body`, and will make your app a little more
                 efficient. However, if your text is of type *unicode*,
                 you will want to use the *body* attribute instead.
 
@@ -50,10 +50,13 @@ class Response(object):
                 ensure Unicode characters are properly encoded in the
                 response body.
 
-        stream (io): File-like object, representing response content.
-            Use this in lieu of *body* or *data* when you want to stream
-            out the response body without having to buffer the entire thing
-            in memory first.
+        stream: Either a file-like object with a *read()* method that takes
+            an optional size argument and returns a block of bytes, or an
+            iterable object, representing response content, and yielding
+            blocks as byte strings. Falcon will use wsgi.file_wrapper, if
+            provided by the WSGI server, in order to efficiently serve
+            file-like objects.
+
         stream_len (int): Expected length of *stream* (e.g., file size).
     """
 

@@ -53,7 +53,7 @@ def rand_string(min, max):
 
 def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
                    headers=None, app='', body='', method='GET',
-                   wsgierrors=None):
+                   wsgierrors=None, file_wrapper=None):
 
     """Creates a mock PEP-3333 environ dict for simulating WSGI requests.
 
@@ -74,6 +74,8 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
         body (str or unicode): The body of the request (default '')
         method (str): The HTTP method to use (default 'GET')
         wsgierrors (io): The stream to use as wsgierrors (default sys.stderr)
+        file_wrapper: Callable that returns an iterable, to be used as
+            the value for 'wsgi.file_wrapper' in the environ.
 
     """
 
@@ -107,6 +109,9 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
         'wsgi.multiprocess': True,
         'wsgi.run_once': False
     }
+
+    if file_wrapper is not None:
+        env['wsgi.file_wrapper'] = file_wrapper
 
     if protocol != 'HTTP/1.0':
         env['HTTP_HOST'] = DEFAULT_HOST
