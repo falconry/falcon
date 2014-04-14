@@ -29,7 +29,7 @@ except AttributeError:  # pragma nocover
 import mimeparse
 import six
 
-from falcon.exceptions import HTTPBadRequest
+from falcon.exceptions import HTTPBadRequest, InvalidHeader, InvalidParam
 from falcon import util
 from falcon.util import uri
 from falcon import request_helpers as helpers
@@ -40,18 +40,6 @@ DEFAULT_ERROR_LOG_FORMAT = (u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
 
 TRUE_STRINGS = ('true', 'True', 'yes')
 FALSE_STRINGS = ('false', 'False', 'no')
-
-
-class InvalidHeaderValueError(HTTPBadRequest):
-    def __init__(self, msg, href=None, href_text=None):
-        super(InvalidHeaderValueError, self).__init__(
-            'Invalid header value', msg, href=href, href_text=None)
-
-
-class InvalidParamValueError(HTTPBadRequest):
-    def __init__(self, msg, href=None, href_text=None):
-        super(InvalidParamValueError, self).__init__(
-            'Invalid query parameter', msg, href=href, href_text=None)
 
 
 class Request(object):
@@ -229,18 +217,17 @@ class Request(object):
     @property
     def content_length(self):
         value = self._get_header_by_wsgi_name('HTTP_CONTENT_LENGTH')
+
         if value:
             try:
                 value_as_int = int(value)
             except ValueError:
-                msg = ('The value of the content-length header must be '
-                       'a number.')
-                raise InvalidHeaderValueError(msg)
+                msg = 'The value of the header must be a number.'
+                raise InvalidHeader(msg, value, 'content-length')
 
             if value_as_int < 0:
-                msg = ('The value of the content-length header must be '
-                       'a positive number.')
-                raise InvalidHeaderValueError(msg)
+                msg = 'The value of the header must be a positive number.'
+                raise InvalidHeader(msg, value, 'content-length')
             else:
                 return value_as_int
 
@@ -256,9 +243,9 @@ class Request(object):
         try:
             return util.http_date_to_dt(http_date)
         except ValueError:
-            msg = ('The value of the Date header could not be parsed. It '
-                   'must be formatted according to RFC 1123.')
-            raise InvalidHeaderValueError(msg)
+            msg = ('The value could not be parsed. It must be formatted '
+                   'according to RFC 1123.')
+            raise InvalidHeader(msg, http_date, 'date')
 
     @property
     def expect(self):
@@ -290,8 +277,8 @@ class Request(object):
 
         if value:
             if ',' in value:
-                raise InvalidHeaderValueError('Only continuous byte ranges '
-                                              'are supported.')
+                msg = 'The value must be a continuous byte range.'
+                raise InvalidHeader(msg, value, 'range')
 
             try:
                 first, last = value.split('-')
@@ -301,16 +288,16 @@ class Request(object):
                 elif last:
                     return (-int(last), -1)
                 else:
-                    raise InvalidHeaderValueError(
-                        'Range value is missing offsets')
+                    msg = 'The value is missing offsets.'
+                    raise InvalidHeader(msg, value, 'range')
 
             except ValueError:
                 href = 'http://goo.gl/zZ6Ey'
                 href_text = 'HTTP/1.1 Range Requests'
-                raise InvalidHeaderValueError('Range string must be formatted '
-                                              'according to RFC 2616.',
-                                              href=href,
-                                              href_text=href_text)
+                msg = ('The string given could not be parsed. It must be '
+                       'formatted according to RFC 2616.')
+                raise InvalidHeader(msg, value, 'range', href=href,
+                                    href_text=href_text)
 
         return None
 
@@ -532,19 +519,16 @@ class Request(object):
             try:
                 val = int(val)
             except ValueError:
-                description = ('The value of the "' + name + '" query '
-                               'parameter must be an integer.')
-                raise InvalidParamValueError(description)
+                msg = 'The value must be an integer.'
+                raise InvalidParam(msg, name)
 
             if min is not None and val < min:
-                description = ('The value of the "' + name + '" query '
-                               'parameter must be at least %d') % min
-                raise InvalidHeaderValueError(description)
+                msg = 'The value must be at least ' + str(min)
+                raise InvalidParam(msg, name)
 
             if max is not None and max < val:
-                description = ('The value of the "' + name + '" query '
-                               'parameter may not exceed %d') % max
-                raise InvalidHeaderValueError(description)
+                msg = 'The value may not exceed ' + str(max)
+                raise InvalidParam(msg, name)
 
             if store is not None:
                 store[name] = val
@@ -596,9 +580,8 @@ class Request(object):
             elif val in FALSE_STRINGS:
                 val = False
             else:
-                description = ('The value of the "' + name + '" query '
-                               'parameter must be "true" or "false".')
-                raise InvalidParamValueError(description)
+                msg = 'The value of the parameter must be "true" or "false".'
+                raise InvalidParam(msg, name)
 
             if store is not None:
                 store[name] = val
@@ -673,9 +656,8 @@ class Request(object):
                     items = [transform(i) if i != '' else None
                              for i in items]
                 except ValueError:
-                    desc = ('The value of the "' + name + '" query parameter '
-                            'is not formatted correctly.')
-                    raise InvalidParamValueError(desc)
+                    msg = 'The value is not formatted correctly.'
+                    raise InvalidParam(msg, name)
 
             if store is not None:
                 store[name] = items
