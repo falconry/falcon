@@ -135,7 +135,23 @@ class TestRequestBody(testing.TestBase):
 
         stream = io.BytesIO(expected_body)
         body = request_helpers.Body(stream, expected_len)
+        self.assertEqual(body.readline(-1), expected_lines[0])
+
+        stream = io.BytesIO(expected_body)
+        body = request_helpers.Body(stream, expected_len)
+        self.assertEqual(body.readline(expected_len + 1), expected_lines[0])
+
+        stream = io.BytesIO(expected_body)
+        body = request_helpers.Body(stream, expected_len)
         self.assertEqual(body.readlines(), expected_lines)
+
+        stream = io.BytesIO(expected_body)
+        body = request_helpers.Body(stream, expected_len)
+        self.assertEqual(body.readlines(-1), expected_lines)
+
+        stream = io.BytesIO(expected_body)
+        body = request_helpers.Body(stream, expected_len)
+        self.assertEqual(body.readlines(expected_len + 1), expected_lines)
 
         stream = io.BytesIO(expected_body)
         body = request_helpers.Body(stream, expected_len)

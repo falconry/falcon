@@ -60,34 +60,16 @@ class Body(object):
     This class normalizes wsgi.input behavior between WSGI servers
     by implementing non-blocking behavior for the cases mentioned
     above.
+
+    Args:
+        stream: Instance of socket._fileobject from environ['wsgi.input']
+        stream_len: Expected content length of the stream.
+
     """
 
     def __init__(self, stream, stream_len):
-        """Initialize the request body instance.
-
-        Args:
-            stream: Instance of socket._fileobject from environ['wsgi.input']
-            stream_len: Expected content length of the stream.
-        """
-
         self.stream = stream
         self.stream_len = stream_len
-
-        def _make_stream_reader(func):
-            def read(size=None):
-                if size is None or size > self.stream_len:
-                    size = self.stream_len
-
-                return func(size)
-
-            return read
-
-        # NOTE(kgriffs): All of the wrapped methods take a single argument,
-        # which is a size AKA length AKA limit, always in bytes/characters.
-        # This is consistent with Gunicorn's "Body" class.
-        for attr in ('read', 'readline', 'readlines'):
-            target = getattr(self.stream, attr)
-            setattr(self, attr, _make_stream_reader(target))
 
     def __iter__(self):
         return self
@@ -96,3 +78,67 @@ class Body(object):
         return next(self.stream)
 
     next = __next__
+
+    def _read(self, size, target):
+        """Helper function for proxing reads to the underlying stream.
+
+        Args:
+            size (int): Maximum number of bytes/characters to read.
+                Will be coerced, if None or -1, to `self.stream_len`. Will
+                likewise be coerced if greater than `self.stream_len`, so
+                that if the stream doesn't follow standard io semantics,
+                the read won't block.
+            target (callable): Once `size` has been fixed up, this function
+                will be called to actually do the work.
+
+        Returns:
+            Data read from the stream, as returned by `target`.
+
+        """
+
+        if size is None or size == -1 or size > self.stream_len:
+            size = self.stream_len
+
+        return target(size)
+
+    def read(self, size=None):
+        """Read from the stream.
+
+        Args:
+            size (int): Maximum number of bytes/characters to read.
+                Defaults to reading until EOF.
+
+        Returns:
+            Data read from the stream.
+
+        """
+
+        return self._read(size, self.stream.read)
+
+    def readline(self, limit=None):
+        """Read a line from the stream.
+
+        Args:
+            limit (int): Maximum number of bytes/characters to read.
+                Defaults to reading until EOF.
+
+        Returns:
+            Data read from the stream.
+
+        """
+
+        return self._read(limit, self.stream.readline)
+
+    def readlines(self, hint=None):
+        """Read lines from the stream.
+
+        Args:
+            hint (int): Maximum number of bytes/characters to read.
+                Defaults to reading until EOF.
+
+        Returns:
+            Data read from the stream.
+
+        """
+
+        return self._read(hint, self.stream.readlines)
