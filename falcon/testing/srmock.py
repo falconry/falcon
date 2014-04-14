@@ -20,9 +20,10 @@ class StartResponseMock:
 
     Attributes:
         call_count (int): Number of times `start_response` was called.
-        status (str): HTTP status line, e.g. "785 TPS Cover Sheet not attached".
-        headers (list): Headers list passed to `start_response`, per PEP-333
-        headers_dict (dict): Headers as a dict instead of a list.
+        status (str): HTTP status line, e.g. "785 TPS Cover Sheet
+        not attached". headers (list): Headers list passed to
+        `start_response`, per PEP-333 headers_dict (dict): Headers as
+        a dict instead of a list.
 
     """
 

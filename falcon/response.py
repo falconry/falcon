@@ -30,9 +30,10 @@ class Response(object):
                 codes. They all start with the ``HTTP_`` prefix, as in:
                 ``falcon.HTTP_204``.
 
-        body (str or unicode): String representing response content. If Unicode, Falcon will
-            encode as UTF-8 in the response. If data is already a byte string,
-            use the data attribute instead (it's faster).
+        body (str or unicode): String representing response content. If
+            Unicode, Falcon will encode as UTF-8 in the response. If
+            data is already a byte string, use the data attribute
+            instead (it's faster).
         body_encoded (bytes): Returns a UTF-8 encoded version of `body`.
         data (bytes): Byte string representing response content.
 
