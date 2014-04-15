@@ -151,7 +151,9 @@ def compile_uri_template(template):
 
     Args:
         template: A Level 1 URI template. Method responders must accept, as
-        arguments, all fields specified in the template (default '/').
+            arguments, all fields specified in the template (default '/').
+            Note that field names are restricted to ASCII a-z, A-Z, and
+            the underscore '_'.
 
     Returns:
         (template_field_names, template_regex)

@@ -569,17 +569,35 @@ for information that will help them crack your API.
 Error Handling
 --------------
 
-When something goes horribly (or mildly) wrong, you *could* manually set the
-error status, appropriate response headers, and even an error body using the
-``resp`` object. However, Falcon tries to make things a bit easier by
-providing a set of exceptions you can raise when something goes wrong. In fact,
-if Falcon catches any exception your responder throws that inherits from
-``falcon.HTTPError``, the framework will convert that exception to an
-appropriate HTTP error response.
+Generally speaking, Falcon assumes that resource responders (*on_get*,
+*on_post*, etc.) will, for the most part, do the right thing. In other words,
+Falcon doesn't try very hard to protect responder code from itself.
+
+This approach reduces the number of (often) extraneous checks that Falcon
+would otherwise have to perform, making the framework more efficient. With
+that in mind, writing a high-quality API based on Falcon requires that:
+
+1. Resource responders set response variables to sane values.
+1. Your code is well-tested, with high code coverage.
+1. Errors are anticipated, detected, and handled appropriately within each
+responder.
+
+.. note::
+    Falcon will re-raise errors that do not inherit from ``falcon.HTTPError``
+    unless you have registered a custom error handler for that type
+    (see also: :ref:`falcon.API <api>`).
+
+Speaking of error handling, when something goes horribly (or mildly) wrong,
+you *could* manually set the error status, appropriate response headers, and
+even an error body using the ``resp`` object. However, Falcon tries to make
+things a bit easier by providing a set of exceptions you can raise when
+something goes wrong. In fact, if Falcon catches any exception your responder
+throws that inherits from ``falcon.HTTPError``, the framework will convert
+that exception to an appropriate HTTP error response.
 
 You may raise an instance of ``falcon.HTTPError``, or use any one
 of a number of predefined error classes that try to do "the right thing" in
-setting appropriate headers and bodies. Have a look at the docstrings for
+setting appropriate headers and bodies. Have a look at the docs for
 any of the following to get more information on how you can use them in your
 API:
 

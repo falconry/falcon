@@ -81,7 +81,14 @@ class Request(object):
         content_length (int): Value of the Content-Length header converted
             to an int, or *None* if the header is missing.
         stream: File-like object for reading the body of the request, if any.
-            any.
+
+            Note:
+                If an HTML form is POSTed to the API using the
+                *application/x-www-form-urlencoded* media type, Falcon
+                will consume `stream` in order to parse the parameters
+                and merge them into the query string parameters. In this
+                case, the stream will be left at EOF.
+
         date (datetime): Value of the Date header, converted to a
             `datetime.datetime` instance. The header value is assumed to
             conform to RFC 1123.
@@ -462,6 +469,12 @@ class Request(object):
 
     def get_param(self, name, required=False, store=None):
         """Return the value of a query string parameter as a string.
+
+        Note:
+            If an HTML form is POSTed to the API using the
+            *application/x-www-form-urlencoded* media type, the
+            parameters from the request body will be merged into
+            the query string parameters.
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'sort')

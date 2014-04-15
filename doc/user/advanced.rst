@@ -6,3 +6,6 @@
 .. error hooks
 .. document all the individual error classes?
 .. stacked hooks
+.. auth whitelist
+.. processing file uploads from forms
+.. static file serving

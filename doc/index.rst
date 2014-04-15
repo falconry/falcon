@@ -73,6 +73,7 @@ Resources
 ---------
 
 - `The Definitive Introduction to Falcon <https://speakerdeck.com/cabrera/the-definitive-introduction-to-falcon>`_
+- `An Unladen Web Framework <http://blog.kgriffs.com/2013/07/02/python-fast-web-service-framework.html>`_.
 
 
 User Guide
@@ -85,6 +86,7 @@ User Guide
    user/install
    user/quickstart
    user/tutorial
+   user/faq
 
 
 .. Community Guide
