@@ -8,29 +8,24 @@ URI Functions
 
 .. automodule:: falcon.util.uri
     :members:
-    :undoc-members:
 
 Testing
 -------
 
 .. autoclass:: falcon.testing.TestBase
     :members:
-    :undoc-members:
 
 .. autoclass:: falcon.testing.TestResource
     :members:
 
 .. autoclass:: falcon.testing.StartResponseMock
     :members:
-    :undoc-members:
 
 .. automodule:: falcon.testing
     :members: httpnow, rand_string, create_environ
-    :undoc-members:
 
 Miscellaneous
 -------------
 
-.. automodule:: falcon.util.misc
-    :members:
-    :undoc-members:
+.. automodule:: falcon.util
+    :members: deprecated, dt_to_http, http_date_to_dt, to_query_str
