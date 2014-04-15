@@ -20,7 +20,7 @@ Falcon is a [high-performance Python framework][home] for building cloud APIs. I
 
 **Light.** Only the essentials are included, with *six* and *mimeparse* being the only dependencies outside the standard library. We work to keep the code lean, making Falcon easier to test, optimize, and deploy.
 
-**Flexible.** Falcon can be deployed in a variety of ways, depending on your needs. The framework speaks WSGI, and works great with [Python 2.6 and 2.7, PyPy, and Python 3.3][ci]. There's no tight coupling with any async framework, leaving you free to mix-and-match what you need.
+**Flexible.** Falcon can be deployed in a variety of ways, depending on your needs. The framework speaks WSGI, and works great with [Python 2.6 and 2.7, PyPy, and Python 3.3/3.4][ci]. There's no tight coupling with any async framework, leaving you free to mix-and-match what you need.
 
 [bench]: http://falconframework.org/#Metrics
 [ci]: https://travis-ci.org/racker/falcon
@@ -33,7 +33,7 @@ Falcon is a [high-performance Python framework][home] for building cloud APIs. I
 * DRY request processing using global, resource, and method hooks
 * Snappy unit testing through WSGI helpers and mocks
 * 20% speed boost when Cython is available
-* Python 2.6, Python 2.7, PyPy and Python 3.3 support
+* Python 2.6, Python 2.7, PyPy and Python 3.3/3.4 support
 * Speed, speed, and more speed!
 
 ### Install ###
