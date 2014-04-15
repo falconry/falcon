@@ -3,6 +3,25 @@
 Questions & Answers
 ===================
 
+How do I authenticate requests?
+----
+Falcon supports custom *before* and *after* hooks that allow you to
+wire up your favorite 3rd-party libraries for handling these sorts of
+things.
+
+In order to keep Falcon lean-and-mean, and to give you maximum control
+over the way your app works, things like authentication, role-based
+access control, etc. are not implemented directly in the framework.
+
+This architectural style also helps encourage separation of concerns
+in your app.
+
+.. note::
+    If you create a nifty hook for your project, and you think it might
+    be helpful to others in the community, please consider contributing
+    your hook to the `Talons <https://github.com/talons/talons>`_ project.
+
+
 Is Falcon thread-safe?
 ----
 
