@@ -22,7 +22,7 @@ if sys.version_info < (2, 7):  # pragma: no cover
 else:  # pragma: no cover
     from collections import OrderedDict
 
-from falcon import util
+from falcon.util import uri
 
 
 class HTTPError(Exception):
@@ -83,7 +83,7 @@ class HTTPError(Exception):
         if href:
             link = self.link = OrderedDict()
             link['text'] = (href_text or 'API documention for this error')
-            link['href'] = util.percent_escape(href)
+            link['href'] = uri.encode(href)
             link['rel'] = 'help'
         else:
             self.link = None

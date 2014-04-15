@@ -17,16 +17,11 @@ import functools
 import inspect
 import warnings
 
-from falcon.util import uri
-
-
 __all__ = (
     'deprecated',
     'dt_to_http',
     'http_date_to_dt',
     'to_query_str',
-    'percent_escape',
-    'percent_unescape',
 )
 
 
@@ -137,10 +132,3 @@ def to_query_str(params):
         query_str += k + '=' + v + '&'
 
     return query_str[:-1]
-
-
-# TODO(kgriffs): Remove this alias in Falcon v0.2.0
-percent_escape = uri.encode
-
-# TODO(kgriffs): Remove this alias in Falcon v0.2.0
-percent_unescape = uri.decode
