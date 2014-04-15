@@ -16,6 +16,9 @@ script: tox -e $TOX_ENV
 after_success: coveralls
 notifications:
   email:
-    - kurt.griffiths@rackspace.com
+    - mail@kgriffs.com
   irc:
-    - "chat.freenode.net#falconframework"
+    channels:
+      - "chat.freenode.net#falconframework"
+    on_success: change
+    on_failure: always
