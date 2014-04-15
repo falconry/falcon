@@ -36,7 +36,9 @@ class Response(object):
             Unicode, Falcon will encode as UTF-8 in the response. If
             data is already a byte string, use the data attribute
             instead (it's faster).
+
         body_encoded (bytes): Returns a UTF-8 encoded version of `body`.
+
         data (bytes): Byte string representing response content.
 
             Note:
@@ -58,6 +60,11 @@ class Response(object):
             file-like objects.
 
         stream_len (int): Expected length of *stream* (e.g., file size).
+
+        context (dict): Dictionary to hold custom app-specific data pertaining
+            to the response. Use this for whatever you need it to be (e.g.
+            store the dictionary version of your response here and use an
+            "after" hook to serialize it to JSON).
     """
 
     __slots__ = (
@@ -67,7 +74,8 @@ class Response(object):
         '_headers',
         'status',
         'stream',
-        'stream_len'
+        'stream_len',
+        'context'
     )
 
     def __init__(self):
@@ -79,6 +87,7 @@ class Response(object):
         self.data = None
         self.stream = None
         self.stream_len = None
+        self.context = {}
 
     def _get_body(self):
         return self._body

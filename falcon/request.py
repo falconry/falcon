@@ -61,6 +61,8 @@ class Request(object):
             hosting).
         env (dict): Reference to the WSGI *environ* dict passed in from the
             server. See also PEP-3333.
+        context (dict): Dictionary to hold custom app-specific data about the
+            request (e.g. session id).
         uri (str): The fully-qualified URI for the request.
         url (str): alias for ``uri``.
         relative_uri (str): The path + query string portion of the full URI.
@@ -137,11 +139,13 @@ class Request(object):
         'path',
         'query_string',
         'stream',
+        'context',
         '_wsgierrors',
     )
 
     def __init__(self, env):
         self.env = env
+        self.context = {}
 
         self._wsgierrors = env['wsgi.errors']
         self.stream = env['wsgi.input']
