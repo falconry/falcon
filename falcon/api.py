@@ -42,13 +42,22 @@ class API(object):
         after (callable, optional): A global action hook (or list of hooks)
             to call after each on_* responder, for all resources. Similar to
             the ``after`` decorator, but applies to the entire API.
+        request_type (Request, optional): Request-alike class to use instead
+            of Falcon's default class. Useful if you wish to extend
+            ``falcon.request.Request`` with a custom ``context_type``.
+            (default falcon.request.Request)
+        response_type (Response, optional): Response-alike class to use
+            instead of Falcon's default class. (default
+            falcon.response.Response)
 
     """
 
-    __slots__ = ('_after', '_before', '_error_handlers', '_media_type',
+    __slots__ = ('_after', '_before', '_request_type', '_response_type',
+                 '_error_handlers', '_media_type',
                  '_routes', '_default_route', '_sinks')
 
-    def __init__(self, media_type=DEFAULT_MEDIA_TYPE, before=None, after=None):
+    def __init__(self, media_type=DEFAULT_MEDIA_TYPE, before=None, after=None,
+                 request_type=Request, response_type=Response):
         self._routes = []
         self._sinks = []
         self._default_route = None
@@ -56,6 +65,9 @@ class API(object):
 
         self._before = helpers.prepare_global_hooks(before)
         self._after = helpers.prepare_global_hooks(after)
+
+        self._request_type = request_type
+        self._response_type = response_type
 
         self._error_handlers = []
 
@@ -75,8 +87,8 @@ class API(object):
 
         """
 
-        req = Request(env)
-        resp = Response()
+        req = self._request_type(env)
+        resp = self._response_type()
 
         responder, params = self._get_responder(
             req.path, req.method)

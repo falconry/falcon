@@ -61,6 +61,14 @@ class Request(object):
             hosting).
         env (dict): Reference to the WSGI *environ* dict passed in from the
             server. See also PEP-3333.
+        context (dict): Dictionary to hold any data about the request which is
+            specific to your app (e.g. session object). Falcon itself will
+            not interact with this attribute after it has been initialized.
+        context_type (None): Custom callable/type to use for initializing the
+            ``context`` attribute.  To change this value so that ``context``
+            is initialized to the type of your choice (e.g. OrderedDict), you
+            will need to extend this class and pass that new type to the
+            ``request_type`` argument of ``falcon.API()``.
         uri (str): The fully-qualified URI for the request.
         url (str): alias for ``uri``.
         relative_uri (str): The path + query string portion of the full URI.
@@ -137,11 +145,23 @@ class Request(object):
         'path',
         'query_string',
         'stream',
+        'context',
         '_wsgierrors',
     )
 
+    # Allow child classes to override this
+    context_type = None
+
     def __init__(self, env):
         self.env = env
+
+        if self.context_type is None:
+            # Literal syntax is more efficient than using dict()
+            self.context = {}
+        else:
+            # pylint will detect this as not-callable because it only sees the
+            # declaration of None, not whatever type a subclass may have set.
+            self.context = self.context_type()  # pylint: disable=not-callable
 
         self._wsgierrors = env['wsgi.errors']
         self.stream = env['wsgi.input']
