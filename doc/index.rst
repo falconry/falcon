@@ -76,6 +76,17 @@ Resources
 - `An Unladen Web Framework <http://blog.kgriffs.com/2013/07/02/python-fast-web-service-framework.html>`_.
 
 
+Community Guide
+---------------
+
+.. toctree::
+   :maxdepth: 1
+
+   community/help
+   community/contribute
+   community/faq
+
+
 User Guide
 ----------
 
@@ -86,19 +97,6 @@ User Guide
    user/install
    user/quickstart
    user/tutorial
-   user/faq
-
-
-.. Community Guide
-.. -----------------
-
-.. *Coming soon*
-
-
-.. Contributor Guide
-.. -----------------
-
-.. *Coming soon*
 
 
 Classes and Functions
