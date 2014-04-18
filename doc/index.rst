@@ -73,7 +73,8 @@ Resources
 ---------
 
 - `The Definitive Introduction to Falcon <https://speakerdeck.com/cabrera/the-definitive-introduction-to-falcon>`_
-- `An Unladen Web Framework <http://blog.kgriffs.com/2013/07/02/python-fast-web-service-framework.html>`_.
+- `An Unladen Web Framework <http://blog.kgriffs.com/2013/07/02/python-fast-web-service-framework.html>`_
+- `Falcon WSGI Framework: 0.1.8 Highlights <http://blog.kgriffs.com/2014/02/04/falcon-wsgi-framework-highlights-0.1.8.html>`_
 
 
 User Guide
