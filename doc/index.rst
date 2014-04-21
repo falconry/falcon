@@ -77,6 +77,17 @@ Resources
 - `Falcon WSGI Framework: 0.1.8 Highlights <http://blog.kgriffs.com/2014/02/04/falcon-wsgi-framework-highlights-0.1.8.html>`_
 
 
+Community Guide
+---------------
+
+.. toctree::
+   :maxdepth: 1
+
+   community/help
+   community/contribute
+   community/faq
+
+
 User Guide
 ----------
 
@@ -87,19 +98,6 @@ User Guide
    user/install
    user/quickstart
    user/tutorial
-   user/faq
-
-
-.. Community Guide
-.. -----------------
-
-.. *Coming soon*
-
-
-.. Contributor Guide
-.. -----------------
-
-.. *Coming soon*
 
 
 Classes and Functions

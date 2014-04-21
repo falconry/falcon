@@ -8,9 +8,6 @@ the way, you will learn about Falcon's features and the terminology used by
 the framework. You'll also learn how to query Falcon's docstrings, and get a
 quick overview of the WSGI standard.
 
-.. introduce talons, etc.
-.. also create a separate FAQ
-
 
 First Steps
 -----------
@@ -75,6 +72,12 @@ The Falcon framework contains extensive inline documentation that you can
 query using the above technique. The team has worked hard to optimize
 the docstrings for readability, so that you can quickly scan them and find
 what you need.
+
+.. note::
+
+    `bpython <http://bpython-interpreter.org/>`_ is another super-
+    powered REPL that is good to have in your toolbox when
+    exploring a new library.
 
 
 Hosting Your App
@@ -662,22 +665,17 @@ information on using this feature to DRY up your code:
 What Now?
 ---------
 
+Our friendly community is available to answer your questions and help you
+work through sticky problems. See also: :ref:`Getting Help <help>`.
+
 As mentioned previously, Falcon's docstrings are quite extensive, and so you
 can learn a lot just by poking around Falcon's modules from a Python REPL,
-such as `IPython <http://ipython.org/>`_.
+such as `IPython <http://ipython.org/>`_ or
+`bpython <http://bpython-interpreter.org/>`_.
 
 Also, don't be shy about pulling up Falcon's source code on GitHub or in your
 favorite text editor. The team has tried to make the code as straightforward
 and readable as possible; where other documentation may fall short, the code basically
 "can't be wrong."
 
-As you play around with Falcon and become more familiar with it, please join
-the **#falconframework** IRC channel on
-`Freenode <https://en.wikipedia.org/wiki/Freenode>`_. It's a great place to
-ask questions, share ideas, and get the scoop on updates to the Falcon
-web framework itself.
 
-Finally, if you run into something that is harder to use than it should be,
-or you find that something is slow or completely broken, please let the crew
-know in **#falconframework** and/or by
-`submitting an issue <https://github.com/racker/falcon/issues>`_.
