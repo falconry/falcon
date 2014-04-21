@@ -60,13 +60,15 @@ Install
 
 **Installing on OS X Mavericks with Xcode 5.1**
 
-Xcode Command Line Tools are required to compile cython. Install with this command:
+Xcode Command Line Tools are required to compile Cython. Install them with
+this command:
 
 .. code:: bash
 
     $ xcode-select --install
 
-Xcode 5.1 CLang compiler treats unrecognized command-line options as errors; to compile you must silence warnings for unused driver arguments:
+The Xcode 5.1 CLang compiler treats unrecognized command-line options as
+errors; you can silence warnings for unused driver arguments like so:
 
 .. code:: bash
 
