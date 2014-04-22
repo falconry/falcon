@@ -25,6 +25,26 @@ If you are on PyPy, you won't need Cython, of course:
 
     $ pip install --upgrade falcon
 
+OS X Mavericks with Xcode 5.1
+-------------------------------------------
+
+Xcode Command Line Tools are required to compile Cython. Install them with
+this command:
+
+.. code:: bash
+
+    $ xcode-select --install
+
+The Xcode 5.1 CLang compiler treats unrecognized command-line options as
+errors; you can silence warnings for unused driver arguments like so:
+
+.. code:: bash
+
+    $ export CFLAGS=-Qunused-arguments
+    $ export CPPFLAGS=-Qunused-arguments
+    $ pip install cython falcon
+
+
 
 WSGI Server
 -----------
