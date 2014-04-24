@@ -26,3 +26,4 @@ Predefined Errors
 
 .. automodule:: falcon.exceptions
     :members:
+    :member-order: bysource
