@@ -25,10 +25,12 @@ If you are on PyPy, you won't need Cython, of course:
 
     $ pip install --upgrade falcon
 
-OS X Mavericks with Xcode 5.1
--------------------------------------------
 
-Xcode Command Line Tools are required to compile Cython. Install them with
+Installing Cython on OS X
+-------------------------
+
+In order to get Cython working on OS X Mavericks with Xcode 5.1, you will
+first need to set up Xcode Command Line Tools. Install them with
 this command:
 
 .. code:: bash
@@ -36,14 +38,20 @@ this command:
     $ xcode-select --install
 
 The Xcode 5.1 CLang compiler treats unrecognized command-line options as
-errors; you can silence warnings for unused driver arguments like so:
+errors; this can cause problems under Python 2.6, for example:
+
+.. code:: bash
+
+    clang: error: unknown argument: '-mno-fused-madd' [-Wunused-command-line-argument-hard-error-in-future]
+
+You can work around errors caused by unused arguments by setting some
+environment variables:
 
 .. code:: bash
 
     $ export CFLAGS=-Qunused-arguments
     $ export CPPFLAGS=-Qunused-arguments
     $ pip install cython falcon
-
 
 
 WSGI Server

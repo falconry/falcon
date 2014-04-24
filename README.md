@@ -52,7 +52,14 @@ $ xcode-select --install
 ```
 
 The Xcode 5.1 CLang compiler treats unrecognized command-line options as
-errors; you can silence warnings for unused driver arguments like so:
+errors; this can cause problems under Python 2.6, for example:
+
+```bash
+clang: error: unknown argument: '-mno-fused-madd' [-Wunused-command-line-argument-hard-error-in-future]
+```
+
+You can work around errors caused by unused arguments by setting some
+environment variables:
 
 ```bash
 $ export CFLAGS=-Qunused-arguments
