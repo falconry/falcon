@@ -3,10 +3,12 @@
 Quickstart
 ==========
 
-Ready to rock? Below you'll find a few librarly-commented examples that
-provide a quick overview of how to get started with Falcon.
+If you haven't done so already, please take a moment to
+:ref:`install <install>` the Falcon web framework before
+continuing.
 
-Before continuing, be sure you've got Falcon :ref:`installed <install>`.
+
+.. include:: big-picture-snip.rst
 
 
 Learning by Example

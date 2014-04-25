@@ -9,6 +9,9 @@ the framework. You'll also learn how to query Falcon's docstrings, and get a
 quick overview of the WSGI standard.
 
 
+.. include:: big-picture-snip.rst
+
+
 First Steps
 -----------
 
@@ -73,7 +76,7 @@ query using the above technique. The team has worked hard to optimize
 the docstrings for readability, so that you can quickly scan them and find
 what you need.
 
-.. note::
+.. tip::
 
     `bpython <http://bpython-interpreter.org/>`_ is another super-
     powered REPL that is good to have in your toolbox when
@@ -547,8 +550,8 @@ initializer:
 To learn more about hooks, take a look at the docstring for the ``API`` class,
 as well the docstrings for the ``falcon.before`` and ``falcon.after`` decorators.
 
-Now that you've added a hook to validate the media type on post, you can see
-it in action by passing in something nefarious:
+Now that you've added a hook to validate the media type when an image is
+POSTed, you can see it in action by passing in something nefarious:
 
 .. code:: bash
 
@@ -562,12 +565,11 @@ authorized to access. In that case, you may wish to simply return
 ``404 Not Found`` with an empty body, in case a malicious user is fishing
 for information that will help them crack your API.
 
-.. note:: Please take a look at our new sister project,
+.. tip:: Please take a look at our new sister project,
    `Talons <https://github.com/talons/talons>`_, for a collection of
-   useful Falcon hooks contributed by the community. If you create a
-   nifty hook that you think others could use, please consider helping your
-   fellow Falconers out by submitting a
-   `Talons <https://github.com/talons/talons>`_ pull request.
+   useful Falcon hooks contributed by the community. Also, If you create a
+   nifty hook that you think others could use, please consider
+   contributing to the project yourself.
 
 Error Handling
 --------------
@@ -585,7 +587,7 @@ that in mind, writing a high-quality API based on Falcon requires that:
 1. Errors are anticipated, detected, and handled appropriately within each
 responder.
 
-.. note::
+.. tip::
     Falcon will re-raise errors that do not inherit from ``falcon.HTTPError``
     unless you have registered a custom error handler for that type
     (see also: :ref:`falcon.API <api>`).

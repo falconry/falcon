@@ -3,24 +3,58 @@
 Questions & Answers
 ===================
 
+Why doesn't Falcon include X?
+----
+The Falcon framework lets you decide your own answers to questions like:
+
+* JSON or MessagePack?
+* konval or jsonschema?
+* Mongothon or Monk?
+* Storm, SQLAlchemy or peewee?
+* Jinja or Tenjin?
+* python-multipart or cgi.FieldStorage?
+* gevent or eventlet?
+
+The Python ecosytem offers a bunch of great libraries that you
+are welcome to use from within your responders and hooks.
+Falcon doesn't try to dictate what you should use, since that would take
+away your freedom to choose the best tool for the job.
+
 How do I authenticate requests?
 ----
-Falcon supports custom *before* and *after* hooks that allow you to
-wire up your favorite 3rd-party libraries for handling these sorts of
-things.
+You can use a *before* hook to authenticate and authorize requests. Hooks
+have full access to the Request and Response objects.
 
-In order to keep Falcon lean-and-mean, and to give you maximum control
-over the way your app works, things like authentication, role-based
-access control, etc. are not implemented directly in the framework.
+.. code:: python
 
-This architectural style also helps encourage separation of concerns
-in your app.
+    def auth(req, resp, params):
+        token = req.get_header('X-Auth-Token')
 
-.. note::
-    If you create a nifty hook for your project, and you think it might
-    be helpful to others in the community, please consider contributing
-    your hook to the `Talons <https://github.com/talons/talons>`_ project.
+        if token is None:
+            description = ('Please provide an auth token '
+                           'as part of the request.')
 
+            raise falcon.HTTPUnauthorized('Auth token required',
+                                          description,
+                                          href='http://docs.example.com/auth')
+
+        if not token_is_valid(token, params['user_id']):
+            description = ('The provided auth token is not valid. '
+                           'Please request a new token and try again.')
+
+            raise falcon.HTTPUnauthorized('Authentication required',
+                                          description,
+                                          href='http://docs.example.com/auth',
+                                          scheme='Token; UUID')
+
+        authorized_projects = get_projects(token)
+        project = req.get_header('X-Project-ID')
+
+        if project not in authorized_projects:
+            description = 'The requested project ID could not be found.'
+            raise falcon.HTTPForbidden('Unknown Project ID',
+                                        description,
+                                        href='http://docs.example.com/headers')
 
 Is Falcon thread-safe?
 ----
@@ -55,8 +89,8 @@ to the *params* dict passed into the hook. You can also add custom data to
 the req.env WSGI dict, as a way of passing contextual information around.
 
 .. note::
-    Falcon 0.2 will add a dict to Request to provide a cleaner alternative to
-    using req.env.
+    Falcon 0.2 will add a "context" dict to Request to provide a cleaner
+    alternative to using req.env.
 
 Does Falcon set Content-Length or do I need to do that explicitly?
 ----
@@ -103,7 +137,7 @@ that in mind, writing a high-quality API based on Falcon requires that:
 #. Errors are anticipated, detected, and handled appropriately within
    each responder and with the aid of custom error handlers.
 
-.. note:: Falcon will re-raise errors that do not inherit from
+.. tip:: Falcon will re-raise errors that do not inherit from
     ``falcon.HTTPError`` unless you have registered a custom error
     handler for that type (see also: :ref:`falcon.API <api>`).
 
