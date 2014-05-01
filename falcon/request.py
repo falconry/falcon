@@ -158,8 +158,10 @@ class Request(object):
         if self.context_type is None:
             # Literal syntax is more efficient than using dict()
             self.context = {}
-        else:
+        elif callable(self.context_type):
             self.context = self.context_type()
+        else:
+            raise TypeError("Custom context_type has been defined but is not callable")
 
         self._wsgierrors = env['wsgi.errors']
         self.stream = env['wsgi.input']
