@@ -56,7 +56,8 @@ class API(object):
                  '_error_handlers', '_media_type',
                  '_routes', '_default_route', '_sinks')
 
-    def __init__(self, media_type=DEFAULT_MEDIA_TYPE, before=None, after=None, request_type=Request, response_type=Response):
+    def __init__(self, media_type=DEFAULT_MEDIA_TYPE, before=None, after=None,
+                 request_type=Request, response_type=Response):
         self._routes = []
         self._sinks = []
         self._default_route = None
