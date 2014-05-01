@@ -44,8 +44,8 @@ class API(object):
             the ``after`` decorator, but applies to the entire API.
         request_type (Request, optional): Request-alike class to use instead
             of Falcon's default class. Useful if you wish to extend
-            ``falcon.request.Request`` with a custom ``context_type``.
-            (default falcon.request.Request)
+            ``falcon.request.Request`` with a custom ``_initialize_context``
+            method. (default falcon.request.Request)
         response_type (Response, optional): Response-alike class to use
             instead of Falcon's default class. (default
             falcon.response.Response)
