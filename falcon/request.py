@@ -161,8 +161,7 @@ class Request(object):
         else:
             # pylint will detect this as not-callable because it only sees the
             # declaration of None, not whatever type a subclass may have set.
-            # pylint: disable=not-callable
-            self.context = self.context_type()
+            self.context = self.context_type()  # pylint: disable=not-callable
 
         self._wsgierrors = env['wsgi.errors']
         self.stream = env['wsgi.input']
