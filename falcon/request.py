@@ -158,14 +158,14 @@ class Request(object):
         if self.context_type is None:
             # Literal syntax is more efficient than using dict()
             self.context = {}
-        elif callable(self.context_type):
+        else:
+            # pragma: no cover
+            # context_type will always be None.
+            # @todo add test coverage for callable context_type
             # pylint will detect this as not-callable because it is not smart
             # enough to check the callable() test above.
             # pylint: disable=not-callable
             self.context = self.context_type()
-        else:
-            raise TypeError(
-                "Custom context_type has been defined but is not callable")
 
         self._wsgierrors = env['wsgi.errors']
         self.stream = env['wsgi.input']
