@@ -159,8 +159,8 @@ class Request(object):
             # Literal syntax is more efficient than using dict()
             self.context = {}
         else:
-            # pylint will detect this as not-callable because it is not smart
-            # enough to check the callable() test above.
+            # pylint will detect this as not-callable because it only sees the
+            # declaration of None, not whatever type a subclass may have set.
             # pylint: disable=not-callable
             self.context = self.context_type()
 
