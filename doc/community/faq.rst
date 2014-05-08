@@ -3,6 +3,25 @@
 Questions & Answers
 ===================
 
+How do I use WSGI middleware with Falcon?
+----
+
+Instances of `falcon.API` are first-class WSGI apps, so you can use the
+standard pattern outlined in PEP-3333. In your main "app" file, you would
+simply wrap your api instance with a middleware app. For example:
+
+.. code:: python
+
+    import my_restful_service
+    import some_middleware
+
+    app = some_middleware.DoSomethingFancy(my_restful_service.api)
+
+See also the `WSGI middleware example <http://legacy.python.org/dev/peps/pep-3333/#middleware-components-that-play-both-sides>`_ given in PEP-3333. Note that use of Paste for wiring up
+middleware is discouraged these days, because that package is not
+well-maintained, and is incompatible with Python 3.
+
+
 Why doesn't Falcon include X?
 ----
 The Falcon framework lets you decide your own answers to questions like:
@@ -172,24 +191,6 @@ Is there a way for me to ensure headers are sent to clients in a specific order?
 In order to generate HTTP responses as quickly as possible, Falcon does not
 try to sort or even logically group related headers in the HTTP response.
 
-.. note about stream being consumed for 'application/x-www-form-urlencoded’
-
 .. If Falcon is designed for building web APIs, why does it support forms?
 .. ----
 .. Doesn't support files, allows same code to handle both...
-
-.. What happens if an error is raised from a hook?
-.. ----
-.. Falcon will catch the error, and do one of three things:
-
-.. 1. If the error is an instance of *HTTPError* (or a child of *HTTPError*), Falcon will convert it to an HTTP response and return that to the client.
-.. 2. If there is a custom error handler, that will be called and given a chance to clean up resources and set up the Response object. When the handler returns, Falcon will immediately return a response to the client.
-.. 3. If the type is unrecognized, it is re-raised and will be handled by your WSGI server.
-
-.. Note that when an error is raised, it short-circuits the normal request chain.
-
-
-.. Coming soon: before vs. after... work to catch HTTPError and other handlers, and set resp,
-.. then continue with after hooks so can DRY up logic you want to run when an
-.. error occurs. For example, serialize error to a normalized response body
-.. scheme.

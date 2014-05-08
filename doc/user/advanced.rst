@@ -9,3 +9,4 @@
 .. auth whitelist
 .. processing file uploads from forms
 .. static file serving
+.. wsgi middleware
