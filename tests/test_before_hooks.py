@@ -33,6 +33,11 @@ def bunnies(req, resp, params):
     params['bunnies'] = 'fuzzy'
 
 
+def resource_aware_bunnies(req, resp, params):
+    assert 'resource' in params
+    params['bunnies'] = 'fuzzy'
+
+
 def frogs(req, resp, params):
     if 'bunnies' in params:
         params['bunnies'] = 'fluffy'
@@ -123,6 +128,14 @@ class TestHooks(testing.TestBase):
 
         self.api.add_route(self.test_route, zoo_resource)
 
+        self.simulate_request(self.test_route)
+        self.assertEqual('fuzzy', zoo_resource.bunnies)
+
+    def test_global_hook_is_resource_aware(self):
+        self.api = falcon.API(before=resource_aware_bunnies)
+        zoo_resource = BunnyResource()
+
+        self.api.add_route(self.test_route, zoo_resource)
         self.simulate_request(self.test_route)
         self.assertEqual('fuzzy', zoo_resource.bunnies)
 
