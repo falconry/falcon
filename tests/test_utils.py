@@ -2,13 +2,16 @@
 
 from datetime import datetime
 import functools
+import io
 import random
+import sys
 
 import testtools
 import six
 
 import falcon
 import falcon.testing
+from falcon import util
 from falcon.util import uri
 
 
@@ -28,6 +31,26 @@ class TestFalconUtils(testtools.TestCase):
         # NOTE(cabrera): for DRYness - used in uri.[de|en]code tests
         # below.
         self.uris = _arbitrary_uris(count=100, length=32)
+
+    def test_deprecated_decorator(self):
+        msg = 'Please stop using this thing. It is going away.'
+
+        @util.deprecated(msg)
+        def old_thing():
+            pass
+
+        if six.PY3:
+            stream = io.StringIO()
+        else:
+            stream = io.BytesIO()
+
+        old_stderr = sys.stderr
+        sys.stderr = stream
+
+        old_thing()
+
+        sys.stderr = old_stderr
+        self.assertIn(msg, stream.getvalue())
 
     def test_dt_to_http(self):
         self.assertEqual(

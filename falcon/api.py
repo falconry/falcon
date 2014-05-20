@@ -19,7 +19,6 @@ from falcon.request import Request
 from falcon.response import Response
 import falcon.responders
 from falcon.status_codes import HTTP_416
-from falcon import util
 
 from falcon.http_error import HTTPError
 from falcon import DEFAULT_MEDIA_TYPE
@@ -54,13 +53,12 @@ class API(object):
 
     __slots__ = ('_after', '_before', '_request_type', '_response_type',
                  '_error_handlers', '_media_type',
-                 '_routes', '_default_route', '_sinks')
+                 '_routes', '_sinks')
 
     def __init__(self, media_type=DEFAULT_MEDIA_TYPE, before=None, after=None,
                  request_type=Request, response_type=Response):
         self._routes = []
         self._sinks = []
-        self._default_route = None
         self._media_type = media_type
 
         self._before = helpers.prepare_global_hooks(before)
@@ -238,27 +236,6 @@ class API(object):
         # is preferred.
         self._sinks.insert(0, (prefix, sink))
 
-    # TODO(kgriffs): Remove this functionality in Falcon version 0.2.0
-    @util.deprecated('Please migrate to add_sink(...) ASAP.')
-    def set_default_route(self, default_resource):
-        """DEPRECATED: Route all the unrouted requests to a default resource.
-
-        NOTE: If a default route is defined, all sinks are ignored.
-
-        Args:
-            default_resource (instance): Object which works like a RESTful
-                resource. Falcon will pass "GET" requests to on_get, "PUT"
-                requests to on_put, etc. If you want to exclude any HTTP
-                methods from the routing, simply do not define the
-                corresponding request handlers, and Falcon will respond
-                with "405 Method Not Allowed" when those methods are
-                requested.
-
-        """
-
-        self._default_route = helpers.create_http_method_map(
-            default_resource, set(), self._before, self._after)
-
     def add_error_handler(self, exception, handler=None):
         """Adds a handler for a given exception type.
 
@@ -340,24 +317,14 @@ class API(object):
         else:
             params = {}
 
-            if self._default_route is None:
+            for pattern, sink in self._sinks:
+                m = pattern.match(path)
+                if m:
+                    params = m.groupdict()
+                    responder = sink
 
-                for pattern, sink in self._sinks:
-                    m = pattern.match(path)
-                    if m:
-                        params = m.groupdict()
-                        responder = sink
-
-                        break
-                else:
-                    responder = falcon.responders.path_not_found
-
+                    break
             else:
-                method_map = self._default_route
-
-                try:
-                    responder = method_map[method]
-                except KeyError:
-                    responder = falcon.responders.bad_request
+                responder = falcon.responders.path_not_found
 
         return (responder, params)
