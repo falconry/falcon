@@ -217,7 +217,8 @@ def create_http_method_map(resource, uri_fields, before, after):
         else:
             # Usually expect a method, but any callable will do
             if callable(responder):
-                responder = _wrap_with_hooks(before, after, responder)
+                responder = _wrap_with_hooks(
+                    before, after, responder, resource)
                 method_map[method] = responder
 
     # Attach a resource for unsupported HTTP methods
@@ -229,14 +230,16 @@ def create_http_method_map(resource, uri_fields, before, after):
         # OPTIONS itself is intentionally excluded from the Allow header
         responder = responders.create_default_options(
             allowed_methods)
-        method_map['OPTIONS'] = _wrap_with_hooks(before, after, responder)
+        method_map['OPTIONS'] = _wrap_with_hooks(
+            before, after, responder, resource)
         allowed_methods.append('OPTIONS')
 
     na_responder = responders.create_method_not_allowed(allowed_methods)
 
     for method in HTTP_METHODS:
         if method not in allowed_methods:
-            method_map[method] = _wrap_with_hooks(before, after, na_responder)
+            method_map[method] = _wrap_with_hooks(
+                before, after, na_responder, resource)
 
     return method_map
 
@@ -246,7 +249,7 @@ def create_http_method_map(resource, uri_fields, before, after):
 # -----------------------------------------------------------------------------
 
 
-def _wrap_with_hooks(before, after, responder):
+def _wrap_with_hooks(before, after, responder, resource):
     if after is not None:
         for action in after:
             responder = _wrap_with_after(action, responder)
@@ -255,12 +258,12 @@ def _wrap_with_hooks(before, after, responder):
         # Wrap in reversed order to achieve natural (first...last)
         # execution order.
         for action in reversed(before):
-            responder = _wrap_with_before(action, responder)
+            responder = _wrap_with_before(action, responder, resource)
 
     return responder
 
 
-def _wrap_with_before(action, responder):
+def _wrap_with_before(action, responder, resource):
     """Execute the given action function before a bound responder.
 
     Args:
@@ -272,7 +275,12 @@ def _wrap_with_before(action, responder):
 
     @wraps(responder)
     def do_before(req, resp, **kwargs):
+        # add resource to kwargs to make global 'before' hooks aware of
+        # resource but we remove this key afterwards to not affect responder
+        # call parameters
+        kwargs['resource'] = resource
         action(req, resp, kwargs)
+        kwargs.pop('resource')
         responder(req, resp, **kwargs)
 
     return do_before
