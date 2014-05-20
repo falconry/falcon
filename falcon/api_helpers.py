@@ -13,10 +13,10 @@
 # limitations under the License.
 
 import re
-from functools import wraps
 
 from falcon import responders, HTTP_METHODS
 import falcon.status_codes as status
+from falcon.hooks import _wrap_with_hooks
 
 STREAM_BLOCK_SIZE = 8 * 1024  # 8 KiB
 
@@ -217,7 +217,8 @@ def create_http_method_map(resource, uri_fields, before, after):
         else:
             # Usually expect a method, but any callable will do
             if callable(responder):
-                responder = _wrap_with_hooks(before, after, responder)
+                responder = _wrap_with_hooks(
+                    before, after, responder, resource)
                 method_map[method] = responder
 
     # Attach a resource for unsupported HTTP methods
@@ -229,68 +230,15 @@ def create_http_method_map(resource, uri_fields, before, after):
         # OPTIONS itself is intentionally excluded from the Allow header
         responder = responders.create_default_options(
             allowed_methods)
-        method_map['OPTIONS'] = _wrap_with_hooks(before, after, responder)
+        method_map['OPTIONS'] = _wrap_with_hooks(
+            before, after, responder, resource)
         allowed_methods.append('OPTIONS')
 
     na_responder = responders.create_method_not_allowed(allowed_methods)
 
     for method in HTTP_METHODS:
         if method not in allowed_methods:
-            method_map[method] = _wrap_with_hooks(before, after, na_responder)
+            method_map[method] = _wrap_with_hooks(
+                before, after, na_responder, resource)
 
     return method_map
-
-
-# -----------------------------------------------------------------------------
-# Helpers
-# -----------------------------------------------------------------------------
-
-
-def _wrap_with_hooks(before, after, responder):
-    if after is not None:
-        for action in after:
-            responder = _wrap_with_after(action, responder)
-
-    if before is not None:
-        # Wrap in reversed order to achieve natural (first...last)
-        # execution order.
-        for action in reversed(before):
-            responder = _wrap_with_before(action, responder)
-
-    return responder
-
-
-def _wrap_with_before(action, responder):
-    """Execute the given action function before a bound responder.
-
-    Args:
-        action: A function with a similar signature to a resource responder
-            method, taking (req, resp, params).
-        responder: The bound responder to wrap.
-
-    """
-
-    @wraps(responder)
-    def do_before(req, resp, **kwargs):
-        action(req, resp, kwargs)
-        responder(req, resp, **kwargs)
-
-    return do_before
-
-
-def _wrap_with_after(action, responder):
-    """Execute the given action function after a bound responder.
-
-    Args:
-        action: A function with a signature similar to a resource responder
-            method, taking (req, resp).
-        responder: The bound responder to wrap.
-
-    """
-
-    @wraps(responder)
-    def do_after(req, resp, **kwargs):
-        responder(req, resp, **kwargs)
-        action(req, resp)
-
-    return do_after

@@ -13,6 +13,8 @@
 # limitations under the License.
 
 from functools import wraps
+import inspect
+
 import six
 
 from falcon import HTTP_METHODS
@@ -60,10 +62,8 @@ def before(action):
                         # variable that is shared between iterations of the
                         # for loop, above.
                         def let(responder=responder):
-                            @wraps(responder)
-                            def do_before_all(self, req, resp, **kwargs):
-                                action(req, resp, kwargs)
-                                responder(self, req, resp, **kwargs)
+                            do_before_all = _wrap_with_before(
+                                action, responder, resource, True)
 
                             setattr(resource, responder_name, do_before_all)
 
@@ -73,11 +73,7 @@ def before(action):
 
         else:
             responder = responder_or_resource
-
-            @wraps(responder)
-            def do_before_one(self, req, resp, **kwargs):
-                action(req, resp, kwargs)
-                responder(self, req, resp, **kwargs)
+            do_before_one = _wrap_with_before(action, responder, None, True)
 
             return do_before_one
 
@@ -107,11 +103,10 @@ def after(action):
                 else:
                     # Usually expect a method, but any callable will do
                     if callable(responder):
+
                         def let(responder=responder):
-                            @wraps(responder)
-                            def do_after_all(self, req, resp, **kwargs):
-                                responder(self, req, resp, **kwargs)
-                                action(req, resp)
+                            do_after_all = _wrap_with_after(
+                                action, responder, resource, True)
 
                             setattr(resource, responder_name, do_after_all)
 
@@ -121,12 +116,108 @@ def after(action):
 
         else:
             responder = responder_or_resource
-
-            @wraps(responder)
-            def do_after_one(self, req, resp, **kwargs):
-                responder(self, req, resp, **kwargs)
-                action(req, resp)
+            do_after_one = _wrap_with_after(action, responder, None, True)
 
             return do_after_one
 
     return _after
+
+# -----------------------------------------------------------------------------
+# Helpers
+# -----------------------------------------------------------------------------
+
+
+def _wrap_with_after(action, responder, resource, is_method=False):
+    """Execute the given action function after a bound responder.
+
+    Args:
+        action: A function with a signature similar to a resource responder
+            method, taking (req, resp).
+        responder: The bound responder to wrap.
+        resource: The resource affected by action.
+        is_method: Is wrapped responder a class method?
+
+    """
+    # NOTE(swistakm): introspect action function do guess if it can handle
+    # additionalresource argument without breaking backwards compatibility
+    spec = inspect.getargspec(action)
+
+    # NOTE(swistakm): create hook before checking what will be actually
+    # decorated. This helps to avoid excessive nesting
+    if len(spec.args) > 2:
+        @wraps(action)
+        def hook(req, resp, resource):
+            action(req, resp, resource)
+    else:
+        @wraps(action)
+        def hook(req, resp, resource):
+            action(req, resp)
+
+    # NOTE(swistakm): method must be decorated differently than normal function
+    if is_method:
+        @wraps(responder)
+        def do_after(self, req, resp, **kwargs):
+            responder(self, req, resp, **kwargs)
+            hook(req, resp, self)
+    else:
+        @wraps(responder)
+        def do_after(req, resp, **kwargs):
+            responder(req, resp, **kwargs)
+            hook(req, resp, resource)
+
+    return do_after
+
+
+def _wrap_with_before(action, responder, resource, is_method=False):
+    """Execute the given action function before a bound responder.
+
+    Args:
+        action: A function with a similar signature to a resource responder
+            method, taking (req, resp, params).
+        responder: The bound responder to wrap.
+        resource: The resource affected by action.
+        is_method: Is wrapped responder a class method?
+
+    """
+    # NOTE(swistakm): introspect action function do guess if it can handle
+    # additional resource argument without breaking backwards compatibility
+    spec = inspect.getargspec(action)
+
+    # NOTE(swistakm): create hook before checking what will be actually
+    # decorated. This allows to avoid excessive nesting
+    if len(spec.args) > 3:
+        @wraps(action)
+        def hook(req, resp, resource, kwargs):
+            action(req, resp, resource, kwargs)
+    else:
+        @wraps(action)
+        def hook(req, resp, resource, kwargs):
+            action(req, resp, kwargs)
+
+    # NOTE(swistakm): method must be decorated differently than normal function
+    if is_method:
+        @wraps(responder)
+        def do_before(self, req, resp, **kwargs):
+            hook(req, resp, self, kwargs)
+            responder(self, req, resp, **kwargs)
+    else:
+        @wraps(responder)
+        def do_before(req, resp, **kwargs):
+            hook(req, resp, resource, kwargs)
+            responder(req, resp, **kwargs)
+
+    return do_before
+
+
+def _wrap_with_hooks(before, after, responder, resource):
+    if after is not None:
+        for action in after:
+            responder = _wrap_with_after(action, responder, resource)
+
+    if before is not None:
+        # Wrap in reversed order to achieve natural (first...last)
+        # execution order.
+        for action in reversed(before):
+            responder = _wrap_with_before(action, responder, resource)
+
+    return responder

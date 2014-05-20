@@ -20,9 +20,19 @@ def fluffiness(req, resp):
     resp.body = 'fluffy'
 
 
+def resource_aware_fluffiness(req, resp, resource):
+    assert resource
+    fluffiness(req, resp)
+
+
 def cuteness(req, resp):
     if resp.body == 'fluffy':
         resp.body += ' and cute'
+
+
+def resource_aware_cuteness(req, resp, resource):
+    assert resource
+    cuteness(req, resp)
 
 
 def fluffiness_in_the_head(req, resp):
@@ -68,6 +78,29 @@ class WrappedClassResource(object):
         self.resp = resp
 
 
+# NOTE(swistakm): we use both type of hooks (class and method)
+# at once for the sake of simplicity
+@falcon.after(resource_aware_cuteness)
+class ClassResourceWithAwareHooks(object):
+
+    # Test that the decorator skips non-callables
+    on_post = False
+
+    def __init__(self):
+        # Test that the decorator skips non-callables
+        self.on_patch = []
+
+    @falcon.after(resource_aware_fluffiness)
+    def on_get(self, req, resp):
+        self.req = req
+        self.resp = resp
+
+    @falcon.after(resource_aware_fluffiness)
+    def on_head(self, req, resp):
+        self.req = req
+        self.resp = resp
+
+
 class ZooResource(object):
 
     def on_get(self, req, resp):
@@ -89,11 +122,26 @@ class TestHooks(testing.TestBase):
         self.wrapped_resource = WrappedClassResource()
         self.api.add_route('/wrapped', self.wrapped_resource)
 
+        self.wrapped_resource_aware = ClassResourceWithAwareHooks()
+        self.api.add_route('/wrapped_aware', self.wrapped_resource_aware)
+
     def test_global_hook(self):
         self.assertRaises(TypeError, falcon.API, None, {})
         self.assertRaises(TypeError, falcon.API, None, 0)
 
         self.api = falcon.API(after=fluffiness)
+        zoo_resource = ZooResource()
+
+        self.api.add_route(self.test_route, zoo_resource)
+
+        self.simulate_request(self.test_route)
+        self.assertEqual(b'fluffy', zoo_resource.resp.body_encoded)
+
+    def test_global_hook_is_resource_aware(self):
+        self.assertRaises(TypeError, falcon.API, None, {})
+        self.assertRaises(TypeError, falcon.API, None, 0)
+
+        self.api = falcon.API(after=resource_aware_fluffiness)
         zoo_resource = ZooResource()
 
         self.api.add_route(self.test_route, zoo_resource)
@@ -187,6 +235,28 @@ class TestHooks(testing.TestBase):
 
         # decorator does not affect the default on_options
         body = self.simulate_request('/wrapped', method='OPTIONS')
+        self.assertEqual(falcon.HTTP_204, self.srmock.status)
+        self.assertEqual([], body)
+
+    def test_wrapped_resource_with_hooks_aware_of_resource(self):
+        expected = b'fluffy and cute'
+
+        self.simulate_request('/wrapped_aware')
+        self.assertEqual(falcon.HTTP_200, self.srmock.status)
+        self.assertEqual(
+            expected, self.wrapped_resource_aware.resp.body_encoded)
+
+        self.simulate_request('/wrapped_aware', method='HEAD')
+        self.assertEqual(falcon.HTTP_200, self.srmock.status)
+
+        self.simulate_request('/wrapped_aware', method='POST')
+        self.assertEqual(falcon.HTTP_405, self.srmock.status)
+
+        self.simulate_request('/wrapped_aware', method='PATCH')
+        self.assertEqual(falcon.HTTP_405, self.srmock.status)
+
+        # decorator does not affect the default on_options
+        body = self.simulate_request('/wrapped_aware', method='OPTIONS')
         self.assertEqual(falcon.HTTP_204, self.srmock.status)
         self.assertEqual([], body)
 
