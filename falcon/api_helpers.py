@@ -275,12 +275,12 @@ def _wrap_with_before(action, responder, resource):
 
     @wraps(responder)
     def do_before(req, resp, **kwargs):
-        # add resource to kwargs to make global 'before' hooks aware of
-        # resource but we remove this key afterwards to not affect responder
-        # call parameters
+        # NOTE(swistakm): add resource to kwargs to make global 'before'
+        # hooks  aware of resource but we remove this key afterwards to not
+        # affect responder call parameters
         kwargs['resource'] = resource
         action(req, resp, kwargs)
-        kwargs.pop('resource')
+        del kwargs['resource']
         responder(req, resp, **kwargs)
 
     return do_before
