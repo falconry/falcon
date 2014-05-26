@@ -13,16 +13,18 @@
 # limitations under the License.
 
 import re
+import sys
 
 from falcon import api_helpers as helpers
-from falcon.request import Request
 from falcon.response import Response
 import falcon.responders
 from falcon.status_codes import HTTP_416
-
+if sys.version_info >= (3, 0):
+    from falcon.request3 import Request  # NOQA
+else:
+    from falcon.request import Request  # NOQA
 from falcon.http_error import HTTPError
 from falcon import DEFAULT_MEDIA_TYPE
-
 
 class API(object):
     """This class is the main entry point into a Falcon-based app.

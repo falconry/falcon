@@ -34,8 +34,8 @@ from falcon import util
 from falcon.util import uri
 from falcon import request_helpers as helpers
 
-DEFAULT_ERROR_LOG_FORMAT = (u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
-                                u' {1} {2}{3} => ')
+DEFAULT_ERROR_LOG_FORMAT = ('{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
+                                ' {1} {2}{3} => ')
 
 TRUE_STRINGS = ('true', 'True', 'yes')
 FALSE_STRINGS = ('false', 'False', 'no')

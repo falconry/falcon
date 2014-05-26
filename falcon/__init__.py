@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import sys
+
 HTTP_METHODS = (
     'CONNECT',
     'DELETE',
@@ -35,5 +37,8 @@ from falcon.exceptions import *  # NOQA
 from falcon.http_error import HTTPError  # NOQA
 from falcon.util import *  # NOQA
 from falcon.hooks import before, after  # NOQA
-from falcon.request import Request  # NOQA
+if sys.version_info >= (3, 0):
+    from falcon.request3 import Request  # NOQA
+else:
+    from falcon.request import Request  # NOQA
 from falcon.response import Response  # NOQA
