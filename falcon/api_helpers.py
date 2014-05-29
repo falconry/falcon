@@ -277,8 +277,8 @@ def _wrap_with_before(action, responder, resource):
     # additional resource argument without breaking backwards compatibility
     spec = inspect.getargspec(action)
 
-    # NOTE(swistakm): in fact two independent hooks declarations to
-    # avoid introspecting on each request/hook run
+    # NOTE(swistakm): two independent definitions created at decoration time
+    # to avoid introspecting on each request/hook run
     if len(spec.args) > 3:
         @wraps(responder)
         def do_before(req, resp, **kwargs):
@@ -306,8 +306,8 @@ def _wrap_with_after(action, responder, resource):
     # additionalresource argument without breaking backwards compatibility
     spec = inspect.getargspec(action)
 
-    # NOTE(swistakm): in fact two independent hooks declarations to
-    # avoid introspecting on each request/hook run
+    # NOTE(swistakm): two independent definitions created at decoration time
+    # to avoid introspecting on each request/hook run
     if len(spec.args) > 2:
         @wraps(responder)
         def do_after(req, resp, **kwargs):
