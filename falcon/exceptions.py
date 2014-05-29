@@ -113,10 +113,24 @@ class HTTPMethodNotAllowed(HTTPError):
     """
 
     def __init__(self, allowed_methods, **kwargs):
+        HTTPError.__init__(self, status.HTTP_405, 'Method not allowed',
+                           **kwargs)
+
+        if kwargs:
+            title = 'Method not allowed'
+        else:
+            # NOTE(kgriffs): Trigger an empty body in the response; 405
+            # responses don't usually have bodies, so we only send one
+            # if the caller indicates they want one, by way of specifying
+            # a description, href, and/or other details.
+            title = None
+
+        # NOTE(kgriffs): Inject the "Allow" header so it will be included
+        # in the HTTP response.
         headers = kwargs.setdefault('headers', {})
         headers['Allow'] = ', '.join(allowed_methods)
 
-        HTTPError.__init__(self, status.HTTP_405, None, **kwargs)
+        HTTPError.__init__(self, status.HTTP_405, title, **kwargs)
 
 
 class HTTPNotAcceptable(HTTPError):
