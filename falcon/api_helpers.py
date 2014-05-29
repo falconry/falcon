@@ -14,6 +14,7 @@
 
 import re
 from functools import wraps
+import inspect
 
 from falcon import responders, HTTP_METHODS
 import falcon.status_codes as status
@@ -252,7 +253,7 @@ def create_http_method_map(resource, uri_fields, before, after):
 def _wrap_with_hooks(before, after, responder, resource):
     if after is not None:
         for action in after:
-            responder = _wrap_with_after(action, responder)
+            responder = _wrap_with_after(action, responder, resource)
 
     if before is not None:
         # Wrap in reversed order to achieve natural (first...last)
@@ -272,21 +273,27 @@ def _wrap_with_before(action, responder, resource):
         responder: The bound responder to wrap.
 
     """
+    # NOTE(swistakm): introspect action function do guess if it can handle
+    # additional resource argument without breaking backwards compatibility
+    spec = inspect.getargspec(action)
 
-    @wraps(responder)
-    def do_before(req, resp, **kwargs):
-        # NOTE(swistakm): add resource to kwargs to make global 'before'
-        # hooks  aware of resource but we remove this key afterwards to not
-        # affect responder call parameters
-        kwargs['resource'] = resource
-        action(req, resp, kwargs)
-        del kwargs['resource']
-        responder(req, resp, **kwargs)
+    # NOTE(swistakm): in fact two independent hooks declarations to
+    # avoid introspecting on each request/hook run
+    if len(spec.args) > 3:
+        @wraps(responder)
+        def do_before(req, resp, **kwargs):
+            action(req, resp, resource, kwargs)
+            responder(req, resp, **kwargs)
+    else:
+        @wraps(responder)
+        def do_before(req, resp, **kwargs):
+            action(req, resp, kwargs)
+            responder(req, resp, **kwargs)
 
     return do_before
 
 
-def _wrap_with_after(action, responder):
+def _wrap_with_after(action, responder, resource):
     """Execute the given action function after a bound responder.
 
     Args:
@@ -295,10 +302,21 @@ def _wrap_with_after(action, responder):
         responder: The bound responder to wrap.
 
     """
+    # NOTE(swistakm): introspect action function do guess if it can handle
+    # additionalresource argument without breaking backwards compatibility
+    spec = inspect.getargspec(action)
 
-    @wraps(responder)
-    def do_after(req, resp, **kwargs):
-        responder(req, resp, **kwargs)
-        action(req, resp)
+    # NOTE(swistakm): in fact two independent hooks declarations to
+    # avoid introspecting on each request/hook run
+    if len(spec.args) > 2:
+        @wraps(responder)
+        def do_after(req, resp, **kwargs):
+            responder(req, resp, **kwargs)
+            action(req, resp, resource)
+    else:
+        @wraps(responder)
+        def do_after(req, resp, **kwargs):
+            responder(req, resp, **kwargs)
+            action(req, resp)
 
     return do_after
