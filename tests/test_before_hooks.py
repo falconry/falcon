@@ -16,6 +16,11 @@ def validate_param(req, resp, params):
         raise falcon.HTTPBadRequest('Out of range', 'limit must be <= 100')
 
 
+def resource_aware_validate_param(req, resp, resource, params):
+    assert resource
+    validate_param(req, resp, params)
+
+
 def validate_field(req, resp, params):
     try:
         params['id'] = int(params['id'])
@@ -35,8 +40,7 @@ def bunnies(req, resp, params):
 
 def resource_aware_bunnies(req, resp, resource, params):
     assert resource
-    assert isinstance(resource, BunnyResource)
-    params['bunnies'] = 'fuzzy'
+    bunnies(req, resp, params)
 
 
 def frogs(req, resp, params):
@@ -88,6 +92,23 @@ class WrappedClassResource(object):
         self.bunnies = bunnies
 
 
+# NOTE(swistakm): we both both type of hooks (class and method)
+# at once for the sake of simplicity
+@falcon.before(resource_aware_bunnies)
+class ClassResourceWithAwareHooks(object):
+    @falcon.before(resource_aware_validate_param)
+    def on_get(self, req, resp, bunnies):
+        self.req = req
+        self.resp = resp
+        self.bunnies = bunnies
+
+    @falcon.before(resource_aware_validate_param)
+    def on_head(self, req, resp, bunnies):
+        self.req = req
+        self.resp = resp
+        self.bunnies = bunnies
+
+
 class TestFieldResource(object):
 
     @falcon.before(validate_field)
@@ -119,6 +140,9 @@ class TestHooks(testing.TestBase):
 
         self.wrapped_resource = WrappedClassResource()
         self.api.add_route('/wrapped', self.wrapped_resource)
+
+        self.wrapped_aware_resource = ClassResourceWithAwareHooks()
+        self.api.add_route('/wrapped_aware', self.wrapped_aware_resource)
 
     def test_global_hook(self):
         self.assertRaises(TypeError, falcon.API, None, 0)
@@ -233,3 +257,19 @@ class TestHooks(testing.TestBase):
         self.simulate_request('/wrapped', query_string='?limit=101')
         self.assertEqual(falcon.HTTP_400, self.srmock.status)
         self.assertEqual('fuzzy', self.wrapped_resource.bunnies)
+
+    def test_wrapped_resource_with_hooks_aware_of_resource(self):
+        self.simulate_request('/wrapped_aware', method='PATCH')
+        self.assertEqual(falcon.HTTP_405, self.srmock.status)
+
+        self.simulate_request('/wrapped_aware', query_string='?limit=10')
+        self.assertEqual(falcon.HTTP_200, self.srmock.status)
+        self.assertEqual('fuzzy', self.wrapped_aware_resource.bunnies)
+
+        self.simulate_request('/wrapped_aware', method='HEAD')
+        self.assertEqual(falcon.HTTP_200, self.srmock.status)
+        self.assertEqual('fuzzy', self.wrapped_aware_resource.bunnies)
+
+        self.simulate_request('/wrapped_aware', query_string='?limit=101')
+        self.assertEqual(falcon.HTTP_400, self.srmock.status)
+        self.assertEqual('fuzzy', self.wrapped_aware_resource.bunnies)
