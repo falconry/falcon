@@ -13,6 +13,8 @@
 # limitations under the License.
 
 from functools import wraps
+import inspect
+
 import six
 
 from falcon import HTTP_METHODS
@@ -38,6 +40,10 @@ def before(action):
                     params['answer'] = 42
 
     """
+    # NOTE(swistakm): introspect action function do
+    # guess if it can handle additional resource
+    # argument without breaking backwards compatibility
+    spec = inspect.getargspec(action)
 
     def _before(responder_or_resource):
         if isinstance(responder_or_resource, six.class_types):
@@ -60,10 +66,23 @@ def before(action):
                         # variable that is shared between iterations of the
                         # for loop, above.
                         def let(responder=responder):
-                            @wraps(responder)
-                            def do_before_all(self, req, resp, **kwargs):
-                                action(req, resp, kwargs)
-                                responder(self, req, resp, **kwargs)
+
+                            # NOTE(swistakm): two independent definitions
+                            # created at decoration time to avoid introspecting
+                            # on each request/hook run
+                            if len(spec.args) > 3:
+                                @wraps(responder)
+                                def do_before_all(self, req, resp, **kwargs):
+                                    action(
+                                        req, resp, resource, kwargs
+                                    )
+                                    responder(self, req, resp, **kwargs)
+
+                            else:
+                                @wraps(responder)
+                                def do_before_all(self, req, resp, **kwargs):
+                                    action(req, resp, kwargs)
+                                    responder(self, req, resp, **kwargs)
 
                             setattr(resource, responder_name, do_before_all)
 
@@ -74,10 +93,18 @@ def before(action):
         else:
             responder = responder_or_resource
 
-            @wraps(responder)
-            def do_before_one(self, req, resp, **kwargs):
-                action(req, resp, kwargs)
-                responder(self, req, resp, **kwargs)
+            # NOTE(swistakm): two independent definitions created at decoration
+            # time to avoid introspecting on each request/hook run
+            if len(spec.args) > 3:
+                @wraps(responder)
+                def do_before_one(self, req, resp, **kwargs):
+                    action(req, resp, self, kwargs)
+                    responder(self, req, resp, **kwargs)
+            else:
+                @wraps(responder)
+                def do_before_one(self, req, resp, **kwargs):
+                    action(req, resp, kwargs)
+                    responder(self, req, resp, **kwargs)
 
             return do_before_one
 
@@ -91,6 +118,10 @@ def after(action):
         action (callable): A function of the form ``func(req, resp)``
 
     """
+    # NOTE(swistakm): introspect action function do
+    # guess if it can handle additional resource
+    # argument without breaking backwards compatibility
+    spec = inspect.getargspec(action)
 
     def _after(responder_or_resource):
         if isinstance(responder_or_resource, six.class_types):
@@ -107,11 +138,21 @@ def after(action):
                 else:
                     # Usually expect a method, but any callable will do
                     if callable(responder):
+
                         def let(responder=responder):
-                            @wraps(responder)
-                            def do_after_all(self, req, resp, **kwargs):
-                                responder(self, req, resp, **kwargs)
-                                action(req, resp)
+                            # NOTE(swistakm): two independent definitions
+                            # created at decoration time to avoid introspecting
+                            # on each request/hook run
+                            if len(spec.args) > 2:
+                                @wraps(responder)
+                                def do_after_all(self, req, resp, **kwargs):
+                                    responder(self, req, resp, **kwargs)
+                                    action(req, resp, resource)
+                            else:
+                                @wraps(responder)
+                                def do_after_all(self, req, resp, **kwargs):
+                                    responder(self, req, resp, **kwargs)
+                                    action(req, resp)
 
                             setattr(resource, responder_name, do_after_all)
 
@@ -122,10 +163,19 @@ def after(action):
         else:
             responder = responder_or_resource
 
-            @wraps(responder)
-            def do_after_one(self, req, resp, **kwargs):
-                responder(self, req, resp, **kwargs)
-                action(req, resp)
+            # NOTE(swistakm): two independent definitions
+            # created at decoration time to avoid introspecting
+            # on each request/hook run
+            if len(spec.args) > 2:
+                @wraps(responder)
+                def do_after_one(self, req, resp, **kwargs):
+                    responder(self, req, resp, **kwargs)
+                    action(req, resp, self)
+            else:
+                @wraps(responder)
+                def do_after_one(self, req, resp, **kwargs):
+                    responder(self, req, resp, **kwargs)
+                    action(req, resp)
 
             return do_after_one
 
