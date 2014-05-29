@@ -77,7 +77,6 @@ def before(action):
                                         req, resp, resource, kwargs
                                     )
                                     responder(self, req, resp, **kwargs)
-
                             else:
                                 @wraps(responder)
                                 def do_before_all(self, req, resp, **kwargs):
