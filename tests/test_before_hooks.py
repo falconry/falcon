@@ -33,8 +33,9 @@ def bunnies(req, resp, params):
     params['bunnies'] = 'fuzzy'
 
 
-def resource_aware_bunnies(req, resp, params):
-    assert 'resource' in params
+def resource_aware_bunnies(req, resp, resource, params):
+    assert resource
+    assert isinstance(resource, BunnyResource)
     params['bunnies'] = 'fuzzy'
 
 

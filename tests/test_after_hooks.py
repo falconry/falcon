@@ -20,6 +20,12 @@ def fluffiness(req, resp):
     resp.body = 'fluffy'
 
 
+def resource_aware_fluffiness(req, resp, resource):
+    assert resource
+    assert isinstance(resource, ZooResource)
+    resp.body = 'fluffy'
+
+
 def cuteness(req, resp):
     if resp.body == 'fluffy':
         resp.body += ' and cute'
@@ -94,6 +100,18 @@ class TestHooks(testing.TestBase):
         self.assertRaises(TypeError, falcon.API, None, 0)
 
         self.api = falcon.API(after=fluffiness)
+        zoo_resource = ZooResource()
+
+        self.api.add_route(self.test_route, zoo_resource)
+
+        self.simulate_request(self.test_route)
+        self.assertEqual(b'fluffy', zoo_resource.resp.body_encoded)
+
+    def test_global_hook_is_resource_aware(self):
+        self.assertRaises(TypeError, falcon.API, None, {})
+        self.assertRaises(TypeError, falcon.API, None, 0)
+
+        self.api = falcon.API(after=resource_aware_fluffiness)
         zoo_resource = ZooResource()
 
         self.api.add_route(self.test_route, zoo_resource)
