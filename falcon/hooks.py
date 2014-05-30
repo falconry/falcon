@@ -134,6 +134,8 @@ def _wrap_with_after(action, responder, resource, is_method=False):
         action: A function with a signature similar to a resource responder
             method, taking (req, resp).
         responder: The bound responder to wrap.
+        resource: The resource affected by action.
+        is_method: Is wrapped responder a class method?
 
     """
     # NOTE(swistakm): introspect action function do guess if it can handle
@@ -173,6 +175,8 @@ def _wrap_with_before(action, responder, resource, is_method=False):
         action: A function with a similar signature to a resource responder
             method, taking (req, resp, params).
         responder: The bound responder to wrap.
+        resource: The resource affected by action.
+        is_method: Is wrapped responder a class method?
 
     """
     # NOTE(swistakm): introspect action function do guess if it can handle
