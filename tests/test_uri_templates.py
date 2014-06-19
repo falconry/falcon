@@ -1,5 +1,6 @@
 import falcon
 import falcon.testing as testing
+import six
 
 
 class IDResource(object):
@@ -48,6 +49,18 @@ class TestUriTemplates(testing.TestBase):
 
     def test_no_vars(self):
         self.api.add_route('/hello/world', self.resource)
+        self.simulate_request('/hello/world')
+
+        self.assertTrue(self.resource.called)
+        req = self.resource.req
+
+        self.assertEqual(req.get_param('world'), None)
+
+    def test_unicode_literal_routes(self):
+        if six.PY3:
+            self.skipTest('Test only applies to Python 2')
+
+        self.api.add_route(u'/hello/world', self.resource)
         self.simulate_request('/hello/world')
 
         self.assertTrue(self.resource.called)
