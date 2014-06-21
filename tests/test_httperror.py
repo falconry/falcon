@@ -88,6 +88,10 @@ class MethodNotAllowedResource:
     def on_get(self, req, resp):
         raise falcon.HTTPMethodNotAllowed(['PUT'])
 
+    def on_post(self, req, resp):
+        raise falcon.HTTPMethodNotAllowed(
+            ['PUT'], description='POST is no longer available.')
+
 
 class LengthRequiredResource:
 
@@ -277,10 +281,19 @@ class TestHTTPError(testing.TestBase):
 
     def test_405(self):
         self.api.add_route('/405', MethodNotAllowedResource())
-        body = self.simulate_request('/405')
 
+        response = self.simulate_request('/405')
         self.assertEqual(self.srmock.status, falcon.HTTP_405)
-        self.assertEqual(body, [])
+        self.assertEqual(response, [])
+        self.assertIn(('allow', 'PUT'), self.srmock.headers)
+
+        body = self.simulate_request('/405', method='POST', decode='utf-8')
+        self.assertEqual(self.srmock.status, falcon.HTTP_405)
+
+        doc = json.loads(body)
+        self.assertEqual(doc['title'], 'Method not allowed')
+        self.assertEqual(doc['description'], 'POST is no longer available.')
+
         self.assertIn(('allow', 'PUT'), self.srmock.headers)
 
     def test_411(self):

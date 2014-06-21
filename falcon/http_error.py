@@ -49,6 +49,8 @@ class HTTPError(Exception):
             be ignored except for headers.) Do this only when you don't
             wish to disclose sensitive information about why a request was
             refused, or if the status and headers are self-descriptive.
+
+    Keyword Args:
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two (default *None*).
         headers (dict): Extra headers to return in the
