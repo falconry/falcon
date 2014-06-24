@@ -140,6 +140,12 @@ class TestReqVars(testing.TestBase):
         self.assertTrue(req.client_accepts('text/plain'))
         self.assertTrue(req.client_accepts('application/json'))
 
+    def test_client_accepts_bogus(self):
+        headers = {'Accept': '~'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertFalse(req.client_accepts('text/plain'))
+        self.assertFalse(req.client_accepts('application/json'))
+
     def test_client_accepts_props(self):
         headers = {'Accept': 'application/xml'}
         req = Request(testing.create_environ(headers=headers))
