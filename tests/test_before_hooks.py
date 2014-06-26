@@ -21,6 +21,12 @@ def resource_aware_validate_param(req, resp, resource, params):
     validate_param(req, resp, params)
 
 
+class ResourceAwareValidateParam(object):
+    def __call__(self, req, resp, resource, params):
+        assert resource
+        validate_param(req, resp, params)
+
+
 def validate_field(req, resp, params):
     try:
         params['id'] = int(params['id'])
@@ -96,14 +102,25 @@ class WrappedClassResource(object):
 # at once for the sake of simplicity
 @falcon.before(resource_aware_bunnies)
 class ClassResourceWithAwareHooks(object):
+    hook_as_class = ResourceAwareValidateParam()
+
     @falcon.before(resource_aware_validate_param)
     def on_get(self, req, resp, bunnies):
-        self.req = req
-        self.resp = resp
-        self.bunnies = bunnies
+        self._capture(req, resp, bunnies)
 
     @falcon.before(resource_aware_validate_param)
     def on_head(self, req, resp, bunnies):
+        self._capture(req, resp, bunnies)
+
+    @falcon.before(hook_as_class)
+    def on_put(self, req, resp, bunnies):
+        self._capture(req, resp, bunnies)
+
+    @falcon.before(hook_as_class.__call__)
+    def on_post(self, req, resp, bunnies):
+        self._capture(req, resp, bunnies)
+
+    def _capture(self, req, resp, bunnies):
         self.req = req
         self.resp = resp
         self.bunnies = bunnies
@@ -266,9 +283,10 @@ class TestHooks(testing.TestBase):
         self.assertEqual(falcon.HTTP_200, self.srmock.status)
         self.assertEqual('fuzzy', self.wrapped_aware_resource.bunnies)
 
-        self.simulate_request('/wrapped_aware', method='HEAD')
-        self.assertEqual(falcon.HTTP_200, self.srmock.status)
-        self.assertEqual('fuzzy', self.wrapped_aware_resource.bunnies)
+        for method in ('HEAD', 'PUT', 'POST'):
+            self.simulate_request('/wrapped_aware', method=method)
+            self.assertEqual(falcon.HTTP_200, self.srmock.status)
+            self.assertEqual('fuzzy', self.wrapped_aware_resource.bunnies)
 
         self.simulate_request('/wrapped_aware', query_string='?limit=101')
         self.assertEqual(falcon.HTTP_400, self.srmock.status)

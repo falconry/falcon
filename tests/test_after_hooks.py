@@ -25,6 +25,12 @@ def resource_aware_fluffiness(req, resp, resource):
     fluffiness(req, resp)
 
 
+class ResourceAwareFluffiness(object):
+    def __call__(self, req, resp, resource):
+        assert resource
+        fluffiness(req, resp)
+
+
 def cuteness(req, resp):
     if resp.body == 'fluffy':
         resp.body += ' and cute'
@@ -86,17 +92,29 @@ class ClassResourceWithAwareHooks(object):
     # Test that the decorator skips non-callables
     on_post = False
 
+    hook_as_class = ResourceAwareFluffiness()
+
     def __init__(self):
         # Test that the decorator skips non-callables
         self.on_patch = []
 
     @falcon.after(resource_aware_fluffiness)
     def on_get(self, req, resp):
-        self.req = req
-        self.resp = resp
+        self._capture(req, resp)
 
     @falcon.after(resource_aware_fluffiness)
     def on_head(self, req, resp):
+        self._capture(req, resp)
+
+    @falcon.after(hook_as_class)
+    def on_put(self, req, resp):
+        self._capture(req, resp)
+
+    @falcon.after(hook_as_class.__call__)
+    def on_post(self, req, resp):
+        self._capture(req, resp)
+
+    def _capture(self, req, resp):
         self.req = req
         self.resp = resp
 
@@ -243,14 +261,14 @@ class TestHooks(testing.TestBase):
 
         self.simulate_request('/wrapped_aware')
         self.assertEqual(falcon.HTTP_200, self.srmock.status)
-        self.assertEqual(
-            expected, self.wrapped_resource_aware.resp.body_encoded)
+        self.assertEqual(expected,
+                         self.wrapped_resource_aware.resp.body_encoded)
 
-        self.simulate_request('/wrapped_aware', method='HEAD')
-        self.assertEqual(falcon.HTTP_200, self.srmock.status)
-
-        self.simulate_request('/wrapped_aware', method='POST')
-        self.assertEqual(falcon.HTTP_405, self.srmock.status)
+        for method in ('HEAD', 'PUT', 'POST'):
+            self.simulate_request('/wrapped_aware', method=method)
+            self.assertEqual(falcon.HTTP_200, self.srmock.status)
+            self.assertEqual(expected,
+                             self.wrapped_resource_aware.resp.body_encoded)
 
         self.simulate_request('/wrapped_aware', method='PATCH')
         self.assertEqual(falcon.HTTP_405, self.srmock.status)

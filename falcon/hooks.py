@@ -127,6 +127,28 @@ def after(action):
 # -----------------------------------------------------------------------------
 
 
+# NOTE(kgriffs): Coverage disabled because under Python 3.4, the exception
+# is never raised. Coverage has been verified when running under other
+# versions of Python.
+def _get_argspec(func):  # pragma: no cover
+    """Wrapper around inspect.getargspec to handle Py2/Py3 differences."""
+
+    try:
+        # NOTE(kgriffs): This will fail for callable classes, which
+        # explicitly define __call__, except under Python 3.4.
+        spec = inspect.getargspec(func)
+
+    except TypeError:
+        # NOTE(kgriffs): If this is a class that defines __call__ as a
+        # method, we need to get the argspec of __call__ directly. This
+        # does not work for regular functions and methods, because in
+        # that case, __call__ isn't actually a Python function under
+        # Python 2.6-3.3 (fixed in 3.4).
+        spec = inspect.getargspec(func.__call__)
+
+    return spec
+
+
 def _wrap_with_after(action, responder, resource, is_method=False):
     """Execute the given action function after a bound responder.
 
@@ -140,7 +162,7 @@ def _wrap_with_after(action, responder, resource, is_method=False):
     """
     # NOTE(swistakm): introspect action function do guess if it can handle
     # additionalresource argument without breaking backwards compatibility
-    spec = inspect.getargspec(action)
+    spec = _get_argspec(action)
 
     # NOTE(swistakm): create shim before checking what will be actually
     # decorated. This helps to avoid excessive nesting
@@ -177,9 +199,10 @@ def _wrap_with_before(action, responder, resource, is_method=False):
         is_method: Is wrapped responder a class method?
 
     """
-    # NOTE(swistakm): introspect action function do guess if it can handle
+
+    # NOTE(swistakm): introspect action function to guess if it can handle
     # additional resource argument without breaking backwards compatibility
-    spec = inspect.getargspec(action)
+    spec = _get_argspec(action)
 
     # NOTE(swistakm): create shim before checking what will be actually
     # decorated. This allows to avoid excessive nesting
