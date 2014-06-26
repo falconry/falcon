@@ -142,15 +142,13 @@ def _wrap_with_after(action, responder, resource, is_method=False):
     # additionalresource argument without breaking backwards compatibility
     spec = inspect.getargspec(action)
 
-    # NOTE(swistakm): create hook before checking what will be actually
+    # NOTE(swistakm): create shim before checking what will be actually
     # decorated. This helps to avoid excessive nesting
     if len(spec.args) > 2:
-        @wraps(action)
-        def hook(req, resp, resource):
-            action(req, resp, resource)
+        shim = action
     else:
         @wraps(action)
-        def hook(req, resp, resource):
+        def shim(req, resp, resource):
             action(req, resp)
 
     # NOTE(swistakm): method must be decorated differently than normal function
@@ -158,12 +156,12 @@ def _wrap_with_after(action, responder, resource, is_method=False):
         @wraps(responder)
         def do_after(self, req, resp, **kwargs):
             responder(self, req, resp, **kwargs)
-            hook(req, resp, self)
+            shim(req, resp, self)
     else:
         @wraps(responder)
         def do_after(req, resp, **kwargs):
             responder(req, resp, **kwargs)
-            hook(req, resp, resource)
+            shim(req, resp, resource)
 
     return do_after
 
@@ -183,27 +181,25 @@ def _wrap_with_before(action, responder, resource, is_method=False):
     # additional resource argument without breaking backwards compatibility
     spec = inspect.getargspec(action)
 
-    # NOTE(swistakm): create hook before checking what will be actually
+    # NOTE(swistakm): create shim before checking what will be actually
     # decorated. This allows to avoid excessive nesting
     if len(spec.args) > 3:
-        @wraps(action)
-        def hook(req, resp, resource, kwargs):
-            action(req, resp, resource, kwargs)
+        shim = action
     else:
         @wraps(action)
-        def hook(req, resp, resource, kwargs):
+        def shim(req, resp, resource, kwargs):
             action(req, resp, kwargs)
 
     # NOTE(swistakm): method must be decorated differently than normal function
     if is_method:
         @wraps(responder)
         def do_before(self, req, resp, **kwargs):
-            hook(req, resp, self, kwargs)
+            shim(req, resp, self, kwargs)
             responder(self, req, resp, **kwargs)
     else:
         @wraps(responder)
         def do_before(req, resp, **kwargs):
-            hook(req, resp, resource, kwargs)
+            shim(req, resp, resource, kwargs)
             responder(req, resp, **kwargs)
 
     return do_before
