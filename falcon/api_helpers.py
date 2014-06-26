@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import re
+import six
 
 from falcon import responders, HTTP_METHODS
 import falcon.status_codes as status
@@ -160,7 +161,7 @@ def compile_uri_template(template):
 
     """
 
-    if not isinstance(template, str):
+    if not isinstance(template, six.string_types):
         raise TypeError('uri_template is not a string')
 
     if not template.startswith('/'):
