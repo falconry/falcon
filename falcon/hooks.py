@@ -149,6 +149,19 @@ def _get_argspec(func):  # pragma: no cover
     return spec
 
 
+def _has_self(spec):
+    """Checkes whether the given argspec includes a self param.
+
+    Warning:
+        If a method's spec lists "self", that doesn't necessarily mean
+        that it should be called with a "self" param; if the method
+        instance is bound, the caller must omit "self" on invocation.
+
+    """
+
+    return len(spec.args) > 0 and spec.args[0] == 'self'
+
+
 def _wrap_with_after(action, responder, resource, is_method=False):
     """Execute the given action function after a bound responder.
 
@@ -160,20 +173,25 @@ def _wrap_with_after(action, responder, resource, is_method=False):
         is_method: Is wrapped responder a class method?
 
     """
-    # NOTE(swistakm): introspect action function do guess if it can handle
-    # additionalresource argument without breaking backwards compatibility
+
+    # NOTE(swistakm): introspect action function to guess if it can handle
+    # additional resource argument without breaking backwards compatibility
     spec = _get_argspec(action)
 
     # NOTE(swistakm): create shim before checking what will be actually
     # decorated. This helps to avoid excessive nesting
-    if len(spec.args) > 2:
+    if len(spec.args) == (4 if _has_self(spec) else 3):
         shim = action
     else:
-        @wraps(action)
+        # TODO(kgriffs): This decorator does not work on callable
+        # classes in Python vesions prior to 3.4.
+        #
+        # @wraps(action)
         def shim(req, resp, resource):
             action(req, resp)
 
-    # NOTE(swistakm): method must be decorated differently than normal function
+    # NOTE(swistakm): method must be decorated differently than
+    # normal function
     if is_method:
         @wraps(responder)
         def do_after(self, req, resp, **kwargs):
@@ -202,18 +220,24 @@ def _wrap_with_before(action, responder, resource, is_method=False):
 
     # NOTE(swistakm): introspect action function to guess if it can handle
     # additional resource argument without breaking backwards compatibility
-    spec = _get_argspec(action)
+    action_spec = _get_argspec(action)
 
     # NOTE(swistakm): create shim before checking what will be actually
     # decorated. This allows to avoid excessive nesting
-    if len(spec.args) > 3:
+    if len(action_spec.args) == (5 if _has_self(action_spec) else 4):
         shim = action
     else:
-        @wraps(action)
+        # TODO(kgriffs): This decorator does not work on callable
+        # classes in Python vesions prior to 3.4.
+        #
+        # @wraps(action)
         def shim(req, resp, resource, kwargs):
+            # NOTE(kgriffs): Don't have to pass "self" even if has_self,
+            # since method is assumed to be bound.
             action(req, resp, kwargs)
 
-    # NOTE(swistakm): method must be decorated differently than normal function
+    # NOTE(swistakm): method must be decorated differently than
+    # normal function
     if is_method:
         @wraps(responder)
         def do_before(self, req, resp, **kwargs):

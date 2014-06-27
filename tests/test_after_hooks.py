@@ -41,6 +41,14 @@ def resource_aware_cuteness(req, resp, resource):
     cuteness(req, resp)
 
 
+class Smartness(object):
+    def __call__(self, req, resp):
+        if resp.body:
+            resp.body += ' and smart'
+        else:
+            resp.body = 'smart'
+
+
 def fluffiness_in_the_head(req, resp):
     resp.set_header('X-Fluffiness', 'fluffy')
 
@@ -62,6 +70,10 @@ class WrappedRespondersResource(object):
         self.req = req
         self.resp = resp
         resp.body = {'animal': 'falcon'}
+
+    @falcon.after(Smartness())
+    def on_post(self, req, resp):
+        pass
 
 
 @falcon.after(cuteness)
@@ -168,13 +180,14 @@ class TestHooks(testing.TestBase):
         self.assertEqual(b'fluffy', zoo_resource.resp.body_encoded)
 
     def test_multiple_global_hook(self):
-        self.api = falcon.API(after=[fluffiness, cuteness])
+        self.api = falcon.API(after=[fluffiness, cuteness, Smartness()])
         zoo_resource = ZooResource()
 
         self.api.add_route(self.test_route, zoo_resource)
 
         self.simulate_request(self.test_route)
-        self.assertEqual(b'fluffy and cute', zoo_resource.resp.body_encoded)
+        self.assertEqual(b'fluffy and cute and smart',
+                         zoo_resource.resp.body_encoded)
 
     def test_global_hook_wrap_default_on_options(self):
         self.api = falcon.API(after=fluffiness_in_the_head)
@@ -234,6 +247,12 @@ class TestHooks(testing.TestBase):
 
         actual_body = self.resource.resp.body_encoded
         self.assertEqual(b'{"animal": "falcon"}', actual_body)
+
+    def test_hook_as_callable_class(self):
+        actual_body = self.simulate_request(self.test_route, method='POST',
+                                            decode='utf-8')
+
+        self.assertEqual(u'smart', actual_body)
 
     def test_wrapped_resource(self):
         expected = b'fluffy and cute'

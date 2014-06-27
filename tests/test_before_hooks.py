@@ -56,6 +56,11 @@ def frogs(req, resp, params):
     params['frogs'] = 'not fluffy'
 
 
+class Fish(object):
+    def __call__(self, req, resp, params):
+        params['fish'] = 'slippery'
+
+
 def bunnies_in_the_head(req, resp, params):
     resp.set_header('X-Bunnies', 'fluffy')
 
@@ -87,12 +92,18 @@ class WrappedClassResource(object):
 
     @falcon.before(validate_param)
     def on_get(self, req, resp, bunnies):
-        self.req = req
-        self.resp = resp
-        self.bunnies = bunnies
+        self._capture(req, resp, bunnies)
 
     @falcon.before(validate_param)
     def on_head(self, req, resp, bunnies):
+        self._capture(req, resp, bunnies)
+
+    @falcon.before(Fish())
+    def on_post(self, req, resp, fish, bunnies):
+        self._capture(req, resp, bunnies)
+        self.fish = fish
+
+    def _capture(self, req, resp, bunnies):
         self.req = req
         self.resp = resp
         self.bunnies = bunnies
@@ -141,9 +152,10 @@ class BunnyResource(object):
 
 class ZooResource(object):
 
-    def on_get(self, req, resp, bunnies, frogs):
+    def on_get(self, req, resp, bunnies, frogs, fish):
         self.bunnies = bunnies
         self.frogs = frogs
+        self.fish = fish
 
 
 class TestHooks(testing.TestBase):
@@ -182,7 +194,7 @@ class TestHooks(testing.TestBase):
         self.assertEqual('fuzzy', zoo_resource.bunnies)
 
     def test_multiple_global_hook(self):
-        self.api = falcon.API(before=[bunnies, frogs])
+        self.api = falcon.API(before=[bunnies, frogs, Fish()])
         zoo_resource = ZooResource()
 
         self.api.add_route(self.test_route, zoo_resource)
@@ -190,6 +202,7 @@ class TestHooks(testing.TestBase):
         self.simulate_request(self.test_route)
         self.assertEqual('fluffy', zoo_resource.bunnies)
         self.assertEqual('not fluffy', zoo_resource.frogs)
+        self.assertEqual('slippery', zoo_resource.fish)
 
     def test_global_hook_wrap_default_on_options(self):
         self.api = falcon.API(before=frogs_in_the_head)
@@ -270,6 +283,10 @@ class TestHooks(testing.TestBase):
         self.simulate_request('/wrapped', method='HEAD')
         self.assertEqual(falcon.HTTP_200, self.srmock.status)
         self.assertEqual('fuzzy', self.wrapped_resource.bunnies)
+
+        self.simulate_request('/wrapped', method='POST')
+        self.assertEqual(falcon.HTTP_200, self.srmock.status)
+        self.assertEqual('slippery', self.wrapped_resource.fish)
 
         self.simulate_request('/wrapped', query_string='?limit=101')
         self.assertEqual(falcon.HTTP_400, self.srmock.status)
