@@ -1,4 +1,7 @@
+# -*- coding: utf-8
+
 import json
+import xml.etree.ElementTree as et
 
 from testtools.matchers import raises, Not
 
@@ -28,7 +31,8 @@ class FaultyResource:
             'Internet crashed',
             'Catastrophic weather event due to climate change.',
             href='http://example.com/api/climate',
-            href_text='Drill baby drill!')
+            href_text='Drill baby drill!',
+            code=8733224)
 
     def on_patch(self, req, resp):
         raise falcon.HTTPError(falcon.HTTP_400, 'No-can-do')
@@ -159,12 +163,22 @@ class TestHTTPError(testing.TestBase):
         self.assertThat(lambda: json.loads(body), Not(raises(ValueError)))
         self.assertEqual(json.loads(body), expected_body)
 
-    def test_no_description(self):
+    def test_no_description_json(self):
         body = self.simulate_request('/fail', method='PATCH')
         self.assertEqual(self.srmock.status, falcon.HTTP_400)
         self.assertEqual(body, [b'{\n    "title": "No-can-do"\n}'])
 
-    def test_client_does_not_accept_json(self):
+    def test_no_description_xml(self):
+        body = self.simulate_request('/fail', method='PATCH',
+                                     headers={'Accept': 'application/xml'})
+        self.assertEqual(self.srmock.status, falcon.HTTP_400)
+
+        expected_xml = (b'<?xml version="1.0" encoding="UTF-8"?>' +
+                        b'<error><title>No-can-do</title></error>')
+
+        self.assertEqual(body, [expected_xml])
+
+    def test_client_does_not_accept_json_or_xml(self):
         headers = {
             'Accept': 'application/soap+xml',
             'X-Error-Title': 'Storage service down',
@@ -215,7 +229,7 @@ class TestHTTPError(testing.TestBase):
         self.assertThat(lambda: json.loads(body), Not(raises(ValueError)))
         self.assertEqual(json.loads(body), expected_body)
 
-    def test_epic_fail(self):
+    def test_epic_fail_json(self):
         headers = {
             'Accept': 'application/json'
         }
@@ -223,6 +237,7 @@ class TestHTTPError(testing.TestBase):
         expected_body = {
             'title': 'Internet crashed',
             'description': 'Catastrophic weather event due to climate change.',
+            'code': 8733224,
             'link': {
                 'text': 'Drill baby drill!',
                 'href': 'http://example.com/api/climate',
@@ -237,7 +252,33 @@ class TestHTTPError(testing.TestBase):
         self.assertThat(lambda: json.loads(body), Not(raises(ValueError)))
         self.assertEqual(json.loads(body), expected_body)
 
-    def test_unicode(self):
+    def test_epic_fail_xml(self):
+        headers = {
+            'Accept': 'text/xml'
+        }
+
+        expected_body = ('<?xml version="1.0" encoding="UTF-8"?>' +
+                         '<error>' +
+                         '<title>Internet crashed</title>' +
+                         '<description>' +
+                         'Catastrophic weather event due to climate change.' +
+                         '</description>' +
+                         '<code>8733224</code>' +
+                         '<link>' +
+                         '<text>Drill baby drill!</text>' +
+                         '<href>http://example.com/api/climate</href>' +
+                         '<rel>help</rel>' +
+                         '</link>' +
+                         '</error>')
+
+        body = self.simulate_request('/fail', headers=headers, method='PUT',
+                                     decode='utf-8')
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_792)
+        self.assertThat(lambda: et.fromstring(body), Not(raises(ValueError)))
+        self.assertEqual(body, expected_body)
+
+    def test_unicode_json(self):
         unicode_resource = UnicodeFaultyResource()
 
         expected_body = {
@@ -256,6 +297,30 @@ class TestHTTPError(testing.TestBase):
         self.assertTrue(unicode_resource.called)
         self.assertEqual(self.srmock.status, falcon.HTTP_792)
         self.assertEqual(expected_body, json.loads(body))
+
+    def test_unicode_xml(self):
+        unicode_resource = UnicodeFaultyResource()
+
+        expected_body = (u'<?xml version="1.0" encoding="UTF-8"?>' +
+                         u'<error>' +
+                         u'<title>Internet çrashed!</title>' +
+                         u'<description>' +
+                         u'Çatastrophic weather event' +
+                         u'</description>' +
+                         u'<link>' +
+                         u'<text>Drill báby drill!</text>' +
+                         u'<href>http://example.com/api/%C3%A7limate</href>' +
+                         u'<rel>help</rel>' +
+                         u'</link>' +
+                         u'</error>')
+
+        self.api.add_route('/unicode', unicode_resource)
+        body = self.simulate_request('/unicode', decode='utf-8',
+                                     headers={'accept': 'application/xml'})
+
+        self.assertTrue(unicode_resource.called)
+        self.assertEqual(self.srmock.status, falcon.HTTP_792)
+        self.assertEqual(expected_body, body)
 
     def test_401(self):
         self.api.add_route('/401', UnauthorizedResource())
@@ -306,14 +371,14 @@ class TestHTTPError(testing.TestBase):
         self.assertEqual(parsed_body['description'], 'description')
 
     def test_416_default_media_type(self):
-        self.api = falcon.API('application/xml')
+        self.api = falcon.API()
         self.api.add_route('/416', RangeNotSatisfiableResource())
-        body = self.simulate_request('/416')
+        body = self.simulate_request('/416', headers={'accept': 'text/xml'})
 
         self.assertEqual(self.srmock.status, falcon.HTTP_416)
         self.assertEqual(body, [])
         self.assertIn(('content-range', 'bytes */123456'), self.srmock.headers)
-        self.assertIn(('content-type', 'application/xml'), self.srmock.headers)
+        self.assertIn(('content-type', 'text/xml'), self.srmock.headers)
         self.assertNotIn(('content-length', '0'), self.srmock.headers)
 
     def test_416_custom_media_type(self):

@@ -117,12 +117,7 @@ class API(object):
                     raise
 
         except HTTPError as ex:
-            resp.status = ex.status
-            if ex.headers is not None:
-                resp.set_headers(ex.headers)
-
-            if req.client_accepts('application/json'):
-                resp.body = ex.json()
+            helpers.compose_error_response(req, resp, ex)
 
         #
         # Set status and headers

@@ -14,6 +14,7 @@
 
 import json
 import sys
+import xml.etree.ElementTree as et
 
 if sys.version_info < (2, 7):  # pragma: no cover
     # NOTE(kgriffs): We could use the module from PyPI, but ordering isn't
@@ -94,8 +95,8 @@ class HTTPError(Exception):
         """Returns a pretty JSON-encoded version of the exception
 
         Returns:
-            A JSON representation of the exception except the status line, or
-            NONE if title was set to *None*.
+            A JSON representation of the exception, or
+            None if title was set to *None* in the initializer.
 
         """
 
@@ -116,3 +117,33 @@ class HTTPError(Exception):
 
         return json.dumps(obj, indent=4, separators=(',', ': '),
                           ensure_ascii=False)
+
+    def xml(self):
+        """Returns an XML-encoded version of the exception
+
+        Returns:
+            An XML representation of the exception, or
+            None if title was set to *None* in the initializer.
+
+        """
+
+        if self.title is None:
+            return None
+
+        error_element = et.Element('error')
+        et.SubElement(error_element, 'title').text = self.title
+
+        if self.description:
+            et.SubElement(error_element, 'description').text = self.description
+
+        if self.code:
+            et.SubElement(error_element, 'code').text = str(self.code)
+
+        if self.link:
+            link_element = et.SubElement(error_element, 'link')
+
+            for key in ('text', 'href', 'rel'):
+                et.SubElement(link_element, key).text = self.link[key]
+
+        return (b'<?xml version="1.0" encoding="UTF-8"?>' +
+                et.tostring(error_element, encoding='utf-8'))
