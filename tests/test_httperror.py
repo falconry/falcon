@@ -375,7 +375,7 @@ class TestHTTPError(testing.TestBase):
         self.assertEqual(self.srmock.status, falcon.HTTP_416)
         self.assertEqual(body, [])
         self.assertIn(('content-range', 'bytes */123456'), self.srmock.headers)
-        self.assertNotIn('content-length', self.srmock.headers_dict)
+        self.assertIn(('content-length', '0'), self.srmock.headers)
 
     def test_503(self):
         self.api.add_route('/503', ServiceUnavailableResource())
