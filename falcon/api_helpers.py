@@ -143,33 +143,27 @@ def get_body(resp, wsgi_file_wrapper=None):
 
 
 def compose_error_response(req, resp, ex):
-    resp.status = ex.status
 
-    content_type_override = None
+    preferred = req.client_prefers(('application/xml',
+                                    'text/xml',
+                                    'application/json'))
+
+    if preferred is not None:
+        if preferred == 'application/json':
+            resp.body = ex.json()
+        else:
+            resp.body = ex.xml()
+
+    resp.status = ex.status
 
     if ex.headers is not None:
         resp.set_headers(ex.headers)
 
-        # PERF(kgriffs): Only call resp.content_type if
-        # we have some headers from the exception that
-        # could have caused it to be set.
-        content_type_override = resp.content_type
-
-    if content_type_override is not None:
-        # Application is forcing the response content-type
-        preferred = content_type_override
-    else:
-        preferred = req.client_prefers(('application/xml',
-                                        'text/xml',
-                                        'application/json'))
-
-    if preferred is not None:
+    # NOTE(kgriffs): Do this after setting headers from ex.headers,
+    # so that we will override Content-Type if it was mistakenly set
+    # by the app.
+    if resp.body is not None:
         resp.content_type = preferred
-
-        if preferred == 'application/json':
-            resp.body = ex.json()
-        elif preferred.endswith('/xml'):
-            resp.body = ex.xml()
 
 
 def compile_uri_template(template):

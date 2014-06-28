@@ -139,9 +139,9 @@ class Response(object):
         Args:
             headers (dict or list): A dictionary of header names and values
                 to set, or list of (name, value) tuples. Both names and
-                values must be of type
-                str or StringType, and only character values 0x00 through
-                0xFF may be used on platforms that use wide characters.
+                values must be of type str or StringType, and only character
+                values 0x00 through 0xFF may be used on platforms that use
+                wide characters.
 
                 Note:
                     Falcon can process a list of tuples slightly faster
