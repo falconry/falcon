@@ -54,6 +54,23 @@ class HTTPError(Exception):
     Keyword Args:
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two (default *None*).
+        headers (dict or list): A dictionary of header names and values
+            to set, or list of (name, value) tuples. Both names and
+            values must be of type str or StringType, and only character
+            values 0x00 through 0xFF may be used on platforms that use
+            wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overriden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of tuples slightly faster
+                than a dict.
+
         headers (dict): Extra headers to return in the
             response to the client (default *None*).
         href (str): A URL someone can visit to find out more information

@@ -258,18 +258,11 @@ class HTTPRangeNotSatisfiable(HTTPError):
     Args:
         resource_length: The maximum value for the last-byte-pos of a range
             request. Used to set the Content-Range header.
-        media_type: Media type to use as the value of the Content-Type
-            header, or *None* to use the default passed to the API
-            initializer.
-
     """
 
-    def __init__(self, resource_length, media_type=None):
+    def __init__(self, resource_length):
         headers = {'Content-Range': 'bytes */' + str(resource_length)}
-        if media_type is not None:
-            headers['Content-Type'] = media_type
-
-        HTTPError.__init__(self, status.HTTP_416, None, None, headers=headers)
+        HTTPError.__init__(self, status.HTTP_416, None, headers=headers)
 
 
 class HTTPInternalServerError(HTTPError):

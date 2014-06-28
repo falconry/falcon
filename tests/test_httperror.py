@@ -108,9 +108,6 @@ class RangeNotSatisfiableResource:
     def on_get(self, req, resp):
         raise falcon.HTTPRangeNotSatisfiable(123456)
 
-    def on_put(self, req, resp):
-        raise falcon.HTTPRangeNotSatisfiable(123456, 'x-falcon/peregrine')
-
 
 class ServiceUnavailableResource:
 
@@ -370,7 +367,7 @@ class TestHTTPError(testing.TestBase):
         self.assertEqual(parsed_body['title'], 'title')
         self.assertEqual(parsed_body['description'], 'description')
 
-    def test_416_default_media_type(self):
+    def test_416(self):
         self.api = falcon.API()
         self.api.add_route('/416', RangeNotSatisfiableResource())
         body = self.simulate_request('/416', headers={'accept': 'text/xml'})
@@ -378,19 +375,7 @@ class TestHTTPError(testing.TestBase):
         self.assertEqual(self.srmock.status, falcon.HTTP_416)
         self.assertEqual(body, [])
         self.assertIn(('content-range', 'bytes */123456'), self.srmock.headers)
-        self.assertIn(('content-type', 'text/xml'), self.srmock.headers)
-        self.assertNotIn(('content-length', '0'), self.srmock.headers)
-
-    def test_416_custom_media_type(self):
-        self.api.add_route('/416', RangeNotSatisfiableResource())
-        body = self.simulate_request('/416', method='PUT')
-
-        self.assertEqual(self.srmock.status, falcon.HTTP_416)
-        self.assertEqual(body, [])
-        self.assertIn(('content-range', 'bytes */123456'),
-                      self.srmock.headers)
-        self.assertIn(('content-type', 'x-falcon/peregrine'),
-                      self.srmock.headers)
+        self.assertNotIn('content-length', self.srmock.headers_dict)
 
     def test_503(self):
         self.api.add_route('/503', ServiceUnavailableResource())
