@@ -167,15 +167,18 @@ def _has_self(spec):
     return len(spec.args) > 0 and spec.args[0] == 'self'
 
 
-def _wrap_with_after(action, responder, resource, is_method=False):
+def _wrap_with_after(action, responder, resource=None, is_method=False):
     """Execute the given action function after a responder method.
 
     Args:
         action: A function with a signature similar to a resource responder
             method, taking (req, resp).
         responder: The responder method to wrap.
-        resource: The resource affected by action.
-        is_method: Is wrapped responder an unbound method?
+        resource: The resource affected by `action` (default None). If None,
+            `is_method` MUST BE True, so that the resource can be
+            derived from the `self` param that is passed into the wrapper
+        is_method: Whether or not `responder` is an unbound method
+            (default False)
 
     """
 
@@ -203,6 +206,8 @@ def _wrap_with_after(action, responder, resource, is_method=False):
             responder(self, req, resp, **kwargs)
             shim(req, resp, self)
     else:
+        assert resource is not None
+
         @wraps(responder)
         def do_after(req, resp, **kwargs):
             responder(req, resp, **kwargs)
@@ -211,15 +216,18 @@ def _wrap_with_after(action, responder, resource, is_method=False):
     return do_after
 
 
-def _wrap_with_before(action, responder, resource, is_method=False):
+def _wrap_with_before(action, responder, resource=None, is_method=False):
     """Execute the given action function before a responder method.
 
     Args:
         action: A function with a similar signature to a resource responder
-            method, taking (req, resp, params).
-        responder: The responder method to wrap.
-        resource: The resource affected by action.
-        is_method: Is wrapped responder an unbound method?
+            method, taking (req, resp, params)
+        responder: The responder method to wrap
+        resource: The resource affected by `action` (default None). If None,
+            `is_method` MUST BE True, so that the resource can be
+            derived from the `self` param that is passed into the wrapper
+        is_method: Whether or not `responder` is an unbound method
+            (default False)
 
     """
 
@@ -249,6 +257,8 @@ def _wrap_with_before(action, responder, resource, is_method=False):
             shim(req, resp, self, kwargs)
             responder(self, req, resp, **kwargs)
     else:
+        assert resource is not None
+
         @wraps(responder)
         def do_before(req, resp, **kwargs):
             shim(req, resp, resource, kwargs)
