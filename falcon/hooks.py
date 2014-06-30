@@ -30,16 +30,17 @@ def before(action):
             and `params` is a dict of URI Template field names, if any,
             that will be passed into the resource responder as *kwargs*.
 
-            Hooks may inject extra params as needed. For example::
+            Note:
+                Hooks may inject extra params as needed. For example::
 
-                def do_something(req, resp, params):
-                    try:
-                        params['id'] = int(params['id'])
-                    except ValueError:
-                        raise falcon.HTTPBadRequest('Invalid ID',
-                                                    'ID was not valid.')
+                    def do_something(req, resp, params):
+                        try:
+                            params['id'] = int(params['id'])
+                        except ValueError:
+                            raise falcon.HTTPBadRequest('Invalid ID',
+                                                        'ID was not valid.')
 
-                    params['answer'] = 42
+                        params['answer'] = 42
 
     """
 

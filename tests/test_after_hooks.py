@@ -143,6 +143,12 @@ class SingleResource(object):
         resp.status = falcon.HTTP_501
 
 
+class FaultyResource(object):
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPError(falcon.HTTP_743, 'Query failed')
+
+
 class TestHooks(testing.TestBase):
 
     def before(self):
@@ -236,6 +242,17 @@ class TestHooks(testing.TestBase):
         self.assertEqual(falcon.HTTP_405, self.srmock.status)
         self.assertEqual('fluffy', self.srmock.headers_dict['X-Fluffiness'])
         self.assertEqual('cute', self.srmock.headers_dict['X-Cuteness'])
+
+    def test_global_after_hooks_run_after_exception(self):
+        self.api = falcon.API(after=[fluffiness,
+                                     resource_aware_cuteness,
+                                     Smartness()])
+
+        self.api.add_route(self.test_route, FaultyResource())
+
+        actual_body = self.simulate_request(self.test_route, decode='utf-8')
+        self.assertEqual(falcon.HTTP_743, self.srmock.status)
+        self.assertEqual(actual_body, u'fluffy and cute and smart')
 
     def test_output_validator(self):
         self.simulate_request(self.test_route)

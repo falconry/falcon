@@ -88,7 +88,7 @@ class API(object):
         req = self._request_type(env)
         resp = self._response_type()
 
-        responder, params = self._get_responder(
+        responder, params, resource = self._get_responder(
             req.path, req.method)
 
         try:
@@ -104,6 +104,7 @@ class API(object):
                 for err_type, err_handler in self._error_handlers:
                     if isinstance(ex, err_type):
                         err_handler(ex, req, resp, params)
+                        self._call_after_hooks(req, resp, resource)
                         break  # pragma: no cover
 
                 else:
@@ -118,6 +119,7 @@ class API(object):
 
         except HTTPError as ex:
             helpers.compose_error_response(req, resp, ex)
+            self._call_after_hooks(req, resp, resource)
 
         #
         # Set status and headers
@@ -194,7 +196,7 @@ class API(object):
 
         # Insert at the head of the list in case we get duplicate
         # adds (will cause the last one to win).
-        self._routes.insert(0, (path_template, method_map))
+        self._routes.insert(0, (path_template, method_map, resource))
 
     def add_sink(self, sink, prefix=r'/'):
         """Adds a "sink" responder to the API.
@@ -267,7 +269,7 @@ class API(object):
                                      'member of the given exception class.')
 
         # Insert at the head of the list in case we get duplicate
-        # adds (will cause the last one to win).
+        # adds (will cause the most recently added one to win).
         self._error_handlers.insert(0, (exception, handler))
 
     # ------------------------------------------------------------------------
@@ -282,9 +284,10 @@ class API(object):
             method: HTTP method (uppercase) requested
 
         Returns:
-            A 2-member tuple consisting of a responder callable and
+            A 3-member tuple consisting of a responder callable,
             a dict containing parsed path fields (if any were specified in
-            the matching route's URI template).
+            the matching route's URI template), and a reference to the
+            responder's resource instance.
 
         Note:
             If a responder was matched to the given URI, but the HTTP
@@ -298,7 +301,7 @@ class API(object):
         """
 
         for route in self._routes:
-            path_template, method_map = route
+            path_template, method_map, resource = route
             m = path_template.match(path)
             if m:
                 params = m.groupdict()
@@ -311,6 +314,7 @@ class API(object):
                 break
         else:
             params = {}
+            resource = None
 
             for pattern, sink in self._sinks:
                 m = pattern.match(path)
@@ -322,4 +326,18 @@ class API(object):
             else:
                 responder = falcon.responders.path_not_found
 
-        return (responder, params)
+        return (responder, params, resource)
+
+    def _call_after_hooks(self, req, resp, resource):
+        """Executes each of the global "after" hooks, in turn."""
+
+        if not self._after:
+            return
+
+        for hook in self._after:
+            try:
+                hook(req, resp, resource)
+            except TypeError:
+                # NOTE(kgriffs): Catching the TypeError is a heuristic to
+                # detect old hooks that do not accept the "resource" param
+                hook(req, resp)
