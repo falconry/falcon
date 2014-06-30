@@ -163,14 +163,14 @@ def _has_self(spec):
 
 
 def _wrap_with_after(action, responder, resource, is_method=False):
-    """Execute the given action function after a bound responder.
+    """Execute the given action function after a responder method.
 
     Args:
         action: A function with a signature similar to a resource responder
             method, taking (req, resp).
-        responder: The bound responder to wrap.
+        responder: The responder method to wrap.
         resource: The resource affected by action.
-        is_method: Is wrapped responder a class method?
+        is_method: Is wrapped responder an unbound method?
 
     """
 
@@ -207,14 +207,14 @@ def _wrap_with_after(action, responder, resource, is_method=False):
 
 
 def _wrap_with_before(action, responder, resource, is_method=False):
-    """Execute the given action function before a bound responder.
+    """Execute the given action function before a responder method.
 
     Args:
         action: A function with a similar signature to a resource responder
             method, taking (req, resp, params).
-        responder: The bound responder to wrap.
+        responder: The responder method to wrap.
         resource: The resource affected by action.
-        is_method: Is wrapped responder a class method?
+        is_method: Is wrapped responder an unbound method?
 
     """
 
@@ -253,6 +253,16 @@ def _wrap_with_before(action, responder, resource, is_method=False):
 
 
 def _wrap_with_hooks(before, after, responder, resource):
+    """Wrap responder on the given resource with "before" and "after" hooks.
+
+    Args:
+        before: An iterable of one or more "before" hooks
+        after: An iterable of one or more "after" hooks
+        responder: A method of a resource to wrap
+        resource: A reference to the resource instance providing the responder
+
+    """
+
     if after is not None:
         for action in after:
             responder = _wrap_with_after(action, responder, resource)
