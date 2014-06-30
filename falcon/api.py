@@ -300,8 +300,7 @@ class API(object):
             `falcon.responder.path_not_found`
         """
 
-        for route in self._routes:
-            path_template, method_map, resource = route
+        for path_template, method_map, resource in self._routes:
             m = path_template.match(path)
             if m:
                 params = m.groupdict()
