@@ -24,20 +24,23 @@ def before(action):
     """Decorator to execute the given action function *before* the responder.
 
     Args:
-        action (callable): A function of the form ``func(req, resp, params)``,
-            where params is a dict of URI Template field names, if any,
+        action (callable): A function of the form
+            ``func(req, resp, resource, params)``, where `resource` is a
+            reference to the resource class associated with the request,
+            and `params` is a dict of URI Template field names, if any,
             that will be passed into the resource responder as *kwargs*.
 
-            Hooks may inject extra params as needed. For example::
+            Note:
+                Hooks may inject extra params as needed. For example::
 
-                def do_something(req, resp, params):
-                    try:
-                        params['id'] = int(params['id'])
-                    except ValueError:
-                        raise falcon.HTTPBadRequest('Invalid ID',
-                                                    'ID was not valid.')
+                    def do_something(req, resp, params):
+                        try:
+                            params['id'] = int(params['id'])
+                        except ValueError:
+                            raise falcon.HTTPBadRequest('Invalid ID',
+                                                        'ID was not valid.')
 
-                    params['answer'] = 42
+                        params['answer'] = 42
 
     """
 
@@ -84,7 +87,9 @@ def after(action):
     """Decorator to execute the given action function *after* the responder.
 
     Args:
-        action (callable): A function of the form ``func(req, resp)``
+        action (callable): A function of the form
+            ``func(req, resp, resource)``, where `resource` is a
+            reference to the resource class associated with the request
 
     """
 
