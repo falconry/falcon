@@ -149,7 +149,7 @@ class Response(object):
         """
         name = name.lower()
         if name in self._headers:
-            value = ','.join((self._headers[name], value))
+            value = self._headers[name] + ',' + value
         self._headers[name] = value
 
     def set_headers(self, headers):
