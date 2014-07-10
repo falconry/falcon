@@ -129,7 +129,7 @@ class Response(object):
 
         # NOTE(kgriffs): normalize name by lowercasing it
         self._headers[name.lower()] = value
-        
+
     def append_header(self, name, value):
         """Set or append a header for this response to a given value.
 
