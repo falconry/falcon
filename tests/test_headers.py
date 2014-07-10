@@ -363,7 +363,7 @@ class TestHeaders(testing.TestBase):
             for name, value in self.srmock.headers:
                 hist[name] += 1
                 self.assertEqual(1, hist[name])
-                
+
     def test_response_append_header(self):
         self.resource = HeaderHelpersResource()
         self.api.add_route(self.test_route, self.resource)
@@ -377,7 +377,7 @@ class TestHeaders(testing.TestBase):
             self.assertEqual('value1', response._headers['key'])
             response.append_header('key', 'value2')
             self.assertEqual('value1,value2', response._headers['key'])
-            
+
     def test_vary_star(self):
         self.resource = VaryHeaderResource(['*'])
         self.api.add_route(self.test_route, self.resource)
