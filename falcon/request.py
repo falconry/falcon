@@ -394,7 +394,7 @@ class Request(object):
                                               href=href,
                                               href_text=href_text)
 
-     # implicit return None
+        return None
 
     @property
     def uri(self):
