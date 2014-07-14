@@ -10,8 +10,6 @@ VERSION = VERSION.__version__
 # NOTE(kgriffs): python-mimeparse is newer than mimeparse, supports Py3
 # TODO(kgriffs): Fork and optimize/modernize python-mimeparse
 REQUIRES = ['six', 'python-mimeparse']
-if sys.version_info < (2, 7):
-    REQUIRES.append('ordereddict')
 
 PYPY = True
 CYTHON = False
