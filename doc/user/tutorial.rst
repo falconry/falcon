@@ -308,6 +308,7 @@ Restart gunicorn, and then try sending a POST request to the resource
 Now, if you check your storage directory, it should contain a copy of the
 image you just POSTed.
 
+.. _tutorial-serving-images:
 
 Serving Images
 --------------

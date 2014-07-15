@@ -101,7 +101,30 @@ Therefore, when adding a route, Falcon requires an *instance* of your
 resource class, rather than the class type. That same instance will be used
 to server all requests coming in on that route.
 
-How can I pass data from a hook to a responders, and between hooks?
+How do I implement both POSTing and GETing items for the same resource?
+----
+Suppose you wanted to implement the following endpoints::
+
+    # Resource Collection
+    POST /resources
+    GET /resources{?marker, limit}
+
+    # Resource Item
+    GET /resources/{id}
+    PATCH /resources/{id}
+    DELETE /resources/{id}
+
+You can implement this sort of API by simply using two Python classes, one
+to represent a single resource, and another to represent the collection of
+said resources. It is common to place both classes in the same module.
+
+The Falcon community did some experimenting with routing both singleton
+and collection-based operations to the same Python class, but it turned
+out to make routing definitions more complicated/less intuitive.
+
+See also :ref:`this section of the tutorial <tutorial-serving-images>`.
+
+How can I pass data from a hook to a responder, and between hooks?
 ----
 You can inject extra responder kwargs from a hook by adding them
 to the *params* dict passed into the hook. You can also add custom data to
