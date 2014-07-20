@@ -96,6 +96,14 @@ class TestReqVars(testing.TestBase):
         headers = {'Accept': '*/*'}
         req = Request(testing.create_environ(headers=headers))
         self.assertTrue(req.client_accepts('application/xml'))
+        self.assertTrue(req.client_accepts('application/json'))
+        self.assertTrue(req.client_accepts('application/x-msgpack'))
+
+        headers = {'Accept': 'application/x-msgpack'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertFalse(req.client_accepts('application/xml'))
+        self.assertFalse(req.client_accepts('application/json'))
+        self.assertTrue(req.client_accepts('application/x-msgpack'))
 
         headers = {}  # NOTE(kgriffs): Equivalent to '*/*' per RFC
         req = Request(testing.create_environ(headers=headers))
@@ -105,6 +113,10 @@ class TestReqVars(testing.TestBase):
         req = Request(testing.create_environ(headers=headers))
         self.assertFalse(req.client_accepts('application/xml'))
 
+        headers = {'Accept': 'application/x-msgpack'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertTrue(req.client_accepts('application/x-msgpack'))
+
         headers = {'Accept': 'application/xm'}
         req = Request(testing.create_environ(headers=headers))
         self.assertFalse(req.client_accepts('application/xml'))
@@ -113,6 +125,7 @@ class TestReqVars(testing.TestBase):
         req = Request(testing.create_environ(headers=headers))
         self.assertTrue(req.client_accepts('application/json'))
         self.assertTrue(req.client_accepts('application/xml'))
+        self.assertTrue(req.client_accepts('application/x-msgpack'))
 
         headers = {'Accept': 'text/*'}
         req = Request(testing.create_environ(headers=headers))
@@ -133,12 +146,16 @@ class TestReqVars(testing.TestBase):
         headers = {'Accept': 'text/*,         application/*'}
         req = Request(testing.create_environ(headers=headers))
         self.assertTrue(req.client_accepts('text/plain'))
+        self.assertTrue(req.client_accepts('application/xml'))
         self.assertTrue(req.client_accepts('application/json'))
+        self.assertTrue(req.client_accepts('application/x-msgpack'))
 
         headers = {'Accept': 'text/*,application/*'}
         req = Request(testing.create_environ(headers=headers))
         self.assertTrue(req.client_accepts('text/plain'))
+        self.assertTrue(req.client_accepts('application/xml'))
         self.assertTrue(req.client_accepts('application/json'))
+        self.assertTrue(req.client_accepts('application/x-msgpack'))
 
     def test_client_accepts_bogus(self):
         headers = {'Accept': '~'}
@@ -151,20 +168,33 @@ class TestReqVars(testing.TestBase):
         req = Request(testing.create_environ(headers=headers))
         self.assertTrue(req.client_accepts_xml)
         self.assertFalse(req.client_accepts_json)
+        self.assertFalse(req.client_accepts_msgpack)
 
         headers = {'Accept': 'application/*'}
         req = Request(testing.create_environ(headers=headers))
         self.assertTrue(req.client_accepts_xml)
+        self.assertTrue(req.client_accepts_json)
+        self.assertTrue(req.client_accepts_msgpack)
 
         headers = {'Accept': 'application/json'}
         req = Request(testing.create_environ(headers=headers))
         self.assertFalse(req.client_accepts_xml)
         self.assertTrue(req.client_accepts_json)
+        self.assertFalse(req.client_accepts_msgpack)
 
-        headers = {'Accept': 'application/json, application/xml'}
+        headers = {'Accept': 'application/x-msgpack'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertFalse(req.client_accepts_xml)
+        self.assertFalse(req.client_accepts_json)
+        self.assertTrue(req.client_accepts_msgpack)
+
+        headers = {
+            'Accept': 'application/json,application/xml,application/x-msgpack'
+        }
         req = Request(testing.create_environ(headers=headers))
         self.assertTrue(req.client_accepts_xml)
         self.assertTrue(req.client_accepts_json)
+        self.assertTrue(req.client_accepts_msgpack)
 
     def test_client_prefers(self):
         headers = {'Accept': 'application/xml'}
