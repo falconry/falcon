@@ -1,3 +1,11 @@
+# 0.1.9 #
+
+## Fixed ##
+
+* Addressed style issues reported by the latest pyflakes version
+* Fixed body not being decoded from UTF-8 in HTTPError tests
+* Remove unnecessary ordereddict requirement on Python 2.6
+
 # 0.1.8 #
 
 ## Breaking Changes ##
