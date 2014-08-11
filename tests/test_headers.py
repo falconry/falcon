@@ -123,8 +123,23 @@ class VaryHeaderResource:
         self.vary = vary
 
     def on_get(self, req, resp):
-        resp.body = "{}"
+        resp.body = '{}'
         resp.vary = self.vary
+
+
+class LinkHeaderResource:
+
+    def __init__(self):
+        self._links = []
+
+    def add_link(self, *args, **kwargs):
+        self._links.append((args, kwargs))
+
+    def on_get(self, req, resp):
+        resp.body = '{}'
+
+        for args, kwargs in self._links:
+            resp.add_link(*args, **kwargs)
 
 
 class TestHeaders(testing.TestBase):
@@ -408,3 +423,124 @@ class TestHeaders(testing.TestBase):
 
         self.simulate_request(self.test_route)
         self.assertIn(('content-type', content_type), self.srmock.headers)
+
+    def test_add_link_single(self):
+        expected_value = '</things/2842>; rel=next'
+
+        self.resource = LinkHeaderResource()
+        self.resource.add_link('/things/2842', 'next')
+
+        self._check_link_header(expected_value)
+
+    def test_add_link_multiple(self):
+        expected_value = (
+            '</things/2842>; rel=next, ' +
+            '<http://%C3%A7runchy/bacon>; rel=contents, ' +
+            '<ab%C3%A7>; rel="http://example.com/ext-type", ' +
+            '<ab%C3%A7>; rel="http://example.com/%C3%A7runchy", ' +
+            '<ab%C3%A7>; rel="https://example.com/too-%C3%A7runchy", ' +
+            '</alt-thing>; rel="alternate http://example.com/%C3%A7runchy"')
+
+        uri = u'ab\u00e7' if six.PY3 else 'ab\xc3\xa7'
+
+        self.resource = LinkHeaderResource()
+        self.resource.add_link('/things/2842', 'next')
+        self.resource.add_link(u'http://\u00e7runchy/bacon', 'contents')
+        self.resource.add_link(uri, 'http://example.com/ext-type')
+        self.resource.add_link(uri, u'http://example.com/\u00e7runchy')
+        self.resource.add_link(uri, u'https://example.com/too-\u00e7runchy')
+        self.resource.add_link('/alt-thing',
+                               u'alternate http://example.com/\u00e7runchy')
+
+        self._check_link_header(expected_value)
+
+    def test_add_link_with_title(self):
+        expected_value = ('</related/thing>; rel=item; '
+                          'title="A related thing"')
+
+        self.resource = LinkHeaderResource()
+        self.resource.add_link('/related/thing', 'item',
+                               title='A related thing')
+
+        self._check_link_header(expected_value)
+
+    def test_add_link_with_title_star(self):
+        expected_value = ('</related/thing>; rel=item; '
+                          "title*=UTF-8''A%20related%20thing, "
+                          '</%C3%A7runchy/thing>; rel=item; '
+                          "title*=UTF-8'en'A%20%C3%A7runchy%20thing")
+
+        self.resource = LinkHeaderResource()
+        self.resource.add_link('/related/thing', 'item',
+                               title_star=('', 'A related thing'))
+
+        self.resource.add_link(u'/\u00e7runchy/thing', 'item',
+                               title_star=('en', u'A \u00e7runchy thing'))
+
+        self._check_link_header(expected_value)
+
+    def test_add_link_with_anchor(self):
+        expected_value = ('</related/thing>; rel=item; '
+                          'anchor="/some%20thing/or-other"')
+
+        self.resource = LinkHeaderResource()
+        self.resource.add_link('/related/thing', 'item',
+                               anchor='/some thing/or-other')
+
+        self._check_link_header(expected_value)
+
+    def test_add_link_with_hreflang(self):
+        expected_value = ('</related/thing>; rel=about; '
+                          'hreflang=en')
+
+        self.resource = LinkHeaderResource()
+        self.resource.add_link('/related/thing', 'about',
+                               hreflang='en')
+
+        self._check_link_header(expected_value)
+
+    def test_add_link_with_hreflang_multi(self):
+        expected_value = ('</related/thing>; rel=about; '
+                          'hreflang=en-GB; hreflang=de')
+
+        self.resource = LinkHeaderResource()
+        self.resource.add_link('/related/thing', 'about',
+                               hreflang=('en-GB', 'de'))
+
+        self._check_link_header(expected_value)
+
+    def test_add_link_with_type_hint(self):
+        expected_value = ('</related/thing>; rel=alternate; '
+                          'type="video/mp4; codecs=avc1.640028"')
+
+        self.resource = LinkHeaderResource()
+        self.resource.add_link('/related/thing', 'alternate',
+                               type_hint='video/mp4; codecs=avc1.640028')
+
+        self._check_link_header(expected_value)
+
+    def test_add_link_complex(self):
+        expected_value = ('</related/thing>; rel=alternate; '
+                          'title="A related thing"; '
+                          "title*=UTF-8'en'A%20%C3%A7runchy%20thing; "
+                          'type="application/json"; '
+                          'hreflang=en-GB; hreflang=de')
+
+        self.resource = LinkHeaderResource()
+        self.resource.add_link('/related/thing', 'alternate',
+                               title='A related thing',
+                               hreflang=('en-GB', 'de'),
+                               type_hint='application/json',
+                               title_star=('en', u'A \u00e7runchy thing'))
+
+        self._check_link_header(expected_value)
+
+    # ----------------------------------------------------------------------
+    # Helpers
+    # ----------------------------------------------------------------------
+
+    def _check_link_header(self, expected_value):
+        self.api.add_route(self.test_route, self.resource)
+
+        self.simulate_request(self.test_route)
+        self.assertEqual(expected_value, self.srmock.headers_dict['link'])
