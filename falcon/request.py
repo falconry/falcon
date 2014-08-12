@@ -132,6 +132,11 @@ class Request(object):
             need all the headers in this format, you should use the
             ``get_header`` method or one of the convenience attributes
             instead, to get a value for a specific header.
+
+        params (dict): The mapping of request query parameter names to their
+            values.  Where the parameter appears multiple times in the query
+            string, the value mapped to that parameter key will be a list of
+            all the values in the order seen.
     """
 
     __slots__ = (
@@ -403,6 +408,10 @@ class Request(object):
 
         return self._cached_headers.copy()
 
+    @property
+    def params(self):
+        return self._params
+
     # ------------------------------------------------------------------------
     # Methods
     # ------------------------------------------------------------------------
@@ -496,6 +505,11 @@ class Request(object):
             parameters from the request body will be merged into
             the query string parameters.
 
+        Note:
+            If a key appears more than once in the form data, one of the
+            values will be returned as a string, but it is undefined which
+            one.  Use .get_param_as_list() to retrieve all the values.
+
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'sort')
             required (bool, optional): Set to True to raise HTTPBadRequest
@@ -519,10 +533,17 @@ class Request(object):
         # PERF: Use if..in since it is a good all-around performer; we don't
         #       know how likely params are to be specified by clients.
         if name in params:
-            if store is not None:
-                store[name] = params[name]
+            # NOTE(warsaw): If the key appeared multiple times, it will be
+            # stored internally as a list.  We do not define which one
+            # actually gets returned, but let's pick the last one for grins.
+            param = params[name]
+            if isinstance(param, list):
+                param = param[-1]
 
-            return params[name]
+            if store is not None:
+                store[name] = param
+
+            return param
 
         if not required:
             return None
@@ -568,6 +589,8 @@ class Request(object):
         #       know how likely params are to be specified by clients.
         if name in params:
             val = params[name]
+            if isinstance(val, list):
+                val = val[-1]
             try:
                 val = int(val)
             except ValueError:
@@ -627,6 +650,8 @@ class Request(object):
         #       know how likely params are to be specified by clients.
         if name in params:
             val = params[name]
+            if isinstance(val, list):
+                val = val[-1]
             if val in TRUE_STRINGS:
                 val = True
             elif val in FALSE_STRINGS:
@@ -695,7 +720,13 @@ class Request(object):
         # PERF: Use if..in since it is a good all-around performer; we don't
         #       know how likely params are to be specified by clients.
         if name in params:
-            items = params[name].split(',')
+            param = params[name]
+            # NOTE(warsaw): when a key appears multiple times in the request
+            # query, it will already be represented internally as a list.
+            if isinstance(param, list):
+                items = param
+            else:
+                items = param.split(',')
 
             # PERF(kgriffs): Use if-else rather than a DRY approach
             # that sets transform to a passthrough function; avoids
