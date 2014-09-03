@@ -17,18 +17,6 @@ import falcon
 from falcon import resource_api
 import falcon.testing as testing
 
-HTTP_METHODS = (
-    'CONNECT',
-    'DELETE',
-    'GET',
-    'HEAD',
-    'OPTIONS',
-    'POST',
-    'PUT',
-    'TRACE',
-    'PATCH'
-)
-
 
 class ThingsResource(object):
     def __init__(self):
