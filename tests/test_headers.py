@@ -142,6 +142,22 @@ class LinkHeaderResource:
             resp.add_link(*args, **kwargs)
 
 
+class AppendHeaderResource:
+
+    def on_get(self, req, resp):
+        resp.append_header('X-Things', 'thing-1')
+        resp.append_header('X-THINGS', 'thing-2')
+        resp.append_header('x-thiNgs', 'thing-3')
+
+    def on_head(self, req, resp):
+        resp.set_header('X-things', 'thing-1')
+        resp.append_header('X-THINGS', 'thing-2')
+        resp.append_header('x-thiNgs', 'thing-3')
+
+    def on_post(self, req, resp):
+        resp.append_header('X-Things', 'thing-1')
+
+
 class TestHeaders(testing.TestBase):
 
     def before(self):
@@ -380,18 +396,17 @@ class TestHeaders(testing.TestBase):
                 self.assertEqual(1, hist[name])
 
     def test_response_append_header(self):
-        self.resource = HeaderHelpersResource()
+        self.resource = AppendHeaderResource()
         self.api.add_route(self.test_route, self.resource)
 
-        for method in ('HEAD', 'POST', 'PUT'):
+        for method in ('HEAD', 'GET'):
             self.simulate_request(self.test_route, method=method)
+            value = self.srmock.headers_dict['x-things']
+            self.assertEqual('thing-1,thing-2,thing-3', value)
 
-            response = self.resource.resp
-            self.assertNotIn('key', response._headers)
-            response.append_header('key', 'value1')
-            self.assertEqual('value1', response._headers['key'])
-            response.append_header('key', 'value2')
-            self.assertEqual('value1,value2', response._headers['key'])
+        self.simulate_request(self.test_route, method='POST')
+        value = self.srmock.headers_dict['x-things']
+        self.assertEqual('thing-1', value)
 
     def test_vary_star(self):
         self.resource = VaryHeaderResource(['*'])

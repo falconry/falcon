@@ -135,7 +135,7 @@ class Response(object):
 
         Warning:
             Calling this method will append any existing value using comma
-            separation.  Please ensure the header type supports this.
+            separation. Please ensure the header type supports this.
 
         Args:
             name (str): Header name to set (case-insensitive). Must be of
@@ -150,6 +150,7 @@ class Response(object):
         name = name.lower()
         if name in self._headers:
             value = self._headers[name] + ',' + value
+
         self._headers[name] = value
 
     def set_headers(self, headers):
