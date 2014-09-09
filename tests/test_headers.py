@@ -379,6 +379,20 @@ class TestHeaders(testing.TestBase):
                 hist[name] += 1
                 self.assertEqual(1, hist[name])
 
+    def test_response_append_header(self):
+        self.resource = HeaderHelpersResource()
+        self.api.add_route(self.test_route, self.resource)
+
+        for method in ('HEAD', 'POST', 'PUT'):
+            self.simulate_request(self.test_route, method=method)
+
+            response = self.resource.resp
+            self.assertNotIn('key', response._headers)
+            response.append_header('key', 'value1')
+            self.assertEqual('value1', response._headers['key'])
+            response.append_header('key', 'value2')
+            self.assertEqual('value1,value2', response._headers['key'])
+
     def test_vary_star(self):
         self.resource = VaryHeaderResource(['*'])
         self.api.add_route(self.test_route, self.resource)
