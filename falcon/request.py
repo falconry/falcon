@@ -249,7 +249,7 @@ class Request(object):
     @property
     def app(self):
         """Name of the WSGI app (if using WSGI's notion of virtual hosting)."""
-        return self.env['SCRIPT_NAME']
+        return self.env.get('SCRIPT_NAME', '')
 
     @property
     def auth(self):

@@ -1,3 +1,9 @@
+# 0.1.10 #
+
+## Fixed ##
+
+* SCRIPT_NAME may not always be present in the WSGI environment
+
 # 0.1.9 #
 
 ## Fixed ##
