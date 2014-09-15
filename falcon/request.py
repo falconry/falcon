@@ -349,7 +349,7 @@ class Request(object):
 
     @property
     def app(self):
-        return self.env['SCRIPT_NAME']
+        return self.env.get('SCRIPT_NAME', '')
 
     @property
     def protocol(self):
