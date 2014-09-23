@@ -46,11 +46,11 @@ class _TestQueryParams(testing.TestBase):
         self.assertEqual(store['limit'], '25')
 
     def test_percent_encoded(self):
-        query_string = 'id=23%2c42&q=%e8%b1%86+%e7%93%a3'
+        query_string = 'id=23&id=42&q=%e8%b1%86+%e7%93%a3'
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
-        self.assertEqual(req.get_param('id'), u'23,42')
+        self.assertEqual(req.get_param('id'), u'42')
         self.assertEqual(req.get_param_as_list('id', int), [23, 42])
         self.assertEqual(req.get_param('q'), u'\u8c46 \u74e3')
 
@@ -84,7 +84,7 @@ class _TestQueryParams(testing.TestBase):
                           'marker', required=True)
 
     def test_int(self):
-        query_string = 'marker=deadbeef&limit=25'
+        query_string = 'marker=deadbeef&limit=25&select=32&select=33'
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
@@ -92,6 +92,7 @@ class _TestQueryParams(testing.TestBase):
                           'marker')
 
         self.assertEqual(req.get_param_as_int('limit'), 25)
+        self.assertEqual(req.get_param_as_int('select'), 33)
 
         store = {}
         self.assertEqual(req.get_param_as_int('limit', store=store), 25)
@@ -168,7 +169,8 @@ class _TestQueryParams(testing.TestBase):
 
     def test_boolean(self):
         query_string = ('echo=true&doit=false&bogus=0&bogus2=1&'
-                        't1=True&f1=False&t2=yes&f2=no')
+                        't1=True&f1=False&t2=yes&f2=no&'
+                        't3=true&t3=false')
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
@@ -184,59 +186,62 @@ class _TestQueryParams(testing.TestBase):
         self.assertEqual(req.get_param_as_bool('t2'), True)
         self.assertEqual(req.get_param_as_bool('f1'), False)
         self.assertEqual(req.get_param_as_bool('f2'), False)
+        self.assertEqual(req.get_param_as_bool('t3'), False)
 
         store = {}
         self.assertEqual(req.get_param_as_bool('echo', store=store), True)
         self.assertEqual(store['echo'], True)
 
     def test_list_type(self):
-        query_string = ('colors=red,green,blue&limit=1'
-                        '&list-ish1=f,,x&list-ish2=,0&list-ish3=a,,,b'
-                        '&empty1=&empty2=,&empty3=,,')
+        query_string = ('colors=red&colors=green&colors=blue&limit=1'
+                        '&list-ish1=f&list-ish1=&list-ish1=x'
+                        '&list-ish2=&list-ish2=0'
+                        '&list-ish3=a&list-ish3=&list-ish3=&list-ish3=b'
+                        '&empty1=&empty2=&empty2=')
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
-        self.assertEqual(req.get_param('colors'), 'red,green,blue')
+        self.assertEqual(req.get_param('colors'), 'blue')
         self.assertEqual(req.get_param_as_list('colors'),
                          ['red', 'green', 'blue'])
         self.assertEqual(req.get_param_as_list('limit'), ['1'])
         self.assertIs(req.get_param_as_list('marker'), None)
 
         self.assertEqual(req.get_param_as_list('empty1'), None)
-        self.assertEqual(req.get_param_as_list('empty2'), [None, None])
-        self.assertEqual(req.get_param_as_list('empty3'), [None, None, None])
+        self.assertEqual(req.get_param_as_list('empty2'), None)
 
         self.assertEqual(req.get_param_as_list('list-ish1'),
-                         ['f', None, 'x'])
+                         ['f', 'x'])
 
         # Ensure that '0' doesn't get translated to None
         self.assertEqual(req.get_param_as_list('list-ish2'),
-                         [None, '0'])
+                         ['0'])
 
         # Ensure that '0' doesn't get translated to None
         self.assertEqual(req.get_param_as_list('list-ish3'),
-                         ['a', None, None, 'b'])
+                         ['a', 'b'])
 
         store = {}
         self.assertEqual(req.get_param_as_list('limit', store=store), ['1'])
         self.assertEqual(store['limit'], ['1'])
 
     def test_list_transformer(self):
-        query_string = 'coord=1.4,13,15.1&limit=100&things=4,,1'
+        query_string = ('coord=1.4&coord=13&coord=15.1'
+                        '&limit=100&things=4&things=&things=1')
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
-        self.assertEqual(req.get_param('coord'), '1.4,13,15.1')
+        self.assertEqual(req.get_param('coord'), '15.1')
 
         expected = [1.4, 13.0, 15.1]
         actual = req.get_param_as_list('coord', transform=float)
         self.assertEqual(actual, expected)
 
-        expected = ['4', None, '1']
+        expected = ['4', '1']
         actual = req.get_param_as_list('things', transform=str)
         self.assertEqual(actual, expected)
 
-        expected = [4, None, 1]
+        expected = [4, 1]
         actual = req.get_param_as_list('things', transform=int)
         self.assertEqual(actual, expected)
 

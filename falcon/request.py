@@ -519,10 +519,13 @@ class Request(object):
         # PERF: Use if..in since it is a good all-around performer; we don't
         #       know how likely params are to be specified by clients.
         if name in params:
-            if store is not None:
-                store[name] = params[name]
+            val = params[name]
+            if isinstance(val, six.types.ListType):
+                val = val[-1]
 
-            return params[name]
+            if store is not None:
+                store[name] = val
+            return val
 
         if not required:
             return None
@@ -568,6 +571,8 @@ class Request(object):
         #       know how likely params are to be specified by clients.
         if name in params:
             val = params[name]
+            if isinstance(val, six.types.ListType):
+                val = val[-1]
             try:
                 val = int(val)
             except ValueError:
@@ -627,6 +632,8 @@ class Request(object):
         #       know how likely params are to be specified by clients.
         if name in params:
             val = params[name]
+            if isinstance(val, six.types.ListType):
+                val = val[-1]
             if val in TRUE_STRINGS:
                 val = True
             elif val in FALSE_STRINGS:
@@ -695,7 +702,9 @@ class Request(object):
         # PERF: Use if..in since it is a good all-around performer; we don't
         #       know how likely params are to be specified by clients.
         if name in params:
-            items = params[name].split(',')
+            items = params[name]
+            if not isinstance(items, six.types.ListType):
+                items = [items]
 
             # PERF(kgriffs): Use if-else rather than a DRY approach
             # that sets transform to a passthrough function; avoids
