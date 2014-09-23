@@ -520,7 +520,7 @@ class Request(object):
         #       know how likely params are to be specified by clients.
         if name in params:
             val = params[name]
-            if isinstance(val, six.types.ListType):
+            if isinstance(val, list):
                 val = val[-1]
 
             if store is not None:
@@ -571,7 +571,7 @@ class Request(object):
         #       know how likely params are to be specified by clients.
         if name in params:
             val = params[name]
-            if isinstance(val, six.types.ListType):
+            if isinstance(val, list):
                 val = val[-1]
             try:
                 val = int(val)
@@ -632,7 +632,7 @@ class Request(object):
         #       know how likely params are to be specified by clients.
         if name in params:
             val = params[name]
-            if isinstance(val, six.types.ListType):
+            if isinstance(val, list):
                 val = val[-1]
             if val in TRUE_STRINGS:
                 val = True
@@ -703,7 +703,7 @@ class Request(object):
         #       know how likely params are to be specified by clients.
         if name in params:
             items = params[name]
-            if not isinstance(items, six.types.ListType):
+            if not isinstance(items, list):
                 items = [items]
 
             # PERF(kgriffs): Use if-else rather than a DRY approach

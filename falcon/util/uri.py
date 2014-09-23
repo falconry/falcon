@@ -279,7 +279,7 @@ def parse_query_string(query_string):
         if k not in params:
             params[k] = v
         else:
-            if not isinstance(params[k], six.types.ListType):
+            if not isinstance(params[k], list):
                 params[k] = [params[k]]
             params[k].append(v)
 
