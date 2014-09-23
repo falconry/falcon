@@ -276,6 +276,11 @@ def parse_query_string(query_string):
     # comprehensions (tested under py27, py33). Go figure!
     params = {}
     for k, v in _QS_PATTERN.findall(query_string):
-        params[k] = v
+        if k not in params:
+            params[k] = v
+        else:
+            if not isinstance(params[k], list):
+                params[k] = [params[k]]
+            params[k].append(v)
 
     return params
