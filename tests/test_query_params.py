@@ -55,19 +55,22 @@ class _TestQueryParams(testing.TestBase):
         self.assertEqual(req.get_param('q'), u'\u8c46 \u74e3')
 
     def test_allowed_names(self):
-        query_string = ('p=0&p1=23&2p=foo&some-thing=that&blank=&some_thing=x&'
-                        '-bogus=foo&more.things=blah')
+        query_string = ('p=0&p1=23&2p=foo&some-thing=that&blank=&'
+                        'some_thing=x&-bogus=foo&more.things=blah&'
+                        '_thing=42&_charset_=utf-8')
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
         self.assertEqual(req.get_param('p'), '0')
         self.assertEqual(req.get_param('p1'), '23')
-        self.assertIs(req.get_param('2p'), None)
+        self.assertEqual(req.get_param('2p'), 'foo')
         self.assertEqual(req.get_param('some-thing'), 'that')
         self.assertIs(req.get_param('blank'), None)
         self.assertEqual(req.get_param('some_thing'), 'x')
-        self.assertIs(req.get_param('-bogus'), None)
+        self.assertEqual(req.get_param('-bogus'), 'foo')
         self.assertEqual(req.get_param('more.things'), 'blah')
+        self.assertEqual(req.get_param('_thing'), '42')
+        self.assertEqual(req.get_param('_charset_'), 'utf-8')
 
     def test_required(self):
         query_string = ''
