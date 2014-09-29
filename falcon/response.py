@@ -41,8 +41,9 @@ class Response(object):
 
             Note:
                 Under Python 2.x, if your content is of type *str*, setting
-                efficient. However, if your text is of type *unicode*,
-                you will want to use the *body* attribute instead.
+                this rather than body will be most efficient. However, if
+                your text is of type *unicode*, you will want to use the
+                *body* attribute instead.
 
                 Under Python 3.x, the 2.x *str* type can be thought of as
                 having been replaced with what was once the *unicode* type,
@@ -109,6 +110,18 @@ class Response(object):
                 self._body_encoded = body.encode('utf-8')
 
         return self._body_encoded
+
+    def set_stream(self, stream, stream_len):
+        """Convenience method for setting both stream and stream_len.
+
+        Although the stream and stream_len properties may be set
+        directly, using this method ensures stream_len is not
+        accidentally neglected.
+
+        """
+
+        self.stream = stream
+        self.stream_len = stream_len
 
     def set_header(self, name, value):
         """Set a header for this response to a given value.
