@@ -87,11 +87,16 @@ class API(object):
 
         req = self._request_type(env)
         resp = self._response_type()
-
-        responder, params, resource = self._get_responder(
-            req.path, req.method)
+        resource = None
 
         try:
+            # NOTE(warsaw): Moved this to inside the try except because it's
+            # possible when using object-based traversal for _get_responder()
+            # to fail.  An example is a case where an object does not have the
+            # requested next-hop child resource.  In that case, the object
+            # being asked to dispatch to its child will raise an HTTP
+            # exception signalling the problem, e.g. a 404.
+            responder, params, resource = self._get_responder(req)
             # NOTE(kgriffs): Using an inner try..except in order to
             # address the case when err_handler raises HTTPError.
             #
@@ -276,12 +281,11 @@ class API(object):
     # Helpers
     # ------------------------------------------------------------------------
 
-    def _get_responder(self, path, method):
+    def _get_responder(self, req):
         """Searches routes for a matching responder.
 
         Args:
-            path: URI path to search (without query string)
-            method: HTTP method (uppercase) requested
+            req: The request object.
 
         Returns:
             A 3-member tuple consisting of a responder callable,
@@ -300,6 +304,8 @@ class API(object):
             `falcon.responder.path_not_found`
         """
 
+        path = req.path
+        method = req.method
         for path_template, method_map, resource in self._routes:
             m = path_template.match(path)
             if m:

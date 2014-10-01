@@ -276,6 +276,15 @@ def parse_query_string(query_string):
     # comprehensions (tested under py27, py33). Go figure!
     params = {}
     for k, v in _QS_PATTERN.findall(query_string):
-        params[k] = v
+        if k in params:
+            # The key was present more than once in the POST data.  Convert to
+            # a list, or append the next value to the list.
+            old_value = params[k]
+            if isinstance(old_value, list):
+                old_value.append(v)
+            else:
+                params[k] = [old_value, v]
+        else:
+            params[k] = v
 
     return params

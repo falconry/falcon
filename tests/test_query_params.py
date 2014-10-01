@@ -243,6 +243,58 @@ class _TestQueryParams(testing.TestBase):
         self.assertRaises(falcon.HTTPBadRequest,
                           req.get_param_as_list, 'coord', transform=int)
 
+    def test_param_property(self):
+        query_string = 'ant=4&bee=3&cat=2&dog=1'
+        self.simulate_request('/', query_string=query_string)
+
+        req = self.resource.req
+        self.assertEqual(
+            sorted(req.params.items()),
+            [('ant', '4'), ('bee', '3'), ('cat', '2'), ('dog', '1')])
+
+    # NOTE(warsaw): Pythons earlier than 2.7 do not have a self.assertIn()
+    # method, so use this compatibility function instead.
+    if not hasattr(testing.TestBase, 'assertIn'):
+        def assertIn(self, a, b):
+            self.assertTrue(a in b)
+
+    def test_multiple_form_keys(self):
+        query_string = 'ant=1&ant=2&bee=3&cat=6&cat=5&cat=4'
+        self.simulate_request('/', query_string=query_string)
+
+        req = self.resource.req
+        # By definition, we cannot guarantee which of the multiple keys will
+        # be returned by .get_param().
+        self.assertIn(req.get_param('ant'), ('1', '2'))
+        # There is only one 'bee' key so it remains a scalar.
+        self.assertEqual(req.get_param('bee'), '3')
+        # There are three 'cat' keys; order is preserved.
+        self.assertIn(req.get_param('cat'), ('6', '5', '4'))
+
+    def test_multiple_keys_as_bool(self):
+        query_string = 'ant=true&ant=yes&ant=True'
+        self.simulate_request('/', query_string=query_string)
+        req = self.resource.req
+        self.assertEqual(req.get_param_as_bool('ant'), True)
+
+    def test_multiple_keys_as_int(self):
+        query_string = 'ant=1&ant=2&ant=3'
+        self.simulate_request('/', query_string=query_string)
+        req = self.resource.req
+        self.assertIn(req.get_param_as_int('ant'), (1, 2, 3))
+
+    def test_multiple_form_keys_as_list(self):
+        query_string = 'ant=1&ant=2&bee=3&cat=6&cat=5&cat=4'
+        self.simulate_request('/', query_string=query_string)
+
+        req = self.resource.req
+        # There are two 'ant' keys.
+        self.assertEqual(req.get_param_as_list('ant'), ['1', '2'])
+        # There is only one 'bee' key..
+        self.assertEqual(req.get_param_as_list('bee'), ['3'])
+        # There are three 'cat' keys; order is preserved.
+        self.assertEqual(req.get_param_as_list('cat'), ['6', '5', '4'])
+
 
 class PostQueryParams(_TestQueryParams):
     def simulate_request(self, path, query_string):
