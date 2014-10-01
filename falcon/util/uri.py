@@ -28,9 +28,9 @@ _ALL_ALLOWED = _UNRESERVED + _DELIMITERS
 
 _HEX_DIGITS = '0123456789ABCDEFabcdef'
 
-# NOTE(kgriffs): Match query string fields that have names that
-# start with a letter.
-_QS_PATTERN = re.compile(r'(?<![0-9])([a-zA-Z][a-zA-Z_0-9\-.]*)=([^&]+)')
+# NOTE(kgriffs): Match query string fields. If this is modified, take
+# care not to reduce performance.
+_QS_PATTERN = re.compile(r'(?:&|\A)([^=]+)=([^&]+)')
 
 
 def _create_char_encoder(allowed_chars):
