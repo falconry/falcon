@@ -302,6 +302,14 @@ class PostQueryParams(_TestQueryParams):
         super(PostQueryParams, self).simulate_request(path, body=query_string,
                                                       headers=headers)
 
+    def test_non_ascii(self):
+        value = u'\u8c46\u74e3'
+        query_string = b'q=' + value.encode('utf-8')
+        self.simulate_request('/', query_string=query_string)
+
+        req = self.resource.req
+        self.assertEqual(req.get_param('q'), None)
+
 
 class GetQueryParams(_TestQueryParams):
     def simulate_request(self, path, query_string):

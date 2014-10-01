@@ -97,6 +97,14 @@ class Request(object):
                 and merge them into the query string parameters. In this
                 case, the stream will be left at EOF.
 
+                Note also that the character encoding for fields, before
+                percent-encoding non-ASCII bytes, is assumed to be
+                UTF-8. The special "_charset_" field is ignored if present.
+
+                Falcon expects form-encoded request bodies to be
+                encoded according to the standard W3C algorithm (see
+                also http://goo.gl/6rlcux).
+
         date (datetime): Value of the Date header, converted to a
             `datetime.datetime` instance. The header value is assumed to
             conform to RFC 1123.
@@ -221,25 +229,7 @@ class Request(object):
             # covered since the test that does so uses multiprocessing.
             self.stream = helpers.Body(self.stream, self.content_length)
 
-        # PERF(kgriffs): Technically, we should spend a few more
-        # cycles and parse the content type for real, but
-        # this heuristic will work virtually all the time.
-        if (self.content_type and
-                'application/x-www-form-urlencoded' in self.content_type):
-
-            # NOTE(kgriffs): This assumes self.stream has been patched
-            # above in the case of wsgiref, so that self.content_length
-            # is not needed. Normally we just avoid accessing
-            # self.content_length, because it is a little expensive
-            # to call. We could cache self.content_length, but the
-            # overhead to do that won't usually be helpful, since
-            # content length will only ever be read once per
-            # request in most cases.
-            body = self.stream.read()
-            body = body.decode('ascii')
-
-            extra_params = uri.parse_query_string(uri.decode(body))
-            self._params.update(extra_params)
+        self._parse_form_urlencoded()
 
     # ------------------------------------------------------------------------
     # Properties
@@ -790,6 +780,39 @@ class Request(object):
     # ------------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------------
+
+    def _parse_form_urlencoded(self):
+        # PERF(kgriffs): Technically, we should spend a few more
+        # cycles and parse the content type for real, but
+        # this heuristic will work virtually all the time.
+        if (self.content_type and
+                'application/x-www-form-urlencoded' in self.content_type):
+
+            # NOTE(kgriffs): This assumes self.stream has been patched
+            # above in the case of wsgiref, so that self.content_length
+            # is not needed. Normally we just avoid accessing
+            # self.content_length, because it is a little expensive
+            # to call. We could cache self.content_length, but the
+            # overhead to do that won't usually be helpful, since
+            # content length will only ever be read once per
+            # request in most cases.
+            body = self.stream.read()
+
+            # NOTE(kgriffs): According to http://goo.gl/6rlcux the
+            # body should be US-ASCII. Enforcing this also helps
+            # catch malicious input.
+            try:
+                body = body.decode('ascii')
+            except UnicodeDecodeError:
+                body = None
+                self.log_error('Non-ASCII characters found in form body '
+                               'with Content-Type of '
+                               'application/x-www-form-urlencoded. Body '
+                               'will be ignored.')
+
+            if body:
+                extra_params = uri.parse_query_string(uri.decode(body))
+                self._params.update(extra_params)
 
     def _get_header_by_wsgi_name(self, name):
         """Looks up a header, assuming name is already UPPERCASE_UNDERSCORE
