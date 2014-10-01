@@ -50,7 +50,11 @@ class _TestQueryParams(testing.TestBase):
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
-        self.assertEqual(req.get_param('id'), u'23,42')
+
+        # NOTE(kgriffs): For lists, get_param will return one of the
+        # elements, but which one it will choose is undefined.
+        self.assertIn(req.get_param('id'), [u'23', u'42'])
+
         self.assertEqual(req.get_param_as_list('id', int), [23, 42])
         self.assertEqual(req.get_param('q'), u'\u8c46 \u74e3')
 
@@ -199,7 +203,11 @@ class _TestQueryParams(testing.TestBase):
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
-        self.assertEqual(req.get_param('colors'), 'red,green,blue')
+
+        # NOTE(kgriffs): For lists, get_param will return one of the
+        # elements, but which one it will choose is undefined.
+        self.assertIn(req.get_param('colors'), ('red', 'green', 'blue'))
+
         self.assertEqual(req.get_param_as_list('colors'),
                          ['red', 'green', 'blue'])
         self.assertEqual(req.get_param_as_list('limit'), ['1'])
@@ -229,7 +237,10 @@ class _TestQueryParams(testing.TestBase):
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
-        self.assertEqual(req.get_param('coord'), '1.4,13,15.1')
+
+        # NOTE(kgriffs): For lists, get_param will return one of the
+        # elements, but which one it will choose is undefined.
+        self.assertIn(req.get_param('coord'), ('1.4', '13', '15.1'))
 
         expected = [1.4, 13.0, 15.1]
         actual = req.get_param_as_list('coord', transform=float)
@@ -254,12 +265,6 @@ class _TestQueryParams(testing.TestBase):
         self.assertEqual(
             sorted(req.params.items()),
             [('ant', '4'), ('bee', '3'), ('cat', '2'), ('dog', '1')])
-
-    # NOTE(warsaw): Pythons earlier than 2.7 do not have a self.assertIn()
-    # method, so use this compatibility function instead.
-    if not hasattr(testing.TestBase, 'assertIn'):
-        def assertIn(self, a, b):
-            self.assertTrue(a in b)
 
     def test_multiple_form_keys(self):
         query_string = 'ant=1&ant=2&bee=3&cat=6&cat=5&cat=4'
