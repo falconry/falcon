@@ -241,6 +241,7 @@ Next, let's implement the POST responder:
 
     import os
     import time
+    import uuid
 
     import falcon
 
@@ -251,7 +252,7 @@ Next, let's implement the POST responder:
 
 
     def _generate_id():
-        return os.urandom(2).encode('hex') + hex(int(time.time() * 10))[5:]
+        return str(uuid.uuid4())
 
 
     class Resource(object):
@@ -337,6 +338,7 @@ Go ahead and edit your ``images.py`` file to look something like this:
 
     import os
     import time
+    import uuid
 
     import falcon
 
@@ -351,7 +353,7 @@ Go ahead and edit your ``images.py`` file to look something like this:
 
 
     def _generate_id():
-        return os.urandom(2).encode('hex') + hex(int(time.time() * 10))[5:]
+        return str(uuid.uuid4())
 
 
     class Collection(object):
