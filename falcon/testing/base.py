@@ -68,6 +68,12 @@ class TestBase(unittest.TestCase):
 
         super(TestBase, self).tearDown()
 
+    # NOTE(warsaw): Pythons earlier than 2.7 do not have a self.assertIn()
+    # method, so use this compatibility function instead.
+    if not hasattr(unittest.TestCase, 'assertIn'):
+        def assertIn(self, a, b):
+            self.assertTrue(a in b)
+
     def simulate_request(self, path, decode=None, **kwargs):
         """Simulates a request to `self.api`.
 

@@ -259,6 +259,15 @@ def parse_query_string(query_string):
     parameters with values are parsed. for example, given "foo=bar&flag",
     this function would ignore "flag".
 
+    Note:
+        In addition to the standard HTML form-based method for specifying
+        lists by repeating a given param multiple times, Falcon supports
+        a more compact form in which the param may be given a single time
+        but set to a list of comma-separated elements (e.g., 'foo=a,b,c').
+
+        The two different ways of specifying lists may not be mixed in
+        a single query string for the same parameter.
+
     Args:
         query_string (str): The query string to parse
 
@@ -284,7 +293,16 @@ def parse_query_string(query_string):
                 old_value.append(v)
             else:
                 params[k] = [old_value, v]
+
         else:
+            if ',' in v:
+                # NOTE(kgriffs): Falcon supports a more compact form of
+                # lists, in which the elements are comma-separated and
+                # assigned to a single param instance. If it turns out that
+                # very few people use this, it can be deprecated at some
+                # point.
+                v = v.split(',')
+
             params[k] = v
 
     return params

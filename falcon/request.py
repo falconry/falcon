@@ -495,10 +495,15 @@ class Request(object):
             parameters from the request body will be merged into
             the query string parameters.
 
-        Note:
             If a key appears more than once in the form data, one of the
             values will be returned as a string, but it is undefined which
             one.  Use .get_param_as_list() to retrieve all the values.
+
+        Note:
+            If a query parameter is assigned a comma-separated list of
+            values (e.g., foo=a,b,c) then only one of the values will be
+            returned, and it is undefined which one. Use
+            .get_param_as_list() to retrieve all the values.
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'sort')
@@ -581,6 +586,7 @@ class Request(object):
             val = params[name]
             if isinstance(val, list):
                 val = val[-1]
+
             try:
                 val = int(val)
             except ValueError:
@@ -642,6 +648,7 @@ class Request(object):
             val = params[name]
             if isinstance(val, list):
                 val = val[-1]
+
             if val in TRUE_STRINGS:
                 val = True
             elif val in FALSE_STRINGS:
@@ -665,7 +672,9 @@ class Request(object):
                           transform=None, required=False, store=None):
         """Return the value of a query string parameter as a list.
 
-        Note that list items must be comma-separated.
+        List items must be comma-separated or must be provided
+        as multiple instances of the same param in the query string
+        ala *application/x-www-form-urlencoded*.
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'limit')
@@ -710,13 +719,13 @@ class Request(object):
         # PERF: Use if..in since it is a good all-around performer; we don't
         #       know how likely params are to be specified by clients.
         if name in params:
-            param = params[name]
-            # NOTE(warsaw): when a key appears multiple times in the request
+            items = params[name]
+
+            # NOTE(warsaw): When a key appears multiple times in the request
             # query, it will already be represented internally as a list.
-            if isinstance(param, list):
-                items = param
-            else:
-                items = param.split(',')
+            # NOTE(kgriffs): Likewise for comma-delimited values.
+            if not isinstance(items, list):
+                items = [items]
 
             # PERF(kgriffs): Use if-else rather than a DRY approach
             # that sets transform to a passthrough function; avoids
