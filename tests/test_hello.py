@@ -35,19 +35,26 @@ class HelloResource(object):
 
     def on_get(self, req, resp):
         self.called = True
-
         self.req, self.resp = req, resp
 
         resp.status = falcon.HTTP_200
 
         if 'stream' in self.mode:
             if 'filelike' in self.mode:
-                resp.stream = io.BytesIO(self.sample_utf8)
+                stream = io.BytesIO(self.sample_utf8)
             else:
-                resp.stream = [self.sample_utf8]
+                stream = [self.sample_utf8]
 
             if 'stream_len' in self.mode:
-                resp.stream_len = len(self.sample_utf8)
+                stream_len = len(self.sample_utf8)
+            else:
+                stream_len = None
+
+            if 'use_helper' in self.mode:
+                resp.set_stream(stream, stream_len)
+            else:
+                resp.stream = stream
+                resp.stream_len = stream_len
 
         if 'body' in self.mode:
             if 'bytes' in self.mode:
@@ -87,6 +94,10 @@ class TestHelloWorld(testing.TestBase):
 
         self.filelike_resource = HelloResource('stream, stream_len, filelike')
         self.api.add_route('/filelike', self.filelike_resource)
+
+        self.filelike_helper_resource = HelloResource(
+            'stream, stream_len, filelike, use_helper')
+        self.api.add_route('/filelike-helper', self.filelike_helper_resource)
 
         self.no_status_resource = NoStatusResource()
         self.api.add_route('/nostatus', self.no_status_resource)
@@ -194,6 +205,19 @@ class TestHelloWorld(testing.TestBase):
                 dest.write(chunk)
 
             expected_len = self.filelike_resource.resp.stream_len
+            content_length = ('content-length', str(expected_len))
+            self.assertThat(self.srmock.headers, Contains(content_length))
+            self.assertEqual(dest.tell(), expected_len)
+
+    def test_filelike_using_helper(self):
+            src = self.simulate_request('/filelike-helper')
+            self.assertTrue(self.filelike_helper_resource.called)
+
+            dest = io.BytesIO()
+            for chunk in src:
+                dest.write(chunk)
+
+            expected_len = self.filelike_helper_resource.resp.stream_len
             content_length = ('content-length', str(expected_len))
             self.assertThat(self.srmock.headers, Contains(content_length))
             self.assertEqual(dest.tell(), expected_len)
