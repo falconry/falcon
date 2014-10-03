@@ -82,6 +82,8 @@ class Request(object):
             is missing.
         client_accepts_json (bool): True if the Accept header includes JSON,
             otherwise False.
+        client_accepts_msgpack (bool): True if the Accept header includes
+            msgpack, otherwise False.
         client_accepts_xml (bool): True if the Accept header includes XML,
             otherwise False.
         content_type (str): Value of the Content-Type header, or *None* if
@@ -238,6 +240,10 @@ class Request(object):
     @property
     def client_accepts_json(self):
         return self.client_accepts('application/json')
+
+    @property
+    def client_accepts_msgpack(self):
+        return self.client_accepts('application/x-msgpack')
 
     @property
     def client_accepts_xml(self):
