@@ -15,6 +15,7 @@
 import re
 
 from falcon import api_helpers as helpers
+from falcon.api_helpers import create_http_method_map
 from falcon.request import Request
 from falcon.response import Response
 import falcon.responders
@@ -22,6 +23,9 @@ from falcon.status_codes import HTTP_416
 
 from falcon.http_error import HTTPError
 from falcon import DEFAULT_MEDIA_TYPE
+
+_missing = object()
+SLASH = '/'
 
 
 class API(object):
@@ -346,3 +350,98 @@ class API(object):
                 # NOTE(kgriffs): Catching the TypeError is a heuristic to
                 # detect old hooks that do not accept the "resource" param
                 hook(req, resp)
+
+
+class RootedAPI(API):
+    def __init__(self, root, *args, **kws):
+        self._root = root
+        super(RootedAPI, self).__init__(*args, **kws)
+
+    def _get_responder(self, req):
+        path = req.path
+        method = req.method
+        path_segments = path.split('/')
+        # Since the path is always rooted at /, skip the first segment, which
+        # will always be the empty string.  There will be at least one other
+        # path segment.
+        path_segments.pop(0)
+        this_segment = path_segments.pop(0)
+        resource = self._root
+        while True:
+            # See if there's a child matching the current segment.
+            # See if any of the resource's child links match the next segment.
+            for name in dir(resource):
+                if name.startswith('__') and name.endswith('__'):
+                    continue
+                attribute = getattr(resource, name)
+                matcher = getattr(attribute, '__matcher__', _missing)
+                if matcher is _missing:
+                    continue
+                result = None
+                if callable(matcher):
+                    # The matcher is a callable.  It returns None if it doesn't
+                    # match, and if it does, it returns a 3-tuple containing
+                    # the positional arguments, the keyword arguments, and the
+                    # remaining segments.  The attribute is then called with
+                    # these arguments.  Note that the matcher wants to see the
+                    # full remaining path components, which includes the
+                    # current hop.
+                    tmp_path_segments = path_segments[:]
+                    tmp_path_segments.insert(0, this_segment)
+                    matcher_result = matcher(req, tmp_path_segments)
+                    if matcher_result is not None:
+                        positional, keyword, path_segments = matcher_result
+                        result = attribute(
+                            req, path_segments, *positional, **keyword)
+                else:
+                    # The matcher string a regular expression or plain string.
+                    # If it starts with a caret, it's a regexp.
+                    if matcher.startswith('^'):
+                        cre = re.compile(matcher)
+                        # Search against the entire remaining path.
+                        tmp_path_segments = path_segments[:]
+                        tmp_path_segments.insert(0, this_segment)
+                        remaining_path = SLASH.join(tmp_path_segments)
+                        mo = cre.match(remaining_path)
+                        if mo:
+                            result = attribute(
+                                req, path_segments, **mo.groupdict())
+                    elif matcher == this_segment:
+                        result = attribute(req, path_segments)
+                # The attribute could return a 2-tuple giving the resource and
+                # remaining path segments, or it could just return the result.
+                # Of course, if the result is None, then the matcher did not
+                # match.
+                if result is None:
+                    continue
+                elif isinstance(result, tuple):
+                    resource, path_segments = result
+                else:
+                    resource = result
+                # The method could have truncated the remaining segments,
+                # meaning, it's consumed all or some of the path segments, or
+                # this is the last path segment.  In that case the resource
+                # we're left at is the responder.
+                if len(path_segments) == 0:
+                    # We're at the end of the path, so the root must be the
+                    # responder.
+                    method_map = create_http_method_map(
+                        resource, None, None, None)
+                    responder = method_map[method]
+                    return responder, {}, resource
+                this_segment = path_segments.pop(0)
+                break
+            else:
+                # None of the attributes matched this path component, so the
+                # response is a 404.
+                return falcon.responders.path_not_found, {}, None
+
+
+def child(matcher=None):
+    def decorator(func):
+        if matcher is None:
+            func.__matcher__ = func.__name__
+        else:
+            func.__matcher__ = matcher
+        return func
+    return decorator
