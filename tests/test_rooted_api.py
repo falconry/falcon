@@ -14,6 +14,7 @@ class NotFound:
     on_patch = _oops
     on_delete = _oops
 
+
 class One:
     @child()
     def two(self, request, segments):
@@ -23,26 +24,31 @@ class One:
         response.status = falcon.HTTP_200
         response.body = 'one'
 
+
 class Two:
     def on_get(self, request, response):
         response.status = falcon.HTTP_200
         response.body = 'two'
+
 
 class Three:
     def on_get(self, request, response):
         response.status = falcon.HTTP_200
         response.body = 'three'
 
+
 class Four:
     def on_get(self, request, response):
         response.status = falcon.HTTP_200
         response.body = 'four'
+
 
 def matcher(request, segments):
     if 'token' in segments:
         # It matches, return positional args, keyword args, and segments.
         return ('ant', 'bee'), dict(cat='cat', dog='dog'), ()
     return None
+
 
 class Matched:
     def __init__(self, a, b, cat='elk', dog='fly'):
@@ -54,6 +60,7 @@ class Matched:
     def on_get(self, request, response):
         response.status = falcon.HTTP_200
         response.body = ''.join((self.a, self.b, self.c, self.d))
+
 
 class Root:
     @child()
@@ -76,7 +83,7 @@ class Root:
             2: Two,
             3: Three,
             4: Four,
-            }.get(segment_count, NotFound)
+        }.get(segment_count, NotFound)
         # No more path segments.
         return next_hop(), ()
 
@@ -120,19 +127,19 @@ class TestRootedAPI(testing.TestBase):
     def test_path_consumer(self):
         response = self.simulate_request('/consume/a')
         self.assertEqual(self.srmock.status, falcon.HTTP_200)
-        self.assertEqual(response[0], 'one')
+        self.assertEqual(response[0], b'one')
 
         response = self.simulate_request('/consume/a/b')
         self.assertEqual(self.srmock.status, falcon.HTTP_200)
-        self.assertEqual(response[0], 'two')
+        self.assertEqual(response[0], b'two')
 
         response = self.simulate_request('/consume/a/b/c')
         self.assertEqual(self.srmock.status, falcon.HTTP_200)
-        self.assertEqual(response[0], 'three')
+        self.assertEqual(response[0], b'three')
 
         response = self.simulate_request('/consume/a/b/c/d')
         self.assertEqual(self.srmock.status, falcon.HTTP_200)
-        self.assertEqual(response[0], 'four')
+        self.assertEqual(response[0], b'four')
 
         response = self.simulate_request('/consume/a/b/c/d/e')
         self.assertEqual(self.srmock.status, falcon.HTTP_404)
@@ -140,7 +147,7 @@ class TestRootedAPI(testing.TestBase):
     def test_callable_matches(self):
         response = self.simulate_request('/this/token/matches')
         self.assertEqual(self.srmock.status, falcon.HTTP_200)
-        self.assertEqual(response[0], 'antbeecatdog')
+        self.assertEqual(response[0], b'antbeecatdog')
 
     def test_callable_misses(self):
         self.simulate_request('/these/tokens/miss')
