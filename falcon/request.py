@@ -698,22 +698,18 @@ class Request(object):
 
         Returns:
             list: The value of the param if it is found. Otherwise, returns
-            *None* unless required is True. for partial lists, *None* will be
-            returned as a placeholder. For example::
+            *None* unless required is True. Empty list elements will be
+            discarded. For example a query string containing this::
 
                 things=1,,3
 
-            would be returned as::
+            or a query string containing this::
 
-                ['1', None, '3']
+                things=1&things=&things=3
 
-            while this::
+            would both result in::
 
-                things=,,,
-
-            would just be retured as::
-
-                [None, None, None, None]
+                ['1', '3']
 
         Raises
             HTTPBadRequest: The param was not found in the request, but was
@@ -736,13 +732,10 @@ class Request(object):
             # PERF(kgriffs): Use if-else rather than a DRY approach
             # that sets transform to a passthrough function; avoids
             # function calling overhead.
-            if transform is None:
-                items = [i if i != '' else None
-                         for i in items]
-            else:
+            if transform is not None:
                 try:
-                    items = [transform(i) if i != '' else None
-                             for i in items]
+                    items = [transform(i) for i in items]
+
                 except ValueError:
                     msg = 'The value is not formatted correctly.'
                     raise InvalidParam(msg, name)

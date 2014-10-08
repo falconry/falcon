@@ -273,8 +273,8 @@ def parse_query_string(query_string):
 
     Returns:
         dict: A dict containing ``(name, value)`` tuples, one per query
-            parameter. Note that *value* will be a string, and that *name* is
-            case-sensitive, both copied directly from the query string.
+            parameter. Note that *value* will be a string or list of
+            strings.
 
     Raises:
         TypeError: query_string was not a string or buffer
@@ -302,6 +302,11 @@ def parse_query_string(query_string):
                 # very few people use this, it can be deprecated at some
                 # point.
                 v = v.split(',')
+
+                # NOTE(kgriffs): Normalize the result in the case that
+                # some elements are empty strings, such that the result
+                # will be the same for 'foo=1,,3' as 'foo=1&foo=&foo=3'.
+                v = [element for element in v if element]
 
             params[k] = v
 

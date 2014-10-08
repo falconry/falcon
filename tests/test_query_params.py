@@ -199,7 +199,9 @@ class _TestQueryParams(testing.TestBase):
     def test_list_type(self):
         query_string = ('colors=red,green,blue&limit=1'
                         '&list-ish1=f,,x&list-ish2=,0&list-ish3=a,,,b'
-                        '&empty1=&empty2=,&empty3=,,')
+                        '&empty1=&empty2=,&empty3=,,'
+                        '&thing_one=1,,3'
+                        '&thing_two=1&thing_two=&thing_two=3')
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
@@ -214,19 +216,25 @@ class _TestQueryParams(testing.TestBase):
         self.assertIs(req.get_param_as_list('marker'), None)
 
         self.assertEqual(req.get_param_as_list('empty1'), None)
-        self.assertEqual(req.get_param_as_list('empty2'), [None, None])
-        self.assertEqual(req.get_param_as_list('empty3'), [None, None, None])
+        self.assertEqual(req.get_param_as_list('empty2'), [])
+        self.assertEqual(req.get_param_as_list('empty3'), [])
 
         self.assertEqual(req.get_param_as_list('list-ish1'),
-                         ['f', None, 'x'])
+                         ['f', 'x'])
 
         # Ensure that '0' doesn't get translated to None
         self.assertEqual(req.get_param_as_list('list-ish2'),
-                         [None, '0'])
+                         ['0'])
 
         # Ensure that '0' doesn't get translated to None
         self.assertEqual(req.get_param_as_list('list-ish3'),
-                         ['a', None, None, 'b'])
+                         ['a', 'b'])
+
+        # Ensure consistency between list conventions
+        self.assertEqual(req.get_param_as_list('thing_one'),
+                         ['1', '3'])
+        self.assertEqual(req.get_param_as_list('thing_one'),
+                         req.get_param_as_list('thing_two'))
 
         store = {}
         self.assertEqual(req.get_param_as_list('limit', store=store), ['1'])
@@ -246,11 +254,11 @@ class _TestQueryParams(testing.TestBase):
         actual = req.get_param_as_list('coord', transform=float)
         self.assertEqual(actual, expected)
 
-        expected = ['4', None, '1']
+        expected = ['4', '1']
         actual = req.get_param_as_list('things', transform=str)
         self.assertEqual(actual, expected)
 
-        expected = [4, None, 1]
+        expected = [4, 1]
         actual = req.get_param_as_list('things', transform=int)
         self.assertEqual(actual, expected)
 
