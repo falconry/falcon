@@ -33,6 +33,20 @@ h1.logo-text {
     font-size: 18pt;
 }
 
+div.body h1,
+div.body h2,
+div.body h3,
+div.body h4,
+div.body h5,
+div.body h6 {
+    font-family:"Amethysta";
+
+    font-weight: normal;
+    margin: 30px 0px 10px -2px;
+    padding: 0;
+}
+
 table.field-list th {
     width: 95px;
 }
+
