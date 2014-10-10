@@ -3,7 +3,9 @@
 import json
 import xml.etree.ElementTree as et
 
+import ddt
 from testtools.matchers import raises, Not
+import yaml
 
 import falcon.testing as testing
 import falcon
@@ -115,6 +117,7 @@ class ServiceUnavailableResource:
         raise falcon.HTTPServiceUnavailable('Oops', 'Stand by...', 60)
 
 
+@ddt.ddt
 class TestHTTPError(testing.TestBase):
 
     def before(self):
@@ -170,14 +173,14 @@ class TestHTTPError(testing.TestBase):
                                      headers={'Accept': 'application/xml'})
         self.assertEqual(self.srmock.status, falcon.HTTP_400)
 
-        expected_xml = (b'<?xml version="1.0" encoding="UTF-8"?>' +
+        expected_xml = (b'<?xml version="1.0" encoding="UTF-8"?>'
                         b'<error><title>No-can-do</title></error>')
 
         self.assertEqual(body, [expected_xml])
 
     def test_client_does_not_accept_json_or_xml(self):
         headers = {
-            'Accept': 'application/soap+xml',
+            'Accept': 'application/x-yaml',
             'X-Error-Title': 'Storage service down',
             'X-Error-Description': ('The configured storage service is not '
                                     'responding to requests. Please contact '
@@ -188,6 +191,41 @@ class TestHTTPError(testing.TestBase):
         body = self.simulate_request('/fail', headers=headers)
         self.assertEqual(self.srmock.status, headers['X-Error-Status'])
         self.assertEqual(body, [])
+
+    def test_custom_error_serializer(self):
+        headers = {
+            'Accept': 'application/x-yaml',
+            'X-Error-Title': 'Storage service down',
+            'X-Error-Description': ('The configured storage service is not '
+                                    'responding to requests. Please contact '
+                                    'your service provider'),
+            'X-Error-Status': falcon.HTTP_503
+        }
+
+        expected_yaml = (b'{code: 10042, description: The configured storage '
+                         b'service is not responding to requests.\n    '
+                         b'Please contact your service provider, title: '
+                         b'Storage service down}\n')
+
+        def my_serializer(req, exception):
+            representation = None
+
+            preferred = req.client_prefers(('application/x-yaml',
+                                            'application/json'))
+
+            if preferred is not None:
+                if preferred == 'application/json':
+                    representation = exception.json()
+                else:
+                    representation = yaml.dump(exception.raw(),
+                                               encoding=None)
+
+            return (preferred, representation)
+
+        self.api.set_error_serializer(my_serializer)
+        body = self.simulate_request('/fail', headers=headers)
+        self.assertEqual(self.srmock.status, headers['X-Error-Status'])
+        self.assertEqual(body, [expected_yaml])
 
     def test_client_does_not_accept_anything(self):
         headers = {
@@ -203,10 +241,13 @@ class TestHTTPError(testing.TestBase):
         self.assertEqual(self.srmock.status, headers['X-Error-Status'])
         self.assertEqual(body, [])
 
-    def test_forbidden(self):
-        headers = {
-            'Accept': 'application/json'
-        }
+    @ddt.data(
+        'application/json',
+        'application/vnd.company.system.project.resource+json;v=1.1',
+        'application/json-patch+json',
+    )
+    def test_forbidden(self, media_type):
+        headers = {'Accept': media_type}
 
         expected_body = {
             'title': 'Request denied',
@@ -227,9 +268,7 @@ class TestHTTPError(testing.TestBase):
         self.assertEqual(json.loads(body), expected_body)
 
     def test_epic_fail_json(self):
-        headers = {
-            'Accept': 'application/json'
-        }
+        headers = {'Accept': 'application/json'}
 
         expected_body = {
             'title': 'Internet crashed',
@@ -249,10 +288,14 @@ class TestHTTPError(testing.TestBase):
         self.assertThat(lambda: json.loads(body), Not(raises(ValueError)))
         self.assertEqual(json.loads(body), expected_body)
 
-    def test_epic_fail_xml(self):
-        headers = {
-            'Accept': 'text/xml'
-        }
+    @ddt.data(
+        'text/xml',
+        'application/xml',
+        'application/vnd.company.system.project.resource+xml;v=1.1',
+        'application/atom+xml',
+    )
+    def test_epic_fail_xml(self, media_type):
+        headers = {'Accept': media_type}
 
         expected_body = ('<?xml version="1.0" encoding="UTF-8"?>' +
                          '<error>' +

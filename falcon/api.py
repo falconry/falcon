@@ -53,7 +53,7 @@ class API(object):
 
     __slots__ = ('_after', '_before', '_request_type', '_response_type',
                  '_error_handlers', '_media_type',
-                 '_routes', '_sinks')
+                 '_routes', '_sinks', '_serialize_error')
 
     def __init__(self, media_type=DEFAULT_MEDIA_TYPE, before=None, after=None,
                  request_type=Request, response_type=Response):
@@ -68,6 +68,7 @@ class API(object):
         self._response_type = response_type
 
         self._error_handlers = []
+        self._serialize_error = helpers.serialize_error
 
     def __call__(self, env, start_response):
         """WSGI `app` method.
@@ -123,7 +124,7 @@ class API(object):
                     raise
 
         except HTTPError as ex:
-            helpers.compose_error_response(req, resp, ex)
+            self._compose_error_response(req, resp, ex)
             self._call_after_hooks(req, resp, resource)
 
         #
@@ -277,6 +278,35 @@ class API(object):
         # adds (will cause the most recently added one to win).
         self._error_handlers.insert(0, (exception, handler))
 
+    def set_error_serializer(self, serializer):
+        """Override the default serializer for instances of HTTPError.
+
+        When a responder raises an instance of HTTPError, Falcon converts
+        it to an HTTP response automatically. The default serializer
+        supports JSON and XML, but may be overridden by this method to
+        use a custom serializer in order to support other media types.
+
+        Note:
+            If a custom media type is used and the type includes a
+            "+json" or "+xml" suffix, the default serializer will
+            convert the error to JSON or XML, respectively. If this
+            is not desirable, a custom error serializer may be used
+            to override this behavior.
+
+        Args:
+            serializer (callable): A function of the form
+                ``func(req, exception)``, where `req` is the request
+                object that was passed to the responder method, and
+                `exception` is an instance of falcon.HTTPError.
+                The function must return a tuple of the form
+                ``(media_type, representation)``, or ``(None, None)``
+                if the client does not support any of the
+                available media types.
+
+        """
+
+        self._serialize_error = serializer
+
     # ------------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------------
@@ -332,6 +362,25 @@ class API(object):
                 responder = falcon.responders.path_not_found
 
         return (responder, params, resource)
+
+    def _compose_error_response(self, req, resp, error):
+        """Composes a response for the given HTTPError instance."""
+
+        resp.status = error.status
+
+        if error.headers is not None:
+            resp.set_headers(error.headers)
+
+        if error.serializable:
+            media_type, body = self._serialize_error(req, error)
+
+            if body is not None:
+                resp.body = body
+
+                # NOTE(kgriffs): This must be done AFTER setting the headers
+                # from error.headers so that we will override Content-Type if
+                # it was mistakenly set by the app.
+                resp.content_type = media_type
 
     def _call_after_hooks(self, req, resp, resource):
         """Executes each of the global "after" hooks, in turn."""
