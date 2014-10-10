@@ -37,16 +37,6 @@ def normalize_headers(env):
     if 'CONTENT_LENGTH' in env:
         env['HTTP_CONTENT_LENGTH'] = env['CONTENT_LENGTH']
 
-    # Fallback to SERVER_* vars if the Host header isn't specified
-    if 'HTTP_HOST' not in env:
-        host = env['SERVER_NAME']
-        port = env['SERVER_PORT']
-
-        if port != '80':
-            host = ''.join([host, ':', port])
-
-        env['HTTP_HOST'] = host
-
 
 class Body(object):
     """Wrap wsgi.input streams to make them more robust.

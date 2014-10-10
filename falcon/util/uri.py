@@ -311,3 +311,52 @@ def parse_query_string(query_string):
             params[k] = v
 
     return params
+
+
+def parse_host(host, default_port=None):
+    """Parse a canonical host:port string into parts.
+
+    Parse a host string (which may or may not contain a port) into
+    parts, taking into account that the string may contain
+    either a domain name or an IP address. In the latter case,
+    both IPv4 and IPv6 addresses are supported.
+
+    Args:
+        host (str): Host string to parse, optionally containing a
+            port number.
+        default_port (int, optional): Port number to return when
+            the host string does not contain one (default ``None``).
+
+    Returns:
+        tuple: A parsed (host, port)  tuple from the given
+            host string, with the port converted to an ``int``.
+            If the string does not specify a port, `default_port` is
+            used instead.
+
+    """
+
+    # NOTE(kgriff): The value from the Host header may
+    # contain a port, so check that and strip it if
+    # necessary. This is complicated by the fact that
+    # a hostname may be specified either as an IP address
+    # or as a domain name, and in the case of IPv6 there
+    # may be multiple colons in the string.
+
+    if host.startswith('['):
+        # IPv6 address with a port
+        pos = host.rfind(']:')
+        if pos != -1:
+            return (host[1:pos], int(host[pos + 2:]))
+        else:
+            return (host[1:-1], default_port)
+
+    pos = host.rfind(':')
+    if (pos == -1) or (pos != host.find(':')):
+        # Bare domain name or IP address
+        return (host, default_port)
+
+    # NOTE(kgriffs): At this point we know that there was
+    # only a single colon, so we should have an IPv4 address
+    # or a domain name plus a port
+    name, _, port = host.partition(':')
+    return (name, int(port))
