@@ -11,7 +11,6 @@ class TestReqVars(testing.TestBase):
         self.qs = 'marker=deadbeef&limit=10'
 
         self.headers = {
-            'Host': 'falcon.example.com',
             'Content-Type': 'text/plain',
             'Content-Length': '4829',
             'Authorization': ''
@@ -20,11 +19,10 @@ class TestReqVars(testing.TestBase):
         self.app = '/test'
         self.path = '/hello'
         self.relative_uri = self.path + '?' + self.qs
-        self.uri = 'http://falcon.example.com' + self.app + self.relative_uri
-        self.uri_noqs = 'http://falcon.example.com' + self.app + self.path
 
         self.req = Request(testing.create_environ(
             app=self.app,
+            port=8080,
             path='/hello',
             query_string=self.qs,
             headers=self.headers))
@@ -45,6 +43,53 @@ class TestReqVars(testing.TestBase):
     def test_empty(self):
         self.assertIs(self.req.auth, None)
 
+    def test_host(self):
+        self.assertEqual(self.req.host, testing.DEFAULT_HOST)
+
+    def test_subdomain(self):
+        req = Request(testing.create_environ(
+            host='com',
+            path='/hello',
+            headers=self.headers))
+        self.assertIs(req.subdomain, None)
+
+        req = Request(testing.create_environ(
+            host='example.com',
+            path='/hello',
+            headers=self.headers))
+        self.assertEqual(req.subdomain, 'example')
+
+        req = Request(testing.create_environ(
+            host='highwire.example.com',
+            path='/hello',
+            headers=self.headers))
+        self.assertEqual(req.subdomain, 'highwire')
+
+        req = Request(testing.create_environ(
+            host='lb01.dfw01.example.com',
+            port=8080,
+            path='/hello',
+            headers=self.headers))
+        self.assertEqual(req.subdomain, 'lb01')
+
+        # NOTE(kgriffs): Behavior for IP addresses is undefined,
+        # so just make sure it doesn't blow up.
+        req = Request(testing.create_environ(
+            host='127.0.0.1',
+            path='/hello',
+            headers=self.headers))
+        self.assertEqual(type(req.subdomain), str)
+
+        # NOTE(kgriffs): Test fallback to SERVER_NAME by using
+        # HTTP 1.0, which will cause .create_environ to not set
+        # HTTP_HOST.
+        req = Request(testing.create_environ(
+            protocol='HTTP/1.0',
+            host='example.com',
+            path='/hello',
+            headers=self.headers))
+        self.assertEqual(req.subdomain, 'example')
+
     def test_reconstruct_url(self):
         req = self.req
 
@@ -54,18 +99,90 @@ class TestReqVars(testing.TestBase):
         path = req.path
         query_string = req.query_string
 
-        actual_url = ''.join([scheme, '://', host, app, path,
-                              '?', query_string])
-        self.assertEqual(actual_url, self.uri)
+        expected_uri = ''.join([scheme, '://', host, app, path,
+                                '?', query_string])
+
+        self.assertEqual(expected_uri, req.uri)
 
     def test_uri(self):
-        self.assertEqual(self.req.url, self.uri)
+        uri = ('http://' + testing.DEFAULT_HOST + ':8080' +
+               self.app + self.relative_uri)
+
+        self.assertEqual(self.req.url, uri)
 
         # NOTE(kgriffs): Call twice to check caching works
-        self.assertEqual(self.req.uri, self.uri)
-        self.assertEqual(self.req.uri, self.uri)
+        self.assertEqual(self.req.uri, uri)
+        self.assertEqual(self.req.uri, uri)
 
-        self.assertEqual(self.req_noqs.uri, self.uri_noqs)
+        uri_noqs = ('http://' + testing.DEFAULT_HOST + self.app + self.path)
+        self.assertEqual(self.req_noqs.uri, uri_noqs)
+
+    def test_uri_http_1_0(self):
+        # =======================================================
+        # HTTP, 80
+        # =======================================================
+        req = Request(testing.create_environ(
+            protocol='HTTP/1.0',
+            app=self.app,
+            port=80,
+            path='/hello',
+            query_string=self.qs,
+            headers=self.headers))
+
+        uri = ('http://' + testing.DEFAULT_HOST +
+               self.app + self.relative_uri)
+
+        self.assertEqual(req.uri, uri)
+
+        # =======================================================
+        # HTTP, 80
+        # =======================================================
+        req = Request(testing.create_environ(
+            protocol='HTTP/1.0',
+            app=self.app,
+            port=8080,
+            path='/hello',
+            query_string=self.qs,
+            headers=self.headers))
+
+        uri = ('http://' + testing.DEFAULT_HOST + ':8080' +
+               self.app + self.relative_uri)
+
+        self.assertEqual(req.uri, uri)
+
+        # =======================================================
+        # HTTP, 80
+        # =======================================================
+        req = Request(testing.create_environ(
+            protocol='HTTP/1.0',
+            scheme='https',
+            app=self.app,
+            port=443,
+            path='/hello',
+            query_string=self.qs,
+            headers=self.headers))
+
+        uri = ('https://' + testing.DEFAULT_HOST +
+               self.app + self.relative_uri)
+
+        self.assertEqual(req.uri, uri)
+
+        # =======================================================
+        # HTTP, 80
+        # =======================================================
+        req = Request(testing.create_environ(
+            protocol='HTTP/1.0',
+            scheme='https',
+            app=self.app,
+            port=22,
+            path='/hello',
+            query_string=self.qs,
+            headers=self.headers))
+
+        uri = ('https://' + testing.DEFAULT_HOST + ':22' +
+               self.app + self.relative_uri)
+
+        self.assertEqual(req.uri, uri)
 
     def test_relative_uri(self):
         self.assertEqual(self.req.relative_uri, self.app + self.relative_uri)

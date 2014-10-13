@@ -55,6 +55,15 @@ class Request(object):
     Attributes:
         protocol (str): Either 'http' or 'https'.
         method (str): HTTP method requested (e.g., GET, POST, etc.)
+        host (str): Hostname requested by the client
+        subdomain (str): Leftmost (i.e., most specific) subdomain from the
+            hostname. If only a single domain name is given, `subdomain`
+            will be *None*.
+
+            Note:
+                If the hostname in the request is an IP address, the value
+                for `subdomain` is undefined.
+
         user_agent (str): Value of the User-Agent header, or *None* if the
             header is missing.
         app (str): Name of the WSGI app (if using WSGI's notion of virtual
@@ -359,11 +368,31 @@ class Request(object):
     @property
     def uri(self):
         if self._cached_uri is None:
+            env = self.env
+            protocol = env['wsgi.url_scheme']
+
+            # NOTE(kgriffs): According to PEP-3333 we should first
+            # try to use the Host header if present.
+            #
+            # PERF(kgriffs): try..except is faster than .get
+            try:
+                host = env['HTTP_HOST']
+            except KeyError:
+                host = env['SERVER_NAME']
+                port = env['SERVER_PORT']
+
+                if protocol == 'https':
+                    if port != '443':
+                        host += ':' + port
+                else:
+                    if port != '80':
+                        host += ':' + port
+
             # PERF: For small numbers of items, '+' is faster
             # than ''.join(...). Concatenation is also generally
             # faster than formatting.
-            value = (self.protocol + '://' +
-                     self.get_header('host') +
+            value = (protocol + '://' +
+                     host +
                      self.app +
                      self.path)
 
@@ -375,6 +404,27 @@ class Request(object):
         return self._cached_uri
 
     url = uri
+
+    @property
+    def host(self):
+        try:
+            # NOTE(kgriffs): Prefer the host header; the web server
+            # isn't supposed to mess with it, so it should be what
+            # the client actually sent.
+            host_header = self.env['HTTP_HOST']
+            host, port = uri.parse_host(host_header)
+        except KeyError:
+            # PERF(kgriffs): According to PEP-3333, this header
+            # will always be present.
+            host = self.env['SERVER_NAME']
+
+        return host
+
+    @property
+    def subdomain(self):
+        # PERF(kgriffs): .partition is slightly faster than .split
+        subdomain, sep, remainder = self.host.partition('.')
+        return subdomain if sep else None
 
     @property
     def relative_uri(self):
