@@ -40,6 +40,7 @@ DEFAULT_ERROR_LOG_FORMAT = (u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
 
 TRUE_STRINGS = ('true', 'True', 'yes')
 FALSE_STRINGS = ('false', 'False', 'no')
+WSGI_CONTENT_HEADERS = ('CONTENT_TYPE', 'CONTENT_LENGTH')
 
 
 class Request(object):
@@ -225,13 +226,12 @@ class Request(object):
         else:
             self._params = {}
 
-        helpers.normalize_headers(env)
         self._cached_headers = {}
 
         self._cached_uri = None
         self._cached_relative_uri = None
 
-        self.content_type = self._get_header_by_wsgi_name('HTTP_CONTENT_TYPE')
+        self.content_type = self._get_header_by_wsgi_name('CONTENT_TYPE')
 
         # NOTE(kgriffs): Wrap wsgi.input if needed to make read() more robust,
         # normalizing semantics between, e.g., gunicorn and wsgiref.
@@ -276,7 +276,7 @@ class Request(object):
 
     @property
     def content_length(self):
-        value = self._get_header_by_wsgi_name('HTTP_CONTENT_LENGTH')
+        value = self._get_header_by_wsgi_name('CONTENT_LENGTH')
 
         if value:
             try:
@@ -452,6 +452,9 @@ class Request(object):
                     # anyway.
                     headers[name[5:].replace('_', '-')] = value
 
+                elif name in WSGI_CONTENT_HEADERS:
+                    headers[name.replace('_', '-')] = value
+
         return self._cached_headers.copy()
 
     @property
@@ -529,13 +532,26 @@ class Request(object):
 
         """
 
+        wsgi_name = name.upper().replace('-', '_')
+
         # Use try..except to optimize for the header existing in most cases
         try:
             # Don't take the time to cache beforehand, using HTTP naming.
             # This will be faster, assuming that most headers are looked
             # up only once, and not all headers will be requested.
-            return self.env['HTTP_' + name.upper().replace('-', '_')]
+            return self.env['HTTP_' + wsgi_name]
+
         except KeyError:
+            # NOTE(kgriffs): There are a couple headers that do not
+            # use the HTTP prefix in the env, so try those. We expect
+            # people to usually just use the relevant helper properties
+            # to access these instead of .get_header.
+            if wsgi_name in WSGI_CONTENT_HEADERS:
+                try:
+                    return self.env[wsgi_name]
+                except KeyError:
+                    pass
+
             if not required:
                 return None
 
