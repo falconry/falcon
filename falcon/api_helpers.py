@@ -197,7 +197,7 @@ def compile_uri_template(template):
         template = template[:-1]
     
     PCT_ENCODED = '%[0-9A-Fa-f]{2}'
-    UNRESERVED = '[A-Za-z0-9\-\._~]'
+    UNRESERVED = '[^/]'
     RESERVED = r'[:/\?#\[\]@\!\$&\'\(\)\*\+,;=]'
     BASIC_VARIABLE = '{([a-zA-Z][a-zA-Z_]+)}'
     RESERVED_VARIABLE = r'{\+([a-zA-Z][a-zA-Z_]+)}'
