@@ -195,15 +195,21 @@ def compile_uri_template(template):
 
     if template != '/' and template.endswith('/'):
         template = template[:-1]
-
-    expression_pattern = r'{([a-zA-Z][a-zA-Z_]*)}'
-
+    
+    PCT_ENCODED = '%[0-9A-Fa-f]{2}'
+    UNRESERVED = '[A-Za-z0-9\-\._~]'
+    RESERVED = r'[:/\?#\[\]@\!\$&\'\(\)\*\+,;=]'
+    BASIC_VARIABLE = '{([a-zA-Z][a-zA-Z_]+)}'
+    RESERVED_VARIABLE = r'{\+([a-zA-Z][a-zA-Z_]+)}'
+    
     # Get a list of field names
-    fields = set(re.findall(expression_pattern, template))
-
-    # Convert Level 1 var patterns to equivalent named regex groups
-    escaped = re.sub(r'[\.\(\)\[\]\?\*\+\^\|]', r'\\\g<0>', template)
-    pattern = re.sub(expression_pattern, r'(?P<\1>[^/]+)', escaped)
+    fields = set(re.findall(BASIC_VARIABLE, template))
+    fields.update( re.findall(RESERVED_VARIABLE, template) )
+    
+    # Convert Basic and Reserved var patterns to equivalent named regex groups
+    escaped = re.sub(r'[\.\(\)\[\]\?\*\^\|]', r'\\\g<0>', template)
+    pattern = re.sub(BASIC_VARIABLE, r'(?P<\1>%s+)' % UNRESERVED, escaped)
+    pattern = re.sub(RESERVED_VARIABLE, r'(?P<\1>(%s|%s|%s)+)' % (UNRESERVED, RESERVED, PCT_ENCODED), pattern)
     pattern = r'\A' + pattern + r'\Z'
 
     return fields, re.compile(pattern, re.IGNORECASE)
