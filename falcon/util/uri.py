@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
-
 import six
 
 # NOTE(kgriffs): See also RFC 3986
@@ -27,10 +25,6 @@ _DELIMITERS = ":/?#[]@!$&'()*+,;="
 _ALL_ALLOWED = _UNRESERVED + _DELIMITERS
 
 _HEX_DIGITS = '0123456789ABCDEFabcdef'
-
-# NOTE(kgriffs): Match query string fields. If this is modified, take
-# care not to reduce performance.
-_QS_PATTERN = re.compile(r'(?:&|\A)([^=]+)=([^&]+)')
 
 
 def _create_char_encoder(allowed_chars):
@@ -280,10 +274,16 @@ def parse_query_string(query_string):
 
     """
 
-    # PERF(kgriffs): A for loop is faster than using array or dict
-    # comprehensions (tested under py27, py33). Go figure!
     params = {}
-    for k, v in _QS_PATTERN.findall(query_string):
+
+    # PERF(kgriffs): This was found to be faster than using a regex, for
+    # both short and long query strings. Tested on both CPython 2.7 and 3.4,
+    # and on PyPy 2.3.
+    for field in query_string.split('&'):
+        k, _, v = field.partition('=')
+        if not v:
+            continue
+
         if k in params:
             # The key was present more than once in the POST data.  Convert to
             # a list, or append the next value to the list.
