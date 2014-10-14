@@ -187,8 +187,7 @@ if six.PY2:  # pragma: no cover
             char, byte = _HEX_TO_BYTE[token[:2]]
             decoded_uri += char + token[2:]
 
-            if only_ascii:
-                only_ascii = (byte <= 127)
+            only_ascii = only_ascii and (byte <= 127)
 
         # PERF(kgriffs): Only spend the time to do this if there
         # were non-ascii bytes found in the string.

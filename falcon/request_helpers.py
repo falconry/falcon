@@ -13,6 +13,27 @@
 # limitations under the License.
 
 
+def header_property(wsgi_name):
+    """Creates a read-only header property.
+
+    Args:
+        wsgi_name (str): Case-sensitive name of the header as it would
+            appear in the WSGI environ dict (i.e., 'HTTP_*')
+
+    Returns:
+        A property instance than can be assigned to a class variable.
+
+    """
+
+    def fget(self):
+        try:
+            return self.env[wsgi_name] or None
+        except KeyError:
+            return None
+
+    return property(fget)
+
+
 class Body(object):
     """Wrap wsgi.input streams to make them more robust.
 
