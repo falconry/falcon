@@ -35,7 +35,16 @@ class HTTPError(Exception):
 
     Attributes:
         status (str): HTTP status line, such as "748 Confounded by Ponies".
-        title (str): Error title to send to the client.
+        serializable (bool): Returns *True* IFF the error should be
+            serialized when composing the HTTP response.
+
+            Note:
+                If an app sets a custom error serializer, it will only
+                be called when the error's `serializable` property is
+                ``True``.
+
+        title (str): Error title to send to the client. Will be ``None`` if
+            the error should result in an HTTP response with an empty body.
         description (str): Description of the error to send to the client.
         headers (dict): Extra headers to add to the response.
         link (str): An href that the client can provide to the user for
@@ -45,15 +54,21 @@ class HTTPError(Exception):
 
     Args:
         status (str): HTTP status code and text, such as "400 Bad Request"
-        title (str): Human-friendly error title. Set to *None* if you wish
+        title (str): Human-friendly error title. Set to ``None`` if you wish
             Falcon to return an empty response body (all remaining args will
-            be ignored except for headers.) Do this only when you don't
-            wish to disclose sensitive information about why a request was
-            refused, or if the status and headers are self-descriptive.
+            be ignored except for headers.) This will set the error's
+            `serializable` property to ``False``.
+
+            Note:
+                Set `title` to ``None`` when you don't wish to disclose
+                sensitive information about why a request was refused,
+                when the status and headers are self-descriptive, or when
+                the HTTP specification forbids returning a body for the
+                status code in question.
 
     Keyword Args:
         description (str): Human-friendly description of the error, along with
-            a helpful suggestion or two (default *None*).
+            a helpful suggestion or two (default ``None``).
         headers (dict or list): A dictionary of header names and values
             to set, or list of (name, value) tuples. Both names and
             values must be of type str or StringType, and only character
@@ -72,9 +87,9 @@ class HTTPError(Exception):
                 than a dict.
 
         headers (dict): Extra headers to return in the
-            response to the client (default *None*).
+            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
-            (default *None*). Unicode characters are percent-encoded.
+            (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
             title/description for the link (defaults to "API documentation
             for this error").
@@ -92,7 +107,7 @@ class HTTPError(Exception):
         'code'
     )
 
-    def __init__(self, status, title, description=None, headers=None,
+    def __init__(self, status, title=None, description=None, headers=None,
                  href=None, href_text=None, code=None):
         self.status = status
         self.title = title
@@ -108,19 +123,28 @@ class HTTPError(Exception):
         else:
             self.link = None
 
-    def json(self):
-        """Returns a pretty JSON-encoded version of the exception
+    @property
+    def serializable(self):
+        return self.title is not None
+
+    def raw(self, obj_type=dict):
+        """Returns a raw dictionary representing the error.
+
+        This method can be useful when serializing the error to hash-like
+        media types, such as YAML, JSON, and MessagePack.
+
+        Args:
+            obj_type: A dict-like type that will be used to store the
+                error information (default *dict*).
 
         Returns:
-            A JSON representation of the exception, or
-            None if title was set to *None* in the initializer.
+            A dictionary populated with the error's title, description, etc.
 
         """
 
-        if self.title is None:
-            return None
+        assert self.serializable
 
-        obj = OrderedDict()
+        obj = obj_type()
         obj['title'] = self.title
 
         if self.description:
@@ -132,20 +156,29 @@ class HTTPError(Exception):
         if self.link:
             obj['link'] = self.link
 
+        return obj
+
+    def json(self):
+        """Returns a pretty-printed JSON representation of the error.
+
+        Returns:
+            A JSON document for the error.
+
+        """
+
+        obj = self.raw(OrderedDict)
         return json.dumps(obj, indent=4, separators=(',', ': '),
                           ensure_ascii=False)
 
     def xml(self):
-        """Returns an XML-encoded version of the exception
+        """Returns an XML-encoded representation of the error.
 
         Returns:
-            An XML representation of the exception, or
-            None if title was set to *None* in the initializer.
+            An XML document for the error.
 
         """
 
-        if self.title is None:
-            return None
+        assert self.serializable
 
         error_element = et.Element('error')
         et.SubElement(error_element, 'title').text = self.title
