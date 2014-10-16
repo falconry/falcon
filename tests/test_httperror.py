@@ -37,7 +37,7 @@ class FaultyResource:
             code=8733224)
 
     def on_patch(self, req, resp):
-        raise falcon.HTTPError(falcon.HTTP_400, 'No-can-do')
+        raise falcon.HTTPError(falcon.HTTP_400)
 
 
 class UnicodeFaultyResource(object):
@@ -166,7 +166,7 @@ class TestHTTPError(testing.TestBase):
     def test_no_description_json(self):
         body = self.simulate_request('/fail', method='PATCH')
         self.assertEqual(self.srmock.status, falcon.HTTP_400)
-        self.assertEqual(body, [b'{\n    "title": "No-can-do"\n}'])
+        self.assertEqual(body, [b'{}'])
 
     def test_no_description_xml(self):
         body = self.simulate_request('/fail', method='PATCH',
@@ -174,7 +174,7 @@ class TestHTTPError(testing.TestBase):
         self.assertEqual(self.srmock.status, falcon.HTTP_400)
 
         expected_xml = (b'<?xml version="1.0" encoding="UTF-8"?>'
-                        b'<error><title>No-can-do</title></error>')
+                        b'<error />')
 
         self.assertEqual(body, [expected_xml])
 

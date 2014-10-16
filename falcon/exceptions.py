@@ -94,7 +94,11 @@ class HTTPNotFound(HTTPError):
     """
 
     def __init__(self):
-        HTTPError.__init__(self, status.HTTP_404, None, None)
+        HTTPError.__init__(self, status.HTTP_404)
+
+    @property
+    def has_representation(self):
+        return False
 
 
 class HTTPMethodNotAllowed(HTTPError):
@@ -116,21 +120,27 @@ class HTTPMethodNotAllowed(HTTPError):
         HTTPError.__init__(self, status.HTTP_405, 'Method not allowed',
                            **kwargs)
 
+        # NOTE(kgriffs): Trigger an empty body in the response; 405
+        # responses don't usually have bodies, so we only send one
+        # if the caller indicates they want one by providing some
+        # details in the kwargs.
         if kwargs:
             title = 'Method not allowed'
+            self._has_representation = True
         else:
-            # NOTE(kgriffs): Trigger an empty body in the response; 405
-            # responses don't usually have bodies, so we only send one
-            # if the caller indicates they want one, by way of specifying
-            # a description, href, and/or other details.
             title = None
+            self._has_representation = False
 
         # NOTE(kgriffs): Inject the "Allow" header so it will be included
         # in the HTTP response.
         headers = kwargs.setdefault('headers', {})
         headers['Allow'] = ', '.join(allowed_methods)
 
-        HTTPError.__init__(self, status.HTTP_405, title, **kwargs)
+        HTTPError.__init__(self, status.HTTP_405, title=title, **kwargs)
+
+    @property
+    def has_representation(self):
+        return self._has_representation
 
 
 class HTTPNotAcceptable(HTTPError):
@@ -262,7 +272,11 @@ class HTTPRangeNotSatisfiable(HTTPError):
 
     def __init__(self, resource_length):
         headers = {'Content-Range': 'bytes */' + str(resource_length)}
-        HTTPError.__init__(self, status.HTTP_416, None, headers=headers)
+        HTTPError.__init__(self, status.HTTP_416, headers=headers)
+
+    @property
+    def has_representation(self):
+        return False
 
 
 class HTTPInternalServerError(HTTPError):

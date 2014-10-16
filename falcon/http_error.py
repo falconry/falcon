@@ -35,14 +35,11 @@ class HTTPError(Exception):
 
     Attributes:
         status (str): HTTP status line, such as "748 Confounded by Ponies".
-        serializable (bool): Returns *True* IFF the error should be
-            serialized when composing the HTTP response.
-
-            Note:
-                If an app sets a custom error serializer, it will only
-                be called when the error's `serializable` property is
-                ``True``.
-
+        has_representation (bool): Read-only property that determines
+            whether error details will be serialized when composing
+            the HTTP response. In ``HTTPError`` this property always
+            returns ``True``, but child classes may override this property
+            in order to return ``False`` when an empty HTTP body is desired.
         title (str): Error title to send to the client. Will be ``None`` if
             the error should result in an HTTP response with an empty body.
         description (str): Description of the error to send to the client.
@@ -54,19 +51,9 @@ class HTTPError(Exception):
 
     Args:
         status (str): HTTP status code and text, such as "400 Bad Request"
-        title (str): Human-friendly error title. Set to ``None`` if you wish
-            Falcon to return an empty response body (all remaining args will
-            be ignored except for headers.) This will set the error's
-            `serializable` property to ``False``.
-
-            Note:
-                Set `title` to ``None`` when you don't wish to disclose
-                sensitive information about why a request was refused,
-                when the status and headers are self-descriptive, or when
-                the HTTP specification forbids returning a body for the
-                status code in question.
 
     Keyword Args:
+        title (str): Human-friendly error title (default ``None``).
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two (default ``None``).
         headers (dict or list): A dictionary of header names and values
@@ -95,7 +82,7 @@ class HTTPError(Exception):
             for this error").
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
-            base articles related to this error.
+            base articles related to this error (default ``None``).
     """
 
     __slots__ = (
@@ -104,7 +91,7 @@ class HTTPError(Exception):
         'description',
         'headers',
         'link',
-        'code'
+        'code',
     )
 
     def __init__(self, status, title=None, description=None, headers=None,
@@ -124,8 +111,8 @@ class HTTPError(Exception):
             self.link = None
 
     @property
-    def serializable(self):
-        return self.title is not None
+    def has_representation(self):
+        return True
 
     def raw(self, obj_type=dict):
         """Returns a raw dictionary representing the error.
@@ -142,18 +129,20 @@ class HTTPError(Exception):
 
         """
 
-        assert self.serializable
+        assert self.has_representation
 
         obj = obj_type()
-        obj['title'] = self.title
 
-        if self.description:
+        if self.title is not None:
+            obj['title'] = self.title
+
+        if self.description is not None:
             obj['description'] = self.description
 
-        if self.code:
+        if self.code is not None:
             obj['code'] = self.code
 
-        if self.link:
+        if self.link is not None:
             obj['link'] = self.link
 
         return obj
@@ -178,18 +167,20 @@ class HTTPError(Exception):
 
         """
 
-        assert self.serializable
+        assert self.has_representation
 
         error_element = et.Element('error')
-        et.SubElement(error_element, 'title').text = self.title
 
-        if self.description:
+        if self.title is not None:
+            et.SubElement(error_element, 'title').text = self.title
+
+        if self.description is not None:
             et.SubElement(error_element, 'description').text = self.description
 
-        if self.code:
+        if self.code is not None:
             et.SubElement(error_element, 'code').text = str(self.code)
 
-        if self.link:
+        if self.link is not None:
             link_element = et.SubElement(error_element, 'link')
 
             for key in ('text', 'href', 'rel'):

@@ -371,7 +371,7 @@ class API(object):
         if error.headers is not None:
             resp.set_headers(error.headers)
 
-        if error.serializable:
+        if error.has_representation:
             media_type, body = self._serialize_error(req, error)
 
             if body is not None:
