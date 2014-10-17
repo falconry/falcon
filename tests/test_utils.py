@@ -233,6 +233,10 @@ class TestFalconUtils(testtools.TestCase):
 class TestFalconTesting(falcon.testing.TestBase):
     """Catch some uncommon branches not covered elsewhere."""
 
+    def test_path_escape_chars_in_create_environ(self):
+        env = falcon.testing.create_environ('/hello%20world%21')
+        self.assertEqual(env['PATH_INFO'], '/hello world!')
+
     def test_unicode_path_in_create_environ(self):
         if six.PY3:
             self.skip('Test does not apply to Py3K')
