@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from falcon.http_error import HTTPError
+from falcon.http_error import HTTPError, NoRepresentation
 import falcon.status_codes as status
 
 
@@ -85,7 +85,7 @@ class HTTPForbidden(HTTPError):
         HTTPError.__init__(self, status.HTTP_403, title, description, **kwargs)
 
 
-class HTTPNotFound(HTTPError):
+class HTTPNotFound(NoRepresentation, HTTPError):
     """404 Not Found.
 
     Use this when the URL path does not map to an existing resource, or you
@@ -96,12 +96,8 @@ class HTTPNotFound(HTTPError):
     def __init__(self):
         HTTPError.__init__(self, status.HTTP_404)
 
-    @property
-    def has_representation(self):
-        return False
 
-
-class HTTPMethodNotAllowed(HTTPError):
+class HTTPMethodNotAllowed(NoRepresentation, HTTPError):
     """405 Method Not Allowed.
 
     The method specified in the Request-Line is not allowed for the
@@ -112,35 +108,12 @@ class HTTPMethodNotAllowed(HTTPError):
     Args:
         allowed_methods (list of str): Allowed HTTP methods for this
             resource, for example: ['GET', 'POST', 'HEAD'].
-        kwargs (optional): Same as for ``HTTPError``.
 
     """
 
-    def __init__(self, allowed_methods, **kwargs):
-        HTTPError.__init__(self, status.HTTP_405, 'Method not allowed',
-                           **kwargs)
-
-        # NOTE(kgriffs): Trigger an empty body in the response; 405
-        # responses don't usually have bodies, so we only send one
-        # if the caller indicates they want one by providing some
-        # details in the kwargs.
-        if kwargs:
-            title = 'Method not allowed'
-            self._has_representation = True
-        else:
-            title = None
-            self._has_representation = False
-
-        # NOTE(kgriffs): Inject the "Allow" header so it will be included
-        # in the HTTP response.
-        headers = kwargs.setdefault('headers', {})
-        headers['Allow'] = ', '.join(allowed_methods)
-
-        HTTPError.__init__(self, status.HTTP_405, title=title, **kwargs)
-
-    @property
-    def has_representation(self):
-        return self._has_representation
+    def __init__(self, allowed_methods):
+        headers = {'Allow': ', '.join(allowed_methods)}
+        HTTPError.__init__(self, status.HTTP_405, headers=headers)
 
 
 class HTTPNotAcceptable(HTTPError):
@@ -260,7 +233,7 @@ class HTTPUnsupportedMediaType(HTTPError):
                            description, **kwargs)
 
 
-class HTTPRangeNotSatisfiable(HTTPError):
+class HTTPRangeNotSatisfiable(NoRepresentation, HTTPError):
     """416 Range Not Satisfiable.
 
     The requested range is not valid. See also: http://goo.gl/Qsa4EF
@@ -273,10 +246,6 @@ class HTTPRangeNotSatisfiable(HTTPError):
     def __init__(self, resource_length):
         headers = {'Content-Range': 'bytes */' + str(resource_length)}
         HTTPError.__init__(self, status.HTTP_416, headers=headers)
-
-    @property
-    def has_representation(self):
-        return False
 
 
 class HTTPInternalServerError(HTTPError):

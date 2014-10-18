@@ -38,8 +38,9 @@ class HTTPError(Exception):
         has_representation (bool): Read-only property that determines
             whether error details will be serialized when composing
             the HTTP response. In ``HTTPError`` this property always
-            returns ``True``, but child classes may override this property
+            returns ``True``, but child classes may override it
             in order to return ``False`` when an empty HTTP body is desired.
+            See also the ``falcon.http_error.NoRepresentation`` mixin.
         title (str): Error title to send to the client. Will be ``None`` if
             the error should result in an HTTP response with an empty body.
         description (str): Description of the error to send to the client.
@@ -188,3 +189,27 @@ class HTTPError(Exception):
 
         return (b'<?xml version="1.0" encoding="UTF-8"?>' +
                 et.tostring(error_element, encoding='utf-8'))
+
+
+class NoRepresentation(object):
+    """Mixin for ``HTTPError`` child classes that have no representation.
+
+    This class can be mixed in when inheriting from ``HTTPError``, in order
+    to override the `has_representation` property, such that it always
+    returns ``False``. This, in turn, will cause Falcon to return an empty
+    response body to the client.
+
+    You can use this mixin when defining errors that either should not have
+    a body (as dictated by HTTP standards or common practice), or in the
+    case that a detailed error response may leak information to an attacker.
+
+    Note:
+        This mixin class must appear before ``HTTPError`` in the base class
+        list when defining the child; otherwise, it will not override the
+        `has_representation` property as expected.
+
+    """
+
+    @property
+    def has_representation(self):
+        return False
