@@ -24,7 +24,7 @@ class HTTPBadRequest(HTTPError):
     modifications. (RFC 2616)
 
     Args:
-        title (str): Error title, for example: 'TTL Out of Range'.
+        title (str): Error title (e.g., 'TTL Out of Range').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         kwargs (optional): Same as for ``HTTPError``.
@@ -42,7 +42,7 @@ class HTTPUnauthorized(HTTPError):
     not valid, or no credentials were provided in the first place.
 
     Args:
-        title (str): Error title, for example: 'Authentication Required'.
+        title (str): Error title (e.g., 'Authentication Required').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         scheme (str): Authentication scheme to use as the value of the
@@ -74,7 +74,7 @@ class HTTPForbidden(HTTPError):
     (Not Found) can be used instead. (RFC 2616)
 
     Args:
-        title (str): Error title, for example: 'Permission Denied'.
+        title (str): Error title (e.g., 'Permission Denied').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         kwargs (optional): Same as for ``HTTPError``.
@@ -107,7 +107,7 @@ class HTTPMethodNotAllowed(NoRepresentation, HTTPError):
 
     Args:
         allowed_methods (list of str): Allowed HTTP methods for this
-            resource, for example: ['GET', 'POST', 'HEAD'].
+            resource (e.g., ['GET', 'POST', 'HEAD']).
 
     """
 
@@ -163,7 +163,7 @@ class HTTPConflict(HTTPError):
     (RFC 2616)
 
     Args:
-        title (str): Error title, for example: 'Editing Conflict'.
+        title (str): Error title (e.g., 'Editing Conflict').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         kwargs (optional): Same as for ``HTTPError``.
@@ -183,7 +183,7 @@ class HTTPLengthRequired(HTTPError):
     message-body in the request message. (RFC 2616)
 
     Args:
-        title (str): Error title, for example: 'Missing Content-Length'.
+        title (str): Error title (e.g., 'Missing Content-Length').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         kwargs (optional): Same as for ``HTTPError``.
@@ -204,7 +204,7 @@ class HTTPPreconditionFailed(HTTPError):
     (RFC 2616)
 
     Args:
-        title (str): Error title, for example: 'Image Not Modified'.
+        title (str): Error title (e.g., 'Image Not Modified').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         kwargs (optional): Same as for ``HTTPError``.
@@ -252,7 +252,7 @@ class HTTPInternalServerError(HTTPError):
     """500 Internal Server Error.
 
     Args:
-        title (str): Error title, for example: 'This Should Never Happen'.
+        title (str): Error title (e.g., 'This Should Never Happen').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         kwargs (optional): Same as for ``HTTPError``.
@@ -264,7 +264,7 @@ class HTTPInternalServerError(HTTPError):
 
 
 class HTTPBadGateway(HTTPError):
-    """502 Bad Gateway
+    """502 Bad Gateway.
 
     Args:
         title (str): Error title, for
@@ -283,7 +283,7 @@ class HTTPServiceUnavailable(HTTPError):
     """503 Service Unavailable.
 
     Args:
-        title (str): Error title, for example: 'Temporarily Unavailable'.
+        title (str): Error title (e.g., 'Temporarily Unavailable').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         retry_after (date or int): Value for the Retry-After header. If a date
@@ -295,10 +295,6 @@ class HTTPServiceUnavailable(HTTPError):
     """
 
     def __init__(self, title, description, retry_after, **kwargs):
-        """Initialize
-
-        """
-
         headers = kwargs.setdefault('headers', {})
         headers['Retry-After'] = str(retry_after)
         HTTPError.__init__(self, status.HTTP_503, title, description, **kwargs)
@@ -312,7 +308,8 @@ class InvalidHeader(HTTPBadRequest):
         value (str): The value that is given to the header.
         header_name (str): The name of the header.
         kwargs (optional): Optional args to include more information.
-        """
+
+    """
 
     def __init__(self, msg, value, header_name, **kwargs):
         description = ('The value "{0}" given for the {1} header is invalid. '
@@ -323,13 +320,14 @@ class InvalidHeader(HTTPBadRequest):
 
 
 class InvalidParam(HTTPBadRequest):
-    """HTTP parameter is invalid
+    """HTTP parameter is invalid.
 
     Args:
         msg (str): A description of the invalid parameter.
         param_name (str): The name of the paramameter.
         kwargs (optional): Optional args to include more information.
-        """
+
+    """
 
     def __init__(self, msg, param_name, **kwargs):
         description = 'The {0} parameter is invalid. {1}'.format(param_name,
