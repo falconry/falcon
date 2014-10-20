@@ -1,10 +1,13 @@
 import datetime
 
+import ddt
+
 import falcon
 from falcon.request import Request
 import falcon.testing as testing
 
 
+@ddt.ddt
 class TestReqVars(testing.TestBase):
 
     def before(self):
@@ -351,7 +354,7 @@ class TestReqVars(testing.TestBase):
 
         headers = {'Range': ''}
         req = Request(testing.create_environ(headers=headers))
-        self.assertIs(req.range, None)
+        self.assertRaises(falcon.InvalidHeader, lambda: req.range)
 
         req = Request(testing.create_environ())
         self.assertIs(req.range, None)
@@ -431,7 +434,7 @@ class TestReqVars(testing.TestBase):
 
         headers = {'content-length': ''}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEqual(req.content_length, None)
+        self.assertRaises(falcon.InvalidHeader, lambda: req.content_length)
 
     def test_bogus_content_length_nan(self):
         headers = {'content-length': 'fuzzy-bunnies'}
@@ -449,10 +452,15 @@ class TestReqVars(testing.TestBase):
         req = Request(testing.create_environ(headers=headers))
         self.assertEqual(req.date, date)
 
-    def test_date_invalid(self):
-        headers = {'date': 'Thu, 04 Apr 2013'}
+    @ddt.data('Thu, 04 Apr 2013', '')
+    def test_date_invalid(self, http_date):
+        headers = {'date': http_date}
         req = Request(testing.create_environ(headers=headers))
         self.assertRaises(falcon.HTTPBadRequest, lambda: req.date)
+
+    def test_date_missing(self):
+        req = Request(testing.create_environ())
+        self.assertEqual(req.date, None)
 
     def test_attribute_headers(self):
         date = testing.httpnow()

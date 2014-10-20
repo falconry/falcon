@@ -40,6 +40,7 @@ DEFAULT_ERROR_LOG_FORMAT = (u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
 
 TRUE_STRINGS = ('true', 'True', 'yes')
 FALSE_STRINGS = ('false', 'False', 'no')
+WSGI_CONTENT_HEADERS = ('CONTENT_TYPE', 'CONTENT_LENGTH')
 
 
 class Request(object):
@@ -201,37 +202,29 @@ class Request(object):
         else:
             self.path = '/'
 
-        # QUERY_STRING isn't required to be in env, so let's check
-        # PERF: if...in is faster than using env.get(...)
-        if 'QUERY_STRING' in env and env['QUERY_STRING']:
+        self._params = {}
 
-            # TODO(kgriffs): Should this escape individual values instead
-            # of the entire string? The way it is now, this:
-            #
-            #   x=ab%2Bcd%3D42%2C9
-            #
-            # becomes this:
-            #
-            #   x=ab+cd=42,9
-            #
-            self.query_string = uri.decode(env['QUERY_STRING'])
+        # PERF(kgriffs): if...in is faster than using env.get(...)
+        if 'QUERY_STRING' in env:
+            query_str = env['QUERY_STRING']
+
+            if query_str:
+                self.query_string = uri.decode(query_str)
+                self._params = uri.parse_query_string(self.query_string)
+            else:
+                self.query_string = six.text_type()
 
         else:
             self.query_string = six.text_type()
 
-        # PERF: Don't parse it if we don't have to!
-        if self.query_string:
-            self._params = uri.parse_query_string(self.query_string)
-        else:
-            self._params = {}
-
-        helpers.normalize_headers(env)
-        self._cached_headers = {}
-
+        self._cached_headers = None
         self._cached_uri = None
         self._cached_relative_uri = None
 
-        self.content_type = self._get_header_by_wsgi_name('HTTP_CONTENT_TYPE')
+        try:
+            self.content_type = self.env['CONTENT_TYPE']
+        except KeyError:
+            self.content_type = None
 
         # NOTE(kgriffs): Wrap wsgi.input if needed to make read() more robust,
         # normalizing semantics between, e.g., gunicorn and wsgiref.
@@ -240,11 +233,27 @@ class Request(object):
             # covered since the test that does so uses multiprocessing.
             self.stream = helpers.Body(self.stream, self.content_length)
 
-        self._parse_form_urlencoded()
+        # PERF(kgriffs): Technically, we should spend a few more
+        # cycles and parse the content type for real, but
+        # this heuristic will work virtually all the time.
+        if (self.content_type is not None and
+                'application/x-www-form-urlencoded' in self.content_type):
+            self._parse_form_urlencoded()
 
     # ------------------------------------------------------------------------
     # Properties
     # ------------------------------------------------------------------------
+
+    user_agent = helpers.header_property('HTTP_USER_AGENT')
+    auth = helpers.header_property('HTTP_AUTHORIZATION')
+
+    expect = helpers.header_property('HTTP_EXPECT')
+
+    if_match = helpers.header_property('HTTP_IF_MATCH')
+    if_none_match = helpers.header_property('HTTP_IF_NONE_MATCH')
+    if_modified_since = helpers.header_property('HTTP_IF_MODIFIED_SINCE')
+    if_unmodified_since = helpers.header_property('HTTP_IF_UNMODIFIED_SINCE')
+    if_range = helpers.header_property('HTTP_IF_RANGE')
 
     @property
     def client_accepts_json(self):
@@ -260,42 +269,39 @@ class Request(object):
 
     @property
     def accept(self):
-        accept = self._get_header_by_wsgi_name('HTTP_ACCEPT')
-
-        # NOTE(kgriffs): Per RFC, missing accept header is
+        # NOTE(kgriffs): Per RFC, a missing accept header is
         # equivalent to '*/*'
-        return '*/*' if accept is None else accept
-
-    @property
-    def user_agent(self):
-        return self._get_header_by_wsgi_name('HTTP_USER_AGENT')
-
-    @property
-    def auth(self):
-        return self._get_header_by_wsgi_name('HTTP_AUTHORIZATION')
+        try:
+            return self.env['HTTP_ACCEPT'] or '*/*'
+        except KeyError:
+            return '*/*'
 
     @property
     def content_length(self):
-        value = self._get_header_by_wsgi_name('HTTP_CONTENT_LENGTH')
+        try:
+            value = self.env['CONTENT_LENGTH']
+        except KeyError:
+            return None
 
-        if value:
-            try:
-                value_as_int = int(value)
-            except ValueError:
-                msg = 'The value of the header must be a number.'
-                raise InvalidHeader(msg, value, 'content-length')
+        try:
+            value_as_int = int(value)
+        except ValueError:
+            msg = 'The value of the header must be a number.'
+            raise InvalidHeader(msg, value, 'content-length')
 
-            if value_as_int < 0:
-                msg = 'The value of the header must be a positive number.'
-                raise InvalidHeader(msg, value, 'content-length')
-            else:
-                return value_as_int
+        if value_as_int < 0:
+            msg = 'The value of the header must be a positive number.'
+            raise InvalidHeader(msg, value, 'content-length')
 
-        return None
+        return value_as_int
 
     @property
     def date(self):
-        http_date = self._get_header_by_wsgi_name('HTTP_DATE')
+        try:
+            http_date = self.env['HTTP_DATE']
+        except KeyError:
+            return None
+
         try:
             return util.http_date_to_dt(http_date)
         except ValueError:
@@ -304,58 +310,34 @@ class Request(object):
             raise InvalidHeader(msg, http_date, 'date')
 
     @property
-    def expect(self):
-        return self._get_header_by_wsgi_name('HTTP_EXPECT')
-
-    @property
-    def if_match(self):
-        return self._get_header_by_wsgi_name('HTTP_IF_MATCH')
-
-    @property
-    def if_none_match(self):
-        return self._get_header_by_wsgi_name('HTTP_IF_NONE_MATCH')
-
-    @property
-    def if_modified_since(self):
-        return self._get_header_by_wsgi_name('HTTP_IF_MODIFIED_SINCE')
-
-    @property
-    def if_unmodified_since(self):
-        return self._get_header_by_wsgi_name('HTTP_IF_UNMODIFIED_SINCE')
-
-    @property
-    def if_range(self):
-        return self._get_header_by_wsgi_name('HTTP_IF_RANGE')
-
-    @property
     def range(self):
-        value = self._get_header_by_wsgi_name('HTTP_RANGE')
+        try:
+            value = self.env['HTTP_RANGE']
+        except KeyError:
+            return None
 
-        if value:
-            if ',' in value:
-                msg = 'The value must be a continuous byte range.'
+        if ',' in value:
+            msg = 'The value must be a continuous byte range.'
+            raise InvalidHeader(msg, value, 'range')
+
+        try:
+            first, last = value.split('-')
+
+            if first:
+                return (int(first), int(last or -1))
+            elif last:
+                return (-int(last), -1)
+            else:
+                msg = 'The value is missing offsets.'
                 raise InvalidHeader(msg, value, 'range')
 
-            try:
-                first, last = value.split('-')
-
-                if first:
-                    return (int(first), int(last or -1))
-                elif last:
-                    return (-int(last), -1)
-                else:
-                    msg = 'The value is missing offsets.'
-                    raise InvalidHeader(msg, value, 'range')
-
-            except ValueError:
-                href = 'http://goo.gl/zZ6Ey'
-                href_text = 'HTTP/1.1 Range Requests'
-                msg = ('The string given could not be parsed. It must be '
-                       'formatted according to RFC 2616.')
-                raise InvalidHeader(msg, value, 'range', href=href,
-                                    href_text=href_text)
-
-        return None
+        except ValueError:
+            href = 'http://goo.gl/zZ6Ey'
+            href_text = 'HTTP/1.1 Range Requests'
+            msg = ('The string given could not be parsed. It must be '
+                   'formatted according to RFC 2616.')
+            raise InvalidHeader(msg, value, 'range', href=href,
+                                href_text=href_text)
 
     @property
     def app(self):
@@ -441,8 +423,8 @@ class Request(object):
     def headers(self):
         # NOTE(kgriffs: First time here will cache the dict so all we
         # have to do is clone it in the future.
-        if not self._cached_headers:
-            headers = self._cached_headers
+        if self._cached_headers is None:
+            headers = self._cached_headers = {}
 
             env = self.env
             for name, value in env.items():
@@ -451,6 +433,9 @@ class Request(object):
                     # since headers are supposed to be case-insensitive
                     # anyway.
                     headers[name[5:].replace('_', '-')] = value
+
+                elif name in WSGI_CONTENT_HEADERS:
+                    headers[name.replace('_', '-')] = value
 
         return self._cached_headers.copy()
 
@@ -529,13 +514,26 @@ class Request(object):
 
         """
 
+        wsgi_name = name.upper().replace('-', '_')
+
         # Use try..except to optimize for the header existing in most cases
         try:
             # Don't take the time to cache beforehand, using HTTP naming.
             # This will be faster, assuming that most headers are looked
             # up only once, and not all headers will be requested.
-            return self.env['HTTP_' + name.upper().replace('-', '_')]
+            return self.env['HTTP_' + wsgi_name]
+
         except KeyError:
+            # NOTE(kgriffs): There are a couple headers that do not
+            # use the HTTP prefix in the env, so try those. We expect
+            # people to usually just use the relevant helper properties
+            # to access these instead of .get_header.
+            if wsgi_name in WSGI_CONTENT_HEADERS:
+                try:
+                    return self.env[wsgi_name]
+                except KeyError:
+                    pass
+
             if not required:
                 return None
 
@@ -840,12 +838,6 @@ class Request(object):
     # ------------------------------------------------------------------------
 
     def _parse_form_urlencoded(self):
-        # PERF(kgriffs): Technically, we should spend a few more
-        # cycles and parse the content type for real, but
-        # this heuristic will work virtually all the time.
-        if (self.content_type and
-                'application/x-www-form-urlencoded' in self.content_type):
-
             # NOTE(kgriffs): This assumes self.stream has been patched
             # above in the case of wsgiref, so that self.content_length
             # is not needed. Normally we just avoid accessing
@@ -871,20 +863,3 @@ class Request(object):
             if body:
                 extra_params = uri.parse_query_string(uri.decode(body))
                 self._params.update(extra_params)
-
-    def _get_header_by_wsgi_name(self, name):
-        """Looks up a header, assuming name is already UPPERCASE_UNDERSCORE
-
-        Args:
-            name (str): Name of the header, already uppercased, and
-                underscored
-
-        Returns:
-            str: Value of the specified header, or *None* if the header was not
-            found. Also returns *None* if the value of the header was blank.
-
-        """
-        try:
-            return self.env[name] or None
-        except KeyError:
-            return None

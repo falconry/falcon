@@ -227,6 +227,12 @@ class TestHeaders(testing.TestBase):
 
         self.assertEqual(body, [])
 
+    def test_content_header_missing(self):
+        environ = testing.create_environ()
+        req = falcon.Request(environ)
+        for header in ('Content-Type', 'Content-Length'):
+            self.assertIs(req.get_header(header), None)
+
     def test_passthrough_req_headers(self):
         req_headers = {
             'X-Auth-Token': 'Setec Astronomy',
