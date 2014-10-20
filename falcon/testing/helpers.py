@@ -20,6 +20,7 @@ from datetime import datetime
 import six
 
 import falcon
+from falcon.util import uri
 
 # Constants
 DEFAULT_HOST = 'falconframework.org'
@@ -87,6 +88,10 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1',
 
     body = io.BytesIO(body.encode('utf-8')
                       if isinstance(body, six.text_type) else body)
+
+    # NOTE(kgriffs): wsgiref, gunicorn, and uWSGI all unescape
+    # the paths before setting PATH_INFO
+    path = uri.decode(path)
 
     # NOTE(kgriffs): nocover since this branch will never be
     # taken in Python3. However, the branch is tested under Py2,
