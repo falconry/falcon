@@ -113,6 +113,34 @@ class ServiceUnavailableResource:
         raise falcon.HTTPServiceUnavailable('Oops', 'Stand by...', 60)
 
 
+class InvalidHeaderResource:
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPInvalidHeader(
+            'Please provide a valid token.', 'X-Auth-Token',
+            code='A1001')
+
+
+class MissingHeaderResource:
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPMissingHeader('X-Auth-Token')
+
+
+class InvalidParamResource:
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPInvalidParam(
+            'The value must be a hex-encoded UUID.', 'id',
+            code='P1002')
+
+
+class MissingParamResource:
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPMissingParam('id', code='P1003')
+
+
 @ddt.ddt
 class TestHTTPError(testing.TestBase):
 
@@ -412,13 +440,69 @@ class TestHTTPError(testing.TestBase):
         body = self.simulate_request('/503', decode='utf-8')
 
         expected_body = {
-            'title': 'Oops',
-            'description': 'Stand by...',
+            u'title': u'Oops',
+            u'description': u'Stand by...',
         }
 
         self.assertEqual(self.srmock.status, falcon.HTTP_503)
         self.assertEqual(json.loads(body), expected_body)
         self.assertIn(('retry-after', '60'), self.srmock.headers)
+
+    def test_invalid_header(self):
+        self.api.add_route('/400', InvalidHeaderResource())
+        body = self.simulate_request('/400', decode='utf-8')
+
+        expected_desc = (u'The value provided for the X-Auth-Token '
+                         u'header is invalid. Please provide a valid token.')
+
+        expected_body = {
+            u'title': u'Invalid header value',
+            u'description': expected_desc,
+            u'code': u'A1001',
+        }
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_400)
+        self.assertEqual(json.loads(body), expected_body)
+
+    def test_missing_header(self):
+        self.api.add_route('/400', MissingHeaderResource())
+        body = self.simulate_request('/400', decode='utf-8')
+
+        expected_body = {
+            u'title': u'Missing header value',
+            u'description': u'The X-Auth-Token header is required.',
+        }
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_400)
+        self.assertEqual(json.loads(body), expected_body)
+
+    def test_invalid_param(self):
+        self.api.add_route('/400', InvalidParamResource())
+        body = self.simulate_request('/400', decode='utf-8')
+
+        expected_desc = (u'The "id" query parameter is invalid. The '
+                         u'value must be a hex-encoded UUID.')
+        expected_body = {
+            u'title': u'Invalid query parameter',
+            u'description': expected_desc,
+            u'code': u'P1002',
+        }
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_400)
+        self.assertEqual(json.loads(body), expected_body)
+
+    def test_missing_param(self):
+        self.api.add_route('/400', MissingParamResource())
+        body = self.simulate_request('/400', decode='utf-8')
+
+        expected_body = {
+            u'title': u'Missing query parameter',
+            u'description': u'The "id" query parameter is required.',
+            u'code': u'P1003',
+        }
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_400)
+        self.assertEqual(json.loads(body), expected_body)
 
     def test_misc(self):
         self._misc_test(falcon.HTTPBadRequest, falcon.HTTP_400)

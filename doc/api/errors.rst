@@ -31,8 +31,10 @@ Predefined Errors
 -----------------
 
 .. automodule:: falcon
-    :members: HTTPBadRequest, HTTPUnauthorized, HTTPForbidden, HTTPNotFound,
+    :members: HTTPInvalidHeader, HTTPMissingHeader,
+        HTTPInvalidParam, HTTPMissingParam,
+        HTTPBadRequest, HTTPUnauthorized, HTTPForbidden, HTTPNotFound,
         HTTPMethodNotAllowed, HTTPNotAcceptable, HTTPConflict,
         HTTPLengthRequired, HTTPPreconditionFailed, HTTPUnsupportedMediaType,
         HTTPRangeNotSatisfiable, HTTPInternalServerError, HTTPBadGateway,
-        HTTPServiceUnavailable, InvalidHeader, InvalidParam
+        HTTPServiceUnavailable,

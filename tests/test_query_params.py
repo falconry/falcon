@@ -1,7 +1,10 @@
+import ddt
+
 import falcon
 import falcon.testing as testing
 
 
+@ddt.ddt
 class _TestQueryParams(testing.TestBase):
 
     def before(self):
@@ -76,27 +79,37 @@ class _TestQueryParams(testing.TestBase):
         self.assertEqual(req.get_param('_thing'), '42')
         self.assertEqual(req.get_param('_charset_'), 'utf-8')
 
-    def test_required(self):
+    @ddt.data('get_param', 'get_param_as_int', 'get_param_as_bool',
+              'get_param_as_list')
+    def test_required(self, method_name):
         query_string = ''
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
-        self.assertRaises(falcon.HTTPBadRequest, req.get_param,
-                          'marker', required=True)
-        self.assertRaises(falcon.HTTPBadRequest, req.get_param_as_int,
-                          'marker', required=True)
-        self.assertRaises(falcon.HTTPBadRequest, req.get_param_as_bool,
-                          'marker', required=True)
-        self.assertRaises(falcon.HTTPBadRequest, req.get_param_as_list,
-                          'marker', required=True)
+
+        try:
+            getattr(req, method_name)('marker', required=True)
+            self.fail('falcon.HTTPMissingParam not raised')
+        except falcon.HTTPMissingParam as ex:
+            self.assertEqual(ex.title, 'Missing query parameter')
+            expected_desc = 'The "marker" query parameter is required.'
+            self.assertEqual(ex.description, expected_desc)
 
     def test_int(self):
         query_string = 'marker=deadbeef&limit=25'
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
-        self.assertRaises(falcon.HTTPBadRequest, req.get_param_as_int,
-                          'marker')
+
+        try:
+            req.get_param_as_int('marker')
+        except Exception as ex:
+            self.assertIsInstance(ex, falcon.HTTPBadRequest)
+            self.assertIsInstance(ex, falcon.HTTPInvalidParam)
+            self.assertEqual(ex.title, 'Invalid query parameter')
+            expected_desc = ('The "marker" query parameter is invalid. '
+                             'The value must be an integer.')
+            self.assertEqual(ex.description, expected_desc)
 
         self.assertEqual(req.get_param_as_int('limit'), 25)
 
@@ -181,8 +194,16 @@ class _TestQueryParams(testing.TestBase):
         req = self.resource.req
         self.assertRaises(falcon.HTTPBadRequest, req.get_param_as_bool,
                           'bogus')
-        self.assertRaises(falcon.HTTPBadRequest, req.get_param_as_bool,
-                          'bogus2')
+
+        try:
+            req.get_param_as_bool('bogus2')
+        except Exception as ex:
+            self.assertIsInstance(ex, falcon.HTTPInvalidParam)
+            self.assertEqual(ex.title, 'Invalid query parameter')
+            expected_desc = ('The "bogus2" query parameter is invalid. '
+                             'The value of the parameter must be "true" '
+                             'or "false".')
+            self.assertEqual(ex.description, expected_desc)
 
         self.assertEqual(req.get_param_as_bool('echo'), True)
         self.assertEqual(req.get_param_as_bool('doit'), False)
@@ -262,8 +283,14 @@ class _TestQueryParams(testing.TestBase):
         actual = req.get_param_as_list('things', transform=int)
         self.assertEqual(actual, expected)
 
-        self.assertRaises(falcon.HTTPBadRequest,
-                          req.get_param_as_list, 'coord', transform=int)
+        try:
+            req.get_param_as_list('coord', transform=int)
+        except Exception as ex:
+            self.assertIsInstance(ex, falcon.HTTPInvalidParam)
+            self.assertEqual(ex.title, 'Invalid query parameter')
+            expected_desc = ('The "coord" query parameter is invalid. '
+                             'The value is not formatted correctly.')
+            self.assertEqual(ex.description, expected_desc)
 
     def test_param_property(self):
         query_string = 'ant=4&bee=3&cat=2&dog=1'

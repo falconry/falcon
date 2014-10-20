@@ -354,7 +354,7 @@ class TestReqVars(testing.TestBase):
 
         headers = {'Range': ''}
         req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.InvalidHeader, lambda: req.range)
+        self.assertRaises(falcon.HTTPInvalidHeader, lambda: req.range)
 
         req = Request(testing.create_environ())
         self.assertIs(req.range, None)
@@ -365,8 +365,11 @@ class TestReqVars(testing.TestBase):
         self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
 
         headers = {'Range': '-'}
-        req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+        expected_desc = ('The value provided for the Range header is '
+                         'invalid. The byte offsets are missing.')
+        self._test_error_details(headers, 'range',
+                                 falcon.HTTPInvalidHeader,
+                                 'Invalid header value', expected_desc)
 
         headers = {'Range': '--'}
         req = Request(testing.create_environ(headers=headers))
@@ -413,12 +416,20 @@ class TestReqVars(testing.TestBase):
         self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
 
         headers = {'Range': 'x-y'}
-        req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+        expected_desc = ('The value provided for the Range header is '
+                         'invalid. It must be formatted according to '
+                         'RFC 2616.')
+        self._test_error_details(headers, 'range',
+                                 falcon.HTTPInvalidHeader,
+                                 'Invalid header value', expected_desc)
 
         headers = {'Range': 'bytes=0-0,-1'}
-        req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+        expected_desc = ('The value provided for the Range '
+                         'header is invalid. The value must be a '
+                         'continuous byte range.')
+        self._test_error_details(headers, 'range',
+                                 falcon.HTTPInvalidHeader,
+                                 'Invalid header value', expected_desc)
 
     def test_missing_attribute_header(self):
         req = Request(testing.create_environ())
@@ -434,17 +445,26 @@ class TestReqVars(testing.TestBase):
 
         headers = {'content-length': ''}
         req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.InvalidHeader, lambda: req.content_length)
+        self.assertRaises(falcon.HTTPInvalidHeader,
+                          lambda: req.content_length)
 
     def test_bogus_content_length_nan(self):
         headers = {'content-length': 'fuzzy-bunnies'}
-        req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.HTTPBadRequest, lambda: req.content_length)
+        expected_desc = ('The value provided for the '
+                         'Content-Length header is invalid. The value '
+                         'of the header must be a number.')
+        self._test_error_details(headers, 'content_length',
+                                 falcon.HTTPInvalidHeader,
+                                 'Invalid header value', expected_desc)
 
     def test_bogus_content_length_neg(self):
         headers = {'content-length': '-1'}
-        req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.HTTPBadRequest, lambda: req.content_length)
+        expected_desc = ('The value provided for the Content-Length '
+                         'header is invalid. The value of the header '
+                         'must be a positive number.')
+        self._test_error_details(headers, 'content_length',
+                                 falcon.HTTPInvalidHeader,
+                                 'Invalid header value', expected_desc)
 
     def test_date(self):
         date = datetime.datetime(2013, 4, 4, 5, 19, 18)
@@ -455,12 +475,16 @@ class TestReqVars(testing.TestBase):
     @ddt.data('Thu, 04 Apr 2013', '')
     def test_date_invalid(self, http_date):
         headers = {'date': http_date}
-        req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.HTTPBadRequest, lambda: req.date)
+        expected_desc = ('The value provided for the Date '
+                         'header is invalid. It must be formatted '
+                         'according to RFC 1123.')
+        self._test_error_details(headers, 'date',
+                                 falcon.HTTPInvalidHeader,
+                                 'Invalid header value', expected_desc)
 
     def test_date_missing(self):
         req = Request(testing.create_environ())
-        self.assertEqual(req.date, None)
+        self.assertIs(req.date, None)
 
     def test_attribute_headers(self):
         date = testing.httpnow()
@@ -516,3 +540,14 @@ class TestReqVars(testing.TestBase):
 
         req = Request(testing.create_environ())
         self.assertEqual(getattr(req, attr), default)
+
+    def _test_error_details(self, headers, attr_name,
+                            error_type, title, description):
+        req = Request(testing.create_environ(headers=headers))
+
+        try:
+            getattr(req, attr_name)
+            self.fail('{0} not raised'.format(error_type.__name__))
+        except error_type as ex:
+            self.assertEqual(ex.title, title)
+            self.assertEqual(ex.description, description)
