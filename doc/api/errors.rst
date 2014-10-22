@@ -21,9 +21,20 @@ Base Class
 .. autoclass:: falcon.HTTPError
     :members:
 
+Mixins
+------
+
+.. autoclass:: falcon.http_error.NoRepresentation
+    :members:
+
 Predefined Errors
 -----------------
 
-.. automodule:: falcon.exceptions
-    :members:
-    :member-order: bysource
+.. automodule:: falcon
+    :members: HTTPInvalidHeader, HTTPMissingHeader,
+        HTTPInvalidParam, HTTPMissingParam,
+        HTTPBadRequest, HTTPUnauthorized, HTTPForbidden, HTTPNotFound,
+        HTTPMethodNotAllowed, HTTPNotAcceptable, HTTPConflict,
+        HTTPLengthRequired, HTTPPreconditionFailed, HTTPUnsupportedMediaType,
+        HTTPRangeNotSatisfiable, HTTPInternalServerError, HTTPBadGateway,
+        HTTPServiceUnavailable,

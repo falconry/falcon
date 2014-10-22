@@ -29,7 +29,7 @@ except AttributeError:  # pragma nocover
 import mimeparse
 import six
 
-from falcon.exceptions import HTTPBadRequest, InvalidHeader, InvalidParam
+from falcon.exceptions import *
 from falcon import util
 from falcon.util import uri
 from falcon import request_helpers as helpers
@@ -287,11 +287,11 @@ class Request(object):
             value_as_int = int(value)
         except ValueError:
             msg = 'The value of the header must be a number.'
-            raise InvalidHeader(msg, value, 'content-length')
+            raise HTTPInvalidHeader(msg, 'Content-Length')
 
         if value_as_int < 0:
             msg = 'The value of the header must be a positive number.'
-            raise InvalidHeader(msg, value, 'content-length')
+            raise HTTPInvalidHeader(msg, 'Content-Length')
 
         return value_as_int
 
@@ -305,9 +305,8 @@ class Request(object):
         try:
             return util.http_date_to_dt(http_date)
         except ValueError:
-            msg = ('The value could not be parsed. It must be formatted '
-                   'according to RFC 1123.')
-            raise InvalidHeader(msg, http_date, 'date')
+            msg = ('It must be formatted according to RFC 1123.')
+            raise HTTPInvalidHeader(msg, 'Date')
 
     @property
     def range(self):
@@ -318,7 +317,7 @@ class Request(object):
 
         if ',' in value:
             msg = 'The value must be a continuous byte range.'
-            raise InvalidHeader(msg, value, 'range')
+            raise HTTPInvalidHeader(msg, 'Range')
 
         try:
             first, last = value.split('-')
@@ -328,16 +327,15 @@ class Request(object):
             elif last:
                 return (-int(last), -1)
             else:
-                msg = 'The value is missing offsets.'
-                raise InvalidHeader(msg, value, 'range')
+                msg = 'The byte offsets are missing.'
+                raise HTTPInvalidHeader(msg, 'Range')
 
         except ValueError:
             href = 'http://goo.gl/zZ6Ey'
             href_text = 'HTTP/1.1 Range Requests'
-            msg = ('The string given could not be parsed. It must be '
-                   'formatted according to RFC 2616.')
-            raise InvalidHeader(msg, value, 'range', href=href,
-                                href_text=href_text)
+            msg = ('It must be formatted according to RFC 2616.')
+            raise HTTPInvalidHeader(msg, 'Range', href=href,
+                                    href_text=href_text)
 
     @property
     def app(self):
@@ -537,8 +535,7 @@ class Request(object):
             if not required:
                 return None
 
-            description = 'The "' + name + '" header is required.'
-            raise HTTPBadRequest('Missing header', description)
+            raise HTTPMissingParam(name)
 
     def get_param(self, name, required=False, store=None):
         """Return the value of a query string parameter as a string.
@@ -597,8 +594,7 @@ class Request(object):
         if not required:
             return None
 
-        description = 'The "' + name + '" query parameter is required.'
-        raise HTTPBadRequest('Missing query parameter', description)
+        raise HTTPMissingParam(name)
 
     def get_param_as_int(self, name,
                          required=False, min=None, max=None, store=None):
@@ -645,15 +641,15 @@ class Request(object):
                 val = int(val)
             except ValueError:
                 msg = 'The value must be an integer.'
-                raise InvalidParam(msg, name)
+                raise HTTPInvalidParam(msg, name)
 
             if min is not None and val < min:
                 msg = 'The value must be at least ' + str(min)
-                raise InvalidParam(msg, name)
+                raise HTTPInvalidParam(msg, name)
 
             if max is not None and max < val:
                 msg = 'The value may not exceed ' + str(max)
-                raise InvalidParam(msg, name)
+                raise HTTPInvalidParam(msg, name)
 
             if store is not None:
                 store[name] = val
@@ -663,8 +659,7 @@ class Request(object):
         if not required:
             return None
 
-        description = 'The "' + name + '" query parameter is required.'
-        raise HTTPBadRequest('Missing query parameter', description)
+        raise HTTPMissingParam(name)
 
     def get_param_as_bool(self, name, required=False, store=None):
         """Return the value of a query string parameter as a boolean
@@ -709,7 +704,7 @@ class Request(object):
                 val = False
             else:
                 msg = 'The value of the parameter must be "true" or "false".'
-                raise InvalidParam(msg, name)
+                raise HTTPInvalidParam(msg, name)
 
             if store is not None:
                 store[name] = val
@@ -719,8 +714,7 @@ class Request(object):
         if not required:
             return None
 
-        description = 'The "' + name + '" query parameter is required.'
-        raise HTTPBadRequest('Missing query parameter', description)
+        raise HTTPMissingParam(name)
 
     def get_param_as_list(self, name,
                           transform=None, required=False, store=None):
@@ -786,7 +780,7 @@ class Request(object):
 
                 except ValueError:
                     msg = 'The value is not formatted correctly.'
-                    raise InvalidParam(msg, name)
+                    raise HTTPInvalidParam(msg, name)
 
             if store is not None:
                 store[name] = items
@@ -796,8 +790,7 @@ class Request(object):
         if not required:
             return None
 
-        raise HTTPBadRequest('Missing query parameter',
-                             'The "' + name + '" query parameter is required.')
+        raise HTTPMissingParam(name)
 
     # TODO(kgriffs): Use the nocover pragma only for the six.PY3 if..else
     def log_error(self, message):  # pragma: no cover

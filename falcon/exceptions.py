@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from falcon.http_error import HTTPError
+from falcon.http_error import HTTPError, NoRepresentation
 import falcon.status_codes as status
 
 
@@ -24,7 +24,7 @@ class HTTPBadRequest(HTTPError):
     modifications. (RFC 2616)
 
     Args:
-        title (str): Error title, for example: 'TTL Out of Range'.
+        title (str): Error title (e.g., 'TTL Out of Range').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         kwargs (optional): Same as for ``HTTPError``.
@@ -42,7 +42,7 @@ class HTTPUnauthorized(HTTPError):
     not valid, or no credentials were provided in the first place.
 
     Args:
-        title (str): Error title, for example: 'Authentication Required'.
+        title (str): Error title (e.g., 'Authentication Required').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         scheme (str): Authentication scheme to use as the value of the
@@ -74,7 +74,7 @@ class HTTPForbidden(HTTPError):
     (Not Found) can be used instead. (RFC 2616)
 
     Args:
-        title (str): Error title, for example: 'Permission Denied'.
+        title (str): Error title (e.g., 'Permission Denied').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         kwargs (optional): Same as for ``HTTPError``.
@@ -85,7 +85,7 @@ class HTTPForbidden(HTTPError):
         HTTPError.__init__(self, status.HTTP_403, title, description, **kwargs)
 
 
-class HTTPNotFound(HTTPError):
+class HTTPNotFound(NoRepresentation, HTTPError):
     """404 Not Found.
 
     Use this when the URL path does not map to an existing resource, or you
@@ -96,12 +96,8 @@ class HTTPNotFound(HTTPError):
     def __init__(self):
         HTTPError.__init__(self, status.HTTP_404)
 
-    @property
-    def has_representation(self):
-        return False
 
-
-class HTTPMethodNotAllowed(HTTPError):
+class HTTPMethodNotAllowed(NoRepresentation, HTTPError):
     """405 Method Not Allowed.
 
     The method specified in the Request-Line is not allowed for the
@@ -111,36 +107,13 @@ class HTTPMethodNotAllowed(HTTPError):
 
     Args:
         allowed_methods (list of str): Allowed HTTP methods for this
-            resource, for example: ['GET', 'POST', 'HEAD'].
-        kwargs (optional): Same as for ``HTTPError``.
+            resource (e.g., ['GET', 'POST', 'HEAD']).
 
     """
 
-    def __init__(self, allowed_methods, **kwargs):
-        HTTPError.__init__(self, status.HTTP_405, 'Method not allowed',
-                           **kwargs)
-
-        # NOTE(kgriffs): Trigger an empty body in the response; 405
-        # responses don't usually have bodies, so we only send one
-        # if the caller indicates they want one by providing some
-        # details in the kwargs.
-        if kwargs:
-            title = 'Method not allowed'
-            self._has_representation = True
-        else:
-            title = None
-            self._has_representation = False
-
-        # NOTE(kgriffs): Inject the "Allow" header so it will be included
-        # in the HTTP response.
-        headers = kwargs.setdefault('headers', {})
-        headers['Allow'] = ', '.join(allowed_methods)
-
-        HTTPError.__init__(self, status.HTTP_405, title=title, **kwargs)
-
-    @property
-    def has_representation(self):
-        return self._has_representation
+    def __init__(self, allowed_methods):
+        headers = {'Allow': ', '.join(allowed_methods)}
+        HTTPError.__init__(self, status.HTTP_405, headers=headers)
 
 
 class HTTPNotAcceptable(HTTPError):
@@ -190,7 +163,7 @@ class HTTPConflict(HTTPError):
     (RFC 2616)
 
     Args:
-        title (str): Error title, for example: 'Editing Conflict'.
+        title (str): Error title (e.g., 'Editing Conflict').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         kwargs (optional): Same as for ``HTTPError``.
@@ -210,7 +183,7 @@ class HTTPLengthRequired(HTTPError):
     message-body in the request message. (RFC 2616)
 
     Args:
-        title (str): Error title, for example: 'Missing Content-Length'.
+        title (str): Error title (e.g., 'Missing Content-Length').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         kwargs (optional): Same as for ``HTTPError``.
@@ -231,7 +204,7 @@ class HTTPPreconditionFailed(HTTPError):
     (RFC 2616)
 
     Args:
-        title (str): Error title, for example: 'Image Not Modified'.
+        title (str): Error title (e.g., 'Image Not Modified').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         kwargs (optional): Same as for ``HTTPError``.
@@ -260,7 +233,7 @@ class HTTPUnsupportedMediaType(HTTPError):
                            description, **kwargs)
 
 
-class HTTPRangeNotSatisfiable(HTTPError):
+class HTTPRangeNotSatisfiable(NoRepresentation, HTTPError):
     """416 Range Not Satisfiable.
 
     The requested range is not valid. See also: http://goo.gl/Qsa4EF
@@ -274,16 +247,12 @@ class HTTPRangeNotSatisfiable(HTTPError):
         headers = {'Content-Range': 'bytes */' + str(resource_length)}
         HTTPError.__init__(self, status.HTTP_416, headers=headers)
 
-    @property
-    def has_representation(self):
-        return False
-
 
 class HTTPInternalServerError(HTTPError):
     """500 Internal Server Error.
 
     Args:
-        title (str): Error title, for example: 'This Should Never Happen'.
+        title (str): Error title (e.g., 'This Should Never Happen').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         kwargs (optional): Same as for ``HTTPError``.
@@ -295,7 +264,7 @@ class HTTPInternalServerError(HTTPError):
 
 
 class HTTPBadGateway(HTTPError):
-    """502 Bad Gateway
+    """502 Bad Gateway.
 
     Args:
         title (str): Error title, for
@@ -314,7 +283,7 @@ class HTTPServiceUnavailable(HTTPError):
     """503 Service Unavailable.
 
     Args:
-        title (str): Error title, for example: 'Temporarily Unavailable'.
+        title (str): Error title (e.g., 'Temporarily Unavailable').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         retry_after (date or int): Value for the Retry-After header. If a date
@@ -326,44 +295,77 @@ class HTTPServiceUnavailable(HTTPError):
     """
 
     def __init__(self, title, description, retry_after, **kwargs):
-        """Initialize
-
-        """
-
         headers = kwargs.setdefault('headers', {})
         headers['Retry-After'] = str(retry_after)
         HTTPError.__init__(self, status.HTTP_503, title, description, **kwargs)
 
 
-class InvalidHeader(HTTPBadRequest):
-    """HTTP header is invalid.
+class HTTPInvalidHeader(HTTPBadRequest):
+    """HTTP header is invalid. Inherits from ``HTTPBadRequest``.
 
     Args:
         msg (str): A description of why the value is invalid.
-        value (str): The value that is given to the header.
         header_name (str): The name of the header.
-        kwargs (optional): Optional args to include more information.
-        """
+        kwargs (optional): Same as for ``HTTPError``.
 
-    def __init__(self, msg, value, header_name, **kwargs):
-        description = ('The value "{0}" given for the {1} header is invalid. '
-                       '{2}').format(value, header_name, msg)
+    """
 
-        super(InvalidHeader, self).__init__('Invalid header value',
-                                            description, **kwargs)
+    def __init__(self, msg, header_name, **kwargs):
+        description = ('The value provided for the {0} header is '
+                       'invalid. {1}')
+        description = description.format(header_name, msg)
+
+        super(HTTPInvalidHeader, self).__init__('Invalid header value',
+                                                description, **kwargs)
 
 
-class InvalidParam(HTTPBadRequest):
-    """HTTP parameter is invalid
+class HTTPMissingHeader(HTTPBadRequest):
+    """HTTP header is missing. Inherits from ``HTTPBadRequest``.
+
+    Args:
+        header_name (str): The name of the header.
+        kwargs (optional): Same as for ``HTTPError``.
+
+    """
+
+    def __init__(self, header_name, **kwargs):
+        description = ('The {0} header is required.')
+        description = description.format(header_name)
+
+        super(HTTPMissingHeader, self).__init__('Missing header value',
+                                                description, **kwargs)
+
+
+class HTTPInvalidParam(HTTPBadRequest):
+    """HTTP parameter is invalid. Inherits from ``HTTPBadRequest``.
 
     Args:
         msg (str): A description of the invalid parameter.
         param_name (str): The name of the paramameter.
-        kwargs (optional): Optional args to include more information.
-        """
+        kwargs (optional): Same as for ``HTTPError``.
+
+    """
 
     def __init__(self, msg, param_name, **kwargs):
-        description = 'The {0} parameter is invalid. {1}'.format(param_name,
-                                                                 msg)
-        super(InvalidParam, self).__init__('Invalid query parameter',
-                                           description, **kwargs)
+        description = 'The "{0}" query parameter is invalid. {1}'
+        description = description.format(param_name, msg)
+
+        super(HTTPInvalidParam, self).__init__('Invalid query parameter',
+                                               description, **kwargs)
+
+
+class HTTPMissingParam(HTTPBadRequest):
+    """HTTP parameter is missing. Inherits from ``HTTPBadRequest``.
+
+    Args:
+        param_name (str): The name of the paramameter.
+        kwargs (optional): Same as for ``HTTPError``.
+
+    """
+
+    def __init__(self, param_name, **kwargs):
+        description = 'The "{0}" query parameter is required.'
+        description = description.format(param_name)
+
+        super(HTTPMissingParam, self).__init__('Missing query parameter',
+                                               description, **kwargs)
