@@ -115,8 +115,8 @@ class HTTPError(Exception):
     def has_representation(self):
         return True
 
-    def raw(self, obj_type=dict):
-        """Returns a raw dictionary representing the error.
+    def dict(self, obj_type=dict):
+        """Returns a basic dictionary representing the error.
 
         This method can be useful when serializing the error to hash-like
         media types, such as YAML, JSON, and MessagePack.
@@ -156,7 +156,7 @@ class HTTPError(Exception):
 
         """
 
-        obj = self.raw(OrderedDict)
+        obj = self.dict(OrderedDict)
         return json.dumps(obj, indent=4, separators=(',', ': '),
                           ensure_ascii=False)
 
