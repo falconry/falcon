@@ -417,8 +417,8 @@ class TestReqVars(testing.TestBase):
 
         headers = {'Range': 'x-y'}
         expected_desc = ('The value provided for the Range header is '
-                         'invalid. It must be formatted according to '
-                         'RFC 2616.')
+                         'invalid. It must be a byte range formatted '
+                         'according to RFC 2616.')
         self._test_error_details(headers, 'range',
                                  falcon.HTTPInvalidHeader,
                                  'Invalid header value', expected_desc)
