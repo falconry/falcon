@@ -867,27 +867,27 @@ class Request(object):
             pass
 
     def _parse_form_urlencoded(self):
-            # NOTE(kgriffs): This assumes self.stream has been patched
-            # above in the case of wsgiref, so that self.content_length
-            # is not needed. Normally we just avoid accessing
-            # self.content_length, because it is a little expensive
-            # to call. We could cache self.content_length, but the
-            # overhead to do that won't usually be helpful, since
-            # content length will only ever be read once per
-            # request in most cases.
-            body = self.stream.read()
+        # NOTE(kgriffs): This assumes self.stream has been patched
+        # above in the case of wsgiref, so that self.content_length
+        # is not needed. Normally we just avoid accessing
+        # self.content_length, because it is a little expensive
+        # to call. We could cache self.content_length, but the
+        # overhead to do that won't usually be helpful, since
+        # content length will only ever be read once per
+        # request in most cases.
+        body = self.stream.read()
 
-            # NOTE(kgriffs): According to http://goo.gl/6rlcux the
-            # body should be US-ASCII. Enforcing this also helps
-            # catch malicious input.
-            try:
-                body = body.decode('ascii')
-            except UnicodeDecodeError:
-                body = None
-                self.log_error('Non-ASCII characters found in form body '
-                               'with Content-Type of '
-                               'application/x-www-form-urlencoded. Body '
-                               'will be ignored.')
+        # NOTE(kgriffs): According to http://goo.gl/6rlcux the
+        # body should be US-ASCII. Enforcing this also helps
+        # catch malicious input.
+        try:
+            body = body.decode('ascii')
+        except UnicodeDecodeError:
+            body = None
+            self.log_error('Non-ASCII characters found in form body '
+                           'with Content-Type of '
+                           'application/x-www-form-urlencoded. Body '
+                           'will be ignored.')
 
         if body:
             extra_params = uri.parse_query_string(
@@ -895,7 +895,7 @@ class Request(object):
                 keep_blank_qs_values=self.options.keep_blank_qs_values,
             )
 
-                self._params.update(extra_params)
+            self._params.update(extra_params)
 
 
 class RequestOptions(object):
