@@ -320,7 +320,10 @@ class Request(object):
             raise HTTPInvalidHeader(msg, 'Range')
 
         try:
-            first, last = value.split('-')
+            first, sep, last = value.partition('-')
+
+            if not sep:
+                raise ValueError()
 
             if first:
                 return (int(first), int(last or -1))
@@ -333,7 +336,7 @@ class Request(object):
         except ValueError:
             href = 'http://goo.gl/zZ6Ey'
             href_text = 'HTTP/1.1 Range Requests'
-            msg = ('It must be formatted according to RFC 2616.')
+            msg = ('It must be a byte range formatted according to RFC 2616.')
             raise HTTPInvalidHeader(msg, 'Range', href=href,
                                     href_text=href_text)
 
