@@ -445,8 +445,7 @@ class TestReqVars(testing.TestBase):
 
         headers = {'content-length': ''}
         req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.HTTPInvalidHeader,
-                          lambda: req.content_length)
+        self.assertEqual(req.content_length, None)
 
     def test_bogus_content_length_nan(self):
         headers = {'content-length': 'fuzzy-bunnies'}

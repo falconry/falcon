@@ -236,10 +236,8 @@ class Request(object):
 
         # NOTE(kgriffs): Wrap wsgi.input if needed to make read() more robust,
         # normalizing semantics between, e.g., gunicorn and wsgiref.
-        if isinstance(self.stream, NativeStream):  # pragma: nocover
-            # NOTE(kgriffs): coverage can't detect that this *is* actually
-            # covered since the test that does so uses multiprocessing.
-            self.stream = helpers.Body(self.stream, self.content_length)
+        if isinstance(self.stream, NativeStream):
+            self._wrap_stream()
 
         # PERF(kgriffs): Technically, we should spend a few more
         # cycles and parse the content type for real, but
@@ -289,6 +287,15 @@ class Request(object):
         try:
             value = self.env['CONTENT_LENGTH']
         except KeyError:
+            return None
+
+        # NOTE(kgriffs): Normalize an empty value to behave as if
+        # the header were not included; wsgiref, at least, inserts
+        # an empty CONTENT_LENGTH value if the request does not
+        # set the header. Gunicorn and uWSGI do not do this, but
+        # others might if they are trying to match wsgiref's
+        # behavior too closely.
+        if not value:
             return None
 
         try:
@@ -847,6 +854,18 @@ class Request(object):
     # Helpers
     # ------------------------------------------------------------------------
 
+    def _wrap_stream(self):
+        try:
+            # NOTE(kgriffs): We can only add the wrapper if the
+            # content-length header was provided.
+            if self.content_length is not None:
+                self.stream = helpers.Body(self.stream, self.content_length)
+
+        except HTTPInvalidHeader:
+            # NOTE(kgriffs): The content-length header was specified,
+            # but it had an invalid value.
+            pass
+
     def _parse_form_urlencoded(self):
             # NOTE(kgriffs): This assumes self.stream has been patched
             # above in the case of wsgiref, so that self.content_length
@@ -870,11 +889,11 @@ class Request(object):
                                'application/x-www-form-urlencoded. Body '
                                'will be ignored.')
 
-            if body:
-                extra_params = uri.parse_query_string(
-                    uri.decode(body),
-                    keep_blank_qs_values=self.options.keep_blank_qs_values,
-                )
+        if body:
+            extra_params = uri.parse_query_string(
+                uri.decode(body),
+                keep_blank_qs_values=self.options.keep_blank_qs_values,
+            )
 
                 self._params.update(extra_params)
 
