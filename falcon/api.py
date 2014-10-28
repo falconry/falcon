@@ -15,7 +15,7 @@
 import re
 
 from falcon import api_helpers as helpers
-from falcon.request import Request
+from falcon.request import Request, RequestOptions
 from falcon.response import Response
 import falcon.responders
 from falcon.status_codes import HTTP_416
@@ -52,8 +52,8 @@ class API(object):
     """
 
     __slots__ = ('_after', '_before', '_request_type', '_response_type',
-                 '_error_handlers', '_media_type',
-                 '_routes', '_sinks', '_serialize_error')
+                 '_error_handlers', '_media_type', '_routes', '_sinks',
+                 '_serialize_error', 'req_options')
 
     def __init__(self, media_type=DEFAULT_MEDIA_TYPE, before=None, after=None,
                  request_type=Request, response_type=Response):
@@ -69,6 +69,7 @@ class API(object):
 
         self._error_handlers = []
         self._serialize_error = helpers.serialize_error
+        self.req_options = RequestOptions()
 
     def __call__(self, env, start_response):
         """WSGI `app` method.
@@ -86,7 +87,7 @@ class API(object):
 
         """
 
-        req = self._request_type(env)
+        req = self._request_type(env, options=self.req_options)
         resp = self._response_type()
         resource = None
 

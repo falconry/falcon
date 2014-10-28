@@ -52,6 +52,7 @@ class Request(object):
     Args:
         env (dict): A WSGI environment dict passed in from the server. See
             also the PEP-3333 spec.
+        options (dict): Set of global options passed from the API handler.
 
     Attributes:
         protocol (str): Either 'http' or 'https'.
@@ -157,6 +158,8 @@ class Request(object):
             values.  Where the parameter appears multiple times in the query
             string, the value mapped to that parameter key will be a list of
             all the values in the order seen.
+
+        options (dict): Set of global options passed from the API handler.
     """
 
     __slots__ = (
@@ -172,13 +175,15 @@ class Request(object):
         'stream',
         'context',
         '_wsgierrors',
+        'options',
     )
 
     # Allow child classes to override this
     context_type = None
 
-    def __init__(self, env):
+    def __init__(self, env, options=None):
         self.env = env
+        self.options = options if options else RequestOptions()
 
         if self.context_type is None:
             # Literal syntax is more efficient than using dict()
@@ -210,7 +215,10 @@ class Request(object):
 
             if query_str:
                 self.query_string = uri.decode(query_str)
-                self._params = uri.parse_query_string(self.query_string)
+                self._params = uri.parse_query_string(
+                    self.query_string,
+                    keep_blank_qs_values=self.options.keep_blank_qs_values,
+                )
             else:
                 self.query_string = six.text_type()
 
@@ -664,7 +672,8 @@ class Request(object):
 
         raise HTTPMissingParam(name)
 
-    def get_param_as_bool(self, name, required=False, store=None):
+    def get_param_as_bool(self, name, required=False, store=None,
+                          blank_as_true=False):
         """Return the value of a query string parameter as a boolean
 
         The following bool-like strings are supported::
@@ -680,6 +689,9 @@ class Request(object):
             store (dict, optional): A dict-like object in which to place the
                 value of the param, but only if the param is found (default
                 *None*).
+            blank_as_true (bool): If True, empty strings will be treated as
+                True.  keep_blank_qs_values must be set on the Request (or API
+                object and inherited) for empty strings to not be filtered.
 
         Returns:
             bool: The value of the param if it is found and can be converted
@@ -705,6 +717,8 @@ class Request(object):
                 val = True
             elif val in FALSE_STRINGS:
                 val = False
+            elif blank_as_true and not val:
+                val = True
             else:
                 msg = 'The value of the parameter must be "true" or "false".'
                 raise HTTPInvalidParam(msg, name)
@@ -857,5 +871,22 @@ class Request(object):
                                'will be ignored.')
 
             if body:
-                extra_params = uri.parse_query_string(uri.decode(body))
+                extra_params = uri.parse_query_string(
+                    uri.decode(body),
+                    keep_blank_qs_values=self.options.keep_blank_qs_values,
+                )
+
                 self._params.update(extra_params)
+
+
+class RequestOptions(object):
+    """This class is a container for Request options.
+
+    PERF: To avoid typos and improve storage space and speed over a dict.
+    """
+    __slots__ = (
+        'keep_blank_qs_values',
+    )
+
+    def __init__(self):
+        self.keep_blank_qs_values = False
