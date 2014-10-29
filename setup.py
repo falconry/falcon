@@ -32,13 +32,13 @@ if CYTHON:
     ext_names = (
         'api',
         'api_helpers',
+        'errors',
+        'http_error',
         'request',
         'request_helpers',
+        'responders',
         'response',
         'response_helpers',
-        'responders',
-        'http_error',
-        'exceptions'
     )
 
     cmdclass = {'build_ext': build_ext}
