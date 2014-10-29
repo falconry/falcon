@@ -245,12 +245,13 @@ else:  # pragma: no cover
         return decoded_uri.decode('utf-8', 'replace')
 
 
-def parse_query_string(query_string):
+def parse_query_string(query_string, keep_blank_qs_values=False):
     """Parse a query string into a dict.
 
     Query string parameters are assumed to use standard form-encoding. Only
     parameters with values are parsed. for example, given "foo=bar&flag",
-    this function would ignore "flag".
+    this function would ignore "flag" unless the keep_blank_qs_values option
+    is set.
 
     Note:
         In addition to the standard HTML form-based method for specifying
@@ -263,6 +264,8 @@ def parse_query_string(query_string):
 
     Args:
         query_string (str): The query string to parse
+        keep_blank_qs_values (bool): If set to True, preserves boolean fields
+            and fields with no content as blank strings.
 
     Returns:
         dict: A dict containing ``(name, value)`` tuples, one per query
@@ -281,7 +284,7 @@ def parse_query_string(query_string):
     # and on PyPy 2.3.
     for field in query_string.split('&'):
         k, _, v = field.partition('=')
-        if not v:
+        if not (v or keep_blank_qs_values):
             continue
 
         if k in params:
@@ -302,10 +305,11 @@ def parse_query_string(query_string):
                 # point.
                 v = v.split(',')
 
-                # NOTE(kgriffs): Normalize the result in the case that
-                # some elements are empty strings, such that the result
-                # will be the same for 'foo=1,,3' as 'foo=1&foo=&foo=3'.
-                v = [element for element in v if element]
+                if not keep_blank_qs_values:
+                    # NOTE(kgriffs): Normalize the result in the case that
+                    # some elements are empty strings, such that the result
+                    # will be the same for 'foo=1,,3' as 'foo=1&foo=&foo=3'.
+                    v = [element for element in v if element]
 
             params[k] = v
 
