@@ -198,9 +198,9 @@ def serialize_error(req, exception):
 
     if preferred is not None:
         if preferred == 'application/json':
-            representation = exception.json()
+            representation = exception.to_json()
         else:
-            representation = exception.xml()
+            representation = exception.to_xml()
 
     return (preferred, representation)
 
