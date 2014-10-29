@@ -115,7 +115,7 @@ class HTTPError(Exception):
     def has_representation(self):
         return True
 
-    def dict(self, obj_type=dict):
+    def to_dict(self, obj_type=dict):
         """Returns a basic dictionary representing the error.
 
         This method can be useful when serializing the error to hash-like
@@ -148,7 +148,7 @@ class HTTPError(Exception):
 
         return obj
 
-    def json(self):
+    def to_json(self):
         """Returns a pretty-printed JSON representation of the error.
 
         Returns:
@@ -156,11 +156,11 @@ class HTTPError(Exception):
 
         """
 
-        obj = self.dict(OrderedDict)
+        obj = self.to_dict(OrderedDict)
         return json.dumps(obj, indent=4, separators=(',', ': '),
                           ensure_ascii=False)
 
-    def xml(self):
+    def to_xml(self):
         """Returns an XML-encoded representation of the error.
 
         Returns:

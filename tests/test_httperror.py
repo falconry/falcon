@@ -241,7 +241,7 @@ class TestHTTPError(testing.TestBase):
                 if preferred == 'application/json':
                     representation = exception.json()
                 else:
-                    representation = yaml.dump(exception.dict(),
+                    representation = yaml.dump(exception.to_dict(),
                                                encoding=None)
 
             return (preferred, representation)
