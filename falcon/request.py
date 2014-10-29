@@ -29,7 +29,7 @@ except AttributeError:  # pragma nocover
 import mimeparse
 import six
 
-from falcon.exceptions import *
+from falcon.errors import *
 from falcon import util
 from falcon.util import uri
 from falcon import request_helpers as helpers
