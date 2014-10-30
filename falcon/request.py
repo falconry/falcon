@@ -43,6 +43,9 @@ FALSE_STRINGS = ('false', 'False', 'no')
 WSGI_CONTENT_HEADERS = ('CONTENT_TYPE', 'CONTENT_LENGTH')
 
 
+_maybe_wrap_wsgi_stream = True
+
+
 class Request(object):
     """Represents a client's HTTP request.
 
@@ -182,6 +185,8 @@ class Request(object):
     context_type = None
 
     def __init__(self, env, options=None):
+        global _maybe_wrap_wsgi_stream
+
         self.env = env
         self.options = options if options else RequestOptions()
 
@@ -236,8 +241,16 @@ class Request(object):
 
         # NOTE(kgriffs): Wrap wsgi.input if needed to make read() more robust,
         # normalizing semantics between, e.g., gunicorn and wsgiref.
-        if isinstance(self.stream, NativeStream):
-            self._wrap_stream()
+        if _maybe_wrap_wsgi_stream:
+            if isinstance(self.stream, NativeStream):
+                # NOTE(kgriffs): This is covered by tests, it's just that
+                # coverage can't figure this out for some reason (TBD).
+                self._wrap_stream()  # pragma nocover
+            else:
+                # PERF(kgriffs): If self.stream does not need to be wrapped
+                # this time, it never needs to be wrapped since the server
+                # will continue using the same type for wsgi.input.
+                _maybe_wrap_wsgi_stream = False
 
         # PERF(kgriffs): Technically, we should spend a few more
         # cycles and parse the content type for real, but
@@ -854,7 +867,7 @@ class Request(object):
     # Helpers
     # ------------------------------------------------------------------------
 
-    def _wrap_stream(self):
+    def _wrap_stream(self):  # pragma nocover
         try:
             # NOTE(kgriffs): We can only add the wrapper if the
             # content-length header was provided.
