@@ -120,6 +120,34 @@ class TestReqVars(testing.TestBase):
         uri_noqs = ('http://' + testing.DEFAULT_HOST + self.app + self.path)
         self.assertEqual(self.req_noqs.uri, uri_noqs)
 
+    def test_uri_https(self):
+        # =======================================================
+        # Default port, implicit
+        # =======================================================
+        req = Request(testing.create_environ(
+            path='/hello', scheme='https'))
+        uri = ('https://' + testing.DEFAULT_HOST + '/hello')
+
+        self.assertEqual(req.uri, uri)
+
+        # =======================================================
+        # Default port, explicit
+        # =======================================================
+        req = Request(testing.create_environ(
+            path='/hello', scheme='https', port=443))
+        uri = ('https://' + testing.DEFAULT_HOST + '/hello')
+
+        self.assertEqual(req.uri, uri)
+
+        # =======================================================
+        # Non-default port
+        # =======================================================
+        req = Request(testing.create_environ(
+            path='/hello', scheme='https', port=22))
+        uri = ('https://' + testing.DEFAULT_HOST + ':22/hello')
+
+        self.assertEqual(req.uri, uri)
+
     def test_uri_http_1_0(self):
         # =======================================================
         # HTTP, 80

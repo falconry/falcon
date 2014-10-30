@@ -70,7 +70,7 @@ class TestBase(unittest.TestCase):
 
     # NOTE(warsaw): Pythons earlier than 2.7 do not have a self.assertIn()
     # method, so use this compatibility function instead.
-    if not hasattr(unittest.TestCase, 'assertIn'):
+    if not hasattr(unittest.TestCase, 'assertIn'):  # pragma: nocover
         def assertIn(self, a, b):
             self.assertTrue(a in b)
 

@@ -82,7 +82,7 @@ class TestWsgi(testtools.TestCase):
         thread.start()
 
         # Wait a moment for the thread to start up
-        time.sleep(0.1)
+        time.sleep(0.2)
 
         resp = requests.get('http://localhost:9803')
         self.assertEqual(resp.status_code, 200)
