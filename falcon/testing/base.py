@@ -20,6 +20,7 @@ except ImportError:  # pragma: nocover
     import unittest
 
 import falcon
+import falcon.request
 from falcon.testing.srmock import StartResponseMock
 from falcon.testing.helpers import create_environ
 
@@ -54,6 +55,9 @@ class TestBase(unittest.TestCase):
         self.api = falcon.API()
         self.srmock = StartResponseMock()
         self.test_route = '/{0}'.format(next(self._id))
+
+        # Reset to simulate "restarting" the WSGI container
+        falcon.request._maybe_wrap_wsgi_stream = True
 
         before = getattr(self, 'before', None)
         if callable(before):
