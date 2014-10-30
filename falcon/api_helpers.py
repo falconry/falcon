@@ -41,6 +41,42 @@ def prepare_global_hooks(hooks):
     return hooks
 
 
+def prepare_mw(middleware=None):
+    """Check middleware interface and prepare it to iterate.
+
+    Args:
+        middleware:  list (or object) of input middleware
+
+    Returns:
+        A middleware list
+    """
+    if middleware is None:
+        middleware = []
+    else:
+        if not isinstance(middleware, list):
+            middleware = [middleware]
+
+    # check basic interface of middleware objects
+    for mw in middleware:
+        if not hasattr(mw, 'process_request') and not\
+                hasattr(mw, 'process_response'):
+
+            raise TypeError('{0} is not a valid middlware'.format(str(mw)))
+
+        # Check process_request and process_response are bounded methods
+        for mw_method in ('process_request', 'process_response'):
+            method_mw_bound = getattr(mw, mw_method, None)
+
+            if method_mw_bound is not None:
+
+                if six.get_method_self(method_mw_bound) is None:
+                    raise AttributeError(
+                        '{0} must be a bound method'.format(method_mw_bound))\
+                        # pragma: no cover
+
+    return middleware
+
+
 def should_ignore_body(status, method):
     """Return True if the status or method indicates no body, per RFC 2616
 

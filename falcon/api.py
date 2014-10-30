@@ -41,6 +41,21 @@ class API(object):
         after (callable, optional): A global action hook (or list of hooks)
             to call after each on_* responder, for all resources. Similar to
             the ``after`` decorator, but applies to the entire API.
+        middleware(callable class, optional): A global action middleware (or
+            list of middlewares) to be executed wrapping the responder.
+            Middleware object can define process_request and process_response,
+            and they will be executed in natural order, as if they were round
+            layers over responder:
+                process_request is executed in the same order of definition
+                process_response and process_exception in reversed order
+            if you define middleware=[OutSideMw, InsideMw]
+            the order will be:
+                OutsideMw.process_request
+                    InsideMw.process_request
+                        responder
+                    InsideMw.process_response
+                OutsideMw.process_request
+            Any exception would apply process_response of the unexecuted mw.
         request_type (Request, optional): Request-alike class to use instead
             of Falcon's default class. Useful if you wish to extend
             ``falcon.request.Request`` with a custom ``context_type``.
@@ -53,16 +68,20 @@ class API(object):
 
     __slots__ = ('_after', '_before', '_request_type', '_response_type',
                  '_error_handlers', '_media_type', '_routes', '_sinks',
-                 '_serialize_error', 'req_options')
+                 '_serialize_error', 'req_options', '_middleware')
 
     def __init__(self, media_type=DEFAULT_MEDIA_TYPE, before=None, after=None,
-                 request_type=Request, response_type=Response):
+                 request_type=Request, response_type=Response,
+                 middleware=None):
         self._routes = []
         self._sinks = []
         self._media_type = media_type
 
         self._before = helpers.prepare_global_hooks(before)
         self._after = helpers.prepare_global_hooks(after)
+
+        # set middleware
+        self._middleware = helpers.prepare_mw(middleware)
 
         self._request_type = request_type
         self._response_type = response_type
@@ -90,6 +109,7 @@ class API(object):
         req = self._request_type(env, options=self.req_options)
         resp = self._response_type()
         resource = None
+        stack_mw = []  # Keep track of executed mw
 
         try:
             # NOTE(warsaw): Moved this to inside the try except because it's
@@ -106,12 +126,18 @@ class API(object):
             # so disabled on relevant lines. All paths are tested
             # afaict.
             try:
+                # Run request middlewares and fill stack_mw
+                self._call_req_mw(stack_mw, req, resp, params)
+
                 responder(req, resp, **params)  # pragma: no cover
+                # Run middlewares for response
+                self._call_resp_mw(stack_mw, req, resp)
             except Exception as ex:
                 for err_type, err_handler in self._error_handlers:
                     if isinstance(ex, err_type):
                         err_handler(ex, req, resp, params)
                         self._call_after_hooks(req, resp, resource)
+                        self._call_resp_mw(stack_mw, req, resp)
                         break  # pragma: no cover
 
                 else:
@@ -122,11 +148,17 @@ class API(object):
                     # indeed, should perhaps be slower to create
                     # backpressure on clients that are issuing bad
                     # requests.
+                    # NOTE(ealogar): This will executed remaining
+                    # process_response when no error_handler is given
+                    # and for whatever exception. If an HTTPError is raised
+                    # remaining process_response will be executed later.
+                    self._call_resp_mw(stack_mw, req, resp)
                     raise
 
         except HTTPError as ex:
             self._compose_error_response(req, resp, ex)
             self._call_after_hooks(req, resp, resource)
+            self._call_resp_mw(stack_mw, req, resp)
 
         #
         # Set status and headers
@@ -382,6 +414,28 @@ class API(object):
                 # from error.headers so that we will override Content-Type if
                 # it was mistakenly set by the app.
                 resp.content_type = media_type
+
+    def _call_req_mw(self, stack_mw, req, resp, params):
+        """Runs the process_request middleware and tracks"""
+        for mw in self._middleware:
+
+            try:
+                getattr(mw, 'process_request')(req, resp, params)
+            except AttributeError:
+                pass
+            # Put executed mw in top of stack
+            stack_mw.insert(0, mw)  # keep track from outside
+
+    def _call_resp_mw(self, stack_mw, req, resp):
+        """Runs the process_response middleware and tracks"""
+        # Make copy of stack_mw
+        for mw in list(stack_mw):
+            # Remove mw about to be executed
+            stack_mw.remove(mw)
+            try:
+                getattr(mw, 'process_response')(req, resp)
+            except AttributeError:
+                pass
 
     def _call_after_hooks(self, req, resp, resource):
         """Executes each of the global "after" hooks, in turn."""
