@@ -426,25 +426,22 @@ class API(object):
 
     def _call_req_mw(self, stack_mw, req, resp, params):
         """Runs the process_request middleware and tracks"""
-        for mw in self._middleware:
 
-            try:
-                getattr(mw, 'process_request')(req, resp, params)
-            except AttributeError:
-                pass
-            # Put executed mw in top of stack
-            stack_mw.insert(0, mw)  # keep track from outside
+        for component in self._middleware:
+            process_request, _ = component
+            if process_request is not None:
+                process_request(req, resp, params)
+
+            # Put executed component on the stack
+            stack_mw.append(component)  # keep track from outside
 
     def _call_resp_mw(self, stack_mw, req, resp):
         """Runs the process_response middleware and tracks"""
-        # Make copy of stack_mw
-        for mw in list(stack_mw):
-            # Remove mw about to be executed
-            stack_mw.remove(mw)
-            try:
-                getattr(mw, 'process_response')(req, resp)
-            except AttributeError:
-                pass
+
+        while stack_mw:
+            _, process_response = stack_mw.pop()
+            if process_response is not None:
+                process_response(req, resp)
 
     def _call_after_hooks(self, req, resp, resource):
         """Executes each of the global "after" hooks, in turn."""
@@ -482,31 +479,56 @@ class API(object):
         Returns:
             A middleware list
         """
+
+        # PERF(kgriffs): do getattr calls once, in advance, so we don't
+        # have to do them every time in the request path.
+        prepared_middleware = []
+
         if middleware is None:
             middleware = []
         else:
             if not isinstance(middleware, list):
                 middleware = [middleware]
 
-        # check basic interface of middleware objects
-        for mw in middleware:
-            if not hasattr(mw, 'process_request') and not\
-                    hasattr(mw, 'process_response'):
+        for component in middleware:
+            process_request = API._get_bound_method(component,
+                                                    'process_request')
+            process_response = API._get_bound_method(component,
+                                                     'process_response')
 
-                raise TypeError('{0} is not a valid middlware'.format(str(mw)))
+            if not (process_request or process_response):
+                msg = '{0} does not implement the middleware interface'
+                raise TypeError(msg.format(component))
 
-            # Check process_request and process_response are bounded methods
-            for mw_method in ('process_request', 'process_response'):
-                method_mw_bound = getattr(mw, mw_method, None)
+            prepared_middleware.append((process_request, process_response))
 
-                if method_mw_bound is not None:
+        return prepared_middleware
 
-                    if six.get_method_self(method_mw_bound) is None:
-                        raise AttributeError(
-                            '{0} must be a bound method'.format(method_mw_bound))\
-                            # pragma: no cover
+    @staticmethod
+    def _get_bound_method(obj, method_name):
+        """Get a bound method of the given object by name.
 
-        return middleware
+        Args:
+            obj: Object on which to look up the method.
+            method_name: Name of the method to retrieve.
+
+        Returns:
+            Bound method, or `None` if the method does not exist on`
+            the object.
+
+        """
+
+        method = getattr(obj, method_name, None)
+        if method is not None:
+            # NOTE(kgriffs): Ensure it is a bound method
+            if six.get_method_self(method) is None:  # pragma nocover
+                # NOTE(kgriffs): In Python 3 this code is unreachable
+                # because the above will raise AttributeError on its
+                # own.
+                msg = '{0} must be a bound method'.format(method)
+                raise AttributeError(msg)
+
+        return method
 
     @staticmethod
     def _should_ignore_body(status, method):

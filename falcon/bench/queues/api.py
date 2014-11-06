@@ -21,6 +21,19 @@ from falcon.bench.queues import queues
 from falcon.bench.queues import stats
 
 
+class RequestIDComponent(object):
+    def process_request(self, req, resp, params):
+        req.context['request_id'] = '<generate ID>'
+
+    def process_response(self, req, resp):
+        resp.set_header('X-Request-ID', req.context['request_id'])
+
+
+class NoopComponent(object):
+    def process_request(self, req, resp, params):
+        pass
+
+
 def create(body, headers):
     vary = ('X-Auth-Token', 'Accept-Encoding')
 
@@ -42,7 +55,8 @@ def create(body, headers):
     claim_collection = claims.CollectionResource()
     claim_item = claims.ItemResource()
 
-    api = falcon.API(after=canned_response)
+    middleware = [NoopComponent(), RequestIDComponent()]
+    api = falcon.API(after=canned_response, middleware=middleware)
     api.add_route('/v1/{tenant_id}/queues', queue_collection)
     api.add_route('/v1/{tenant_id}/queues/{queue_name}', queue_item)
     api.add_route('/v1/{tenant_id}/queues/{queue_name}'
