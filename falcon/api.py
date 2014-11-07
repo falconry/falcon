@@ -22,6 +22,7 @@ from falcon.request import Request, RequestOptions
 from falcon.response import Response
 import falcon.responders
 import falcon.status_codes as status
+from falcon import util
 
 STREAM_BLOCK_SIZE = 8 * 1024  # 8 KiB
 
@@ -457,8 +458,7 @@ class API(object):
                 # detect old hooks that do not accept the "resource" param
                 hook(req, resp)
 
-    @staticmethod
-    def _prepare_global_hooks(hooks):
+    def _prepare_global_hooks(self, hooks):
         if hooks is not None:
             if not isinstance(hooks, list):
                 hooks = [hooks]
@@ -469,8 +469,7 @@ class API(object):
 
         return hooks
 
-    @staticmethod
-    def _prepare_mw(middleware=None):
+    def _prepare_mw(self, middleware=None):
         """Check middleware interface and prepare it to iterate.
 
         Args:
@@ -491,9 +490,9 @@ class API(object):
                 middleware = [middleware]
 
         for component in middleware:
-            process_request = API._get_bound_method(component,
+            process_request = util.get_bound_method(component,
                                                     'process_request')
-            process_response = API._get_bound_method(component,
+            process_response = util.get_bound_method(component,
                                                      'process_response')
 
             if not (process_request or process_response):
@@ -504,34 +503,7 @@ class API(object):
 
         return prepared_middleware
 
-    @staticmethod
-    def _get_bound_method(obj, method_name):
-        """Get a bound method of the given object by name.
-
-        Args:
-            obj: Object on which to look up the method.
-            method_name: Name of the method to retrieve.
-
-        Returns:
-            Bound method, or `None` if the method does not exist on`
-            the object.
-
-        """
-
-        method = getattr(obj, method_name, None)
-        if method is not None:
-            # NOTE(kgriffs): Ensure it is a bound method
-            if six.get_method_self(method) is None:  # pragma nocover
-                # NOTE(kgriffs): In Python 3 this code is unreachable
-                # because the above will raise AttributeError on its
-                # own.
-                msg = '{0} must be a bound method'.format(method)
-                raise AttributeError(msg)
-
-        return method
-
-    @staticmethod
-    def _should_ignore_body(status, method):
+    def _should_ignore_body(self, status, method):
         """Return True if the status or method indicates no body per RFC 2616.
 
         Args:
@@ -545,8 +517,7 @@ class API(object):
 
         return (method == 'HEAD' or status in IGNORE_BODY_STATUS_CODES)
 
-    @staticmethod
-    def _set_content_length(resp):
+    def _set_content_length(self, resp):
         """Set Content-Length when given a fully-buffered body or stream len.
 
         Pre:
@@ -581,8 +552,7 @@ class API(object):
         resp.set_header('Content-Length', str(content_length))
         return content_length
 
-    @staticmethod
-    def _get_body(resp, wsgi_file_wrapper=None):
+    def _get_body(self, resp, wsgi_file_wrapper=None):
         """Converts resp content into an iterable as required by PEP 333
 
         Args:
@@ -632,8 +602,7 @@ class API(object):
 
         return []
 
-    @staticmethod
-    def _default_serialize_error(req, exception):
+    def _default_serialize_error(self, req, exception):
         """Serialize the given instance of HTTPError.
 
         This function determines which of the supported media types, if
@@ -696,8 +665,7 @@ class API(object):
 
         return (preferred, representation)
 
-    @staticmethod
-    def _compile_uri_template(template):
+    def _compile_uri_template(self, template):
         """Compile the given URI template string into a pattern matcher.
 
         Currently only recognizes Level 1 URI templates, and only for the path
@@ -740,8 +708,7 @@ class API(object):
 
         return fields, re.compile(pattern, re.IGNORECASE)
 
-    @staticmethod
-    def _create_http_method_map(resource, uri_fields, before, after):
+    def _create_http_method_map(self, resource, uri_fields, before, after):
         """Maps HTTP methods (e.g., GET, POST) to methods of a resource object.
 
         Args:
