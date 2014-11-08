@@ -1,7 +1,10 @@
+import ddt
+
 import falcon
 import falcon.testing as testing
 
 
+@ddt.ddt
 class _TestQueryParams(testing.TestBase):
 
     def before(self):
@@ -76,27 +79,37 @@ class _TestQueryParams(testing.TestBase):
         self.assertEqual(req.get_param('_thing'), '42')
         self.assertEqual(req.get_param('_charset_'), 'utf-8')
 
-    def test_required(self):
+    @ddt.data('get_param', 'get_param_as_int', 'get_param_as_bool',
+              'get_param_as_list')
+    def test_required(self, method_name):
         query_string = ''
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
-        self.assertRaises(falcon.HTTPBadRequest, req.get_param,
-                          'marker', required=True)
-        self.assertRaises(falcon.HTTPBadRequest, req.get_param_as_int,
-                          'marker', required=True)
-        self.assertRaises(falcon.HTTPBadRequest, req.get_param_as_bool,
-                          'marker', required=True)
-        self.assertRaises(falcon.HTTPBadRequest, req.get_param_as_list,
-                          'marker', required=True)
+
+        try:
+            getattr(req, method_name)('marker', required=True)
+            self.fail('falcon.HTTPMissingParam not raised')
+        except falcon.HTTPMissingParam as ex:
+            self.assertEqual(ex.title, 'Missing query parameter')
+            expected_desc = 'The "marker" query parameter is required.'
+            self.assertEqual(ex.description, expected_desc)
 
     def test_int(self):
         query_string = 'marker=deadbeef&limit=25'
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
-        self.assertRaises(falcon.HTTPBadRequest, req.get_param_as_int,
-                          'marker')
+
+        try:
+            req.get_param_as_int('marker')
+        except Exception as ex:
+            self.assertIsInstance(ex, falcon.HTTPBadRequest)
+            self.assertIsInstance(ex, falcon.HTTPInvalidParam)
+            self.assertEqual(ex.title, 'Invalid query parameter')
+            expected_desc = ('The "marker" query parameter is invalid. '
+                             'The value must be an integer.')
+            self.assertEqual(ex.description, expected_desc)
 
         self.assertEqual(req.get_param_as_int('limit'), 25)
 
@@ -175,14 +188,22 @@ class _TestQueryParams(testing.TestBase):
 
     def test_boolean(self):
         query_string = ('echo=true&doit=false&bogus=0&bogus2=1&'
-                        't1=True&f1=False&t2=yes&f2=no')
+                        't1=True&f1=False&t2=yes&f2=no&blank')
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
         self.assertRaises(falcon.HTTPBadRequest, req.get_param_as_bool,
                           'bogus')
-        self.assertRaises(falcon.HTTPBadRequest, req.get_param_as_bool,
-                          'bogus2')
+
+        try:
+            req.get_param_as_bool('bogus2')
+        except Exception as ex:
+            self.assertIsInstance(ex, falcon.HTTPInvalidParam)
+            self.assertEqual(ex.title, 'Invalid query parameter')
+            expected_desc = ('The "bogus2" query parameter is invalid. '
+                             'The value of the parameter must be "true" '
+                             'or "false".')
+            self.assertEqual(ex.description, expected_desc)
 
         self.assertEqual(req.get_param_as_bool('echo'), True)
         self.assertEqual(req.get_param_as_bool('doit'), False)
@@ -191,10 +212,30 @@ class _TestQueryParams(testing.TestBase):
         self.assertEqual(req.get_param_as_bool('t2'), True)
         self.assertEqual(req.get_param_as_bool('f1'), False)
         self.assertEqual(req.get_param_as_bool('f2'), False)
+        self.assertEqual(req.get_param('blank'), None)
 
         store = {}
         self.assertEqual(req.get_param_as_bool('echo', store=store), True)
         self.assertEqual(store['echo'], True)
+
+    def test_boolean_blank(self):
+        self.api.req_options.keep_blank_qs_values = True
+        self.simulate_request(
+            '/',
+            query_string='blank&blank2=',
+        )
+
+        req = self.resource.req
+        self.assertEqual(req.get_param('blank'), '')
+        self.assertEqual(req.get_param('blank2'), '')
+        self.assertRaises(falcon.HTTPInvalidParam, req.get_param_as_bool,
+                          'blank')
+        self.assertRaises(falcon.HTTPInvalidParam, req.get_param_as_bool,
+                          'blank2')
+        self.assertEqual(req.get_param_as_bool('blank', blank_as_true=True),
+                         True)
+        self.assertEqual(req.get_param_as_bool('blank3', blank_as_true=True),
+                         None)
 
     def test_list_type(self):
         query_string = ('colors=red,green,blue&limit=1'
@@ -240,6 +281,62 @@ class _TestQueryParams(testing.TestBase):
         self.assertEqual(req.get_param_as_list('limit', store=store), ['1'])
         self.assertEqual(store['limit'], ['1'])
 
+    def test_list_type_blank(self):
+        query_string = ('colors=red,green,blue&limit=1'
+                        '&list-ish1=f,,x&list-ish2=,0&list-ish3=a,,,b'
+                        '&empty1=&empty2=,&empty3=,,'
+                        '&thing_one=1,,3'
+                        '&thing_two=1&thing_two=&thing_two=3'
+                        '&empty4=&empty4&empty4='
+                        '&empty5&empty5&empty5')
+        self.api.req_options.keep_blank_qs_values = True
+        self.simulate_request(
+            '/',
+            query_string=query_string
+        )
+
+        req = self.resource.req
+
+        # NOTE(kgriffs): For lists, get_param will return one of the
+        # elements, but which one it will choose is undefined.
+        self.assertIn(req.get_param('colors'), ('red', 'green', 'blue'))
+
+        self.assertEqual(req.get_param_as_list('colors'),
+                         ['red', 'green', 'blue'])
+        self.assertEqual(req.get_param_as_list('limit'), ['1'])
+        self.assertIs(req.get_param_as_list('marker'), None)
+
+        self.assertEqual(req.get_param_as_list('empty1'), [''])
+        self.assertEqual(req.get_param_as_list('empty2'), ['', ''])
+        self.assertEqual(req.get_param_as_list('empty3'), ['', '', ''])
+
+        self.assertEqual(req.get_param_as_list('list-ish1'),
+                         ['f', '', 'x'])
+
+        # Ensure that '0' doesn't get translated to None
+        self.assertEqual(req.get_param_as_list('list-ish2'),
+                         ['', '0'])
+
+        # Ensure that '0' doesn't get translated to None
+        self.assertEqual(req.get_param_as_list('list-ish3'),
+                         ['a', '', '', 'b'])
+
+        # Ensure consistency between list conventions
+        self.assertEqual(req.get_param_as_list('thing_one'),
+                         ['1', '', '3'])
+        self.assertEqual(req.get_param_as_list('thing_one'),
+                         req.get_param_as_list('thing_two'))
+
+        store = {}
+        self.assertEqual(req.get_param_as_list('limit', store=store), ['1'])
+        self.assertEqual(store['limit'], ['1'])
+
+        # Test empty elements
+        self.assertEqual(req.get_param_as_list('empty4'), ['', '', ''])
+        self.assertEqual(req.get_param_as_list('empty5'), ['', '', ''])
+        self.assertEqual(req.get_param_as_list('empty4'),
+                         req.get_param_as_list('empty5'))
+
     def test_list_transformer(self):
         query_string = 'coord=1.4,13,15.1&limit=100&things=4,,1'
         self.simulate_request('/', query_string=query_string)
@@ -262,8 +359,14 @@ class _TestQueryParams(testing.TestBase):
         actual = req.get_param_as_list('things', transform=int)
         self.assertEqual(actual, expected)
 
-        self.assertRaises(falcon.HTTPBadRequest,
-                          req.get_param_as_list, 'coord', transform=int)
+        try:
+            req.get_param_as_list('coord', transform=int)
+        except Exception as ex:
+            self.assertIsInstance(ex, falcon.HTTPInvalidParam)
+            self.assertEqual(ex.title, 'Invalid query parameter')
+            expected_desc = ('The "coord" query parameter is invalid. '
+                             'The value is not formatted correctly.')
+            self.assertEqual(ex.description, expected_desc)
 
     def test_param_property(self):
         query_string = 'ant=4&bee=3&cat=2&dog=1'
@@ -313,10 +416,10 @@ class _TestQueryParams(testing.TestBase):
 
 
 class PostQueryParams(_TestQueryParams):
-    def simulate_request(self, path, query_string):
+    def simulate_request(self, path, query_string, **kwargs):
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
-        super(PostQueryParams, self).simulate_request(path, body=query_string,
-                                                      headers=headers)
+        super(PostQueryParams, self).simulate_request(
+            path, body=query_string, headers=headers, **kwargs)
 
     def test_non_ascii(self):
         value = u'\u8c46\u74e3'
@@ -328,6 +431,6 @@ class PostQueryParams(_TestQueryParams):
 
 
 class GetQueryParams(_TestQueryParams):
-    def simulate_request(self, path, query_string):
+    def simulate_request(self, path, query_string, **kwargs):
         super(GetQueryParams, self).simulate_request(
-            path, query_string=query_string)
+            path, query_string=query_string, **kwargs)

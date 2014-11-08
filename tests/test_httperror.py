@@ -3,7 +3,9 @@
 import json
 import xml.etree.ElementTree as et
 
+import ddt
 from testtools.matchers import raises, Not
+import yaml
 
 import falcon.testing as testing
 import falcon
@@ -35,7 +37,7 @@ class FaultyResource:
             code=8733224)
 
     def on_patch(self, req, resp):
-        raise falcon.HTTPError(falcon.HTTP_400, 'No-can-do')
+        raise falcon.HTTPError(falcon.HTTP_400)
 
 
 class UnicodeFaultyResource(object):
@@ -92,10 +94,6 @@ class MethodNotAllowedResource:
     def on_get(self, req, resp):
         raise falcon.HTTPMethodNotAllowed(['PUT'])
 
-    def on_post(self, req, resp):
-        raise falcon.HTTPMethodNotAllowed(
-            ['PUT'], description='POST is no longer available.')
-
 
 class LengthRequiredResource:
 
@@ -115,6 +113,35 @@ class ServiceUnavailableResource:
         raise falcon.HTTPServiceUnavailable('Oops', 'Stand by...', 60)
 
 
+class InvalidHeaderResource:
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPInvalidHeader(
+            'Please provide a valid token.', 'X-Auth-Token',
+            code='A1001')
+
+
+class MissingHeaderResource:
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPMissingHeader('X-Auth-Token')
+
+
+class InvalidParamResource:
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPInvalidParam(
+            'The value must be a hex-encoded UUID.', 'id',
+            code='P1002')
+
+
+class MissingParamResource:
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPMissingParam('id', code='P1003')
+
+
+@ddt.ddt
 class TestHTTPError(testing.TestBase):
 
     def before(self):
@@ -163,21 +190,21 @@ class TestHTTPError(testing.TestBase):
     def test_no_description_json(self):
         body = self.simulate_request('/fail', method='PATCH')
         self.assertEqual(self.srmock.status, falcon.HTTP_400)
-        self.assertEqual(body, [b'{\n    "title": "No-can-do"\n}'])
+        self.assertEqual(body, [b'{}'])
 
     def test_no_description_xml(self):
         body = self.simulate_request('/fail', method='PATCH',
                                      headers={'Accept': 'application/xml'})
         self.assertEqual(self.srmock.status, falcon.HTTP_400)
 
-        expected_xml = (b'<?xml version="1.0" encoding="UTF-8"?>' +
-                        b'<error><title>No-can-do</title></error>')
+        expected_xml = (b'<?xml version="1.0" encoding="UTF-8"?>'
+                        b'<error />')
 
         self.assertEqual(body, [expected_xml])
 
     def test_client_does_not_accept_json_or_xml(self):
         headers = {
-            'Accept': 'application/soap+xml',
+            'Accept': 'application/x-yaml',
             'X-Error-Title': 'Storage service down',
             'X-Error-Description': ('The configured storage service is not '
                                     'responding to requests. Please contact '
@@ -188,6 +215,41 @@ class TestHTTPError(testing.TestBase):
         body = self.simulate_request('/fail', headers=headers)
         self.assertEqual(self.srmock.status, headers['X-Error-Status'])
         self.assertEqual(body, [])
+
+    def test_custom_error_serializer(self):
+        headers = {
+            'Accept': 'application/x-yaml',
+            'X-Error-Title': 'Storage service down',
+            'X-Error-Description': ('The configured storage service is not '
+                                    'responding to requests. Please contact '
+                                    'your service provider'),
+            'X-Error-Status': falcon.HTTP_503
+        }
+
+        expected_yaml = (b'{code: 10042, description: The configured storage '
+                         b'service is not responding to requests.\n    '
+                         b'Please contact your service provider, title: '
+                         b'Storage service down}\n')
+
+        def my_serializer(req, exception):
+            representation = None
+
+            preferred = req.client_prefers(('application/x-yaml',
+                                            'application/json'))
+
+            if preferred is not None:
+                if preferred == 'application/json':
+                    representation = exception.json()
+                else:
+                    representation = yaml.dump(exception.to_dict(),
+                                               encoding=None)
+
+            return (preferred, representation)
+
+        self.api.set_error_serializer(my_serializer)
+        body = self.simulate_request('/fail', headers=headers)
+        self.assertEqual(self.srmock.status, headers['X-Error-Status'])
+        self.assertEqual(body, [expected_yaml])
 
     def test_client_does_not_accept_anything(self):
         headers = {
@@ -203,10 +265,13 @@ class TestHTTPError(testing.TestBase):
         self.assertEqual(self.srmock.status, headers['X-Error-Status'])
         self.assertEqual(body, [])
 
-    def test_forbidden(self):
-        headers = {
-            'Accept': 'application/json'
-        }
+    @ddt.data(
+        'application/json',
+        'application/vnd.company.system.project.resource+json;v=1.1',
+        'application/json-patch+json',
+    )
+    def test_forbidden(self, media_type):
+        headers = {'Accept': media_type}
 
         expected_body = {
             'title': 'Request denied',
@@ -227,9 +292,7 @@ class TestHTTPError(testing.TestBase):
         self.assertEqual(json.loads(body), expected_body)
 
     def test_epic_fail_json(self):
-        headers = {
-            'Accept': 'application/json'
-        }
+        headers = {'Accept': 'application/json'}
 
         expected_body = {
             'title': 'Internet crashed',
@@ -249,10 +312,14 @@ class TestHTTPError(testing.TestBase):
         self.assertThat(lambda: json.loads(body), Not(raises(ValueError)))
         self.assertEqual(json.loads(body), expected_body)
 
-    def test_epic_fail_xml(self):
-        headers = {
-            'Accept': 'text/xml'
-        }
+    @ddt.data(
+        'text/xml',
+        'application/xml',
+        'application/vnd.company.system.project.resource+xml;v=1.1',
+        'application/atom+xml',
+    )
+    def test_epic_fail_xml(self, media_type):
+        headers = {'Accept': media_type}
 
         expected_body = ('<?xml version="1.0" encoding="UTF-8"?>' +
                          '<error>' +
@@ -349,15 +416,6 @@ class TestHTTPError(testing.TestBase):
         self.assertEqual(response, [])
         self.assertIn(('allow', 'PUT'), self.srmock.headers)
 
-        body = self.simulate_request('/405', method='POST', decode='utf-8')
-        self.assertEqual(self.srmock.status, falcon.HTTP_405)
-
-        doc = json.loads(body)
-        self.assertEqual(doc['title'], 'Method not allowed')
-        self.assertEqual(doc['description'], 'POST is no longer available.')
-
-        self.assertIn(('allow', 'PUT'), self.srmock.headers)
-
     def test_411(self):
         self.api.add_route('/411', LengthRequiredResource())
         body = self.simulate_request('/411')
@@ -382,13 +440,69 @@ class TestHTTPError(testing.TestBase):
         body = self.simulate_request('/503', decode='utf-8')
 
         expected_body = {
-            'title': 'Oops',
-            'description': 'Stand by...',
+            u'title': u'Oops',
+            u'description': u'Stand by...',
         }
 
         self.assertEqual(self.srmock.status, falcon.HTTP_503)
         self.assertEqual(json.loads(body), expected_body)
         self.assertIn(('retry-after', '60'), self.srmock.headers)
+
+    def test_invalid_header(self):
+        self.api.add_route('/400', InvalidHeaderResource())
+        body = self.simulate_request('/400', decode='utf-8')
+
+        expected_desc = (u'The value provided for the X-Auth-Token '
+                         u'header is invalid. Please provide a valid token.')
+
+        expected_body = {
+            u'title': u'Invalid header value',
+            u'description': expected_desc,
+            u'code': u'A1001',
+        }
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_400)
+        self.assertEqual(json.loads(body), expected_body)
+
+    def test_missing_header(self):
+        self.api.add_route('/400', MissingHeaderResource())
+        body = self.simulate_request('/400', decode='utf-8')
+
+        expected_body = {
+            u'title': u'Missing header value',
+            u'description': u'The X-Auth-Token header is required.',
+        }
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_400)
+        self.assertEqual(json.loads(body), expected_body)
+
+    def test_invalid_param(self):
+        self.api.add_route('/400', InvalidParamResource())
+        body = self.simulate_request('/400', decode='utf-8')
+
+        expected_desc = (u'The "id" query parameter is invalid. The '
+                         u'value must be a hex-encoded UUID.')
+        expected_body = {
+            u'title': u'Invalid query parameter',
+            u'description': expected_desc,
+            u'code': u'P1002',
+        }
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_400)
+        self.assertEqual(json.loads(body), expected_body)
+
+    def test_missing_param(self):
+        self.api.add_route('/400', MissingParamResource())
+        body = self.simulate_request('/400', decode='utf-8')
+
+        expected_body = {
+            u'title': u'Missing query parameter',
+            u'description': u'The "id" query parameter is required.',
+            u'code': u'P1003',
+        }
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_400)
+        self.assertEqual(json.loads(body), expected_body)
 
     def test_misc(self):
         self._misc_test(falcon.HTTPBadRequest, falcon.HTTP_400)

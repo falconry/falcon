@@ -185,9 +185,57 @@ class TestFalconUtils(testtools.TestCase):
             actual = uri.decode(case)
             self.assertEqual(expect, actual)
 
+    def test_parse_host(self):
+        self.assertEqual(uri.parse_host('::1'), ('::1', None))
+        self.assertEqual(uri.parse_host('2001:ODB8:AC10:FE01::'),
+                         ('2001:ODB8:AC10:FE01::', None))
+        self.assertEqual(
+            uri.parse_host('2001:ODB8:AC10:FE01::', default_port=80),
+            ('2001:ODB8:AC10:FE01::', 80))
+
+        ipv6_addr = '2001:4801:1221:101:1c10::f5:116'
+
+        self.assertEqual(uri.parse_host(ipv6_addr), (ipv6_addr, None))
+        self.assertEqual(uri.parse_host('[' + ipv6_addr + ']'),
+                         (ipv6_addr, None))
+        self.assertEqual(uri.parse_host('[' + ipv6_addr + ']:28080'),
+                         (ipv6_addr, 28080))
+        self.assertEqual(uri.parse_host('[' + ipv6_addr + ']:8080'),
+                         (ipv6_addr, 8080))
+        self.assertEqual(uri.parse_host('[' + ipv6_addr + ']:123'),
+                         (ipv6_addr, 123))
+        self.assertEqual(uri.parse_host('[' + ipv6_addr + ']:42'),
+                         (ipv6_addr, 42))
+
+        self.assertEqual(uri.parse_host('173.203.44.122'),
+                         ('173.203.44.122', None))
+        self.assertEqual(uri.parse_host('173.203.44.122', default_port=80),
+                         ('173.203.44.122', 80))
+        self.assertEqual(uri.parse_host('173.203.44.122:27070'),
+                         ('173.203.44.122', 27070))
+        self.assertEqual(uri.parse_host('173.203.44.122:123'),
+                         ('173.203.44.122', 123))
+        self.assertEqual(uri.parse_host('173.203.44.122:42'),
+                         ('173.203.44.122', 42))
+
+        self.assertEqual(uri.parse_host('example.com'),
+                         ('example.com', None))
+        self.assertEqual(uri.parse_host('example.com', default_port=443),
+                         ('example.com', 443))
+        self.assertEqual(uri.parse_host('falcon.example.com'),
+                         ('falcon.example.com', None))
+        self.assertEqual(uri.parse_host('falcon.example.com:9876'),
+                         ('falcon.example.com', 9876))
+        self.assertEqual(uri.parse_host('falcon.example.com:42'),
+                         ('falcon.example.com', 42))
+
 
 class TestFalconTesting(falcon.testing.TestBase):
     """Catch some uncommon branches not covered elsewhere."""
+
+    def test_path_escape_chars_in_create_environ(self):
+        env = falcon.testing.create_environ('/hello%20world%21')
+        self.assertEqual(env['PATH_INFO'], '/hello world!')
 
     def test_unicode_path_in_create_environ(self):
         if six.PY3:

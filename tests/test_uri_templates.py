@@ -25,13 +25,13 @@ class NameResource(object):
         self.id = id
         self.name = name
         self.called = True
-        
-        
+
+
 class PathResource(object):
     def __init__(self):
         self.path = None
         self.called = False
-        
+
     def on_get(self, req, resp, path):
         self.path = path
         self.called = True
@@ -167,7 +167,7 @@ class TestUriTemplates(testing.TestBase):
 
         self.assertRaises(ValueError, self.api.add_route,
                           'no/leading_slash', self.resource)
-        
+
     def test_reserved_variable(self):
         resource = PathResource()
         self.api.add_route('/files/{+path}', resource)
@@ -179,4 +179,3 @@ class TestUriTemplates(testing.TestBase):
         self.assertTrue(resource.called)
 
         self.assertEqual(resource.path, '%s/%s' % (dir_a, dir_b))
-        

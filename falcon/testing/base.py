@@ -20,6 +20,7 @@ except ImportError:  # pragma: nocover
     import unittest
 
 import falcon
+import falcon.request
 from falcon.testing.srmock import StartResponseMock
 from falcon.testing.helpers import create_environ
 
@@ -55,6 +56,9 @@ class TestBase(unittest.TestCase):
         self.srmock = StartResponseMock()
         self.test_route = '/{0}'.format(next(self._id))
 
+        # Reset to simulate "restarting" the WSGI container
+        falcon.request._maybe_wrap_wsgi_stream = True
+
         before = getattr(self, 'before', None)
         if callable(before):
             before()
@@ -70,7 +74,7 @@ class TestBase(unittest.TestCase):
 
     # NOTE(warsaw): Pythons earlier than 2.7 do not have a self.assertIn()
     # method, so use this compatibility function instead.
-    if not hasattr(unittest.TestCase, 'assertIn'):
+    if not hasattr(unittest.TestCase, 'assertIn'):  # pragma: nocover
         def assertIn(self, a, b):
             self.assertTrue(a in b)
 

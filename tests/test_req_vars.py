@@ -1,17 +1,19 @@
 import datetime
 
+import ddt
+
 import falcon
 from falcon.request import Request
 import falcon.testing as testing
 
 
+@ddt.ddt
 class TestReqVars(testing.TestBase):
 
     def before(self):
         self.qs = 'marker=deadbeef&limit=10'
 
         self.headers = {
-            'Host': 'falcon.example.com',
             'Content-Type': 'text/plain',
             'Content-Length': '4829',
             'Authorization': ''
@@ -20,11 +22,10 @@ class TestReqVars(testing.TestBase):
         self.app = '/test'
         self.path = '/hello'
         self.relative_uri = self.path + '?' + self.qs
-        self.uri = 'http://falcon.example.com' + self.app + self.relative_uri
-        self.uri_noqs = 'http://falcon.example.com' + self.app + self.path
 
         self.req = Request(testing.create_environ(
             app=self.app,
+            port=8080,
             path='/hello',
             query_string=self.qs,
             headers=self.headers))
@@ -45,6 +46,53 @@ class TestReqVars(testing.TestBase):
     def test_empty(self):
         self.assertIs(self.req.auth, None)
 
+    def test_host(self):
+        self.assertEqual(self.req.host, testing.DEFAULT_HOST)
+
+    def test_subdomain(self):
+        req = Request(testing.create_environ(
+            host='com',
+            path='/hello',
+            headers=self.headers))
+        self.assertIs(req.subdomain, None)
+
+        req = Request(testing.create_environ(
+            host='example.com',
+            path='/hello',
+            headers=self.headers))
+        self.assertEqual(req.subdomain, 'example')
+
+        req = Request(testing.create_environ(
+            host='highwire.example.com',
+            path='/hello',
+            headers=self.headers))
+        self.assertEqual(req.subdomain, 'highwire')
+
+        req = Request(testing.create_environ(
+            host='lb01.dfw01.example.com',
+            port=8080,
+            path='/hello',
+            headers=self.headers))
+        self.assertEqual(req.subdomain, 'lb01')
+
+        # NOTE(kgriffs): Behavior for IP addresses is undefined,
+        # so just make sure it doesn't blow up.
+        req = Request(testing.create_environ(
+            host='127.0.0.1',
+            path='/hello',
+            headers=self.headers))
+        self.assertEqual(type(req.subdomain), str)
+
+        # NOTE(kgriffs): Test fallback to SERVER_NAME by using
+        # HTTP 1.0, which will cause .create_environ to not set
+        # HTTP_HOST.
+        req = Request(testing.create_environ(
+            protocol='HTTP/1.0',
+            host='example.com',
+            path='/hello',
+            headers=self.headers))
+        self.assertEqual(req.subdomain, 'example')
+
     def test_reconstruct_url(self):
         req = self.req
 
@@ -54,18 +102,118 @@ class TestReqVars(testing.TestBase):
         path = req.path
         query_string = req.query_string
 
-        actual_url = ''.join([scheme, '://', host, app, path,
-                              '?', query_string])
-        self.assertEqual(actual_url, self.uri)
+        expected_uri = ''.join([scheme, '://', host, app, path,
+                                '?', query_string])
+
+        self.assertEqual(expected_uri, req.uri)
 
     def test_uri(self):
-        self.assertEqual(self.req.url, self.uri)
+        uri = ('http://' + testing.DEFAULT_HOST + ':8080' +
+               self.app + self.relative_uri)
+
+        self.assertEqual(self.req.url, uri)
 
         # NOTE(kgriffs): Call twice to check caching works
-        self.assertEqual(self.req.uri, self.uri)
-        self.assertEqual(self.req.uri, self.uri)
+        self.assertEqual(self.req.uri, uri)
+        self.assertEqual(self.req.uri, uri)
 
-        self.assertEqual(self.req_noqs.uri, self.uri_noqs)
+        uri_noqs = ('http://' + testing.DEFAULT_HOST + self.app + self.path)
+        self.assertEqual(self.req_noqs.uri, uri_noqs)
+
+    def test_uri_https(self):
+        # =======================================================
+        # Default port, implicit
+        # =======================================================
+        req = Request(testing.create_environ(
+            path='/hello', scheme='https'))
+        uri = ('https://' + testing.DEFAULT_HOST + '/hello')
+
+        self.assertEqual(req.uri, uri)
+
+        # =======================================================
+        # Default port, explicit
+        # =======================================================
+        req = Request(testing.create_environ(
+            path='/hello', scheme='https', port=443))
+        uri = ('https://' + testing.DEFAULT_HOST + '/hello')
+
+        self.assertEqual(req.uri, uri)
+
+        # =======================================================
+        # Non-default port
+        # =======================================================
+        req = Request(testing.create_environ(
+            path='/hello', scheme='https', port=22))
+        uri = ('https://' + testing.DEFAULT_HOST + ':22/hello')
+
+        self.assertEqual(req.uri, uri)
+
+    def test_uri_http_1_0(self):
+        # =======================================================
+        # HTTP, 80
+        # =======================================================
+        req = Request(testing.create_environ(
+            protocol='HTTP/1.0',
+            app=self.app,
+            port=80,
+            path='/hello',
+            query_string=self.qs,
+            headers=self.headers))
+
+        uri = ('http://' + testing.DEFAULT_HOST +
+               self.app + self.relative_uri)
+
+        self.assertEqual(req.uri, uri)
+
+        # =======================================================
+        # HTTP, 80
+        # =======================================================
+        req = Request(testing.create_environ(
+            protocol='HTTP/1.0',
+            app=self.app,
+            port=8080,
+            path='/hello',
+            query_string=self.qs,
+            headers=self.headers))
+
+        uri = ('http://' + testing.DEFAULT_HOST + ':8080' +
+               self.app + self.relative_uri)
+
+        self.assertEqual(req.uri, uri)
+
+        # =======================================================
+        # HTTP, 80
+        # =======================================================
+        req = Request(testing.create_environ(
+            protocol='HTTP/1.0',
+            scheme='https',
+            app=self.app,
+            port=443,
+            path='/hello',
+            query_string=self.qs,
+            headers=self.headers))
+
+        uri = ('https://' + testing.DEFAULT_HOST +
+               self.app + self.relative_uri)
+
+        self.assertEqual(req.uri, uri)
+
+        # =======================================================
+        # HTTP, 80
+        # =======================================================
+        req = Request(testing.create_environ(
+            protocol='HTTP/1.0',
+            scheme='https',
+            app=self.app,
+            port=22,
+            path='/hello',
+            query_string=self.qs,
+            headers=self.headers))
+
+        uri = ('https://' + testing.DEFAULT_HOST + ':22' +
+               self.app + self.relative_uri)
+
+        self.assertEqual(req.uri, uri)
 
     def test_relative_uri(self):
         self.assertEqual(self.req.relative_uri, self.app + self.relative_uri)
@@ -234,7 +382,7 @@ class TestReqVars(testing.TestBase):
 
         headers = {'Range': ''}
         req = Request(testing.create_environ(headers=headers))
-        self.assertIs(req.range, None)
+        self.assertRaises(falcon.HTTPInvalidHeader, lambda: req.range)
 
         req = Request(testing.create_environ())
         self.assertIs(req.range, None)
@@ -245,8 +393,11 @@ class TestReqVars(testing.TestBase):
         self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
 
         headers = {'Range': '-'}
-        req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+        expected_desc = ('The value provided for the Range header is '
+                         'invalid. The byte offsets are missing.')
+        self._test_error_details(headers, 'range',
+                                 falcon.HTTPInvalidHeader,
+                                 'Invalid header value', expected_desc)
 
         headers = {'Range': '--'}
         req = Request(testing.create_environ(headers=headers))
@@ -293,12 +444,20 @@ class TestReqVars(testing.TestBase):
         self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
 
         headers = {'Range': 'x-y'}
-        req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+        expected_desc = ('The value provided for the Range header is '
+                         'invalid. It must be a byte range formatted '
+                         'according to RFC 2616.')
+        self._test_error_details(headers, 'range',
+                                 falcon.HTTPInvalidHeader,
+                                 'Invalid header value', expected_desc)
 
         headers = {'Range': 'bytes=0-0,-1'}
-        req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+        expected_desc = ('The value provided for the Range '
+                         'header is invalid. The value must be a '
+                         'continuous byte range.')
+        self._test_error_details(headers, 'range',
+                                 falcon.HTTPInvalidHeader,
+                                 'Invalid header value', expected_desc)
 
     def test_missing_attribute_header(self):
         req = Request(testing.create_environ())
@@ -318,13 +477,21 @@ class TestReqVars(testing.TestBase):
 
     def test_bogus_content_length_nan(self):
         headers = {'content-length': 'fuzzy-bunnies'}
-        req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.HTTPBadRequest, lambda: req.content_length)
+        expected_desc = ('The value provided for the '
+                         'Content-Length header is invalid. The value '
+                         'of the header must be a number.')
+        self._test_error_details(headers, 'content_length',
+                                 falcon.HTTPInvalidHeader,
+                                 'Invalid header value', expected_desc)
 
     def test_bogus_content_length_neg(self):
         headers = {'content-length': '-1'}
-        req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.HTTPBadRequest, lambda: req.content_length)
+        expected_desc = ('The value provided for the Content-Length '
+                         'header is invalid. The value of the header '
+                         'must be a positive number.')
+        self._test_error_details(headers, 'content_length',
+                                 falcon.HTTPInvalidHeader,
+                                 'Invalid header value', expected_desc)
 
     def test_date(self):
         date = datetime.datetime(2013, 4, 4, 5, 19, 18)
@@ -332,10 +499,19 @@ class TestReqVars(testing.TestBase):
         req = Request(testing.create_environ(headers=headers))
         self.assertEqual(req.date, date)
 
-    def test_date_invalid(self):
-        headers = {'date': 'Thu, 04 Apr 2013'}
-        req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.HTTPBadRequest, lambda: req.date)
+    @ddt.data('Thu, 04 Apr 2013', '')
+    def test_date_invalid(self, http_date):
+        headers = {'date': http_date}
+        expected_desc = ('The value provided for the Date '
+                         'header is invalid. It must be formatted '
+                         'according to RFC 1123.')
+        self._test_error_details(headers, 'date',
+                                 falcon.HTTPInvalidHeader,
+                                 'Invalid header value', expected_desc)
+
+    def test_date_missing(self):
+        req = Request(testing.create_environ())
+        self.assertIs(req.date, None)
 
     def test_attribute_headers(self):
         date = testing.httpnow()
@@ -391,3 +567,14 @@ class TestReqVars(testing.TestBase):
 
         req = Request(testing.create_environ())
         self.assertEqual(getattr(req, attr), default)
+
+    def _test_error_details(self, headers, attr_name,
+                            error_type, title, description):
+        req = Request(testing.create_environ(headers=headers))
+
+        try:
+            getattr(req, attr_name)
+            self.fail('{0} not raised'.format(error_type.__name__))
+        except error_type as ex:
+            self.assertEqual(ex.title, title)
+            self.assertEqual(ex.description, description)

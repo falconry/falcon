@@ -81,7 +81,7 @@ def profile(name, env, filename=None, verbose=False):
     func = create_bench(name, env)
 
     gc.collect()
-    code = 'for x in xrange(10000): func()'
+    code = 'for x in range(10000): func()'
 
     if verbose:
         if pprofile is None:
@@ -262,3 +262,6 @@ def main():
             print(heap_diff)
 
     print()
+
+if __name__ == '__main__':
+    main()

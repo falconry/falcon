@@ -31,7 +31,7 @@ DEFAULT_MEDIA_TYPE = 'application/json; charset=utf-8'
 from falcon.version import __version__  # NOQA
 from falcon.api import API, DEFAULT_MEDIA_TYPE  # NOQA
 from falcon.status_codes import *  # NOQA
-from falcon.exceptions import *  # NOQA
+from falcon.errors import *  # NOQA
 from falcon.http_error import HTTPError  # NOQA
 from falcon.util import *  # NOQA
 from falcon.hooks import before, after  # NOQA
