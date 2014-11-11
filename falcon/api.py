@@ -51,21 +51,77 @@ class API(object):
         after (callable, optional): A global action hook (or list of hooks)
             to call after each on_* responder, for all resources. Similar to
             the ``after`` decorator, but applies to the entire API.
-        middleware(callable class, optional): A global action middleware (or
-            list of middlewares) to be executed wrapping the responder.
-            Middleware object can define process_request and process_response,
-            and they will be executed in natural order, as if they were round
-            layers over responder:
-                process_request is executed in the same order of definition
-                process_response and process_exception in reversed order
-            if you define middleware=[OutSideMw, InsideMw]
-            the order will be:
-                OutsideMw.process_request
-                    InsideMw.process_request
-                        responder
-                    InsideMw.process_response
-                OutsideMw.process_request
-            Any exception would apply process_response of the unexecuted mw.
+        middleware(object or list, optional): One or more objects that
+            implement the following middleware component interface::
+
+                class ExampleComponent(object):
+                    def process_request(req, resp, params):
+                        \"""Process the request before routing it.
+
+                        Args:
+                            req: Request object that will eventually be
+                                routed to an on_* responder method
+                            resp: Response object that will be routed to
+                                the on_* responder
+                            params: kwargs that will eventually be passed
+                                to the on_* responder
+                        \"""
+
+                    def process_response(req, resp)
+                        \"""Post-processing of the response (after routing).
+                        \"""
+
+            Each component's *process_request* and *process_response* methods
+            are executed hierarchically, as a stack. For example, if a list of
+            middleware objects are passed as ``[mob1, mob2, mob3]``, the order
+            of execution is as follows::
+
+                mob1.process_request
+                    mob2.process_request
+                        mob3.process_request
+                            <route to responder method>
+                        mob3.process_response
+                    mob2.process_response
+                mob3.process_response
+
+            Note that each component need not implement both process_*
+            methods; in the case that one of the two methods is missing,
+            it is treated as a noop in the stack. For example, if ``mob2`` did
+            not implement *process_request* and ``mob3`` did not implement
+            *process_response*, the execution order would look
+            like this::
+
+                mob1.process_request
+                    _
+                        mob3.process_request
+                            <route to responder method>
+                        _
+                    mob2.process_response
+                mob3.process_response
+
+            If one of the *process_request* middleware methods raises an
+            error, it will be processed according to the error type. If
+            the type matches a registered error handler, that handler will
+            be invoked and then the framework will begin to unwind the
+            stack, skipping any lower layers. The error handler may itself
+            raise an instance of HTTPError, in which case the framework
+            will use the latter exception to update the *resp* object.
+            Regardless, the framework will continue unwinding the middleware
+            stack. For example, if *mob2.process_request* were to raise an
+            error, the framework would execute the stack as follows::
+
+                mob1.process_request
+                    mob2.process_request
+                        <skip mob3 and routing>
+                    mob2.process_response
+                mob3.process_response
+
+            Finally, if one of the *process_response* methods raises an error,
+            or the routed on_* responder method itself raises an error, the
+            exception will be handled in a similar manner as above. Then,
+            the framework will execute any remaining middleware on the
+            stack.
+
         request_type (Request, optional): Request-alike class to use instead
             of Falcon's default class. Useful if you wish to extend
             ``falcon.request.Request`` with a custom ``context_type``.
@@ -74,6 +130,9 @@ class API(object):
             instead of Falcon's default class. (default
             falcon.response.Response)
 
+    Attributes:
+        req_options (RequestOptions): A set of behavioral options related to
+            incoming requests.
     """
 
     __slots__ = ('_after', '_before', '_request_type', '_response_type',
@@ -91,7 +150,7 @@ class API(object):
         self._after = self._prepare_global_hooks(after)
 
         # set middleware
-        self._middleware = self._prepare_mw(middleware)
+        self._middleware = self._prepare_middleware(middleware)
 
         self._request_type = request_type
         self._response_type = response_type
@@ -119,7 +178,7 @@ class API(object):
         req = self._request_type(env, options=self.req_options)
         resp = self._response_type()
         resource = None
-        stack_mw = []  # Keep track of executed mw
+        middleware_stack = []  # Keep track of executed components
 
         try:
             # NOTE(warsaw): Moved this to inside the try except because it's
@@ -129,26 +188,30 @@ class API(object):
             # being asked to dispatch to its child will raise an HTTP
             # exception signalling the problem, e.g. a 404.
             responder, params, resource = self._get_responder(req)
+
             # NOTE(kgriffs): Using an inner try..except in order to
             # address the case when err_handler raises HTTPError.
-            #
+
             # NOTE(kgriffs): Coverage is giving false negatives,
             # so disabled on relevant lines. All paths are tested
             # afaict.
             try:
-                # Run request middlewares and fill stack_mw
-                self._call_req_mw(stack_mw, req, resp, params)
+                self._call_req_mw(middleware_stack, req, resp, params)
+                responder(req, resp, **params)
+                self._call_resp_mw(middleware_stack, req, resp)
 
-                responder(req, resp, **params)  # pragma: no cover
-                # Run middlewares for response
-                self._call_resp_mw(stack_mw, req, resp)
             except Exception as ex:
                 for err_type, err_handler in self._error_handlers:
                     if isinstance(ex, err_type):
                         err_handler(ex, req, resp, params)
                         self._call_after_hooks(req, resp, resource)
-                        self._call_resp_mw(stack_mw, req, resp)
-                        break  # pragma: no cover
+                        self._call_resp_mw(middleware_stack, req, resp)
+
+                        # NOTE(kgriffs): The following line is not
+                        # reported to be covered under Python 3.4 for
+                        # some reason, although coverage was manually
+                        # verified using PDB.
+                        break  # pragma nocover
 
                 else:
                     # PERF(kgriffs): This will propagate HTTPError to
@@ -158,17 +221,18 @@ class API(object):
                     # indeed, should perhaps be slower to create
                     # backpressure on clients that are issuing bad
                     # requests.
+
                     # NOTE(ealogar): This will executed remaining
                     # process_response when no error_handler is given
                     # and for whatever exception. If an HTTPError is raised
                     # remaining process_response will be executed later.
-                    self._call_resp_mw(stack_mw, req, resp)
+                    self._call_resp_mw(middleware_stack, req, resp)
                     raise
 
         except HTTPError as ex:
             self._compose_error_response(req, resp, ex)
             self._call_after_hooks(req, resp, resource)
-            self._call_resp_mw(stack_mw, req, resp)
+            self._call_resp_mw(middleware_stack, req, resp)
 
         #
         # Set status and headers
@@ -425,8 +489,8 @@ class API(object):
                 # it was mistakenly set by the app.
                 resp.content_type = media_type
 
-    def _call_req_mw(self, stack_mw, req, resp, params):
-        """Runs the process_request middleware and tracks"""
+    def _call_req_mw(self, stack, req, resp, params):
+        """Run process_request middleware methods."""
 
         for component in self._middleware:
             process_request, _ = component
@@ -434,13 +498,13 @@ class API(object):
                 process_request(req, resp, params)
 
             # Put executed component on the stack
-            stack_mw.append(component)  # keep track from outside
+            stack.append(component)  # keep track from outside
 
-    def _call_resp_mw(self, stack_mw, req, resp):
-        """Runs the process_response middleware and tracks"""
+    def _call_resp_mw(self, stack, req, resp):
+        """Run process_response middleware."""
 
-        while stack_mw:
-            _, process_response = stack_mw.pop()
+        while stack:
+            _, process_response = stack.pop()
             if process_response is not None:
                 process_response(req, resp)
 
@@ -469,7 +533,7 @@ class API(object):
 
         return hooks
 
-    def _prepare_mw(self, middleware=None):
+    def _prepare_middleware(self, middleware=None):
         """Check middleware interface and prepare it to iterate.
 
         Args:
