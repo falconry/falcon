@@ -17,11 +17,14 @@ import functools
 import inspect
 import warnings
 
+import six
+
 __all__ = (
     'deprecated',
     'dt_to_http',
     'http_date_to_dt',
     'to_query_str',
+    'get_bound_method',
 )
 
 
@@ -132,3 +135,34 @@ def to_query_str(params):
         query_str += k + '=' + v + '&'
 
     return query_str[:-1]
+
+
+def get_bound_method(obj, method_name):
+    """Get a bound method of the given object by name.
+
+    Args:
+        obj: Object on which to look up the method.
+        method_name: Name of the method to retrieve.
+
+    Returns:
+        Bound method, or `None` if the method does not exist on`
+        the object.
+
+    Raises:
+        AttributeError: The method exists, but it isn't
+            bound (most likely a class was passed, rather than
+            an instance of that class).
+
+    """
+
+    method = getattr(obj, method_name, None)
+    if method is not None:
+        # NOTE(kgriffs): Ensure it is a bound method
+        if six.get_method_self(method) is None:  # pragma nocover
+            # NOTE(kgriffs): In Python 3 this code is unreachable
+            # because the above will raise AttributeError on its
+            # own.
+            msg = '{0} must be a bound method'.format(method)
+            raise AttributeError(msg)
+
+    return method
