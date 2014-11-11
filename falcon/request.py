@@ -911,10 +911,14 @@ class Request(object):
             self._params.update(extra_params)
 
 
+# PERF: To avoid typos and improve storage space and speed over a dict.
 class RequestOptions(object):
     """This class is a container for Request options.
 
-    PERF: To avoid typos and improve storage space and speed over a dict.
+    Attributes:
+        keep_blank_qs_values (bool): Set to ``True`` in order to retain
+            blank values in query string parameters (default ``False``.)
+
     """
     __slots__ = (
         'keep_blank_qs_values',

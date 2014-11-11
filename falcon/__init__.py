@@ -35,5 +35,5 @@ from falcon.errors import *  # NOQA
 from falcon.http_error import HTTPError  # NOQA
 from falcon.util import *  # NOQA
 from falcon.hooks import before, after  # NOQA
-from falcon.request import Request  # NOQA
+from falcon.request import Request, RequestOptions  # NOQA
 from falcon.response import Response  # NOQA
