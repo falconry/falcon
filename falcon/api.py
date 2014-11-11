@@ -13,25 +13,15 @@
 # limitations under the License.
 
 import re
-import six
 
-from falcon import DEFAULT_MEDIA_TYPE, HTTP_METHODS, responders
-from falcon.hooks import _wrap_with_hooks
+from falcon import api_helpers as helpers
+from falcon import DEFAULT_MEDIA_TYPE
 from falcon.http_error import HTTPError
 from falcon.request import Request, RequestOptions
 from falcon.response import Response
 import falcon.responders
+from falcon import routing
 import falcon.status_codes as status
-from falcon import util
-
-STREAM_BLOCK_SIZE = 8 * 1024  # 8 KiB
-
-IGNORE_BODY_STATUS_CODES = set([
-    status.HTTP_100,
-    status.HTTP_101,
-    status.HTTP_204,
-    status.HTTP_304
-])
 
 
 class API(object):
@@ -135,6 +125,17 @@ class API(object):
             incoming requests.
     """
 
+    # PERF(kgriffs): Reference via self since that is faster than
+    # module global...
+    _BODILESS_STATUS_CODES = set([
+        status.HTTP_100,
+        status.HTTP_101,
+        status.HTTP_204,
+        status.HTTP_304
+    ])
+
+    _STREAM_BLOCK_SIZE = 8 * 1024  # 8 KiB
+
     __slots__ = ('_after', '_before', '_request_type', '_response_type',
                  '_error_handlers', '_media_type', '_routes', '_sinks',
                  '_serialize_error', 'req_options', '_middleware')
@@ -146,17 +147,17 @@ class API(object):
         self._sinks = []
         self._media_type = media_type
 
-        self._before = self._prepare_global_hooks(before)
-        self._after = self._prepare_global_hooks(after)
+        self._before = helpers.prepare_global_hooks(before)
+        self._after = helpers.prepare_global_hooks(after)
 
         # set middleware
-        self._middleware = self._prepare_middleware(middleware)
+        self._middleware = helpers.prepare_middleware(middleware)
 
         self._request_type = request_type
         self._response_type = response_type
 
         self._error_handlers = []
-        self._serialize_error = self._default_serialize_error
+        self._serialize_error = helpers.default_serialize_error
         self.req_options = RequestOptions()
 
     def __call__(self, env, start_response):
@@ -237,13 +238,11 @@ class API(object):
         #
         # Set status and headers
         #
-        use_body = not self._should_ignore_body(resp.status, req.method)
-        if use_body:
+        if req.method == 'HEAD' or resp.status in self._BODILESS_STATUS_CODES:
+            body = []
+        else:
             self._set_content_length(resp)
             body = self._get_body(resp, env.get('wsgi.file_wrapper'))
-        else:
-            # Default: return an empty body
-            body = []
 
         # Set content type if needed
         use_content_type = (body or
@@ -303,8 +302,8 @@ class API(object):
 
         """
 
-        uri_fields, path_template = self._compile_uri_template(uri_template)
-        method_map = self._create_http_method_map(
+        uri_fields, path_template = routing.compile_uri_template(uri_template)
+        method_map = routing.create_http_method_map(
             resource, uri_fields, self._before, self._after)
 
         # Insert at the head of the list in case we get duplicate
@@ -415,7 +414,7 @@ class API(object):
         self._serialize_error = serializer
 
     # ------------------------------------------------------------------------
-    # Helpers
+    # Helpers that require self
     # ------------------------------------------------------------------------
 
     def _get_responder(self, req):
@@ -522,65 +521,9 @@ class API(object):
                 # detect old hooks that do not accept the "resource" param
                 hook(req, resp)
 
-    def _prepare_global_hooks(self, hooks):
-        if hooks is not None:
-            if not isinstance(hooks, list):
-                hooks = [hooks]
-
-            for action in hooks:
-                if not callable(action):
-                    raise TypeError('One or more hooks are not callable')
-
-        return hooks
-
-    def _prepare_middleware(self, middleware=None):
-        """Check middleware interface and prepare it to iterate.
-
-        Args:
-            middleware:  list (or object) of input middleware
-
-        Returns:
-            A middleware list
-        """
-
-        # PERF(kgriffs): do getattr calls once, in advance, so we don't
-        # have to do them every time in the request path.
-        prepared_middleware = []
-
-        if middleware is None:
-            middleware = []
-        else:
-            if not isinstance(middleware, list):
-                middleware = [middleware]
-
-        for component in middleware:
-            process_request = util.get_bound_method(component,
-                                                    'process_request')
-            process_response = util.get_bound_method(component,
-                                                     'process_response')
-
-            if not (process_request or process_response):
-                msg = '{0} does not implement the middleware interface'
-                raise TypeError(msg.format(component))
-
-            prepared_middleware.append((process_request, process_response))
-
-        return prepared_middleware
-
-    def _should_ignore_body(self, status, method):
-        """Return True if the status or method indicates no body per RFC 2616.
-
-        Args:
-            status: An HTTP status line, e.g., "204 No Content"
-
-        Returns:
-            True if method is HEAD, or the status is 1xx, 204, or 304; returns
-            False otherwise.
-
-        """
-
-        return (method == 'HEAD' or status in IGNORE_BODY_STATUS_CODES)
-
+    # PERF(kgriffs): Moved from api_helpers since it is slightly faster
+    # to call using self, and this function is called for most
+    # requests.
     def _set_content_length(self, resp):
         """Set Content-Length when given a fully-buffered body or stream len.
 
@@ -616,6 +559,9 @@ class API(object):
         resp.set_header('Content-Length', str(content_length))
         return content_length
 
+    # PERF(kgriffs): Moved from api_helpers since it is slightly faster
+    # to call using self, and this function is called for most
+    # requests.
     def _get_body(self, resp, wsgi_file_wrapper=None):
         """Converts resp content into an iterable as required by PEP 333
 
@@ -657,176 +603,11 @@ class API(object):
                     # useful that would be.
                     #
                     # See also the discussion on the PR: http://goo.gl/XGrtDz
-                    return wsgi_file_wrapper(stream, STREAM_BLOCK_SIZE)
+                    return wsgi_file_wrapper(stream, self._STREAM_BLOCK_SIZE)
                 else:
-                    return iter(lambda: stream.read(STREAM_BLOCK_SIZE),
+                    return iter(lambda: stream.read(self._STREAM_BLOCK_SIZE),
                                 b'')
 
             return resp.stream
 
         return []
-
-    def _default_serialize_error(self, req, exception):
-        """Serialize the given instance of HTTPError.
-
-        This function determines which of the supported media types, if
-        any, are acceptable by the client, and serializes the error
-        to the preferred type.
-
-        Currently, JSON and XML are the only supported media types. If the
-        client accepts both JSON and XML with equal weight, JSON will be
-        chosen.
-
-        Other media types can be supported by using a custom error serializer.
-
-        Note:
-            If a custom media type is used and the type includes a
-            "+json" or "+xml" suffix, the error will be serialized
-            to JSON or XML, respectively. If this behavior is not
-            desirable, a custom error serializer may be used to
-            override this one.
-
-        Args:
-            req: Instance of falcon.Request
-            exception: Instance of falcon.HTTPError
-
-        Returns:
-            A tuple of the form ``(media_type, representation)``, or
-            ``(None, None)`` if the client does not support any of the
-            available media types.
-
-        """
-        representation = None
-
-        preferred = req.client_prefers(('application/xml',
-                                        'text/xml',
-                                        'application/json'))
-
-        if preferred is None:
-            # NOTE(kgriffs): See if the client expects a custom media
-            # type based on something Falcon supports. Returning something
-            # is probably better than nothing, but if that is not
-            # desired, this behavior can be customized by adding a
-            # custom HTTPError serializer for the custom type.
-            accept = req.accept.lower()
-
-            # NOTE(kgriffs): Simple heuristic, but it's fast, and
-            # should be sufficiently accurate for our purposes. Does
-            # not take into account weights if both types are
-            # acceptable (simply chooses JSON). If it turns out we
-            # need to be more sophisticated, we can always change it
-            # later (YAGNI).
-            if '+json' in accept:
-                preferred = 'application/json'
-            elif '+xml' in accept:
-                preferred = 'application/xml'
-
-        if preferred is not None:
-            if preferred == 'application/json':
-                representation = exception.to_json()
-            else:
-                representation = exception.to_xml()
-
-        return (preferred, representation)
-
-    def _compile_uri_template(self, template):
-        """Compile the given URI template string into a pattern matcher.
-
-        Currently only recognizes Level 1 URI templates, and only for the path
-        portion of the URI.
-
-        See also: http://tools.ietf.org/html/rfc6570
-
-        Args:
-            template: A Level 1 URI template. Method responders must accept, as
-                arguments, all fields specified in the template (default '/').
-                Note that field names are restricted to ASCII a-z, A-Z, and
-                the underscore '_'.
-
-        Returns:
-            (template_field_names, template_regex)
-
-        """
-
-        if not isinstance(template, six.string_types):
-            raise TypeError('uri_template is not a string')
-
-        if not template.startswith('/'):
-            raise ValueError("uri_template must start with '/'")
-
-        if '//' in template:
-            raise ValueError("uri_template may not contain '//'")
-
-        if template != '/' and template.endswith('/'):
-            template = template[:-1]
-
-        expression_pattern = r'{([a-zA-Z][a-zA-Z_]*)}'
-
-        # Get a list of field names
-        fields = set(re.findall(expression_pattern, template))
-
-        # Convert Level 1 var patterns to equivalent named regex groups
-        escaped = re.sub(r'[\.\(\)\[\]\?\*\+\^\|]', r'\\\g<0>', template)
-        pattern = re.sub(expression_pattern, r'(?P<\1>[^/]+)', escaped)
-        pattern = r'\A' + pattern + r'\Z'
-
-        return fields, re.compile(pattern, re.IGNORECASE)
-
-    def _create_http_method_map(self, resource, uri_fields, before, after):
-        """Maps HTTP methods (e.g., GET, POST) to methods of a resource object.
-
-        Args:
-            resource: An object with "responder" methods, starting with
-                on_*, that correspond to each method the resource supports.
-                For example, if a resource supports GET and POST, it should
-                define on_get(self, req, resp) and on_post(self,req,resp).
-            uri_fields: A set of field names from the route's URI template
-                that a responder must support in order to avoid "method not
-                allowed".
-            before: An action hook or list of hooks to be called before each
-                on_* responder defined by the resource.
-            after: An action hook or list of hooks to be called after each
-                on_* responder defined by the resource.
-
-        Returns:
-            A tuple containing a dict mapping HTTP methods to responders,
-            and the method-not-allowed responder.
-
-        """
-
-        method_map = {}
-
-        for method in HTTP_METHODS:
-            try:
-                responder = getattr(resource, 'on_' + method.lower())
-            except AttributeError:
-                # resource does not implement this method
-                pass
-            else:
-                # Usually expect a method, but any callable will do
-                if callable(responder):
-                    responder = _wrap_with_hooks(
-                        before, after, responder, resource)
-                    method_map[method] = responder
-
-        # Attach a resource for unsupported HTTP methods
-        allowed_methods = sorted(list(method_map.keys()))
-
-        # NOTE(sebasmagri): We want the OPTIONS and 405 (Not Allowed) methods
-        # responders to be wrapped on global hooks
-        if 'OPTIONS' not in method_map:
-            # OPTIONS itself is intentionally excluded from the Allow header
-            responder = responders.create_default_options(
-                allowed_methods)
-            method_map['OPTIONS'] = _wrap_with_hooks(
-                before, after, responder, resource)
-            allowed_methods.append('OPTIONS')
-
-        na_responder = responders.create_method_not_allowed(allowed_methods)
-
-        for method in HTTP_METHODS:
-            if method not in allowed_methods:
-                method_map[method] = _wrap_with_hooks(
-                    before, after, na_responder, resource)
-
-        return method_map
