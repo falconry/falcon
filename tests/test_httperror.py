@@ -89,10 +89,40 @@ class NotFoundResource:
         raise falcon.HTTPNotFound()
 
 
+class NotFoundResourceWithBody:
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPNotFound(description='Not Found')
+
+
 class MethodNotAllowedResource:
 
     def on_get(self, req, resp):
         raise falcon.HTTPMethodNotAllowed(['PUT'])
+
+
+class MethodNotAllowedResourceWithHeaders:
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPMethodNotAllowed(['PUT'],
+                                          headers={
+                                              'x-ping': 'pong'})
+
+
+class MethodNotAllowedResourceWithHeadersWithAccept:
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPMethodNotAllowed(['PUT'],
+                                          headers={
+                                              'x-ping': 'pong',
+                                              'accept': 'GET,PUT'})
+
+
+class MethodNotAllowedResourceWithBody:
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPMethodNotAllowed(['PUT'],
+                                          description='Not Allowed')
 
 
 class LengthRequiredResource:
@@ -401,19 +431,63 @@ class TestHTTPError(testing.TestBase):
         self.assertEqual(self.srmock.status, falcon.HTTP_401)
         self.assertNotIn(('www-authenticate', 'Token'), self.srmock.headers)
 
-    def test_404(self):
+    def test_404_without_body(self):
         self.api.add_route('/404', NotFoundResource())
         body = self.simulate_request('/404')
 
         self.assertEqual(self.srmock.status, falcon.HTTP_404)
         self.assertEqual(body, [])
 
-    def test_405(self):
+    def test_404_with_body(self):
+        self.api.add_route('/404', NotFoundResourceWithBody())
+
+        response = self.simulate_request('/404', decode='utf-8')
+        self.assertEqual(self.srmock.status, falcon.HTTP_404)
+        self.assertNotEqual(response, [])
+        expected_body = {
+            u'description': u'Not Found'
+        }
+        self.assertEqual(json.loads(response), expected_body)
+
+    def test_405_without_body(self):
         self.api.add_route('/405', MethodNotAllowedResource())
 
         response = self.simulate_request('/405')
         self.assertEqual(self.srmock.status, falcon.HTTP_405)
         self.assertEqual(response, [])
+        self.assertIn(('allow', 'PUT'), self.srmock.headers)
+
+    def test_405_without_body_with_extra_headers(self):
+        self.api.add_route('/405', MethodNotAllowedResourceWithHeaders())
+
+        response = self.simulate_request('/405')
+        self.assertEqual(self.srmock.status, falcon.HTTP_405)
+        self.assertEqual(response, [])
+        self.assertIn(('allow', 'PUT'), self.srmock.headers)
+        self.assertIn(('x-ping', 'pong'), self.srmock.headers)
+
+    def test_405_without_body_with_extra_headers_double_check(self):
+        self.api.add_route('/405',
+                           MethodNotAllowedResourceWithHeadersWithAccept())
+
+        response = self.simulate_request('/405')
+        self.assertEqual(self.srmock.status, falcon.HTTP_405)
+        self.assertEqual(response, [])
+        self.assertIn(('allow', 'PUT'), self.srmock.headers)
+        self.assertNotIn(('allow', 'GET,PUT'), self.srmock.headers)
+        self.assertNotIn(('allow', 'GET'), self.srmock.headers)
+        self.assertIn(('x-ping', 'pong'), self.srmock.headers)
+
+    def test_405_with_body(self):
+        self.api.add_route('/405', MethodNotAllowedResourceWithBody())
+
+        response = self.simulate_request('/405', decode='utf-8')
+        self.assertEqual(self.srmock.status, falcon.HTTP_405)
+        self.assertNotEqual(response, [])
+        expected_body = {
+            u'description': u'Not Allowed'
+        }
+        self.assertEqual(json.loads(response), expected_body)
         self.assertIn(('allow', 'PUT'), self.srmock.headers)
 
     def test_411(self):
