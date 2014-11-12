@@ -95,6 +95,13 @@ class MethodNotAllowedResource:
         raise falcon.HTTPMethodNotAllowed(['PUT'])
 
 
+class MethodNotAllowedResourceWithBody:
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPMethodNotAllowed(['PUT'],
+                                          description='Not Allowed')
+
+
 class LengthRequiredResource:
 
     def on_get(self, req, resp):
@@ -408,12 +415,24 @@ class TestHTTPError(testing.TestBase):
         self.assertEqual(self.srmock.status, falcon.HTTP_404)
         self.assertEqual(body, [])
 
-    def test_405(self):
+    def test_405_without_body(self):
         self.api.add_route('/405', MethodNotAllowedResource())
 
         response = self.simulate_request('/405')
         self.assertEqual(self.srmock.status, falcon.HTTP_405)
         self.assertEqual(response, [])
+        self.assertIn(('allow', 'PUT'), self.srmock.headers)
+
+    def test_405_with_body(self):
+        self.api.add_route('/405', MethodNotAllowedResourceWithBody())
+
+        response = self.simulate_request('/405', decode='utf-8')
+        self.assertEqual(self.srmock.status, falcon.HTTP_405)
+        self.assertNotEqual(response, [])
+        expected_body = {
+            u'description': u'Not Allowed'
+        }
+        self.assertEqual(json.loads(response), expected_body)
         self.assertIn(('allow', 'PUT'), self.srmock.headers)
 
     def test_411(self):

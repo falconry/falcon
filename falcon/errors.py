@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from falcon.http_error import HTTPError, NoRepresentation
+from falcon.http_error import HTTPError, NoRepresentation, \
+    OptionalRepresentation
 import falcon.status_codes as status
 
 
@@ -85,7 +86,7 @@ class HTTPForbidden(HTTPError):
         HTTPError.__init__(self, status.HTTP_403, title, description, **kwargs)
 
 
-class HTTPNotFound(NoRepresentation, HTTPError):
+class HTTPNotFound(OptionalRepresentation, HTTPError):
     """404 Not Found.
 
     Use this when the URL path does not map to an existing resource, or you
@@ -94,10 +95,11 @@ class HTTPNotFound(NoRepresentation, HTTPError):
     """
 
     def __init__(self, **kwargs):
+        OptionalRepresentation.__init__(self)
         HTTPError.__init__(self, status.HTTP_404, **kwargs)
 
 
-class HTTPMethodNotAllowed(NoRepresentation, HTTPError):
+class HTTPMethodNotAllowed(OptionalRepresentation, HTTPError):
     """405 Method Not Allowed.
 
     The method specified in the Request-Line is not allowed for the
@@ -113,6 +115,7 @@ class HTTPMethodNotAllowed(NoRepresentation, HTTPError):
 
     def __init__(self, allowed_methods, **kwargs):
         headers = {'Allow': ', '.join(allowed_methods)}
+        OptionalRepresentation.__init__(self)
         HTTPError.__init__(self, status.HTTP_405, headers=headers, **kwargs)
 
 

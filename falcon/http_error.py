@@ -213,3 +213,29 @@ class NoRepresentation(object):
     @property
     def has_representation(self):
         return False
+
+
+class OptionalRepresentation(object):
+    """Mixin for ``HTTPError`` child classes that may have a representation.
+
+    This class can be mixed in when inheriting from ``HTTPError``, in order
+    to override the `has_representation` property, such that it optionally
+    returns ``False``. This, in turn, will cause Falcon to return an empty
+    response body to the client.
+
+    You can use this mixin when defining errors that either may optionally have
+    a body (as dictated by HTTP standards or common practice), or in the
+    case that a detailed error response may leak information to an attacker.
+
+    Note:
+        This mixin class must appear before ``HTTPError`` in the base class
+        list when defining the child; otherwise, it will not override the
+        `has_representation` property as expected.
+
+    """
+    def __init__(self):
+        self.description = None
+
+    @property
+    def has_representation(self):
+        return self.description is not None
