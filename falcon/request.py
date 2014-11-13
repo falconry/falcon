@@ -76,7 +76,7 @@ class Request(object):
         '_cached_relative_uri',
         'env',
         'method',
-        '_params',
+        'params',
         'path',
         'query_string',
         'stream',
@@ -129,9 +129,9 @@ class Request(object):
 
         # PERF: Don't parse it if we don't have to!
         if self.query_string:
-            self._params = uri.parse_query_string(self.query_string)
+            self.params = uri.parse_query_string(self.query_string)
         else:
-            self._params = {}
+            self.params = {}
 
         helpers.normalize_headers(env)
         self._cached_headers = {}
@@ -518,7 +518,7 @@ class Request(object):
 
         """
 
-        params = self._params
+        params = self.params
 
         # PERF: Use if..in since it is a good all-around performer; we don't
         #       know how likely params are to be specified by clients.
@@ -564,7 +564,7 @@ class Request(object):
 
         """
 
-        params = self._params
+        params = self.params
 
         # PERF: Use if..in since it is a good all-around performer; we don't
         #       know how likely params are to be specified by clients.
@@ -625,7 +625,7 @@ class Request(object):
 
         """
 
-        params = self._params
+        params = self.params
 
         # PERF: Use if..in since it is a good all-around performer; we don't
         #       know how likely params are to be specified by clients.
@@ -694,7 +694,7 @@ class Request(object):
                 required.
         """
 
-        params = self._params
+        params = self.params
 
         # PERF: Use if..in since it is a good all-around performer; we don't
         #       know how likely params are to be specified by clients.
