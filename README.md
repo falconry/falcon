@@ -85,7 +85,7 @@ We have started documenting the library at http://falcon.readthedocs.org and we 
 
 The docstrings in the Falcon code base are quite extensive, and we recommend keeping a REPL running while learning the framework so that you can query the various modules and classes as you have questions.
 
-You can also check out [Marconi's WSGI driver](https://github.com/openstack/marconi/tree/master/marconi/queues/transport/wsgi) to get a feel for how you might
+You can also check out [Zaqar's WSGI driver](https://github.com/openstack/zaqar/tree/master/zaqar/queues/transport/wsgi) to get a feel for how you might
 leverage Falcon in a real-world app.
 
 Finally, you can always ask questions in **#falconframework** on freenode. The community is very friendly and helpful.
