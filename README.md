@@ -86,7 +86,25 @@ We have started documenting the library at http://falcon.readthedocs.org and we 
 The docstrings in the Falcon code base are quite extensive, and we recommend keeping a REPL running while learning the framework so that you can query the various modules and classes as you have questions.
 
 You can also check out [Zaqar's WSGI driver](https://github.com/openstack/zaqar/tree/master/zaqar/queues/transport/wsgi) to get a feel for how you might
-leverage Falcon in a real-world app.
+leverage Falcon in building a REST API.
+
+The Falcon community maintains a mailing list that you can use to share
+your ideas and ask questions about the framework. We use the appropriately
+minimalistic [Librelist](http://librelist.com/) to host the discussions.
+
+Subscribing is super easy and doesn't require any account setup. Simply
+send an email to falcon@librelist.com and follow the instructions in the
+reply. For more information about managing your subscription, check out
+the [Librelist help page](http://librelist.com/help.html).
+
+While we don't have an official code of conduct, we do expect everyone
+who participates on the mailing list to act professionally, and lead
+by example in encouraging constructive discussions. Each individual in
+the community is responsible for creating a positive, constructive, and
+productive culture.
+
+[Discussions are archived](http://librelist.com/browser/falcon)
+for posterity. 
 
 Finally, you can always ask questions in **#falconframework** on freenode. The community is very friendly and helpful.
 
