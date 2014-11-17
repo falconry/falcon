@@ -53,8 +53,6 @@ class API(object):
                                 routed to an on_* responder method
                             resp: Response object that will be routed to
                                 the on_* responder
-                            params: kwargs that will eventually be passed
-                                to the on_* responder
                         \"""
 
                     def process_response(req, resp)
@@ -180,16 +178,9 @@ class API(object):
         resp = self._response_type()
         resource = None
         middleware_stack = []  # Keep track of executed components
+        params = {}
 
         try:
-            # NOTE(warsaw): Moved this to inside the try except because it's
-            # possible when using object-based traversal for _get_responder()
-            # to fail.  An example is a case where an object does not have the
-            # requested next-hop child resource.  In that case, the object
-            # being asked to dispatch to its child will raise an HTTP
-            # exception signalling the problem, e.g. a 404.
-            responder, params, resource = self._get_responder(req)
-
             # NOTE(kgriffs): Using an inner try..except in order to
             # address the case when err_handler raises HTTPError.
 
@@ -197,7 +188,18 @@ class API(object):
             # so disabled on relevant lines. All paths are tested
             # afaict.
             try:
-                self._call_req_mw(middleware_stack, req, resp, params)
+                # NOTE(ealogar): The execution of request middleware should be
+                # before routing. This will allow request mw to modify path.
+                self._call_req_mw(middleware_stack, req, resp)
+                # NOTE(warsaw): Moved this to inside the try except because it
+                # is possible when using object-based traversal for
+                # _get_responder() to fail.  An example is a case where an
+                # object does not have the requested next-hop child resource.
+                # In that case, the object being asked to dispatch to its
+                # child will raise an HTTP exception signalling the problem,
+                # e.g. a 404.
+                responder, params, resource = self._get_responder(req)
+
                 responder(req, resp, **params)
                 self._call_resp_mw(middleware_stack, req, resp)
 
@@ -488,13 +490,13 @@ class API(object):
                 # it was mistakenly set by the app.
                 resp.content_type = media_type
 
-    def _call_req_mw(self, stack, req, resp, params):
+    def _call_req_mw(self, stack, req, resp):
         """Run process_request middleware methods."""
 
         for component in self._middleware:
             process_request, _ = component
             if process_request is not None:
-                process_request(req, resp, params)
+                process_request(req, resp)
 
             # Put executed component on the stack
             stack.append(component)  # keep track from outside
