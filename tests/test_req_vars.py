@@ -380,6 +380,10 @@ class TestReqVars(testing.TestBase):
         req = Request(testing.create_environ(headers=headers))
         self.assertEqual(req.range, (-10240, -1))
 
+        headers = {'Range': 'bytes=0-2'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertEqual(req.range, (0, 2))
+
         headers = {'Range': ''}
         req = Request(testing.create_environ(headers=headers))
         self.assertRaises(falcon.HTTPInvalidHeader, lambda: req.range)
