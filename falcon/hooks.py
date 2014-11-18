@@ -33,7 +33,7 @@ def before(action):
             Note:
                 Hooks may inject extra params as needed. For example::
 
-                    def do_something(req, resp, params):
+                    def do_something(req, resp, resource, params):
                         try:
                             params['id'] = int(params['id'])
                         except ValueError:
