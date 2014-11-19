@@ -12,9 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from datetime import datetime
+
 from falcon.http_error import HTTPError, NoRepresentation, \
     OptionalRepresentation
 import falcon.status_codes as status
+from falcon import util
 
 
 class HTTPBadRequest(HTTPError):
@@ -219,6 +222,47 @@ class HTTPPreconditionFailed(HTTPError):
 
     def __init__(self, title, description, **kwargs):
         HTTPError.__init__(self, status.HTTP_412, title, description, **kwargs)
+
+
+class HTTPRequestEntityTooLarge(HTTPError):
+    """413 Request Entity Too Large.
+
+    The server is refusing to process a request because the request
+    entity is larger than the server is willing or able to process. The
+    server MAY close the connection to prevent the client from continuing
+    the request.
+
+    If the condition is temporary, the server SHOULD include a Retry-
+    After header field to indicate that it is temporary and after what
+    time the client MAY try again.
+
+    (RFC 2616)
+
+    Args:
+        title (str): Error title (e.g., 'Request Body Limit Exceeded').
+        description (str): Human-friendly description of the error, along with
+            a helpful suggestion or two.
+        retry_after (datetime or int, optional): Value for the Retry-After
+            header. If a datetime object, will serialize as an HTTP date.
+            Otherwise, a non-negative int is expected, representing the number
+            of seconds to wait. See also: http://goo.gl/DIrWr .
+        kwargs (optional): Same as for ``HTTPError``.
+
+    """
+
+    def __init__(self, title, description, retry_after=None, **kwargs):
+        headers = kwargs.setdefault('headers', {})
+
+        if isinstance(retry_after, datetime):
+            headers['Retry-After'] = util.dt_to_http(retry_after)
+
+        elif retry_after is not None:
+            headers['Retry-After'] = str(retry_after)
+
+        super(HTTPRequestEntityTooLarge, self).__init__(status.HTTP_413,
+                                                        title,
+                                                        description,
+                                                        **kwargs)
 
 
 class HTTPUnsupportedMediaType(HTTPError):
