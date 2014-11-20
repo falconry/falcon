@@ -233,9 +233,6 @@ class OptionalRepresentation(object):
         `has_representation` property as expected.
 
     """
-    def __init__(self):
-        self.description = None
-
     @property
     def has_representation(self):
-        return self.description is not None
+        return super(OptionalRepresentation, self).description is not None

@@ -95,8 +95,7 @@ class HTTPNotFound(OptionalRepresentation, HTTPError):
     """
 
     def __init__(self, **kwargs):
-        OptionalRepresentation.__init__(self)
-        HTTPError.__init__(self, status.HTTP_404, **kwargs)
+        super(HTTPNotFound, self).__init__(status.HTTP_404, **kwargs)
 
 
 class HTTPMethodNotAllowed(OptionalRepresentation, HTTPError):
@@ -115,8 +114,7 @@ class HTTPMethodNotAllowed(OptionalRepresentation, HTTPError):
 
     def __init__(self, allowed_methods, **kwargs):
         headers = {'Allow': ', '.join(allowed_methods)}
-        OptionalRepresentation.__init__(self)
-        HTTPError.__init__(self, status.HTTP_405, headers=headers, **kwargs)
+        super(HTTPMethodNotAllowed, self).__init__(status.HTTP_405, headers=headers, **kwargs)
 
 
 class HTTPNotAcceptable(HTTPError):
