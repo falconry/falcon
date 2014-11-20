@@ -41,8 +41,9 @@ class API(object):
         after (callable, optional): A global action hook (or list of hooks)
             to call after each on_* responder, for all resources. Similar to
             the ``after`` decorator, but applies to the entire API.
-        middleware(object or list, optional): One or more objects that
-            implement the following middleware component interface::
+        middleware(object or list, optional): One or more objects (
+            instantiated classes) that implement the following middleware
+            component interface::
 
                 class ExampleComponent(object):
                     def process_request(self, req, resp, params):
