@@ -89,6 +89,12 @@ class NotFoundResource:
         raise falcon.HTTPNotFound()
 
 
+class NotFoundResourceWithBody:
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPNotFound(description='Not Found')
+
+
 class MethodNotAllowedResource:
 
     def on_get(self, req, resp):
@@ -408,12 +414,23 @@ class TestHTTPError(testing.TestBase):
         self.assertEqual(self.srmock.status, falcon.HTTP_401)
         self.assertNotIn(('www-authenticate', 'Token'), self.srmock.headers)
 
-    def test_404(self):
+    def test_404_without_body(self):
         self.api.add_route('/404', NotFoundResource())
         body = self.simulate_request('/404')
 
         self.assertEqual(self.srmock.status, falcon.HTTP_404)
         self.assertEqual(body, [])
+
+    def test_404_with_body(self):
+        self.api.add_route('/404', NotFoundResourceWithBody())
+
+        response = self.simulate_request('/404', decode='utf-8')
+        self.assertEqual(self.srmock.status, falcon.HTTP_404)
+        self.assertNotEqual(response, [])
+        expected_body = {
+            u'description': u'Not Found'
+        }
+        self.assertEqual(json.loads(response), expected_body)
 
     def test_405_without_body(self):
         self.api.add_route('/405', MethodNotAllowedResource())
