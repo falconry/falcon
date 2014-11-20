@@ -27,14 +27,15 @@ Falcon is a [high-performance Python framework][home] for building cloud APIs. I
 
 ### Features ###
 
+* Highly-optimized, extensible code base 
 * Intuitive routing via URI templates and resource classes
 * Easy access to headers and bodies through request and response classes
+* Does not use WebOb (some of us do indeed consider this a feature)
 * Idiomatic HTTP error responses via a handy exception base class
 * DRY request processing using global, resource, and method hooks
 * Snappy unit testing through WSGI helpers and mocks
-* 20% speed boost when Cython is available
 * Python 2.6, Python 2.7, PyPy and Python 3.3/3.4 support
-* Speed, speed, and more speed!
+* 20% speed boost when Cython is available
 
 ### Install ###
 
