@@ -113,10 +113,13 @@ class HTTPMethodNotAllowed(OptionalRepresentation, HTTPError):
     """
 
     def __init__(self, allowed_methods, **kwargs):
-        headers = {'Allow': ', '.join(allowed_methods)}
+        new_headers = {'Allow': ', '.join(allowed_methods)}
         super(HTTPMethodNotAllowed, self).__init__(status.HTTP_405,
-                                                   headers=headers,
                                                    **kwargs)
+        if not self.headers:
+            self.headers = {}
+
+        self.headers.update(new_headers)
 
 
 class HTTPNotAcceptable(HTTPError):
