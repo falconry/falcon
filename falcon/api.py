@@ -72,7 +72,7 @@ class API(object):
                             <route to responder method>
                         mob3.process_response
                     mob2.process_response
-                mob3.process_response
+                mob1.process_response
 
             Note that each component need not implement both process_*
             methods; in the case that one of the two methods is missing,
@@ -87,7 +87,7 @@ class API(object):
                             <route to responder method>
                         _
                     mob2.process_response
-                mob3.process_response
+                mob1.process_response
 
             If one of the *process_request* middleware methods raises an
             error, it will be processed according to the error type. If
@@ -104,7 +104,7 @@ class API(object):
                     mob2.process_request
                         <skip mob3 and routing>
                     mob2.process_response
-                mob3.process_response
+                mob1.process_response
 
             Finally, if one of the *process_response* methods raises an error,
             or the routed on_* responder method itself raises an error, the
