@@ -101,6 +101,23 @@ class MethodNotAllowedResource:
         raise falcon.HTTPMethodNotAllowed(['PUT'])
 
 
+class MethodNotAllowedResourceWithHeaders:
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPMethodNotAllowed(['PUT'],
+                                          headers={
+                                              'x-ping': 'pong'})
+
+
+class MethodNotAllowedResourceWithHeadersWithAccept:
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPMethodNotAllowed(['PUT'],
+                                          headers={
+                                              'x-ping': 'pong',
+                                              'accept': 'GET,PUT'})
+
+
 class MethodNotAllowedResourceWithBody:
 
     def on_get(self, req, resp):
@@ -439,6 +456,27 @@ class TestHTTPError(testing.TestBase):
         self.assertEqual(self.srmock.status, falcon.HTTP_405)
         self.assertEqual(response, [])
         self.assertIn(('allow', 'PUT'), self.srmock.headers)
+
+    def test_405_without_body_with_extra_headers(self):
+        self.api.add_route('/405', MethodNotAllowedResourceWithHeaders())
+
+        response = self.simulate_request('/405')
+        self.assertEqual(self.srmock.status, falcon.HTTP_405)
+        self.assertEqual(response, [])
+        self.assertIn(('allow', 'PUT'), self.srmock.headers)
+        self.assertIn(('x-ping', 'pong'), self.srmock.headers)
+
+    def test_405_without_body_with_extra_headers_double_check(self):
+        self.api.add_route('/405',
+                           MethodNotAllowedResourceWithHeadersWithAccept())
+
+        response = self.simulate_request('/405')
+        self.assertEqual(self.srmock.status, falcon.HTTP_405)
+        self.assertEqual(response, [])
+        self.assertIn(('allow', 'PUT'), self.srmock.headers)
+        self.assertNotIn(('allow', 'GET,PUT'), self.srmock.headers)
+        self.assertNotIn(('allow', 'GET'), self.srmock.headers)
+        self.assertIn(('x-ping', 'pong'), self.srmock.headers)
 
     def test_405_with_body(self):
         self.api.add_route('/405', MethodNotAllowedResourceWithBody())
