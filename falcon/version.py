@@ -12,5 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version__ = '0.2.0a1'
+__version__ = '0.2.0b1'
 """Current version of Falcon."""

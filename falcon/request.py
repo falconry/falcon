@@ -340,6 +340,8 @@ class Request(object):
     def range(self):
         try:
             value = self.env['HTTP_RANGE']
+            if value.startswith('bytes='):
+                value = value[6:]
         except KeyError:
             return None
 
