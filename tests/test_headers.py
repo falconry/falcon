@@ -142,6 +142,22 @@ class LinkHeaderResource:
             resp.add_link(*args, **kwargs)
 
 
+class AppendHeaderResource:
+
+    def on_get(self, req, resp):
+        resp.append_header('X-Things', 'thing-1')
+        resp.append_header('X-THINGS', 'thing-2')
+        resp.append_header('x-thiNgs', 'thing-3')
+
+    def on_head(self, req, resp):
+        resp.set_header('X-things', 'thing-1')
+        resp.append_header('X-THINGS', 'thing-2')
+        resp.append_header('x-thiNgs', 'thing-3')
+
+    def on_post(self, req, resp):
+        resp.append_header('X-Things', 'thing-1')
+
+
 class TestHeaders(testing.TestBase):
 
     def before(self):
@@ -170,30 +186,6 @@ class TestHeaders(testing.TestBase):
         self.assertRaises(falcon.HTTPBadRequest,
                           self.resource.req.get_header, 'X-Not-Found',
                           required=True)
-
-    def test_prefer_host_header(self):
-        self.simulate_request(self.test_route)
-
-        # Make sure we picked up host from HTTP_HOST, not SERVER_NAME
-        host = self.resource.req.get_header('host')
-        self.assertEqual(host, testing.DEFAULT_HOST)
-
-    def test_host_fallback(self):
-        # Set protocol to 1.0 so that we won't get a host header
-        self.simulate_request(self.test_route, protocol='HTTP/1.0')
-
-        # Make sure we picked up host from HTTP_HOST, not SERVER_NAME
-        host = self.resource.req.get_header('host')
-        self.assertEqual(host, 'localhost')
-
-    def test_host_fallback_port8000(self):
-        # Set protocol to 1.0 so that we won't get a host header
-        self.simulate_request(self.test_route, protocol='HTTP/1.0',
-                              port='8000')
-
-        # Make sure we picked up host from HTTP_HOST, not SERVER_NAME
-        host = self.resource.req.get_header('host')
-        self.assertEqual(host, 'localhost:8000')
 
     def test_no_body_on_100(self):
         self.resource = StatusTestResource(falcon.HTTP_100)
@@ -234,6 +226,12 @@ class TestHeaders(testing.TestBase):
                         Not(Contains('Content-Length')))
 
         self.assertEqual(body, [])
+
+    def test_content_header_missing(self):
+        environ = testing.create_environ()
+        req = falcon.Request(environ)
+        for header in ('Content-Type', 'Content-Length'):
+            self.assertIs(req.get_header(header), None)
 
     def test_passthrough_req_headers(self):
         req_headers = {
@@ -378,6 +376,19 @@ class TestHeaders(testing.TestBase):
             for name, value in self.srmock.headers:
                 hist[name] += 1
                 self.assertEqual(1, hist[name])
+
+    def test_response_append_header(self):
+        self.resource = AppendHeaderResource()
+        self.api.add_route(self.test_route, self.resource)
+
+        for method in ('HEAD', 'GET'):
+            self.simulate_request(self.test_route, method=method)
+            value = self.srmock.headers_dict['x-things']
+            self.assertEqual('thing-1,thing-2,thing-3', value)
+
+        self.simulate_request(self.test_route, method='POST')
+        value = self.srmock.headers_dict['x-things']
+        self.assertEqual('thing-1', value)
 
     def test_vary_star(self):
         self.resource = VaryHeaderResource(['*'])

@@ -41,8 +41,9 @@ class Response(object):
 
             Note:
                 Under Python 2.x, if your content is of type *str*, setting
-                efficient. However, if your text is of type *unicode*,
-                you will want to use the *body* attribute instead.
+                this rather than body will be most efficient. However, if
+                your text is of type *unicode*, you will want to use the
+                *body* attribute instead.
 
                 Under Python 3.x, the 2.x *str* type can be thought of as
                 having been replaced with what was once the *unicode* type,
@@ -110,6 +111,18 @@ class Response(object):
 
         return self._body_encoded
 
+    def set_stream(self, stream, stream_len):
+        """Convenience method for setting both stream and stream_len.
+
+        Although the stream and stream_len properties may be set
+        directly, using this method ensures stream_len is not
+        accidentally neglected.
+
+        """
+
+        self.stream = stream
+        self.stream_len = stream_len
+
     def set_header(self, name, value):
         """Set a header for this response to a given value.
 
@@ -129,6 +142,29 @@ class Response(object):
 
         # NOTE(kgriffs): normalize name by lowercasing it
         self._headers[name.lower()] = value
+
+    def append_header(self, name, value):
+        """Set or append a header for this response to a given value.
+
+        Warning:
+            Calling this method will append any existing value using comma
+            separation. Please ensure the header type supports this.
+
+        Args:
+            name (str): Header name to set (case-insensitive). Must be of
+                type str or StringType, and only character values 0x00
+                through 0xFF may be used on platforms that use wide
+                characters.
+            value (str): Value for the header. Must be of type str or
+                StringType, and only character values 0x00 through 0xFF
+                may be used on platforms that use wide characters.
+
+        """
+        name = name.lower()
+        if name in self._headers:
+            value = self._headers[name] + ',' + value
+
+        self._headers[name] = value
 
     def set_headers(self, headers):
         """Set several headers at once.

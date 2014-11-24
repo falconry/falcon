@@ -29,7 +29,7 @@ except AttributeError:  # pragma nocover
 import mimeparse
 import six
 
-from falcon.exceptions import HTTPBadRequest, InvalidHeader, InvalidParam
+from falcon.errors import *
 from falcon import util
 from falcon.util import uri
 from falcon import request_helpers as helpers
@@ -40,6 +40,10 @@ DEFAULT_ERROR_LOG_FORMAT = (u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
 
 TRUE_STRINGS = ('true', 'True', 'yes')
 FALSE_STRINGS = ('false', 'False', 'no')
+WSGI_CONTENT_HEADERS = ('CONTENT_TYPE', 'CONTENT_LENGTH')
+
+
+_maybe_wrap_wsgi_stream = True
 
 
 class Request(object):
@@ -51,10 +55,20 @@ class Request(object):
     Args:
         env (dict): A WSGI environment dict passed in from the server. See
             also the PEP-3333 spec.
+        options (dict): Set of global options passed from the API handler.
 
     Attributes:
         protocol (str): Either 'http' or 'https'.
         method (str): HTTP method requested (e.g., GET, POST, etc.)
+        host (str): Hostname requested by the client
+        subdomain (str): Leftmost (i.e., most specific) subdomain from the
+            hostname. If only a single domain name is given, `subdomain`
+            will be *None*.
+
+            Note:
+                If the hostname in the request is an IP address, the value
+                for `subdomain` is undefined.
+
         user_agent (str): Value of the User-Agent header, or *None* if the
             header is missing.
         app (str): Name of the WSGI app (if using WSGI's notion of virtual
@@ -82,6 +96,8 @@ class Request(object):
             is missing.
         client_accepts_json (bool): True if the Accept header includes JSON,
             otherwise False.
+        client_accepts_msgpack (bool): True if the Accept header includes
+            msgpack, otherwise False.
         client_accepts_xml (bool): True if the Accept header includes XML,
             otherwise False.
         content_type (str): Value of the Content-Type header, or *None* if
@@ -96,6 +112,14 @@ class Request(object):
                 will consume `stream` in order to parse the parameters
                 and merge them into the query string parameters. In this
                 case, the stream will be left at EOF.
+
+                Note also that the character encoding for fields, before
+                percent-encoding non-ASCII bytes, is assumed to be
+                UTF-8. The special "_charset_" field is ignored if present.
+
+                Falcon expects form-encoded request bodies to be
+                encoded according to the standard W3C algorithm (see
+                also http://goo.gl/6rlcux).
 
         date (datetime): Value of the Date header, converted to a
             `datetime.datetime` instance. The header value is assumed to
@@ -132,6 +156,13 @@ class Request(object):
             need all the headers in this format, you should use the
             ``get_header`` method or one of the convenience attributes
             instead, to get a value for a specific header.
+
+        params (dict): The mapping of request query parameter names to their
+            values.  Where the parameter appears multiple times in the query
+            string, the value mapped to that parameter key will be a list of
+            all the values in the order seen.
+
+        options (dict): Set of global options passed from the API handler.
     """
 
     __slots__ = (
@@ -147,13 +178,17 @@ class Request(object):
         'stream',
         'context',
         '_wsgierrors',
+        'options',
     )
 
     # Allow child classes to override this
     context_type = None
 
-    def __init__(self, env):
+    def __init__(self, env, options=None):
+        global _maybe_wrap_wsgi_stream
+
         self.env = env
+        self.options = options if options else RequestOptions()
 
         if self.context_type is None:
             # Literal syntax is more efficient than using dict()
@@ -177,72 +212,75 @@ class Request(object):
         else:
             self.path = '/'
 
-        # QUERY_STRING isn't required to be in env, so let's check
-        # PERF: if...in is faster than using env.get(...)
-        if 'QUERY_STRING' in env and env['QUERY_STRING']:
+        self._params = {}
 
-            # TODO(kgriffs): Should this escape individual values instead
-            # of the entire string? The way it is now, this:
-            #
-            #   x=ab%2Bcd%3D42%2C9
-            #
-            # becomes this:
-            #
-            #   x=ab+cd=42,9
-            #
-            self.query_string = uri.decode(env['QUERY_STRING'])
+        # PERF(kgriffs): if...in is faster than using env.get(...)
+        if 'QUERY_STRING' in env:
+            query_str = env['QUERY_STRING']
+
+            if query_str:
+                self.query_string = uri.decode(query_str)
+                self._params = uri.parse_query_string(
+                    self.query_string,
+                    keep_blank_qs_values=self.options.keep_blank_qs_values,
+                )
+            else:
+                self.query_string = six.text_type()
 
         else:
             self.query_string = six.text_type()
 
-        # PERF: Don't parse it if we don't have to!
-        if self.query_string:
-            self._params = uri.parse_query_string(self.query_string)
-        else:
-            self._params = {}
-
-        helpers.normalize_headers(env)
-        self._cached_headers = {}
-
+        self._cached_headers = None
         self._cached_uri = None
         self._cached_relative_uri = None
 
-        self.content_type = self._get_header_by_wsgi_name('HTTP_CONTENT_TYPE')
+        try:
+            self.content_type = self.env['CONTENT_TYPE']
+        except KeyError:
+            self.content_type = None
 
         # NOTE(kgriffs): Wrap wsgi.input if needed to make read() more robust,
         # normalizing semantics between, e.g., gunicorn and wsgiref.
-        if isinstance(self.stream, NativeStream):  # pragma: nocover
-            # NOTE(kgriffs): coverage can't detect that this *is* actually
-            # covered since the test that does so uses multiprocessing.
-            self.stream = helpers.Body(self.stream, self.content_length)
+        if _maybe_wrap_wsgi_stream:
+            if isinstance(self.stream, NativeStream):
+                # NOTE(kgriffs): This is covered by tests, it's just that
+                # coverage can't figure this out for some reason (TBD).
+                self._wrap_stream()  # pragma nocover
+            else:
+                # PERF(kgriffs): If self.stream does not need to be wrapped
+                # this time, it never needs to be wrapped since the server
+                # will continue using the same type for wsgi.input.
+                _maybe_wrap_wsgi_stream = False
 
         # PERF(kgriffs): Technically, we should spend a few more
         # cycles and parse the content type for real, but
         # this heuristic will work virtually all the time.
-        if (self.content_type and
+        if (self.content_type is not None and
                 'application/x-www-form-urlencoded' in self.content_type):
-
-            # NOTE(kgriffs): This assumes self.stream has been patched
-            # above in the case of wsgiref, so that self.content_length
-            # is not needed. Normally we just avoid accessing
-            # self.content_length, because it is a little expensive
-            # to call. We could cache self.content_length, but the
-            # overhead to do that won't usually be helpful, since
-            # content length will only ever be read once per
-            # request in most cases.
-            body = self.stream.read()
-            body = body.decode('ascii')
-
-            extra_params = uri.parse_query_string(uri.decode(body))
-            self._params.update(extra_params)
+            self._parse_form_urlencoded()
 
     # ------------------------------------------------------------------------
     # Properties
     # ------------------------------------------------------------------------
 
+    user_agent = helpers.header_property('HTTP_USER_AGENT')
+    auth = helpers.header_property('HTTP_AUTHORIZATION')
+
+    expect = helpers.header_property('HTTP_EXPECT')
+
+    if_match = helpers.header_property('HTTP_IF_MATCH')
+    if_none_match = helpers.header_property('HTTP_IF_NONE_MATCH')
+    if_modified_since = helpers.header_property('HTTP_IF_MODIFIED_SINCE')
+    if_unmodified_since = helpers.header_property('HTTP_IF_UNMODIFIED_SINCE')
+    if_range = helpers.header_property('HTTP_IF_RANGE')
+
     @property
     def client_accepts_json(self):
         return self.client_accepts('application/json')
+
+    @property
+    def client_accepts_msgpack(self):
+        return self.client_accepts('application/x-msgpack')
 
     @property
     def client_accepts_xml(self):
@@ -250,106 +288,91 @@ class Request(object):
 
     @property
     def accept(self):
-        accept = self._get_header_by_wsgi_name('HTTP_ACCEPT')
-
-        # NOTE(kgriffs): Per RFC, missing accept header is
+        # NOTE(kgriffs): Per RFC, a missing accept header is
         # equivalent to '*/*'
-        return '*/*' if accept is None else accept
-
-    @property
-    def user_agent(self):
-        return self._get_header_by_wsgi_name('HTTP_USER_AGENT')
-
-    @property
-    def auth(self):
-        return self._get_header_by_wsgi_name('HTTP_AUTHORIZATION')
+        try:
+            return self.env['HTTP_ACCEPT'] or '*/*'
+        except KeyError:
+            return '*/*'
 
     @property
     def content_length(self):
-        value = self._get_header_by_wsgi_name('HTTP_CONTENT_LENGTH')
+        try:
+            value = self.env['CONTENT_LENGTH']
+        except KeyError:
+            return None
 
-        if value:
-            try:
-                value_as_int = int(value)
-            except ValueError:
-                msg = 'The value of the header must be a number.'
-                raise InvalidHeader(msg, value, 'content-length')
+        # NOTE(kgriffs): Normalize an empty value to behave as if
+        # the header were not included; wsgiref, at least, inserts
+        # an empty CONTENT_LENGTH value if the request does not
+        # set the header. Gunicorn and uWSGI do not do this, but
+        # others might if they are trying to match wsgiref's
+        # behavior too closely.
+        if not value:
+            return None
 
-            if value_as_int < 0:
-                msg = 'The value of the header must be a positive number.'
-                raise InvalidHeader(msg, value, 'content-length')
-            else:
-                return value_as_int
+        try:
+            value_as_int = int(value)
+        except ValueError:
+            msg = 'The value of the header must be a number.'
+            raise HTTPInvalidHeader(msg, 'Content-Length')
 
-        return None
+        if value_as_int < 0:
+            msg = 'The value of the header must be a positive number.'
+            raise HTTPInvalidHeader(msg, 'Content-Length')
+
+        return value_as_int
 
     @property
     def date(self):
-        http_date = self._get_header_by_wsgi_name('HTTP_DATE')
+        try:
+            http_date = self.env['HTTP_DATE']
+        except KeyError:
+            return None
+
         try:
             return util.http_date_to_dt(http_date)
         except ValueError:
-            msg = ('The value could not be parsed. It must be formatted '
-                   'according to RFC 1123.')
-            raise InvalidHeader(msg, http_date, 'date')
-
-    @property
-    def expect(self):
-        return self._get_header_by_wsgi_name('HTTP_EXPECT')
-
-    @property
-    def if_match(self):
-        return self._get_header_by_wsgi_name('HTTP_IF_MATCH')
-
-    @property
-    def if_none_match(self):
-        return self._get_header_by_wsgi_name('HTTP_IF_NONE_MATCH')
-
-    @property
-    def if_modified_since(self):
-        return self._get_header_by_wsgi_name('HTTP_IF_MODIFIED_SINCE')
-
-    @property
-    def if_unmodified_since(self):
-        return self._get_header_by_wsgi_name('HTTP_IF_UNMODIFIED_SINCE')
-
-    @property
-    def if_range(self):
-        return self._get_header_by_wsgi_name('HTTP_IF_RANGE')
+            msg = ('It must be formatted according to RFC 1123.')
+            raise HTTPInvalidHeader(msg, 'Date')
 
     @property
     def range(self):
-        value = self._get_header_by_wsgi_name('HTTP_RANGE')
+        try:
+            value = self.env['HTTP_RANGE']
+            if value.startswith('bytes='):
+                value = value[6:]
+        except KeyError:
+            return None
 
-        if value:
-            if ',' in value:
-                msg = 'The value must be a continuous byte range.'
-                raise InvalidHeader(msg, value, 'range')
+        if ',' in value:
+            msg = 'The value must be a continuous byte range.'
+            raise HTTPInvalidHeader(msg, 'Range')
 
-            try:
-                first, last = value.split('-')
+        try:
+            first, sep, last = value.partition('-')
 
-                if first:
-                    return (int(first), int(last or -1))
-                elif last:
-                    return (-int(last), -1)
-                else:
-                    msg = 'The value is missing offsets.'
-                    raise InvalidHeader(msg, value, 'range')
+            if not sep:
+                raise ValueError()
 
-            except ValueError:
-                href = 'http://goo.gl/zZ6Ey'
-                href_text = 'HTTP/1.1 Range Requests'
-                msg = ('The string given could not be parsed. It must be '
-                       'formatted according to RFC 2616.')
-                raise InvalidHeader(msg, value, 'range', href=href,
+            if first:
+                return (int(first), int(last or -1))
+            elif last:
+                return (-int(last), -1)
+            else:
+                msg = 'The byte offsets are missing.'
+                raise HTTPInvalidHeader(msg, 'Range')
+
+        except ValueError:
+            href = 'http://goo.gl/zZ6Ey'
+            href_text = 'HTTP/1.1 Range Requests'
+            msg = ('It must be a byte range formatted according to RFC 2616.')
+            raise HTTPInvalidHeader(msg, 'Range', href=href,
                                     href_text=href_text)
-
-        return None
 
     @property
     def app(self):
-        return self.env['SCRIPT_NAME']
+        return self.env.get('SCRIPT_NAME', '')
 
     @property
     def protocol(self):
@@ -358,11 +381,31 @@ class Request(object):
     @property
     def uri(self):
         if self._cached_uri is None:
+            env = self.env
+            protocol = env['wsgi.url_scheme']
+
+            # NOTE(kgriffs): According to PEP-3333 we should first
+            # try to use the Host header if present.
+            #
+            # PERF(kgriffs): try..except is faster than .get
+            try:
+                host = env['HTTP_HOST']
+            except KeyError:
+                host = env['SERVER_NAME']
+                port = env['SERVER_PORT']
+
+                if protocol == 'https':
+                    if port != '443':
+                        host += ':' + port
+                else:
+                    if port != '80':
+                        host += ':' + port
+
             # PERF: For small numbers of items, '+' is faster
             # than ''.join(...). Concatenation is also generally
             # faster than formatting.
-            value = (self.protocol + '://' +
-                     self.get_header('host') +
+            value = (protocol + '://' +
+                     host +
                      self.app +
                      self.path)
 
@@ -374,6 +417,27 @@ class Request(object):
         return self._cached_uri
 
     url = uri
+
+    @property
+    def host(self):
+        try:
+            # NOTE(kgriffs): Prefer the host header; the web server
+            # isn't supposed to mess with it, so it should be what
+            # the client actually sent.
+            host_header = self.env['HTTP_HOST']
+            host, port = uri.parse_host(host_header)
+        except KeyError:
+            # PERF(kgriffs): According to PEP-3333, this header
+            # will always be present.
+            host = self.env['SERVER_NAME']
+
+        return host
+
+    @property
+    def subdomain(self):
+        # PERF(kgriffs): .partition is slightly faster than .split
+        subdomain, sep, remainder = self.host.partition('.')
+        return subdomain if sep else None
 
     @property
     def relative_uri(self):
@@ -390,8 +454,8 @@ class Request(object):
     def headers(self):
         # NOTE(kgriffs: First time here will cache the dict so all we
         # have to do is clone it in the future.
-        if not self._cached_headers:
-            headers = self._cached_headers
+        if self._cached_headers is None:
+            headers = self._cached_headers = {}
 
             env = self.env
             for name, value in env.items():
@@ -401,7 +465,14 @@ class Request(object):
                     # anyway.
                     headers[name[5:].replace('_', '-')] = value
 
+                elif name in WSGI_CONTENT_HEADERS:
+                    headers[name.replace('_', '-')] = value
+
         return self._cached_headers.copy()
+
+    @property
+    def params(self):
+        return self._params
 
     # ------------------------------------------------------------------------
     # Methods
@@ -474,18 +545,30 @@ class Request(object):
 
         """
 
+        wsgi_name = name.upper().replace('-', '_')
+
         # Use try..except to optimize for the header existing in most cases
         try:
             # Don't take the time to cache beforehand, using HTTP naming.
             # This will be faster, assuming that most headers are looked
             # up only once, and not all headers will be requested.
-            return self.env['HTTP_' + name.upper().replace('-', '_')]
+            return self.env['HTTP_' + wsgi_name]
+
         except KeyError:
+            # NOTE(kgriffs): There are a couple headers that do not
+            # use the HTTP prefix in the env, so try those. We expect
+            # people to usually just use the relevant helper properties
+            # to access these instead of .get_header.
+            if wsgi_name in WSGI_CONTENT_HEADERS:
+                try:
+                    return self.env[wsgi_name]
+                except KeyError:
+                    pass
+
             if not required:
                 return None
 
-            description = 'The "' + name + '" header is required.'
-            raise HTTPBadRequest('Missing header', description)
+            raise HTTPMissingParam(name)
 
     def get_param(self, name, required=False, store=None):
         """Return the value of a query string parameter as a string.
@@ -495,6 +578,16 @@ class Request(object):
             *application/x-www-form-urlencoded* media type, the
             parameters from the request body will be merged into
             the query string parameters.
+
+            If a key appears more than once in the form data, one of the
+            values will be returned as a string, but it is undefined which
+            one.  Use .get_param_as_list() to retrieve all the values.
+
+        Note:
+            If a query parameter is assigned a comma-separated list of
+            values (e.g., foo=a,b,c) then only one of the values will be
+            returned, and it is undefined which one. Use
+            .get_param_as_list() to retrieve all the values.
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'sort')
@@ -519,16 +612,22 @@ class Request(object):
         # PERF: Use if..in since it is a good all-around performer; we don't
         #       know how likely params are to be specified by clients.
         if name in params:
-            if store is not None:
-                store[name] = params[name]
+            # NOTE(warsaw): If the key appeared multiple times, it will be
+            # stored internally as a list.  We do not define which one
+            # actually gets returned, but let's pick the last one for grins.
+            param = params[name]
+            if isinstance(param, list):
+                param = param[-1]
 
-            return params[name]
+            if store is not None:
+                store[name] = param
+
+            return param
 
         if not required:
             return None
 
-        description = 'The "' + name + '" query parameter is required.'
-        raise HTTPBadRequest('Missing query parameter', description)
+        raise HTTPMissingParam(name)
 
     def get_param_as_int(self, name,
                          required=False, min=None, max=None, store=None):
@@ -568,19 +667,22 @@ class Request(object):
         #       know how likely params are to be specified by clients.
         if name in params:
             val = params[name]
+            if isinstance(val, list):
+                val = val[-1]
+
             try:
                 val = int(val)
             except ValueError:
                 msg = 'The value must be an integer.'
-                raise InvalidParam(msg, name)
+                raise HTTPInvalidParam(msg, name)
 
             if min is not None and val < min:
                 msg = 'The value must be at least ' + str(min)
-                raise InvalidParam(msg, name)
+                raise HTTPInvalidParam(msg, name)
 
             if max is not None and max < val:
                 msg = 'The value may not exceed ' + str(max)
-                raise InvalidParam(msg, name)
+                raise HTTPInvalidParam(msg, name)
 
             if store is not None:
                 store[name] = val
@@ -590,10 +692,10 @@ class Request(object):
         if not required:
             return None
 
-        description = 'The "' + name + '" query parameter is required.'
-        raise HTTPBadRequest('Missing query parameter', description)
+        raise HTTPMissingParam(name)
 
-    def get_param_as_bool(self, name, required=False, store=None):
+    def get_param_as_bool(self, name, required=False, store=None,
+                          blank_as_true=False):
         """Return the value of a query string parameter as a boolean
 
         The following bool-like strings are supported::
@@ -609,6 +711,9 @@ class Request(object):
             store (dict, optional): A dict-like object in which to place the
                 value of the param, but only if the param is found (default
                 *None*).
+            blank_as_true (bool): If True, empty strings will be treated as
+                True.  keep_blank_qs_values must be set on the Request (or API
+                object and inherited) for empty strings to not be filtered.
 
         Returns:
             bool: The value of the param if it is found and can be converted
@@ -627,13 +732,18 @@ class Request(object):
         #       know how likely params are to be specified by clients.
         if name in params:
             val = params[name]
+            if isinstance(val, list):
+                val = val[-1]
+
             if val in TRUE_STRINGS:
                 val = True
             elif val in FALSE_STRINGS:
                 val = False
+            elif blank_as_true and not val:
+                val = True
             else:
                 msg = 'The value of the parameter must be "true" or "false".'
-                raise InvalidParam(msg, name)
+                raise HTTPInvalidParam(msg, name)
 
             if store is not None:
                 store[name] = val
@@ -643,14 +753,15 @@ class Request(object):
         if not required:
             return None
 
-        description = 'The "' + name + '" query parameter is required.'
-        raise HTTPBadRequest('Missing query parameter', description)
+        raise HTTPMissingParam(name)
 
     def get_param_as_list(self, name,
                           transform=None, required=False, store=None):
         """Return the value of a query string parameter as a list.
 
-        Note that list items must be comma-separated.
+        List items must be comma-separated or must be provided
+        as multiple instances of the same param in the query string
+        ala *application/x-www-form-urlencoded*.
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'limit')
@@ -668,22 +779,18 @@ class Request(object):
 
         Returns:
             list: The value of the param if it is found. Otherwise, returns
-            *None* unless required is True. for partial lists, *None* will be
-            returned as a placeholder. For example::
+            *None* unless required is True. Empty list elements will be
+            discarded. For example a query string containing this::
 
                 things=1,,3
 
-            would be returned as::
+            or a query string containing this::
 
-                ['1', None, '3']
+                things=1&things=&things=3
 
-            while this::
+            would both result in::
 
-                things=,,,
-
-            would just be retured as::
-
-                [None, None, None, None]
+                ['1', '3']
 
         Raises
             HTTPBadRequest: The param was not found in the request, but was
@@ -695,21 +802,24 @@ class Request(object):
         # PERF: Use if..in since it is a good all-around performer; we don't
         #       know how likely params are to be specified by clients.
         if name in params:
-            items = params[name].split(',')
+            items = params[name]
+
+            # NOTE(warsaw): When a key appears multiple times in the request
+            # query, it will already be represented internally as a list.
+            # NOTE(kgriffs): Likewise for comma-delimited values.
+            if not isinstance(items, list):
+                items = [items]
 
             # PERF(kgriffs): Use if-else rather than a DRY approach
             # that sets transform to a passthrough function; avoids
             # function calling overhead.
-            if transform is None:
-                items = [i if i != '' else None
-                         for i in items]
-            else:
+            if transform is not None:
                 try:
-                    items = [transform(i) if i != '' else None
-                             for i in items]
+                    items = [transform(i) for i in items]
+
                 except ValueError:
                     msg = 'The value is not formatted correctly.'
-                    raise InvalidParam(msg, name)
+                    raise HTTPInvalidParam(msg, name)
 
             if store is not None:
                 store[name] = items
@@ -719,8 +829,7 @@ class Request(object):
         if not required:
             return None
 
-        raise HTTPBadRequest('Missing query parameter',
-                             'The "' + name + '" query parameter is required.')
+        raise HTTPMissingParam(name)
 
     # TODO(kgriffs): Use the nocover pragma only for the six.PY3 if..else
     def log_error(self, message):  # pragma: no cover
@@ -760,19 +869,62 @@ class Request(object):
     # Helpers
     # ------------------------------------------------------------------------
 
-    def _get_header_by_wsgi_name(self, name):
-        """Looks up a header, assuming name is already UPPERCASE_UNDERSCORE
-
-        Args:
-            name (str): Name of the header, already uppercased, and
-                underscored
-
-        Returns:
-            str: Value of the specified header, or *None* if the header was not
-            found. Also returns *None* if the value of the header was blank.
-
-        """
+    def _wrap_stream(self):  # pragma nocover
         try:
-            return self.env[name] or None
-        except KeyError:
-            return None
+            # NOTE(kgriffs): We can only add the wrapper if the
+            # content-length header was provided.
+            if self.content_length is not None:
+                self.stream = helpers.Body(self.stream, self.content_length)
+
+        except HTTPInvalidHeader:
+            # NOTE(kgriffs): The content-length header was specified,
+            # but it had an invalid value.
+            pass
+
+    def _parse_form_urlencoded(self):
+        # NOTE(kgriffs): This assumes self.stream has been patched
+        # above in the case of wsgiref, so that self.content_length
+        # is not needed. Normally we just avoid accessing
+        # self.content_length, because it is a little expensive
+        # to call. We could cache self.content_length, but the
+        # overhead to do that won't usually be helpful, since
+        # content length will only ever be read once per
+        # request in most cases.
+        body = self.stream.read()
+
+        # NOTE(kgriffs): According to http://goo.gl/6rlcux the
+        # body should be US-ASCII. Enforcing this also helps
+        # catch malicious input.
+        try:
+            body = body.decode('ascii')
+        except UnicodeDecodeError:
+            body = None
+            self.log_error('Non-ASCII characters found in form body '
+                           'with Content-Type of '
+                           'application/x-www-form-urlencoded. Body '
+                           'will be ignored.')
+
+        if body:
+            extra_params = uri.parse_query_string(
+                uri.decode(body),
+                keep_blank_qs_values=self.options.keep_blank_qs_values,
+            )
+
+            self._params.update(extra_params)
+
+
+# PERF: To avoid typos and improve storage space and speed over a dict.
+class RequestOptions(object):
+    """This class is a container for Request options.
+
+    Attributes:
+        keep_blank_qs_values (bool): Set to ``True`` in order to retain
+            blank values in query string parameters (default ``False``.)
+
+    """
+    __slots__ = (
+        'keep_blank_qs_values',
+    )
+
+    def __init__(self):
+        self.keep_blank_qs_values = False

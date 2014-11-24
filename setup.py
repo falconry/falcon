@@ -1,8 +1,12 @@
+import glob
 import imp
 import io
-import sys
+import os
 from os import path
 from setuptools import setup, find_packages, Extension
+import sys
+
+MYDIR = path.abspath(os.path.dirname(__file__))
 
 VERSION = imp.load_source('version', path.join('.', 'falcon', 'version.py'))
 VERSION = VERSION.__version__
@@ -29,22 +33,29 @@ if not PYPY:
         CYTHON = False
 
 if CYTHON:
-    ext_names = (
-        'api',
-        'api_helpers',
-        'request',
-        'request_helpers',
-        'response',
-        'response_helpers',
-        'responders',
-        'http_error',
-        'exceptions'
-    )
+    def list_modules(dirname):
+        filenames = glob.glob(path.join(dirname, '*.py'))
 
-    cmdclass = {'build_ext': build_ext}
+        module_names = []
+        for name in filenames:
+            module, ext = path.splitext(path.basename(name))
+            if module != '__init__':
+                module_names.append(module)
+
+        return module_names
+
     ext_modules = [
         Extension('falcon.' + ext, [path.join('falcon', ext + '.py')])
-        for ext in ext_names]
+        for ext in list_modules(path.join(MYDIR, 'falcon'))]
+
+    ext_modules += [
+        Extension('falcon.util.' + ext,
+                  [path.join('falcon', 'util', ext + '.py')])
+
+        for ext in list_modules(path.join(MYDIR, 'falcon', 'util'))]
+
+    cmdclass = {'build_ext': build_ext}
+
 else:
     cmdclass = {}
     ext_modules = []

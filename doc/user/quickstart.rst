@@ -71,13 +71,18 @@ parameters, handling errors, and working with request and response bodies.
 
     import json
     import logging
+    import uuid
     from wsgiref import simple_server
 
     import falcon
 
 
-    class StorageEngine:
-        pass
+    class StorageEngine(object):
+        def get_things(self, marker, limit):
+            return []
+
+        def add_thing(self, thing):
+            return {'id': str(uuid.uuid4())}
 
 
     class StorageError(Exception):
@@ -134,9 +139,39 @@ parameters, handling errors, and working with request and response bodies.
 
     def check_media_type(req, resp, params):
         if not req.client_accepts_json:
-            raise falcon.HTTPUnsupportedMediaType(
-                'This API only supports the JSON media type.',
+            raise falcon.HTTPNotAcceptable(
+                'This API only supports responses encoded as JSON.',
                 href='http://docs.examples.com/api/json')
+
+        if req.method in ('POST', 'PUT'):
+            if not req.content_type == 'application/json':
+                raise falcon.HTTPUnsupportedMediaType(
+                    'This API only supports requests encoded as JSON.',
+                    href='http://docs.examples.com/api/json')
+
+
+    def deserialize(req, resp, resource, params):
+        # req.stream corresponds to the WSGI wsgi.input environ variable,
+        # and allows you to read bytes from the request body.
+        #
+        # See also: PEP 3333
+        body = req.stream.read()
+        if not body:
+            raise falcon.HTTPBadRequest('Empty request body',
+                                        'A valid JSON document is required.')
+
+        try:
+            params['doc'] = json.loads(body.decode('utf-8'))
+
+        except (ValueError, UnicodeDecodeError):
+            raise falcon.HTTPError(falcon.HTTP_753,
+                                   'Malformed JSON',
+                                   'Could not decode the request body. The '
+                                   'JSON was incorrect or not encoded as UTF-8.')
+
+
+    def serialize(req, resp, resource):
+        resp.body = json.dumps(req.context['doc'])
 
 
     class ThingsResource:
@@ -145,6 +180,7 @@ parameters, handling errors, and working with request and response bodies.
             self.db = db
             self.logger = logging.getLogger('thingsapp.' + __name__)
 
+        @falcon.after(serialize)
         def on_get(self, req, resp, user_id):
             marker = req.get_param('marker') or ''
             limit = req.get_param_as_int('limit') or 50
@@ -163,31 +199,22 @@ parameters, handling errors, and working with request and response bodies.
                     description,
                     30)
 
-            resp.set_header('X-Powered-By', 'Donuts')
+            # An alternative way of doing DRY serialization would be to
+            # create a custom class that inherits from falcon.Request. This
+            # class could, for example, have an additional 'doc' property
+            # that would serialize to JSON under the covers.
+            req.context['doc'] = result
+
+            resp.set_header('X-Powered-By', 'Small Furry Creatures')
             resp.status = falcon.HTTP_200
-            resp.body = json.dumps(result)
 
-        def on_post(self, req, resp, user_id):
-            try:
-                # req.stream corresponds to the WSGI wsgi.input environ variable,
-                # and allows you to read bytes from the request body.
-                #
-                # json.load assumes the input stream is encoded at utf-8 if the
-                # encoding is not specified explicitly.
-                #
-                # See also: PEP 3333
-                thing = json.load(req.stream, 'utf-8')
-
-            except ValueError:
-                raise falcon.HTTPError(falcon.HTTP_753,
-                                       'Malformed JSON',
-                                       'Could not decode the request body. The '
-                                       'JSON was incorrect.')
-
-            proper_thing = self.db.add_thing(thing)
+        @falcon.before(deserialize)
+        def on_post(self, req, resp, user_id, doc):
+            proper_thing = self.db.add_thing(doc)
 
             resp.status = falcon.HTTP_201
-            resp.location = '/%s/things/%s' % (user_id, proper_thing.id)
+            resp.location = '/%s/things/%s' % (user_id, proper_thing['id'])
+
 
     # Configure your WSGI server to load "things.app" (app is a WSGI callable)
     app = falcon.API(before=[auth, check_media_type])
@@ -200,9 +227,9 @@ parameters, handling errors, and working with request and response bodies.
     # the given handler.
     app.add_error_handler(StorageError, StorageError.handle)
 
-    # Proxy some things to another service. This example shows how you might
+    # Proxy some things to another service; this example shows how you might
     # send parts of an API off to a legacy system that hasn't been upgraded
-    # yet, or perhaps is a single cluster that all datacenters have to share.
+    # yet, or perhaps is a single cluster that all data centers have to share.
     sink = SinkAdapter()
     app.add_sink(sink, r'/v1/[charts|inventory]')
 
@@ -210,6 +237,7 @@ parameters, handling errors, and working with request and response bodies.
     if __name__ == '__main__':
         httpd = simple_server.make_server('127.0.0.1', 8000, app)
         httpd.serve_forever()
+
 
 
 

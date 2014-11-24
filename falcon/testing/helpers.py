@@ -20,6 +20,7 @@ from datetime import datetime
 import six
 
 import falcon
+from falcon.util import uri
 
 # Constants
 DEFAULT_HOST = 'falconframework.org'
@@ -51,7 +52,8 @@ def rand_string(min, max):
                     for i in range(string_length)])
 
 
-def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
+def create_environ(path='/', query_string='', protocol='HTTP/1.1',
+                   scheme='http', host=DEFAULT_HOST, port=None,
                    headers=None, app='', body='', method='GET',
                    wsgierrors=None, file_wrapper=None):
 
@@ -62,8 +64,13 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
         query_string (str, optional): The query string to simulate, without a
             leading '?' (default '')
         protocol (str, optional): The HTTP protocol to simulate
-            (default 'HTTP/1.1')
-        port (str, optional): The TCP port to simulate (default '80')
+            (default 'HTTP/1.1'). If set 'HTTP/1.0', the Host header
+            will not be added to the environment.
+        scheme (str): URL scheme, either 'http' or 'https' (default 'http')
+        host(str): Hostname for the request (default 'falconframework.org')
+        port (str or int, optional): The TCP port to simulate. Defaults to
+            the standard port used by the given scheme (i.e., 80 for 'http'
+            and 443 for 'https').
         headers (dict or list, optional): Headers as a dict or an
             iterable collection of ``(key, value)`` tuples
         app (str): Value for the SCRIPT_NAME environ variable, described in
@@ -82,11 +89,21 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
     body = io.BytesIO(body.encode('utf-8')
                       if isinstance(body, six.text_type) else body)
 
+    # NOTE(kgriffs): wsgiref, gunicorn, and uWSGI all unescape
+    # the paths before setting PATH_INFO
+    path = uri.decode(path)
+
     # NOTE(kgriffs): nocover since this branch will never be
     # taken in Python3. However, the branch is tested under Py2,
     # in test_utils.TestFalconTesting.test_unicode_path_in_create_environ
-    if six.PY2 and isinstance(path, unicode):  # pragma: nocover
+    if six.PY2 and isinstance(path, six.text_type):  # pragma: nocover
         path = path.encode('utf-8')
+
+    scheme = scheme.lower()
+    if port is None:
+        port = '80' if scheme == 'http' else '443'
+    else:
+        port = str(port)
 
     env = {
         'SERVER_PROTOCOL': protocol,
@@ -99,10 +116,10 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
         'REMOTE_PORT': '65133',
         'RAW_URI': '/',
         'REMOTE_ADDR': '127.0.0.1',
-        'SERVER_NAME': 'localhost',
+        'SERVER_NAME': host,
         'SERVER_PORT': port,
 
-        'wsgi.url_scheme': 'http',
+        'wsgi.url_scheme': scheme,
         'wsgi.input': body,
         'wsgi.errors': wsgierrors or sys.stderr,
         'wsgi.multithread': False,
@@ -114,7 +131,16 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1', port='80',
         env['wsgi.file_wrapper'] = file_wrapper
 
     if protocol != 'HTTP/1.0':
-        env['HTTP_HOST'] = DEFAULT_HOST
+        host_header = host
+
+        if scheme == 'https':
+            if port != '443':
+                host_header += ':' + port
+        else:
+            if port != '80':
+                host_header += ':' + port
+
+        env['HTTP_HOST'] = host_header
 
     content_length = body.seek(0, 2)
     body.seek(0)

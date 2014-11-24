@@ -13,39 +13,25 @@
 # limitations under the License.
 
 
-def normalize_headers(env):
-    """Normalize HTTP headers in an WSGI environ dictionary.
+def header_property(wsgi_name):
+    """Creates a read-only header property.
 
     Args:
-        env: A WSGI environ dictionary to normalize (in-place)
+        wsgi_name (str): Case-sensitive name of the header as it would
+            appear in the WSGI environ dict (i.e., 'HTTP_*')
 
-    Raises:
-        KeyError: The env dictionary did not contain a key that is required by
-            PEP-333.
-        TypeError: env is not dictionary-like. In other words, it has no
-            attribute '__getitem__'.
+    Returns:
+        A property instance than can be assigned to a class variable.
 
     """
 
-    # NOTE(kgriffs): Per the WSGI spec, HOST, Content-Type, and
-    # CONTENT_LENGTH are not under HTTP_* and so we normalize
-    # that here.
+    def fget(self):
+        try:
+            return self.env[wsgi_name] or None
+        except KeyError:
+            return None
 
-    if 'CONTENT_TYPE' in env:
-        env['HTTP_CONTENT_TYPE'] = env['CONTENT_TYPE']
-
-    if 'CONTENT_LENGTH' in env:
-        env['HTTP_CONTENT_LENGTH'] = env['CONTENT_LENGTH']
-
-    # Fallback to SERVER_* vars if the Host header isn't specified
-    if 'HTTP_HOST' not in env:
-        host = env['SERVER_NAME']
-        port = env['SERVER_PORT']
-
-        if port != '80':
-            host = ''.join([host, ':', port])
-
-        env['HTTP_HOST'] = host
+    return property(fget)
 
 
 class Body(object):

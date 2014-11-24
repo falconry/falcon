@@ -1,5 +1,9 @@
 import sys
+import threading
+import time
 
+import requests
+from six.moves import http_client
 import testtools
 from testtools.matchers import Equals, MatchesRegex
 
@@ -15,6 +19,22 @@ def _is_iterable(thing):
         return True
     except:
         return False
+
+
+def _run_server():
+    class Things(object):
+        def on_get(self, req, resp):
+            pass
+
+        def on_put(self, req, resp):
+            pass
+
+    api = application = falcon.API()
+    api.add_route('/', Things())
+
+    from wsgiref.simple_server import make_server
+    server = make_server('localhost', 9803, application)
+    server.serve_forever()
 
 
 class TestWsgi(testtools.TestCase):
@@ -55,3 +75,31 @@ class TestWsgi(testtools.TestCase):
             self.assertThat(len(header), Equals(2))
             self.assertTrue(isinstance(header[0], str))
             self.assertTrue(isinstance(header[1], str))
+
+    def test_wsgiref(self):
+        thread = threading.Thread(target=_run_server)
+        thread.daemon = True
+        thread.start()
+
+        # Wait a moment for the thread to start up
+        time.sleep(0.2)
+
+        resp = requests.get('http://localhost:9803')
+        self.assertEqual(resp.status_code, 200)
+
+        # NOTE(kgriffs): This will cause a different path to
+        # be taken in req._wrap_stream. Have to use httplib
+        # to prevent the invalid header value from being
+        # forced to "0".
+        conn = http_client.HTTPConnection('localhost', 9803)
+        headers = {'Content-Length': 'invalid'}
+        conn.request('PUT', '/', headers=headers)
+        resp = conn.getresponse()
+        self.assertEqual(resp.status, 200)
+
+        headers = {'Content-Length': '0'}
+        resp = requests.put('http://localhost:9803', headers=headers)
+        self.assertEqual(resp.status_code, 200)
+
+        resp = requests.post('http://localhost:9803')
+        self.assertEqual(resp.status_code, 405)

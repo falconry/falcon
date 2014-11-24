@@ -251,11 +251,11 @@ class TestHooks(testing.TestBase):
         self.assertEqual(falcon.HTTP_400, self.srmock.status)
 
     def test_param_validator(self):
-        self.simulate_request(self.test_route, query_string='?limit=10',
+        self.simulate_request(self.test_route, query_string='limit=10',
                               body='{}')
         self.assertEqual(falcon.HTTP_200, self.srmock.status)
 
-        self.simulate_request(self.test_route, query_string='?limit=101')
+        self.simulate_request(self.test_route, query_string='limit=101')
         self.assertEqual(falcon.HTTP_400, self.srmock.status)
 
     def test_field_validator(self):
@@ -276,7 +276,7 @@ class TestHooks(testing.TestBase):
         self.simulate_request('/wrapped', method='PATCH')
         self.assertEqual(falcon.HTTP_405, self.srmock.status)
 
-        self.simulate_request('/wrapped', query_string='?limit=10')
+        self.simulate_request('/wrapped', query_string='limit=10')
         self.assertEqual(falcon.HTTP_200, self.srmock.status)
         self.assertEqual('fuzzy', self.wrapped_resource.bunnies)
 
@@ -288,7 +288,7 @@ class TestHooks(testing.TestBase):
         self.assertEqual(falcon.HTTP_200, self.srmock.status)
         self.assertEqual('slippery', self.wrapped_resource.fish)
 
-        self.simulate_request('/wrapped', query_string='?limit=101')
+        self.simulate_request('/wrapped', query_string='limit=101')
         self.assertEqual(falcon.HTTP_400, self.srmock.status)
         self.assertEqual('fuzzy', self.wrapped_resource.bunnies)
 
@@ -296,7 +296,7 @@ class TestHooks(testing.TestBase):
         self.simulate_request('/wrapped_aware', method='PATCH')
         self.assertEqual(falcon.HTTP_405, self.srmock.status)
 
-        self.simulate_request('/wrapped_aware', query_string='?limit=10')
+        self.simulate_request('/wrapped_aware', query_string='limit=10')
         self.assertEqual(falcon.HTTP_200, self.srmock.status)
         self.assertEqual('fuzzy', self.wrapped_aware_resource.bunnies)
 
@@ -305,6 +305,6 @@ class TestHooks(testing.TestBase):
             self.assertEqual(falcon.HTTP_200, self.srmock.status)
             self.assertEqual('fuzzy', self.wrapped_aware_resource.bunnies)
 
-        self.simulate_request('/wrapped_aware', query_string='?limit=101')
+        self.simulate_request('/wrapped_aware', query_string='limit=101')
         self.assertEqual(falcon.HTTP_400, self.srmock.status)
         self.assertEqual('fuzzy', self.wrapped_aware_resource.bunnies)

@@ -5,7 +5,7 @@ import falcon.testing as testing
 
 
 def validate_output(req, resp):
-    raise falcon.HTTPError(falcon.HTTP_723, title=None)
+    raise falcon.HTTPError(falcon.HTTP_723, 'Tricky')
 
 
 def serialize_body(req, resp):
@@ -257,7 +257,9 @@ class TestHooks(testing.TestBase):
     def test_output_validator(self):
         self.simulate_request(self.test_route)
         self.assertEqual(falcon.HTTP_723, self.srmock.status)
-        self.assertEqual(None, self.resource.resp.body_encoded)
+
+        expected = b'{\n    "title": "Tricky"\n}'
+        self.assertEqual(expected, self.resource.resp.body_encoded)
 
     def test_serializer(self):
         self.simulate_request(self.test_route, method='PUT')

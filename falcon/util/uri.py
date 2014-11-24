@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
-
 import six
 
 # NOTE(kgriffs): See also RFC 3986
@@ -27,10 +25,6 @@ _DELIMITERS = ":/?#[]@!$&'()*+,;="
 _ALL_ALLOWED = _UNRESERVED + _DELIMITERS
 
 _HEX_DIGITS = '0123456789ABCDEFabcdef'
-
-# NOTE(kgriffs): Match query string fields that have names that
-# start with a letter.
-_QS_PATTERN = re.compile(r'(?<![0-9])([a-zA-Z][a-zA-Z_0-9\-.]*)=([^&]+)')
 
 
 def _create_char_encoder(allowed_chars):
@@ -187,8 +181,7 @@ if six.PY2:  # pragma: no cover
             char, byte = _HEX_TO_BYTE[token[:2]]
             decoded_uri += char + token[2:]
 
-            if only_ascii:
-                only_ascii = (byte <= 127)
+            only_ascii = only_ascii and (byte <= 127)
 
         # PERF(kgriffs): Only spend the time to do this if there
         # were non-ascii bytes found in the string.
@@ -252,30 +245,121 @@ else:  # pragma: no cover
         return decoded_uri.decode('utf-8', 'replace')
 
 
-def parse_query_string(query_string):
+def parse_query_string(query_string, keep_blank_qs_values=False):
     """Parse a query string into a dict.
 
     Query string parameters are assumed to use standard form-encoding. Only
     parameters with values are parsed. for example, given "foo=bar&flag",
-    this function would ignore "flag".
+    this function would ignore "flag" unless the keep_blank_qs_values option
+    is set.
+
+    Note:
+        In addition to the standard HTML form-based method for specifying
+        lists by repeating a given param multiple times, Falcon supports
+        a more compact form in which the param may be given a single time
+        but set to a list of comma-separated elements (e.g., 'foo=a,b,c').
+
+        The two different ways of specifying lists may not be mixed in
+        a single query string for the same parameter.
 
     Args:
         query_string (str): The query string to parse
+        keep_blank_qs_values (bool): If set to True, preserves boolean fields
+            and fields with no content as blank strings.
 
     Returns:
         dict: A dict containing ``(name, value)`` tuples, one per query
-            parameter. Note that *value* will be a string, and that *name* is
-            case-sensitive, both copied directly from the query string.
+            parameter. Note that *value* will be a string or list of
+            strings.
 
     Raises:
         TypeError: query_string was not a string or buffer
 
     """
 
-    # PERF(kgriffs): A for loop is faster than using array or dict
-    # comprehensions (tested under py27, py33). Go figure!
     params = {}
-    for k, v in _QS_PATTERN.findall(query_string):
-        params[k] = v
+
+    # PERF(kgriffs): This was found to be faster than using a regex, for
+    # both short and long query strings. Tested on both CPython 2.7 and 3.4,
+    # and on PyPy 2.3.
+    for field in query_string.split('&'):
+        k, _, v = field.partition('=')
+        if not (v or keep_blank_qs_values):
+            continue
+
+        if k in params:
+            # The key was present more than once in the POST data.  Convert to
+            # a list, or append the next value to the list.
+            old_value = params[k]
+            if isinstance(old_value, list):
+                old_value.append(v)
+            else:
+                params[k] = [old_value, v]
+
+        else:
+            if ',' in v:
+                # NOTE(kgriffs): Falcon supports a more compact form of
+                # lists, in which the elements are comma-separated and
+                # assigned to a single param instance. If it turns out that
+                # very few people use this, it can be deprecated at some
+                # point.
+                v = v.split(',')
+
+                if not keep_blank_qs_values:
+                    # NOTE(kgriffs): Normalize the result in the case that
+                    # some elements are empty strings, such that the result
+                    # will be the same for 'foo=1,,3' as 'foo=1&foo=&foo=3'.
+                    v = [element for element in v if element]
+
+            params[k] = v
 
     return params
+
+
+def parse_host(host, default_port=None):
+    """Parse a canonical host:port string into parts.
+
+    Parse a host string (which may or may not contain a port) into
+    parts, taking into account that the string may contain
+    either a domain name or an IP address. In the latter case,
+    both IPv4 and IPv6 addresses are supported.
+
+    Args:
+        host (str): Host string to parse, optionally containing a
+            port number.
+        default_port (int, optional): Port number to return when
+            the host string does not contain one (default ``None``).
+
+    Returns:
+        tuple: A parsed (host, port)  tuple from the given
+            host string, with the port converted to an ``int``.
+            If the string does not specify a port, `default_port` is
+            used instead.
+
+    """
+
+    # NOTE(kgriff): The value from the Host header may
+    # contain a port, so check that and strip it if
+    # necessary. This is complicated by the fact that
+    # a hostname may be specified either as an IP address
+    # or as a domain name, and in the case of IPv6 there
+    # may be multiple colons in the string.
+
+    if host.startswith('['):
+        # IPv6 address with a port
+        pos = host.rfind(']:')
+        if pos != -1:
+            return (host[1:pos], int(host[pos + 2:]))
+        else:
+            return (host[1:-1], default_port)
+
+    pos = host.rfind(':')
+    if (pos == -1) or (pos != host.find(':')):
+        # Bare domain name or IP address
+        return (host, default_port)
+
+    # NOTE(kgriffs): At this point we know that there was
+    # only a single colon, so we should have an IPv4 address
+    # or a domain name plus a port
+    name, _, port = host.partition(':')
+    return (name, int(port))
