@@ -22,7 +22,7 @@ from falcon.bench.queues import stats
 
 
 class RequestIDComponent(object):
-    def process_request(self, req, resp, params):
+    def process_request(self, req, resp):
         req.context['request_id'] = '<generate ID>'
 
     def process_response(self, req, resp):
@@ -30,7 +30,7 @@ class RequestIDComponent(object):
 
 
 class NoopComponent(object):
-    def process_request(self, req, resp, params):
+    def process_request(self, req, resp):
         pass
 
 

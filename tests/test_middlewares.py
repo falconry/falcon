@@ -7,7 +7,7 @@ context = {'executed_methods': []}
 
 class RequestTimeMiddleware(object):
 
-    def process_request(self, req, resp, params):
+    def process_request(self, req, resp):
         global context
         context['start_time'] = datetime.utcnow()
 
@@ -18,14 +18,14 @@ class RequestTimeMiddleware(object):
 
 class TransactionIdMiddleware(object):
 
-    def process_request(self, req, resp, params):
+    def process_request(self, req, resp):
         global context
         context['transaction_id'] = 'unique-req-id'
 
 
 class ExecutedFirstMiddleware(object):
 
-    def process_request(self, req, resp, params):
+    def process_request(self, req, resp):
         global context
         context['executed_methods'].append(
             '{0}.{1}'.format(self.__class__.__name__, 'process_request'))
@@ -38,6 +38,12 @@ class ExecutedFirstMiddleware(object):
 
 class ExecutedLastMiddleware(ExecutedFirstMiddleware):
     pass
+
+
+class RemoveBasePathMiddleware(object):
+
+    def process_request(self, req, resp):
+        req.path = req.path.replace('/base_path', '', 1)
 
 
 class MiddlewareClassResource(object):
@@ -75,7 +81,7 @@ class TestRequestTimeMiddleware(TestMiddleware):
         """Test that error in response middleware is propagated up"""
         class RaiseErrorMiddleware(object):
 
-            def process_response(self, req, resp, params):
+            def process_response(self, req, resp):
                 raise Exception("Always fail")
 
         self.api = falcon.API(middleware=[RaiseErrorMiddleware()])
@@ -161,7 +167,7 @@ class TestSeveralMiddlewares(TestMiddleware):
 
         class RaiseErrorMiddleware(object):
 
-            def process_request(self, req, resp, params):
+            def process_request(self, req, resp):
                 raise Exception("Always fail")
 
         self.api = falcon.API(middleware=[TransactionIdMiddleware(),
@@ -183,7 +189,7 @@ class TestSeveralMiddlewares(TestMiddleware):
 
         class RaiseErrorMiddleware(object):
 
-            def process_request(self, req, resp, params):
+            def process_request(self, req, resp):
                 raise Exception("Always fail")
 
         self.api = falcon.API(middleware=[TransactionIdMiddleware(),
@@ -211,7 +217,7 @@ class TestSeveralMiddlewares(TestMiddleware):
 
         class RaiseErrorMiddleware(object):
 
-            def process_request(self, req, resp, params):
+            def process_request(self, req, resp):
                 raise Exception("Always fail")
 
         self.api = falcon.API(middleware=[TransactionIdMiddleware(),
@@ -292,3 +298,19 @@ class TestSeveralMiddlewares(TestMiddleware):
             "ExecutedFirstMiddleware.process_response"
         ]
         self.assertEqual(expectedExecutedMethods, context['executed_methods'])
+
+
+class TestRemoveBasePathMiddleware(TestMiddleware):
+
+    def test_base_path_is_removed_before_routing(self):
+        """Test that RemoveBasePathMiddleware is executed before routing"""
+        self.api = falcon.API(middleware=RemoveBasePathMiddleware())
+
+        # We dont include /base_path as it will be removed in middleware
+        self.api.add_route('/sub_path', MiddlewareClassResource())
+
+        body = self.simulate_request('/base_path/sub_path')
+        self.assertEqual([{'status': 'ok'}], body)
+        self.assertEqual(self.srmock.status, falcon.HTTP_200)
+        self.simulate_request('/base_pathIncorrect/sub_path')
+        self.assertEqual(self.srmock.status, falcon.HTTP_404)
