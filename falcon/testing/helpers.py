@@ -172,4 +172,4 @@ def _add_headers_to_environ(env, headers):
         elif name == 'CONTENT_LENGTH':
             env[name] = value
         else:
-            env['HTTP_' + name.upper()] = value
+            env['HTTP_' + name] = value
