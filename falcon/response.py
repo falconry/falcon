@@ -25,7 +25,13 @@ class Response(object):
         `Response` is not meant to be instantiated directly by responders.
 
     Attributes:
-        status (str): HTTP status line, such as "200 OK"
+        status (str): HTTP status line (e.g., '200 OK'). Falcon requires the
+            full status line, not just the code (e.g., 200). This design
+            makes the framework more efficient because it does not have to
+            do any kind of conversion or lookup when composing the WSGI
+            response.
+
+            If not set explicitly, the status defaults to '200 OK'.
 
             Note:
                 Falcon provides a number of constants for common status
