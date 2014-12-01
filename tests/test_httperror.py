@@ -1,5 +1,6 @@
 # -*- coding: utf-8
 
+import datetime
 import json
 import xml.etree.ElementTree as et
 
@@ -129,6 +130,24 @@ class LengthRequiredResource:
 
     def on_get(self, req, resp):
         raise falcon.HTTPLengthRequired('title', 'description')
+
+
+class RequestEntityTooLongResource:
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPRequestEntityTooLarge('Request Rejected',
+                                               'Request Body Too Large')
+
+
+class TemporaryRequestEntityTooLongResource:
+
+    def __init__(self, retry_after):
+        self.retry_after = retry_after
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPRequestEntityTooLarge('Request Rejected',
+                                               'Request Body Too Large',
+                                               retry_after=self.retry_after)
 
 
 class RangeNotSatisfiableResource:
@@ -498,6 +517,39 @@ class TestHTTPError(testing.TestBase):
         self.assertEqual(self.srmock.status, falcon.HTTP_411)
         self.assertEqual(parsed_body['title'], 'title')
         self.assertEqual(parsed_body['description'], 'description')
+
+    def test_413(self):
+        self.api.add_route('/413', RequestEntityTooLongResource())
+        body = self.simulate_request('/413')
+        parsed_body = json.loads(body[0].decode())
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_413)
+        self.assertEqual(parsed_body['title'], 'Request Rejected')
+        self.assertEqual(parsed_body['description'], 'Request Body Too Large')
+        self.assertNotIn('retry-after', self.srmock.headers)
+
+    def test_temporary_413_integer_retry_after(self):
+        self.api.add_route('/413', TemporaryRequestEntityTooLongResource('6'))
+        body = self.simulate_request('/413')
+        parsed_body = json.loads(body[0].decode())
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_413)
+        self.assertEqual(parsed_body['title'], 'Request Rejected')
+        self.assertEqual(parsed_body['description'], 'Request Body Too Large')
+        self.assertIn(('retry-after', '6'), self.srmock.headers)
+
+    def test_temporary_413_datetime_retry_after(self):
+        date = datetime.datetime.now() + datetime.timedelta(minutes=5)
+        self.api.add_route('/413',
+                           TemporaryRequestEntityTooLongResource(date))
+        body = self.simulate_request('/413')
+        parsed_body = json.loads(body[0].decode())
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_413)
+        self.assertEqual(parsed_body['title'], 'Request Rejected')
+        self.assertEqual(parsed_body['description'], 'Request Body Too Large')
+        self.assertIn(('retry-after', falcon.util.dt_to_http(date)),
+                      self.srmock.headers)
 
     def test_416(self):
         self.api = falcon.API()
