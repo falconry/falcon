@@ -336,18 +336,26 @@ class HTTPServiceUnavailable(HTTPError):
         title (str): Error title (e.g., 'Temporarily Unavailable').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-        retry_after (date or int): Value for the Retry-After header. If a date
-            object, will serialize as an HTTP date. Otherwise, a non-negative
-            int is expected, representing the number of seconds to wait. See
-            also: http://goo.gl/DIrWr .
+        retry_after (datetime or int): Value for the Retry-After header. If a
+            datetime object, will serialize as an HTTP date. Otherwise,
+            a non-negative int is expected, representing the number of seconds
+            to wait. See also: http://goo.gl/DIrWr .
         kwargs (optional): Same as for ``HTTPError``.
 
     """
 
     def __init__(self, title, description, retry_after, **kwargs):
         headers = kwargs.setdefault('headers', {})
-        headers['Retry-After'] = str(retry_after)
-        HTTPError.__init__(self, status.HTTP_503, title, description, **kwargs)
+
+        if isinstance(retry_after, datetime):
+            headers['Retry-After'] = util.dt_to_http(retry_after)
+        else:
+            headers['Retry-After'] = str(retry_after)
+
+        super(HTTPServiceUnavailable, self).__init__(status.HTTP_503,
+                                                     title,
+                                                     description,
+                                                     **kwargs)
 
 
 class HTTPInvalidHeader(HTTPBadRequest):
