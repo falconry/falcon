@@ -158,8 +158,13 @@ class RangeNotSatisfiableResource:
 
 class ServiceUnavailableResource:
 
+    def __init__(self, retry_after):
+        self.retry_after = retry_after
+
     def on_get(self, req, resp):
-        raise falcon.HTTPServiceUnavailable('Oops', 'Stand by...', 60)
+        raise falcon.HTTPServiceUnavailable('Oops',
+                                            'Stand by...',
+                                            retry_after=self.retry_after)
 
 
 class InvalidHeaderResource:
@@ -561,8 +566,8 @@ class TestHTTPError(testing.TestBase):
         self.assertIn(('content-range', 'bytes */123456'), self.srmock.headers)
         self.assertIn(('content-length', '0'), self.srmock.headers)
 
-    def test_503(self):
-        self.api.add_route('/503', ServiceUnavailableResource())
+    def test_503_integer_retry_after(self):
+        self.api.add_route('/503', ServiceUnavailableResource(60))
         body = self.simulate_request('/503', decode='utf-8')
 
         expected_body = {
@@ -573,6 +578,22 @@ class TestHTTPError(testing.TestBase):
         self.assertEqual(self.srmock.status, falcon.HTTP_503)
         self.assertEqual(json.loads(body), expected_body)
         self.assertIn(('retry-after', '60'), self.srmock.headers)
+
+    def test_503_datetime_retry_after(self):
+        date = datetime.datetime.now() + datetime.timedelta(minutes=5)
+        self.api.add_route('/503',
+                           ServiceUnavailableResource(date))
+        body = self.simulate_request('/503', decode='utf-8')
+
+        expected_body = {
+            u'title': u'Oops',
+            u'description': u'Stand by...',
+        }
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_503)
+        self.assertEqual(json.loads(body), expected_body)
+        self.assertIn(('retry-after', falcon.util.dt_to_http(date)),
+                      self.srmock.headers)
 
     def test_invalid_header(self):
         self.api.add_route('/400', InvalidHeaderResource())
