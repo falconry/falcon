@@ -47,6 +47,29 @@ class TestUriTemplates(testing.TestBase):
         self.assertRaises(TypeError, self.api.add_route, set(), self.resource)
         self.assertRaises(TypeError, self.api.add_route, self, self.resource)
 
+    def test_field_name_cannot_start_with_digit(self):
+        self.assertRaises(ValueError, self.api.add_route,
+                          '/hello/{1world}', self.resource)
+
+        self.assertRaises(ValueError, self.api.add_route,
+                          '/{524hello}/world', self.resource)
+
+    def test_whitespace_not_allowed(self):
+        self.assertRaises(ValueError, self.api.add_route,
+                          '/{thing }/world', self.resource)
+
+        self.assertRaises(ValueError, self.api.add_route,
+                          '/{ thing}/world', self.resource)
+
+        self.assertRaises(ValueError, self.api.add_route,
+                          '/{ thing }/world', self.resource)
+
+        self.assertRaises(ValueError, self.api.add_route,
+                          '/{thing}/wo rld', self.resource)
+
+        self.assertRaises(ValueError, self.api.add_route,
+                          '/{thing} /world', self.resource)
+
     def test_no_vars(self):
         self.api.add_route('/hello/world', self.resource)
         self.simulate_request('/hello/world')

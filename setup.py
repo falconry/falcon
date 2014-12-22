@@ -54,6 +54,12 @@ if CYTHON:
 
         for ext in list_modules(path.join(MYDIR, 'falcon', 'util'))]
 
+    ext_modules += [
+        Extension('falcon.routing.' + ext,
+                  [path.join('falcon', 'routing', ext + '.py')])
+
+        for ext in list_modules(path.join(MYDIR, 'falcon', 'routing'))]
+
     cmdclass = {'build_ext': build_ext}
 
 else:

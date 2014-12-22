@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import re
+import six
 
 from falcon import api_helpers as helpers
 from falcon import DEFAULT_MEDIA_TYPE
@@ -88,6 +89,10 @@ class API(object):
             instead of Falcon's default class. (default
             ``falcon.response.Response``)
 
+        router (object, optional): An instance of a custom router
+            to use in lieu of the default engine.
+            See also: :ref:`Routing <routing>`.
+
     Attributes:
         req_options (RequestOptions): A set of behavioral options related to
             incoming requests.
@@ -105,13 +110,12 @@ class API(object):
     _STREAM_BLOCK_SIZE = 8 * 1024  # 8 KiB
 
     __slots__ = ('_after', '_before', '_request_type', '_response_type',
-                 '_error_handlers', '_media_type', '_routes', '_sinks',
+                 '_error_handlers', '_media_type', '_router', '_sinks',
                  '_serialize_error', 'req_options', '_middleware')
 
     def __init__(self, media_type=DEFAULT_MEDIA_TYPE, before=None, after=None,
                  request_type=Request, response_type=Response,
-                 middleware=None):
-        self._routes = []
+                 middleware=None, router=None):
         self._sinks = []
         self._media_type = media_type
 
@@ -120,6 +124,8 @@ class API(object):
 
         # set middleware
         self._middleware = helpers.prepare_middleware(middleware)
+
+        self._router = router or routing.DefaultRouter()
 
         self._request_type = request_type
         self._response_type = response_type
@@ -278,13 +284,20 @@ class API(object):
 
         """
 
-        uri_fields, path_template = routing.compile_uri_template(uri_template)
-        method_map = routing.create_http_method_map(
-            resource, uri_fields, self._before, self._after)
+        # NOTE(richardolsson): Doing the validation here means it doesn't have
+        # to be duplicated in every future router implementation.
+        if not isinstance(uri_template, six.string_types):
+            raise TypeError('uri_template is not a string')
 
-        # Insert at the head of the list in case we get duplicate
-        # adds (will cause the last one to win).
-        self._routes.insert(0, (path_template, method_map, resource))
+        if not uri_template.startswith('/'):
+            raise ValueError("uri_template must start with '/'")
+
+        if '//' in uri_template:
+            raise ValueError("uri_template may not contain '//'")
+
+        method_map = routing.create_http_method_map(
+            resource, self._before, self._after)
+        self._router.add_route(uri_template, method_map, resource)
 
     def add_sink(self, sink, prefix=r'/'):
         """Registers a sink method for the API.
@@ -448,17 +461,12 @@ class API(object):
 
         path = req.path
         method = req.method
-        for path_template, method_map, resource in self._routes:
-            m = path_template.match(path)
-            if m:
-                params = m.groupdict()
-
-                try:
-                    responder = method_map[method]
-                except KeyError:
-                    responder = falcon.responders.bad_request
-
-                break
+        resource, method_map, params = self._router.find(path)
+        if resource is not None:
+            try:
+                responder = method_map[method]
+            except KeyError:
+                responder = falcon.responders.bad_request
         else:
             params = {}
             resource = None
