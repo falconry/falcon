@@ -81,11 +81,11 @@ class CompiledRouter(object):
             # routing tree recursively until it reaches the new node leaf.
             new_node = CompiledRouterNode(path[path_index])
             nodes.append(new_node)
-            if path_index == len(path)-1:
+            if path_index == len(path) - 1:
                 new_node.method_map = method_map
                 new_node.resource = resource
             else:
-                insert(new_node.children, path_index+1)
+                insert(new_node.children, path_index + 1)
 
         insert(self._roots)
 
@@ -134,7 +134,7 @@ class CompiledRouter(object):
 
         if len(node.children):
             for child in node.children:
-                self._compile_node(child, pad+'  ', level+1)
+                self._compile_node(child, pad + '  ', level + 1)
         if node.resource is not None:
             line(pad, '  return return_values[%d]' % resource_idx)
 
