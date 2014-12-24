@@ -26,9 +26,10 @@ def before(action):
     Args:
         action (callable): A function of the form
             ``func(req, resp, resource, params)``, where `resource` is a
-            reference to the resource class associated with the request,
-            and `params` is a dict of URI Template field names, if any,
-            that will be passed into the resource responder as *kwargs*.
+            reference to the resource class instance associated with the
+            request, and `params` is a dict of URI Template field names,
+            if any, that will be passed into the resource responder as
+            *kwargs*.
 
             Note:
                 Hooks may inject extra params as needed. For example::
@@ -89,7 +90,8 @@ def after(action):
     Args:
         action (callable): A function of the form
             ``func(req, resp, resource)``, where `resource` is a
-            reference to the resource class associated with the request
+            reference to the resource class instance associated with the
+            request
 
     """
 
@@ -155,7 +157,7 @@ def _get_argspec(func):  # pragma: no cover
 
 
 def _has_self(spec):
-    """Checkes whether the given argspec includes a self param.
+    """Checks whether the given argspec includes a self param.
 
     Warning:
         If a method's spec lists "self", that doesn't necessarily mean
@@ -172,7 +174,7 @@ def _wrap_with_after(action, responder, resource=None, is_method=False):
 
     Args:
         action: A function with a signature similar to a resource responder
-            method, taking (req, resp).
+            method, taking (req, resp, resource).
         responder: The responder method to wrap.
         resource: The resource affected by `action` (default None). If None,
             `is_method` MUST BE True, so that the resource can be
@@ -221,7 +223,7 @@ def _wrap_with_before(action, responder, resource=None, is_method=False):
 
     Args:
         action: A function with a similar signature to a resource responder
-            method, taking (req, resp, params)
+            method, taking (req, resp, resource, params)
         responder: The responder method to wrap
         resource: The resource affected by `action` (default None). If None,
             `is_method` MUST BE True, so that the resource can be
