@@ -45,7 +45,7 @@ class API(object):
             implement the following middleware component interface::
 
                 class ExampleComponent(object):
-                    def process_request(req, resp, params):
+                    def process_request(self, req, resp, params):
                         \"""Process the request before routing it.
 
                         Args:
@@ -55,7 +55,7 @@ class API(object):
                                 the on_* responder
                         \"""
 
-                    def process_response(req, resp)
+                    def process_response(self, req, resp)
                         \"""Post-processing of the response (after routing).
                         \"""
 
