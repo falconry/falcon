@@ -13,15 +13,12 @@
 # limitations under the License.
 
 import json
-import sys
 import xml.etree.ElementTree as et
 
-if sys.version_info < (2, 7):  # pragma: no cover
-    # NOTE(kgriffs): We could use the module from PyPI, but ordering isn't
-    # critical in JSON, and Falcon eschews dependencies.
-    OrderedDict = dict
-else:  # pragma: no cover
+try:  # pragma nocover
     from collections import OrderedDict
+except ImportError:  # pragma nocover
+    OrderedDict = dict
 
 from falcon.util import uri
 
