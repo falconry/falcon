@@ -3,10 +3,10 @@
 Tutorial
 ========
 
-This page walks you through building an API for an image-sharing service. Along
-the way, you will learn about Falcon's features and the terminology used by
-the framework. You'll also learn how to query Falcon's docstrings, and get a
-quick overview of the WSGI standard.
+This page walks you through building an API for a simple image-sharing
+service. Along the way, you will learn about Falcon's features and the
+terminology used by the framework. You'll also learn how to query Falcon's
+docstrings, and get a quick overview of the WSGI standard.
 
 
 .. include:: big-picture-snip.rst
