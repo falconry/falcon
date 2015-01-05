@@ -45,7 +45,7 @@ class API(object):
             implement the following middleware component interface::
 
                 class ExampleComponent(object):
-                    def process_request(self, req, resp, params):
+                    def process_request(self, req, resp, resource):
                         \"""Process the request before routing it.
 
                         Args:
@@ -53,9 +53,10 @@ class API(object):
                                 routed to an on_* responder method
                             resp: Response object that will be routed to
                                 the on_* responder
+                            resource: Handler object
                         \"""
 
-                    def process_response(self, req, resp)
+                    def process_response(self, req, resp, resource)
                         \"""Post-processing of the response (after routing).
                         \"""
 
@@ -200,15 +201,19 @@ class API(object):
                 # e.g. a 404.
                 responder, params, resource = self._get_responder(req)
 
+                # NOTE(rsyed83): Only execute middleware that define the
+                # "execute_after_route" attribute
+                self._call_req_mw(middleware_stack, req, resp, resource)
+
                 responder(req, resp, **params)
-                self._call_resp_mw(middleware_stack, req, resp)
+                self._call_resp_mw(middleware_stack, req, resp, resource)
 
             except Exception as ex:
                 for err_type, err_handler in self._error_handlers:
                     if isinstance(ex, err_type):
                         err_handler(ex, req, resp, params)
                         self._call_after_hooks(req, resp, resource)
-                        self._call_resp_mw(middleware_stack, req, resp)
+                        self._call_resp_mw(middleware_stack, req, resp, resource)
 
                         # NOTE(kgriffs): The following line is not
                         # reported to be covered under Python 3.4 for
@@ -490,24 +495,36 @@ class API(object):
                 # it was mistakenly set by the app.
                 resp.content_type = media_type
 
-    def _call_req_mw(self, stack, req, resp):
+    def _call_req_mw(self, stack, req, resp, resource=None):
         """Run process_request middleware methods."""
 
         for component in self._middleware:
+
+            try:
+                should_execute_after_route = component.execute_after_route
+            except AttributeError:
+                should_execute_after_route = False
+
+            # NOTE(rsyed): Processing should be skipped if execute_after_route
+            # is False and the resource variable is present (routing has
+            # occurred).  The same logic applies in reverse.
+            if should_execute_after_route != bool(resource):
+                continue
+
             process_request, _ = component
             if process_request is not None:
-                process_request(req, resp)
+                process_request(req, resp, resource)
 
             # Put executed component on the stack
             stack.append(component)  # keep track from outside
 
-    def _call_resp_mw(self, stack, req, resp):
+    def _call_resp_mw(self, stack, req, resp, resource):
         """Run process_response middleware."""
 
         while stack:
             _, process_response = stack.pop()
             if process_response is not None:
-                process_response(req, resp)
+                process_response(req, resp, resource)
 
     def _call_after_hooks(self, req, resp, resource):
         """Executes each of the global "after" hooks, in turn."""
