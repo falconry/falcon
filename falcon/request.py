@@ -1,5 +1,3 @@
-# Copyright 2013 by Rackspace Hosting, Inc.
-#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -33,6 +31,8 @@ from falcon.errors import *
 from falcon import util
 from falcon.util import uri
 from falcon import request_helpers as helpers
+
+from six.moves.http_cookies import SimpleCookie
 
 
 DEFAULT_ERROR_LOG_FORMAT = (u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
@@ -167,6 +167,11 @@ class Request(object):
             all the values in the order seen.
 
         options (dict): Set of global options passed from the API handler.
+
+        cookies (dict):
+            A dict of name/value cookie pairs.
+            See also: :ref:`Getting Cookies <getting-cookies>`
+
     """
 
     __slots__ = (
@@ -183,6 +188,7 @@ class Request(object):
         'context',
         '_wsgierrors',
         'options',
+        '_cookies',
     )
 
     # Allow child classes to override this
@@ -233,6 +239,8 @@ class Request(object):
 
         else:
             self.query_string = six.text_type()
+
+        self._cookies = None
 
         self._cached_headers = None
         self._cached_uri = None
@@ -477,6 +485,21 @@ class Request(object):
     @property
     def params(self):
         return self._params
+
+    @property
+    def cookies(self):
+        if self._cookies is None:
+            # NOTE(tbug): We might want to look into parsing
+            # cookies ourselves. The SimpleCookie is doing a
+            # lot if stuff only required to SEND cookies.
+            parser = SimpleCookie(self.get_header("Cookie"))
+            cookies = {}
+            for morsel in parser.values():
+                cookies[morsel.key] = morsel.value
+
+            self._cookies = cookies
+
+        return self._cookies.copy()
 
     # ------------------------------------------------------------------------
     # Methods
