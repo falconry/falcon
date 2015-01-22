@@ -4,10 +4,11 @@ Hooks
 =====
 
 Falcon supports both **before** and **after** hooks. You install a hook simply by
-applying one of the decorators below either to an individual responder or
+applying one of the decorators below, either to an individual responder or
 to an entire resource.
 
-For example, suppose you had a hook like this:
+For example, consider this hook that validates a POST request for
+an image resource:
 
 .. code:: python
 
@@ -16,7 +17,7 @@ For example, suppose you had a hook like this:
             msg = 'Image type not allowed. Must be PNG, JPEG, or GIF'
             raise falcon.HTTPBadRequest('Bad request', msg)
 
-You would attach the hook to an ``on_post`` responder like so:
+You would attach this hook to an ``on_post`` responder like so:
 
 .. code:: python
 
@@ -24,22 +25,26 @@ You would attach the hook to an ``on_post`` responder like so:
     def on_post(self, req, resp):
         pass
 
-Or, if you had a hook that you would like to applied to *all*
-responders for a given resource, you could install the hook like this:
+Or, suppose you had a hook that you would like to apply to *all*
+responders for a given resource. In that case, you would simply
+decorate the resource class:
 
 .. code:: python
 
     @falcon.before(extract_project_id)
     class Message(object):
-        pass
+        def on_post(self, req, resp):
+            pass
 
-And you can apply hooks globally by passing them into the API class
-initializer (note that this does not require the use of a decorator):
+        def on_get(self, req, resp):
+            pass
 
-.. code:: python
-
-    falcon.API(before=[extract_project_id])
-
+Falcon middleware components can also be used to insert logic before and
+after requests. Unlike hooks, however, middleware components are
+triggered **globally** for all requests. This feature is
+documented in the
+:ref:`API class <api>` reference and the
+:ref:`Quickstart <quickstart-more-features>` example code.
 
 .. automodule:: falcon
     :members: before, after

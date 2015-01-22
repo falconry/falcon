@@ -60,6 +60,7 @@ Then, in another terminal:
 
     $ curl localhost:8000/things
 
+.. _quickstart-more-features:
 
 More Features
 -------------

@@ -95,9 +95,6 @@ We have started documenting the library at http://falcon.readthedocs.org and we 
 
 The docstrings in the Falcon code base are quite extensive, and we recommend keeping a REPL running while learning the framework so that you can query the various modules and classes as you have questions.
 
-You can also check out [Zaqar's WSGI driver](https://github.com/openstack/zaqar/tree/master/zaqar/queues/transport/wsgi) to get a feel for how you might
-leverage Falcon in building a REST API.
-
 The Falcon community maintains a mailing list that you can use to share
 your ideas and ask questions about the framework. We use the appropriately
 minimalistic [Librelist](http://librelist.com/) to host the discussions.
