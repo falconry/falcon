@@ -31,7 +31,7 @@ class HTTPError(Exception):
     when something goes wrong.
 
     Attributes:
-        status (str): HTTP status line, such as "748 Confounded by Ponies".
+        status (str): HTTP status line, e.g. '748 Confounded by Ponies'.
         has_representation (bool): Read-only property that determines
             whether error details will be serialized when composing
             the HTTP response. In ``HTTPError`` this property always
@@ -61,7 +61,7 @@ class HTTPError(Exception):
             wide characters.
 
             Note:
-                The Content-Type header, if present, will be overriden. If
+                The Content-Type header, if present, will be overridden. If
                 you wish to return custom error messages, you can create
                 your own HTTP error class, and install an error handler
                 to convert it into an appropriate HTTP response for the
@@ -192,7 +192,7 @@ class NoRepresentation(object):
     """Mixin for ``HTTPError`` child classes that have no representation.
 
     This class can be mixed in when inheriting from ``HTTPError``, in order
-    to override the `has_representation` property, such that it always
+    to override the `has_representation` property such that it always
     returns ``False``. This, in turn, will cause Falcon to return an empty
     response body to the client.
 
@@ -215,14 +215,14 @@ class NoRepresentation(object):
 class OptionalRepresentation(object):
     """Mixin for ``HTTPError`` child classes that may have a representation.
 
-    This class can be mixed in when inheriting from ``HTTPError``, in order
-    to override the `has_representation` property, such that it optionally
-    returns ``False``. This, in turn, will cause Falcon to return an empty
-    response body to the client.
+    This class can be mixed in when inheriting from ``HTTPError`` in order
+    to override the `has_representation` property, such that it will
+    return ``False`` when the error instance has no description
+    (i.e., the `description` kwarg was not set).
 
-    You can use this mixin when defining errors that either may optionally have
-    a body (as dictated by HTTP standards or common practice), or in the
-    case that a detailed error response may leak information to an attacker.
+    You can use this mixin when defining errors that do not include
+    a body in the HTTP response by default, serializing details only when
+    the web developer provides a description of the error.
 
     Note:
         This mixin class must appear before ``HTTPError`` in the base class

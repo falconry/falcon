@@ -145,7 +145,7 @@ def get_bound_method(obj, method_name):
         method_name: Name of the method to retrieve.
 
     Returns:
-        Bound method, or `None` if the method does not exist on`
+        Bound method, or `None` if the method does not exist on
         the object.
 
     Raises:

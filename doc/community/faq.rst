@@ -17,9 +17,7 @@ simply wrap your api instance with a middleware app. For example:
 
     app = some_middleware.DoSomethingFancy(my_restful_service.api)
 
-See also the `WSGI middleware example <http://legacy.python.org/dev/peps/pep-3333/#middleware-components-that-play-both-sides>`_ given in PEP-3333. Note that use of Paste for wiring up
-middleware is discouraged these days, because that package is not
-well-maintained, and is incompatible with Python 3.
+See also the `WSGI middleware example <http://legacy.python.org/dev/peps/pep-3333/#middleware-components-that-play-both-sides>`_ given in PEP-3333.
 
 
 Why doesn't Falcon include X?
@@ -46,7 +44,7 @@ have full access to the Request and Response objects.
 
 .. code:: python
 
-    def auth(req, resp, params):
+    def auth(req, resp, resource, params):
         token = req.get_header('X-Auth-Token')
 
         if token is None:
