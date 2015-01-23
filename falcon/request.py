@@ -54,7 +54,7 @@ class Request(object):
 
     Args:
         env (dict): A WSGI environment dict passed in from the server. See
-            also the PEP-3333 spec.
+            also PEP-3333.
         options (dict): Set of global options passed from the API handler.
 
     Attributes:
@@ -78,11 +78,14 @@ class Request(object):
         context (dict): Dictionary to hold any data about the request which is
             specific to your app (e.g. session object). Falcon itself will
             not interact with this attribute after it has been initialized.
-        context_type (None): Custom callable/type to use for initializing the
-            ``context`` attribute.  To change this value so that ``context``
-            is initialized to the type of your choice (e.g. OrderedDict), you
-            will need to extend this class and pass that new type to the
-            ``request_type`` argument of ``falcon.API()``.
+        context_type (class): Class variable that determines the
+            factory or type to use for initializing the
+            ``context`` attribute. By default, the framework will
+            instantiate standard
+            ``dict`` objects. However, You may override this behavior
+            by creating a custom child class of ``falcon.Request``, and
+            then passing that new class to ``falcon.API()`` by way of the
+            latter's `request_type` parameter.
         uri (str): The fully-qualified URI for the request.
         url (str): alias for ``uri``.
         relative_uri (str): The path + query string portion of the full URI.
@@ -94,12 +97,12 @@ class Request(object):
             missing.
         auth (str): Value of the Authorization header, or *None* if the header
             is missing.
-        client_accepts_json (bool): True if the Accept header includes JSON,
-            otherwise False.
-        client_accepts_msgpack (bool): True if the Accept header includes
-            msgpack, otherwise False.
-        client_accepts_xml (bool): True if the Accept header includes XML,
-            otherwise False.
+        client_accepts_json (bool): True if the Accept header indicates that
+            the client is willing to receive JSON, otherwise False.
+        client_accepts_msgpack (bool): True if the Accept header indicates
+            that the client is willing to receive MessagePack, otherwise False.
+        client_accepts_xml (bool): True if the Accept header indicates that
+            the client is willing to receive XML, otherwise False.
         content_type (str): Value of the Content-Type header, or *None* if
             the header is missing.
         content_length (int): Value of the Content-Length header converted
@@ -504,7 +507,7 @@ class Request(object):
             return False
 
     def client_prefers(self, media_types):
-        """Returns the client's preferred media type given several choices.
+        """Returns the client's preferred media type, given several choices.
 
         Args:
             media_types (iterable of str): One or more Internet media types
@@ -527,7 +530,7 @@ class Request(object):
         return (preferred_type if preferred_type else None)
 
     def get_header(self, name, required=False):
-        """Return a header value as a string.
+        """Return a raw header value as a string.
 
         Args:
             name (str): Header name, case-insensitive (e.g., 'Content-Type')
@@ -571,7 +574,7 @@ class Request(object):
             raise HTTPMissingParam(name)
 
     def get_param(self, name, required=False, store=None):
-        """Return the value of a query string parameter as a string.
+        """Return the raw value of a query string parameter as a string.
 
         Note:
             If an HTML form is POSTed to the API using the
@@ -581,13 +584,14 @@ class Request(object):
 
             If a key appears more than once in the form data, one of the
             values will be returned as a string, but it is undefined which
-            one.  Use .get_param_as_list() to retrieve all the values.
+            one. Use `req.get_param_as_list()` to retrieve all the values.
 
         Note:
-            If a query parameter is assigned a comma-separated list of
-            values (e.g., foo=a,b,c) then only one of the values will be
+            Similar to the way multiple keys in form data is handled,
+            if a query parameter is assigned a comma-separated list of
+            values (e.g., foo=a,b,c), only one of those values will be
             returned, and it is undefined which one. Use
-            .get_param_as_list() to retrieve all the values.
+            `req.get_param_as_list()` to retrieve all the values.
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'sort')
@@ -595,15 +599,14 @@ class Request(object):
                 instead of returning gracefully when the parameter is not
                 found (default False)
             store (dict, optional): A dict-like object in which to place the
-                value of the param, but only if the param is found.
+                value of the param, but only if the param is present.
 
         Returns:
             string: The value of the param as a string, or *None* if param is
                 not found and is not required.
 
         Raises:
-            HTTPBadRequest: The param was not found in the request, but was
-                required.
+            HTTPBadRequest: A required param is missing from the request.
 
         """
 
@@ -720,9 +723,8 @@ class Request(object):
             to a boolean. If the param is not found, returns *None* unless
             required is True.
 
-        Raises
-            HTTPBadRequest: The param was not found in the request, even though
-                it was required to be there.
+        Raises:
+            HTTPBadRequest: A required param is missing from the request.
 
         """
 
@@ -792,9 +794,9 @@ class Request(object):
 
                 ['1', '3']
 
-        Raises
-            HTTPBadRequest: The param was not found in the request, but was
-                required.
+        Raises:
+            HTTPBadRequest: A required param is missing from the request.
+
         """
 
         params = self._params
@@ -839,7 +841,7 @@ class Request(object):
         result out to the WSGI server's error stream (`wsgi.error`).
 
         Args:
-            message (str): A string describing the problem. If a byte-string
+            message (str): A string describing the problem. If a byte-string,
                 it is simply written out as-is. Unicode strings will be
                 converted to UTF-8.
 

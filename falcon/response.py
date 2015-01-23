@@ -25,7 +25,13 @@ class Response(object):
         `Response` is not meant to be instantiated directly by responders.
 
     Attributes:
-        status (str): HTTP status line, such as "200 OK"
+        status (str): HTTP status line (e.g., '200 OK'). Falcon requires the
+            full status line, not just the code (e.g., 200). This design
+            makes the framework more efficient because it does not have to
+            do any kind of conversion or lookup when composing the WSGI
+            response.
+
+            If not set explicitly, the status defaults to '200 OK'.
 
             Note:
                 Falcon provides a number of constants for common status
@@ -39,17 +45,24 @@ class Response(object):
         body_encoded (bytes): Returns a UTF-8 encoded version of `body`.
         data (bytes): Byte string representing response content.
 
+            Use this attribute in lieu of `body` when your content is
+            already a byte string (``str`` or ``bytes`` in Python 2, or
+            simply ``bytes`` in Python 3). See also the note below.
+
             Note:
-                Under Python 2.x, if your content is of type *str*, setting
-                this rather than body will be most efficient. However, if
-                your text is of type *unicode*, you will want to use the
+                Under Python 2.x, if your content is of type *str*, using
+                the `data` attribute instead of `body` is the most
+                efficient approach. However, if
+                your text is of type *unicode*, you will need to use the
                 *body* attribute instead.
 
-                Under Python 3.x, the 2.x *str* type can be thought of as
-                having been replaced with what was once the *unicode* type,
-                and so you will want to use the `body` attribute to
+                Under Python 3.x, on the other hand, the 2.x *str* type can
+                be thought of as
+                having been replaced by what was once the *unicode* type,
+                and so you will need to always use the `body` attribute for
+                strings to
                 ensure Unicode characters are properly encoded in the
-                response body.
+                HTTP response.
 
         stream: Either a file-like object with a *read()* method that takes
             an optional size argument and returns a block of bytes, or an
@@ -144,11 +157,12 @@ class Response(object):
         self._headers[name.lower()] = value
 
     def append_header(self, name, value):
-        """Set or append a header for this response to a given value.
+        """Set or append a header for this response.
 
         Warning:
-            Calling this method will append any existing value using comma
-            separation. Please ensure the header type supports this.
+            If the header already exists, the new value will be appended
+            to it, delimited by a comma. Most header specifications support
+            this format, Cookie and Set-Cookie being the notable exceptions.
 
         Args:
             name (str): Header name to set (case-insensitive). Must be of

@@ -272,7 +272,6 @@ class TestHTTPError(testing.TestBase):
 
     def test_custom_error_serializer(self):
         headers = {
-            'Accept': 'application/x-yaml',
             'X-Error-Title': 'Storage service down',
             'X-Error-Description': ('The configured storage service is not '
                                     'responding to requests. Please contact '
@@ -280,12 +279,15 @@ class TestHTTPError(testing.TestBase):
             'X-Error-Status': falcon.HTTP_503
         }
 
-        expected_yaml = (b'{code: 10042, description: The configured storage '
-                         b'service is not responding to requests.\n    '
-                         b'Please contact your service provider, title: '
-                         b'Storage service down}\n')
+        expected_doc = {
+            'code': 10042,
+            'description': ('The configured storage service is not '
+                            'responding to requests. Please contact '
+                            'your service provider'),
+            'title': 'Storage service down'
+        }
 
-        def my_serializer(req, exception):
+        def _my_serializer(req, exception):
             representation = None
 
             preferred = req.client_prefers(('application/x-yaml',
@@ -293,17 +295,24 @@ class TestHTTPError(testing.TestBase):
 
             if preferred is not None:
                 if preferred == 'application/json':
-                    representation = exception.json()
+                    representation = exception.to_json()
                 else:
                     representation = yaml.dump(exception.to_dict(),
                                                encoding=None)
 
             return (preferred, representation)
 
-        self.api.set_error_serializer(my_serializer)
-        body = self.simulate_request('/fail', headers=headers)
-        self.assertEqual(self.srmock.status, headers['X-Error-Status'])
-        self.assertEqual(body, [expected_yaml])
+        def _check(media_type, deserializer):
+            headers['Accept'] = media_type
+            self.api.set_error_serializer(_my_serializer)
+            body = self.simulate_request('/fail', headers=headers)
+            self.assertEqual(self.srmock.status, headers['X-Error-Status'])
+
+            actual_doc = deserializer(body[0].decode('utf-8'))
+            self.assertEqual(expected_doc, actual_doc)
+
+        # _check('application/x-yaml', yaml.load)
+        _check('application/json', json.loads)
 
     def test_client_does_not_accept_anything(self):
         headers = {

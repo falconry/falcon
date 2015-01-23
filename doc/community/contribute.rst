@@ -50,7 +50,7 @@ doesn't make pyflakes sad.
 * Use whitespace to separate logical blocks of code and to improve readability.
 * Do not use single-character variable names except for trivial indexes when
   looping, or in mathematical expressions implementing well-known formulae.
-* Heavily document code that is especially complex and/or clever.
+* Heavily document code that is especially complex or clever!
 * When in doubt, optimize for readability.
 
 .. _napolean-flavored: http://sphinxcontrib-napoleon.readthedocs.org/en/latest/example_google.html#example-google-style-python-docstrings

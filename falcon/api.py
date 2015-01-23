@@ -27,25 +27,22 @@ import falcon.status_codes as status
 class API(object):
     """This class is the main entry point into a Falcon-based app.
 
-    Each API instance provides a callable WSGI interface and a simple routing
-    engine based on URI Templates (RFC 6570).
+    Each API instance provides a callable WSGI interface and a routing engine.
+
+    Note:
+        Global hooks (configured using the `before` and `after` kwargs) are
+        deprecated in favor of middleware, and may be removed in a future
+        version of the framework.
 
     Args:
         media_type (str, optional): Default media type to use as the value for
             the Content-Type header on responses. (default 'application/json')
-        before (callable, optional): A global action hook (or list of hooks)
-            to call before each on_* responder, for all resources. Similar to
-            the ``falcon.before`` decorator, but applies to the entire API.
-            When more than one hook is given, they will be executed
-            in natural order (starting with the first in the list).
-        after (callable, optional): A global action hook (or list of hooks)
-            to call after each on_* responder, for all resources. Similar to
-            the ``after`` decorator, but applies to the entire API.
-        middleware(object or list, optional): One or more objects that
-            implement the following middleware component interface::
+        middleware(object or list, optional): One or more objects (
+            instantiated classes) that implement the following middleware
+            component interface::
 
                 class ExampleComponent(object):
-                    def process_request(self, req, resp, resource):
+                    def process_request(self, req, resp):
                         \"""Process the request before routing it.
 
                         Args:
@@ -53,12 +50,16 @@ class API(object):
                                 routed to an on_* responder method
                             resp: Response object that will be routed to
                                 the on_* responder
-                            resource: Handler object
                         \"""
 
                     def process_response(self, req, resp, resource)
                         \"""Post-processing of the response (after routing).
                         \"""
+
+            Middleware components execute both before and after the framework
+            routes the request, or calls any hooks. For example, if a
+            component modifies ``req.uri`` in its *process_request* method,
+            the framework will use the modified value to route the request.
 
             Each component's *process_request* and *process_response* methods
             are executed hierarchically, as a stack. For example, if a list of
@@ -114,11 +115,12 @@ class API(object):
             the framework will execute any remaining middleware on the
             stack.
 
-        request_type (Request, optional): Request-alike class to use instead
-            of Falcon's default class. Useful if you wish to extend
-            ``falcon.request.Request`` with a custom ``context_type``.
+        request_type (Request, optional): Request-like class to use instead
+            of Falcon's default class. Among other things, this feature
+            affords inheriting from ``falcon.request.Request`` in order
+            to override the ``context_type`` class variable.
             (default falcon.request.Request)
-        response_type (Response, optional): Response-alike class to use
+        response_type (Response, optional): Response-like class to use
             instead of Falcon's default class. (default
             falcon.response.Response)
 
@@ -270,7 +272,7 @@ class API(object):
         return body
 
     def add_route(self, uri_template, resource):
-        """Associates a URI path with a resource.
+        """Associates a templatized URI path with a resource.
 
         A resource is an instance of a class that defines various on_*
         "responder" methods, one for each HTTP method the resource
@@ -284,26 +286,27 @@ class API(object):
             def on_post(self, req, resp):
                 pass
 
-        In addition, if the route's uri template contains field
+        In addition, if the route's template contains field
         expressions, any responder that desires to receive requests
         for that route must accept arguments named after the respective
-        field names defined in the template. For example, given the
-        following uri template::
+        field names defined in the template. A field expression consists
+        of a bracketed field name.
 
-            /das/{thing}
+        For example, given the following template::
 
-        A PUT request to "/das/code" would be routed to::
+            /user/{name}
 
-            def on_put(self, req, resp, thing):
+        A PUT request to "/user/kgriffs" would be routed to::
+
+            def on_put(self, req, resp, name):
                 pass
 
         Args:
-            uri_template (str): Relative URI template. Currently only Level 1
-                templates are supported. See also RFC 6570. Care must be
+            uri_template (str): A templatized URI. Care must be
                 taken to ensure the template does not mask any sink
-                patterns (see also ``add_sink``).
-            resource (instance): Object which represents an HTTP/REST
-                "resource". Falcon will pass "GET" requests to on_get,
+                patterns, if any are registered (see also ``add_sink``).
+            resource (instance): Object which represents a REST
+                resource. Falcon will pass "GET" requests to on_get,
                 "PUT" requests to on_put, etc. If any HTTP methods are not
                 supported by your resource, simply don't define the
                 corresponding request handlers, and Falcon will do the right
@@ -320,11 +323,16 @@ class API(object):
         self._routes.insert(0, (path_template, method_map, resource))
 
     def add_sink(self, sink, prefix=r'/'):
-        """Adds a "sink" responder to the API.
+        """Registers a sink method for the API.
 
         If no route matches a request, but the path in the requested URI
-        matches the specified prefix, Falcon will pass control to the
-        given sink, regardless of the HTTP method requested.
+        matches a sink prefix, Falcon will pass control to the
+        associated sink, regardless of the HTTP method requested.
+
+        Using sinks, you can drain and dynamically handle a large number
+        of routes, when creating static resources and responders would be
+        impractical. For example, you might use a sink to create a smart
+        proxy that forwards requests to one or more backend services.
 
         Args:
             sink (callable): A callable taking the form ``func(req, resp)``.
@@ -340,8 +348,9 @@ class API(object):
                     the sink as such.
 
                 Note:
-                    If the route collides with a route's URI template, the
-                    route will mask the sink (see also ``add_route``).
+                    If the prefix overlaps a registered route template,
+                    the route will take precedence and mask the sink
+                    (see also ``add_route``).
 
         """
 
@@ -355,28 +364,33 @@ class API(object):
         self._sinks.insert(0, (prefix, sink))
 
     def add_error_handler(self, exception, handler=None):
-        """Adds a handler for a given exception type.
+        """Registers a handler for a given exception error type.
 
         Args:
             exception (type): Whenever an error occurs when handling a request
-                that is an instance of this exception class, the given
-                handler callable will be used to handle the exception.
-            handler (callable): A callable taking the form
-                ``func(ex, req, resp, params)``, called
-                when there is a matching exception raised when handling a
-                request.
+                that is an instance of this exception class, the associated
+                handler will be called.
+            handler (callable): A function or callable object taking the form
+                ``func(ex, req, resp, params)``.
 
-                Note:
-                    If not specified, the handler will default to
-                    ``exception.handle``, where ``exception`` is the error
-                    type specified above, and ``handle`` is a static method
-                    (i.e., decorated with @staticmethod) that accepts
-                    the same params just described.
+                If not specified explicitly, the handler will default to
+                ``exception.handle``, where ``exception`` is the error
+                type specified above, and ``handle`` is a static method
+                (i.e., decorated with @staticmethod) that accepts
+                the same params just described. For example:
+
+                    class CustomException(CustomBaseException):
+
+                        @staticmethod
+                        def handle(ex, req, resp, params):
+                            # TODO: Log the error
+                            # Convert to an instance of falcon.HTTPError
+                            raise falcon.HTTPError(falcon.HTTP_792)
 
                 Note:
                     A handler can either raise an instance of HTTPError
-                    or modify resp manually in order to communicate information
-                    about the issue to the client.
+                    or modify resp manually in order to communicate
+                    information about the issue to the client.
 
         """
 
@@ -400,6 +414,25 @@ class API(object):
         it to an HTTP response automatically. The default serializer
         supports JSON and XML, but may be overridden by this method to
         use a custom serializer in order to support other media types.
+
+        The ``falcon.HTTPError`` class contains helper methods, such as
+        `to_json()` and `to_dict()`, that can be used from within
+        custom serializers. For example:
+
+            def my_serializer(req, exception):
+                representation = None
+
+                preferred = req.client_prefers(('application/x-yaml',
+                                                'application/json'))
+
+                if preferred is not None:
+                    if preferred == 'application/json':
+                        representation = exception.to_json()
+                    else:
+                        representation = yaml.dump(exception.to_dict(),
+                                                   encoding=None)
+
+                return (preferred, representation)
 
         Note:
             If a custom media type is used and the type includes a
