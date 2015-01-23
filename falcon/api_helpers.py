@@ -50,14 +50,16 @@ def prepare_middleware(middleware=None):
     for component in middleware:
         process_request = util.get_bound_method(component,
                                                 'process_request')
+        process_resource = util.get_bound_method(component,
+                                                'process_resource')
         process_response = util.get_bound_method(component,
                                                  'process_response')
 
-        if not (process_request or process_response):
+        if not (process_request or process_resource or process_response):
             msg = '{0} does not implement the middleware interface'
             raise TypeError(msg.format(component))
 
-        prepared_middleware.append((process_request, process_response))
+        prepared_middleware.append((process_request, process_resource, process_response))
 
     return prepared_middleware
 
