@@ -587,7 +587,7 @@ that in mind, writing a high-quality API based on Falcon requires that:
 1. Resource responders set response variables to sane values.
 2. Your code is well-tested, with high code coverage.
 3. Errors are anticipated, detected, and handled appropriately within each
-responder.
+   responder.
 
 .. tip::
     Falcon will re-raise errors that do not inherit from ``falcon.HTTPError``
