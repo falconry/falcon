@@ -37,8 +37,8 @@ class API(object):
     Args:
         media_type (str, optional): Default media type to use as the value for
             the Content-Type header on responses. (default 'application/json')
-        middleware(object or list, optional): One or more objects (
-            instantiated classes) that implement the following middleware
+        middleware(object or list, optional): One or more objects
+            (instantiated classes) that implement the following middleware
             component interface::
 
                 class ExampleComponent(object):
@@ -52,66 +52,30 @@ class API(object):
                                 the on_* responder
                         \"""
 
-                    def process_response(self, req, resp)
-                        \"""Post-processing of the response (after routing).
+                    def process_resource(self, req, resp, resource):
+                        \"""Process the request after routing.
+
+                        Args:
+                            req: Request object that will be passed to the
+                                routed responder
+                            resp: Response object that will be passed to the
+                                responder
+                            resource: Resource object to which the request was
+                                routed. May be None if no route was found for
+                                the request
                         \"""
 
-            Middleware components execute both before and after the framework
-            routes the request, or calls any hooks. For example, if a
-            component modifies ``req.uri`` in its *process_request* method,
-            the framework will use the modified value to route the request.
+                    def process_response(self, req, resp, resource)
+                        \"""Post-processing of the response (after routing).
 
-            Each component's *process_request* and *process_response* methods
-            are executed hierarchically, as a stack. For example, if a list of
-            middleware objects are passed as ``[mob1, mob2, mob3]``, the order
-            of execution is as follows::
-
-                mob1.process_request
-                    mob2.process_request
-                        mob3.process_request
-                            <route to responder method>
-                        mob3.process_response
-                    mob2.process_response
-                mob1.process_response
-
-            Note that each component need not implement both process_*
-            methods; in the case that one of the two methods is missing,
-            it is treated as a noop in the stack. For example, if ``mob2`` did
-            not implement *process_request* and ``mob3`` did not implement
-            *process_response*, the execution order would look
-            like this::
-
-                mob1.process_request
-                    _
-                        mob3.process_request
-                            <route to responder method>
-                        _
-                    mob2.process_response
-                mob1.process_response
-
-            If one of the *process_request* middleware methods raises an
-            error, it will be processed according to the error type. If
-            the type matches a registered error handler, that handler will
-            be invoked and then the framework will begin to unwind the
-            stack, skipping any lower layers. The error handler may itself
-            raise an instance of HTTPError, in which case the framework
-            will use the latter exception to update the *resp* object.
-            Regardless, the framework will continue unwinding the middleware
-            stack. For example, if *mob2.process_request* were to raise an
-            error, the framework would execute the stack as follows::
-
-                mob1.process_request
-                    mob2.process_request
-                        <skip mob3 and routing>
-                    mob2.process_response
-                mob1.process_response
-
-            Finally, if one of the *process_response* methods raises an error,
-            or the routed on_* responder method itself raises an error, the
-            exception will be handled in a similar manner as above. Then,
-            the framework will execute any remaining middleware on the
-            stack.
-
+                        Args:
+                            req: Request object
+                            resp: Response object
+                            resource: Resource object to which the request was
+                                routed. May be None if no route was found
+                                for the request
+                        \"""
+            See also :ref:`Middleware <middleware>`.
         request_type (Request, optional): Request-like class to use instead
             of Falcon's default class. Among other things, this feature
             affords inheriting from ``falcon.request.Request`` in order
@@ -203,15 +167,18 @@ class API(object):
                 # e.g. a 404.
                 responder, params, resource = self._get_responder(req)
 
+                self._call_rsrc_mw(middleware_stack, req, resp, resource)
+
                 responder(req, resp, **params)
-                self._call_resp_mw(middleware_stack, req, resp)
+                self._call_resp_mw(middleware_stack, req, resp, resource)
 
             except Exception as ex:
                 for err_type, err_handler in self._error_handlers:
                     if isinstance(ex, err_type):
                         err_handler(ex, req, resp, params)
                         self._call_after_hooks(req, resp, resource)
-                        self._call_resp_mw(middleware_stack, req, resp)
+                        self._call_resp_mw(middleware_stack, req, resp,
+                                           resource)
 
                         # NOTE(kgriffs): The following line is not
                         # reported to be covered under Python 3.4 for
@@ -232,13 +199,13 @@ class API(object):
                     # process_response when no error_handler is given
                     # and for whatever exception. If an HTTPError is raised
                     # remaining process_response will be executed later.
-                    self._call_resp_mw(middleware_stack, req, resp)
+                    self._call_resp_mw(middleware_stack, req, resp, resource)
                     raise
 
         except HTTPError as ex:
             self._compose_error_response(req, resp, ex)
             self._call_after_hooks(req, resp, resource)
-            self._call_resp_mw(middleware_stack, req, resp)
+            self._call_resp_mw(middleware_stack, req, resp, resource)
 
         #
         # Set status and headers
@@ -528,20 +495,28 @@ class API(object):
         """Run process_request middleware methods."""
 
         for component in self._middleware:
-            process_request, _ = component
+            process_request, _, _ = component
             if process_request is not None:
                 process_request(req, resp)
 
             # Put executed component on the stack
             stack.append(component)  # keep track from outside
 
-    def _call_resp_mw(self, stack, req, resp):
+    def _call_rsrc_mw(self, stack, req, resp, resource):
+        """Run process_resource middleware methods."""
+
+        for component in self._middleware:
+            _, process_resource, _ = component
+            if process_resource is not None:
+                process_resource(req, resp, resource)
+
+    def _call_resp_mw(self, stack, req, resp, resource):
         """Run process_response middleware."""
 
         while stack:
-            _, process_response = stack.pop()
+            _, _, process_response = stack.pop()
             if process_response is not None:
-                process_response(req, resp)
+                process_response(req, resp, resource)
 
     def _call_after_hooks(self, req, resp, resource):
         """Executes each of the global "after" hooks, in turn."""
