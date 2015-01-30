@@ -26,20 +26,20 @@ from falcon.testing.helpers import create_environ
 
 
 class TestBase(unittest.TestCase):
-    """Extends *testtools.TestCase* to support WSGI integration testing.
+    """Extends ``testtools.TestCase`` to support WSGI integration testing.
 
-    `TestBase` provides a base class that provides some extra plumbing to
+    ``TestBase`` provides a base class that provides some extra plumbing to
     help simulate WSGI calls without having to actually host your API
     in a server.
 
     Note:
-        If *testtools* is not available, *unittest* is used instead.
+        If ``testtools`` is not available, ``unittest`` is used instead.
 
     Attributes:
         api (falcon.API): An API instance to target when simulating
             requests. Defaults to ``falcon.API()``.
         srmock (falcon.testing.StartResponseMock): Provides a callable
-            that simulates the behavior of the *start_response* argument
+            that simulates the behavior of the `start_response` argument
             that the server would normally pass into the WSGI app. The
             mock object captures various information from the app's
             response to the simulated request.
@@ -84,7 +84,7 @@ class TestBase(unittest.TestCase):
         Args:
             path (str): The path to request.
             decode (str, optional): If this is set to a character encoding,
-                such as "utf-8", `simulate_request` will assume the
+                such as 'utf-8', `simulate_request` will assume the
                 response is a single byte string, and will decode it as the
                 result of the request, rather than simply returning the
                 standard WSGI iterable.

@@ -18,7 +18,7 @@ def header_property(wsgi_name):
 
     Args:
         wsgi_name (str): Case-sensitive name of the header as it would
-            appear in the WSGI environ dict (i.e., 'HTTP_*')
+            appear in the WSGI environ ``dict`` (i.e., 'HTTP_*')
 
     Returns:
         A property instance than can be assigned to a class variable.
@@ -35,20 +35,21 @@ def header_property(wsgi_name):
 
 
 class Body(object):
-    """Wrap wsgi.input streams to make them more robust.
+    """Wrap *wsgi.input* streams to make them more robust.
 
-    The socket._fileobject and io.BufferedReader are sometimes used
-    to implement wsgi.input. However, app developers are often burned
-    by the fact that the read() method for these objects block
+    ``socket._fileobject`` and ``io.BufferedReader`` are sometimes used
+    to implement *wsgi.input*. However, app developers are often burned
+    by the fact that the `read()` method for these objects block
     indefinitely if either no size is passed, or a size greater than
     the request's content length is passed to the method.
 
-    This class normalizes wsgi.input behavior between WSGI servers
+    This class normalizes *wsgi.input* behavior between WSGI servers
     by implementing non-blocking behavior for the cases mentioned
     above.
 
     Args:
-        stream: Instance of socket._fileobject from environ['wsgi.input']
+        stream: Instance of ``socket._fileobject`` from
+            ``environ['wsgi.input']``
         stream_len: Expected content length of the stream.
 
     """

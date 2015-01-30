@@ -14,6 +14,16 @@ $ tox -e py27,py33,pep8
 
 * Docstrings are required for classes, attributes, methods, and functions.
 * Docstrings should utilize the [napolean style][docstrings] in order to make them read well, regardless of whether they are viewed through `help()` or on [Read the Docs][rtd].
+* Please try to be consistent with the way existing docstrings are formatted. In particular, note the use of single vs. double backticks as follows:
+    * Double backticks
+        * Inline code
+        * Variables
+        * Types
+        * Decorators
+    * Single backticks
+        * Methods
+        * Params
+        * Attributes
 * Format non-trivial comments using your GitHub nick and one of these prefixes:
     * TODO(riker): Damage report!
     * NOTE(riker): Well, that's certainly good to know.

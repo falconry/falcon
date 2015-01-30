@@ -14,7 +14,6 @@ standard-compliant WSGI server.
 
 .. autoclass:: falcon.API
     :members:
-    :undoc-members:
 
 .. autoclass:: falcon.RequestOptions
     :members:

@@ -36,7 +36,7 @@ class API(object):
 
     Args:
         media_type (str, optional): Default media type to use as the value for
-            the Content-Type header on responses. (default 'application/json')
+            the Content-Type header on responses (default 'application/json').
         middleware(object or list, optional): One or more objects
             (instantiated classes) that implement the following middleware
             component interface::
@@ -47,9 +47,9 @@ class API(object):
 
                         Args:
                             req: Request object that will eventually be
-                                routed to an on_* responder method
+                                routed to an on_* responder method.
                             resp: Response object that will be routed to
-                                the on_* responder
+                                the on_* responder.
                         \"""
 
                     def process_resource(self, req, resp, resource):
@@ -57,33 +57,36 @@ class API(object):
 
                         Args:
                             req: Request object that will be passed to the
-                                routed responder
+                                routed responder.
                             resp: Response object that will be passed to the
-                                responder
+                                responder.
                             resource: Resource object to which the request was
                                 routed. May be None if no route was found for
-                                the request
+                                the request.
                         \"""
 
                     def process_response(self, req, resp, resource)
                         \"""Post-processing of the response (after routing).
 
                         Args:
-                            req: Request object
-                            resp: Response object
+                            req: Request object.
+                            resp: Response object.
                             resource: Resource object to which the request was
                                 routed. May be None if no route was found
-                                for the request
+                                for the request.
                         \"""
+
             See also :ref:`Middleware <middleware>`.
-        request_type (Request, optional): Request-like class to use instead
+
+        request_type (Request, optional): ``Request``-like class to use instead
             of Falcon's default class. Among other things, this feature
             affords inheriting from ``falcon.request.Request`` in order
             to override the ``context_type`` class variable.
-            (default falcon.request.Request)
-        response_type (Response, optional): Response-like class to use
+            (default ``falcon.request.Request``)
+
+        response_type (Response, optional): ``Response``-like class to use
             instead of Falcon's default class. (default
-            falcon.response.Response)
+            ``falcon.response.Response``)
 
     Attributes:
         req_options (RequestOptions): A set of behavioral options related to
@@ -265,7 +268,7 @@ class API(object):
         Args:
             uri_template (str): A templatized URI. Care must be
                 taken to ensure the template does not mask any sink
-                patterns, if any are registered (see also ``add_sink``).
+                patterns, if any are registered (see also `add_sink`).
             resource (instance): Object which represents a REST
                 resource. Falcon will pass "GET" requests to on_get,
                 "PUT" requests to on_put, etc. If any HTTP methods are not
@@ -311,7 +314,7 @@ class API(object):
                 Note:
                     If the prefix overlaps a registered route template,
                     the route will take precedence and mask the sink
-                    (see also ``add_route``).
+                    (see also `add_route`).
 
         """
 
@@ -349,7 +352,7 @@ class API(object):
                             raise falcon.HTTPError(falcon.HTTP_792)
 
                 Note:
-                    A handler can either raise an instance of HTTPError
+                    A handler can either raise an instance of ``HTTPError``
                     or modify resp manually in order to communicate
                     information about the issue to the client.
 
@@ -403,12 +406,12 @@ class API(object):
             to override this behavior.
 
         Args:
-            serializer (callable): A function of the form
+            serializer (callable): A function taking the form
                 ``func(req, exception)``, where `req` is the request
                 object that was passed to the responder method, and
-                `exception` is an instance of falcon.HTTPError.
-                The function must return a tuple of the form
-                ``(media_type, representation)``, or ``(None, None)``
+                `exception` is an instance of ``falcon.HTTPError``.
+                The function must return a ``tuple`` of the form
+                (*media_type*, *representation*), or (``None``, ``None``)
                 if the client does not support any of the
                 available media types.
 
@@ -428,7 +431,7 @@ class API(object):
 
         Returns:
             A 3-member tuple consisting of a responder callable,
-            a dict containing parsed path fields (if any were specified in
+            a ``dict`` containing parsed path fields (if any were specified in
             the matching route's URI template), and a reference to the
             responder's resource instance.
 
@@ -583,11 +586,11 @@ class API(object):
                 when resp.stream is a file-like object (default None).
 
         Returns:
-            * If resp.body is not *None*, returns [resp.body], encoded
+            * If resp.body is not ``None``, returns [resp.body], encoded
               as UTF-8 if it is a Unicode string. Bytestrings are returned
               as-is.
-            * If resp.data is not *None*, returns [resp.data]
-            * If resp.stream is not *None*, returns resp.stream
+            * If resp.data is not ``None``, returns [resp.data]
+            * If resp.stream is not ``None``, returns resp.stream
               iterable using wsgi.file_wrapper, if possible.
             * Otherwise, returns []
 

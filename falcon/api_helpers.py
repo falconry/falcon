@@ -86,12 +86,12 @@ def default_serialize_error(req, exception):
         override this one.
 
     Args:
-        req: Instance of falcon.Request
-        exception: Instance of falcon.HTTPError
+        req: Instance of ``falcon.Request``
+        exception: Instance of ``falcon.HTTPError``
 
     Returns:
-        A tuple of the form ``(media_type, representation)``, or
-        ``(None, None)`` if the client does not support any of the
+        A ``tuple`` of the form (*media_type*, *representation*), or
+        (``None``, ``None``) if the client does not support any of the
         available media types.
 
     """

@@ -3,20 +3,15 @@
 Installation
 ============
 
-Install from PyPI
------------------
-
-Falcon is super easy to install with pip. If you don't have pip yet,
-please run—don't walk—to the
-`pip website <http://www.pip-installer.org/en/latest/installing.html>`_
-and get that happy little tool installed before you do anything else.
-
 .. note::
 
   This documentation targets the upcoming 0.2 release of Falcon,
   currently in beta and available on PyPI. You will need to use the
   ``--pre`` flag with pip in order to install the Falcon 0.2 betas
   and release candidates.
+
+Install from PyPI
+-----------------
 
 If available, Falcon will compile itself with Cython for an extra
 speed boost. The following will make sure Cython is installed first, and
@@ -26,7 +21,8 @@ that you always have the latest and greatest.
 
     $ pip install --upgrade cython falcon
 
-If you are on PyPy, you won't need Cython, of course:
+Note that if you are running on PyPy, you won't need Cython, so you can just
+type:
 
 .. code:: bash
 

@@ -45,7 +45,7 @@ def deprecated(instructions):
 
     Args:
         instructions (str): Specific guidance for the developer, e.g.:
-            "Please migrate to add_proxy(...)"
+            'Please migrate to add_proxy(...)''
     """
 
     def decorator(func):
@@ -70,14 +70,13 @@ def deprecated(instructions):
 
 
 def dt_to_http(dt):
-    """Converts a datetime instance to an HTTP date string.
+    """Converts a ``datetime`` instance to an HTTP date string.
 
     Args:
-        dt (datetime): A *datetime.datetime* instance, assumed to be UTC.
+        dt (datetime): A ``datetime`` instance to convert, assumed to be UTC.
 
     Returns:
-        str: An RFC 1123 date string, e.g.:
-            "Tue, 15 Nov 1994 12:45:26 GMT".
+        str: An RFC 1123 date string, e.g.: "Tue, 15 Nov 1994 12:45:26 GMT".
 
     """
 
@@ -102,18 +101,18 @@ def http_date_to_dt(http_date):
 
 
 def to_query_str(params):
-    """Converts a dict of params to a query string.
+    """Converts a dictionary of params to a query string.
 
     Args:
         params (dict): A dictionary of parameters, where each key is a
-            parameter name, and each value is either a string or
-            something that can be converted into a string. If `params`
-            is a list, it will be converted to a comma-delimited string
-            of values (e.g., "thing=1,2,3")
+            parameter name, and each value is either a ``str`` or
+            something that can be converted into a ``str``. If `params`
+            is a ``list``, it will be converted to a comma-delimited string
+            of values (e.g., 'thing=1,2,3')
 
     Returns:
-        str: A URI query string including the "?" prefix, or an empty string
-            if no params are given (the dict is empty).
+        str: A URI query string including the '?' prefix, or an empty string
+            if no params are given (the ``dict`` is empty).
     """
 
     if not params:
@@ -145,7 +144,7 @@ def get_bound_method(obj, method_name):
         method_name: Name of the method to retrieve.
 
     Returns:
-        Bound method, or `None` if the method does not exist on
+        Bound method, or ``None`` if the method does not exist on
         the object.
 
     Raises:

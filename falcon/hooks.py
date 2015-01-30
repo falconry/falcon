@@ -29,7 +29,7 @@ def before(action):
             reference to the resource class instance associated with the
             request, and `params` is a dict of URI Template field names,
             if any, that will be passed into the resource responder as
-            *kwargs*.
+            kwargs.
 
             Note:
                 Hooks may inject extra params as needed. For example::
@@ -161,8 +161,8 @@ def _has_self(spec):
 
     Warning:
         If a method's spec lists "self", that doesn't necessarily mean
-        that it should be called with a "self" param; if the method
-        instance is bound, the caller must omit "self" on invocation.
+        that it should be called with a `self` param; if the method
+        instance is bound, the caller must omit `self` on invocation.
 
     """
 
@@ -174,13 +174,13 @@ def _wrap_with_after(action, responder, resource=None, is_method=False):
 
     Args:
         action: A function with a signature similar to a resource responder
-            method, taking (req, resp, resource).
+            method, taking the form ``func(req, resp, resource)``.
         responder: The responder method to wrap.
-        resource: The resource affected by `action` (default None). If None,
-            `is_method` MUST BE True, so that the resource can be
-            derived from the `self` param that is passed into the wrapper
+        resource: The resource affected by `action` (default ``None``). If
+            ``None``, `is_method` MUST BE True, so that the resource can be
+            derived from the `self` param that is passed into the wrapper.
         is_method: Whether or not `responder` is an unbound method
-            (default False)
+            (default ``False``).
 
     """
 
@@ -223,13 +223,13 @@ def _wrap_with_before(action, responder, resource=None, is_method=False):
 
     Args:
         action: A function with a similar signature to a resource responder
-            method, taking (req, resp, resource, params)
+            method, taking the form ``func(req, resp, resource, params)``.
         responder: The responder method to wrap
-        resource: The resource affected by `action` (default None). If None,
-            `is_method` MUST BE True, so that the resource can be
+        resource: The resource affected by `action` (default ``None``). If
+            ``None``, `is_method` MUST BE True, so that the resource can be
             derived from the `self` param that is passed into the wrapper
         is_method: Whether or not `responder` is an unbound method
-            (default False)
+            (default ``False``)
 
     """
 

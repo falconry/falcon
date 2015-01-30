@@ -19,7 +19,7 @@ from .helpers import rand_string
 class TestResource:
     """Mock resource for integration testing.
 
-    This class implements the *on_get* responder, captures
+    This class implements the `on_get` responder, captures
     request data, and sets response body and headers.
 
     Child classes may add additional methods and attributes as
@@ -30,13 +30,14 @@ class TestResource:
         sample_body (str): Random body string to set in the response
         resp_headers (dict): Sample headers to use in the response
 
-        req (falcon.Request): Request object passed into the *on_get*
-            responder
-        resp (falcon.Response): Response object passed into the *on_get*
-            responder
-        kwargs (dict): Keyword arguments passed into the *on_get*
-            responder, if any
-        called (bool): True if *on_get* was ever called; False otherwise
+        req (falcon.Request): Request object passed into the `on_get`
+            responder.
+        resp (falcon.Response): Response object passed into the `on_get`
+            responder.
+        kwargs (dict): Keyword arguments passed into the `on_get`
+            responder, if any.
+        called (bool): ``True`` if `on_get` was ever called; ``False``
+            otherwise.
 
 
     """
@@ -57,13 +58,13 @@ class TestResource:
     def on_get(self, req, resp, **kwargs):
         """GET responder.
 
-        Captures req, resp, and kwargs. Also sets up a sample response.
+        Captures `req`, `resp`, and `kwargs`. Also sets up a sample response.
 
         Args:
-            req: Falcon `Request` instance
-            resp: Falcon `Response` instance
+            req: Falcon ``Request`` instance.
+            resp: Falcon ``Response`` instance.
             kwargs: URI template *name=value* pairs, if any, along with
-                any extra args injected by middleware
+                any extra args injected by middleware.
 
         """
 

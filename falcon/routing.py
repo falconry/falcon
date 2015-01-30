@@ -67,7 +67,7 @@ def compile_uri_template(template):
 
 # NOTE(kgriffs): Published method; take care to avoid breaking changes.
 def create_http_method_map(resource, uri_fields, before, after):
-    """Maps HTTP methods (e.g., GET, POST) to methods of a resource object.
+    """Maps HTTP methods (e.g., 'GET', 'POST') to methods of a resource object.
 
     Args:
         resource: An object with *responder* methods, following the naming
@@ -78,9 +78,9 @@ def create_http_method_map(resource, uri_fields, before, after):
         uri_fields: A set of field names from the route's URI template
             that a responder must support in order to avoid "method not
             allowed".
-        before: An action hook or list of hooks to be called before each
+        before: An action hook or ``list`` of hooks to be called before each
             *on_\** responder defined by the resource.
-        after: An action hook or list of hooks to be called after each
+        after: An action hook or ``list`` of hooks to be called after each
             *on_\** responder defined by the resource.
 
     Returns:
