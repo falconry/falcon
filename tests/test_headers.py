@@ -103,6 +103,22 @@ class HeaderHelpersResource:
         self.resp = resp
 
 
+class UnicodeHeaderResource(HeaderHelpersResource):
+
+    def on_head(self, req, resp):
+        resp.set_header('Content-Type', u'x-swallow/unladen')
+        resp.set_header(u'X-Auth-Token', 'setecastronomy')
+        resp.set_header(u'X-AUTH-TOKEN', u'toomanysecrets')
+
+        resp.location = '/things/87'
+        del resp.location
+
+        self._overwrite_headers(req, resp)
+
+        self.resp = resp
+
+
+
 class LocationHeaderUnicodeResource:
 
     URL1 = u'/\u00e7runchy/bacon'
@@ -358,6 +374,27 @@ class TestHeaders(testing.TestBase):
 
     def test_response_set_header(self):
         self.resource = HeaderHelpersResource()
+        self.api.add_route(self.test_route, self.resource)
+
+        for method in ('HEAD', 'POST', 'PUT'):
+            self.simulate_request(self.test_route, method=method)
+
+            content_type = 'x-falcon/peregrine'
+            self.assertIn(('content-type', content_type), self.srmock.headers)
+            self.assertIn(('cache-control', 'no-store'), self.srmock.headers)
+            self.assertIn(('x-auth-token', 'toomanysecrets'),
+                          self.srmock.headers)
+
+            self.assertEqual(None, self.resource.resp.location)
+
+            # Check for duplicate headers
+            hist = defaultdict(lambda: 0)
+            for name, value in self.srmock.headers:
+                hist[name] += 1
+                self.assertEqual(1, hist[name])
+
+    def test_response_header_unicode(self):
+        self.resource = UnicodeHeaderResource()
         self.api.add_route(self.test_route, self.resource)
 
         for method in ('HEAD', 'POST', 'PUT'):
