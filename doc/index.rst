@@ -115,7 +115,7 @@ Classes and Functions
    api/request_and_response
    api/status
    api/errors
+   api/middleware
    api/hooks
    api/routing
    api/util
-
