@@ -140,8 +140,10 @@ class Response(object):
 
         """
 
-        if isinstance(name, six.text_type): name.encode('utf-8')
-        if isinstance(value, six.text_type): value.encode('utf-8')
+        if isinstance(name, six.text_type):
+            name.encode('utf-8')
+        if isinstance(value, six.text_type):
+            value.encode('utf-8')
 
         # NOTE(kgriffs): normalize name by lowercasing it
         self._headers[name.lower()] = value
