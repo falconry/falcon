@@ -18,9 +18,9 @@ The middleware interface is defined as follows:
 
             Args:
                 req: Request object that will eventually be
-                    routed to an on_* responder method
+                    routed to an on_* responder method.
                 resp: Response object that will be routed to
-                    the on_* responder
+                    the on_* responder.
             """
 
         def process_resource(self, req, resp, resource):
@@ -28,23 +28,23 @@ The middleware interface is defined as follows:
 
             Args:
                 req: Request object that will be passed to the
-                    routed responder
+                    routed responder.
                 resp: Response object that will be passed to the
-                    responder
+                    responder.
                 resource: Resource object to which the request was
                     routed. May be None if no route was found for
-                    the request
+                    the request.
             """
 
-        def process_response(self, req, resp, resource)
+        def process_response(self, req, resp, resource):
             """Post-processing of the response (after routing).
 
             Args:
-                req: Request object
-                resp: Response object
+                req: Request object.
+                resp: Response object.
                 resource: Resource object to which the request was
                     routed. May be None if no route was found
-                    for the request
+                    for the request.
             """
 
 Because middleware can execute before routing has occurred, if a

@@ -16,16 +16,16 @@ from falcon import util
 
 
 class StartResponseMock:
-    """Mock object that represents a WSGI "start_response" callable.
+    """Mock object representing a WSGI `start_response` callable.
 
     Attributes:
-        call_count (int): Number of times start_response was called.
-        status (str): HTTP status line, e.g. "785 TPS Cover Sheet
-            not attached".
+        call_count (int): Number of times `start_response` was called.
+        status (str): HTTP status line, e.g. '785 TPS Cover Sheet
+            not attached'.
         headers (list): Raw headers list passed to `start_response`,
             per PEP-333.
         headers_dict (dict): Headers as a case-insensitive
-            dictionary, instead of a list.
+            ``dict``-like object, instead of a ``list``.
 
     """
 

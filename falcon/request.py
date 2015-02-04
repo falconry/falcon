@@ -59,35 +59,35 @@ class Request(object):
 
     Attributes:
         protocol (str): Either 'http' or 'https'.
-        method (str): HTTP method requested (e.g., GET, POST, etc.)
+        method (str): HTTP method requested (e.g., 'GET', 'POST', etc.)
         host (str): Hostname requested by the client
         subdomain (str): Leftmost (i.e., most specific) subdomain from the
             hostname. If only a single domain name is given, `subdomain`
-            will be *None*.
+            will be ``None``.
 
             Note:
                 If the hostname in the request is an IP address, the value
                 for `subdomain` is undefined.
 
-        user_agent (str): Value of the User-Agent header, or *None* if the
+        user_agent (str): Value of the User-Agent header, or ``None`` if the
             header is missing.
         app (str): Name of the WSGI app (if using WSGI's notion of virtual
             hosting).
-        env (dict): Reference to the WSGI *environ* dict passed in from the
+        env (dict): Reference to the WSGI environ ``dict`` passed in from the
             server. See also PEP-3333.
         context (dict): Dictionary to hold any data about the request which is
             specific to your app (e.g. session object). Falcon itself will
             not interact with this attribute after it has been initialized.
         context_type (class): Class variable that determines the
             factory or type to use for initializing the
-            ``context`` attribute. By default, the framework will
+            `context` attribute. By default, the framework will
             instantiate standard
             ``dict`` objects. However, You may override this behavior
             by creating a custom child class of ``falcon.Request``, and
-            then passing that new class to ``falcon.API()`` by way of the
+            then passing that new class to `falcon.API()` by way of the
             latter's `request_type` parameter.
         uri (str): The fully-qualified URI for the request.
-        url (str): alias for ``uri``.
+        url (str): alias for `uri`.
         relative_uri (str): The path + query string portion of the full URI.
         path (str): Path portion of the request URL (not including query
             string).
@@ -95,18 +95,19 @@ class Request(object):
             the preceding '?' character.
         accept (str): Value of the Accept header, or '*/*' if the header is
             missing.
-        auth (str): Value of the Authorization header, or *None* if the header
-            is missing.
-        client_accepts_json (bool): True if the Accept header indicates that
-            the client is willing to receive JSON, otherwise False.
-        client_accepts_msgpack (bool): True if the Accept header indicates
-            that the client is willing to receive MessagePack, otherwise False.
-        client_accepts_xml (bool): True if the Accept header indicates that
-            the client is willing to receive XML, otherwise False.
-        content_type (str): Value of the Content-Type header, or *None* if
+        auth (str): Value of the Authorization header, or ``None`` if the
+            header is missing.
+        client_accepts_json (bool): ``True`` if the Accept header indicates
+            that the client is willing to receive JSON, otherwise ``False``.
+        client_accepts_msgpack (bool): ``True`` if the Accept header indicates
+            that the client is willing to receive MessagePack, otherwise
+            ``False``.
+        client_accepts_xml (bool): ``True`` if the Accept header indicates that
+            the client is willing to receive XML, otherwise ``False``.
+        content_type (str): Value of the Content-Type header, or ``None`` if
             the header is missing.
         content_length (int): Value of the Content-Length header converted
-            to an int, or *None* if the header is missing.
+            to an ``int``, or ``None`` if the header is missing.
         stream: File-like object for reading the body of the request, if any.
 
             Note:
@@ -118,18 +119,18 @@ class Request(object):
 
                 Note also that the character encoding for fields, before
                 percent-encoding non-ASCII bytes, is assumed to be
-                UTF-8. The special "_charset_" field is ignored if present.
+                UTF-8. The special `_charset_` field is ignored if present.
 
                 Falcon expects form-encoded request bodies to be
                 encoded according to the standard W3C algorithm (see
                 also http://goo.gl/6rlcux).
 
         date (datetime): Value of the Date header, converted to a
-            `datetime.datetime` instance. The header value is assumed to
+            ``datetime`` instance. The header value is assumed to
             conform to RFC 1123.
-        expect (str): Value of the Expect header, or *None* if the
+        expect (str): Value of the Expect header, or ``None`` if the
             header is missing.
-        range (tuple of int): A 2-member tuple parsed from the value of the
+        range (tuple of int): A 2-member ``tuple`` parsed from the value of the
             Range header.
 
             The two members correspond to the first and last byte
@@ -141,15 +142,15 @@ class Request(object):
             Only continous ranges are supported (e.g., "bytes=0-0,-1" would
             result in an HTTPBadRequest exception when the attribute is
             accessed.)
-        if_match (str): Value of the If-Match header, or *None* if the
+        if_match (str): Value of the If-Match header, or ``None`` if the
             header is missing.
-        if_none_match (str): Value of the If-None-Match header, or *None*
+        if_none_match (str): Value of the If-None-Match header, or ``None``
             if the header is missing.
         if_modified_since (str): Value of the If-Modified-Since header, or
-            None if the header is missing.
+            ``None`` if the header is missing.
         if_unmodified_since (str): Value of the If-Unmodified-Sinc header,
-            or *None* if the header is missing.
-        if_range (str): Value of the If-Range header, or *None* if the
+            or ``None`` if the header is missing.
+        if_range (str): Value of the If-Range header, or ``None`` if the
             header is missing.
 
         headers (dict): Raw HTTP headers from the request with
@@ -157,7 +158,7 @@ class Request(object):
             to create this dict is done the first time this attribute
             is accessed. This parsing can be costly, so unless you
             need all the headers in this format, you should use the
-            ``get_header`` method or one of the convenience attributes
+            `get_header` method or one of the convenience attributes
             instead, to get a value for a specific header.
 
         params (dict): The mapping of request query parameter names to their
@@ -488,9 +489,9 @@ class Request(object):
             media_type (str): An Internet media type to check.
 
         Returns:
-            bool: True if the client has indicated in the Accept header that
-                it accepts the specified media type. Otherwise, returns
-                False.
+            bool: ``True`` if the client has indicated in the Accept header
+                that it accepts the specified media type. Otherwise, returns
+                ``False``.
         """
 
         accept = self.accept
@@ -516,7 +517,7 @@ class Request(object):
 
         Returns:
             str: The client's preferred media type, based on the Accept
-                header. Returns *None* if the client does not accept any
+                header. Returns ``None`` if the client does not accept any
                 of the given types.
         """
 
@@ -534,12 +535,12 @@ class Request(object):
 
         Args:
             name (str): Header name, case-insensitive (e.g., 'Content-Type')
-            required (bool, optional): Set to True to raise HttpBadRequest
-                instead of returning gracefully when the header is not found
-                (default False).
+            required (bool, optional): Set to ``True`` to raise
+                ``HTTPBadRequest`` instead of returning gracefully when the
+                header is not found (default ``False``).
 
         Returns:
-            str: The value of the specified header if it exists, or *None* if
+            str: The value of the specified header if it exists, or ``None`` if
                 the header is not found and is not required.
 
         Raises:
@@ -589,20 +590,20 @@ class Request(object):
         Note:
             Similar to the way multiple keys in form data is handled,
             if a query parameter is assigned a comma-separated list of
-            values (e.g., foo=a,b,c), only one of those values will be
+            values (e.g., 'foo=a,b,c'), only one of those values will be
             returned, and it is undefined which one. Use
             `req.get_param_as_list()` to retrieve all the values.
 
         Args:
-            name (str): Parameter name, case-sensitive (e.g., 'sort')
-            required (bool, optional): Set to True to raise HTTPBadRequest
-                instead of returning gracefully when the parameter is not
-                found (default False)
-            store (dict, optional): A dict-like object in which to place the
-                value of the param, but only if the param is present.
+            name (str): Parameter name, case-sensitive (e.g., 'sort').
+            required (bool, optional): Set to ``True`` to raise
+                ``HTTPBadRequest`` instead of returning ``None`` when the
+                parameter is not found (default ``False``).
+            store (dict, optional): A ``dict``-like object in which to place
+                the value of the param, but only if the param is present.
 
         Returns:
-            string: The value of the param as a string, or *None* if param is
+            str: The value of the param as a string, or ``None`` if param is
                 not found and is not required.
 
         Raises:
@@ -637,24 +638,25 @@ class Request(object):
         """Return the value of a query string parameter as an int.
 
         Args:
-            name (str): Parameter name, case-sensitive (e.g., 'limit')
-            required (bool, optional): Set to True to raise HTTPBadRequest
-                instead of returning gracefully when the parameter is not
-                found or is not an integer (default False).
+            name (str): Parameter name, case-sensitive (e.g., 'limit').
+            required (bool, optional): Set to ``True`` to raise
+                ``HTTPBadRequest`` instead of returning ``None`` when the
+                parameter is not found or is not an integer (default
+                ``False``).
             min (int, optional): Set to the minimum value allowed for this
                 param. If the param is found and it is less than min, an
-                HTTPError is raised.
+                ``HTTPError`` is raised.
             max (int, optional): Set to the maximum value allowed for this
                 param. If the param is found and its value is greater than
-                max, an HTTPError is raised.
-            store (dict, optional): A dict-like object in which to place the
-                value of the param, but only if the param is found (default
-                *None*).
+                max, an ``HTTPError`` is raised.
+            store (dict, optional): A ``dict``-like object in which to place
+                the value of the param, but only if the param is found
+                (default ``None``).
 
         Returns:
             int: The value of the param if it is found and can be converted to
-                an integer. If the param is not found, returns *None*, unless
-                ``required`` is True.
+                an integer. If the param is not found, returns ``None``, unless
+                `required` is ``True``.
 
         Raises
             HTTPBadRequest: The param was not found in the request, even though
@@ -701,27 +703,31 @@ class Request(object):
                           blank_as_true=False):
         """Return the value of a query string parameter as a boolean
 
-        The following bool-like strings are supported::
+        The following boolean strings are supported::
 
             TRUE_STRINGS = ('true', 'True', 'yes')
             FALSE_STRINGS = ('false', 'False', 'no')
 
         Args:
-            name (str): Parameter name, case-sensitive (e.g., 'limit')
-            required (bool, optional): Set to True to raise HTTPBadRequest
-                instead of returning gracefully when the parameter is not
-                found or is not a recognized bool-ish string (default False).
-            store (dict, optional): A dict-like object in which to place the
-                value of the param, but only if the param is found (default
-                *None*).
-            blank_as_true (bool): If True, empty strings will be treated as
-                True.  keep_blank_qs_values must be set on the Request (or API
-                object and inherited) for empty strings to not be filtered.
+            name (str): Parameter name, case-sensitive (e.g., 'detailed').
+            required (bool, optional): Set to ``True`` to raise
+                ``HTTPBadRequest`` instead of returning ``None`` when the
+                parameter is not found or is not a recognized boolean
+                string (default ``False``).
+            store (dict, optional): A ``dict``-like object in which to place
+                the value of the param, but only if the param is found (default
+                ``None``).
+            blank_as_true (bool): If ``True``, an empty string value will be
+                treated as ``True``.  Normally empty strings are ignored, so
+                if you would like to recognize them, you must set the
+                `keep_blank_qs_values` request option to ``True``. Request
+                options are set globally for each instance of
+                ``falcon.API`` through that instance's `req_options` attribute.
 
         Returns:
             bool: The value of the param if it is found and can be converted
-            to a boolean. If the param is not found, returns *None* unless
-            required is True.
+                to a ``bool``. If the param is not found, returns ``None``
+                unless required is ``True``.
 
         Raises:
             HTTPBadRequest: A required param is missing from the request.
@@ -766,22 +772,22 @@ class Request(object):
         ala *application/x-www-form-urlencoded*.
 
         Args:
-            name (str): Parameter name, case-sensitive (e.g., 'limit')
+            name (str): Parameter name, case-sensitive (e.g., 'ids').
             transform (callable, optional): An optional transform function
-                that takes as input each element in the list as a string and
+                that takes as input each element in the list as a ``str`` and
                 outputs a transformed element for inclusion in the list that
-                will be returned. For example, passing the int function will
+                will be returned. For example, passing ``int`` will
                 transform list items into numbers.
-            required (bool, optional): Set to True to raise HTTPBadRequest
-                instead of returning gracefully when the parameter is not
-                found or is not an integer (default False)
-            store (dict, optional): A dict-like object in which to place the
-                value of the param, but only if the param is found (default
-                *None*).
+            required (bool, optional): Set to ``True`` to raise
+                ``HTTPBadRequest`` instead of returning ``None`` when the
+                parameter is not found (default ``False``).
+            store (dict, optional): A ``dict``-like object in which to place
+                the value of the param, but only if the param is found (default
+                ``None``).
 
         Returns:
             list: The value of the param if it is found. Otherwise, returns
-            *None* unless required is True. Empty list elements will be
+            ``None`` unless required is True. Empty list elements will be
             discarded. For example a query string containing this::
 
                 things=1,,3
@@ -796,6 +802,8 @@ class Request(object):
 
         Raises:
             HTTPBadRequest: A required param is missing from the request.
+            HTTPInvalidParam: A tranform function raised an instance of
+                ``ValueError``.
 
         """
 
@@ -841,9 +849,8 @@ class Request(object):
         result out to the WSGI server's error stream (`wsgi.error`).
 
         Args:
-            message (str): A string describing the problem. If a byte-string,
-                it is simply written out as-is. Unicode strings will be
-                converted to UTF-8.
+            message (str or unicode): Description of the problem. On Python 2,
+                instances of ``unicode`` will be converted to UTF-8.
 
         """
 
@@ -917,11 +924,11 @@ class Request(object):
 
 # PERF: To avoid typos and improve storage space and speed over a dict.
 class RequestOptions(object):
-    """This class is a container for Request options.
+    """This class is a container for ``Request`` options.
 
     Attributes:
         keep_blank_qs_values (bool): Set to ``True`` in order to retain
-            blank values in query string parameters (default ``False``.)
+            blank values in query string parameters (default ``False``).
 
     """
     __slots__ = (

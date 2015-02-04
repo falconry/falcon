@@ -57,32 +57,33 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1',
                    headers=None, app='', body='', method='GET',
                    wsgierrors=None, file_wrapper=None):
 
-    """Creates a mock PEP-3333 environ dict for simulating WSGI requests.
+    """Creates a mock PEP-3333 environ ``dict`` for simulating WSGI requests.
 
     Args:
         path (str, optional): The path for the request (default '/')
         query_string (str, optional): The query string to simulate, without a
             leading '?' (default '')
         protocol (str, optional): The HTTP protocol to simulate
-            (default 'HTTP/1.1'). If set 'HTTP/1.0', the Host header
+            (default 'HTTP/1.1'). If set to 'HTTP/1.0', the Host header
             will not be added to the environment.
         scheme (str): URL scheme, either 'http' or 'https' (default 'http')
         host(str): Hostname for the request (default 'falconframework.org')
         port (str or int, optional): The TCP port to simulate. Defaults to
             the standard port used by the given scheme (i.e., 80 for 'http'
             and 443 for 'https').
-        headers (dict or list, optional): Headers as a dict or an
-            iterable collection of ``(key, value)`` tuples
-        app (str): Value for the SCRIPT_NAME environ variable, described in
+        headers (dict or list, optional): Headers as a ``dict`` or an
+            iterable collection of (*key*, *value*) ``tuple``'s
+        app (str): Value for the ``SCRIPT_NAME`` environ variable, described in
             PEP-333: 'The initial portion of the request URL's "path" that
             corresponds to the application object, so that the application
             knows its virtual "location". This may be an empty string, if the
             application corresponds to the "root" of the server.' (default '')
         body (str or unicode): The body of the request (default '')
         method (str): The HTTP method to use (default 'GET')
-        wsgierrors (io): The stream to use as wsgierrors (default sys.stderr)
+        wsgierrors (io): The stream to use as *wsgierrors*
+            (default ``sys.stderr``)
         file_wrapper: Callable that returns an iterable, to be used as
-            the value for 'wsgi.file_wrapper' in the environ.
+            the value for *wsgi.file_wrapper* in the environ.
 
     """
 

@@ -22,7 +22,7 @@ def header_property(name, doc, transform=None):
         transform: Transformation function to use when setting the
             property. The value will be passed to the function, and
             the function should return the transformed value to use
-            as the value of the header (default None)
+            as the value of the header (default ``None``).
 
     """
     normalized_name = name.lower()
@@ -50,7 +50,7 @@ def format_range(value):
     """Formats a range header tuple per the HTTP spec.
 
     Args:
-        value: Tuple passed to req.range
+        value: ``tuple`` passed to `req.range`
 
     """
 

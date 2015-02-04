@@ -82,12 +82,12 @@ all other "disallowed" characters by percent-encoding them.
 
 Note:
     This utility is faster in the average case than the similar
-    `quote` function found in urlib. It also strives to be easier
+    `quote` function found in ``urlib``. It also strives to be easier
     to use by assuming a sensible default of allowed characters.
 
 Args:
     uri (str): URI or part of a URI to encode. If this is a wide
-        string (i.e., *six.text_type*), it will be encoded to
+        string (i.e., ``six.text_type``), it will be encoded to
         a UTF-8 byte array and any multibyte sequences will
         be percent-encoded as-is.
 
@@ -119,7 +119,7 @@ Args:
     uri (str): URI fragment to encode. It is assumed not to cross delimiter
         boundaries, and so any reserved URI delimiter characters
         included in it will be escaped. If `value` is a wide
-        string (i.e., *six.text_type*), it will be encoded to
+        string (i.e., ``six.text_type``), it will be encoded to
         a UTF-8 byte array and any multibyte sequences will
         be percent-encoded as-is.
 
@@ -140,7 +140,7 @@ if six.PY2:  # pragma: no cover
     def decode(encoded_uri):
         """Decodes percent-encoded characters in a URI or query string.
 
-        This function models the behavior of urllib.parse.unquote_plus, but
+        This function models the behavior of `urllib.parse.unquote_plus`, but
         is faster. It is also more robust, in that it will decode escaped
         UTF-8 mutibyte sequences.
 
@@ -148,7 +148,7 @@ if six.PY2:  # pragma: no cover
             encoded_uri (str): An encoded URI (full or partial).
 
         Returns:
-            str: A decoded URL. Will be of type *unicode* on Python 2 IFF the
+            str: A decoded URL. Will be of type ``unicode`` on Python 2 IFF the
                 URL contained escaped non-ASCII characters, in which case
                 UTF-8 is assumed per RFC 3986.
 
@@ -249,31 +249,31 @@ def parse_query_string(query_string, keep_blank_qs_values=False):
     """Parse a query string into a dict.
 
     Query string parameters are assumed to use standard form-encoding. Only
-    parameters with values are parsed. for example, given "foo=bar&flag",
-    this function would ignore "flag" unless the keep_blank_qs_values option
+    parameters with values are parsed. for example, given 'foo=bar&flag',
+    this function would ignore 'flag' unless the `keep_blank_qs_values` option
     is set.
 
     Note:
         In addition to the standard HTML form-based method for specifying
         lists by repeating a given param multiple times, Falcon supports
         a more compact form in which the param may be given a single time
-        but set to a list of comma-separated elements (e.g., 'foo=a,b,c').
+        but set to a ``list`` of comma-separated elements (e.g., 'foo=a,b,c').
 
         The two different ways of specifying lists may not be mixed in
         a single query string for the same parameter.
 
     Args:
-        query_string (str): The query string to parse
-        keep_blank_qs_values (bool): If set to True, preserves boolean fields
-            and fields with no content as blank strings.
+        query_string (str): The query string to parse.
+        keep_blank_qs_values (bool): If set to ``True``, preserves boolean
+            fields and fields with no content as blank strings.
 
     Returns:
-        dict: A dict containing ``(name, value)`` tuples, one per query
-            parameter. Note that *value* will be a string or list of
-            strings.
+        dict: A dictionary of (*name*, *value*) pairs, one per query
+            parameter. Note that *value* may be a single ``str``, or a
+            ``list`` of ``str``.
 
     Raises:
-        TypeError: query_string was not a string or buffer
+        TypeError: `query_string` was not a ``str``.
 
     """
 
@@ -317,7 +317,7 @@ def parse_query_string(query_string, keep_blank_qs_values=False):
 
 
 def parse_host(host, default_port=None):
-    """Parse a canonical host:port string into parts.
+    """Parse a canonical 'host:port' string into parts.
 
     Parse a host string (which may or may not contain a port) into
     parts, taking into account that the string may contain
@@ -331,9 +331,9 @@ def parse_host(host, default_port=None):
             the host string does not contain one (default ``None``).
 
     Returns:
-        tuple: A parsed (host, port)  tuple from the given
+        tuple: A parsed (*host*, *port*) tuple from the given
             host string, with the port converted to an ``int``.
-            If the string does not specify a port, `default_port` is
+            If the host string does not specify a port, `default_port` is
             used instead.
 
     """

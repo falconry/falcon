@@ -54,11 +54,11 @@ class HTTPError(Exception):
         title (str): Human-friendly error title (default ``None``).
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two (default ``None``).
-        headers (dict or list): A dictionary of header names and values
-            to set, or list of (name, value) tuples. Both names and
-            values must be of type str or StringType, and only character
-            values 0x00 through 0xFF may be used on platforms that use
-            wide characters.
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
 
             Note:
                 The Content-Type header, if present, will be overridden. If
@@ -68,8 +68,8 @@ class HTTPError(Exception):
                 client
 
             Note:
-                Falcon can process a list of tuples slightly faster
-                than a dict.
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
 
         headers (dict): Extra headers to return in the
             response to the client (default ``None``).
@@ -120,7 +120,7 @@ class HTTPError(Exception):
 
         Args:
             obj_type: A dict-like type that will be used to store the
-                error information (default *dict*).
+                error information (default ``dict``).
 
         Returns:
             A dictionary populated with the error's title, description, etc.

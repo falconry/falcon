@@ -50,28 +50,28 @@ class Response(object):
             simply ``bytes`` in Python 3). See also the note below.
 
             Note:
-                Under Python 2.x, if your content is of type *str*, using
+                Under Python 2.x, if your content is of type ``str``, using
                 the `data` attribute instead of `body` is the most
                 efficient approach. However, if
-                your text is of type *unicode*, you will need to use the
-                *body* attribute instead.
+                your text is of type ``unicode``, you will need to use the
+                `body` attribute instead.
 
-                Under Python 3.x, on the other hand, the 2.x *str* type can
+                Under Python 3.x, on the other hand, the 2.x ``str`` type can
                 be thought of as
-                having been replaced by what was once the *unicode* type,
+                having been replaced by what was once the ``unicode`` type,
                 and so you will need to always use the `body` attribute for
                 strings to
                 ensure Unicode characters are properly encoded in the
                 HTTP response.
 
-        stream: Either a file-like object with a *read()* method that takes
+        stream: Either a file-like object with a `read()` method that takes
             an optional size argument and returns a block of bytes, or an
             iterable object, representing response content, and yielding
-            blocks as byte strings. Falcon will use wsgi.file_wrapper, if
+            blocks as byte strings. Falcon will use *wsgi.file_wrapper*, if
             provided by the WSGI server, in order to efficiently serve
             file-like objects.
 
-        stream_len (int): Expected length of *stream* (e.g., file size).
+        stream_len (int): Expected length of `stream` (e.g., file size).
     """
 
     __slots__ = (
@@ -125,10 +125,10 @@ class Response(object):
         return self._body_encoded
 
     def set_stream(self, stream, stream_len):
-        """Convenience method for setting both stream and stream_len.
+        """Convenience method for setting both `stream` and `stream_len`.
 
-        Although the stream and stream_len properties may be set
-        directly, using this method ensures stream_len is not
+        Although the `stream` and `stream_len` properties may be set
+        directly, using this method ensures `stream_len` is not
         accidentally neglected.
 
         """
@@ -144,11 +144,11 @@ class Response(object):
 
         Args:
             name (str): Header name to set (case-insensitive). Must be of
-                type str or StringType, and only character values 0x00
+                type ``str`` or ``StringType``, and only character values 0x00
                 through 0xFF may be used on platforms that use wide
                 characters.
-            value (str): Value for the header. Must be of type str or
-                StringType, and only character values 0x00 through 0xFF
+            value (str): Value for the header. Must be of type ``str`` or
+                ``StringType``, and only character values 0x00 through 0xFF
                 may be used on platforms that use wide characters.
 
         """
@@ -166,11 +166,11 @@ class Response(object):
 
         Args:
             name (str): Header name to set (case-insensitive). Must be of
-                type str or StringType, and only character values 0x00
+                type ``str`` or ``StringType``, and only character values 0x00
                 through 0xFF may be used on platforms that use wide
                 characters.
-            value (str): Value for the header. Must be of type str or
-                StringType, and only character values 0x00 through 0xFF
+            value (str): Value for the header. Must be of type ``str`` or
+                ``StringType``, and only character values 0x00 through 0xFF
                 may be used on platforms that use wide characters.
 
         """
@@ -188,17 +188,17 @@ class Response(object):
 
         Args:
             headers (dict or list): A dictionary of header names and values
-                to set, or list of (name, value) tuples. Both names and
-                values must be of type str or StringType, and only character
-                values 0x00 through 0xFF may be used on platforms that use
-                wide characters.
+                to set, or ``list`` of (*name*, *value*) tuples. Both *name*
+                and *value* must be of type ``str`` or ``StringType``, and
+                only character values 0x00 through 0xFF may be used on
+                platforms that use wide characters.
 
                 Note:
                     Falcon can process a list of tuples slightly faster
                     than a dict.
 
         Raises:
-            ValueError: headers was not a dictionary or list of tuples.
+            ValueError: `headers` was not a ``dict`` or ``list`` of ``tuple``.
 
         """
 
@@ -236,12 +236,12 @@ class Response(object):
 
         Kwargs:
             title (str): Human-readable label for the destination of
-                the link (default None). If the title includes non-ASCII
+                the link (default ``None``). If the title includes non-ASCII
                 characters, you will need to use `title_star` instead, or
                 provide both a US-ASCII version using `title` and a
                 Unicode version using `title_star`.
             title_star (tuple of str): Localized title describing the
-                destination of the link (default None). The value must be a
+                destination of the link (default ``None``). The value must be a
                 two-member tuple in the form of (*language-tag*, *text*),
                 where *language-tag* is a standard language identifier as
                 defined in RFC 5646, Section 2.1, and *text* is a Unicode
@@ -255,7 +255,7 @@ class Response(object):
                 Note:
                     *text* will always be encoded as UTF-8. If the string
                     contains non-ASCII characters, it should be passed as
-                    a "unicode" type string (requires the 'u' prefix in
+                    a ``unicode`` type string (requires the 'u' prefix in
                     Python 2).
 
             anchor (str): Override the context IRI with a different URI
@@ -263,13 +263,13 @@ class Response(object):
                 simply the IRI of the requested resource. The value
                 provided may be a relative URI.
             hreflang (str or iterable): Either a single *language-tag*, or
-                a list or tuple of such tags to provide a hint to the client
-                as to the language of the result of following the link. A
-                list of tags may be given in order to indicate to the
+                a ``list`` or ``tuple`` of such tags to provide a hint to the
+                client as to the language of the result of following the link.
+                A list of tags may be given in order to indicate to the
                 client that the target resource is available in multiple
                 languages.
             type_hint(str): Provides a hint as to the media type of the
-                result of dereferencing the link (default None). As noted
+                result of dereferencing the link (default ``None``). As noted
                 in RFC 5988, this is only a hint and does not override the
                 Content-Type header returned when the link is followed.
 
@@ -344,15 +344,15 @@ class Response(object):
         'Content-Range',
         """A tuple to use in constructing a value for the Content-Range header.
 
-        The tuple has the form ``(start, end, length)``, where *start* and
+        The tuple has the form (*start*, *end*, *length*), where *start* and
         *end* designate the byte range (inclusive), and *length* is the
-        total number of bytes, or '*' if unknown. You may use *int*'s for
-        these numbers (no need to convert to a *str* first).
+        total number of bytes, or '*' if unknown. You may pass ``int``'s for
+        these numbers (no need to convert to ``str`` beforehand).
 
         Note:
-            You only need to use the alternate form, "bytes */1234", for
-            responses that use the status "416 Range Not Satisfiable". In this
-            case, raising falcon.HTTPRangeNotSatisfiable will do the right
+            You only need to use the alternate form, 'bytes */1234', for
+            responses that use the status '416 Range Not Satisfiable'. In this
+            case, raising ``falcon.HTTPRangeNotSatisfiable`` will do the right
             thing.
 
             See also: http://goo.gl/Iglhp
@@ -369,10 +369,10 @@ class Response(object):
 
     last_modified = header_property(
         'Last-Modified',
-        """Sets the Last-Modified header. Set to a datetime (UTC) instance.
+        """Sets the Last-Modified header. Set to a ``datetime`` (UTC) instance.
 
         Note:
-            Falcon will format the datetime as an HTTP date.
+            Falcon will format the ``datetime`` as an HTTP date string.
         """,
         dt_to_http)
 
@@ -395,8 +395,8 @@ class Response(object):
         """Value to use for the Vary header.
 
         Set this property to an iterable of header names. For a single
-        asterisk or field value, simply pass a single-element list or
-        tuple.
+        asterisk or field value, simply pass a single-element ``list`` or
+        ``tuple``.
 
         "Tells downstream proxies how to match future request headers
         to decide whether the cached response can be used rather than
@@ -414,7 +414,7 @@ class Response(object):
 
         Args:
             media_type: Default media type to use for the Content-Type
-                header if the header was not set explicitly (default None).
+                header if the header was not set explicitly (default ``None``).
 
         """
 

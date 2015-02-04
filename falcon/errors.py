@@ -50,7 +50,7 @@ class HTTPUnauthorized(HTTPError):
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         scheme (str): Authentication scheme to use as the value of the
-            WWW-Authenticate header in the response (default *None*).
+            WWW-Authenticate header in the response (default ``None``).
         kwargs (optional): Same as for ``HTTPError``.
 
     """
@@ -111,7 +111,7 @@ class HTTPMethodNotAllowed(OptionalRepresentation, HTTPError):
 
     Args:
         allowed_methods (list of str): Allowed HTTP methods for this
-            resource (e.g., ['GET', 'POST', 'HEAD']).
+            resource (e.g., ``['GET', 'POST', 'HEAD']``).
 
     """
 
@@ -243,9 +243,9 @@ class HTTPRequestEntityTooLarge(HTTPError):
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         retry_after (datetime or int, optional): Value for the Retry-After
-            header. If a datetime object, will serialize as an HTTP date.
-            Otherwise, a non-negative int is expected, representing the number
-            of seconds to wait. See also: http://goo.gl/DIrWr .
+            header. If a ``datetime`` object, will serialize as an HTTP date.
+            Otherwise, a non-negative ``int`` is expected, representing the
+            number of seconds to wait. See also: http://goo.gl/DIrWr .
         kwargs (optional): Same as for ``HTTPError``.
 
     """
@@ -337,9 +337,9 @@ class HTTPServiceUnavailable(HTTPError):
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         retry_after (datetime or int): Value for the Retry-After header. If a
-            datetime object, will serialize as an HTTP date. Otherwise,
-            a non-negative int is expected, representing the number of seconds
-            to wait. See also: http://goo.gl/DIrWr .
+            ``datetime`` object, will serialize as an HTTP date. Otherwise,
+            a non-negative ``int`` is expected, representing the number of
+            seconds to wait. See also: http://goo.gl/DIrWr .
         kwargs (optional): Same as for ``HTTPError``.
 
     """
