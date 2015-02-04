@@ -186,7 +186,7 @@ parameters, handling errors, and working with request and response bodies.
                                        'JSON was incorrect or not encoded as '
                                        'UTF-8.')
 
-        def process_response(self, req, resp):
+        def process_response(self, req, resp, resource):
             if 'result' not in req.context:
                 return
 
