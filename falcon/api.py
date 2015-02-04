@@ -29,7 +29,7 @@ class API(object):
 
     Each API instance provides a callable WSGI interface and a routing engine.
 
-    Note:
+    Warning:
         Global hooks (configured using the `before` and `after` kwargs) are
         deprecated in favor of middleware, and may be removed in a future
         version of the framework.
@@ -311,7 +311,7 @@ class API(object):
                     Named groups are converted to kwargs and passed to
                     the sink as such.
 
-                Note:
+                Warning:
                     If the prefix overlaps a registered route template,
                     the route will take precedence and mask the sink
                     (see also `add_route`).
@@ -341,7 +341,7 @@ class API(object):
                 ``exception.handle``, where ``exception`` is the error
                 type specified above, and ``handle`` is a static method
                 (i.e., decorated with @staticmethod) that accepts
-                the same params just described. For example:
+                the same params just described. For example::
 
                     class CustomException(CustomBaseException):
 

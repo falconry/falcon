@@ -1,14 +1,18 @@
 .. _middleware:
 
-Middleware
-==========
+Middleware Components
+=====================
 
-Middleware components execute both before and after the framework
-routes the request.  Middleware is registered by passing components
-to the :ref:`API class <api>` initializer.
+Middleware components provide a way to execute logic before the
+framework routes each request, after each request is routed but before
+the target responder is called, or just before the response is returned
+for each request. Components are registered with the `middleware` kwarg when instantiating
+Falcon's :ref:`API class <api>`.
 
-The middleware interface is defined as follows:
+.. Note::
+    Unlike hooks, middleware methods apply globally to the entire API.
 
+Falcon's middleware interface is defined as follows:
 
 .. code:: python
 
@@ -47,9 +51,10 @@ The middleware interface is defined as follows:
                     for the request.
             """
 
-Because middleware can execute before routing has occurred, if a
-component modifies ``req.uri`` in its *process_request* method,
-the framework will use the modified value to route the request.
+.. Tip::
+    Because *process_request* executes before routing has occurred, if a
+    component modifies ``req.uri`` in its *process_request* method,
+    the framework will use the modified value to route the request.
 
 Each component's *process_request*, *process_resource*, and
 *process_response* methods are executed hierarchically, as a stack.
