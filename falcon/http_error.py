@@ -102,7 +102,7 @@ class HTTPError(Exception):
 
         if href:
             link = self.link = OrderedDict()
-            link['text'] = (href_text or 'API documention for this error')
+            link['text'] = (href_text or 'Documentation related to this error')
             link['href'] = uri.encode(href)
             link['rel'] = 'help'
         else:

@@ -341,7 +341,7 @@ class TestHTTPError(testing.TestBase):
             'description': ('You do not have write permissions for this '
                             'queue.'),
             'link': {
-                'text': 'API documention for this error',
+                'text': 'Documentation related to this error',
                 'href': 'http://example.com/api/rbac',
                 'rel': 'help',
             },
