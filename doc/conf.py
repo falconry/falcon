@@ -96,7 +96,7 @@ exclude_patterns = ['_build']
 #show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'flask_theme_support.FlaskyStyle'
+# pygments_style = 'flask_theme_support.FlaskyStyle'
 
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
@@ -108,20 +108,20 @@ pygments_style = 'flask_theme_support.FlaskyStyle'
 # -- Options for HTML output ----------------------------------------------
 
 # Add any paths that contain custom themes here, relative to this directory.
-html_theme_path = ['_themes']
-html_theme = 'kr'
+# html_theme_path = ['_themes']
+# html_theme = 'kr'
 
 # html_theme = 'default'
 
-# if not on_rtd:
-#   # Use the RTD theme explicitly if it is available
-#   try:
-#     import sphinx_rtd_theme
+if not on_rtd:
+  # Use the RTD theme explicitly if it is available
+  try:
+    import sphinx_rtd_theme
 
-#     html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-#     html_theme = "sphinx_rtd_theme"
-#   except ImportError:
-#     pass
+    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+    html_theme = "sphinx_rtd_theme"
+  except ImportError:
+    pass
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
