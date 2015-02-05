@@ -19,7 +19,7 @@ try:
     # standard way of exposing a socket as a file-like object, and
     # is used by wsgiref for wsgi.input.
     import socket
-    NativeStream = socket._fileobject
+    NativeStream = socket._fileobject  # pylint: disable=E1101
 except AttributeError:  # pragma nocover
     # NOTE(kgriffs): In Python 3.3, wsgiref implements wsgi.input
     # using _io.BufferedReader which is an alias of io.BufferedReader
@@ -868,7 +868,7 @@ class Request(object):
         if six.PY3:
             self._wsgierrors.write(log_line + message + '\n')
         else:
-            if isinstance(message, unicode):
+            if isinstance(message, unicode):  # pylint: disable=E0602
                 message = message.encode('utf-8')
 
             self._wsgierrors.write(log_line.encode('utf-8'))
