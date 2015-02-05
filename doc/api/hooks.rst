@@ -3,7 +3,7 @@
 Hooks
 =====
 
-Falcon supports both **before** and **after** hooks. You install a hook simply by
+Falcon supports *before* and *after* hooks. You install a hook simply by
 applying one of the decorators below, either to an individual responder or
 to an entire resource.
 
@@ -39,12 +39,10 @@ decorate the resource class:
         def on_get(self, req, resp):
             pass
 
-Falcon middleware components can also be used to insert logic before and
-after requests. Unlike hooks, however, middleware components are
-triggered **globally** for all requests. This feature is
-documented in the
-:ref:`API class <api>` reference and the
-:ref:`Quickstart <quickstart-more-features>` example code.
+Falcon :ref:`middleware components <middleware>` can also be used to insert
+logic before and after requests. However, unlike hooks,
+:ref:`middleware components <middleware>` are triggered **globally** for all
+requests.
 
 .. automodule:: falcon
     :members: before, after
