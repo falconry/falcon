@@ -353,7 +353,7 @@ class API(object):
 
                 Note:
                     A handler can either raise an instance of ``HTTPError``
-                    or modify resp manually in order to communicate
+                    or modify `resp` manually in order to communicate
                     information about the issue to the client.
 
         """
@@ -381,7 +381,7 @@ class API(object):
 
         The ``falcon.HTTPError`` class contains helper methods, such as
         `to_json()` and `to_dict()`, that can be used from within
-        custom serializers. For example:
+        custom serializers. For example::
 
             def my_serializer(req, exception):
                 representation = None
