@@ -718,11 +718,11 @@ class Request(object):
                 the value of the param, but only if the param is found (default
                 ``None``).
             blank_as_true (bool): If ``True``, an empty string value will be
-                treated as ``True``.  Normally empty strings are ignored, so
-                if you would like to recognize them, you must set the
+                treated as ``True``. Normally empty strings are ignored; if
+                you would like to recognize such parameters, you must set the
                 `keep_blank_qs_values` request option to ``True``. Request
-                options are set globally for each instance of
-                ``falcon.API`` through that instance's `req_options` attribute.
+                options are set globally for each instance of ``falcon.API``
+                through the `req_options` attribute.
 
         Returns:
             bool: The value of the param if it is found and can be converted
