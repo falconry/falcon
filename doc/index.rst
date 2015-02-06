@@ -80,48 +80,13 @@ Resources
 - `An Unladen Web Framework <http://blog.kgriffs.com/2013/07/02/python-fast-web-service-framework.html>`_
 - `The Definitive Introduction to Falcon <https://speakerdeck.com/cabrera/the-definitive-introduction-to-falcon>`_
 
-Community Guide
----------------
-
-.. toctree::
-   :maxdepth: 1
-
-   community/help
-   community/contribute
-   community/faq
-
-
-User Guide
-----------
+Documentation
+-------------
 
 .. toctree::
    :maxdepth: 2
 
-   user/intro
-   user/install
-   user/quickstart
-   user/tutorial
-
-
-Classes and Functions
----------------------
-
-.. toctree::
-   :maxdepth: 2
-
-   api/api
-   api/request_and_response
-   api/status
-   api/errors
-   api/middleware
-   api/hooks
-   api/routing
-   api/util
-
-Changelogs
-----------
-
-.. toctree::
-   :glob:
-
-   changes/*
+   community/index
+   user/index
+   api/index
+   changes/index
