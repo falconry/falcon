@@ -34,26 +34,20 @@ clean design that embraces HTTP and the REST architectural style.
     app.add_route('/items/{id}', CatalogItem())
 
 
-Testimonials
-------------
+What People are Saying
+----------------------
 
-.. Who's using Falcon?
+"Falcon looks great so far. I hacked together a quick test for a
+tiny server of mine and was ~40% faster with only 20 minutes of
+work."
 
-   TODO: When we confirm enough of these, publish the list.
+"I feel like I'm just talking HTTP at last, with nothing in the
+middle. Falcon seems like the *requests* of backend."
 
-   Confirmed: IBM, Red Hat, Rackspace
-   Unconfirmed: AT&T, Marchex
+"The source code for falcon is so good, I almost prefer it to
+documentation. It basically can't be wrong."
 
-**S. Magrí**
-    I feel like I'm just talking HTTP at last, with nothing in the
-    middle. Falcon seems like the *requests* of backend.
-
-**J. Legler**
-    The source code for falcon is so good, I almost prefer it to
-    documentation. It basically can't be wrong.
-
-**K. Conway**
-    What other framework has integrated support for "786 TRY IT NOW"?
+"What other framework has integrated support for '786 TRY IT NOW' ?"
 
 
 Features
@@ -73,14 +67,18 @@ Falcon tries to do as little as possible while remaining highly effective.
 - Only depends on six and mimeparse
 - Python 2.6, 2.7, 3.3, 3.4 + PyPy
 
+Useful Links
+------------
+
+- `Falcon Home <http://falconframework.org/>`_
+- `Falcon @ PyPI <https://pypi.python.org/pypi/falcon>`_
+- `Falcon @ GitHub <https://github.com/racker/falcon>`_
 
 Resources
 ---------
 
-- `The Definitive Introduction to Falcon <https://speakerdeck.com/cabrera/the-definitive-introduction-to-falcon>`_
 - `An Unladen Web Framework <http://blog.kgriffs.com/2013/07/02/python-fast-web-service-framework.html>`_
-- `Falcon WSGI Framework: 0.1.8 Highlights <http://blog.kgriffs.com/2014/02/04/falcon-wsgi-framework-highlights-0.1.8.html>`_
-
+- `The Definitive Introduction to Falcon <https://speakerdeck.com/cabrera/the-definitive-introduction-to-falcon>`_
 
 Community Guide
 ---------------
