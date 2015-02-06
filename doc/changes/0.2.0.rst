@@ -1,0 +1,100 @@
+Changelog for Falcon 0.2.0
+==========================
+
+New
+---
+
+-  Since 0.1 we've added proper RTD docs to make it easier for everyone
+   to get started with the framework. Over time we will continue adding
+   content, and we would love your help!
+-  Falcon now supports "wsgi.filewrapper". You can assign any file-like
+   object to resp.stream and Falcon will use "wsgi.filewrapper" to more
+   efficiently pipe the data to the WSGI server.
+-  Support was added for automatically parsing requests containing
+   "application/x-www-form-urlencoded" content. Form fields are now
+   folded into req.params.
+-  Custom Request and Response classes are now supported. You can
+   specify custom types when instantiating falcon.API.
+-  A new middleware feature was added to the framework. Middleware
+   deprecates global hooks, and we encourage everyone to migrate as soon
+   as possible.
+-  A general-purpose dict attribute was added to Request. Middleware,
+   hooks, and responders can now use req.context to share contextual
+   information about the current request.
+-  A new method, append\_header, was added to falcon.API to allow
+   setting multiple values for the same header using comma separation.
+   Note that this will not work for setting cookies, but we plan to
+   address this in the next release (0.3).
+-  A new "resource" attribute was added to hooks. Old hooks that do not
+   accept this new attribute are shimmed so that they will continue to
+   function. While we have worked hard to minimize the performance
+   impact, we recommend migrating to the new function signature to avoid
+   any overhead.
+-  Error response bodies now support XML in addition to JSON. In
+   addition, the HTTPError serialization code was refactored to make it
+   easier to implement a custom error serializer.
+-  A new method, "set\_error\_serializer" was added to falcon.API. You
+   can use this method to override Falcon's default HTTPError serializer
+   if you need to support custom media types.
+-  Falcon's testing base class, testing.TestBase was improved to
+   facilitate Py3k testing. Notably, TestBase.simulate\_request now
+   takes an additional "decode" kwarg that can be used to automatically
+   decode byte-string PEP-3333 response bodies.
+-  An "add\_link" method was added to the Response class. Apps can use
+   this method to add one or more Link header values to a response.
+-  Added two new properties, req.host and req.subdomain, to make it
+   easier to get at the hostname info in the request.
+-  Allow a wider variety of characters to be used in query string
+   params.
+-  Internal APIs have been refactored to allow overriding the default
+   routing mechanism. Further modularization is planned for the next
+   release (0.3).
+-  Changed req.get\_param so that it behaves the same whether a list was
+   specified in the query string using the HTML form style (in which
+   each element is listed in a separate 'key=val' field) or in the more
+   compact API style (in which each element is comma-separated and
+   assigned to a single param instance, as in 'key=val1,val2,val3')
+-  Added a convenience method, set\_stream(...), to the Response class
+   for setting the stream and its length at the same time, which should
+   help people not forget to set both (and save a few keystrokes along
+   the way).
+-  Added several new error classes, including HTTPRequestEntityTooLarge,
+   HTTPInvalidParam, HTTPMissingParam, HTTPInvalidHeader and
+   HTTPMissingHeader.
+-  Python 3.4 is now fully supported.
+-  Various minor performance improvements
+
+Breaking Changes
+----------------
+
+-  The deprecated util.misc.percent\_escape and
+   util.misc.percent\_unescape functions were removed. Please use the
+   functions in the util.uri module instead.
+-  The deprecated function, API.set\_default\_route, was removed. Please
+   use sinks instead.
+-  HTTPRangeNotSatisfiable no longer accepts a media\_type parameter.
+-  When using the comma-delimited list convention,
+   req.get\_param\_as\_list(...) will no longer insert placeholders,
+   using the None type, for empty elements. For example, where
+   previously the query string "foo=1,,3" would result in ['1', None,
+   '3'], it will now result in ['1', '3'].
+
+Fixed
+-----
+
+-  Ensure 100% test coverage and fix any bugs identified in the process.
+-  Fix not recognizing the "bytes=" prefix in Range headers.
+-  Make HTTPNotFound and HTTPMethodNotAllowed fully compliant, according
+   to RFC 7231.
+-  Fixed the default on\_options responder causing a Cython type error.
+-  URI template strings can now be of type unicode under Python 2.
+-  When SCRIPT\_NAME is not present in the WSGI environ, return an empty
+   string for the req.app property.
+-  Global "after" hooks will now be executed even when a responder
+   raises an error.
+-  Fixed several minor issues regarding testing.create\_environ(...)
+-  Work around a wsgiref quirk, where if no content-length header is
+   submitted by the client, wsgiref will set the value of that header to
+   an empty string in the WSGI environ.
+-  Resolved an issue causing several source files to not be Cythonized.
+-  Docstrings have been edited for clarity and correctness.
