@@ -117,3 +117,11 @@ Classes and Functions
    api/hooks
    api/routing
    api/util
+
+Changelogs
+----------
+
+.. toctree::
+   :glob:
+
+   changes/*
