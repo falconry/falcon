@@ -7,6 +7,8 @@ env:
   - TOX_ENV=py27_cython
   - TOX_ENV=py33
   - TOX_ENV=py33_cython
+  - TOX_ENV=py34
+  - TOX_ENV=py34_cython
   - TOX_ENV=pypy
   - TOX_ENV=pypy3
   - TOX_ENV=pep8
