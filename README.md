@@ -80,6 +80,7 @@ $ pip install cython falcon
 ### Test ###
 
 ```bash
+$ pip install -r tools/test-requires
 $ pip install nose && nosetests
 ```
 
