@@ -99,6 +99,7 @@ Test
 
 .. code:: bash
 
+    $ pip install -r tools/test-requires
     $ pip install nose && nosetests
 
 To test across all supported Python versions:

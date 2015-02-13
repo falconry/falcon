@@ -1,0 +1,10 @@
+recursive-include tests *.py
+recursive-include doc *.rst
+include .coveragerc
+include tox.ini
+include README.md
+include doc/conf.py doc/Makefile
+graft doc/_static
+graft doc/_themes
+graft doc/_templates
+graft tools
