@@ -3,13 +3,6 @@
 Installation
 ============
 
-.. note::
-
-  This documentation targets the upcoming 0.2 release of Falcon,
-  currently in beta and available on PyPI. You will need to use the
-  ``--pre`` flag with pip in order to install the Falcon 0.2 betas
-  and release candidates.
-
 Install from PyPI
 -----------------
 
