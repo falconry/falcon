@@ -185,6 +185,38 @@ class TestFalconUtils(testtools.TestCase):
             actual = uri.decode(case)
             self.assertEqual(expect, actual)
 
+    def test_parse_query_string(self):
+        query_strinq = (
+            "a=http%3A%2F%2Ffalconframework.org%3Ftest%3D1"
+            "&b=%7B%22test1%22%3A%20%22data1%22%"
+            "2C%20%22test2%22%3A%20%22data2%22%7D"
+            "&c=1,2,3"
+            "&d=test"
+            "&e=a,,%26%3D%2C"
+            "&f=a&f=a%3Db"
+            "&%C3%A9=a%3Db"
+        )
+        decoded_url = 'http://falconframework.org?test=1'
+        decoded_json = '{"test1": "data1", "test2": "data2"}'
+
+        result = uri.parse_query_string(query_strinq)
+        self.assertEqual(result['a'], decoded_url)
+        self.assertEqual(result['b'], decoded_json)
+        self.assertEqual(result['c'], ['1', '2', '3'])
+        self.assertEqual(result['d'], 'test')
+        self.assertEqual(result['e'], ['a', '&=,'])
+        self.assertEqual(result['f'], ['a', 'a=b'])
+        self.assertEqual(result[u'é'], 'a=b')
+
+        result = uri.parse_query_string(query_strinq, True)
+        self.assertEqual(result['a'], decoded_url)
+        self.assertEqual(result['b'], decoded_json)
+        self.assertEqual(result['c'], ['1', '2', '3'])
+        self.assertEqual(result['d'], 'test')
+        self.assertEqual(result['e'], ['a', '', '&=,'])
+        self.assertEqual(result['f'], ['a', 'a=b'])
+        self.assertEqual(result[u'é'], 'a=b')
+
     def test_parse_host(self):
         self.assertEqual(uri.parse_host('::1'), ('::1', None))
         self.assertEqual(uri.parse_host('2001:ODB8:AC10:FE01::'),

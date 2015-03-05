@@ -220,16 +220,13 @@ class Request(object):
 
         # PERF(kgriffs): if...in is faster than using env.get(...)
         if 'QUERY_STRING' in env:
-            query_str = env['QUERY_STRING']
+            self.query_string = env['QUERY_STRING']
 
-            if query_str:
-                self.query_string = uri.decode(query_str)
+            if self.query_string:
                 self._params = uri.parse_query_string(
                     self.query_string,
                     keep_blank_qs_values=self.options.keep_blank_qs_values,
                 )
-            else:
-                self.query_string = six.text_type()
 
         else:
             self.query_string = six.text_type()
@@ -915,7 +912,7 @@ class Request(object):
 
         if body:
             extra_params = uri.parse_query_string(
-                uri.decode(body),
+                body,
                 keep_blank_qs_values=self.options.keep_blank_qs_values,
             )
 

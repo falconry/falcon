@@ -49,7 +49,7 @@ class _TestQueryParams(testing.TestBase):
         self.assertEqual(store['limit'], '25')
 
     def test_percent_encoded(self):
-        query_string = 'id=23%2c42&q=%e8%b1%86+%e7%93%a3'
+        query_string = 'id=23,42&q=%e8%b1%86+%e7%93%a3'
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
