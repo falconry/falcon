@@ -13,7 +13,7 @@ VERSION = VERSION.__version__
 
 # NOTE(kgriffs): python-mimeparse is newer than mimeparse, supports Py3
 # TODO(kgriffs): Fork and optimize/modernize python-mimeparse
-REQUIRES = ['six', 'python-mimeparse']
+REQUIRES = ['six>=1.4.0', 'python-mimeparse']
 
 PYPY = True
 CYTHON = False
