@@ -731,8 +731,8 @@ class API(object):
         PCT_ENCODED = '%[0-9A-Fa-f]{2}'
         UNRESERVED = '[^/]'
         RESERVED = r'[:/\?#\[\]@\!\$&\'\(\)\*\+,;=]'
-        BASIC_VARIABLE = '{([a-zA-Z][a-zA-Z_]+)}'
-        RESERVED_VARIABLE = r'{\+([a-zA-Z][a-zA-Z_]+)}'
+        BASIC_VARIABLE = '{([a-zA-Z]\w+)}'
+        RESERVED_VARIABLE = r'{\+([a-zA-Z]\w+)}'
 
         # Get a list of field names
         fields = set(re.findall(BASIC_VARIABLE, template))
