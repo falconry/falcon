@@ -54,13 +54,6 @@ Features
 
 Install
 ~~~~~~~
-.. note::
-
-  This documentation targets the upcoming 0.2 release of Falcon,
-  currently in beta and available on PyPI. You will need to use the
-  ``--pre`` flag with pip in order to install the Falcon 0.2 betas
-  and release candidates.
-
 If available, Falcon will compile itself with Cython for an extra
 speed boost. The following will make sure Cython is installed first, and
 that you always have the latest and greatest.
