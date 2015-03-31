@@ -570,7 +570,7 @@ class Request(object):
 
             raise HTTPMissingParam(name)
 
-    def get_param(self, name, required=False, store=None):
+    def get_param(self, name, required=False, store=None, default=None):
         """Return the value of a query string parameter as a string.
 
         Note:
@@ -596,6 +596,8 @@ class Request(object):
                 found (default False)
             store (dict, optional): A dict-like object in which to place the
                 value of the param, but only if the param is found.
+            default (any, optional): If the param is not found returns the
+                given value instead of None
 
         Returns:
             string: The value of the param as a string, or *None* if param is
@@ -625,7 +627,7 @@ class Request(object):
             return param
 
         if not required:
-            return None
+            return default
 
         raise HTTPMissingParam(name)
 
