@@ -915,8 +915,9 @@ class Request(object):
 
         if body:
             extra_params = uri.parse_query_string(
-                uri.decode(body),
+                body,
                 keep_blank_qs_values=self.options.keep_blank_qs_values,
+                encoded_qs=True,
             )
 
             self._params.update(extra_params)

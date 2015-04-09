@@ -245,7 +245,8 @@ else:  # pragma: no cover
         return decoded_uri.decode('utf-8', 'replace')
 
 
-def parse_query_string(query_string, keep_blank_qs_values=False):
+def parse_query_string(query_string,
+                       keep_blank_qs_values=False, encoded_qs=False):
     """Parse a query string into a dict.
 
     Query string parameters are assumed to use standard form-encoding. Only
@@ -264,8 +265,10 @@ def parse_query_string(query_string, keep_blank_qs_values=False):
 
     Args:
         query_string (str): The query string to parse.
-        keep_blank_qs_values (bool): If set to ``True``, preserves boolean
-            fields and fields with no content as blank strings.
+        keep_blank_qs_values (bool, optional): If set to ``True``, preserves
+            boolean fields and fields with no content as blank strings.
+        encoded_qs (bool, optional): Set to ``True`` if the query string passed
+            is in encoded form.
 
     Returns:
         dict: A dictionary of (*name*, *value*) pairs, one per query
@@ -284,6 +287,7 @@ def parse_query_string(query_string, keep_blank_qs_values=False):
     # and on PyPy 2.3.
     for field in query_string.split('&'):
         k, _, v = field.partition('=')
+        k, v = map(lambda a: decode(a), (k, v)) if encoded_qs else (k, v)
         if not (v or keep_blank_qs_values):
             continue
 
