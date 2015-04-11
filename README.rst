@@ -434,7 +434,7 @@ permissions and limitations under the License.
 .. |Runner| image:: https://a248.e.akamai.net/assets.github.com/images/icons/emoji/runner.png
     :width: 20
     :height: 20
-.. |Build Status| image:: https://travis-ci.org/racker/falcon.png
+.. |Build Status| image:: https://travis-ci.org/racker/falcon.svg
    :target: https://travis-ci.org/racker/falcon
-.. |Coverage Status| image:: https://coveralls.io/repos/racker/falcon/badge.png?branch=master
+.. |Coverage Status| image:: https://coveralls.io/repos/racker/falcon/badge.svg?branch=master
    :target: https://coveralls.io/r/racker/falcon
