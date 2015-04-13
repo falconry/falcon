@@ -343,6 +343,9 @@ class Request(object):
             value = self.env['HTTP_RANGE']
             if value.startswith('bytes='):
                 value = value[6:]
+            else:
+                msg = "The value must be prefixed with 'bytes='"
+                raise HTTPInvalidHeader(msg, 'Range')
         except KeyError:
             return None
 
