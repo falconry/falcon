@@ -1,4 +1,4 @@
-Falcon [![Build Status](https://travis-ci.org/racker/falcon.svg)](https://travis-ci.org/racker/falcon) [![Coverage Status](https://coveralls.io/repos/racker/falcon/badge.svg?branch=master)](https://coveralls.io/r/racker/falcon)
+Falcon [![Build Status](https://travis-ci.org/falconry/falcon.svg)](https://travis-ci.org/falconry/falcon) [![Coverage Status](https://coveralls.io/repos/falconry/falcon/badge.svg?branch=master)](https://coveralls.io/r/falconry/falcon)
 ======
 
 :runner: Come hang out with us in **#falconframework** on freenode.
@@ -23,7 +23,7 @@ Falcon is a [high-performance Python framework][home] for building cloud APIs. I
 **Flexible.** Falcon can be deployed in a variety of ways, depending on your needs. The framework speaks WSGI, and works great with [Python 2.6 and 2.7, PyPy, and Python 3.3/3.4][ci]. There's no tight coupling with any async framework, leaving you free to mix-and-match what you need.
 
 [bench]: http://falconframework.org/#Metrics
-[ci]: https://travis-ci.org/racker/falcon
+[ci]: https://travis-ci.org/falconry/falcon
 
 ### Features ###
 
@@ -390,7 +390,7 @@ Comments follow [Google's style guide][goog-style-comments].
 
 ### Legal ###
 
-Copyright 2013 by Rackspace Hosting, Inc.
+Copyright 2013 by Rackspace Hosting, Inc. and other contributors as noted in the individual source files.
 
 Falcon image courtesy of [John O'Neill](https://commons.wikimedia.org/wiki/File:Brown-Falcon,-Vic,-3.1.2008.jpg).
 
