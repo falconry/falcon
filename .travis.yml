@@ -1,6 +1,9 @@
 language: python
 sudo: false
 install: pip install tox coveralls --use-mirrors
+cache:
+    directories:
+        - $HOME/.cache/pip
 env:
   - TOX_ENV=py26
   - TOX_ENV=py27
