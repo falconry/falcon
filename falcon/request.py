@@ -866,7 +866,7 @@ class Request(object):
             msg = "The date value does not match the required format"
             raise HTTPInvalidParam(msg, name)
             
-        if store != None:
+        if store is not None:
             store[name] = date
         return date
 
