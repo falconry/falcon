@@ -117,6 +117,16 @@ class LocationHeaderUnicodeResource:
         resp.content_location = self.URL1
 
 
+class UnicodeHeaderResource:
+
+    def on_get(self, req, resp):
+        resp.set_headers([
+            (u'X-auTH-toKEN', 'toomanysecrets'),
+            ('Content-TYpE', u'application/json'),
+            (u'X-symBOl', u'\u0040'),
+        ])
+
+
 class VaryHeaderResource:
 
     def __init__(self, vary):
@@ -355,6 +365,19 @@ class TestHeaders(testing.TestBase):
 
         content_location = ('content-location', '/%C3%A7runchy/bacon')
         self.assertIn(content_location, self.srmock.headers)
+
+    def test_unicode_headers(self):
+        self.api.add_route(self.test_route, UnicodeHeaderResource())
+        self.simulate_request(self.test_route)
+
+        expect = ('x-auth-token', 'toomanysecrets')
+        self.assertIn(expect, self.srmock.headers)
+
+        expect = ('content-type', 'application/json')
+        self.assertIn(expect, self.srmock.headers)
+
+        expect = ('x-symbol', '@')
+        self.assertIn(expect, self.srmock.headers)
 
     def test_response_set_header(self):
         self.resource = HeaderHelpersResource()
