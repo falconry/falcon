@@ -860,7 +860,7 @@ class Request(object):
         """
         param_value = self.get_param(name, required=required)
         try:
-            date = datetime.datetime.strptime(param_value, format_string).date()
+            date = datetime.strptime(param_value, format_string).date()
         except ValueError:
             msg = "The date value does not match the required format"
             raise HTTPInvalidParam(msg, name)
