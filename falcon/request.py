@@ -869,6 +869,44 @@ class Request(object):
 
         raise HTTPMissingParam(name)
 
+    def get_param_as_date(self, name, format_string='%Y-%m-%d',
+                          required=False, store=None):
+        """
+        Args:
+            name (str): Parameter name, case-sensitive (e.g., 'ids').
+            format_string (str): String used to parse the param value into a
+                date.
+                Any format recognized by strptime() is supported.
+                (default ``"%Y-%m-%d"``)
+            required (bool, optional): Set to ``True`` to raise
+                ``HTTPBadRequest`` instead of returning ``None`` when the
+                parameter is not found (default ``False``).
+            store (dict, optional): A ``dict``-like object in which to place
+                the value of the param, but only if the param is found (default
+                ``None``).
+        Returns:
+            datetime.date
+
+        Raises:
+            HTTPBadRequest: A required param is missing from the request.
+            HTTPInvalidParam: A tranform function raised an instance of
+                ``ValueError``.
+        """
+        param_value = self.get_param(name, required=required)
+
+        if param_value is None:
+            return None
+
+        try:
+            date = datetime.strptime(param_value, format_string).date()
+        except ValueError:
+            msg = "The date value does not match the required format"
+            raise HTTPInvalidParam(msg, name)
+
+        if store is not None:
+            store[name] = date
+        return date
+
     # TODO(kgriffs): Use the nocover pragma only for the six.PY3 if..else
     def log_error(self, message):  # pragma: no cover
         """Write an error message to the server's log.
