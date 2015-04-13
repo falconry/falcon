@@ -434,3 +434,10 @@ class Response(object):
             return headers.items()
 
         return list(headers.items())  # pragma: no cover
+
+    def redirect(self, uri, permanent=False):
+        if permanent:
+            self.status = "301 Moved Permanently"
+        else:
+            self.status = "303 See Other"
+        self.append_header("Location", uri)
