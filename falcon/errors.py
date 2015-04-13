@@ -36,7 +36,8 @@ class HTTPBadRequest(HTTPError):
     """
 
     def __init__(self, title, description, **kwargs):
-        HTTPError.__init__(self, status.HTTP_400, title, description, **kwargs)
+        super(HTTPBadRequest, self).__init__(status.HTTP_400, title,
+                                             description, **kwargs)
 
 
 class HTTPUnauthorized(HTTPError):
@@ -62,7 +63,8 @@ class HTTPUnauthorized(HTTPError):
         if scheme is not None:
             headers['WWW-Authenticate'] = scheme
 
-        HTTPError.__init__(self, status.HTTP_401, title, description, **kwargs)
+        super(HTTPUnauthorized, self).__init__(status.HTTP_401, title,
+                                               description, **kwargs)
 
 
 class HTTPForbidden(HTTPError):
@@ -86,7 +88,8 @@ class HTTPForbidden(HTTPError):
     """
 
     def __init__(self, title, description, **kwargs):
-        HTTPError.__init__(self, status.HTTP_403, title, description, **kwargs)
+        super(HTTPForbidden, self).__init__(status.HTTP_403, title,
+                                            description, **kwargs)
 
 
 class HTTPNotFound(OptionalRepresentation, HTTPError):
@@ -144,8 +147,9 @@ class HTTPNotAcceptable(HTTPError):
     """
 
     def __init__(self, description, **kwargs):
-        HTTPError.__init__(self, status.HTTP_406, 'Media type not acceptable',
-                           description, **kwargs)
+        super(HTTPNotAcceptable, self).__init__(status.HTTP_406,
+                                                'Media type not acceptable',
+                                                description, **kwargs)
 
 
 class HTTPConflict(HTTPError):
@@ -180,7 +184,8 @@ class HTTPConflict(HTTPError):
     """
 
     def __init__(self, title, description, **kwargs):
-        HTTPError.__init__(self, status.HTTP_409, title, description, **kwargs)
+        super(HTTPConflict, self).__init__(status.HTTP_409, title,
+                                           description, **kwargs)
 
 
 class HTTPLengthRequired(HTTPError):
@@ -199,7 +204,8 @@ class HTTPLengthRequired(HTTPError):
 
     """
     def __init__(self, title, description, **kwargs):
-        HTTPError.__init__(self, status.HTTP_411, title, description, **kwargs)
+        super(HTTPLengthRequired, self).__init__(status.HTTP_411,
+                                                 title, description, **kwargs)
 
 
 class HTTPPreconditionFailed(HTTPError):
@@ -221,7 +227,8 @@ class HTTPPreconditionFailed(HTTPError):
     """
 
     def __init__(self, title, description, **kwargs):
-        HTTPError.__init__(self, status.HTTP_412, title, description, **kwargs)
+        super(HTTPPreconditionFailed, self).__init__(status.HTTP_412, title,
+                                                     description, **kwargs)
 
 
 class HTTPRequestEntityTooLarge(HTTPError):
@@ -279,8 +286,8 @@ class HTTPUnsupportedMediaType(HTTPError):
     """
 
     def __init__(self, description, **kwargs):
-        HTTPError.__init__(self, status.HTTP_415, 'Unsupported media type',
-                           description, **kwargs)
+        super(HTTPUnsupportedMediaType, self).__init__(
+            status.HTTP_415, 'Unsupported media type', description, **kwargs)
 
 
 class HTTPRangeNotSatisfiable(NoRepresentation, HTTPError):
@@ -295,7 +302,8 @@ class HTTPRangeNotSatisfiable(NoRepresentation, HTTPError):
 
     def __init__(self, resource_length):
         headers = {'Content-Range': 'bytes */' + str(resource_length)}
-        HTTPError.__init__(self, status.HTTP_416, headers=headers)
+        super(HTTPRangeNotSatisfiable, self).__init__(status.HTTP_416,
+                                                      headers=headers)
 
 
 class HTTPInternalServerError(HTTPError):
@@ -310,7 +318,8 @@ class HTTPInternalServerError(HTTPError):
     """
 
     def __init__(self, title, description, **kwargs):
-        HTTPError.__init__(self, status.HTTP_500, title, description, **kwargs)
+        super(HTTPInternalServerError, self).__init__(status.HTTP_500, title,
+                                                      description, **kwargs)
 
 
 class HTTPBadGateway(HTTPError):
@@ -326,7 +335,8 @@ class HTTPBadGateway(HTTPError):
     """
 
     def __init__(self, title, description, **kwargs):
-        HTTPError.__init__(self, status.HTTP_502, title, description, **kwargs)
+        super(HTTPBadGateway, self).__init__(status.HTTP_502, title,
+                                             description, **kwargs)
 
 
 class HTTPServiceUnavailable(HTTPError):
