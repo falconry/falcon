@@ -2,7 +2,7 @@
 
 Kurt Griffiths (kgriffs) is the creator and current maintainer of the Falcon framework. Pull requests are always welcome.
 
-Before submitting a pull request, please ensure you have added or updated tests as appropriate, and that all existing tests still pass with your changes on both Python 2 and Python 3. Please also ensure that your coding style follows PEP 8 and doesn't cause pyflakes to complain. 
+Before submitting a pull request, please ensure you have added or updated tests as appropriate, and that all existing tests still pass with your changes on both Python 2 and Python 3. Please also ensure that your coding style follows PEP 8 and doesn't cause pyflakes to complain.
 
 You can check all this by running the following from within the falcon project directory (requires Python 2.7 and Python 3.3 to be installed on your system):
 
@@ -63,7 +63,7 @@ Must be one of the following:
 * **perf**: A code change that improves performance
 * **test**: Adding missing tests
 * **chore**: Changes to the build process or auxiliary tools and libraries such as documentation generation
- 
+
 ##### Scope
 The scope could be anything specifying place of the commit change. For example: `$location`, `$browser`, `$compile`, `$rootScope`, `ngHref`, `ngClick`, `ngView`, etc...
 
@@ -79,6 +79,16 @@ Just as in the **subject**, use the imperative, present tense: "change" not "cha
 
 ##### Footer
 The footer should contain any information about **Breaking Changes** and is also the place to reference GitHub issues that this commit **Closes**.
+
+### Running tests against Jython
+In addition to the tests run with tox against cpython, cython, and pypy versions, Travis runs tests against jython 2.7 outside of tox. If you need to run these tests locally, do the following:
+* Install JDK 7 or better
+* run `travis_scripts/install_jython2.7.sh` -- this will install jython at `~/jython`
+* Install testing requirements `~/jython/bin/pip install -r tools/test-requires`
+    * May need to set `export JYTHON_HOME=~/jython` first
+* Run tests `~/jython/bin/nosetests`
+
+Note: coverage does not support Jython, so the coverage tests will fail.
 
 [ajs]: https://github.com/angular/angular.js/blob/master/CONTRIBUTING.md#commit
 [docstrings]: http://sphinxcontrib-napoleon.readthedocs.org/en/latest/example_google.html#example-google-style-python-docstrings
