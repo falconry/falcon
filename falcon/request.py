@@ -844,6 +844,7 @@ class Request(object):
             name (str): Parameter name, case-sensitive (e.g., 'ids').
             format_string (str): String used to parse the param value into a date.
                 See https://docs.python.org/3.4/library/datetime.html#strftime-and-strptime-behavior
+                (default ``"%Y-%m-%d"``)
             required (bool, optional): Set to ``True`` to raise
                 ``HTTPBadRequest`` instead of returning ``None`` when the
                 parameter is not found (default ``False``).
