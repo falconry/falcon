@@ -140,14 +140,30 @@ class TestCookies(testing.TestBase):
         self.assertIn("_gat", req.cookies)
         self.assertIn("_octo", req.cookies)
 
-    def test_unicode_ascii(self):
+    def test_unicode_inside_ascii_range(self):
         resp = falcon.Response()
         # should be ok
-        resp.set_cookie(u"unicode_ascii", "foobar", max_age=60)
+        resp.set_cookie("non_unicode_ascii_name_1", "ascii_value")
+        resp.set_cookie(u"unicode_ascii_name_1", "ascii_value")
+        resp.set_cookie("non_unicode_ascii_name_2", u"unicode_ascii_value")
+        resp.set_cookie(u"unicode_ascii_name_2", u"unicode_ascii_value")
 
-    def test_unicode_bad(self):
-        resp = falcon.Response()
-
+    def test_unicode_outside_ascii_range(self):
         def set_bad_cookie_name():
-            resp.set_cookie(u"unicode_\xc3\xa6\xc3\xb8", "foobar", max_age=60)
+            resp = falcon.Response()
+            resp.set_cookie(u"unicode_\xc3\xa6\xc3\xb8", "ok_value")
         self.assertRaises(KeyError, set_bad_cookie_name)
+
+        def set_bad_cookie_value():
+            resp = falcon.Response()
+            resp.set_cookie("ok_name", u"unicode_\xc3\xa6\xc3\xb8")
+        # NOTE(tbug): we need to grab the exception to check
+        # that it is not instance of UnicodeEncodeError, so
+        # we cannot simply use assertRaises
+        try:
+            set_bad_cookie_value()
+        except ValueError as e:
+            self.assertIsInstance(e, ValueError)
+            self.assertNotIsInstance(e, UnicodeEncodeError)
+        else:
+            self.fail("set_bad_cookie_value did not fail as expected")

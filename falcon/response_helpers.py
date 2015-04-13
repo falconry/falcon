@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import six
 
 
 def header_property(name, doc, transform=None):
@@ -60,3 +61,18 @@ def format_range(value):
             str(value[0]) + '-' +
             str(value[1]) + '/' +
             str(value[2]))
+
+
+def is_ascii_encodable(s):  # pragma: no cover
+    """ check if argument encodes to ascii without error
+    """
+    if isinstance(s, six.text_type):
+        try:
+            s.encode("ascii")
+            return True
+        except UnicodeEncodeError:
+            return False
+    elif six.PY2 and isinstance(s, str):
+        return True
+    else:
+        raise ValueError("argument was not a string type")

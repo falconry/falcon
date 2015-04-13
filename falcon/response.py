@@ -14,7 +14,8 @@
 
 import six
 
-from falcon.response_helpers import header_property, format_range
+from falcon.response_helpers import header_property, format_range,\
+    is_ascii_encodable
 from falcon.util import dt_to_http, uri, TimezoneGMT
 from six.moves.http_cookies import SimpleCookie, CookieError
 
@@ -193,15 +194,14 @@ class Response(object):
 
         """
 
+        if not is_ascii_encodable(name):
+            raise KeyError('"name" is not ascii encodable')
+        if not is_ascii_encodable(value):
+            raise ValueError('"value" is not ascii encodable')
+
         if six.PY2:  # pragma: no cover
-            # NOTE(tbug): In python 2 we want a str type name,
-            # as unicode will make the SimpleCookie implementation
-            # blow up.
-            if isinstance(name, unicode):
-                try:
-                    name = name.encode("ascii")
-                except UnicodeEncodeError as e:
-                    raise KeyError("'name' must consist of only ascii")
+            name = str(name)
+            value = str(value)
 
         if self._cookies is None:
             self._cookies = SimpleCookie()
@@ -209,6 +209,9 @@ class Response(object):
         try:
             self._cookies[name] = value
         except CookieError as e:  # pragma: no cover
+            # NOTE(tbug): we raise a KeyError here, to avoid leaking
+            # the CookieError to the user. SimpleCookie (well, BaseCookie)
+            # only throws CookieError on issues with the cookie key
             raise KeyError(str(e))
 
         if expires:
