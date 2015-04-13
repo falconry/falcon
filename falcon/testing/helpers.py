@@ -15,26 +15,13 @@
 import random
 import io
 import sys
-from datetime import datetime
 
 import six
 
-import falcon
 from falcon.util import uri
 
 # Constants
 DEFAULT_HOST = 'falconframework.org'
-
-
-def httpnow():
-    """Returns the current UTC time as an RFC 1123 date.
-
-    Returns:
-        str: An HTTP date string, e.g., "Tue, 15 Nov 1994 12:45:26 GMT".
-
-    """
-
-    return falcon.dt_to_http(datetime.utcnow())
 
 
 def rand_string(min, max):
