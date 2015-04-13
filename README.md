@@ -1,4 +1,4 @@
-Falcon [![Build Status](https://travis-ci.org/racker/falcon.png)](https://travis-ci.org/racker/falcon) [![Coverage Status](https://coveralls.io/repos/racker/falcon/badge.png?branch=master)](https://coveralls.io/r/racker/falcon)
+Falcon [![Build Status](https://travis-ci.org/racker/falcon.svg)](https://travis-ci.org/racker/falcon) [![Coverage Status](https://coveralls.io/repos/racker/falcon/badge.svg?branch=master)](https://coveralls.io/r/racker/falcon)
 ======
 
 :runner: Come hang out with us in **#falconframework** on freenode.
