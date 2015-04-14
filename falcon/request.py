@@ -626,12 +626,13 @@ class Request(object):
 
         try:
             http_date = self.get_header(header, required=required)
-            return util.http_date_to_dt(http_date)
+            return util.http_date_to_dt(http_date, obs_date=True)
         except TypeError:
             # When the header does not exist and isn't required
             return None
         except ValueError:
-            msg = ('It must be formatted according to RFC 1123.')
+            msg = ('It must be formatted according to RFC 7231, '
+                   'Section 7.1.1.1')
             raise HTTPInvalidHeader(msg, header)
 
     def get_param(self, name, required=False, store=None, default=None):

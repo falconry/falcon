@@ -527,7 +527,7 @@ class TestReqVars(testing.TestBase):
         headers = {header: 'Thu, 04 Apr 2013'}
         expected_desc = ('The value provided for the {0} '
                          'header is invalid. It must be formatted '
-                         'according to RFC 1123.')
+                         'according to RFC 7231, Section 7.1.1.1')
 
         self._test_error_details(headers, attr,
                                  falcon.HTTPInvalidHeader,
