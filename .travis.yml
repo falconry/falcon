@@ -22,10 +22,11 @@ env:
 script: tox -e $TOX_ENV
 after_success: coveralls
 notifications:
-  email:
-    - mail@kgriffs.com
   irc:
     channels:
       - "chat.freenode.net#falconframework"
     on_success: change
     on_failure: always
+    use_notice: true
+    skip_join: true
+    
