@@ -497,28 +497,47 @@ class TestReqVars(testing.TestBase):
                                  falcon.HTTPInvalidHeader,
                                  'Invalid header value', expected_desc)
 
-    def test_date(self):
+    @ddt.data(('Date', 'date'),
+              ('If-Modified-since', 'if_modified_since'),
+              ('If-Unmodified-since', 'if_unmodified_since'),
+              )
+    @ddt.unpack
+    def test_date(self, header, attr):
         date = datetime.datetime(2013, 4, 4, 5, 19, 18)
-        headers = {'date': 'Thu, 04 Apr 2013 05:19:18 GMT'}
-        req = Request(testing.create_environ(headers=headers))
-        self.assertEqual(req.date, date)
+        date_str = 'Thu, 04 Apr 2013 05:19:18 GMT'
 
-    @ddt.data('Thu, 04 Apr 2013', '')
-    def test_date_invalid(self, http_date):
-        headers = {'date': http_date}
-        expected_desc = ('The value provided for the Date '
+        self._test_header_expected_value(header, date_str, attr, date)
+
+    @ddt.data(('Date', 'date'),
+              ('If-Modified-Since', 'if_modified_since'),
+              ('If-Unmodified-Since', 'if_unmodified_since'),
+              )
+    @ddt.unpack
+    def test_date_invalid(self, header, attr):
+
+        # Date formats don't conform to RFC 1123
+        headers = {header: 'Thu, 04 Apr 2013'}
+        expected_desc = ('The value provided for the {0} '
                          'header is invalid. It must be formatted '
                          'according to RFC 1123.')
-        self._test_error_details(headers, 'date',
-                                 falcon.HTTPInvalidHeader,
-                                 'Invalid header value', expected_desc)
 
-    def test_date_missing(self):
+        self._test_error_details(headers, attr,
+                                 falcon.HTTPInvalidHeader,
+                                 'Invalid header value',
+                                 expected_desc.format(header))
+
+        headers = {header: ''}
+        self._test_error_details(headers, attr,
+                                 falcon.HTTPInvalidHeader,
+                                 'Invalid header value',
+                                 expected_desc.format(header))
+
+    @ddt.data('date', 'if_modified_since', 'if_unmodified_since')
+    def test_date_missing(self, attr):
         req = Request(testing.create_environ())
-        self.assertIs(req.date, None)
+        self.assertIs(getattr(req, attr), None)
 
     def test_attribute_headers(self):
-        date = testing.httpnow()
         hash = 'fa0d1a60ef6616bb28038515c8ea4cb2'
         auth = 'HMAC_SHA1 c590afa9bb59191ffab30f223791e82d3fd3e3af'
         agent = 'testing/1.0.1'
@@ -534,12 +553,8 @@ class TestReqVars(testing.TestBase):
         self._test_attribute_header('Expect', '100-continue', 'expect')
 
         self._test_attribute_header('If-Match', hash, 'if_match')
-        self._test_attribute_header('If-Modified-Since', date,
-                                    'if_modified_since')
         self._test_attribute_header('If-None-Match', hash, 'if_none_match')
         self._test_attribute_header('If-Range', hash, 'if_range')
-        self._test_attribute_header('If-Unmodified-Since', date,
-                                    'if_unmodified_since')
 
         self._test_attribute_header('User-Agent', agent, 'user_agent',
                                     default=default_agent)
@@ -571,6 +586,11 @@ class TestReqVars(testing.TestBase):
 
         req = Request(testing.create_environ())
         self.assertEqual(getattr(req, attr), default)
+
+    def _test_header_expected_value(self, name, value, attr, expected_value):
+        headers = {name: value}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertEqual(getattr(req, attr), expected_value)
 
     def _test_error_details(self, headers, attr_name,
                             error_type, title, description):
