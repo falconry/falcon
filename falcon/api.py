@@ -18,6 +18,7 @@ import six
 from falcon import api_helpers as helpers
 from falcon import DEFAULT_MEDIA_TYPE
 from falcon.http_error import HTTPError
+from falcon.http_status import HTTPStatus
 from falcon.request import Request, RequestOptions
 from falcon.response import Response
 import falcon.responders
@@ -210,6 +211,11 @@ class API(object):
                     # remaining process_response will be executed later.
                     self._call_resp_mw(middleware_stack, req, resp, resource)
                     raise
+
+        except HTTPStatus as ex:
+            self._compose_status_response(req, resp, ex)
+            self._call_after_hooks(req, resp, resource)
+            self._call_resp_mw(middleware_stack, req, resp, resource)
 
         except HTTPError as ex:
             self._compose_error_response(req, resp, ex)
@@ -483,13 +489,22 @@ class API(object):
 
         return (responder, params, resource)
 
+    def _compose_status_response(self, req, resp, http_status):
+        """Composes a response for the given HTTPStatus instance."""
+
+        resp.status = http_status.status
+
+        if http_status.headers is not None:
+            resp.set_headers(http_status.headers)
+
+        if getattr(http_status, "body", None) is not None:
+            resp.body = http_status.body
+
     def _compose_error_response(self, req, resp, error):
         """Composes a response for the given HTTPError instance."""
 
-        resp.status = error.status
-
-        if error.headers is not None:
-            resp.set_headers(error.headers)
+        # Use the HTTPStatus handler function to set status/headers
+        self._compose_status_response(req, resp, error)
 
         if error.has_representation:
             media_type, body = self._serialize_error(req, error)
