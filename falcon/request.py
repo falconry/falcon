@@ -146,10 +146,10 @@ class Request(object):
             header is missing.
         if_none_match (str): Value of the If-None-Match header, or ``None``
             if the header is missing.
-        if_modified_since (str): Value of the If-Modified-Since header, or
-            ``None`` if the header is missing.
-        if_unmodified_since (str): Value of the If-Unmodified-Sinc header,
+        if_modified_since (datetime): Value of the If-Modified-Since header,
             or ``None`` if the header is missing.
+        if_unmodified_since (datetime): Value of the If-Unmodified-Since
+            header, or ``None`` if the header is missing.
         if_range (str): Value of the If-Range header, or ``None`` if the
             header is missing.
 
@@ -271,8 +271,6 @@ class Request(object):
 
     if_match = helpers.header_property('HTTP_IF_MATCH')
     if_none_match = helpers.header_property('HTTP_IF_NONE_MATCH')
-    if_modified_since = helpers.header_property('HTTP_IF_MODIFIED_SINCE')
-    if_unmodified_since = helpers.header_property('HTTP_IF_UNMODIFIED_SINCE')
     if_range = helpers.header_property('HTTP_IF_RANGE')
 
     @property
@@ -326,16 +324,15 @@ class Request(object):
 
     @property
     def date(self):
-        try:
-            http_date = self.env['HTTP_DATE']
-        except KeyError:
-            return None
+        return self.get_header_as_datetime('Date')
 
-        try:
-            return util.http_date_to_dt(http_date)
-        except ValueError:
-            msg = ('It must be formatted according to RFC 1123.')
-            raise HTTPInvalidHeader(msg, 'Date')
+    @property
+    def if_modified_since(self):
+        return self.get_header_as_datetime('If-Modified-Since')
+
+    @property
+    def if_unmodified_since(self):
+        return self.get_header_as_datetime('If-Unmodified-Since')
 
     @property
     def range(self):
@@ -573,6 +570,35 @@ class Request(object):
                 return None
 
             raise HTTPMissingParam(name)
+
+    def get_header_as_datetime(self, header, required=False):
+        """Return an HTTP header with HTTP-Date values as a datetime.
+
+        Args:
+            name (str): Header name, case-insensitive (e.g., 'Date')
+            required (bool, optional): Set to ``True`` to raise
+                ``HTTPBadRequest`` instead of returning gracefully when the
+                header is not found (default ``False``).
+
+        Returns:
+            datetime: The value of the specified header if it exists,
+                or ``None`` if the header is not found and is not required.
+
+        Raises:
+            HTTPBadRequest: The header was not found in the request, but
+                it was required.
+            HttpInvalidHeader: The header contained a malformed/invalid value.
+        """
+
+        try:
+            http_date = self.get_header(header, required=required)
+            return util.http_date_to_dt(http_date)
+        except TypeError:
+            # When the header does not exist and isn't required
+            return None
+        except ValueError:
+            msg = ('It must be formatted according to RFC 1123.')
+            raise HTTPInvalidHeader(msg, header)
 
     def get_param(self, name, required=False, store=None, default=None):
         """Return the raw value of a query string parameter as a string.
