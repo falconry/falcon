@@ -1,5 +1,5 @@
 import io
-import multiprocessing
+import threading
 from wsgiref import simple_server
 
 import requests
@@ -87,12 +87,12 @@ class TestRequestBody(testing.TestBase):
             httpd = simple_server.make_server('127.0.0.1', 8989, api)
             httpd.serve_forever()
 
-        process = multiprocessing.Process(target=server)
-        process.daemon = True
-        process.start()
+        thread = threading.Thread(target=server)
+        thread.daemon = True
+        thread.start()
 
         # Let it boot
-        process.join(1)
+        thread.join(1)
 
         url = 'http://127.0.0.1:8989/echo'
         resp = requests.post(url, data=expected_body)
@@ -100,8 +100,6 @@ class TestRequestBody(testing.TestBase):
 
         resp = requests.put(url, data=expected_body)
         self.assertEqual(resp.text, expected_body)
-
-        process.terminate()
 
     def test_body_stream_wrapper(self):
         data = testing.rand_string(SIZE_1_KB / 2, SIZE_1_KB)

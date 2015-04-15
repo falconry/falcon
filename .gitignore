@@ -4,6 +4,9 @@
 *.c
 *.so
 
+# Jython
+*$py.class
+
 # Packages
 *.egg
 *.egg-info

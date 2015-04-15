@@ -1,6 +1,6 @@
 language: python
 sudo: false
-install: pip install tox coveralls --use-mirrors
+install: travis_scripts/install.sh
 cache:
     directories:
         - $HOME/.cache/pip
@@ -18,8 +18,9 @@ env:
   - TOX_ENV=pylint
   - TOX_ENV=py27_smoke
   - TOX_ENV=py27_smoke_cython
+  - JYTHON=true
 
-script: tox -e $TOX_ENV
+script: travis_scripts/run_tests.sh
 after_success: coveralls
 notifications:
   irc:
