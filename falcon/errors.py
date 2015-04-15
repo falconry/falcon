@@ -437,3 +437,18 @@ class HTTPMissingParam(HTTPBadRequest):
 
         super(HTTPMissingParam, self).__init__('Missing query parameter',
                                                description, **kwargs)
+
+
+class HTTPUnsupportedProtocol(HTTPBadRequest):
+    """HTTP protocol used by client is unsupported.
+
+    Args:
+        protocol_name (str): The unsupported protocol.
+    """
+
+    def __init__(self, unsupported_protocols, **kwargs):
+        description = 'These protocols are not supported: {0}.'
+        description = description.format(unsupported_protocols)
+
+        super(HTTPUnsupportedProtocol, self).__init__('Unsupported protocol',
+                                                      description, **kwargs)

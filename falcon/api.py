@@ -88,6 +88,17 @@ class API(object):
             instead of Falcon's default class. (default
             ``falcon.response.Response``)
 
+        enforce_https (bool, False): Whether to allow only https requests.
+            If 'https' is not the url scheme, the value of the
+            X-Forwarded-Proto header, or the first proto value in the Forwarded
+            header, ``falcon.errors.HTTPUnsupportedProtocol``
+            is raised before any provided middleware runs. An error handler can
+            be added to handle the exception.
+            If a frontend server like nginx is used, it should be configured
+            to set the header with the protocol. Frontend servers can also be
+            configured to handle non-https requests; this provides a mechanism
+            to prevent non-https requests in case of a misconfiguration.
+
     Attributes:
         req_options (RequestOptions): A set of behavioral options related to
             incoming requests.
@@ -110,13 +121,18 @@ class API(object):
 
     def __init__(self, media_type=DEFAULT_MEDIA_TYPE, before=None, after=None,
                  request_type=Request, response_type=Response,
-                 middleware=None):
+                 middleware=[], enforce_https=False):
         self._routes = []
         self._sinks = []
         self._media_type = media_type
 
         self._before = helpers.prepare_global_hooks(before)
         self._after = helpers.prepare_global_hooks(after)
+
+        if not isinstance(middleware, list):
+            middleware = [middleware]
+        if enforce_https:
+            middleware = [helpers.EnsureHttpsMiddleware()] + middleware
 
         # set middleware
         self._middleware = helpers.prepare_middleware(middleware)

@@ -11,7 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import re
 
+from falcon.errors import HTTPUnsupportedProtocol
 from falcon import util
 
 
@@ -27,7 +29,7 @@ def prepare_global_hooks(hooks):
     return hooks
 
 
-def prepare_middleware(middleware=None):
+def prepare_middleware(middleware):
     """Check middleware interface and prepare it to iterate.
 
     Args:
@@ -40,12 +42,6 @@ def prepare_middleware(middleware=None):
     # PERF(kgriffs): do getattr calls once, in advance, so we don't
     # have to do them every time in the request path.
     prepared_middleware = []
-
-    if middleware is None:
-        middleware = []
-    else:
-        if not isinstance(middleware, list):
-            middleware = [middleware]
 
     for component in middleware:
         process_request = util.get_bound_method(component,
@@ -127,3 +123,36 @@ def default_serialize_error(req, exception):
             representation = exception.to_xml()
 
     return (preferred, representation)
+
+
+class EnsureHttpsMiddleware(object):
+    forwarded_proto_regex = re.compile("proto=([A-Za-z]+)")
+
+    def process_request(self, req, resp):
+        """Raises HTTPUnsupportedProtocol if the protocol is not https.
+
+        This checks if 'https' is in the url scheme, value of the
+        X-FORWARDED-PROTO header, or the first value of proto in the
+        Forwarded header (the first is chosen as it is closest to the
+        client).
+        """
+        protocols = []
+
+        # Get protocol specified by url
+        protocols.append(req.protocol)
+
+        # Get protocol specified by X-Forwarded-Proto header
+        protocols.append(req.get_header("X-FORWARDED-PROTO"))
+
+        # Get first protocol specified by Forwarded header
+        forwarded_header = req.get_header("FORWARDED")
+        if forwarded_header:
+            regex = EnsureHttpsMiddleware.forwarded_proto_regex
+            for matched in regex.finditer(forwarded_header):
+                protocols.append(matched.groups()[0])
+                break
+
+        protocols = [protocol.lower() for protocol in protocols if protocol]
+
+        if "https" not in protocols:
+            raise HTTPUnsupportedProtocol(protocols)
