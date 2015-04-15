@@ -53,7 +53,7 @@ class API(object):
                         \"""
 
                     def process_resource(self, req, resp, resource):
-                        \"""Process the request after routing.
+                        \"""Process the request and resource *after* routing.
 
                         Args:
                             req: Request object that will be passed to the
