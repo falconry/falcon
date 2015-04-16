@@ -594,13 +594,6 @@ def run_simple(hostname, port, application, use_reloader=False,
         inner()
 
 
-def run_with_reloader(*args, **kwargs):
-    # People keep using undocumented APIs.  Do not use this function
-    # please, we do not guarantee that it continues working.
-    from ._reloader import run_with_reloader
-    return run_with_reloader(*args, **kwargs)
-
-
 # def main():
 #     '''A simple command-line interface for :py:func:`run_simple`.'''
 
