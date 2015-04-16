@@ -562,9 +562,9 @@ def run_simple(hostname, port, application, use_reloader=False,
                         the server should automatically create one, or ``None``
                         to disable SSL (which is the default).
     """
-    # if use_debugger:
-    #     from werkzeug.debug import DebuggedApplication
-    #     application = DebuggedApplication(application, use_evalex)
+    if use_debugger:
+        from .debug import DebuggedApplication
+        application = DebuggedApplication(application)
 
     def inner():
         make_server(hostname, port, application, threaded,
