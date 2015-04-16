@@ -27,6 +27,7 @@ import falcon.status_codes as status
 
 
 class API(object):
+
     """This class is the main entry point into a Falcon-based app.
 
     Each API instance provides a callable WSGI interface and a routing engine.

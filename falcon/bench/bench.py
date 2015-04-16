@@ -192,7 +192,7 @@ def main():
         'falcon-ext',
         'flask',
         'pecan',
-        'werkzeug'
+        'falcon.dev_server'
     ]
 
     parser = argparse.ArgumentParser(description="Falcon benchmark runner")
