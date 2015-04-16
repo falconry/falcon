@@ -565,9 +565,6 @@ def run_simple(hostname, port, application, use_reloader=False,
     # if use_debugger:
     #     from werkzeug.debug import DebuggedApplication
     #     application = DebuggedApplication(application, use_evalex)
-    # if static_files:
-    #     from werkzeug.wsgi import SharedDataMiddleware
-    #     application = SharedDataMiddleware(application, static_files)
 
     def inner():
         make_server(hostname, port, application, threaded,
