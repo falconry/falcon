@@ -494,8 +494,7 @@ def is_running_from_reloader():
 
 
 def run_simple(hostname, port, application, use_reloader=False,
-               use_debugger=False, use_evalex=True,
-               extra_files=None, reloader_interval=1,
+               use_debugger=False, extra_files=None, reloader_interval=1,
                reloader_type='auto', threaded=False,
                processes=1, request_handler=None, static_files=None,
                passthrough_errors=False, ssl_context=None):
@@ -531,7 +530,6 @@ def run_simple(hostname, port, application, use_reloader=False,
     :param use_reloader: should the server automatically restart the python
                          process if modules were changed?
     :param use_debugger: should the werkzeug debugging system be used?
-    :param use_evalex: should the exception evaluation feature be enabled?
     :param extra_files: a list of files the reloader should watch
                         additionally to the modules.  For example configuration
                         files.
