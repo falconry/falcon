@@ -183,15 +183,17 @@ class WSGIRequestHandler(BaseHTTPRequestHandler, object):
         def _blanket_error_handler(ex, req, resp, params):
             if self.server.passthrough_errors:
                 raise
-            # from werkzeug.debug.tbtools import get_current_traceback
-            # traceback = get_current_traceback(ignore_system_exceptions=True)
-            # self.server.log('error', 'Error on request:\n%s',
-            #                 traceback.plaintext)
+
+            import traceback
+            tb = traceback.format_exc()
+            self.server.log('error', 'Error on request:\n%s', tb)
+
             if not headers_sent:
                 del headers_set[:]
+
             raise HTTPInternalServerError(
                 title='500 Internal Server Error',
-                description='something bad happened :-(')
+                description=tb)
 
         self.server.app.add_error_handler(Exception, _blanket_error_handler)
         self.server.app.add_error_handler(socket.error, _socket_error_handler)
