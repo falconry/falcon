@@ -29,7 +29,7 @@ import six
 
 from falcon.errors import *
 from falcon import util
-from falcon.util import uri
+from falcon.util.uri import parse_query_string, parse_host
 from falcon import request_helpers as helpers
 
 from six.moves.http_cookies import SimpleCookie
@@ -227,7 +227,7 @@ class Request(object):
             self.query_string = env['QUERY_STRING']
 
             if self.query_string:
-                self._params = uri.parse_query_string(
+                self._params = parse_query_string(
                     self.query_string,
                     keep_blank_qs_values=self.options.keep_blank_qs_values,
                 )
@@ -436,7 +436,7 @@ class Request(object):
             # isn't supposed to mess with it, so it should be what
             # the client actually sent.
             host_header = self.env['HTTP_HOST']
-            host, port = uri.parse_host(host_header)
+            host, port = parse_host(host_header)
         except KeyError:
             # PERF(kgriffs): According to PEP-3333, this header
             # will always be present.
@@ -967,7 +967,7 @@ class Request(object):
                            'will be ignored.')
 
         if body:
-            extra_params = uri.parse_query_string(
+            extra_params = parse_query_string(
                 body,
                 keep_blank_qs_values=self.options.keep_blank_qs_values,
             )

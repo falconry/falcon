@@ -28,6 +28,10 @@ __all__ = (
 )
 
 
+# PERF(kgriffs): Avoid superfluous namespace lookups
+strptime = datetime.datetime.strptime
+
+
 # NOTE(kgriffs): We don't want our deprecations to be ignored by default,
 # so create our own type.
 #
@@ -96,8 +100,7 @@ def http_date_to_dt(http_date):
             HTTP date.
     """
 
-    return datetime.datetime.strptime(
-        http_date, '%a, %d %b %Y %H:%M:%S %Z')
+    return strptime(http_date, '%a, %d %b %Y %H:%M:%S %Z')
 
 
 def to_query_str(params):
