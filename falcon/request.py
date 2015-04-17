@@ -558,7 +558,7 @@ class Request(object):
         return (preferred_type if preferred_type else None)
 
     def get_header(self, name, required=False):
-        """Return a raw header value as a string.
+        """Retrieve the raw string value for the given header.
 
         Args:
             name (str): Header name, case-insensitive (e.g., 'Content-Type')
