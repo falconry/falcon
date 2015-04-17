@@ -136,6 +136,20 @@ class Response(object):
         self.stream = stream
         self.stream_len = stream_len
 
+    def get_header(self, name):
+        """Check if a header is set on the response.
+
+        Args:
+            name (str): Header name to set (case-insensitive).
+                The same rules apply here as the do to the name
+                argument of :py:meth:`set_header`.
+
+        Returns:
+            The raw value of the header if it is set, or ``None``
+            if it is not set.
+        """
+        return self._headers.get(name.lower(), None)
+
     def set_header(self, name, value):
         """Set a header for this response to a given value.
 

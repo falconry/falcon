@@ -356,7 +356,7 @@ class TestHeaders(testing.TestBase):
         content_location = ('content-location', '/%C3%A7runchy/bacon')
         self.assertIn(content_location, self.srmock.headers)
 
-    def test_response_set_header(self):
+    def test_response_set_and_get_header(self):
         self.resource = HeaderHelpersResource()
         self.api.add_route(self.test_route, self.resource)
 
@@ -365,11 +365,13 @@ class TestHeaders(testing.TestBase):
 
             content_type = 'x-falcon/peregrine'
             self.assertIn(('content-type', content_type), self.srmock.headers)
+            self.assertEquals(self.resource.resp.get_header('content-type'), content_type)
             self.assertIn(('cache-control', 'no-store'), self.srmock.headers)
             self.assertIn(('x-auth-token', 'toomanysecrets'),
                           self.srmock.headers)
 
             self.assertEqual(None, self.resource.resp.location)
+            self.assertEquals(self.resource.resp.get_header('not-real'), None)
 
             # Check for duplicate headers
             hist = defaultdict(lambda: 0)
