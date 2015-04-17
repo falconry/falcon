@@ -222,8 +222,6 @@ class Request(object):
         else:
             self.path = '/'
 
-        self._params = {}
-
         # PERF(kgriffs): if...in is faster than using env.get(...)
         if 'QUERY_STRING' in env:
             self.query_string = env['QUERY_STRING']
@@ -234,8 +232,12 @@ class Request(object):
                     keep_blank_qs_values=self.options.keep_blank_qs_values,
                 )
 
+            else:
+                self._params = {}
+
         else:
-            self.query_string = six.text_type()
+            self.query_string = ''
+            self._params = {}
 
         self._cookies = None
 
