@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import six
 
 
 def header_property(name, doc, transform=None):
@@ -64,15 +63,18 @@ def format_range(value):
 
 
 def is_ascii_encodable(s):  # pragma: no cover
-    """ check if argument encodes to ascii without error
-    """
-    if isinstance(s, six.text_type):
-        try:
-            s.encode("ascii")
-            return True
-        except UnicodeEncodeError:
-            return False
-    elif six.PY2 and isinstance(s, str):
-        return True
-    else:
-        raise ValueError("argument was not a string type")
+    """Check if argument encodes to ascii without error."""
+    try:
+        s.encode("ascii")
+    except UnicodeEncodeError:
+        # NOTE(tbug): Py2 and Py3 will raise this if string contained
+        # chars that could not be ascii encoded
+        return False
+    except UnicodeDecodeError:
+        # NOTE(tbug): py2 will raise this if type is str
+        # and contains non-ascii chars
+        return False
+    except AttributeError:
+        # NOTE(tbug): s is probably not a string type
+        return False
+    return True

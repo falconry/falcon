@@ -29,18 +29,18 @@ class CookieResource:
 
     def on_head(self, req, resp):
         resp.set_cookie("foo", "bar", max_age=300)
-        resp.set_cookie("bar", "baz", httponly=False)
+        resp.set_cookie("bar", "baz", http_only=False)
         resp.set_cookie("bad", "cookie")
         resp.unset_cookie("bad")
 
     def on_post(self, req, resp):
         e = datetime(year=2050, month=1, day=1)  # naive
-        resp.set_cookie("foo", "bar", httponly=False, secure=False, expires=e)
+        resp.set_cookie("foo", "bar", http_only=False, secure=False, expires=e)
         resp.unset_cookie("bad")
 
     def on_put(self, req, resp):
         e = datetime(year=2050, month=1, day=1, tzinfo=GMT_PLUS_ONE)  # aware
-        resp.set_cookie("foo", "bar", httponly=False, secure=False, expires=e)
+        resp.set_cookie("foo", "bar", http_only=False, secure=False, expires=e)
         resp.unset_cookie("bad")
 
 

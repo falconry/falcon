@@ -146,7 +146,7 @@ class Response(object):
         self.stream_len = stream_len
 
     def set_cookie(self, name, value, expires=None, max_age=None,
-                   domain=None, path=None, secure=True, httponly=True):
+                   domain=None, path=None, secure=True, http_only=True):
         """Set a response cookie.
 
         Note:
@@ -177,8 +177,8 @@ class Response(object):
                 server whenever it sends back this cookie.
                 Warning: You will also need to enforce HTTPS for the cookies
                 to be transfered securely.
-            httponly (bool) (default: True):
-                The attribute httponly specifies that the cookie
+            http_only (bool) (default: True):
+                The attribute http_only specifies that the cookie
                 is  only transferred in HTTP requests, and is not accessible
                 through JavaScript. This is intended to mitigate some forms
                 of cross-site scripting.
@@ -241,8 +241,8 @@ class Response(object):
         if secure:
             self._cookies[name]["secure"] = secure
 
-        if httponly:
-            self._cookies[name]["httponly"] = httponly
+        if http_only:
+            self._cookies[name]["httponly"] = http_only
 
     def unset_cookie(self, name):
         """Unset a cookie from the response
