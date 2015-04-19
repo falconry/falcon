@@ -79,7 +79,7 @@ Falcon `lives on GitHub <https://github.com/racker/falcon>`_, making the
 code easy to browse, download, fork, etc. Pull requests are always welcome! Also,
 please remember to star the project if it makes you happy.
 
-Once you have cloned the repro or downloaded a tarball from GitHub, you
+Once you have cloned the repo or downloaded a tarball from GitHub, you
 can install Falcon like this:
 
 .. code:: bash
