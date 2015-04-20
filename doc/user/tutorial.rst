@@ -466,7 +466,6 @@ Query Strings
 
 *Coming soon...*
 
-
 Introducing Hooks
 -----------------
 

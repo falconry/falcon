@@ -14,8 +14,12 @@
 
 import six
 
-from falcon.response_helpers import header_property, format_range
-from falcon.util import dt_to_http, uri
+from falcon.response_helpers import header_property, format_range,\
+    is_ascii_encodable
+from falcon.util import dt_to_http, uri, TimezoneGMT
+from six.moves.http_cookies import SimpleCookie, CookieError
+
+GMT_TIMEZONE = TimezoneGMT()
 
 
 class Response(object):
@@ -79,6 +83,7 @@ class Response(object):
         '_body_encoded',  # Stuff
         'data',
         '_headers',
+        '_cookies',
         'status',
         'stream',
         'stream_len'
@@ -87,6 +92,10 @@ class Response(object):
     def __init__(self):
         self.status = '200 OK'
         self._headers = {}
+
+        # NOTE(tbug): will be set to a SimpleCookie object
+        # when cookie is set via set_cookie
+        self._cookies = None
 
         self._body = None
         self._body_encoded = None
@@ -136,11 +145,119 @@ class Response(object):
         self.stream = stream
         self.stream_len = stream_len
 
+    def set_cookie(self, name, value, expires=None, max_age=None,
+                   domain=None, path=None, secure=True, http_only=True):
+        """Set a response cookie.
+
+        Note:
+            :meth:`~.set_cookie` is capable of setting multiple cookies
+            with specified cookie properties on the same request.
+            Currently :meth:`~.set_header` and :meth:`~.append_header` are
+            not capable of this.
+
+        Args:
+            name (str):
+                Cookie name
+            value (str):
+                Cookie value
+            expires (datetime): Defines when the cookie should expire.
+                the default is to expire when the browser is closed.
+            max_age (int): The Max-Age attribute defines the lifetime of the
+                cookie, in seconds.  The delta-seconds value is a decimal non-
+                negative integer.  After delta-seconds seconds elapse,
+                the client should discard the cookie.
+            domain (str): The Domain attribute specifies the domain for
+                which the cookie is valid.
+                An explicitly specified domain must always start with a dot.
+                A value of 0 means the cookie should be discarded immediately.
+            path (str): The Path attribute specifies the subset of URLs to
+                which this cookie applies.
+            secure (bool) (default: True): The Secure attribute directs the
+                user agent to use only secure means to contact the origin
+                server whenever it sends back this cookie.
+                Warning: You will also need to enforce HTTPS for the cookies
+                to be transfered securely.
+            http_only (bool) (default: True):
+                The attribute http_only specifies that the cookie
+                is  only transferred in HTTP requests, and is not accessible
+                through JavaScript. This is intended to mitigate some forms
+                of cross-site scripting.
+        Note:
+            Kwargs and their valid values are all
+            specified in http://tools.ietf.org/html/rfc6265
+
+        See Also:
+            :ref:`Setting Cookies <setting-cookies>`
+
+        Raises:
+            KeyError if ``name`` is not a valid cookie name.
+
+        """
+
+        if not is_ascii_encodable(name):
+            raise KeyError('"name" is not ascii encodable')
+        if not is_ascii_encodable(value):
+            raise ValueError('"value" is not ascii encodable')
+
+        if six.PY2:  # pragma: no cover
+            name = str(name)
+            value = str(value)
+
+        if self._cookies is None:
+            self._cookies = SimpleCookie()
+
+        try:
+            self._cookies[name] = value
+        except CookieError as e:  # pragma: no cover
+            # NOTE(tbug): we raise a KeyError here, to avoid leaking
+            # the CookieError to the user. SimpleCookie (well, BaseCookie)
+            # only throws CookieError on issues with the cookie key
+            raise KeyError(str(e))
+
+        if expires:
+            # set Expires on cookie. Format is Wdy, DD Mon YYYY HH:MM:SS GMT
+
+            # NOTE(tbug): we never actually need to
+            # know that GMT is named GMT when formatting cookies.
+            # It is a function call less to just write "GMT" in the fmt string:
+            fmt = "%a, %d %b %Y %H:%M:%S GMT"
+            if expires.tzinfo is None:
+                # naive
+                self._cookies[name]["expires"] = expires.strftime(fmt)
+            else:
+                # aware
+                gmt_expires = expires.astimezone(GMT_TIMEZONE)
+                self._cookies[name]["expires"] = gmt_expires.strftime(fmt)
+
+        if max_age:
+            self._cookies[name]["max-age"] = max_age
+
+        if domain:
+            self._cookies[name]["domain"] = domain
+
+        if path:
+            self._cookies[name]["path"] = path
+
+        if secure:
+            self._cookies[name]["secure"] = secure
+
+        if http_only:
+            self._cookies[name]["httponly"] = http_only
+
+    def unset_cookie(self, name):
+        """Unset a cookie from the response
+        """
+        if self._cookies is not None and name in self._cookies:
+            del self._cookies[name]
+
     def set_header(self, name, value):
         """Set a header for this response to a given value.
 
         Warning:
             Calling this method overwrites the existing value, if any.
+
+        Warning:
+            For setting cookies, see instead :meth:`~.set_cookie`
 
         Args:
             name (str): Header name to set (case-insensitive). Must be of
@@ -163,6 +280,9 @@ class Response(object):
             If the header already exists, the new value will be appended
             to it, delimited by a comma. Most header specifications support
             this format, Cookie and Set-Cookie being the notable exceptions.
+
+        Warning:
+            For setting cookies, see :py:meth:`~.set_cookie`
 
         Args:
             name (str): Header name to set (case-insensitive). Must be of
@@ -431,6 +551,19 @@ class Response(object):
         if six.PY2:  # pragma: no cover
             # PERF(kgriffs): Don't create an extra list object if
             # it isn't needed.
-            return headers.items()
+            items = headers.items()
+        else:
+            items = list(headers.items())  # pragma: no cover
 
-        return list(headers.items())  # pragma: no cover
+        if self._cookies is not None:
+            # PERF(tbug):
+            # The below implementation is ~23% faster than
+            # the alternative:
+            #
+            #     self._cookies.output().split("\\r\\n")
+            #
+            # Even without the .split("\\r\\n"), the below
+            # is still ~17% faster, so don't use .output()
+            items += [("set-cookie", c.OutputString())
+                      for c in self._cookies.values()]
+        return items
