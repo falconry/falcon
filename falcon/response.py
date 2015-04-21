@@ -12,12 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import six
-
-from falcon.response_helpers import header_property, format_range,\
-    is_ascii_encodable
-from falcon.util import dt_to_http, uri, TimezoneGMT
+from six import PY2
+from six import text_type as TEXT_TYPE
+from six import string_types as STRING_TYPES
 from six.moves.http_cookies import SimpleCookie, CookieError
+
+from falcon.response_helpers import header_property, format_range
+from falcon.response_helpers import is_ascii_encodable
+from falcon.util import dt_to_http, TimezoneGMT
+from falcon.util.uri import encode as uri_encode
+from falcon.util.uri import encode_value as uri_encode_value
 
 GMT_TIMEZONE = TimezoneGMT()
 
@@ -128,7 +132,7 @@ class Response(object):
             # encoded str, then check and encode
             # if it isn't.
             self._body_encoded = body
-            if isinstance(body, six.text_type):
+            if isinstance(body, TEXT_TYPE):
                 self._body_encoded = body.encode('utf-8')
 
         return self._body_encoded
@@ -199,7 +203,7 @@ class Response(object):
         if not is_ascii_encodable(value):
             raise ValueError('"value" is not ascii encodable')
 
-        if six.PY2:  # pragma: no cover
+        if PY2:  # pragma: no cover
             name = str(name)
             value = str(value)
 
@@ -411,32 +415,32 @@ class Response(object):
         if '//' in rel:
             if ' ' in rel:
                 rel = ('"' +
-                       ' '.join([uri.encode(r) for r in rel.split()]) +
+                       ' '.join([uri_encode(r) for r in rel.split()]) +
                        '"')
             else:
-                rel = '"' + uri.encode(rel) + '"'
+                rel = '"' + uri_encode(rel) + '"'
 
-        value = '<' + uri.encode(target) + '>; rel=' + rel
+        value = '<' + uri_encode(target) + '>; rel=' + rel
 
         if title is not None:
             value += '; title="' + title + '"'
 
         if title_star is not None:
             value += ("; title*=UTF-8'" + title_star[0] + "'" +
-                      uri.encode_value(title_star[1]))
+                      uri_encode_value(title_star[1]))
 
         if type_hint is not None:
             value += '; type="' + type_hint + '"'
 
         if hreflang is not None:
-            if isinstance(hreflang, six.string_types):
+            if isinstance(hreflang, STRING_TYPES):
                 value += '; hreflang=' + hreflang
             else:
                 value += '; '
                 value += '; '.join(['hreflang=' + lang for lang in hreflang])
 
         if anchor is not None:
-            value += '; anchor="' + uri.encode(anchor) + '"'
+            value += '; anchor="' + uri_encode(anchor) + '"'
 
         _headers = self._headers
         if 'link' in _headers:
@@ -458,7 +462,7 @@ class Response(object):
     content_location = header_property(
         'Content-Location',
         'Sets the Content-Location header.',
-        uri.encode)
+        uri_encode)
 
     content_range = header_property(
         'Content-Range',
@@ -499,7 +503,7 @@ class Response(object):
     location = header_property(
         'Location',
         'Sets the Location header.',
-        uri.encode)
+        uri_encode)
 
     retry_after = header_property(
         'Retry-After',
@@ -529,7 +533,7 @@ class Response(object):
         """,
         lambda v: ', '.join(v))
 
-    def _wsgi_headers(self, media_type=None):
+    def _wsgi_headers(self, media_type=None, py2=PY2):
         """Convert headers into the format expected by WSGI servers.
 
         Args:
@@ -548,7 +552,7 @@ class Response(object):
         if set_content_type:
             headers['content-type'] = media_type
 
-        if six.PY2:  # pragma: no cover
+        if py2:  # pragma: no cover
             # PERF(kgriffs): Don't create an extra list object if
             # it isn't needed.
             items = headers.items()
