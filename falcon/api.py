@@ -250,11 +250,16 @@ class API(object):
     def add_route(self, uri_template, resource):
         """Associates a templatized URI path with a resource.
 
-        A resource is an instance of a class that defines various on_*
+        A resource is an instance of a class that defines various
         "responder" methods, one for each HTTP method the resource
-        allows. For example, to support GET, simply define an `on_get`
-        responder. If a client requests an unsupported method, Falcon
-        will respond with "405 Method not allowed".
+        allows. Responder names start with `on_` and are named according to
+        which HTTP method they handle, as in `on_get`, `on_post`, `on_put`,
+        etc.
+
+        If your resource does not support a particular
+        HTTP method, simply omit the corresponding responder and
+        Falcon will reply with "405 Method not allowed" if that
+        method is ever requested.
 
         Responders must always define at least two arguments to receive
         request and response objects, respectively. For example::
@@ -276,6 +281,11 @@ class API(object):
 
             def on_put(self, req, resp, name):
                 pass
+
+        Individual path segments may contain one or more field expressions.
+        For example::
+
+            /repos/{org}/{repo}/compare/{usr0}:{branch0}...{usr1}:{branch1}
 
         Args:
             uri_template (str): A templatized URI. Care must be
