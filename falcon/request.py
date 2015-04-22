@@ -840,8 +840,8 @@ class Request(object):
 
         Returns:
             list: The value of the param if it is found. Otherwise, returns
-            ``None`` unless required is True. Empty list elements will be
-            discarded. For example a query string containing this::
+                ``None`` unless required is True. Empty list elements will be
+                discarded. For example a query string containing this::
 
                 things=1,,3
 
@@ -855,7 +855,7 @@ class Request(object):
 
         Raises:
             HTTPBadRequest: A required param is missing from the request.
-            HTTPInvalidParam: A tranform function raised an instance of
+            HTTPInvalidParam: A transform function raised an instance of
                 ``ValueError``.
 
         """
@@ -896,7 +896,8 @@ class Request(object):
 
     def get_param_as_date(self, name, format_string='%Y-%m-%d',
                           required=False, store=None):
-        """
+        """Return the value of a query string parameter as a date.
+
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'ids').
             format_string (str): String used to parse the param value into a
@@ -910,13 +911,17 @@ class Request(object):
                 the value of the param, but only if the param is found (default
                 ``None``).
         Returns:
-            datetime.date
+            datetime.date: The value of the param if it is found and can be
+                converted to a ``date`` according to the supplied format
+                string. If the param is not found, returns ``None`` unless
+                required is ``True``.
 
         Raises:
             HTTPBadRequest: A required param is missing from the request.
-            HTTPInvalidParam: A tranform function raised an instance of
+            HTTPInvalidParam: A transform function raised an instance of
                 ``ValueError``.
         """
+
         param_value = self.get_param(name, required=required)
 
         if param_value is None:
@@ -930,6 +935,7 @@ class Request(object):
 
         if store is not None:
             store[name] = date
+
         return date
 
     # TODO(kgriffs): Use the nocover pragma only for the six.PY3 if..else
