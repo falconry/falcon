@@ -154,47 +154,43 @@ class Response(object):
         """Set a response cookie.
 
         Note:
-            :meth:`~.set_cookie` is capable of setting multiple cookies
-            with specified cookie properties on the same request.
-            Currently :meth:`~.set_header` and :meth:`~.append_header` are
-            not capable of this.
+            This method can be called multiple times to add one or
+            more cookies to the response.
+
+        See Also:
+            To learn more about setting cookies, see
+            :ref:`Setting Cookies <setting-cookies>`. The parameters listed
+            below correspond to those defined in `RFC 6265`_.
 
         Args:
             name (str):
                 Cookie name
             value (str):
                 Cookie value
-            expires (datetime): Defines when the cookie should expire.
-                the default is to expire when the browser is closed.
-            max_age (int): The Max-Age attribute defines the lifetime of the
-                cookie, in seconds.  The delta-seconds value is a decimal non-
-                negative integer.  After delta-seconds seconds elapse,
-                the client should discard the cookie.
-            domain (str): The Domain attribute specifies the domain for
-                which the cookie is valid.
+            expires (datetime): Specifies when the cookie should expire. By
+                default, cookies expire when the user agent exits.
+            max_age (int): Defines the lifetime of the cookie in seconds.
+                After the specified number of seconds elapse, the client
+                should discard the cookie.
+            domain (str): Specifies the domain for which the cookie is valid.
                 An explicitly specified domain must always start with a dot.
                 A value of 0 means the cookie should be discarded immediately.
-            path (str): The Path attribute specifies the subset of URLs to
+            path (str): Specifies the subset of URLs to
                 which this cookie applies.
-            secure (bool) (default: True): The Secure attribute directs the
-                user agent to use only secure means to contact the origin
-                server whenever it sends back this cookie.
-                Warning: You will also need to enforce HTTPS for the cookies
-                to be transfered securely.
-            http_only (bool) (default: True):
-                The attribute http_only specifies that the cookie
-                is  only transferred in HTTP requests, and is not accessible
-                through JavaScript. This is intended to mitigate some forms
-                of cross-site scripting.
-        Note:
-            Kwargs and their valid values are all
-            specified in http://tools.ietf.org/html/rfc6265
-
-        See Also:
-            :ref:`Setting Cookies <setting-cookies>`
+            secure (bool): Direct the client to use only secure means to
+                contact the origin server whenever it sends back this cookie
+                (default: ``True``). Warning: You will also need to enforce
+                HTTPS for the cookies to be transfered securely.
+            http_only (bool): Direct the client to only transfer the cookie
+                with unscripted HTTP requests (default: ``True``). This is
+                intended to mitigate some forms of cross-site scripting.
 
         Raises:
-            KeyError if ``name`` is not a valid cookie name.
+            KeyError: `name` is not a valid cookie name.
+            ValueError: `value` is not a valid cookie value.
+
+        .. _RFC 6265:
+            http://tools.ietf.org/html/rfc6265
 
         """
 
