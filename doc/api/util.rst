@@ -29,3 +29,6 @@ Miscellaneous
 
 .. automodule:: falcon.util
     :members: deprecated, dt_to_http, http_date_to_dt, to_query_str
+
+.. autoclass:: falcon.util.TimezoneGMT
+    :members:
