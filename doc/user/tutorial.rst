@@ -160,7 +160,7 @@ params, as we shall see later on.
 
 Right now, the image resource responds to GET requests with a simple
 ``200 OK`` and a JSON body. Falcon's Internet media type defaults to
-``application/json`` but you can set it to whatever you like. See 
+``application/json`` but you can set it to whatever you like. See
 serialization with `MessagePack <http://msgpack.org/>`_ for example:
 
 .. code:: python
@@ -439,9 +439,11 @@ argument.
 
 .. note::
 
-    Falcon currently supports Level 1
-    `URI templates <https://tools.ietf.org/html/rfc6570>`_, and support for
-    higher levels is planned.
+    Falcon also supports more complex parameterized path segments containing
+    multiple values. For example, a GH-like API could use the following
+    template to add a route for diffing two branches::
+
+        /repos/{org}/{repo}/compare/{usr0}:{branch0}...{usr1}:{branch1}
 
 Now, restart gunicorn and post another picture to the service:
 
@@ -461,10 +463,10 @@ headers were set correctly. Just for fun, go ahead and paste the above URI
 into your web browser. The image should display correctly.
 
 
-Query Strings
--------------
+.. Query Strings
+.. -------------
 
-*Coming soon...*
+.. *Coming soon...*
 
 Introducing Hooks
 -----------------

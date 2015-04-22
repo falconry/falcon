@@ -21,11 +21,8 @@ TAB_STR = ' ' * 4
 class CompiledRouter(object):
     """Fast URI router which compiles its routing logic to Python code.
 
-    This class is a Falcon router, which handles the routing from URI paths
-    to resource class instance methods. It implements the necessary router
-    methods add_route() and find(). Generally you do not need to use this
-    router class directly, as an instance is created by default when the
-    falcon.API class is initialized.
+    Generally you do not need to use this router class directly, as an
+    instance is created by default when the falcon.API class is initialized.
 
     The router treats URI paths as a tree of URI segments and searches by
     checking the URI one segment at a time. Instead of interpreting the route
