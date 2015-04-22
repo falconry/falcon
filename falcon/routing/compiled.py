@@ -15,6 +15,9 @@
 import re
 
 
+TAB_STR = ' ' * 4
+
+
 class CompiledRouter(object):
     """Fast URI router which compiles its routing logic to Python code.
 
@@ -28,37 +31,84 @@ class CompiledRouter(object):
     checking the URI one segment at a time. Instead of interpreting the route
     tree for each look-up, it generates inlined, bespoke Python code to
     perform the search, then compiles that code. This makes the route
-    provessing blazingly fast.
+    processing quite fast.
 
-    The generated code for the test() method looks something like this:
+    The generated code looks something like this::
 
-    def test(path, return_values, expressions, params):
-      path_len = len(path)
-      if path_len > 0 and path[0] == "books":
-        if path_len > 1:
-          params["book_id"] = path[1]
-          return return_values[1]
-        return return_values[0]
-      if path_len > 0 and path[0] == "authors"
-        if path_len > 1:
-          params["author_id"] = path[1]
-          if path_len > 2:
-            match = expressions[0].search(path[2])
-            if match is not None:
-              params.update(match.groupdict())
-              return return_values[4]
-          return return_values[3]
-        return return_values[2]
+        def find(path, return_values, expressions, params):
+            path_len = len(path)
+            if path_len > 0:
+                if path[0] == "repos":
+                    if path_len > 1:
+                        params["org"] = path[1]
+                        if path_len > 2:
+                            params["repo"] = path[2]
+                            if path_len > 3:
+                                if path[3] == "commits":
+                                    return return_values[3]
+                                if path[3] == "compare":
+                                    if path_len > 4:
+                                        match = expressions[0].match(path[4])
+                                        if match is not None:
+                                            params.update(match.groupdict())
+                                            if path_len > 5:
+                                                if path[5] == "full":
+                                                    return return_values[5]
+                                                if path[5] == "part":
+                                                    return return_values[6]
+                                                return None
+                                            return return_values[4]
+                                        if path[4] == "all":
+                                            return return_values[7]
+                                        match = expressions[1].match(path[4])
+                                        if match is not None:
+                                            params.update(match.groupdict())
+                                            if path_len > 5:
+                                                if path[5] == "full":
+                                                    return return_values[9]
+                                                return None
+                                            return return_values[8]
+                                        return None
+                                    return None
+                                return None
+                            return return_values[2]
+                        return return_values[1]
+                    return return_values[0]
+                if path[0] == "teams":
+                    if path_len > 1:
+                        params["id"] = path[1]
+                        if path_len > 2:
+                            if path[2] == "members":
+                                return return_values[11]
+                            return None
+                        return return_values[10]
+                    return None
+                if path[0] == "user":
+                    if path_len > 1:
+                        if path[1] == "memberships":
+                            return return_values[12]
+                        return None
+                    return None
+                if path[0] == "emojis":
+                    if path_len > 1:
+                        if path[1] == "signs":
+                            if path_len > 2:
+                                params["id"] = path[2]
+                                return return_values[14]
+                            return None
+                        return None
+                    return return_values[13]
+                return None
+            return None
     """
 
     def __init__(self):
         self._roots = []
         self._find = self._compile()
         self._code_lines = None
+        self._src = None
         self._expressions = None
         self._return_values = None
-
-        self._compile()
 
     def add_route(self, uri_template, method_map, resource):
         """Adds a route between URI path template and resource."""
@@ -74,7 +124,8 @@ class CompiledRouter(object):
 
         def insert(nodes, path_index=0):
             for node in nodes:
-                if node.matches(path[path_index]):
+                segment = path[path_index]
+                if node.matches(segment):
                     path_index += 1
                     if path_index == len(path):
                         node.method_map = method_map
@@ -83,6 +134,11 @@ class CompiledRouter(object):
                         insert(node.children, path_index)
 
                     return
+
+                if node.conflicts_with(segment):
+                    raise ValueError('The URI template for this route '
+                                     "conflicts with another route's "
+                                     'template.')
 
             # NOTE(richardolsson): If we got this far, the node doesn't already
             # exist and needs to be created. This builds a new branch of the
@@ -109,40 +165,75 @@ class CompiledRouter(object):
         else:
             return None, None, None
 
-    def _compile_node(self, node=None, pad='  ', level=0):
-        """Generates Python code for a router node (and it's children)."""
-        def line(pad, lstr):
-            self._code_lines.append(pad + lstr)
+    def _compile_tree(self, nodes, indent=1, level=0):
+        """Generates Python code for a routing tree or subtree."""
 
-        if node.is_var:
-            line(pad, 'if path_len > %d:' % level)
-            if node.is_complex:
-                # NOTE(richardolsson): Complex nodes are nodes which contain
-                # anything more than a single literal or variable, and they
-                # need to be checked using a pre-compiled regular expression.
-                expression_idx = len(self._expressions)
-                self._expressions.append(node.var_regex)
-                line(pad, '  match = expressions[%d].match(path[%d]) # %s' % (
-                    expression_idx, level, node.var_regex.pattern))
+        def line(text, indent_offset=0):
+            pad = TAB_STR * (indent + indent_offset)
+            self._code_lines.append(pad + text)
 
-                line(pad, '  if match is not None:')
-                line(pad, '    params.update(match.groupdict())')
-                pad += '  '
+        # NOTE(kgriffs): Base case
+        if not nodes:
+            return
+
+        line('if path_len > %d:' % level)
+        indent += 1
+
+        level_indent = indent
+        found_simple = False
+
+        for node in nodes:
+            if node.is_var:
+                if node.is_complex:
+                    # NOTE(richardolsson): Complex nodes are nodes which contain
+                    # anything more than a single literal or variable, and they
+                    # need to be checked using a pre-compiled regular expression.
+                    expression_idx = len(self._expressions)
+                    self._expressions.append(node.var_regex)
+
+                    line('match = expressions[%d].match(path[%d]) # %s' % (
+                        expression_idx, level, node.var_regex.pattern))
+
+                    line('if match is not None:')
+                    indent += 1
+                    line('params.update(match.groupdict())')
+
+                else:
+                    # NOTE(kgriffs): Simple nodes just capture the entire path
+                    # segment as the value for the param.
+                    line('params["%s"] = path[%d]' % (node.var_name, level))
+
+                    # NOTE(kgriffs): We don't allow multiple simple var nodes
+                    # to exist at the same level, e.g.:
+                    #
+                    #   /foo/{id}/bar
+                    #   /foo/{name}/bar
+                    #
+                    assert len(nodes) == 1
+                    found_simple = True
+
             else:
-                line(pad, '  params["%s"] = path[%d]' % (node.var_name, level))
-        else:
-            line(pad, 'if path_len > %d and path[%d] == "%s":' % (
-                level, level, node.raw_segment))
+                # NOTE(kgriffs): Not a param, so must match exactly
+                line('if path[%d] == "%s":' % (level, node.raw_segment))
+                indent += 1
 
-        if node.resource is not None:
-            resource_idx = len(self._return_values)
-            self._return_values.append(node)
+            if node.resource is not None:
+                # NOTE(kgriffs): This is a valid route, so we will want to
+                # return the relevant information.
+                resource_idx = len(self._return_values)
+                self._return_values.append(node)
 
-        if len(node.children):
-            for child in node.children:
-                self._compile_node(child, pad + '  ', level + 1)
-        if node.resource is not None:
-            line(pad, '  return return_values[%d]' % resource_idx)
+            self._compile_tree(node.children, indent, level + 1)
+
+            if node.resource is None:
+                line('return None')
+            else:
+                line('return return_values[%d]' % resource_idx)
+
+            indent = level_indent
+
+        if not found_simple:
+            line('return None')
 
     def _compile(self):
         """Generates Python code for entire routing tree.
@@ -154,16 +245,20 @@ class CompiledRouter(object):
         self._expressions = []
         self._code_lines = [
             'def find(path, return_values, expressions, params):',
-            '  path_len = len(path)',
+            TAB_STR + 'path_len = len(path)',
         ]
 
-        for root in self._roots:
-            self._compile_node(root)
+        self._compile_tree(self._roots)
 
-        src = '\n'.join(self._code_lines)
+        self._code_lines.append(
+            # PERF(kgriffs): Explicit return of None is faster than implicit
+            TAB_STR + 'return None'
+        )
+
+        self._src = '\n'.join(self._code_lines)
 
         scope = {}
-        exec(compile(src, '<string>', 'exec'), scope)
+        exec(compile(self._src, '<string>', 'exec'), scope)
 
         return scope['find']
 
@@ -177,6 +272,10 @@ class CompiledRouterNode(object):
         self.raw_segment = raw_segment
         self.method_map = method_map
         self.resource = resource
+
+        self.is_var = False
+        self.is_complex = False
+        self.var_name = None
 
         seg = raw_segment.replace('.', '\\.')
 
@@ -200,8 +299,10 @@ class CompiledRouterNode(object):
                 for match in matches:
                     var_start_idx, var_end_idx = match.span()
                     seg_fields.append(seg[prev_end_idx:var_start_idx])
+
                     var_name = match.groups()[0].replace('-', '_')
                     seg_fields.append('(?P<%s>[^/]+)' % var_name)
+
                     prev_end_idx = var_end_idx
 
                 seg_fields.append(seg[prev_end_idx:])
@@ -210,19 +311,58 @@ class CompiledRouterNode(object):
         else:
             self.is_var = False
 
+    @property
+    def is_simple_var(self):
+        return self.is_var and not self.is_complex
+
     def matches(self, segment):
-        """Returns True if this node matches the supplied URI segment."""
+        """Returns True if this node matches the supplied template segment."""
+
+        return segment == self.raw_segment
+
+    def conflicts_with(self, segment):
+        """Returns True if this node conflicts with a given template segment."""
+
+        # NOTE(kgriffs): This method assumes that the caller has already
+        # checked if the segment matches. By definition, only unmatched
+        # segments may conflict, so there isn't any sense in calling
+        # conflicts_with in that case.
+        assert not self.matches(segment)
+
+        # NOTE(kgriffs): Possible combinations are as follows.
+        #
+        #   simple, simple ==> True
+        #   simple, complex ==> True
+        #   simple, string ==> True
+        #   complex, simple ==> True
+        #   complex, complex ==> False
+        #   complex, string ==> False
+        #   string, simple ==> True
+        #   string, complex ==> False
+        #   string, string ==> False
+        #
+
+        other = CompiledRouterNode(segment)
 
         if self.is_var:
             if self.is_complex:
-                match = self.var_regex.search(segment)
-                if match:
-                    return True
-                else:
+                if other.is_complex:
                     return False
+
+                if other.is_var:
+                    return True
+
+                return False
             else:
+                # NOTE(kgriffs): Falcon does not support the following:
+                #
+                #   /foo/{thing1}
+                #   /foo/{thing2}
+                #
+                # or
+                #
+                #   /foo/{thing1}
+                #   /foo/all
                 return True
-        elif segment == self.raw_segment:
-            return True
-        else:
-            return False
+
+        return other.is_simple_var

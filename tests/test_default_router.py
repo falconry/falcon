@@ -1,3 +1,5 @@
+import ddt
+
 import falcon.testing as testing
 
 
@@ -33,17 +35,70 @@ def setup_routes(router_interface):
         '/repos/{org}/{repo}/compare/{usr0}:{branch0}...{usr1}:{branch1}/full',
         {}, ResourceWithId(10))
     router_interface.add_route(
-        '/repos/{org}/{repo}/compare/all', {}, ResourceWithId(10))
+        '/repos/{org}/{repo}/compare/all', {}, ResourceWithId(11))
+    router_interface.add_route(
+        '/emojis/signs/{id}', {}, ResourceWithId(12))
+    router_interface.add_route(
+        '/repos/{org}/{repo}/compare/{usr0}:{branch0}...{usr1}:{branch1}/part',
+        {}, ResourceWithId(13))
+    router_interface.add_route(
+        '/repos/{org}/{repo}/compare/{usr0}:{branch0}',
+        {}, ResourceWithId(14))
+    router_interface.add_route(
+        '/repos/{org}/{repo}/compare/{usr0}:{branch0}/full',
+        {}, ResourceWithId(15))
 
 
+@ddt.ddt
 class TestStandaloneRouter(testing.TestBase):
     def before(self):
         from falcon.routing import DefaultRouter
         self.router = DefaultRouter()
         setup_routes(self.router)
 
+    @ddt.data(
+        '/teams/{collision}',
+        '/repos/{org}/{repo}/compare/{simple-collision}',
+    )
+    def test_collision(self, template):
+        self.assertRaises(
+            ValueError,
+            self.router.add_route, template, {}, ResourceWithId(6)
+        )
+
     def test_missing(self):
         resource, method_map, params = self.router.find('/this/does/not/exist')
+        self.assertIs(resource, None)
+
+        resource, method_map, params = self.router.find('/user/bogus')
+        self.assertIs(resource, None)
+
+        resource, method_map, params = self.router.find('/teams/1234/bogus')
+        self.assertIs(resource, None)
+
+        resource, method_map, params = self.router.find(
+            '/repos/racker/falcon/compare/johndoe:master...janedoe:dev/bogus')
+        self.assertIs(resource, None)
+
+    def test_dead_segment(self):
+        resource, method_map, params = self.router.find('/teams')
+        self.assertIs(resource, None)
+
+        resource, method_map, params = self.router.find('/emojis/signs')
+        self.assertIs(resource, None)
+
+        resource, method_map, params = self.router.find('/emojis/signs/stop')
+        self.assertEqual(params, {
+            'id': 'stop',
+        })
+
+    def test_malformed_pattern(self):
+        resource, method_map, params = self.router.find(
+            '/repos/racker/falcon/compare/foo')
+        self.assertIs(resource, None)
+
+        resource, method_map, params = self.router.find(
+            '/repos/racker/falcon/compare/foo/full')
         self.assertIs(resource, None)
 
     def test_literal(self):
@@ -61,11 +116,18 @@ class TestStandaloneRouter(testing.TestBase):
         self.assertEqual(resource.resource_id, 4)
         self.assertEqual(params, {'org': 'racker', 'repo': 'falcon'})
 
-    def test_complex(self):
         resource, method_map, params = self.router.find(
-            '/repos/racker/falcon/compare/johndoe:master...janedoe:dev')
+            '/repos/racker/falcon/compare/all')
+        self.assertEqual(resource.resource_id, 11)
+        self.assertEqual(params, {'org': 'racker', 'repo': 'falcon'})
 
-        self.assertEqual(resource.resource_id, 5)
+    @ddt.data(('', 5), ('/full', 10), ('/part', 13))
+    @ddt.unpack
+    def test_complex(self, url_postfix, resource_id):
+        uri = '/repos/racker/falcon/compare/johndoe:master...janedoe:dev'
+        resource, method_map, params = self.router.find(uri + url_postfix)
+
+        self.assertEqual(resource.resource_id, resource_id)
         self.assertEqual(params, {
             'org': 'racker',
             'repo': 'falcon',
@@ -73,4 +135,18 @@ class TestStandaloneRouter(testing.TestBase):
             'branch0': 'master',
             'usr1': 'janedoe',
             'branch1': 'dev'
+        })
+
+    @ddt.data(('', 14), ('/full', 15))
+    @ddt.unpack
+    def test_complex_alt(self, url_postfix, resource_id):
+        uri = '/repos/falconry/falcon/compare/johndoe:master'
+        resource, method_map, params = self.router.find(uri + url_postfix)
+
+        self.assertEqual(resource.resource_id, resource_id)
+        self.assertEqual(params, {
+            'org': 'falconry',
+            'repo': 'falcon',
+            'usr0': 'johndoe',
+            'branch0': 'master',
         })
