@@ -46,6 +46,11 @@ WSGI_CONTENT_HEADERS = ('CONTENT_TYPE', 'CONTENT_LENGTH')
 _maybe_wrap_wsgi_stream = True
 
 
+# PERF(kgriffs): Avoid an extra namespace lookup when using these functions
+strptime = datetime.strptime
+now = datetime.now
+
+
 class Request(object):
     """Represents a client's HTTP request.
 
@@ -928,7 +933,7 @@ class Request(object):
             return None
 
         try:
-            date = datetime.strptime(param_value, format_string).date()
+            date = strptime(param_value, format_string).date()
         except ValueError:
             msg = "The date value does not match the required format"
             raise HTTPInvalidParam(msg, name)
@@ -958,8 +963,7 @@ class Request(object):
 
         log_line = (
             DEFAULT_ERROR_LOG_FORMAT.
-            format(datetime.now(), self.method, self.path,
-                   query_string_formatted)
+            format(now(), self.method, self.path, query_string_formatted)
         )
 
         if six.PY3:
