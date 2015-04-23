@@ -841,17 +841,11 @@ class Request(object):
         Returns:
             list: The value of the param if it is found. Otherwise, returns
                 ``None`` unless required is True. Empty list elements will be
-                discarded. For example a query string containing this::
+                discarded. For example, the following query strings would
+                both result in `['1', '3']`::
 
-                things=1,,3
-
-            or a query string containing this::
-
-                things=1&things=&things=3
-
-            would both result in::
-
-                ['1', '3']
+                    things=1,,3
+                    things=1&things=&things=3
 
         Raises:
             HTTPBadRequest: A required param is missing from the request.
