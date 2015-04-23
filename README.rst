@@ -34,7 +34,7 @@ the code lean, making Falcon easier to test, optimize, and deploy.
 
 **Flexible.** Falcon can be deployed in a variety of ways, depending on
 your needs. The framework speaks WSGI, and works great with `Python 2.6
-and 2.7, PyPy, and Python 3.3/3.4 <https://travis-ci.org/racker/falcon>`__.
+and 2.7, PyPy, and Python 3.3/3.4 <https://travis-ci.org/falconry/falcon>`__.
 There's no tight coupling with any async framework, leaving you free to
 mix-and-match what you need.
 
@@ -54,13 +54,6 @@ Features
 
 Install
 ~~~~~~~
-.. note::
-
-  This documentation targets the upcoming 0.2 release of Falcon,
-  currently in beta and available on PyPI. You will need to use the
-  ``--pre`` flag with pip in order to install the Falcon 0.2 betas
-  and release candidates.
-
 If available, Falcon will compile itself with Cython for an extra
 speed boost. The following will make sure Cython is installed first, and
 that you always have the latest and greatest.
@@ -421,7 +414,7 @@ guide <http://google-styleguide.googlecode.com/svn/trunk/pyguide.html#Comments>`
 Legal
 ~~~~~
 
-Copyright 2013 by Rackspace Hosting, Inc.
+Copyright 2013 by Rackspace Hosting, Inc. and other contributors as noted in the individual source files.
 
 Falcon image courtesy of `John
 O'Neill <https://commons.wikimedia.org/wiki/File:Brown-Falcon,-Vic,-3.1.2008.jpg>`__.
@@ -441,7 +434,7 @@ permissions and limitations under the License.
 .. |Runner| image:: https://a248.e.akamai.net/assets.github.com/images/icons/emoji/runner.png
     :width: 20
     :height: 20
-.. |Build Status| image:: https://travis-ci.org/racker/falcon.png
-   :target: https://travis-ci.org/racker/falcon
-.. |Coverage Status| image:: https://coveralls.io/repos/racker/falcon/badge.png?branch=master
-   :target: https://coveralls.io/r/racker/falcon
+.. |Build Status| image:: https://travis-ci.org/falconry/falcon.svg
+   :target: https://travis-ci.org/falconry/falcon
+.. |Coverage Status| image:: https://coveralls.io/repos/falconry/falcon/badge.svg?branch=master
+   :target: https://coveralls.io/r/falconry/falcon

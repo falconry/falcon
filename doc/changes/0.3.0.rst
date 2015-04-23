@@ -1,0 +1,39 @@
+Changelog for Falcon 0.3.0
+==========================
+
+New
+---
+
+- This release includes a new router architecture for improved performance
+  and flexibility.
+- A custom router can now be specified when instantiating the
+  :py:class:`API` class.
+- URI templates can now include multiple parameterized fields within a
+  single path segment.
+- Falcon now supports reading and writing cookies.
+- Falcon now supports Jython 2.7.
+- A method for getting a query param as a date was added to the
+  :py:class:`Request` class.
+- Date headers are now returned as :py:class:`datetime.datetime` objects.
+- A default value can now be specified when calling
+  :py:meth:`Request.get_param`. This provides an alternative to using the
+  pattern::
+      value = req.get_param(name) or default_value
+- Friendly constants for status codes were added (e.g.,
+  :py:attr:`falcon.HTTP_NO_CONTENT` vs. :py:attr:`falcon.HTTP_204`.)
+- Several minor performance optimizations were made to the code base.
+
+Breaking Changes
+----------------
+- Date headers are now returned as :py:class:`datetime.datetime` objects
+  instead of strings.
+
+Fixed
+-----
+
+- The query string parser was modified to improve handling of percent-encoded
+  data.
+- Several errors in the documentation were corrected.
+- The :py:mod:`six` package was pinned to 1.4.0 or better.
+  :py:attr:`six.PY2` is required by Falcon, but that wasn't added to
+  :py:mod:`six` until version 1.4.0.

@@ -1,5 +1,3 @@
-# Copyright 2013 by Rackspace Hosting, Inc.
-#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -31,8 +29,10 @@ import six
 
 from falcon.errors import *
 from falcon import util
-from falcon.util import uri
+from falcon.util.uri import parse_query_string, parse_host
 from falcon import request_helpers as helpers
+
+from six.moves.http_cookies import SimpleCookie
 
 
 DEFAULT_ERROR_LOG_FORMAT = (u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
@@ -44,6 +44,11 @@ WSGI_CONTENT_HEADERS = ('CONTENT_TYPE', 'CONTENT_LENGTH')
 
 
 _maybe_wrap_wsgi_stream = True
+
+
+# PERF(kgriffs): Avoid an extra namespace lookup when using these functions
+strptime = datetime.strptime
+now = datetime.now
 
 
 class Request(object):
@@ -146,10 +151,10 @@ class Request(object):
             header is missing.
         if_none_match (str): Value of the If-None-Match header, or ``None``
             if the header is missing.
-        if_modified_since (str): Value of the If-Modified-Since header, or
-            ``None`` if the header is missing.
-        if_unmodified_since (str): Value of the If-Unmodified-Sinc header,
+        if_modified_since (datetime): Value of the If-Modified-Since header,
             or ``None`` if the header is missing.
+        if_unmodified_since (datetime): Value of the If-Unmodified-Since
+            header, or ``None`` if the header is missing.
         if_range (str): Value of the If-Range header, or ``None`` if the
             header is missing.
 
@@ -167,6 +172,11 @@ class Request(object):
             all the values in the order seen.
 
         options (dict): Set of global options passed from the API handler.
+
+        cookies (dict):
+            A dict of name/value cookie pairs.
+            See also: :ref:`Getting Cookies <getting-cookies>`
+
     """
 
     __slots__ = (
@@ -183,6 +193,7 @@ class Request(object):
         'context',
         '_wsgierrors',
         'options',
+        '_cookies',
     )
 
     # Allow child classes to override this
@@ -216,23 +227,24 @@ class Request(object):
         else:
             self.path = '/'
 
-        self._params = {}
-
         # PERF(kgriffs): if...in is faster than using env.get(...)
         if 'QUERY_STRING' in env:
-            query_str = env['QUERY_STRING']
+            self.query_string = env['QUERY_STRING']
 
-            if query_str:
-                self.query_string = uri.decode(query_str)
-                self._params = uri.parse_query_string(
+            if self.query_string:
+                self._params = parse_query_string(
                     self.query_string,
                     keep_blank_qs_values=self.options.keep_blank_qs_values,
                 )
+
             else:
-                self.query_string = six.text_type()
+                self._params = {}
 
         else:
-            self.query_string = six.text_type()
+            self.query_string = ''
+            self._params = {}
+
+        self._cookies = None
 
         self._cached_headers = None
         self._cached_uri = None
@@ -274,8 +286,6 @@ class Request(object):
 
     if_match = helpers.header_property('HTTP_IF_MATCH')
     if_none_match = helpers.header_property('HTTP_IF_NONE_MATCH')
-    if_modified_since = helpers.header_property('HTTP_IF_MODIFIED_SINCE')
-    if_unmodified_since = helpers.header_property('HTTP_IF_UNMODIFIED_SINCE')
     if_range = helpers.header_property('HTTP_IF_RANGE')
 
     @property
@@ -329,16 +339,15 @@ class Request(object):
 
     @property
     def date(self):
-        try:
-            http_date = self.env['HTTP_DATE']
-        except KeyError:
-            return None
+        return self.get_header_as_datetime('Date')
 
-        try:
-            return util.http_date_to_dt(http_date)
-        except ValueError:
-            msg = ('It must be formatted according to RFC 1123.')
-            raise HTTPInvalidHeader(msg, 'Date')
+    @property
+    def if_modified_since(self):
+        return self.get_header_as_datetime('If-Modified-Since')
+
+    @property
+    def if_unmodified_since(self):
+        return self.get_header_as_datetime('If-Unmodified-Since')
 
     @property
     def range(self):
@@ -346,6 +355,9 @@ class Request(object):
             value = self.env['HTTP_RANGE']
             if value.startswith('bytes='):
                 value = value[6:]
+            else:
+                msg = "The value must be prefixed with 'bytes='"
+                raise HTTPInvalidHeader(msg, 'Range')
         except KeyError:
             return None
 
@@ -429,7 +441,7 @@ class Request(object):
             # isn't supposed to mess with it, so it should be what
             # the client actually sent.
             host_header = self.env['HTTP_HOST']
-            host, port = uri.parse_host(host_header)
+            host, port = parse_host(host_header)
         except KeyError:
             # PERF(kgriffs): According to PEP-3333, this header
             # will always be present.
@@ -477,6 +489,21 @@ class Request(object):
     @property
     def params(self):
         return self._params
+
+    @property
+    def cookies(self):
+        if self._cookies is None:
+            # NOTE(tbug): We might want to look into parsing
+            # cookies ourselves. The SimpleCookie is doing a
+            # lot if stuff only required to SEND cookies.
+            parser = SimpleCookie(self.get_header("Cookie"))
+            cookies = {}
+            for morsel in parser.values():
+                cookies[morsel.key] = morsel.value
+
+            self._cookies = cookies
+
+        return self._cookies.copy()
 
     # ------------------------------------------------------------------------
     # Methods
@@ -574,7 +601,36 @@ class Request(object):
 
             raise HTTPMissingParam(name)
 
-    def get_param(self, name, required=False, store=None):
+    def get_header_as_datetime(self, header, required=False):
+        """Return an HTTP header with HTTP-Date values as a datetime.
+
+        Args:
+            name (str): Header name, case-insensitive (e.g., 'Date')
+            required (bool, optional): Set to ``True`` to raise
+                ``HTTPBadRequest`` instead of returning gracefully when the
+                header is not found (default ``False``).
+
+        Returns:
+            datetime: The value of the specified header if it exists,
+                or ``None`` if the header is not found and is not required.
+
+        Raises:
+            HTTPBadRequest: The header was not found in the request, but
+                it was required.
+            HttpInvalidHeader: The header contained a malformed/invalid value.
+        """
+
+        try:
+            http_date = self.get_header(header, required=required)
+            return util.http_date_to_dt(http_date)
+        except TypeError:
+            # When the header does not exist and isn't required
+            return None
+        except ValueError:
+            msg = ('It must be formatted according to RFC 1123.')
+            raise HTTPInvalidHeader(msg, header)
+
+    def get_param(self, name, required=False, store=None, default=None):
         """Return the raw value of a query string parameter as a string.
 
         Note:
@@ -601,6 +657,8 @@ class Request(object):
                 parameter is not found (default ``False``).
             store (dict, optional): A ``dict``-like object in which to place
                 the value of the param, but only if the param is present.
+            default (any, optional): If the param is not found returns the
+                given value instead of None
 
         Returns:
             str: The value of the param as a string, or ``None`` if param is
@@ -629,7 +687,7 @@ class Request(object):
             return param
 
         if not required:
-            return None
+            return default
 
         raise HTTPMissingParam(name)
 
@@ -787,22 +845,16 @@ class Request(object):
 
         Returns:
             list: The value of the param if it is found. Otherwise, returns
-            ``None`` unless required is True. Empty list elements will be
-            discarded. For example a query string containing this::
+                ``None`` unless required is True. Empty list elements will be
+                discarded. For example, the following query strings would
+                both result in `['1', '3']`::
 
-                things=1,,3
-
-            or a query string containing this::
-
-                things=1&things=&things=3
-
-            would both result in::
-
-                ['1', '3']
+                    things=1,,3
+                    things=1&things=&things=3
 
         Raises:
             HTTPBadRequest: A required param is missing from the request.
-            HTTPInvalidParam: A tranform function raised an instance of
+            HTTPInvalidParam: A transform function raised an instance of
                 ``ValueError``.
 
         """
@@ -841,6 +893,50 @@ class Request(object):
 
         raise HTTPMissingParam(name)
 
+    def get_param_as_date(self, name, format_string='%Y-%m-%d',
+                          required=False, store=None):
+        """Return the value of a query string parameter as a date.
+
+        Args:
+            name (str): Parameter name, case-sensitive (e.g., 'ids').
+            format_string (str): String used to parse the param value into a
+                date.
+                Any format recognized by strptime() is supported.
+                (default ``"%Y-%m-%d"``)
+            required (bool, optional): Set to ``True`` to raise
+                ``HTTPBadRequest`` instead of returning ``None`` when the
+                parameter is not found (default ``False``).
+            store (dict, optional): A ``dict``-like object in which to place
+                the value of the param, but only if the param is found (default
+                ``None``).
+        Returns:
+            datetime.date: The value of the param if it is found and can be
+                converted to a ``date`` according to the supplied format
+                string. If the param is not found, returns ``None`` unless
+                required is ``True``.
+
+        Raises:
+            HTTPBadRequest: A required param is missing from the request.
+            HTTPInvalidParam: A transform function raised an instance of
+                ``ValueError``.
+        """
+
+        param_value = self.get_param(name, required=required)
+
+        if param_value is None:
+            return None
+
+        try:
+            date = strptime(param_value, format_string).date()
+        except ValueError:
+            msg = "The date value does not match the required format"
+            raise HTTPInvalidParam(msg, name)
+
+        if store is not None:
+            store[name] = date
+
+        return date
+
     # TODO(kgriffs): Use the nocover pragma only for the six.PY3 if..else
     def log_error(self, message):  # pragma: no cover
         """Write an error message to the server's log.
@@ -861,8 +957,7 @@ class Request(object):
 
         log_line = (
             DEFAULT_ERROR_LOG_FORMAT.
-            format(datetime.now(), self.method, self.path,
-                   query_string_formatted)
+            format(now(), self.method, self.path, query_string_formatted)
         )
 
         if six.PY3:
@@ -914,8 +1009,8 @@ class Request(object):
                            'will be ignored.')
 
         if body:
-            extra_params = uri.parse_query_string(
-                uri.decode(body),
+            extra_params = parse_query_string(
+                body,
                 keep_blank_qs_values=self.options.keep_blank_qs_values,
             )
 

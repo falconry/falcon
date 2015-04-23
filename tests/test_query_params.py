@@ -1,7 +1,10 @@
+from datetime import date
+
 import ddt
 
 import falcon
 import falcon.testing as testing
+from falcon.errors import HTTPInvalidParam
 
 
 @ddt.ddt
@@ -49,7 +52,7 @@ class _TestQueryParams(testing.TestBase):
         self.assertEqual(store['limit'], '25')
 
     def test_percent_encoded(self):
-        query_string = 'id=23%2c42&q=%e8%b1%86+%e7%93%a3'
+        query_string = 'id=23,42&q=%e8%b1%86+%e7%93%a3'
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
@@ -413,6 +416,49 @@ class _TestQueryParams(testing.TestBase):
         self.assertEqual(req.get_param_as_list('bee'), ['3'])
         # There are three 'cat' keys; order is preserved.
         self.assertEqual(req.get_param_as_list('cat'), ['6', '5', '4'])
+
+    def test_get_date_valid(self):
+        date_value = "2015-04-20"
+        query_string = "thedate={0}".format(date_value)
+        self.simulate_request("/", query_string=query_string)
+        req = self.resource.req
+        self.assertEqual(req.get_param_as_date("thedate"),
+                         date(2015, 4, 20))
+
+    def test_get_date_missing_param(self):
+        query_string = "notthedate=2015-04-20"
+        self.simulate_request("/", query_string=query_string)
+        req = self.resource.req
+        self.assertEqual(req.get_param_as_date("thedate"),
+                         None)
+
+    def test_get_date_valid_with_format(self):
+        date_value = "20150420"
+        query_string = "thedate={0}".format(date_value)
+        format_string = "%Y%m%d"
+        self.simulate_request("/", query_string=query_string)
+        req = self.resource.req
+        self.assertEqual(req.get_param_as_date("thedate",
+                         format_string=format_string),
+                         date(2015, 4, 20))
+
+    def test_get_date_store(self):
+        date_value = "2015-04-20"
+        query_string = "thedate={0}".format(date_value)
+        self.simulate_request("/", query_string=query_string)
+        req = self.resource.req
+        store = {}
+        req.get_param_as_date("thedate", store=store)
+        self.assertNotEqual(len(store), 0)
+
+    def test_get_date_invalid(self):
+        date_value = "notarealvalue"
+        query_string = "thedate={0}".format(date_value)
+        format_string = "%Y%m%d"
+        self.simulate_request("/", query_string=query_string)
+        req = self.resource.req
+        self.assertRaises(HTTPInvalidParam, req.get_param_as_date,
+                          "thedate", format_string=format_string)
 
 
 class PostQueryParams(_TestQueryParams):

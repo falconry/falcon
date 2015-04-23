@@ -6,6 +6,7 @@ Classes and Functions
 
    api
    request_and_response
+   cookies
    status
    errors
    middleware

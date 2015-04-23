@@ -22,10 +22,13 @@ Testing
     :members:
 
 .. automodule:: falcon.testing
-    :members: httpnow, rand_string, create_environ
+    :members: rand_string, create_environ
 
 Miscellaneous
 -------------
 
-.. automodule:: falcon.util
-    :members: deprecated, dt_to_http, http_date_to_dt, to_query_str
+.. automodule:: falcon
+    :members: deprecated, http_now, dt_to_http, http_date_to_dt, to_query_str
+
+.. autoclass:: falcon.util.TimezoneGMT
+    :members:

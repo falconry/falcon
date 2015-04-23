@@ -13,7 +13,7 @@ VERSION = VERSION.__version__
 
 # NOTE(kgriffs): python-mimeparse is newer than mimeparse, supports Py3
 # TODO(kgriffs): Fork and optimize/modernize python-mimeparse
-REQUIRES = ['six', 'python-mimeparse']
+REQUIRES = ['six>=1.4.0', 'python-mimeparse']
 
 PYPY = True
 CYTHON = False
@@ -54,6 +54,12 @@ if CYTHON:
 
         for ext in list_modules(path.join(MYDIR, 'falcon', 'util'))]
 
+    ext_modules += [
+        Extension('falcon.routing.' + ext,
+                  [path.join('falcon', 'routing', ext + '.py')])
+
+        for ext in list_modules(path.join(MYDIR, 'falcon', 'routing'))]
+
     cmdclass = {'build_ext': build_ext}
 
 else:
@@ -80,6 +86,7 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
+        'Programming Language :: Python :: Implementation :: Jython',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.3',

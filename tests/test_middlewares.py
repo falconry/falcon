@@ -112,9 +112,9 @@ class TestRequestTimeMiddleware(TestMiddleware):
         self.assertIn("start_time", context)
         self.assertIn("mid_time", context)
         self.assertIn("end_time", context)
-        self.assertTrue(context['mid_time'] > context['start_time'],
+        self.assertTrue(context['mid_time'] >= context['start_time'],
                         "process_resource not executed after request")
-        self.assertTrue(context['end_time'] > context['start_time'],
+        self.assertTrue(context['end_time'] >= context['start_time'],
                         "process_response not executed after request")
 
 
@@ -151,9 +151,9 @@ class TestSeveralMiddlewares(TestMiddleware):
         self.assertIn("start_time", context)
         self.assertIn("mid_time", context)
         self.assertIn("end_time", context)
-        self.assertTrue(context['mid_time'] > context['start_time'],
+        self.assertTrue(context['mid_time'] >= context['start_time'],
                         "process_resource not executed after request")
-        self.assertTrue(context['end_time'] > context['start_time'],
+        self.assertTrue(context['end_time'] >= context['start_time'],
                         "process_response not executed after request")
 
     def test_middleware_execution_order(self):

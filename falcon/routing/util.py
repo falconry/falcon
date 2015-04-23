@@ -12,63 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
-
-import six
-
-from falcon.hooks import _wrap_with_hooks
 from falcon import HTTP_METHODS, responders
+from falcon.hooks import _wrap_with_hooks
 
 
-# NOTE(kgriffs): Published method; take care to avoid breaking changes.
-def compile_uri_template(template):
-    """Compile the given URI template string into a pattern matcher.
-
-    This function currently only recognizes Level 1 URI templates, and only
-    for the path portion of the URI.
-
-    See also: http://tools.ietf.org/html/rfc6570
-
-    Args:
-        template: A Level 1 URI template. Method responders must accept, as
-            arguments, all fields specified in the template (default '/').
-            Note that field names are restricted to ASCII a-z, A-Z, and
-            the underscore '_'.
-
-    Returns:
-        tuple: (template_field_names, template_regex)
-
-    """
-
-    if not isinstance(template, six.string_types):
-        raise TypeError('uri_template is not a string')
-
-    if not template.startswith('/'):
-        raise ValueError("uri_template must start with '/'")
-
-    if '//' in template:
-        raise ValueError("uri_template may not contain '//'")
-
-    if template != '/' and template.endswith('/'):
-        template = template[:-1]
-
-    # template names should be able to start with A-Za-z
-    # but also contain 0-9_ in the remaining portion
-    expression_pattern = r'{([a-zA-Z][\w]*)}'
-
-    # Get a list of field names
-    fields = set(re.findall(expression_pattern, template))
-
-    # Convert Level 1 var patterns to equivalent named regex groups
-    escaped = re.sub(r'[\.\(\)\[\]\?\*\+\^\|]', r'\\\g<0>', template)
-    pattern = re.sub(expression_pattern, r'(?P<\1>[^/]+)', escaped)
-    pattern = r'\A' + pattern + r'\Z'
-
-    return fields, re.compile(pattern, re.IGNORECASE)
-
-
-# NOTE(kgriffs): Published method; take care to avoid breaking changes.
-def create_http_method_map(resource, uri_fields, before, after):
+def create_http_method_map(resource, before, after):
     """Maps HTTP methods (e.g., 'GET', 'POST') to methods of a resource object.
 
     Args:
@@ -77,9 +25,6 @@ def create_http_method_map(resource, uri_fields, before, after):
             supports. For example, if a resource supports GET and POST, it
             should define ``on_get(self, req, resp)`` and
             ``on_post(self, req, resp)``.
-        uri_fields: A set of field names from the route's URI template
-            that a responder must support in order to avoid "method not
-            allowed".
         before: An action hook or ``list`` of hooks to be called before each
             *on_\** responder defined by the resource.
         after: An action hook or ``list`` of hooks to be called after each

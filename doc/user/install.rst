@@ -21,6 +21,16 @@ type:
 
     $ pip install --upgrade falcon
 
+.. note::
+
+    When using Cython, you should always recompile Falcon after
+    upgrading Python. To do this, simply run:
+
+    .. code:: bash
+
+        $ pip install --force-reinstall --upgrade cython
+        $ pip install --force-reinstall --upgrade falcon
+
 Installing Cython on OS X
 -------------------------
 
@@ -69,7 +79,7 @@ Falcon `lives on GitHub <https://github.com/racker/falcon>`_, making the
 code easy to browse, download, fork, etc. Pull requests are always welcome! Also,
 please remember to star the project if it makes you happy.
 
-Once you have cloned the repro or downloaded a tarball from GitHub, you
+Once you have cloned the repo or downloaded a tarball from GitHub, you
 can install Falcon like this:
 
 .. code:: bash

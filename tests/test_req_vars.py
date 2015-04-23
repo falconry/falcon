@@ -368,15 +368,15 @@ class TestReqVars(testing.TestBase):
         self.assertEqual(preferred_type, None)
 
     def test_range(self):
-        headers = {'Range': '10-'}
+        headers = {'Range': 'bytes=10-'}
         req = Request(testing.create_environ(headers=headers))
         self.assertEqual(req.range, (10, -1))
 
-        headers = {'Range': '10-20'}
+        headers = {'Range': 'bytes=10-20'}
         req = Request(testing.create_environ(headers=headers))
         self.assertEqual(req.range, (10, 20))
 
-        headers = {'Range': '-10240'}
+        headers = {'Range': 'bytes=-10240'}
         req = Request(testing.create_environ(headers=headers))
         self.assertEqual(req.range, (-10240, -1))
 
@@ -392,62 +392,62 @@ class TestReqVars(testing.TestBase):
         self.assertIs(req.range, None)
 
     def test_range_invalid(self):
-        headers = {'Range': '10240'}
+        headers = {'Range': 'bytes=10240'}
         req = Request(testing.create_environ(headers=headers))
         self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
 
-        headers = {'Range': '-'}
+        headers = {'Range': 'bytes=-'}
         expected_desc = ('The value provided for the Range header is '
                          'invalid. The byte offsets are missing.')
         self._test_error_details(headers, 'range',
                                  falcon.HTTPInvalidHeader,
                                  'Invalid header value', expected_desc)
 
-        headers = {'Range': '--'}
+        headers = {'Range': 'bytes=--'}
         req = Request(testing.create_environ(headers=headers))
         self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
 
-        headers = {'Range': '-3-'}
+        headers = {'Range': 'bytes=-3-'}
         req = Request(testing.create_environ(headers=headers))
         self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
 
-        headers = {'Range': '-3-4'}
+        headers = {'Range': 'bytes=-3-4'}
         req = Request(testing.create_environ(headers=headers))
         self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
 
-        headers = {'Range': '3-3-4'}
+        headers = {'Range': 'bytes=3-3-4'}
         req = Request(testing.create_environ(headers=headers))
         self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
 
-        headers = {'Range': '3-3-'}
+        headers = {'Range': 'bytes=3-3-'}
         req = Request(testing.create_environ(headers=headers))
         self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
 
-        headers = {'Range': '3-3- '}
+        headers = {'Range': 'bytes=3-3- '}
         req = Request(testing.create_environ(headers=headers))
         self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
 
-        headers = {'Range': 'fizbit'}
+        headers = {'Range': 'bytes=fizbit'}
         req = Request(testing.create_environ(headers=headers))
         self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
 
-        headers = {'Range': 'a-'}
+        headers = {'Range': 'bytes=a-'}
         req = Request(testing.create_environ(headers=headers))
         self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
 
-        headers = {'Range': 'a-3'}
+        headers = {'Range': 'bytes=a-3'}
         req = Request(testing.create_environ(headers=headers))
         self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
 
-        headers = {'Range': '-b'}
+        headers = {'Range': 'bytes=-b'}
         req = Request(testing.create_environ(headers=headers))
         self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
 
-        headers = {'Range': '3-b'}
+        headers = {'Range': 'bytes=3-b'}
         req = Request(testing.create_environ(headers=headers))
         self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
 
-        headers = {'Range': 'x-y'}
+        headers = {'Range': 'bytes=x-y'}
         expected_desc = ('The value provided for the Range header is '
                          'invalid. It must be a byte range formatted '
                          'according to RFC 2616.')
@@ -459,6 +459,14 @@ class TestReqVars(testing.TestBase):
         expected_desc = ('The value provided for the Range '
                          'header is invalid. The value must be a '
                          'continuous byte range.')
+        self._test_error_details(headers, 'range',
+                                 falcon.HTTPInvalidHeader,
+                                 'Invalid header value', expected_desc)
+
+        headers = {'Range': '10-'}
+        expected_desc = ("The value provided for the Range "
+                         "header is invalid. The value must be "
+                         "prefixed with 'bytes='")
         self._test_error_details(headers, 'range',
                                  falcon.HTTPInvalidHeader,
                                  'Invalid header value', expected_desc)
@@ -497,28 +505,47 @@ class TestReqVars(testing.TestBase):
                                  falcon.HTTPInvalidHeader,
                                  'Invalid header value', expected_desc)
 
-    def test_date(self):
+    @ddt.data(('Date', 'date'),
+              ('If-Modified-since', 'if_modified_since'),
+              ('If-Unmodified-since', 'if_unmodified_since'),
+              )
+    @ddt.unpack
+    def test_date(self, header, attr):
         date = datetime.datetime(2013, 4, 4, 5, 19, 18)
-        headers = {'date': 'Thu, 04 Apr 2013 05:19:18 GMT'}
-        req = Request(testing.create_environ(headers=headers))
-        self.assertEqual(req.date, date)
+        date_str = 'Thu, 04 Apr 2013 05:19:18 GMT'
 
-    @ddt.data('Thu, 04 Apr 2013', '')
-    def test_date_invalid(self, http_date):
-        headers = {'date': http_date}
-        expected_desc = ('The value provided for the Date '
+        self._test_header_expected_value(header, date_str, attr, date)
+
+    @ddt.data(('Date', 'date'),
+              ('If-Modified-Since', 'if_modified_since'),
+              ('If-Unmodified-Since', 'if_unmodified_since'),
+              )
+    @ddt.unpack
+    def test_date_invalid(self, header, attr):
+
+        # Date formats don't conform to RFC 1123
+        headers = {header: 'Thu, 04 Apr 2013'}
+        expected_desc = ('The value provided for the {0} '
                          'header is invalid. It must be formatted '
                          'according to RFC 1123.')
-        self._test_error_details(headers, 'date',
-                                 falcon.HTTPInvalidHeader,
-                                 'Invalid header value', expected_desc)
 
-    def test_date_missing(self):
+        self._test_error_details(headers, attr,
+                                 falcon.HTTPInvalidHeader,
+                                 'Invalid header value',
+                                 expected_desc.format(header))
+
+        headers = {header: ''}
+        self._test_error_details(headers, attr,
+                                 falcon.HTTPInvalidHeader,
+                                 'Invalid header value',
+                                 expected_desc.format(header))
+
+    @ddt.data('date', 'if_modified_since', 'if_unmodified_since')
+    def test_date_missing(self, attr):
         req = Request(testing.create_environ())
-        self.assertIs(req.date, None)
+        self.assertIs(getattr(req, attr), None)
 
     def test_attribute_headers(self):
-        date = testing.httpnow()
         hash = 'fa0d1a60ef6616bb28038515c8ea4cb2'
         auth = 'HMAC_SHA1 c590afa9bb59191ffab30f223791e82d3fd3e3af'
         agent = 'testing/1.0.1'
@@ -534,12 +561,8 @@ class TestReqVars(testing.TestBase):
         self._test_attribute_header('Expect', '100-continue', 'expect')
 
         self._test_attribute_header('If-Match', hash, 'if_match')
-        self._test_attribute_header('If-Modified-Since', date,
-                                    'if_modified_since')
         self._test_attribute_header('If-None-Match', hash, 'if_none_match')
         self._test_attribute_header('If-Range', hash, 'if_range')
-        self._test_attribute_header('If-Unmodified-Since', date,
-                                    'if_unmodified_since')
 
         self._test_attribute_header('User-Agent', agent, 'user_agent',
                                     default=default_agent)
@@ -571,6 +594,11 @@ class TestReqVars(testing.TestBase):
 
         req = Request(testing.create_environ())
         self.assertEqual(getattr(req, attr), default)
+
+    def _test_header_expected_value(self, name, value, attr, expected_value):
+        headers = {name: value}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertEqual(getattr(req, attr), expected_value)
 
     def _test_error_details(self, headers, attr_name,
                             error_type, title, description):

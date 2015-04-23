@@ -259,6 +259,10 @@ def parse_query_string(query_string, keep_blank_qs_values=False):
         a more compact form in which the param may be given a single time
         but set to a ``list`` of comma-separated elements (e.g., 'foo=a,b,c').
 
+        When using this format, all commas uri-encoded will not be treated by
+        Falcon as a delimiter. If the client wants to send a value as a list,
+        it must not encode the commas with the values.
+
         The two different ways of specifying lists may not be mixed in
         a single query string for the same parameter.
 
@@ -287,14 +291,21 @@ def parse_query_string(query_string, keep_blank_qs_values=False):
         if not (v or keep_blank_qs_values):
             continue
 
+        # Note(steffgrez): Falcon first decode name parameter for handle
+        # utf8 character.
+        k = decode(k)
+
+        # NOTE(steffgrez): Falcon decode value at the last moment. So query
+        # parser won't mix up between percent-encoded comma (as value) and
+        # comma-separated list (as reserved character for sub-delimiter)
         if k in params:
             # The key was present more than once in the POST data.  Convert to
             # a list, or append the next value to the list.
             old_value = params[k]
             if isinstance(old_value, list):
-                old_value.append(v)
+                old_value.append(decode(v))
             else:
-                params[k] = [old_value, v]
+                params[k] = [old_value, decode(v)]
 
         else:
             if ',' in v:
@@ -309,9 +320,11 @@ def parse_query_string(query_string, keep_blank_qs_values=False):
                     # NOTE(kgriffs): Normalize the result in the case that
                     # some elements are empty strings, such that the result
                     # will be the same for 'foo=1,,3' as 'foo=1&foo=&foo=3'.
-                    v = [element for element in v if element]
-
-            params[k] = v
+                    params[k] = [decode(element) for element in v if element]
+                else:
+                    params[k] = [decode(element) for element in v]
+            else:
+                params[k] = decode(v)
 
     return params
 

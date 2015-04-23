@@ -21,11 +21,17 @@ import six
 
 __all__ = (
     'deprecated',
+    'http_now',
     'dt_to_http',
     'http_date_to_dt',
     'to_query_str',
     'get_bound_method',
 )
+
+
+# PERF(kgriffs): Avoid superfluous namespace lookups
+strptime = datetime.datetime.strptime
+utcnow = datetime.datetime.utcnow
 
 
 # NOTE(kgriffs): We don't want our deprecations to be ignored by default,
@@ -69,6 +75,17 @@ def deprecated(instructions):
     return decorator
 
 
+def http_now():
+    """Returns the current UTC time as an IMF-fixdate.
+
+    Returns:
+        str: The current UTC time as an IMF-fixdate,
+            e.g., 'Tue, 15 Nov 1994 12:45:26 GMT'.
+    """
+
+    return dt_to_http(utcnow())
+
+
 def dt_to_http(dt):
     """Converts a ``datetime`` instance to an HTTP date string.
 
@@ -96,8 +113,7 @@ def http_date_to_dt(http_date):
             HTTP date.
     """
 
-    return datetime.datetime.strptime(
-        http_date, '%a, %d %b %Y %H:%M:%S %Z')
+    return strptime(http_date, '%a, %d %b %Y %H:%M:%S %Z')
 
 
 def to_query_str(params):
