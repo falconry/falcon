@@ -1,16 +1,17 @@
-
 .. _cookies:
-Cookies
--------------
 
-Cookie support has been added to falcon from version 0.3.
+Cookies
+-------
+
+Cookie support is available in Falcon version 0.3 or later.
 
 .. _getting-cookies:
+
 Getting Cookies
-~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~
 
-Cookie can be read from a request via the :py:attr:`~.Request.cookies` request attribute:
-
+Cookies can be read from a request via the :py:attr:`~.Request.cookies`
+request attribute:
 
 .. code:: python
 
@@ -31,7 +32,8 @@ The :py:attr:`~.Request.cookies` attribute is a regular
     for better performance.
 
 .. _setting-cookies:
-Setting Cookies 
+
+Setting Cookies
 ~~~~~~~~~~~~~~~
 
 Setting cookies on a response is done via the :py:meth:`~.Response.set_cookie`.
@@ -46,8 +48,6 @@ with the same name (which is how multiple cookies are sent to the client).
 header field, which is not compatible with the format used by `Set-Cookie`
 headers to send cookies to clients.
 
-
-
 Simple example:
 
 .. code:: python
@@ -59,9 +59,6 @@ Simple example:
 
 
 You can of course also set the domain, path and lifetime of the cookie.
-
-
-
 
 .. code:: python
 

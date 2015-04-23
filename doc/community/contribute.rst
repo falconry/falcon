@@ -35,13 +35,12 @@ doesn't make pyflakes sad.
   using the *help* function within a REPL, and when browsing
   them on *Read the Docs*.
 * Format non-trivial comments using your GitHub nick and an appropriate
-  prefix. Here are some examples:
-    .. code:: python
+  prefix. Here are some examples::
 
-        # TODO(riker): Damage report!
-        # NOTE(riker): Well, that's certainly good to know.
-        # PERF(riker): Travel time to the nearest starbase?
-        # APPSEC(riker): In all trust, there is the possibility for betrayal.
+      # TODO(riker): Damage report!
+      # NOTE(riker): Well, that's certainly good to know.
+      # PERF(riker): Travel time to the nearest starbase?
+      # APPSEC(riker): In all trust, there is the possibility for betrayal.
 
 * Commit messages should be formatted using `AngularJS conventions`_
   (one-liners are OK for now but bodies and footers may be required as the
