@@ -18,10 +18,14 @@ import sys
 
 import six
 
-from falcon.util import uri
+from falcon.util import uri, http_now
 
 # Constants
 DEFAULT_HOST = 'falconframework.org'
+
+
+# NOTE(kgriffs): Alias for backwards-compatibility with Falcon 0.2
+httpnow = http_now
 
 
 def rand_string(min, max):

@@ -52,6 +52,15 @@ class TestFalconUtils(testtools.TestCase):
         sys.stderr = old_stderr
         self.assertIn(msg, stream.getvalue())
 
+    def test_http_now(self):
+        expected = datetime.utcnow()
+        actual = falcon.http_date_to_dt(falcon.http_now())
+
+        delta = actual - expected
+        delta_sec = abs(delta.days * 86400 + delta.seconds)
+
+        self.assertLessEqual(delta_sec, 1)
+
     def test_dt_to_http(self):
         self.assertEqual(
             falcon.dt_to_http(datetime(2013, 4, 4)),
@@ -286,3 +295,6 @@ class TestFalconTesting(falcon.testing.TestBase):
     def test_decode_empty_result(self):
         body = self.simulate_request('/', decode='utf-8')
         self.assertEqual(body, '')
+
+    def test_httpnow_alias_for_backwards_compat(self):
+        self.assertIs(falcon.testing.httpnow, util.http_now)
