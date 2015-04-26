@@ -12,10 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import six
+from six import PY2
+from six import text_type as TEXT_TYPE
+from six import string_types as STRING_TYPES
+from six.moves.http_cookies import SimpleCookie, CookieError
 
 from falcon.response_helpers import header_property, format_range
-from falcon.util import dt_to_http, uri
+from falcon.response_helpers import is_ascii_encodable
+from falcon.util import dt_to_http, TimezoneGMT
+from falcon.util.uri import encode as uri_encode
+from falcon.util.uri import encode_value as uri_encode_value
+
+GMT_TIMEZONE = TimezoneGMT()
 
 
 class Response(object):
@@ -79,6 +87,7 @@ class Response(object):
         '_body_encoded',  # Stuff
         'data',
         '_headers',
+        '_cookies',
         'status',
         'stream',
         'stream_len'
@@ -87,6 +96,10 @@ class Response(object):
     def __init__(self):
         self.status = '200 OK'
         self._headers = {}
+
+        # NOTE(tbug): will be set to a SimpleCookie object
+        # when cookie is set via set_cookie
+        self._cookies = None
 
         self._body = None
         self._body_encoded = None
@@ -119,7 +132,7 @@ class Response(object):
             # encoded str, then check and encode
             # if it isn't.
             self._body_encoded = body
-            if isinstance(body, six.text_type):
+            if isinstance(body, TEXT_TYPE):
                 self._body_encoded = body.encode('utf-8')
 
         return self._body_encoded
@@ -136,11 +149,115 @@ class Response(object):
         self.stream = stream
         self.stream_len = stream_len
 
+    def set_cookie(self, name, value, expires=None, max_age=None,
+                   domain=None, path=None, secure=True, http_only=True):
+        """Set a response cookie.
+
+        Note:
+            This method can be called multiple times to add one or
+            more cookies to the response.
+
+        See Also:
+            To learn more about setting cookies, see
+            :ref:`Setting Cookies <setting-cookies>`. The parameters listed
+            below correspond to those defined in `RFC 6265`_.
+
+        Args:
+            name (str):
+                Cookie name
+            value (str):
+                Cookie value
+            expires (datetime): Specifies when the cookie should expire. By
+                default, cookies expire when the user agent exits.
+            max_age (int): Defines the lifetime of the cookie in seconds.
+                After the specified number of seconds elapse, the client
+                should discard the cookie.
+            domain (str): Specifies the domain for which the cookie is valid.
+                An explicitly specified domain must always start with a dot.
+                A value of 0 means the cookie should be discarded immediately.
+            path (str): Specifies the subset of URLs to
+                which this cookie applies.
+            secure (bool): Direct the client to use only secure means to
+                contact the origin server whenever it sends back this cookie
+                (default: ``True``). Warning: You will also need to enforce
+                HTTPS for the cookies to be transfered securely.
+            http_only (bool): Direct the client to only transfer the cookie
+                with unscripted HTTP requests (default: ``True``). This is
+                intended to mitigate some forms of cross-site scripting.
+
+        Raises:
+            KeyError: `name` is not a valid cookie name.
+            ValueError: `value` is not a valid cookie value.
+
+        .. _RFC 6265:
+            http://tools.ietf.org/html/rfc6265
+
+        """
+
+        if not is_ascii_encodable(name):
+            raise KeyError('"name" is not ascii encodable')
+        if not is_ascii_encodable(value):
+            raise ValueError('"value" is not ascii encodable')
+
+        if PY2:  # pragma: no cover
+            name = str(name)
+            value = str(value)
+
+        if self._cookies is None:
+            self._cookies = SimpleCookie()
+
+        try:
+            self._cookies[name] = value
+        except CookieError as e:  # pragma: no cover
+            # NOTE(tbug): we raise a KeyError here, to avoid leaking
+            # the CookieError to the user. SimpleCookie (well, BaseCookie)
+            # only throws CookieError on issues with the cookie key
+            raise KeyError(str(e))
+
+        if expires:
+            # set Expires on cookie. Format is Wdy, DD Mon YYYY HH:MM:SS GMT
+
+            # NOTE(tbug): we never actually need to
+            # know that GMT is named GMT when formatting cookies.
+            # It is a function call less to just write "GMT" in the fmt string:
+            fmt = "%a, %d %b %Y %H:%M:%S GMT"
+            if expires.tzinfo is None:
+                # naive
+                self._cookies[name]["expires"] = expires.strftime(fmt)
+            else:
+                # aware
+                gmt_expires = expires.astimezone(GMT_TIMEZONE)
+                self._cookies[name]["expires"] = gmt_expires.strftime(fmt)
+
+        if max_age:
+            self._cookies[name]["max-age"] = max_age
+
+        if domain:
+            self._cookies[name]["domain"] = domain
+
+        if path:
+            self._cookies[name]["path"] = path
+
+        if secure:
+            self._cookies[name]["secure"] = secure
+
+        if http_only:
+            self._cookies[name]["httponly"] = http_only
+
+    def unset_cookie(self, name):
+        """Unset a cookie from the response
+        """
+        if self._cookies is not None and name in self._cookies:
+            del self._cookies[name]
+
     def set_header(self, name, value):
         """Set a header for this response to a given value.
 
         Warning:
             Calling this method overwrites the existing value, if any.
+
+        Warning:
+            For setting cookies, see instead :meth:`~.set_cookie`
 
         Args:
             name (str): Header name to set (case-insensitive). Must be of
@@ -163,6 +280,9 @@ class Response(object):
             If the header already exists, the new value will be appended
             to it, delimited by a comma. Most header specifications support
             this format, Cookie and Set-Cookie being the notable exceptions.
+
+        Warning:
+            For setting cookies, see :py:meth:`~.set_cookie`
 
         Args:
             name (str): Header name to set (case-insensitive). Must be of
@@ -291,32 +411,32 @@ class Response(object):
         if '//' in rel:
             if ' ' in rel:
                 rel = ('"' +
-                       ' '.join([uri.encode(r) for r in rel.split()]) +
+                       ' '.join([uri_encode(r) for r in rel.split()]) +
                        '"')
             else:
-                rel = '"' + uri.encode(rel) + '"'
+                rel = '"' + uri_encode(rel) + '"'
 
-        value = '<' + uri.encode(target) + '>; rel=' + rel
+        value = '<' + uri_encode(target) + '>; rel=' + rel
 
         if title is not None:
             value += '; title="' + title + '"'
 
         if title_star is not None:
             value += ("; title*=UTF-8'" + title_star[0] + "'" +
-                      uri.encode_value(title_star[1]))
+                      uri_encode_value(title_star[1]))
 
         if type_hint is not None:
             value += '; type="' + type_hint + '"'
 
         if hreflang is not None:
-            if isinstance(hreflang, six.string_types):
+            if isinstance(hreflang, STRING_TYPES):
                 value += '; hreflang=' + hreflang
             else:
                 value += '; '
                 value += '; '.join(['hreflang=' + lang for lang in hreflang])
 
         if anchor is not None:
-            value += '; anchor="' + uri.encode(anchor) + '"'
+            value += '; anchor="' + uri_encode(anchor) + '"'
 
         _headers = self._headers
         if 'link' in _headers:
@@ -338,7 +458,7 @@ class Response(object):
     content_location = header_property(
         'Content-Location',
         'Sets the Content-Location header.',
-        uri.encode)
+        uri_encode)
 
     content_range = header_property(
         'Content-Range',
@@ -346,11 +466,11 @@ class Response(object):
 
         The tuple has the form (*start*, *end*, *length*), where *start* and
         *end* designate the byte range (inclusive), and *length* is the
-        total number of bytes, or '*' if unknown. You may pass ``int``'s for
+        total number of bytes, or '\*' if unknown. You may pass ``int``'s for
         these numbers (no need to convert to ``str`` beforehand).
 
         Note:
-            You only need to use the alternate form, 'bytes */1234', for
+            You only need to use the alternate form, 'bytes \*/1234', for
             responses that use the status '416 Range Not Satisfiable'. In this
             case, raising ``falcon.HTTPRangeNotSatisfiable`` will do the right
             thing.
@@ -379,7 +499,7 @@ class Response(object):
     location = header_property(
         'Location',
         'Sets the Location header.',
-        uri.encode)
+        uri_encode)
 
     retry_after = header_property(
         'Retry-After',
@@ -409,7 +529,7 @@ class Response(object):
         """,
         lambda v: ', '.join(v))
 
-    def _wsgi_headers(self, media_type=None):
+    def _wsgi_headers(self, media_type=None, py2=PY2):
         """Convert headers into the format expected by WSGI servers.
 
         Args:
@@ -428,9 +548,22 @@ class Response(object):
         if set_content_type:
             headers['content-type'] = media_type
 
-        if six.PY2:  # pragma: no cover
+        if py2:  # pragma: no cover
             # PERF(kgriffs): Don't create an extra list object if
             # it isn't needed.
-            return headers.items()
+            items = headers.items()
+        else:
+            items = list(headers.items())  # pragma: no cover
 
-        return list(headers.items())  # pragma: no cover
+        if self._cookies is not None:
+            # PERF(tbug):
+            # The below implementation is ~23% faster than
+            # the alternative:
+            #
+            #     self._cookies.output().split("\\r\\n")
+            #
+            # Even without the .split("\\r\\n"), the below
+            # is still ~17% faster, so don't use .output()
+            items += [("set-cookie", c.OutputString())
+                      for c in self._cookies.values()]
+        return items

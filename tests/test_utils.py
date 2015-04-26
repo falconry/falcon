@@ -1,4 +1,4 @@
-# -*- coding: utf-8-*-
+# -*- coding: utf-8 -*-
 
 from datetime import datetime
 import functools
@@ -51,6 +51,15 @@ class TestFalconUtils(testtools.TestCase):
 
         sys.stderr = old_stderr
         self.assertIn(msg, stream.getvalue())
+
+    def test_http_now(self):
+        expected = datetime.utcnow()
+        actual = falcon.http_date_to_dt(falcon.http_now())
+
+        delta = actual - expected
+        delta_sec = abs(delta.days * 86400 + delta.seconds)
+
+        self.assertLessEqual(delta_sec, 1)
 
     def test_dt_to_http(self):
         self.assertEqual(
@@ -185,6 +194,38 @@ class TestFalconUtils(testtools.TestCase):
             actual = uri.decode(case)
             self.assertEqual(expect, actual)
 
+    def test_parse_query_string(self):
+        query_strinq = (
+            "a=http%3A%2F%2Ffalconframework.org%3Ftest%3D1"
+            "&b=%7B%22test1%22%3A%20%22data1%22%"
+            "2C%20%22test2%22%3A%20%22data2%22%7D"
+            "&c=1,2,3"
+            "&d=test"
+            "&e=a,,%26%3D%2C"
+            "&f=a&f=a%3Db"
+            "&%C3%A9=a%3Db"
+        )
+        decoded_url = 'http://falconframework.org?test=1'
+        decoded_json = '{"test1": "data1", "test2": "data2"}'
+
+        result = uri.parse_query_string(query_strinq)
+        self.assertEqual(result['a'], decoded_url)
+        self.assertEqual(result['b'], decoded_json)
+        self.assertEqual(result['c'], ['1', '2', '3'])
+        self.assertEqual(result['d'], 'test')
+        self.assertEqual(result['e'], ['a', '&=,'])
+        self.assertEqual(result['f'], ['a', 'a=b'])
+        self.assertEqual(result[u'é'], 'a=b')
+
+        result = uri.parse_query_string(query_strinq, True)
+        self.assertEqual(result['a'], decoded_url)
+        self.assertEqual(result['b'], decoded_json)
+        self.assertEqual(result['c'], ['1', '2', '3'])
+        self.assertEqual(result['d'], 'test')
+        self.assertEqual(result['e'], ['a', '', '&=,'])
+        self.assertEqual(result['f'], ['a', 'a=b'])
+        self.assertEqual(result[u'é'], 'a=b')
+
     def test_parse_host(self):
         self.assertEqual(uri.parse_host('::1'), ('::1', None))
         self.assertEqual(uri.parse_host('2001:ODB8:AC10:FE01::'),
@@ -254,3 +295,6 @@ class TestFalconTesting(falcon.testing.TestBase):
     def test_decode_empty_result(self):
         body = self.simulate_request('/', decode='utf-8')
         self.assertEqual(body, '')
+
+    def test_httpnow_alias_for_backwards_compat(self):
+        self.assertIs(falcon.testing.httpnow, util.http_now)

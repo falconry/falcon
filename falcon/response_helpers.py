@@ -60,3 +60,21 @@ def format_range(value):
             str(value[0]) + '-' +
             str(value[1]) + '/' +
             str(value[2]))
+
+
+def is_ascii_encodable(s):  # pragma: no cover
+    """Check if argument encodes to ascii without error."""
+    try:
+        s.encode("ascii")
+    except UnicodeEncodeError:
+        # NOTE(tbug): Py2 and Py3 will raise this if string contained
+        # chars that could not be ascii encoded
+        return False
+    except UnicodeDecodeError:
+        # NOTE(tbug): py2 will raise this if type is str
+        # and contains non-ascii chars
+        return False
+    except AttributeError:
+        # NOTE(tbug): s is probably not a string type
+        return False
+    return True

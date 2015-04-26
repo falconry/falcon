@@ -13,10 +13,12 @@
 # limitations under the License.
 
 import re
+import six
 
 from falcon import api_helpers as helpers
 from falcon import DEFAULT_MEDIA_TYPE
 from falcon.http_error import HTTPError
+from falcon.http_status import HTTPStatus
 from falcon.request import Request, RequestOptions
 from falcon.response import Response
 import falcon.responders
@@ -53,7 +55,7 @@ class API(object):
                         \"""
 
                     def process_resource(self, req, resp, resource):
-                        \"""Process the request after routing.
+                        \"""Process the request and resource *after* routing.
 
                         Args:
                             req: Request object that will be passed to the
@@ -88,6 +90,10 @@ class API(object):
             instead of Falcon's default class. (default
             ``falcon.response.Response``)
 
+        router (object, optional): An instance of a custom router
+            to use in lieu of the default engine.
+            See also: :ref:`Routing <routing>`.
+
     Attributes:
         req_options (RequestOptions): A set of behavioral options related to
             incoming requests.
@@ -105,13 +111,12 @@ class API(object):
     _STREAM_BLOCK_SIZE = 8 * 1024  # 8 KiB
 
     __slots__ = ('_after', '_before', '_request_type', '_response_type',
-                 '_error_handlers', '_media_type', '_routes', '_sinks',
+                 '_error_handlers', '_media_type', '_router', '_sinks',
                  '_serialize_error', 'req_options', '_middleware')
 
     def __init__(self, media_type=DEFAULT_MEDIA_TYPE, before=None, after=None,
                  request_type=Request, response_type=Response,
-                 middleware=None):
-        self._routes = []
+                 middleware=None, router=None):
         self._sinks = []
         self._media_type = media_type
 
@@ -120,6 +125,8 @@ class API(object):
 
         # set middleware
         self._middleware = helpers.prepare_middleware(middleware)
+
+        self._router = router or routing.DefaultRouter()
 
         self._request_type = request_type
         self._response_type = response_type
@@ -205,6 +212,11 @@ class API(object):
                     self._call_resp_mw(middleware_stack, req, resp, resource)
                     raise
 
+        except HTTPStatus as ex:
+            self._compose_status_response(req, resp, ex)
+            self._call_after_hooks(req, resp, resource)
+            self._call_resp_mw(middleware_stack, req, resp, resource)
+
         except HTTPError as ex:
             self._compose_error_response(req, resp, ex)
             self._call_after_hooks(req, resp, resource)
@@ -238,11 +250,16 @@ class API(object):
     def add_route(self, uri_template, resource):
         """Associates a templatized URI path with a resource.
 
-        A resource is an instance of a class that defines various on_*
+        A resource is an instance of a class that defines various
         "responder" methods, one for each HTTP method the resource
-        allows. For example, to support GET, simply define an `on_get`
-        responder. If a client requests an unsupported method, Falcon
-        will respond with "405 Method not allowed".
+        allows. Responder names start with `on_` and are named according to
+        which HTTP method they handle, as in `on_get`, `on_post`, `on_put`,
+        etc.
+
+        If your resource does not support a particular
+        HTTP method, simply omit the corresponding responder and
+        Falcon will reply with "405 Method not allowed" if that
+        method is ever requested.
 
         Responders must always define at least two arguments to receive
         request and response objects, respectively. For example::
@@ -265,6 +282,11 @@ class API(object):
             def on_put(self, req, resp, name):
                 pass
 
+        Individual path segments may contain one or more field expressions.
+        For example::
+
+            /repos/{org}/{repo}/compare/{usr0}:{branch0}...{usr1}:{branch1}
+
         Args:
             uri_template (str): A templatized URI. Care must be
                 taken to ensure the template does not mask any sink
@@ -278,13 +300,20 @@ class API(object):
 
         """
 
-        uri_fields, path_template = routing.compile_uri_template(uri_template)
-        method_map = routing.create_http_method_map(
-            resource, uri_fields, self._before, self._after)
+        # NOTE(richardolsson): Doing the validation here means it doesn't have
+        # to be duplicated in every future router implementation.
+        if not isinstance(uri_template, six.string_types):
+            raise TypeError('uri_template is not a string')
 
-        # Insert at the head of the list in case we get duplicate
-        # adds (will cause the last one to win).
-        self._routes.insert(0, (path_template, method_map, resource))
+        if not uri_template.startswith('/'):
+            raise ValueError("uri_template must start with '/'")
+
+        if '//' in uri_template:
+            raise ValueError("uri_template may not contain '//'")
+
+        method_map = routing.create_http_method_map(
+            resource, self._before, self._after)
+        self._router.add_route(uri_template, method_map, resource)
 
     def add_sink(self, sink, prefix=r'/'):
         """Registers a sink method for the API.
@@ -448,17 +477,12 @@ class API(object):
 
         path = req.path
         method = req.method
-        for path_template, method_map, resource in self._routes:
-            m = path_template.match(path)
-            if m:
-                params = m.groupdict()
-
-                try:
-                    responder = method_map[method]
-                except KeyError:
-                    responder = falcon.responders.bad_request
-
-                break
+        resource, method_map, params = self._router.find(path)
+        if resource is not None:
+            try:
+                responder = method_map[method]
+            except KeyError:
+                responder = falcon.responders.bad_request
         else:
             params = {}
             resource = None
@@ -475,13 +499,22 @@ class API(object):
 
         return (responder, params, resource)
 
+    def _compose_status_response(self, req, resp, http_status):
+        """Composes a response for the given HTTPStatus instance."""
+
+        resp.status = http_status.status
+
+        if http_status.headers is not None:
+            resp.set_headers(http_status.headers)
+
+        if getattr(http_status, "body", None) is not None:
+            resp.body = http_status.body
+
     def _compose_error_response(self, req, resp, error):
         """Composes a response for the given HTTPError instance."""
 
-        resp.status = error.status
-
-        if error.headers is not None:
-            resp.set_headers(error.headers)
+        # Use the HTTPStatus handler function to set status/headers
+        self._compose_status_response(req, resp, error)
 
         if error.has_representation:
             media_type, body = self._serialize_error(req, error)
