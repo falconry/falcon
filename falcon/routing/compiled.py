@@ -206,7 +206,7 @@ class CompiledRouter(object):
                     #   /foo/{id}/bar
                     #   /foo/{name}/bar
                     #
-                    assert len(nodes) == 1
+                    assert len([node for node in nodes if node.is_var]) == 1
                     found_simple = True
 
             else:
@@ -308,10 +308,6 @@ class CompiledRouterNode(object):
         else:
             self.is_var = False
 
-    @property
-    def is_simple_var(self):
-        return self.is_var and not self.is_complex
-
     def matches(self, segment):
         """Returns True if this node matches the supplied template segment."""
 
@@ -334,7 +330,7 @@ class CompiledRouterNode(object):
         #   complex, simple ==> True
         #   complex, complex ==> False
         #   complex, string ==> False
-        #   string, simple ==> True
+        #   string, simple ==> False
         #   string, complex ==> False
         #   string, string ==> False
         #
@@ -362,4 +358,4 @@ class CompiledRouterNode(object):
                 #   /foo/all
                 return True
 
-        return other.is_simple_var
+        return False
