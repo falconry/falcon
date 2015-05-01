@@ -7,6 +7,9 @@ class ResourceWithId(object):
     def __init__(self, resource_id):
         self.resource_id = resource_id
 
+    def __repr__(self):
+        return 'ResourceWithId({0})'.format(self.resource_id)
+
     def on_get(self, req, resp):
         resp.body = self.resource_id
 
@@ -36,19 +39,33 @@ def setup_routes(router_interface):
         {}, ResourceWithId(10))
     router_interface.add_route(
         '/repos/{org}/{repo}/compare/all', {}, ResourceWithId(11))
+
+    # NOTE(kgriffs): The ordering of these calls is significant; we
+    # need to test that the {id} field does not match the other routes,
+    # regardless of the order they are added.
     router_interface.add_route(
         '/emojis/signs/0', {}, ResourceWithId(12))
     router_interface.add_route(
         '/emojis/signs/{id}', {}, ResourceWithId(13))
     router_interface.add_route(
-        '/repos/{org}/{repo}/compare/{usr0}:{branch0}...{usr1}:{branch1}/part',
-        {}, ResourceWithId(14))
+        '/emojis/signs/42', {}, ResourceWithId(14))
     router_interface.add_route(
-        '/repos/{org}/{repo}/compare/{usr0}:{branch0}',
+        '/emojis/signs/42/small', {}, ResourceWithId(14.1))
+    router_interface.add_route(
+        '/emojis/signs/78/small', {}, ResourceWithId(14.1))
+
+    router_interface.add_route(
+        '/repos/{org}/{repo}/compare/{usr0}:{branch0}...{usr1}:{branch1}/part',
         {}, ResourceWithId(15))
     router_interface.add_route(
-        '/repos/{org}/{repo}/compare/{usr0}:{branch0}/full',
+        '/repos/{org}/{repo}/compare/{usr0}:{branch0}',
         {}, ResourceWithId(16))
+    router_interface.add_route(
+        '/repos/{org}/{repo}/compare/{usr0}:{branch0}/full',
+        {}, ResourceWithId(17))
+
+    router_interface.add_route(
+        '/gists/{id}/raw', {}, ResourceWithId(18))
 
 
 @ddt.ddt
@@ -61,13 +78,22 @@ class TestStandaloneRouter(testing.TestBase):
     @ddt.data(
         '/teams/{collision}',
         '/repos/{org}/{repo}/compare/{simple-collision}',
-        '/emojis/signs/1',
+        '/emojis/signs/{id_too}',
     )
     def test_collision(self, template):
         self.assertRaises(
             ValueError,
-            self.router.add_route, template, {}, ResourceWithId(6)
+            self.router.add_route, template, {}, ResourceWithId(-1)
         )
+
+    def test_dump(self):
+        print(self.router._src)
+
+    def test_override(self):
+        self.router.add_route('/emojis/signs/0', {}, ResourceWithId(-1))
+
+        resource, method_map, params = self.router.find('/emojis/signs/0')
+        self.assertEqual(resource.resource_id, -1)
 
     def test_missing(self):
         resource, method_map, params = self.router.find('/this/does/not/exist')
@@ -90,17 +116,24 @@ class TestStandaloneRouter(testing.TestBase):
         resource, method_map, params = self.router.find('/emojis/signs/1')
         self.assertEqual(resource.resource_id, 13)
 
-    def test_dead_segment(self):
-        resource, method_map, params = self.router.find('/teams')
-        self.assertIs(resource, None)
+        resource, method_map, params = self.router.find('/emojis/signs/42')
+        self.assertEqual(resource.resource_id, 14)
 
-        resource, method_map, params = self.router.find('/emojis/signs')
-        self.assertIs(resource, None)
+        resource, method_map, params = self.router.find('/emojis/signs/42/small')
+        self.assertEqual(resource.resource_id, 14.1)
 
-        resource, method_map, params = self.router.find('/emojis/signs/stop')
-        self.assertEqual(params, {
-            'id': 'stop',
-        })
+        resource, method_map, params = self.router.find('/emojis/signs/1/small')
+        self.assertEqual(resource, None)
+
+    @ddt.data(
+        '/teams',
+        '/emojis/signs',
+        '/gists',
+        '/gists/42',
+    )
+    def test_dead_segment(self, template):
+        resource, method_map, params = self.router.find(template)
+        self.assertIs(resource, None)
 
     def test_malformed_pattern(self):
         resource, method_map, params = self.router.find(
@@ -120,6 +153,16 @@ class TestStandaloneRouter(testing.TestBase):
         self.assertEqual(resource.resource_id, 6)
         self.assertEqual(params, {'id': '42'})
 
+        resource, method_map, params = self.router.find('/emojis/signs/stop')
+        self.assertEqual(params, {'id': 'stop'})
+
+        resource, method_map, params = self.router.find('/gists/42/raw')
+        self.assertEqual(params, {'id': '42'})
+
+    def test_subsegment_not_found(self):
+        resource, method_map, params = self.router.find('/emojis/signs/0/x')
+        self.assertIs(resource, None)
+
     def test_multivar(self):
         resource, method_map, params = self.router.find(
             '/repos/racker/falcon/commits')
@@ -131,7 +174,7 @@ class TestStandaloneRouter(testing.TestBase):
         self.assertEqual(resource.resource_id, 11)
         self.assertEqual(params, {'org': 'racker', 'repo': 'falcon'})
 
-    @ddt.data(('', 5), ('/full', 10), ('/part', 14))
+    @ddt.data(('', 5), ('/full', 10), ('/part', 15))
     @ddt.unpack
     def test_complex(self, url_postfix, resource_id):
         uri = '/repos/racker/falcon/compare/johndoe:master...janedoe:dev'
@@ -147,7 +190,7 @@ class TestStandaloneRouter(testing.TestBase):
             'branch1': 'dev'
         })
 
-    @ddt.data(('', 15), ('/full', 16))
+    @ddt.data(('', 16), ('/full', 17))
     @ddt.unpack
     def test_complex_alt(self, url_postfix, resource_id):
         uri = '/repos/falconry/falcon/compare/johndoe:master'
