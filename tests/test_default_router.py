@@ -37,16 +37,18 @@ def setup_routes(router_interface):
     router_interface.add_route(
         '/repos/{org}/{repo}/compare/all', {}, ResourceWithId(11))
     router_interface.add_route(
-        '/emojis/signs/{id}', {}, ResourceWithId(12))
+        '/emojis/signs/0', {}, ResourceWithId(12))
+    router_interface.add_route(
+        '/emojis/signs/{id}', {}, ResourceWithId(13))
     router_interface.add_route(
         '/repos/{org}/{repo}/compare/{usr0}:{branch0}...{usr1}:{branch1}/part',
-        {}, ResourceWithId(13))
-    router_interface.add_route(
-        '/repos/{org}/{repo}/compare/{usr0}:{branch0}',
         {}, ResourceWithId(14))
     router_interface.add_route(
-        '/repos/{org}/{repo}/compare/{usr0}:{branch0}/full',
+        '/repos/{org}/{repo}/compare/{usr0}:{branch0}',
         {}, ResourceWithId(15))
+    router_interface.add_route(
+        '/repos/{org}/{repo}/compare/{usr0}:{branch0}/full',
+        {}, ResourceWithId(16))
 
 
 @ddt.ddt
@@ -59,6 +61,7 @@ class TestStandaloneRouter(testing.TestBase):
     @ddt.data(
         '/teams/{collision}',
         '/repos/{org}/{repo}/compare/{simple-collision}',
+        '/emojis/signs/1',
     )
     def test_collision(self, template):
         self.assertRaises(
@@ -79,6 +82,13 @@ class TestStandaloneRouter(testing.TestBase):
         resource, method_map, params = self.router.find(
             '/repos/racker/falcon/compare/johndoe:master...janedoe:dev/bogus')
         self.assertIs(resource, None)
+
+    def test_literal_segment(self):
+        resource, method_map, params = self.router.find('/emojis/signs/0')
+        self.assertEqual(resource.resource_id, 12)
+
+        resource, method_map, params = self.router.find('/emojis/signs/1')
+        self.assertEqual(resource.resource_id, 13)
 
     def test_dead_segment(self):
         resource, method_map, params = self.router.find('/teams')
@@ -121,7 +131,7 @@ class TestStandaloneRouter(testing.TestBase):
         self.assertEqual(resource.resource_id, 11)
         self.assertEqual(params, {'org': 'racker', 'repo': 'falcon'})
 
-    @ddt.data(('', 5), ('/full', 10), ('/part', 13))
+    @ddt.data(('', 5), ('/full', 10), ('/part', 14))
     @ddt.unpack
     def test_complex(self, url_postfix, resource_id):
         uri = '/repos/racker/falcon/compare/johndoe:master...janedoe:dev'
@@ -137,7 +147,7 @@ class TestStandaloneRouter(testing.TestBase):
             'branch1': 'dev'
         })
 
-    @ddt.data(('', 14), ('/full', 15))
+    @ddt.data(('', 15), ('/full', 16))
     @ddt.unpack
     def test_complex_alt(self, url_postfix, resource_id):
         uri = '/repos/falconry/falcon/compare/johndoe:master'
