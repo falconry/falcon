@@ -599,7 +599,7 @@ class Request(object):
             if not required:
                 return None
 
-            raise HTTPMissingParam(name)
+            raise HTTPMissingHeader(name)
 
     def get_header_as_datetime(self, header, required=False):
         """Return an HTTP header with HTTP-Date values as a datetime.
