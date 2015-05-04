@@ -183,9 +183,14 @@ class TestHeaders(testing.TestBase):
     def test_required_header(self):
         self.simulate_request(self.test_route)
 
-        self.assertRaises(falcon.HTTPBadRequest,
-                          self.resource.req.get_header, 'X-Not-Found',
-                          required=True)
+        try:
+            self.resource.req.get_header('X-Not-Found', required=True)
+            self.fail('falcon.HTTPMissingHeader not raised')
+        except falcon.HTTPMissingHeader as ex:
+            self.assertIsInstance(ex, falcon.HTTPBadRequest)
+            self.assertEqual(ex.title, 'Missing header value')
+            expected_desc = 'The X-Not-Found header is required.'
+            self.assertEqual(ex.description, expected_desc)
 
     def test_no_body_on_100(self):
         self.resource = StatusTestResource(falcon.HTTP_100)

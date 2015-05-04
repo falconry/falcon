@@ -94,6 +94,7 @@ class _TestQueryParams(testing.TestBase):
             getattr(req, method_name)('marker', required=True)
             self.fail('falcon.HTTPMissingParam not raised')
         except falcon.HTTPMissingParam as ex:
+            self.assertIsInstance(ex, falcon.HTTPBadRequest)
             self.assertEqual(ex.title, 'Missing query parameter')
             expected_desc = 'The "marker" query parameter is required.'
             self.assertEqual(ex.description, expected_desc)
