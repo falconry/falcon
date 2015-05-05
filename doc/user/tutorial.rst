@@ -160,15 +160,28 @@ params, as we shall see later on.
 
 Right now, the image resource responds to GET requests with a simple
 ``200 OK`` and a JSON body. Falcon's Internet media type defaults to
-``application/json`` but you can set it to whatever you like. See
-serialization with `MessagePack <http://msgpack.org/>`_ for example:
+``application/json`` but you can set it to whatever you like. For example,
+you could use `MessagePack <http://msgpack.org/>`_, or any other
+serialization format.
+
+If you'd like to use MessagePack in the above example, you'll need to
+install the (de)serializer for Python running ``pip install msgpack-python``
+and then update your responder to set the response data and content_type
+accordingly:
 
 .. code:: python
 
-    def on_get(self, req, resp):
-        resp.data = msgpack.packb({'message': 'Hello world!'})
-        resp.content_type = 'application/msgpack'
-        resp.status = falcon.HTTP_200
+    import falcon
+
+    import msgpack
+
+
+    class Resource(object):
+
+        def on_get(self, req, resp):
+            resp.data = msgpack.packb({'message': 'Hello world!'})
+            resp.content_type = 'application/msgpack'
+            resp.status = falcon.HTTP_200
 
 Note the use of ``resp.data`` in lieu of ``resp.body``. If you assign a
 bytestring to the latter, Falcon will figure it out, but you can
