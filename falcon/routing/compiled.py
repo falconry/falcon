@@ -29,74 +29,6 @@ class CompiledRouter(object):
     tree for each look-up, it generates inlined, bespoke Python code to
     perform the search, then compiles that code. This makes the route
     processing quite fast.
-
-    The generated code looks something like this::
-
-        def find(path, return_values, expressions, params):
-            path_len = len(path)
-            if path_len > 0:
-                if path[0] == "repos":
-                    if path_len > 1:
-                        params["org"] = path[1]
-                        if path_len > 2:
-                            params["repo"] = path[2]
-                            if path_len > 3:
-                                if path[3] == "commits":
-                                    return return_values[3]
-                                if path[3] == "compare":
-                                    if path_len > 4:
-                                        match = expressions[0].match(path[4])
-                                        if match is not None:
-                                            params.update(match.groupdict())
-                                            if path_len > 5:
-                                                if path[5] == "full":
-                                                    return return_values[5]
-                                                if path[5] == "part":
-                                                    return return_values[6]
-                                                return None
-                                            return return_values[4]
-                                        if path[4] == "all":
-                                            return return_values[7]
-                                        match = expressions[1].match(path[4])
-                                        if match is not None:
-                                            params.update(match.groupdict())
-                                            if path_len > 5:
-                                                if path[5] == "full":
-                                                    return return_values[9]
-                                                return None
-                                            return return_values[8]
-                                        return None
-                                    return None
-                                return None
-                            return return_values[2]
-                        return return_values[1]
-                    return return_values[0]
-                if path[0] == "teams":
-                    if path_len > 1:
-                        params["id"] = path[1]
-                        if path_len > 2:
-                            if path[2] == "members":
-                                return return_values[11]
-                            return None
-                        return return_values[10]
-                    return None
-                if path[0] == "user":
-                    if path_len > 1:
-                        if path[1] == "memberships":
-                            return return_values[12]
-                        return None
-                    return None
-                if path[0] == "emojis":
-                    if path_len > 1:
-                        if path[1] == "signs":
-                            if path_len > 2:
-                                params["id"] = path[2]
-                                return return_values[14]
-                            return None
-                        return None
-                    return return_values[13]
-                return None
-            return None
     """
 
     def __init__(self):
@@ -125,6 +57,7 @@ class CompiledRouter(object):
                 if node.matches(segment):
                     path_index += 1
                     if path_index == len(path):
+                        # NOTE(kgriffs): Override previous node
                         node.method_map = method_map
                         node.resource = resource
                     else:
@@ -179,6 +112,10 @@ class CompiledRouter(object):
         level_indent = indent
         found_simple = False
 
+        # NOTE(kgriffs): Sort static nodes before var nodes so that
+        # none of them get masked. False sorts before True.
+        nodes = sorted(nodes, key=lambda node: node.is_var)
+
         for node in nodes:
             if node.is_var:
                 if node.is_complex:
@@ -225,7 +162,13 @@ class CompiledRouter(object):
             if node.resource is None:
                 line('return None')
             else:
-                line('return return_values[%d]' % resource_idx)
+                # NOTE(kgriffs): Make sure that we have consumed all of
+                # the segments for the requested route; otherwise we could
+                # mistakenly match "/foo/23/bar" against "/foo/{id}".
+                line('if path_len == %d:' % (level + 1))
+                line('return return_values[%d]' % resource_idx, 1)
+
+                line('return None')
 
             indent = level_indent
 
@@ -326,7 +269,7 @@ class CompiledRouterNode(object):
         #
         #   simple, simple ==> True
         #   simple, complex ==> True
-        #   simple, string ==> True
+        #   simple, string ==> False
         #   complex, simple ==> True
         #   complex, complex ==> False
         #   complex, string ==> False
@@ -334,7 +277,6 @@ class CompiledRouterNode(object):
         #   string, complex ==> False
         #   string, string ==> False
         #
-
         other = CompiledRouterNode(segment)
 
         if self.is_var:
@@ -352,10 +294,13 @@ class CompiledRouterNode(object):
                 #   /foo/{thing1}
                 #   /foo/{thing2}
                 #
-                # or
+                # On the other hand, this is OK:
                 #
                 #   /foo/{thing1}
                 #   /foo/all
-                return True
+                #
+                return other.is_var
 
+        # NOTE(kgriffs): If self is a static string match, then all the cases
+        # for other are False, so no need to check.
         return False
