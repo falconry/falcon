@@ -19,12 +19,16 @@ from __future__ import print_function
 
 import argparse
 from collections import defaultdict
-import cProfile
 from decimal import Decimal
 import gc
 import random
 import sys
 import timeit
+
+try:
+    import cProfile
+except ImportError:
+    import profile as cProfile
 
 try:
     import guppy
