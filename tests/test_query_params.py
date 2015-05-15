@@ -95,8 +95,8 @@ class _TestQueryParams(testing.TestBase):
             self.fail('falcon.HTTPMissingParam not raised')
         except falcon.HTTPMissingParam as ex:
             self.assertIsInstance(ex, falcon.HTTPBadRequest)
-            self.assertEqual(ex.title, 'Missing query parameter')
-            expected_desc = 'The "marker" query parameter is required.'
+            self.assertEqual(ex.title, 'Missing parameter')
+            expected_desc = 'The "marker" parameter is required.'
             self.assertEqual(ex.description, expected_desc)
 
     def test_int(self):
@@ -110,8 +110,8 @@ class _TestQueryParams(testing.TestBase):
         except Exception as ex:
             self.assertIsInstance(ex, falcon.HTTPBadRequest)
             self.assertIsInstance(ex, falcon.HTTPInvalidParam)
-            self.assertEqual(ex.title, 'Invalid query parameter')
-            expected_desc = ('The "marker" query parameter is invalid. '
+            self.assertEqual(ex.title, 'Invalid parameter')
+            expected_desc = ('The "marker" parameter is invalid. '
                              'The value must be an integer.')
             self.assertEqual(ex.description, expected_desc)
 
@@ -203,8 +203,8 @@ class _TestQueryParams(testing.TestBase):
             req.get_param_as_bool('bogus2')
         except Exception as ex:
             self.assertIsInstance(ex, falcon.HTTPInvalidParam)
-            self.assertEqual(ex.title, 'Invalid query parameter')
-            expected_desc = ('The "bogus2" query parameter is invalid. '
+            self.assertEqual(ex.title, 'Invalid parameter')
+            expected_desc = ('The "bogus2" parameter is invalid. '
                              'The value of the parameter must be "true" '
                              'or "false".')
             self.assertEqual(ex.description, expected_desc)
@@ -367,8 +367,8 @@ class _TestQueryParams(testing.TestBase):
             req.get_param_as_list('coord', transform=int)
         except Exception as ex:
             self.assertIsInstance(ex, falcon.HTTPInvalidParam)
-            self.assertEqual(ex.title, 'Invalid query parameter')
-            expected_desc = ('The "coord" query parameter is invalid. '
+            self.assertEqual(ex.title, 'Invalid parameter')
+            expected_desc = ('The "coord" parameter is invalid. '
                              'The value is not formatted correctly.')
             self.assertEqual(ex.description, expected_desc)
 
