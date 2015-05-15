@@ -636,10 +636,10 @@ class TestHTTPError(testing.TestBase):
         self.api.add_route('/400', InvalidParamResource())
         body = self.simulate_request('/400', decode='utf-8')
 
-        expected_desc = (u'The "id" query parameter is invalid. The '
+        expected_desc = (u'The "id" parameter is invalid. The '
                          u'value must be a hex-encoded UUID.')
         expected_body = {
-            u'title': u'Invalid query parameter',
+            u'title': u'Invalid parameter',
             u'description': expected_desc,
             u'code': u'P1002',
         }
@@ -652,8 +652,8 @@ class TestHTTPError(testing.TestBase):
         body = self.simulate_request('/400', decode='utf-8')
 
         expected_body = {
-            u'title': u'Missing query parameter',
-            u'description': u'The "id" query parameter is required.',
+            u'title': u'Missing parameter',
+            u'description': u'The "id" parameter is required.',
             u'code': u'P1003',
         }
 
