@@ -369,7 +369,7 @@ class HTTPServiceUnavailable(HTTPError):
 
 
 class HTTPInvalidHeader(HTTPBadRequest):
-    """HTTP header is invalid. Inherits from ``HTTPBadRequest``.
+    """A header in the request is invalid. Inherits from ``HTTPBadRequest``.
 
     Args:
         msg (str): A description of why the value is invalid.
@@ -388,7 +388,7 @@ class HTTPInvalidHeader(HTTPBadRequest):
 
 
 class HTTPMissingHeader(HTTPBadRequest):
-    """HTTP header is missing. Inherits from ``HTTPBadRequest``.
+    """A header is missing from the request. Inherits from ``HTTPBadRequest``.
 
     Args:
         header_name (str): The name of the header.
@@ -405,35 +405,41 @@ class HTTPMissingHeader(HTTPBadRequest):
 
 
 class HTTPInvalidParam(HTTPBadRequest):
-    """HTTP parameter is invalid. Inherits from ``HTTPBadRequest``.
+    """A parameter in the request is invalid. Inherits from ``HTTPBadRequest``.
+
+    This error may refer to a parameter in a query string, form, or
+    document that was submitted with the request.
 
     Args:
         msg (str): A description of the invalid parameter.
-        param_name (str): The name of the paramameter.
+        param_name (str): The name of the parameter.
         kwargs (optional): Same as for ``HTTPError``.
 
     """
 
     def __init__(self, msg, param_name, **kwargs):
-        description = 'The "{0}" query parameter is invalid. {1}'
+        description = 'The "{0}" parameter is invalid. {1}'
         description = description.format(param_name, msg)
 
-        super(HTTPInvalidParam, self).__init__('Invalid query parameter',
+        super(HTTPInvalidParam, self).__init__('Invalid parameter',
                                                description, **kwargs)
 
 
 class HTTPMissingParam(HTTPBadRequest):
-    """HTTP parameter is missing. Inherits from ``HTTPBadRequest``.
+    """A parameter is missing from the request. Inherits from ``HTTPBadRequest``.
+
+    This error may refer to a parameter in a query string, form, or
+    document that was submitted with the request.
 
     Args:
-        param_name (str): The name of the paramameter.
+        param_name (str): The name of the parameter.
         kwargs (optional): Same as for ``HTTPError``.
 
     """
 
     def __init__(self, param_name, **kwargs):
-        description = 'The "{0}" query parameter is required.'
+        description = 'The "{0}" parameter is required.'
         description = description.format(param_name)
 
-        super(HTTPMissingParam, self).__init__('Missing query parameter',
+        super(HTTPMissingParam, self).__init__('Missing parameter',
                                                description, **kwargs)
