@@ -10,7 +10,7 @@ Release v\ |version| (:ref:`Installation <install>`)
 
 .. note::
 
-  This documentation targets the upcoming 0.3.0 release of Falcon.
+  This documentation targets the upcoming |version| release of Falcon.
 
 Falcon is a minimalist WSGI library for building speedy web APIs and app
 backends. We like to think of Falcon as the `Dieter Rams` of web frameworks.
