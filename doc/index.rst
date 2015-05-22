@@ -40,8 +40,11 @@ What People are Saying
 tiny server of mine and was ~40% faster with only 20 minutes of
 work."
 
+"I'm loving #falconframework! Super clean and simple, I finally
+have the speed and flexibility I need!"
+
 "I feel like I'm just talking HTTP at last, with nothing in the
-middle. Falcon seems like the *requests* of backend."
+middle. Falcon seems like the requests of backend."
 
 "The source code for falcon is so good, I almost prefer it to
 documentation. It basically can't be wrong."
