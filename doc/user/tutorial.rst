@@ -511,7 +511,7 @@ message. Add this method below the definition of ``ALLOWED_IMAGE_TYPES``:
 
 .. code:: python
 
-    def validate_image_type(req, resp, params):
+    def validate_image_type(req, resp, resource, params):
         if req.content_type not in ALLOWED_IMAGE_TYPES:
             msg = 'Image type not allowed. Must be PNG, JPEG, or GIF'
             raise falcon.HTTPBadRequest('Bad request', msg)
@@ -525,9 +525,10 @@ And then attach the hook to the ``on_post`` responder like so:
 
 Now, before every call to that responder, Falcon will first invoke the
 ``validate_image_type`` method. There isn't anything special about that
-method, other than it must accept three arguments. Every hook takes, as its
+method, other than it must accept four arguments. Every hook takes, as its
 first two arguments, a reference to the same ``req`` and ``resp`` objects
-that are passed into responders. The third argument, named ``params`` by
+that are passed into responders. ``resource`` argument is a Resource instance
+associated with the request. The fourth argument, named ``params`` by
 convention, is a reference to the kwarg dictionary Falcon creates for each
 request. ``params`` will contain the route's URI template params and their
 values, if any.
@@ -539,7 +540,7 @@ responders in a DRY way, e.g.,:
 
 .. code:: python
 
-    def extract_project_id(req, resp, params):
+    def extract_project_id(req, resp, resource, params):
         """Adds `project_id` to the list of params for all responders.
 
         Meant to be used as a `before` hook.
