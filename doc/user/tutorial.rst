@@ -559,11 +559,8 @@ entire resource like so:
         # ...
 
 And you can apply hooks globally by passing them into the API class
-initializer:
-
-.. code:: python
-
-    falcon.API(before=[extract_project_id])
+initializer, though this has been depreciated in favor of middleware.
+(See :ref:`falcon.middleware <middleware>`)
 
 To learn more about hooks, take a look at the docstring for the ``API`` class,
 as well the docstrings for the ``falcon.before`` and ``falcon.after`` decorators.
