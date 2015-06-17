@@ -56,16 +56,16 @@ class TestCookies(testing.TestBase):
         self.simulate_request(self.test_route, method="GET")
         self.assertIn(
             ("set-cookie",
-                "foo=bar; Domain=example.com; httponly; Path=/; secure"),
+                "foo=bar; Domain=example.com; HttpOnly; Path=/; Secure"),
             self.srmock.headers)
 
     def test_response_complex_case(self):
         self.resource = CookieResource()
         self.api.add_route(self.test_route, self.resource)
         self.simulate_request(self.test_route, method="HEAD")
-        self.assertIn(("set-cookie", "foo=bar; httponly; Max-Age=300; secure"),
+        self.assertIn(("set-cookie", "foo=bar; HttpOnly; Max-Age=300; Secure"),
                       self.srmock.headers)
-        self.assertIn(("set-cookie", "bar=baz; secure"), self.srmock.headers)
+        self.assertIn(("set-cookie", "bar=baz; Secure"), self.srmock.headers)
         self.assertNotIn(("set-cookie", "bad=cookie"), self.srmock.headers)
 
     def test_cookie_expires_naive(self):
