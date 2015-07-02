@@ -548,8 +548,7 @@ responders in a DRY way, e.g.,:
         params['project_id'] = req.get_header('X-PROJECT-ID')
 
 Now, you can imagine that such a hook should apply to all responders for
-a resource, or even globally to all resources. You can apply hooks to an
-entire resource like so:
+a resource. You can apply hooks to an entire resource like so:
 
 .. code:: python
 
@@ -558,8 +557,7 @@ entire resource like so:
 
         # ...
 
-And you can apply hooks globally by passing them into the API class
-initializer, though this has been depreciated in favor of middleware.
+Similar logic can be applied globally with middleware.
 (See :ref:`falcon.middleware <middleware>`)
 
 To learn more about hooks, take a look at the docstring for the ``API`` class,
