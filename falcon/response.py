@@ -269,9 +269,8 @@ class Response(object):
                 may be used on platforms that use wide characters.
 
         """
-
         # NOTE(kgriffs): normalize name by lowercasing it
-        self._headers[name.lower()] = value
+        self._headers[str(name).lower()] = str(value)
 
     def append_header(self, name, value):
         """Set or append a header for this response.
@@ -294,11 +293,11 @@ class Response(object):
                 may be used on platforms that use wide characters.
 
         """
-        name = name.lower()
+        name = str(name).lower()
         if name in self._headers:
             value = self._headers[name] + ',' + value
 
-        self._headers[name] = value
+        self._headers[name] = str(value)
 
     def set_headers(self, headers):
         """Set several headers at once.
@@ -329,7 +328,7 @@ class Response(object):
         # normalize the header names.
         _headers = self._headers
         for name, value in headers:
-            _headers[name.lower()] = value
+            _headers[str(name).lower()] = str(value)
 
     def add_link(self, target, rel, title=None, title_star=None,
                  anchor=None, hreflang=None, type_hint=None):
