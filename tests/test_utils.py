@@ -81,6 +81,15 @@ class TestFalconUtils(testtools.TestCase):
 
         self.assertRaises(
             ValueError,
+            falcon.http_date_to_dt, 'Thu, 04-Apr-2013 10:28:54 GMT')
+
+        self.assertEqual(
+            falcon.http_date_to_dt('Thu, 04-Apr-2013 10:28:54 GMT',
+                                   obs_date=True),
+            datetime(2013, 4, 4, 10, 28, 54))
+
+        self.assertRaises(
+            ValueError,
             falcon.http_date_to_dt, 'Sun Nov  6 08:49:37 1994')
 
         self.assertRaises(
