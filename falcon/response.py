@@ -247,8 +247,16 @@ class Response(object):
     def unset_cookie(self, name):
         """Unset a cookie from the response
         """
-        if self._cookies is not None and name in self._cookies:
-            del self._cookies[name]
+        if self._cookies is None:
+            self._cookies = SimpleCookie()
+        if name not in self._cookies:
+            self._cookies[name] = ""
+        # SimpleCookie apparently special cases the expires attribute to
+        # automatically use strftime and set the time as a delta from the
+        # current time. We use -1 here to basically tell the browser to
+        # immediately expire the cookie, thus removing it from future
+        # request objects.
+        self._cookies[name]["expires"] = -1
 
     def set_header(self, name, value):
         """Set a header for this response to a given value.
