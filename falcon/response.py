@@ -246,6 +246,10 @@ class Response(object):
 
     def unset_cookie(self, name):
         """Unset a cookie from the response
+        
+        Note:
+            This will instruct the browser to expire its copy of the cookie
+            if it has previously been set.
         """
         if self._cookies is None:
             self._cookies = SimpleCookie()
