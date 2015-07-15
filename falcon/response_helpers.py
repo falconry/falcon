@@ -51,12 +51,16 @@ def format_range(value):
 
     Args:
         value: ``tuple`` passed to `req.range`
-
     """
 
     # PERF: Concatenation is faster than % string formatting as well
     #       as ''.join() in this case.
-    return ('bytes ' +
+    if len(value) == 4:
+        unit = value[3]
+    else:
+        unit = 'bytes'
+
+    return (unit + ' ' +
             str(value[0]) + '-' +
             str(value[1]) + '/' +
             str(value[2]))

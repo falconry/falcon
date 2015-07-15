@@ -336,6 +336,16 @@ class TestHeaders(testing.TestBase):
         self.assertIn(('content-range', 'bytes 0-499/10240'),
                       self.srmock.headers)
 
+        resp.content_range = (0, 499, 10 * 1024, 'bytes')
+        self.assertEqual('bytes 0-499/10240', resp.content_range)
+        self.assertIn(('content-range', 'bytes 0-499/10240'),
+                      self.srmock.headers)
+
+        resp.content_range = (0, 25, 100, 'items')
+        self.assertEqual('items 0-25/100', resp.content_range)
+        self.assertIn(('content-range', 'bytes 0-499/10240'),
+                      self.srmock.headers)
+
         # Check for duplicate headers
         hist = defaultdict(lambda: 0)
         for name, value in self.srmock.headers:

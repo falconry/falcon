@@ -353,16 +353,16 @@ class Request(object):
     def range(self):
         try:
             value = self.env['HTTP_RANGE']
-            if value.startswith('bytes='):
-                value = value[6:]
+            if len(value.split('=', 1)) == 2:
+                value = value.split('=', 1)[1]
             else:
-                msg = "The value must be prefixed with 'bytes='"
+                msg = "The value must be prefixed with range unit, e.g. 'bytes='"
                 raise HTTPInvalidHeader(msg, 'Range')
         except KeyError:
             return None
 
         if ',' in value:
-            msg = 'The value must be a continuous byte range.'
+            msg = 'The value must be a continuous range.'
             raise HTTPInvalidHeader(msg, 'Range')
 
         try:
@@ -382,9 +382,23 @@ class Request(object):
         except ValueError:
             href = 'http://goo.gl/zZ6Ey'
             href_text = 'HTTP/1.1 Range Requests'
-            msg = ('It must be a byte range formatted according to RFC 2616.')
+            msg = ('It must be a range formatted according to RFC 2616.')
             raise HTTPInvalidHeader(msg, 'Range', href=href,
                                     href_text=href_text)
+
+    @property
+    def range_unit(self):
+        try:
+            value = self.env['HTTP_RANGE']
+
+            if len(value.split('=', 1)) == 2:
+                unit = value.split('=', 1)[0]
+                return unit
+            else:
+                msg = "The value must be prefixed with range unit, e.g. 'bytes='"
+                raise HTTPInvalidHeader(msg, 'Range')
+        except KeyError:
+            return None
 
     @property
     def app(self):
