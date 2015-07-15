@@ -74,14 +74,17 @@ class UnauthorizedResource:
     def on_get(self, req, resp):
         raise falcon.HTTPUnauthorized('Authentication Required',
                                       'Missing or invalid token header.',
-                                      scheme='Token; UUID')
+                                      ['Basic realm="simple"'])
 
-
-class UnauthorizedResourceSchemaless:
-
-    def on_get(self, req, resp):
+    def on_post(self, req, resp):
         raise falcon.HTTPUnauthorized('Authentication Required',
-                                      'Missing or invalid token header.')
+                                      'Missing or invalid token header.',
+                                      ['Newauth realm="apps"',
+                                       'Basic realm="simple"'])
+
+    def on_put(self, req, resp):
+        raise falcon.HTTPUnauthorized('Authentication Required',
+                                      'Missing or invalid token header.', [])
 
 
 class NotFoundResource:
@@ -454,15 +457,20 @@ class TestHTTPError(testing.TestBase):
         self.simulate_request('/401')
 
         self.assertEqual(self.srmock.status, falcon.HTTP_401)
-        self.assertIn(('www-authenticate', 'Token; UUID'),
+        self.assertIn(('www-authenticate', 'Basic realm="simple"'),
                       self.srmock.headers)
 
-    def test_401_schemaless(self):
-        self.api.add_route('/401', UnauthorizedResourceSchemaless())
-        self.simulate_request('/401')
+        self.simulate_request('/401', method='POST')
 
         self.assertEqual(self.srmock.status, falcon.HTTP_401)
-        self.assertNotIn(('www-authenticate', 'Token'), self.srmock.headers)
+        self.assertIn(('www-authenticate', 'Newauth realm="apps", '
+                      'Basic realm="simple"'),
+                      self.srmock.headers)
+
+        self.simulate_request('/401', method='PUT')
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_401)
+        self.assertNotIn(('www-authenticate', []), self.srmock.headers)
 
     def test_404_without_body(self):
         self.api.add_route('/404', NotFoundResource())

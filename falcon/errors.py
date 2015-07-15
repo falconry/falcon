@@ -50,18 +50,18 @@ class HTTPUnauthorized(HTTPError):
         title (str): Error title (e.g., 'Authentication Required').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-        scheme (str): Authentication scheme to use as the value of the
-            WWW-Authenticate header in the response (default ``None``).
+        challenges (iterable of str): One or more authentication
+            challenges to use as the value of the WWW-Authenticate header in
+            the response.
         kwargs (optional): Same as for ``HTTPError``.
 
     """
 
-    def __init__(self, title, description, **kwargs):
+    def __init__(self, title, description, challenges, **kwargs):
         headers = kwargs.setdefault('headers', {})
 
-        scheme = kwargs.pop('scheme', None)
-        if scheme is not None:
-            headers['WWW-Authenticate'] = scheme
+        if challenges:
+            headers['WWW-Authenticate'] = ', '.join(challenges)
 
         super(HTTPUnauthorized, self).__init__(status.HTTP_401, title,
                                                description, **kwargs)
