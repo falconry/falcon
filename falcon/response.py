@@ -253,8 +253,7 @@ class Response(object):
         """
         if self._cookies is None:
             self._cookies = SimpleCookie()
-        if name not in self._cookies:
-            self._cookies[name] = ""
+        self._cookies[name] = ""
         # SimpleCookie apparently special cases the expires attribute to
         # automatically use strftime and set the time as a delta from the
         # current time. We use -1 here to basically tell the browser to
