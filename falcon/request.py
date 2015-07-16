@@ -147,6 +147,8 @@ class Request(object):
             Only continous ranges are supported (e.g., "bytes=0-0,-1" would
             result in an HTTPBadRequest exception when the attribute is
             accessed.)
+        range_unit (str): Unit of the range parsed from the value of the
+            Range header, or ``None`` if the header is missing
         if_match (str): Value of the If-Match header, or ``None`` if the
             header is missing.
         if_none_match (str): Value of the If-None-Match header, or ``None``
