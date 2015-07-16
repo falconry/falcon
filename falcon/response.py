@@ -254,11 +254,12 @@ class Response(object):
         if self._cookies is None:
             self._cookies = SimpleCookie()
         self._cookies[name] = ""
-        # SimpleCookie apparently special cases the expires attribute to
-        # automatically use strftime and set the time as a delta from the
-        # current time. We use -1 here to basically tell the browser to
-        # immediately expire the cookie, thus removing it from future
-        # request objects.
+        
+        # NOTE(Freezerburn): SimpleCookie apparently special cases the
+        # expires attribute to automatically use strftime and set the
+        # time as a delta from the current time. We use -1 here to
+        # basically tell the browser to immediately expire the cookie,
+        # thus removing it from future request objects.
         self._cookies[name]["expires"] = -1
 
     def set_header(self, name, value):
