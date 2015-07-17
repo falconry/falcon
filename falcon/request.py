@@ -220,6 +220,10 @@ class Request(object):
         # Normalize path
         path = env['PATH_INFO']
         if path:
+            if six.PY3:
+                # PEP 3333 specifies that PATH_INFO variable are always
+                # "bytes tunneled as latin-1" and must be encoded back
+                path = path.encode('latin1').decode('utf-8', 'replace')
             if len(path) != 1 and path.endswith('/'):
                 self.path = path[:-1]
             else:
