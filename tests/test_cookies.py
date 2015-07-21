@@ -1,4 +1,4 @@
-
+import sys
 import falcon
 import falcon.testing as testing
 
@@ -54,23 +54,26 @@ class TestCookies(testing.TestBase):
         self.resource = CookieResource()
         self.api.add_route(self.test_route, self.resource)
         self.simulate_request(self.test_route, method="GET")
-        value = "foo=bar; Domain=example.com; HttpOnly; Path=/; Secure"
-        upper = ("set-cookie", value) in self.srmock.headers
-        lower = ("set-cookie", value.lower()) in self.srmock.headers
-        self.assertTrue(upper or lower)
+        if sys.version_info >= (3, 4, 3):
+            value = "foo=bar; Domain=example.com; HttpOnly; Path=/; Secure"
+        else:
+            value = "foo=bar; Domain=example.com; httponly; Path=/; secure"
+        self.assertIn(("set-cookie", value), self.srmock.headers)
 
     def test_response_complex_case(self):
         self.resource = CookieResource()
         self.api.add_route(self.test_route, self.resource)
         self.simulate_request(self.test_route, method="HEAD")
-        value = "foo=bar; HttpOnly; Max-Age=300; Secure"
-        upper = ("set-cookie", value) in self.srmock.headers
-        lower = ("set-cookie", value.lower()) in self.srmock.headers
-        self.assertTrue(upper or lower)
-        value = "bar=baz; Secure"
-        upper = ("set-cookie", value) in self.srmock.headers
-        lower = ("set-cookie", value.lower()) in self.srmock.headers
-        self.assertTrue(upper or lower)
+        if sys.version_info >= (3, 4, 3):
+            value = "foo=bar; HttpOnly; Max-Age=300; Secure"
+        else:
+            value = "foo=bar; httponly; Max-Age=300; secure"
+        self.assertIn(("set-cookie", value), self.srmock.headers)
+        if sys.version_info >= (3, 4, 3):
+            value = "bar=baz; Secure"
+        else:
+            value = "bar=baz; secure"
+        self.assertIn(("set-cookie", value), self.srmock.headers)
         self.assertNotIn(("set-cookie", "bad=cookie"), self.srmock.headers)
 
     def test_cookie_expires_naive(self):
