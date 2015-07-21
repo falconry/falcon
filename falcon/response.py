@@ -245,10 +245,22 @@ class Response(object):
             self._cookies[name]["httponly"] = http_only
 
     def unset_cookie(self, name):
-        """Unset a cookie from the response
-        """
+        """Unset a cookie in the response."""
         if self._cookies is not None and name in self._cookies:
             del self._cookies[name]
+
+    def get_header(self, name):
+        """Retrieve the raw string value for the given header.
+
+        Args:
+            name (str): Header name, case-insensitive. Must be of type ``str``
+                or ``StringType``, and only character values 0x00 through 0xFF
+                may be used on platforms that use wide characters.
+
+        Returns:
+            str: The header's value if set, otherwise ``None``.
+        """
+        return self._headers.get(name.lower(), None)
 
     def set_header(self, name, value):
         """Set a header for this response to a given value.
