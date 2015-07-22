@@ -28,7 +28,7 @@ started writing an API:
     # Falcon follows the REST architectural style, meaning (among
     # other things) that you think in terms of resources and state
     # transitions, which map to HTTP verbs.
-    class ThingsResource:
+    class ThingsResource(object):
         def on_get(self, req, resp):
             """Handles GET requests"""
             resp.status = falcon.HTTP_200  # This is the default status
@@ -207,7 +207,7 @@ parameters, handling errors, and working with request and response bodies.
         return hook
 
 
-    class ThingsResource:
+    class ThingsResource(object):
 
         def __init__(self, db):
             self.db = db
