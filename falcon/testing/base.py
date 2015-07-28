@@ -46,14 +46,15 @@ class TestBase(unittest.TestCase):
         test_route (str): A simple, generated path that a test
             can use to add a route to the API.
     """
+    api_class = falcon.API
+    srmock_class = StartResponseMock
 
     def setUp(self):
         """Initializer, unittest-style"""
-
         super(TestBase, self).setUp()
         self._id = itertools.count(0)
-        self.api = falcon.API()
-        self.srmock = StartResponseMock()
+        self.api = self.api_class()
+        self.srmock = self.srmock_class()
         self.test_route = '/{0}'.format(next(self._id))
 
         # Reset to simulate "restarting" the WSGI container
