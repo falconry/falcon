@@ -27,6 +27,18 @@ class NameResource(object):
         self.called = True
 
 
+class NameAndDigitResource(object):
+    def __init__(self):
+        self.id = None
+        self.name51 = None
+        self.called = False
+
+    def on_get(self, req, resp, id, name51):
+        self.id = id
+        self.name51 = name51
+        self.called = True
+
+
 class TestUriTemplates(testing.TestBase):
 
     def before(self):
@@ -116,6 +128,18 @@ class TestUriTemplates(testing.TestBase):
         self.assertNotIn(kwargs, 'Id')
         self.assertEqual(req.get_param('id'), None)
 
+    def test_single_with_digit(self):
+        self.api.add_route('/widgets/{id12}', self.resource)
+
+        self.simulate_request('/widgets/123')
+        self.assertTrue(self.resource.called)
+
+        req = self.resource.req
+        kwargs = self.resource.kwargs
+        self.assertEqual(kwargs['id12'], '123')
+        self.assertNotIn(kwargs, 'Id12')
+        self.assertEqual(req.get_param('id12'), None)
+
     def test_single_trailing_slash(self):
         resource1 = IDResource()
         self.api.add_route('/1/{id}/', resource1)
@@ -157,6 +181,19 @@ class TestUriTemplates(testing.TestBase):
 
         self.assertEqual(resource.id, test_id)
         self.assertEqual(resource.name, test_name)
+
+    def test_multiple_with_digit(self):
+        resource = NameAndDigitResource()
+        self.api.add_route('/messages/{id}/names/{name51}', resource)
+
+        test_id = self.getUniqueString()
+        test_name = self.getUniqueString()
+        path = '/messages/' + test_id + '/names/' + test_name
+        self.simulate_request(path)
+        self.assertTrue(resource.called)
+
+        self.assertEqual(resource.id, test_id)
+        self.assertEqual(resource.name51, test_name)
 
     def test_empty_path_component(self):
         self.assertRaises(ValueError, self.api.add_route,
