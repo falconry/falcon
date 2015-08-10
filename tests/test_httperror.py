@@ -159,6 +159,24 @@ class RangeNotSatisfiableResource:
         raise falcon.HTTPRangeNotSatisfiable(123456)
 
 
+class PreconditionRequiredResource:
+
+    def on_put(self, req, resp):
+        raise falcon.HTTPPreconditionRequired('Server state conflict. GET '
+                                              'the desired record and resubmit')
+
+
+class HTTPTooManyRequestsResource:
+
+    def __init__(self, retry_after):
+        self.retry_after = retry_after
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPTooManyRequests('Request Rejected',
+                                               'Too Many Requests',
+                                               retry_after=self.retry_after)
+
+
 class ServiceUnavailableResource:
 
     def __init__(self, retry_after):
@@ -582,6 +600,14 @@ class TestHTTPError(testing.TestBase):
         self.assertEqual(body, [])
         self.assertIn(('content-range', 'bytes */123456'), self.srmock.headers)
         self.assertIn(('content-length', '0'), self.srmock.headers)
+
+    def test_428(self):
+        self.api.add_route('/428', PreconditionRequiredResource())
+        body = self.simulate_request('/428')
+        parsed_body = json.loads(body[0].decode())
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_428)
+        self.assertEqual(parsed_body['description'], 'description')
 
     def test_503_integer_retry_after(self):
         self.api.add_route('/503', ServiceUnavailableResource(60))
