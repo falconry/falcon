@@ -36,5 +36,5 @@ Predefined Errors
         HTTPBadRequest, HTTPUnauthorized, HTTPForbidden, HTTPNotFound,
         HTTPMethodNotAllowed, HTTPNotAcceptable, HTTPConflict,
         HTTPLengthRequired, HTTPPreconditionFailed, HTTPUnsupportedMediaType,
-        HTTPRangeNotSatisfiable, HTTPUnprocessableEntity, HTTPInternalServerError,
-        HTTPBadGateway, HTTPServiceUnavailable
+        HTTPRangeNotSatisfiable, HTTPUnprocessableEntity, HTTPTooManyRequests,
+        HTTPInternalServerError, HTTPBadGateway, HTTPServiceUnavailable
