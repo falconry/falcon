@@ -1,4 +1,4 @@
-Falcon [![Build Status](https://travis-ci.org/falconry/falcon.svg)](https://travis-ci.org/falconry/falcon) [![Coverage Status](https://coveralls.io/repos/falconry/falcon/badge.svg?branch=master)](https://coveralls.io/r/falconry/falcon)
+Falcon [![Build Status](https://travis-ci.org/falconry/falcon.svg)](https://travis-ci.org/falconry/falcon) [![codecov.io](http://codecov.io/github/falconry/falcon/coverage.svg?branch=master)](http://codecov.io/github/falconry/falcon?branch=master)
 ======
 
 :runner: Come hang out with us in **#falconframework** on freenode.
@@ -27,7 +27,7 @@ Falcon is a [high-performance Python framework][home] for building cloud APIs. I
 
 ### Features ###
 
-* Highly-optimized, extensible code base 
+* Highly-optimized, extensible code base
 * Intuitive routing via URI templates and resource classes
 * Easy access to headers and bodies through request and response classes
 * Does not use WebOb (some of us do indeed consider this a feature)
@@ -107,7 +107,7 @@ the community is responsible for creating a positive, constructive, and
 productive culture.
 
 [Discussions are archived](http://librelist.com/browser/falcon)
-for posterity. 
+for posterity.
 
 Finally, you can always ask questions in **#falconframework** on freenode. The community is very friendly and helpful.
 

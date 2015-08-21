@@ -436,5 +436,5 @@ permissions and limitations under the License.
     :height: 20
 .. |Build Status| image:: https://travis-ci.org/falconry/falcon.svg
    :target: https://travis-ci.org/falconry/falcon
-.. |Coverage Status| image:: https://coveralls.io/repos/falconry/falcon/badge.svg?branch=master
-   :target: https://coveralls.io/r/falconry/falcon
+.. |Coverage Status| image:: http://codecov.io/github/falconry/falcon/coverage.svg?branch=master
+   :target: http://codecov.io/github/falconry/falcon?branch=master
