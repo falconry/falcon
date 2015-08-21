@@ -601,7 +601,7 @@ class Request(object):
 
             raise HTTPMissingHeader(name)
 
-    def get_header_as_datetime(self, header, required=False):
+    def get_header_as_datetime(self, header, required=False, obs_date=False):
         """Return an HTTP header with HTTP-Date values as a datetime.
 
         Args:
@@ -609,6 +609,8 @@ class Request(object):
             required (bool, optional): Set to ``True`` to raise
                 ``HTTPBadRequest`` instead of returning gracefully when the
                 header is not found (default ``False``).
+            obs_date (bool, optional): Support obs-date formats according to
+                RFC 7231, e.g.: "Sunday, 06-Nov-94 08:49:37 GMT" (default ``False``).
 
         Returns:
             datetime: The value of the specified header if it exists,
@@ -622,7 +624,7 @@ class Request(object):
 
         try:
             http_date = self.get_header(header, required=required)
-            return util.http_date_to_dt(http_date, obs_date=True)
+            return util.http_date_to_dt(http_date, obs_date=obs_date)
         except TypeError:
             # When the header does not exist and isn't required
             return None
