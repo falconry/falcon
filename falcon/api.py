@@ -502,19 +502,25 @@ class API(object):
     def _compose_status_response(self, req, resp, http_status):
         """Composes a response for the given HTTPStatus instance."""
 
+        # PERF(kgriffs): The code to set the status and headers is identical
+        # to that used in _compose_error_response(), but refactoring in the
+        # name of DRY isn't worth the extra CPU cycles.
         resp.status = http_status.status
 
         if http_status.headers is not None:
             resp.set_headers(http_status.headers)
 
-        if getattr(http_status, "body", None) is not None:
-            resp.body = http_status.body
+        # NOTE(kgriffs): If http_status.body is None, that's OK because
+        # it's acceptable to set resp.body to None (to indicate no body).
+        resp.body = http_status.body
 
     def _compose_error_response(self, req, resp, error):
         """Composes a response for the given HTTPError instance."""
 
-        # Use the HTTPStatus handler function to set status/headers
-        self._compose_status_response(req, resp, error)
+        resp.status = error.status
+
+        if error.headers is not None:
+            resp.set_headers(error.headers)
 
         if error.has_representation:
             media_type, body = self._serialize_error(req, error)
