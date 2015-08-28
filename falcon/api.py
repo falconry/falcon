@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import inspect
 import re
 import six
 
@@ -413,7 +414,7 @@ class API(object):
         `to_json()` and `to_dict()`, that can be used from within
         custom serializers. For example::
 
-            def my_serializer(req, exception):
+            def my_serializer(req, resp, exception):
                 representation = None
 
                 preferred = req.client_prefers(('application/x-yaml',
@@ -425,8 +426,8 @@ class API(object):
                     else:
                         representation = yaml.dump(exception.to_dict(),
                                                    encoding=None)
-
-                return (preferred, representation)
+                    resp.body = representation
+                    resp.content_type = preferred
 
         Note:
             If a custom media type is used and the type includes a
@@ -437,16 +438,15 @@ class API(object):
 
         Args:
             serializer (callable): A function taking the form
-                ``func(req, exception)``, where `req` is the request
-                object that was passed to the responder method, and
-                `exception` is an instance of ``falcon.HTTPError``.
-                The function must return a ``tuple`` of the form
-                (*media_type*, *representation*), or (``None``, ``None``)
-                if the client does not support any of the
-                available media types.
+                ``func(req, resp, exception)``, where `req` is the request
+                object that was passed to the responder method, `resp` is
+                the response object, and `exception` is an instance of
+                ``falcon.HTTPError``.
 
         """
 
+        if len(inspect.getargspec(serializer).args) == 2:
+            serializer = helpers.wrap_old_error_serializer(serializer)
         self._serialize_error = serializer
 
     # ------------------------------------------------------------------------
@@ -524,15 +524,7 @@ class API(object):
             resp.set_headers(error.headers)
 
         if error.has_representation:
-            media_type, body = self._serialize_error(req, error)
-
-            if body is not None:
-                resp.body = body
-
-                # NOTE(kgriffs): This must be done AFTER setting the headers
-                # from error.headers so that we will override Content-Type if
-                # it was mistakenly set by the app.
-                resp.content_type = media_type
+            self._serialize_error(req, resp, error)
 
     def _call_req_mw(self, stack, req, resp):
         """Run process_request middleware methods."""
