@@ -22,6 +22,7 @@ except ImportError:  # pragma: nocover
 import falcon
 import falcon.request
 from falcon.testing.srmock import StartResponseMock
+from falcon.testing.smmock import MiddlewareMock
 from falcon.testing.helpers import create_environ
 
 
@@ -38,6 +39,9 @@ class TestBase(unittest.TestCase):
     Attributes:
         api (falcon.API): An API instance to target when simulating
             requests. Defaults to ``falcon.API()``.
+        smmock (falcon.testing.MiddlewareMock): Provides an object to
+            simulate running Falcon middleware one step at a time without
+            running the full WSGI stack.
         srmock (falcon.testing.StartResponseMock): Provides a callable
             that simulates the behavior of the `start_response` argument
             that the server would normally pass into the WSGI app. The
@@ -53,6 +57,7 @@ class TestBase(unittest.TestCase):
         super(TestBase, self).setUp()
         self._id = itertools.count(0)
         self.api = falcon.API()
+        self.smmock = MiddlewareMock()
         self.srmock = StartResponseMock()
         self.test_route = '/{0}'.format(next(self._id))
 
