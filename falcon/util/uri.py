@@ -178,9 +178,12 @@ if six.PY2:
         tokens = decoded_uri.split('%')
         decoded_uri = tokens[0]
         for token in tokens[1:]:
-            char, byte = _HEX_TO_BYTE[token[:2]]
-            decoded_uri += char + token[2:]
-
+            token_partial = token[:2]
+            if token_partial in _HEX_TO_BYTE:
+                char, byte = _HEX_TO_BYTE[token_partial]
+            else:
+                char, byte = '%', 0
+            decoded_uri += char + (token[2:] if byte else token)
             only_ascii = only_ascii and (byte <= 127)
 
         # PERF(kgriffs): Only spend the time to do this if there
@@ -235,7 +238,12 @@ else:
         tokens = decoded_uri.split(b'%')
         decoded_uri = tokens[0]
         for token in tokens[1:]:
-            decoded_uri += _HEX_TO_BYTE[token[:2]] + token[2:]
+            token_partial = token[:2]
+            if token_partial in _HEX_TO_BYTE:
+                decoded_uri += _HEX_TO_BYTE[token_partial] + token[2:]
+            else:
+                # malformed percentage like "x=%" or "y=%+"
+                decoded_uri += b'%' + token
 
         # Convert back to str
         return decoded_uri.decode('utf-8', 'replace')
