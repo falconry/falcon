@@ -376,3 +376,23 @@ def parse_host(host, default_port=None):
     # or a domain name plus a port
     name, _, port = host.partition(':')
     return (name, int(port))
+
+
+def unquote_string(quoted):
+    """unquote a rfc7320 "quoted-string" into normal one
+
+    Args:
+        quoted (str): Original quoted string
+
+    Returns:
+        str: unquoted string
+
+    Raises:
+        TypeError: `quoted` was not a ``str``.
+    """
+    tmp_quoted = quoted.strip()
+    if tmp_quoted[0] != '"' or tmp_quoted[-1] != '"':
+        # return original one, prevent side-effect
+        return quoted
+    return '\\'.join(q.replace('\\', '')
+                     for q in tmp_quoted[1:-1].split(r'\\'))

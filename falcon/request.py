@@ -29,7 +29,7 @@ import six
 
 from falcon.errors import *
 from falcon import util
-from falcon.util.uri import parse_query_string, parse_host
+from falcon.util.uri import parse_query_string, parse_host, unquote_string
 from falcon import request_helpers as helpers
 
 # NOTE(tbug): In some cases, http_cookies is not a module
@@ -198,6 +198,7 @@ class Request(object):
         '_wsgierrors',
         'options',
         '_cookies',
+        '_cached_access_route',
     )
 
     # Allow child classes to override this
@@ -258,6 +259,7 @@ class Request(object):
         self._cached_headers = None
         self._cached_uri = None
         self._cached_relative_uri = None
+        self._cached_access_route = None
 
         try:
             self.content_type = self.env['CONTENT_TYPE']
@@ -513,6 +515,35 @@ class Request(object):
             self._cookies = cookies
 
         return self._cookies.copy()
+
+    @property
+    def access_route(self):
+        """If a forwarded header exists this is a list of all ip addresses
+        from the client ip to the last proxy server.
+
+        Inspired by werkzeug's access_route
+        """
+        if self._cached_access_route is None:
+            access_route = []
+            if 'HTTP_FORWARDED' in self.env:
+                access_route = self._parse_rfc_forwarded()
+            if not access_route and 'HTTP_X_FORWARDED_FOR' in self.env:
+                # we don't handle X-Fowarded-By since it is not possible to
+                # know in which order the already existing fields were added
+                # just as rfc7239 stated
+                access_route = [ip.strip() for ip in
+                                self.env['HTTP_X_FORWARDED_FOR'].split(',')]
+            if not access_route and 'HTTP_X_REAL_IP' in self.env:
+                access_route = [self.env['HTTP_X_REAL_IP']]
+            if not access_route and 'REMOTE_ADDR' in self.env:
+                access_route = [self.env['REMOTE_ADDR']]
+            self._cached_access_route = access_route
+        return self._cached_access_route
+
+    @property
+    def remote_addr(self):
+        """The remote address of the client."""
+        return self.env.get('REMOTE_ADDR')
 
     # ------------------------------------------------------------------------
     # Methods
@@ -1027,6 +1058,22 @@ class Request(object):
             )
 
             self._params.update(extra_params)
+
+    def _parse_rfc_forwarded(self):
+        """rfc 7239"""
+        addr = []
+        for forwarded in self.env['HTTP_FORWARDED'].split(','):
+            for param in forwarded.split(';'):
+                param = param.strip().split('=', 1)
+                if len(param) == 1:
+                    continue
+                key, val = param
+                if key.lower() not in ('for', 'by'):
+                    # we only want for/by params
+                    continue
+                host, _ = parse_host(unquote_string(val))
+                addr.append(host)
+        return addr
 
 
 # PERF: To avoid typos and improve storage space and speed over a dict.
