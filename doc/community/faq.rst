@@ -58,7 +58,7 @@ Falcon generally tries to minimize the number of objects that it
 instantiates. It does this for two reasons: first, to avoid the expense of
 creating the object, and second to reduce memory usage. Therefore, when
 adding a route, Falcon requires an *instance* of your resource class, rather
-than the class type. That same instance will be used to server all requests
+than the class type. That same instance will be used to serve all requests
 coming in on that route.
 
 Is Falcon thread-safe?
