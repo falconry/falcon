@@ -16,6 +16,7 @@ import re
 import six
 
 from falcon import api_helpers as helpers
+from falcon.cors import CORS, CORSMiddleware
 from falcon import DEFAULT_MEDIA_TYPE
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
@@ -94,6 +95,9 @@ class API(object):
             to use in lieu of the default engine.
             See also: :ref:`Routing <routing>`.
 
+        cors (CORS, optional): An instance of :py:class:`~falcon.cors.CORS` to be
+            used as global CORS configuration for the API.
+
     Attributes:
         req_options (RequestOptions): A set of behavioral options related to
             incoming requests.
@@ -112,16 +116,27 @@ class API(object):
 
     __slots__ = ('_after', '_before', '_request_type', '_response_type',
                  '_error_handlers', '_media_type', '_router', '_sinks',
-                 '_serialize_error', 'req_options', '_middleware')
+                 '_serialize_error', 'req_options', '_middleware',
+                 '_cors_enabled', '_cors')
 
     def __init__(self, media_type=DEFAULT_MEDIA_TYPE, before=None, after=None,
                  request_type=Request, response_type=Response,
-                 middleware=None, router=None):
+                 middleware=None, router=None, cors=None):
         self._sinks = []
         self._media_type = media_type
 
         self._before = helpers.prepare_global_hooks(before)
         self._after = helpers.prepare_global_hooks(after)
+
+        if cors is not None:
+            if not isinstance(cors, CORS):
+                raise ValueError('cors argument must be an instance of '
+                                 'falcon.cors.CORS')
+            cors_middleware = CORSMiddleware(cors)
+            if middleware is not None:
+                middleware.insert(0, cors_middleware)
+            else:
+                middleware = [cors_middleware]
 
         # set middleware
         self._middleware = helpers.prepare_middleware(middleware)
