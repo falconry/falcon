@@ -1,3 +1,4 @@
+import functools
 import json
 
 import falcon
@@ -47,6 +48,19 @@ class Smartness(object):
             resp.body += ' and smart'
         else:
             resp.body = 'smart'
+
+
+# NOTE(kgriffs): Use partial methods for these next two in order
+# to make sure we handle that correctly.
+def things_in_the_head(header, value, req, resp, params):
+    resp.set_header(header, value)
+
+
+bunnies_in_the_head = functools.partial(things_in_the_head,
+                                        'X-Bunnies', 'fluffy')
+
+cuteness_in_the_head = functools.partial(things_in_the_head,
+                                         'X-Cuteness', 'cute')
 
 
 def fluffiness_in_the_head(req, resp):

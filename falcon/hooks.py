@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import functools
 from functools import wraps
 import inspect
 
@@ -129,44 +130,32 @@ def after(action):
 
     return _after
 
+
 # -----------------------------------------------------------------------------
 # Helpers
 # -----------------------------------------------------------------------------
 
 
-# NOTE(kgriffs): Coverage disabled because under Python 3.4, the exception
-# is never raised. Coverage has been verified when running under other
-# versions of Python.
-def _get_argspec(func):  # pragma: no cover
-    """Wrapper around inspect.getargspec to handle Py2/Py3 differences."""
+def _has_resource_arg(action):
+    """Check if the given action function accepts a resource arg."""
 
-    try:
-        # NOTE(kgriffs): This will fail for callable classes, which
-        # explicitly define __call__, except under Python 3.4.
-        spec = inspect.getargspec(func)
+    if isinstance(action, functools.partial):
+        # NOTE(kgriffs): We special-case this, since versions of
+        # Python prior to 3.4 raise an error when trying to get the
+        # spec for a partial.
+        spec = inspect.getargspec(action.func)
 
-    except TypeError:
-        # NOTE(kgriffs): If this is a class that defines __call__ as a
-        # method, we need to get the argspec of __call__ directly. This
-        # does not work for regular functions and methods, because in
-        # that case, __call__ isn't actually a Python function under
-        # Python 2.6-3.3 (fixed in 3.4).
-        spec = inspect.getargspec(func.__call__)
+    elif inspect.isroutine(action):
+        # NOTE(kgriffs): We have to distinguish between instances of a
+        # callable class vs. a routine, since Python versions prior to
+        # 3.4 raise an error when trying to get the spec from
+        # a callable class instance.
+        spec = inspect.getargspec(action)
 
-    return spec
+    else:
+        spec = inspect.getargspec(action.__call__)
 
-
-def _has_self(spec):
-    """Checks whether the given argspec includes a self param.
-
-    Warning:
-        If a method's spec lists "self", that doesn't necessarily mean
-        that it should be called with a `self` param; if the method
-        instance is bound, the caller must omit `self` on invocation.
-
-    """
-
-    return len(spec.args) > 0 and spec.args[0] == 'self'
+    return 'resource' in spec.args
 
 
 def _wrap_with_after(action, responder, resource=None, is_method=False):
@@ -184,13 +173,9 @@ def _wrap_with_after(action, responder, resource=None, is_method=False):
 
     """
 
-    # NOTE(swistakm): introspect action function to guess if it can handle
-    # additional resource argument without breaking backwards compatibility
-    spec = _get_argspec(action)
-
     # NOTE(swistakm): create shim before checking what will be actually
     # decorated. This helps to avoid excessive nesting
-    if len(spec.args) == (4 if _has_self(spec) else 3):
+    if _has_resource_arg(action):
         shim = action
     else:
         # TODO(kgriffs): This decorator does not work on callable
@@ -233,13 +218,9 @@ def _wrap_with_before(action, responder, resource=None, is_method=False):
 
     """
 
-    # NOTE(swistakm): introspect action function to guess if it can handle
-    # additional resource argument without breaking backwards compatibility
-    action_spec = _get_argspec(action)
-
     # NOTE(swistakm): create shim before checking what will be actually
     # decorated. This allows to avoid excessive nesting
-    if len(action_spec.args) == (5 if _has_self(action_spec) else 4):
+    if _has_resource_arg(action):
         shim = action
     else:
         # TODO(kgriffs): This decorator does not work on callable
