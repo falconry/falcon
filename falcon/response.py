@@ -15,7 +15,13 @@
 from six import PY2
 from six import text_type as TEXT_TYPE
 from six import string_types as STRING_TYPES
-from six.moves.http_cookies import SimpleCookie, CookieError
+
+# NOTE(tbug): In some cases, http_cookies is not a module
+# but a dict-like structure. This fixes that issue.
+# See issue https://github.com/falconry/falcon/issues/556
+from six.moves import http_cookies
+SimpleCookie = http_cookies.SimpleCookie
+CookieError = http_cookies.CookieError
 
 from falcon.response_helpers import header_property, format_range
 from falcon.response_helpers import is_ascii_encodable
