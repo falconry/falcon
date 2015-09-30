@@ -175,7 +175,8 @@ class Request(object):
             values. Behaves exactly as the ``params`` attribute.
 
         raw_body (bytes): The raw POST data, if any. Note that Falcon will not
-            save the raw body unless the `save_raw_body` option is set.
+            save the raw body unless the `save_raw_body` option is set, in order
+            to minimize unnecessary memory usage.
 
         options (dict): Set of global options passed from the API handler.
 
@@ -556,8 +557,8 @@ class Request(object):
             # PERF(kgriffs): Technically, we should spend a few more
             # cycles and parse the content type for real, but
             # these heuristics will work virtually all the time.
-            content_type = self.content_type or ''
-            if 'application/x-www-form-urlencoded' in content_type:
+            if (self.content_type is not None and
+                    'application/x-www-form-urlencoded' in content_type):
                 self._parse_form_urlencoded()
             else:
                 self.log_error(
