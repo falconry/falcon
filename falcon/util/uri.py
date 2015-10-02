@@ -59,7 +59,7 @@ def _create_str_encoder(is_value):
         #
         # NOTE(kgriffs): Code coverage disabled since in Py3K the uri
         # is always a text type, so we get a failure for that tox env.
-        if isinstance(uri, six.text_type):  # pragma no cover
+        if isinstance(uri, six.text_type):
             uri = uri.encode('utf-8')
 
         # Use our map to encode each char and join the result into a new uri

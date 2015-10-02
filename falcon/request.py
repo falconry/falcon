@@ -18,7 +18,7 @@ try:
     # is used by wsgiref for wsgi.input.
     import socket
     NativeStream = socket._fileobject  # pylint: disable=E1101
-except AttributeError:  # pragma nocover
+except AttributeError:
     # NOTE(kgriffs): In Python 3.3, wsgiref implements wsgi.input
     # using _io.BufferedReader which is an alias of io.BufferedReader
     import io
@@ -265,7 +265,7 @@ class Request(object):
         # Normalize path
         path = env['PATH_INFO']
         if path:
-            if six.PY3:  # pragma: no cover
+            if six.PY3:
                 # PEP 3333 specifies that PATH_INFO variable are always
                 # "bytes tunneled as latin-1" and must be encoded back
                 path = path.encode('latin1').decode('utf-8', 'replace')
@@ -310,9 +310,7 @@ class Request(object):
         # normalizing semantics between, e.g., gunicorn and wsgiref.
         if _maybe_wrap_wsgi_stream:
             if isinstance(self.stream, NativeStream):
-                # NOTE(kgriffs): This is covered by tests, it's just that
-                # coverage can't figure this out for some reason (TBD).
-                self._wrap_stream()  # pragma nocover
+                self._wrap_stream()
             else:
                 # PERF(kgriffs): If self.stream does not need to be wrapped
                 # this time, it never needs to be wrapped since the server
@@ -1036,8 +1034,7 @@ class Request(object):
 
         return date
 
-    # TODO(kgriffs): Use the nocover pragma only for the six.PY3 if..else
-    def log_error(self, message):  # pragma: no cover
+    def log_error(self, message):
         """Write an error message to the server's log.
 
         Prepends timestamp and request info to message, and writes the
@@ -1072,11 +1069,13 @@ class Request(object):
     # Helpers
     # ------------------------------------------------------------------------
 
-    def _wrap_stream(self):  # pragma nocover
+    def _wrap_stream(self):
         try:
             content_length = self.content_length or 0
 
-        except HTTPInvalidHeader:
+        # NOTE(kgriffs): This branch is indeed covered in test_wsgi.py
+        # even though coverage isn't able to detect it.
+        except HTTPInvalidHeader:  # pragma: no cover
             # NOTE(kgriffs): The content-length header was specified,
             # but it had an invalid value. Assume no content.
             content_length = 0

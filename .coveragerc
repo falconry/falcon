@@ -1,4 +1,5 @@
 [run]
+parallel = True
 branch = True
 source = falcon
 omit = falcon/tests*,falcon/cmd*,falcon/bench*

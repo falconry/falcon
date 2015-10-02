@@ -1,6 +1,8 @@
 ## Contributing
 
-Kurt Griffiths (kgriffs) is the creator and current maintainer of the Falcon framework. Pull requests are always welcome.
+Hi, thanks for your interest in the project! We welcome pull requests from developers of all skill levels. 
+
+Kurt Griffiths (kgriffs) is the creator and current maintainer of the Falcon framework, along with a group of talented and stylish volunteers. Please don't hesitate to reach out if you have any questions, or just need a little help getting started.
 
 Before submitting a pull request, please ensure you have added or updated tests as appropriate, and that all existing tests still pass with your changes on both Python 2 and Python 3. Please also ensure that your coding style follows PEP 8 and doesn't cause pyflakes to complain.
 
@@ -8,6 +10,54 @@ You can check all this by running the following from within the falcon project d
 
 ```bash
 $ tox -e py27,py33,pep8
+```
+
+### Running tests against Jython
+
+In addition to the tests run with tox against CPython, Cython, and PyPy, Travis runs tests against Jython 2.7 outside of tox. If you need to run these tests locally, do the following:
+* Install JDK 7 or better
+* run `travis_scripts/install_jython2.7.sh` -- this will install jython at `~/jython`
+* Install testing requirements `~/jython/bin/pip install -r tools/test-requires`
+    * May need to set `export JYTHON_HOME=~/jython` first
+* Run tests `~/jython/bin/nosetests`
+
+Note: coverage does not support Jython, so the coverage tests will fail.
+
+### Test coverage
+
+Pull requests must maintain 100% test coverage of all code branches. This helps ensure the quality of the Falcon framework. To check coverage before submitting a pull request:
+
+```bash
+$ tox -e py26,py27,py34 && tools/combine_coverage.sh
+```
+
+This generates an HTML coverage report that can be viewed by simply opening `.coverage_html/index.html` in a browser.
+
+### Documentation
+
+To check documentation changes (including docstrings), before submitting a PR, do the following:
+
+```bash
+#
+# Create a virtualenv, then inside that env:
+#
+
+$ pip install -r tools/doc-requires
+$ cd doc
+$ make html
+
+#
+# Then open _build/html/index.html
+#
+
+# OS X
+$ open _build/html/index.html
+
+# Gnome
+$ gnome-open _build/html/index.html
+
+# Generic X Windows
+$ xdg-open _build/html/index.html
 ```
 
 ### Code style rules
@@ -79,16 +129,6 @@ Just as in the **subject**, use the imperative, present tense: "change" not "cha
 
 ##### Footer
 The footer should contain any information about **Breaking Changes** and is also the place to reference GitHub issues that this commit **Closes**.
-
-### Running tests against Jython
-In addition to the tests run with tox against cpython, cython, and pypy versions, Travis runs tests against jython 2.7 outside of tox. If you need to run these tests locally, do the following:
-* Install JDK 7 or better
-* run `travis_scripts/install_jython2.7.sh` -- this will install jython at `~/jython`
-* Install testing requirements `~/jython/bin/pip install -r tools/test-requires`
-    * May need to set `export JYTHON_HOME=~/jython` first
-* Run tests `~/jython/bin/nosetests`
-
-Note: coverage does not support Jython, so the coverage tests will fail.
 
 [ajs]: https://github.com/angular/angular.js/blob/master/CONTRIBUTING.md#commit
 [docstrings]: http://sphinxcontrib-napoleon.readthedocs.org/en/latest/example_google.html#example-google-style-python-docstrings
