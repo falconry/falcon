@@ -9,11 +9,12 @@ send an email to falcon@librelist.com and follow the instructions in the
 reply. For more information about managing your subscription, check out
 the `Librelist help page <http://librelist.com/help.html>`_.
 
-While we don't have an official code of conduct, we do expect everyone
-who participates on the mailing list to act professionally, and lead
-by example in encouraging constructive discussions. Each individual in
-the community is responsible for creating a positive, constructive, and
-productive culture.
+All contributors and maintainers of this project are subject to our `Code
+of Conduct <https://github.com/falconry/falcon/blob/master/CODEOFCONDUCT.md>`_.
+We expect everyone who participates on the mailing list to act
+professionally, and lead by example in encouraging constructive
+discussions. Each individual in the community is responsible for creating
+a positive, constructive, and productive culture.
 
 `Discussions are archived <http://librelist.com/browser/falcon>`_
 for posterity.
@@ -33,3 +34,8 @@ questions in IRC, and to peer-review
 `pull requests <https://github.com/racker/falcon/pulls>`_. If you use the
 Chrome browser, we recommend installing the
 `NotHub extension <http://nothub.org/>`_ to stay up to date with PRs.
+
+Code of Conduct
+---------------
+All contributors and maintainers of this project are subject to our `Code
+of Conduct <https://github.com/falconry/falcon/blob/master/CODEOFCONDUCT.md>`_.
