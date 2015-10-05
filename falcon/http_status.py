@@ -16,8 +16,9 @@
 class HTTPStatus(Exception):
     """Represents a generic HTTP status.
 
-    Raise this class from a hook, middleware, or a responder to stop handling
-    the request and skip to the response handling.
+    Raise an instance of this class from a hook, middleware, or
+    responder to short-circuit request processing in a manner similar
+    to ``falcon.HTTPError``, but for non-error status codes.
 
     Attributes:
         status (str): HTTP status line, e.g. '748 Confounded by Ponies'.
