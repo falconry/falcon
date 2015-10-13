@@ -394,5 +394,5 @@ def unquote_string(quoted):
     if tmp_quoted[0] != '"' or tmp_quoted[-1] != '"':
         # return original one, prevent side-effect
         return quoted
-    return '\\'.join(q.replace('\\', '')
-                     for q in tmp_quoted[1:-1].split(r'\\'))
+    return '\\'.join([q.replace('\\', '')
+                      for q in tmp_quoted[1:-1].split(r'\\')])
