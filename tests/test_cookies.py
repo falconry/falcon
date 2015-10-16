@@ -1,11 +1,13 @@
+import re
 import sys
-import falcon
-import falcon.testing as testing
-
-from falcon.util import TimezoneGMT
 from datetime import datetime, timedelta, tzinfo
 
 from six.moves.http_cookies import Morsel
+from testtools.matchers import LessThan
+
+import falcon
+import falcon.testing as testing
+from falcon.util import TimezoneGMT, http_date_to_dt
 
 
 class TimezoneGMTPlus1(tzinfo):
@@ -109,12 +111,23 @@ class TestCookies(testing.TestBase):
     def test_response_unset_cookie(self):
         resp = falcon.Response()
         resp.unset_cookie("bad")
-        resp.set_cookie("bad", "cookie", max_age=301)
+        resp.set_cookie("bad", "cookie", max_age=300)
         resp.unset_cookie("bad")
 
         morsels = list(resp._cookies.values())
+        self.assertEqual(len(morsels), 1)
 
-        self.assertEqual(len(morsels), 0)
+        bad_cookie = morsels[0]
+        self.assertEqual(bad_cookie['expires'], -1)
+
+        output = bad_cookie.OutputString()
+        self.assertTrue('bad=;' in output or 'bad="";' in output)
+
+        match = re.search('expires=([^;]+)', output)
+        self.assertIsNotNone(match)
+
+        expiration = http_date_to_dt(match.group(1), obs_date=True)
+        self.assertThat(expiration, LessThan(datetime.utcnow()))
 
     def test_cookie_timezone(self):
         tz = TimezoneGMT()

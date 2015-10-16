@@ -128,6 +128,7 @@ def http_date_to_dt(http_date, obs_date=False):
 
     time_formats = (
         '%a, %d %b %Y %H:%M:%S %Z',
+        '%a, %d-%b-%Y %H:%M:%S %Z',
         '%A, %d-%b-%y %H:%M:%S %Z',
         '%a %b %d %H:%M:%S %Y',
     )

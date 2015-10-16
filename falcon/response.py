@@ -251,9 +251,24 @@ class Response(object):
             self._cookies[name]["httponly"] = http_only
 
     def unset_cookie(self, name):
-        """Unset a cookie in the response."""
-        if self._cookies is not None and name in self._cookies:
-            del self._cookies[name]
+        """Unset a cookie in the response
+
+        Note:
+            This will clear the contents of the cookie, and instruct
+            the browser to immediately expire its own copy of the
+            cookie, if any.
+        """
+        if self._cookies is None:
+            self._cookies = SimpleCookie()
+
+        self._cookies[name] = ""
+
+        # NOTE(Freezerburn): SimpleCookie apparently special cases the
+        # expires attribute to automatically use strftime and set the
+        # time as a delta from the current time. We use -1 here to
+        # basically tell the browser to immediately expire the cookie,
+        # thus removing it from future request objects.
+        self._cookies[name]["expires"] = -1
 
     def get_header(self, name):
         """Retrieve the raw string value for the given header.
