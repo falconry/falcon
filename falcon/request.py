@@ -42,8 +42,6 @@ SimpleCookie = http_cookies.SimpleCookie
 DEFAULT_ERROR_LOG_FORMAT = (u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
                             u' {1} {2}{3} => ')
 
-TRUE_STRINGS = ('true', 'True', 'yes')
-FALSE_STRINGS = ('false', 'False', 'no')
 WSGI_CONTENT_HEADERS = ('CONTENT_TYPE', 'CONTENT_LENGTH')
 
 
@@ -120,11 +118,9 @@ class Request(object):
         stream: File-like object for reading the body of the request, if any.
 
             Note:
-                If an HTML form is POSTed to the API using the
-                *application/x-www-form-urlencoded* media type, Falcon
-                will consume `stream` in order to parse the parameters
-                and merge them into the query string parameters. In this
-                case, the stream will be left at EOF.
+                Falcon does *not* consume the request stream unless the
+                body data is actually read (see the ``raw_body`` property).
+                When it does, the stream is left at ``EOF``.
 
                 Note also that the character encoding for fields, before
                 percent-encoding non-ASCII bytes, is assumed to be
@@ -175,6 +171,13 @@ class Request(object):
             string, the value mapped to that parameter key will be a list of
             all the values in the order seen.
 
+        form_params (dict): The mapping of form data parameter names to their
+            values. Behaves exactly as the ``params`` attribute.
+
+        raw_body (bytes): The raw POST data, if any. Note that Falcon will not
+            save the raw body unless the `save_raw_body` option is set, in order
+            to minimize unnecessary memory usage.
+
         options (dict): Set of global options passed from the API handler.
 
         cookies (dict):
@@ -191,6 +194,8 @@ class Request(object):
         'env',
         'method',
         '_params',
+        '_form_params',
+        '_raw_body',
         'path',
         'query_string',
         'stream',
@@ -198,6 +203,8 @@ class Request(object):
         '_wsgierrors',
         'options',
         '_cookies',
+        '_param',
+        '_form_param'
     )
 
     # Allow child classes to override this
@@ -235,6 +242,14 @@ class Request(object):
                 self.path = path
         else:
             self.path = '/'
+
+        self._params = {}
+        # NOTE(necaris): These are actually initialized and populated
+        # later, on-demand, through properties
+        self._param = None
+        self._form_param = None
+        self._form_params = None
+        self._raw_body = None
 
         # PERF(kgriffs): if...in is faster than using env.get(...)
         if 'QUERY_STRING' in env:
@@ -276,13 +291,6 @@ class Request(object):
                 # this time, it never needs to be wrapped since the server
                 # will continue using the same type for wsgi.input.
                 _maybe_wrap_wsgi_stream = False
-
-        # PERF(kgriffs): Technically, we should spend a few more
-        # cycles and parse the content type for real, but
-        # this heuristic will work virtually all the time.
-        if (self.content_type is not None and
-                'application/x-www-form-urlencoded' in self.content_type):
-            self._parse_form_urlencoded()
 
     # ------------------------------------------------------------------------
     # Properties
@@ -514,6 +522,58 @@ class Request(object):
 
         return self._cookies.copy()
 
+    def param(self):
+        if self._param is None:
+            self._param = helpers.ParamProxy(self, self.params)
+
+        return self._param
+
+    @property
+    def raw_body(self):
+        # NOTE(necaris): This will only store the raw body data if
+        # `self.options.store_raw_body` is True; otherwise it will consume
+        # the body data stream and discard data after returning
+        if self._raw_body is not None:
+            raw_body = self._raw_body
+        else:
+            # NOTE(kgriffs): This assumes self.stream has been patched
+            # above in the case of wsgiref, so that self.content_length
+            # is not needed. Normally we just avoid accessing
+            # self.content_length, because it is a little expensive
+            # to call. We could cache self.content_length, but the
+            # overhead to do that won't usually be helpful, since
+            # content length will only ever be read once per
+            # request in most cases.
+            raw_body = self.stream.read()
+
+            if self.options.store_raw_body:
+                self._raw_body = raw_body
+
+        return raw_body
+
+    @property
+    def form_params(self):
+        if self._form_params is None:
+            # PERF(kgriffs): Technically, we should spend a few more
+            # cycles and parse the content type for real, but
+            # these heuristics will work virtually all the time.
+            if (self.content_type is not None and
+                    'application/x-www-form-urlencoded' in content_type):
+                self._parse_form_urlencoded()
+            else:
+                self.log_error(
+                    'Content-Type not supported ({t}).'.format(t=content_type))
+                self._form_params = {}
+
+        return self._form_params
+
+    @property
+    def form_param(self):
+        if self._form_param is None:
+            self._form_param = helpers.ParamProxy(self, self.form_params)
+
+        return self._form_param
+
     # ------------------------------------------------------------------------
     # Methods
     # ------------------------------------------------------------------------
@@ -642,269 +702,25 @@ class Request(object):
                    'Section 7.1.1.1')
             raise HTTPInvalidHeader(msg, header)
 
-    def get_param(self, name, required=False, store=None, default=None):
-        """Return the raw value of a query string parameter as a string.
-
-        Note:
-            If an HTML form is POSTed to the API using the
-            *application/x-www-form-urlencoded* media type, the
-            parameters from the request body will be merged into
-            the query string parameters.
-
-            If a key appears more than once in the form data, one of the
-            values will be returned as a string, but it is undefined which
-            one. Use `req.get_param_as_list()` to retrieve all the values.
-
-        Note:
-            Similar to the way multiple keys in form data is handled,
-            if a query parameter is assigned a comma-separated list of
-            values (e.g., 'foo=a,b,c'), only one of those values will be
-            returned, and it is undefined which one. Use
-            `req.get_param_as_list()` to retrieve all the values.
-
-        Args:
-            name (str): Parameter name, case-sensitive (e.g., 'sort').
-            required (bool, optional): Set to ``True`` to raise
-                ``HTTPBadRequest`` instead of returning ``None`` when the
-                parameter is not found (default ``False``).
-            store (dict, optional): A ``dict``-like object in which to place
-                the value of the param, but only if the param is present.
-            default (any, optional): If the param is not found returns the
-                given value instead of None
-
-        Returns:
-            str: The value of the param as a string, or ``None`` if param is
-                not found and is not required.
-
-        Raises:
-            HTTPBadRequest: A required param is missing from the request.
-
-        """
-
-        params = self._params
-
-        # PERF: Use if..in since it is a good all-around performer; we don't
-        #       know how likely params are to be specified by clients.
-        if name in params:
-            # NOTE(warsaw): If the key appeared multiple times, it will be
-            # stored internally as a list.  We do not define which one
-            # actually gets returned, but let's pick the last one for grins.
-            param = params[name]
-            if isinstance(param, list):
-                param = param[-1]
-
-            if store is not None:
-                store[name] = param
-
-            return param
-
-        if not required:
-            return default
-
-        raise HTTPMissingParam(name)
+    def get_param(self, name, required=False, store=None):
+        return self.param.get(name, required=required, store=store)
 
     def get_param_as_int(self, name,
                          required=False, min=None, max=None, store=None):
-        """Return the value of a query string parameter as an int.
-
-        Args:
-            name (str): Parameter name, case-sensitive (e.g., 'limit').
-            required (bool, optional): Set to ``True`` to raise
-                ``HTTPBadRequest`` instead of returning ``None`` when the
-                parameter is not found or is not an integer (default
-                ``False``).
-            min (int, optional): Set to the minimum value allowed for this
-                param. If the param is found and it is less than min, an
-                ``HTTPError`` is raised.
-            max (int, optional): Set to the maximum value allowed for this
-                param. If the param is found and its value is greater than
-                max, an ``HTTPError`` is raised.
-            store (dict, optional): A ``dict``-like object in which to place
-                the value of the param, but only if the param is found
-                (default ``None``).
-
-        Returns:
-            int: The value of the param if it is found and can be converted to
-                an integer. If the param is not found, returns ``None``, unless
-                `required` is ``True``.
-
-        Raises
-            HTTPBadRequest: The param was not found in the request, even though
-                it was required to be there. Also raised if the param's value
-                falls outside the given interval, i.e., the value must be in
-                the interval: min <= value <= max to avoid triggering an error.
-
-        """
-
-        params = self._params
-
-        # PERF: Use if..in since it is a good all-around performer; we don't
-        #       know how likely params are to be specified by clients.
-        if name in params:
-            val = params[name]
-            if isinstance(val, list):
-                val = val[-1]
-
-            try:
-                val = int(val)
-            except ValueError:
-                msg = 'The value must be an integer.'
-                raise HTTPInvalidParam(msg, name)
-
-            if min is not None and val < min:
-                msg = 'The value must be at least ' + str(min)
-                raise HTTPInvalidParam(msg, name)
-
-            if max is not None and max < val:
-                msg = 'The value may not exceed ' + str(max)
-                raise HTTPInvalidParam(msg, name)
-
-            if store is not None:
-                store[name] = val
-
-            return val
-
-        if not required:
-            return None
-
-        raise HTTPMissingParam(name)
+        return self.param.get_as_int(name, required=required, min=min,
+                                     max=max, store=store)
 
     def get_param_as_bool(self, name, required=False, store=None,
                           blank_as_true=False):
-        """Return the value of a query string parameter as a boolean
-
-        The following boolean strings are supported::
-
-            TRUE_STRINGS = ('true', 'True', 'yes')
-            FALSE_STRINGS = ('false', 'False', 'no')
-
-        Args:
-            name (str): Parameter name, case-sensitive (e.g., 'detailed').
-            required (bool, optional): Set to ``True`` to raise
-                ``HTTPBadRequest`` instead of returning ``None`` when the
-                parameter is not found or is not a recognized boolean
-                string (default ``False``).
-            store (dict, optional): A ``dict``-like object in which to place
-                the value of the param, but only if the param is found (default
-                ``None``).
-            blank_as_true (bool): If ``True``, an empty string value will be
-                treated as ``True``. Normally empty strings are ignored; if
-                you would like to recognize such parameters, you must set the
-                `keep_blank_qs_values` request option to ``True``. Request
-                options are set globally for each instance of ``falcon.API``
-                through the `req_options` attribute.
-
-        Returns:
-            bool: The value of the param if it is found and can be converted
-                to a ``bool``. If the param is not found, returns ``None``
-                unless required is ``True``.
-
-        Raises:
-            HTTPBadRequest: A required param is missing from the request.
-
-        """
-
-        params = self._params
-
-        # PERF: Use if..in since it is a good all-around performer; we don't
-        #       know how likely params are to be specified by clients.
-        if name in params:
-            val = params[name]
-            if isinstance(val, list):
-                val = val[-1]
-
-            if val in TRUE_STRINGS:
-                val = True
-            elif val in FALSE_STRINGS:
-                val = False
-            elif blank_as_true and not val:
-                val = True
-            else:
-                msg = 'The value of the parameter must be "true" or "false".'
-                raise HTTPInvalidParam(msg, name)
-
-            if store is not None:
-                store[name] = val
-
-            return val
-
-        if not required:
-            return None
-
-        raise HTTPMissingParam(name)
+        return self.param.get_as_bool(name, required=required, store=store,
+                                      blank_as_true=blank_as_true)
 
     def get_param_as_list(self, name,
                           transform=None, required=False, store=None):
-        """Return the value of a query string parameter as a list.
+        return self.param.get_as_list(
+            name, transform=transform, required=required, store=store)
 
-        List items must be comma-separated or must be provided
-        as multiple instances of the same param in the query string
-        ala *application/x-www-form-urlencoded*.
-
-        Args:
-            name (str): Parameter name, case-sensitive (e.g., 'ids').
-            transform (callable, optional): An optional transform function
-                that takes as input each element in the list as a ``str`` and
-                outputs a transformed element for inclusion in the list that
-                will be returned. For example, passing ``int`` will
-                transform list items into numbers.
-            required (bool, optional): Set to ``True`` to raise
-                ``HTTPBadRequest`` instead of returning ``None`` when the
-                parameter is not found (default ``False``).
-            store (dict, optional): A ``dict``-like object in which to place
-                the value of the param, but only if the param is found (default
-                ``None``).
-
-        Returns:
-            list: The value of the param if it is found. Otherwise, returns
-                ``None`` unless required is True. Empty list elements will be
-                discarded. For example, the following query strings would
-                both result in `['1', '3']`::
-
-                    things=1,,3
-                    things=1&things=&things=3
-
-        Raises:
-            HTTPBadRequest: A required param is missing from the request.
-            HTTPInvalidParam: A transform function raised an instance of
-                ``ValueError``.
-
-        """
-
-        params = self._params
-
-        # PERF: Use if..in since it is a good all-around performer; we don't
-        #       know how likely params are to be specified by clients.
-        if name in params:
-            items = params[name]
-
-            # NOTE(warsaw): When a key appears multiple times in the request
-            # query, it will already be represented internally as a list.
-            # NOTE(kgriffs): Likewise for comma-delimited values.
-            if not isinstance(items, list):
-                items = [items]
-
-            # PERF(kgriffs): Use if-else rather than a DRY approach
-            # that sets transform to a passthrough function; avoids
-            # function calling overhead.
-            if transform is not None:
-                try:
-                    items = [transform(i) for i in items]
-
-                except ValueError:
-                    msg = 'The value is not formatted correctly.'
-                    raise HTTPInvalidParam(msg, name)
-
-            if store is not None:
-                store[name] = items
-
-            return items
-
-        if not required:
-            return None
-
-        raise HTTPMissingParam(name)
-
+    # TODO(necaris): add get_as_date for self.param
     def get_param_as_date(self, name, format_string='%Y-%m-%d',
                           required=False, store=None):
         """Return the value of a query string parameter as a date.
@@ -998,15 +814,7 @@ class Request(object):
             pass
 
     def _parse_form_urlencoded(self):
-        # NOTE(kgriffs): This assumes self.stream has been patched
-        # above in the case of wsgiref, so that self.content_length
-        # is not needed. Normally we just avoid accessing
-        # self.content_length, because it is a little expensive
-        # to call. We could cache self.content_length, but the
-        # overhead to do that won't usually be helpful, since
-        # content length will only ever be read once per
-        # request in most cases.
-        body = self.stream.read()
+        body = self.raw_body
 
         # NOTE(kgriffs): According to http://goo.gl/6rlcux the
         # body should be US-ASCII. Enforcing this also helps
@@ -1021,12 +829,14 @@ class Request(object):
                            'will be ignored.')
 
         if body:
-            extra_params = parse_query_string(
+            form_params = uri.parse_query_string(
                 body,
                 keep_blank_qs_values=self.options.keep_blank_qs_values,
             )
 
-            self._params.update(extra_params)
+            self._form_params = form_params
+        else:
+            self._form_params = {}
 
 
 # PERF: To avoid typos and improve storage space and speed over a dict.
@@ -1040,7 +850,9 @@ class RequestOptions(object):
     """
     __slots__ = (
         'keep_blank_qs_values',
+        'store_raw_body',
     )
 
     def __init__(self):
         self.keep_blank_qs_values = False
+        self.store_raw_body = False
