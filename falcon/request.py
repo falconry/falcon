@@ -97,10 +97,10 @@ class Request(object):
             latter's `request_type` parameter.
 
             Note:
-                When overriding ``context_type`` with a factory function, the
-                function is called like a method of the current Request
-                instance. Therefore the first argument is the Request instance
-                itself (self).
+                When overriding `context_type` with a factory function (as
+                opposed to a class), the function is called like a method of
+                the current Request instance. Therefore the first argument is
+                the Request instance itself (self).
 
         uri (str): The fully-qualified URI for the request.
         url (str): alias for `uri`.
