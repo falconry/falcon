@@ -95,6 +95,13 @@ class Request(object):
             by creating a custom child class of ``falcon.Request``, and
             then passing that new class to `falcon.API()` by way of the
             latter's `request_type` parameter.
+
+            Note:
+                When overriding `context_type` with a factory function (as
+                opposed to a class), the function is called like a method of
+                the current Request instance. Therefore the first argument is
+                the Request instance itself (self).
+
         uri (str): The fully-qualified URI for the request.
         url (str): alias for `uri`.
         relative_uri (str): The path + query string portion of the full URI.
@@ -209,14 +216,6 @@ class Request(object):
         self.env = env
         self.options = options if options else RequestOptions()
 
-        if self.context_type is None:
-            # Literal syntax is more efficient than using dict()
-            self.context = {}
-        else:
-            # pylint will detect this as not-callable because it only sees the
-            # declaration of None, not whatever type a subclass may have set.
-            self.context = self.context_type()  # pylint: disable=not-callable
-
         self._wsgierrors = env['wsgi.errors']
         self.stream = env['wsgi.input']
         self.method = env['REQUEST_METHOD']
@@ -283,6 +282,14 @@ class Request(object):
         if (self.content_type is not None and
                 'application/x-www-form-urlencoded' in self.content_type):
             self._parse_form_urlencoded()
+
+        if self.context_type is None:
+            # Literal syntax is more efficient than using dict()
+            self.context = {}
+        else:
+            # pylint will detect this as not-callable because it only sees the
+            # declaration of None, not whatever type a subclass may have set.
+            self.context = self.context_type()  # pylint: disable=not-callable
 
     # ------------------------------------------------------------------------
     # Properties
