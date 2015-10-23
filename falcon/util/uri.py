@@ -391,7 +391,9 @@ def unquote_string(quoted):
         TypeError: `quoted` was not a ``str``.
     """
     tmp_quoted = quoted.strip()
-    if tmp_quoted[0] != '"' or tmp_quoted[-1] != '"':
+    if len(tmp_quoted) < 2:
+        return quoted
+    elif tmp_quoted[0] != '"' or tmp_quoted[-1] != '"':
         # return original one, prevent side-effect
         return quoted
     tmp_quoted = tmp_quoted[1:-1]
