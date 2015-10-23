@@ -650,7 +650,8 @@ class Request(object):
                 ``HTTPBadRequest`` instead of returning gracefully when the
                 header is not found (default ``False``).
             obs_date (bool, optional): Support obs-date formats according to
-                RFC 7231, e.g.: "Sunday, 06-Nov-94 08:49:37 GMT" (default ``False``).
+                RFC 7231, e.g.: "Sunday, 06-Nov-94 08:49:37 GMT"
+                (default ``False``).
 
         Returns:
             datetime: The value of the specified header if it exists,
@@ -1068,7 +1069,7 @@ class Request(object):
                 if len(param) == 1:
                     continue
                 key, val = param
-                if key.lower() not in ('for', 'by'):
+                if key.lower() != 'for':
                     # we only want for/by params
                     continue
                 host, _ = parse_host(unquote_string(val))
