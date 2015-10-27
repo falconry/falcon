@@ -24,16 +24,16 @@ class TestAccessRoute(testing.TestBase):
                 'Forwarded': ('for=192.0.2.43,for=,'
                               'for="[2001:db8:cafe::17]:555",'
                               'for="unknown", by=_hidden,for="\\"\\\\",'
+                              'for="_don\\\"t_\\try_this\\\\at_home_\\42",'
                               'for="198\\.51\\.100\\.17\\:1236";'
                               'proto=https;host=example.com')
             }))
-        self.assertEqual(req.access_route,
-                         ['192.0.2.43', '', '2001:db8:cafe::17',
-                          'unknown', '"\\', '198.51.100.17'])
+        compares = ['192.0.2.43', '', '2001:db8:cafe::17',
+                    'unknown', '"\\', '_don"t_try_this\\at_home_42',
+                    '198.51.100.17']
+        self.assertEqual(req.access_route, compares)
         # test cached
-        self.assertEqual(req.access_route,
-                         ['192.0.2.43', '', '2001:db8:cafe::17',
-                          'unknown', '"\\', '198.51.100.17'])
+        self.assertEqual(req.access_route, compares)
 
     def test_malformed_rfc_forwarded(self):
         req = Request(testing.create_environ(

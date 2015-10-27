@@ -379,7 +379,7 @@ def parse_host(host, default_port=None):
 
 
 def unquote_string(quoted):
-    """unquote a rfc7320 "quoted-string" into normal one
+    """Unquote an RFC 7320 "quoted-string".
 
     Args:
         quoted (str): Original quoted string
@@ -396,7 +396,11 @@ def unquote_string(quoted):
     elif tmp_quoted[0] != '"' or tmp_quoted[-1] != '"':
         # return original one, prevent side-effect
         return quoted
+
     tmp_quoted = tmp_quoted[1:-1]
+    # PERF(philiptzou): Most header strings don't contain "quoted-pair" which
+    # defined by RFC 7320. We use this little trick (quick string search) to
+    # speed up string parsing by preventing unnecessary processes if possible.
     if '\\' not in tmp_quoted:
         return tmp_quoted
     elif r'\\' not in tmp_quoted:

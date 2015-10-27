@@ -27,7 +27,7 @@ except AttributeError:  # pragma nocover
 import mimeparse
 import six
 
-from falcon.errors import *
+from falcon.errors import *  # NOQA
 from falcon import util
 from falcon.util.uri import parse_query_string, parse_host, unquote_string
 from falcon import request_helpers as helpers
@@ -518,19 +518,30 @@ class Request(object):
 
     @property
     def access_route(self):
-        """If a forwarded header exists this is a list of all ip addresses
-        from the client ip to the last proxy server.
+        """A list of all addresses from client to the last proxy server.
 
-        Inspired by werkzeug's access_route
+        Inspired by werkzeug's `access_route`. Notice this list may contain
+        string(s) other than IPv4 / IPv6 address. For example the "unknown"
+        identifier and obfuscated identifier defined by RFC 7239.
+
+        Warning: HTTP Forwarded headers can be forged by any client or proxy.
+        Use this property with caution and write your own verify function.
+        The best practice here is always using `.remote_addr` unless your
+        application is hosted behind some reverse proxy servers. Also only
+        trust the **last** N addresses provided by reverse proxy server(s).
+
+        This property will try to derive addresses sequentially from:
+            - `Forwarded`;
+            - `X-Forwarded-For`;
+            - `X-Real-IP`;
+            - **or** the IP address of the closest client/proxy
+
         """
         if self._cached_access_route is None:
             access_route = []
             if 'HTTP_FORWARDED' in self.env:
                 access_route = self._parse_rfc_forwarded()
             if not access_route and 'HTTP_X_FORWARDED_FOR' in self.env:
-                # we don't handle X-Fowarded-By since it is not possible to
-                # know in which order the already existing fields were added
-                # just as rfc7239 stated
                 access_route = [ip.strip() for ip in
                                 self.env['HTTP_X_FORWARDED_FOR'].split(',')]
             if not access_route and 'HTTP_X_REAL_IP' in self.env:
@@ -538,11 +549,20 @@ class Request(object):
             if not access_route and 'REMOTE_ADDR' in self.env:
                 access_route = [self.env['REMOTE_ADDR']]
             self._cached_access_route = access_route
+
         return self._cached_access_route
 
     @property
     def remote_addr(self):
-        """The remote address of the client."""
+        """String of the IP address of the closest client/proxy.
+
+        This property will only derive address directly from WSGI `REMOTE_ADDR`
+        header which can not be mofidied by any client or proxy.
+
+        If your application is behind one or more reverse proxies, you may use
+        `.access_remote` to retrieve the real IP address of client. Please See
+        the document of `.access_remote` for more detail.
+        """
         return self.env.get('REMOTE_ADDR')
 
     # ------------------------------------------------------------------------
@@ -1061,7 +1081,11 @@ class Request(object):
             self._params.update(extra_params)
 
     def _parse_rfc_forwarded(self):
-        """rfc 7239"""
+        """Parse RFC 7239 "Forwarded" header.
+
+        Returns:
+            list: addresses derived from "for" parameters.
+        """
         addr = []
         for forwarded in self.env['HTTP_FORWARDED'].split(','):
             for param in forwarded.split(';'):
@@ -1070,7 +1094,7 @@ class Request(object):
                     continue
                 key, val = param
                 if key.lower() != 'for':
-                    # we only want for/by params
+                    # we only want for params
                     continue
                 host, _ = parse_host(unquote_string(val))
                 addr.append(host)
