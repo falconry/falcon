@@ -520,21 +520,28 @@ class Request(object):
     def access_route(self):
         """A list of all addresses from client to the last proxy server.
 
-        Inspired by werkzeug's `access_route`. Notice this list may contain
-        string(s) other than IPv4 / IPv6 address. For example the "unknown"
-        identifier and obfuscated identifier defined by RFC 7239.
+        Inspired by werkzeug's ``access_route``.
 
-        Warning: HTTP Forwarded headers can be forged by any client or proxy.
-        Use this property with caution and write your own verify function.
-        The best practice here is always using `.remote_addr` unless your
-        application is hosted behind some reverse proxy servers. Also only
-        trust the **last** N addresses provided by reverse proxy server(s).
+        Note:
+            The list may contain string(s) other than IPv4 / IPv6 address. For
+            example the "unknown" identifier and obfuscated identifier defined
+            by `RFC 7239`_.
+
+            .. _RFC 7239: https://tools.ietf.org/html/rfc7239#section-6
+
+        Warning:
+            HTTP Forwarded headers can be forged by any client or proxy.
+            Use this property with caution and write your own verify function.
+            The best practice is always using :py:attr:`~.remote_addr` unless
+            your application is hosted behind some reverse proxy server(s).
+            Also only trust the **last N** addresses provided by those reverse
+            proxy servers.
 
         This property will try to derive addresses sequentially from:
-            - `Forwarded`;
-            - `X-Forwarded-For`;
-            - `X-Real-IP`;
-            - **or** the IP address of the closest client/proxy
+            - ``Forwarded``;
+            - ``X-Forwarded-For``;
+            - ``X-Real-IP``;
+            - **or** the IP address of the closest client/proxy.
 
         """
         if self._cached_access_route is None:
@@ -556,12 +563,13 @@ class Request(object):
     def remote_addr(self):
         """String of the IP address of the closest client/proxy.
 
-        This property will only derive address directly from WSGI `REMOTE_ADDR`
-        header which can not be mofidied by any client or proxy.
+        Address will only be derived from WSGI ``REMOTE_ADDR`` header, which
+        can not be mofidied by any client or proxy.
 
-        If your application is behind one or more reverse proxies, you may use
-        `.access_remote` to retrieve the real IP address of client. Please See
-        the document of `.access_remote` for more detail.
+        Note:
+            If your application is behind one or more reverse proxies, you may
+            need to use :py:obj:`~.access_route` to retrieve the real IP
+            address of the client.
         """
         return self.env.get('REMOTE_ADDR')
 
