@@ -538,10 +538,11 @@ class Request(object):
             proxy servers.
 
         This property will try to derive addresses sequentially from:
-            - ``Forwarded``;
-            - ``X-Forwarded-For``;
-            - ``X-Real-IP``;
-            - **or** the IP address of the closest client/proxy.
+
+            - ``Forwarded``
+            - ``X-Forwarded-For``
+            - ``X-Real-IP``
+            - **or** the IP address of the closest client/proxy
 
         """
         if self._cached_access_route is None:
@@ -564,7 +565,7 @@ class Request(object):
         """String of the IP address of the closest client/proxy.
 
         Address will only be derived from WSGI ``REMOTE_ADDR`` header, which
-        can not be mofidied by any client or proxy.
+        can not be modified by any client or proxy.
 
         Note:
             If your application is behind one or more reverse proxies, you may
