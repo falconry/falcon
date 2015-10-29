@@ -27,9 +27,9 @@ except AttributeError:  # pragma nocover
 import mimeparse
 import six
 
-from falcon.errors import *
+from falcon.errors import *  # NOQA
 from falcon import util
-from falcon.util.uri import parse_query_string, parse_host
+from falcon.util.uri import parse_query_string, parse_host, unquote_string
 from falcon import request_helpers as helpers
 
 # NOTE(tbug): In some cases, http_cookies is not a module
@@ -205,6 +205,7 @@ class Request(object):
         '_wsgierrors',
         'options',
         '_cookies',
+        '_cached_access_route',
     )
 
     # Allow child classes to override this
@@ -257,6 +258,7 @@ class Request(object):
         self._cached_headers = None
         self._cached_uri = None
         self._cached_relative_uri = None
+        self._cached_access_route = None
 
         try:
             self.content_type = self.env['CONTENT_TYPE']
@@ -521,6 +523,64 @@ class Request(object):
 
         return self._cookies.copy()
 
+    @property
+    def access_route(self):
+        """A list of all addresses from client to the last proxy server.
+
+        Inspired by werkzeug's ``access_route``.
+
+        Note:
+            The list may contain string(s) other than IPv4 / IPv6 address. For
+            example the "unknown" identifier and obfuscated identifier defined
+            by `RFC 7239`_.
+
+            .. _RFC 7239: https://tools.ietf.org/html/rfc7239#section-6
+
+        Warning:
+            HTTP Forwarded headers can be forged by any client or proxy.
+            Use this property with caution and write your own verify function.
+            The best practice is always using :py:attr:`~.remote_addr` unless
+            your application is hosted behind some reverse proxy server(s).
+            Also only trust the **last N** addresses provided by those reverse
+            proxy servers.
+
+        This property will try to derive addresses sequentially from:
+
+            - ``Forwarded``
+            - ``X-Forwarded-For``
+            - ``X-Real-IP``
+            - **or** the IP address of the closest client/proxy
+
+        """
+        if self._cached_access_route is None:
+            access_route = []
+            if 'HTTP_FORWARDED' in self.env:
+                access_route = self._parse_rfc_forwarded()
+            if not access_route and 'HTTP_X_FORWARDED_FOR' in self.env:
+                access_route = [ip.strip() for ip in
+                                self.env['HTTP_X_FORWARDED_FOR'].split(',')]
+            if not access_route and 'HTTP_X_REAL_IP' in self.env:
+                access_route = [self.env['HTTP_X_REAL_IP']]
+            if not access_route and 'REMOTE_ADDR' in self.env:
+                access_route = [self.env['REMOTE_ADDR']]
+            self._cached_access_route = access_route
+
+        return self._cached_access_route
+
+    @property
+    def remote_addr(self):
+        """String of the IP address of the closest client/proxy.
+
+        Address will only be derived from WSGI ``REMOTE_ADDR`` header, which
+        can not be modified by any client or proxy.
+
+        Note:
+            If your application is behind one or more reverse proxies, you may
+            need to use :py:obj:`~.access_route` to retrieve the real IP
+            address of the client.
+        """
+        return self.env.get('REMOTE_ADDR')
+
     # ------------------------------------------------------------------------
     # Methods
     # ------------------------------------------------------------------------
@@ -626,7 +686,8 @@ class Request(object):
                 ``HTTPBadRequest`` instead of returning gracefully when the
                 header is not found (default ``False``).
             obs_date (bool, optional): Support obs-date formats according to
-                RFC 7231, e.g.: "Sunday, 06-Nov-94 08:49:37 GMT" (default ``False``).
+                RFC 7231, e.g.: "Sunday, 06-Nov-94 08:49:37 GMT"
+                (default ``False``).
 
         Returns:
             datetime: The value of the specified header if it exists,
@@ -1034,6 +1095,26 @@ class Request(object):
             )
 
             self._params.update(extra_params)
+
+    def _parse_rfc_forwarded(self):
+        """Parse RFC 7239 "Forwarded" header.
+
+        Returns:
+            list: addresses derived from "for" parameters.
+        """
+        addr = []
+        for forwarded in self.env['HTTP_FORWARDED'].split(','):
+            for param in forwarded.split(';'):
+                param = param.strip().split('=', 1)
+                if len(param) == 1:
+                    continue
+                key, val = param
+                if key.lower() != 'for':
+                    # we only want for params
+                    continue
+                host, _ = parse_host(unquote_string(val))
+                addr.append(host)
+        return addr
 
 
 # PERF: To avoid typos and improve storage space and speed over a dict.
