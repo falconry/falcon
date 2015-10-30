@@ -64,12 +64,11 @@ class HeaderHelpersResource:
         resp.location = '/things/87'
         resp.content_location = '/things/78'
 
-        if req.range_unit == None or req.range_unit == 'bytes':
+        if req.range_unit is None or req.range_unit == 'bytes':
             # bytes 0-499/10240
-            resp.content_range = (0, 499, 10 * 1024)
+            resp.content_range = (0, 499, 10 * 1024, req.range_unit)
         else:
             resp.content_range = (0, 25, 100, req.range_unit)
-
 
         self.resp = resp
 
