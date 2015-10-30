@@ -66,7 +66,7 @@ class HeaderHelpersResource:
 
         if req.range_unit is None or req.range_unit == 'bytes':
             # bytes 0-499/10240
-            resp.content_range = (0, 499, 10 * 1024, req.range_unit)
+            resp.content_range = (0, 499, 10 * 1024, 'bytes')
         else:
             resp.content_range = (0, 25, 100, req.range_unit)
 
