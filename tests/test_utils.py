@@ -79,6 +79,32 @@ class TestFalconUtils(testtools.TestCase):
             falcon.http_date_to_dt('Thu, 04 Apr 2013 10:28:54 GMT'),
             datetime(2013, 4, 4, 10, 28, 54))
 
+        self.assertRaises(
+            ValueError,
+            falcon.http_date_to_dt, 'Thu, 04-Apr-2013 10:28:54 GMT')
+
+        self.assertEqual(
+            falcon.http_date_to_dt('Thu, 04-Apr-2013 10:28:54 GMT',
+                                   obs_date=True),
+            datetime(2013, 4, 4, 10, 28, 54))
+
+        self.assertRaises(
+            ValueError,
+            falcon.http_date_to_dt, 'Sun Nov  6 08:49:37 1994')
+
+        self.assertRaises(
+            ValueError,
+            falcon.http_date_to_dt, 'Nov  6 08:49:37 1994', obs_date=True)
+
+        self.assertEqual(
+            falcon.http_date_to_dt('Sun Nov  6 08:49:37 1994', obs_date=True),
+            datetime(1994, 11, 6, 8, 49, 37))
+
+        self.assertEqual(
+            falcon.http_date_to_dt('Sunday, 06-Nov-94 08:49:37 GMT',
+                                   obs_date=True),
+            datetime(1994, 11, 6, 8, 49, 37))
+
     def test_pack_query_params_none(self):
         self.assertEqual(
             falcon.to_query_str({}),

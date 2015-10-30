@@ -121,6 +121,17 @@ class LocationHeaderUnicodeResource:
         resp.content_location = self.URL1
 
 
+class UnicodeHeaderResource:
+
+    def on_get(self, req, resp):
+        resp.set_headers([
+            (u'X-auTH-toKEN', 'toomanysecrets'),
+            ('Content-TYpE', u'application/json'),
+            (u'X-symBOl', u'\u0040'),
+            (u'X-symb\u00F6l', u'\u00FF'),
+        ])
+
+
 class VaryHeaderResource:
 
     def __init__(self, vary):
@@ -380,7 +391,23 @@ class TestHeaders(testing.TestBase):
         content_location = ('content-location', '/%C3%A7runchy/bacon')
         self.assertIn(content_location, self.srmock.headers)
 
-    def test_response_set_header(self):
+    def test_unicode_headers(self):
+        self.api.add_route(self.test_route, UnicodeHeaderResource())
+        self.simulate_request(self.test_route)
+
+        expect = ('x-auth-token', 'toomanysecrets')
+        self.assertIn(expect, self.srmock.headers)
+
+        expect = ('content-type', 'application/json')
+        self.assertIn(expect, self.srmock.headers)
+
+        expect = ('x-symbol', '@')
+        self.assertIn(expect, self.srmock.headers)
+
+        expect = ('x-symb\xF6l', '\xFF')
+        self.assertIn(expect, self.srmock.headers)
+
+    def test_response_set_and_get_header(self):
         self.resource = HeaderHelpersResource()
         self.api.add_route(self.test_route, self.resource)
 
@@ -389,11 +416,13 @@ class TestHeaders(testing.TestBase):
 
             content_type = 'x-falcon/peregrine'
             self.assertIn(('content-type', content_type), self.srmock.headers)
+            self.assertEquals(self.resource.resp.get_header('content-TyPe'), content_type)
             self.assertIn(('cache-control', 'no-store'), self.srmock.headers)
             self.assertIn(('x-auth-token', 'toomanysecrets'),
                           self.srmock.headers)
 
             self.assertEqual(None, self.resource.resp.location)
+            self.assertEquals(self.resource.resp.get_header('not-real'), None)
 
             # Check for duplicate headers
             hist = defaultdict(lambda: 0)

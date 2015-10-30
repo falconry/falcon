@@ -1,11 +1,13 @@
-
-import falcon
-import falcon.testing as testing
-
-from falcon.util import TimezoneGMT
+import re
+import sys
 from datetime import datetime, timedelta, tzinfo
 
 from six.moves.http_cookies import Morsel
+from testtools.matchers import LessThan
+
+import falcon
+import falcon.testing as testing
+from falcon.util import TimezoneGMT, http_date_to_dt
 
 
 class TimezoneGMTPlus1(tzinfo):
@@ -54,18 +56,26 @@ class TestCookies(testing.TestBase):
         self.resource = CookieResource()
         self.api.add_route(self.test_route, self.resource)
         self.simulate_request(self.test_route, method="GET")
-        self.assertIn(
-            ("set-cookie",
-                "foo=bar; Domain=example.com; httponly; Path=/; secure"),
-            self.srmock.headers)
+        if sys.version_info >= (3, 4, 3):
+            value = "foo=bar; Domain=example.com; HttpOnly; Path=/; Secure"
+        else:
+            value = "foo=bar; Domain=example.com; httponly; Path=/; secure"
+        self.assertIn(("set-cookie", value), self.srmock.headers)
 
     def test_response_complex_case(self):
         self.resource = CookieResource()
         self.api.add_route(self.test_route, self.resource)
         self.simulate_request(self.test_route, method="HEAD")
-        self.assertIn(("set-cookie", "foo=bar; httponly; Max-Age=300; secure"),
-                      self.srmock.headers)
-        self.assertIn(("set-cookie", "bar=baz; secure"), self.srmock.headers)
+        if sys.version_info >= (3, 4, 3):
+            value = "foo=bar; HttpOnly; Max-Age=300; Secure"
+        else:
+            value = "foo=bar; httponly; Max-Age=300; secure"
+        self.assertIn(("set-cookie", value), self.srmock.headers)
+        if sys.version_info >= (3, 4, 3):
+            value = "bar=baz; Secure"
+        else:
+            value = "bar=baz; secure"
+        self.assertIn(("set-cookie", value), self.srmock.headers)
         self.assertNotIn(("set-cookie", "bad=cookie"), self.srmock.headers)
 
     def test_cookie_expires_naive(self):
@@ -101,12 +111,23 @@ class TestCookies(testing.TestBase):
     def test_response_unset_cookie(self):
         resp = falcon.Response()
         resp.unset_cookie("bad")
-        resp.set_cookie("bad", "cookie", max_age=301)
+        resp.set_cookie("bad", "cookie", max_age=300)
         resp.unset_cookie("bad")
 
         morsels = list(resp._cookies.values())
+        self.assertEqual(len(morsels), 1)
 
-        self.assertEqual(len(morsels), 0)
+        bad_cookie = morsels[0]
+        self.assertEqual(bad_cookie['expires'], -1)
+
+        output = bad_cookie.OutputString()
+        self.assertTrue('bad=;' in output or 'bad="";' in output)
+
+        match = re.search('expires=([^;]+)', output)
+        self.assertIsNotNone(match)
+
+        expiration = http_date_to_dt(match.group(1), obs_date=True)
+        self.assertThat(expiration, LessThan(datetime.utcnow()))
 
     def test_cookie_timezone(self):
         tz = TimezoneGMT()

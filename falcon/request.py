@@ -27,12 +27,16 @@ except AttributeError:  # pragma nocover
 import mimeparse
 import six
 
-from falcon.errors import *
+from falcon.errors import *  # NOQA
 from falcon import util
-from falcon.util.uri import parse_query_string, parse_host
+from falcon.util.uri import parse_query_string, parse_host, unquote_string
 from falcon import request_helpers as helpers
 
-from six.moves.http_cookies import SimpleCookie
+# NOTE(tbug): In some cases, http_cookies is not a module
+# but a dict-like structure. This fixes that issue.
+# See issue https://github.com/falconry/falcon/issues/556
+from six.moves import http_cookies
+SimpleCookie = http_cookies.SimpleCookie
 
 
 DEFAULT_ERROR_LOG_FORMAT = (u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
@@ -91,6 +95,13 @@ class Request(object):
             by creating a custom child class of ``falcon.Request``, and
             then passing that new class to `falcon.API()` by way of the
             latter's `request_type` parameter.
+
+            Note:
+                When overriding `context_type` with a factory function (as
+                opposed to a class), the function is called like a method of
+                the current Request instance. Therefore the first argument is
+                the Request instance itself (self).
+
         uri (str): The fully-qualified URI for the request.
         url (str): alias for `uri`.
         relative_uri (str): The path + query string portion of the full URI.
@@ -196,6 +207,7 @@ class Request(object):
         '_wsgierrors',
         'options',
         '_cookies',
+        '_cached_access_route',
     )
 
     # Allow child classes to override this
@@ -207,14 +219,6 @@ class Request(object):
         self.env = env
         self.options = options if options else RequestOptions()
 
-        if self.context_type is None:
-            # Literal syntax is more efficient than using dict()
-            self.context = {}
-        else:
-            # pylint will detect this as not-callable because it only sees the
-            # declaration of None, not whatever type a subclass may have set.
-            self.context = self.context_type()  # pylint: disable=not-callable
-
         self._wsgierrors = env['wsgi.errors']
         self.stream = env['wsgi.input']
         self.method = env['REQUEST_METHOD']
@@ -222,6 +226,11 @@ class Request(object):
         # Normalize path
         path = env['PATH_INFO']
         if path:
+            if six.PY3:  # pragma: no cover
+                # PEP 3333 specifies that PATH_INFO variable are always
+                # "bytes tunneled as latin-1" and must be encoded back
+                path = path.encode('latin1').decode('utf-8', 'replace')
+
             if len(path) != 1 and path.endswith('/'):
                 self.path = path[:-1]
             else:
@@ -251,6 +260,7 @@ class Request(object):
         self._cached_headers = None
         self._cached_uri = None
         self._cached_relative_uri = None
+        self._cached_access_route = None
 
         try:
             self.content_type = self.env['CONTENT_TYPE']
@@ -276,6 +286,14 @@ class Request(object):
         if (self.content_type is not None and
                 'application/x-www-form-urlencoded' in self.content_type):
             self._parse_form_urlencoded()
+
+        if self.context_type is None:
+            # Literal syntax is more efficient than using dict()
+            self.context = {}
+        else:
+            # pylint will detect this as not-callable because it only sees the
+            # declaration of None, not whatever type a subclass may have set.
+            self.context = self.context_type()  # pylint: disable=not-callable
 
     # ------------------------------------------------------------------------
     # Properties
@@ -521,6 +539,64 @@ class Request(object):
 
         return self._cookies.copy()
 
+    @property
+    def access_route(self):
+        """A list of all addresses from client to the last proxy server.
+
+        Inspired by werkzeug's ``access_route``.
+
+        Note:
+            The list may contain string(s) other than IPv4 / IPv6 address. For
+            example the "unknown" identifier and obfuscated identifier defined
+            by `RFC 7239`_.
+
+            .. _RFC 7239: https://tools.ietf.org/html/rfc7239#section-6
+
+        Warning:
+            HTTP Forwarded headers can be forged by any client or proxy.
+            Use this property with caution and write your own verify function.
+            The best practice is always using :py:attr:`~.remote_addr` unless
+            your application is hosted behind some reverse proxy server(s).
+            Also only trust the **last N** addresses provided by those reverse
+            proxy servers.
+
+        This property will try to derive addresses sequentially from:
+
+            - ``Forwarded``
+            - ``X-Forwarded-For``
+            - ``X-Real-IP``
+            - **or** the IP address of the closest client/proxy
+
+        """
+        if self._cached_access_route is None:
+            access_route = []
+            if 'HTTP_FORWARDED' in self.env:
+                access_route = self._parse_rfc_forwarded()
+            if not access_route and 'HTTP_X_FORWARDED_FOR' in self.env:
+                access_route = [ip.strip() for ip in
+                                self.env['HTTP_X_FORWARDED_FOR'].split(',')]
+            if not access_route and 'HTTP_X_REAL_IP' in self.env:
+                access_route = [self.env['HTTP_X_REAL_IP']]
+            if not access_route and 'REMOTE_ADDR' in self.env:
+                access_route = [self.env['REMOTE_ADDR']]
+            self._cached_access_route = access_route
+
+        return self._cached_access_route
+
+    @property
+    def remote_addr(self):
+        """String of the IP address of the closest client/proxy.
+
+        Address will only be derived from WSGI ``REMOTE_ADDR`` header, which
+        can not be modified by any client or proxy.
+
+        Note:
+            If your application is behind one or more reverse proxies, you may
+            need to use :py:obj:`~.access_route` to retrieve the real IP
+            address of the client.
+        """
+        return self.env.get('REMOTE_ADDR')
+
     # ------------------------------------------------------------------------
     # Methods
     # ------------------------------------------------------------------------
@@ -574,7 +650,7 @@ class Request(object):
         return (preferred_type if preferred_type else None)
 
     def get_header(self, name, required=False):
-        """Return a raw header value as a string.
+        """Retrieve the raw string value for the given header.
 
         Args:
             name (str): Header name, case-insensitive (e.g., 'Content-Type')
@@ -617,7 +693,7 @@ class Request(object):
 
             raise HTTPMissingHeader(name)
 
-    def get_header_as_datetime(self, header, required=False):
+    def get_header_as_datetime(self, header, required=False, obs_date=False):
         """Return an HTTP header with HTTP-Date values as a datetime.
 
         Args:
@@ -625,6 +701,9 @@ class Request(object):
             required (bool, optional): Set to ``True`` to raise
                 ``HTTPBadRequest`` instead of returning gracefully when the
                 header is not found (default ``False``).
+            obs_date (bool, optional): Support obs-date formats according to
+                RFC 7231, e.g.: "Sunday, 06-Nov-94 08:49:37 GMT"
+                (default ``False``).
 
         Returns:
             datetime: The value of the specified header if it exists,
@@ -638,12 +717,13 @@ class Request(object):
 
         try:
             http_date = self.get_header(header, required=required)
-            return util.http_date_to_dt(http_date)
+            return util.http_date_to_dt(http_date, obs_date=obs_date)
         except TypeError:
             # When the header does not exist and isn't required
             return None
         except ValueError:
-            msg = ('It must be formatted according to RFC 1123.')
+            msg = ('It must be formatted according to RFC 7231, '
+                   'Section 7.1.1.1')
             raise HTTPInvalidHeader(msg, header)
 
     def get_param(self, name, required=False, store=None, default=None):
@@ -1031,6 +1111,26 @@ class Request(object):
             )
 
             self._params.update(extra_params)
+
+    def _parse_rfc_forwarded(self):
+        """Parse RFC 7239 "Forwarded" header.
+
+        Returns:
+            list: addresses derived from "for" parameters.
+        """
+        addr = []
+        for forwarded in self.env['HTTP_FORWARDED'].split(','):
+            for param in forwarded.split(';'):
+                param = param.strip().split('=', 1)
+                if len(param) == 1:
+                    continue
+                key, val = param
+                if key.lower() != 'for':
+                    # we only want for params
+                    continue
+                host, _ = parse_host(unquote_string(val))
+                addr.append(host)
+        return addr
 
 
 # PERF: To avoid typos and improve storage space and speed over a dict.

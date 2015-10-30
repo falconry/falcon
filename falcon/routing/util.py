@@ -65,7 +65,9 @@ def compile_uri_template(template):
     if template != '/' and template.endswith('/'):
         template = template[:-1]
 
-    expression_pattern = r'{([a-zA-Z][a-zA-Z_]*)}'
+    # template names should be able to start with A-Za-z
+    # but also contain 0-9_ in the remaining portion
+    expression_pattern = r'{([a-zA-Z]\w*)}'
 
     # Get a list of field names
     fields = set(re.findall(expression_pattern, template))

@@ -15,19 +15,27 @@ VERSION = VERSION.__version__
 # TODO(kgriffs): Fork and optimize/modernize python-mimeparse
 REQUIRES = ['six>=1.4.0', 'python-mimeparse']
 
-PYPY = True
-CYTHON = False
+JYTHON = 'java' in sys.platform
+
 try:
     sys.pypy_version_info
+    PYPY = True
 except AttributeError:
     PYPY = False
 
-if not PYPY:
+if PYPY or JYTHON:
+    CYTHON = False
+else:
     try:
         from Cython.Distutils import build_ext
         CYTHON = True
     except ImportError:
-        print('\nWARNING: Cython not installed. '
+        # TODO(kgriffs): pip now ignores all output, so the user
+        # may not see this message. See also:
+        #
+        #   https://github.com/pypa/pip/issues/2732
+        #
+        print('\nNOTE: Cython not installed. '
               'Falcon will still work fine, but may run '
               'a bit slower.\n')
         CYTHON = False
