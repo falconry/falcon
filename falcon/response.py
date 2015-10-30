@@ -15,7 +15,13 @@
 from six import PY2
 from six import text_type as TEXT_TYPE
 from six import string_types as STRING_TYPES
-from six.moves.http_cookies import SimpleCookie, CookieError
+
+# NOTE(tbug): In some cases, http_cookies is not a module
+# but a dict-like structure. This fixes that issue.
+# See issue https://github.com/falconry/falcon/issues/556
+from six.moves import http_cookies
+SimpleCookie = http_cookies.SimpleCookie
+CookieError = http_cookies.CookieError
 
 from falcon.response_helpers import header_property, format_range
 from falcon.response_helpers import is_ascii_encodable
@@ -245,10 +251,37 @@ class Response(object):
             self._cookies[name]["httponly"] = http_only
 
     def unset_cookie(self, name):
-        """Unset a cookie from the response
+        """Unset a cookie in the response
+
+        Note:
+            This will clear the contents of the cookie, and instruct
+            the browser to immediately expire its own copy of the
+            cookie, if any.
         """
-        if self._cookies is not None and name in self._cookies:
-            del self._cookies[name]
+        if self._cookies is None:
+            self._cookies = SimpleCookie()
+
+        self._cookies[name] = ""
+
+        # NOTE(Freezerburn): SimpleCookie apparently special cases the
+        # expires attribute to automatically use strftime and set the
+        # time as a delta from the current time. We use -1 here to
+        # basically tell the browser to immediately expire the cookie,
+        # thus removing it from future request objects.
+        self._cookies[name]["expires"] = -1
+
+    def get_header(self, name):
+        """Retrieve the raw string value for the given header.
+
+        Args:
+            name (str): Header name, case-insensitive. Must be of type ``str``
+                or ``StringType``, and only character values 0x00 through 0xFF
+                may be used on platforms that use wide characters.
+
+        Returns:
+            str: The header's value if set, otherwise ``None``.
+        """
+        return self._headers.get(name.lower(), None)
 
     def set_header(self, name, value):
         """Set a header for this response to a given value.
@@ -260,15 +293,14 @@ class Response(object):
             For setting cookies, see instead :meth:`~.set_cookie`
 
         Args:
-            name (str): Header name to set (case-insensitive). Must be of
-                type ``str`` or ``StringType``, and only character values 0x00
-                through 0xFF may be used on platforms that use wide
-                characters.
+            name (str): Header name (case-insensitive). The restrictions
+                noted below for the header's value also apply here.
             value (str): Value for the header. Must be of type ``str`` or
-                ``StringType``, and only character values 0x00 through 0xFF
-                may be used on platforms that use wide characters.
-
+                ``StringType`` and contain only ISO-8859-1 characters.
+                Under Python 2.x, the ``unicode`` type is also accepted,
+                although such strings are also limited to ISO-8859-1.
         """
+        name, value = self._encode_header(name, value)
 
         # NOTE(kgriffs): normalize name by lowercasing it
         self._headers[name.lower()] = value
@@ -285,15 +317,16 @@ class Response(object):
             For setting cookies, see :py:meth:`~.set_cookie`
 
         Args:
-            name (str): Header name to set (case-insensitive). Must be of
-                type ``str`` or ``StringType``, and only character values 0x00
-                through 0xFF may be used on platforms that use wide
-                characters.
+            name (str): Header name (case-insensitive). The restrictions
+                noted below for the header's value also apply here.
             value (str): Value for the header. Must be of type ``str`` or
-                ``StringType``, and only character values 0x00 through 0xFF
-                may be used on platforms that use wide characters.
+                ``StringType`` and contain only ISO-8859-1 characters.
+                Under Python 2.x, the ``unicode`` type is also accepted,
+                although such strings are also limited to ISO-8859-1.
 
         """
+        name, value = self._encode_header(name, value)
+
         name = name.lower()
         if name in self._headers:
             value = self._headers[name] + ',' + value
@@ -308,10 +341,11 @@ class Response(object):
 
         Args:
             headers (dict or list): A dictionary of header names and values
-                to set, or ``list`` of (*name*, *value*) tuples. Both *name*
-                and *value* must be of type ``str`` or ``StringType``, and
-                only character values 0x00 through 0xFF may be used on
-                platforms that use wide characters.
+                to set, or a ``list`` of (*name*, *value*) tuples. Both *name*
+                and *value* must be of type ``str`` or ``StringType`` and
+                contain only ISO-8859-1 characters. Under Python 2.x, the
+                ``unicode`` type is also accepted, although such strings are
+                also limited to ISO-8859-1.
 
                 Note:
                     Falcon can process a list of tuples slightly faster
@@ -329,6 +363,7 @@ class Response(object):
         # normalize the header names.
         _headers = self._headers
         for name, value in headers:
+            name, value = self._encode_header(name, value)
             _headers[name.lower()] = value
 
     def add_link(self, target, rel, title=None, title_star=None,
@@ -529,6 +564,16 @@ class Response(object):
 
         """,
         lambda v: ', '.join(v))
+
+    def _encode_header(self, name, value, py2=PY2):
+        if py2:  # pragma: no cover
+            if isinstance(name, unicode):
+                name = name.encode('ISO-8859-1')
+
+            if isinstance(value, unicode):
+                value = value.encode('ISO-8859-1')
+
+        return name, value
 
     def _wsgi_headers(self, media_type=None, py2=PY2):
         """Convert headers into the format expected by WSGI servers.

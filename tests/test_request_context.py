@@ -31,3 +31,17 @@ class TestRequestContext(testing.TestBase):
 
         env = testing.create_environ()
         self.assertRaises(TypeError, MyCustomRequest, env)
+
+    def test_custom_request_context_request_access(self):
+
+        def create_context(req):
+            return {'uri': req.uri}
+
+        # Define a Request-alike with a custom context type
+        class MyCustomRequest(Request):
+            context_type = create_context
+
+        env = testing.create_environ()
+        req = MyCustomRequest(env)
+        self.assertIsInstance(req.context, dict)
+        self.assertEqual(req.context['uri'], req.uri)

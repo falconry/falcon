@@ -69,15 +69,30 @@ class TestUriTemplates(testing.TestBase):
         self.assertTrue(result)
         self.assertEqual(result.groupdict(), {'name': 'Kelsier'})
 
+    def test_one_field_with_digits(self):
+        fields, pattern = routing.compile_uri_template('/{name123}')
+        self.assertEqual(fields, set(['name123']))
+
+        result = pattern.match('/Kelsier')
+        self.assertTrue(result)
+        self.assertEqual(result.groupdict(), {'name123': 'Kelsier'})
+
+    def test_one_field_with_prefixed_digits(self):
+        fields, pattern = routing.compile_uri_template('/{37signals}')
+        self.assertEqual(fields, set())
+
+        result = pattern.match('/s2n')
+        self.assertFalse(result)
+
     @ddt.data('', '/')
     def test_two_fields(self, postfix):
-        path = '/book/{id}/characters/{name}' + postfix
+        path = '/book/{book_id}/characters/{n4m3}' + postfix
         fields, pattern = routing.compile_uri_template(path)
-        self.assertEqual(fields, set(['name', 'id']))
+        self.assertEqual(fields, set(['n4m3', 'book_id']))
 
         result = pattern.match('/book/0765350386/characters/Vin')
         self.assertTrue(result)
-        self.assertEqual(result.groupdict(), {'name': 'Vin', 'id': '0765350386'})
+        self.assertEqual(result.groupdict(), {'n4m3': 'Vin', 'book_id': '0765350386'})
 
     def test_three_fields(self):
         fields, pattern = routing.compile_uri_template('/{a}/{b}/x/{c}')

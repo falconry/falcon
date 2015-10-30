@@ -1,4 +1,6 @@
 import datetime
+import six
+import testtools
 
 import ddt
 
@@ -106,6 +108,16 @@ class TestReqVars(testing.TestBase):
                                 '?', query_string])
 
         self.assertEqual(expected_uri, req.uri)
+
+    @testtools.skipUnless(six.PY3, 'Test only applies to Python 3')
+    def test_nonlatin_path(self):
+        cyrillic_path = u'/hello_\u043f\u0440\u0438\u0432\u0435\u0442'
+        cyrillic_path_decoded = cyrillic_path.encode('utf-8').decode('latin1')
+        req = Request(testing.create_environ(
+            host='com',
+            path=cyrillic_path_decoded,
+            headers=self.headers))
+        self.assertEqual(req.path, cyrillic_path)
 
     def test_uri(self):
         uri = ('http://' + testing.DEFAULT_HOST + ':8080' +
@@ -545,7 +557,7 @@ class TestReqVars(testing.TestBase):
         headers = {header: 'Thu, 04 Apr 2013'}
         expected_desc = ('The value provided for the {0} '
                          'header is invalid. It must be formatted '
-                         'according to RFC 1123.')
+                         'according to RFC 7231, Section 7.1.1.1')
 
         self._test_error_details(headers, attr,
                                  falcon.HTTPInvalidHeader,

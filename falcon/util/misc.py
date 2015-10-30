@@ -101,19 +101,48 @@ def dt_to_http(dt):
     return dt.strftime('%a, %d %b %Y %H:%M:%S GMT')
 
 
-def http_date_to_dt(http_date):
+def http_date_to_dt(http_date, obs_date=False):
     """Converts an HTTP date string to a datetime instance.
 
     Args:
         http_date (str): An RFC 1123 date string, e.g.:
             "Tue, 15 Nov 1994 12:45:26 GMT".
+        obs_date (bool, optional): Support obs-date formats according to
+            RFC 7231, e.g.:
+            "Sunday, 06-Nov-94 08:49:37 GMT" (default ``False``).
 
     Returns:
         datetime: A UTC datetime instance corresponding to the given
             HTTP date.
+
+    Raises:
+        ValueError: http_date doesn't match any of the available time formats
     """
 
-    return strptime(http_date, '%a, %d %b %Y %H:%M:%S %Z')
+    if not obs_date:
+        # PERF(kgriffs): This violates DRY, but we do it anyway
+        #   to avoid the overhead of setting up a tuple, looping
+        #   over it, and setting up exception handling blocks each
+        #   time around the loop, in the case that we don't actually
+        #   need to check for multiple formats.
+        return strptime(http_date, '%a, %d %b %Y %H:%M:%S %Z')
+
+    time_formats = (
+        '%a, %d %b %Y %H:%M:%S %Z',
+        '%a, %d-%b-%Y %H:%M:%S %Z',
+        '%A, %d-%b-%y %H:%M:%S %Z',
+        '%a %b %d %H:%M:%S %Y',
+    )
+
+    # Loop through the formats and return the first that matches
+    for time_format in time_formats:
+        try:
+            return strptime(http_date, time_format)
+        except ValueError:
+            continue
+
+    # Did not match any formats
+    raise ValueError('time data %r does not match known formats' % http_date)
 
 
 def to_query_str(params):
