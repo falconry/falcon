@@ -373,7 +373,7 @@ class Request(object):
     def range(self):
         try:
             value = self.env['HTTP_RANGE']
-            if len(value.split('=', 1)) == 2:
+            if '=' in value:
                 value = value.split('=', 1)[1]
             else:
                 msg = "The value must be prefixed with range unit, e.g. 'bytes='"
@@ -411,7 +411,7 @@ class Request(object):
         try:
             value = self.env['HTTP_RANGE']
 
-            if len(value.split('=', 1)) == 2:
+            if '=' in value:
                 unit = value.split('=', 1)[0]
                 return unit
             else:
