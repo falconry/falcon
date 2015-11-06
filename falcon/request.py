@@ -374,19 +374,19 @@ class Request(object):
         try:
             value = self.env['HTTP_RANGE']
             if '=' in value:
-                value = value.split('=', 1)[1]
+                unit, sep, range = value.partition('=')
             else:
                 msg = "The value must be prefixed with range unit, e.g. 'bytes='"
                 raise HTTPInvalidHeader(msg, 'Range')
         except KeyError:
             return None
 
-        if ',' in value:
+        if ',' in range:
             msg = 'The value must be a continuous range.'
             raise HTTPInvalidHeader(msg, 'Range')
 
         try:
-            first, sep, last = value.partition('-')
+            first, sep, last = range.partition('-')
 
             if not sep:
                 raise ValueError()
@@ -412,7 +412,7 @@ class Request(object):
             value = self.env['HTTP_RANGE']
 
             if '=' in value:
-                unit = value.split('=', 1)[0]
+                unit, sep, range = value.partition('=')
                 return unit
             else:
                 msg = "The value must be prefixed with range unit, e.g. 'bytes='"
