@@ -85,7 +85,11 @@ class Response(object):
             provided by the WSGI server, in order to efficiently serve
             file-like objects.
 
-        stream_len (int): Expected length of `stream` (e.g., file size).
+        stream_len (int): Expected length of `stream`. If `stream` is set,
+            but `stream_len` is not, Falcon will not supply a
+            Content-Length header to the WSGI server. Consequently, the
+            server may choose to use chunked encoding or one of the
+            other strategies suggested by PEP-3333.
     """
 
     __slots__ = (
@@ -148,8 +152,14 @@ class Response(object):
 
         Although the `stream` and `stream_len` properties may be set
         directly, using this method ensures `stream_len` is not
-        accidentally neglected.
+        accidentally neglected when the length of the stream is known in
+        advance.
 
+        Note:
+            If the stream length is unknown, you can set `stream`
+            directly, and ignore `stream_len`. In this case, the
+            WSGI server may choose to use chunked encoding or one
+            of the other strategies suggested by PEP-3333.
         """
 
         self.stream = stream
