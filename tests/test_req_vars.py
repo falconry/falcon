@@ -428,7 +428,7 @@ class TestReqVars(testing.TestBase):
 
         headers = {'Range': 'bytes=-'}
         expected_desc = ('The value provided for the Range header is '
-                         'invalid. The byte offsets are missing.')
+                         'invalid. The range offsets are missing.')
         self._test_error_details(headers, 'range',
                                  falcon.HTTPInvalidHeader,
                                  'Invalid header value', expected_desc)
@@ -480,7 +480,7 @@ class TestReqVars(testing.TestBase):
         headers = {'Range': 'bytes=x-y'}
         expected_desc = ('The value provided for the Range header is '
                          'invalid. It must be a range formatted '
-                         'according to RFC 2616.')
+                         'according to RFC 7233.')
         self._test_error_details(headers, 'range',
                                  falcon.HTTPInvalidHeader,
                                  'Invalid header value', expected_desc)
@@ -496,7 +496,7 @@ class TestReqVars(testing.TestBase):
         headers = {'Range': '10-'}
         expected_desc = ("The value provided for the Range "
                          "header is invalid. The value must be "
-                         "prefixed with range unit, e.g. 'bytes='")
+                         "prefixed with a range unit, e.g. 'bytes='")
         self._test_error_details(headers, 'range',
                                  falcon.HTTPInvalidHeader,
                                  'Invalid header value', expected_desc)

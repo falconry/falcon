@@ -502,7 +502,7 @@ class Response(object):
         The tuple has the form (*start*, *end*, *length*, [*unit*]), where *start* and
         *end* designate the range (inclusive), and *length* is the
         total length, or '\*' if unknown. You may pass ``int``'s for
-        these numbers (no need to convert to ``str`` beforehand). Optional value
+        these numbers (no need to convert to ``str`` beforehand). The optional value
         *unit* describes the range unit and defaults to 'bytes'
 
         Note:

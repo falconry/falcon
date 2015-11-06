@@ -376,7 +376,7 @@ class Request(object):
             if '=' in value:
                 unit, sep, range = value.partition('=')
             else:
-                msg = "The value must be prefixed with range unit, e.g. 'bytes='"
+                msg = "The value must be prefixed with a range unit, e.g. 'bytes='"
                 raise HTTPInvalidHeader(msg, 'Range')
         except KeyError:
             return None
@@ -396,13 +396,13 @@ class Request(object):
             elif last:
                 return (-int(last), -1)
             else:
-                msg = 'The byte offsets are missing.'
+                msg = 'The range offsets are missing.'
                 raise HTTPInvalidHeader(msg, 'Range')
 
         except ValueError:
             href = 'http://goo.gl/zZ6Ey'
             href_text = 'HTTP/1.1 Range Requests'
-            msg = ('It must be a range formatted according to RFC 2616.')
+            msg = ('It must be a range formatted according to RFC 7233.')
             raise HTTPInvalidHeader(msg, 'Range', href=href,
                                     href_text=href_text)
 
@@ -415,7 +415,7 @@ class Request(object):
                 unit, sep, range = value.partition('=')
                 return unit
             else:
-                msg = "The value must be prefixed with range unit, e.g. 'bytes='"
+                msg = "The value must be prefixed with a range unit, e.g. 'bytes='"
                 raise HTTPInvalidHeader(msg, 'Range')
         except KeyError:
             return None
