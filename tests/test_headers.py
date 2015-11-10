@@ -64,8 +64,11 @@ class HeaderHelpersResource:
         resp.location = '/things/87'
         resp.content_location = '/things/78'
 
-        # bytes 0-499/10240
-        resp.content_range = (0, 499, 10 * 1024)
+        if req.range_unit is None or req.range_unit == 'bytes':
+            # bytes 0-499/10240
+            resp.content_range = (0, 499, 10 * 1024)
+        else:
+            resp.content_range = (0, 25, 100, req.range_unit)
 
         self.resp = resp
 
@@ -345,6 +348,21 @@ class TestHeaders(testing.TestBase):
 
         self.assertEqual('bytes 0-499/10240', resp.content_range)
         self.assertIn(('content-range', 'bytes 0-499/10240'),
+                      self.srmock.headers)
+
+        resp.content_range = (0, 499, 10 * 1024, 'bytes')
+        self.assertEqual('bytes 0-499/10240', resp.content_range)
+        self.assertIn(('content-range', 'bytes 0-499/10240'),
+                      self.srmock.headers)
+
+        req_headers = {
+            'Range': 'items=0-25',
+        }
+        self.simulate_request(self.test_route, headers=req_headers)
+
+        resp.content_range = (0, 25, 100, 'items')
+        self.assertEqual('items 0-25/100', resp.content_range)
+        self.assertIn(('content-range', 'items 0-25/100'),
                       self.srmock.headers)
 
         # Check for duplicate headers

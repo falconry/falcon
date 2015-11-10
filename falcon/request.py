@@ -158,6 +158,8 @@ class Request(object):
             Only continous ranges are supported (e.g., "bytes=0-0,-1" would
             result in an HTTPBadRequest exception when the attribute is
             accessed.)
+        range_unit (str): Unit of the range parsed from the value of the
+            Range header, or ``None`` if the header is missing
         if_match (str): Value of the If-Match header, or ``None`` if the
             header is missing.
         if_none_match (str): Value of the If-None-Match header, or ``None``
@@ -371,20 +373,20 @@ class Request(object):
     def range(self):
         try:
             value = self.env['HTTP_RANGE']
-            if value.startswith('bytes='):
-                value = value[6:]
+            if '=' in value:
+                unit, sep, req_range = value.partition('=')
             else:
-                msg = "The value must be prefixed with 'bytes='"
+                msg = "The value must be prefixed with a range unit, e.g. 'bytes='"
                 raise HTTPInvalidHeader(msg, 'Range')
         except KeyError:
             return None
 
-        if ',' in value:
-            msg = 'The value must be a continuous byte range.'
+        if ',' in req_range:
+            msg = 'The value must be a continuous range.'
             raise HTTPInvalidHeader(msg, 'Range')
 
         try:
-            first, sep, last = value.partition('-')
+            first, sep, last = req_range.partition('-')
 
             if not sep:
                 raise ValueError()
@@ -394,15 +396,29 @@ class Request(object):
             elif last:
                 return (-int(last), -1)
             else:
-                msg = 'The byte offsets are missing.'
+                msg = 'The range offsets are missing.'
                 raise HTTPInvalidHeader(msg, 'Range')
 
         except ValueError:
             href = 'http://goo.gl/zZ6Ey'
             href_text = 'HTTP/1.1 Range Requests'
-            msg = ('It must be a byte range formatted according to RFC 2616.')
+            msg = ('It must be a range formatted according to RFC 7233.')
             raise HTTPInvalidHeader(msg, 'Range', href=href,
                                     href_text=href_text)
+
+    @property
+    def range_unit(self):
+        try:
+            value = self.env['HTTP_RANGE']
+
+            if '=' in value:
+                unit, sep, req_range = value.partition('=')
+                return unit
+            else:
+                msg = "The value must be prefixed with a range unit, e.g. 'bytes='"
+                raise HTTPInvalidHeader(msg, 'Range')
+        except KeyError:
+            return None
 
     @property
     def app(self):
