@@ -58,6 +58,8 @@ class Body(object):
         self.stream = stream
         self.stream_len = stream_len
 
+        self._bytes_remaining = self.stream_len
+
     def __iter__(self):
         return self
 
@@ -83,9 +85,13 @@ class Body(object):
 
         """
 
-        if size is None or size == -1 or size > self.stream_len:
-            size = self.stream_len
+        # NOTE(kgriffs): Default to reading all remaining bytes if the
+        # size is not specified or is out of bounds. This behaves
+        # similarly to the IO streams passed in by non-wsgiref servers.
+        if (size is None or size == -1 or size > self._bytes_remaining):
+            size = self._bytes_remaining
 
+        self._bytes_remaining -= size
         return target(size)
 
     def read(self, size=None):

@@ -1055,15 +1055,14 @@ class Request(object):
 
     def _wrap_stream(self):  # pragma nocover
         try:
-            # NOTE(kgriffs): We can only add the wrapper if the
-            # content-length header was provided.
-            if self.content_length is not None:
-                self.stream = helpers.Body(self.stream, self.content_length)
+            content_length = self.content_length or 0
 
         except HTTPInvalidHeader:
             # NOTE(kgriffs): The content-length header was specified,
-            # but it had an invalid value.
-            pass
+            # but it had an invalid value. Assume no content.
+            content_length = 0
+
+        self.stream = helpers.Body(self.stream, content_length)
 
     def _parse_form_urlencoded(self):
         # NOTE(kgriffs): This assumes self.stream has been patched
