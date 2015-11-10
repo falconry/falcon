@@ -75,14 +75,14 @@ def bottle(body, headers):
     return bottle.default_app()
 
 
-def werkzeug(body, headers):
-    import werkzeug.wrappers as werkzeug
-    from werkzeug.routing import Map, Rule
+def falcon.dev_server(body, headers):
+    import falcon.dev_server.wrappers as falcon.dev_server
+    from falcon.dev_server.routing import Map, Rule
 
     path = '/hello/<account_id>/test'
     url_map = Map([Rule(path, endpoint='hello')])
 
-    @werkzeug.Request.application
+    @falcon.dev_server.Request.application
     def hello(request):
         user_agent = request.headers['User-Agent']  # NOQA
         limit = request.args.get('limit', '10')  # NOQA
@@ -90,7 +90,7 @@ def werkzeug(body, headers):
         endpoint, values = adapter.match()  # NOQA
         aid = values['account_id']  # NOQA
 
-        return werkzeug.Response(body, headers=headers,
+        return falcon.dev_server.Response(body, headers=headers,
                                  mimetype='text/plain')
 
     return hello

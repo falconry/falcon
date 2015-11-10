@@ -27,6 +27,7 @@ import falcon.status_codes as status
 
 
 class API(object):
+
     """This class is the main entry point into a Falcon-based app.
 
     Each API instance provides a callable WSGI interface and a routing engine.
@@ -246,6 +247,18 @@ class API(object):
         # Return the response per the WSGI spec
         start_response(resp.status, headers)
         return body
+
+    def run_dev_server(self, hostname=None, port=None,
+                       use_reloader=True, use_debugger=False):
+        from falcon.dev_server.serving import run_simple
+
+        if hostname is None:
+            hostname = '127.0.0.1'
+        if port is None:
+            port = 5000
+
+        run_simple(hostname, port, self, use_reloader=use_reloader,
+                   use_debugger=use_debugger)
 
     def add_route(self, uri_template, resource):
         """Associates a templatized URI path with a resource.
