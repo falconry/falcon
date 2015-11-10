@@ -18,39 +18,21 @@ simply wrap your api instance with a middleware app. For example:
 
 See also the `WSGI middleware example <http://legacy.python.org/dev/peps/pep-3333/#middleware-components-that-play-both-sides>`_ given in PEP-3333.
 
-
-Why doesn't Falcon include X?
------------------------------
-The Python ecosytem offers a bunch of great libraries that you
-are welcome to use from within your responder, hooks, and middleware.
-Falcon doesn't try to dictate what you should use, since that would take
-away your freedom to choose the best tool for the job.
-
-The Falcon framework lets you decide your own answers to questions like:
-
-* gevent or asyncio?
-* JSON or MessagePack?
-* konval or jsonschema?
-* Mongothon or Monk?
-* Storm, SQLAlchemy or peewee?
-* Jinja or Tenjin?
-* python-multipart or cgi.FieldStorage?
-
-
+Why doesn't Falcon come with batteries included?
+------------------------------------------------
+The Python ecosystem offers a bunch of great libraries that you are welcome
+to use from within your responders, hooks, and middleware components. Falcon
+doesn't try to dictate what you should use, since that would take away your
+freedom to choose the best tool for the job.
 
 How do I authenticate requests?
 -------------------------------
-Hooks and/or middleware components can be used to to authenticate and
-authorize requests. For example, you could create a middleware component
-that parses incoming credentials and places the result in ``req.context``.
-Downstream components or hooks could then use this info to authenticate
-the user, and then finally authorize the request, taking into account the
-user's role and the requested resource.
-
-.. Tip::
-
-    The `Talons project <https://github.com/talons/talons>`_ maintains a
-    collection of auth plugins for the Falcon framework.
+Hooks and middleware components can be used together to authenticate and
+authorize requests. For example, a middleware component could be used to
+parse incoming credentials and place the results in ``req.context``.
+Downstream components or hooks could then use this information to
+authorize the request, taking into account the user's role and the requested
+resource.
 
 Why doesn't Falcon create a new Resource instance for every request?
 --------------------------------------------------------------------
