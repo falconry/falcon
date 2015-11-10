@@ -476,6 +476,13 @@ class PostQueryParams(_TestQueryParams):
         req = self.resource.req
         self.assertEqual(req.get_param('q'), None)
 
+    def test_stream_should_be_reset(self):
+        query_string = 'one=1'
+        self.simulate_request('/', query_string=query_string)
+
+        req = self.resource.req
+        self.assertEqual(req.stream.read(), b'one=1')
+
 
 class GetQueryParams(_TestQueryParams):
     def simulate_request(self, path, query_string, **kwargs):

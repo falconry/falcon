@@ -1090,6 +1090,7 @@ class Request(object):
         # content length will only ever be read once per
         # request in most cases.
         body = self.stream.read()
+        self.stream.seek(0)
 
         # NOTE(kgriffs): According to http://goo.gl/6rlcux the
         # body should be US-ASCII. Enforcing this also helps
