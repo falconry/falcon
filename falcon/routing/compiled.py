@@ -211,6 +211,8 @@ class CompiledRouter(object):
 class CompiledRouterNode(object):
     """Represents a single URI segment in a URI."""
 
+    _regex_vars = re.compile('{([-_a-zA-Z0-9]+)}')
+
     def __init__(self, raw_segment, method_map=None, resource=None):
         self.children = []
 
@@ -224,7 +226,7 @@ class CompiledRouterNode(object):
 
         seg = raw_segment.replace('.', '\\.')
 
-        matches = list(re.finditer('{([-_a-zA-Z0-9]+)}', seg))
+        matches = list(self._regex_vars.finditer(seg))
         if matches:
             self.is_var = True
             # NOTE(richardolsson): if there is a single variable and it spans
@@ -273,10 +275,10 @@ class CompiledRouterNode(object):
         # NOTE(kgriffs): Possible combinations are as follows.
         #
         #   simple, simple ==> True
-        #   simple, complex ==> True
+        #   simple, complex ==> False
         #   simple, string ==> False
-        #   complex, simple ==> True
-        #   complex, complex ==> False
+        #   complex, simple ==> False
+        #   complex, complex ==> (Depend)
         #   complex, string ==> False
         #   string, simple ==> False
         #   string, complex ==> False
@@ -285,27 +287,31 @@ class CompiledRouterNode(object):
         other = CompiledRouterNode(segment)
 
         if self.is_var:
+            # NOTE(kgriffs & philiptzou): Falcon does not accept multiple
+            # simple var nodes exist at the same level as following:
+            #
+            #   /foo/{thing1}
+            #   /foo/{thing2}
+            #
+            # Nor two complex nodes like this:
+            #
+            #   /foo/{thing1}.{ext}
+            #   /foo/{thing2}.{ext}
+            #
+            # On the other hand, those are all OK:
+            #
+            #   /foo/{thing1}
+            #   /foo/all
+            #   /foo/{thing1}.{ext}
+            #   /foo/{thing2}.detail.{ext}
+            #
             if self.is_complex:
                 if other.is_complex:
-                    return False
-
-                if other.is_var:
-                    return True
+                    return (self._regex_vars.sub('v', self.raw_segment) ==
+                            self._regex_vars.sub('v', segment))
 
                 return False
             else:
-                # NOTE(kgriffs & philiptzou): Falcon does not accept multiple
-                # simple var nodes exist at the same level as following:
-                #
-                #   /foo/{thing1}
-                #   /foo/{thing2}
-                #
-                # On the other hand, this is OK:
-                #
-                #   /foo/{thing1}
-                #   /foo/all
-                #   /foo/{thing1}.{ext}
-                #
                 return other.is_var and not other.is_complex
 
         # NOTE(kgriffs): If self is a static string match, then all the cases
