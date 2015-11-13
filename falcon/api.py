@@ -247,7 +247,7 @@ class API(object):
         start_response(resp.status, headers)
         return body
 
-    def add_route(self, uri_template, resource):
+    def add_route(self, uri_template, resource, *args, **kwargs):
         """Associates a templatized URI path with a resource.
 
         A resource is an instance of a class that defines various
@@ -313,7 +313,8 @@ class API(object):
 
         method_map = routing.create_http_method_map(
             resource, self._before, self._after)
-        self._router.add_route(uri_template, method_map, resource)
+        self._router.add_route(uri_template, method_map, resource, *args,
+                               **kwargs)
 
     def add_sink(self, sink, prefix=r'/'):
         """Registers a sink method for the API.
