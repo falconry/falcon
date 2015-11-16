@@ -494,8 +494,7 @@ class API(object):
 
                     break
             else:
-                responder = falcon.responders.path_not_found
-
+                raise falcon.HTTPNotFound()
         return (responder, params, resource)
 
     def _compose_status_response(self, req, resp, http_status):
