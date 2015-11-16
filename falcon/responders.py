@@ -18,11 +18,6 @@ from falcon.status_codes import HTTP_404
 from falcon.status_codes import HTTP_405
 
 
-def path_not_found(req, resp, **kwargs):
-    """Simply sets responseto "404 Not Found", no body."""
-    resp.status = HTTP_404
-
-
 def bad_request(req, resp, **kwargs):
     """Sets response to "400 Bad Request", no body."""
     resp.status = HTTP_400

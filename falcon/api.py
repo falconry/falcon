@@ -468,10 +468,6 @@ class API(object):
             method was not found in the method_map for the responder,
             the responder callable element of the returned tuple will be
             `falcon.responder.bad_request`.
-
-            Likewise, if no responder was matched for the given URI, then
-            the responder callable element of the returned tuple will be
-            `falcon.responder.path_not_found`
         """
 
         path = req.path
