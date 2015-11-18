@@ -1,3 +1,4 @@
+import functools
 import json
 import io
 
@@ -60,13 +61,21 @@ class Fish(object):
     def __call__(self, req, resp, params):
         params['fish'] = 'slippery'
 
+    def hook(self, req, resp, resource, params):
+        params['fish'] = 'wet'
 
-def bunnies_in_the_head(req, resp, params):
-    resp.set_header('X-Bunnies', 'fluffy')
+
+# NOTE(kgriffs): Use partial methods for these next two in order
+# to make sure we handle that correctly.
+def things_in_the_head(header, value, req, resp, resource, params):
+    resp.set_header(header, value)
 
 
-def frogs_in_the_head(req, resp, params):
-    resp.set_header('X-Frogs', 'not fluffy')
+bunnies_in_the_head = functools.partial(things_in_the_head,
+                                        'X-Bunnies', 'fluffy')
+
+frogs_in_the_head = functools.partial(things_in_the_head,
+                                      'X-Frogs', 'not fluffy')
 
 
 class WrappedRespondersResource(object):
@@ -87,6 +96,8 @@ class WrappedRespondersResource(object):
 @falcon.before(bunnies)
 class WrappedClassResource(object):
 
+    _some_fish = Fish()
+
     # Test non-callable should be skipped by decorator
     on_patch = {}
 
@@ -98,8 +109,13 @@ class WrappedClassResource(object):
     def on_head(self, req, resp, bunnies):
         self._capture(req, resp, bunnies)
 
-    @falcon.before(Fish())
+    @falcon.before(_some_fish)
     def on_post(self, req, resp, fish, bunnies):
+        self._capture(req, resp, bunnies)
+        self.fish = fish
+
+    @falcon.before(_some_fish.hook)
+    def on_put(self, req, resp, fish, bunnies):
         self._capture(req, resp, bunnies)
         self.fish = fish
 
