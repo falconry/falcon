@@ -578,12 +578,6 @@ authorized to access. In that case, you may wish to simply return
 ``404 Not Found`` with an empty body, in case a malicious user is fishing
 for information that will help them crack your API.
 
-.. tip:: Please take a look at our new sister project,
-   `Talons <https://github.com/talons/talons>`_, for a collection of
-   useful Falcon hooks contributed by the community. Also, If you create a
-   nifty hook that you think others could use, please consider
-   contributing to the project yourself.
-
 Error Handling
 --------------
 
