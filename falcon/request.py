@@ -78,12 +78,49 @@ class Request(object):
                 If the hostname in the request is an IP address, the value
                 for `subdomain` is undefined.
 
-        user_agent (str): Value of the User-Agent header, or ``None`` if the
-            header is missing.
-        app (str): Name of the WSGI app (if using WSGI's notion of virtual
-            hosting).
         env (dict): Reference to the WSGI environ ``dict`` passed in from the
             server. See also PEP-3333.
+        app (str): Name of the WSGI app (if using WSGI's notion of virtual
+            hosting).
+        access_route(list): IP address of the original client, as well
+            as any known addresses of proxies fronting the WSGI server.
+
+            The following request headers are checked, in order of
+            preference, to determine the addresses:
+
+                - ``Forwarded``
+                - ``X-Forwarded-For``
+                - ``X-Real-IP``
+
+            If none of these headers are available, the value of
+            :py:attr:`~.remote_addr` is used instead.
+
+            Note:
+                Per `RFC 7239`_, the access route may contain "unknown"
+                and obfuscated identifiers, in addition to IPv4 and
+                IPv6 addresses
+
+                .. _RFC 7239: https://tools.ietf.org/html/rfc7239
+
+            Warning:
+                Headers can be forged by any client or proxy. Use this
+                property with caution and validate all values before
+                using them. Do not rely on the access route to authorize
+                requests.
+
+        remote_addr(str): IP address of the closest client or proxy to
+            the WSGI server.
+
+            This property is determined by the value of ``REMOTE_ADDR``
+            in the WSGI environment dict. Since this address is not
+            derived from an HTTP header, clients and proxies can not
+            forge it.
+
+            Note:
+                If your application is behind one or more reverse
+                proxies, you can use :py:attr:`~.access_route`
+                to retrieve the real IP address of the client.
+
         context (dict): Dictionary to hold any data about the request which is
             specific to your app (e.g. session object). Falcon itself will
             not interact with this attribute after it has been initialized.
@@ -109,6 +146,8 @@ class Request(object):
             string).
         query_string (str): Query string portion of the request URL, without
             the preceding '?' character.
+        user_agent (str): Value of the User-Agent header, or ``None`` if the
+            header is missing.
         accept (str): Value of the Accept header, or '*/*' if the header is
             missing.
         auth (str): Value of the Authorization header, or ``None`` if the
@@ -541,33 +580,6 @@ class Request(object):
 
     @property
     def access_route(self):
-        """A list of all addresses from client to the last proxy server.
-
-        Inspired by werkzeug's ``access_route``.
-
-        Note:
-            The list may contain string(s) other than IPv4 / IPv6 address. For
-            example the "unknown" identifier and obfuscated identifier defined
-            by `RFC 7239`_.
-
-            .. _RFC 7239: https://tools.ietf.org/html/rfc7239#section-6
-
-        Warning:
-            HTTP Forwarded headers can be forged by any client or proxy.
-            Use this property with caution and write your own verify function.
-            The best practice is always using :py:attr:`~.remote_addr` unless
-            your application is hosted behind some reverse proxy server(s).
-            Also only trust the **last N** addresses provided by those reverse
-            proxy servers.
-
-        This property will try to derive addresses sequentially from:
-
-            - ``Forwarded``
-            - ``X-Forwarded-For``
-            - ``X-Real-IP``
-            - **or** the IP address of the closest client/proxy
-
-        """
         if self._cached_access_route is None:
             access_route = []
             if 'HTTP_FORWARDED' in self.env:
@@ -585,16 +597,6 @@ class Request(object):
 
     @property
     def remote_addr(self):
-        """String of the IP address of the closest client/proxy.
-
-        Address will only be derived from WSGI ``REMOTE_ADDR`` header, which
-        can not be modified by any client or proxy.
-
-        Note:
-            If your application is behind one or more reverse proxies, you may
-            need to use :py:obj:`~.access_route` to retrieve the real IP
-            address of the client.
-        """
         return self.env.get('REMOTE_ADDR')
 
     # ------------------------------------------------------------------------
