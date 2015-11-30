@@ -306,6 +306,24 @@ class HTTPRangeNotSatisfiable(NoRepresentation, HTTPError):
                                                       headers=headers)
 
 
+class HTTPUnprocessableEntity(HTTPError):
+    """422 Unprocessable Entity.
+
+    The request was well-formed but was unable to be followed due to semantic
+    errors. See also: http://www.ietf.org/rfc/rfc4918.
+
+    Args:
+        title (str): Error title (e.g., 'Missing title field').
+        description (str): Human-friendly description of the error, along with
+            a helpful suggestion or two.
+        kwargs (optional): Same as for ``HTTPError``.
+    """
+
+    def __init__(self, title, description, **kwargs):
+        super(HTTPUnprocessableEntity, self).__init__(status.HTTP_422, title,
+                                                      description, **kwargs)
+
+
 class HTTPInternalServerError(HTTPError):
     """500 Internal Server Error.
 
