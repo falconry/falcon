@@ -95,6 +95,7 @@ string objects that must be created when preparing responses.
     HTTP_REQUESTED_RANGE_NOT_SATISFIABLE = HTTP_416
     HTTP_EXPECTATION_FAILED = HTTP_417
     HTTP_IM_A_TEAPOT = HTTP_418
+    HTTP_UNPROCESSABLE_ENTITY = HTTP_422
     HTTP_UPGRADE_REQUIRED = HTTP_426
     HTTP_PRECONDITION_REQUIRED = HTTP_428
     HTTP_TOO_MANY_REQUESTS = HTTP_429
@@ -119,6 +120,7 @@ string objects that must be created when preparing responses.
     HTTP_416 = '416 Range Not Satisfiable'
     HTTP_417 = '417 Expectation Failed'
     HTTP_418 = "418 I'm a teapot"
+    HTTP_422 = "422 Unprocessable Entity"
     HTTP_426 = '426 Upgrade Required'
     HTTP_428 = '428 Precondition Required'
     HTTP_429 = '429 Too Many Requests'
