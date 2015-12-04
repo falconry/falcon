@@ -4,21 +4,37 @@ install: travis_scripts/install.sh
 cache:
     directories:
         - $HOME/.cache/pip
-env:
-  - JYTHON=true
-  - TOXENV=py26
-  - TOXENV=pep8
-  - TOXENV=pylint
-  - TOXENV=py27
-  - TOXENV=py27_cython
-  - TOXENV=py33
-  - TOXENV=py33_cython
-  - TOXENV=py34
-  - TOXENV=py34_cython
-  - TOXENV=pypy
-  - TOXENV=pypy3
-  - TOXENV=py27_smoke
-  - TOXENV=py27_smoke_cython
+
+matrix:
+    include:
+        - python: 2.7  # these are just to make travis's UI a bit prettier
+          env: JYTHON=true
+        - python: pypy
+          env: TOXENV=pypy
+        - python: pypy3
+          env: TOXENV=pypy3
+        - python: 2.7
+          env: TOXENV=pep8
+        - python: 2.7
+          env: TOXENV=pylint
+        - python: 2.6
+          env: TOXENV=py26
+        - python: 2.7
+          env: TOXENV=py27
+        - python: 2.7
+          env: TOXENV=py27_smoke
+        - python: 2.7
+          env: TOXENV=py27_cython
+        - python: 2.7
+          env: TOXENV=py27_smoke_cython
+        - python: 3.3
+          env: TOXENV=py33
+        - python: 3.3
+          env: TOXENV=py33_cython
+        - python: 3.4
+          env: TOXENV=py34
+        - python: 3.4
+          env: TOXENV=py34_cython
 
 script: travis_scripts/run_tests.sh
 notifications:
