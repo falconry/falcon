@@ -159,6 +159,17 @@ class RangeNotSatisfiableResource:
         raise falcon.HTTPRangeNotSatisfiable(123456)
 
 
+class TooManyRequestsResource:
+
+    def __init__(self, retry_after=None):
+        self.retry_after = retry_after
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPTooManyRequests('Too many requests',
+                                         '1 per minute',
+                                         retry_after=self.retry_after)
+
+
 class ServiceUnavailableResource:
 
     def __init__(self, retry_after):
@@ -582,6 +593,38 @@ class TestHTTPError(testing.TestBase):
         self.assertEqual(body, [])
         self.assertIn(('content-range', 'bytes */123456'), self.srmock.headers)
         self.assertIn(('content-length', '0'), self.srmock.headers)
+
+    def test_429_no_retry_after(self):
+        self.api.add_route('/429', TooManyRequestsResource())
+        body = self.simulate_request('/429')
+        parsed_body = json.loads(body[0].decode())
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_429)
+        self.assertEqual(parsed_body['title'], 'Too many requests')
+        self.assertEqual(parsed_body['description'], '1 per minute')
+        self.assertNotIn('retry-after', self.srmock.headers)
+
+    def test_429(self):
+        self.api.add_route('/429', TooManyRequestsResource(60))
+        body = self.simulate_request('/429')
+        parsed_body = json.loads(body[0].decode())
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_429)
+        self.assertEqual(parsed_body['title'], 'Too many requests')
+        self.assertEqual(parsed_body['description'], '1 per minute')
+        self.assertIn(('retry-after', '60'), self.srmock.headers)
+
+    def test_429_datetime(self):
+        date = datetime.datetime.now() + datetime.timedelta(minutes=1)
+        self.api.add_route('/429', TooManyRequestsResource(date))
+        body = self.simulate_request('/429')
+        parsed_body = json.loads(body[0].decode())
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_429)
+        self.assertEqual(parsed_body['title'], 'Too many requests')
+        self.assertEqual(parsed_body['description'], '1 per minute')
+        self.assertIn(('retry-after', falcon.util.dt_to_http(date)),
+                      self.srmock.headers)
 
     def test_503_integer_retry_after(self):
         self.api.add_route('/503', ServiceUnavailableResource(60))

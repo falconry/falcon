@@ -252,7 +252,7 @@ class HTTPRequestEntityTooLarge(HTTPError):
         retry_after (datetime or int, optional): Value for the Retry-After
             header. If a ``datetime`` object, will serialize as an HTTP date.
             Otherwise, a non-negative ``int`` is expected, representing the
-            number of seconds to wait. See also: http://goo.gl/DIrWr .
+            number of seconds to wait.
         kwargs (optional): Same as for ``HTTPError``.
 
     """
@@ -262,7 +262,6 @@ class HTTPRequestEntityTooLarge(HTTPError):
 
         if isinstance(retry_after, datetime):
             headers['Retry-After'] = util.dt_to_http(retry_after)
-
         elif retry_after is not None:
             headers['Retry-After'] = str(retry_after)
 
@@ -324,6 +323,44 @@ class HTTPUnprocessableEntity(HTTPError):
                                                       description, **kwargs)
 
 
+class HTTPTooManyRequests(HTTPError):
+    """429 Too Many Requests.
+
+    The user has sent too many requests in a given amount of time
+    ("rate limiting").
+
+    The response representations SHOULD include details explaining the
+    condition, and MAY include a Retry-After header indicating how long
+    to wait before making a new request.
+
+    (RFC 6585)
+
+    Args:
+        title (str): Error title (e.g., 'Too Many Requests').
+        description (str): Human-friendly description of the rate limit that
+            was exceeded.
+        retry_after (datetime or int, optional): Value for the Retry-After
+            header. If a ``datetime`` object, will serialize as an HTTP date.
+            Otherwise, a non-negative ``int`` is expected, representing the
+            number of seconds to wait.
+        kwargs (optional): Same as for ``HTTPError``.
+
+    """
+
+    def __init__(self, title, description, retry_after=None, **kwargs):
+        headers = kwargs.setdefault('headers', {})
+
+        if isinstance(retry_after, datetime):
+            headers['Retry-After'] = util.dt_to_http(retry_after)
+        elif retry_after is not None:
+            headers['Retry-After'] = str(retry_after)
+
+        super(HTTPTooManyRequests, self).__init__(status.HTTP_429,
+                                                  title,
+                                                  description,
+                                                  **kwargs)
+
+
 class HTTPInternalServerError(HTTPError):
     """500 Internal Server Error.
 
@@ -367,7 +404,7 @@ class HTTPServiceUnavailable(HTTPError):
         retry_after (datetime or int): Value for the Retry-After header. If a
             ``datetime`` object, will serialize as an HTTP date. Otherwise,
             a non-negative ``int`` is expected, representing the number of
-            seconds to wait. See also: http://goo.gl/DIrWr .
+            seconds to wait.
         kwargs (optional): Same as for ``HTTPError``.
 
     """
