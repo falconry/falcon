@@ -244,6 +244,7 @@ class TestHTTPError(testing.TestBase):
         body = self.simulate_request('/fail', headers=headers, decode='utf-8')
 
         self.assertEqual(self.srmock.status, headers['X-Error-Status'])
+        self.assertIn(('vary', 'Accept'), self.srmock.headers)
         self.assertThat(lambda: json.loads(body), Not(raises(ValueError)))
         self.assertEqual(expected_body, json.loads(body))
 
@@ -284,7 +285,7 @@ class TestHTTPError(testing.TestBase):
         self.assertEqual(self.srmock.status, headers['X-Error-Status'])
         self.assertEqual(body, [])
 
-    def test_custom_error_serializer(self):
+    def test_custom_old_error_serializer(self):
         headers = {
             'X-Error-Title': 'Storage service down',
             'X-Error-Description': ('The configured storage service is not '
@@ -325,7 +326,59 @@ class TestHTTPError(testing.TestBase):
             actual_doc = deserializer(body[0].decode('utf-8'))
             self.assertEqual(expected_doc, actual_doc)
 
-        # _check('application/x-yaml', yaml.load)
+        _check('application/x-yaml', yaml.load)
+        _check('application/json', json.loads)
+
+    def test_custom_old_error_serializer_no_body(self):
+        def _my_serializer(req, exception):
+            return (None, None)
+
+        self.api.set_error_serializer(_my_serializer)
+        self.simulate_request('/fail')
+
+    def test_custom_new_error_serializer(self):
+        headers = {
+            'X-Error-Title': 'Storage service down',
+            'X-Error-Description': ('The configured storage service is not '
+                                    'responding to requests. Please contact '
+                                    'your service provider'),
+            'X-Error-Status': falcon.HTTP_503
+        }
+
+        expected_doc = {
+            'code': 10042,
+            'description': ('The configured storage service is not '
+                            'responding to requests. Please contact '
+                            'your service provider'),
+            'title': 'Storage service down'
+        }
+
+        def _my_serializer(req, resp, exception):
+            representation = None
+
+            preferred = req.client_prefers(('application/x-yaml',
+                                            'application/json'))
+
+            if preferred is not None:
+                if preferred == 'application/json':
+                    representation = exception.to_json()
+                else:
+                    representation = yaml.dump(exception.to_dict(),
+                                               encoding=None)
+
+                resp.body = representation
+                resp.content_type = preferred
+
+        def _check(media_type, deserializer):
+            headers['Accept'] = media_type
+            self.api.set_error_serializer(_my_serializer)
+            body = self.simulate_request('/fail', headers=headers)
+            self.assertEqual(self.srmock.status, headers['X-Error-Status'])
+
+            actual_doc = deserializer(body[0].decode('utf-8'))
+            self.assertEqual(expected_doc, actual_doc)
+
+        _check('application/x-yaml', yaml.load)
         _check('application/json', json.loads)
 
     def test_client_does_not_accept_anything(self):
