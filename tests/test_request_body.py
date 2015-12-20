@@ -167,3 +167,31 @@ class TestRequestBody(testing.TestBase):
         body = request_helpers.Body(stream, expected_len)
         for i, line in enumerate(body):
             self.assertEqual(line, expected_lines[i])
+
+    def test_parsing_json_body(self):
+        self.simulate_request('/', body='{"sample": "yes"}')
+
+        # Make sure we don't pre-parse the JSON
+        self.assertIsNone(self.resource.req._json)
+
+        json = self.resource.req.json
+        self.assertEqual(json.get('sample'), 'yes')
+
+    def test_caching_of_parsed_json_body(self):
+        self.simulate_request('/', body='{"sample": "yes"}')
+
+        # Force set the json cache variable
+        self.resource.req._json = {'thing': 'something'}
+
+        json = self.resource.req.json
+        self.assertEqual(json.get('thing'), 'something')
+
+    def test_parsing_json_body_w_utf16(self):
+        self.simulate_request('/', body='{"sample": "yes"}'.encode('utf-16'))
+        self.assertIsNone(self.resource.req.json)
+
+    def test_calling_json_without_a_valid_body(self):
+        self.simulate_request('/', body='{"}')
+
+        result = self.resource.req._parse_application_json()
+        self.assertIsNone(result)

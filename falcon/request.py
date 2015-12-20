@@ -11,6 +11,7 @@
 # limitations under the License.
 
 from datetime import datetime
+import json
 
 try:
     # NOTE(kgrifs): In Python 2.6 and 2.7, socket._fileobject is a
@@ -229,6 +230,9 @@ class Request(object):
             A dict of name/value cookie pairs.
             See also: :ref:`Getting Cookies <getting-cookies>`
 
+        json (dict): Attempts to parse the request stream as a Json string.
+            If called, it'll leave the request stream at EOF.
+
     """
 
     __slots__ = (
@@ -247,6 +251,7 @@ class Request(object):
         'options',
         '_cookies',
         '_cached_access_route',
+        '_json',
     )
 
     # Allow child classes to override this
@@ -333,6 +338,11 @@ class Request(object):
             # pylint will detect this as not-callable because it only sees the
             # declaration of None, not whatever type a subclass may have set.
             self.context = self.context_type()  # pylint: disable=not-callable
+
+        # NOTE(jmvrbanac): To preserve performance, we don't want to
+        # automatically parse the body as Json so we're just going to leave
+        # self._json empty until self.json is called
+        self._json = None
 
     # ------------------------------------------------------------------------
     # Properties
@@ -577,6 +587,12 @@ class Request(object):
             self._cookies = cookies
 
         return self._cookies.copy()
+
+    @property
+    def json(self):
+        if self._json is None:
+            self._parse_application_json()
+        return self._json
 
     @property
     def access_route(self):
@@ -1112,6 +1128,20 @@ class Request(object):
             )
 
             self._params.update(extra_params)
+
+    def _parse_application_json(self):
+        raw_body = self.stream.read()
+
+        body = None
+        try:
+            body = json.loads(raw_body.decode('utf-8'))
+        except UnicodeDecodeError:
+            self.log_error('Non-UTF8 characters found in the request body')
+        except ValueError as e:
+            msg = 'Could not parse the body as Json: {0}. Ignoring.'.format(e)
+            self.log_error(msg)
+
+        self._json = body
 
     def _parse_rfc_forwarded(self):
         """Parse RFC 7239 "Forwarded" header.
