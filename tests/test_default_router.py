@@ -76,15 +76,23 @@ class TestStandaloneRouter(testing.TestBase):
         setup_routes(self.router)
 
     @ddt.data(
-        '/teams/{collision}',
-        '/repos/{org}/{repo}/compare/{simple-collision}',
-        '/emojis/signs/{id_too}',
+        '/teams/{collision}',  # simple vs simple
+        '/emojis/signs/{id_too}',  # another simple vs simple
+        '/repos/{org}/{repo}/compare/{complex}:{vs}...{complex2}:{collision}',
     )
     def test_collision(self, template):
         self.assertRaises(
             ValueError,
             self.router.add_route, template, {}, ResourceWithId(-1)
         )
+
+    @ddt.data(
+        '/repos/{org}/{repo}/compare/{simple-vs-complex}',
+        '/repos/{complex}.{vs}.{simple}',
+        '/repos/{org}/{repo}/compare/{complex}:{vs}...{complex2}/full',
+    )
+    def test_non_collision(self, template):
+        self.router.add_route(template, {}, ResourceWithId(-1))
 
     def test_dump(self):
         print(self.router._src)
