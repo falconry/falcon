@@ -348,6 +348,12 @@ class TestReqVars(testing.TestBase):
         self.assertFalse(req.client_accepts_json)
         self.assertTrue(req.client_accepts_msgpack)
 
+        headers = {'Accept': 'application/msgpack'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertFalse(req.client_accepts_xml)
+        self.assertFalse(req.client_accepts_json)
+        self.assertTrue(req.client_accepts_msgpack)
+
         headers = {
             'Accept': 'application/json,application/xml,application/x-msgpack'
         }

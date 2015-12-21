@@ -353,7 +353,8 @@ class Request(object):
 
     @property
     def client_accepts_msgpack(self):
-        return self.client_accepts('application/x-msgpack')
+        return (self.client_accepts('application/x-msgpack')
+                or self.client_accepts('application/msgpack'))
 
     @property
     def client_accepts_xml(self):
