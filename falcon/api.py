@@ -466,8 +466,7 @@ class API(object):
         Note:
             If a responder was matched to the given URI, but the HTTP
             method was not found in the method_map for the responder,
-            the responder callable element of the returned tuple will be
-            `falcon.responder.bad_request`.
+            falcon.HTTPBadRequest() error will be raised.
         """
 
         path = req.path
@@ -490,7 +489,8 @@ class API(object):
 
                     break
             else:
-                raise falcon.HTTPNotFound()
+                responder = falcon.responders.path_not_found
+
         return (responder, params, resource)
 
     def _compose_status_response(self, req, resp, http_status):

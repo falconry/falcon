@@ -13,14 +13,19 @@
 # limitations under the License.
 
 from falcon.status_codes import HTTP_204
-from falcon.status_codes import HTTP_400
-from falcon.status_codes import HTTP_404
 from falcon.status_codes import HTTP_405
+from falcon.errors import HTTPNotFound
+from falcon.errors import HTTPBadRequest
+
+
+def path_not_found(req, resp, **kwargs):
+    """Raise 404 HTTPNotFound error"""
+    raise HTTPNotFound()
 
 
 def bad_request(req, resp, **kwargs):
-    """Sets response to "400 Bad Request", no body."""
-    resp.status = HTTP_400
+    """Raise 400 HTTPBadRequest error"""
+    raise HTTPBadRequest('Bad request', 'Invalid HTTP method')
 
 
 def create_method_not_allowed(allowed_methods):
