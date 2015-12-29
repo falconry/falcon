@@ -178,7 +178,8 @@ class API(object):
                 # e.g. a 404.
                 responder, params, resource = self._get_responder(req)
 
-                self._call_rsrc_mw(middleware_stack, req, resp, resource)
+                self._call_rsrc_mw(middleware_stack, req, resp, resource,
+                                   params)
 
                 responder(req, resp, **params)
                 self._call_resp_mw(middleware_stack, req, resp, resource)
@@ -537,13 +538,13 @@ class API(object):
             # Put executed component on the stack
             stack.append(component)  # keep track from outside
 
-    def _call_rsrc_mw(self, stack, req, resp, resource):
+    def _call_rsrc_mw(self, stack, req, resp, resource, params):
         """Run process_resource middleware methods."""
 
         for component in self._middleware:
             _, process_resource, _ = component
             if process_resource is not None:
-                process_resource(req, resp, resource)
+                process_resource(req, resp, resource, params)
 
     def _call_resp_mw(self, stack, req, resp, resource):
         """Run process_response middleware."""

@@ -166,7 +166,7 @@ class TestHTTPStatusWithGlobalHooks(testing.TestBase):
     def test_raise_status_in_process_resource(self):
         """ Make sure we can raise status from middleware process resource """
         class TestMiddleware:
-            def process_resource(self, req, resp, resource):
+            def process_resource(self, req, resp, resource, params):
                 raise HTTPStatus(falcon.HTTP_200,
                                  headers={"X-Failed": "False"},
                                  body="Pass")

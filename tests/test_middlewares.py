@@ -1,3 +1,5 @@
+import json
+
 import falcon
 import falcon.testing as testing
 from datetime import datetime
@@ -11,7 +13,7 @@ class RequestTimeMiddleware(object):
         global context
         context['start_time'] = datetime.utcnow()
 
-    def process_resource(self, req, resp, resource):
+    def process_resource(self, req, resp, resource, params):
         global context
         context['mid_time'] = datetime.utcnow()
 
@@ -34,7 +36,7 @@ class ExecutedFirstMiddleware(object):
         context['executed_methods'].append(
             '{0}.{1}'.format(self.__class__.__name__, 'process_request'))
 
-    def process_resource(self, req, resp, resource):
+    def process_resource(self, req, resp, resource, params):
         global context
         context['executed_methods'].append(
             '{0}.{1}'.format(self.__class__.__name__, 'process_resource'))
@@ -55,9 +57,17 @@ class RemoveBasePathMiddleware(object):
         req.path = req.path.replace('/base_path', '', 1)
 
 
+class AccessParamsMiddleware(object):
+
+    def process_resource(self, req, resp, resource, params):
+        global context
+        params['added'] = True
+        context['params'] = params
+
+
 class MiddlewareClassResource(object):
 
-    def on_get(self, req, resp):
+    def on_get(self, req, resp, **kwargs):
         resp.status = falcon.HTTP_200
         resp.body = {'status': 'ok'}
 
@@ -368,3 +378,23 @@ class TestRemoveBasePathMiddleware(TestMiddleware):
         self.assertEqual(self.srmock.status, falcon.HTTP_200)
         self.simulate_request('/base_pathIncorrect/sub_path')
         self.assertEqual(self.srmock.status, falcon.HTTP_404)
+
+
+class TestResourceMiddleware(TestMiddleware):
+
+    def test_can_access_resource_params(self):
+        """Test that params can be accessed from within process_resource"""
+        global context
+
+        class Resource:
+            def on_get(self, req, resp, **params):
+                resp.data = json.dumps(params)
+
+        self.api = falcon.API(middleware=AccessParamsMiddleware())
+        self.api.add_route('/path/{id}', Resource())
+        resp = self.simulate_request('/path/22')
+
+        self.assertIn('params', context)
+        self.assertTrue(context['params'])
+        self.assertEqual(context['params']['id'], '22')
+        self.assertEqual(json.loads(resp[0]), {"added": True, "id": "22"})
