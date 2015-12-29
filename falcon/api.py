@@ -192,11 +192,7 @@ class API(object):
                         self._call_resp_mw(middleware_stack, req, resp,
                                            resource)
 
-                        # NOTE(kgriffs): The following line is not
-                        # reported to be covered under Python 3.4 for
-                        # some reason, although coverage was manually
-                        # verified using PDB.
-                        break  # pragma nocover
+                        break
 
                 else:
                     # PERF(kgriffs): This will propagate HTTPError to

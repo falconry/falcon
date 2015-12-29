@@ -85,10 +85,7 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1',
     # the paths before setting PATH_INFO
     path = uri.decode(path)
 
-    # NOTE(kgriffs): nocover since this branch will never be
-    # taken in Python3. However, the branch is tested under Py2,
-    # in test_utils.TestFalconTesting.test_unicode_path_in_create_environ
-    if six.PY2 and isinstance(path, six.text_type):  # pragma: nocover
+    if six.PY2 and isinstance(path, six.text_type):
         path = path.encode('utf-8')
 
     scheme = scheme.lower()

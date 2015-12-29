@@ -202,7 +202,7 @@ def get_bound_method(obj, method_name):
     method = getattr(obj, method_name, None)
     if method is not None:
         # NOTE(kgriffs): Ensure it is a bound method
-        if six.get_method_self(method) is None:  # pragma nocover
+        if six.get_method_self(method) is None:
             # NOTE(kgriffs): In Python 3 this code is unreachable
             # because the above will raise AttributeError on its
             # own.

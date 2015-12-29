@@ -35,11 +35,13 @@ class TestWSGIError(testing.TestBase):
             self.wsgierrors = self.wsgierrors_buffer
 
     def test_responder_logged_bytestring(self):
-        self.simulate_request('/logger', wsgierrors=self.wsgierrors)
+        self.simulate_request('/logger', wsgierrors=self.wsgierrors,
+                              query_string='amount=10')
 
         log = self.wsgierrors_buffer.getvalue()
 
         self.assertIn(unicode_message.encode('utf-8'), log)
+        self.assertIn(b'?amount=10', log)
 
     def test_responder_logged_unicode(self):
         if six.PY3:
