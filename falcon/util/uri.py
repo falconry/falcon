@@ -130,7 +130,7 @@ Returns:
 """
 
 # NOTE(kgriffs): This is actually covered, but not in py33; hence the pragma
-if six.PY2:  # pragma: no cover
+if six.PY2:
 
     # This map construction is based on urllib
     _HEX_TO_BYTE = dict((a + b, (chr(int(a + b, 16)), int(a + b, 16)))
@@ -192,16 +192,12 @@ if six.PY2:  # pragma: no cover
 
 # NOTE(kgriffs): This is actually covered, but not in py2x; hence the pragma
 
-else:  # pragma: no cover
+else:
 
     # This map construction is based on urllib
     _HEX_TO_BYTE = dict(((a + b).encode(), bytes([int(a + b, 16)]))
                         for a in _HEX_DIGITS
                         for b in _HEX_DIGITS)
-
-    def _unescape(matchobj):
-        # NOTE(kgriffs): Strip '%' and convert the hex number
-        return _HEX_TO_BYTE[matchobj.group(0)[1:]]
 
     def decode(encoded_uri):
         """Decodes percent-encoded characters in a URI or query string.
