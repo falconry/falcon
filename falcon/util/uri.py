@@ -386,14 +386,15 @@ def unquote_string(quoted):
     Raises:
         TypeError: `quoted` was not a ``str``.
     """
-    tmp_quoted = quoted.strip()
-    if len(tmp_quoted) < 2:
+
+    if len(quoted) < 2:
         return quoted
-    elif tmp_quoted[0] != '"' or tmp_quoted[-1] != '"':
+    elif quoted[0] != '"' or quoted[-1] != '"':
         # return original one, prevent side-effect
         return quoted
 
-    tmp_quoted = tmp_quoted[1:-1]
+    tmp_quoted = quoted[1:-1]
+
     # PERF(philiptzou): Most header strings don't contain "quoted-pair" which
     # defined by RFC 7320. We use this little trick (quick string search) to
     # speed up string parsing by preventing unnecessary processes if possible.

@@ -29,7 +29,7 @@ def _is_iterable(thing):
 def _run_server(stop_event):
     class Things(object):
         def on_get(self, req, resp):
-            pass
+            resp.body = req.remote_addr
 
         def on_post(self, req, resp):
             resp.body = req.stream.read(1000)
@@ -127,6 +127,7 @@ class TestWSGIReference(testing.TestBase):
     def test_wsgiref_get(self):
         resp = requests.get(_SERVER_BASE_URL)
         self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.text, '127.0.0.1')
 
     def test_wsgiref_put(self):
         body = '{}'

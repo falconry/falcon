@@ -580,17 +580,28 @@ class Request(object):
     @property
     def access_route(self):
         if self._cached_access_route is None:
-            access_route = []
+            # NOTE(kgriffs): Try different headers in order of
+            # preference; if none are found, fall back to REMOTE_ADDR.
+            #
+            # If one of these headers is present, but its value is
+            # malformed such that we end up with an empty list, or
+            # a non-empty list containing malformed values, go ahead
+            # and return the results as-is. The alternative would be
+            # to fall back to another header or to REMOTE_ADDR, but
+            # that only masks the problem; the operator needs to be
+            # aware that an upstream proxy is malfunctioning.
+
             if 'HTTP_FORWARDED' in self.env:
-                access_route = self._parse_rfc_forwarded()
-            if not access_route and 'HTTP_X_FORWARDED_FOR' in self.env:
-                access_route = [ip.strip() for ip in
-                                self.env['HTTP_X_FORWARDED_FOR'].split(',')]
-            if not access_route and 'HTTP_X_REAL_IP' in self.env:
-                access_route = [self.env['HTTP_X_REAL_IP']]
-            if not access_route and 'REMOTE_ADDR' in self.env:
-                access_route = [self.env['REMOTE_ADDR']]
-            self._cached_access_route = access_route
+                self._cached_access_route = self._parse_rfc_forwarded()
+            elif 'HTTP_X_FORWARDED_FOR' in self.env:
+                addresses = self.env['HTTP_X_FORWARDED_FOR'].split(',')
+                self._cached_access_route = [ip.strip() for ip in addresses]
+            elif 'HTTP_X_REAL_IP' in self.env:
+                self._cached_access_route = [self.env['HTTP_X_REAL_IP']]
+            elif 'REMOTE_ADDR' in self.env:
+                self._cached_access_route = [self.env['REMOTE_ADDR']]
+            else:
+                self._cached_access_route = []
 
         return self._cached_access_route
 
@@ -1119,18 +1130,25 @@ class Request(object):
         Returns:
             list: addresses derived from "for" parameters.
         """
+
         addr = []
+
         for forwarded in self.env['HTTP_FORWARDED'].split(','):
             for param in forwarded.split(';'):
-                param = param.strip().split('=', 1)
-                if len(param) == 1:
+                # PERF(kgriffs): Partition() is faster than split().
+                key, _, val = param.strip().partition('=')
+                if not val:
+                    # NOTE(kgriffs): The '=' separator was not found or
+                    # it was, but the value was missing.
                     continue
-                key, val = param
+
                 if key.lower() != 'for':
-                    # we only want for params
+                    # We only want "for" params
                     continue
+
                 host, _ = parse_host(unquote_string(val))
                 addr.append(host)
+
         return addr
 
 
