@@ -140,7 +140,7 @@ class TestCookies(testing.TestBase):
     def test_request_cookie_parsing(self):
         # testing with a github-ish set of cookies
         headers = [
-            ('Cookie', '''Cookie:
+            ('Cookie', '''
                 logged_in=no;_gh_sess=eyJzZXXzaW9uX2lkIjoiN2;
                 tz=Europe/Berlin; _ga=GA1.2.332347814.1422308165;
                 _gat=1;
