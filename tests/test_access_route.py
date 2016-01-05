@@ -23,12 +23,13 @@ class TestAccessRoute(testing.TestBase):
             headers={
                 'Forwarded': ('for=192.0.2.43,for=,'
                               'for="[2001:db8:cafe::17]:555",'
+                              'for=x,'
                               'for="unknown", by=_hidden,for="\\"\\\\",'
                               'for="_don\\\"t_\\try_this\\\\at_home_\\42",'
                               'for="198\\.51\\.100\\.17\\:1236";'
                               'proto=https;host=example.com')
             }))
-        compares = ['192.0.2.43', '', '2001:db8:cafe::17',
+        compares = ['192.0.2.43', '2001:db8:cafe::17', 'x',
                     'unknown', '"\\', '_don"t_try_this\\at_home_42',
                     '198.51.100.17']
         self.assertEqual(req.access_route, compares)
@@ -42,9 +43,9 @@ class TestAccessRoute(testing.TestBase):
             headers={
                 'Forwarded': 'for'
             }))
-        self.assertEqual(req.access_route, ['127.0.0.1'])
+        self.assertEqual(req.access_route, [])
         # test cached
-        self.assertEqual(req.access_route, ['127.0.0.1'])
+        self.assertEqual(req.access_route, [])
 
     def test_x_forwarded_for(self):
         req = Request(testing.create_environ(
@@ -72,3 +73,10 @@ class TestAccessRoute(testing.TestBase):
             host='example.com',
             path='/access_route'))
         self.assertEqual(req.access_route, ['127.0.0.1'])
+
+    def test_remote_addr_missing(self):
+        env = testing.create_environ(host='example.com', path='/access_route')
+        del env['REMOTE_ADDR']
+
+        req = Request(env)
+        self.assertEqual(req.access_route, [])
