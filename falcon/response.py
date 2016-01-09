@@ -193,10 +193,12 @@ class Response(object):
                 A value of 0 means the cookie should be discarded immediately.
             path (str): Specifies the subset of URLs to
                 which this cookie applies.
-            secure (bool): Direct the client to use only secure means to
-                contact the origin server whenever it sends back this cookie
-                (default: ``True``). Warning: You will also need to enforce
-                HTTPS for the cookies to be transfered securely.
+            secure (bool): Direct the client to only return the cookie in
+                subsequent requests if they are made over HTTPS
+                (default: ``True``). This prevents attackers from reading
+                sensitive cookie data. Note that for the `secure` cookie
+                attribute to be effective, your application will need to
+                enforce HTTPS. See also: `RFC 6265, Section 4.1.2.5`_.
             http_only (bool): Direct the client to only transfer the cookie
                 with unscripted HTTP requests (default: ``True``). This is
                 intended to mitigate some forms of cross-site scripting.
@@ -207,6 +209,9 @@ class Response(object):
 
         .. _RFC 6265:
             http://tools.ietf.org/html/rfc6265
+
+        .. _RFC 6265, Section 4.1.2.5:
+            https://tools.ietf.org/html/rfc6265#section-4.1.2.5
 
         """
 
