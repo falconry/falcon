@@ -120,6 +120,12 @@ If you have another case where you body isn't being returned to the
 client, it's probably a bug! Let us know in IRC or on the mailing list so
 we can help.
 
+My app is setting a cookie, but it isn't being passed back in subsequent requests.
+----------------------------------------------------------------------------------
+By default, Falcon enables the `secure` cookie attribute. Therefore, if you are
+testing your app over HTTP (instead of HTTPS), the client will not send the
+cookie in subsequent requests. See also :ref:`the cookie documentation <cookie-secure-attribute>`
+
 Why does raising an error inside a resource crash my app?
 ---------------------------------------------------------
 Generally speaking, Falcon assumes that resource responders (such as *on_get*,
