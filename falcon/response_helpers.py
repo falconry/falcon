@@ -53,17 +53,13 @@ def format_range(value):
         value: ``tuple`` passed to `req.range`
     """
 
-    # PERF: Concatenation is faster than % string formatting as well
-    #       as ''.join() in this case.
-    if len(value) == 4:
-        unit = value[3] + ' '
-    else:
-        unit = 'bytes '
+    # PERF(kgriffs): % was found to be faster than str.format(),
+    # string concatenation, and str.join() in this case.
 
-    return (unit +
-            str(value[0]) + '-' +
-            str(value[1]) + '/' +
-            str(value[2]))
+    if len(value) == 4:
+        return '%s %s-%s/%s' % (value[3], value[0], value[1], value[2])
+
+    return 'bytes %s-%s/%s' % (value[0], value[1], value[2])
 
 
 def is_ascii_encodable(s):  # pragma: no cover
