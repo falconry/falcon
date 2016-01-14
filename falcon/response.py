@@ -20,14 +20,15 @@ from six import string_types as STRING_TYPES
 # but a dict-like structure. This fixes that issue.
 # See issue https://github.com/falconry/falcon/issues/556
 from six.moves import http_cookies
-SimpleCookie = http_cookies.SimpleCookie
-CookieError = http_cookies.CookieError
 
 from falcon.response_helpers import header_property, format_range
 from falcon.response_helpers import is_ascii_encodable
 from falcon.util import dt_to_http, TimezoneGMT
 from falcon.util.uri import encode as uri_encode
 from falcon.util.uri import encode_value as uri_encode_value
+
+SimpleCookie = http_cookies.SimpleCookie
+CookieError = http_cookies.CookieError
 
 GMT_TIMEZONE = TimezoneGMT()
 

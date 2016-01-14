@@ -2,8 +2,10 @@ import sys
 import time
 from wsgiref.simple_server import make_server
 
-if 'java' not in sys.platform:
+try:
     import multiprocessing
+except ImportError:
+    pass  # Jython
 
 import requests
 from testtools.matchers import Equals, MatchesRegex
