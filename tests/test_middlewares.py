@@ -4,6 +4,8 @@ import falcon
 import falcon.testing as testing
 from datetime import datetime
 
+_EXPECTED_BODY = {u'status': u'ok'}
+
 context = {'executed_methods': []}
 
 
@@ -69,7 +71,7 @@ class MiddlewareClassResource(object):
 
     def on_get(self, req, resp, **kwargs):
         resp.status = falcon.HTTP_200
-        resp.body = {'status': 'ok'}
+        resp.body = json.dumps(_EXPECTED_BODY)
 
 
 class TestMiddleware(testing.TestBase):
@@ -79,6 +81,11 @@ class TestMiddleware(testing.TestBase):
         global context
         context = {'executed_methods': []}
         testing.TestBase.setUp(self)
+
+    # TODO(kgriffs): Consider adding this to TestBase
+    def simulate_json_request(self, *args, **kwargs):
+        result = self.simulate_request(*args, decode='utf-8', **kwargs)
+        return json.loads(result)
 
 
 class TestRequestTimeMiddleware(TestMiddleware):
@@ -116,8 +123,8 @@ class TestRequestTimeMiddleware(TestMiddleware):
 
         self.api.add_route(self.test_route, MiddlewareClassResource())
 
-        body = self.simulate_request(self.test_route)
-        self.assertEqual([{'status': 'ok'}], body)
+        body = self.simulate_json_request(self.test_route)
+        self.assertEqual(_EXPECTED_BODY, body)
         self.assertEqual(self.srmock.status, falcon.HTTP_200)
         self.assertIn("start_time", context)
         self.assertIn("mid_time", context)
@@ -137,8 +144,8 @@ class TestTransactionIdMiddleware(TestMiddleware):
 
         self.api.add_route(self.test_route, MiddlewareClassResource())
 
-        body = self.simulate_request(self.test_route)
-        self.assertEqual([{'status': 'ok'}], body)
+        body = self.simulate_json_request(self.test_route)
+        self.assertEqual(_EXPECTED_BODY, body)
         self.assertEqual(self.srmock.status, falcon.HTTP_200)
         self.assertIn("transaction_id", context)
         self.assertEqual("unique-req-id", context['transaction_id'])
@@ -153,8 +160,8 @@ class TestSeveralMiddlewares(TestMiddleware):
 
         self.api.add_route(self.test_route, MiddlewareClassResource())
 
-        body = self.simulate_request(self.test_route)
-        self.assertEqual([{'status': 'ok'}], body)
+        body = self.simulate_json_request(self.test_route)
+        self.assertEqual(_EXPECTED_BODY, body)
         self.assertEqual(self.srmock.status, falcon.HTTP_200)
         self.assertIn("transaction_id", context)
         self.assertEqual("unique-req-id", context['transaction_id'])
@@ -173,8 +180,8 @@ class TestSeveralMiddlewares(TestMiddleware):
 
         self.api.add_route(self.test_route, MiddlewareClassResource())
 
-        body = self.simulate_request(self.test_route)
-        self.assertEqual([{'status': 'ok'}], body)
+        body = self.simulate_json_request(self.test_route)
+        self.assertEqual(_EXPECTED_BODY, body)
         self.assertEqual(self.srmock.status, falcon.HTTP_200)
         # as the method registration is in a list, the order also is
         # tested
@@ -373,8 +380,8 @@ class TestRemoveBasePathMiddleware(TestMiddleware):
         # We dont include /base_path as it will be removed in middleware
         self.api.add_route('/sub_path', MiddlewareClassResource())
 
-        body = self.simulate_request('/base_path/sub_path')
-        self.assertEqual([{'status': 'ok'}], body)
+        body = self.simulate_json_request('/base_path/sub_path')
+        self.assertEqual(_EXPECTED_BODY, body)
         self.assertEqual(self.srmock.status, falcon.HTTP_200)
         self.simulate_request('/base_pathIncorrect/sub_path')
         self.assertEqual(self.srmock.status, falcon.HTTP_404)
@@ -388,13 +395,13 @@ class TestResourceMiddleware(TestMiddleware):
 
         class Resource:
             def on_get(self, req, resp, **params):
-                resp.data = json.dumps(params)
+                resp.body = json.dumps(params)
 
         self.api = falcon.API(middleware=AccessParamsMiddleware())
         self.api.add_route('/path/{id}', Resource())
-        resp = self.simulate_request('/path/22')
+        body = self.simulate_json_request('/path/22')
 
         self.assertIn('params', context)
         self.assertTrue(context['params'])
         self.assertEqual(context['params']['id'], '22')
-        self.assertEqual(json.loads(resp[0]), {"added": True, "id": "22"})
+        self.assertEqual(body, {"added": True, "id": "22"})
