@@ -64,6 +64,16 @@ class _TestQueryParams(testing.TestBase):
         self.assertEqual(req.get_param_as_list('id', int), [23, 42])
         self.assertEqual(req.get_param('q'), u'\u8c46 \u74e3')
 
+    def test_bad_percentage(self):
+        query_string = 'x=%%20%+%&y=peregrine&z=%a%z%zz%1%20e'
+        self.simulate_request('/', query_string=query_string)
+        self.assertEqual(self.srmock.status, falcon.HTTP_200)
+
+        req = self.resource.req
+        self.assertEqual(req.get_param('x'), '% % %')
+        self.assertEqual(req.get_param('y'), 'peregrine')
+        self.assertEqual(req.get_param('z'), '%a%z%zz%1 e')
+
     def test_allowed_names(self):
         query_string = ('p=0&p1=23&2p=foo&some-thing=that&blank=&'
                         'some_thing=x&-bogus=foo&more.things=blah&'
