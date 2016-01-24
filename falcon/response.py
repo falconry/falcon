@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from six import PY2
-from six import text_type as TEXT_TYPE
 from six import string_types as STRING_TYPES
 
 # NOTE(tbug): In some cases, http_cookies is not a module
@@ -57,7 +56,6 @@ class Response(object):
             Unicode, Falcon will encode as UTF-8 in the response. If
             data is already a byte string, use the data attribute
             instead (it's faster).
-        body_encoded (bytes): Returns a UTF-8 encoded version of `body`.
         data (bytes): Byte string representing response content.
 
             Use this attribute in lieu of `body` when your content is
@@ -94,8 +92,7 @@ class Response(object):
     """
 
     __slots__ = (
-        '_body',  # Stuff
-        '_body_encoded',  # Stuff
+        'body',
         'data',
         '_headers',
         '_cookies',
@@ -112,41 +109,10 @@ class Response(object):
         # when cookie is set via set_cookie
         self._cookies = None
 
-        self._body = None
-        self._body_encoded = None
+        self.body = None
         self.data = None
         self.stream = None
         self.stream_len = None
-
-    def _get_body(self):
-        return self._body
-
-    def _set_body(self, value):
-        self._body = value
-        self._body_encoded = None
-
-    # NOTE(flaper87): Lets use a property
-    # for the body in case its content was
-    # encoded and then modified.
-    body = property(_get_body, _set_body)
-
-    @property
-    def body_encoded(self):
-        # NOTE(flaper87): Notice this property
-        # is not thread-safe. If body is modified
-        # before this property returns, we might
-        # end up returning None.
-        body = self._body
-        if body and self._body_encoded is None:
-
-            # NOTE(flaper87): Assume it is an
-            # encoded str, then check and encode
-            # if it isn't.
-            self._body_encoded = body
-            if isinstance(body, TEXT_TYPE):
-                self._body_encoded = body.encode('utf-8')
-
-        return self._body_encoded
 
     def set_stream(self, stream, stream_len):
         """Convenience method for setting both `stream` and `stream_len`.

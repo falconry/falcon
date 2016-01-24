@@ -226,8 +226,9 @@ class API(object):
         if req.method == 'HEAD' or resp.status in self._BODILESS_STATUS_CODES:
             body = []
         else:
-            self._set_content_length(resp)
-            body = self._get_body(resp, env.get('wsgi.file_wrapper'))
+            body, length = self._get_body(resp, env.get('wsgi.file_wrapper'))
+            if length is not None:
+                resp._headers['content-length'] = str(length)
 
         # Set content type if needed
         use_content_type = (body or
@@ -567,44 +568,6 @@ class API(object):
     # PERF(kgriffs): Moved from api_helpers since it is slightly faster
     # to call using self, and this function is called for most
     # requests.
-    def _set_content_length(self, resp):
-        """Set Content-Length when given a fully-buffered body or stream len.
-
-        Pre:
-            Either resp.body or resp.stream is set
-        Post:
-            resp contains a "Content-Length" header unless a stream is given,
-                but resp.stream_len is not set (in which case, the length
-                cannot be derived reliably).
-        Args:
-            resp: The response object on which to set the content length.
-
-        """
-
-        content_length = 0
-
-        if resp.body_encoded is not None:
-            # Since body is assumed to be a byte string (str in Python 2,
-            # bytes in Python 3), figure out the length using standard
-            # functions.
-            content_length = len(resp.body_encoded)
-        elif resp.data is not None:
-            content_length = len(resp.data)
-        elif resp.stream is not None:
-            if resp.stream_len is not None:
-                # Total stream length is known in advance
-                content_length = resp.stream_len
-            else:
-                # Stream given, but length is unknown (dynamically-
-                # generated body). Do not set the header.
-                return -1
-
-        resp.set_header('Content-Length', str(content_length))
-        return content_length
-
-    # PERF(kgriffs): Moved from api_helpers since it is slightly faster
-    # to call using self, and this function is called for most
-    # requests.
     def _get_body(self, resp, wsgi_file_wrapper=None):
         """Converts resp content into an iterable as required by PEP 333
 
@@ -615,42 +578,55 @@ class API(object):
                 when resp.stream is a file-like object (default None).
 
         Returns:
-            * If resp.body is not ``None``, returns [resp.body], encoded
-              as UTF-8 if it is a Unicode string. Bytestrings are returned
-              as-is.
-            * If resp.data is not ``None``, returns [resp.data]
-            * If resp.stream is not ``None``, returns resp.stream
-              iterable using wsgi.file_wrapper, if possible.
-            * Otherwise, returns []
+            A two-member tuple of the form (iterable, content_length).
+            The length is returned as ``None`` when unknown. The
+            iterable is determined as follows:
+
+                * If resp.body is not ``None``, returns [resp.body],
+                  encoded as UTF-8 if it is a Unicode string.
+                  Bytestrings are returned as-is.
+                * If resp.data is not ``None``, returns [resp.data]
+                * If resp.stream is not ``None``, returns resp.stream
+                  iterable using wsgi.file_wrapper, if possible.
+                * Otherwise, returns []
 
         """
 
-        body = resp.body_encoded
-
+        body = resp.body
         if body is not None:
-            return [body]
+            if not isinstance(body, bytes):
+                body = body.encode('utf-8')
 
-        elif resp.data is not None:
-            return [resp.data]
+            return [body], len(body)
 
-        elif resp.stream is not None:
-            stream = resp.stream
+        data = resp.data
+        if data is not None:
+            return [data], len(data)
 
-            # NOTE(kgriffs): Heuristic to quickly check if
-            # stream is file-like. Not perfect, but should be
-            # good enough until proven otherwise.
+        stream = resp.stream
+        if stream is not None:
+            # NOTE(kgriffs): Heuristic to quickly check if stream is
+            # file-like. Not perfect, but should be good enough until
+            # proven otherwise.
             if hasattr(stream, 'read'):
                 if wsgi_file_wrapper is not None:
                     # TODO(kgriffs): Make block size configurable at the
                     # global level, pending experimentation to see how
-                    # useful that would be.
-                    #
-                    # See also the discussion on the PR: http://goo.gl/XGrtDz
-                    return wsgi_file_wrapper(stream, self._STREAM_BLOCK_SIZE)
+                    # useful that would be. See also the discussion on
+                    # this GitHub PR: http://goo.gl/XGrtDz
+                    iterable = wsgi_file_wrapper(stream,
+                                                 self._STREAM_BLOCK_SIZE)
                 else:
-                    return iter(lambda: stream.read(self._STREAM_BLOCK_SIZE),
-                                b'')
+                    iterable = iter(
+                        lambda: stream.read(self._STREAM_BLOCK_SIZE),
+                        b''
+                    )
+            else:
+                iterable = stream
 
-            return resp.stream
+            # NOTE(kgriffs): If resp.stream_len is None, content_length
+            # will be as well; the caller of _get_body must handle this
+            # case by not setting the Content-Length header.
+            return iterable, resp.stream_len
 
-        return []
+        return [], 0

@@ -133,7 +133,7 @@ class TestHelloWorld(testing.TestBase):
 
         self.assertEqual(self.srmock.status, self.resource.sample_status)
         self.assertEqual(resp.status, self.resource.sample_status)
-        self.assertEqual(resp.body_encoded, self.resource.sample_utf8)
+        self.assertEqual(resp.body.encode('utf-8'), self.resource.sample_utf8)
         self.assertEqual(body, [self.resource.sample_utf8])
 
     def test_body_bytes(self):
@@ -145,7 +145,7 @@ class TestHelloWorld(testing.TestBase):
 
         self.assertEqual(self.srmock.status, self.resource.sample_status)
         self.assertEqual(resp.status, self.resource.sample_status)
-        self.assertEqual(resp.body_encoded, self.resource.sample_utf8)
+        self.assertEqual(resp.body, self.resource.sample_utf8)
         self.assertEqual(body, [self.resource.sample_utf8])
 
     def test_data(self):
