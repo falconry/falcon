@@ -89,13 +89,25 @@ You can also instruct the client to remove a cookie with the
 The Secure Attribute
 ~~~~~~~~~~~~~~~~~~~~
 
-By default, Falcon sets the `secure` attribute for cookies. This instructs the client to never transmit the cookie in the clear over HTTP, in order to protect any sensitive data that cookie might contain. If a cookie is set, and a subsequent request is made over HTTP (rather than HTTPS), the client will not include that cookie in the request.
+By default, Falcon sets the `secure` attribute for cookies. This
+instructs the client to never transmit the cookie in the clear over
+HTTP, in order to protect any sensitive data that cookie might
+contain. If a cookie is set, and a subsequent request is made over
+HTTP (rather than HTTPS), the client will not include that cookie in
+the request.
 
 .. warning::
 
-    For this attribute to be effective, your application will need to enforce HTTPS when setting the cookie, as well as in all subsequent requests that require the cookie to be sent back from the client.
+    For this attribute to be effective, your application will need to
+    enforce HTTPS when setting the cookie, as well as in all
+    subsequent requests that require the cookie to be sent back from
+    the client.
 
-When running your application in a development environment, you can disable this behavior by passing `secure=False` to :py:meth:`~.Response.set_cookie`. This lets you test your app locally without having to set up TLS. You can make this option configurable to easily switch between development and production environments.
+When running your application in a development environment, you can
+disable this behavior by passing `secure=False` to
+:py:meth:`~.Response.set_cookie`. This lets you test your app locally
+without having to set up TLS. You can make this option configurable to
+easily switch between development and production environments.
 
 See also: `RFC 6265, Section 4.1.2.5`_
 

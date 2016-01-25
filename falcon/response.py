@@ -293,7 +293,7 @@ class Response(object):
         Warning:
             If the header already exists, the new value will be appended
             to it, delimited by a comma. Most header specifications support
-            this format, Cookie and Set-Cookie being the notable exceptions.
+            this format, Set-Cookie being the notable exceptions.
 
         Warning:
             For setting cookies, see :py:meth:`~.set_cookie`
