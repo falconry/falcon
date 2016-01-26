@@ -62,7 +62,7 @@ def format_range(value):
     return 'bytes %s-%s/%s' % (value[0], value[1], value[2])
 
 
-def is_ascii_encodable(s):  # pragma: no cover
+def is_ascii_encodable(s):
     """Check if argument encodes to ascii without error."""
     try:
         s.encode("ascii")

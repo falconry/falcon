@@ -2,12 +2,16 @@ import re
 import sys
 from datetime import datetime, timedelta, tzinfo
 
+import ddt
 from six.moves.http_cookies import Morsel
 from testtools.matchers import LessThan
 
 import falcon
 import falcon.testing as testing
 from falcon.util import TimezoneGMT, http_date_to_dt
+
+
+UNICODE_TEST_STRING = u"Unicode_\xc3\xa6\xc3\xb8"
 
 
 class TimezoneGMTPlus1(tzinfo):
@@ -46,6 +50,7 @@ class CookieResource:
         resp.unset_cookie("bad")
 
 
+@ddt.ddt
 class TestCookies(testing.TestBase):
 
     #
@@ -163,26 +168,36 @@ class TestCookies(testing.TestBase):
 
     def test_unicode_inside_ascii_range(self):
         resp = falcon.Response()
+
         # should be ok
         resp.set_cookie("non_unicode_ascii_name_1", "ascii_value")
         resp.set_cookie(u"unicode_ascii_name_1", "ascii_value")
         resp.set_cookie("non_unicode_ascii_name_2", u"unicode_ascii_value")
         resp.set_cookie(u"unicode_ascii_name_2", u"unicode_ascii_value")
 
-    def test_unicode_outside_ascii_range(self):
-        def set_bad_cookie_name():
-            resp = falcon.Response()
-            resp.set_cookie(u"unicode_\xc3\xa6\xc3\xb8", "ok_value")
-        self.assertRaises(KeyError, set_bad_cookie_name)
+    @ddt.data(
+        UNICODE_TEST_STRING,
+        UNICODE_TEST_STRING.encode('utf-8'),
+        42
+    )
+    def test_non_ascii_name(self, name):
+        resp = falcon.Response()
+        self.assertRaises(KeyError, resp.set_cookie,
+                          name, "ok_value")
 
-        def set_bad_cookie_value():
-            resp = falcon.Response()
-            resp.set_cookie("ok_name", u"unicode_\xc3\xa6\xc3\xb8")
+    @ddt.data(
+        UNICODE_TEST_STRING,
+        UNICODE_TEST_STRING.encode('utf-8'),
+        42
+    )
+    def test_non_ascii_value(self, value):
+        resp = falcon.Response()
+
         # NOTE(tbug): we need to grab the exception to check
         # that it is not instance of UnicodeEncodeError, so
         # we cannot simply use assertRaises
         try:
-            set_bad_cookie_value()
+            resp.set_cookie("ok_name", value)
         except ValueError as e:
             self.assertIsInstance(e, ValueError)
             self.assertNotIsInstance(e, UnicodeEncodeError)
