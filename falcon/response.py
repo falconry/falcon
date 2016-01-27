@@ -187,7 +187,7 @@ class Response(object):
         if not is_ascii_encodable(value):
             raise ValueError('"value" is not ascii encodable')
 
-        if PY2:  # pragma: no cover
+        if PY2:
             name = str(name)
             value = str(value)
 
@@ -576,7 +576,7 @@ class Response(object):
         if set_content_type:
             headers['content-type'] = media_type
 
-        if py2:  # pragma: no cover
+        if py2:
             # PERF(kgriffs): Don't create an extra list object if
             # it isn't needed.
             items = headers.items()
