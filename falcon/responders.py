@@ -16,6 +16,8 @@ from falcon.errors import HTTPBadRequest
 from falcon.errors import HTTPNotFound
 from falcon.status_codes import HTTP_204
 from falcon.status_codes import HTTP_405
+from falcon.errors import HTTPBadRequest
+from falcon.errors import HTTPNotFound
 
 
 def path_not_found(req, resp, **kwargs):
