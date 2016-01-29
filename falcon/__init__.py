@@ -24,7 +24,7 @@ HTTP_METHODS = (
     'TRACE',
 )
 
-DEFAULT_MEDIA_TYPE = 'application/json; charset=utf-8'
+DEFAULT_MEDIA_TYPE = 'application/json; charset=UTF-8'
 
 
 # Hoist classes and functions into the falcon namespace

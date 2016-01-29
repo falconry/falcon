@@ -230,15 +230,14 @@ class API(object):
             if length is not None:
                 resp._headers['content-length'] = str(length)
 
-        # Set content type if needed
-        use_content_type = (body or
-                            req.method == 'HEAD' or
-                            resp.status == status.HTTP_416)
-
-        if use_content_type:
-            media_type = self._media_type
-        else:
+        # NOTE(kgriffs): Based on wsgiref.validate's interpretation of
+        # RFC 2616, as commented in that module's source code. The
+        # presence of the Content-Length header is not similarly
+        # enforced.
+        if resp.status in (status.HTTP_204, status.HTTP_304):
             media_type = None
+        else:
+            media_type = self._media_type
 
         headers = resp._wsgi_headers(media_type)
 

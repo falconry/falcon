@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import cgi
 import random
 import io
 import sys
@@ -28,6 +29,33 @@ DEFAULT_HOST = 'falconframework.org'
 httpnow = http_now
 
 
+# get_encoding_from_headers() is Copyright 2016 Kenneth Reitz, and is
+# used here under the terms of the Apache License, Version 2.0.
+def get_encoding_from_headers(headers):
+    """Returns encoding from given HTTP Header Dict.
+
+    Args:
+        headers(dict): Dictionary from which to extract encoding. Header
+            names must either be lowercase or the dict must support
+            case-insensitive lookups.
+    """
+
+    content_type = headers.get('content-type')
+
+    if not content_type:
+        return None
+
+    content_type, params = cgi.parse_header(content_type)
+
+    if 'charset' in params:
+        return params['charset'].strip("'\"")
+
+    if 'text' in content_type:
+        return 'ISO-8859-1'
+
+    return None
+
+
 def rand_string(min, max):
     """Returns a randomly-generated string, of a random length.
 
@@ -40,7 +68,7 @@ def rand_string(min, max):
     int_gen = random.randint
     string_length = int_gen(min, max)
     return ''.join([chr(int_gen(ord(' '), ord('~')))
-                    for i in range(string_length)])
+                    for __ in range(string_length)])
 
 
 def create_environ(path='/', query_string='', protocol='HTTP/1.1',
@@ -50,26 +78,28 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1',
 
     """Creates a mock PEP-3333 environ ``dict`` for simulating WSGI requests.
 
-    Args:
-        path (str, optional): The path for the request (default '/')
-        query_string (str, optional): The query string to simulate, without a
+    Keyword Args:
+        path (str): The path for the request (default '/')
+        query_string (str): The query string to simulate, without a
             leading '?' (default '')
-        protocol (str, optional): The HTTP protocol to simulate
+        protocol (str): The HTTP protocol to simulate
             (default 'HTTP/1.1'). If set to 'HTTP/1.0', the Host header
             will not be added to the environment.
         scheme (str): URL scheme, either 'http' or 'https' (default 'http')
         host(str): Hostname for the request (default 'falconframework.org')
-        port (str or int, optional): The TCP port to simulate. Defaults to
+        port (str): The TCP port to simulate. Defaults to
             the standard port used by the given scheme (i.e., 80 for 'http'
             and 443 for 'https').
-        headers (dict or list, optional): Headers as a ``dict`` or an
-            iterable collection of (*key*, *value*) ``tuple``'s
+        headers (dict): Headers as a ``dict`` or an iterable yielding
+            (*key*, *value*) ``tuple``'s
         app (str): Value for the ``SCRIPT_NAME`` environ variable, described in
             PEP-333: 'The initial portion of the request URL's "path" that
             corresponds to the application object, so that the application
             knows its virtual "location". This may be an empty string, if the
             application corresponds to the "root" of the server.' (default '')
-        body (str or unicode): The body of the request (default '')
+        body (str): The body of the request (default ''). Accepts both byte
+            strings and Unicode strings. Unicode strings are encoded as UTF-8
+            in the request.
         method (str): The HTTP method to use (default 'GET')
         wsgierrors (io): The stream to use as *wsgierrors*
             (default ``sys.stderr``)
@@ -108,6 +138,7 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1',
         'SERVER_NAME': host,
         'SERVER_PORT': port,
 
+        'wsgi.version': (1, 0),
         'wsgi.url_scheme': scheme,
         'wsgi.input': body,
         'wsgi.errors': wsgierrors or sys.stderr,
@@ -135,7 +166,7 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1',
     body.seek(0)
 
     if content_length != 0:
-        env['CONTENT_LENGTH'] = content_length
+        env['CONTENT_LENGTH'] = str(content_length)
 
     if headers is not None:
         _add_headers_to_environ(env, headers)

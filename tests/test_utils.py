@@ -3,6 +3,7 @@
 from datetime import datetime
 import functools
 import io
+import json
 import random
 import sys
 
@@ -10,7 +11,7 @@ import testtools
 import six
 
 import falcon
-import falcon.testing
+from falcon import testing
 from falcon import util
 from falcon.util import uri
 
@@ -297,25 +298,25 @@ class TestFalconUtils(testtools.TestCase):
                          ('falcon.example.com', 42))
 
 
-class TestFalconTesting(falcon.testing.TestBase):
+class TestFalconTesting(testing.TestBase):
     """Catch some uncommon branches not covered elsewhere."""
 
     def test_path_escape_chars_in_create_environ(self):
-        env = falcon.testing.create_environ('/hello%20world%21')
+        env = testing.create_environ('/hello%20world%21')
         self.assertEqual(env['PATH_INFO'], '/hello world!')
 
     def test_unicode_path_in_create_environ(self):
         if six.PY3:
             self.skip('Test does not apply to Py3K')
 
-        env = falcon.testing.create_environ(u'/fancy/unícode')
+        env = testing.create_environ(u'/fancy/unícode')
         self.assertEqual(env['PATH_INFO'], '/fancy/un\xc3\xadcode')
 
-        env = falcon.testing.create_environ(u'/simple')
+        env = testing.create_environ(u'/simple')
         self.assertEqual(env['PATH_INFO'], '/simple')
 
     def test_none_header_value_in_create_environ(self):
-        env = falcon.testing.create_environ('/', headers={'X-Foo': None})
+        env = testing.create_environ('/', headers={'X-Foo': None})
         self.assertEqual(env['HTTP_X_FOO'], '')
 
     def test_decode_empty_result(self):
@@ -323,4 +324,69 @@ class TestFalconTesting(falcon.testing.TestBase):
         self.assertEqual(body, '')
 
     def test_httpnow_alias_for_backwards_compat(self):
-        self.assertIs(falcon.testing.httpnow, util.http_now)
+        self.assertIs(testing.httpnow, util.http_now)
+
+
+class TestFalconTestCase(testing.TestCase):
+    """Verify some branches not covered elsewhere."""
+
+    def test_status(self):
+        resource = testing.SimpleTestResource(status=falcon.HTTP_702)
+        self.api.add_route('/', resource)
+
+        result = self.simulate_get()
+        self.assertEqual(result.status, falcon.HTTP_702)
+
+    def test_wsgi_iterable_not_closeable(self):
+        result = testing.Result([], falcon.HTTP_200, [])
+        self.assertFalse(result.data)
+
+    def test_path_must_start_with_slash(self):
+        self.assertRaises(ValueError, self.simulate_get, 'foo')
+
+    def test_cached_text_in_result(self):
+        self.api.add_route('/', testing.SimpleTestResource(body='test'))
+
+        result = self.simulate_get()
+        self.assertEqual(result.text, result.text)
+
+    def test_simple_resource_body_json_xor(self):
+        self.assertRaises(
+            ValueError,
+            testing.SimpleTestResource,
+            body='',
+            json={},
+        )
+
+    def test_query_string(self):
+        class SomeResource(object):
+            def on_get(self, req, resp):
+                doc = {}
+
+                doc['oid'] = req.get_param_as_int('oid')
+                doc['detailed'] = req.get_param_as_bool('detailed')
+
+                resp.body = json.dumps(doc)
+
+        self.api.add_route('/', SomeResource())
+
+        result = self.simulate_get(query_string='oid=42&detailed=no')
+        self.assertEqual(result.json['oid'], 42)
+        self.assertFalse(result.json['detailed'])
+
+    def test_query_string_no_question(self):
+        self.assertRaises(ValueError, self.simulate_get, query_string='?x=1')
+
+    def test_query_string_in_path(self):
+        self.assertRaises(ValueError, self.simulate_get, path='/thing?x=1')
+
+
+class FancyAPI(falcon.API):
+    pass
+
+
+class FancyTestCase(testing.TestCase):
+    api_class = FancyAPI
+
+    def test_something(self):
+        self.assertTrue(isinstance(self.api, FancyAPI))

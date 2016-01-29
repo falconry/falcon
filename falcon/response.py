@@ -581,7 +581,7 @@ class Response(object):
             # it isn't needed.
             items = headers.items()
         else:
-            items = list(headers.items())  # pragma: no cover
+            items = list(headers.items())
 
         if self._cookies is not None:
             # PERF(tbug):
