@@ -297,11 +297,12 @@ class TestReqVars(testing.TestBase):
         req = Request(testing.create_environ(headers=headers))
         self.assertTrue(req.client_accepts('text/plain'))
         self.assertTrue(req.client_accepts('text/csv'))
-        self.assertTrue(req.client_accepts('application/xhtml+xml'))
+        self.assertFalse(req.client_accepts('application/xhtml+xml'))
 
         headers = {'Accept': 'text/*; q=0.1, application/xhtml+xml; q=0.5'}
         req = Request(testing.create_environ(headers=headers))
         self.assertTrue(req.client_accepts('text/plain'))
+        self.assertTrue(req.client_accepts('application/xhtml+xml'))
 
         headers = {'Accept': 'text/*,         application/*'}
         req = Request(testing.create_environ(headers=headers))
@@ -372,7 +373,7 @@ class TestReqVars(testing.TestBase):
         preferred_type = req.client_prefers(('application/xml',
                                              'application/json'))
 
-        # NOTE(kgriffs): If client doesn't care, "preferr" the first one
+        # NOTE(kgriffs): If client doesn't care, "prefer" the first one
         self.assertEqual(preferred_type, 'application/xml')
 
         headers = {'Accept': 'text/*; q=0.1, application/xhtml+xml; q=0.5'}
