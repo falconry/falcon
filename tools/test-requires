@@ -5,3 +5,4 @@ pyyaml
 requests
 six
 testtools
+mock
