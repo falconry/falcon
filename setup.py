@@ -56,8 +56,9 @@ if CYTHON:
     ext_modules = []
 
     for each in dirs:
-        ext_modules += [Extension(each + ext, [path.join(each, ext + '.py')])
-                            for ext in list_modules(path.join(MYDIR, each))]
+        ext_modules += [Extension(each + '.' + ext,
+                        [path.join(*each.split('.'), ext + '.py')])
+                        for ext in list_modules(path.join(MYDIR, *each.split('.')))]
 
     cmdclass = {'build_ext': build_ext}
 
