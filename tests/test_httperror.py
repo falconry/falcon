@@ -773,5 +773,7 @@ class TestHTTPError(testing.TestBase):
         self._misc_test(falcon.HTTPUnsupportedMediaType, falcon.HTTP_415,
                         needs_title=False)
         self._misc_test(falcon.HTTPUnprocessableEntity, falcon.HTTP_422)
+        self._misc_test(falcon.HTTPUnavailableForLegalReasons, falcon.HTTP_451,
+                        needs_title=False)
         self._misc_test(falcon.HTTPInternalServerError, falcon.HTTP_500)
         self._misc_test(falcon.HTTPBadGateway, falcon.HTTP_502)

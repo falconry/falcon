@@ -361,6 +361,26 @@ class HTTPTooManyRequests(HTTPError):
                                                   **kwargs)
 
 
+class HTTPUnavailableForLegalReasons(OptionalRepresentation, HTTPError):
+    """451 Unavailable For Legal Reasons.
+
+    This status code indicates that the server is denying access to the
+    resource as a consequence of a legal demand.
+
+    See also:
+    https://datatracker.ietf.org/doc/draft-ietf-httpbis-legally-restricted-status/
+
+    Args:
+        title (str): Error title (e.g., 'Legal reason: <reason>').
+        kwargs (optional): Same as for ``HTTPError``.
+
+    """
+
+    def __init__(self, title, **kwargs):
+        super(HTTPUnavailableForLegalReasons, self).__init__(status.HTTP_451,
+                                                             title, **kwargs)
+
+
 class HTTPInternalServerError(HTTPError):
     """500 Internal Server Error.
 
