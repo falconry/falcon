@@ -36,7 +36,7 @@ to keep the code lean, making Falcon easier to test, secure, optimize,
 and deploy.
 
 **Flexible.** Falcon is not opinionated when it comes to talking to
-databases rendering content, authorizing requests, etc. You are free to
+databases, rendering content, authorizing requests, etc. You are free to
 mix and match your own favorite libraries. Falcon apps work with
 any WSGI server, and run great under `CPython 2.6-2.7, PyPy, Jython 2.7,
 and CPython 3.3-3.5 <https://travis-ci.org/falconry/falcon>`__.
