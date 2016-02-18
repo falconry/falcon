@@ -154,7 +154,8 @@ class Response(object):
                 default, cookies expire when the user agent exits.
             max_age (int): Defines the lifetime of the cookie in seconds.
                 After the specified number of seconds elapse, the client
-                should discard the cookie.
+                should discard the cookie. Coercion to `int` is attempted
+                if provided with `float` or `str`.
             domain (str): Specifies the domain for which the cookie is valid.
                 An explicitly specified domain must always start with a dot.
                 A value of 0 means the cookie should be discarded immediately.
@@ -218,7 +219,13 @@ class Response(object):
                 self._cookies[name]['expires'] = gmt_expires.strftime(fmt)
 
         if max_age:
-            self._cookies[name]['max-age'] = max_age
+            # RFC 6265 section 5.2.2 says about the max-age value:
+            #   "If the remainder of attribute-value contains a non-DIGIT
+            #    character, ignore the cookie-av."
+            # That is, RFC-compliant response parsers will ignore the max-age
+            # attribute if the value contains a dot, as in floating point
+            # numbers. Therefore, attempt to convert the value to an integer.
+            self._cookies[name]['max-age'] = int(max_age)
 
         if domain:
             self._cookies[name]['domain'] = domain
