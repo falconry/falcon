@@ -4,10 +4,11 @@ The Falcon community maintains a mailing list that you can use to share
 your ideas and ask questions about the framework. We use the appropriately
 minimalistic `Librelist <http://librelist.com/>`_ to host the discussions.
 
-Subscribing is super easy and doesn't require any account setup. Simply
-send an email to falcon@librelist.com and follow the instructions in the
-reply. For more information about managing your subscription, check out
-the `Librelist help page <http://librelist.com/help.html>`_.
+To join the mailing list, simply send your first email to falcon@librelist.com!
+This will automatically subscribe you to the mailing list *and* sends your email
+along to the rest of the subscribers. For more information about managing your
+subscription, check out the
+`Librelist help page <http://librelist.com/help.html>`_.
 
 All contributors and maintainers of this project are subject to our `Code
 of Conduct <https://github.com/falconry/falcon/blob/master/CODEOFCONDUCT.md>`_.
