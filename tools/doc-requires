@@ -2,4 +2,5 @@ jinja2
 pygments
 docutils
 markupsafe
+sphinx
 sphinxcontrib-napoleon

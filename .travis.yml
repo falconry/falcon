@@ -39,6 +39,8 @@ matrix:
           env: TOXENV=py35
         - python: 3.5
           env: TOXENV=py35_cython
+        - python: 2.7
+          env: TOXENV=docs
 
 script: travis_scripts/run_tests.sh
 notifications:
