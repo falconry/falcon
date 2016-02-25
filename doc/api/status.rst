@@ -22,6 +22,17 @@ Or, using the more verbose name:
 Using these constants helps avoid typos and cuts down on the number of
 string objects that must be created when preparing responses.
 
+Falcon also provides a generic `HTTPStatus` class. Raise this class from a hook,
+middleware, or a responder to stop handling the request and skip to the response
+handling. It takes status, additional headers and body as input arguments.
+
+HTTPStatus
+----------
+
+.. autoclass:: falcon.http_status.HTTPStatus
+    :members:
+
+
 1xx Informational
 -----------------
 
