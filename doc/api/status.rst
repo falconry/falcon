@@ -111,6 +111,7 @@ HTTPStatus
     HTTP_PRECONDITION_REQUIRED = HTTP_428
     HTTP_TOO_MANY_REQUESTS = HTTP_429
     HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE = HTTP_431
+    HTTP_UNAVAILABLE_FOR_LEGAL_REASONS = HTTP_451
 
     HTTP_400 = '400 Bad Request'
     HTTP_401 = '401 Unauthorized'  # <-- Really means "unauthenticated"
@@ -136,6 +137,7 @@ HTTPStatus
     HTTP_428 = '428 Precondition Required'
     HTTP_429 = '429 Too Many Requests'
     HTTP_431 = '431 Request Header Fields Too Large'
+    HTTP_451 = '451 Unavailable For Legal Reasons'
 
 5xx Server Error
 ----------------
