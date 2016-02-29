@@ -415,13 +415,14 @@ Community
 ---------
 
 The Falcon community maintains a mailing list that you can use to share
-your ideas and ask questions about the framework. We use the
-appropriately minimalistic `Librelist <http://librelist.com/>`__ to host
-the discussions. Subscribing is super easy and doesn't require any
-account setup. Simply send an email to falcon@librelist.com and follow
-the instructions in the reply. For more information about managing your
+your ideas and ask questions about the framework. We use the appropriately
+minimalistic `Librelist <http://librelist.com/>`_ to host the discussions.
+
+To join the mailing list, simply send your first email to falcon@librelist.com!
+This will automatically subscribe you to the mailing list *and* sends your email
+along to the rest of the subscribers. For more information about managing your
 subscription, check out the
-`Librelist help page <http://librelist.com/help.html>`__.
+`Librelist help page <http://librelist.com/help.html>`_.
 
 We expect everyone who participates on the mailing list to act
 professionally, and lead by example in encouraging constructive
