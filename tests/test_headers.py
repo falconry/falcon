@@ -201,7 +201,7 @@ class TestHeaders(testing.TestCase):
 
         result = self.simulate_get('/xxx')
         self.assertNotIn('Content-Length', result.headers)
-        self.assertFalse(result.data)
+        self.assertFalse(result.content)
 
     def test_content_header_missing(self):
         environ = testing.create_environ()
@@ -274,7 +274,7 @@ class TestHeaders(testing.TestCase):
         self.api.add_route('/', testing.SimpleTestResource(body=body))
         result = self.simulate_get()
 
-        self.assertEqual(result.data, body)
+        self.assertEqual(result.content, body)
         self.assertRaises(RuntimeError, lambda: result.text)
         self.assertRaises(RuntimeError, lambda: result.json)
 

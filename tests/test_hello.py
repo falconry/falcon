@@ -114,13 +114,13 @@ class TestHelloWorld(testing.TestCase):
         self.assertEqual(result.status, resource.sample_status)
         self.assertEqual(resp.status, resource.sample_status)
         self.assertEqual(get_body(resp), resource.sample_utf8)
-        self.assertEqual(result.data, resource.sample_utf8)
+        self.assertEqual(result.content, resource.sample_utf8)
 
     def test_no_body_on_head(self):
         self.api.add_route('/body', HelloResource('body'))
         result = self.simulate_head('/body')
 
-        self.assertFalse(result.data)
+        self.assertFalse(result.content)
         self.assertEqual(result.status_code, 200)
 
     def test_stream_chunked(self):
@@ -129,7 +129,7 @@ class TestHelloWorld(testing.TestCase):
 
         result = self.simulate_get('/chunked-stream')
 
-        self.assertEqual(result.data, resource.sample_utf8)
+        self.assertEqual(result.content, resource.sample_utf8)
         self.assertNotIn('content-length', result.headers)
 
     def test_stream_known_len(self):
@@ -142,8 +142,8 @@ class TestHelloWorld(testing.TestCase):
         expected_len = resource.resp.stream_len
         actual_len = int(result.headers['content-length'])
         self.assertEqual(actual_len, expected_len)
-        self.assertEqual(len(result.data), expected_len)
-        self.assertEqual(result.data, resource.sample_utf8)
+        self.assertEqual(len(result.content), expected_len)
+        self.assertEqual(result.content, resource.sample_utf8)
 
     def test_filelike(self):
         resource = HelloResource('stream, stream_len, filelike')
@@ -156,7 +156,7 @@ class TestHelloWorld(testing.TestCase):
             expected_len = resource.resp.stream_len
             actual_len = int(result.headers['content-length'])
             self.assertEqual(actual_len, expected_len)
-            self.assertEqual(len(result.data), expected_len)
+            self.assertEqual(len(result.content), expected_len)
 
     def test_filelike_using_helper(self):
         resource = HelloResource('stream, stream_len, filelike, use_helper')
@@ -168,12 +168,12 @@ class TestHelloWorld(testing.TestCase):
         expected_len = resource.resp.stream_len
         actual_len = int(result.headers['content-length'])
         self.assertEqual(actual_len, expected_len)
-        self.assertEqual(len(result.data), expected_len)
+        self.assertEqual(len(result.content), expected_len)
 
     def test_status_not_set(self):
         self.api.add_route('/nostatus', NoStatusResource())
 
         result = self.simulate_get('/nostatus')
 
-        self.assertFalse(result.data)
+        self.assertFalse(result.content)
         self.assertEqual(result.status_code, 200)

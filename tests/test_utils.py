@@ -339,7 +339,7 @@ class TestFalconTestCase(testing.TestCase):
 
     def test_wsgi_iterable_not_closeable(self):
         result = testing.Result([], falcon.HTTP_200, [])
-        self.assertFalse(result.data)
+        self.assertFalse(result.content)
 
     def test_path_must_start_with_slash(self):
         self.assertRaises(ValueError, self.simulate_get, 'foo')
