@@ -84,7 +84,7 @@ You can also instruct the client to remove a cookie with the
             # Clear the bad cookie
             resp.unset_cookie('bad_cookie')
 
-.. _cookie-secure-atribute:
+.. _cookie-secure-attribute:
 
 The Secure Attribute
 ~~~~~~~~~~~~~~~~~~~~

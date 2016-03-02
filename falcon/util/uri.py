@@ -129,7 +129,6 @@ Returns:
 
 """
 
-# NOTE(kgriffs): This is actually covered, but not in py33; hence the pragma
 if six.PY2:
 
     # This map construction is based on urllib
@@ -192,8 +191,6 @@ if six.PY2:
             decoded_uri = decoded_uri.decode('utf-8', 'replace')
 
         return decoded_uri
-
-# NOTE(kgriffs): This is actually covered, but not in py2x; hence the pragma
 
 else:
 

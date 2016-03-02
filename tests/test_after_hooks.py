@@ -2,7 +2,12 @@ import functools
 import json
 
 import falcon
-import falcon.testing as testing
+from falcon import testing
+
+
+# --------------------------------------------------------------------
+# Hooks
+# --------------------------------------------------------------------
 
 
 def validate_output(req, resp):
@@ -69,6 +74,11 @@ def fluffiness_in_the_head(req, resp):
 
 def cuteness_in_the_head(req, resp):
     resp.set_header('X-Cuteness', 'cute')
+
+
+# --------------------------------------------------------------------
+# Resources
+# --------------------------------------------------------------------
 
 
 class WrappedRespondersResource(object):
@@ -163,15 +173,18 @@ class FaultyResource(object):
         raise falcon.HTTPError(falcon.HTTP_743, 'Query failed')
 
 
-class TestHooks(testing.TestBase):
+# --------------------------------------------------------------------
+# Tests
+# --------------------------------------------------------------------
 
-    def simulate_request(self, *args, **kwargs):
-        return super(TestHooks, self).simulate_request(
-            *args, decode='utf-8', **kwargs)
 
-    def before(self):
+class TestHooks(testing.TestCase):
+
+    def setUp(self):
+        super(TestHooks, self).setUp()
+
         self.resource = WrappedRespondersResource()
-        self.api.add_route(self.test_route, self.resource)
+        self.api.add_route('/', self.resource)
 
         self.wrapped_resource = WrappedClassResource()
         self.api.add_route('/wrapped', self.wrapped_resource)
@@ -179,157 +192,145 @@ class TestHooks(testing.TestBase):
         self.wrapped_resource_aware = ClassResourceWithAwareHooks()
         self.api.add_route('/wrapped_aware', self.wrapped_resource_aware)
 
+    def test_output_validator(self):
+        result = self.simulate_get()
+        self.assertEqual(result.status_code, 723)
+        self.assertEqual(result.text, '{\n    "title": "Tricky"\n}')
+
+    def test_serializer(self):
+        result = self.simulate_put()
+        self.assertEqual('{"animal": "falcon"}', result.text)
+
+    def test_hook_as_callable_class(self):
+        result = self.simulate_post()
+        self.assertEqual('smart', result.text)
+
+    def test_wrapped_resource(self):
+        result = self.simulate_get('/wrapped')
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual(result.text, 'fluffy and cute', )
+
+        result = self.simulate_head('/wrapped')
+        self.assertEqual(result.status_code, 200)
+
+        result = self.simulate_post('/wrapped')
+        self.assertEqual(result.status_code, 405)
+
+        result = self.simulate_patch('/wrapped')
+        self.assertEqual(result.status_code, 405)
+
+        # Decorator should not affect the default on_options responder
+        result = self.simulate_options('/wrapped')
+        self.assertEqual(result.status_code, 204)
+        self.assertFalse(result.text)
+
+    def test_wrapped_resource_with_hooks_aware_of_resource(self):
+        expected = 'fluffy and cute'
+
+        result = self.simulate_get('/wrapped_aware')
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual(expected, result.text)
+
+        for test in (self.simulate_head, self.simulate_put, self.simulate_post):
+            result = test('/wrapped_aware')
+            self.assertEqual(result.status_code, 200)
+            self.assertEqual(self.wrapped_resource_aware.resp.body, expected)
+
+        result = self.simulate_patch('/wrapped_aware')
+        self.assertEqual(result.status_code, 405)
+
+        # Decorator should not affect the default on_options responder
+        result = self.simulate_options('/wrapped_aware')
+        self.assertEqual(result.status_code, 204)
+        self.assertFalse(result.text)
+
+
+class TestGlobalHooks(testing.TestCase):
+
+    def test_invalid_type(self):
+        self.assertRaises(TypeError, falcon.API, after={})
+        self.assertRaises(TypeError, falcon.API, after=0)
+
     def test_global_hook(self):
-        self.assertRaises(TypeError, falcon.API, None, {})
-        self.assertRaises(TypeError, falcon.API, None, 0)
-
         self.api = falcon.API(after=fluffiness)
-        zoo_resource = ZooResource()
+        self.api.add_route('/', ZooResource())
 
-        self.api.add_route(self.test_route, zoo_resource)
-
-        result = self.simulate_request(self.test_route)
-        self.assertEqual(u'fluffy', result)
+        result = self.simulate_get()
+        self.assertEqual(result.text, 'fluffy')
 
     def test_global_hook_is_resource_aware(self):
-        self.assertRaises(TypeError, falcon.API, None, {})
-        self.assertRaises(TypeError, falcon.API, None, 0)
-
         self.api = falcon.API(after=resource_aware_fluffiness)
-        zoo_resource = ZooResource()
+        self.api.add_route('/', ZooResource())
 
-        self.api.add_route(self.test_route, zoo_resource)
-
-        result = self.simulate_request(self.test_route)
-        self.assertEqual(u'fluffy', result)
+        result = self.simulate_get()
+        self.assertEqual(result.text, 'fluffy')
 
     def test_multiple_global_hook(self):
         self.api = falcon.API(after=[fluffiness, cuteness, Smartness()])
-        zoo_resource = ZooResource()
+        self.api.add_route('/', ZooResource())
 
-        self.api.add_route(self.test_route, zoo_resource)
-
-        result = self.simulate_request(self.test_route)
-        self.assertEqual(u'fluffy and cute and smart', result)
+        result = self.simulate_get()
+        self.assertEqual(result.text, 'fluffy and cute and smart')
 
     def test_global_hook_wrap_default_on_options(self):
         self.api = falcon.API(after=fluffiness_in_the_head)
-        zoo_resource = ZooResource()
+        self.api.add_route('/', ZooResource())
 
-        self.api.add_route(self.test_route, zoo_resource)
+        result = self.simulate_options()
 
-        self.simulate_request(self.test_route, method='OPTIONS')
-
-        self.assertEqual(falcon.HTTP_204, self.srmock.status)
-        self.assertEqual('fluffy', self.srmock.headers_dict['X-Fluffiness'])
+        self.assertEqual(result.status_code, 204)
+        self.assertEqual(result.headers['X-Fluffiness'], 'fluffy')
 
     def test_global_hook_wrap_default_405(self):
         self.api = falcon.API(after=fluffiness_in_the_head)
-        zoo_resource = ZooResource()
+        self.api.add_route('/', ZooResource())
 
-        self.api.add_route(self.test_route, zoo_resource)
+        result = self.simulate_post()
 
-        self.simulate_request(self.test_route, method='POST')
-
-        self.assertEqual(falcon.HTTP_405, self.srmock.status)
-        self.assertEqual('fluffy', self.srmock.headers_dict['X-Fluffiness'])
+        self.assertEqual(result.status_code, 405)
+        self.assertEqual(result.headers['X-Fluffiness'], 'fluffy')
 
     def test_multiple_global_hooks_wrap_default_on_options(self):
         self.api = falcon.API(after=[fluffiness_in_the_head,
                                      cuteness_in_the_head])
-        zoo_resource = ZooResource()
 
-        self.api.add_route(self.test_route, zoo_resource)
+        self.api.add_route('/', ZooResource())
 
-        self.simulate_request(self.test_route, method='OPTIONS')
+        result = self.simulate_options()
 
-        self.assertEqual(falcon.HTTP_204, self.srmock.status)
-        self.assertEqual('fluffy', self.srmock.headers_dict['X-Fluffiness'])
-        self.assertEqual('cute', self.srmock.headers_dict['X-Cuteness'])
+        self.assertEqual(result.status_code, 204)
+        self.assertEqual(result.headers['X-Fluffiness'], 'fluffy')
+        self.assertEqual(result.headers['X-Cuteness'], 'cute')
 
     def test_multiple_global_hooks_wrap_default_405(self):
         self.api = falcon.API(after=[fluffiness_in_the_head,
                                      cuteness_in_the_head])
-        zoo_resource = ZooResource()
 
-        self.api.add_route(self.test_route, zoo_resource)
+        self.api.add_route('/', ZooResource())
 
-        self.simulate_request(self.test_route, method='POST')
+        result = self.simulate_post()
 
-        self.assertEqual(falcon.HTTP_405, self.srmock.status)
-        self.assertEqual('fluffy', self.srmock.headers_dict['X-Fluffiness'])
-        self.assertEqual('cute', self.srmock.headers_dict['X-Cuteness'])
+        self.assertEqual(result.status_code, 405)
+        self.assertEqual(result.headers['X-Fluffiness'], 'fluffy')
+        self.assertEqual(result.headers['X-Cuteness'], 'cute')
 
     def test_global_after_hooks_run_after_exception(self):
         self.api = falcon.API(after=[fluffiness,
                                      resource_aware_cuteness,
                                      Smartness()])
 
-        self.api.add_route(self.test_route, FaultyResource())
+        self.api.add_route('/', FaultyResource())
 
-        actual_body = self.simulate_request(self.test_route)
-        self.assertEqual(falcon.HTTP_743, self.srmock.status)
-        self.assertEqual(u'fluffy and cute and smart', actual_body)
-
-    def test_output_validator(self):
-        actual_body = self.simulate_request(self.test_route)
-        self.assertEqual(falcon.HTTP_723, self.srmock.status)
-        self.assertEqual(u'{\n    "title": "Tricky"\n}', actual_body)
-
-    def test_serializer(self):
-        actual_body = self.simulate_request(self.test_route, method='PUT')
-
-        self.assertEqual(u'{"animal": "falcon"}', actual_body)
-
-    def test_hook_as_callable_class(self):
-        actual_body = self.simulate_request(self.test_route, method='POST')
-        self.assertEqual(u'smart', actual_body)
-
-    def test_wrapped_resource(self):
-        actual_body = self.simulate_request('/wrapped')
-        self.assertEqual(falcon.HTTP_200, self.srmock.status)
-        self.assertEqual(u'fluffy and cute', actual_body)
-
-        self.simulate_request('/wrapped', method='HEAD')
-        self.assertEqual(falcon.HTTP_200, self.srmock.status)
-
-        self.simulate_request('/wrapped', method='POST')
-        self.assertEqual(falcon.HTTP_405, self.srmock.status)
-
-        self.simulate_request('/wrapped', method='PATCH')
-        self.assertEqual(falcon.HTTP_405, self.srmock.status)
-
-        # decorator does not affect the default on_options
-        body = self.simulate_request('/wrapped', method='OPTIONS')
-        self.assertEqual(falcon.HTTP_204, self.srmock.status)
-        self.assertEqual(u'', body)
-
-    def test_wrapped_resource_with_hooks_aware_of_resource(self):
-        expected = u'fluffy and cute'
-
-        actual_body = self.simulate_request('/wrapped_aware')
-        self.assertEqual(falcon.HTTP_200, self.srmock.status)
-        self.assertEqual(expected, actual_body)
-
-        for method in ('HEAD', 'PUT', 'POST'):
-            self.simulate_request('/wrapped_aware', method=method)
-            self.assertEqual(falcon.HTTP_200, self.srmock.status)
-            self.assertEqual(expected, self.wrapped_resource_aware.resp.body)
-
-        self.simulate_request('/wrapped_aware', method='PATCH')
-        self.assertEqual(falcon.HTTP_405, self.srmock.status)
-
-        # decorator does not affect the default on_options
-        body = self.simulate_request('/wrapped_aware', method='OPTIONS')
-        self.assertEqual(falcon.HTTP_204, self.srmock.status)
-        self.assertEqual(u'', body)
+        result = self.simulate_get()
+        self.assertEqual(result.status_code, 743)
+        self.assertEqual(result.text, 'fluffy and cute and smart')
 
     def test_customized_options(self):
         self.api = falcon.API(after=fluffiness)
-
         self.api.add_route('/one', SingleResource())
 
-        body = self.simulate_request('/one', method='OPTIONS')
-        self.assertEqual(falcon.HTTP_501, self.srmock.status)
-        self.assertEqual(u'fluffy', body)
-        self.assertNotIn('allow', self.srmock.headers_dict)
+        result = self.simulate_options('/one')
+
+        self.assertEqual(result.status_code, 501)
+        self.assertEqual(result.text, 'fluffy')
+        self.assertNotIn(result.headers, 'allow')

@@ -9,21 +9,6 @@ URI Functions
 .. automodule:: falcon.util.uri
     :members:
 
-Testing
--------
-
-.. autoclass:: falcon.testing.TestBase
-    :members:
-
-.. autoclass:: falcon.testing.TestResource
-    :members:
-
-.. autoclass:: falcon.testing.StartResponseMock
-    :members:
-
-.. automodule:: falcon.testing
-    :members: rand_string, create_environ
-
 Miscellaneous
 -------------
 

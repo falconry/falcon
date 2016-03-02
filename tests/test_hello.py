@@ -1,4 +1,4 @@
-from testtools.matchers import Contains
+import ddt
 
 import falcon
 import io
@@ -74,156 +74,106 @@ class NoStatusResource(object):
         pass
 
 
-class TestHelloWorld(testing.TestBase):
+@ddt.ddt
+class TestHelloWorld(testing.TestCase):
 
-    def before(self):
-        self.resource = HelloResource('body')
-        self.api.add_route(self.test_route, self.resource)
-
-        self.bytes_resource = HelloResource('body, bytes')
-        self.api.add_route('/bytes', self.bytes_resource)
-
-        self.data_resource = HelloResource('data')
-        self.api.add_route('/data', self.data_resource)
-
-        self.chunked_resource = HelloResource('stream')
-        self.api.add_route('/chunked-stream', self.chunked_resource)
-
-        self.stream_resource = HelloResource('stream, stream_len')
-        self.api.add_route('/stream', self.stream_resource)
-
-        self.filelike_resource = HelloResource('stream, stream_len, filelike')
-        self.api.add_route('/filelike', self.filelike_resource)
-
-        self.filelike_helper_resource = HelloResource(
-            'stream, stream_len, filelike, use_helper')
-        self.api.add_route('/filelike-helper', self.filelike_helper_resource)
-
-        self.no_status_resource = NoStatusResource()
-        self.api.add_route('/nostatus', self.no_status_resource)
-
-        self.root_resource = testing.TestResource()
-        self.api.add_route('/', self.root_resource)
-
-    def after(self):
-        pass
+    def setUp(self):
+        super(TestHelloWorld, self).setUp()
 
     def test_env_headers_list_of_tuples(self):
         env = testing.create_environ(headers=[('User-Agent', 'Falcon-Test')])
         self.assertEqual(env['HTTP_USER_AGENT'], 'Falcon-Test')
 
-    def test_empty_route(self):
-        self.simulate_request('')
-        self.assertTrue(self.root_resource.called)
+    def test_root_route(self):
+        doc = {u"message": u"Hello world!"}
+        resource = testing.SimpleTestResource(json=doc)
+        self.api.add_route('/', resource)
 
-    def test_route_negative(self):
-        bogus_route = self.test_route + 'x'
-        self.simulate_request(bogus_route)
+        result = self.simulate_get()
+        self.assertEqual(result.json, doc)
 
-        # Ensure the request was NOT routed to resource
-        self.assertFalse(self.resource.called)
-        self.assertEqual(self.srmock.status, falcon.HTTP_404)
+    def test_no_route(self):
+        result = self.simulate_get('/seenoevil')
+        self.assertEqual(result.status_code, 404)
 
-    def test_body(self):
-        body = self.simulate_request(self.test_route)
-        resp = self.resource.resp
+    @ddt.data(
+        ('/body', HelloResource('body'), lambda r: r.body.encode('utf-8')),
+        ('/bytes', HelloResource('body, bytes'), lambda r: r.body),
+        ('/data', HelloResource('data'), lambda r: r.data),
+    )
+    @ddt.unpack
+    def test_body(self, path, resource, get_body):
+        self.api.add_route(path, resource)
 
-        content_length = int(self.srmock.headers_dict['content-length'])
-        self.assertEqual(content_length, len(self.resource.sample_utf8))
+        result = self.simulate_get(path)
+        resp = resource.resp
 
-        self.assertEqual(self.srmock.status, self.resource.sample_status)
-        self.assertEqual(resp.status, self.resource.sample_status)
-        self.assertEqual(resp.body.encode('utf-8'), self.resource.sample_utf8)
-        self.assertEqual(body, [self.resource.sample_utf8])
+        content_length = int(result.headers['content-length'])
+        self.assertEqual(content_length, len(resource.sample_utf8))
 
-    def test_body_bytes(self):
-        body = self.simulate_request('/bytes')
-        resp = self.bytes_resource.resp
-
-        content_length = int(self.srmock.headers_dict['content-length'])
-        self.assertEqual(content_length, len(self.resource.sample_utf8))
-
-        self.assertEqual(self.srmock.status, self.resource.sample_status)
-        self.assertEqual(resp.status, self.resource.sample_status)
-        self.assertEqual(resp.body, self.resource.sample_utf8)
-        self.assertEqual(body, [self.resource.sample_utf8])
-
-    def test_data(self):
-        body = self.simulate_request('/data')
-        resp = self.data_resource.resp
-
-        content_length = int(self.srmock.headers_dict['content-length'])
-        self.assertEqual(content_length, len(self.resource.sample_utf8))
-
-        self.assertEqual(self.srmock.status, self.resource.sample_status)
-        self.assertEqual(resp.status, self.resource.sample_status)
-        self.assertEqual(resp.data, self.resource.sample_utf8)
-        self.assertEqual(body, [self.resource.sample_utf8])
+        self.assertEqual(result.status, resource.sample_status)
+        self.assertEqual(resp.status, resource.sample_status)
+        self.assertEqual(get_body(resp), resource.sample_utf8)
+        self.assertEqual(result.data, resource.sample_utf8)
 
     def test_no_body_on_head(self):
-        body = self.simulate_request(self.test_route, method='HEAD')
-        self.assertEqual(body, [])
-        self.assertEqual(self.srmock.status, falcon.HTTP_200)
+        self.api.add_route('/body', HelloResource('body'))
+        result = self.simulate_head('/body')
+
+        self.assertFalse(result.data)
+        self.assertEqual(result.status_code, 200)
 
     def test_stream_chunked(self):
-        src = self.simulate_request('/chunked-stream')
+        resource = HelloResource('stream')
+        self.api.add_route('/chunked-stream', resource)
 
-        dest = io.BytesIO()
-        for chunk in src:
-            dest.write(chunk)
+        result = self.simulate_get('/chunked-stream')
 
-        self.assertEqual(dest.getvalue(), self.chunked_resource.sample_utf8)
-
-        for header in self.srmock.headers:
-            self.assertNotEqual(header[0].lower(), 'content-length')
+        self.assertEqual(result.data, resource.sample_utf8)
+        self.assertNotIn('content-length', result.headers)
 
     def test_stream_known_len(self):
-        src = self.simulate_request('/stream')
-        self.assertTrue(self.stream_resource.called)
+        resource = HelloResource('stream, stream_len')
+        self.api.add_route('/stream', resource)
 
-        dest = io.BytesIO()
-        for chunk in src:
-            dest.write(chunk)
+        result = self.simulate_get('/stream')
+        self.assertTrue(resource.called)
 
-        expected_len = self.stream_resource.resp.stream_len
-        content_length = ('content-length', str(expected_len))
-        self.assertThat(self.srmock.headers, Contains(content_length))
-        self.assertEqual(dest.tell(), expected_len)
-
-        self.assertEqual(dest.getvalue(),
-                         self.chunked_resource.sample_utf8)
+        expected_len = resource.resp.stream_len
+        actual_len = int(result.headers['content-length'])
+        self.assertEqual(actual_len, expected_len)
+        self.assertEqual(len(result.data), expected_len)
+        self.assertEqual(result.data, resource.sample_utf8)
 
     def test_filelike(self):
+        resource = HelloResource('stream, stream_len, filelike')
+        self.api.add_route('/filelike', resource)
+
         for file_wrapper in (None, FileWrapper):
-            url = '/filelike'
+            result = self.simulate_get('/filelike', file_wrapper=file_wrapper)
+            self.assertTrue(resource.called)
 
-            src = self.simulate_request(url, file_wrapper=file_wrapper)
-            self.assertTrue(self.filelike_resource.called)
-
-            dest = io.BytesIO()
-            for chunk in src:
-                dest.write(chunk)
-
-            expected_len = self.filelike_resource.resp.stream_len
-            content_length = ('content-length', str(expected_len))
-            self.assertThat(self.srmock.headers, Contains(content_length))
-            self.assertEqual(dest.tell(), expected_len)
+            expected_len = resource.resp.stream_len
+            actual_len = int(result.headers['content-length'])
+            self.assertEqual(actual_len, expected_len)
+            self.assertEqual(len(result.data), expected_len)
 
     def test_filelike_using_helper(self):
-            src = self.simulate_request('/filelike-helper')
-            self.assertTrue(self.filelike_helper_resource.called)
+        resource = HelloResource('stream, stream_len, filelike, use_helper')
+        self.api.add_route('/filelike-helper', resource)
 
-            dest = io.BytesIO()
-            for chunk in src:
-                dest.write(chunk)
+        result = self.simulate_get('/filelike-helper')
+        self.assertTrue(resource.called)
 
-            expected_len = self.filelike_helper_resource.resp.stream_len
-            content_length = ('content-length', str(expected_len))
-            self.assertThat(self.srmock.headers, Contains(content_length))
-            self.assertEqual(dest.tell(), expected_len)
+        expected_len = resource.resp.stream_len
+        actual_len = int(result.headers['content-length'])
+        self.assertEqual(actual_len, expected_len)
+        self.assertEqual(len(result.data), expected_len)
 
     def test_status_not_set(self):
-        body = self.simulate_request('/nostatus')
+        self.api.add_route('/nostatus', NoStatusResource())
 
-        self.assertEqual(body, [])
-        self.assertEqual(self.srmock.status, falcon.HTTP_200)
+        result = self.simulate_get('/nostatus')
+
+        self.assertFalse(result.data)
+        self.assertEqual(result.status_code, 200)

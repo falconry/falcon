@@ -15,7 +15,7 @@
 from falcon import util
 
 
-class StartResponseMock:
+class StartResponseMock(object):
     """Mock object representing a WSGI `start_response` callable.
 
     Attributes:

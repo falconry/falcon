@@ -123,7 +123,7 @@ def default_serialize_error(req, resp, exception):
             representation = exception.to_xml()
 
         resp.body = representation
-        resp.content_type = preferred
+        resp.content_type = preferred + '; charset=UTF-8'
 
 
 def wrap_old_error_serializer(old_fn):

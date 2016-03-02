@@ -26,14 +26,22 @@ from falcon.testing.helpers import create_environ
 
 
 class TestBase(unittest.TestCase):
-    """Extends ``testtools.TestCase`` to support WSGI integration testing.
+    """Extends :py:mod:`unittest` to support WSGI functional testing.
 
-    ``TestBase`` provides a base class that provides some extra plumbing to
-    help simulate WSGI calls without having to actually host your API
-    in a server.
+    Warning:
+        This class has been deprecated and will be removed in a future
+        release. Please use :py:class:`~.TestCase`
+        instead.
 
     Note:
-        If ``testtools`` is not available, ``unittest`` is used instead.
+        If available, uses :py:mod:`testtools` in lieu of
+        :py:mod:`unittest`.
+
+    This base class provides some extra plumbing for unittest-style
+    test cases, to help simulate WSGI calls without having to spin up
+    an actual web server. Simply inherit from this class in your test
+    case classes instead of :py:class:`unittest.TestCase` or
+    :py:class:`testtools.TestCase`.
 
     Attributes:
         api (falcon.API): An API instance to target when simulating
@@ -46,6 +54,7 @@ class TestBase(unittest.TestCase):
         test_route (str): A simple, generated path that a test
             can use to add a route to the API.
     """
+
     api_class = falcon.API
     srmock_class = StartResponseMock
 
