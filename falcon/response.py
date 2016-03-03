@@ -548,7 +548,7 @@ class Response(object):
         lambda v: ', '.join(v))
 
     def _encode_header(self, name, value, py2=PY2):
-        if py2:  # pragma: no cover
+        if py2:
             if isinstance(name, unicode):
                 name = name.encode('ISO-8859-1')
 
