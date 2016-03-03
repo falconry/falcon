@@ -1,6 +1,6 @@
 ## Contributing
 
-Hi, thanks for your interest in the project! We welcome pull requests from developers of all skill levels. 
+Hi, thanks for your interest in the project! We welcome pull requests from developers of all skill levels.
 
 Kurt Griffiths (kgriffs) is the creator and current maintainer of the Falcon framework, along with a group of talented and stylish volunteers. Please don't hesitate to reach out if you have any questions, or just need a little help getting started.
 
@@ -35,29 +35,20 @@ This generates an HTML coverage report that can be viewed by simply opening `.co
 
 ### Documentation
 
-To check documentation changes (including docstrings), before submitting a PR, do the following:
+To check documentation changes (including docstrings), before submitting a PR, ensure the tox job
+builds the documentation correctly:
 
 ```bash
-#
-# Create a virtualenv, then inside that env:
-#
-
-$ pip install -r tools/doc-requires
-$ cd doc
-$ make html
-
-#
-# Then open _build/html/index.html
-#
+$ tox -e docs
 
 # OS X
-$ open _build/html/index.html
+$ open doc/_build/html/index.html
 
 # Gnome
-$ gnome-open _build/html/index.html
+$ gnome-open doc/_build/html/index.html
 
 # Generic X Windows
-$ xdg-open _build/html/index.html
+$ xdg-open doc/_build/html/index.html
 ```
 
 ### Code style rules
