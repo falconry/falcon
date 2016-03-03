@@ -473,6 +473,10 @@ class _TestQueryParams(testing.TestBase):
 
 
 class PostQueryParams(_TestQueryParams):
+    def before(self):
+        super(PostQueryParams, self).before()
+        self.api.req_options.auto_parse_form_urlencoded = True
+
     def simulate_request(self, path, query_string, **kwargs):
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
         super(PostQueryParams, self).simulate_request(
@@ -484,10 +488,29 @@ class PostQueryParams(_TestQueryParams):
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
-        self.assertEqual(req.get_param('q'), None)
+        self.assertIs(req.get_param('q'), None)
+
+    def test_explicitly_disable_auto_parse(self):
+        self.api.req_options.auto_parse_form_urlencoded = False
+        self.simulate_request('/', query_string='q=42')
+
+        req = self.resource.req
+        self.assertIs(req.get_param('q'), None)
 
 
 class GetQueryParams(_TestQueryParams):
     def simulate_request(self, path, query_string, **kwargs):
         super(GetQueryParams, self).simulate_request(
             path, query_string=query_string, **kwargs)
+
+
+class PostQueryParamsDefaultBehavior(testing.TestBase):
+    def test_dont_auto_parse_by_default(self):
+        self.resource = testing.TestResource()
+        self.api.add_route('/', self.resource)
+
+        headers = {"Content-Type": "application/x-www-form-urlencoded"}
+        self.simulate_request('/', body='q=42', headers=headers)
+
+        req = self.resource.req
+        self.assertIs(req.get_param('q'), None)

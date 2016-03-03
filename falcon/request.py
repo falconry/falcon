@@ -167,18 +167,12 @@ class Request(object):
 
             Note:
                 If an HTML form is POSTed to the API using the
-                *application/x-www-form-urlencoded* media type, Falcon
+                *application/x-www-form-urlencoded* media type, and
+                the :py:attr:`~.RequestOptions.auto_parse_form_urlencoded`
+                option is set, the framework
                 will consume `stream` in order to parse the parameters
                 and merge them into the query string parameters. In this
                 case, the stream will be left at EOF.
-
-                Note also that the character encoding for fields, before
-                percent-encoding non-ASCII bytes, is assumed to be
-                UTF-8. The special `_charset_` field is ignored if present.
-
-                Falcon expects form-encoded request bodies to be
-                encoded according to the standard W3C algorithm (see
-                also http://goo.gl/6rlcux).
 
         date (datetime): Value of the Date header, converted to a
             ``datetime`` instance. The header value is assumed to
@@ -320,7 +314,8 @@ class Request(object):
         # PERF(kgriffs): Technically, we should spend a few more
         # cycles and parse the content type for real, but
         # this heuristic will work virtually all the time.
-        if (self.content_type is not None and
+        if (self.options.auto_parse_form_urlencoded and
+                self.content_type is not None and
                 'application/x-www-form-urlencoded' in self.content_type):
             self._parse_form_urlencoded()
 
@@ -1159,11 +1154,28 @@ class RequestOptions(object):
     Attributes:
         keep_blank_qs_values (bool): Set to ``True`` in order to retain
             blank values in query string parameters (default ``False``).
+        auto_parse_form_urlencoded: Set to ``True`` in order to
+            automatically consume the request stream and merge the
+            results into the request's query string params when the
+            request's content type is
+            *application/x-www-form-urlencoded* (default ``False``). In
+            this case, the request's content stream will be left at EOF.
+
+            Note:
+                The character encoding for fields, before
+                percent-encoding non-ASCII bytes, is assumed to be
+                UTF-8. The special `_charset_` field is ignored if present.
+
+                Falcon expects form-encoded request bodies to be
+                encoded according to the standard W3C algorithm (see
+                also http://goo.gl/6rlcux).
 
     """
     __slots__ = (
         'keep_blank_qs_values',
+        'auto_parse_form_urlencoded',
     )
 
     def __init__(self):
         self.keep_blank_qs_values = False
+        self.auto_parse_form_urlencoded = False
