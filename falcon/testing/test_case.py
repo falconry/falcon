@@ -45,8 +45,8 @@ class Result(object):
             containing all the headers in the response
         encoding (str): Text encoding of the response body, or ``None``
             if the encoding can not be determined.
-        data (bytes): Raw response body, or ``bytes`` if the response
-            body was empty.
+        content (bytes): Raw response body, or ``bytes`` if the
+            response body was empty.
         text (str): Decoded response body of type ``unicode``
             under Python 2.6 and 2.7, and of type ``str`` otherwise.
             Raises an error if the response encoding can not be
@@ -58,7 +58,7 @@ class Result(object):
     def __init__(self, iterable, status, headers):
         self._text = None
 
-        self._data = b''.join(iterable)
+        self._content = b''.join(iterable)
         if hasattr(iterable, 'close'):
             iterable.close()
 
@@ -85,20 +85,20 @@ class Result(object):
         return self._encoding
 
     @property
-    def data(self):
-        return self._data
+    def content(self):
+        return self._content
 
     @property
     def text(self):
         if self._text is None:
-            if not self.data:
+            if not self.content:
                 self._text = u''
             else:
                 if self.encoding is None:
                     msg = 'Response did not specify a content encoding'
                     raise RuntimeError(msg)
 
-                self._text = self.data.decode(self.encoding)
+                self._text = self.content.decode(self.encoding)
 
         return self._text
 

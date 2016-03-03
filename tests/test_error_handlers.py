@@ -54,7 +54,7 @@ class TestErrorHandler(testing.TestCase):
 
         result = self.simulate_head()
         self.assertEqual(result.status_code, 723)
-        self.assertFalse(result.data)
+        self.assertFalse(result.content)
 
     def test_uncaught_error(self):
         self.api.add_error_handler(CustomException, capture_error)
