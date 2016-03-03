@@ -29,7 +29,7 @@ class HeaderHelpersResource(object):
         resp.cache_control = ['no-store']
 
     def on_get(self, req, resp):
-        resp.body = "{}"
+        resp.body = '{}'
         resp.content_type = 'x-falcon/peregrine'
         resp.cache_control = [
             'public', 'private', 'no-cache', 'no-store', 'must-revalidate',

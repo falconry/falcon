@@ -563,7 +563,7 @@ class Request(object):
             # NOTE(tbug): We might want to look into parsing
             # cookies ourselves. The SimpleCookie is doing a
             # lot if stuff only required to SEND cookies.
-            parser = SimpleCookie(self.get_header("Cookie"))
+            parser = SimpleCookie(self.get_header('Cookie'))
             cookies = {}
             for morsel in parser.values():
                 cookies[morsel.key] = morsel.value
@@ -1032,7 +1032,7 @@ class Request(object):
         try:
             date = strptime(param_value, format_string).date()
         except ValueError:
-            msg = "The date value does not match the required format"
+            msg = 'The date value does not match the required format'
             raise HTTPInvalidParam(msg, name)
 
         if store is not None:

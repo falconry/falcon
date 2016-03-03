@@ -208,29 +208,29 @@ class Response(object):
             # NOTE(tbug): we never actually need to
             # know that GMT is named GMT when formatting cookies.
             # It is a function call less to just write "GMT" in the fmt string:
-            fmt = "%a, %d %b %Y %H:%M:%S GMT"
+            fmt = '%a, %d %b %Y %H:%M:%S GMT'
             if expires.tzinfo is None:
                 # naive
-                self._cookies[name]["expires"] = expires.strftime(fmt)
+                self._cookies[name]['expires'] = expires.strftime(fmt)
             else:
                 # aware
                 gmt_expires = expires.astimezone(GMT_TIMEZONE)
-                self._cookies[name]["expires"] = gmt_expires.strftime(fmt)
+                self._cookies[name]['expires'] = gmt_expires.strftime(fmt)
 
         if max_age:
-            self._cookies[name]["max-age"] = max_age
+            self._cookies[name]['max-age'] = max_age
 
         if domain:
-            self._cookies[name]["domain"] = domain
+            self._cookies[name]['domain'] = domain
 
         if path:
-            self._cookies[name]["path"] = path
+            self._cookies[name]['path'] = path
 
         if secure:
-            self._cookies[name]["secure"] = secure
+            self._cookies[name]['secure'] = secure
 
         if http_only:
-            self._cookies[name]["httponly"] = http_only
+            self._cookies[name]['httponly'] = http_only
 
     def unset_cookie(self, name):
         """Unset a cookie in the response
@@ -243,14 +243,14 @@ class Response(object):
         if self._cookies is None:
             self._cookies = SimpleCookie()
 
-        self._cookies[name] = ""
+        self._cookies[name] = ''
 
         # NOTE(Freezerburn): SimpleCookie apparently special cases the
         # expires attribute to automatically use strftime and set the
         # time as a delta from the current time. We use -1 here to
         # basically tell the browser to immediately expire the cookie,
         # thus removing it from future request objects.
-        self._cookies[name]["expires"] = -1
+        self._cookies[name]['expires'] = -1
 
     def get_header(self, name):
         """Retrieve the raw string value for the given header.
@@ -592,6 +592,6 @@ class Response(object):
             #
             # Even without the .split("\\r\\n"), the below
             # is still ~17% faster, so don't use .output()
-            items += [("set-cookie", c.OutputString())
+            items += [('set-cookie', c.OutputString())
                       for c in self._cookies.values()]
         return items

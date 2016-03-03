@@ -199,7 +199,7 @@ def main():
         'werkzeug'
     ]
 
-    parser = argparse.ArgumentParser(description="Falcon benchmark runner")
+    parser = argparse.ArgumentParser(description='Falcon benchmark runner')
     parser.add_argument('-b', '--benchmark', type=str, action='append',
                         choices=frameworks, dest='frameworks', nargs='+')
     parser.add_argument('-i', '--iterations', type=int, default=50000)

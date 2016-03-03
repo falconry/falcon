@@ -7,14 +7,14 @@ from falcon.http_status import HTTPStatus
 
 def before_hook(req, resp, params):
     raise HTTPStatus(falcon.HTTP_200,
-                     headers={"X-Failed": "False"},
-                     body="Pass")
+                     headers={'X-Failed': 'False'},
+                     body='Pass')
 
 
 def after_hook(req, resp, resource):
     resp.status = falcon.HTTP_200
-    resp.set_header("X-Failed", "False")
-    resp.body = "Pass"
+    resp.set_header('X-Failed', 'False')
+    resp.body = 'Pass'
 
 
 def noop_after_hook(req, resp, resource):
@@ -26,23 +26,23 @@ class TestStatusResource:
     @falcon.before(before_hook)
     def on_get(self, req, resp):
         resp.status = falcon.HTTP_500
-        resp.set_header("X-Failed", "True")
-        resp.body = "Fail"
+        resp.set_header('X-Failed', 'True')
+        resp.body = 'Fail'
 
     def on_post(self, req, resp):
         resp.status = falcon.HTTP_500
-        resp.set_header("X-Failed", "True")
-        resp.body = "Fail"
+        resp.set_header('X-Failed', 'True')
+        resp.body = 'Fail'
 
         raise HTTPStatus(falcon.HTTP_200,
-                         headers={"X-Failed": "False"},
-                         body="Pass")
+                         headers={'X-Failed': 'False'},
+                         body='Pass')
 
     @falcon.after(after_hook)
     def on_put(self, req, resp):
         resp.status = falcon.HTTP_500
-        resp.set_header("X-Failed", "True")
-        resp.body = "Fail"
+        resp.set_header('X-Failed', 'True')
+        resp.body = 'Fail'
 
     def on_patch(self, req, resp):
         raise HTTPStatus(falcon.HTTP_200,
@@ -51,16 +51,16 @@ class TestStatusResource:
     @falcon.after(noop_after_hook)
     def on_delete(self, req, resp):
         raise HTTPStatus(falcon.HTTP_200,
-                         headers={"X-Failed": "False"},
-                         body="Pass")
+                         headers={'X-Failed': 'False'},
+                         body='Pass')
 
 
 class TestHookResource:
 
     def on_get(self, req, resp):
         resp.status = falcon.HTTP_500
-        resp.set_header("X-Failed", "True")
-        resp.body = "Fail"
+        resp.set_header('X-Failed', 'True')
+        resp.body = 'Fail'
 
     def on_patch(self, req, resp):
         raise HTTPStatus(falcon.HTTP_200,
@@ -68,8 +68,8 @@ class TestHookResource:
 
     def on_delete(self, req, resp):
         raise HTTPStatus(falcon.HTTP_200,
-                         headers={"X-Failed": "False"},
-                         body="Pass")
+                         headers={'X-Failed': 'False'},
+                         body='Pass')
 
 
 class TestHTTPStatus(testing.TestBase):
@@ -152,8 +152,8 @@ class TestHTTPStatusWithGlobalHooks(testing.TestBase):
         class TestMiddleware:
             def process_request(self, req, resp):
                 raise HTTPStatus(falcon.HTTP_200,
-                                 headers={"X-Failed": "False"},
-                                 body="Pass")
+                                 headers={'X-Failed': 'False'},
+                                 body='Pass')
 
         self.api = falcon.API(middleware=TestMiddleware())
         self.api.add_route('/status', self.resource)
@@ -168,8 +168,8 @@ class TestHTTPStatusWithGlobalHooks(testing.TestBase):
         class TestMiddleware:
             def process_resource(self, req, resp, resource, params):
                 raise HTTPStatus(falcon.HTTP_200,
-                                 headers={"X-Failed": "False"},
-                                 body="Pass")
+                                 headers={'X-Failed': 'False'},
+                                 body='Pass')
 
         self.api = falcon.API(middleware=TestMiddleware())
         self.api.add_route('/status', self.resource)
@@ -184,8 +184,8 @@ class TestHTTPStatusWithGlobalHooks(testing.TestBase):
         class TestMiddleware:
             def process_response(self, req, resp, response):
                 resp.status = falcon.HTTP_200
-                resp.set_header("X-Failed", "False")
-                resp.body = "Pass"
+                resp.set_header('X-Failed', 'False')
+                resp.body = 'Pass'
 
         self.api = falcon.API(middleware=TestMiddleware())
         self.api.add_route('/status', self.resource)
