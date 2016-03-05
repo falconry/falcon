@@ -29,21 +29,20 @@ class RequestIDComponent(object):
         resp.set_header('X-Request-ID', req.context['request_id'])
 
 
-class NoopComponent(object):
-    def process_request(self, req, resp):
-        pass
+class CannedResponseComponent(object):
+    def __init__(self, body, headers):
+        self._body = body
+        self._headers = headers
+
+    def process_response(self, req, resp, resource):
+        resp.status = falcon.HTTP_200
+        resp.body = self._body
+        resp.set_headers(self._headers)
+        resp.vary = ('X-Auth-Token', 'Accept-Encoding')
+        resp.content_range = (0, len(self._body), len(self._body) + 100)
 
 
 def create(body, headers):
-    vary = ('X-Auth-Token', 'Accept-Encoding')
-
-    def canned_response(req, resp):
-        resp.status = falcon.HTTP_200
-        resp.body = body
-        resp.set_headers(headers)
-        resp.vary = vary
-        resp.content_range = (0, len(body), len(body) + 100)
-
     queue_collection = queues.CollectionResource()
     queue_item = queues.ItemResource()
 
@@ -55,8 +54,12 @@ def create(body, headers):
     claim_collection = claims.CollectionResource()
     claim_item = claims.ItemResource()
 
-    middleware = [NoopComponent(), RequestIDComponent()]
-    api = falcon.API(after=canned_response, middleware=middleware)
+    middleware = [
+        RequestIDComponent(),
+        CannedResponseComponent(body, headers),
+    ]
+
+    api = falcon.API(middleware=middleware)
     api.add_route('/v1/{tenant_id}/queues', queue_collection)
     api.add_route('/v1/{tenant_id}/queues/{queue_name}', queue_item)
     api.add_route('/v1/{tenant_id}/queues/{queue_name}'
