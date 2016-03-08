@@ -501,8 +501,8 @@ class TestReqVars(testing.TestBase):
                                  'Invalid header value', expected_desc)
 
         headers = {'Range': '10-'}
-        expected_desc = ("The value provided for the Range "
-                         "header is invalid. The value must be "
+        expected_desc = ('The value provided for the Range '
+                         'header is invalid. The value must be '
                          "prefixed with a range unit, e.g. 'bytes='")
         self._test_error_details(headers, 'range',
                                  falcon.HTTPInvalidHeader,

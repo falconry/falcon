@@ -205,7 +205,7 @@ class TestFalconUtils(testtools.TestCase):
 
     def test_prop_uri_encode_value_models_stdlib_quote_safe_tilde(self):
         equiv_quote = functools.partial(
-            six.moves.urllib.parse.quote, safe="~"
+            six.moves.urllib.parse.quote, safe='~'
         )
         for case in self.uris:
             expect = equiv_quote(case)
@@ -223,14 +223,14 @@ class TestFalconUtils(testtools.TestCase):
 
     def test_parse_query_string(self):
         query_strinq = (
-            "a=http%3A%2F%2Ffalconframework.org%3Ftest%3D1"
-            "&b=%7B%22test1%22%3A%20%22data1%22%"
-            "2C%20%22test2%22%3A%20%22data2%22%7D"
-            "&c=1,2,3"
-            "&d=test"
-            "&e=a,,%26%3D%2C"
-            "&f=a&f=a%3Db"
-            "&%C3%A9=a%3Db"
+            'a=http%3A%2F%2Ffalconframework.org%3Ftest%3D1'
+            '&b=%7B%22test1%22%3A%20%22data1%22%'
+            '2C%20%22test2%22%3A%20%22data2%22%7D'
+            '&c=1,2,3'
+            '&d=test'
+            '&e=a,,%26%3D%2C'
+            '&f=a&f=a%3Db'
+            '&%C3%A9=a%3Db'
         )
         decoded_url = 'http://falconframework.org?test=1'
         decoded_json = '{"test1": "data1", "test2": "data2"}'

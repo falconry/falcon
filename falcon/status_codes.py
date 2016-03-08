@@ -90,7 +90,7 @@ HTTP_417 = '417 Expectation Failed'
 HTTP_EXPECTATION_FAILED = HTTP_417
 HTTP_418 = "418 I'm a teapot"
 HTTP_IM_A_TEAPOT = HTTP_418
-HTTP_422 = "422 Unprocessable Entity"
+HTTP_422 = '422 Unprocessable Entity'
 HTTP_UNPROCESSABLE_ENTITY = HTTP_422
 HTTP_426 = '426 Upgrade Required'
 HTTP_UPGRADE_REQUIRED = HTTP_426
@@ -146,7 +146,7 @@ HTTP_742 = '742 A kitten dies'
 HTTP_743 = '743 I thought I knew regular expressions'
 HTTP_744 = '744 Y U NO write integration tests?'
 HTTP_745 = ("745 I don't always test my code, but when I do"
-            "I do it in production")
+            'I do it in production')
 HTTP_748 = '748 Confounded by Ponies'
 HTTP_749 = '749 Reserved for Chuck Norris'
 

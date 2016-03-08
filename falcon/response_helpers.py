@@ -65,7 +65,7 @@ def format_range(value):
 def is_ascii_encodable(s):
     """Check if argument encodes to ascii without error."""
     try:
-        s.encode("ascii")
+        s.encode('ascii')
     except UnicodeEncodeError:
         # NOTE(tbug): Py2 and Py3 will raise this if string contained
         # chars that could not be ascii encoded
