@@ -90,6 +90,18 @@ class TestMiddleware(testing.TestBase):
 
 class TestRequestTimeMiddleware(TestMiddleware):
 
+    def test_skip_process_resource(self):
+        global context
+        self.api = falcon.API(middleware=[RequestTimeMiddleware()])
+
+        self.api.add_route('/', MiddlewareClassResource())
+
+        self.simulate_request('/404')
+        self.assertEqual(self.srmock.status, falcon.HTTP_404)
+        self.assertIn('start_time', context)
+        self.assertNotIn('mid_time', context)
+        self.assertIn('end_time', context)
+
     def test_add_invalid_middleware(self):
         """Test than an invalid class can not be added as middleware"""
         class InvalidMiddleware():

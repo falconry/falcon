@@ -58,6 +58,10 @@ class API(object):
                     def process_resource(self, req, resp, resource):
                         \"""Process the request and resource *after* routing.
 
+                        Note:
+                            This method is only called when the request matches
+                            a route to a resource.
+
                         Args:
                             req: Request object that will be passed to the
                                 routed responder.
@@ -178,8 +182,12 @@ class API(object):
                 # e.g. a 404.
                 responder, params, resource = self._get_responder(req)
 
-                self._call_rsrc_mw(middleware_stack, req, resp, resource,
-                                   params)
+                # NOTE(kgriffs): If the request did not match any route,
+                # a default responder is returned and the resource is
+                # None.
+                if resource is not None:
+                    self._call_rsrc_mw(middleware_stack, req, resp, resource,
+                                       params)
 
                 responder(req, resp, **params)
                 self._call_resp_mw(middleware_stack, req, resp, resource)
