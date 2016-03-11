@@ -32,11 +32,6 @@ class API(object):
 
     Each API instance provides a callable WSGI interface and a routing engine.
 
-    Warning:
-        Global hooks (configured using the `before` and `after` kwargs) are
-        deprecated in favor of middleware, and may be removed in a future
-        version of the framework.
-
     Args:
         media_type (str, optional): Default media type to use as the value for
             the Content-Type header on responses (default 'application/json').
@@ -115,18 +110,15 @@ class API(object):
 
     _STREAM_BLOCK_SIZE = 8 * 1024  # 8 KiB
 
-    __slots__ = ('_after', '_before', '_request_type', '_response_type',
+    __slots__ = ('_request_type', '_response_type',
                  '_error_handlers', '_media_type', '_router', '_sinks',
                  '_serialize_error', 'req_options', '_middleware')
 
-    def __init__(self, media_type=DEFAULT_MEDIA_TYPE, before=None, after=None,
+    def __init__(self, media_type=DEFAULT_MEDIA_TYPE,
                  request_type=Request, response_type=Response,
                  middleware=None, router=None):
         self._sinks = []
         self._media_type = media_type
-
-        self._before = helpers.prepare_global_hooks(before)
-        self._after = helpers.prepare_global_hooks(after)
 
         # set middleware
         self._middleware = helpers.prepare_middleware(middleware)
@@ -196,7 +188,6 @@ class API(object):
                 for err_type, err_handler in self._error_handlers:
                     if isinstance(ex, err_type):
                         err_handler(ex, req, resp, params)
-                        self._call_after_hooks(req, resp, resource)
                         self._call_resp_mw(middleware_stack, req, resp,
                                            resource)
 
@@ -220,12 +211,10 @@ class API(object):
 
         except HTTPStatus as ex:
             self._compose_status_response(req, resp, ex)
-            self._call_after_hooks(req, resp, resource)
             self._call_resp_mw(middleware_stack, req, resp, resource)
 
         except HTTPError as ex:
             self._compose_error_response(req, resp, ex)
-            self._call_after_hooks(req, resp, resource)
             self._call_resp_mw(middleware_stack, req, resp, resource)
 
         #
@@ -317,8 +306,7 @@ class API(object):
         if '//' in uri_template:
             raise ValueError("uri_template may not contain '//'")
 
-        method_map = routing.create_http_method_map(
-            resource, self._before, self._after)
+        method_map = routing.create_http_method_map(resource)
         self._router.add_route(uri_template, method_map, resource, *args,
                                **kwargs)
 
@@ -557,20 +545,6 @@ class API(object):
             _, _, process_response = stack.pop()
             if process_response is not None:
                 process_response(req, resp, resource)
-
-    def _call_after_hooks(self, req, resp, resource):
-        """Executes each of the global "after" hooks, in turn."""
-
-        if not self._after:
-            return
-
-        for hook in self._after:
-            try:
-                hook(req, resp, resource)
-            except TypeError:
-                # NOTE(kgriffs): Catching the TypeError is a heuristic to
-                # detect old hooks that do not accept the "resource" param
-                hook(req, resp)
 
     # PERF(kgriffs): Moved from api_helpers since it is slightly faster
     # to call using self, and this function is called for most

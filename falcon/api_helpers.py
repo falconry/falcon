@@ -15,18 +15,6 @@
 from falcon import util
 
 
-def prepare_global_hooks(hooks):
-    if hooks is not None:
-        if not isinstance(hooks, list):
-            hooks = [hooks]
-
-        for action in hooks:
-            if not callable(action):
-                raise TypeError('One or more hooks are not callable')
-
-    return hooks
-
-
 def prepare_middleware(middleware=None):
     """Check middleware interface and prepare it to iterate.
 

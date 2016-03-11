@@ -112,40 +112,9 @@ class TestHTTPStatus(testing.TestBase):
         self.assertEqual(body, '')
 
 
-class TestHTTPStatusWithGlobalHooks(testing.TestBase):
+class TestHTTPStatusWithMiddleware(testing.TestBase):
     def before(self):
         self.resource = TestHookResource()
-
-    def test_raise_status_in_before_hook(self):
-        """ Make sure we get the 200 raised by before hook """
-        self.api = falcon.API(before=[before_hook])
-        self.api.add_route('/status', self.resource)
-
-        body = self.simulate_request('/status', method='GET', decode='utf-8')
-        self.assertEqual(self.srmock.status, falcon.HTTP_200)
-        self.assertIn(('x-failed', 'False'), self.srmock.headers)
-        self.assertEqual(body, 'Pass')
-
-    def test_raise_status_runs_after_hooks(self):
-        """ Make sure we still run after hooks """
-        self.api = falcon.API(after=[after_hook])
-        self.api.add_route('/status', self.resource)
-
-        body = self.simulate_request('/status', method='GET', decode='utf-8')
-        self.assertEqual(self.srmock.status, falcon.HTTP_200)
-        self.assertIn(('x-failed', 'False'), self.srmock.headers)
-        self.assertEqual(body, 'Pass')
-
-    def test_raise_status_survives_after_hooks(self):
-        """ Make sure after hook doesn't overwrite our status """
-        self.api = falcon.API(after=[noop_after_hook])
-        self.api.add_route('/status', self.resource)
-
-        body = self.simulate_request('/status', method='DELETE',
-                                     decode='utf-8')
-        self.assertEqual(self.srmock.status, falcon.HTTP_200)
-        self.assertIn(('x-failed', 'False'), self.srmock.headers)
-        self.assertEqual(body, 'Pass')
 
     def test_raise_status_in_process_request(self):
         """ Make sure we can raise status from middleware process request """
