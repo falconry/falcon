@@ -284,6 +284,7 @@ class Request(object):
                 self._params = parse_query_string(
                     self.query_string,
                     keep_blank_qs_values=self.options.keep_blank_qs_values,
+                    parse_qs_csv=self.options.auto_parse_qs_csv,
                 )
 
             else:
@@ -1153,6 +1154,7 @@ class Request(object):
             extra_params = parse_query_string(
                 body,
                 keep_blank_qs_values=self.options.keep_blank_qs_values,
+                parse_qs_csv=self.options.auto_parse_qs_csv,
             )
 
             self._params.update(extra_params)
@@ -1190,8 +1192,11 @@ class RequestOptions(object):
     """This class is a container for ``Request`` options.
 
     Attributes:
-        keep_blank_qs_values (bool): Set to ``True`` in order to retain
-            blank values in query string parameters (default ``False``).
+        keep_blank_qs_values (bool): Set to ``True`` to keep query string
+            fields even if they do not have a value (default ``False``).
+            For comma-separated values, this option also determines
+            whether or not empty elements in the parsed list are
+            retained.
         auto_parse_form_urlencoded: Set to ``True`` in order to
             automatically consume the request stream and merge the
             results into the request's query string params when the
@@ -1202,18 +1207,29 @@ class RequestOptions(object):
             Note:
                 The character encoding for fields, before
                 percent-encoding non-ASCII bytes, is assumed to be
-                UTF-8. The special `_charset_` field is ignored if present.
+                UTF-8. The special `_charset_` field is ignored if
+                present.
 
                 Falcon expects form-encoded request bodies to be
                 encoded according to the standard W3C algorithm (see
                 also http://goo.gl/6rlcux).
 
+        auto_parse_qs_csv: Set to ``False`` to treat commas in a query
+            string value as literal characters, rather than as a comma-
+            separated list (default ``True``). When this option is
+            enabled, the value will be split on any non-percent-encoded
+            commas. Disable this option when encoding lists as multiple
+            occurrences of the same parameter, and when values may be
+            encoded in alternative formats in which the comma character
+            is significant.
     """
     __slots__ = (
         'keep_blank_qs_values',
         'auto_parse_form_urlencoded',
+        'auto_parse_qs_csv',
     )
 
     def __init__(self):
         self.keep_blank_qs_values = False
         self.auto_parse_form_urlencoded = False
+        self.auto_parse_qs_csv = True
