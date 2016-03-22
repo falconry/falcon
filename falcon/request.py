@@ -17,7 +17,7 @@ try:
     # standard way of exposing a socket as a file-like object, and
     # is used by wsgiref for wsgi.input.
     import socket
-    NativeStream = socket._fileobject  # pylint: disable=E1101
+    NativeStream = socket._fileobject
 except AttributeError:
     # NOTE(kgriffs): In Python 3.3, wsgiref implements wsgi.input
     # using _io.BufferedReader which is an alias of io.BufferedReader
@@ -323,9 +323,7 @@ class Request(object):
             # Literal syntax is more efficient than using dict()
             self.context = {}
         else:
-            # pylint will detect this as not-callable because it only sees the
-            # declaration of None, not whatever type a subclass may have set.
-            self.context = self.context_type()  # pylint: disable=not-callable
+            self.context = self.context_type()
 
     # ------------------------------------------------------------------------
     # Properties
@@ -1065,7 +1063,7 @@ class Request(object):
         if six.PY3:
             self._wsgierrors.write(log_line + message + '\n')
         else:
-            if isinstance(message, unicode):  # pylint: disable=E0602
+            if isinstance(message, unicode):
                 message = message.encode('utf-8')
 
             self._wsgierrors.write(log_line.encode('utf-8'))

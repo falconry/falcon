@@ -232,9 +232,4 @@ class OptionalRepresentation(object):
     """
     @property
     def has_representation(self):
-        # NOTE(kgriffs): pylint has no way of knowing this class is a mixin
-        # that expects to be used along with HTTPError (which will provide
-        # the description attribute).
-        #
-        # pylint: disable=no-member
         return super(OptionalRepresentation, self).description is not None
