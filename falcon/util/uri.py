@@ -247,7 +247,7 @@ else:
 
 
 def parse_query_string(query_string, keep_blank_qs_values=False,
-                       auto_parse_query_string_lists=True):
+                       auto_parse_lists=True):
     """Parse a query string into a dict.
 
     Query string parameters are assumed to use standard form-encoding. Only
@@ -272,7 +272,7 @@ def parse_query_string(query_string, keep_blank_qs_values=False,
         query_string (str): The query string to parse.
         keep_blank_qs_values (bool): If set to ``True``, preserves boolean
             fields and fields with no content as blank strings.
-        auto_parse_query_string_lists: Set to ``False`` in order to disable
+        auto_parse_lists: Set to ``False`` in order to disable
             splitting query parameters on ``,`` (default ``True``)
 
     Returns:
@@ -312,7 +312,7 @@ def parse_query_string(query_string, keep_blank_qs_values=False,
                 params[k] = [old_value, decode(v)]
 
         else:
-            if ',' in v and auto_parse_query_string_lists:
+            if ',' in v and auto_parse_lists:
                 # NOTE(kgriffs): Falcon supports a more compact form of
                 # lists, in which the elements are comma-separated and
                 # assigned to a single param instance. If it turns out that

@@ -64,8 +64,8 @@ class _TestQueryParams(testing.TestBase):
         self.assertEqual(req.get_param_as_list('id', int), [23, 42])
         self.assertEqual(req.get_param('q'), u'\u8c46 \u74e3')
 
-    def test_option_auto_parse_query_string_lists(self):
-        self.api.req_options.auto_parse_query_string_lists = False
+    def test_option_auto_parse_lists(self):
+        self.api.req_options.auto_parse_lists = False
 
         query_string = 'id=23,42,,'
         self.simulate_request('/', query_string=query_string)
@@ -75,7 +75,7 @@ class _TestQueryParams(testing.TestBase):
         self.assertEqual(req.params['id'], u'23,42,,')
         self.assertEqual(req.get_param('id'), u'23,42,,')
 
-        self.api.req_options.auto_parse_query_string_lists = True
+        self.api.req_options.auto_parse_lists = True
 
         self.simulate_request('/', query_string=query_string)
 
