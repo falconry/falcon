@@ -15,8 +15,6 @@ matrix:
           env: TOXENV=pypy3
         - python: 2.7
           env: TOXENV=pep8
-        - python: 2.7
-          env: TOXENV=pylint
         - python: 2.6
           env: TOXENV=py26
         - python: 2.7
