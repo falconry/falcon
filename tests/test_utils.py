@@ -129,9 +129,9 @@ class TestFalconUtils(testtools.TestCase):
             '?things=a,b')
 
         self.assertEqual(
-            falcon.to_query_str({'things': ['a', 'b', True, False]},
-                                encode_lists_as_comma_delimited_string=False),
-            '?things=a&things=b&things=true&things=false')
+            falcon.to_query_str({'things': ['a', 'b', '', None, True, False, 0]},
+                                comma_delimited_lists=False),
+            '?things=a&things=b&things=&things=None&things=true&things=false&things=0')
 
     def test_pack_query_params_several(self):
         garbage_in = {
