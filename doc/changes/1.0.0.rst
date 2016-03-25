@@ -75,13 +75,14 @@ New & Improved
   method facilitates this and other use cases.
 - :meth:`falcon.Request.client_accepts_msgpack` now recognizes
   "application/msgpack", in addition to "application/x-msgpack".
-- The :any:`access_route` and
-  :any:`remote_addr` properties were added to
-  :class:`~falcon.Request` for getting upstream IP addresses.
+- New :any:`access_route` and :any:`remote_addr` properties were added
+  to :class:`~falcon.Request` for getting upstream IP addresses.
 - :class:`~falcon.Request` and :class:`~falcon.Response` now support
   range units other than bytes.
-- The `API` and `srmock` class types can now be customized in
-  :class:`~falcon.testing.TestBase`.
+- The :class:`~falcon.API` and
+  :class:`~falcon.testing.StartResponseMock` class types can now be
+  customized by inheriting from :class:`~falcon.testing.TestBase` and
+  overriding the `api_class` and `srmock_class` class attributes.
 - Path segments with multiple field expressions may now be defined at
   the same level as path segments having only a single field
   expression. For example::
