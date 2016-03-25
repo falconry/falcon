@@ -1,8 +1,13 @@
 Changelog for Falcon 0.3.0
 ==========================
 
-New
----
+Breaking Changes
+----------------
+- Date headers are now returned as :py:class:`datetime.datetime` objects
+  instead of strings.
+
+New & Improved
+--------------
 
 - This release includes a new router architecture for improved performance
   and flexibility.
@@ -22,11 +27,6 @@ New
 - Friendly constants for status codes were added (e.g.,
   :py:attr:`falcon.HTTP_NO_CONTENT` vs. :py:attr:`falcon.HTTP_204`.)
 - Several minor performance optimizations were made to the code base.
-
-Breaking Changes
-----------------
-- Date headers are now returned as :py:class:`datetime.datetime` objects
-  instead of strings.
 
 Fixed
 -----
