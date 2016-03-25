@@ -52,13 +52,15 @@ if CYTHON:
 
         return module_names
 
-    dirs = ['falcon', 'falcon.util', 'falcon.routing']
-    ext_modules = []
-
-    for each in dirs:
-        ext_modules += [Extension(each + '.' + ext,
-                        [path.join(*(each.split('.') + [ext + '.py']))])
-                        for ext in list_modules(path.join(MYDIR, *each.split('.')))]
+    package_names = ['falcon', 'falcon.util', 'falcon.routing']
+    ext_modules = [
+        Extension(
+            package + '.' + module,
+            [path.join(*(package.split('.') + [module + '.py']))]
+        )
+        for package in package_names
+        for module in list_modules(path.join(MYDIR, *package.split('.')))
+    ]
 
     cmdclass = {'build_ext': build_ext}
 
