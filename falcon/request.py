@@ -1161,7 +1161,11 @@ class RequestOptions(object):
             *application/x-www-form-urlencoded* (default ``False``). In
             this case, the request's content stream will be left at EOF.
         auto_parse_lists: Set to ``False`` in order to disable
-            splitting query parameters on ``,`` (default ``True``)
+            splitting query parameters on ``,`` (default ``True``).
+            Depending of the language/framework talking to your api encoding
+            lists as multiple occurences of the same parameter might be
+            preferable, thus commas should be trated as literal characters
+            in each occuring parameter value.
 
             Note:
                 The character encoding for fields, before

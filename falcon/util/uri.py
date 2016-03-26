@@ -273,7 +273,11 @@ def parse_query_string(query_string, keep_blank_qs_values=False,
         keep_blank_qs_values (bool): If set to ``True``, preserves boolean
             fields and fields with no content as blank strings.
         auto_parse_lists: Set to ``False`` in order to disable
-            splitting query parameters on ``,`` (default ``True``)
+            splitting query parameters on ``,`` (default ``True``).
+            Depending of the language/framework talking to your api encoding
+            lists as multiple occurences of the same parameter might be
+            preferable, thus commas should be trated as literal characters
+            in each occuring parameter value.
 
     Returns:
         dict: A dictionary of (*name*, *value*) pairs, one per query
