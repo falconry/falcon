@@ -155,7 +155,7 @@ def to_query_str(params, comma_delimited_lists=True):
             is a ``list``, it will be converted to a comma-delimited string
             of values (e.g., 'thing=1,2,3')
         comma_delimited_lists (bool, default ``True``):
-            If set to false encode lists by specifying multiple instances
+            If set to ``False`` encode lists by specifying multiple instances
             of the parameter (e.g., 'thing=1&thing=2&thing=3')
 
 
