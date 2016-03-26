@@ -293,6 +293,13 @@ class API(object):
                 corresponding request handlers, and Falcon will do the right
                 thing.
 
+        Note:
+            Any additional args and kwargs not defined above are passed
+            through to the underlying router's ``add_route()`` method. The
+            default router does not expect any additional arguments, but
+            custom routers may take advantage of this feature to receive
+            additional options when setting up routes.
+
         """
 
         # NOTE(richardolsson): Doing the validation here means it doesn't have

@@ -1,5 +1,5 @@
 Falcon |Docs| |Build Status| |codecov.io|
-==================================
+=========================================
 
     Perfection is finally attained not when there is no longer anything
     to add, but when there is no longer anything to take away.
