@@ -1,8 +1,23 @@
 Changelog for Falcon 0.2.0
 ==========================
 
-New
----
+Breaking Changes
+----------------
+
+-  The deprecated util.misc.percent\_escape and
+   util.misc.percent\_unescape functions were removed. Please use the
+   functions in the util.uri module instead.
+-  The deprecated function, API.set\_default\_route, was removed. Please
+   use sinks instead.
+-  HTTPRangeNotSatisfiable no longer accepts a media\_type parameter.
+-  When using the comma-delimited list convention,
+   req.get\_param\_as\_list(...) will no longer insert placeholders,
+   using the None type, for empty elements. For example, where
+   previously the query string "foo=1,,3" would result in ['1', None,
+   '3'], it will now result in ['1', '3'].
+
+New & Improved
+--------------
 
 -  Since 0.1 we've added proper RTD docs to make it easier for everyone
    to get started with the framework. Over time we will continue adding
@@ -63,21 +78,6 @@ New
    HTTPMissingHeader.
 -  Python 3.4 is now fully supported.
 -  Various minor performance improvements
-
-Breaking Changes
-----------------
-
--  The deprecated util.misc.percent\_escape and
-   util.misc.percent\_unescape functions were removed. Please use the
-   functions in the util.uri module instead.
--  The deprecated function, API.set\_default\_route, was removed. Please
-   use sinks instead.
--  HTTPRangeNotSatisfiable no longer accepts a media\_type parameter.
--  When using the comma-delimited list convention,
-   req.get\_param\_as\_list(...) will no longer insert placeholders,
-   using the None type, for empty elements. For example, where
-   previously the query string "foo=1,,3" would result in ['1', None,
-   '3'], it will now result in ['1', '3'].
 
 Fixed
 -----

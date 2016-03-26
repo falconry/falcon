@@ -29,7 +29,7 @@ handling. It takes status, additional headers and body as input arguments.
 HTTPStatus
 ----------
 
-.. autoclass:: falcon.http_status.HTTPStatus
+.. autoclass:: falcon.HTTPStatus
     :members:
 
 

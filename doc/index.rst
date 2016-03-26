@@ -8,10 +8,6 @@ The Falcon Web Framework
 
 Release v\ |version| (:ref:`Installation <install>`)
 
-.. note::
-
-  This documentation targets the upcoming |version| release of Falcon.
-
 Falcon is a minimalist WSGI library for building speedy web APIs and app
 backends. We like to think of Falcon as the `Dieter Rams` of web frameworks.
 
@@ -67,7 +63,8 @@ Falcon tries to do as little as possible while remaining highly effective.
 - Minimal attack surface for writing secure APIs
 - 100% code coverage with a comprehensive test suite
 - Only depends on six and mimeparse
-- Python 2.6, 2.7, 3.3, 3.4 + PyPy
+- Supports Python 2.6, 2.7, 3.3, 3.4 and 3.5
+- Compatible with PyPy and Jython
 
 Useful Links
 ------------
