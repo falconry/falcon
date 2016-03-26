@@ -95,7 +95,7 @@ class CompiledRouter(object):
         else:
             return None, None, None
 
-    def _compile_tree(self, nodes, indent=1, level=0):
+    def _compile_tree(self, nodes, indent=1, level=0, fast_return=True):
         """Generates Python code for a routing tree or subtree."""
 
         def line(text, indent_offset=0):
@@ -118,6 +118,18 @@ class CompiledRouter(object):
         nodes = sorted(
             nodes, key=lambda node: node.is_var + (node.is_var and
                                                    not node.is_complex))
+
+        # NOTE(kgriffs): Down to this branch in the tree, we can do a
+        # fast 'return None'. See if the nodes at this branch are
+        # all still simple, meaning there is only one possible path.
+        if fast_return:
+            if len(nodes) > 1:
+                # NOTE(kgriffs): There's the possibility of more than
+                # one path.
+                var_nodes = [node for node in nodes if node.is_var]
+                found_var_nodes = bool(var_nodes)
+
+                fast_return = not found_var_nodes
 
         for node in nodes:
             if node.is_var:
@@ -162,10 +174,11 @@ class CompiledRouter(object):
                 resource_idx = len(self._return_values)
                 self._return_values.append(node)
 
-            self._compile_tree(node.children, indent, level + 1)
+            self._compile_tree(node.children, indent, level + 1, fast_return)
 
             if node.resource is None:
-                line('return None')
+                if fast_return:
+                    line('return None')
             else:
                 # NOTE(kgriffs): Make sure that we have consumed all of
                 # the segments for the requested route; otherwise we could
@@ -173,11 +186,12 @@ class CompiledRouter(object):
                 line('if path_len == %d:' % (level + 1))
                 line('return return_values[%d]' % resource_idx, 1)
 
-                line('return None')
+                if fast_return:
+                    line('return None')
 
             indent = level_indent
 
-        if not found_simple:
+        if not found_simple and fast_return:
             line('return None')
 
     def _compile(self):

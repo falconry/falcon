@@ -135,7 +135,7 @@ class TestCase(unittest.TestCase):
         if self.api_class is None:
             self.api = falcon.API()
         else:
-            self.api = self.api_class()  # pylint: disable=not-callable
+            self.api = self.api_class()
 
         # Reset to simulate "restarting" the WSGI container
         falcon.request._maybe_wrap_wsgi_stream = True
