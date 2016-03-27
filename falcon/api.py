@@ -206,7 +206,11 @@ class API(object):
                     # process_response when no error_handler is given
                     # and for whatever exception. If an HTTPError is raised
                     # remaining process_response will be executed later.
-                    self._call_resp_mw(middleware_stack, req, resp, resource)
+
+                    # NOTE(joarley): The condition will prevent that process_reponse
+                    # is called before self._compose_error_response on HTTPErrors
+                    if not isinstance(ex, HTTPError):
+                        self._call_resp_mw(middleware_stack, req, resp, resource)
                     raise
 
         except HTTPStatus as ex:
