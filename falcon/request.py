@@ -26,6 +26,7 @@ except AttributeError:
 
 import mimeparse
 import six
+from wsgiref.validate import InputWrapper
 
 from falcon.errors import *  # NOQA
 from falcon import util
@@ -303,7 +304,7 @@ class Request(object):
         # NOTE(kgriffs): Wrap wsgi.input if needed to make read() more robust,
         # normalizing semantics between, e.g., gunicorn and wsgiref.
         if _maybe_wrap_wsgi_stream:
-            if isinstance(self.stream, NativeStream):
+            if isinstance(self.stream, (NativeStream, InputWrapper,)):
                 self._wrap_stream()
             else:
                 # PERF(kgriffs): If self.stream does not need to be wrapped
