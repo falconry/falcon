@@ -253,19 +253,10 @@ Next, let's implement the POST responder:
 .. code:: python
 
     import os
-    import time
     import uuid
+    import mimetypes
 
     import falcon
-
-
-    def _media_type_to_ext(media_type):
-        # Strip off the 'image/' prefix
-        return media_type[6:]
-
-
-    def _generate_id():
-        return str(uuid.uuid4())
 
 
     class Resource(object):
@@ -274,10 +265,8 @@ Next, let's implement the POST responder:
             self.storage_path = storage_path
 
         def on_post(self, req, resp):
-            image_id = _generate_id()
-            ext = _media_type_to_ext(req.content_type)
-            filename = image_id + '.' + ext
-
+            ext = mimetypes.guess_extension(req.content_type)
+            filename = '{uuid}{ext}'.format(uuid=uuid.uuid4(), ext=ext)
             image_path = os.path.join(self.storage_path, filename)
 
             with open(image_path, 'wb') as image_file:
@@ -289,7 +278,7 @@ Next, let's implement the POST responder:
                     image_file.write(chunk)
 
             resp.status = falcon.HTTP_201
-            resp.location = '/images/' + image_id
+            resp.location = '/images/' + filename
 
 As you can see, we generate a unique ID and filename for the new image, and
 then write it out by reading from ``req.stream``. It's called ``stream`` instead
@@ -350,23 +339,10 @@ Go ahead and edit your ``images.py`` file to look something like this:
 .. code:: python
 
     import os
-    import time
     import uuid
+    import mimetypes
 
     import falcon
-
-
-    def _media_type_to_ext(media_type):
-        # Strip off the 'image/' prefix
-        return media_type[6:]
-
-
-    def _ext_to_media_type(ext):
-        return 'image/' + ext
-
-
-    def _generate_id():
-        return str(uuid.uuid4())
 
 
     class Collection(object):
@@ -375,10 +351,8 @@ Go ahead and edit your ``images.py`` file to look something like this:
             self.storage_path = storage_path
 
         def on_post(self, req, resp):
-            image_id = _generate_id()
-            ext = _media_type_to_ext(req.content_type)
-            filename = image_id + '.' + ext
-
+            ext = mimetypes.guess_extension(req.content_type)
+            filename = '{uuid}{ext}'.format(uuid=uuid.uuid4(), ext=ext)
             image_path = os.path.join(self.storage_path, filename)
 
             with open(image_path, 'wb') as image_file:
@@ -399,9 +373,7 @@ Go ahead and edit your ``images.py`` file to look something like this:
             self.storage_path = storage_path
 
         def on_get(self, req, resp, name):
-            ext = os.path.splitext(name)[1][1:]
-            resp.content_type = _ext_to_media_type(ext)
-
+            resp.content_type = mimetypes.guess_type(name)[0]
             image_path = os.path.join(self.storage_path, name)
             resp.stream = open(image_path, 'rb')
             resp.stream_len = os.path.getsize(image_path)
@@ -577,12 +549,6 @@ an error occurs because the user is requested something they are not
 authorized to access. In that case, you may wish to simply return
 ``404 Not Found`` with an empty body, in case a malicious user is fishing
 for information that will help them crack your API.
-
-.. tip:: Please take a look at our new sister project,
-   `Talons <https://github.com/talons/talons>`_, for a collection of
-   useful Falcon hooks contributed by the community. Also, If you create a
-   nifty hook that you think others could use, please consider
-   contributing to the project yourself.
 
 Error Handling
 --------------

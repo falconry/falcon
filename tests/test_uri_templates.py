@@ -39,6 +39,28 @@ class NameAndDigitResource(object):
         self.called = True
 
 
+class FileResource(object):
+    def __init__(self):
+        self.file_id = None
+        self.called = False
+
+    def on_get(self, req, resp, file_id):
+        self.file_id = file_id
+        self.called = True
+
+
+class FileDetailsResource(object):
+    def __init__(self):
+        self.file_id = None
+        self.ext = None
+        self.called = False
+
+    def on_get(self, req, resp, file_id, ext):
+        self.file_id = file_id
+        self.ext = ext
+        self.called = True
+
+
 class TestUriTemplates(testing.TestBase):
 
     def before(self):
@@ -219,3 +241,47 @@ class TestUriTemplates(testing.TestBase):
 
         self.assertRaises(ValueError, self.api.add_route,
                           'no/leading_slash', self.resource)
+
+    def test_same_level_complex_var(self):
+        resource = FileResource()
+        details_resource = FileDetailsResource()
+        self.api.add_route('/files/{file_id}', resource)
+        self.api.add_route('/files/{file_id}.{ext}', details_resource)
+
+        # dots cause ambiguous in filenames
+        file_id_1 = self.getUniqueString().replace('.', '-')
+        file_id_2 = self.getUniqueString().replace('.', '-')
+        ext = self.getUniqueString().replace('.', '-')
+        path_1 = '/files/' + file_id_1
+        path_2 = '/files/' + file_id_2 + '.' + ext
+
+        self.simulate_request(path_1)
+        self.assertTrue(resource.called)
+        self.assertEqual(resource.file_id, file_id_1)
+
+        self.simulate_request(path_2)
+        self.assertTrue(details_resource.called)
+        self.assertEqual(details_resource.file_id, file_id_2)
+        self.assertEqual(details_resource.ext, ext)
+
+    def test_same_level_complex_var_in_reverse_order(self):
+        resource = FileResource()
+        details_resource = FileDetailsResource()
+        self.api.add_route('/files/{file_id}.{ext}', details_resource)
+        self.api.add_route('/files/{file_id}', resource)
+
+        # dots cause ambiguous in filenames
+        file_id_1 = self.getUniqueString().replace('.', '-')
+        file_id_2 = self.getUniqueString().replace('.', '-')
+        ext = self.getUniqueString().replace('.', '-')
+        path_1 = '/files/' + file_id_1
+        path_2 = '/files/' + file_id_2 + '.' + ext
+
+        self.simulate_request(path_1)
+        self.assertTrue(resource.called)
+        self.assertEqual(resource.file_id, file_id_1)
+
+        self.simulate_request(path_2)
+        self.assertTrue(details_resource.called)
+        self.assertEqual(details_resource.file_id, file_id_2)
+        self.assertEqual(details_resource.ext, ext)

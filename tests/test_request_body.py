@@ -127,6 +127,14 @@ class TestRequestBody(testing.TestBase):
         body = request_helpers.Body(stream, expected_len)
         self.assertEqual(body.read(expected_len + 1), expected_body)
 
+        # NOTE(kgriffs): Test that reading past the end does not
+        # hang, but returns the empty string.
+        stream = io.BytesIO(expected_body)
+        body = request_helpers.Body(stream, expected_len)
+        for i in range(expected_len + 1):
+            expected_value = expected_body[i:i + 1] if i < expected_len else b''
+            self.assertEqual(body.read(1), expected_value)
+
         stream = io.BytesIO(expected_body)
         body = request_helpers.Body(stream, expected_len)
         self.assertEqual(body.readline(), expected_lines[0])

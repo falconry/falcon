@@ -51,21 +51,21 @@ def format_range(value):
 
     Args:
         value: ``tuple`` passed to `req.range`
-
     """
 
-    # PERF: Concatenation is faster than % string formatting as well
-    #       as ''.join() in this case.
-    return ('bytes ' +
-            str(value[0]) + '-' +
-            str(value[1]) + '/' +
-            str(value[2]))
+    # PERF(kgriffs): % was found to be faster than str.format(),
+    # string concatenation, and str.join() in this case.
+
+    if len(value) == 4:
+        return '%s %s-%s/%s' % (value[3], value[0], value[1], value[2])
+
+    return 'bytes %s-%s/%s' % (value[0], value[1], value[2])
 
 
-def is_ascii_encodable(s):  # pragma: no cover
+def is_ascii_encodable(s):
     """Check if argument encodes to ascii without error."""
     try:
-        s.encode("ascii")
+        s.encode('ascii')
     except UnicodeEncodeError:
         # NOTE(tbug): Py2 and Py3 will raise this if string contained
         # chars that could not be ascii encoded

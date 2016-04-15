@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from falcon import Request, Response
-from falcon.testing import create_environ
+from falcon.testing.helpers import create_environ
 
 
 class MiddlewareMock(object):
@@ -49,7 +49,8 @@ class MiddlewareMock(object):
         response (falcon.Response): instance of `falcon.Response` to use. If it
             is None or not an instance of `falcon.Response` then it will be
             created.
-
+        uri_route_parameters (dict): dictionary containing any parameters that
+            are expected to be extracted by request router (e.g falcon.routing)
     """
 
     def __init__(self):
@@ -61,6 +62,7 @@ class MiddlewareMock(object):
         self.request = None
         self.resource = None
         self.response = None
+        self.uri_route_parameters = {}
 
     def _build(self, **kwargs):
         """Create the request and response information"""
@@ -111,11 +113,13 @@ class MiddlewareMock(object):
                 if hasattr(m, 'process_resource'):
                     m.process_resource(self.request,
                                        self.response,
-                                       self.resource)
+                                       self.resource,
+                                       self.uri_route_parameters)
         elif hasattr(self.middleware, 'process_resource'):
             self.middleware.process_resource(self.request,
                                              self.response,
-                                             self.resource)
+                                             self.resource,
+                                             self.uri_route_parameters)
         else:
             raise TypeError('middleware not configured')
 

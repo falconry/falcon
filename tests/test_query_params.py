@@ -64,6 +64,16 @@ class _TestQueryParams(testing.TestBase):
         self.assertEqual(req.get_param_as_list('id', int), [23, 42])
         self.assertEqual(req.get_param('q'), u'\u8c46 \u74e3')
 
+    def test_bad_percentage(self):
+        query_string = 'x=%%20%+%&y=peregrine&z=%a%z%zz%1%20e'
+        self.simulate_request('/', query_string=query_string)
+        self.assertEqual(self.srmock.status, falcon.HTTP_200)
+
+        req = self.resource.req
+        self.assertEqual(req.get_param('x'), '% % %')
+        self.assertEqual(req.get_param('y'), 'peregrine')
+        self.assertEqual(req.get_param('z'), '%a%z%zz%1 e')
+
     def test_allowed_names(self):
         query_string = ('p=0&p1=23&2p=foo&some-thing=that&blank=&'
                         'some_thing=x&-bogus=foo&more.things=blah&'
@@ -419,52 +429,56 @@ class _TestQueryParams(testing.TestBase):
         self.assertEqual(req.get_param_as_list('cat'), ['6', '5', '4'])
 
     def test_get_date_valid(self):
-        date_value = "2015-04-20"
-        query_string = "thedate={0}".format(date_value)
-        self.simulate_request("/", query_string=query_string)
+        date_value = '2015-04-20'
+        query_string = 'thedate={0}'.format(date_value)
+        self.simulate_request('/', query_string=query_string)
         req = self.resource.req
-        self.assertEqual(req.get_param_as_date("thedate"),
+        self.assertEqual(req.get_param_as_date('thedate'),
                          date(2015, 4, 20))
 
     def test_get_date_missing_param(self):
-        query_string = "notthedate=2015-04-20"
-        self.simulate_request("/", query_string=query_string)
+        query_string = 'notthedate=2015-04-20'
+        self.simulate_request('/', query_string=query_string)
         req = self.resource.req
-        self.assertEqual(req.get_param_as_date("thedate"),
+        self.assertEqual(req.get_param_as_date('thedate'),
                          None)
 
     def test_get_date_valid_with_format(self):
-        date_value = "20150420"
-        query_string = "thedate={0}".format(date_value)
-        format_string = "%Y%m%d"
-        self.simulate_request("/", query_string=query_string)
+        date_value = '20150420'
+        query_string = 'thedate={0}'.format(date_value)
+        format_string = '%Y%m%d'
+        self.simulate_request('/', query_string=query_string)
         req = self.resource.req
-        self.assertEqual(req.get_param_as_date("thedate",
+        self.assertEqual(req.get_param_as_date('thedate',
                          format_string=format_string),
                          date(2015, 4, 20))
 
     def test_get_date_store(self):
-        date_value = "2015-04-20"
-        query_string = "thedate={0}".format(date_value)
-        self.simulate_request("/", query_string=query_string)
+        date_value = '2015-04-20'
+        query_string = 'thedate={0}'.format(date_value)
+        self.simulate_request('/', query_string=query_string)
         req = self.resource.req
         store = {}
-        req.get_param_as_date("thedate", store=store)
+        req.get_param_as_date('thedate', store=store)
         self.assertNotEqual(len(store), 0)
 
     def test_get_date_invalid(self):
-        date_value = "notarealvalue"
-        query_string = "thedate={0}".format(date_value)
-        format_string = "%Y%m%d"
-        self.simulate_request("/", query_string=query_string)
+        date_value = 'notarealvalue'
+        query_string = 'thedate={0}'.format(date_value)
+        format_string = '%Y%m%d'
+        self.simulate_request('/', query_string=query_string)
         req = self.resource.req
         self.assertRaises(HTTPInvalidParam, req.get_param_as_date,
-                          "thedate", format_string=format_string)
+                          'thedate', format_string=format_string)
 
 
 class PostQueryParams(_TestQueryParams):
+    def before(self):
+        super(PostQueryParams, self).before()
+        self.api.req_options.auto_parse_form_urlencoded = True
+
     def simulate_request(self, path, query_string, **kwargs):
-        headers = {"Content-Type": "application/x-www-form-urlencoded"}
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         super(PostQueryParams, self).simulate_request(
             path, body=query_string, headers=headers, **kwargs)
 
@@ -474,10 +488,29 @@ class PostQueryParams(_TestQueryParams):
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
-        self.assertEqual(req.get_param('q'), None)
+        self.assertIs(req.get_param('q'), None)
+
+    def test_explicitly_disable_auto_parse(self):
+        self.api.req_options.auto_parse_form_urlencoded = False
+        self.simulate_request('/', query_string='q=42')
+
+        req = self.resource.req
+        self.assertIs(req.get_param('q'), None)
 
 
 class GetQueryParams(_TestQueryParams):
     def simulate_request(self, path, query_string, **kwargs):
         super(GetQueryParams, self).simulate_request(
             path, query_string=query_string, **kwargs)
+
+
+class PostQueryParamsDefaultBehavior(testing.TestBase):
+    def test_dont_auto_parse_by_default(self):
+        self.resource = testing.TestResource()
+        self.api.add_route('/', self.resource)
+
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+        self.simulate_request('/', body='q=42', headers=headers)
+
+        req = self.resource.req
+        self.assertIs(req.get_param('q'), None)

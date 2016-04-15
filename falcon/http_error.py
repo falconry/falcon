@@ -15,9 +15,9 @@
 import json
 import xml.etree.ElementTree as et
 
-try:  # pragma nocover
+try:
     from collections import OrderedDict
-except ImportError:  # pragma nocover
+except ImportError:
     OrderedDict = dict
 
 from falcon.util import uri

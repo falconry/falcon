@@ -1,7 +1,7 @@
 def application(environ, start_response):
     # wsgi_errors = environ['wsgi.errors']
 
-    start_response("200 OK", [
+    start_response('200 OK', [
         ('Content-Type', 'text/plain')])
 
     body = '\n{\n'

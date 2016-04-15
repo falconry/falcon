@@ -1,25 +1,14 @@
 from collections import defaultdict
 from datetime import datetime
 
+import ddt
 import six
-from testtools.matchers import Contains, Not
 
 import falcon
-import falcon.testing as testing
+from falcon import testing
 
 
-class StatusTestResource:
-    sample_body = testing.rand_string(0, 128 * 1024)
-
-    def __init__(self, status):
-        self.status = status
-
-    def on_get(self, req, resp):
-        resp.status = self.status
-        resp.body = self.sample_body
-
-
-class XmlResource:
+class XmlResource(object):
     def __init__(self, content_type):
         self.content_type = content_type
 
@@ -27,16 +16,7 @@ class XmlResource:
         resp.set_header('content-type', self.content_type)
 
 
-class DefaultContentTypeResource:
-    def __init__(self, body=None):
-        self.body = body
-
-    def on_get(self, req, resp):
-        if self.body is not None:
-            resp.body = self.body
-
-
-class HeaderHelpersResource:
+class HeaderHelpersResource(object):
 
     def __init__(self, last_modified=None):
         if last_modified is not None:
@@ -49,7 +29,7 @@ class HeaderHelpersResource:
         resp.cache_control = ['no-store']
 
     def on_get(self, req, resp):
-        resp.body = "{}"
+        resp.body = '{}'
         resp.content_type = 'x-falcon/peregrine'
         resp.cache_control = [
             'public', 'private', 'no-cache', 'no-store', 'must-revalidate',
@@ -64,8 +44,11 @@ class HeaderHelpersResource:
         resp.location = '/things/87'
         resp.content_location = '/things/78'
 
-        # bytes 0-499/10240
-        resp.content_range = (0, 499, 10 * 1024)
+        if req.range_unit is None or req.range_unit == 'bytes':
+            # bytes 0-499/10240
+            resp.content_range = (0, 499, 10 * 1024)
+        else:
+            resp.content_range = (0, 25, 100, req.range_unit)
 
         self.resp = resp
 
@@ -103,7 +86,7 @@ class HeaderHelpersResource:
         self.resp = resp
 
 
-class LocationHeaderUnicodeResource:
+class LocationHeaderUnicodeResource(object):
 
     URL1 = u'/\u00e7runchy/bacon'
     URL2 = u'ab\u00e7' if six.PY3 else 'ab\xc3\xa7'
@@ -117,18 +100,25 @@ class LocationHeaderUnicodeResource:
         resp.content_location = self.URL1
 
 
-class UnicodeHeaderResource:
+class UnicodeHeaderResource(object):
 
     def on_get(self, req, resp):
         resp.set_headers([
             (u'X-auTH-toKEN', 'toomanysecrets'),
             ('Content-TYpE', u'application/json'),
-            (u'X-symBOl', u'\u0040'),
-            (u'X-symb\u00F6l', u'\u00FF'),
+            (u'X-symBOl', u'@'),
+
+            # TODO(kgriffs): This will cause the wsgiref validator
+            # to raise an error. Falcon itself does not currently
+            # check for non-ASCII chars to save some CPU cycles. The
+            # app is responsible for doing the right thing, and
+            # validating its own output as needed.
+            #
+            # (u'X-symb\u00F6l', u'\u00FF'),
         ])
 
 
-class VaryHeaderResource:
+class VaryHeaderResource(object):
 
     def __init__(self, vary):
         self.vary = vary
@@ -138,7 +128,7 @@ class VaryHeaderResource:
         resp.vary = self.vary
 
 
-class LinkHeaderResource:
+class LinkHeaderResource(object):
 
     def __init__(self):
         self._links = []
@@ -153,7 +143,7 @@ class LinkHeaderResource:
             resp.add_link(*args, **kwargs)
 
 
-class AppendHeaderResource:
+class AppendHeaderResource(object):
 
     def on_get(self, req, resp):
         resp.append_header('X-Things', 'thing-1')
@@ -169,33 +159,35 @@ class AppendHeaderResource:
         resp.append_header('X-Things', 'thing-1')
 
 
-class TestHeaders(testing.TestBase):
+@ddt.ddt
+class TestHeaders(testing.TestCase):
 
-    def before(self):
-        self.resource = testing.TestResource()
-        self.api.add_route(self.test_route, self.resource)
+    def setUp(self):
+        super(TestHeaders, self).setUp()
+
+        self.sample_body = testing.rand_string(0, 128 * 1024)
+        self.resource = testing.SimpleTestResource(body=self.sample_body)
+        self.api.add_route('/', self.resource)
 
     def test_content_length(self):
-        self.simulate_request(self.test_route)
+        result = self.simulate_get()
 
-        headers = self.srmock.headers
-
-        # Test Content-Length header set
-        content_length = str(len(self.resource.sample_body))
-        content_length_header = ('content-length', content_length)
-        self.assertThat(headers, Contains(content_length_header))
+        content_length = str(len(self.sample_body))
+        self.assertEqual(result.headers['Content-Length'], content_length)
 
     def test_default_value(self):
-        self.simulate_request(self.test_route)
+        self.simulate_get()
 
-        value = self.resource.req.get_header('X-Not-Found') or '876'
+        req = self.resource.captured_req
+        value = req.get_header('X-Not-Found') or '876'
         self.assertEqual(value, '876')
 
     def test_required_header(self):
-        self.simulate_request(self.test_route)
+        self.simulate_get()
 
         try:
-            self.resource.req.get_header('X-Not-Found', required=True)
+            req = self.resource.captured_req
+            req.get_header('X-Not-Found', required=True)
             self.fail('falcon.HTTPMissingHeader not raised')
         except falcon.HTTPMissingHeader as ex:
             self.assertIsInstance(ex, falcon.HTTPBadRequest)
@@ -203,45 +195,13 @@ class TestHeaders(testing.TestBase):
             expected_desc = 'The X-Not-Found header is required.'
             self.assertEqual(ex.description, expected_desc)
 
-    def test_no_body_on_100(self):
-        self.resource = StatusTestResource(falcon.HTTP_100)
-        self.api.add_route('/1xx', self.resource)
+    @ddt.data(falcon.HTTP_204, falcon.HTTP_304)
+    def test_no_content_length(self, status):
+        self.api.add_route('/xxx', testing.SimpleTestResource(status=status))
 
-        body = self.simulate_request('/1xx')
-        self.assertThat(self.srmock.headers_dict,
-                        Not(Contains('Content-Length')))
-
-        self.assertEqual(body, [])
-
-    def test_no_body_on_101(self):
-        self.resource = StatusTestResource(falcon.HTTP_101)
-        self.api.add_route('/1xx', self.resource)
-
-        body = self.simulate_request('/1xx')
-        self.assertThat(self.srmock.headers_dict,
-                        Not(Contains('Content-Length')))
-
-        self.assertEqual(body, [])
-
-    def test_no_body_on_204(self):
-        self.resource = StatusTestResource(falcon.HTTP_204)
-        self.api.add_route('/204', self.resource)
-
-        body = self.simulate_request('/204')
-        self.assertThat(self.srmock.headers_dict,
-                        Not(Contains('Content-Length')))
-
-        self.assertEqual(body, [])
-
-    def test_no_body_on_304(self):
-        self.resource = StatusTestResource(falcon.HTTP_304)
-        self.api.add_route('/304', self.resource)
-
-        body = self.simulate_request('/304')
-        self.assertThat(self.srmock.headers_dict,
-                        Not(Contains('Content-Length')))
-
-        self.assertEqual(body, [])
+        result = self.simulate_get('/xxx')
+        self.assertNotIn('Content-Length', result.headers)
+        self.assertFalse(result.content)
 
     def test_content_header_missing(self):
         environ = testing.create_environ()
@@ -249,233 +209,228 @@ class TestHeaders(testing.TestBase):
         for header in ('Content-Type', 'Content-Length'):
             self.assertIs(req.get_header(header), None)
 
-    def test_passthrough_req_headers(self):
-        req_headers = {
+    def test_passthrough_request_headers(self):
+        request_headers = {
             'X-Auth-Token': 'Setec Astronomy',
             'Content-Type': 'text/plain; charset=utf-8'
         }
-        self.simulate_request(self.test_route, headers=req_headers)
+        self.simulate_get(headers=request_headers)
 
-        for name, expected_value in req_headers.items():
-            actual_value = self.resource.req.get_header(name)
+        for name, expected_value in request_headers.items():
+            actual_value = self.resource.captured_req.get_header(name)
             self.assertEqual(actual_value, expected_value)
 
-        self.simulate_request(self.test_route,
-                              headers=self.resource.req.headers)
+        self.simulate_get(headers=self.resource.captured_req.headers)
 
         # Compare the request HTTP headers with the original headers
-        for name, expected_value in req_headers.items():
-            actual_value = self.resource.req.get_header(name)
+        for name, expected_value in request_headers.items():
+            actual_value = self.resource.captured_req.get_header(name)
             self.assertEqual(actual_value, expected_value)
 
-    def test_get_raw_headers(self):
+    def test_headers_as_list(self):
         headers = [
             ('Client-ID', '692ba466-74bb-11e3-bf3f-7567c531c7ca'),
             ('Accept', 'audio/*; q=0.2, audio/basic')
         ]
 
+        # Unit test
         environ = testing.create_environ(headers=headers)
         req = falcon.Request(environ)
 
         for name, value in headers:
             self.assertIn((name.upper(), value), req.headers.items())
 
-    def test_passthrough_resp_headers(self):
-        self.simulate_request(self.test_route)
+        # Functional test
+        self.api.add_route('/', testing.SimpleTestResource(headers=headers))
+        result = self.simulate_get()
 
-        resp_headers = self.srmock.headers
-
-        for name, value in self.resource.resp_headers.items():
-            expected = (name.lower(), value)
-            self.assertThat(resp_headers, Contains(expected))
+        for name, value in headers:
+            self.assertEqual(result.headers[name], value)
 
     def test_default_media_type(self):
-        self.resource = DefaultContentTypeResource('Hello world!')
-        self.api.add_route(self.test_route, self.resource)
-        self.simulate_request(self.test_route)
+        resource = testing.SimpleTestResource(body='Hello world!')
+        self._check_header(resource, 'Content-Type', falcon.DEFAULT_MEDIA_TYPE)
 
-        content_type = falcon.DEFAULT_MEDIA_TYPE
-        self.assertIn(('content-type', content_type), self.srmock.headers)
+    @ddt.data(
+        ('text/plain; charset=UTF-8', u'Hello Unicode! \U0001F638'),
 
-    def test_custom_media_type(self):
-        self.resource = DefaultContentTypeResource('Hello world!')
-        self.api = falcon.API(media_type='application/atom+xml')
-        self.api.add_route(self.test_route, self.resource)
-        self.simulate_request(self.test_route)
+        # NOTE(kgriffs): This only works because the client defaults to
+        # ISO-8859-1 IFF the media type is 'text'.
+        ('text/plain', 'Hello ISO-8859-1!'),
+    )
+    @ddt.unpack
+    def test_override_default_media_type(self, content_type, body):
+        self.api = falcon.API(media_type=content_type)
+        self.api.add_route('/', testing.SimpleTestResource(body=body))
+        result = self.simulate_get()
 
-        content_type = 'application/atom+xml'
-        self.assertIn(('content-type', content_type), self.srmock.headers)
+        self.assertEqual(result.text, body)
+        self.assertEqual(result.headers['Content-Type'], content_type)
+
+    def test_override_default_media_type_missing_encoding(self):
+        body = b'{}'
+
+        self.api = falcon.API(media_type='application/json')
+        self.api.add_route('/', testing.SimpleTestResource(body=body))
+        result = self.simulate_get()
+
+        self.assertEqual(result.content, body)
+        self.assertRaises(RuntimeError, lambda: result.text)
+        self.assertRaises(RuntimeError, lambda: result.json)
 
     def test_response_header_helpers_on_get(self):
         last_modified = datetime(2013, 1, 1, 10, 30, 30)
-        self.resource = HeaderHelpersResource(last_modified)
-        self.api.add_route(self.test_route, self.resource)
-        self.simulate_request(self.test_route)
+        resource = HeaderHelpersResource(last_modified)
+        self.api.add_route('/', resource)
+        result = self.simulate_get()
 
-        resp = self.resource.resp
+        resp = resource.resp
 
         content_type = 'x-falcon/peregrine'
-        self.assertEqual(content_type, resp.content_type)
-        self.assertIn(('content-type', content_type), self.srmock.headers)
+        self.assertEqual(resp.content_type, content_type)
+        self.assertEqual(result.headers['Content-Type'], content_type)
 
         cache_control = ('public, private, no-cache, no-store, '
                          'must-revalidate, proxy-revalidate, max-age=3600, '
                          's-maxage=60, no-transform')
 
-        self.assertEqual(cache_control, resp.cache_control)
-        self.assertIn(('cache-control', cache_control), self.srmock.headers)
+        self.assertEqual(resp.cache_control, cache_control)
+        self.assertEqual(result.headers['Cache-Control'], cache_control)
 
         etag = 'fa0d1a60ef6616bb28038515c8ea4cb2'
-        self.assertEqual(etag, resp.etag)
-        self.assertIn(('etag', etag), self.srmock.headers)
+        self.assertEqual(resp.etag, etag)
+        self.assertEqual(result.headers['Etag'], etag)
 
-        last_modified_http_date = 'Tue, 01 Jan 2013 10:30:30 GMT'
-        self.assertEqual(last_modified_http_date, resp.last_modified)
-        self.assertIn(('last-modified', last_modified_http_date),
-                      self.srmock.headers)
+        lm_date = 'Tue, 01 Jan 2013 10:30:30 GMT'
+        self.assertEqual(resp.last_modified, lm_date)
+        self.assertEqual(result.headers['Last-Modified'], lm_date)
 
-        self.assertEqual('3601', resp.retry_after)
-        self.assertIn(('retry-after', '3601'), self.srmock.headers)
+        self.assertEqual(resp.retry_after, '3601')
+        self.assertEqual(result.headers['Retry-After'], '3601')
 
-        self.assertEqual('/things/87', resp.location)
-        self.assertIn(('location', '/things/87'), self.srmock.headers)
+        self.assertEqual(resp.location, '/things/87')
+        self.assertEqual(result.headers['Location'], '/things/87')
 
-        self.assertEqual('/things/78', resp.content_location)
-        self.assertIn(('content-location', '/things/78'), self.srmock.headers)
+        self.assertEqual(resp.content_location, '/things/78')
+        self.assertEqual(result.headers['Content-Location'], '/things/78')
 
-        self.assertEqual('bytes 0-499/10240', resp.content_range)
-        self.assertIn(('content-range', 'bytes 0-499/10240'),
-                      self.srmock.headers)
+        content_range = 'bytes 0-499/10240'
+        self.assertEqual(resp.content_range, content_range)
+        self.assertEqual(result.headers['Content-Range'], content_range)
+
+        resp.content_range = (1, 499, 10 * 1024, 'bytes')
+        self.assertEqual(resp.content_range, 'bytes 1-499/10240')
+
+        req_headers = {'Range': 'items=0-25'}
+        result = self.simulate_get(headers=req_headers)
+        self.assertEqual(result.headers['Content-Range'], 'items 0-25/100')
 
         # Check for duplicate headers
         hist = defaultdict(lambda: 0)
-        for name, value in self.srmock.headers:
+        for name, value in result.headers.items():
             hist[name] += 1
             self.assertEqual(1, hist[name])
 
     def test_unicode_location_headers(self):
-        self.api.add_route(self.test_route, LocationHeaderUnicodeResource())
-        self.simulate_request(self.test_route)
+        self.api.add_route('/', LocationHeaderUnicodeResource())
 
-        location = ('location', '/%C3%A7runchy/bacon')
-        self.assertIn(location, self.srmock.headers)
-
-        content_location = ('content-location', 'ab%C3%A7')
-        self.assertIn(content_location, self.srmock.headers)
+        result = self.simulate_get()
+        self.assertEqual(result.headers['Location'], '/%C3%A7runchy/bacon')
+        self.assertEqual(result.headers['Content-Location'], 'ab%C3%A7')
 
         # Test with the values swapped
-        self.simulate_request(self.test_route, method='HEAD')
-
-        location = ('location', 'ab%C3%A7')
-        self.assertIn(location, self.srmock.headers)
-
-        content_location = ('content-location', '/%C3%A7runchy/bacon')
-        self.assertIn(content_location, self.srmock.headers)
+        result = self.simulate_head()
+        self.assertEqual(result.headers['Content-Location'],
+                         '/%C3%A7runchy/bacon')
+        self.assertEqual(result.headers['Location'], 'ab%C3%A7')
 
     def test_unicode_headers(self):
-        self.api.add_route(self.test_route, UnicodeHeaderResource())
-        self.simulate_request(self.test_route)
+        self.api.add_route('/', UnicodeHeaderResource())
 
-        expect = ('x-auth-token', 'toomanysecrets')
-        self.assertIn(expect, self.srmock.headers)
+        result = self.simulate_get('/')
 
-        expect = ('content-type', 'application/json')
-        self.assertIn(expect, self.srmock.headers)
-
-        expect = ('x-symbol', '@')
-        self.assertIn(expect, self.srmock.headers)
-
-        expect = ('x-symb\xF6l', '\xFF')
-        self.assertIn(expect, self.srmock.headers)
+        self.assertEqual(result.headers['Content-Type'], 'application/json')
+        self.assertEqual(result.headers['X-Auth-Token'], 'toomanysecrets')
+        self.assertEqual(result.headers['X-Symbol'], '@')
 
     def test_response_set_and_get_header(self):
-        self.resource = HeaderHelpersResource()
-        self.api.add_route(self.test_route, self.resource)
+        resource = HeaderHelpersResource()
+        self.api.add_route('/', resource)
 
         for method in ('HEAD', 'POST', 'PUT'):
-            self.simulate_request(self.test_route, method=method)
+            result = self.simulate_request(method=method)
 
             content_type = 'x-falcon/peregrine'
-            self.assertIn(('content-type', content_type), self.srmock.headers)
-            self.assertEquals(self.resource.resp.get_header('content-TyPe'), content_type)
-            self.assertIn(('cache-control', 'no-store'), self.srmock.headers)
-            self.assertIn(('x-auth-token', 'toomanysecrets'),
-                          self.srmock.headers)
+            self.assertEqual(result.headers['Content-Type'], content_type)
+            self.assertEqual(resource.resp.get_header('content-TyPe'),
+                             content_type)
 
-            self.assertEqual(None, self.resource.resp.location)
-            self.assertEquals(self.resource.resp.get_header('not-real'), None)
+            self.assertEqual(result.headers['Cache-Control'], 'no-store')
+            self.assertEqual(result.headers['X-Auth-Token'], 'toomanysecrets')
+
+            self.assertEqual(resource.resp.location, None)
+            self.assertEqual(resource.resp.get_header('not-real'), None)
 
             # Check for duplicate headers
-            hist = defaultdict(lambda: 0)
-            for name, value in self.srmock.headers:
+            hist = defaultdict(int)
+            for name, value in result.headers.items():
                 hist[name] += 1
-                self.assertEqual(1, hist[name])
+                self.assertEqual(hist[name], 1)
 
     def test_response_append_header(self):
-        self.resource = AppendHeaderResource()
-        self.api.add_route(self.test_route, self.resource)
+        self.api.add_route('/', AppendHeaderResource())
 
         for method in ('HEAD', 'GET'):
-            self.simulate_request(self.test_route, method=method)
-            value = self.srmock.headers_dict['x-things']
-            self.assertEqual('thing-1,thing-2,thing-3', value)
+            result = self.simulate_request(method=method)
+            value = result.headers['x-things']
+            self.assertEqual(value, 'thing-1,thing-2,thing-3')
 
-        self.simulate_request(self.test_route, method='POST')
-        value = self.srmock.headers_dict['x-things']
-        self.assertEqual('thing-1', value)
+        result = self.simulate_request(method='POST')
+        self.assertEqual(result.headers['x-things'], 'thing-1')
 
     def test_vary_star(self):
-        self.resource = VaryHeaderResource(['*'])
-        self.api.add_route(self.test_route, self.resource)
-        self.simulate_request(self.test_route)
+        self.api.add_route('/', VaryHeaderResource(['*']))
+        result = self.simulate_get()
+        self.assertEqual(result.headers['vary'], '*')
 
-        self.assertIn(('vary', '*'), self.srmock.headers)
+    @ddt.data(
+        (['accept-encoding'], 'accept-encoding'),
+        (['accept-encoding', 'x-auth-token'], 'accept-encoding, x-auth-token'),
+        (('accept-encoding', 'x-auth-token'), 'accept-encoding, x-auth-token'),
+    )
+    @ddt.unpack
+    def test_vary_header(self, vary, expected_value):
+        resource = VaryHeaderResource(vary)
+        self._check_header(resource, 'Vary', expected_value)
 
-    def test_vary_header(self):
-        self.resource = VaryHeaderResource(['accept-encoding'])
-        self.api.add_route(self.test_route, self.resource)
-        self.simulate_request(self.test_route)
+    def test_content_type_no_body(self):
+        self.api.add_route('/', testing.SimpleTestResource())
+        result = self.simulate_get()
 
-        self.assertIn(('vary', 'accept-encoding'), self.srmock.headers)
+        # NOTE(kgriffs): Even when there is no body, Content-Type
+        # should still be included per wsgiref.validate
+        self.assertIn('Content-Type', result.headers)
+        self.assertEqual(result.headers['Content-Length'], '0')
 
-    def test_vary_headers(self):
-        self.resource = VaryHeaderResource(['accept-encoding', 'x-auth-token'])
-        self.api.add_route(self.test_route, self.resource)
-        self.simulate_request(self.test_route)
+    @ddt.data(falcon.HTTP_204, falcon.HTTP_304)
+    def test_no_content_type(self, status):
+        self.api.add_route('/', testing.SimpleTestResource(status=status))
 
-        vary = 'accept-encoding, x-auth-token'
-        self.assertIn(('vary', vary), self.srmock.headers)
-
-    def test_vary_headers_tuple(self):
-        self.resource = VaryHeaderResource(('accept-encoding', 'x-auth-token'))
-        self.api.add_route(self.test_route, self.resource)
-        self.simulate_request(self.test_route)
-
-        vary = 'accept-encoding, x-auth-token'
-        self.assertIn(('vary', vary), self.srmock.headers)
-
-    def test_no_content_type(self):
-        self.resource = DefaultContentTypeResource()
-        self.api.add_route(self.test_route, self.resource)
-        self.simulate_request(self.test_route)
-
-        self.assertNotIn('content-type', self.srmock.headers_dict)
+        result = self.simulate_get()
+        self.assertNotIn('Content-Type', result.headers)
 
     def test_custom_content_type(self):
         content_type = 'application/xml; charset=utf-8'
-        self.resource = XmlResource(content_type)
-        self.api.add_route(self.test_route, self.resource)
-
-        self.simulate_request(self.test_route)
-        self.assertIn(('content-type', content_type), self.srmock.headers)
+        resource = XmlResource(content_type)
+        self._check_header(resource, 'Content-Type', content_type)
 
     def test_add_link_single(self):
         expected_value = '</things/2842>; rel=next'
 
-        self.resource = LinkHeaderResource()
-        self.resource.add_link('/things/2842', 'next')
+        resource = LinkHeaderResource()
+        resource.add_link('/things/2842', 'next')
 
-        self._check_link_header(expected_value)
+        self._check_link_header(resource, expected_value)
 
     def test_add_link_multiple(self):
         expected_value = (
@@ -488,26 +443,26 @@ class TestHeaders(testing.TestBase):
 
         uri = u'ab\u00e7' if six.PY3 else 'ab\xc3\xa7'
 
-        self.resource = LinkHeaderResource()
-        self.resource.add_link('/things/2842', 'next')
-        self.resource.add_link(u'http://\u00e7runchy/bacon', 'contents')
-        self.resource.add_link(uri, 'http://example.com/ext-type')
-        self.resource.add_link(uri, u'http://example.com/\u00e7runchy')
-        self.resource.add_link(uri, u'https://example.com/too-\u00e7runchy')
-        self.resource.add_link('/alt-thing',
-                               u'alternate http://example.com/\u00e7runchy')
+        resource = LinkHeaderResource()
+        resource.add_link('/things/2842', 'next')
+        resource.add_link(u'http://\u00e7runchy/bacon', 'contents')
+        resource.add_link(uri, 'http://example.com/ext-type')
+        resource.add_link(uri, u'http://example.com/\u00e7runchy')
+        resource.add_link(uri, u'https://example.com/too-\u00e7runchy')
+        resource.add_link('/alt-thing',
+                          u'alternate http://example.com/\u00e7runchy')
 
-        self._check_link_header(expected_value)
+        self._check_link_header(resource, expected_value)
 
     def test_add_link_with_title(self):
         expected_value = ('</related/thing>; rel=item; '
                           'title="A related thing"')
 
-        self.resource = LinkHeaderResource()
-        self.resource.add_link('/related/thing', 'item',
-                               title='A related thing')
+        resource = LinkHeaderResource()
+        resource.add_link('/related/thing', 'item',
+                          title='A related thing')
 
-        self._check_link_header(expected_value)
+        self._check_link_header(resource, expected_value)
 
     def test_add_link_with_title_star(self):
         expected_value = ('</related/thing>; rel=item; '
@@ -515,54 +470,53 @@ class TestHeaders(testing.TestBase):
                           '</%C3%A7runchy/thing>; rel=item; '
                           "title*=UTF-8'en'A%20%C3%A7runchy%20thing")
 
-        self.resource = LinkHeaderResource()
-        self.resource.add_link('/related/thing', 'item',
-                               title_star=('', 'A related thing'))
+        resource = LinkHeaderResource()
+        resource.add_link('/related/thing', 'item',
+                          title_star=('', 'A related thing'))
 
-        self.resource.add_link(u'/\u00e7runchy/thing', 'item',
-                               title_star=('en', u'A \u00e7runchy thing'))
+        resource.add_link(u'/\u00e7runchy/thing', 'item',
+                          title_star=('en', u'A \u00e7runchy thing'))
 
-        self._check_link_header(expected_value)
+        self._check_link_header(resource, expected_value)
 
     def test_add_link_with_anchor(self):
         expected_value = ('</related/thing>; rel=item; '
                           'anchor="/some%20thing/or-other"')
 
-        self.resource = LinkHeaderResource()
-        self.resource.add_link('/related/thing', 'item',
-                               anchor='/some thing/or-other')
+        resource = LinkHeaderResource()
+        resource.add_link('/related/thing', 'item',
+                          anchor='/some thing/or-other')
 
-        self._check_link_header(expected_value)
+        self._check_link_header(resource, expected_value)
 
     def test_add_link_with_hreflang(self):
         expected_value = ('</related/thing>; rel=about; '
                           'hreflang=en')
 
-        self.resource = LinkHeaderResource()
-        self.resource.add_link('/related/thing', 'about',
-                               hreflang='en')
+        resource = LinkHeaderResource()
+        resource.add_link('/related/thing', 'about', hreflang='en')
 
-        self._check_link_header(expected_value)
+        self._check_link_header(resource, expected_value)
 
     def test_add_link_with_hreflang_multi(self):
         expected_value = ('</related/thing>; rel=about; '
                           'hreflang=en-GB; hreflang=de')
 
-        self.resource = LinkHeaderResource()
-        self.resource.add_link('/related/thing', 'about',
-                               hreflang=('en-GB', 'de'))
+        resource = LinkHeaderResource()
+        resource.add_link('/related/thing', 'about',
+                          hreflang=('en-GB', 'de'))
 
-        self._check_link_header(expected_value)
+        self._check_link_header(resource, expected_value)
 
     def test_add_link_with_type_hint(self):
         expected_value = ('</related/thing>; rel=alternate; '
                           'type="video/mp4; codecs=avc1.640028"')
 
-        self.resource = LinkHeaderResource()
-        self.resource.add_link('/related/thing', 'alternate',
-                               type_hint='video/mp4; codecs=avc1.640028')
+        resource = LinkHeaderResource()
+        resource.add_link('/related/thing', 'alternate',
+                          type_hint='video/mp4; codecs=avc1.640028')
 
-        self._check_link_header(expected_value)
+        self._check_link_header(resource, expected_value)
 
     def test_add_link_complex(self):
         expected_value = ('</related/thing>; rel=alternate; '
@@ -571,21 +525,24 @@ class TestHeaders(testing.TestBase):
                           'type="application/json"; '
                           'hreflang=en-GB; hreflang=de')
 
-        self.resource = LinkHeaderResource()
-        self.resource.add_link('/related/thing', 'alternate',
-                               title='A related thing',
-                               hreflang=('en-GB', 'de'),
-                               type_hint='application/json',
-                               title_star=('en', u'A \u00e7runchy thing'))
+        resource = LinkHeaderResource()
+        resource.add_link('/related/thing', 'alternate',
+                          title='A related thing',
+                          hreflang=('en-GB', 'de'),
+                          type_hint='application/json',
+                          title_star=('en', u'A \u00e7runchy thing'))
 
-        self._check_link_header(expected_value)
+        self._check_link_header(resource, expected_value)
 
     # ----------------------------------------------------------------------
     # Helpers
     # ----------------------------------------------------------------------
 
-    def _check_link_header(self, expected_value):
-        self.api.add_route(self.test_route, self.resource)
+    def _check_link_header(self, resource, expected_value):
+        self._check_header(resource, 'Link', expected_value)
 
-        self.simulate_request(self.test_route)
-        self.assertEqual(expected_value, self.srmock.headers_dict['link'])
+    def _check_header(self, resource, header, expected_value):
+        self.api.add_route('/', resource)
+
+        result = self.simulate_get()
+        self.assertEqual(result.headers[header], expected_value)

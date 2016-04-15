@@ -107,8 +107,9 @@ def http_date_to_dt(http_date, obs_date=False):
     Args:
         http_date (str): An RFC 1123 date string, e.g.:
             "Tue, 15 Nov 1994 12:45:26 GMT".
-            obs_date (bool, optional): Support obs-date formats according to
-                RFC 7231, e.g.: "Sunday, 06-Nov-94 08:49:37 GMT" (default ``False``).
+        obs_date (bool, optional): Support obs-date formats according to
+            RFC 7231, e.g.:
+            "Sunday, 06-Nov-94 08:49:37 GMT" (default ``False``).
 
     Returns:
         datetime: A UTC datetime instance corresponding to the given
@@ -128,6 +129,7 @@ def http_date_to_dt(http_date, obs_date=False):
 
     time_formats = (
         '%a, %d %b %Y %H:%M:%S %Z',
+        '%a, %d-%b-%Y %H:%M:%S %Z',
         '%A, %d-%b-%y %H:%M:%S %Z',
         '%a %b %d %H:%M:%S %Y',
     )
@@ -200,7 +202,7 @@ def get_bound_method(obj, method_name):
     method = getattr(obj, method_name, None)
     if method is not None:
         # NOTE(kgriffs): Ensure it is a bound method
-        if six.get_method_self(method) is None:  # pragma nocover
+        if six.get_method_self(method) is None:
             # NOTE(kgriffs): In Python 3 this code is unreachable
             # because the above will raise AttributeError on its
             # own.

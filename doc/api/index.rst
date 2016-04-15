@@ -14,3 +14,4 @@ Classes and Functions
    hooks
    routing
    util
+   testing

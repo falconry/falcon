@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import functools
 from functools import wraps
 import inspect
 
@@ -66,8 +67,7 @@ def before(action):
                         # variable that is shared between iterations of the
                         # for loop, above.
                         def let(responder=responder):
-                            do_before_all = _wrap_with_before(
-                                action, responder, resource, True)
+                            do_before_all = _wrap_with_before(action, responder)
 
                             setattr(resource, responder_name, do_before_all)
 
@@ -77,7 +77,7 @@ def before(action):
 
         else:
             responder = responder_or_resource
-            do_before_one = _wrap_with_before(action, responder, None, True)
+            do_before_one = _wrap_with_before(action, responder)
 
             return do_before_one
 
@@ -112,8 +112,7 @@ def after(action):
                     if callable(responder):
 
                         def let(responder=responder):
-                            do_after_all = _wrap_with_after(
-                                action, responder, resource, True)
+                            do_after_all = _wrap_with_after(action, responder)
 
                             setattr(resource, responder_name, do_after_all)
 
@@ -123,74 +122,52 @@ def after(action):
 
         else:
             responder = responder_or_resource
-            do_after_one = _wrap_with_after(action, responder, None, True)
+            do_after_one = _wrap_with_after(action, responder)
 
             return do_after_one
 
     return _after
+
 
 # -----------------------------------------------------------------------------
 # Helpers
 # -----------------------------------------------------------------------------
 
 
-# NOTE(kgriffs): Coverage disabled because under Python 3.4, the exception
-# is never raised. Coverage has been verified when running under other
-# versions of Python.
-def _get_argspec(func):  # pragma: no cover
-    """Wrapper around inspect.getargspec to handle Py2/Py3 differences."""
+def _has_resource_arg(action):
+    """Check if the given action function accepts a resource arg."""
 
-    try:
-        # NOTE(kgriffs): This will fail for callable classes, which
-        # explicitly define __call__, except under Python 3.4.
-        spec = inspect.getargspec(func)
+    if isinstance(action, functools.partial):
+        # NOTE(kgriffs): We special-case this, since versions of
+        # Python prior to 3.4 raise an error when trying to get the
+        # spec for a partial.
+        spec = inspect.getargspec(action.func)
 
-    except TypeError:
-        # NOTE(kgriffs): If this is a class that defines __call__ as a
-        # method, we need to get the argspec of __call__ directly. This
-        # does not work for regular functions and methods, because in
-        # that case, __call__ isn't actually a Python function under
-        # Python 2.6-3.3 (fixed in 3.4).
-        spec = inspect.getargspec(func.__call__)
+    elif inspect.isroutine(action):
+        # NOTE(kgriffs): We have to distinguish between instances of a
+        # callable class vs. a routine, since Python versions prior to
+        # 3.4 raise an error when trying to get the spec from
+        # a callable class instance.
+        spec = inspect.getargspec(action)
 
-    return spec
+    else:
+        spec = inspect.getargspec(action.__call__)
 
-
-def _has_self(spec):
-    """Checks whether the given argspec includes a self param.
-
-    Warning:
-        If a method's spec lists "self", that doesn't necessarily mean
-        that it should be called with a `self` param; if the method
-        instance is bound, the caller must omit `self` on invocation.
-
-    """
-
-    return len(spec.args) > 0 and spec.args[0] == 'self'
+    return 'resource' in spec.args
 
 
-def _wrap_with_after(action, responder, resource=None, is_method=False):
+def _wrap_with_after(action, responder):
     """Execute the given action function after a responder method.
 
     Args:
         action: A function with a signature similar to a resource responder
             method, taking the form ``func(req, resp, resource)``.
         responder: The responder method to wrap.
-        resource: The resource affected by `action` (default ``None``). If
-            ``None``, `is_method` MUST BE True, so that the resource can be
-            derived from the `self` param that is passed into the wrapper.
-        is_method: Whether or not `responder` is an unbound method
-            (default ``False``).
-
     """
-
-    # NOTE(swistakm): introspect action function to guess if it can handle
-    # additional resource argument without breaking backwards compatibility
-    spec = _get_argspec(action)
 
     # NOTE(swistakm): create shim before checking what will be actually
     # decorated. This helps to avoid excessive nesting
-    if len(spec.args) == (4 if _has_self(spec) else 3):
+    if _has_resource_arg(action):
         shim = action
     else:
         # TODO(kgriffs): This decorator does not work on callable
@@ -200,46 +177,26 @@ def _wrap_with_after(action, responder, resource=None, is_method=False):
         def shim(req, resp, resource):
             action(req, resp)
 
-    # NOTE(swistakm): method must be decorated differently than
-    # normal function
-    if is_method:
-        @wraps(responder)
-        def do_after(self, req, resp, **kwargs):
-            responder(self, req, resp, **kwargs)
-            shim(req, resp, self)
-    else:
-        assert resource is not None
-
-        @wraps(responder)
-        def do_after(req, resp, **kwargs):
-            responder(req, resp, **kwargs)
-            shim(req, resp, resource)
+    @wraps(responder)
+    def do_after(self, req, resp, **kwargs):
+        responder(self, req, resp, **kwargs)
+        shim(req, resp, self)
 
     return do_after
 
 
-def _wrap_with_before(action, responder, resource=None, is_method=False):
+def _wrap_with_before(action, responder):
     """Execute the given action function before a responder method.
 
     Args:
         action: A function with a similar signature to a resource responder
             method, taking the form ``func(req, resp, resource, params)``.
         responder: The responder method to wrap
-        resource: The resource affected by `action` (default ``None``). If
-            ``None``, `is_method` MUST BE True, so that the resource can be
-            derived from the `self` param that is passed into the wrapper
-        is_method: Whether or not `responder` is an unbound method
-            (default ``False``)
-
     """
-
-    # NOTE(swistakm): introspect action function to guess if it can handle
-    # additional resource argument without breaking backwards compatibility
-    action_spec = _get_argspec(action)
 
     # NOTE(swistakm): create shim before checking what will be actually
     # decorated. This allows to avoid excessive nesting
-    if len(action_spec.args) == (5 if _has_self(action_spec) else 4):
+    if _has_resource_arg(action):
         shim = action
     else:
         # TODO(kgriffs): This decorator does not work on callable
@@ -251,43 +208,9 @@ def _wrap_with_before(action, responder, resource=None, is_method=False):
             # since method is assumed to be bound.
             action(req, resp, kwargs)
 
-    # NOTE(swistakm): method must be decorated differently than
-    # normal function
-    if is_method:
-        @wraps(responder)
-        def do_before(self, req, resp, **kwargs):
-            shim(req, resp, self, kwargs)
-            responder(self, req, resp, **kwargs)
-    else:
-        assert resource is not None
-
-        @wraps(responder)
-        def do_before(req, resp, **kwargs):
-            shim(req, resp, resource, kwargs)
-            responder(req, resp, **kwargs)
+    @wraps(responder)
+    def do_before(self, req, resp, **kwargs):
+        shim(req, resp, self, kwargs)
+        responder(self, req, resp, **kwargs)
 
     return do_before
-
-
-def _wrap_with_hooks(before, after, responder, resource):
-    """Wrap responder on the given resource with "before" and "after" hooks.
-
-    Args:
-        before: An iterable of one or more "before" hooks
-        after: An iterable of one or more "after" hooks
-        responder: A method of a resource to wrap
-        resource: A reference to the resource instance providing the responder
-
-    """
-
-    if after is not None:
-        for action in after:
-            responder = _wrap_with_after(action, responder, resource)
-
-    if before is not None:
-        # Wrap in reversed order to achieve natural (first...last)
-        # execution order.
-        for action in reversed(before):
-            responder = _wrap_with_before(action, responder, resource)
-
-    return responder

@@ -30,14 +30,17 @@ Falcon's middleware interface is defined as follows:
         def process_resource(self, req, resp, resource):
             """Process the request after routing.
 
+            Note:
+                This method is only called when the request matches
+                a route to a resource.
+
             Args:
                 req: Request object that will be passed to the
                     routed responder.
                 resp: Response object that will be passed to the
                     responder.
                 resource: Resource object to which the request was
-                    routed. May be None if no route was found for
-                    the request.
+                    routed.
             """
 
         def process_response(self, req, resp, resource):
@@ -55,6 +58,11 @@ Falcon's middleware interface is defined as follows:
     Because *process_request* executes before routing has occurred, if a
     component modifies ``req.path`` in its *process_request* method,
     the framework will use the modified value to route the request.
+
+.. Tip::
+    The *process_resource* method is only called when the request matches
+    a route to a resource. To take action when a route is not found, a
+    :py:meth:`sink <falcon.API.add_sink>` may be used instead.
 
 Each component's *process_request*, *process_resource*, and
 *process_response* methods are executed hierarchically, as a stack, following

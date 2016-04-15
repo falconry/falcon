@@ -13,21 +13,21 @@
 # limitations under the License.
 
 from six import PY2
-from six import text_type as TEXT_TYPE
 from six import string_types as STRING_TYPES
 
 # NOTE(tbug): In some cases, http_cookies is not a module
 # but a dict-like structure. This fixes that issue.
 # See issue https://github.com/falconry/falcon/issues/556
 from six.moves import http_cookies
-SimpleCookie = http_cookies.SimpleCookie
-CookieError = http_cookies.CookieError
 
 from falcon.response_helpers import header_property, format_range
 from falcon.response_helpers import is_ascii_encodable
 from falcon.util import dt_to_http, TimezoneGMT
 from falcon.util.uri import encode as uri_encode
 from falcon.util.uri import encode_value as uri_encode_value
+
+SimpleCookie = http_cookies.SimpleCookie
+CookieError = http_cookies.CookieError
 
 GMT_TIMEZONE = TimezoneGMT()
 
@@ -56,7 +56,6 @@ class Response(object):
             Unicode, Falcon will encode as UTF-8 in the response. If
             data is already a byte string, use the data attribute
             instead (it's faster).
-        body_encoded (bytes): Returns a UTF-8 encoded version of `body`.
         data (bytes): Byte string representing response content.
 
             Use this attribute in lieu of `body` when your content is
@@ -85,12 +84,15 @@ class Response(object):
             provided by the WSGI server, in order to efficiently serve
             file-like objects.
 
-        stream_len (int): Expected length of `stream` (e.g., file size).
+        stream_len (int): Expected length of `stream`. If `stream` is set,
+            but `stream_len` is not, Falcon will not supply a
+            Content-Length header to the WSGI server. Consequently, the
+            server may choose to use chunked encoding or one of the
+            other strategies suggested by PEP-3333.
     """
 
     __slots__ = (
-        '_body',  # Stuff
-        '_body_encoded',  # Stuff
+        'body',
         'data',
         '_headers',
         '_cookies',
@@ -107,49 +109,24 @@ class Response(object):
         # when cookie is set via set_cookie
         self._cookies = None
 
-        self._body = None
-        self._body_encoded = None
+        self.body = None
         self.data = None
         self.stream = None
         self.stream_len = None
-
-    def _get_body(self):
-        return self._body
-
-    def _set_body(self, value):
-        self._body = value
-        self._body_encoded = None
-
-    # NOTE(flaper87): Lets use a property
-    # for the body in case its content was
-    # encoded and then modified.
-    body = property(_get_body, _set_body)
-
-    @property
-    def body_encoded(self):
-        # NOTE(flaper87): Notice this property
-        # is not thread-safe. If body is modified
-        # before this property returns, we might
-        # end up returning None.
-        body = self._body
-        if body and self._body_encoded is None:
-
-            # NOTE(flaper87): Assume it is an
-            # encoded str, then check and encode
-            # if it isn't.
-            self._body_encoded = body
-            if isinstance(body, TEXT_TYPE):
-                self._body_encoded = body.encode('utf-8')
-
-        return self._body_encoded
 
     def set_stream(self, stream, stream_len):
         """Convenience method for setting both `stream` and `stream_len`.
 
         Although the `stream` and `stream_len` properties may be set
         directly, using this method ensures `stream_len` is not
-        accidentally neglected.
+        accidentally neglected when the length of the stream is known in
+        advance.
 
+        Note:
+            If the stream length is unknown, you can set `stream`
+            directly, and ignore `stream_len`. In this case, the
+            WSGI server may choose to use chunked encoding or one
+            of the other strategies suggested by PEP-3333.
         """
 
         self.stream = stream
@@ -183,10 +160,12 @@ class Response(object):
                 A value of 0 means the cookie should be discarded immediately.
             path (str): Specifies the subset of URLs to
                 which this cookie applies.
-            secure (bool): Direct the client to use only secure means to
-                contact the origin server whenever it sends back this cookie
-                (default: ``True``). Warning: You will also need to enforce
-                HTTPS for the cookies to be transfered securely.
+            secure (bool): Direct the client to only return the cookie in
+                subsequent requests if they are made over HTTPS
+                (default: ``True``). This prevents attackers from reading
+                sensitive cookie data. Note that for the `secure` cookie
+                attribute to be effective, your application will need to
+                enforce HTTPS. See also: `RFC 6265, Section 4.1.2.5`_.
             http_only (bool): Direct the client to only transfer the cookie
                 with unscripted HTTP requests (default: ``True``). This is
                 intended to mitigate some forms of cross-site scripting.
@@ -198,6 +177,9 @@ class Response(object):
         .. _RFC 6265:
             http://tools.ietf.org/html/rfc6265
 
+        .. _RFC 6265, Section 4.1.2.5:
+            https://tools.ietf.org/html/rfc6265#section-4.1.2.5
+
         """
 
         if not is_ascii_encodable(name):
@@ -205,7 +187,7 @@ class Response(object):
         if not is_ascii_encodable(value):
             raise ValueError('"value" is not ascii encodable')
 
-        if PY2:  # pragma: no cover
+        if PY2:
             name = str(name)
             value = str(value)
 
@@ -226,34 +208,49 @@ class Response(object):
             # NOTE(tbug): we never actually need to
             # know that GMT is named GMT when formatting cookies.
             # It is a function call less to just write "GMT" in the fmt string:
-            fmt = "%a, %d %b %Y %H:%M:%S GMT"
+            fmt = '%a, %d %b %Y %H:%M:%S GMT'
             if expires.tzinfo is None:
                 # naive
-                self._cookies[name]["expires"] = expires.strftime(fmt)
+                self._cookies[name]['expires'] = expires.strftime(fmt)
             else:
                 # aware
                 gmt_expires = expires.astimezone(GMT_TIMEZONE)
-                self._cookies[name]["expires"] = gmt_expires.strftime(fmt)
+                self._cookies[name]['expires'] = gmt_expires.strftime(fmt)
 
         if max_age:
-            self._cookies[name]["max-age"] = max_age
+            self._cookies[name]['max-age'] = max_age
 
         if domain:
-            self._cookies[name]["domain"] = domain
+            self._cookies[name]['domain'] = domain
 
         if path:
-            self._cookies[name]["path"] = path
+            self._cookies[name]['path'] = path
 
         if secure:
-            self._cookies[name]["secure"] = secure
+            self._cookies[name]['secure'] = secure
 
         if http_only:
-            self._cookies[name]["httponly"] = http_only
+            self._cookies[name]['httponly'] = http_only
 
     def unset_cookie(self, name):
-        """Unset a cookie in the response."""
-        if self._cookies is not None and name in self._cookies:
-            del self._cookies[name]
+        """Unset a cookie in the response
+
+        Note:
+            This will clear the contents of the cookie, and instruct
+            the browser to immediately expire its own copy of the
+            cookie, if any.
+        """
+        if self._cookies is None:
+            self._cookies = SimpleCookie()
+
+        self._cookies[name] = ''
+
+        # NOTE(Freezerburn): SimpleCookie apparently special cases the
+        # expires attribute to automatically use strftime and set the
+        # time as a delta from the current time. We use -1 here to
+        # basically tell the browser to immediately expire the cookie,
+        # thus removing it from future request objects.
+        self._cookies[name]['expires'] = -1
 
     def get_header(self, name):
         """Retrieve the raw string value for the given header.
@@ -296,7 +293,7 @@ class Response(object):
         Warning:
             If the header already exists, the new value will be appended
             to it, delimited by a comma. Most header specifications support
-            this format, Cookie and Set-Cookie being the notable exceptions.
+            this format, Set-Cookie being the notable exceptions.
 
         Warning:
             For setting cookies, see :py:meth:`~.set_cookie`
@@ -484,10 +481,11 @@ class Response(object):
         'Content-Range',
         """A tuple to use in constructing a value for the Content-Range header.
 
-        The tuple has the form (*start*, *end*, *length*), where *start* and
-        *end* designate the byte range (inclusive), and *length* is the
-        total number of bytes, or '\*' if unknown. You may pass ``int``'s for
-        these numbers (no need to convert to ``str`` beforehand).
+        The tuple has the form (*start*, *end*, *length*, [*unit*]), where *start* and
+        *end* designate the range (inclusive), and *length* is the
+        total length, or '\*' if unknown. You may pass ``int``'s for
+        these numbers (no need to convert to ``str`` beforehand). The optional value
+        *unit* describes the range unit and defaults to 'bytes'
 
         Note:
             You only need to use the alternate form, 'bytes \*/1234', for
@@ -550,7 +548,7 @@ class Response(object):
         lambda v: ', '.join(v))
 
     def _encode_header(self, name, value, py2=PY2):
-        if py2:  # pragma: no cover
+        if py2:
             if isinstance(name, unicode):
                 name = name.encode('ISO-8859-1')
 
@@ -578,12 +576,12 @@ class Response(object):
         if set_content_type:
             headers['content-type'] = media_type
 
-        if py2:  # pragma: no cover
+        if py2:
             # PERF(kgriffs): Don't create an extra list object if
             # it isn't needed.
             items = headers.items()
         else:
-            items = list(headers.items())  # pragma: no cover
+            items = list(headers.items())
 
         if self._cookies is not None:
             # PERF(tbug):
@@ -594,6 +592,6 @@ class Response(object):
             #
             # Even without the .split("\\r\\n"), the below
             # is still ~17% faster, so don't use .output()
-            items += [("set-cookie", c.OutputString())
+            items += [('set-cookie', c.OutputString())
                       for c in self._cookies.values()]
         return items

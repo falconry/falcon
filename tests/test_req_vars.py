@@ -297,11 +297,12 @@ class TestReqVars(testing.TestBase):
         req = Request(testing.create_environ(headers=headers))
         self.assertTrue(req.client_accepts('text/plain'))
         self.assertTrue(req.client_accepts('text/csv'))
-        self.assertTrue(req.client_accepts('application/xhtml+xml'))
+        self.assertFalse(req.client_accepts('application/xhtml+xml'))
 
         headers = {'Accept': 'text/*; q=0.1, application/xhtml+xml; q=0.5'}
         req = Request(testing.create_environ(headers=headers))
         self.assertTrue(req.client_accepts('text/plain'))
+        self.assertTrue(req.client_accepts('application/xhtml+xml'))
 
         headers = {'Accept': 'text/*,         application/*'}
         req = Request(testing.create_environ(headers=headers))
@@ -348,6 +349,12 @@ class TestReqVars(testing.TestBase):
         self.assertFalse(req.client_accepts_json)
         self.assertTrue(req.client_accepts_msgpack)
 
+        headers = {'Accept': 'application/msgpack'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertFalse(req.client_accepts_xml)
+        self.assertFalse(req.client_accepts_json)
+        self.assertTrue(req.client_accepts_msgpack)
+
         headers = {
             'Accept': 'application/json,application/xml,application/x-msgpack'
         }
@@ -366,7 +373,7 @@ class TestReqVars(testing.TestBase):
         preferred_type = req.client_prefers(('application/xml',
                                              'application/json'))
 
-        # NOTE(kgriffs): If client doesn't care, "preferr" the first one
+        # NOTE(kgriffs): If client doesn't care, "prefer" the first one
         self.assertEqual(preferred_type, 'application/xml')
 
         headers = {'Accept': 'text/*; q=0.1, application/xhtml+xml; q=0.5'}
@@ -403,6 +410,24 @@ class TestReqVars(testing.TestBase):
         req = Request(testing.create_environ())
         self.assertIs(req.range, None)
 
+    def test_range_unit(self):
+        headers = {'Range': 'bytes=10-'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertEqual(req.range, (10, -1))
+        self.assertEqual(req.range_unit, 'bytes')
+
+        headers = {'Range': 'items=10-'}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertEqual(req.range, (10, -1))
+        self.assertEqual(req.range_unit, 'items')
+
+        headers = {'Range': ''}
+        req = Request(testing.create_environ(headers=headers))
+        self.assertRaises(falcon.HTTPInvalidHeader, lambda: req.range_unit)
+
+        req = Request(testing.create_environ())
+        self.assertIs(req.range_unit, None)
+
     def test_range_invalid(self):
         headers = {'Range': 'bytes=10240'}
         req = Request(testing.create_environ(headers=headers))
@@ -410,7 +435,7 @@ class TestReqVars(testing.TestBase):
 
         headers = {'Range': 'bytes=-'}
         expected_desc = ('The value provided for the Range header is '
-                         'invalid. The byte offsets are missing.')
+                         'invalid. The range offsets are missing.')
         self._test_error_details(headers, 'range',
                                  falcon.HTTPInvalidHeader,
                                  'Invalid header value', expected_desc)
@@ -461,8 +486,8 @@ class TestReqVars(testing.TestBase):
 
         headers = {'Range': 'bytes=x-y'}
         expected_desc = ('The value provided for the Range header is '
-                         'invalid. It must be a byte range formatted '
-                         'according to RFC 2616.')
+                         'invalid. It must be a range formatted '
+                         'according to RFC 7233.')
         self._test_error_details(headers, 'range',
                                  falcon.HTTPInvalidHeader,
                                  'Invalid header value', expected_desc)
@@ -470,15 +495,15 @@ class TestReqVars(testing.TestBase):
         headers = {'Range': 'bytes=0-0,-1'}
         expected_desc = ('The value provided for the Range '
                          'header is invalid. The value must be a '
-                         'continuous byte range.')
+                         'continuous range.')
         self._test_error_details(headers, 'range',
                                  falcon.HTTPInvalidHeader,
                                  'Invalid header value', expected_desc)
 
         headers = {'Range': '10-'}
-        expected_desc = ("The value provided for the Range "
-                         "header is invalid. The value must be "
-                         "prefixed with 'bytes='")
+        expected_desc = ('The value provided for the Range '
+                         'header is invalid. The value must be '
+                         "prefixed with a range unit, e.g. 'bytes='")
         self._test_error_details(headers, 'range',
                                  falcon.HTTPInvalidHeader,
                                  'Invalid header value', expected_desc)

@@ -1,0 +1,148 @@
+Changelog for Falcon 1.0.0
+==========================
+
+Breaking Changes
+----------------
+- The deprecated global hooks feature has been removed.
+  :class:`~falcon.API` no longer accepts `before` and `after`
+  kwargs. Applications can work around this by migrating any logic
+  contained in global hooks to reside in middleware components instead.
+- The middleware method :meth:`process_resource` must now accept
+  an additional `params` argument. This gives the middleware method an
+  opportunity to interact with the values for any fields defined in a
+  route's URI template.
+- The middleware method :meth:`process_resource` is now skipped when
+  no route is found for the incoming request. This avoids having to
+  include an ``if resource is not None`` check when implementing this
+  method. A sink may be used instead to execute logic in the case that
+  no route is found.
+- An option was added to toggle automatic parsing of form params. Falcon
+  will no longer automatically parse, by default, requests that have the
+  content type "application/x-www-form-urlencoded". This was done to
+  avoid unintended side-effects that may arise from consuming the
+  request stream. It also makes it more straightforward for applications
+  to customize and extend the handling of form submissions. Applications
+  that require this functionality must re-enable it explicitly, by
+  setting a new request option that was added for that purpose, per the
+  example below::
+
+        app = falcon.API()
+        app.req_options.auto_parse_form_urlencoded = True
+
+- The performance of composing the response body was
+  improved. As part of this work, the :attr:`Response.body_encoded`
+  attribute was removed. This property was only intended to be used by
+  the framework itself, but any dependent code can be migrated per
+  the example below::
+
+    # Before
+    body = resp.body_encoded
+
+    # After
+    if resp.body:
+        body = resp.body.encode('utf-8')
+    else:
+        body = b''
+
+New & Improved
+--------------
+
+- A `code of conduct <https://github.com/falconry/falcon/blob/master/CODEOFCONDUCT.md>`_
+  was added to solidify our community's commitment to sustaining a
+  welcoming, respectful culture.
+- CPython 3.5 is now fully supported.
+- The constants HTTP_422, HTTP_428, HTTP_429, HTTP_431, HTTP_451, and
+  HTTP_511 were added.
+- The :class:`~falcon.HTTPUnprocessableEntity`,
+  :class:`~falcon.HTTPTooManyRequests`, and
+  :class:`~falcon.HTTPUnavailableForLegalReasons` error classes were
+  added.
+- The :any:`HTTPStatus` class is now available directly under
+  the `falcon` module, and has been properly documented.
+- Support for HTTP redirections was added via a set of
+  :any:`HTTPStatus` subclasses. This should avoid the problem
+  of hooks and responder methods possibly overriding the redirect.
+  Raising an instance of one of these new redirection classes will
+  short-circuit request processing, similar to raising an instance of
+  :class:`~falcon.HTTPError`.
+- The default 404 responder now raises an instance of
+  :class:`~falcon.HTTPError` instead of manipulating the
+  response object directly. This makes it possible to customize the
+  response body using a custom error handler or serializer.
+- A new method, :meth:`~falcon.Response.get_header`, was added to
+  :class:`~falcon.Response`. Previously there was no way to check if a
+  header had been set. The new :meth:`~falcon.Response.get_header`
+  method facilitates this and other use cases.
+- :meth:`falcon.Request.client_accepts_msgpack` now recognizes
+  "application/msgpack", in addition to "application/x-msgpack".
+- New :any:`access_route` and :any:`remote_addr` properties were added
+  to :class:`~falcon.Request` for getting upstream IP addresses.
+- :class:`~falcon.Request` and :class:`~falcon.Response` now support
+  range units other than bytes.
+- The :class:`~falcon.API` and
+  :class:`~falcon.testing.StartResponseMock` class types can now be
+  customized by inheriting from :class:`~falcon.testing.TestBase` and
+  overriding the `api_class` and `srmock_class` class attributes.
+- Path segments with multiple field expressions may now be defined at
+  the same level as path segments having only a single field
+  expression. For example::
+
+    api.add_route('/files/{file_id}', resource_1)
+    api.add_route('/files/{file_id}.{ext}', resource_2)
+
+- Support was added to :any:`API.add_route()` for passing through
+  additional args and kwargs to custom routers.
+- Digits and the underscore character are now allowed in the
+  :meth:`falcon.routing.compile_uri_template` helper, for use in custom
+  router implementations.
+- A new testing framework was added that should be more intuitive to
+  use than the old one. Several of Falcon's own tests were ported to use
+  the new framework (the remainder to be ported in a
+  subsequent release.) The new testing framework performs wsgiref
+  validation on all requests.
+- The performance of setting :attr:`Response.content_range` was
+  improved by ~50%.
+- A new param, `obs_date`, was added to
+  :meth:`falcon.Request.get_header_as_datetime`, and defaults to
+  ``False``. This improves the method's performance when obsolete date
+  formats do not need to be supported.
+
+Fixed
+-----
+
+- Field expressions at a given level in the routing tree no longer
+  mask alternative branches. When a single segment in a requested path
+  can match more than one node at that branch in the routing tree, and
+  the first branch taken happens to be the wrong one (i.e., the
+  subsequent nodes do not match, but they would have under a different
+  branch), the other branches that could result in a
+  successful resolution of the requested path will now be subsequently
+  tried, whereas previously the framework would behave as if no route
+  could be found.
+- The user agent is now instructed to expire the cookie when it is
+  cleared via :meth:`~falcon.Response.unset_cookie`.
+- Support was added for hooks that have been defined via
+  :meth:`functools.partial`.
+- Tunneled UTF-8 characters in the request path are now properly
+  decoded, and a placeholder character is substituted for any invalid
+  code points.
+- The instantiation of :any:`Request.context_type` is now
+  delayed until after all other properties of the
+  :class:`~falcon.Request` class have been initialized, in case the
+  context type's own initialization depends on any of
+  :class:`~falcon.Request`'s properties.
+- A case was fixed in which reading from :any:`Request.stream`
+  could hang when using :mod:`wsgiref` to host the app.
+- The default error serializer now sets the Vary header in responses.
+  Implementing this required passing the :class:`~falcon.Response`
+  object to the serializer, which would normally be a breaking change.
+  However, the framework was modified to detect old-style error
+  serializers and wrap them with a shim to make them compatible with
+  the new interface.
+- A query string containing malformed percent-encoding no longer causes
+  the framework to raise an error.
+- Additional tests were added for a few lines of code that were
+  previously not covered, due to deficiencies in code coverage reporting
+  that have since been corrected.
+- The Cython note is no longer displayed when installing under Jython.
+- Several errors and ambiguities in the documentation were corrected.

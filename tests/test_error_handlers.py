@@ -1,7 +1,5 @@
-import json
-
 import falcon
-import falcon.testing as testing
+from falcon import testing
 
 
 def capture_error(ex, req, resp, params):
@@ -31,6 +29,7 @@ class CustomException(CustomBaseException):
 
 
 class ErroredClassResource(object):
+
     def on_get(self, req, resp):
         raise Exception('Plain Exception')
 
@@ -41,44 +40,35 @@ class ErroredClassResource(object):
         raise CustomException('CustomException')
 
 
-class TestErrorHandler(testing.TestBase):
+class TestErrorHandler(testing.TestCase):
+
+    def setUp(self):
+        super(TestErrorHandler, self).setUp()
+        self.api.add_route('/', ErroredClassResource())
 
     def test_caught_error(self):
         self.api.add_error_handler(Exception, capture_error)
 
-        self.api.add_route(self.test_route, ErroredClassResource())
+        result = self.simulate_get()
+        self.assertEqual(result.text, 'error: Plain Exception')
 
-        body = self.simulate_request(self.test_route)
-        self.assertEqual([b'error: Plain Exception'], body)
-
-        body = self.simulate_request(self.test_route, method='HEAD')
-        self.assertEqual(falcon.HTTP_723, self.srmock.status)
-        self.assertEqual([], body)
+        result = self.simulate_head()
+        self.assertEqual(result.status_code, 723)
+        self.assertFalse(result.content)
 
     def test_uncaught_error(self):
         self.api.add_error_handler(CustomException, capture_error)
-
-        self.api.add_route(self.test_route, ErroredClassResource())
-
-        self.assertRaises(Exception,
-                          self.simulate_request, self.test_route)
+        self.assertRaises(Exception, self.simulate_get)
 
     def test_uncaught_error_else(self):
-        self.api.add_route(self.test_route, ErroredClassResource())
-
-        self.assertRaises(Exception,
-                          self.simulate_request, self.test_route)
+        self.assertRaises(Exception, self.simulate_get)
 
     def test_converted_error(self):
         self.api.add_error_handler(CustomException)
 
-        self.api.add_route(self.test_route, ErroredClassResource())
-
-        body = self.simulate_request(self.test_route, method='DELETE')
-        self.assertEqual(falcon.HTTP_792, self.srmock.status)
-
-        info = json.loads(body[0].decode())
-        self.assertEqual('Internet crashed!', info['title'])
+        result = self.simulate_delete()
+        self.assertEqual(result.status_code, 792)
+        self.assertEqual(result.json[u'title'], u'Internet crashed!')
 
     def test_handle_not_defined(self):
         self.assertRaises(AttributeError,
@@ -87,17 +77,13 @@ class TestErrorHandler(testing.TestBase):
     def test_subclass_error(self):
         self.api.add_error_handler(CustomBaseException, capture_error)
 
-        self.api.add_route(self.test_route, ErroredClassResource())
-
-        body = self.simulate_request(self.test_route, method='DELETE')
-        self.assertEqual(falcon.HTTP_723, self.srmock.status)
-        self.assertEqual([b'error: CustomException'], body)
+        result = self.simulate_delete()
+        self.assertEqual(result.status_code, 723)
+        self.assertEqual(result.text, 'error: CustomException')
 
     def test_error_order(self):
         self.api.add_error_handler(Exception, capture_error)
         self.api.add_error_handler(Exception, handle_error_first)
 
-        self.api.add_route(self.test_route, ErroredClassResource())
-
-        body = self.simulate_request(self.test_route)
-        self.assertEqual([b'first error handler'], body)
+        result = self.simulate_get()
+        self.assertEqual(result.text, 'first error handler')

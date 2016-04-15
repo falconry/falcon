@@ -15,19 +15,27 @@ VERSION = VERSION.__version__
 # TODO(kgriffs): Fork and optimize/modernize python-mimeparse
 REQUIRES = ['six>=1.4.0', 'python-mimeparse']
 
-PYPY = True
-CYTHON = False
+JYTHON = 'java' in sys.platform
+
 try:
     sys.pypy_version_info
+    PYPY = True
 except AttributeError:
     PYPY = False
 
-if not PYPY:
+if PYPY or JYTHON:
+    CYTHON = False
+else:
     try:
         from Cython.Distutils import build_ext
         CYTHON = True
     except ImportError:
-        print('\nWARNING: Cython not installed. '
+        # TODO(kgriffs): pip now ignores all output, so the user
+        # may not see this message. See also:
+        #
+        #   https://github.com/pypa/pip/issues/2732
+        #
+        print('\nNOTE: Cython not installed. '
               'Falcon will still work fine, but may run '
               'a bit slower.\n')
         CYTHON = False
@@ -44,21 +52,15 @@ if CYTHON:
 
         return module_names
 
+    package_names = ['falcon', 'falcon.util', 'falcon.routing']
     ext_modules = [
-        Extension('falcon.' + ext, [path.join('falcon', ext + '.py')])
-        for ext in list_modules(path.join(MYDIR, 'falcon'))]
-
-    ext_modules += [
-        Extension('falcon.util.' + ext,
-                  [path.join('falcon', 'util', ext + '.py')])
-
-        for ext in list_modules(path.join(MYDIR, 'falcon', 'util'))]
-
-    ext_modules += [
-        Extension('falcon.routing.' + ext,
-                  [path.join('falcon', 'routing', ext + '.py')])
-
-        for ext in list_modules(path.join(MYDIR, 'falcon', 'routing'))]
+        Extension(
+            package + '.' + module,
+            [path.join(*(package.split('.') + [module + '.py']))]
+        )
+        for package in package_names
+        for module in list_modules(path.join(MYDIR, *package.split('.')))
+    ]
 
     cmdclass = {'build_ext': build_ext}
 
@@ -91,6 +93,7 @@ setup(
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
     ],
     keywords='wsgi web api framework rest http cloud',
     author='Kurt Griffiths',

@@ -17,8 +17,8 @@ try:
     # standard way of exposing a socket as a file-like object, and
     # is used by wsgiref for wsgi.input.
     import socket
-    NativeStream = socket._fileobject  # pylint: disable=E1101
-except AttributeError:  # pragma nocover
+    NativeStream = socket._fileobject
+except AttributeError:
     # NOTE(kgriffs): In Python 3.3, wsgiref implements wsgi.input
     # using _io.BufferedReader which is an alias of io.BufferedReader
     import io
@@ -26,10 +26,11 @@ except AttributeError:  # pragma nocover
 
 import mimeparse
 import six
+from wsgiref.validate import InputWrapper
 
-from falcon.errors import *
+from falcon.errors import *  # NOQA
 from falcon import util
-from falcon.util.uri import parse_query_string, parse_host
+from falcon.util.uri import parse_query_string, parse_host, unquote_string
 from falcon import request_helpers as helpers
 
 # NOTE(tbug): In some cases, http_cookies is not a module
@@ -78,12 +79,49 @@ class Request(object):
                 If the hostname in the request is an IP address, the value
                 for `subdomain` is undefined.
 
-        user_agent (str): Value of the User-Agent header, or ``None`` if the
-            header is missing.
-        app (str): Name of the WSGI app (if using WSGI's notion of virtual
-            hosting).
         env (dict): Reference to the WSGI environ ``dict`` passed in from the
             server. See also PEP-3333.
+        app (str): Name of the WSGI app (if using WSGI's notion of virtual
+            hosting).
+        access_route(list): IP address of the original client, as well
+            as any known addresses of proxies fronting the WSGI server.
+
+            The following request headers are checked, in order of
+            preference, to determine the addresses:
+
+                - ``Forwarded``
+                - ``X-Forwarded-For``
+                - ``X-Real-IP``
+
+            If none of these headers are available, the value of
+            :py:attr:`~.remote_addr` is used instead.
+
+            Note:
+                Per `RFC 7239`_, the access route may contain "unknown"
+                and obfuscated identifiers, in addition to IPv4 and
+                IPv6 addresses
+
+                .. _RFC 7239: https://tools.ietf.org/html/rfc7239
+
+            Warning:
+                Headers can be forged by any client or proxy. Use this
+                property with caution and validate all values before
+                using them. Do not rely on the access route to authorize
+                requests.
+
+        remote_addr(str): IP address of the closest client or proxy to
+            the WSGI server.
+
+            This property is determined by the value of ``REMOTE_ADDR``
+            in the WSGI environment dict. Since this address is not
+            derived from an HTTP header, clients and proxies can not
+            forge it.
+
+            Note:
+                If your application is behind one or more reverse
+                proxies, you can use :py:attr:`~.access_route`
+                to retrieve the real IP address of the client.
+
         context (dict): Dictionary to hold any data about the request which is
             specific to your app (e.g. session object). Falcon itself will
             not interact with this attribute after it has been initialized.
@@ -95,6 +133,13 @@ class Request(object):
             by creating a custom child class of ``falcon.Request``, and
             then passing that new class to `falcon.API()` by way of the
             latter's `request_type` parameter.
+
+            Note:
+                When overriding `context_type` with a factory function (as
+                opposed to a class), the function is called like a method of
+                the current Request instance. Therefore the first argument is
+                the Request instance itself (self).
+
         uri (str): The fully-qualified URI for the request.
         url (str): alias for `uri`.
         relative_uri (str): The path + query string portion of the full URI.
@@ -102,6 +147,8 @@ class Request(object):
             string).
         query_string (str): Query string portion of the request URL, without
             the preceding '?' character.
+        user_agent (str): Value of the User-Agent header, or ``None`` if the
+            header is missing.
         accept (str): Value of the Accept header, or '*/*' if the header is
             missing.
         auth (str): Value of the Authorization header, or ``None`` if the
@@ -121,18 +168,12 @@ class Request(object):
 
             Note:
                 If an HTML form is POSTed to the API using the
-                *application/x-www-form-urlencoded* media type, Falcon
+                *application/x-www-form-urlencoded* media type, and
+                the :py:attr:`~.RequestOptions.auto_parse_form_urlencoded`
+                option is set, the framework
                 will consume `stream` in order to parse the parameters
                 and merge them into the query string parameters. In this
                 case, the stream will be left at EOF.
-
-                Note also that the character encoding for fields, before
-                percent-encoding non-ASCII bytes, is assumed to be
-                UTF-8. The special `_charset_` field is ignored if present.
-
-                Falcon expects form-encoded request bodies to be
-                encoded according to the standard W3C algorithm (see
-                also http://goo.gl/6rlcux).
 
         date (datetime): Value of the Date header, converted to a
             ``datetime`` instance. The header value is assumed to
@@ -151,6 +192,8 @@ class Request(object):
             Only continous ranges are supported (e.g., "bytes=0-0,-1" would
             result in an HTTPBadRequest exception when the attribute is
             accessed.)
+        range_unit (str): Unit of the range parsed from the value of the
+            Range header, or ``None`` if the header is missing
         if_match (str): Value of the If-Match header, or ``None`` if the
             header is missing.
         if_none_match (str): Value of the If-None-Match header, or ``None``
@@ -198,6 +241,7 @@ class Request(object):
         '_wsgierrors',
         'options',
         '_cookies',
+        '_cached_access_route',
     )
 
     # Allow child classes to override this
@@ -209,14 +253,6 @@ class Request(object):
         self.env = env
         self.options = options if options else RequestOptions()
 
-        if self.context_type is None:
-            # Literal syntax is more efficient than using dict()
-            self.context = {}
-        else:
-            # pylint will detect this as not-callable because it only sees the
-            # declaration of None, not whatever type a subclass may have set.
-            self.context = self.context_type()  # pylint: disable=not-callable
-
         self._wsgierrors = env['wsgi.errors']
         self.stream = env['wsgi.input']
         self.method = env['REQUEST_METHOD']
@@ -224,7 +260,7 @@ class Request(object):
         # Normalize path
         path = env['PATH_INFO']
         if path:
-            if six.PY3:  # pragma: no cover
+            if six.PY3:
                 # PEP 3333 specifies that PATH_INFO variable are always
                 # "bytes tunneled as latin-1" and must be encoded back
                 path = path.encode('latin1').decode('utf-8', 'replace')
@@ -258,6 +294,7 @@ class Request(object):
         self._cached_headers = None
         self._cached_uri = None
         self._cached_relative_uri = None
+        self._cached_access_route = None
 
         try:
             self.content_type = self.env['CONTENT_TYPE']
@@ -267,10 +304,8 @@ class Request(object):
         # NOTE(kgriffs): Wrap wsgi.input if needed to make read() more robust,
         # normalizing semantics between, e.g., gunicorn and wsgiref.
         if _maybe_wrap_wsgi_stream:
-            if isinstance(self.stream, NativeStream):
-                # NOTE(kgriffs): This is covered by tests, it's just that
-                # coverage can't figure this out for some reason (TBD).
-                self._wrap_stream()  # pragma nocover
+            if isinstance(self.stream, (NativeStream, InputWrapper,)):
+                self._wrap_stream()
             else:
                 # PERF(kgriffs): If self.stream does not need to be wrapped
                 # this time, it never needs to be wrapped since the server
@@ -280,9 +315,16 @@ class Request(object):
         # PERF(kgriffs): Technically, we should spend a few more
         # cycles and parse the content type for real, but
         # this heuristic will work virtually all the time.
-        if (self.content_type is not None and
+        if (self.options.auto_parse_form_urlencoded and
+                self.content_type is not None and
                 'application/x-www-form-urlencoded' in self.content_type):
             self._parse_form_urlencoded()
+
+        if self.context_type is None:
+            # Literal syntax is more efficient than using dict()
+            self.context = {}
+        else:
+            self.context = self.context_type()
 
     # ------------------------------------------------------------------------
     # Properties
@@ -303,7 +345,8 @@ class Request(object):
 
     @property
     def client_accepts_msgpack(self):
-        return self.client_accepts('application/x-msgpack')
+        return (self.client_accepts('application/x-msgpack') or
+                self.client_accepts('application/msgpack'))
 
     @property
     def client_accepts_xml(self):
@@ -362,20 +405,20 @@ class Request(object):
     def range(self):
         try:
             value = self.env['HTTP_RANGE']
-            if value.startswith('bytes='):
-                value = value[6:]
+            if '=' in value:
+                unit, sep, req_range = value.partition('=')
             else:
-                msg = "The value must be prefixed with 'bytes='"
+                msg = "The value must be prefixed with a range unit, e.g. 'bytes='"
                 raise HTTPInvalidHeader(msg, 'Range')
         except KeyError:
             return None
 
-        if ',' in value:
-            msg = 'The value must be a continuous byte range.'
+        if ',' in req_range:
+            msg = 'The value must be a continuous range.'
             raise HTTPInvalidHeader(msg, 'Range')
 
         try:
-            first, sep, last = value.partition('-')
+            first, sep, last = req_range.partition('-')
 
             if not sep:
                 raise ValueError()
@@ -385,15 +428,29 @@ class Request(object):
             elif last:
                 return (-int(last), -1)
             else:
-                msg = 'The byte offsets are missing.'
+                msg = 'The range offsets are missing.'
                 raise HTTPInvalidHeader(msg, 'Range')
 
         except ValueError:
             href = 'http://goo.gl/zZ6Ey'
             href_text = 'HTTP/1.1 Range Requests'
-            msg = ('It must be a byte range formatted according to RFC 2616.')
+            msg = ('It must be a range formatted according to RFC 7233.')
             raise HTTPInvalidHeader(msg, 'Range', href=href,
                                     href_text=href_text)
+
+    @property
+    def range_unit(self):
+        try:
+            value = self.env['HTTP_RANGE']
+
+            if '=' in value:
+                unit, sep, req_range = value.partition('=')
+                return unit
+            else:
+                msg = "The value must be prefixed with a range unit, e.g. 'bytes='"
+                raise HTTPInvalidHeader(msg, 'Range')
+        except KeyError:
+            return None
 
     @property
     def app(self):
@@ -505,7 +562,7 @@ class Request(object):
             # NOTE(tbug): We might want to look into parsing
             # cookies ourselves. The SimpleCookie is doing a
             # lot if stuff only required to SEND cookies.
-            parser = SimpleCookie(self.get_header("Cookie"))
+            parser = SimpleCookie(self.get_header('Cookie'))
             cookies = {}
             for morsel in parser.values():
                 cookies[morsel.key] = morsel.value
@@ -513,6 +570,38 @@ class Request(object):
             self._cookies = cookies
 
         return self._cookies.copy()
+
+    @property
+    def access_route(self):
+        if self._cached_access_route is None:
+            # NOTE(kgriffs): Try different headers in order of
+            # preference; if none are found, fall back to REMOTE_ADDR.
+            #
+            # If one of these headers is present, but its value is
+            # malformed such that we end up with an empty list, or
+            # a non-empty list containing malformed values, go ahead
+            # and return the results as-is. The alternative would be
+            # to fall back to another header or to REMOTE_ADDR, but
+            # that only masks the problem; the operator needs to be
+            # aware that an upstream proxy is malfunctioning.
+
+            if 'HTTP_FORWARDED' in self.env:
+                self._cached_access_route = self._parse_rfc_forwarded()
+            elif 'HTTP_X_FORWARDED_FOR' in self.env:
+                addresses = self.env['HTTP_X_FORWARDED_FOR'].split(',')
+                self._cached_access_route = [ip.strip() for ip in addresses]
+            elif 'HTTP_X_REAL_IP' in self.env:
+                self._cached_access_route = [self.env['HTTP_X_REAL_IP']]
+            elif 'REMOTE_ADDR' in self.env:
+                self._cached_access_route = [self.env['REMOTE_ADDR']]
+            else:
+                self._cached_access_route = []
+
+        return self._cached_access_route
+
+    @property
+    def remote_addr(self):
+        return self.env.get('REMOTE_ADDR')
 
     # ------------------------------------------------------------------------
     # Methods
@@ -619,7 +708,8 @@ class Request(object):
                 ``HTTPBadRequest`` instead of returning gracefully when the
                 header is not found (default ``False``).
             obs_date (bool, optional): Support obs-date formats according to
-                RFC 7231, e.g.: "Sunday, 06-Nov-94 08:49:37 GMT" (default ``False``).
+                RFC 7231, e.g.: "Sunday, 06-Nov-94 08:49:37 GMT"
+                (default ``False``).
 
         Returns:
             datetime: The value of the specified header if it exists,
@@ -941,7 +1031,7 @@ class Request(object):
         try:
             date = strptime(param_value, format_string).date()
         except ValueError:
-            msg = "The date value does not match the required format"
+            msg = 'The date value does not match the required format'
             raise HTTPInvalidParam(msg, name)
 
         if store is not None:
@@ -949,8 +1039,7 @@ class Request(object):
 
         return date
 
-    # TODO(kgriffs): Use the nocover pragma only for the six.PY3 if..else
-    def log_error(self, message):  # pragma: no cover
+    def log_error(self, message):
         """Write an error message to the server's log.
 
         Prepends timestamp and request info to message, and writes the
@@ -975,7 +1064,7 @@ class Request(object):
         if six.PY3:
             self._wsgierrors.write(log_line + message + '\n')
         else:
-            if isinstance(message, unicode):  # pylint: disable=E0602
+            if isinstance(message, unicode):
                 message = message.encode('utf-8')
 
             self._wsgierrors.write(log_line.encode('utf-8'))
@@ -985,17 +1074,18 @@ class Request(object):
     # Helpers
     # ------------------------------------------------------------------------
 
-    def _wrap_stream(self):  # pragma nocover
+    def _wrap_stream(self):
         try:
-            # NOTE(kgriffs): We can only add the wrapper if the
-            # content-length header was provided.
-            if self.content_length is not None:
-                self.stream = helpers.Body(self.stream, self.content_length)
+            content_length = self.content_length or 0
 
-        except HTTPInvalidHeader:
+        # NOTE(kgriffs): This branch is indeed covered in test_wsgi.py
+        # even though coverage isn't able to detect it.
+        except HTTPInvalidHeader:  # pragma: no cover
             # NOTE(kgriffs): The content-length header was specified,
-            # but it had an invalid value.
-            pass
+            # but it had an invalid value. Assume no content.
+            content_length = 0
+
+        self.stream = helpers.Body(self.stream, content_length)
 
     def _parse_form_urlencoded(self):
         # NOTE(kgriffs): This assumes self.stream has been patched
@@ -1028,6 +1118,33 @@ class Request(object):
 
             self._params.update(extra_params)
 
+    def _parse_rfc_forwarded(self):
+        """Parse RFC 7239 "Forwarded" header.
+
+        Returns:
+            list: addresses derived from "for" parameters.
+        """
+
+        addr = []
+
+        for forwarded in self.env['HTTP_FORWARDED'].split(','):
+            for param in forwarded.split(';'):
+                # PERF(kgriffs): Partition() is faster than split().
+                key, _, val = param.strip().partition('=')
+                if not val:
+                    # NOTE(kgriffs): The '=' separator was not found or
+                    # it was, but the value was missing.
+                    continue
+
+                if key.lower() != 'for':
+                    # We only want "for" params
+                    continue
+
+                host, _ = parse_host(unquote_string(val))
+                addr.append(host)
+
+        return addr
+
 
 # PERF: To avoid typos and improve storage space and speed over a dict.
 class RequestOptions(object):
@@ -1036,11 +1153,28 @@ class RequestOptions(object):
     Attributes:
         keep_blank_qs_values (bool): Set to ``True`` in order to retain
             blank values in query string parameters (default ``False``).
+        auto_parse_form_urlencoded: Set to ``True`` in order to
+            automatically consume the request stream and merge the
+            results into the request's query string params when the
+            request's content type is
+            *application/x-www-form-urlencoded* (default ``False``). In
+            this case, the request's content stream will be left at EOF.
+
+            Note:
+                The character encoding for fields, before
+                percent-encoding non-ASCII bytes, is assumed to be
+                UTF-8. The special `_charset_` field is ignored if present.
+
+                Falcon expects form-encoded request bodies to be
+                encoded according to the standard W3C algorithm (see
+                also http://goo.gl/6rlcux).
 
     """
     __slots__ = (
         'keep_blank_qs_values',
+        'auto_parse_form_urlencoded',
     )
 
     def __init__(self):
         self.keep_blank_qs_values = False
+        self.auto_parse_form_urlencoded = False

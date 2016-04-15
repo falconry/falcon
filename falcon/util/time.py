@@ -29,7 +29,7 @@ class TimezoneGMT(datetime.tzinfo):
             str: "GMT"
         """
 
-        return "GMT"
+        return 'GMT'
 
     def dst(self, dt):
         """Return the daylight saving time (DST) adjustment.

@@ -15,18 +15,6 @@
 from falcon import util
 
 
-def prepare_global_hooks(hooks):
-    if hooks is not None:
-        if not isinstance(hooks, list):
-            hooks = [hooks]
-
-        for action in hooks:
-            if not callable(action):
-                raise TypeError('One or more hooks are not callable')
-
-    return hooks
-
-
 def prepare_middleware(middleware=None):
     """Check middleware interface and prepare it to iterate.
 
@@ -65,7 +53,7 @@ def prepare_middleware(middleware=None):
     return prepared_middleware
 
 
-def default_serialize_error(req, exception):
+def default_serialize_error(req, resp, exception):
     """Serialize the given instance of HTTPError.
 
     This function determines which of the supported media types, if
@@ -87,13 +75,8 @@ def default_serialize_error(req, exception):
 
     Args:
         req: Instance of ``falcon.Request``
+        resp: Instance of ``falcon.Response``
         exception: Instance of ``falcon.HTTPError``
-
-    Returns:
-        A ``tuple`` of the form (*media_type*, *representation*), or
-        (``None``, ``None``) if the client does not support any of the
-        available media types.
-
     """
     representation = None
 
@@ -121,9 +104,30 @@ def default_serialize_error(req, exception):
             preferred = 'application/xml'
 
     if preferred is not None:
+        resp.append_header('Vary', 'Accept')
         if preferred == 'application/json':
             representation = exception.to_json()
         else:
             representation = exception.to_xml()
 
-    return (preferred, representation)
+        resp.body = representation
+        resp.content_type = preferred + '; charset=UTF-8'
+
+
+def wrap_old_error_serializer(old_fn):
+    """Wraps an old-style error serializer to add body/content_type setting.
+
+    Args:
+        old_fn: Old-style error serializer
+
+    Returns:
+        A function that does the same, but sets body/content_type as needed.
+
+    """
+    def new_fn(req, resp, exception):
+        media_type, body = old_fn(req, exception)
+        if body is not None:
+            resp.body = body
+            resp.content_type = media_type
+
+    return new_fn

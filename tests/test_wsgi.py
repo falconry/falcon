@@ -1,14 +1,21 @@
 import sys
-import threading
 import time
+from wsgiref.simple_server import make_server
+
+try:
+    import multiprocessing
+except ImportError:
+    pass  # Jython
 
 import requests
-from six.moves import http_client
-import testtools
 from testtools.matchers import Equals, MatchesRegex
 
 import falcon
 import falcon.testing as testing
+
+_SERVER_HOST = 'localhost'
+_SERVER_PORT = 9809
+_SERVER_BASE_URL = 'http://{0}:{1}/'.format(_SERVER_HOST, _SERVER_PORT)
 
 
 def _is_iterable(thing):
@@ -21,23 +28,32 @@ def _is_iterable(thing):
         return False
 
 
-def _run_server():
+def _run_server(stop_event):
     class Things(object):
         def on_get(self, req, resp):
-            pass
+            resp.body = req.remote_addr
+
+        def on_post(self, req, resp):
+            resp.body = req.stream.read(1000)
 
         def on_put(self, req, resp):
-            pass
+            # NOTE(kgriffs): Test that reading past the end does
+            # not hang.
+            req_body = (req.stream.read(1)
+                        for i in range(req.content_length + 1))
+
+            resp.body = b''.join(req_body)
 
     api = application = falcon.API()
     api.add_route('/', Things())
 
-    from wsgiref.simple_server import make_server
-    server = make_server('localhost', 9803, application)
-    server.serve_forever()
+    server = make_server(_SERVER_HOST, _SERVER_PORT, application)
+
+    while not stop_event.is_set():
+        server.handle_request()
 
 
-class TestWsgi(testtools.TestCase):
+class TestWSGIInterface(testing.TestBase):
 
     def test_srmock(self):
         mock = testing.StartResponseMock()
@@ -76,30 +92,64 @@ class TestWsgi(testtools.TestCase):
             self.assertTrue(isinstance(header[0], str))
             self.assertTrue(isinstance(header[1], str))
 
-    def test_wsgiref(self):
-        thread = threading.Thread(target=_run_server)
-        thread.daemon = True
-        thread.start()
 
-        # Wait a moment for the thread to start up
+class TestWSGIReference(testing.TestBase):
+
+    def before(self):
+        if 'java' in sys.platform:
+            # NOTE(kgriffs): Jython does not support the multiprocessing
+            # module. We could alternatively implement these tests
+            # using threads, but then we have to force a garbage
+            # collection in between each test in order to make
+            # the server relinquish its socket, and the gc module
+            # doesn't appear to do anything under Jython.
+            self.skip('Incompatible with Jython')
+
+        self._stop_event = multiprocessing.Event()
+        self._process = multiprocessing.Process(target=_run_server,
+                                                args=(self._stop_event,))
+        self._process.start()
+
+        # NOTE(kgriffs): Let the server start up
         time.sleep(0.2)
 
-        resp = requests.get('http://localhost:9803')
+    def after(self):
+        self._stop_event.set()
+
+        # NOTE(kgriffs): Pump the request handler loop in case execution
+        # made it to the next server.handle_request() before we sent the
+        # event.
+        try:
+            requests.get(_SERVER_BASE_URL)
+        except Exception:
+            pass  # Thread already exited
+
+        self._process.join()
+
+    def test_wsgiref_get(self):
+        resp = requests.get(_SERVER_BASE_URL)
         self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.text, '127.0.0.1')
 
-        # NOTE(kgriffs): This will cause a different path to
-        # be taken in req._wrap_stream. Have to use httplib
-        # to prevent the invalid header value from being
-        # forced to "0".
-        conn = http_client.HTTPConnection('localhost', 9803)
-        headers = {'Content-Length': 'invalid'}
-        conn.request('PUT', '/', headers=headers)
-        resp = conn.getresponse()
-        self.assertEqual(resp.status, 200)
-
-        headers = {'Content-Length': '0'}
-        resp = requests.put('http://localhost:9803', headers=headers)
+    def test_wsgiref_put(self):
+        body = '{}'
+        resp = requests.put(_SERVER_BASE_URL, data=body)
         self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.text, '{}')
 
-        resp = requests.post('http://localhost:9803')
+    def test_wsgiref_head_405(self):
+        body = '{}'
+        resp = requests.head(_SERVER_BASE_URL, data=body)
         self.assertEqual(resp.status_code, 405)
+
+    def test_wsgiref_post(self):
+        body = '{}'
+        resp = requests.post(_SERVER_BASE_URL, data=body)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.text, '{}')
+
+    def test_wsgiref_post_invalid_content_length(self):
+        headers = {'Content-Length': 'invalid'}
+        resp = requests.post(_SERVER_BASE_URL, headers=headers)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.text, '')

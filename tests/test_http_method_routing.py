@@ -88,6 +88,14 @@ class MiscResource(object):
     def on_patch(self, req, resp):
         pass
 
+    def on_options(self, req, resp):
+        resp.status = falcon.HTTP_204
+
+        # NOTE(kgriffs): This is incorrect, but only return GET so
+        # that we can verify that the default OPTIONS responder has
+        # been overridden.
+        resp.set_header('allow', 'GET')
+
 
 class GetWithFaultyPutResource(object):
     def __init__(self):
@@ -184,12 +192,21 @@ class TestHttpMethodRouting(testing.TestBase):
 
             self.assertThat(headers, Contains(allow_header))
 
-    def test_default_on_options(self):
+    def test_on_options(self):
         self.simulate_request('/things/84/stuff/65', method='OPTIONS')
         self.assertEqual(self.srmock.status, falcon.HTTP_204)
 
         headers = self.srmock.headers
         allow_header = ('allow', 'GET, HEAD, PUT')
+
+        self.assertThat(headers, Contains(allow_header))
+
+    def test_default_on_options(self):
+        self.simulate_request('/misc', method='OPTIONS')
+        self.assertEqual(self.srmock.status, falcon.HTTP_204)
+
+        headers = self.srmock.headers
+        allow_header = ('allow', 'GET')
 
         self.assertThat(headers, Contains(allow_header))
 

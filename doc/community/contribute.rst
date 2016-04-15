@@ -31,7 +31,7 @@ doesn't make pyflakes sad.
 **Additional Style Rules**
 
 * Docstrings are required for classes, attributes, methods, and functions.
-* Use `napolean-flavored`_ dosctrings to make them readable both when
+* Use `napolean-flavored`_ docstrings to make them readable both when
   using the *help* function within a REPL, and when browsing
   them on *Read the Docs*.
 * Format non-trivial comments using your GitHub nick and an appropriate

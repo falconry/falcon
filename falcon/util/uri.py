@@ -59,7 +59,7 @@ def _create_str_encoder(is_value):
         #
         # NOTE(kgriffs): Code coverage disabled since in Py3K the uri
         # is always a text type, so we get a failure for that tox env.
-        if isinstance(uri, six.text_type):  # pragma no cover
+        if isinstance(uri, six.text_type):
             uri = uri.encode('utf-8')
 
         # Use our map to encode each char and join the result into a new uri
@@ -129,8 +129,7 @@ Returns:
 
 """
 
-# NOTE(kgriffs): This is actually covered, but not in py33; hence the pragma
-if six.PY2:  # pragma: no cover
+if six.PY2:
 
     # This map construction is based on urllib
     _HEX_TO_BYTE = dict((a + b, (chr(int(a + b, 16)), int(a + b, 16)))
@@ -178,9 +177,12 @@ if six.PY2:  # pragma: no cover
         tokens = decoded_uri.split('%')
         decoded_uri = tokens[0]
         for token in tokens[1:]:
-            char, byte = _HEX_TO_BYTE[token[:2]]
-            decoded_uri += char + token[2:]
-
+            token_partial = token[:2]
+            if token_partial in _HEX_TO_BYTE:
+                char, byte = _HEX_TO_BYTE[token_partial]
+            else:
+                char, byte = '%', 0
+            decoded_uri += char + (token[2:] if byte else token)
             only_ascii = only_ascii and (byte <= 127)
 
         # PERF(kgriffs): Only spend the time to do this if there
@@ -190,18 +192,12 @@ if six.PY2:  # pragma: no cover
 
         return decoded_uri
 
-# NOTE(kgriffs): This is actually covered, but not in py2x; hence the pragma
-
-else:  # pragma: no cover
+else:
 
     # This map construction is based on urllib
     _HEX_TO_BYTE = dict(((a + b).encode(), bytes([int(a + b, 16)]))
                         for a in _HEX_DIGITS
                         for b in _HEX_DIGITS)
-
-    def _unescape(matchobj):
-        # NOTE(kgriffs): Strip '%' and convert the hex number
-        return _HEX_TO_BYTE[matchobj.group(0)[1:]]
 
     def decode(encoded_uri):
         """Decodes percent-encoded characters in a URI or query string.
@@ -239,7 +235,12 @@ else:  # pragma: no cover
         tokens = decoded_uri.split(b'%')
         decoded_uri = tokens[0]
         for token in tokens[1:]:
-            decoded_uri += _HEX_TO_BYTE[token[:2]] + token[2:]
+            token_partial = token[:2]
+            if token_partial in _HEX_TO_BYTE:
+                decoded_uri += _HEX_TO_BYTE[token_partial] + token[2:]
+            else:
+                # malformed percentage like "x=%" or "y=%+"
+                decoded_uri += b'%' + token
 
         # Convert back to str
         return decoded_uri.decode('utf-8', 'replace')
@@ -376,3 +377,36 @@ def parse_host(host, default_port=None):
     # or a domain name plus a port
     name, _, port = host.partition(':')
     return (name, int(port))
+
+
+def unquote_string(quoted):
+    """Unquote an RFC 7320 "quoted-string".
+
+    Args:
+        quoted (str): Original quoted string
+
+    Returns:
+        str: unquoted string
+
+    Raises:
+        TypeError: `quoted` was not a ``str``.
+    """
+
+    if len(quoted) < 2:
+        return quoted
+    elif quoted[0] != '"' or quoted[-1] != '"':
+        # return original one, prevent side-effect
+        return quoted
+
+    tmp_quoted = quoted[1:-1]
+
+    # PERF(philiptzou): Most header strings don't contain "quoted-pair" which
+    # defined by RFC 7320. We use this little trick (quick string search) to
+    # speed up string parsing by preventing unnecessary processes if possible.
+    if '\\' not in tmp_quoted:
+        return tmp_quoted
+    elif r'\\' not in tmp_quoted:
+        return tmp_quoted.replace('\\', '')
+    else:
+        return '\\'.join([q.replace('\\', '')
+                          for q in tmp_quoted.split(r'\\')])

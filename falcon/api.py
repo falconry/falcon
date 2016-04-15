@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import inspect
 import re
 import six
 
@@ -30,11 +31,6 @@ class API(object):
     """This class is the main entry point into a Falcon-based app.
 
     Each API instance provides a callable WSGI interface and a routing engine.
-
-    Warning:
-        Global hooks (configured using the `before` and `after` kwargs) are
-        deprecated in favor of middleware, and may be removed in a future
-        version of the framework.
 
     Args:
         media_type (str, optional): Default media type to use as the value for
@@ -56,6 +52,10 @@ class API(object):
 
                     def process_resource(self, req, resp, resource):
                         \"""Process the request and resource *after* routing.
+
+                        Note:
+                            This method is only called when the request matches
+                            a route to a resource.
 
                         Args:
                             req: Request object that will be passed to the
@@ -110,18 +110,15 @@ class API(object):
 
     _STREAM_BLOCK_SIZE = 8 * 1024  # 8 KiB
 
-    __slots__ = ('_after', '_before', '_request_type', '_response_type',
+    __slots__ = ('_request_type', '_response_type',
                  '_error_handlers', '_media_type', '_router', '_sinks',
                  '_serialize_error', 'req_options', '_middleware')
 
-    def __init__(self, media_type=DEFAULT_MEDIA_TYPE, before=None, after=None,
+    def __init__(self, media_type=DEFAULT_MEDIA_TYPE,
                  request_type=Request, response_type=Response,
                  middleware=None, router=None):
         self._sinks = []
         self._media_type = media_type
-
-        self._before = helpers.prepare_global_hooks(before)
-        self._after = helpers.prepare_global_hooks(after)
 
         # set middleware
         self._middleware = helpers.prepare_middleware(middleware)
@@ -177,7 +174,12 @@ class API(object):
                 # e.g. a 404.
                 responder, params, resource = self._get_responder(req)
 
-                self._call_rsrc_mw(middleware_stack, req, resp, resource)
+                # NOTE(kgriffs): If the request did not match any route,
+                # a default responder is returned and the resource is
+                # None.
+                if resource is not None:
+                    self._call_rsrc_mw(middleware_stack, req, resp, resource,
+                                       params)
 
                 responder(req, resp, **params)
                 self._call_resp_mw(middleware_stack, req, resp, resource)
@@ -186,15 +188,10 @@ class API(object):
                 for err_type, err_handler in self._error_handlers:
                     if isinstance(ex, err_type):
                         err_handler(ex, req, resp, params)
-                        self._call_after_hooks(req, resp, resource)
                         self._call_resp_mw(middleware_stack, req, resp,
                                            resource)
 
-                        # NOTE(kgriffs): The following line is not
-                        # reported to be covered under Python 3.4 for
-                        # some reason, although coverage was manually
-                        # verified using PDB.
-                        break  # pragma nocover
+                        break
 
                 else:
                     # PERF(kgriffs): This will propagate HTTPError to
@@ -214,12 +211,10 @@ class API(object):
 
         except HTTPStatus as ex:
             self._compose_status_response(req, resp, ex)
-            self._call_after_hooks(req, resp, resource)
             self._call_resp_mw(middleware_stack, req, resp, resource)
 
         except HTTPError as ex:
             self._compose_error_response(req, resp, ex)
-            self._call_after_hooks(req, resp, resource)
             self._call_resp_mw(middleware_stack, req, resp, resource)
 
         #
@@ -228,18 +223,18 @@ class API(object):
         if req.method == 'HEAD' or resp.status in self._BODILESS_STATUS_CODES:
             body = []
         else:
-            self._set_content_length(resp)
-            body = self._get_body(resp, env.get('wsgi.file_wrapper'))
+            body, length = self._get_body(resp, env.get('wsgi.file_wrapper'))
+            if length is not None:
+                resp._headers['content-length'] = str(length)
 
-        # Set content type if needed
-        use_content_type = (body or
-                            req.method == 'HEAD' or
-                            resp.status == status.HTTP_416)
-
-        if use_content_type:
-            media_type = self._media_type
-        else:
+        # NOTE(kgriffs): Based on wsgiref.validate's interpretation of
+        # RFC 2616, as commented in that module's source code. The
+        # presence of the Content-Length header is not similarly
+        # enforced.
+        if resp.status in (status.HTTP_204, status.HTTP_304):
             media_type = None
+        else:
+            media_type = self._media_type
 
         headers = resp._wsgi_headers(media_type)
 
@@ -247,7 +242,7 @@ class API(object):
         start_response(resp.status, headers)
         return body
 
-    def add_route(self, uri_template, resource):
+    def add_route(self, uri_template, resource, *args, **kwargs):
         """Associates a templatized URI path with a resource.
 
         A resource is an instance of a class that defines various
@@ -298,6 +293,13 @@ class API(object):
                 corresponding request handlers, and Falcon will do the right
                 thing.
 
+        Note:
+            Any additional args and kwargs not defined above are passed
+            through to the underlying router's ``add_route()`` method. The
+            default router does not expect any additional arguments, but
+            custom routers may take advantage of this feature to receive
+            additional options when setting up routes.
+
         """
 
         # NOTE(richardolsson): Doing the validation here means it doesn't have
@@ -311,9 +313,9 @@ class API(object):
         if '//' in uri_template:
             raise ValueError("uri_template may not contain '//'")
 
-        method_map = routing.create_http_method_map(
-            resource, self._before, self._after)
-        self._router.add_route(uri_template, method_map, resource)
+        method_map = routing.create_http_method_map(resource)
+        self._router.add_route(uri_template, method_map, resource, *args,
+                               **kwargs)
 
     def add_sink(self, sink, prefix=r'/'):
         """Registers a sink method for the API.
@@ -412,7 +414,7 @@ class API(object):
         `to_json()` and `to_dict()`, that can be used from within
         custom serializers. For example::
 
-            def my_serializer(req, exception):
+            def my_serializer(req, resp, exception):
                 representation = None
 
                 preferred = req.client_prefers(('application/x-yaml',
@@ -424,8 +426,8 @@ class API(object):
                     else:
                         representation = yaml.dump(exception.to_dict(),
                                                    encoding=None)
-
-                return (preferred, representation)
+                    resp.body = representation
+                    resp.content_type = preferred
 
         Note:
             If a custom media type is used and the type includes a
@@ -436,16 +438,15 @@ class API(object):
 
         Args:
             serializer (callable): A function taking the form
-                ``func(req, exception)``, where `req` is the request
-                object that was passed to the responder method, and
-                `exception` is an instance of ``falcon.HTTPError``.
-                The function must return a ``tuple`` of the form
-                (*media_type*, *representation*), or (``None``, ``None``)
-                if the client does not support any of the
-                available media types.
+                ``func(req, resp, exception)``, where `req` is the request
+                object that was passed to the responder method, `resp` is
+                the response object, and `exception` is an instance of
+                ``falcon.HTTPError``.
 
         """
 
+        if len(inspect.getargspec(serializer).args) == 2:
+            serializer = helpers.wrap_old_error_serializer(serializer)
         self._serialize_error = serializer
 
     # ------------------------------------------------------------------------
@@ -523,15 +524,7 @@ class API(object):
             resp.set_headers(error.headers)
 
         if error.has_representation:
-            media_type, body = self._serialize_error(req, error)
-
-            if body is not None:
-                resp.body = body
-
-                # NOTE(kgriffs): This must be done AFTER setting the headers
-                # from error.headers so that we will override Content-Type if
-                # it was mistakenly set by the app.
-                resp.content_type = media_type
+            self._serialize_error(req, resp, error)
 
     def _call_req_mw(self, stack, req, resp):
         """Run process_request middleware methods."""
@@ -544,13 +537,13 @@ class API(object):
             # Put executed component on the stack
             stack.append(component)  # keep track from outside
 
-    def _call_rsrc_mw(self, stack, req, resp, resource):
+    def _call_rsrc_mw(self, stack, req, resp, resource, params):
         """Run process_resource middleware methods."""
 
         for component in self._middleware:
             _, process_resource, _ = component
             if process_resource is not None:
-                process_resource(req, resp, resource)
+                process_resource(req, resp, resource, params)
 
     def _call_resp_mw(self, stack, req, resp, resource):
         """Run process_response middleware."""
@@ -559,58 +552,6 @@ class API(object):
             _, _, process_response = stack.pop()
             if process_response is not None:
                 process_response(req, resp, resource)
-
-    def _call_after_hooks(self, req, resp, resource):
-        """Executes each of the global "after" hooks, in turn."""
-
-        if not self._after:
-            return
-
-        for hook in self._after:
-            try:
-                hook(req, resp, resource)
-            except TypeError:
-                # NOTE(kgriffs): Catching the TypeError is a heuristic to
-                # detect old hooks that do not accept the "resource" param
-                hook(req, resp)
-
-    # PERF(kgriffs): Moved from api_helpers since it is slightly faster
-    # to call using self, and this function is called for most
-    # requests.
-    def _set_content_length(self, resp):
-        """Set Content-Length when given a fully-buffered body or stream len.
-
-        Pre:
-            Either resp.body or resp.stream is set
-        Post:
-            resp contains a "Content-Length" header unless a stream is given,
-                but resp.stream_len is not set (in which case, the length
-                cannot be derived reliably).
-        Args:
-            resp: The response object on which to set the content length.
-
-        """
-
-        content_length = 0
-
-        if resp.body_encoded is not None:
-            # Since body is assumed to be a byte string (str in Python 2,
-            # bytes in Python 3), figure out the length using standard
-            # functions.
-            content_length = len(resp.body_encoded)
-        elif resp.data is not None:
-            content_length = len(resp.data)
-        elif resp.stream is not None:
-            if resp.stream_len is not None:
-                # Total stream length is known in advance
-                content_length = resp.stream_len
-            else:
-                # Stream given, but length is unknown (dynamically-
-                # generated body). Do not set the header.
-                return -1
-
-        resp.set_header('Content-Length', str(content_length))
-        return content_length
 
     # PERF(kgriffs): Moved from api_helpers since it is slightly faster
     # to call using self, and this function is called for most
@@ -625,42 +566,55 @@ class API(object):
                 when resp.stream is a file-like object (default None).
 
         Returns:
-            * If resp.body is not ``None``, returns [resp.body], encoded
-              as UTF-8 if it is a Unicode string. Bytestrings are returned
-              as-is.
-            * If resp.data is not ``None``, returns [resp.data]
-            * If resp.stream is not ``None``, returns resp.stream
-              iterable using wsgi.file_wrapper, if possible.
-            * Otherwise, returns []
+            A two-member tuple of the form (iterable, content_length).
+            The length is returned as ``None`` when unknown. The
+            iterable is determined as follows:
+
+                * If resp.body is not ``None``, returns [resp.body],
+                  encoded as UTF-8 if it is a Unicode string.
+                  Bytestrings are returned as-is.
+                * If resp.data is not ``None``, returns [resp.data]
+                * If resp.stream is not ``None``, returns resp.stream
+                  iterable using wsgi.file_wrapper, if possible.
+                * Otherwise, returns []
 
         """
 
-        body = resp.body_encoded
-
+        body = resp.body
         if body is not None:
-            return [body]
+            if not isinstance(body, bytes):
+                body = body.encode('utf-8')
 
-        elif resp.data is not None:
-            return [resp.data]
+            return [body], len(body)
 
-        elif resp.stream is not None:
-            stream = resp.stream
+        data = resp.data
+        if data is not None:
+            return [data], len(data)
 
-            # NOTE(kgriffs): Heuristic to quickly check if
-            # stream is file-like. Not perfect, but should be
-            # good enough until proven otherwise.
+        stream = resp.stream
+        if stream is not None:
+            # NOTE(kgriffs): Heuristic to quickly check if stream is
+            # file-like. Not perfect, but should be good enough until
+            # proven otherwise.
             if hasattr(stream, 'read'):
                 if wsgi_file_wrapper is not None:
                     # TODO(kgriffs): Make block size configurable at the
                     # global level, pending experimentation to see how
-                    # useful that would be.
-                    #
-                    # See also the discussion on the PR: http://goo.gl/XGrtDz
-                    return wsgi_file_wrapper(stream, self._STREAM_BLOCK_SIZE)
+                    # useful that would be. See also the discussion on
+                    # this GitHub PR: http://goo.gl/XGrtDz
+                    iterable = wsgi_file_wrapper(stream,
+                                                 self._STREAM_BLOCK_SIZE)
                 else:
-                    return iter(lambda: stream.read(self._STREAM_BLOCK_SIZE),
-                                b'')
+                    iterable = iter(
+                        lambda: stream.read(self._STREAM_BLOCK_SIZE),
+                        b''
+                    )
+            else:
+                iterable = stream
 
-            return resp.stream
+            # NOTE(kgriffs): If resp.stream_len is None, content_length
+            # will be as well; the caller of _get_body must handle this
+            # case by not setting the Content-Length header.
+            return iterable, resp.stream_len
 
-        return []
+        return [], 0
