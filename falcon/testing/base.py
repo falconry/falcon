@@ -61,6 +61,7 @@ class TestBase(unittest.TestCase):
 
     api_class = falcon.API
     srmock_class = StartResponseMock
+    smmock_class = MiddlewareMock
 
     def setUp(self):
         """Initializer, unittest-style"""
@@ -68,7 +69,7 @@ class TestBase(unittest.TestCase):
         self._id = itertools.count(0)
         self.api = self.api_class()
         self.srmock = self.srmock_class()
-        self.smmock = MiddlewareMock()
+        self.smmock = self.smmock_class()
         self.test_route = '/{0}'.format(next(self._id))
 
         # Reset to simulate "restarting" the WSGI container
