@@ -50,7 +50,7 @@ class API(object):
                                 the on_* responder.
                         \"""
 
-                    def process_resource(self, req, resp, resource):
+                    def process_resource(self, req, resp, resource, params):
                         \"""Process the request and resource *after* routing.
 
                         Note:
@@ -65,6 +65,11 @@ class API(object):
                             resource: Resource object to which the request was
                                 routed. May be None if no route was found for
                                 the request.
+                            params: A dict-like object representing any
+                                additional params derived from the route's URI
+                                template fields, that will be passed to the
+                                resource's responder method as keyword
+                                arguments.
                         \"""
 
                     def process_response(self, req, resp, resource)
