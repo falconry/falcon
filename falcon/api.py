@@ -483,7 +483,18 @@ class API(object):
 
         path = req.path
         method = req.method
-        resource, method_map, params = self._router.find(path)
+
+        route = self._router.find(path)
+
+        if route is not None:
+            resource, method_map, params = route
+        else:
+            # NOTE(kgriffs): Older routers may indicate that no route
+            # was found by returning (None, None, None). Therefore, we
+            # normalize resource as the flag to indicate whether or not
+            # a route was found, for the sake of backwards-compat.
+            resource = None
+
         if resource is not None:
             try:
                 responder = method_map[method]
@@ -491,7 +502,6 @@ class API(object):
                 responder = falcon.responders.bad_request
         else:
             params = {}
-            resource = None
 
             for pattern, sink in self._sinks:
                 m = pattern.match(path)
