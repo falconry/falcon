@@ -52,7 +52,8 @@ class HTTPUnauthorized(HTTPError):
             a helpful suggestion or two.
         challenges (iterable of str): One or more authentication
             challenges to use as the value of the WWW-Authenticate header in
-            the response.
+            the response. See also:
+            http://tools.ietf.org/html/rfc7235#section-2.1
         kwargs (optional): Same as for ``HTTPError``.
 
     """

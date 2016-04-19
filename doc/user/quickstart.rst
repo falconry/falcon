@@ -21,7 +21,7 @@ started writing an API:
 
     # things.py
 
-    # Let's get this party started
+    # Let's get this party started!
     import falcon
 
 
@@ -121,8 +121,10 @@ parameters, handling errors, and working with request and response bodies.
     class AuthMiddleware(object):
 
         def process_request(self, req, resp):
-            token = req.get_header('X-Auth-Token')
-            project = req.get_header('X-Project-ID')
+            token = req.get_header('Authorization')
+            account_id = req.get_header('Account-ID')
+
+            challenges = ['Token type="Fernet"']
 
             if token is None:
                 description = ('Please provide an auth token '
@@ -130,18 +132,19 @@ parameters, handling errors, and working with request and response bodies.
 
                 raise falcon.HTTPUnauthorized('Auth token required',
                                               description,
+                                              challenges,
                                               href='http://docs.example.com/auth')
 
-            if not self._token_is_valid(token, project):
+            if not self._token_is_valid(token, account_id):
                 description = ('The provided auth token is not valid. '
                                'Please request a new token and try again.')
 
                 raise falcon.HTTPUnauthorized('Authentication required',
                                               description,
-                                              href='http://docs.example.com/auth',
-                                              scheme='Token; UUID')
+                                              challenges,
+                                              href='http://docs.example.com/auth')
 
-        def _token_is_valid(self, token, project):
+        def _token_is_valid(self, token, account_id):
             return True  # Suuuuuure it's valid...
 
 
@@ -237,7 +240,7 @@ parameters, handling errors, and working with request and response bodies.
             # that would serialize to JSON under the covers.
             req.context['result'] = result
 
-            resp.set_header('X-Powered-By', 'Small Furry Creatures')
+            resp.set_header('Powered-By', 'Falcon')
             resp.status = falcon.HTTP_200
 
         @falcon.before(max_body(64 * 1024))
@@ -276,7 +279,10 @@ parameters, handling errors, and working with request and response bodies.
     sink = SinkAdapter()
     app.add_sink(sink, r'/search/(?P<engine>ddg|y)\Z')
 
-    # Useful for debugging problems in your API; works with pdb.set_trace()
+    # Useful for debugging problems in your API; works with pdb.set_trace(). You
+    # can also use Gunicorn to host your app. Gunicorn can be configured to
+    # auto-restart workers when it detects a code change, and it also works
+    # with pdb.
     if __name__ == '__main__':
         httpd = simple_server.make_server('127.0.0.1', 8000, app)
         httpd.serve_forever()
