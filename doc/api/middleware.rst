@@ -27,7 +27,7 @@ Falcon's middleware interface is defined as follows:
                     the on_* responder.
             """
 
-        def process_resource(self, req, resp, resource):
+        def process_resource(self, req, resp, resource, params):
             """Process the request after routing.
 
             Note:
@@ -41,6 +41,10 @@ Falcon's middleware interface is defined as follows:
                     responder.
                 resource: Resource object to which the request was
                     routed.
+                params: A dict-like object representing any additional
+                    params derived from the route's URI template fields,
+                    that will be passed to the resource's responder
+                    method as keyword arguments.
             """
 
         def process_response(self, req, resp, resource):
