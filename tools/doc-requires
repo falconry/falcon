@@ -1,6 +1,7 @@
-jinja2
-pygments
 docutils
+jinja2
 markupsafe
+pygments
 sphinx
 sphinxcontrib-napoleon
+sphinx_rtd_theme
