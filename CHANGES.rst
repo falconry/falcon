@@ -29,6 +29,10 @@ Breaking Changes
         app = falcon.API()
         app.req_options.auto_parse_form_urlencoded = True
 
+- The ``HTTPUnauthorized`` initializer now requires an
+  additional argument, `challenges`. Per RFC 7235, a server returning a
+  401 must include a WWW-Authenticate header field containing at least
+  one challenge.
 - The performance of composing the response body was
   improved. As part of this work, the ``Response.body_encoded``
   attribute was removed. This property was only intended to be used by

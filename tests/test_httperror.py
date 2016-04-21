@@ -73,18 +73,18 @@ class UnauthorizedResource:
 
     def on_get(self, req, resp):
         raise falcon.HTTPUnauthorized('Authentication Required',
-                                      'Missing or invalid token header.',
+                                      'Missing or invalid authorization.',
                                       ['Basic realm="simple"'])
 
     def on_post(self, req, resp):
         raise falcon.HTTPUnauthorized('Authentication Required',
-                                      'Missing or invalid token header.',
+                                      'Missing or invalid authorization.',
                                       ['Newauth realm="apps"',
                                        'Basic realm="simple"'])
 
     def on_put(self, req, resp):
         raise falcon.HTTPUnauthorized('Authentication Required',
-                                      'Missing or invalid token header.', [])
+                                      'Missing or invalid authorization.', [])
 
 
 class NotFoundResource:
