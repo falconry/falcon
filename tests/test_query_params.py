@@ -201,8 +201,8 @@ class _TestQueryParams(testing.TestBase):
             req.get_param_as_int, 'pos', min=0, max=10)
 
     def test_boolean(self):
-        query_string = ('echo=true&doit=false&bogus=0&bogus2=1&'
-                        't1=True&f1=False&t2=yes&f2=no&blank')
+        query_string = ('echo=true&doit=false&bogus=bar&bogus2=foo&'
+                        't1=True&f1=False&t2=yes&f2=no&blank&one=1&zero=0')
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.req
@@ -226,6 +226,8 @@ class _TestQueryParams(testing.TestBase):
         self.assertEqual(req.get_param_as_bool('t2'), True)
         self.assertEqual(req.get_param_as_bool('f1'), False)
         self.assertEqual(req.get_param_as_bool('f2'), False)
+        self.assertEqual(req.get_param_as_bool('one'), True)
+        self.assertEqual(req.get_param_as_bool('zero'), False)
         self.assertEqual(req.get_param('blank'), None)
 
         store = {}
