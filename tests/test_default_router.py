@@ -38,8 +38,8 @@ class TestRegressionCases(testing.TestBase):
         resource, method_map, params = self.router.find('/v1/messages')
         self.assertEqual(resource.resource_id, 2)
 
-        resource, method_map, params = self.router.find('/v1')
-        self.assertIs(resource, None)
+        route = self.router.find('/v1')
+        self.assertIs(route, None)
 
     def test_recipes(self):
         self.router.add_route(
@@ -53,8 +53,8 @@ class TestRegressionCases(testing.TestBase):
         resource, method_map, params = self.router.find('/recipes/baking')
         self.assertEqual(resource.resource_id, 2)
 
-        resource, method_map, params = self.router.find('/recipes/grilling')
-        self.assertIs(resource, None)
+        route = self.router.find('/recipes/grilling')
+        self.assertIs(route, None)
 
 
 @ddt.ddt
@@ -166,8 +166,8 @@ class TestComplexRouting(testing.TestBase):
         resource, method_map, params = self.router.find('/emojis/signs/42/small')
         self.assertEqual(resource.resource_id, 14.1)
 
-        resource, method_map, params = self.router.find('/emojis/signs/1/small')
-        self.assertEqual(resource, None)
+        route = self.router.find('/emojis/signs/1/small')
+        self.assertEqual(route, None)
 
     @ddt.data(
         '/teams',
@@ -176,17 +176,17 @@ class TestComplexRouting(testing.TestBase):
         '/gists/42',
     )
     def test_dead_segment(self, template):
-        resource, method_map, params = self.router.find(template)
-        self.assertIs(resource, None)
+        route = self.router.find(template)
+        self.assertIs(route, None)
 
     def test_malformed_pattern(self):
-        resource, method_map, params = self.router.find(
+        route = self.router.find(
             '/repos/racker/falcon/compare/foo')
-        self.assertIs(resource, None)
+        self.assertIs(route, None)
 
-        resource, method_map, params = self.router.find(
+        route = self.router.find(
             '/repos/racker/falcon/compare/foo/full')
-        self.assertIs(resource, None)
+        self.assertIs(route, None)
 
     def test_literal(self):
         resource, method_map, params = self.router.find('/user/memberships')
@@ -248,12 +248,12 @@ class TestComplexRouting(testing.TestBase):
         '/emojis/signs/78/undefined',
     )
     def test_not_found(self, path):
-        resource, method_map, params = self.router.find(path)
-        self.assertIs(resource, None)
+        route = self.router.find(path)
+        self.assertIs(route, None)
 
     def test_subsegment_not_found(self):
-        resource, method_map, params = self.router.find('/emojis/signs/0/x')
-        self.assertIs(resource, None)
+        route = self.router.find('/emojis/signs/0/x')
+        self.assertIs(route, None)
 
     def test_multivar(self):
         resource, method_map, params = self.router.find(

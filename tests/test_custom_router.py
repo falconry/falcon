@@ -24,12 +24,30 @@ class TestCustomRouter(testing.TestBase):
             resp.body = '{"status": "ok"}'
 
         class CustomRouter(object):
-            def find(self, *args, **kwargs):
-                return resource, {'GET': resource}, {}
+            def __init__(self):
+                self.reached_backwards_compat = False
 
-        self.api = falcon.API(router=CustomRouter())
+            def find(self, uri):
+                if uri == '/test':
+                    return resource, {'GET': resource}, {}
+
+                if uri == '/404/backwards-compat':
+                    self.reached_backwards_compat = True
+                    return (None, None, None)
+
+                return None
+
+        router = CustomRouter()
+        self.api = falcon.API(router=router)
         body = self.simulate_request('/test')
         self.assertEqual(body, [b'{"status": "ok"}'])
+
+        for uri in ('/404', '/404/backwards-compat'):
+            body = self.simulate_request(uri)
+            self.assertFalse(body)
+            self.assertEqual(self.srmock.status, falcon.HTTP_404)
+
+        self.assertTrue(router.reached_backwards_compat)
 
     def test_can_pass_additional_params_to_add_route(self):
 

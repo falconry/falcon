@@ -93,7 +93,7 @@ class CompiledRouter(object):
         if node is not None:
             return node.resource, node.method_map, params
         else:
-            return None, None, None
+            return None
 
     def _compile_tree(self, nodes, indent=1, level=0, fast_return=True):
         """Generates Python code for a routing tree or subtree."""
