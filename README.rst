@@ -63,8 +63,9 @@ Install
 PyPy
 ^^^^
 
-`PyPy <http://pypy.org/>`__ is the fastest way to run your Falcon app. However, note that
-only the PyPy 2.7 compatible release is currently supported.
+`PyPy <http://pypy.org/>`__ is the fastest way to run your Falcon app.
+However, note that only the PyPy 2.7 compatible release is currently
+supported.
 
 .. code:: bash
 
@@ -74,14 +75,29 @@ CPython
 ^^^^^^^
 
 Falcon also fully supports
-`CPython <https://www.python.org/downloads/>`__ 2.6, 2.7, 3.3, 3.4, and
-3.5. Under CPython, Falcon will compile itself with Cython, if
-available, for an extra speed boost. The following will make sure Cython
-is installed first, and that you always have the latest and greatest.
+`CPython <https://www.python.org/downloads/>`__ 2.6-3.5.
+
+A universal wheel is available on PyPI for the the Falcon framework.
+Installing it is as simple as:
 
 .. code:: bash
 
-    $ pip install --upgrade cython falcon
+    $ pip install falcon
+
+Installing the wheel is a great way to get up and running with Falcon
+quickly in a development environment, but for an extra speed boost when
+deploying your application in production, Falcon can compile itself with
+Cython.
+
+The following commands tell pip to install Cython, and then to invoke
+Falcon's ``setup.py``, which will in turn detect the presence of Cython
+and then compile (AKA cythonize) the Falcon framework with the system's
+default C compiler.
+
+.. code:: bash
+
+    $ pip install cython
+    $ pip install --no-binary :all: falcon
 
 **Installing on OS X**
 
@@ -92,21 +108,19 @@ with this command:
 
     $ xcode-select --install
 
-The Xcode 5.1 CLang compiler treats unrecognized command-line options as
+The Clang compiler treats unrecognized command-line options as
 errors; this can cause problems under Python 2.6, for example:
 
 .. code:: bash
 
     clang: error: unknown argument: '-mno-fused-madd' [-Wunused-command-line-argument-hard-error-in-future]
 
-You can work around errors caused by unused arguments by setting some
-environment variables:
+You might also see warnings about unused functions. You can work around
+these issues by setting additional Clang C compiler flags as follows:
 
 .. code:: bash
 
-    $ export CFLAGS=-Qunused-arguments
-    $ export CPPFLAGS=-Qunused-arguments
-    $ pip install cython falcon
+    $ export CFLAGS="-Qunused-arguments -Wno-unused-function"
 
 Test
 ----
