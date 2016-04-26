@@ -50,6 +50,15 @@ class CookieResource:
         resp.unset_cookie('bad')
 
 
+class CookieResourceMaxAgeFloatString:
+
+    def on_get(self, req, resp):
+        resp.set_cookie(
+            'foofloat', 'bar', max_age=15.3, secure=False, http_only=False)
+        resp.set_cookie(
+            'foostring', 'bar', max_age='15', secure=False, http_only=False)
+
+
 @ddt.ddt
 class TestCookies(testing.TestBase):
 
@@ -112,6 +121,17 @@ class TestCookies(testing.TestBase):
         self.assertEqual(morsel.key, 'foo')
         self.assertEqual(morsel.value, 'bar')
         self.assertEqual(morsel['max-age'], 300)
+
+    def test_cookie_max_age_float_and_string(self):
+        # Falcon implicitly converts max-age values to integers,
+        # for ensuring RFC 6265-compliance of the attribute value.
+        self.resource = CookieResourceMaxAgeFloatString()
+        self.api.add_route(self.test_route, self.resource)
+        self.simulate_request(self.test_route, method='GET')
+        self.assertIn(
+            ('set-cookie', 'foofloat=bar; Max-Age=15'), self.srmock.headers)
+        self.assertIn(
+            ('set-cookie', 'foostring=bar; Max-Age=15'), self.srmock.headers)
 
     def test_response_unset_cookie(self):
         resp = falcon.Response()
