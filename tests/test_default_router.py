@@ -137,12 +137,27 @@ class TestComplexRouting(testing.TestBase):
         )
 
     @ddt.data(
-        '/repos/{org}/{repo}/compare/{simple-vs-complex}',
+        '/repos/{org}/{repo}/compare/{simple_vs_complex}',
         '/repos/{complex}.{vs}.{simple}',
         '/repos/{org}/{repo}/compare/{complex}:{vs}...{complex2}/full',
     )
     def test_non_collision(self, template):
         self.router.add_route(template, {}, ResourceWithId(-1))
+
+    @ddt.data(
+        '/{}',
+        '/{9v}',
+        '/{@kgriffs}',
+        '/repos/{simple-thing}/etc',
+        '/repos/{or g}/{repo}/compare/{thing}',
+        '/repos/{org}/{repo}/compare/{}',
+        '/repos/{complex}.{}.{thing}',
+        '/repos/{complex}.{9v}.{thing}/etc',
+    )
+    def test_invalid_field_name(self, template):
+        self.assertRaises(
+            ValueError,
+            self.router.add_route, template, {}, ResourceWithId(-1))
 
     def test_dump(self):
         print(self.router._src)

@@ -40,17 +40,17 @@ class API(object):
 
                 class ExampleComponent(object):
                     def process_request(self, req, resp):
-                        \"""Process the request before routing it.
+                        \"\"\"Process the request before routing it.
 
                         Args:
                             req: Request object that will eventually be
                                 routed to an on_* responder method.
                             resp: Response object that will be routed to
                                 the on_* responder.
-                        \"""
+                        \"\"\"
 
                     def process_resource(self, req, resp, resource, params):
-                        \"""Process the request and resource *after* routing.
+                        \"\"\"Process the request and resource *after* routing.
 
                         Note:
                             This method is only called when the request matches
@@ -69,10 +69,10 @@ class API(object):
                                 template fields, that will be passed to the
                                 resource's responder method as keyword
                                 arguments.
-                        \"""
+                        \"\"\"
 
                     def process_response(self, req, resp, resource)
-                        \"""Post-processing of the response (after routing).
+                        \"\"\"Post-processing of the response (after routing).
 
                         Args:
                             req: Request object.
@@ -80,7 +80,7 @@ class API(object):
                             resource: Resource object to which the request was
                                 routed. May be None if no route was found
                                 for the request.
-                        \"""
+                        \"\"\"
 
             See also :ref:`Middleware <middleware>`.
 
@@ -249,6 +249,10 @@ class API(object):
     def add_route(self, uri_template, resource, *args, **kwargs):
         """Associates a templatized URI path with a resource.
 
+        Note:
+            The following information describes the behavior of
+            Falcon's default router.
+
         A resource is an instance of a class that defines various
         "responder" methods, one for each HTTP method the resource
         allows. Responder names start with `on_` and are named according to
@@ -272,6 +276,10 @@ class API(object):
         field names defined in the template. A field expression consists
         of a bracketed field name.
 
+        Note:
+            Since field names correspond to argument names in responder
+            methods, they must be valid Python identifiers.
+
         For example, given the following template::
 
             /user/{name}
@@ -281,8 +289,8 @@ class API(object):
             def on_put(self, req, resp, name):
                 pass
 
-        Individual path segments may contain one or more field expressions.
-        For example::
+        Individual path segments may contain one or more field
+        expressions::
 
             /repos/{org}/{repo}/compare/{usr0}:{branch0}...{usr1}:{branch1}
 
