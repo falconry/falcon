@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import re
+import keyword
 
 
 TAB_STR = ' ' * 4
@@ -43,8 +44,12 @@ class CompiledRouter(object):
         """Adds a route between URI path template and resource."""
         # Can't start with a number, since these eventually get passed as
         # args to on_* responders
-        if re.search('{\d', uri_template):
-            raise ValueError('Field names may not start with a digit.')
+
+        fields = re.findall('{(.+?)}', uri_template)
+        for field in fields:
+            is_identifier = re.match('[A-Za-z_][A-Za-z0-9_]*$', field)
+            if not is_identifier or field in keyword.kwlist:
+                raise ValueError('Field names must be valid identifiers.')
 
         if re.search('\s', uri_template):
             raise ValueError('URI templates may not include whitespace.')
