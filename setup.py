@@ -108,6 +108,7 @@ setup(
     cmdclass=cmdclass,
     ext_modules=ext_modules,
     test_suite='nose.collector',
+    tests_require=['nose', 'ddt', 'testtools', 'requests', 'pyyaml'],
     entry_points={
         'console_scripts': [
             'falcon-bench = falcon.cmd.bench:main'
