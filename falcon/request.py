@@ -11,6 +11,7 @@
 # limitations under the License.
 
 from datetime import datetime
+import json
 
 try:
     # NOTE(kgrifs): In Python 2.6 and 2.7, socket._fileobject is a
@@ -1038,6 +1039,47 @@ class Request(object):
             store[name] = date
 
         return date
+
+    def get_param_as_dict(self, name, required=False, store=None):
+        """Return the value of a query string parameter as a dict.
+
+        The param value should be JSON Serialized.
+
+        Args:
+            name (str): Parameter name, case-sensitive (e.g., 'payload').
+            required (bool, optional): Set to ``True`` to raise
+                ``HTTPBadRequest`` instead of returning ``None`` when the
+                parameter is not found (default ``False``).
+            store (dict, optional): A ``dict``-like object in which to place
+                the value of the param, but only if the param is found (default
+                ``None``).
+
+        Returns:
+            dict: The value of the param if it is found. Otherwise, returns
+                ``None`` unless required is True.
+
+        Raises:
+            HTTPBadRequest: A required param is missing from the request.
+            HTTPInvalidParam: A transform function raised an instance of
+                ``ValueError``.
+
+        """
+
+        param_value = self.get_param(name, required=required)
+
+        if param_value is None:
+            return None
+
+        try:
+            val = json.loads(param_value)
+        except ValueError:
+            msg = 'The value of the parameter is not JSON formatted'
+            raise HTTPInvalidParam(msg, name)
+
+        if store is not None:
+            store[name] = val
+
+        return val
 
     def log_error(self, message):
         """Write an error message to the server's log.
