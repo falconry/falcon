@@ -1,4 +1,5 @@
 from datetime import date
+import json
 
 import ddt
 
@@ -472,6 +473,39 @@ class _TestQueryParams(testing.TestBase):
         req = self.resource.req
         self.assertRaises(HTTPInvalidParam, req.get_param_as_date,
                           'thedate', format_string=format_string)
+
+    def test_get_dict_valid(self):
+        payload_dict = {'foo': 'bar'}
+        query_string = 'payload={0}'.format(json.dumps(payload_dict))
+        self.simulate_request('/', query_string=query_string)
+        req = self.resource.req
+        self.assertEqual(req.get_param_as_dict('payload'),
+                         payload_dict)
+
+    def test_get_dict_missing_param(self):
+        payload_dict = {'foo': 'bar'}
+        query_string = 'notthepayload={0}'.format(json.dumps(payload_dict))
+        self.simulate_request('/', query_string=query_string)
+        req = self.resource.req
+        self.assertEqual(req.get_param_as_dict('payload'),
+                         None)
+
+    def test_get_dict_store(self):
+        payload_dict = {'foo': 'bar'}
+        query_string = 'payload={0}'.format(json.dumps(payload_dict))
+        self.simulate_request('/', query_string=query_string)
+        req = self.resource.req
+        store = {}
+        req.get_param_as_dict('payload', store=store)
+        self.assertNotEqual(len(store), 0)
+
+    def test_get_dict_invalid(self):
+        payload_dict = 'foobar'
+        query_string = 'payload={0}'.format(payload_dict)
+        self.simulate_request('/', query_string=query_string)
+        req = self.resource.req
+        self.assertRaises(HTTPInvalidParam, req.get_param_as_dict,
+                          'payload')
 
 
 class PostQueryParams(_TestQueryParams):
