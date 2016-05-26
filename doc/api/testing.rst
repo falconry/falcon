@@ -15,6 +15,9 @@ Testing
 .. autoclass:: falcon.testing.StartResponseMock
     :members:
 
+.. autoclass:: falcon.testing.MiddlewareMock
+    :members:
+
 .. automodule:: falcon.testing
     :members: capture_responder_args, rand_string, create_environ
 

@@ -207,6 +207,124 @@ class TestSeveralMiddlewares(TestMiddleware):
         ]
         self.assertEqual(expectedExecutedMethods, context['executed_methods'])
 
+    def test_middleware_smmock_bad_middleware(self):
+        global context
+        self.smmock.middleware = None
+        self.smmock.path = '/'
+
+        self.assertRaises(TypeError, self.smmock.simulate_process_request)
+        self.assertRaises(TypeError, self.smmock.simulate_process_resource)
+        self.assertRaises(TypeError, self.smmock.simulate_process_response)
+
+    def test_middleware_smmock_middleware_list_no_attributes(self):
+        global context
+        self.smmock.middleware = [None, None]
+        self.smmock.path = '/'
+
+        self.smmock.simulate_process_request()
+        self.smmock.simulate_process_resource()
+        self.smmock.simulate_process_response()
+
+    def test_middleware_smmock_invalid_request_response_objects(self):
+        self.smmock.path = '/'
+        self.smmock.request = RequestTimeMiddleware()
+        self.smmock.response = RequestTimeMiddleware()
+
+        self.assertFalse(isinstance(self.smmock.request, falcon.Request))
+        self.assertFalse(isinstance(self.smmock.response, falcon.Response))
+
+        self.smmock._build()
+
+        self.assertTrue(isinstance(self.smmock.request, falcon.Request))
+        self.assertTrue(isinstance(self.smmock.response, falcon.Response))
+
+    def test_middleware_smmock_object_support(self):
+        global context
+        self.smmock.middleware = RequestTimeMiddleware()
+        self.smmock.path = '/'
+        self.smmock.simulate_process_request()
+        self.smmock.simulate_process_resource()
+        self.smmock.simulate_process_response()
+
+    def test_middleware_smmock_object_list_support(self):
+        # do the list as a whole
+        global context
+        self.smmock.middleware = [ExecutedFirstMiddleware(),
+                                  ExecutedLastMiddleware()]
+        self.smmock.path = '/'
+        self.smmock.simulate_process_request()
+        self.smmock.simulate_process_resource()
+        self.smmock.simulate_process_response()
+
+        # as the method registration is in a list, the order also is
+        # tested
+        expectedExecutedMethods = [
+            'ExecutedFirstMiddleware.process_request',
+            'ExecutedLastMiddleware.process_request',
+            'ExecutedFirstMiddleware.process_resource',
+            'ExecutedLastMiddleware.process_resource',
+            'ExecutedLastMiddleware.process_response',
+            'ExecutedFirstMiddleware.process_response'
+        ]
+        self.assertEqual(expectedExecutedMethods, context['executed_methods'])
+
+    def test_middleware_execution_order_smmock_request(self):
+        # do just the request portion
+        global context
+        self.smmock.middleware = [ExecutedFirstMiddleware(),
+                                  ExecutedLastMiddleware()]
+        self.smmock.path = '/'
+
+        self.smmock.simulate_process_request()
+
+        # as the method registration is in a list, the order also is
+        # tested
+        expectedExecutedMethods = [
+            'ExecutedFirstMiddleware.process_request',
+            'ExecutedLastMiddleware.process_request',
+        ]
+        self.assertEqual(expectedExecutedMethods, context['executed_methods'])
+
+    def test_middleware_execution_order_smmock_resource(self):
+        # do just the resource portion
+        global context
+        self.smmock.middleware = [ExecutedFirstMiddleware(),
+                                  ExecutedLastMiddleware()]
+        self.smmock.path = '/'
+
+        self.smmock._build()
+        self.smmock.simulate_process_resource()
+
+        # as the method registration is in a list, the order also is
+        # tested
+        expectedExecutedMethods = [
+            'ExecutedFirstMiddleware.process_resource',
+            'ExecutedLastMiddleware.process_resource',
+        ]
+        self.assertEqual(expectedExecutedMethods, context['executed_methods'])
+
+    def test_middleware_execution_order_smmock_response(self):
+        # do just the response portion
+        global context
+        self.smmock.middleware = [ExecutedFirstMiddleware(),
+                                  ExecutedLastMiddleware()]
+        self.smmock.path = '/'
+
+        self.smmock._build()
+        self.assertIsNotNone(self.smmock.middleware)
+        self.assertIsNotNone(self.smmock.request)
+        self.assertIsNotNone(self.smmock.response)
+
+        self.smmock.simulate_process_response()
+
+        # as the method registration is in a list, the order also is
+        # tested
+        expectedExecutedMethods = [
+            'ExecutedLastMiddleware.process_response',
+            'ExecutedFirstMiddleware.process_response'
+        ]
+        self.assertEqual(expectedExecutedMethods, context['executed_methods'])
+
     def test_inner_mw_throw_exception(self):
         """Test that error in inner middleware leaves"""
         global context

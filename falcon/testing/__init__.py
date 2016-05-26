@@ -18,4 +18,5 @@ from falcon.testing.helpers import *  # NOQA
 from falcon.testing.resource import capture_responder_args  # NOQA
 from falcon.testing.resource import SimpleTestResource, TestResource  # NOQA
 from falcon.testing.srmock import StartResponseMock  # NOQA
+from falcon.testing.smmock import MiddlewareMock  # NOQA
 from falcon.testing.test_case import Result, TestCase  # NOQA
