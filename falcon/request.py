@@ -272,7 +272,7 @@ class Request(object):
         else:
             self.path = '/'
 
-        # # PERF(ueg1990): try/catch cheaper and faster (and more Pythonic)
+        # PERF(ueg1990): try/catch cheaper and faster (and more Pythonic)
         try:
             self.query_string = env['QUERY_STRING']
         except KeyError:
