@@ -3,8 +3,9 @@ import imp
 import io
 import os
 from os import path
-from setuptools import setup, find_packages, Extension
 import sys
+
+from setuptools import Extension, find_packages, setup
 
 MYDIR = path.abspath(os.path.dirname(__file__))
 

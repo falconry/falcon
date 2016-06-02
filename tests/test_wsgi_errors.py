@@ -1,7 +1,8 @@
 import io
 
-import falcon.testing as testing
 import six
+
+import falcon.testing as testing
 
 unicode_message = u'Unicode: \x80'
 

@@ -1,6 +1,6 @@
+from datetime import datetime, timedelta, tzinfo
 import re
 import sys
-from datetime import datetime, timedelta, tzinfo
 
 import ddt
 from six.moves.http_cookies import Morsel
@@ -8,7 +8,7 @@ from testtools.matchers import LessThan
 
 import falcon
 import falcon.testing as testing
-from falcon.util import TimezoneGMT, http_date_to_dt
+from falcon.util import http_date_to_dt, TimezoneGMT
 
 
 UNICODE_TEST_STRING = u'Unicode_\xc3\xa6\xc3\xb8'

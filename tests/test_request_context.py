@@ -1,6 +1,5 @@
-import falcon.testing as testing
-
 from falcon.request import Request
+import falcon.testing as testing
 
 
 class TestRequestContext(testing.TestBase):

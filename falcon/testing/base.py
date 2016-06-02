@@ -21,8 +21,8 @@ except ImportError:  # pragma: nocover
 
 import falcon
 import falcon.request
-from falcon.testing.srmock import StartResponseMock
 from falcon.testing.helpers import create_environ
+from falcon.testing.srmock import StartResponseMock
 
 
 class TestBase(unittest.TestCase):

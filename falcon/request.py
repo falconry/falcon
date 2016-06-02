@@ -24,21 +24,20 @@ except AttributeError:
     import io
     NativeStream = io.BufferedReader
 
-import mimeparse
-import six
 from wsgiref.validate import InputWrapper
 
+import mimeparse
+import six
+from six.moves import http_cookies
+
 from falcon.errors import *  # NOQA
-from falcon import util
-from falcon.util.uri import parse_query_string, parse_host, unquote_string
-from falcon import request_helpers as helpers
+from falcon import request_helpers as helpers, util
+from falcon.util.uri import parse_host, parse_query_string, unquote_string
 
 # NOTE(tbug): In some cases, http_cookies is not a module
 # but a dict-like structure. This fixes that issue.
 # See issue https://github.com/falconry/falcon/issues/556
-from six.moves import http_cookies
 SimpleCookie = http_cookies.SimpleCookie
-
 
 DEFAULT_ERROR_LOG_FORMAT = (u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
                             u' {1} {2}{3} => ')

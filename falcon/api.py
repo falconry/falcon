@@ -14,16 +14,15 @@
 
 import inspect
 import re
+
 import six
 
-from falcon import api_helpers as helpers
-from falcon import DEFAULT_MEDIA_TYPE
+from falcon import api_helpers as helpers, DEFAULT_MEDIA_TYPE, routing
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 from falcon.request import Request, RequestOptions
-from falcon.response import Response
 import falcon.responders
-from falcon import routing
+from falcon.response import Response
 import falcon.status_codes as status
 
 

@@ -1,8 +1,8 @@
+from datetime import datetime
 import json
 
 import falcon
 import falcon.testing as testing
-from datetime import datetime
 
 _EXPECTED_BODY = {u'status': u'ok'}
 

@@ -1,8 +1,8 @@
 # -*- coding: utf-8
 
-import falcon.testing as testing
 import falcon
 from falcon.http_status import HTTPStatus
+import falcon.testing as testing
 
 
 def before_hook(req, resp, params):

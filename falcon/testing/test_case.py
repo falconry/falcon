@@ -22,9 +22,9 @@ except ImportError:  # pragma: nocover
 
 import falcon
 import falcon.request
-from falcon.util import CaseInsensitiveDict
-from falcon.testing.srmock import StartResponseMock
 from falcon.testing.helpers import create_environ, get_encoding_from_headers
+from falcon.testing.srmock import StartResponseMock
+from falcon.util import CaseInsensitiveDict
 
 
 class Result(object):

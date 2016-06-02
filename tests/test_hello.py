@@ -1,10 +1,10 @@
+import io
+
 import ddt
+import six
 
 import falcon
-import io
 import falcon.testing as testing
-
-import six
 
 
 # NOTE(kgriffs): Concept from Gunicorn's source (wsgi.py)
