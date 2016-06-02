@@ -19,6 +19,8 @@ import warnings
 
 import six
 
+from falcon import status_codes
+
 __all__ = (
     'deprecated',
     'http_now',
@@ -26,6 +28,7 @@ __all__ = (
     'http_date_to_dt',
     'to_query_str',
     'get_bound_method',
+    'get_http_status'
 )
 
 
@@ -210,3 +213,36 @@ def get_bound_method(obj, method_name):
             raise AttributeError(msg)
 
     return method
+
+
+def get_http_status(status_code, default_reason='Unknown'):
+    """Gets both the http status code and description from just a code
+
+    Args:
+        status_code: integer or string that can be converted to an integer
+        default_reason: default text to be appended to the status_code
+            if the lookup does not find a result
+
+    Returns:
+        str: status code e.g. "404 Not Found"
+
+    Raises:
+        ValueError: the value entered could not be converted to an integer
+
+    """
+    # sanitize inputs
+    try:
+        code = float(status_code)  # float can validate values like "401.1"
+        code = int(code)  # converting to int removes the decimal places
+        if code < 100:
+            raise ValueError
+    except ValueError:
+        raise ValueError('get_http_status failed: "%s" is not a '
+                         'valid status code', status_code)
+
+    # lookup the status code
+    try:
+        return getattr(status_codes, 'HTTP_' + str(code))
+    except AttributeError:
+        # not found
+        return str(code) + ' ' + default_reason

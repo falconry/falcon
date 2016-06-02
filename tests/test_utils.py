@@ -297,6 +297,21 @@ class TestFalconUtils(testtools.TestCase):
         self.assertEqual(uri.parse_host('falcon.example.com:42'),
                          ('falcon.example.com', 42))
 
+    def test_get_http_status(self):
+        self.assertEqual(falcon.get_http_status(404), falcon.HTTP_404)
+        self.assertEqual(falcon.get_http_status(404.3), falcon.HTTP_404)
+        self.assertEqual(falcon.get_http_status('404.3'), falcon.HTTP_404)
+        self.assertEqual(falcon.get_http_status(404.9), falcon.HTTP_404)
+        self.assertEqual(falcon.get_http_status('404'), falcon.HTTP_404)
+        self.assertEqual(falcon.get_http_status(123), '123 Unknown')
+        self.assertRaises(ValueError, falcon.get_http_status, 'not_a_number')
+        self.assertRaises(ValueError, falcon.get_http_status, 0)
+        self.assertRaises(ValueError, falcon.get_http_status, 99)
+        self.assertRaises(ValueError, falcon.get_http_status, -404.3)
+        self.assertRaises(ValueError, falcon.get_http_status, '-404')
+        self.assertRaises(ValueError, falcon.get_http_status, '-404.3')
+        self.assertEqual(falcon.get_http_status(123, 'Go Away'), '123 Go Away')
+
 
 class TestFalconTesting(testing.TestBase):
     """Catch some uncommon branches not covered elsewhere."""
