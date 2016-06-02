@@ -474,7 +474,12 @@ class Response(object):
 
     content_location = header_property(
         'Content-Location',
-        'Sets the Content-Location header.',
+        """Sets the Content-Location header.
+
+        This value will be URI encoded per RFC 3986. If the value that is
+        being set is already URI encoded it should be decoded first or the
+        header should be set manually using the set_header method.
+        """,
         uri_encode)
 
     content_range = header_property(
@@ -516,7 +521,12 @@ class Response(object):
 
     location = header_property(
         'Location',
-        'Sets the Location header.',
+        """Sets the Location header.
+
+        This value will be URI encoded per RFC 3986. If the value that is
+        being set is already URI encoded it should be decoded first or the
+        header should be set manually using the set_header method.
+        """,
         uri_encode)
 
     retry_after = header_property(
