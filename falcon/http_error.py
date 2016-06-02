@@ -38,8 +38,9 @@ class HTTPError(Exception):
             returns ``True``, but child classes may override it
             in order to return ``False`` when an empty HTTP body is desired.
             See also the ``falcon.http_error.NoRepresentation`` mixin.
-        title (str): Error title to send to the client. Will be ``None`` if
-            the error should result in an HTTP response with an empty body.
+        title (str): Error title to send to the client. Will be same as
+            ``status`` if the error should result in an HTTP response with an
+            empty body.
         description (str): Description of the error to send to the client.
         headers (dict): Extra headers to add to the response.
         link (str): An href that the client can provide to the user for
@@ -51,7 +52,7 @@ class HTTPError(Exception):
         status (str): HTTP status code and text, such as "400 Bad Request"
 
     Keyword Args:
-        title (str): Human-friendly error title (default ``None``).
+        title (str): Human-friendly error title.
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two (default ``None``).
         headers (dict or list): A ``dict`` of header names and values
@@ -95,7 +96,7 @@ class HTTPError(Exception):
     def __init__(self, status, title=None, description=None, headers=None,
                  href=None, href_text=None, code=None):
         self.status = status
-        self.title = title
+        self.title = title or status
         self.description = description
         self.headers = headers
         self.code = code
