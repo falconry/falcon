@@ -1,6 +1,7 @@
+import six
+
 import falcon
 import falcon.testing as testing
-import six
 
 
 class IDResource(object):

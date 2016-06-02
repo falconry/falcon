@@ -5,11 +5,11 @@ import json
 import xml.etree.ElementTree as et
 
 import ddt
-from testtools.matchers import raises, Not
+from testtools.matchers import Not, raises
 import yaml
 
-import falcon.testing as testing
 import falcon
+import falcon.testing as testing
 
 
 class FaultyResource:

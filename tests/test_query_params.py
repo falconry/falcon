@@ -3,8 +3,8 @@ from datetime import date
 import ddt
 
 import falcon
-import falcon.testing as testing
 from falcon.errors import HTTPInvalidParam
+import falcon.testing as testing
 
 
 @ddt.ddt

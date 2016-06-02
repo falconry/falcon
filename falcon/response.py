@@ -20,7 +20,7 @@ from six import string_types as STRING_TYPES
 # See issue https://github.com/falconry/falcon/issues/556
 from six.moves import http_cookies
 
-from falcon.response_helpers import header_property, format_range
+from falcon.response_helpers import format_range, header_property
 from falcon.response_helpers import is_ascii_encodable
 from falcon.util import dt_to_http, TimezoneGMT
 from falcon.util.uri import encode as uri_encode

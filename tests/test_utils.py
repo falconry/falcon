@@ -7,8 +7,8 @@ import json
 import random
 import sys
 
-import testtools
 import six
+import testtools
 
 import falcon
 from falcon import testing

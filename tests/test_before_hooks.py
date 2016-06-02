@@ -1,6 +1,6 @@
 import functools
-import json
 import io
+import json
 
 import falcon
 import falcon.testing as testing

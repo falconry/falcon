@@ -3,8 +3,9 @@ import logging
 import uuid
 from wsgiref import simple_server
 
-import falcon
 import requests
+
+import falcon
 
 
 class StorageEngine(object):

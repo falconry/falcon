@@ -1,8 +1,8 @@
 import datetime
-import six
-import testtools
 
 import ddt
+import six
+import testtools
 
 import falcon
 from falcon.request import Request

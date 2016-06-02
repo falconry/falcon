@@ -1,7 +1,7 @@
 import ddt
 
-import falcon.testing as testing
 import falcon
+import falcon.testing as testing
 
 
 class RedirectingResource(object):

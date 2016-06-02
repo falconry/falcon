@@ -13,13 +13,13 @@
 # limitations under the License.
 
 import cgi
-import random
 import io
+import random
 import sys
 
 import six
 
-from falcon.util import uri, http_now
+from falcon.util import http_now, uri
 
 # Constants
 DEFAULT_HOST = 'falconframework.org'
