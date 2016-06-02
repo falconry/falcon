@@ -1,3 +1,7 @@
+"""
+Falcon is a minimalist WSGI library for building speedy web APIs and app backends.
+"""
+
 # Copyright 2013 by Rackspace Hosting, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
