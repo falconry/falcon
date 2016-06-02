@@ -564,6 +564,22 @@ class Response(object):
         """,
         lambda v: ', '.join(v))
 
+    accept_ranges = header_property(
+        'Accept-Ranges',
+        """
+        Sets the Accept-Ranges headers.
+
+        The "Accept-Ranges" header field allows a server to indicate that it
+        supports range requests for the target resource.
+
+        If the server does not support any kind of range request for the
+        target resource, then set the header to ``none``
+
+        Note:
+            ``none`` is the literal string, not Python's built-in type ``None``
+
+        """)
+
     def _encode_header(self, name, value, py2=PY2):
         if py2:
             if isinstance(name, unicode):
