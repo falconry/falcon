@@ -272,10 +272,13 @@ class Request(object):
         else:
             self.path = '/'
 
-        # PERF(kgriffs): if...in is faster than using env.get(...)
-        if 'QUERY_STRING' in env:
+        # # PERF(ueg1990): try/catch cheaper and faster (and more Pythonic)
+        try:
             self.query_string = env['QUERY_STRING']
-
+        except KeyError:
+            self.query_string = ''
+            self._params = {}
+        else:
             if self.query_string:
                 self._params = parse_query_string(
                     self.query_string,
@@ -284,10 +287,6 @@ class Request(object):
 
             else:
                 self._params = {}
-
-        else:
-            self.query_string = ''
-            self._params = {}
 
         self._cookies = None
 
