@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Utilities for the Request class."""
+
 
 def header_property(wsgi_name):
     """Creates a read-only header property.

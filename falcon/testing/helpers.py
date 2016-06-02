@@ -12,6 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Testing utilities.
+
+This module contains various testing utilities that can be accessed
+directly from the `testing` package::
+
+    from falcon import testing
+
+    wsgi_environ = testing.create_environ()
+
+"""
+
 import cgi
 import io
 import random

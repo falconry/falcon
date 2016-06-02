@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Default responder implementations."""
+
 from falcon.errors import HTTPBadRequest
 from falcon.errors import HTTPNotFound
 from falcon.status_codes import HTTP_204

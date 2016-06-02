@@ -12,6 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Mock resource classes.
+
+This module contains mock resource classes and associated hooks for use
+in Falcon framework tests. The classes and hooks may be referenced
+directly from the `testing` package::
+
+    from falcon import testing
+
+    resource = testing.SimpleTestResource()
+
+"""
+
 from json import dumps as json_dumps
 
 import falcon

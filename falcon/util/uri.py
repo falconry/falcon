@@ -12,6 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""URI utilities.
+
+This module provides utility functions to parse, encode, decode, and
+otherwise manipulate a URI. These functions are not available directly
+in the `falcon` module, and so must be explicitly imported::
+
+    from falcon import uri
+
+    name, port = uri.parse_host('example.org:8080')
+
+"""
+
 import six
 
 # NOTE(kgriffs): See also RFC 3986

@@ -12,6 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""HTTP error classes.
+
+This module implements a collection of `falcon.HTTPError`
+specializations that can be raised to generate a 4xx or 5xx HTTP
+response. All classes are available directly from the `falcon`
+package namespace::
+
+    import falcon
+
+    class MessageResource(object):
+        def on_get(self, req, resp):
+
+            # ...
+
+            raise falcon.HTTPBadRequest(
+                'TTL Out of Range',
+                'The message's TTL must be between 60 and 300 seconds, inclusive.'
+            )
+
+            # ...
+
+"""
+
 from datetime import datetime
 
 from falcon import util
