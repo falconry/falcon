@@ -1,3 +1,4 @@
+import ddt
 import falcon
 import falcon.testing as testing
 import six
@@ -61,6 +62,7 @@ class FileDetailsResource(object):
         self.called = True
 
 
+@ddt.ddt
 class TestUriTemplates(testing.TestBase):
 
     def before(self):
@@ -81,28 +83,13 @@ class TestUriTemplates(testing.TestBase):
         self.assertRaises(TypeError, self.api.add_route, set(), self.resource)
         self.assertRaises(TypeError, self.api.add_route, self, self.resource)
 
-    def test_field_name_cannot_start_with_digit(self):
-        self.assertRaises(ValueError, self.api.add_route,
-                          '/hello/{1world}', self.resource)
+    @ddt.data('/hello/{1world}', '/{524hello}/world')
+    def test_field_name_cannot_start_with_digit(self, route):
+        self.assertRaises(ValueError, self.api.add_route, route, self.resource)
 
-        self.assertRaises(ValueError, self.api.add_route,
-                          '/{524hello}/world', self.resource)
-
-    def test_whitespace_not_allowed(self):
-        self.assertRaises(ValueError, self.api.add_route,
-                          '/{thing }/world', self.resource)
-
-        self.assertRaises(ValueError, self.api.add_route,
-                          '/{ thing}/world', self.resource)
-
-        self.assertRaises(ValueError, self.api.add_route,
-                          '/{ thing }/world', self.resource)
-
-        self.assertRaises(ValueError, self.api.add_route,
-                          '/{thing}/wo rld', self.resource)
-
-        self.assertRaises(ValueError, self.api.add_route,
-                          '/{thing} /world', self.resource)
+    @ddt.data('/{thing }/world', '/{ thing}/world', '/{ thing }/world', '/{thing}/wo rld', '/{thing} /world')
+    def test_whitespace_not_allowed(self, route):
+        self.assertRaises(ValueError, self.api.add_route, route, self.resource)
 
     def test_no_vars(self):
         self.api.add_route('/hello/world', self.resource)
@@ -219,28 +206,13 @@ class TestUriTemplates(testing.TestBase):
         self.assertEqual(resource.id, test_id)
         self.assertEqual(resource.name51, test_name)
 
-    def test_empty_path_component(self):
-        self.assertRaises(ValueError, self.api.add_route,
-                          '//', self.resource)
+    @ddt.data('//', '//begin', '/end//', '/in//side')
+    def test_empty_path_component(self, route):
+        self.assertRaises(ValueError, self.api.add_route, route, self.resource)
 
-        self.assertRaises(ValueError, self.api.add_route,
-                          '//begin', self.resource)
-
-        self.assertRaises(ValueError, self.api.add_route,
-                          '/end//', self.resource)
-
-        self.assertRaises(ValueError, self.api.add_route,
-                          '/in//side', self.resource)
-
-    def test_relative_path(self):
-        self.assertRaises(ValueError, self.api.add_route,
-                          '', self.resource)
-
-        self.assertRaises(ValueError, self.api.add_route,
-                          'no', self.resource)
-
-        self.assertRaises(ValueError, self.api.add_route,
-                          'no/leading_slash', self.resource)
+    @ddt.data('', 'no', 'no/leading_slash')
+    def test_relative_path(self, route):
+        self.assertRaises(ValueError, self.api.add_route, route, self.resource)
 
     def test_same_level_complex_var(self):
         resource = FileResource()
