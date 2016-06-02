@@ -50,6 +50,8 @@ class HeaderHelpersResource(object):
         else:
             resp.content_range = (0, 25, 100, req.range_unit)
 
+        resp.accept_ranges = 'bytes'
+
         self.resp = resp
 
     def on_head(self, req, resp):
@@ -320,6 +322,9 @@ class TestHeaders(testing.TestCase):
 
         resp.content_range = (1, 499, 10 * 1024, 'bytes')
         self.assertEqual(resp.content_range, 'bytes 1-499/10240')
+
+        self.assertEqual(resp.accept_ranges, 'bytes')
+        self.assertEqual(result.headers['Accept-Ranges'], 'bytes')
 
         req_headers = {'Range': 'items=0-25'}
         result = self.simulate_get(headers=req_headers)
