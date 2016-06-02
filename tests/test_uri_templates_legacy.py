@@ -8,21 +8,17 @@ import falcon.testing as testing
 @ddt.ddt
 class TestUriTemplates(testing.TestBase):
 
-    def test_string_type_required(self):
-        self.assertRaises(TypeError, routing.compile_uri_template, 42)
-        self.assertRaises(TypeError, routing.compile_uri_template, falcon.API)
+    @ddt.data(42, falcon.API)
+    def test_string_type_required(self, value):
+        self.assertRaises(TypeError, routing.compile_uri_template, value)
 
-    def test_template_must_start_with_slash(self):
-        self.assertRaises(ValueError, routing.compile_uri_template, 'this')
-        self.assertRaises(ValueError, routing.compile_uri_template, 'this/that')
+    @ddt.data('this', 'this/that')
+    def test_template_must_start_with_slash(self, value):
+        self.assertRaises(ValueError, routing.compile_uri_template, value)
 
-    def test_template_may_not_contain_double_slash(self):
-        self.assertRaises(ValueError, routing.compile_uri_template, '//')
-        self.assertRaises(ValueError, routing.compile_uri_template, 'a//')
-        self.assertRaises(ValueError, routing.compile_uri_template, '//b')
-        self.assertRaises(ValueError, routing.compile_uri_template, 'a//b')
-        self.assertRaises(ValueError, routing.compile_uri_template, 'a/b//')
-        self.assertRaises(ValueError, routing.compile_uri_template, 'a/b//c')
+    @ddt.data('//', 'a//', '//b', 'a//b', 'a/b//', 'a/b//c')
+    def test_template_may_not_contain_double_slash(self, value):
+        self.assertRaises(ValueError, routing.compile_uri_template, value)
 
     def test_root(self):
         fields, pattern = routing.compile_uri_template('/')
