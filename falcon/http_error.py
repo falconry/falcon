@@ -40,8 +40,7 @@ class HTTPError(Exception):
             returns ``True``, but child classes may override it
             in order to return ``False`` when an empty HTTP body is desired.
             See also the ``falcon.http_error.NoRepresentation`` mixin.
-        title (str): Error title to send to the client. Will be ``None`` if
-            the error should result in an HTTP response with an empty body.
+        title (str): Error title to send to the client.
         description (str): Description of the error to send to the client.
         headers (dict): Extra headers to add to the response.
         link (str): An href that the client can provide to the user for
@@ -53,7 +52,8 @@ class HTTPError(Exception):
         status (str): HTTP status code and text, such as "400 Bad Request"
 
     Keyword Args:
-        title (str): Human-friendly error title (default ``None``).
+        title (str): Human-friendly error title. If not provided, defaults
+            to the HTTP status line as determined by the ``status`` argument.
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two (default ``None``).
         headers (dict or list): A ``dict`` of header names and values
@@ -97,7 +97,13 @@ class HTTPError(Exception):
     def __init__(self, status, title=None, description=None, headers=None,
                  href=None, href_text=None, code=None):
         self.status = status
-        self.title = title
+
+        # TODO(kgriffs): HTTP/2 does away with the "reason phrase". Eventually
+        #   we'll probably switch over to making everything code-based to more
+        #   easily support HTTP/2. When that happens, should we continue to
+        #   include the reason phrase in the title?
+        self.title = title or status
+
         self.description = description
         self.headers = headers
         self.code = code
@@ -133,8 +139,7 @@ class HTTPError(Exception):
 
         obj = obj_type()
 
-        if self.title is not None:
-            obj['title'] = self.title
+        obj['title'] = self.title
 
         if self.description is not None:
             obj['description'] = self.description
@@ -171,8 +176,7 @@ class HTTPError(Exception):
 
         error_element = et.Element('error')
 
-        if self.title is not None:
-            et.SubElement(error_element, 'title').text = self.title
+        et.SubElement(error_element, 'title').text = self.title
 
         if self.description is not None:
             et.SubElement(error_element, 'description').text = self.description
