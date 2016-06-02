@@ -246,7 +246,8 @@ else:
         return decoded_uri.decode('utf-8', 'replace')
 
 
-def parse_query_string(query_string, keep_blank_qs_values=False):
+def parse_query_string(query_string, keep_blank_qs_values=False,
+                       parse_csv_qs_values_as_list=True):
     """Parse a query string into a dict.
 
     Query string parameters are assumed to use standard form-encoding. Only
@@ -271,6 +272,8 @@ def parse_query_string(query_string, keep_blank_qs_values=False):
         query_string (str): The query string to parse.
         keep_blank_qs_values (bool): If set to ``True``, preserves boolean
             fields and fields with no content as blank strings.
+        parse_csv_qs_values_as_list (bool): If set to ``True``, parses query string
+            as a list.
 
     Returns:
         dict: A dictionary of (*name*, *value*) pairs, one per query
@@ -309,7 +312,7 @@ def parse_query_string(query_string, keep_blank_qs_values=False):
                 params[k] = [old_value, decode(v)]
 
         else:
-            if ',' in v:
+            if ',' in v and parse_csv_qs_values_as_list:
                 # NOTE(kgriffs): Falcon supports a more compact form of
                 # lists, in which the elements are comma-separated and
                 # assigned to a single param instance. If it turns out that
