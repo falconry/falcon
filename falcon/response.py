@@ -116,6 +116,7 @@ class Response(object):
         'stream',
         'stream_len',
         'context',
+        '__dict__',
     )
 
     # Child classes may override this
