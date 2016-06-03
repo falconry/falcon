@@ -98,7 +98,8 @@ class Response(object):
         '_cookies',
         'status',
         'stream',
-        'stream_len'
+        'stream_len',
+        '__dict__',
     )
 
     def __init__(self):
