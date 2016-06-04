@@ -534,6 +534,12 @@ class TestHeaders(testing.TestCase):
 
         self._check_link_header(resource, expected_value)
 
+    def test_content_length_options(self):
+        result = self.simulate_options()
+
+        content_length = '0'
+        self.assertEqual(result.headers['Content-Length'], content_length)
+
     # ----------------------------------------------------------------------
     # Helpers
     # ----------------------------------------------------------------------
