@@ -1060,9 +1060,7 @@ class Request(object):
 
         Raises:
             HTTPBadRequest: A required param is missing from the request.
-            HTTPInvalidParam: A transform function raised an instance of
-                ``ValueError``.
-
+            HTTPInvalidParam: The parameter's value could not be parsed as JSON.
         """
 
         param_value = self.get_param(name, required=required)
