@@ -151,7 +151,10 @@ class CompiledRouter(object):
                 else:
                     # NOTE(kgriffs): Simple nodes just capture the entire path
                     # segment as the value for the param.
-                    line('params["%s"] = path[%d]' % (node.var_name, level))
+                    if node.var_filter:
+                        line('params["%s"] = %s(path[%d])' % (node.var_name, node.var_filter, level))
+                    else:
+                        line('params["%s"] = path[%d]' % (node.var_name, level))
 
                     # NOTE(kgriffs): We don't allow multiple simple var nodes
                     # to exist at the same level, e.g.:
@@ -225,7 +228,7 @@ class CompiledRouter(object):
 class CompiledRouterNode(object):
     """Represents a single URI segment in a URI."""
 
-    _regex_vars = re.compile('{([-_a-zA-Z0-9]+)}')
+    _regex_vars = re.compile('{([-_a-zA-Z0-9]+)(:[-_a-zA-Z0-9]+)?}')
 
     def __init__(self, raw_segment, method_map=None, resource=None):
         self.children = []
@@ -237,6 +240,7 @@ class CompiledRouterNode(object):
         self.is_var = False
         self.is_complex = False
         self.var_name = None
+        self.var_filter = None
 
         seg = raw_segment.replace('.', '\\.')
 
@@ -248,7 +252,9 @@ class CompiledRouterNode(object):
             # name is simply the string contained within curly braces.
             if len(matches) == 1 and matches[0].span() == (0, len(seg)):
                 self.is_complex = False
-                self.var_name = raw_segment[1:-1]
+                match_groups = matches[0].groups()
+                self.var_name = match_groups[0]
+                self.var_filter = match_groups[1][1:] if match_groups[1] else None
             else:
                 # NOTE(richardolsson): Complex segments need to be converted
                 # into regular expressions will be used to match and extract

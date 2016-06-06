@@ -75,7 +75,7 @@ class TestComplexRouting(testing.TestBase):
             {}, ResourceWithId(5))
 
         self.router.add_route(
-            '/teams/{id}', {}, ResourceWithId(6))
+            '/teams/{id:int}', {}, ResourceWithId(6))
         self.router.add_route(
             '/teams/{id}/members', {}, ResourceWithId(7))
 
