@@ -1,16 +1,18 @@
 ## Contributing
 
-Hi, thanks for your interest in the project! We welcome pull requests from developers of all skill levels.
+Hi, thanks for your interest in the project! We welcome pull requests from developers of all skill levels. To get started, simply fork the master branch on GitHub to your personal account and then clone the fork into your development environment.
 
-Kurt Griffiths (kgriffs) is the creator and current maintainer of the Falcon framework, along with a group of talented and stylish volunteers. Please don't hesitate to reach out if you have any questions, or just need a little help getting started.
+Kurt Griffiths (kgriffs) is the creator and current maintainer of the Falcon framework, along with a group of talented and stylish volunteers. Please don't hesitate to reach out if you have any questions, or just need a little help getting started. You can find us on IRC in #falconframework on Freenode.
 
 Before submitting a pull request, please ensure you have added or updated tests as appropriate, and that all existing tests still pass with your changes on both Python 2 and Python 3. Please also ensure that your coding style follows PEP 8 and doesn't cause pyflakes to complain.
 
-You can check all this by running the following from within the falcon project directory (requires Python 2.7 and Python 3.3 to be installed on your system):
+You can check all this by running the following from within the falcon project directory (requires Python 2.7 and Python 3.5 to be installed on your system):
 
 ```bash
-$ tox -e py27,py33,pep8
+$ tox -e py27,py35,pep8
 ```
+
+You may also use Python 3.3 or 3.4 if you don't have 3.5 installed on your system. This is just a quick sanity check to verify that your patch works across both Python 2 and Python 3.
 
 ### Running tests against Jython
 
@@ -31,7 +33,9 @@ Pull requests must maintain 100% test coverage of all code branches. This helps 
 $ tox -e py26,py27,py34 && tools/combine_coverage.sh
 ```
 
-This generates an HTML coverage report that can be viewed by simply opening `.coverage_html/index.html` in a browser.
+It is necessary to combine test coverage from all three of these environments in order to account for branches in the code that are only taken for a given Python version.
+
+The `combine_coverage.sh` script generates an HTML coverage report that can be viewed by simply opening `.coverage_html/index.html` in a browser. This can be helpful in tracking down specific lines or branches that are missing coverage.
 
 ### Documentation
 
