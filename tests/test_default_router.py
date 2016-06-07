@@ -75,7 +75,7 @@ class TestComplexRouting(testing.TestBase):
             {}, ResourceWithId(5))
 
         self.router.add_route(
-            '/teams/{id:int}', {}, ResourceWithId(6))
+            '/teams/{id}', {}, ResourceWithId(6))
         self.router.add_route(
             '/teams/{id}/members', {}, ResourceWithId(7))
 
@@ -93,6 +93,18 @@ class TestComplexRouting(testing.TestBase):
             {}, ResourceWithId(10))
         self.router.add_route(
             '/repos/{org}/{repo}/compare/all', {}, ResourceWithId(11))
+        self.router.add_route(
+            '/users/{id:int}', {}, ResourceWithId(10))
+        self.router.add_route(
+            '/nearby/{lat:float}/{lon:float}', {}, ResourceWithId(10))
+        self.router.add_route(
+            '/nearby/{lat:float}/{lon:float}', {}, ResourceWithId(10))
+        self.router.add_route(
+            'static/{path:path}', {}, ResourceWithId(10))
+        self.router.add_route(
+            'numbers/{numbers:re:[0-9]+}', {}, ResourceWithId(10))
+        self.router.add_route(
+            'letters/{numbers:re:[a-z]+}', {}, ResourceWithId(10))
 
         # NOTE(kgriffs): The ordering of these calls is significant; we
         # need to test that the {id} field does not match the other routes,
