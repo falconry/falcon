@@ -98,8 +98,6 @@ class TestComplexRouting(testing.TestBase):
         self.router.add_route(
             '/nearby/{lat:float}/{lon:float}', {}, ResourceWithId(10))
         self.router.add_route(
-            '/nearby/{lat:float}/{lon:float}', {}, ResourceWithId(10))
-        self.router.add_route(
             'static/{path:path}', {}, ResourceWithId(10))
         self.router.add_route(
             'numbers/{numbers:re:[0-9]+}', {}, ResourceWithId(10))
@@ -307,3 +305,17 @@ class TestComplexRouting(testing.TestBase):
             'usr0': 'johndoe',
             'branch0': 'master',
         })
+
+    def test_int_filter(self):
+        _, _, params = self.router.find('/users/101')
+        self.assertEqual(params, {'id': 101})
+
+    def test_float_filter(self):
+        _, _, params = self.router.find('/nearby/41.8781/87.6298')
+        self.assertEqual(params, {'lat': 41.8781, 'lon': 87.6298})
+
+    def test_path_filter(self):
+        pass
+
+    def test_regex_filter(self):
+        pass

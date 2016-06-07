@@ -38,6 +38,7 @@ class CompiledRouter(object):
         self._src = None
         self._expressions = None
         self._return_values = None
+        self._filters = self._get_available_filters()
 
     def add_route(self, uri_template, method_map, resource):
         """Adds a route between URI path template and resource."""
@@ -223,6 +224,14 @@ class CompiledRouter(object):
         exec(compile(self._src, '<string>', 'exec'), scope)
 
         return scope['find']
+
+    def _get_available_filters(self):
+        return {
+            'int': int,
+            'float': float,
+            'path': lambda x: 'TODO',
+            're': lambda x: 'TODO'
+        }
 
 
 class CompiledRouterNode(object):
