@@ -83,12 +83,26 @@ class Response(object):
             blocks as byte strings. Falcon will use *wsgi.file_wrapper*, if
             provided by the WSGI server, in order to efficiently serve
             file-like objects.
-
         stream_len (int): Expected length of `stream`. If `stream` is set,
             but `stream_len` is not, Falcon will not supply a
             Content-Length header to the WSGI server. Consequently, the
             server may choose to use chunked encoding or one of the
             other strategies suggested by PEP-3333.
+        context (dict): Dictionary to hold any data about the response which is
+            specific to your app. Falcon itself will not interact with this
+            attribute after it has been initialized.
+        context_type (class): Class variable that determines the factory or
+            type to use for initializing the `context` attribute. By default,
+            the framework will instantiate standard ``dict`` objects. However,
+            you may override this behavior by creating a custom child class of
+            ``falcon.Response``, and then passing that new class to
+            `falcon.API()` by way of the latter's `response_type` parameter.
+
+            Note:
+                When overriding `context_type` with a factory function (as
+                opposed to a class), the function is called like a method of
+                the current Response instance. Therefore the first argument is
+                the Response instance itself (self).
     """
 
     __slots__ = (
@@ -98,8 +112,12 @@ class Response(object):
         '_cookies',
         'status',
         'stream',
-        'stream_len'
+        'stream_len',
+        'context',
     )
+
+    # Child classes may override this
+    context_type = None
 
     def __init__(self):
         self.status = '200 OK'
@@ -113,6 +131,12 @@ class Response(object):
         self.data = None
         self.stream = None
         self.stream_len = None
+
+        if self.context_type is None:
+            # PERF(kgriffs): The literal syntax is more efficient than dict().
+            self.context = {}
+        else:
+            self.context = self.context_type()
 
     def set_stream(self, stream, stream_len):
         """Convenience method for setting both `stream` and `stream_len`.
