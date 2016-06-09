@@ -1,8 +1,31 @@
-## Contributing
+## Contributer's Guide
 
-Hi, thanks for your interest in the project! We welcome pull requests from developers of all skill levels. To get started, simply fork the master branch on GitHub to your personal account and then clone the fork into your development environment.
+Thanks for your interest in the project! We welcome pull requests from
+developers of all skill levels. To get started, simply fork the master branch
+on GitHub to your personal account and then clone the fork into your
+development environment.
 
-Kurt Griffiths (kgriffs) is the creator and current maintainer of the Falcon framework, along with a group of talented and stylish volunteers. Please don't hesitate to reach out if you have any questions, or just need a little help getting started. You can find us on IRC in #falconframework on Freenode.
+Kurt Griffiths (**kgriffs** on IRC and Twitter) is the original creator of the
+Falcon framework, and currently co-maintains the project along with John Vrbanac
+(**jvrbanac** on IRC and Twitter). Falcon is developed by a growing
+community of users and contributors just like you.
+
+Please don't hesitate to reach out if you have any questions, or just need a
+little help getting started. You can find us in
+the **#falconframework** IRC channel on [Freenode][freenode]. It's the best way to discuss ideas, ask
+questions, and generally stay in touch with fellow contributors.
+
+Please note that all contributors and maintainers of this project are subject to our [Code of Conduct][coc].
+
+### Mailing List
+
+The Falcon community maintains a mailing list that you can use to share your ideas and ask questions about the framework. To join the list, simply send an email to [<users-join@mail.falconframework.org>][ml-join] (the subject and body will be ignored). You’ll receive a reply asking you to confirm the request.
+
+Per our [Code of Conduct][coc], we expect everyone who participates on the mailing list to act professionally, and lead by example in encouraging constructive discussions. Each individual in the community is responsible for creating a positive, constructive, and productive culture.
+
+[Discussions are archived][ml-archive] for future reference.
+
+### Pull Requests
 
 Before submitting a pull request, please ensure you have added or updated tests as appropriate, and that all existing tests still pass with your changes on both Python 2 and Python 3. Please also ensure that your coding style follows PEP 8 and doesn't cause pyflakes to complain.
 
@@ -129,3 +152,7 @@ The footer should contain any information about **Breaking Changes** and is also
 [docstrings]: http://sphinxcontrib-napoleon.readthedocs.org/en/latest/example_google.html#example-google-style-python-docstrings
 [goog-style]: http://google-styleguide.googlecode.com/svn/trunk/pyguide.html#Comments
 [rtd]: http://falcon.readthedocs.org
+[coc]: https://github.com/falconry/falcon/blob/master/CODEOFCONDUCT.md
+[freenode]: https://www.freenode.net/
+[ml-join]: mailto:users-join@mail.falconframework.org?subject=join
+[ml-archive]: https://mail.falconframework.org/archives/list/users@mail.falconframework.org/
