@@ -268,15 +268,16 @@ class TestHeaders(testing.TestCase):
         self.assertEqual(result.headers['Content-Type'], content_type)
 
     def test_override_default_media_type_missing_encoding(self):
-        body = b'{}'
+        body = u'{"msg": "Hello Unicode! \U0001F638"}'
 
         self.api = falcon.API(media_type='application/json')
         self.api.add_route('/', testing.SimpleTestResource(body=body))
         result = self.simulate_get()
 
-        self.assertEqual(result.content, body)
-        self.assertRaises(RuntimeError, lambda: result.text)
-        self.assertRaises(RuntimeError, lambda: result.json)
+        self.assertEqual(result.content, body.encode('utf-8'))
+        self.assertIsInstance(result.text, six.text_type)
+        self.assertEqual(result.text, body)
+        self.assertEqual(result.json, {u'msg': u'Hello Unicode! \U0001F638'})
 
     def test_response_header_helpers_on_get(self):
         last_modified = datetime(2013, 1, 1, 10, 30, 30)

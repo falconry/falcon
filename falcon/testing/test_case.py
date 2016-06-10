@@ -55,8 +55,8 @@ class Result(object):
             response body was empty.
         text (str): Decoded response body of type ``unicode``
             under Python 2.6 and 2.7, and of type ``str`` otherwise.
-            Raises an error if the response encoding can not be
-            determined.
+            If the content type does not specify an encoding, UTF-8 is
+            assumed.
         json (dict): Deserialized JSON body. Raises an error if the
             response is not JSON.
     """
@@ -101,10 +101,11 @@ class Result(object):
                 self._text = u''
             else:
                 if self.encoding is None:
-                    msg = 'Response did not specify a content encoding'
-                    raise RuntimeError(msg)
+                    encoding = 'UTF-8'
+                else:
+                    encoding = self.encoding
 
-                self._text = self.content.decode(self.encoding)
+                self._text = self.content.decode(encoding)
 
         return self._text
 
