@@ -2,6 +2,5 @@ docutils
 jinja2
 markupsafe
 pygments
-sphinx
-sphinxcontrib-napoleon
+sphinx>=1.4.4
 sphinx_rtd_theme
