@@ -10,6 +10,6 @@ def init_model():
     recommended place to do it.
 
     For more information working with databases, and some common recipes,
-    see http://pecan.readthedocs.org/en/latest/databases.html
+    see https://pecan.readthedocs.io/en/latest/databases.html
     """
     pass
