@@ -12,7 +12,7 @@ class TestRootController(FunctionalTest):
     def test_search(self):
         response = self.app.post('/', params={'q': 'RestController'})
         assert response.status_int == 302
-        assert response.headers['Location'] == ('http://pecan.readthedocs.org'
+        assert response.headers['Location'] == ('https://pecan.readthedocs.io'
                                                 '/en/latest/search.html'
                                                 '?q=RestController')
 

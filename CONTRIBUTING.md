@@ -149,9 +149,9 @@ Just as in the **subject**, use the imperative, present tense: "change" not "cha
 The footer should contain any information about **Breaking Changes** and is also the place to reference GitHub issues that this commit **Closes**.
 
 [ajs]: https://github.com/angular/angular.js/blob/master/CONTRIBUTING.md#commit
-[docstrings]: http://sphinxcontrib-napoleon.readthedocs.org/en/latest/example_google.html#example-google-style-python-docstrings
+[docstrings]: https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html#example-google-style-python-docstrings
 [goog-style]: http://google-styleguide.googlecode.com/svn/trunk/pyguide.html#Comments
-[rtd]: http://falcon.readthedocs.org
+[rtd]: https://falcon.readthedocs.io
 [coc]: https://github.com/falconry/falcon/blob/master/CODEOFCONDUCT.md
 [freenode]: https://www.freenode.net/
 [ml-join]: mailto:users-join@mail.falconframework.org?subject=join
