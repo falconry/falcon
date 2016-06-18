@@ -567,16 +567,17 @@ class Response(object):
     accept_ranges = header_property(
         'Accept-Ranges',
         """
-        Sets the Accept-Ranges headers.
+        Sets the Accept-Ranges header.
 
-        The "Accept-Ranges" header field allows a server to indicate that it
-        supports range requests for the target resource.
+        The Accept-Ranges header field allows a server to indicate that it
+        supports range requests for the target resource. The value of this
+        header indicates what range units are supported (e.g. "bytes").
 
         If the server does not support any kind of range request for the
-        target resource, then set the header to ``none``
+        target resource, then set the header to "none"
 
         Note:
-            ``none`` is the literal string, not Python's built-in type ``None``
+            "none" is the literal string, not Python's built-in type ``None``
 
         """)
 
