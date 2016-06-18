@@ -52,7 +52,7 @@ class HTTPError(Exception):
         status (str): HTTP status code and text, such as "400 Bad Request"
 
     Keyword Args:
-        title (str): Human-friendly error title.
+        title (str): Human-friendly error title. Defaults to value of ``status``
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two (default ``None``).
         headers (dict or list): A ``dict`` of header names and values
@@ -132,8 +132,7 @@ class HTTPError(Exception):
 
         obj = obj_type()
 
-        if self.title is not None:
-            obj['title'] = self.title
+        obj['title'] = self.title
 
         if self.description is not None:
             obj['description'] = self.description
@@ -170,8 +169,7 @@ class HTTPError(Exception):
 
         error_element = et.Element('error')
 
-        if self.title is not None:
-            et.SubElement(error_element, 'title').text = self.title
+        et.SubElement(error_element, 'title').text = self.title
 
         if self.description is not None:
             et.SubElement(error_element, 'description').text = self.description
