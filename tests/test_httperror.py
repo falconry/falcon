@@ -153,6 +153,19 @@ class TemporaryRequestEntityTooLongResource:
                                                retry_after=self.retry_after)
 
 
+class UriTooLongResource:
+
+    def __init__(self, title=None, description=None, code=None):
+        self.title = title
+        self.description = description
+        self.code = code
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPUriTooLong(self.title,
+                                    self.description,
+                                    code=self.code)
+
+
 class RangeNotSatisfiableResource:
 
     def on_get(self, req, resp):
