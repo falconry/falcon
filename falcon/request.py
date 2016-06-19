@@ -30,8 +30,9 @@ import mimeparse
 import six
 from six.moves import http_cookies
 
-from falcon.errors import *  # NOQA
-from falcon import request_helpers as helpers, util
+from falcon import errors
+from falcon import request_helpers as helpers
+from falcon import util
 from falcon.util.uri import parse_host, parse_query_string, unquote_string
 
 # NOTE(tbug): In some cases, http_cookies is not a module
@@ -379,11 +380,11 @@ class Request(object):
             value_as_int = int(value)
         except ValueError:
             msg = 'The value of the header must be a number.'
-            raise HTTPInvalidHeader(msg, 'Content-Length')
+            raise errors.HTTPInvalidHeader(msg, 'Content-Length')
 
         if value_as_int < 0:
             msg = 'The value of the header must be a positive number.'
-            raise HTTPInvalidHeader(msg, 'Content-Length')
+            raise errors.HTTPInvalidHeader(msg, 'Content-Length')
 
         return value_as_int
 
@@ -407,13 +408,13 @@ class Request(object):
                 unit, sep, req_range = value.partition('=')
             else:
                 msg = "The value must be prefixed with a range unit, e.g. 'bytes='"
-                raise HTTPInvalidHeader(msg, 'Range')
+                raise errors.HTTPInvalidHeader(msg, 'Range')
         except KeyError:
             return None
 
         if ',' in req_range:
             msg = 'The value must be a continuous range.'
-            raise HTTPInvalidHeader(msg, 'Range')
+            raise errors.HTTPInvalidHeader(msg, 'Range')
 
         try:
             first, sep, last = req_range.partition('-')
@@ -427,14 +428,14 @@ class Request(object):
                 return (-int(last), -1)
             else:
                 msg = 'The range offsets are missing.'
-                raise HTTPInvalidHeader(msg, 'Range')
+                raise errors.HTTPInvalidHeader(msg, 'Range')
 
         except ValueError:
             href = 'http://goo.gl/zZ6Ey'
             href_text = 'HTTP/1.1 Range Requests'
             msg = ('It must be a range formatted according to RFC 7233.')
-            raise HTTPInvalidHeader(msg, 'Range', href=href,
-                                    href_text=href_text)
+            raise errors.HTTPInvalidHeader(msg, 'Range', href=href,
+                                           href_text=href_text)
 
     @property
     def range_unit(self):
@@ -446,7 +447,7 @@ class Request(object):
                 return unit
             else:
                 msg = "The value must be prefixed with a range unit, e.g. 'bytes='"
-                raise HTTPInvalidHeader(msg, 'Range')
+                raise errors.HTTPInvalidHeader(msg, 'Range')
         except KeyError:
             return None
 
@@ -695,7 +696,7 @@ class Request(object):
             if not required:
                 return None
 
-            raise HTTPMissingHeader(name)
+            raise errors.HTTPMissingHeader(name)
 
     def get_header_as_datetime(self, header, required=False, obs_date=False):
         """Return an HTTP header with HTTP-Date values as a datetime.
@@ -728,7 +729,7 @@ class Request(object):
         except ValueError:
             msg = ('It must be formatted according to RFC 7231, '
                    'Section 7.1.1.1')
-            raise HTTPInvalidHeader(msg, header)
+            raise errors.HTTPInvalidHeader(msg, header)
 
     def get_param(self, name, required=False, store=None, default=None):
         """Return the raw value of a query string parameter as a string.
@@ -789,7 +790,7 @@ class Request(object):
         if not required:
             return default
 
-        raise HTTPMissingParam(name)
+        raise errors.HTTPMissingParam(name)
 
     def get_param_as_int(self, name,
                          required=False, min=None, max=None, store=None):
@@ -837,15 +838,15 @@ class Request(object):
                 val = int(val)
             except ValueError:
                 msg = 'The value must be an integer.'
-                raise HTTPInvalidParam(msg, name)
+                raise errors.HTTPInvalidParam(msg, name)
 
             if min is not None and val < min:
                 msg = 'The value must be at least ' + str(min)
-                raise HTTPInvalidParam(msg, name)
+                raise errors.HTTPInvalidParam(msg, name)
 
             if max is not None and max < val:
                 msg = 'The value may not exceed ' + str(max)
-                raise HTTPInvalidParam(msg, name)
+                raise errors.HTTPInvalidParam(msg, name)
 
             if store is not None:
                 store[name] = val
@@ -855,7 +856,7 @@ class Request(object):
         if not required:
             return None
 
-        raise HTTPMissingParam(name)
+        raise errors.HTTPMissingParam(name)
 
     def get_param_as_bool(self, name, required=False, store=None,
                           blank_as_true=False):
@@ -909,7 +910,7 @@ class Request(object):
                 val = True
             else:
                 msg = 'The value of the parameter must be "true" or "false".'
-                raise HTTPInvalidParam(msg, name)
+                raise errors.HTTPInvalidParam(msg, name)
 
             if store is not None:
                 store[name] = val
@@ -919,7 +920,7 @@ class Request(object):
         if not required:
             return None
 
-        raise HTTPMissingParam(name)
+        raise errors.HTTPMissingParam(name)
 
     def get_param_as_list(self, name,
                           transform=None, required=False, store=None):
@@ -981,7 +982,7 @@ class Request(object):
 
                 except ValueError:
                     msg = 'The value is not formatted correctly.'
-                    raise HTTPInvalidParam(msg, name)
+                    raise errors.HTTPInvalidParam(msg, name)
 
             if store is not None:
                 store[name] = items
@@ -991,7 +992,7 @@ class Request(object):
         if not required:
             return None
 
-        raise HTTPMissingParam(name)
+        raise errors.HTTPMissingParam(name)
 
     def get_param_as_date(self, name, format_string='%Y-%m-%d',
                           required=False, store=None):
@@ -1030,7 +1031,7 @@ class Request(object):
             date = strptime(param_value, format_string).date()
         except ValueError:
             msg = 'The date value does not match the required format'
-            raise HTTPInvalidParam(msg, name)
+            raise errors.HTTPInvalidParam(msg, name)
 
         if store is not None:
             store[name] = date
@@ -1078,7 +1079,7 @@ class Request(object):
 
         # NOTE(kgriffs): This branch is indeed covered in test_wsgi.py
         # even though coverage isn't able to detect it.
-        except HTTPInvalidHeader:  # pragma: no cover
+        except errors.HTTPInvalidHeader:  # pragma: no cover
             # NOTE(kgriffs): The content-length header was specified,
             # but it had an invalid value. Assume no content.
             content_length = 0
