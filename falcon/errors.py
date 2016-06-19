@@ -272,6 +272,30 @@ class HTTPRequestEntityTooLarge(HTTPError):
                                                         **kwargs)
 
 
+class HTTPUriTooLong(HTTPError):
+    """414 URI Too Long.
+
+    The server is refusing to process a request because the request-target is
+    longer than the server is willing to interpret.
+
+    This usually occurs when the client is sending a GET request with long
+    query information, when the client has descended in a redirection loop
+    that points to a suffix of itself or when the server is under attack by a
+    client.
+
+    (RFC 7231)
+
+    Args:
+      title (str): Error title (e.g., 'Request Body Limit Exceeded').
+      description (str): Human-friendly description of the error, along with
+            a helpful suggestion or two.
+      kwargs (optional): Same as for ``HTTPError``.
+    """
+
+    def __init__(self, title=None, description=None, **kwargs):
+        super(HTTPUriTooLong, self).__init__(status.HTTP_414, title, description, **kwargs)
+
+
 class HTTPUnsupportedMediaType(HTTPError):
     """415 Unsupported Media Type.
 
