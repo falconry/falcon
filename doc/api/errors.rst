@@ -35,7 +35,8 @@ Predefined Errors
         HTTPInvalidParam, HTTPMissingParam,
         HTTPBadRequest, HTTPUnauthorized, HTTPForbidden, HTTPNotFound,
         HTTPMethodNotAllowed, HTTPNotAcceptable, HTTPConflict,
-        HTTPLengthRequired, HTTPPreconditionFailed, HTTPUnsupportedMediaType,
-        HTTPRangeNotSatisfiable, HTTPUnprocessableEntity, HTTPTooManyRequests,
+        HTTPLengthRequired, HTTPPreconditionFailed, HTTPRequestEntityTooLarge,
+        HTTPUriTooLong, HTTPUnsupportedMediaType, HTTPRangeNotSatisfiable,
+        HTTPUnprocessableEntity, HTTPTooManyRequests,
         HTTPUnavailableForLegalReasons, HTTPInternalServerError,
         HTTPBadGateway, HTTPServiceUnavailable
