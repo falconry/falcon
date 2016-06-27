@@ -2,7 +2,7 @@
 
 All contributors and maintainers of this project are subject to this Code of Conduct.
 
-We pledge to respect everyone who contributes to the *Falcon* project or other associated activities by (including but not limited to) creating project issues, submitting pull requests, and providing feedback on the same. We also pledge to respect everyone who participates in discussions on the project's mailing list, in the project's chat channel, and at meetups and conferences.
+We pledge to respect everyone who contributes to the *Falcon* project or other associated activities by (including but not limited to) creating project issues, submitting pull requests, and providing feedback on the same. We also pledge to respect everyone who participates in discussions on the project's mailing list, in the project's chat channel, in online discussion groups, and at meetups and conferences.
 
 Unacceptable behavior includes (but is not limited to) offensive verbal comments related to gender, gender identity and expression, age, sexual orientation, disability, physical appearance, body size, race, ethnicity, religion, technology choices, sexual images in public spaces, deliberate intimidation, stalking, following, harassing photography or recording, sustained disruption of talks or other events, inappropriate physical contact, and unwelcome sexual attention.
 
