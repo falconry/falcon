@@ -11,6 +11,7 @@
 # limitations under the License.
 
 from datetime import datetime
+import json
 
 try:
     # NOTE(kgrifs): In Python 2.6 and 2.7, socket._fileobject is a
@@ -1030,13 +1031,52 @@ class Request(object):
         try:
             date = strptime(param_value, format_string).date()
         except ValueError:
-            msg = 'The date value does not match the required format'
+            msg = 'The date value does not match the required format.'
             raise errors.HTTPInvalidParam(msg, name)
 
         if store is not None:
             store[name] = date
 
         return date
+
+    def get_param_as_dict(self, name, required=False, store=None):
+        """Return the value of a query string parameter as a dict.
+
+        Given a JSON value, parse and return it as a dict.
+
+        Args:
+            name (str): Parameter name, case-sensitive (e.g., 'payload').
+            required (bool, optional): Set to ``True`` to raise
+                ``HTTPBadRequest`` instead of returning ``None`` when the
+                parameter is not found (default ``False``).
+            store (dict, optional): A ``dict``-like object in which to place
+                the value of the param, but only if the param is found (default
+                ``None``).
+
+        Returns:
+            dict: The value of the param if it is found. Otherwise, returns
+                ``None`` unless required is ``True``.
+
+        Raises:
+            HTTPBadRequest: A required param is missing from the request.
+            HTTPInvalidParam: The parameter's value could not be parsed as JSON.
+        """
+
+        param_value = self.get_param(name, required=required)
+
+        if param_value is None:
+            return None
+
+        try:
+            val = json.loads(param_value)
+        except ValueError:
+            msg = 'It could not be parsed as JSON.'
+            raise errors.HTTPInvalidParam(msg, name)
+
+        if store is not None:
+            store[name] = val
+
+        return val
 
     def log_error(self, message):
         """Write an error message to the server's log.
