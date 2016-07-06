@@ -85,7 +85,7 @@ class TestHelloWorld(testing.TestCase):
         self.assertEqual(env['HTTP_USER_AGENT'], 'Falcon-Test')
 
     def test_root_route(self):
-        doc = {u"message": u"Hello world!"}
+        doc = {u'message': u'Hello world!'}
         resource = testing.SimpleTestResource(json=doc)
         self.api.add_route('/', resource)
 
