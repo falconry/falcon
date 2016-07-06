@@ -65,6 +65,30 @@ class _TestQueryParams(testing.TestBase):
         self.assertEqual(req.get_param_as_list('id', int), [23, 42])
         self.assertEqual(req.get_param('q'), u'\u8c46 \u74e3')
 
+    def test_option_auto_parse_lists_true(self):
+        self.api.req_options.auto_parse_lists = False
+
+        query_string = 'id=23,42,,&id=2'
+        self.simulate_request('/', query_string=query_string)
+
+        req = self.resource.req
+
+        self.assertEqual(req.params['id'], [u'23,42,,', u'2'])
+        self.assertIn(req.get_param('id'), [u'23,42,,', u'2'])
+        self.assertEqual(req.get_param_as_list('id'), [u'23,42,,', u'2'])
+
+    def test_option_auto_parse_lists_false(self):
+        self.api.req_options.auto_parse_lists = True
+
+        query_string = 'id=23,42,,&id=2'
+        self.simulate_request('/', query_string=query_string)
+
+        req = self.resource.req
+
+        self.assertEqual(req.params['id'], [u'23', u'42', u'2'])
+        self.assertIn(req.get_param('id'), [u'23', u'42', u'2'])
+        self.assertEqual(req.get_param_as_list('id', int), [23, 42, 2])
+
     def test_bad_percentage(self):
         query_string = 'x=%%20%+%&y=peregrine&z=%a%z%zz%1%20e'
         self.simulate_request('/', query_string=query_string)

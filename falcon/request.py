@@ -284,6 +284,7 @@ class Request(object):
                 self._params = parse_query_string(
                     self.query_string,
                     keep_blank_qs_values=self.options.keep_blank_qs_values,
+                    auto_parse_lists=self.options.auto_parse_lists,
                 )
 
             else:
@@ -1153,6 +1154,7 @@ class Request(object):
             extra_params = parse_query_string(
                 body,
                 keep_blank_qs_values=self.options.keep_blank_qs_values,
+                auto_parse_lists=self.options.auto_parse_lists,
             )
 
             self._params.update(extra_params)
@@ -1198,6 +1200,12 @@ class RequestOptions(object):
             request's content type is
             *application/x-www-form-urlencoded* (default ``False``). In
             this case, the request's content stream will be left at EOF.
+        auto_parse_lists: Set to ``False`` in order to disable
+            splitting query parameters on ``,`` (default ``True``).
+            Depending of the language/framework talking to your api encoding
+            lists as multiple occurences of the same parameter might be
+            preferable, thus commas should be trated as literal characters
+            in each occuring parameter value.
 
             Note:
                 The character encoding for fields, before
@@ -1212,8 +1220,10 @@ class RequestOptions(object):
     __slots__ = (
         'keep_blank_qs_values',
         'auto_parse_form_urlencoded',
+        'auto_parse_lists',
     )
 
     def __init__(self):
         self.keep_blank_qs_values = False
         self.auto_parse_form_urlencoded = False
+        self.auto_parse_lists = True
