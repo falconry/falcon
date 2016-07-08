@@ -284,6 +284,7 @@ class Request(object):
                 self._params = parse_query_string(
                     self.query_string,
                     keep_blank_qs_values=self.options.keep_blank_qs_values,
+                    parse_csv_qs_values_as_list=self.options.parse_csv_qs_values_as_list
                 )
 
             else:
@@ -1153,6 +1154,7 @@ class Request(object):
             extra_params = parse_query_string(
                 body,
                 keep_blank_qs_values=self.options.keep_blank_qs_values,
+                parse_csv_qs_values_as_list=self.options.parse_csv_qs_values_as_list
             )
 
             self._params.update(extra_params)
@@ -1212,8 +1214,10 @@ class RequestOptions(object):
     __slots__ = (
         'keep_blank_qs_values',
         'auto_parse_form_urlencoded',
+        'parse_csv_qs_values_as_list'
     )
 
     def __init__(self):
         self.keep_blank_qs_values = False
         self.auto_parse_form_urlencoded = False
+        self.parse_csv_qs_values_as_list = True

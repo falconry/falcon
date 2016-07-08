@@ -385,6 +385,48 @@ class _TestQueryParams(testing.TestBase):
                              'The value is not formatted correctly.')
             self.assertEqual(ex.description, expected_desc)
 
+    def test_list_as_string_option(self):
+        query_string = ('colors=red,green,blue&limit=1'
+                        '&list-ish1=f,,x&list-ish2=,0&list-ish3=a,,,b'
+                        '&empty1=&empty2=,&empty3=,,'
+                        '&thing_one=1,,3'
+                        '&thing_two=1&thing_two=&thing_two=3')
+        self.api.req_options.parse_csv_qs_values_as_list = False
+
+        self.simulate_request('/', query_string=query_string)
+
+        req = self.resource.req
+
+        self.assertIn(req.get_param('colors'), 'red,green,blue')
+
+        self.assertNotEqual(req.get_param_as_list('colors'),
+                            ['red', 'green', 'blue'])
+
+        self.assertEqual(req.get_param_as_list('limit'), ['1'])
+        self.assertIs(req.get_param_as_list('marker'), None)
+
+        self.assertEqual(req.get_param_as_list('empty1'), None)
+        self.assertNotEqual(req.get_param_as_list('empty2'), [])
+        self.assertNotEqual(req.get_param_as_list('empty3'), [])
+
+        self.assertNotEqual(req.get_param_as_list('list-ish1'), ['f', 'x'])
+
+        # Ensure that '0' doesn't get translated to None
+        self.assertNotEqual(req.get_param_as_list('list-ish2'), ['0'])
+
+        # Ensure that '0' doesn't get translated to None
+        self.assertNotEqual(req.get_param_as_list('list-ish3'), ['a', 'b'])
+
+        # Ensure consistency between list conventions
+        self.assertIn(req.get_param('thing_one'), '1,,3')
+        self.assertNotEqual(req.get_param_as_list('thing_one'), ['1', '3'])
+        self.assertNotEqual(req.get_param_as_list('thing_one'),
+                            req.get_param_as_list('thing_two'))
+
+        store = {}
+        self.assertEqual(req.get_param_as_list('limit', store=store), ['1'])
+        self.assertEqual(store['limit'], ['1'])
+
     def test_param_property(self):
         query_string = 'ant=4&bee=3&cat=2&dog=1'
         self.simulate_request('/', query_string=query_string)

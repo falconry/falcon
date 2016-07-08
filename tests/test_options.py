@@ -11,6 +11,8 @@ class TestRequestOptions(testing.TestBase):
         self.assertTrue(options.keep_blank_qs_values)
         options.keep_blank_qs_values = False
         self.assertFalse(options.keep_blank_qs_values)
+        options.parse_csv_qs_values_as_list = True
+        self.assertTrue(options.parse_csv_qs_values_as_list)
 
     def test_incorrect_options(self):
         options = RequestOptions()
