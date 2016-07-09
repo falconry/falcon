@@ -246,11 +246,12 @@ else:
         return decoded_uri.decode('utf-8', 'replace')
 
 
-def parse_query_string(query_string, keep_blank_qs_values=False):
+def parse_query_string(query_string, keep_blank_qs_values=False,
+                       parse_qs_csv=True):
     """Parse a query string into a dict.
 
     Query string parameters are assumed to use standard form-encoding. Only
-    parameters with values are parsed. for example, given 'foo=bar&flag',
+    parameters with values are returned. For example, given 'foo=bar&flag',
     this function would ignore 'flag' unless the `keep_blank_qs_values` option
     is set.
 
@@ -269,8 +270,16 @@ def parse_query_string(query_string, keep_blank_qs_values=False):
 
     Args:
         query_string (str): The query string to parse.
-        keep_blank_qs_values (bool): If set to ``True``, preserves boolean
-            fields and fields with no content as blank strings.
+        keep_blank_qs_values (bool): Set to ``True`` to return fields even if
+            they do not have a value (default ``False``). For comma-separated
+            values, this option also determines whether or not empty elements
+            in the parsed list are retained.
+        parse_qs_csv: Set to ``False`` in order to disable splitting query
+            parameters on ``,`` (default ``True``). Depending on the user agent,
+            encoding lists as multiple occurrences of the same parameter might
+            be preferable. In this case, setting `parse_qs_csv` to ``False``
+            will cause the framework to treat commas as literal characters in
+            each occurring parameter value.
 
     Returns:
         dict: A dictionary of (*name*, *value*) pairs, one per query
@@ -309,7 +318,7 @@ def parse_query_string(query_string, keep_blank_qs_values=False):
                 params[k] = [old_value, decode(v)]
 
         else:
-            if ',' in v:
+            if parse_qs_csv and ',' in v:
                 # NOTE(kgriffs): Falcon supports a more compact form of
                 # lists, in which the elements are comma-separated and
                 # assigned to a single param instance. If it turns out that

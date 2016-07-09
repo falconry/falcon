@@ -128,6 +128,16 @@ class TestFalconUtils(testtools.TestCase):
             falcon.to_query_str({'things': ['a', 'b']}),
             '?things=a,b')
 
+        expected = ('?things=a&things=b&things=&things=None'
+                    '&things=true&things=false&things=0')
+
+        actual = falcon.to_query_str(
+            {'things': ['a', 'b', '', None, True, False, 0]},
+            comma_delimited_lists=False
+        )
+
+        self.assertEqual(actual, expected)
+
     def test_pack_query_params_several(self):
         garbage_in = {
             'limit': 17,

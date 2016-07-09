@@ -65,6 +65,60 @@ class _TestQueryParams(testing.TestBase):
         self.assertEqual(req.get_param_as_list('id', int), [23, 42])
         self.assertEqual(req.get_param('q'), u'\u8c46 \u74e3')
 
+    def test_option_auto_parse_qs_csv_simple_false(self):
+        self.api.req_options.auto_parse_qs_csv = False
+
+        query_string = 'id=23,42,,&id=2'
+        self.simulate_request('/', query_string=query_string)
+
+        req = self.resource.req
+
+        self.assertEqual(req.params['id'], [u'23,42,,', u'2'])
+        self.assertIn(req.get_param('id'), [u'23,42,,', u'2'])
+        self.assertEqual(req.get_param_as_list('id'), [u'23,42,,', u'2'])
+
+    def test_option_auto_parse_qs_csv_simple_true(self):
+        self.api.req_options.auto_parse_qs_csv = True
+
+        query_string = 'id=23,42,,&id=2'
+        self.simulate_request('/', query_string=query_string)
+
+        req = self.resource.req
+
+        self.assertEqual(req.params['id'], [u'23', u'42', u'2'])
+        self.assertIn(req.get_param('id'), [u'23', u'42', u'2'])
+        self.assertEqual(req.get_param_as_list('id', int), [23, 42, 2])
+
+    def test_option_auto_parse_qs_csv_complex_false(self):
+        self.api.req_options.auto_parse_qs_csv = False
+
+        encoded_json = '%7B%22msg%22:%22Testing%201,2,3...%22,%22code%22:857%7D'
+        decoded_json = '{"msg":"Testing 1,2,3...","code":857}'
+
+        query_string = ('colors=red,green,blue&limit=1'
+                        '&list-ish1=f,,x&list-ish2=,0&list-ish3=a,,,b'
+                        '&empty1=&empty2=,&empty3=,,'
+                        '&thing=' + encoded_json)
+
+        self.simulate_request('/', query_string=query_string)
+
+        req = self.resource.req
+
+        self.assertIn(req.get_param('colors'), 'red,green,blue')
+        self.assertEqual(req.get_param_as_list('colors'), [u'red,green,blue'])
+
+        self.assertEqual(req.get_param_as_list('limit'), ['1'])
+
+        self.assertEqual(req.get_param_as_list('empty1'), None)
+        self.assertEqual(req.get_param_as_list('empty2'), [u','])
+        self.assertEqual(req.get_param_as_list('empty3'), [u',,'])
+
+        self.assertEqual(req.get_param_as_list('list-ish1'), [u'f,,x'])
+        self.assertEqual(req.get_param_as_list('list-ish2'), [u',0'])
+        self.assertEqual(req.get_param_as_list('list-ish3'), [u'a,,,b'])
+
+        self.assertEqual(req.get_param('thing'), decoded_json)
+
     def test_bad_percentage(self):
         query_string = 'x=%%20%+%&y=peregrine&z=%a%z%zz%1%20e'
         self.simulate_request('/', query_string=query_string)
