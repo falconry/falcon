@@ -137,7 +137,6 @@ class TestComplexRouting(testing.TestBase):
         )
 
     @ddt.data(
-        '/repos/{org}/{repo}/compare/{simple-vs-complex}',
         '/repos/{complex}.{vs}.{simple}',
         '/repos/{org}/{repo}/compare/{complex}:{vs}...{complex2}/full',
     )
