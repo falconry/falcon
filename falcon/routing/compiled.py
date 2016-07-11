@@ -14,6 +14,13 @@
 
 import re
 
+from falcon.routing.filters import (
+    int_filter,
+    float_filter,
+    path_filter,
+    re_filter,
+    uuid_filter
+)
 
 TAB_STR = ' ' * 4
 
@@ -33,12 +40,12 @@ class CompiledRouter(object):
 
     def __init__(self):
         self._roots = []
+        self._filters = self._get_default_filters()
         self._find = self._compile()
         self._code_lines = None
         self._src = None
         self._expressions = None
         self._return_values = None
-        self._filters = self._get_available_filters()
 
     def add_route(self, uri_template, method_map, resource):
         """Adds a route between URI path template and resource."""
@@ -89,7 +96,7 @@ class CompiledRouter(object):
         """Finds resource and method map for a URI, or returns None."""
         path = uri.lstrip('/').split('/')
         params = {}
-        node = self._find(path, self._return_values, self._expressions, params)
+        node = self._find(path, self._return_values, self._expressions, params, self._filters)
 
         if node is not None:
             return node.resource, node.method_map, params
@@ -153,7 +160,14 @@ class CompiledRouter(object):
                     # NOTE(kgriffs): Simple nodes just capture the entire path
                     # segment as the value for the param.
                     if node.var_filter:
-                        line('params["%s"] = %s(path[%d])' % (node.var_name, node.var_filter, level))
+                        try:
+                            self._filters[node.var_filter]
+                        except KeyError:
+                            # TODO: raise something here
+                            raise Exception("This ain't a registered filter, yo.")
+
+                        # segment = line('path[%d]')
+                        line('_, _, params["%s"] = filters["%s"](path[%d:])' % (node.var_name, node.var_filter, level))
                     else:
                         line('params["%s"] = path[%d]' % (node.var_name, level))
 
@@ -207,7 +221,7 @@ class CompiledRouter(object):
         self._return_values = []
         self._expressions = []
         self._code_lines = [
-            'def find(path, return_values, expressions, params):',
+            'def find(path, return_values, expressions, params, filters):',
             TAB_STR + 'path_len = len(path)',
         ]
 
@@ -225,12 +239,13 @@ class CompiledRouter(object):
 
         return scope['find']
 
-    def _get_available_filters(self):
+    def _get_default_filters(self):
         return {
-            'int': int,
-            'float': float,
-            'path': lambda x: 'TODO',
-            're': lambda x: 'TODO'
+            'int': int_filter,
+            'float': float_filter,
+            'path': path_filter,
+            're': re_filter,
+            'uuid': uuid_filter
         }
 
 
