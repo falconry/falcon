@@ -243,6 +243,7 @@ class Request(object):
         'options',
         '_cookies',
         '_cached_access_route',
+        '__dict__',
     )
 
     # Allow child classes to override this
