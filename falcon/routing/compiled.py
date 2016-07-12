@@ -167,7 +167,17 @@ class CompiledRouter(object):
                             raise Exception("This ain't a registered filter, yo.")
 
                         # segment = line('path[%d]')
-                        line('_, _, params["%s"] = filters["%s"](path[%d:])' % (node.var_name, node.var_filter, level))
+                        line(
+                            '_, filter_consumed_remaining_segments, params["%s"] = filters["%s"](path[%d:], config="%s")' %
+                            (
+                                node.var_name,
+                                node.var_filter,
+                                level,
+                                node.var_filter_conf
+                            )
+                        )
+                        line('if filter_consumed_remaining_segments: path_len =  %d' % (level + 1))
+
                     else:
                         line('params["%s"] = path[%d]' % (node.var_name, level))
 
@@ -252,7 +262,7 @@ class CompiledRouter(object):
 class CompiledRouterNode(object):
     """Represents a single URI segment in a URI."""
 
-    _regex_vars = re.compile('{([-_a-zA-Z0-9]+)(:[-_a-zA-Z0-9]+)?}')
+    _regex_vars = re.compile('{([-_a-zA-Z0-9]+)((:[-_a-zA-Z0-9]+)(:.+)?)?}')
 
     def __init__(self, raw_segment, method_map=None, resource=None):
         self.children = []
@@ -278,7 +288,8 @@ class CompiledRouterNode(object):
                 self.is_complex = False
                 match_groups = matches[0].groups()
                 self.var_name = match_groups[0]
-                self.var_filter = match_groups[1][1:] if match_groups[1] else None
+                self.var_filter = match_groups[2][1:] if match_groups[2] else None
+                self.var_filter_conf = match_groups[3][1:] if match_groups[3] else None
             else:
                 # NOTE(richardolsson): Complex segments need to be converted
                 # into regular expressions will be used to match and extract
