@@ -14,13 +14,8 @@
 
 import re
 
-from falcon.routing.filters import (
-    int_filter,
-    float_filter,
-    path_filter,
-    re_filter,
-    uuid_filter
-)
+from falcon.routing.filters import FilterRegistry
+
 
 TAB_STR = ' ' * 4
 
@@ -40,12 +35,15 @@ class CompiledRouter(object):
 
     def __init__(self):
         self._roots = []
-        self._filters = self._get_default_filters()
+        self.filters = FilterRegistry()
         self._find = self._compile()
         self._code_lines = None
         self._src = None
         self._expressions = None
         self._return_values = None
+
+    def register_filter(self, name, func):
+        return self.filters.register_filter(name, func)
 
     def add_route(self, uri_template, method_map, resource):
         """Adds a route between URI path template and resource."""
@@ -96,7 +94,7 @@ class CompiledRouter(object):
         """Finds resource and method map for a URI, or returns None."""
         path = uri.lstrip('/').split('/')
         params = {}
-        node = self._find(path, self._return_values, self._expressions, params, self._filters)
+        node = self._find(path, self._return_values, self._expressions, params, self.filters)
 
         if node is not None:
             return node.resource, node.method_map, params
@@ -161,14 +159,14 @@ class CompiledRouter(object):
                     # segment as the value for the param.
                     if node.var_filter:
                         try:
-                            self._filters[node.var_filter]
+                            self.filters[node.var_filter]
                         except KeyError:
                             # TODO: raise something here
-                            raise Exception("This ain't a registered filter, yo.")
+                            raise Exception("{} ain't a registered filter, yo.".format(node.var_filter))
 
                         # segment = line('path[%d]')
                         line(
-                            '_, filter_consumed_remaining_segments, params["%s"] = filters["%s"](path[%d:], config="%s")' %
+                            'num_segments_matched, params["%s"] = filters["%s"](path[%d:], config="%s")' %
                             (
                                 node.var_name,
                                 node.var_filter,
@@ -176,7 +174,7 @@ class CompiledRouter(object):
                                 node.var_filter_conf
                             )
                         )
-                        line('if filter_consumed_remaining_segments: path_len =  %d' % (level + 1))
+                        line('if num_segments_matched > 1: path_len = path_len - num_segments_matched')
 
                     else:
                         line('params["%s"] = path[%d]' % (node.var_name, level))
@@ -248,15 +246,6 @@ class CompiledRouter(object):
         exec(compile(self._src, '<string>', 'exec'), scope)
 
         return scope['find']
-
-    def _get_default_filters(self):
-        return {
-            'int': int_filter,
-            'float': float_filter,
-            'path': path_filter,
-            're': re_filter,
-            'uuid': uuid_filter
-        }
 
 
 class CompiledRouterNode(object):
