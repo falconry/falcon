@@ -375,6 +375,18 @@ class API(object):
     def add_error_handler(self, exception, handler=None):
         """Registers a handler for a given exception error type.
 
+        A handler can either raise an instance of ``HTTPError``
+        or modify `resp` manually in order to communicate
+        information about the issue to the client.
+
+        Error handlers are matched in LIFO order. In other words, when
+        searching for an error handler to match a raised exception, and
+        more than one handler matches the exception type, the framework
+        will choose the one that was most recently registered.
+        Therefore, more general error handlers (e.g., for the
+        ``Exception`` type) should be added first, to avoid masking more
+        specific handlers for subclassed types.
+
         Args:
             exception (type): Whenever an error occurs when handling a request
                 that is an instance of this exception class, the associated
@@ -396,10 +408,6 @@ class API(object):
                             # Convert to an instance of falcon.HTTPError
                             raise falcon.HTTPError(falcon.HTTP_792)
 
-                Note:
-                    A handler can either raise an instance of ``HTTPError``
-                    or modify `resp` manually in order to communicate
-                    information about the issue to the client.
 
         """
 

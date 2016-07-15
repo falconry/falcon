@@ -81,9 +81,29 @@ class TestErrorHandler(testing.TestCase):
         self.assertEqual(result.status_code, 723)
         self.assertEqual(result.text, 'error: CustomException')
 
-    def test_error_order(self):
+    def test_error_order_duplicate(self):
         self.api.add_error_handler(Exception, capture_error)
         self.api.add_error_handler(Exception, handle_error_first)
 
         result = self.simulate_get()
         self.assertEqual(result.text, 'first error handler')
+
+    def test_error_order_subclass(self):
+        self.api.add_error_handler(Exception, capture_error)
+        self.api.add_error_handler(CustomException, handle_error_first)
+
+        result = self.simulate_delete()
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual(result.text, 'first error handler')
+
+        result = self.simulate_get()
+        self.assertEqual(result.status_code, 723)
+        self.assertEqual(result.text, 'error: Plain Exception')
+
+    def test_error_order_subclass_masked(self):
+        self.api.add_error_handler(CustomException, handle_error_first)
+        self.api.add_error_handler(Exception, capture_error)
+
+        result = self.simulate_delete()
+        self.assertEqual(result.status_code, 723)
+        self.assertEqual(result.text, 'error: CustomException')
