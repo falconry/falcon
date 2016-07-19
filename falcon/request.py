@@ -126,14 +126,12 @@ class Request(object):
         context (dict): Dictionary to hold any data about the request which is
             specific to your app (e.g. session object). Falcon itself will
             not interact with this attribute after it has been initialized.
-        context_type (class): Class variable that determines the
-            factory or type to use for initializing the
-            `context` attribute. By default, the framework will
-            instantiate standard
-            ``dict`` objects. However, You may override this behavior
-            by creating a custom child class of ``falcon.Request``, and
-            then passing that new class to `falcon.API()` by way of the
-            latter's `request_type` parameter.
+        context_type (class): Class variable that determines the factory or
+            type to use for initializing the `context` attribute. By default,
+            the framework will instantiate standard ``dict`` objects. However,
+            you may override this behavior by creating a custom child class of
+            ``falcon.Request``, and then passing that new class to
+            `falcon.API()` by way of the latter's `request_type` parameter.
 
             Note:
                 When overriding `context_type` with a factory function (as
@@ -245,7 +243,7 @@ class Request(object):
         '_cached_access_route',
     )
 
-    # Allow child classes to override this
+    # Child classes may override this
     context_type = None
 
     def __init__(self, env, options=None):
