@@ -1,3 +1,7 @@
+"""
+Routing module helps route requests to appropriate resources and handlers.
+"""
+
 # Copyright 2013 by Rackspace Hosting, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
