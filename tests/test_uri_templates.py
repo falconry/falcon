@@ -88,7 +88,13 @@ class TestUriTemplates(testing.TestBase):
     def test_field_name_cannot_start_with_digit(self, route):
         self.assertRaises(ValueError, self.api.add_route, route, self.resource)
 
-    @ddt.data('/{thing }/world', '/{ thing}/world', '/{ thing }/world', '/{thing}/wo rld', '/{thing} /world')
+    @ddt.data(
+        '/{thing }/world',
+        '/{ thing}/world',
+        '/{ thing }/world',
+        '/{thing}/wo rld',
+        '/{thing} /world'
+    )
     def test_whitespace_not_allowed(self, route):
         self.assertRaises(ValueError, self.api.add_route, route, self.resource)
 
