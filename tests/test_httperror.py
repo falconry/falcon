@@ -259,15 +259,15 @@ class TestHTTPError(testing.TestBase):
     def test_no_description_json(self):
         body = self.simulate_request('/fail', method='PATCH')
         self.assertEqual(self.srmock.status, falcon.HTTP_400)
-        self.assertEqual(body, [b'{}'])
+        self.assertEqual(body, [b'{\n    "title": "400 Bad Request"\n}'])
 
     def test_no_description_xml(self):
         body = self.simulate_request('/fail', method='PATCH',
                                      headers={'Accept': 'application/xml'})
         self.assertEqual(self.srmock.status, falcon.HTTP_400)
 
-        expected_xml = (b'<?xml version="1.0" encoding="UTF-8"?>'
-                        b'<error />')
+        expected_xml = (b'<?xml version="1.0" encoding="UTF-8"?><error>'
+                        b'<title>400 Bad Request</title></error>')
 
         self.assertEqual(body, [expected_xml])
 
@@ -550,6 +550,7 @@ class TestHTTPError(testing.TestBase):
         self.assertEqual(self.srmock.status, falcon.HTTP_404)
         self.assertNotEqual(response, [])
         expected_body = {
+            u'title': u'404 Not Found',
             u'description': u'Not Found'
         }
         self.assertEqual(json.loads(response), expected_body)
@@ -590,6 +591,7 @@ class TestHTTPError(testing.TestBase):
         self.assertEqual(self.srmock.status, falcon.HTTP_405)
         self.assertNotEqual(response, [])
         expected_body = {
+            'title': '405 Method Not Allowed',
             u'description': u'Not Allowed'
         }
         self.assertEqual(json.loads(response), expected_body)
@@ -777,3 +779,14 @@ class TestHTTPError(testing.TestBase):
                         needs_title=False)
         self._misc_test(falcon.HTTPInternalServerError, falcon.HTTP_500)
         self._misc_test(falcon.HTTPBadGateway, falcon.HTTP_502)
+
+    def test_title_default_message_if_none(self):
+        headers = {
+            'X-Error-Status': falcon.HTTP_503
+        }
+
+        body = self.simulate_request('/fail', headers=headers, decode='utf-8')
+        body_json = json.loads(body)
+
+        self.assertEqual(self.srmock.status, headers['X-Error-Status'])
+        self.assertEqual(body_json['title'], headers['X-Error-Status'])
