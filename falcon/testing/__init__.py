@@ -12,6 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Testing utilities.
+
+This package contains various test classes and utility functions to
+support functional testing for both Falcon-based apps and the Falcon
+framework itself::
+
+    from falcon import testing
+    from myapp import app
+
+    class TestMyApp(testing.TestCase):
+        def setUp(self):
+            super(TestMyApp, self).setUp()
+            self.api = app.create_api()
+
+    def test_get_message(self):
+        doc = {u'message': u'Hello world!'}
+
+        result = self.simulate_get('/messages/42')
+        self.assertEqual(result.json, doc)
+
+For additional examples, see also Falcon's own test suite.
+"""
+
 # Hoist classes and functions into the falcon.testing namespace
 from falcon.testing.base import TestBase  # NOQA
 from falcon.testing.helpers import *  # NOQA

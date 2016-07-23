@@ -12,6 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""unittest-style base class and utilities for test cases.
+
+This package includes a unittest-style base class and requests-like
+utilities for simulating and validating HTTP requests.
+"""
+
 import json
 import wsgiref.validate
 

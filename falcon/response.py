@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Response class."""
+
 from six import PY2
 from six import string_types as STRING_TYPES
 

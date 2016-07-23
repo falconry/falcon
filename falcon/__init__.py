@@ -12,6 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Primary package for Falcon, the minimalist WSGI library.
+
+Falcon is a minimalist WSGI library for building speedy web APIs and app
+backends. The `falcon` package can be used to directly access most of
+the framework's classes, functions, and variables::
+
+    import falcon
+
+    app = falcon.API()
+
+"""
+
 HTTP_METHODS = (
     'CONNECT',
     'DELETE',

@@ -12,6 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""WSGI start_response mock.
+
+This module implements a callable StartResponseMock class that can be
+used, along with a mock environ dict, to simulate a WSGI request.
+"""
+
 from falcon import util
 
 

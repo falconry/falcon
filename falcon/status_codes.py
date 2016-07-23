@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""HTTP status line constants."""
 
 HTTP_100 = '100 Continue'
 HTTP_CONTINUE = HTTP_100

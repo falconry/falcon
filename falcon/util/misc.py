@@ -12,6 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Miscellaneous utilities.
+
+This module provides misc. utility functions for apps and the Falcon
+framework itself. These functions are hoisted into the front-door
+`falcon` module for convenience::
+
+    import falcon
+
+    now = falcon.http_now()
+
+"""
+
 import datetime
 import functools
 import inspect

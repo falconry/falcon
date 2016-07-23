@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Utilities for the Response class."""
+
 
 def header_property(name, doc, transform=None):
     """Creates a header getter/setter.

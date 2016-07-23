@@ -14,6 +14,19 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+
+"""Data structures.
+
+This module provides additional data structures not found in the
+standard library. These classes are hoisted into the `falcon` module
+for convenience::
+
+    import falcon
+
+    things = falcon.CaseInsensitiveDict()
+
+"""
+
 import collections
 
 

@@ -1,3 +1,15 @@
+"""Time and date utilities.
+
+This module provides utility functions and classes for dealing with
+times and dates. These functions are hoisted into the `falcon` module
+for convenience::
+
+    import falcon
+
+    tz = falcon.TimezoneGMT()
+
+"""
+
 import datetime
 
 
