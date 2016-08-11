@@ -15,8 +15,8 @@ effective <http://falconframework.org/index.html#Benefits>`__.
 Quick Links
 -----------
 
-* `Read the docs <http://falcon.readthedocs.org/en/stable>`__.
-* `Subscribe to the community mailing list <https://falcon.readthedocs.org/en/stable/community/help.html#mailing-list>`__.
+* `Read the docs <https://falcon.readthedocs.io/en/stable>`__.
+* `Subscribe to the community mailing list <https://falcon.readthedocs.io/en/stable/community/help.html#mailing-list>`__.
 * `Hang out in #falconframework on freenode <https://kiwiirc.com/client/irc.freenode.net/?#falconframework>`__.
 
 
@@ -143,7 +143,7 @@ The docstrings in the Falcon code base are quite extensive, and we
 recommend keeping a REPL running while learning the framework so that
 you can query the various modules and classes as you have questions.
 
-Online docs are available at: http://falcon.readthedocs.org
+Online docs are available at: https://falcon.readthedocs.io
 
 You can build the same docs locally as follows:
 
@@ -509,7 +509,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 .. |Docs| image:: https://readthedocs.org/projects/falcon/badge/?version=stable
-    :target: http://falcon.readthedocs.org/en/stable/?badge=stable
+    :target: https://falcon.readthedocs.io/en/stable/?badge=stable
     :alt: Falcon web framework docs
 .. |Runner| image:: https://a248.e.akamai.net/assets.github.com/images/icons/emoji/runner.png
     :width: 20
