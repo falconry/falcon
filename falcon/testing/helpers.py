@@ -32,6 +32,7 @@ import six
 
 from falcon.util import http_now, uri
 
+
 # Constants
 DEFAULT_HOST = 'falconframework.org'
 
@@ -183,6 +184,11 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1',
         _add_headers_to_environ(env, headers)
 
     return env
+
+
+# ---------------------------------------------------------------------
+# Private
+# ---------------------------------------------------------------------
 
 
 def _add_headers_to_environ(env, headers):
