@@ -1,4 +1,4 @@
-# Copyright 2013 by Rackspace Hosting, Inc.
+# Copyright 2016 by Rackspace Hosting, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,9 +18,6 @@ This package includes a unittest-style base class and requests-like
 utilities for simulating and validating HTTP requests.
 """
 
-import json
-import wsgiref.validate
-
 try:
     import testtools as unittest
 except ImportError:  # pragma: nocover
@@ -28,90 +25,8 @@ except ImportError:  # pragma: nocover
 
 import falcon
 import falcon.request
-from falcon.testing.helpers import create_environ, get_encoding_from_headers
-from falcon.testing.srmock import StartResponseMock
-from falcon.util import CaseInsensitiveDict
-
-
-class Result(object):
-    """Encapsulates the result of a simulated WSGI request.
-
-    Args:
-        iterable (iterable): An iterable that yields zero or more
-            bytestrings, per PEP-3333
-        status (str): An HTTP status string, including status code and
-            reason string
-        headers (list): A list of (header_name, header_value) tuples,
-            per PEP-3333
-
-    Attributes:
-        status (str): HTTP status string given in the response
-        status_code (int): The code portion of the HTTP status string
-        headers (CaseInsensitiveDict): A case-insensitive dictionary
-            containing all the headers in the response
-        encoding (str): Text encoding of the response body, or ``None``
-            if the encoding can not be determined.
-        content (bytes): Raw response body, or ``bytes`` if the
-            response body was empty.
-        text (str): Decoded response body of type ``unicode``
-            under Python 2.6 and 2.7, and of type ``str`` otherwise.
-            If the content type does not specify an encoding, UTF-8 is
-            assumed.
-        json (dict): Deserialized JSON body. Raises an error if the
-            response is not JSON.
-    """
-
-    def __init__(self, iterable, status, headers):
-        self._text = None
-
-        self._content = b''.join(iterable)
-        if hasattr(iterable, 'close'):
-            iterable.close()
-
-        self._status = status
-        self._status_code = int(status[:3])
-        self._headers = CaseInsensitiveDict(headers)
-
-        self._encoding = get_encoding_from_headers(self._headers)
-
-    @property
-    def status(self):
-        return self._status
-
-    @property
-    def status_code(self):
-        return self._status_code
-
-    @property
-    def headers(self):
-        return self._headers
-
-    @property
-    def encoding(self):
-        return self._encoding
-
-    @property
-    def content(self):
-        return self._content
-
-    @property
-    def text(self):
-        if self._text is None:
-            if not self.content:
-                self._text = u''
-            else:
-                if self.encoding is None:
-                    encoding = 'UTF-8'
-                else:
-                    encoding = self.encoding
-
-                self._text = self.content.decode(encoding)
-
-        return self._text
-
-    @property
-    def json(self):
-        return json.loads(self.text)
+from falcon.testing import client
+from falcon.testing.client import Result  # NOQA - hoist for backwards compat
 
 
 class TestCase(unittest.TestCase):
@@ -128,10 +43,14 @@ class TestCase(unittest.TestCase):
     :py:class:`testtools.TestCase`.
 
     Attributes:
-        api_class (class): An API class to use when instantiating
-            the ``api`` instance (default: :py:class:`falcon.API`)
-        api (object): An API instance to target when simulating
-            requests (default: ``self.api_class()``)
+        api_class (class): An API class or factory method to use when
+            instantiating the ``api`` instance (default:
+            :py:class:`falcon.API`).
+        api (object): An API instance to target when simulating requests
+            (default: ``self.api_class()``). When testing your
+            application, you will need to overwrite this with your own
+            instance of ``falcon.API``, or use `api_class` to specify a
+            factory method for your application.
     """
 
     api_class = None
@@ -168,7 +87,7 @@ class TestCase(unittest.TestCase):
             headers (dict): Additional headers to include in the request
                 (default: ``None``)
         """
-        return self.simulate_request('GET', path, **kwargs)
+        return client.simulate_get(self.api, path, **kwargs)
 
     def simulate_head(self, path='/', **kwargs):
         """Simulates a HEAD request to a WSGI application.
@@ -184,7 +103,7 @@ class TestCase(unittest.TestCase):
             headers (dict): Additional headers to include in the request
                 (default: ``None``)
         """
-        return self.simulate_request('HEAD', path, **kwargs)
+        return client.simulate_head(self.api, path, **kwargs)
 
     def simulate_post(self, path='/', **kwargs):
         """Simulates a POST request to a WSGI application.
@@ -204,7 +123,7 @@ class TestCase(unittest.TestCase):
                 (default: ``None``). If a Unicode string is provided,
                 it will be encoded as UTF-8 in the request.
         """
-        return self.simulate_request('POST', path, **kwargs)
+        return client.simulate_post(self.api, path, **kwargs)
 
     def simulate_put(self, path='/', **kwargs):
         """Simulates a PUT request to a WSGI application.
@@ -224,7 +143,7 @@ class TestCase(unittest.TestCase):
                 (default: ``None``). If a Unicode string is provided,
                 it will be encoded as UTF-8 in the request.
         """
-        return self.simulate_request('PUT', path, **kwargs)
+        return client.simulate_put(self.api, path, **kwargs)
 
     def simulate_options(self, path='/', **kwargs):
         """Simulates an OPTIONS request to a WSGI application.
@@ -240,7 +159,7 @@ class TestCase(unittest.TestCase):
             headers (dict): Additional headers to include in the request
                 (default: ``None``)
         """
-        return self.simulate_request('OPTIONS', path, **kwargs)
+        return client.simulate_options(self.api, path, **kwargs)
 
     def simulate_patch(self, path='/', **kwargs):
         """Simulates a PATCH request to a WSGI application.
@@ -260,7 +179,7 @@ class TestCase(unittest.TestCase):
                 (default: ``None``). If a Unicode string is provided,
                 it will be encoded as UTF-8 in the request.
         """
-        return self.simulate_request('PATCH', path, **kwargs)
+        return client.simulate_patch(self.api, path, **kwargs)
 
     def simulate_delete(self, path='/', **kwargs):
         """Simulates a DELETE request to a WSGI application.
@@ -276,64 +195,15 @@ class TestCase(unittest.TestCase):
             headers (dict): Additional headers to include in the request
                 (default: ``None``)
         """
-        return self.simulate_request('DELETE', path, **kwargs)
+        return client.simulate_delete(self.api, path, **kwargs)
 
-    def simulate_request(self, method='GET', path='/', query_string=None,
-                         headers=None, body=None, file_wrapper=None):
+    def simulate_request(self, *args, **kwargs):
         """Simulates a request to a WSGI application.
 
-        Performs a WSGI request directly against ``self.api``.
+        Wraps :py:meth:`falcon.testing.simulate_request` to perform a
+        WSGI request directly against ``self.api``. Equivalent to::
 
-        Keyword Args:
-            method (str): The HTTP method to use in the request
-                (default: 'GET')
-            path (str): The URL path to request (default: '/')
-            query_string (str): A raw query string to include in the
-                request (default: ``None``)
-            headers (dict): Additional headers to include in the request
-                (default: ``None``)
-            body (str): A string to send as the body of the request.
-                Accepts both byte strings and Unicode strings
-                (default: ``None``). If a Unicode string is provided,
-                it will be encoded as UTF-8 in the request.
-            file_wrapper (callable): Callable that returns an iterable,
-                to be used as the value for *wsgi.file_wrapper* in the
-                environ (default: ``None``).
-
-        Returns:
-            :py:class:`~.Result`: The result of the request
+            falcon.testing.simulate_request(self.api, *args, **kwargs)
         """
 
-        if not path.startswith('/'):
-            raise ValueError("path must start with '/'")
-
-        if query_string and query_string.startswith('?'):
-            raise ValueError("query_string should not start with '?'")
-
-        if '?' in path:
-            # NOTE(kgriffs): We could allow this, but then we'd need
-            #   to define semantics regarding whether the path takes
-            #   precedence over the query_string. Also, it would make
-            #   tests less consistent, since there would be "more than
-            #   one...way to do it."
-            raise ValueError(
-                'path may not contain a query string. Please use the '
-                'query_string parameter instead.'
-            )
-
-        env = create_environ(
-            method=method,
-            path=path,
-            query_string=(query_string or ''),
-            headers=headers,
-            body=body,
-            file_wrapper=file_wrapper,
-        )
-
-        srmock = StartResponseMock()
-        validator = wsgiref.validate.validator(self.api)
-        iterable = validator(env, srmock)
-
-        result = Result(iterable, srmock.status, srmock.headers)
-
-        return result
+        return client.simulate_request(self.api, *args, **kwargs)
