@@ -25,11 +25,11 @@ except ImportError:  # pragma: nocover
 
 import falcon
 import falcon.request
-from falcon.testing import client
+from falcon.testing.client import TestClient
 from falcon.testing.client import Result  # NOQA - hoist for backwards compat
 
 
-class TestCase(unittest.TestCase):
+class TestCase(unittest.TestCase, TestClient):
     """Extends :py:mod:`unittest` to support WSGI functional testing.
 
     Note:
@@ -38,30 +38,65 @@ class TestCase(unittest.TestCase):
 
     This base class provides some extra plumbing for unittest-style
     test cases, to help simulate WSGI calls without having to spin up
-    an actual web server. Simply inherit from this class in your test
-    case classes instead of :py:class:`unittest.TestCase` or
-    :py:class:`testtools.TestCase`.
+    an actual web server. Various simulation methods are derived
+    from :py:class:`falcon.testing.TestClient`.
+
+    Simply inherit from this class in your test case classes instead of
+    :py:class:`unittest.TestCase` or :py:class:`testtools.TestCase`.
 
     Attributes:
-        api_class (class): An API class or factory method to use when
-            instantiating the ``api`` instance (default:
-            :py:class:`falcon.API`).
-        api (object): An API instance to target when simulating requests
-            (default: ``self.api_class()``). When testing your
-            application, you will need to overwrite this with your own
-            instance of ``falcon.API``, or use `api_class` to specify a
-            factory method for your application.
+        app (object): A WSGI application to target when simulating
+            requests (default: ``falcon.API()``). When testing your
+            application, you will need to set this to your own instance
+            of ``falcon.API``. For example::
+
+                from falcon import testing
+                import myapp
+
+
+                class MyTestCase(testing.TestCase):
+                    def setUp(self):
+                        super(MyTestCase, self).setUp()
+
+                        # Assume the hypothetical `myapp` package has a
+                        # function called `create()` to initialize and
+                        # return a `falcon.API` instance.
+                        self.app = myapp.create()
+
+
+                class TestMyApp(MyTestCase):
+                    def test_get_message(self):
+                        doc = {u'message': u'Hello world!'}
+
+                        result = self.simulate_get('/messages/42')
+                        self.assertEqual(result.json, doc)
+
+        api (object): Deprecated alias for ``app``
+        api_class (callable): Deprecated class variable; will be
+            removed in a future release.
     """
 
     api_class = None
+
+    @property
+    def api(self):
+        return self.app
+
+    @api.setter
+    def api(self, value):
+        self.app = value
 
     def setUp(self):
         super(TestCase, self).setUp()
 
         if self.api_class is None:
-            self.api = falcon.API()
+            app = falcon.API()
         else:
-            self.api = self.api_class()
+            app = self.api_class()
+
+        # NOTE(kgriffs): Don't use super() to avoid triggering
+        # unittest.TestCase.__init__()
+        TestClient.__init__(self, app)
 
         # Reset to simulate "restarting" the WSGI container
         falcon.request._maybe_wrap_wsgi_stream = True
@@ -72,138 +107,3 @@ class TestCase(unittest.TestCase):
     if not hasattr(unittest.TestCase, 'assertIn'):  # pragma: nocover
         def assertIn(self, a, b):
             self.assertTrue(a in b)
-
-    def simulate_get(self, path='/', **kwargs):
-        """Simulates a GET request to a WSGI application.
-
-        Equivalent to ``simulate_request('GET', ...)``
-
-        Args:
-            path (str): The URL path to request (default: '/')
-
-        Keyword Args:
-            query_string (str): A raw query string to include in the
-                request (default: ``None``)
-            headers (dict): Additional headers to include in the request
-                (default: ``None``)
-        """
-        return client.simulate_get(self.api, path, **kwargs)
-
-    def simulate_head(self, path='/', **kwargs):
-        """Simulates a HEAD request to a WSGI application.
-
-        Equivalent to ``simulate_request('HEAD', ...)``
-
-        Args:
-            path (str): The URL path to request (default: '/')
-
-        Keyword Args:
-            query_string (str): A raw query string to include in the
-                request (default: ``None``)
-            headers (dict): Additional headers to include in the request
-                (default: ``None``)
-        """
-        return client.simulate_head(self.api, path, **kwargs)
-
-    def simulate_post(self, path='/', **kwargs):
-        """Simulates a POST request to a WSGI application.
-
-        Equivalent to ``simulate_request('POST', ...)``
-
-        Args:
-            path (str): The URL path to request (default: '/')
-
-        Keyword Args:
-            query_string (str): A raw query string to include in the
-                request (default: ``None``)
-            headers (dict): Additional headers to include in the request
-                (default: ``None``)
-            body (str): A string to send as the body of the request.
-                Accepts both byte strings and Unicode strings
-                (default: ``None``). If a Unicode string is provided,
-                it will be encoded as UTF-8 in the request.
-        """
-        return client.simulate_post(self.api, path, **kwargs)
-
-    def simulate_put(self, path='/', **kwargs):
-        """Simulates a PUT request to a WSGI application.
-
-        Equivalent to ``simulate_request('PUT', ...)``
-
-        Args:
-            path (str): The URL path to request (default: '/')
-
-        Keyword Args:
-            query_string (str): A raw query string to include in the
-                request (default: ``None``)
-            headers (dict): Additional headers to include in the request
-                (default: ``None``)
-            body (str): A string to send as the body of the request.
-                Accepts both byte strings and Unicode strings
-                (default: ``None``). If a Unicode string is provided,
-                it will be encoded as UTF-8 in the request.
-        """
-        return client.simulate_put(self.api, path, **kwargs)
-
-    def simulate_options(self, path='/', **kwargs):
-        """Simulates an OPTIONS request to a WSGI application.
-
-        Equivalent to ``simulate_request('OPTIONS', ...)``
-
-        Args:
-            path (str): The URL path to request (default: '/')
-
-        Keyword Args:
-            query_string (str): A raw query string to include in the
-                request (default: ``None``)
-            headers (dict): Additional headers to include in the request
-                (default: ``None``)
-        """
-        return client.simulate_options(self.api, path, **kwargs)
-
-    def simulate_patch(self, path='/', **kwargs):
-        """Simulates a PATCH request to a WSGI application.
-
-        Equivalent to ``simulate_request('PATCH', ...)``
-
-        Args:
-            path (str): The URL path to request (default: '/')
-
-        Keyword Args:
-            query_string (str): A raw query string to include in the
-                request (default: ``None``)
-            headers (dict): Additional headers to include in the request
-                (default: ``None``)
-            body (str): A string to send as the body of the request.
-                Accepts both byte strings and Unicode strings
-                (default: ``None``). If a Unicode string is provided,
-                it will be encoded as UTF-8 in the request.
-        """
-        return client.simulate_patch(self.api, path, **kwargs)
-
-    def simulate_delete(self, path='/', **kwargs):
-        """Simulates a DELETE request to a WSGI application.
-
-        Equivalent to ``simulate_request('DELETE', ...)``
-
-        Args:
-            path (str): The URL path to request (default: '/')
-
-        Keyword Args:
-            query_string (str): A raw query string to include in the
-                request (default: ``None``)
-            headers (dict): Additional headers to include in the request
-                (default: ``None``)
-        """
-        return client.simulate_delete(self.api, path, **kwargs)
-
-    def simulate_request(self, *args, **kwargs):
-        """Simulates a request to a WSGI application.
-
-        Wraps :py:meth:`falcon.testing.simulate_request` to perform a
-        WSGI request directly against ``self.api``. Equivalent to::
-
-            falcon.testing.simulate_request(self.api, *args, **kwargs)
-        """
-
-        return client.simulate_request(self.api, *args, **kwargs)

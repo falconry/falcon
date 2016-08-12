@@ -16,23 +16,51 @@
 
 This package contains various test classes and utility functions to
 support functional testing for both Falcon-based apps and the Falcon
-framework itself::
+framework itself. Both unittest-style and pytest-style tests are
+supported::
+
+    # -----------------------------------------------------------------
+    # unittest-style
+    # -----------------------------------------------------------------
 
     from falcon import testing
-    from myapp import app
+    from myapp import api
 
-    class TestMyApp(testing.TestCase):
+
+    class MyTestCase(testing.TestCase):
         def setUp(self):
-            super(TestMyApp, self).setUp()
-            self.api = app.create_api()
+            super(MyTestCase, self).setUp()
+            self.app = api.create()
 
-    def test_get_message(self):
+
+    class TestMyApp(MyTestCase):
+        def test_get_message(self):
+            doc = {u'message': u'Hello world!'}
+
+            result = self.simulate_get('/messages/42')
+            self.assertEqual(result.json, doc)
+
+
+    # -----------------------------------------------------------------
+    # pytest-style
+    # -----------------------------------------------------------------
+
+    from falcon import testing
+    import pytest
+
+    from myapp import api
+
+
+    @pytest.fixture(scope='module')
+    def client():
+        return testing.TestClient(api.create())
+
+
+    def test_get_message(client):
         doc = {u'message': u'Hello world!'}
 
-        result = self.simulate_get('/messages/42')
-        self.assertEqual(result.json, doc)
-
-For additional examples, see also Falcon's own test suite.
+        result = client.simulate_get('/messages/42')
+        assert result.json == doc
 """
 
 # Hoist classes and functions into the falcon.testing namespace

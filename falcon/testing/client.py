@@ -125,7 +125,9 @@ def simulate_request(app, method='GET', path='/', query_string=None,
                      headers=None, body=None, file_wrapper=None):
         """Simulates a request to a WSGI application.
 
-        Performs a request against a WSGI application callable.
+        Performs a request against a WSGI application. Uses
+        :any:`wsgiref.validate` to ensure the response is valid
+        WSGI.
 
         Keyword Args:
             app (callable): The WSGI application to call
@@ -186,7 +188,9 @@ def simulate_request(app, method='GET', path='/', query_string=None,
 def simulate_get(app, path, **kwargs):
     """Simulates a GET request to a WSGI application.
 
-    Equivalent to ``simulate_request(app, 'GET', ...)``
+    Equivalent to::
+
+         simulate_request(app, 'GET', path, **kwargs)
 
     Args:
         app (callable): The WSGI application to call
@@ -204,7 +208,9 @@ def simulate_get(app, path, **kwargs):
 def simulate_head(app, path, **kwargs):
     """Simulates a HEAD request to a WSGI application.
 
-    Equivalent to ``simulate_request(app, 'HEAD', ...)``
+    Equivalent to::
+
+         simulate_request(app, 'HEAD', path, **kwargs)
 
     Args:
         app (callable): The WSGI application to call
@@ -222,7 +228,9 @@ def simulate_head(app, path, **kwargs):
 def simulate_post(app, path, **kwargs):
     """Simulates a POST request to a WSGI application.
 
-    Equivalent to ``simulate_request(app, 'POST', ...)``
+    Equivalent to::
+
+         simulate_request(app, 'POST', path, **kwargs)
 
     Args:
         app (callable): The WSGI application to call
@@ -244,7 +252,9 @@ def simulate_post(app, path, **kwargs):
 def simulate_put(app, path, **kwargs):
     """Simulates a PUT request to a WSGI application.
 
-    Equivalent to ``simulate_request(app, 'PUT', ...)``
+    Equivalent to::
+
+         simulate_request(app, 'PUT', path, **kwargs)
 
     Args:
         app (callable): The WSGI application to call
@@ -266,7 +276,9 @@ def simulate_put(app, path, **kwargs):
 def simulate_options(app, path, **kwargs):
     """Simulates an OPTIONS request to a WSGI application.
 
-    Equivalent to ``simulate_request(app, 'OPTIONS', ...)``
+    Equivalent to::
+
+         simulate_request(app, 'OPTIONS', path, **kwargs)
 
     Args:
         app (callable): The WSGI application to call
@@ -284,7 +296,9 @@ def simulate_options(app, path, **kwargs):
 def simulate_patch(app, path, **kwargs):
     """Simulates a PATCH request to a WSGI application.
 
-    Equivalent to ``simulate_request(app, 'PATCH', ...)``
+    Equivalent to::
+
+         simulate_request(app, 'PATCH', path, **kwargs)
 
     Args:
         app (callable): The WSGI application to call
@@ -306,7 +320,9 @@ def simulate_patch(app, path, **kwargs):
 def simulate_delete(app, path, **kwargs):
     """Simulates a DELETE request to a WSGI application.
 
-    Equivalent to ``simulate_request(app, 'DELETE', ...)``
+    Equivalent to::
+
+         simulate_request(app, 'DELETE', path, **kwargs)
 
     Args:
         app (callable): The WSGI application to call
@@ -319,3 +335,87 @@ def simulate_delete(app, path, **kwargs):
             (default: ``None``)
     """
     return simulate_request(app, 'DELETE', path, **kwargs)
+
+
+class TestClient(object):
+    """"Simulates requests to a WSGI application.
+
+    This class provides a contextual wrapper for Falcon's simulate_*
+    test functions. It lets you replace this::
+
+        simulate_get(app, '/messages')
+        simulate_head(app, '/messages')
+
+    with this::
+
+        client = TestClient(app)
+        client.simulate_get('/messages')
+        client.simulate_head('/messages')
+
+    Args:
+        app (callable): A WSGI application to target when simulating
+            requests
+    """
+
+    def __init__(self, app):
+        self.app = app
+
+    def simulate_get(self, path='/', **kwargs):
+        """Simulates a GET request to a WSGI application.
+
+        See also: :py:meth:`falcon.testing.simulate_get`.
+        """
+        return simulate_get(self.app, path, **kwargs)
+
+    def simulate_head(self, path='/', **kwargs):
+        """Simulates a HEAD request to a WSGI application.
+
+        See also: :py:meth:`falcon.testing.simulate_head`.
+        """
+        return simulate_head(self.app, path, **kwargs)
+
+    def simulate_post(self, path='/', **kwargs):
+        """Simulates a POST request to a WSGI application.
+
+        See also: :py:meth:`falcon.testing.simulate_post`.
+        """
+        return simulate_post(self.app, path, **kwargs)
+
+    def simulate_put(self, path='/', **kwargs):
+        """Simulates a PUT request to a WSGI application.
+
+        See also: :py:meth:`falcon.testing.simulate_put`.
+        """
+        return simulate_put(self.app, path, **kwargs)
+
+    def simulate_options(self, path='/', **kwargs):
+        """Simulates an OPTIONS request to a WSGI application.
+
+        See also: :py:meth:`falcon.testing.simulate_options`.
+        """
+        return simulate_options(self.app, path, **kwargs)
+
+    def simulate_patch(self, path='/', **kwargs):
+        """Simulates a PATCH request to a WSGI application.
+
+        See also: :py:meth:`falcon.testing.simulate_patch`.
+        """
+        return simulate_patch(self.app, path, **kwargs)
+
+    def simulate_delete(self, path='/', **kwargs):
+        """Simulates a DELETE request to a WSGI application.
+
+        See also: :py:meth:`falcon.testing.simulate_delete`.
+        """
+        return simulate_delete(self.app, path, **kwargs)
+
+    def simulate_request(self, *args, **kwargs):
+        """Simulates a request to a WSGI application.
+
+        Wraps :py:meth:`falcon.testing.simulate_request` to perform a
+        WSGI request directly against ``self.app``. Equivalent to::
+
+            falcon.testing.simulate_request(self.app, *args, **kwargs)
+        """
+
+        return simulate_request(self.app, *args, **kwargs)
