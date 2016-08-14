@@ -135,8 +135,6 @@ class HTTPError(Exception):
 
         """
 
-        assert self.has_representation
-
         obj = obj_type()
 
         obj['title'] = self.title
@@ -171,8 +169,6 @@ class HTTPError(Exception):
             An XML document for the error.
 
         """
-
-        assert self.has_representation
 
         error_element = et.Element('error')
 
