@@ -18,9 +18,10 @@
 from __future__ import print_function
 
 import argparse
-from collections import defaultdict
+from collections import defaultdict, deque
 from decimal import Decimal
 import gc
+import inspect
 import random
 import sys
 import timeit
@@ -99,6 +100,11 @@ def profile(name, env, filename=None, verbose=False):
                         sort='tottime', filename=filename)
 
 
+def exhaust(iterator_or_generator):
+    # from https://docs.python.org/dev/library/itertools.html#itertools-recipes
+    deque(iterator_or_generator, maxlen=0)
+
+
 BODY = helpers.rand_string(10240, 10240)  # NOQA
 HEADERS = {'X-Test': 'Funky Chicken'}  # NOQA
 
@@ -114,7 +120,15 @@ def create_bench(name, env):
         if srmock.status != '200 OK':
             raise AssertionError(srmock.status + ' != 200 OK')
 
-    return bench
+    def bench_generator():
+        exhaust(app(env, srmock))
+        if srmock.status != '200 OK':
+            raise AssertionError(srmock.status + ' != 200 OK')
+
+    if inspect.isgeneratorfunction(app):
+        return bench_generator
+    else:
+        return bench
 
 
 def consolidate_datasets(datasets):
