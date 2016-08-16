@@ -177,6 +177,35 @@ class TestFalconUtils(testtools.TestCase):
                     '?limit=3&e%C3%A7ho=true')
         self.assertEqual(uri.encode(url), expected)
 
+    def test_uri_encode_double(self):
+        url = 'http://example.com/v1/fiz bit/messages'
+        expected = 'http://example.com/v1/fiz%20bit/messages'
+        self.assertEqual(uri.encode(uri.encode(url)), expected)
+
+        url = u'http://example.com/v1/fizbit/messages?limit=3&e\u00e7ho=true'
+        expected = ('http://example.com/v1/fizbit/messages'
+                    '?limit=3&e%C3%A7ho=true')
+        self.assertEqual(uri.encode(uri.encode(url)), expected)
+
+        url = 'http://example.com/v1/fiz%bit/mess%ages/%'
+        expected = 'http://example.com/v1/fiz%25bit/mess%25ages/%25'
+        self.assertEqual(uri.encode(uri.encode(url)), expected)
+
+        url = 'http://example.com/%%'
+        expected = 'http://example.com/%25%25'
+        self.assertEqual(uri.encode(uri.encode(url)), expected)
+
+        # NOTE(kgriffs): Specific example cited in GH issue
+        url = 'http://something?redirect_uri=http%3A%2F%2Fsite'
+        self.assertEqual(uri.encode(url), url)
+
+        hex_digits = 'abcdefABCDEF0123456789'
+        for c1 in hex_digits:
+            for c2 in hex_digits:
+                url = 'http://example.com/%' + c1 + c2
+                encoded = uri.encode(uri.encode(url))
+                self.assertEqual(encoded, url)
+
     def test_uri_encode_value(self):
         self.assertEqual(uri.encode_value('abcd'), 'abcd')
         self.assertEqual(uri.encode_value(u'abcd'), u'abcd')

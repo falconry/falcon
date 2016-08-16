@@ -60,6 +60,7 @@ def _create_char_encoder(allowed_chars):
 def _create_str_encoder(is_value):
 
     allowed_chars = _UNRESERVED if is_value else _ALL_ALLOWED
+    allowed_chars_plus_percent = allowed_chars + '%'
     encode_char = _create_char_encoder(allowed_chars)
 
     def encoder(uri):
@@ -67,10 +68,32 @@ def _create_str_encoder(is_value):
         if not uri.rstrip(allowed_chars):
             return uri
 
+        if not uri.rstrip(allowed_chars_plus_percent):
+            # NOTE(kgriffs): There's a good chance the string has already
+            # been escaped. Do one more check to increase our certainty.
+            tokens = uri.split('%')
+            for token in tokens[1:]:
+                hex_octet = token[:2]
+
+                if not len(hex_octet) == 2:
+                    break
+
+                if not (hex_octet[0] in _HEX_DIGITS and
+                        hex_octet[1] in _HEX_DIGITS):
+                    break
+            else:
+                # NOTE(kgriffs): All percent-encoded sequences were
+                # valid, so assume that the string has already been
+                # encoded.
+                return uri
+
+            # NOTE(kgriffs): At this point we know there is at least
+            # one unallowed percent character. We are going to assume
+            # that everything should be encoded. If the string is
+            # partially encoded, the caller will need to normalize it
+            # before passing it in here.
+
         # Convert to a byte array if it is not one already
-        #
-        # NOTE(kgriffs): Code coverage disabled since in Py3K the uri
-        # is always a text type, so we get a failure for that tox env.
         if isinstance(uri, six.text_type):
             uri = uri.encode('utf-8')
 
