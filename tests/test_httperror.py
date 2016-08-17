@@ -153,6 +153,19 @@ class TemporaryRequestEntityTooLongResource:
                                                retry_after=self.retry_after)
 
 
+class UriTooLongResource:
+
+    def __init__(self, title=None, description=None, code=None):
+        self.title = title
+        self.description = description
+        self.code = code
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPUriTooLong(self.title,
+                                    self.description,
+                                    code=self.code)
+
+
 class RangeNotSatisfiableResource:
 
     def on_get(self, req, resp):
@@ -638,6 +651,32 @@ class TestHTTPError(testing.TestBase):
         self.assertEqual(parsed_body['description'], 'Request Body Too Large')
         self.assertIn(('retry-after', falcon.util.dt_to_http(date)),
                       self.srmock.headers)
+
+    def test_414(self):
+        self.api.add_route('/414', UriTooLongResource())
+        self.simulate_request('/414')
+        self.assertEqual(self.srmock.status, falcon.HTTP_414)
+
+    def test_414_with_title(self):
+        title = 'Argh! Error!'
+        self.api.add_route('/414', UriTooLongResource(title=title))
+        body = self.simulate_request('/414', headers={})
+        parsed_body = json.loads(body[0].decode())
+        self.assertEqual(parsed_body['title'], title)
+
+    def test_414_with_description(self):
+        description = 'Be short please.'
+        self.api.add_route('/414', UriTooLongResource(description=description))
+        body = self.simulate_request('/414', headers={})
+        parsed_body = json.loads(body[0].decode())
+        self.assertEqual(parsed_body['description'], description)
+
+    def test_414_with_custom_kwargs(self):
+        code = 'someid'
+        self.api.add_route('/414', UriTooLongResource(code=code))
+        body = self.simulate_request('/414', headers={})
+        parsed_body = json.loads(body[0].decode())
+        self.assertEqual(parsed_body['code'], code)
 
     def test_416(self):
         self.api = falcon.API()
