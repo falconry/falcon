@@ -57,8 +57,8 @@ Features
 -  CPython 2.6-2.7, PyPy, Jython 2.7, and CPython 3.3-3.5 support
 -  ~20% speed boost when Cython is available
 
-Install
--------
+Installation
+------------
 
 PyPy
 ^^^^
@@ -122,8 +122,19 @@ these issues by setting additional Clang C compiler flags as follows:
 
     $ export CFLAGS="-Qunused-arguments -Wno-unused-function"
 
-Test
-----
+
+Dependencies
+------------
+
+Falcon depends on six and `python-mimeparse`. `python-mimeparse` is a
+better-maintained fork of the similarly named `mimeparse` project.
+Normally the correct package will be selected by Falcon's ``setup.py``.
+However, if you are using an alternate strategy to manage dependencies,
+please take care to install the correct package in order to avoid
+errors.
+
+Tests
+-----
 
 .. code:: bash
 
