@@ -37,7 +37,7 @@ import wsgiref.validate
 
 from falcon.testing import helpers
 from falcon.testing.srmock import StartResponseMock
-from falcon.util import CaseInsensitiveDict
+from falcon.util import CaseInsensitiveDict, to_query_str
 
 
 class Result(object):
@@ -122,7 +122,8 @@ class Result(object):
 
 
 def simulate_request(app, method='GET', path='/', query_string=None,
-                     headers=None, body=None, file_wrapper=None):
+                     headers=None, body=None, file_wrapper=None,
+                     params=None, params_csv=True):
         """Simulates a request to a WSGI application.
 
         Performs a request against a WSGI application. Uses
@@ -134,8 +135,20 @@ def simulate_request(app, method='GET', path='/', query_string=None,
             method (str): An HTTP method to use in the request
                 (default: 'GET')
             path (str): The URL path to request (default: '/')
+            params (dict): A dictionary of query string parameters,
+                where each key is a parameter name, and each value is
+                either a ``str`` or something that can be converted
+                into a ``str``, or a list of such values. If a ``list``,
+                the value will be converted to a comma-delimited string
+                of values (e.g., 'thing=1,2,3').
+            params_csv (bool): Set to ``False`` to encode list values
+                in query string params by specifying multiple instances
+                of the parameter (e.g., 'thing=1&thing=2&thing=3').
+                Otherwise, parameters will be encoded as comma-separated
+                values (e.g., 'thing=1,2,3'). Defaults to ``True``.
             query_string (str): A raw query string to include in the
-                request (default: ``None``)
+                request (default: ``None``). If specified, overrides
+                `params`.
             headers (dict): Additional headers to include in the request
                 (default: ``None``)
             body (str): A string to send as the body of the request.
@@ -165,6 +178,13 @@ def simulate_request(app, method='GET', path='/', query_string=None,
             raise ValueError(
                 'path may not contain a query string. Please use the '
                 'query_string parameter instead.'
+            )
+
+        if query_string is None:
+            query_string = to_query_str(
+                params,
+                comma_delimited_lists=params_csv,
+                prefix=False,
             )
 
         env = helpers.create_environ(
@@ -197,8 +217,20 @@ def simulate_get(app, path, **kwargs):
         path (str): The URL path to request
 
     Keyword Args:
+        params (dict): A dictionary of query string parameters,
+            where each key is a parameter name, and each value is
+            either a ``str`` or something that can be converted
+            into a ``str``, or a list of such values. If a ``list``,
+            the value will be converted to a comma-delimited string
+            of values (e.g., 'thing=1,2,3').
+        params_csv (bool): Set to ``False`` to encode list values
+            in query string params by specifying multiple instances
+            of the parameter (e.g., 'thing=1&thing=2&thing=3').
+            Otherwise, parameters will be encoded as comma-separated
+            values (e.g., 'thing=1,2,3'). Defaults to ``True``.
         query_string (str): A raw query string to include in the
-            request (default: ``None``)
+            request (default: ``None``). If specified, overrides
+            `params`.
         headers (dict): Additional headers to include in the request
             (default: ``None``)
     """
@@ -217,8 +249,20 @@ def simulate_head(app, path, **kwargs):
         path (str): The URL path to request
 
     Keyword Args:
+        params (dict): A dictionary of query string parameters,
+            where each key is a parameter name, and each value is
+            either a ``str`` or something that can be converted
+            into a ``str``, or a list of such values. If a ``list``,
+            the value will be converted to a comma-delimited string
+            of values (e.g., 'thing=1,2,3').
+        params_csv (bool): Set to ``False`` to encode list values
+            in query string params by specifying multiple instances
+            of the parameter (e.g., 'thing=1&thing=2&thing=3').
+            Otherwise, parameters will be encoded as comma-separated
+            values (e.g., 'thing=1,2,3'). Defaults to ``True``.
         query_string (str): A raw query string to include in the
-            request (default: ``None``)
+            request (default: ``None``). If specified, overrides
+            `params`.
         headers (dict): Additional headers to include in the request
             (default: ``None``)
     """
@@ -237,8 +281,17 @@ def simulate_post(app, path, **kwargs):
         path (str): The URL path to request
 
     Keyword Args:
-        query_string (str): A raw query string to include in the
-            request (default: ``None``)
+        params (dict): A dictionary of query string parameters,
+            where each key is a parameter name, and each value is
+            either a ``str`` or something that can be converted
+            into a ``str``, or a list of such values. If a ``list``,
+            the value will be converted to a comma-delimited string
+            of values (e.g., 'thing=1,2,3').
+        params_csv (bool): Set to ``False`` to encode list values
+            in query string params by specifying multiple instances
+            of the parameter (e.g., 'thing=1&thing=2&thing=3').
+            Otherwise, parameters will be encoded as comma-separated
+            values (e.g., 'thing=1,2,3'). Defaults to ``True``.
         headers (dict): Additional headers to include in the request
             (default: ``None``)
         body (str): A string to send as the body of the request.
@@ -261,8 +314,17 @@ def simulate_put(app, path, **kwargs):
         path (str): The URL path to request
 
     Keyword Args:
-        query_string (str): A raw query string to include in the
-            request (default: ``None``)
+        params (dict): A dictionary of query string parameters,
+            where each key is a parameter name, and each value is
+            either a ``str`` or something that can be converted
+            into a ``str``, or a list of such values. If a ``list``,
+            the value will be converted to a comma-delimited string
+            of values (e.g., 'thing=1,2,3').
+        params_csv (bool): Set to ``False`` to encode list values
+            in query string params by specifying multiple instances
+            of the parameter (e.g., 'thing=1&thing=2&thing=3').
+            Otherwise, parameters will be encoded as comma-separated
+            values (e.g., 'thing=1,2,3'). Defaults to ``True``.
         headers (dict): Additional headers to include in the request
             (default: ``None``)
         body (str): A string to send as the body of the request.
@@ -285,8 +347,17 @@ def simulate_options(app, path, **kwargs):
         path (str): The URL path to request
 
     Keyword Args:
-        query_string (str): A raw query string to include in the
-            request (default: ``None``)
+        params (dict): A dictionary of query string parameters,
+            where each key is a parameter name, and each value is
+            either a ``str`` or something that can be converted
+            into a ``str``, or a list of such values. If a ``list``,
+            the value will be converted to a comma-delimited string
+            of values (e.g., 'thing=1,2,3').
+        params_csv (bool): Set to ``False`` to encode list values
+            in query string params by specifying multiple instances
+            of the parameter (e.g., 'thing=1&thing=2&thing=3').
+            Otherwise, parameters will be encoded as comma-separated
+            values (e.g., 'thing=1,2,3'). Defaults to ``True``.
         headers (dict): Additional headers to include in the request
             (default: ``None``)
     """
@@ -305,8 +376,17 @@ def simulate_patch(app, path, **kwargs):
         path (str): The URL path to request
 
     Keyword Args:
-        query_string (str): A raw query string to include in the
-            request (default: ``None``)
+        params (dict): A dictionary of query string parameters,
+            where each key is a parameter name, and each value is
+            either a ``str`` or something that can be converted
+            into a ``str``, or a list of such values. If a ``list``,
+            the value will be converted to a comma-delimited string
+            of values (e.g., 'thing=1,2,3').
+        params_csv (bool): Set to ``False`` to encode list values
+            in query string params by specifying multiple instances
+            of the parameter (e.g., 'thing=1&thing=2&thing=3').
+            Otherwise, parameters will be encoded as comma-separated
+            values (e.g., 'thing=1,2,3'). Defaults to ``True``.
         headers (dict): Additional headers to include in the request
             (default: ``None``)
         body (str): A string to send as the body of the request.
@@ -329,8 +409,17 @@ def simulate_delete(app, path, **kwargs):
         path (str): The URL path to request
 
     Keyword Args:
-        query_string (str): A raw query string to include in the
-            request (default: ``None``)
+        params (dict): A dictionary of query string parameters,
+            where each key is a parameter name, and each value is
+            either a ``str`` or something that can be converted
+            into a ``str``, or a list of such values. If a ``list``,
+            the value will be converted to a comma-delimited string
+            of values (e.g., 'thing=1,2,3').
+        params_csv (bool): Set to ``False`` to encode list values
+            in query string params by specifying multiple instances
+            of the parameter (e.g., 'thing=1&thing=2&thing=3').
+            Otherwise, parameters will be encoded as comma-separated
+            values (e.g., 'thing=1,2,3'). Defaults to ``True``.
         headers (dict): Additional headers to include in the request
             (default: ``None``)
     """

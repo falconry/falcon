@@ -120,6 +120,9 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1',
 
     """
 
+    if query_string and query_string.startswith('?'):
+        raise ValueError("query_string should not start with '?'")
+
     body = io.BytesIO(body.encode('utf-8')
                       if isinstance(body, six.text_type) else body)
 
