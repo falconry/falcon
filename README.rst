@@ -160,11 +160,12 @@ You can build the same docs locally as follows:
 
 .. code:: bash
 
-    $ pip install -r tools/doc-requires
-    $ cd doc
-    $ make html
+    $ pip install tox && tox -e docs
 
-    $ # open _build/html/index.html
+Once the docs have been built, you can view them by opening the following
+index page in your browser::
+
+    ./_build/html/index.html
 
 
 Getting started

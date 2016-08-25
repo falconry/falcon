@@ -35,7 +35,7 @@ htmlcov
 
 
 # Docs
-doc/_build
+docs/_build
 
 # Translations
 *.mo
