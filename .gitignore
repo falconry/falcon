@@ -31,6 +31,8 @@ pip-log.txt
 nosetests.xml
 htmlcov
 *.dat
+.cache
+
 
 # Docs
 doc/_build
