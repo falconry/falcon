@@ -382,6 +382,28 @@ class TestSeveralMiddlewares(TestMiddleware):
         ]
         self.assertEqual(expectedExecutedMethods, context['executed_methods'])
 
+    def test_status_at_proc_resp_mw_on_http_error(self):
+        """Test that http status is correctly set by the time process_response is called"""
+        context = {}
+
+        class CheckStatusMiddleware(object):
+
+            def process_response(self, req, resp, resource):
+                context['status'] = resp.status
+
+        class RaiseHTTPErrorResource(object):
+
+            def onget(self, req, resp):
+                raise falcon.HTTPBadRequest(title='bad request', description='description')
+
+        self.api = falcon.API(middleware=[CheckStatusMiddleware()])
+
+        self.api.add_route(self.test_route, RaiseHTTPErrorResource())
+
+        self.simulate_request('GET', self.test_route)
+
+        self.assertEqual(context['status'], falcon.HTTP_404)
+
 
 class TestRemoveBasePathMiddleware(TestMiddleware):
 
