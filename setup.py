@@ -12,9 +12,8 @@ MYDIR = path.abspath(os.path.dirname(__file__))
 VERSION = imp.load_source('version', path.join('.', 'falcon', 'version.py'))
 VERSION = VERSION.__version__
 
-# NOTE(kgriffs): python-mimeparse is newer than mimeparse, supports Py3
-# TODO(kgriffs): Fork and optimize/modernize python-mimeparse
-REQUIRES = ['six>=1.4.0', 'python-mimeparse']
+# NOTE(kgriffs): python-mimeparse is better-maintained fork of mimeparse
+REQUIRES = ['six>=1.4.0', 'python-mimeparse>=1.5.2']
 
 JYTHON = 'java' in sys.platform
 
