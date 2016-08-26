@@ -9,6 +9,12 @@ _EXPECTED_BODY = {u'status': u'ok'}
 context = {'executed_methods': []}
 
 
+class CaptureResponseMiddleware(object):
+
+    def process_response(self, req, resp, resource):
+        self.resp = resp
+
+
 class RequestTimeMiddleware(object):
 
     def process_request(self, req, resp):
@@ -72,6 +78,9 @@ class MiddlewareClassResource(object):
     def on_get(self, req, resp, **kwargs):
         resp.status = falcon.HTTP_200
         resp.body = json.dumps(_EXPECTED_BODY)
+
+    def on_post(self, req, resp):
+        raise falcon.HTTPForbidden(falcon.HTTP_403, 'Setec Astronomy')
 
 
 class TestMiddleware(testing.TestBase):
@@ -206,6 +215,35 @@ class TestSeveralMiddlewares(TestMiddleware):
             'ExecutedFirstMiddleware.process_response'
         ]
         self.assertEqual(expectedExecutedMethods, context['executed_methods'])
+
+    def test_multiple_reponse_mw_throw_exception(self):
+        """Test that error in inner middleware leaves"""
+        global context
+
+        class RaiseStatusMiddleware(object):
+            def process_response(self, req, resp, resource):
+                raise falcon.HTTPStatus(falcon.HTTP_201)
+
+        class RaiseErrorMiddleware(object):
+            def process_response(self, req, resp, resource):
+                raise falcon.HTTPError(falcon.HTTP_748)
+
+        class ProcessResponseMiddleware(object):
+            def process_response(self, req, resp, resource):
+                context['executed_methods'].append('process_response')
+
+        self.api = falcon.API(middleware=[RaiseErrorMiddleware(),
+                                          ProcessResponseMiddleware(),
+                                          RaiseStatusMiddleware(),
+                                          ProcessResponseMiddleware()])
+
+        self.api.add_route(self.test_route, MiddlewareClassResource())
+        self.simulate_request(self.test_route)
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_748)
+
+        expected_methods = ['process_response', 'process_response']
+        self.assertEqual(context['executed_methods'], expected_methods)
 
     def test_inner_mw_throw_exception(self):
         """Test that error in inner middleware leaves"""
@@ -417,3 +455,34 @@ class TestResourceMiddleware(TestMiddleware):
         self.assertTrue(context['params'])
         self.assertEqual(context['params']['id'], '22')
         self.assertEqual(body, {'added': True, 'id': '22'})
+
+
+class TestErrorHandling(TestMiddleware):
+
+    def setUp(self):
+        super(TestErrorHandling, self).setUp()
+
+        self.mw = CaptureResponseMiddleware()
+
+        self.api = falcon.API(middleware=self.mw)
+        self.api.add_route('/', MiddlewareClassResource())
+
+    def test_error_composed_before_resp_middleware_called(self):
+        self.simulate_request('/', method='POST')
+        self.assertEqual(self.srmock.status, falcon.HTTP_403)
+        self.assertEqual(self.mw.resp.status, self.srmock.status)
+
+        composed_body = json.loads(self.mw.resp.body)
+        self.assertEqual(composed_body['title'], self.srmock.status)
+
+    def test_http_status_raised_from_error_handler(self):
+        def _http_error_handler(error, req, resp, params):
+            raise falcon.HTTPStatus(falcon.HTTP_201)
+
+        # NOTE(kgriffs): This will take precedence over the default
+        # handler for facon.HTTPError.
+        self.api.add_error_handler(falcon.HTTPError, _http_error_handler)
+
+        self.simulate_request('/', method='POST')
+        self.assertEqual(self.srmock.status, falcon.HTTP_201)
+        self.assertEqual(self.mw.resp.status, self.srmock.status)
