@@ -1,6 +1,7 @@
 coverage>=4.1
 ddt
-nose
+pytest>=3.0.1
+pytest-sugar
 pyyaml
 requests
 six
