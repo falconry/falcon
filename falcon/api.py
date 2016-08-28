@@ -138,7 +138,11 @@ class API(object):
         self._serialize_error = helpers.default_serialize_error
         self.req_options = RequestOptions()
 
-    def __call__(self, env, start_response):
+        # NOTE(kgriffs): Add default error handlers
+        self.add_error_handler(falcon.HTTPError, self._http_error_handler)
+        self.add_error_handler(falcon.HTTPStatus, self._http_status_handler)
+
+    def __call__(self, env, start_response):  # noqa: C901
         """WSGI `app` method.
 
         Makes instances of API callable from a WSGI server. May be used to
@@ -157,71 +161,66 @@ class API(object):
         req = self._request_type(env, options=self.req_options)
         resp = self._response_type()
         resource = None
-        middleware_stack = []  # Keep track of executed components
+        mw_pr_stack = []  # Keep track of executed middleware components
         params = {}
 
         try:
-            # NOTE(kgriffs): Using an inner try..except in order to
-            # address the case when err_handler raises HTTPError.
-
-            # NOTE(kgriffs): Coverage is giving false negatives,
-            # so disabled on relevant lines. All paths are tested
-            # afaict.
             try:
-                # NOTE(ealogar): The execution of request middleware should be
-                # before routing. This will allow request mw to modify path.
-                self._call_req_mw(middleware_stack, req, resp)
-                # NOTE(warsaw): Moved this to inside the try except because it
-                # is possible when using object-based traversal for
-                # _get_responder() to fail.  An example is a case where an
-                # object does not have the requested next-hop child resource.
-                # In that case, the object being asked to dispatch to its
-                # child will raise an HTTP exception signalling the problem,
-                # e.g. a 404.
+                # NOTE(ealogar): The execution of request middleware
+                # should be before routing. This will allow request mw
+                # to modify the path.
+                for component in self._middleware:
+                    process_request, _, process_response = component
+                    if process_request is not None:
+                        process_request(req, resp)
+
+                    if process_response is not None:
+                        mw_pr_stack.append(process_response)
+
+                # NOTE(warsaw): Moved this to inside the try except
+                # because it is possible when using object-based
+                # traversal for _get_responder() to fail.  An example is
+                # a case where an object does not have the requested
+                # next-hop child resource. In that case, the object
+                # being asked to dispatch to its child will raise an
+                # HTTP exception signalling the problem, e.g. a 404.
                 responder, params, resource = self._get_responder(req)
-
-                # NOTE(kgriffs): If the request did not match any route,
-                # a default responder is returned and the resource is
-                # None.
-                if resource is not None:
-                    self._call_rsrc_mw(middleware_stack, req, resp, resource,
-                                       params)
-
-                responder(req, resp, **params)
-                self._call_resp_mw(middleware_stack, req, resp, resource)
-
             except Exception as ex:
-                for err_type, err_handler in self._error_handlers:
-                    if isinstance(ex, err_type):
-                        err_handler(ex, req, resp, params)
-                        self._call_resp_mw(middleware_stack, req, resp,
-                                           resource)
-
-                        break
-
-                else:
-                    # PERF(kgriffs): This will propagate HTTPError to
-                    # the handler below. It makes handling HTTPError
-                    # less efficient, but that is OK since error cases
-                    # don't need to be as fast as the happy path, and
-                    # indeed, should perhaps be slower to create
-                    # backpressure on clients that are issuing bad
-                    # requests.
-
-                    # NOTE(ealogar): This will executed remaining
-                    # process_response when no error_handler is given
-                    # and for whatever exception. If an HTTPError is raised
-                    # remaining process_response will be executed later.
-                    self._call_resp_mw(middleware_stack, req, resp, resource)
+                if not self._handle_exception(ex, req, resp, params):
                     raise
+            else:
+                try:
+                    # NOTE(kgriffs): If the request did not match any
+                    # route, a default responder is returned and the
+                    # resource is None. In that case, we skip the
+                    # resource middleware methods.
+                    if resource is not None:
+                        # Call process_resource middleware methods.
+                        for component in self._middleware:
+                            _, process_resource, _ = component
+                            if process_resource is not None:
+                                process_resource(req, resp, resource, params)
 
-        except HTTPStatus as ex:
-            self._compose_status_response(req, resp, ex)
-            self._call_resp_mw(middleware_stack, req, resp, resource)
+                    responder(req, resp, **params)
+                except Exception as ex:
+                    if not self._handle_exception(ex, req, resp, params):
+                        raise
+        finally:
+            # NOTE(kgriffs): It may not be useful to still execute
+            # response middleware methods in the case of an unhandled
+            # exception, but this is done for the sake of backwards
+            # compatibility, since it was incidentally the behavior in
+            # the 1.0 release before this section of the code was
+            # reworked.
 
-        except HTTPError as ex:
-            self._compose_error_response(req, resp, ex)
-            self._call_resp_mw(middleware_stack, req, resp, resource)
+            # Call process_response middleware methods.
+            while mw_pr_stack:
+                process_response = mw_pr_stack.pop()
+                try:
+                    process_response(req, resp, resource)
+                except Exception as ex:
+                    if not self._handle_exception(ex, req, resp, params):
+                        raise
 
         #
         # Set status and headers
@@ -375,9 +374,10 @@ class API(object):
     def add_error_handler(self, exception, handler=None):
         """Registers a handler for a given exception error type.
 
-        A handler can either raise an instance of ``HTTPError``
-        or modify `resp` manually in order to communicate
-        information about the issue to the client.
+        A handler can raise an instance of ``HTTPError`` or
+        ``HTTPStatus`` to communicate information about the issue to
+        the client.  Alternatively, a handler may modify `resp`
+        directly.
 
         Error handlers are matched in LIFO order. In other words, when
         searching for an error handler to match a raised exception, and
@@ -558,32 +558,45 @@ class API(object):
         if error.has_representation:
             self._serialize_error(req, resp, error)
 
-    def _call_req_mw(self, stack, req, resp):
-        """Run process_request middleware methods."""
+    def _http_status_handler(self, status, req, resp, params):
+        self._compose_status_response(req, resp, status)
 
-        for component in self._middleware:
-            process_request, _, _ = component
-            if process_request is not None:
-                process_request(req, resp)
+    def _http_error_handler(self, error, req, resp, params):
+        self._compose_error_response(req, resp, error)
 
-            # Put executed component on the stack
-            stack.append(component)  # keep track from outside
+    def _handle_exception(self, ex, req, resp, params):
+        """Handles an exception raised from mw or a responder.
 
-    def _call_rsrc_mw(self, stack, req, resp, resource, params):
-        """Run process_resource middleware methods."""
+        Args:
+            ex: Exception to handle
+            req: Current request object to pass to the handler
+                registered for the given exception type
+            resp: Current response object to pass to the handler
+                registered for the given exception type
+            params: Responder params to pass to the handler
+                registered for the given exception type
 
-        for component in self._middleware:
-            _, process_resource, _ = component
-            if process_resource is not None:
-                process_resource(req, resp, resource, params)
+        Returns:
+            bool: ``True`` if a handler was found and called for the
+                exception, ``False`` otherwise.
+        """
 
-    def _call_resp_mw(self, stack, req, resp, resource):
-        """Run process_response middleware."""
+        for err_type, err_handler in self._error_handlers:
+            if isinstance(ex, err_type):
+                try:
+                    err_handler(ex, req, resp, params)
+                except HTTPStatus as status:
+                    self._compose_status_response(req, resp, status)
+                except HTTPError as error:
+                    self._compose_error_response(req, resp, error)
 
-        while stack:
-            _, _, process_response = stack.pop()
-            if process_response is not None:
-                process_response(req, resp, resource)
+                return True
+
+        # NOTE(kgriffs): No error handlers are defined for ex
+        # and it is not one of (HTTPStatus, HTTPError), since it
+        # would have matched one of the corresponding default
+        # handlers.
+        return False
 
     # PERF(kgriffs): Moved from api_helpers since it is slightly faster
     # to call using self, and this function is called for most
