@@ -67,13 +67,13 @@ builds the documentation correctly:
 $ tox -e docs
 
 # OS X
-$ open doc/_build/html/index.html
+$ open docs/_build/html/index.html
 
 # Gnome
-$ gnome-open doc/_build/html/index.html
+$ gnome-open docs/_build/html/index.html
 
 # Generic X Windows
-$ xdg-open doc/_build/html/index.html
+$ xdg-open docs/_build/html/index.html
 ```
 
 ### Code style rules
