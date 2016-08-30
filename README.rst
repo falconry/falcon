@@ -55,6 +55,31 @@ Features
 -  CPython 2.6-2.7, PyPy, Jython 2.7, and CPython 3.3-3.5 support
 -  ~20% speed boost when Cython is available
 
+Who's Using Falcon?
+-------------------
+
+Falcon is used around the world by a growing number of organizations,
+including:
+
+- 7ideas
+- Cronitor
+- EMC
+- Hurricane Electric
+- Leadpages
+- OpenStack
+- Rackspace
+- Shiftgig
+- tempfil.es
+- Opera Software
+
+If you are using the Falcon framework for a community or commercial
+project, please consider adding your information to our wiki under
+`Who's Using Falcon? <https://github.com/falconry/falcon/wiki/Who's-using-Falcon%3F>`_
+
+You might also like to view our
+`Add-on Catalog <https://github.com/falconry/falcon/wiki/Add-on-Catalog>`_,
+where you can find a list of add-ons maintained by the community.
+
 Installation
 ------------
 
