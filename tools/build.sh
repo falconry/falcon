@@ -93,25 +93,3 @@ _open_env 2.7.11
 python setup.py bdist_wheel -d $DIST_DIR
 
 _close_env
-
-#----------------------------------------------------------------------
-# Build platform-specific wheel
-#----------------------------------------------------------------------
-
-if [ "$(uname)" == "Darwin" ]; then
-
-    # Disable spurious warnings when cythonizing
-    CFLAGS="-Qunused-arguments -Wno-unused-function"
-
-    for PY_VERSION in 2.6.9 2.7.11 3.3.6 3.4.4 3.5.1; do
-        _echo_task "Building OS X wheel for $PY_VERSION"
-        _open_env $PY_VERSION
-
-        pip install cython
-
-        python setup.py bdist_wheel -d $DIST_DIR
-
-        _close_env
-    done
-
-fi
