@@ -359,6 +359,10 @@ class TestFalconTesting(testing.TestBase):
         env = testing.create_environ('/hello%20world%21')
         self.assertEqual(env['PATH_INFO'], '/hello world!')
 
+    def test_no_prefix_allowed_for_query_strings_in_create_environ(self):
+        self.assertRaises(ValueError, testing.create_environ,
+                          query_string='?foo=bar')
+
     def test_unicode_path_in_create_environ(self):
         if six.PY3:
             self.skip('Test does not apply to Py3K')
@@ -419,14 +423,38 @@ class TestFalconTestCase(testing.TestCase):
 
                 doc['oid'] = req.get_param_as_int('oid')
                 doc['detailed'] = req.get_param_as_bool('detailed')
+                doc['things'] = req.get_param_as_list('things', int)
+                doc['query_string'] = req.query_string
 
                 resp.body = json.dumps(doc)
 
         self.api.add_route('/', SomeResource())
 
-        result = self.simulate_get(query_string='oid=42&detailed=no')
+        result = self.simulate_get(query_string='oid=42&detailed=no&things=1')
         self.assertEqual(result.json['oid'], 42)
         self.assertFalse(result.json['detailed'])
+        self.assertEqual(result.json['things'], [1])
+
+        params = {'oid': 42, 'detailed': False}
+        result = self.simulate_get(params=params)
+        self.assertEqual(result.json['oid'], params['oid'])
+        self.assertFalse(result.json['detailed'])
+        self.assertEqual(result.json['things'], None)
+
+        params = {'oid': 1978, 'detailed': 'yes', 'things': [1, 2, 3]}
+        result = self.simulate_get(params=params)
+        self.assertEqual(result.json['oid'], params['oid'])
+        self.assertTrue(result.json['detailed'])
+        self.assertEqual(result.json['things'], params['things'])
+
+        expected_qs = 'things=1,2,3'
+        result = self.simulate_get(params={'things': [1, 2, 3]})
+        self.assertEqual(result.json['query_string'], expected_qs)
+
+        expected_qs = 'things=1&things=2&things=3'
+        result = self.simulate_get(params={'things': [1, 2, 3]},
+                                   params_csv=False)
+        self.assertEqual(result.json['query_string'], expected_qs)
 
     def test_query_string_no_question(self):
         self.assertRaises(ValueError, self.simulate_get, query_string='?x=1')

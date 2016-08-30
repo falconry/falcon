@@ -160,23 +160,28 @@ def http_date_to_dt(http_date, obs_date=False):
     raise ValueError('time data %r does not match known formats' % http_date)
 
 
-def to_query_str(params, comma_delimited_lists=True):
-    """Converts a dictionary of params to a query string.
+def to_query_str(params, comma_delimited_lists=True, prefix=True):
+    """Converts a dictionary of parameters to a query string.
 
     Args:
-        params (dict): A dictionary of parameters, where each key is a
-            parameter name, and each value is either a ``str`` or
-            something that can be converted into a ``str``. If `params`
-            is a ``list``, it will be converted to a comma-delimited string
-            of values (e.g., 'thing=1,2,3')
-        comma_delimited_lists (bool, default ``True``):
-            If set to ``False`` encode lists by specifying multiple instances
-            of the parameter (e.g., 'thing=1&thing=2&thing=3')
-
+        params (dict): A dictionary of parameters, where each key is
+            a parameter name, and each value is either a ``str`` or
+            something that can be converted into a ``str``, or a
+            list of such values. If a ``list``, the value will be
+            converted to a comma-delimited string of values
+            (e.g., 'thing=1,2,3').
+        comma_delimited_lists (bool): Set to ``False`` to encode list
+            values by specifying multiple instances of the parameter
+            (e.g., 'thing=1&thing=2&thing=3'). Otherwise, parameters
+            will be encoded as comma-separated values (e.g.,
+            'thing=1,2,3'). Defaults to ``True``.
+        prefix (bool): Set to ``False`` to exclude the '?' prefix
+            in the result string (default ``True``).
 
     Returns:
-        str: A URI query string including the '?' prefix, or an empty string
-            if no params are given (the ``dict`` is empty).
+        str: A URI query string, including the '?' prefix (unless
+            `prefix` is ``False``), or an empty string if no params are
+            given (the ``dict`` is empty).
     """
 
     if not params:
@@ -184,7 +189,7 @@ def to_query_str(params, comma_delimited_lists=True):
 
     # PERF: This is faster than a list comprehension and join, mainly
     # because it allows us to inline the value transform.
-    query_str = '?'
+    query_str = '?' if prefix else ''
     for k, v in params.items():
         if v is True:
             v = 'true'
