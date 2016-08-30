@@ -38,13 +38,24 @@ You may also use Python 3.3 or 3.4 if you don't have 3.5 installed on your syste
 ### Running tests against Jython
 
 In addition to the tests run with tox against CPython, Cython, and PyPy, Travis runs tests against Jython 2.7 outside of tox. If you need to run these tests locally, do the following:
-* Install JDK 7 or better
-* run `travis_scripts/install_jython2.7.sh` -- this will install jython at `~/jython`
-* Install testing requirements `~/jython/bin/pip install -r tools/test-requires`
-    * May need to set `export JYTHON_HOME=~/jython` first
-* Run tests `~/jython/bin/nosetests`
 
-Note: coverage does not support Jython, so the coverage tests will fail.
+First, install JDK 7 or better. Then install Jython at `~/jython`:
+
+```bash
+$ travis_scripts/install_jython2.7.sh
+```
+
+Now install all testing dependencies (if you get an error, you may need to `export JYTHON_HOME=~/jython`):
+ 
+```bash
+$ ~/jython/bin/pip install -r tools/test-requires 
+```
+
+Finally, run the tests:
+
+```bash
+$ ~/jython/bin/pytest tests
+```
 
 ### Test coverage
 
@@ -60,8 +71,7 @@ The `combine_coverage.sh` script generates an HTML coverage report that can be v
 
 ### Documentation
 
-To check documentation changes (including docstrings), before submitting a PR, ensure the tox job
-builds the documentation correctly:
+To check documentation changes (including docstrings), before submitting a PR, ensure the tox job builds the documentation correctly:
 
 ```bash
 $ tox -e docs

@@ -1,5 +1,5 @@
 if [ "$JYTHON" = "true" ]; then
-    $HOME/jython/bin/nosetests
+    $HOME/jython/bin/pytest tests
 
     # Smoke test
     $HOME/jython/bin/jython falcon/bench/bench.py -t 1 -b falcon falcon-ext
