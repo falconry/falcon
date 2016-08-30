@@ -19,7 +19,6 @@ Quick Links
 * `Subscribe to the community mailing list <https://falcon.readthedocs.io/en/stable/community/help.html#mailing-list>`__.
 * `Hang out in #falconframework on freenode <https://kiwiirc.com/client/irc.freenode.net/?#falconframework>`__.
 
-
 Design Goals
 ------------
 
@@ -40,7 +39,6 @@ databases, rendering content, authorizing requests, etc. You are free to
 mix and match your own favorite libraries. Falcon apps work with
 any WSGI server, and run great under `CPython 2.6-2.7, PyPy, Jython 2.7,
 and CPython 3.3-3.5 <https://travis-ci.org/falconry/falcon>`__.
-
 
 Features
 --------
@@ -122,30 +120,69 @@ these issues by setting additional Clang C compiler flags as follows:
 
     $ export CFLAGS="-Qunused-arguments -Wno-unused-function"
 
-
 Dependencies
-------------
+^^^^^^^^^^^^
 
-Falcon depends on six and `python-mimeparse`. `python-mimeparse` is a
+Falcon depends on `six` and `python-mimeparse`. `python-mimeparse` is a
 better-maintained fork of the similarly named `mimeparse` project.
 Normally the correct package will be selected by Falcon's ``setup.py``.
 However, if you are using an alternate strategy to manage dependencies,
 please take care to install the correct package in order to avoid
 errors.
 
-Tests
------
+WSGI Server
+-----------
+
+Falcon speaks WSGI, and so in order to serve a Falcon app, you will
+need a WSGI server. Gunicorn and uWSGI are some of the more popular
+ones out there, but anything that can load a WSGI app will do.
 
 .. code:: bash
 
-    $ pip install -r tools/test-requires
-    $ pip install nose && nosetests
+    $ pip install [gunicorn|uwsgi]
 
-To run the default set of tests:
+Source Code
+-----------
+
+Falcon `lives on GitHub <https://github.com/racker/falcon>`_, making the
+code easy to browse, download, fork, etc. Pull requests are always welcome! Also,
+please remember to star the project if it makes you happy. :)
+
+Once you have cloned the repo or downloaded a tarball from GitHub, you
+can install Falcon like this:
+
+.. code:: bash
+
+    $ cd falcon
+    $ pip install .
+
+Or, if you want to edit the code, first fork the main repo, clone the fork
+to your desktop, and then run the following to install it using symbolic
+linking, so that when you change your code, the changes will be automagically
+available to your app without having to reinstall the package:
+
+.. code:: bash
+
+    $ cd falcon
+    $ pip install -e .
+
+You can manually test changes to the Falcon framework by switching to the
+directory of the cloned repo and then running pytest:
+
+.. code:: bash
+
+    $ cd falcon
+    $ pip install -r tools/test-requires
+    $ pytest tests
+
+Or, to run the default set of tests:
 
 .. code:: bash
 
     $ pip install tox && tox
+
+See also the `tox.ini <https://github.com/falconry/falcon/blob/master/tox.ini>`_
+file for a full list of available environments.
 
 Read the docs
 -------------
@@ -163,10 +200,13 @@ You can build the same docs locally as follows:
     $ pip install tox && tox -e docs
 
 Once the docs have been built, you can view them by opening the following
-index page in your browser::
+index page in your browser. On OS X it's as simple as::
 
-    ./_build/html/index.html
+    $ open docs/_build/html/index.html
 
+Or on Linux:
+
+    $ xdg-open docs/_build/html/index.html
 
 Getting started
 ---------------
