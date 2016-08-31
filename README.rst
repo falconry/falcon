@@ -169,7 +169,7 @@ ones out there, but anything that can load a WSGI app will do.
 Source Code
 -----------
 
-Falcon `lives on GitHub <https://github.com/racker/falcon>`_, making the
+Falcon `lives on GitHub <https://github.com/falconry/falcon>`_, making the
 code easy to browse, download, fork, etc. Pull requests are always welcome! Also,
 please remember to star the project if it makes you happy. :)
 
