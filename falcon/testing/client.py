@@ -157,7 +157,9 @@ def simulate_request(app, method='GET', path='/', query_string=None,
                 it will be encoded as UTF-8 in the request.
             file_wrapper (callable): Callable that returns an iterable,
                 to be used as the value for *wsgi.file_wrapper* in the
-                environ (default: ``None``).
+                environ (default: ``None``). This can be used to test
+                high-performance file transmission when `resp.stream` is
+                set to a file-like object.
 
         Returns:
             :py:class:`~.Result`: The result of the request
@@ -233,6 +235,11 @@ def simulate_get(app, path, **kwargs):
             `params`.
         headers (dict): Additional headers to include in the request
             (default: ``None``)
+        file_wrapper (callable): Callable that returns an iterable,
+            to be used as the value for *wsgi.file_wrapper* in the
+            environ (default: ``None``). This can be used to test
+            high-performance file transmission when `resp.stream` is
+            set to a file-like object.
     """
     return simulate_request(app, 'GET', path, **kwargs)
 
