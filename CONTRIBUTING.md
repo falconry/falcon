@@ -6,28 +6,26 @@ on GitHub to your personal account and then clone the fork into your
 development environment.
 
 Kurt Griffiths (**kgriffs** on IRC and Twitter) is the original creator of the
-Falcon framework, and currently co-maintains the project along with John Vrbanac
-(**jvrbanac** on IRC and Twitter). Falcon is developed by a growing
+Falcon framework, and currently co-maintains the project along with John Vrbanac (**jvrbanac** on IRC and Twitter). Falcon is developed by a growing
 community of users and contributors just like you.
 
 Please don't hesitate to reach out if you have any questions, or just need a
 little help getting started. You can find us in
-the **#falconframework** IRC channel on [Freenode][freenode]. It's the best way to discuss ideas, ask
-questions, and generally stay in touch with fellow contributors.
+the [#falconframework][irc-channel] IRC channel on [Freenode][freenode]. It's the best way to discuss ideas, ask questions, and generally stay in touch with fellow contributors.
 
 Please note that all contributors and maintainers of this project are subject to our [Code of Conduct][coc].
 
-### Mailing List
+### Discussion Group
 
-The Falcon community maintains a mailing list that you can use to share your ideas and ask questions about the framework. To join the list, simply send an email to [<users-join@mail.falconframework.org>][ml-join] (the subject and body will be ignored). You’ll receive a reply asking you to confirm the request.
+The Falcon community maintains a discussion group that you can use to
+share your ideas and ask questions about the framework. To join the
+discussion, please visit https://groups.google.com/d/forum/falconframework.
 
-Per our [Code of Conduct][coc], we expect everyone who participates on the mailing list to act professionally, and lead by example in encouraging constructive discussions. Each individual in the community is responsible for creating a positive, constructive, and productive culture.
-
-[Discussions are archived][ml-archive] for future reference.
+Per our [Code of Conduct][coc], we expect everyone who participates in community discussions to act professionally, and lead by example in encouraging constructive discussions. Each individual in the community is responsible for creating a positive, constructive, and productive culture.
 
 ### Pull Requests
 
-Before submitting a pull request, please ensure you have added or updated tests as appropriate, and that all existing tests still pass with your changes on both Python 2 and Python 3. Please also ensure that your coding style follows PEP 8 and doesn't cause pyflakes to complain.
+Before submitting a pull request, please ensure you have added or updated tests as appropriate, and that all existing tests still pass with your changes on both Python 2 and Python 3. Please also ensure that your coding style follows PEP 8.
 
 You can check all this by running the following from within the falcon project directory (requires Python 2.7 and Python 3.5 to be installed on your system):
 
@@ -69,13 +67,13 @@ builds the documentation correctly:
 $ tox -e docs
 
 # OS X
-$ open doc/_build/html/index.html
+$ open docs/_build/html/index.html
 
 # Gnome
-$ gnome-open doc/_build/html/index.html
+$ gnome-open docs/_build/html/index.html
 
 # Generic X Windows
-$ xdg-open doc/_build/html/index.html
+$ xdg-open docs/_build/html/index.html
 ```
 
 ### Code style rules
@@ -154,5 +152,6 @@ The footer should contain any information about **Breaking Changes** and is also
 [rtd]: https://falcon.readthedocs.io
 [coc]: https://github.com/falconry/falcon/blob/master/CODEOFCONDUCT.md
 [freenode]: https://www.freenode.net/
+[irc-channel]: https://kiwiirc.com/client/irc.freenode.net/?#falconframework
 [ml-join]: mailto:users-join@mail.falconframework.org?subject=join
 [ml-archive]: https://mail.falconframework.org/archives/list/users@mail.falconframework.org/

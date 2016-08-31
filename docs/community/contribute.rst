@@ -15,9 +15,9 @@ community of users and contributors just like you.
 
 Please don't hesitate to reach out if you have any questions, or just need a
 little help getting started. You can find us in
-the **#falconframework** IRC channel on `Freenode
-<https://www.freenode.net/>`_. It's the best way to discuss ideas, ask
-questions, and generally stay in touch with fellow contributors.
+`#falconframework <https://kiwiirc.com/client/irc.freenode.net/?#falconframework>`_
+on `Freenode <https://www.freenode.net/>`_. It's the best way to discuss ideas,
+ask questions, and generally stay in touch with fellow contributors.
 
 Please check out our
 `Contributor's Guide <https://github.com/falconry/falcon/blob/master/CONTRIBUTING.md>`_

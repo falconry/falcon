@@ -19,7 +19,6 @@ Quick Links
 * `Subscribe to the community mailing list <https://falcon.readthedocs.io/en/stable/community/help.html#mailing-list>`__.
 * `Hang out in #falconframework on freenode <https://kiwiirc.com/client/irc.freenode.net/?#falconframework>`__.
 
-
 Design Goals
 ------------
 
@@ -41,7 +40,6 @@ mix and match your own favorite libraries. Falcon apps work with
 any WSGI server, and run great under `CPython 2.6-2.7, PyPy, Jython 2.7,
 and CPython 3.3-3.5 <https://travis-ci.org/falconry/falcon>`__.
 
-
 Features
 --------
 
@@ -56,6 +54,31 @@ Features
 -  Snappy unit testing through WSGI helpers and mocks
 -  CPython 2.6-2.7, PyPy, Jython 2.7, and CPython 3.3-3.5 support
 -  ~20% speed boost when Cython is available
+
+Who's Using Falcon?
+-------------------
+
+Falcon is used around the world by a growing number of organizations,
+including:
+
+- 7ideas
+- Cronitor
+- EMC
+- Hurricane Electric
+- Leadpages
+- OpenStack
+- Rackspace
+- Shiftgig
+- tempfil.es
+- Opera Software
+
+If you are using the Falcon framework for a community or commercial
+project, please consider adding your information to our wiki under
+`Who's Using Falcon? <https://github.com/falconry/falcon/wiki/Who's-using-Falcon%3F>`_
+
+You might also like to view our
+`Add-on Catalog <https://github.com/falconry/falcon/wiki/Add-on-Catalog>`_,
+where you can find a list of add-ons maintained by the community.
 
 Installation
 ------------
@@ -122,30 +145,69 @@ these issues by setting additional Clang C compiler flags as follows:
 
     $ export CFLAGS="-Qunused-arguments -Wno-unused-function"
 
-
 Dependencies
-------------
+^^^^^^^^^^^^
 
-Falcon depends on six and `python-mimeparse`. `python-mimeparse` is a
+Falcon depends on `six` and `python-mimeparse`. `python-mimeparse` is a
 better-maintained fork of the similarly named `mimeparse` project.
 Normally the correct package will be selected by Falcon's ``setup.py``.
 However, if you are using an alternate strategy to manage dependencies,
 please take care to install the correct package in order to avoid
 errors.
 
-Tests
------
+WSGI Server
+-----------
+
+Falcon speaks WSGI, and so in order to serve a Falcon app, you will
+need a WSGI server. Gunicorn and uWSGI are some of the more popular
+ones out there, but anything that can load a WSGI app will do.
 
 .. code:: bash
 
-    $ pip install -r tools/test-requires
-    $ pip install nose && nosetests
+    $ pip install [gunicorn|uwsgi]
 
-To run the default set of tests:
+Source Code
+-----------
+
+Falcon `lives on GitHub <https://github.com/falconry/falcon>`_, making the
+code easy to browse, download, fork, etc. Pull requests are always welcome! Also,
+please remember to star the project if it makes you happy. :)
+
+Once you have cloned the repo or downloaded a tarball from GitHub, you
+can install Falcon like this:
+
+.. code:: bash
+
+    $ cd falcon
+    $ pip install .
+
+Or, if you want to edit the code, first fork the main repo, clone the fork
+to your desktop, and then run the following to install it using symbolic
+linking, so that when you change your code, the changes will be automagically
+available to your app without having to reinstall the package:
+
+.. code:: bash
+
+    $ cd falcon
+    $ pip install -e .
+
+You can manually test changes to the Falcon framework by switching to the
+directory of the cloned repo and then running pytest:
+
+.. code:: bash
+
+    $ cd falcon
+    $ pip install -r tools/test-requires
+    $ pytest tests
+
+Or, to run the default set of tests:
 
 .. code:: bash
 
     $ pip install tox && tox
+
+See also the `tox.ini <https://github.com/falconry/falcon/blob/master/tox.ini>`_
+file for a full list of available environments.
 
 Read the docs
 -------------
@@ -163,10 +225,13 @@ You can build the same docs locally as follows:
     $ pip install tox && tox -e docs
 
 Once the docs have been built, you can view them by opening the following
-index page in your browser::
+index page in your browser. On OS X it's as simple as::
 
-    ./_build/html/index.html
+    $ open docs/_build/html/index.html
 
+Or on Linux:
+
+    $ xdg-open docs/_build/html/index.html
 
 Getting started
 ---------------
@@ -447,27 +512,21 @@ bodies.
 Community
 ---------
 
-The Falcon community maintains a mailing list that you can use to share
-your ideas and ask questions about the framework. We use the appropriately
-minimalistic `Librelist <http://librelist.com/>`_ to host the discussions.
+The Falcon community maintains a discussion group that you can use to
+share your ideas and ask questions about the framework. To join the
+discussion, please visit https://groups.google.com/d/forum/falconframework.
 
-To join the mailing list, simply send your first email to falcon@librelist.com!
-This will automatically subscribe you to the mailing list *and* sends your email
-along to the rest of the subscribers. For more information about managing your
-subscription, check out the
-`Librelist help page <http://librelist.com/help.html>`_.
-
-We expect everyone who participates on the mailing list to act
+Per our
+`Code of Conduct <https://github.com/falconry/falcon/blob/master/CODEOFCONDUCT.md>`_,
+we expect everyone who participates in community discussions to act
 professionally, and lead by example in encouraging constructive
 discussions. Each individual in the community is responsible for
-creating a positive, constructive, and productive culture. See also
-the `Falcon Code of Conduct <https://github.com/falconry/falcon/blob/master/CODEOFCONDUCT.md>`__
+creating a positive, constructive, and productive culture.
 
-`Discussions are archived <http://librelist.com/browser/falcon>`__ for
-posterity.
-
-We also hang out in `#falconframework <https://kiwiirc.com/client/irc.freenode.net/?#falconframework>`__ on freenode, where everyone is
-always welcome to ask questions and share ideas.
+We also hang out in
+`#falconframework <https://kiwiirc.com/client/irc.freenode.net/?#falconframework>`_
+on freenode, where everyone is always welcome to ask questions and share
+ideas.
 
 Contributing
 ------------

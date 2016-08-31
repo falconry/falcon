@@ -13,26 +13,21 @@ IRC
 ---
 Chat with fellow community members in the official Falcon IRC channel. It's a
 great place to ask questions and share your ideas. You can find us in
-**#falconframework** on `Freenode <https://en.wikipedia.org/wiki/Freenode>`_.
+`#falconframework <https://kiwiirc.com/client/irc.freenode.net/?#falconframework>`_
+on `Freenode <https://en.wikipedia.org/wiki/Freenode>`_.
 
-Mailing List
-------------
-The Falcon community maintains a mailing list that you can use to share
-your ideas and ask questions about the framework. To join the list, simply send
-an email to
-`users-join@mail.falconframework.org <mailto:users-join@mail.falconframework.org?subject=join>`_
-(the subject and body will be ignored). You'll receive a reply asking you to
-confirm the request.
+Discussion Group
+----------------
+The Falcon community maintains a discussion group that you can use to
+share your ideas and ask questions about the framework. To join the
+discussion, please visit https://groups.google.com/d/forum/falconframework.
 
 Per our
 `Code of Conduct <https://github.com/falconry/falcon/blob/master/CODEOFCONDUCT.md>`_,
-we expect everyone who participates on the mailing list to act
+we expect everyone who participates in community discussions to act
 professionally, and lead by example in encouraging constructive
-discussions. Each individual in the community is responsible for creating
-a positive, constructive, and productive culture.
-
-`Discussions are archived <https://mail.falconframework.org/archives/list/users@mail.falconframework.org/>`_
-for future reference.
+discussions. Each individual in the community is responsible for
+creating a positive, constructive, and productive culture.
 
 Submit Issues
 -------------

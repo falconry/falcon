@@ -47,7 +47,6 @@ documentation. It basically can't be wrong."
 
 "What other framework has integrated support for '786 TRY IT NOW' ?"
 
-
 Features
 --------
 
@@ -65,6 +64,31 @@ Falcon tries to do as little as possible while remaining highly effective.
 - Only depends on six and mimeparse
 - Supports Python 2.6, 2.7, 3.3, 3.4 and 3.5
 - Compatible with PyPy and Jython
+
+Who's Using Falcon?
+-------------------
+
+Falcon is used around the world by a growing number of organizations,
+including:
+
+- 7ideas
+- Cronitor
+- EMC
+- Hurricane Electric
+- Leadpages
+- OpenStack
+- Rackspace
+- Shiftgig
+- tempfil.es
+- Opera Software
+
+If you are using the Falcon framework for a community or commercial
+project, please consider adding your information to our wiki under
+`Who's Using Falcon? <https://github.com/falconry/falcon/wiki/Who's-using-Falcon%3F>`_
+
+You might also like to view our
+`Add-on Catalog <https://github.com/falconry/falcon/wiki/Add-on-Catalog>`_,
+where you can find a list of add-ons maintained by the community.
 
 Useful Links
 ------------
