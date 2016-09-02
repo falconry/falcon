@@ -111,7 +111,8 @@ setup(
     tests_require=['nose', 'ddt', 'testtools', 'requests', 'pyyaml'],
     entry_points={
         'console_scripts': [
-            'falcon-bench = falcon.cmd.bench:main'
+            'falcon-bench = falcon.cmd.bench:main',
+            'falcon-print-routes = falcon.cmd.print_routes:main'
         ]
     }
 )
