@@ -43,7 +43,15 @@ class CompiledRouter(object):
         self._return_values = None
 
     def add_route(self, uri_template, method_map, resource):
-        """Adds a route between URI path template and resource."""
+        """Adds a route between a URI path template and a resource.
+
+        Args:
+            uri_template (str): A URI template to use for the route
+            method_map (dict): A mapping of HTTP methods (e.g., 'GET',
+                'POST') to methods of a resource object.
+            resource (object): The resource instance to associate with
+                the URI template.
+        """
 
         if re.search('\s', uri_template):
             raise ValueError('URI templates may not include whitespace.')
@@ -67,6 +75,7 @@ class CompiledRouter(object):
                         # NOTE(kgriffs): Override previous node
                         node.method_map = method_map
                         node.resource = resource
+                        node.uri_template = uri_template
                     else:
                         insert(node.children, path_index)
 
@@ -85,6 +94,7 @@ class CompiledRouter(object):
             if path_index == len(path) - 1:
                 new_node.method_map = method_map
                 new_node.resource = resource
+                new_node.uri_template = uri_template
             else:
                 insert(new_node.children, path_index + 1)
 
@@ -92,13 +102,23 @@ class CompiledRouter(object):
         self._find = self._compile()
 
     def find(self, uri):
-        """Finds resource and method map for a URI, or returns None."""
+        """Search for a route that matches the given partial URI.
+
+        Args:
+            uri(str): The requested path to route
+
+        Returns:
+            tuple: A 4-member tuple composed of (resource, method_map,
+                params, uri_template), or ``None`` if no route matches
+                the requested path
+        """
+
         path = uri.lstrip('/').split('/')
         params = {}
         node = self._find(path, self._return_values, self._expressions, params)
 
         if node is not None:
-            return node.resource, node.method_map, params
+            return node.resource, node.method_map, params, node.uri_template
         else:
             return None
 
@@ -234,12 +254,14 @@ class CompiledRouterNode(object):
 
     _regex_vars = re.compile('{([-_a-zA-Z0-9]+)}')
 
-    def __init__(self, raw_segment, method_map=None, resource=None):
+    def __init__(self, raw_segment,
+                 method_map=None, resource=None, uri_template=None):
         self.children = []
 
         self.raw_segment = raw_segment
         self.method_map = method_map
         self.resource = resource
+        self.uri_template = uri_template
 
         self.is_var = False
         self.is_complex = False
