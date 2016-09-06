@@ -14,6 +14,9 @@
 
 """Utilities for the API class."""
 
+from functools import wraps
+import inspect
+
 from falcon import util
 
 
@@ -48,6 +51,21 @@ def prepare_middleware(middleware=None):
         if not (process_request or process_resource or process_response):
             msg = '{0} does not implement the middleware interface'
             raise TypeError(msg.format(component))
+
+        if process_response:
+            # NOTE(kgriffs): Shim older implementations to ensure
+            # backwards-compatibility.
+            spec = inspect.getargspec(process_response)
+
+            if len(spec.args) == 4:  # (self, req, resp, resource)
+                def let(process_response=process_response):
+                    @wraps(process_response)
+                    def shim(req, resp, resource, req_succeeded):
+                        process_response(req, resp, resource)
+
+                    return shim
+
+                process_response = let()
 
         prepared_middleware.append((process_request, process_resource,
                                     process_response))

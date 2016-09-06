@@ -73,7 +73,7 @@ class API(object):
                                 arguments.
                         \"\"\"
 
-                    def process_response(self, req, resp, resource)
+                    def process_response(self, req, resp, resource, req_succeeded)
                         \"\"\"Post-processing of the response (after routing).
 
                         Args:
@@ -82,6 +82,9 @@ class API(object):
                             resource: Resource object to which the request was
                                 routed. May be None if no route was found
                                 for the request.
+                            req_succeeded: True if no exceptions were raised
+                                while the framework processed and routed the
+                                request; otherwise False.
                         \"\"\"
 
             See also :ref:`Middleware <middleware>`.
@@ -161,8 +164,10 @@ class API(object):
         req = self._request_type(env, options=self.req_options)
         resp = self._response_type()
         resource = None
-        mw_pr_stack = []  # Keep track of executed middleware components
         params = {}
+
+        mw_pr_stack = []  # Keep track of executed middleware components
+        req_succeeded = False
 
         try:
             try:
@@ -202,6 +207,7 @@ class API(object):
                                 process_resource(req, resp, resource, params)
 
                     responder(req, resp, **params)
+                    req_succeeded = True
                 except Exception as ex:
                     if not self._handle_exception(ex, req, resp, params):
                         raise
@@ -217,10 +223,12 @@ class API(object):
             while mw_pr_stack:
                 process_response = mw_pr_stack.pop()
                 try:
-                    process_response(req, resp, resource)
+                    process_response(req, resp, resource, req_succeeded)
                 except Exception as ex:
                     if not self._handle_exception(ex, req, resp, params):
                         raise
+
+                    req_succeeded = False
 
         #
         # Set status and headers
