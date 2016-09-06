@@ -463,6 +463,70 @@ class HTTPConflict(HTTPError):
                                            description, **kwargs)
 
 
+class HTTPGone(OptionalRepresentation, HTTPError):
+    """410 Gone.
+
+    The target resource is no longer available at the origin server and
+    this condition is likely to be permanent.
+
+    If the origin server does not know, or has no facility to determine,
+    whether or not the condition is permanent, the status code 404 Not
+    Found ought to be used instead.
+
+    The 410 response is primarily intended to assist the task of web
+    maintenance by notifying the recipient that the resource is
+    intentionally unavailable and that the server owners desire that
+    remote links to that resource be removed. Such an event is common
+    for limited-time, promotional services and for resources belonging
+    to individuals no longer associated with the origin server's site.
+    It is not necessary to mark all permanently unavailable resources as
+    "gone" or to keep the mark for any length of time -- that is left to
+    the discretion of the server owner.
+
+    A 410 response is cacheable by default; i.e., unless otherwise
+    indicated by the method definition or explicit cache controls.
+
+    (See also: RFC 7231, Section 6.5.9)
+
+    Keyword Args:
+        title (str): Human-friendly error title. If not provided, and
+            `description` is also not provided, no body will be included
+            in the response.
+        description (str): Human-friendly description of the error, along with
+            a helpful suggestion or two (default ``None``).
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        headers (dict): Extra headers to return in the
+            response to the client (default ``None``).
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (defaults to "API documentation
+            for this error").
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
+    """
+
+    def __init__(self, **kwargs):
+        super(HTTPGone, self).__init__(status.HTTP_410, **kwargs)
+
+
 class HTTPLengthRequired(HTTPError):
     """411 Length Required.
 

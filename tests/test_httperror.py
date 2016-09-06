@@ -99,6 +99,18 @@ class NotFoundResourceWithBody:
         raise falcon.HTTPNotFound(description='Not Found')
 
 
+class GoneResource:
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPGone()
+
+
+class GoneResourceWithBody:
+
+    def on_get(self, req, resp):
+        raise falcon.HTTPGone(description='Gone with the wind')
+
+
 class MethodNotAllowedResource:
 
     def on_get(self, req, resp):
@@ -609,6 +621,25 @@ class TestHTTPError(testing.TestBase):
         }
         self.assertEqual(json.loads(response), expected_body)
         self.assertIn(('allow', 'PUT'), self.srmock.headers)
+
+    def test_410_without_body(self):
+        self.api.add_route('/410', GoneResource())
+        body = self.simulate_request('/410')
+
+        self.assertEqual(self.srmock.status, falcon.HTTP_410)
+        self.assertEqual(body, [])
+
+    def test_410_with_body(self):
+        self.api.add_route('/410', GoneResourceWithBody())
+
+        response = self.simulate_request('/410', decode='utf-8')
+        self.assertEqual(self.srmock.status, falcon.HTTP_410)
+        self.assertNotEqual(response, [])
+        expected_body = {
+            u'title': u'410 Gone',
+            u'description': u'Gone with the wind'
+        }
+        self.assertEqual(json.loads(response), expected_body)
 
     def test_411(self):
         self.api.add_route('/411', LengthRequiredResource())
