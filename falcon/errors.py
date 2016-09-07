@@ -46,16 +46,46 @@ import falcon.status_codes as status
 class HTTPBadRequest(HTTPError):
     """400 Bad Request.
 
-    The request could not be understood by the server due to malformed
-    syntax. The client SHOULD NOT repeat the request without
-    modifications. (RFC 2616)
+    The server cannot or will not process the request due to something
+    that is perceived to be a client error (e.g., malformed request
+    syntax, invalid request message framing, or deceptive request
+    routing).
+
+    (See also: RFC 7231, Section 6.5.1)
 
     Args:
         title (str): Error title (e.g., 'TTL Out of Range').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-        kwargs (optional): Same as for ``HTTPError``.
 
+    Keyword Args:
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        headers (dict): Extra headers to return in the
+            response to the client (default ``None``).
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (defaults to "API documentation
+            for this error").
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
     """
 
     def __init__(self, title, description, **kwargs):
@@ -66,8 +96,23 @@ class HTTPBadRequest(HTTPError):
 class HTTPUnauthorized(HTTPError):
     """401 Unauthorized.
 
-    Use when authentication is required, and the provided credentials are
-    not valid, or no credentials were provided in the first place.
+    The request has not been applied because it lacks valid
+    authentication credentials for the target resource.
+
+    The server generating a 401 response MUST send a WWW-Authenticate
+    header field containing at least one challenge applicable to the
+    target resource.
+
+    If the request included authentication credentials, then the 401
+    response indicates that authorization has been refused for those
+    credentials. The user agent MAY repeat the request with a new or
+    replaced Authorization header field. If the 401 response contains
+    the same challenge as the prior response, and the user agent has
+    already attempted authentication at least once, then the user agent
+    SHOULD present the enclosed representation to the user, since it
+    usually contains relevant diagnostic information.
+
+    (See also: RFC 7235, Section 3.1)
 
     Args:
         title (str): Error title (e.g., 'Authentication Required').
@@ -75,9 +120,36 @@ class HTTPUnauthorized(HTTPError):
             a helpful suggestion or two.
         challenges (iterable of str): One or more authentication
             challenges to use as the value of the WWW-Authenticate header in
-            the response. See also:
-            http://tools.ietf.org/html/rfc7235#section-2.1
-        kwargs (optional): Same as for ``HTTPError``.
+            the response (see also RFC 7235, Section 2.1).
+
+    Keyword Args:
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        headers (dict): Extra headers to return in the
+            response to the client (default ``None``).
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (defaults to "API documentation
+            for this error").
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
 
     """
 
@@ -94,21 +166,57 @@ class HTTPUnauthorized(HTTPError):
 class HTTPForbidden(HTTPError):
     """403 Forbidden.
 
-    Use when the client's credentials are good, but they do not have permission
-    to access the requested resource.
+    The server understood the request but refuses to authorize it.
 
-    If the request method was not HEAD and the server wishes to make
-    public why the request has not been fulfilled, it SHOULD describe the
-    reason for the refusal in the entity.  If the server does not wish to
-    make this information available to the client, the status code 404
-    (Not Found) can be used instead. (RFC 2616)
+    A server that wishes to make public why the request has been
+    forbidden can describe that reason in the response payload (if any).
+
+    If authentication credentials were provided in the request, the
+    server considers them insufficient to grant access. The client
+    SHOULD NOT automatically repeat the request with the same
+    credentials. The client MAY repeat the request with new or different
+    credentials. However, a request might be forbidden for reasons
+    unrelated to the credentials.
+
+    An origin server that wishes to "hide" the current existence of a
+    forbidden target resource MAY instead respond with a status code of
+    404 Not Found.
+
+    (See also: RFC 7231, Section 6.5.4)
 
     Args:
         title (str): Error title (e.g., 'Permission Denied').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-        kwargs (optional): Same as for ``HTTPError``.
 
+    Keyword Args:
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        headers (dict): Extra headers to return in the
+            response to the client (default ``None``).
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (defaults to "API documentation
+            for this error").
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
     """
 
     def __init__(self, title, description, **kwargs):
@@ -119,9 +227,53 @@ class HTTPForbidden(HTTPError):
 class HTTPNotFound(OptionalRepresentation, HTTPError):
     """404 Not Found.
 
-    Use this when the URL path does not map to an existing resource, or you
-    do not wish to disclose exactly why a request was refused.
+    The origin server did not find a current representation for the
+    target resource or is not willing to disclose that one exists.
 
+    A 404 status code does not indicate whether this lack of
+    representation is temporary or permanent; the 410 Gone status code
+    is preferred over 404 if the origin server knows, presumably through
+    some configurable means, that the condition is likely to be
+    permanent.
+
+    A 404 response is cacheable by default; i.e., unless otherwise
+    indicated by the method definition or explicit cache controls.
+
+    (See also: RFC 7231, Section 6.5.3)
+
+    Keyword Args:
+        title (str): Human-friendly error title. If not provided, and
+            `description` is also not provided, no body will be included
+            in the response.
+        description (str): Human-friendly description of the error, along with
+            a helpful suggestion or two (default ``None``).
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        headers (dict): Extra headers to return in the
+            response to the client (default ``None``).
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (defaults to "API documentation
+            for this error").
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
     """
 
     def __init__(self, **kwargs):
@@ -131,15 +283,55 @@ class HTTPNotFound(OptionalRepresentation, HTTPError):
 class HTTPMethodNotAllowed(OptionalRepresentation, HTTPError):
     """405 Method Not Allowed.
 
-    The method specified in the Request-Line is not allowed for the
-    resource identified by the Request-URI. The response MUST include an
-    Allow header containing a list of valid methods for the requested
-    resource. (RFC 2616)
+    The method received in the request-line is known by the origin
+    server but not supported by the target resource.
+
+    The origin server MUST generate an Allow header field in a 405
+    response containing a list of the target resource's currently
+    supported methods.
+
+    A 405 response is cacheable by default; i.e., unless otherwise
+    indicated by the method definition or explicit cache controls.
+
+    (See also: RFC 7231, Section 6.5.5)
 
     Args:
         allowed_methods (list of str): Allowed HTTP methods for this
             resource (e.g., ``['GET', 'POST', 'HEAD']``).
 
+    Keyword Args:
+        title (str): Human-friendly error title. If not provided, and
+            `description` is also not provided, no body will be included
+            in the response.
+        description (str): Human-friendly description of the error, along with
+            a helpful suggestion or two (default ``None``).
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        headers (dict): Extra headers to return in the
+            response to the client (default ``None``).
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (defaults to "API documentation
+            for this error").
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
     """
 
     def __init__(self, allowed_methods, **kwargs):
@@ -155,19 +347,53 @@ class HTTPMethodNotAllowed(OptionalRepresentation, HTTPError):
 class HTTPNotAcceptable(HTTPError):
     """406 Not Acceptable.
 
-    The client requested a resource in a representation that is not
-    supported by the server. The client must indicate a supported
-    media type in the Accept header.
+    The target resource does not have a current representation that
+    would be acceptable to the user agent, according to the proactive
+    negotiation header fields received in the request1, and the server
+    is unwilling to supply a default representation.
 
-    The resource identified by the request is only capable of generating
-    response entities which have content characteristics not acceptable
-    according to the accept headers sent in the request. (RFC 2616)
+    The server SHOULD generate a payload containing a list of available
+    representation characteristics and corresponding resource
+    identifiers from which the user or user agent can choose the one
+    most appropriate. A user agent MAY automatically select the most
+    appropriate choice from that list. However, this specification does
+    not define any standard for such automatic selection, as described
+    in RFC 7231, Section 6.4.1
+
+    (See also: RFC 7231, Section 6.5.6)
 
     Args:
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-        kwargs (optional): Same as for ``HTTPError``.
 
+    Keyword Args:
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        headers (dict): Extra headers to return in the
+            response to the client (default ``None``).
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (defaults to "API documentation
+            for this error").
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
     """
 
     def __init__(self, description, **kwargs):
@@ -179,32 +405,57 @@ class HTTPNotAcceptable(HTTPError):
 class HTTPConflict(HTTPError):
     """409 Conflict.
 
-    The request could not be completed due to a conflict with the current
-    state of the resource. This code is only allowed in situations where
-    it is expected that the user might be able to resolve the conflict
-    and resubmit the request. The response body SHOULD include enough
-    information for the user to recognize the source of the conflict.
-    Ideally, the response entity would include enough information for the
-    user or user agent to fix the problem; however, that might not be
-    possible and is not required.
+    The request could not be completed due to a conflict with the
+    current state of the target resource. This code is used in
+    situations where the user might be able to resolve the conflict and
+    resubmit the request.
+
+    The server SHOULD generate a payload that includes enough
+    information for a user to recognize the source of the conflict.
 
     Conflicts are most likely to occur in response to a PUT request. For
-    example, if versioning were being used and the entity being PUT
-    included changes to a resource which conflict with those made by an
-    earlier (third-party) request, the server might use the 409 response
-    to indicate that it can't complete the request. In this case, the
-    response entity would likely contain a list of the differences
-    between the two versions in a format defined by the response
-    Content-Type.
+    example, if versioning were being used and the representation being
+    PUT included changes to a resource that conflict with those made by
+    an earlier (third-party) request, the origin server might use a 409
+    response to indicate that it can't complete the request. In this
+    case, the response representation would likely contain information
+    useful for merging the differences based on the revision history.
 
-    (RFC 2616)
+    (See also: RFC 7231, Section 6.5.8)
 
     Args:
         title (str): Error title (e.g., 'Editing Conflict').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-        kwargs (optional): Same as for ``HTTPError``.
 
+    Keyword Args:
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        headers (dict): Extra headers to return in the
+            response to the client (default ``None``).
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (defaults to "API documentation
+            for this error").
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
     """
 
     def __init__(self, title, description, **kwargs):
@@ -215,17 +466,48 @@ class HTTPConflict(HTTPError):
 class HTTPLengthRequired(HTTPError):
     """411 Length Required.
 
-    The server refuses to accept the request without a defined
-    Content-Length. The client MAY repeat the request if it adds a
-    valid Content-Length header field containing the length of the
-    message-body in the request message. (RFC 2616)
+    The server refuses to accept the request without a defined Content-
+    Length.
+
+    The client MAY repeat the request if it adds a valid Content-Length
+    header field containing the length of the message body in the
+    request message.
+
+    (See also: RFC 7231, Section 6.5.10)
 
     Args:
         title (str): Error title (e.g., 'Missing Content-Length').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-        kwargs (optional): Same as for ``HTTPError``.
 
+    Keyword Args:
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        headers (dict): Extra headers to return in the
+            response to the client (default ``None``).
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (defaults to "API documentation
+            for this error").
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
     """
     def __init__(self, title, description, **kwargs):
         super(HTTPLengthRequired, self).__init__(status.HTTP_411,
@@ -235,19 +517,49 @@ class HTTPLengthRequired(HTTPError):
 class HTTPPreconditionFailed(HTTPError):
     """412 Precondition Failed.
 
-    The precondition given in one or more of the request-header fields
-    evaluated to false when it was tested on the server. This response
-    code allows the client to place preconditions on the current resource
-    metainformation (header field data) and thus prevent the requested
-    method from being applied to a resource other than the one intended.
-    (RFC 2616)
+    One or more conditions given in the request header fields evaluated
+    to false when tested on the server.
+
+    This response code allows the client to place preconditions on the
+    current resource state (its current representations and metadata)
+    and, thus, prevent the request method from being applied if the
+    target resource is in an unexpected state.
+
+    (See also: RFC 7232, Section 4.2)
 
     Args:
         title (str): Error title (e.g., 'Image Not Modified').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-        kwargs (optional): Same as for ``HTTPError``.
 
+    Keyword Args:
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        headers (dict): Extra headers to return in the
+            response to the client (default ``None``).
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (defaults to "API documentation
+            for this error").
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
     """
 
     def __init__(self, title, description, **kwargs):
@@ -259,26 +571,54 @@ class HTTPRequestEntityTooLarge(HTTPError):
     """413 Request Entity Too Large.
 
     The server is refusing to process a request because the request
-    entity is larger than the server is willing or able to process. The
-    server MAY close the connection to prevent the client from continuing
-    the request.
+    payload is larger than the server is willing or able to process.
 
-    If the condition is temporary, the server SHOULD include a Retry-
+    The server MAY close the connection to prevent the client from
+    continuing the request.
+
+    If the condition is temporary, the server SHOULD generate a Retry-
     After header field to indicate that it is temporary and after what
     time the client MAY try again.
 
-    (RFC 2616)
+    (See also: RFC 7231, Section 6.5.11)
 
     Args:
         title (str): Error title (e.g., 'Request Body Limit Exceeded').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-        retry_after (datetime or int, optional): Value for the Retry-After
+
+    Keyword Args:
+        retry_after (datetime or int): Value for the Retry-After
             header. If a ``datetime`` object, will serialize as an HTTP date.
             Otherwise, a non-negative ``int`` is expected, representing the
             number of seconds to wait.
-        kwargs (optional): Same as for ``HTTPError``.
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
 
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        headers (dict): Extra headers to return in the
+            response to the client (default ``None``).
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (defaults to "API documentation
+            for this error").
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
     """
 
     def __init__(self, title, description, retry_after=None, **kwargs):
@@ -298,21 +638,52 @@ class HTTPRequestEntityTooLarge(HTTPError):
 class HTTPUriTooLong(HTTPError):
     """414 URI Too Long.
 
-    The server is refusing to process a request because the request-target is
-    longer than the server is willing to interpret.
+    The server is refusing to service the request because the request-
+    target is longer than the server is willing to interpret.
 
-    This usually occurs when the client is sending a GET request with long
-    query information, when the client has descended in a redirection loop
-    that points to a suffix of itself or when the server is under attack by a
-    client.
+    This rare condition is only likely to occur when a client has
+    improperly converted a POST request to a GET request with long query
+    information, when the client has descended into a "black hole" of
+    redirection (e.g., a redirected URI prefix that points to a suffix
+    of itself) or when the server is under attack by a client attempting
+    to exploit potential security holes.
 
-    (RFC 7231)
+    A 414 response is cacheable by default; i.e., unless otherwise
+    indicated by the method definition or explicit cache controls.
 
-    Args:
+    (See also: RFC 7231, Section 6.5.12)
+
+    Keyword Args:
         title (str): Error title (default '414 URI Too Long').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two (default ``None``).
-        kwargs (optional): Same as for ``HTTPError``.
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        headers (dict): Extra headers to return in the
+            response to the client (default ``None``).
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (defaults to "API documentation
+            for this error").
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
     """
 
     def __init__(self, title=None, description=None, **kwargs):
@@ -322,14 +693,48 @@ class HTTPUriTooLong(HTTPError):
 class HTTPUnsupportedMediaType(HTTPError):
     """415 Unsupported Media Type.
 
-    The client is trying to submit a resource encoded as an Internet media
-    type that the server does not support.
+    The origin server is refusing to service the request because the
+    payload is in a format not supported by this method on the target
+    resource.
+
+    The format problem might be due to the request's indicated Content-
+    Type or Content-Encoding, or as a result of inspecting the data
+    directly.
+
+    (See also: RFC 7231, Section 6.5.13)
 
     Args:
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-        kwargs (optional): Same as for ``HTTPError``.
 
+    Keyword Args:
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        headers (dict): Extra headers to return in the
+            response to the client (default ``None``).
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (defaults to "API documentation
+            for this error").
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
     """
 
     def __init__(self, description, **kwargs):
@@ -340,7 +745,19 @@ class HTTPUnsupportedMediaType(HTTPError):
 class HTTPRangeNotSatisfiable(NoRepresentation, HTTPError):
     """416 Range Not Satisfiable.
 
-    The requested range is not valid. See also: http://goo.gl/Qsa4EF
+    None of the ranges in the request's Range header field overlap the
+    current extent of the selected resource or that the set of ranges
+    requested has been rejected due to invalid ranges or an excessive
+    request of small or overlapping ranges.
+
+    For byte ranges, failing to overlap the current extent means that
+    the first-byte-pos of all of the byte-range-spec values were greater
+    than the current length of the selected representation. When this
+    status code is generated in response to a byte-range request, the
+    sender SHOULD generate a Content-Range header field specifying the
+    current length of the selected representation.
+
+    (See also: RFC 7233, Section 4.4)
 
     Args:
         resource_length: The maximum value for the last-byte-pos of a range
@@ -356,14 +773,51 @@ class HTTPRangeNotSatisfiable(NoRepresentation, HTTPError):
 class HTTPUnprocessableEntity(HTTPError):
     """422 Unprocessable Entity.
 
-    The request was well-formed but was unable to be followed due to semantic
-    errors. See also: http://www.ietf.org/rfc/rfc4918.
+    The server understands the content type of the request entity (hence
+    a 415 Unsupported Media Type status code is inappropriate), and the
+    syntax of the request entity is correct (thus a 400 Bad Request
+    status code is inappropriate) but was unable to process the
+    contained instructions.
+
+    For example, this error condition may occur if an XML request body
+    contains well-formed (i.e., syntactically correct), but semantically
+    erroneous, XML instructions.
+
+    (See also: RFC 4918, Section 11.2)
 
     Args:
         title (str): Error title (e.g., 'Missing title field').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-        kwargs (optional): Same as for ``HTTPError``.
+
+    Keyword Args:
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        headers (dict): Extra headers to return in the
+            response to the client (default ``None``).
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (defaults to "API documentation
+            for this error").
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
     """
 
     def __init__(self, title, description, **kwargs):
@@ -374,25 +828,54 @@ class HTTPUnprocessableEntity(HTTPError):
 class HTTPTooManyRequests(HTTPError):
     """429 Too Many Requests.
 
-    The user has sent too many requests in a given amount of time
-    ("rate limiting").
+    The user has sent too many requests in a given amount of time ("rate
+    limiting").
 
     The response representations SHOULD include details explaining the
     condition, and MAY include a Retry-After header indicating how long
     to wait before making a new request.
 
-    (RFC 6585)
+    Responses with the 429 status code MUST NOT be stored by a cache.
+
+    (See also: RFC 6585, Section 4)
 
     Args:
         title (str): Error title (e.g., 'Too Many Requests').
         description (str): Human-friendly description of the rate limit that
             was exceeded.
-        retry_after (datetime or int, optional): Value for the Retry-After
+
+    Keyword Args:
+        retry_after (datetime or int): Value for the Retry-After
             header. If a ``datetime`` object, will serialize as an HTTP date.
             Otherwise, a non-negative ``int`` is expected, representing the
             number of seconds to wait.
-        kwargs (optional): Same as for ``HTTPError``.
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
 
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        headers (dict): Extra headers to return in the
+            response to the client (default ``None``).
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (defaults to "API documentation
+            for this error").
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
     """
 
     def __init__(self, title, description, retry_after=None, **kwargs):
@@ -412,16 +895,59 @@ class HTTPTooManyRequests(HTTPError):
 class HTTPUnavailableForLegalReasons(OptionalRepresentation, HTTPError):
     """451 Unavailable For Legal Reasons.
 
-    This status code indicates that the server is denying access to the
-    resource as a consequence of a legal demand.
+    The server is denying access to the resource as a consequence of a
+    legal demand.
 
-    See also:
-    https://datatracker.ietf.org/doc/draft-ietf-httpbis-legally-restricted-status/
+    The server in question might not be an origin server. This type of
+    legal demand typically most directly affects the operations of ISPs
+    and search engines.
+
+    Responses using this status code SHOULD include an explanation, in
+    the response body, of the details of the legal demand: the party
+    making it, the applicable legislation or regulation, and what
+    classes of person and resource it applies to.
+
+    Note that in many cases clients can still access the denied resource
+    by using technical countermeasures such as a VPN or the Tor network.
+
+    A 451 response is cacheable by default; i.e., unless otherwise
+    indicated by the method definition or explicit cache controls.
+
+    (See also: RFC 7725, Section 3)
 
     Args:
         title (str): Error title (e.g., 'Legal reason: <reason>').
-        kwargs (optional): Same as for ``HTTPError``.
 
+    Keyword Args:
+        description (str): Human-friendly description of the error, along with
+            a helpful suggestion or two (default ``None``).
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        headers (dict): Extra headers to return in the
+            response to the client (default ``None``).
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (defaults to "API documentation
+            for this error").
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
     """
 
     def __init__(self, title, **kwargs):
@@ -432,11 +958,44 @@ class HTTPUnavailableForLegalReasons(OptionalRepresentation, HTTPError):
 class HTTPInternalServerError(HTTPError):
     """500 Internal Server Error.
 
+    The server encountered an unexpected condition that prevented it
+    from fulfilling the request.
+
+    (See also: RFC 7231, Section 6.6.1)
+
     Args:
         title (str): Error title (e.g., 'This Should Never Happen').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-        kwargs (optional): Same as for ``HTTPError``.
+
+    Keyword Args:
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        headers (dict): Extra headers to return in the
+            response to the client (default ``None``).
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (defaults to "API documentation
+            for this error").
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
 
     """
 
@@ -448,13 +1007,46 @@ class HTTPInternalServerError(HTTPError):
 class HTTPBadGateway(HTTPError):
     """502 Bad Gateway.
 
+    The server, while acting as a gateway or proxy, received an invalid
+    response from an inbound server it accessed while attempting to
+    fulfill the request.
+
+    (See also: RFC 7231, Section 6.6.3)
+
     Args:
         title (str): Error title, for
             example: 'Upstream Server is Unavailable'.
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-        kwargs (optional): Same as for ``HTTPError``.
 
+    Keyword Args:
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        headers (dict): Extra headers to return in the
+            response to the client (default ``None``).
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (defaults to "API documentation
+            for this error").
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
     """
 
     def __init__(self, title, description, **kwargs):
@@ -465,6 +1057,20 @@ class HTTPBadGateway(HTTPError):
 class HTTPServiceUnavailable(HTTPError):
     """503 Service Unavailable.
 
+    The server is currently unable to handle the request due to a
+    temporary overload or scheduled maintenance, which will likely be
+    alleviated after some delay.
+
+    The server MAY send a Retry-After header field to suggest an
+    appropriate amount of time for the client to wait before retrying
+    the request.
+
+    Note: The existence of the 503 status code does not imply that a
+    server has to use it when becoming overloaded. Some servers might
+    simply refuse the connection.
+
+    (See also: RFC 7231, Section 6.6.4)
+
     Args:
         title (str): Error title (e.g., 'Temporarily Unavailable').
         description (str): Human-friendly description of the error, along with
@@ -473,8 +1079,35 @@ class HTTPServiceUnavailable(HTTPError):
             ``datetime`` object, will serialize as an HTTP date. Otherwise,
             a non-negative ``int`` is expected, representing the number of
             seconds to wait.
-        kwargs (optional): Same as for ``HTTPError``.
 
+    Keyword Args:
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        headers (dict): Extra headers to return in the
+            response to the client (default ``None``).
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (defaults to "API documentation
+            for this error").
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
     """
 
     def __init__(self, title, description, retry_after, **kwargs):
@@ -492,13 +1125,42 @@ class HTTPServiceUnavailable(HTTPError):
 
 
 class HTTPInvalidHeader(HTTPBadRequest):
-    """A header in the request is invalid. Inherits from ``HTTPBadRequest``.
+    """400 Bad Request.
+
+    One of the headers in the request is invalid.
 
     Args:
         msg (str): A description of why the value is invalid.
-        header_name (str): The name of the header.
-        kwargs (optional): Same as for ``HTTPError``.
+        header_name (str): The name of the invalid header.
 
+    Keyword Args:
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        headers (dict): Extra headers to return in the
+            response to the client (default ``None``).
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (defaults to "API documentation
+            for this error").
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
     """
 
     def __init__(self, msg, header_name, **kwargs):
@@ -511,12 +1173,41 @@ class HTTPInvalidHeader(HTTPBadRequest):
 
 
 class HTTPMissingHeader(HTTPBadRequest):
-    """A header is missing from the request. Inherits from ``HTTPBadRequest``.
+    """400 Bad Request
+
+    A header is missing from the request.
 
     Args:
-        header_name (str): The name of the header.
-        kwargs (optional): Same as for ``HTTPError``.
+        header_name (str): The name of the missing header.
 
+    Keyword Args:
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        headers (dict): Extra headers to return in the
+            response to the client (default ``None``).
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (defaults to "API documentation
+            for this error").
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
     """
 
     def __init__(self, header_name, **kwargs):
@@ -528,16 +1219,44 @@ class HTTPMissingHeader(HTTPBadRequest):
 
 
 class HTTPInvalidParam(HTTPBadRequest):
-    """A parameter in the request is invalid. Inherits from ``HTTPBadRequest``.
+    """400 Bad Request
 
-    This error may refer to a parameter in a query string, form, or
-    document that was submitted with the request.
+    A parameter in the request is invalid. This error may refer to a
+    parameter in a query string, form, or document that was submitted
+    with the request.
 
     Args:
         msg (str): A description of the invalid parameter.
         param_name (str): The name of the parameter.
-        kwargs (optional): Same as for ``HTTPError``.
 
+    Keyword Args:
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        headers (dict): Extra headers to return in the
+            response to the client (default ``None``).
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (defaults to "API documentation
+            for this error").
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
     """
 
     def __init__(self, msg, param_name, **kwargs):
@@ -549,15 +1268,43 @@ class HTTPInvalidParam(HTTPBadRequest):
 
 
 class HTTPMissingParam(HTTPBadRequest):
-    """A parameter is missing from the request. Inherits from ``HTTPBadRequest``.
+    """400 Bad Request
 
-    This error may refer to a parameter in a query string, form, or
-    document that was submitted with the request.
+    A parameter is missing from the request. This error may refer to a
+    parameter in a query string, form, or document that was submitted
+    with the request.
 
     Args:
-        param_name (str): The name of the parameter.
-        kwargs (optional): Same as for ``HTTPError``.
+        param_name (str): The name of the missing parameter.
 
+    Keyword Args:
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        headers (dict): Extra headers to return in the
+            response to the client (default ``None``).
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (defaults to "API documentation
+            for this error").
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
     """
 
     def __init__(self, param_name, **kwargs):

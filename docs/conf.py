@@ -22,6 +22,7 @@ on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('.'))
 
 # Path to custom themes
 sys.path.append(os.path.abspath('_themes'))
@@ -39,6 +40,10 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
+
+    # Falcon-specific extensions
+    'ext.rfc',
+    'ext.doorway',
 ]
 
 # Add any paths that contain templates here, relative to this directory.

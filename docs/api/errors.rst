@@ -3,7 +3,7 @@
 Error Handling
 ==============
 
-When a request results in an error condition, you *could* manually set the
+When a request results in an error condition, you can manually set the
 error status, appropriate response headers, and even an error body using the
 ``resp`` object. However, Falcon tries to make things a bit easier and more
 consistent by providing a set of error classes you can raise from within
@@ -14,6 +14,22 @@ response.
 You may raise an instance of ``falcon.HTTPError`` directly, or use any one
 of a number of predefined error classes that try to be idiomatic in
 setting appropriate headers and bodies.
+
+All classes are available directly from the `falcon` package namespace::
+
+    import falcon
+
+    class MessageResource(object):
+        def on_get(self, req, resp):
+
+            # ...
+
+            raise falcon.HTTPBadRequest(
+                'TTL Out of Range',
+                'The message's TTL must be between 60 and 300 seconds, inclusive.'
+            )
+
+            # ...
 
 Base Class
 ----------
@@ -31,12 +47,13 @@ Predefined Errors
 -----------------
 
 .. automodule:: falcon
-    :members: HTTPInvalidHeader, HTTPMissingHeader,
+    :members: HTTPBadRequest,
+        HTTPInvalidHeader, HTTPMissingHeader,
         HTTPInvalidParam, HTTPMissingParam,
-        HTTPBadRequest, HTTPUnauthorized, HTTPForbidden, HTTPNotFound,
-        HTTPMethodNotAllowed, HTTPNotAcceptable, HTTPConflict,
-        HTTPLengthRequired, HTTPPreconditionFailed, HTTPRequestEntityTooLarge,
-        HTTPUriTooLong, HTTPUnsupportedMediaType, HTTPRangeNotSatisfiable,
+        HTTPUnauthorized, HTTPForbidden, HTTPNotFound, HTTPMethodNotAllowed,
+        HTTPNotAcceptable, HTTPConflict, HTTPLengthRequired,
+        HTTPPreconditionFailed, HTTPRequestEntityTooLarge, HTTPUriTooLong,
+        HTTPUnsupportedMediaType, HTTPRangeNotSatisfiable,
         HTTPUnprocessableEntity, HTTPTooManyRequests,
-        HTTPUnavailableForLegalReasons, HTTPInternalServerError,
-        HTTPBadGateway, HTTPServiceUnavailable
+        HTTPUnavailableForLegalReasons,
+        HTTPInternalServerError, HTTPBadGateway, HTTPServiceUnavailable
