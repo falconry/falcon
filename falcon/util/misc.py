@@ -95,7 +95,7 @@ def http_now():
 
     Returns:
         str: The current UTC time as an IMF-fixdate,
-            e.g., 'Tue, 15 Nov 1994 12:45:26 GMT'.
+        e.g., 'Tue, 15 Nov 1994 12:45:26 GMT'.
     """
 
     return dt_to_http(utcnow())
@@ -128,7 +128,7 @@ def http_date_to_dt(http_date, obs_date=False):
 
     Returns:
         datetime: A UTC datetime instance corresponding to the given
-            HTTP date.
+        HTTP date.
 
     Raises:
         ValueError: http_date doesn't match any of the available time formats
@@ -180,8 +180,8 @@ def to_query_str(params, comma_delimited_lists=True, prefix=True):
 
     Returns:
         str: A URI query string, including the '?' prefix (unless
-            `prefix` is ``False``), or an empty string if no params are
-            given (the ``dict`` is empty).
+        `prefix` is ``False``), or an empty string if no params are
+        given (the ``dict`` is empty).
     """
 
     if not params:
@@ -226,8 +226,8 @@ def get_bound_method(obj, method_name):
         method_name: Name of the method to retrieve.
 
     Returns:
-        Bound method, or ``None`` if the method does not exist on
-        the object.
+    Bound method, or ``None`` if the method does not exist on
+    the object.
 
     Raises:
         AttributeError: The method exists, but it isn't
