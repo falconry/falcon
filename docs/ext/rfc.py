@@ -62,3 +62,5 @@ def _on_process_docstring(app, what, name, obj, options, lines):
 
 def setup(app):
     app.connect('autodoc-process-docstring', _on_process_docstring)
+
+    return {'parallel_read_safe': True}
