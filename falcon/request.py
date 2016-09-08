@@ -617,8 +617,8 @@ class Request(object):
 
         Returns:
             bool: ``True`` if the client has indicated in the Accept header
-                that it accepts the specified media type. Otherwise, returns
-                ``False``.
+            that it accepts the specified media type. Otherwise, returns
+            ``False``.
         """
 
         accept = self.accept
@@ -644,8 +644,8 @@ class Request(object):
 
         Returns:
             str: The client's preferred media type, based on the Accept
-                header. Returns ``None`` if the client does not accept any
-                of the given types.
+            header. Returns ``None`` if the client does not accept any
+            of the given types.
         """
 
         try:
@@ -668,7 +668,7 @@ class Request(object):
 
         Returns:
             str: The value of the specified header if it exists, or ``None`` if
-                the header is not found and is not required.
+            the header is not found and is not required.
 
         Raises:
             HTTPBadRequest: The header was not found in the request, but
@@ -715,7 +715,7 @@ class Request(object):
 
         Returns:
             datetime: The value of the specified header if it exists,
-                or ``None`` if the header is not found and is not required.
+            or ``None`` if the header is not found and is not required.
 
         Raises:
             HTTPBadRequest: The header was not found in the request, but
@@ -766,7 +766,7 @@ class Request(object):
 
         Returns:
             str: The value of the param as a string, or ``None`` if param is
-                not found and is not required.
+            not found and is not required.
 
         Raises:
             HTTPBadRequest: A required param is missing from the request.
@@ -817,8 +817,8 @@ class Request(object):
 
         Returns:
             int: The value of the param if it is found and can be converted to
-                an integer. If the param is not found, returns ``None``, unless
-                `required` is ``True``.
+            an integer. If the param is not found, returns ``None``, unless
+            `required` is ``True``.
 
         Raises
             HTTPBadRequest: The param was not found in the request, even though
@@ -888,8 +888,8 @@ class Request(object):
 
         Returns:
             bool: The value of the param if it is found and can be converted
-                to a ``bool``. If the param is not found, returns ``None``
-                unless required is ``True``.
+            to a ``bool``. If the param is not found, returns ``None``
+            unless required is ``True``.
 
         Raises:
             HTTPBadRequest: A required param is missing from the request.
@@ -949,12 +949,12 @@ class Request(object):
 
         Returns:
             list: The value of the param if it is found. Otherwise, returns
-                ``None`` unless required is True. Empty list elements will be
-                discarded. For example, the following query strings would
-                both result in `['1', '3']`::
+            ``None`` unless required is True. Empty list elements will be
+            discarded. For example, the following query strings would
+            both result in `['1', '3']`::
 
-                    things=1,,3
-                    things=1&things=&things=3
+                things=1,,3
+                things=1&things=&things=3
 
         Raises:
             HTTPBadRequest: A required param is missing from the request.
@@ -1015,9 +1015,9 @@ class Request(object):
                 ``None``).
         Returns:
             datetime.date: The value of the param if it is found and can be
-                converted to a ``date`` according to the supplied format
-                string. If the param is not found, returns ``None`` unless
-                required is ``True``.
+            converted to a ``date`` according to the supplied format
+            string. If the param is not found, returns ``None`` unless
+            required is ``True``.
 
         Raises:
             HTTPBadRequest: A required param is missing from the request.
@@ -1057,7 +1057,7 @@ class Request(object):
 
         Returns:
             dict: The value of the param if it is found. Otherwise, returns
-                ``None`` unless required is ``True``.
+            ``None`` unless required is ``True``.
 
         Raises:
             HTTPBadRequest: A required param is missing from the request.

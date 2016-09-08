@@ -24,7 +24,7 @@ def prepare_middleware(middleware=None):
         middleware:  list (or object) of input middleware
 
     Returns:
-        A middleware list
+        list: A list of prepared middleware tuples
     """
 
     # PERF(kgriffs): do getattr calls once, in advance, so we don't

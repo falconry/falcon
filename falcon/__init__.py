@@ -47,7 +47,13 @@ from falcon.errors import *  # NOQA
 from falcon.redirects import *  # NOQA
 from falcon.http_error import HTTPError  # NOQA
 from falcon.http_status import HTTPStatus  # NOQA
+
+# NOTE(kgriffs): Explicitly import uri since the star import doesn't
+# grab modules by default. This is simpler and easier to maintain
+# vs. a large __all__ list in util/__init__.py
+import falcon.util.uri as uri  # NOQA
 from falcon.util import *  # NOQA
+
 from falcon.hooks import before, after  # NOQA
 from falcon.request import Request, RequestOptions  # NOQA
 from falcon.response import Response  # NOQA

@@ -13,7 +13,7 @@ imported directly into the front-door `falcon` module for convenience::
 
 Conversely, the `uri` module must be imported explicitly::
 
-    from falcon.util import uri
+    from falcon import uri
 
     some_uri = '...'
     decoded_uri = uri.decode(some_uri)

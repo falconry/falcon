@@ -482,7 +482,7 @@ class API(object):
             req: The request object.
 
         Returns:
-            A 3-member tuple consisting of a responder callable,
+            tuple: A 3-member tuple consisting of a responder callable,
             a ``dict`` containing parsed path fields (if any were specified in
             the matching route's URI template), and a reference to the
             responder's resource instance.
@@ -578,7 +578,7 @@ class API(object):
 
         Returns:
             bool: ``True`` if a handler was found and called for the
-                exception, ``False`` otherwise.
+            exception, ``False`` otherwise.
         """
 
         for err_type, err_handler in self._error_handlers:
@@ -611,7 +611,7 @@ class API(object):
                 when resp.stream is a file-like object (default None).
 
         Returns:
-            A two-member tuple of the form (iterable, content_length).
+            tuple: A two-member tuple of the form (iterable, content_length).
             The length is returned as ``None`` when unknown. The
             iterable is determined as follows:
 
