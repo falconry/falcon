@@ -83,7 +83,7 @@ class Body(object):
                 will be called to actually do the work.
 
         Returns:
-            Data read from the stream, as returned by `target`.
+            bytes: Data read from the stream, as returned by `target`.
 
         """
 
@@ -104,7 +104,7 @@ class Body(object):
                 Defaults to reading until EOF.
 
         Returns:
-            Data read from the stream.
+            bytes: Data read from the stream.
 
         """
 
@@ -118,7 +118,7 @@ class Body(object):
                 Defaults to reading until EOF.
 
         Returns:
-            Data read from the stream.
+            bytes: Data read from the stream.
 
         """
 
@@ -132,7 +132,7 @@ class Body(object):
                 Defaults to reading until EOF.
 
         Returns:
-            Data read from the stream.
+            bytes: Data read from the stream.
 
         """
 

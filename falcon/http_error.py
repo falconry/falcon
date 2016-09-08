@@ -131,7 +131,8 @@ class HTTPError(Exception):
                 error information (default ``dict``).
 
         Returns:
-            A dictionary populated with the error's title, description, etc.
+            dict: A dictionary populated with the error's title,
+            description, etc.
 
         """
 
@@ -154,7 +155,7 @@ class HTTPError(Exception):
         """Returns a pretty-printed JSON representation of the error.
 
         Returns:
-            A JSON document for the error.
+            str: A JSON document for the error.
 
         """
 
@@ -166,7 +167,7 @@ class HTTPError(Exception):
         """Returns an XML-encoded representation of the error.
 
         Returns:
-            An XML document for the error.
+            str: An XML document for the error.
 
         """
 

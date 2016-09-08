@@ -128,7 +128,7 @@ Args:
 
 Returns:
     str: An escaped version of `uri`, where all disallowed characters
-        have been percent-encoded.
+    have been percent-encoded.
 
 """
 
@@ -160,7 +160,7 @@ Args:
 
 Returns:
     str: An escaped version of `uri`, where all disallowed characters
-        have been percent-encoded.
+    have been percent-encoded.
 
 """
 
@@ -183,8 +183,8 @@ if six.PY2:
 
         Returns:
             str: A decoded URL. Will be of type ``unicode`` on Python 2 IFF the
-                URL contained escaped non-ASCII characters, in which case
-                UTF-8 is assumed per RFC 3986.
+            URL contained escaped non-ASCII characters, in which case
+            UTF-8 is assumed per RFC 3986.
 
         """
 
@@ -318,8 +318,8 @@ def parse_query_string(query_string, keep_blank_qs_values=False,
 
     Returns:
         dict: A dictionary of (*name*, *value*) pairs, one per query
-            parameter. Note that *value* may be a single ``str``, or a
-            ``list`` of ``str``.
+        parameter. Note that *value* may be a single ``str``, or a
+        ``list`` of ``str``.
 
     Raises:
         TypeError: `query_string` was not a ``str``.
@@ -390,9 +390,9 @@ def parse_host(host, default_port=None):
 
     Returns:
         tuple: A parsed (*host*, *port*) tuple from the given
-            host string, with the port converted to an ``int``.
-            If the host string does not specify a port, `default_port` is
-            used instead.
+        host string, with the port converted to an ``int``.
+        If the host string does not specify a port, `default_port` is
+        used instead.
 
     """
 
