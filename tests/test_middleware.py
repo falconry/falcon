@@ -11,8 +11,11 @@ context = {'executed_methods': []}
 
 class CaptureResponseMiddleware(object):
 
-    def process_response(self, req, resp, resource):
+    def process_response(self, req, resp, resource, req_succeeded):
+        self.req = req
         self.resp = resp
+        self.resource = resource
+        self.req_succeeded = req_succeeded
 
 
 class RequestTimeMiddleware(object):
@@ -25,9 +28,10 @@ class RequestTimeMiddleware(object):
         global context
         context['mid_time'] = datetime.utcnow()
 
-    def process_response(self, req, resp, resource):
+    def process_response(self, req, resp, resource, req_succeeded):
         global context
         context['end_time'] = datetime.utcnow()
+        context['req_succeeded'] = req_succeeded
 
 
 class TransactionIdMiddleware(object):
@@ -35,6 +39,9 @@ class TransactionIdMiddleware(object):
     def process_request(self, req, resp):
         global context
         context['transaction_id'] = 'unique-req-id'
+
+    def process_response(self, req, resp, resource):
+        pass
 
 
 class ExecutedFirstMiddleware(object):
@@ -49,10 +56,17 @@ class ExecutedFirstMiddleware(object):
         context['executed_methods'].append(
             '{0}.{1}'.format(self.__class__.__name__, 'process_resource'))
 
+    # NOTE(kgriffs): This also tests that the framework can continue to
+    # call process_response() methods that do not have a 'req_succeeded'
+    # arg.
     def process_response(self, req, resp, resource):
         global context
         context['executed_methods'].append(
             '{0}.{1}'.format(self.__class__.__name__, 'process_response'))
+
+        context['req'] = req
+        context['resp'] = resp
+        context['resource'] = resource
 
 
 class ExecutedLastMiddleware(ExecutedFirstMiddleware):
@@ -110,6 +124,7 @@ class TestRequestTimeMiddleware(TestMiddleware):
         self.assertIn('start_time', context)
         self.assertNotIn('mid_time', context)
         self.assertIn('end_time', context)
+        self.assertFalse(context['req_succeeded'])
 
     def test_add_invalid_middleware(self):
         """Test than an invalid class can not be added as middleware"""
@@ -147,6 +162,7 @@ class TestRequestTimeMiddleware(TestMiddleware):
         body = self.simulate_json_request(self.test_route)
         self.assertEqual(_EXPECTED_BODY, body)
         self.assertEqual(self.srmock.status, falcon.HTTP_200)
+
         self.assertIn('start_time', context)
         self.assertIn('mid_time', context)
         self.assertIn('end_time', context)
@@ -154,6 +170,8 @@ class TestRequestTimeMiddleware(TestMiddleware):
                         'process_resource not executed after request')
         self.assertTrue(context['end_time'] >= context['start_time'],
                         'process_response not executed after request')
+
+        self.assertTrue(context['req_succeeded'])
 
 
 class TestTransactionIdMiddleware(TestMiddleware):
@@ -194,6 +212,16 @@ class TestSeveralMiddlewares(TestMiddleware):
         self.assertTrue(context['end_time'] >= context['start_time'],
                         'process_response not executed after request')
 
+    def test_legacy_middleware_called_with_correct_args(self):
+        global context
+        self.api = falcon.API(middleware=[ExecutedFirstMiddleware()])
+        self.api.add_route(self.test_route, MiddlewareClassResource())
+
+        self.simulate_request(self.test_route)
+        self.assertIsInstance(context['req'], falcon.Request)
+        self.assertIsInstance(context['resp'], falcon.Response)
+        self.assertIsInstance(context['resource'], MiddlewareClassResource)
+
     def test_middleware_execution_order(self):
         global context
         self.api = falcon.API(middleware=[ExecutedFirstMiddleware(),
@@ -220,6 +248,8 @@ class TestSeveralMiddlewares(TestMiddleware):
         """Test that error in inner middleware leaves"""
         global context
 
+        context['req_succeeded'] = []
+
         class RaiseStatusMiddleware(object):
             def process_response(self, req, resp, resource):
                 raise falcon.HTTPStatus(falcon.HTTP_201)
@@ -229,10 +259,12 @@ class TestSeveralMiddlewares(TestMiddleware):
                 raise falcon.HTTPError(falcon.HTTP_748)
 
         class ProcessResponseMiddleware(object):
-            def process_response(self, req, resp, resource):
+            def process_response(self, req, resp, resource, req_succeeded):
                 context['executed_methods'].append('process_response')
+                context['req_succeeded'].append(req_succeeded)
 
-        self.api = falcon.API(middleware=[RaiseErrorMiddleware(),
+        self.api = falcon.API(middleware=[ProcessResponseMiddleware(),
+                                          RaiseErrorMiddleware(),
                                           ProcessResponseMiddleware(),
                                           RaiseStatusMiddleware(),
                                           ProcessResponseMiddleware()])
@@ -242,8 +274,9 @@ class TestSeveralMiddlewares(TestMiddleware):
 
         self.assertEqual(self.srmock.status, falcon.HTTP_748)
 
-        expected_methods = ['process_response', 'process_response']
+        expected_methods = ['process_response'] * 3
         self.assertEqual(context['executed_methods'], expected_methods)
+        self.assertEqual(context['req_succeeded'], [True, False, False])
 
     def test_inner_mw_throw_exception(self):
         """Test that error in inner middleware leaves"""
@@ -474,6 +507,13 @@ class TestErrorHandling(TestMiddleware):
 
         composed_body = json.loads(self.mw.resp.body)
         self.assertEqual(composed_body['title'], self.srmock.status)
+
+        self.assertFalse(self.mw.req_succeeded)
+
+        # NOTE(kgriffs): Sanity-check the other params passed to
+        # process_response()
+        self.assertIsInstance(self.mw.req, falcon.Request)
+        self.assertIsInstance(self.mw.resource, MiddlewareClassResource)
 
     def test_http_status_raised_from_error_handler(self):
         def _http_error_handler(error, req, resp, params):

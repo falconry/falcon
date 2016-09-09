@@ -47,7 +47,7 @@ Falcon's middleware interface is defined as follows:
                     method as keyword arguments.
             """
 
-        def process_response(self, req, resp, resource):
+        def process_response(self, req, resp, resource, req_succeeded):
             """Post-processing of the response (after routing).
 
             Args:
@@ -56,6 +56,9 @@ Falcon's middleware interface is defined as follows:
                 resource: Resource object to which the request was
                     routed. May be None if no route was found
                     for the request.
+                req_succeeded: True if no exceptions were raised while
+                    the framework processed and routed the request;
+                    otherwise False.
             """
 
 .. Tip::
