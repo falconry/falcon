@@ -1,8 +1,4 @@
 import io
-import threading
-from wsgiref import simple_server
-
-import requests
 
 import falcon
 from falcon import request_helpers
@@ -64,42 +60,21 @@ class TestRequestBody(testing.TestBase):
 
         self.assertEqual(stream.tell(), expected_len)
 
-    def test_read_socket_body(self):
-        expected_body = testing.rand_string(SIZE_1_KB / 2, SIZE_1_KB)
+    def test_bounded_stream_property_empty_body(self):
+        """Test that we can get a bounded stream outside of wsgiref."""
 
-        def server():
-            class Echo(object):
-                def on_post(self, req, resp):
-                    # wsgiref socket._fileobject blocks when len not given,
-                    # but Falcon is smarter than that. :D
-                    body = req.stream.read()
-                    resp.body = body
+        environ = testing.create_environ()
+        req = falcon.Request(environ)
 
-                def on_put(self, req, resp):
-                    # wsgiref socket._fileobject blocks when len too long,
-                    # but Falcon should work around that for me.
-                    body = req.stream.read(req.content_length + 1)
-                    resp.body = body
+        bounded_stream = req.bounded_stream
 
-            api = falcon.API()
-            api.add_route('/echo', Echo())
+        # NOTE(kgriffs): Verify that we aren't creating a new object
+        # each time the property is called. Also ensures branch
+        # coverage of the property implementation.
+        assert bounded_stream is req.bounded_stream
 
-            httpd = simple_server.make_server('127.0.0.1', 8989, api)
-            httpd.serve_forever()
-
-        thread = threading.Thread(target=server)
-        thread.daemon = True
-        thread.start()
-
-        # Let it boot
-        thread.join(1)
-
-        url = 'http://127.0.0.1:8989/echo'
-        resp = requests.post(url, data=expected_body)
-        self.assertEqual(resp.text, expected_body)
-
-        resp = requests.put(url, data=expected_body)
-        self.assertEqual(resp.text, expected_body)
+        data = bounded_stream.read()
+        self.assertEqual(len(data), 0)
 
     def test_body_stream_wrapper(self):
         data = testing.rand_string(SIZE_1_KB / 2, SIZE_1_KB)

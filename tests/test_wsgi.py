@@ -7,25 +7,70 @@ try:
 except ImportError:
     pass  # Jython
 
+import pytest
 import requests
-from testtools.matchers import Equals, MatchesRegex
 
 import falcon
+from falcon.request_helpers import BoundedStream
 import falcon.testing as testing
 
 _SERVER_HOST = 'localhost'
 _SERVER_PORT = 9809
 _SERVER_BASE_URL = 'http://{0}:{1}/'.format(_SERVER_HOST, _SERVER_PORT)
+_SIZE_1_KB = 1024
 
 
-def _is_iterable(thing):
-    try:
-        for i in thing:
-            break
+@pytest.mark.skipif(
+    # NOTE(kgriffs): Jython does not support the multiprocessing
+    # module. We could alternatively implement these tests
+    # using threads, but then we have to force a garbage
+    # collection in between each test in order to make
+    # the server relinquish its socket, and the gc module
+    # doesn't appear to do anything under Jython.
 
-        return True
-    except:
-        return False
+    'java' in sys.platform,
+    reason='Incompatible with Jython'
+)
+@pytest.mark.usefixtures('_setup_wsgi_server')
+class TestWSGIServer(object):
+
+    def test_get(self):
+        resp = requests.get(_SERVER_BASE_URL)
+        assert resp.status_code == 200
+        assert resp.text == '127.0.0.1'
+
+    def test_put(self):
+        body = '{}'
+        resp = requests.put(_SERVER_BASE_URL, data=body)
+        assert resp.status_code == 200
+        assert resp.text == '{}'
+
+    def test_head_405(self):
+        body = '{}'
+        resp = requests.head(_SERVER_BASE_URL, data=body)
+        assert resp.status_code == 405
+
+    def test_post(self):
+        body = testing.rand_string(_SIZE_1_KB / 2, _SIZE_1_KB)
+        resp = requests.post(_SERVER_BASE_URL, data=body)
+        assert resp.status_code == 200
+        assert resp.text == body
+
+    def test_post_invalid_content_length(self):
+        headers = {'Content-Length': 'invalid'}
+        resp = requests.post(_SERVER_BASE_URL, headers=headers)
+        assert resp.status_code == 200
+        assert resp.text == ''
+
+    def test_post_read_bounded_stream(self):
+        body = testing.rand_string(_SIZE_1_KB / 2, _SIZE_1_KB)
+        resp = requests.post(_SERVER_BASE_URL + 'bucket', data=body)
+        assert resp.status_code == 200
+        assert resp.text == body
+
+    def test_post_read_bounded_stream_no_body(self):
+        resp = requests.post(_SERVER_BASE_URL + 'bucket')
+        assert not resp.text
 
 
 def _run_server(stop_event):
@@ -34,7 +79,7 @@ def _run_server(stop_event):
             resp.body = req.remote_addr
 
         def on_post(self, req, resp):
-            resp.body = req.stream.read(1000)
+            resp.body = req.stream.read(_SIZE_1_KB)
 
         def on_put(self, req, resp):
             # NOTE(kgriffs): Test that reading past the end does
@@ -44,8 +89,36 @@ def _run_server(stop_event):
 
             resp.body = b''.join(req_body)
 
+    class Bucket(object):
+        def on_post(self, req, resp):
+            # NOTE(kgriffs): The framework automatically detects
+            # wsgiref's input object type and wraps it; we'll probably
+            # do away with this at some point, but for now we
+            # verify the functionality,
+            assert isinstance(req.stream, BoundedStream)
+
+            # NOTE(kgriffs): Ensure we are reusing the same object for
+            # the sake of efficiency and to ensure a shared state of the
+            # stream. (only in the case that we have decided to
+            # automatically wrap the WSGI input object, i.e. when
+            # running under wsgiref or similar).
+            assert req.stream is req.bounded_stream
+
+            # NOTE(kgriffs): This would normally block when
+            # Content-Length is 0 and the WSGI input object.
+            # BoundedStream fixes that. This is just a sanity check to
+            # make sure req.bounded_stream is what we think it is;
+            # BoundedStream itself has its own unit tests in
+            # test_request_body.py
+            resp.body = req.bounded_stream.read()
+
+            # NOTE(kgriffs): No need to also test the same read() for
+            # req.stream, since we already asserted they are the same
+            # objects.
+
     api = application = falcon.API()
     api.add_route('/', Things())
+    api.add_route('/bucket', Bucket())
 
     server = make_server(_SERVER_HOST, _SERVER_PORT, application)
 
@@ -53,103 +126,29 @@ def _run_server(stop_event):
         server.handle_request()
 
 
-class TestWSGIInterface(testing.TestBase):
+@pytest.fixture
+def _setup_wsgi_server():
+    stop_event = multiprocessing.Event()
+    process = multiprocessing.Process(
+        target=_run_server,
+        args=(stop_event,)
+    )
 
-    def test_srmock(self):
-        mock = testing.StartResponseMock()
-        mock(falcon.HTTP_200, ())
+    process.start()
 
-        self.assertEqual(falcon.HTTP_200, mock.status)
-        self.assertEqual(None, mock.exc_info)
+    # NOTE(kgriffs): Let the server start up
+    time.sleep(0.2)
 
-        mock = testing.StartResponseMock()
-        exc_info = sys.exc_info()
-        mock(falcon.HTTP_200, (), exc_info)
+    yield
 
-        self.assertEqual(exc_info, mock.exc_info)
+    stop_event.set()
 
-    def test_pep3333(self):
-        api = falcon.API()
-        mock = testing.StartResponseMock()
+    # NOTE(kgriffs): Pump the request handler loop in case execution
+    # made it to the next server.handle_request() before we sent the
+    # event.
+    try:
+        requests.get(_SERVER_BASE_URL)
+    except Exception:
+        pass  # Thread already exited
 
-        # Simulate a web request (normally done though a WSGI server)
-        response = api(testing.create_environ(), mock)
-
-        # Verify that the response is iterable
-        self.assertTrue(_is_iterable(response))
-
-        # Make sure start_response was passed a valid status string
-        self.assertIs(mock.call_count, 1)
-        self.assertTrue(isinstance(mock.status, str))
-        self.assertThat(mock.status, MatchesRegex('^\d+[a-zA-Z\s]+$'))
-
-        # Verify headers is a list of tuples, each containing a pair of strings
-        self.assertTrue(isinstance(mock.headers, list))
-        if len(mock.headers) != 0:
-            header = mock.headers[0]
-            self.assertTrue(isinstance(header, tuple))
-            self.assertThat(len(header), Equals(2))
-            self.assertTrue(isinstance(header[0], str))
-            self.assertTrue(isinstance(header[1], str))
-
-
-class TestWSGIReference(testing.TestBase):
-
-    def before(self):
-        if 'java' in sys.platform:
-            # NOTE(kgriffs): Jython does not support the multiprocessing
-            # module. We could alternatively implement these tests
-            # using threads, but then we have to force a garbage
-            # collection in between each test in order to make
-            # the server relinquish its socket, and the gc module
-            # doesn't appear to do anything under Jython.
-            self.skip('Incompatible with Jython')
-
-        self._stop_event = multiprocessing.Event()
-        self._process = multiprocessing.Process(target=_run_server,
-                                                args=(self._stop_event,))
-        self._process.start()
-
-        # NOTE(kgriffs): Let the server start up
-        time.sleep(0.2)
-
-    def after(self):
-        self._stop_event.set()
-
-        # NOTE(kgriffs): Pump the request handler loop in case execution
-        # made it to the next server.handle_request() before we sent the
-        # event.
-        try:
-            requests.get(_SERVER_BASE_URL)
-        except Exception:
-            pass  # Thread already exited
-
-        self._process.join()
-
-    def test_wsgiref_get(self):
-        resp = requests.get(_SERVER_BASE_URL)
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.text, '127.0.0.1')
-
-    def test_wsgiref_put(self):
-        body = '{}'
-        resp = requests.put(_SERVER_BASE_URL, data=body)
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.text, '{}')
-
-    def test_wsgiref_head_405(self):
-        body = '{}'
-        resp = requests.head(_SERVER_BASE_URL, data=body)
-        self.assertEqual(resp.status_code, 405)
-
-    def test_wsgiref_post(self):
-        body = '{}'
-        resp = requests.post(_SERVER_BASE_URL, data=body)
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.text, '{}')
-
-    def test_wsgiref_post_invalid_content_length(self):
-        headers = {'Content-Length': 'invalid'}
-        resp = requests.post(_SERVER_BASE_URL, headers=headers)
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.text, '')
+    process.join()

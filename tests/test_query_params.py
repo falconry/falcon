@@ -12,14 +12,14 @@ import falcon.testing as testing
 class _TestQueryParams(testing.TestBase):
 
     def before(self):
-        self.resource = testing.TestResource()
+        self.resource = testing.SimpleTestResource()
         self.api.add_route('/', self.resource)
 
     def test_none(self):
         query_string = ''
         self.simulate_request('/', query_string=query_string)
 
-        req = self.resource.req
+        req = self.resource.captured_req
         store = {}
         self.assertIs(req.get_param('marker'), None)
         self.assertIs(req.get_param('limit', store), None)
@@ -32,7 +32,7 @@ class _TestQueryParams(testing.TestBase):
         query_string = 'marker='
         self.simulate_request('/', query_string=query_string)
 
-        req = self.resource.req
+        req = self.resource.captured_req
         self.assertIs(req.get_param('marker'), None)
 
         store = {}
@@ -43,7 +43,7 @@ class _TestQueryParams(testing.TestBase):
         query_string = 'marker=deadbeef&limit=25'
         self.simulate_request('/', query_string=query_string)
 
-        req = self.resource.req
+        req = self.resource.captured_req
         store = {}
         self.assertEqual(req.get_param('marker', store=store) or 'nada',
                          'deadbeef')
@@ -56,7 +56,7 @@ class _TestQueryParams(testing.TestBase):
         query_string = 'id=23,42&q=%e8%b1%86+%e7%93%a3'
         self.simulate_request('/', query_string=query_string)
 
-        req = self.resource.req
+        req = self.resource.captured_req
 
         # NOTE(kgriffs): For lists, get_param will return one of the
         # elements, but which one it will choose is undefined.
@@ -71,7 +71,7 @@ class _TestQueryParams(testing.TestBase):
         query_string = 'id=23,42,,&id=2'
         self.simulate_request('/', query_string=query_string)
 
-        req = self.resource.req
+        req = self.resource.captured_req
 
         self.assertEqual(req.params['id'], [u'23,42,,', u'2'])
         self.assertIn(req.get_param('id'), [u'23,42,,', u'2'])
@@ -83,7 +83,7 @@ class _TestQueryParams(testing.TestBase):
         query_string = 'id=23,42,,&id=2'
         self.simulate_request('/', query_string=query_string)
 
-        req = self.resource.req
+        req = self.resource.captured_req
 
         self.assertEqual(req.params['id'], [u'23', u'42', u'2'])
         self.assertIn(req.get_param('id'), [u'23', u'42', u'2'])
@@ -102,7 +102,7 @@ class _TestQueryParams(testing.TestBase):
 
         self.simulate_request('/', query_string=query_string)
 
-        req = self.resource.req
+        req = self.resource.captured_req
 
         self.assertIn(req.get_param('colors'), 'red,green,blue')
         self.assertEqual(req.get_param_as_list('colors'), [u'red,green,blue'])
@@ -124,7 +124,7 @@ class _TestQueryParams(testing.TestBase):
         self.simulate_request('/', query_string=query_string)
         self.assertEqual(self.srmock.status, falcon.HTTP_200)
 
-        req = self.resource.req
+        req = self.resource.captured_req
         self.assertEqual(req.get_param('x'), '% % %')
         self.assertEqual(req.get_param('y'), 'peregrine')
         self.assertEqual(req.get_param('z'), '%a%z%zz%1 e')
@@ -135,7 +135,7 @@ class _TestQueryParams(testing.TestBase):
                         '_thing=42&_charset_=utf-8')
         self.simulate_request('/', query_string=query_string)
 
-        req = self.resource.req
+        req = self.resource.captured_req
         self.assertEqual(req.get_param('p'), '0')
         self.assertEqual(req.get_param('p1'), '23')
         self.assertEqual(req.get_param('2p'), 'foo')
@@ -153,7 +153,7 @@ class _TestQueryParams(testing.TestBase):
         query_string = ''
         self.simulate_request('/', query_string=query_string)
 
-        req = self.resource.req
+        req = self.resource.captured_req
 
         try:
             getattr(req, method_name)('marker', required=True)
@@ -168,7 +168,7 @@ class _TestQueryParams(testing.TestBase):
         query_string = 'marker=deadbeef&limit=25'
         self.simulate_request('/', query_string=query_string)
 
-        req = self.resource.req
+        req = self.resource.captured_req
 
         try:
             req.get_param_as_int('marker')
@@ -230,7 +230,7 @@ class _TestQueryParams(testing.TestBase):
         query_string = 'marker=deadbeef&pos=-7'
         self.simulate_request('/', query_string=query_string)
 
-        req = self.resource.req
+        req = self.resource.captured_req
         self.assertEqual(req.get_param_as_int('pos'), -7)
 
         self.assertEqual(
@@ -260,7 +260,7 @@ class _TestQueryParams(testing.TestBase):
                         't1=True&f1=False&t2=yes&f2=no&blank&one=1&zero=0')
         self.simulate_request('/', query_string=query_string)
 
-        req = self.resource.req
+        req = self.resource.captured_req
         self.assertRaises(falcon.HTTPBadRequest, req.get_param_as_bool,
                           'bogus')
 
@@ -296,7 +296,7 @@ class _TestQueryParams(testing.TestBase):
             query_string='blank&blank2=',
         )
 
-        req = self.resource.req
+        req = self.resource.captured_req
         self.assertEqual(req.get_param('blank'), '')
         self.assertEqual(req.get_param('blank2'), '')
         self.assertRaises(falcon.HTTPInvalidParam, req.get_param_as_bool,
@@ -316,7 +316,7 @@ class _TestQueryParams(testing.TestBase):
                         '&thing_two=1&thing_two=&thing_two=3')
         self.simulate_request('/', query_string=query_string)
 
-        req = self.resource.req
+        req = self.resource.captured_req
 
         # NOTE(kgriffs): For lists, get_param will return one of the
         # elements, but which one it will choose is undefined.
@@ -366,7 +366,7 @@ class _TestQueryParams(testing.TestBase):
             query_string=query_string
         )
 
-        req = self.resource.req
+        req = self.resource.captured_req
 
         # NOTE(kgriffs): For lists, get_param will return one of the
         # elements, but which one it will choose is undefined.
@@ -412,7 +412,7 @@ class _TestQueryParams(testing.TestBase):
         query_string = 'coord=1.4,13,15.1&limit=100&things=4,,1'
         self.simulate_request('/', query_string=query_string)
 
-        req = self.resource.req
+        req = self.resource.captured_req
 
         # NOTE(kgriffs): For lists, get_param will return one of the
         # elements, but which one it will choose is undefined.
@@ -443,7 +443,7 @@ class _TestQueryParams(testing.TestBase):
         query_string = 'ant=4&bee=3&cat=2&dog=1'
         self.simulate_request('/', query_string=query_string)
 
-        req = self.resource.req
+        req = self.resource.captured_req
         self.assertEqual(
             sorted(req.params.items()),
             [('ant', '4'), ('bee', '3'), ('cat', '2'), ('dog', '1')])
@@ -452,7 +452,7 @@ class _TestQueryParams(testing.TestBase):
         query_string = 'ant=1&ant=2&bee=3&cat=6&cat=5&cat=4'
         self.simulate_request('/', query_string=query_string)
 
-        req = self.resource.req
+        req = self.resource.captured_req
         # By definition, we cannot guarantee which of the multiple keys will
         # be returned by .get_param().
         self.assertIn(req.get_param('ant'), ('1', '2'))
@@ -464,20 +464,20 @@ class _TestQueryParams(testing.TestBase):
     def test_multiple_keys_as_bool(self):
         query_string = 'ant=true&ant=yes&ant=True'
         self.simulate_request('/', query_string=query_string)
-        req = self.resource.req
+        req = self.resource.captured_req
         self.assertEqual(req.get_param_as_bool('ant'), True)
 
     def test_multiple_keys_as_int(self):
         query_string = 'ant=1&ant=2&ant=3'
         self.simulate_request('/', query_string=query_string)
-        req = self.resource.req
+        req = self.resource.captured_req
         self.assertIn(req.get_param_as_int('ant'), (1, 2, 3))
 
     def test_multiple_form_keys_as_list(self):
         query_string = 'ant=1&ant=2&bee=3&cat=6&cat=5&cat=4'
         self.simulate_request('/', query_string=query_string)
 
-        req = self.resource.req
+        req = self.resource.captured_req
         # There are two 'ant' keys.
         self.assertEqual(req.get_param_as_list('ant'), ['1', '2'])
         # There is only one 'bee' key..
@@ -489,14 +489,14 @@ class _TestQueryParams(testing.TestBase):
         date_value = '2015-04-20'
         query_string = 'thedate={0}'.format(date_value)
         self.simulate_request('/', query_string=query_string)
-        req = self.resource.req
+        req = self.resource.captured_req
         self.assertEqual(req.get_param_as_date('thedate'),
                          date(2015, 4, 20))
 
     def test_get_date_missing_param(self):
         query_string = 'notthedate=2015-04-20'
         self.simulate_request('/', query_string=query_string)
-        req = self.resource.req
+        req = self.resource.captured_req
         self.assertEqual(req.get_param_as_date('thedate'),
                          None)
 
@@ -505,7 +505,7 @@ class _TestQueryParams(testing.TestBase):
         query_string = 'thedate={0}'.format(date_value)
         format_string = '%Y%m%d'
         self.simulate_request('/', query_string=query_string)
-        req = self.resource.req
+        req = self.resource.captured_req
         self.assertEqual(req.get_param_as_date('thedate',
                          format_string=format_string),
                          date(2015, 4, 20))
@@ -514,7 +514,7 @@ class _TestQueryParams(testing.TestBase):
         date_value = '2015-04-20'
         query_string = 'thedate={0}'.format(date_value)
         self.simulate_request('/', query_string=query_string)
-        req = self.resource.req
+        req = self.resource.captured_req
         store = {}
         req.get_param_as_date('thedate', store=store)
         self.assertNotEqual(len(store), 0)
@@ -524,7 +524,7 @@ class _TestQueryParams(testing.TestBase):
         query_string = 'thedate={0}'.format(date_value)
         format_string = '%Y%m%d'
         self.simulate_request('/', query_string=query_string)
-        req = self.resource.req
+        req = self.resource.captured_req
         self.assertRaises(HTTPInvalidParam, req.get_param_as_date,
                           'thedate', format_string=format_string)
 
@@ -532,7 +532,7 @@ class _TestQueryParams(testing.TestBase):
         payload_dict = {'foo': 'bar'}
         query_string = 'payload={0}'.format(json.dumps(payload_dict))
         self.simulate_request('/', query_string=query_string)
-        req = self.resource.req
+        req = self.resource.captured_req
         self.assertEqual(req.get_param_as_dict('payload'),
                          payload_dict)
 
@@ -540,7 +540,7 @@ class _TestQueryParams(testing.TestBase):
         payload_dict = {'foo': 'bar'}
         query_string = 'notthepayload={0}'.format(json.dumps(payload_dict))
         self.simulate_request('/', query_string=query_string)
-        req = self.resource.req
+        req = self.resource.captured_req
         self.assertEqual(req.get_param_as_dict('payload'),
                          None)
 
@@ -548,7 +548,7 @@ class _TestQueryParams(testing.TestBase):
         payload_dict = {'foo': 'bar'}
         query_string = 'payload={0}'.format(json.dumps(payload_dict))
         self.simulate_request('/', query_string=query_string)
-        req = self.resource.req
+        req = self.resource.captured_req
         store = {}
         req.get_param_as_dict('payload', store=store)
         self.assertNotEqual(len(store), 0)
@@ -557,7 +557,7 @@ class _TestQueryParams(testing.TestBase):
         payload_dict = 'foobar'
         query_string = 'payload={0}'.format(payload_dict)
         self.simulate_request('/', query_string=query_string)
-        req = self.resource.req
+        req = self.resource.captured_req
         self.assertRaises(HTTPInvalidParam, req.get_param_as_dict,
                           'payload')
 
@@ -568,23 +568,42 @@ class PostQueryParams(_TestQueryParams):
         self.api.req_options.auto_parse_form_urlencoded = True
 
     def simulate_request(self, path, query_string, **kwargs):
-        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+
+        headers = kwargs.setdefault('headers', {})
+        headers['Content-Type'] = 'application/x-www-form-urlencoded'
+
         super(PostQueryParams, self).simulate_request(
-            path, body=query_string, headers=headers, **kwargs)
+            path,
+            method='POST',
+            body=query_string,
+            **kwargs
+        )
 
     def test_non_ascii(self):
         value = u'\u8c46\u74e3'
         query_string = b'q=' + value.encode('utf-8')
         self.simulate_request('/', query_string=query_string)
 
-        req = self.resource.req
+        req = self.resource.captured_req
+        self.assertIs(req.get_param('q'), None)
+
+    def test_empty_body(self):
+        self.simulate_request('/', query_string=None)
+
+        req = self.resource.captured_req
+        self.assertIs(req.get_param('q'), None)
+
+    def test_empty_body_no_content_length(self):
+        self.simulate_request('/', query_string=None)
+
+        req = self.resource.captured_req
         self.assertIs(req.get_param('q'), None)
 
     def test_explicitly_disable_auto_parse(self):
         self.api.req_options.auto_parse_form_urlencoded = False
         self.simulate_request('/', query_string='q=42')
 
-        req = self.resource.req
+        req = self.resource.captured_req
         self.assertIs(req.get_param('q'), None)
 
 
@@ -596,11 +615,11 @@ class GetQueryParams(_TestQueryParams):
 
 class PostQueryParamsDefaultBehavior(testing.TestBase):
     def test_dont_auto_parse_by_default(self):
-        self.resource = testing.TestResource()
+        self.resource = testing.SimpleTestResource()
         self.api.add_route('/', self.resource)
 
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         self.simulate_request('/', body='q=42', headers=headers)
 
-        req = self.resource.req
+        req = self.resource.captured_req
         self.assertIs(req.get_param('q'), None)

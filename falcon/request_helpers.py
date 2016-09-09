@@ -36,7 +36,7 @@ def header_property(wsgi_name):
     return property(fget)
 
 
-class Body(object):
+class BoundedStream(object):
     """Wrap *wsgi.input* streams to make them more robust.
 
     ``socket._fileobject`` and ``io.BufferedReader`` are sometimes used
@@ -74,11 +74,11 @@ class Body(object):
         """Helper function for proxing reads to the underlying stream.
 
         Args:
-            size (int): Maximum number of bytes/characters to read.
-                Will be coerced, if None or -1, to `self.stream_len`. Will
-                likewise be coerced if greater than `self.stream_len`, so
-                that if the stream doesn't follow standard io semantics,
-                the read won't block.
+            size (int): Maximum number of bytes to read. Will be
+                coerced, if None or -1, to the number of remaining bytes
+                in the stream. Will likewise be coerced if greater than
+                the number of remaining bytes, to avoid making a
+                blocking call to the wrapped stream.
             target (callable): Once `size` has been fixed up, this function
                 will be called to actually do the work.
 
@@ -137,3 +137,7 @@ class Body(object):
         """
 
         return self._read(hint, self.stream.readlines)
+
+
+# NOTE(kgriffs): Alias for backwards-compat
+Body = BoundedStream

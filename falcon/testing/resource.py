@@ -66,9 +66,10 @@ class SimpleTestResource(object):
     as needed to test middleware, hooks, and the Falcon framework
     itself.
 
-    Only the ``on_get()`` responder is implemented; when adding
-    additional responders in child classes, they can be decorated
-    with the :py:meth:`falcon.testing.capture_responder_args` hook in
+    Only noop ``on_get()`` and ``on_post()`` responders are implemented;
+    when overriding these, or adding additional responders in child
+    classes, they can be decorated with the
+    :py:meth:`falcon.testing.capture_responder_args` hook in
     order to capture the *req*, *resp*, and *params* arguments that
     are passed to the responder. Responders may also be decorated with
     the :py:meth:`falcon.testing.set_resp_defaults` hook in order to
@@ -108,9 +109,18 @@ class SimpleTestResource(object):
         else:
             self._default_body = body
 
+        self.captured_req = None
+        self.captured_resp = None
+        self.captured_kwargs = None
+
     @falcon.before(capture_responder_args)
     @falcon.before(set_resp_defaults)
     def on_get(self, req, resp, **kwargs):
+        pass
+
+    @falcon.before(capture_responder_args)
+    @falcon.before(set_resp_defaults)
+    def on_post(self, req, resp, **kwargs):
         pass
 
 

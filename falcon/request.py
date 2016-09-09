@@ -50,10 +50,6 @@ TRUE_STRINGS = ('true', 'True', 'yes', '1')
 FALSE_STRINGS = ('false', 'False', 'no', '0')
 WSGI_CONTENT_HEADERS = ('CONTENT_TYPE', 'CONTENT_LENGTH')
 
-
-_maybe_wrap_wsgi_stream = True
-
-
 # PERF(kgriffs): Avoid an extra namespace lookup when using these functions
 strptime = datetime.strptime
 now = datetime.now
@@ -165,7 +161,38 @@ class Request(object):
             the header is missing.
         content_length (int): Value of the Content-Length header converted
             to an ``int``, or ``None`` if the header is missing.
-        stream: File-like object for reading the body of the request, if any.
+        stream: File-like input object for reading the body of the
+            request, if any. Since this object is provided by the WSGI
+            server itself, rather than by Falcon, it may behave
+            differently depending on how you host your app. For example,
+            attempting to read more bytes than are expected (as
+            determined by the Content-Length header) may or may not
+            block indefinitely. It's a good idea to test your WSGI
+            server to find out how it behaves.
+
+            This can be particulary problematic when a request body is
+            expected, but none is given. In this case, the following
+            call blocks under certain WSGI servers::
+
+                # Blocks if Content-Length is 0
+                data = req.stream.read()
+
+            The workaround is fairly straightforward, if verbose::
+
+                # If Content-Length happens to be 0, or the header is
+                # missing altogether, this will not block.
+                data = req.stream.read(req.content_length or 0)
+
+            Alternatively, when passing the stream directly to a
+            consumer, it may be necessary to branch off the
+            value of the Content-Length header::
+
+                if req.content_length:
+                    doc = json.load(req.stream)
+
+            For a slight performance cost, you may instead wish to use
+            :py:attr:`bounded_stream`, which wraps the native WSGI
+            input object to normalize its behavior.
 
             Note:
                 If an HTML form is POSTed to the API using the
@@ -175,6 +202,23 @@ class Request(object):
                 will consume `stream` in order to parse the parameters
                 and merge them into the query string parameters. In this
                 case, the stream will be left at EOF.
+
+        bounded_stream: File-like wrapper around `stream` to normalize
+            certain differences between the native input objects
+            employed by different WSGI servers. In particular,
+            `bounded_stream` is aware of the expected Content-Length of
+            the body, and will never block on out-of-bounds reads,
+            assuming the client does not stall while transmitting the
+            data to the server.
+
+            For example, the following will not block when
+            Content-Length is 0 or the header is missing altogether::
+
+                data = req.bounded_stream.read()
+
+            This is also safe::
+
+                doc = json.load(req.stream)
 
         date (datetime): Value of the Date header, converted to a
             ``datetime`` instance. The header value is assumed to
@@ -238,6 +282,7 @@ class Request(object):
         'path',
         'query_string',
         'stream',
+        '_bounded_stream',
         'context',
         '_wsgierrors',
         'options',
@@ -249,14 +294,14 @@ class Request(object):
     # Child classes may override this
     context_type = None
 
-    def __init__(self, env, options=None):
-        global _maybe_wrap_wsgi_stream
+    _wsgi_input_type_known = False
+    _always_wrap_wsgi_input = False
 
+    def __init__(self, env, options=None):
         self.env = env
         self.options = options if options else RequestOptions()
 
         self._wsgierrors = env['wsgi.errors']
-        self.stream = env['wsgi.input']
         self.method = env['REQUEST_METHOD']
 
         # Normalize path
@@ -305,21 +350,30 @@ class Request(object):
 
         # NOTE(kgriffs): Wrap wsgi.input if needed to make read() more robust,
         # normalizing semantics between, e.g., gunicorn and wsgiref.
-        if _maybe_wrap_wsgi_stream:
-            if isinstance(self.stream, (NativeStream, InputWrapper,)):
-                self._wrap_stream()
-            else:
-                # PERF(kgriffs): If self.stream does not need to be wrapped
-                # this time, it never needs to be wrapped since the server
-                # will continue using the same type for wsgi.input.
-                _maybe_wrap_wsgi_stream = False
+        if not Request._wsgi_input_type_known:
+            Request._always_wrap_wsgi_input = isinstance(
+                env['wsgi.input'],
+                (NativeStream, InputWrapper)
+            )
+
+            Request._wsgi_input_type_known = True
+
+        if Request._always_wrap_wsgi_input:
+            # TODO(kgriffs): In Falcon 2.0, stop wrapping stream since it is
+            # less useful now that we have bounded_stream.
+            self.stream = self._get_wrapped_wsgi_input()
+            self._bounded_stream = self.stream
+        else:
+            self.stream = env['wsgi.input']
+            self._bounded_stream = None  # Lazy wrapping
 
         # PERF(kgriffs): Technically, we should spend a few more
         # cycles and parse the content type for real, but
         # this heuristic will work virtually all the time.
         if (self.options.auto_parse_form_urlencoded and
                 self.content_type is not None and
-                'application/x-www-form-urlencoded' in self.content_type):
+                'application/x-www-form-urlencoded' in self.content_type and
+                self.method == 'POST'):
             self._parse_form_urlencoded()
 
         if self.context_type is None:
@@ -390,6 +444,13 @@ class Request(object):
             raise errors.HTTPInvalidHeader(msg, 'Content-Length')
 
         return value_as_int
+
+    @property
+    def bounded_stream(self):
+        if self._bounded_stream is None:
+            self._bounded_stream = self._get_wrapped_wsgi_input()
+
+        return self._bounded_stream
 
     @property
     def date(self):
@@ -739,9 +800,12 @@ class Request(object):
 
         Note:
             If an HTML form is POSTed to the API using the
-            *application/x-www-form-urlencoded* media type, the
-            parameters from the request body will be merged into
-            the query string parameters.
+            *application/x-www-form-urlencoded* media type, Falcon can
+            automatically parse the parameters from the request body
+            and merge them into the query string parameters. To enable
+            this functionality, set
+            :py:attr:`~.RequestOptions.auto_parse_form_urlencoded` to
+            ``True`` via :any:`API.req_options`.
 
             If a key appears more than once in the form data, one of the
             values will be returned as a string, but it is undefined which
@@ -1115,7 +1179,7 @@ class Request(object):
     # Helpers
     # ------------------------------------------------------------------------
 
-    def _wrap_stream(self):
+    def _get_wrapped_wsgi_input(self):
         try:
             content_length = self.content_length or 0
 
@@ -1126,18 +1190,14 @@ class Request(object):
             # but it had an invalid value. Assume no content.
             content_length = 0
 
-        self.stream = helpers.Body(self.stream, content_length)
+        return helpers.BoundedStream(self.env['wsgi.input'], content_length)
 
     def _parse_form_urlencoded(self):
-        # NOTE(kgriffs): This assumes self.stream has been patched
-        # above in the case of wsgiref, so that self.content_length
-        # is not needed. Normally we just avoid accessing
-        # self.content_length, because it is a little expensive
-        # to call. We could cache self.content_length, but the
-        # overhead to do that won't usually be helpful, since
-        # content length will only ever be read once per
-        # request in most cases.
-        body = self.stream.read()
+        content_length = self.content_length
+        if not content_length:
+            return
+
+        body = self.stream.read(content_length)
 
         # NOTE(kgriffs): According to http://goo.gl/6rlcux the
         # body should be US-ASCII. Enforcing this also helps
@@ -1190,7 +1250,10 @@ class Request(object):
 
 # PERF: To avoid typos and improve storage space and speed over a dict.
 class RequestOptions(object):
-    """This class is a container for ``Request`` options.
+    """Defines a set of configurable request options.
+
+    An instance of this class is exposed via :any:`API.req_options` for
+    configuring certain :py:class:`~.Request` behaviors.
 
     Attributes:
         keep_blank_qs_values (bool): Set to ``True`` to keep query string

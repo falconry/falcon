@@ -104,8 +104,8 @@ class API(object):
             See also: :ref:`Routing <routing>`.
 
     Attributes:
-        req_options (RequestOptions): A set of behavioral options related to
-            incoming requests.
+        req_options: A set of behavioral options related to incoming
+            requests. See also: :py:class:`~.RequestOptions`
     """
 
     # PERF(kgriffs): Reference via self since that is faster than
