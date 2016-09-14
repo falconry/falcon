@@ -16,8 +16,8 @@
 
 from falcon.errors import HTTPBadRequest
 from falcon.errors import HTTPNotFound
+from falcon.errors import HTTPMethodNotAllowed
 from falcon.status_codes import HTTP_204
-from falcon.status_codes import HTTP_405
 
 
 def path_not_found(req, resp, **kwargs):
@@ -38,11 +38,9 @@ def create_method_not_allowed(allowed_methods):
             returned in the Allow header.
 
     """
-    allowed = ', '.join(allowed_methods)
-
     def method_not_allowed(req, resp, **kwargs):
-        resp.status = HTTP_405
-        resp.set_header('Allow', allowed)
+        """Raise 405 HTTPMethodNotAllowed error"""
+        raise HTTPMethodNotAllowed(allowed_methods)
 
     return method_not_allowed
 

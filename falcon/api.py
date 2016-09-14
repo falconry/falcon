@@ -189,7 +189,7 @@ class API(object):
                 # next-hop child resource. In that case, the object
                 # being asked to dispatch to its child will raise an
                 # HTTP exception signalling the problem, e.g. a 404.
-                responder, params, resource = self._get_responder(req)
+                responder, params, resource, req.uri_template = self._get_responder(req)
             except Exception as ex:
                 if not self._handle_exception(ex, req, resp, params):
                     raise
@@ -508,11 +508,18 @@ class API(object):
 
         path = req.path
         method = req.method
+        uri_template = None
 
         route = self._router.find(path)
 
         if route is not None:
-            resource, method_map, params = route
+            try:
+                resource, method_map, params, uri_template = route
+            except ValueError:
+                # NOTE(kgriffs): Older routers may not return the
+                # template. But for performance reasons they should at
+                # least return None if they don't support it.
+                resource, method_map, params = route
         else:
             # NOTE(kgriffs): Older routers may indicate that no route
             # was found by returning (None, None, None). Therefore, we
@@ -538,7 +545,7 @@ class API(object):
             else:
                 responder = falcon.responders.path_not_found
 
-        return (responder, params, resource)
+        return (responder, params, resource, uri_template)
 
     def _compose_status_response(self, req, resp, http_status):
         """Composes a response for the given HTTPStatus instance."""
