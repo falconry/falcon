@@ -24,14 +24,15 @@ A custom router is any class that implements the following interface:
             """
 
         def find(self, uri):
-            """Search for a route that matches the given URI.
+            """Search for a route that matches the given partial URI.
 
             Args:
-                uri (str): Request URI to match to a route.
+                uri(str): The requested path to route
 
             Returns:
-                tuple: A 3-member tuple composed of (resource, method_map, params)
-                    or ``None`` if no route is found.
+                tuple: A 4-member tuple composed of (resource, method_map,
+                    params, uri_template), or ``None`` if no route matches
+                    the requested path
             """
 
 A custom routing engine may be specified when instantiating

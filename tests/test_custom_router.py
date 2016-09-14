@@ -21,14 +21,20 @@ class TestCustomRouter(testing.TestBase):
     def test_custom_router_find_should_be_used(self):
 
         def resource(req, resp, **kwargs):
-            resp.body = '{"status": "ok"}'
+            resp.body = '{{"uri_template": "{0}"}}'.format(req.uri_template)
 
         class CustomRouter(object):
             def __init__(self):
                 self.reached_backwards_compat = False
 
             def find(self, uri):
-                if uri == '/test':
+                if uri == '/test/42':
+                    return resource, {'GET': resource}, {}, '/test/{id}'
+
+                if uri == '/test/42/no-uri-template':
+                    return resource, {'GET': resource}, {}, None
+
+                if uri == '/test/42/uri-template/backwards-compat':
                     return resource, {'GET': resource}, {}
 
                 if uri == '/404/backwards-compat':
@@ -39,8 +45,14 @@ class TestCustomRouter(testing.TestBase):
 
         router = CustomRouter()
         self.api = falcon.API(router=router)
-        body = self.simulate_request('/test')
-        self.assertEqual(body, [b'{"status": "ok"}'])
+        body = self.simulate_request('/test/42')
+        self.assertEqual(body, [b'{"uri_template": "/test/{id}"}'])
+
+        body = self.simulate_request('/test/42/no-uri-template')
+        self.assertEqual(body, [b'{"uri_template": "None"}'])
+
+        body = self.simulate_request('/test/42/uri-template/backwards-compat')
+        self.assertEqual(body, [b'{"uri_template": "None"}'])
 
         for uri in ('/404', '/404/backwards-compat'):
             body = self.simulate_request(uri)
