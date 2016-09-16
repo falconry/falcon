@@ -27,7 +27,10 @@ from falcon.testing.helpers import create_environ
 from falcon.testing.srmock import StartResponseMock
 
 
-class TestBase(unittest.TestCase):
+# NOTE(kgriffs): Since this class is deprecated and we will be using it
+# less and less for Falcon's own tests, coverage may be reduced, hence
+# the pragma to ignore coverage errors from now on.
+class TestBase(unittest.TestCase):  # pragma nocover
     """Extends :py:mod:`unittest` to support WSGI functional testing.
 
     Warning:
