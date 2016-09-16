@@ -24,18 +24,18 @@ class TestRegressionCases(testing.TestBase):
     def test_versioned_url(self):
         self.router.add_route('/{version}/messages', {}, ResourceWithId(2))
 
-        resource, method_map, params = self.router.find('/v2/messages')
+        resource, __, __, __ = self.router.find('/v2/messages')
         self.assertEqual(resource.resource_id, 2)
 
         self.router.add_route('/v2', {}, ResourceWithId(1))
 
-        resource, method_map, params = self.router.find('/v2')
+        resource, __, __, __ = self.router.find('/v2')
         self.assertEqual(resource.resource_id, 1)
 
-        resource, method_map, params = self.router.find('/v2/messages')
+        resource, __, __, __ = self.router.find('/v2/messages')
         self.assertEqual(resource.resource_id, 2)
 
-        resource, method_map, params = self.router.find('/v1/messages')
+        resource, __, __, __ = self.router.find('/v1/messages')
         self.assertEqual(resource.resource_id, 2)
 
         route = self.router.find('/v1')
@@ -47,10 +47,10 @@ class TestRegressionCases(testing.TestBase):
         self.router.add_route(
             '/recipes/baking', {}, ResourceWithId(2))
 
-        resource, method_map, params = self.router.find('/recipes/baking/4242')
+        resource, __, __, __ = self.router.find('/recipes/baking/4242')
         self.assertEqual(resource.resource_id, 1)
 
-        resource, method_map, params = self.router.find('/recipes/baking')
+        resource, __, __, __ = self.router.find('/recipes/baking')
         self.assertEqual(resource.resource_id, 2)
 
         route = self.router.find('/recipes/grilling')
@@ -165,20 +165,20 @@ class TestComplexRouting(testing.TestBase):
     def test_override(self):
         self.router.add_route('/emojis/signs/0', {}, ResourceWithId(-1))
 
-        resource, method_map, params = self.router.find('/emojis/signs/0')
+        resource, __, __, __ = self.router.find('/emojis/signs/0')
         self.assertEqual(resource.resource_id, -1)
 
     def test_literal_segment(self):
-        resource, method_map, params = self.router.find('/emojis/signs/0')
+        resource, __, __, __ = self.router.find('/emojis/signs/0')
         self.assertEqual(resource.resource_id, 12)
 
-        resource, method_map, params = self.router.find('/emojis/signs/1')
+        resource, __, __, __ = self.router.find('/emojis/signs/1')
         self.assertEqual(resource.resource_id, 13)
 
-        resource, method_map, params = self.router.find('/emojis/signs/42')
+        resource, __, __, __ = self.router.find('/emojis/signs/42')
         self.assertEqual(resource.resource_id, 14)
 
-        resource, method_map, params = self.router.find('/emojis/signs/42/small')
+        resource, __, __, __ = self.router.find('/emojis/signs/42/small')
         self.assertEqual(resource.resource_id, 14.1)
 
         route = self.router.find('/emojis/signs/1/small')
@@ -204,18 +204,18 @@ class TestComplexRouting(testing.TestBase):
         self.assertIs(route, None)
 
     def test_literal(self):
-        resource, method_map, params = self.router.find('/user/memberships')
+        resource, __, __, __ = self.router.find('/user/memberships')
         self.assertEqual(resource.resource_id, 8)
 
     def test_variable(self):
-        resource, method_map, params = self.router.find('/teams/42')
+        resource, __, params, __ = self.router.find('/teams/42')
         self.assertEqual(resource.resource_id, 6)
         self.assertEqual(params, {'id': '42'})
 
-        resource, method_map, params = self.router.find('/emojis/signs/stop')
+        __, __, params, __ = self.router.find('/emojis/signs/stop')
         self.assertEqual(params, {'id': 'stop'})
 
-        resource, method_map, params = self.router.find('/gists/42/raw')
+        __, __, params, __ = self.router.find('/gists/42/raw')
         self.assertEqual(params, {'id': '42'})
 
     @ddt.data(
@@ -232,7 +232,7 @@ class TestComplexRouting(testing.TestBase):
     )
     @ddt.unpack
     def test_literal_vs_variable(self, path, expected_id):
-        resource, method_map, params = self.router.find(path)
+        resource, __, __, __ = self.router.find(path)
         self.assertEqual(resource.resource_id, expected_id)
 
     @ddt.data(
@@ -271,12 +271,12 @@ class TestComplexRouting(testing.TestBase):
         self.assertIs(route, None)
 
     def test_multivar(self):
-        resource, method_map, params = self.router.find(
+        resource, __, params, __ = self.router.find(
             '/repos/racker/falcon/commits')
         self.assertEqual(resource.resource_id, 4)
         self.assertEqual(params, {'org': 'racker', 'repo': 'falcon'})
 
-        resource, method_map, params = self.router.find(
+        resource, __, params, __ = self.router.find(
             '/repos/racker/falcon/compare/all')
         self.assertEqual(resource.resource_id, 11)
         self.assertEqual(params, {'org': 'racker', 'repo': 'falcon'})
@@ -285,7 +285,7 @@ class TestComplexRouting(testing.TestBase):
     @ddt.unpack
     def test_complex(self, url_postfix, resource_id):
         uri = '/repos/racker/falcon/compare/johndoe:master...janedoe:dev'
-        resource, method_map, params = self.router.find(uri + url_postfix)
+        resource, __, params, __ = self.router.find(uri + url_postfix)
 
         self.assertEqual(resource.resource_id, resource_id)
         self.assertEqual(params, {
@@ -297,11 +297,14 @@ class TestComplexRouting(testing.TestBase):
             'branch1': 'dev',
         })
 
-    @ddt.data(('', 16), ('/full', 17))
+    @ddt.data(
+        ('', 16, '/repos/{org}/{repo}/compare/{usr0}:{branch0}'),
+        ('/full', 17, '/repos/{org}/{repo}/compare/{usr0}:{branch0}/full')
+    )
     @ddt.unpack
-    def test_complex_alt(self, url_postfix, resource_id):
-        uri = '/repos/falconry/falcon/compare/johndoe:master'
-        resource, method_map, params = self.router.find(uri + url_postfix)
+    def test_complex_alt(self, url_postfix, resource_id, expected_template):
+        uri = '/repos/falconry/falcon/compare/johndoe:master' + url_postfix
+        resource, __, params, uri_template = self.router.find(uri)
 
         self.assertEqual(resource.resource_id, resource_id)
         self.assertEqual(params, {
@@ -310,3 +313,4 @@ class TestComplexRouting(testing.TestBase):
             'usr0': 'johndoe',
             'branch0': 'master',
         })
+        self.assertEqual(uri_template, expected_template)

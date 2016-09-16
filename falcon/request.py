@@ -64,6 +64,8 @@ class Request(object):
     Args:
         env (dict): A WSGI environment dict passed in from the server. See
             also PEP-3333.
+
+    Keyword Arguments
         options (dict): Set of global options passed from the API handler.
 
     Attributes:
@@ -136,7 +138,6 @@ class Request(object):
                 opposed to a class), the function is called like a method of
                 the current Request instance. Therefore the first argument is
                 the Request instance itself (self).
-
         uri (str): The fully-qualified URI for the request.
         url (str): alias for `uri`.
         relative_uri (str): The path + query string portion of the full URI.
@@ -144,6 +145,13 @@ class Request(object):
             string).
         query_string (str): Query string portion of the request URL, without
             the preceding '?' character.
+        uri_template (str): The template for the route that was matched for
+            this request. May be ``None`` if the request has not yet been
+            routed, as would be the case for `process_request()` middleware
+            methods. May also be ``None`` if your app uses a custom routing
+            engine and the engine does not provide the URI template when
+            resolving a route.
+
         user_agent (str): Value of the User-Agent header, or ``None`` if the
             header is missing.
         accept (str): Value of the Accept header, or '*/*' if the header is
@@ -289,6 +297,7 @@ class Request(object):
         '_cookies',
         '_cached_access_route',
         '__dict__',
+        'uri_template',
     )
 
     # Child classes may override this
@@ -303,6 +312,8 @@ class Request(object):
 
         self._wsgierrors = env['wsgi.errors']
         self.method = env['REQUEST_METHOD']
+
+        self.uri_template = None
 
         # Normalize path
         path = env['PATH_INFO']
