@@ -4,7 +4,7 @@ Testing
 =======
 
 .. automodule:: falcon.testing
-    :members: Result,
+    :members: Result, Cookie,
         simulate_request, simulate_get, simulate_head, simulate_post,
         simulate_put, simulate_options, simulate_patch, simulate_delete,
         TestClient, TestCase, SimpleTestResource, StartResponseMock,

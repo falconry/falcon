@@ -14,6 +14,8 @@
 
 """Utilities for the Request class."""
 
+import io
+
 
 def header_property(wsgi_name):
     """Creates a read-only header property.
@@ -36,7 +38,7 @@ def header_property(wsgi_name):
     return property(fget)
 
 
-class BoundedStream(object):
+class BoundedStream(io.IOBase):
     """Wrap *wsgi.input* streams to make them more robust.
 
     ``socket._fileobject`` and ``io.BufferedReader`` are sometimes used
@@ -96,6 +98,18 @@ class BoundedStream(object):
         self._bytes_remaining -= size
         return target(size)
 
+    def readable(self):
+        """Always returns ``True``."""
+        return True
+
+    def seekable(self):
+        """Always returns ``False``."""
+        return False
+
+    def writeable(self):
+        """Always returns ``False``."""
+        return False
+
     def read(self, size=None):
         """Read from the stream.
 
@@ -137,6 +151,11 @@ class BoundedStream(object):
         """
 
         return self._read(hint, self.stream.readlines)
+
+    def write(self, data):
+        """Always raises IOError; writing is not supported."""
+
+        raise IOError('Stream is not writeable')
 
 
 # NOTE(kgriffs): Alias for backwards-compat

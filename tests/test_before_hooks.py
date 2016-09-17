@@ -173,11 +173,13 @@ class ZooResource(object):
         self.fish = fish
 
 
-class TestHooks(testing.TestBase):
+class TestHooks(testing.TestCase):
 
-    def before(self):
+    def setUp(self):
+        super(TestHooks, self).setUp()
+
         self.resource = WrappedRespondersResource()
-        self.api.add_route(self.test_route, self.resource)
+        self.api.add_route('/', self.resource)
 
         self.field_resource = TestFieldResource()
         self.api.add_route('/queue/{id}/messages', self.field_resource)
@@ -190,76 +192,73 @@ class TestHooks(testing.TestBase):
 
     def test_multiple_resource_hooks(self):
         zoo_resource = ZooResource()
-        self.api.add_route(self.test_route, zoo_resource)
+        self.api.add_route('/', zoo_resource)
 
-        self.simulate_request(self.test_route)
+        result = self.simulate_get('/')
 
-        self.assertEqual('not fluffy', self.srmock.headers_dict['X-Frogs'])
-        self.assertEqual('fluffy', self.srmock.headers_dict['X-Bunnies'])
+        self.assertEqual('not fluffy', result.headers['X-Frogs'])
+        self.assertEqual('fluffy', result.headers['X-Bunnies'])
 
         self.assertEqual('fluffy', zoo_resource.bunnies)
         self.assertEqual('not fluffy', zoo_resource.frogs)
         self.assertEqual('slippery', zoo_resource.fish)
 
     def test_input_validator(self):
-        self.simulate_request(self.test_route, method='PUT')
-        self.assertEqual(falcon.HTTP_400, self.srmock.status)
+        result = self.simulate_put('/')
+        self.assertEqual(result.status_code, 400)
 
     def test_param_validator(self):
-        self.simulate_request(self.test_route, query_string='limit=10',
-                              body='{}')
-        self.assertEqual(falcon.HTTP_200, self.srmock.status)
+        result = self.simulate_get('/', query_string='limit=10', body='{}')
+        self.assertEqual(result.status_code, 200)
 
-        self.simulate_request(self.test_route, query_string='limit=101')
-        self.assertEqual(falcon.HTTP_400, self.srmock.status)
+        result = self.simulate_get('/', query_string='limit=101')
+        self.assertEqual(result.status_code, 400)
 
     def test_field_validator(self):
-        self.simulate_request('/queue/10/messages')
-        self.assertEqual(falcon.HTTP_200, self.srmock.status)
+        result = self.simulate_get('/queue/10/messages')
+        self.assertEqual(result.status_code, 200)
         self.assertEqual(self.field_resource.id, 10)
 
-        self.simulate_request('/queue/bogus/messages')
-        self.assertEqual(falcon.HTTP_400, self.srmock.status)
+        result = self.simulate_get('/queue/bogus/messages')
+        self.assertEqual(result.status_code, 400)
 
     def test_parser(self):
-        self.simulate_request(self.test_route,
-                              body=json.dumps({'animal': 'falcon'}))
-
+        self.simulate_get('/', body=json.dumps({'animal': 'falcon'}))
         self.assertEqual(self.resource.doc, {'animal': 'falcon'})
 
     def test_wrapped_resource(self):
-        self.simulate_request('/wrapped', method='PATCH')
-        self.assertEqual(falcon.HTTP_405, self.srmock.status)
+        result = self.simulate_patch('/wrapped')
+        self.assertEqual(result.status_code, 405)
 
-        self.simulate_request('/wrapped', query_string='limit=10')
-        self.assertEqual(falcon.HTTP_200, self.srmock.status)
+        result = self.simulate_get('/wrapped', query_string='limit=10')
+        self.assertEqual(result.status_code, 200)
         self.assertEqual('fuzzy', self.wrapped_resource.bunnies)
 
-        self.simulate_request('/wrapped', method='HEAD')
-        self.assertEqual(falcon.HTTP_200, self.srmock.status)
+        result = self.simulate_head('/wrapped')
+        self.assertEqual(result.status_code, 200)
         self.assertEqual('fuzzy', self.wrapped_resource.bunnies)
 
-        self.simulate_request('/wrapped', method='POST')
-        self.assertEqual(falcon.HTTP_200, self.srmock.status)
+        result = self.simulate_post('/wrapped')
+        self.assertEqual(result.status_code, 200)
         self.assertEqual('slippery', self.wrapped_resource.fish)
 
-        self.simulate_request('/wrapped', query_string='limit=101')
-        self.assertEqual(falcon.HTTP_400, self.srmock.status)
-        self.assertEqual('fuzzy', self.wrapped_resource.bunnies)
+        result = self.simulate_get('/wrapped', query_string='limit=101')
+        self.assertEqual(result.status_code, 400)
+        self.assertEqual(self.wrapped_resource.bunnies, 'fuzzy')
 
     def test_wrapped_resource_with_hooks_aware_of_resource(self):
-        self.simulate_request('/wrapped_aware', method='PATCH')
-        self.assertEqual(falcon.HTTP_405, self.srmock.status)
+        result = self.simulate_patch('/wrapped_aware')
+        self.assertEqual(result.status_code, 405)
 
-        self.simulate_request('/wrapped_aware', query_string='limit=10')
-        self.assertEqual(falcon.HTTP_200, self.srmock.status)
-        self.assertEqual('fuzzy', self.wrapped_aware_resource.bunnies)
+        result = self.simulate_get('/wrapped_aware', query_string='limit=10')
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual(self.wrapped_aware_resource.bunnies, 'fuzzy')
 
         for method in ('HEAD', 'PUT', 'POST'):
-            self.simulate_request('/wrapped_aware', method=method)
-            self.assertEqual(falcon.HTTP_200, self.srmock.status)
-            self.assertEqual('fuzzy', self.wrapped_aware_resource.bunnies)
+            result = self.simulate_request(method, '/wrapped_aware')
+            self.assertEqual(result.status_code, 200)
+            self.assertEqual(self.wrapped_aware_resource.bunnies, 'fuzzy')
 
-        self.simulate_request('/wrapped_aware', query_string='limit=101')
-        self.assertEqual(falcon.HTTP_400, self.srmock.status)
-        self.assertEqual('fuzzy', self.wrapped_aware_resource.bunnies)
+        result = self.simulate_get('/wrapped_aware', query_string='limit=101')
+        self.assertEqual(result.status_code, 400)
+        self.assertEqual(self.wrapped_aware_resource.bunnies, 'fuzzy')

@@ -1,10 +1,8 @@
 from datetime import datetime, timedelta, tzinfo
 import re
-import sys
 
-import ddt
+import pytest
 from six.moves.http_cookies import Morsel
-from testtools.matchers import LessThan
 
 import falcon
 import falcon.testing as testing
@@ -59,167 +57,241 @@ class CookieResourceMaxAgeFloatString:
             'foostring', 'bar', max_age='15', secure=False, http_only=False)
 
 
-@ddt.ddt
-class TestCookies(testing.TestBase):
+@pytest.fixture(scope='module')
+def client():
+    app = falcon.API()
+    app.add_route('/', CookieResource())
+    app.add_route('/test-convert', CookieResourceMaxAgeFloatString())
 
-    #
-    # Response
-    #
+    return testing.TestClient(app)
 
-    def test_response_base_case(self):
-        self.resource = CookieResource()
-        self.api.add_route(self.test_route, self.resource)
-        self.simulate_request(self.test_route, method='GET')
-        if sys.version_info >= (3, 4, 3):
-            value = 'foo=bar; Domain=example.com; HttpOnly; Path=/; Secure'
-        else:
-            value = 'foo=bar; Domain=example.com; httponly; Path=/; secure'
-        self.assertIn(('set-cookie', value), self.srmock.headers)
 
-    def test_response_complex_case(self):
-        self.resource = CookieResource()
-        self.api.add_route(self.test_route, self.resource)
-        self.simulate_request(self.test_route, method='HEAD')
-        if sys.version_info >= (3, 4, 3):
-            value = 'foo=bar; HttpOnly; Max-Age=300; Secure'
-        else:
-            value = 'foo=bar; httponly; Max-Age=300; secure'
-        self.assertIn(('set-cookie', value), self.srmock.headers)
-        if sys.version_info >= (3, 4, 3):
-            value = 'bar=baz; Secure'
-        else:
-            value = 'bar=baz; secure'
-        self.assertIn(('set-cookie', value), self.srmock.headers)
-        self.assertNotIn(('set-cookie', 'bad=cookie'), self.srmock.headers)
+# =====================================================================
+# Response
+# =====================================================================
 
-    def test_cookie_expires_naive(self):
-        self.resource = CookieResource()
-        self.api.add_route(self.test_route, self.resource)
-        self.simulate_request(self.test_route, method='POST')
-        self.assertIn(
-            ('set-cookie', 'foo=bar; expires=Sat, 01 Jan 2050 00:00:00 GMT'),
-            self.srmock.headers)
 
-    def test_cookie_expires_aware(self):
-        self.resource = CookieResource()
-        self.api.add_route(self.test_route, self.resource)
-        self.simulate_request(self.test_route, method='PUT')
-        self.assertIn(
-            ('set-cookie', 'foo=bar; expires=Fri, 31 Dec 2049 23:00:00 GMT'),
-            self.srmock.headers)
+def test_response_base_case(client):
+    result = client.simulate_get('/')
 
-    def test_cookies_setable(self):
-        resp = falcon.Response()
+    cookie = result.cookies['foo']
+    assert cookie.name == 'foo'
+    assert cookie.value == 'bar'
+    assert cookie.domain == 'example.com'
+    assert cookie.http_only
 
-        self.assertIsNone(resp._cookies)
+    # NOTE(kgriffs): Explicitly test for None to ensure
+    # falcon.testing.Cookie is returning exactly what we
+    # expect. Apps using falcon.testing.Cookie can be a
+    # bit more cavalier if they wish.
+    assert cookie.max_age is None
+    assert cookie.expires is None
 
-        resp.set_cookie('foo', 'wrong-cookie', max_age=301)
-        resp.set_cookie('foo', 'bar', max_age=300)
-        morsel = resp._cookies['foo']
+    assert cookie.path == '/'
+    assert cookie.secure
 
-        self.assertIsInstance(morsel, Morsel)
-        self.assertEqual(morsel.key, 'foo')
-        self.assertEqual(morsel.value, 'bar')
-        self.assertEqual(morsel['max-age'], 300)
 
-    def test_cookie_max_age_float_and_string(self):
-        # Falcon implicitly converts max-age values to integers,
-        # for ensuring RFC 6265-compliance of the attribute value.
-        self.resource = CookieResourceMaxAgeFloatString()
-        self.api.add_route(self.test_route, self.resource)
-        self.simulate_request(self.test_route, method='GET')
-        self.assertIn(
-            ('set-cookie', 'foofloat=bar; Max-Age=15'), self.srmock.headers)
-        self.assertIn(
-            ('set-cookie', 'foostring=bar; Max-Age=15'), self.srmock.headers)
+def test_response_complex_case(client):
+    result = client.simulate_head('/')
 
-    def test_response_unset_cookie(self):
-        resp = falcon.Response()
-        resp.unset_cookie('bad')
-        resp.set_cookie('bad', 'cookie', max_age=300)
-        resp.unset_cookie('bad')
+    assert len(result.cookies) == 3
 
-        morsels = list(resp._cookies.values())
-        self.assertEqual(len(morsels), 1)
+    cookie = result.cookies['foo']
+    assert cookie.value == 'bar'
+    assert cookie.domain is None
+    assert cookie.expires is None
+    assert cookie.http_only
+    assert cookie.max_age == 300
+    assert cookie.path is None
+    assert cookie.secure
 
-        bad_cookie = morsels[0]
-        self.assertEqual(bad_cookie['expires'], -1)
+    cookie = result.cookies['bar']
+    assert cookie.value == 'baz'
+    assert cookie.domain is None
+    assert cookie.expires is None
+    assert not cookie.http_only
+    assert cookie.max_age is None
+    assert cookie.path is None
+    assert cookie.secure
 
-        output = bad_cookie.OutputString()
-        self.assertTrue('bad=;' in output or 'bad="";' in output)
+    cookie = result.cookies['bad']
+    assert cookie.value == ''  # An unset cookie has an empty value
+    assert cookie.domain is None
 
-        match = re.search('expires=([^;]+)', output)
-        self.assertIsNotNone(match)
+    assert cookie.expires < datetime.utcnow()
 
-        expiration = http_date_to_dt(match.group(1), obs_date=True)
-        self.assertThat(expiration, LessThan(datetime.utcnow()))
+    # NOTE(kgriffs): I know accessing a private attr like this is
+    # naughty of me, but we just need to sanity-check that the
+    # string is GMT.
+    assert cookie._expires.endswith('GMT')
 
-    def test_cookie_timezone(self):
-        tz = TimezoneGMT()
-        self.assertEqual('GMT', tz.tzname(timedelta(0)))
+    assert cookie.http_only
+    assert cookie.max_age is None
+    assert cookie.path is None
+    assert cookie.secure
 
-    #
-    # Request
-    #
 
-    def test_request_cookie_parsing(self):
-        # testing with a github-ish set of cookies
-        headers = [
-            ('Cookie', '''
-                logged_in=no;_gh_sess=eyJzZXXzaW9uX2lkIjoiN2;
-                tz=Europe/Berlin; _ga=GA1.2.332347814.1422308165;
-                _gat=1;
-                _octo=GH1.1.201722077.1422308165'''),
-        ]
+def test_cookie_expires_naive(client):
+    result = client.simulate_post('/')
 
-        environ = testing.create_environ(headers=headers)
-        req = falcon.Request(environ)
+    cookie = result.cookies['foo']
+    assert cookie.value == 'bar'
+    assert cookie.domain is None
+    assert cookie.expires == datetime(year=2050, month=1, day=1)
+    assert not cookie.http_only
+    assert cookie.max_age is None
+    assert cookie.path is None
+    assert not cookie.secure
 
-        self.assertEqual('no', req.cookies['logged_in'])
-        self.assertEqual('Europe/Berlin', req.cookies['tz'])
-        self.assertEqual('GH1.1.201722077.1422308165', req.cookies['_octo'])
 
-        self.assertIn('logged_in', req.cookies)
-        self.assertIn('_gh_sess', req.cookies)
-        self.assertIn('tz', req.cookies)
-        self.assertIn('_ga', req.cookies)
-        self.assertIn('_gat', req.cookies)
-        self.assertIn('_octo', req.cookies)
+def test_cookie_expires_aware(client):
+    result = client.simulate_put('/')
 
-    def test_unicode_inside_ascii_range(self):
-        resp = falcon.Response()
+    cookie = result.cookies['foo']
+    assert cookie.value == 'bar'
+    assert cookie.domain is None
+    assert cookie.expires == datetime(year=2049, month=12, day=31, hour=23)
+    assert not cookie.http_only
+    assert cookie.max_age is None
+    assert cookie.path is None
+    assert not cookie.secure
 
-        # should be ok
-        resp.set_cookie('non_unicode_ascii_name_1', 'ascii_value')
-        resp.set_cookie(u'unicode_ascii_name_1', 'ascii_value')
-        resp.set_cookie('non_unicode_ascii_name_2', u'unicode_ascii_value')
-        resp.set_cookie(u'unicode_ascii_name_2', u'unicode_ascii_value')
 
-    @ddt.data(
+def test_cookies_setable(client):
+    resp = falcon.Response()
+
+    assert resp._cookies is None
+
+    resp.set_cookie('foo', 'wrong-cookie', max_age=301)
+    resp.set_cookie('foo', 'bar', max_age=300)
+    morsel = resp._cookies['foo']
+
+    assert isinstance(morsel, Morsel)
+    assert morsel.key == 'foo'
+    assert morsel.value == 'bar'
+    assert morsel['max-age'] == 300
+
+
+@pytest.mark.parametrize('cookie_name', ('foofloat', 'foostring'))
+def test_cookie_max_age_float_and_string(client, cookie_name):
+    # NOTE(tbug): Falcon implicitly converts max-age values to integers,
+    # to ensure RFC 6265-compliance of the attribute value.
+
+    result = client.simulate_get('/test-convert')
+
+    cookie = result.cookies[cookie_name]
+    assert cookie.value == 'bar'
+    assert cookie.domain is None
+    assert cookie.expires is None
+    assert not cookie.http_only
+    assert cookie.max_age == 15
+    assert cookie.path is None
+    assert not cookie.secure
+
+
+def test_response_unset_cookie(client):
+    resp = falcon.Response()
+    resp.unset_cookie('bad')
+    resp.set_cookie('bad', 'cookie', max_age=300)
+    resp.unset_cookie('bad')
+
+    morsels = list(resp._cookies.values())
+    len(morsels) == 1
+
+    bad_cookie = morsels[0]
+    bad_cookie['expires'] == -1
+
+    output = bad_cookie.OutputString()
+    assert 'bad=;' in output or 'bad="";' in output
+
+    match = re.search('expires=([^;]+)', output)
+    assert match
+
+    expiration = http_date_to_dt(match.group(1), obs_date=True)
+    assert expiration < datetime.utcnow()
+
+
+def test_cookie_timezone(client):
+    tz = TimezoneGMT()
+    assert tz.tzname(timedelta(0)) == 'GMT'
+
+
+# =====================================================================
+# Request
+# =====================================================================
+
+
+def test_request_cookie_parsing():
+    # testing with a github-ish set of cookies
+    headers = [
+        (
+            'Cookie',
+            '''
+            logged_in=no;_gh_sess=eyJzZXXzaW9uX2lkIjoiN2;
+            tz=Europe/Berlin; _ga=GA1.2.332347814.1422308165;
+            _gat=1;
+            _octo=GH1.1.201722077.1422308165
+            '''
+        ),
+    ]
+
+    environ = testing.create_environ(headers=headers)
+    req = falcon.Request(environ)
+
+    assert req.cookies['logged_in'] == 'no'
+    assert req.cookies['tz'] == 'Europe/Berlin'
+    assert req.cookies['_octo'] == 'GH1.1.201722077.1422308165'
+
+    assert 'logged_in' in req.cookies
+    assert '_gh_sess' in req.cookies
+    assert 'tz' in req.cookies
+    assert '_ga' in req.cookies
+    assert '_gat' in req.cookies
+    assert '_octo' in req.cookies
+
+
+def test_unicode_inside_ascii_range():
+    resp = falcon.Response()
+
+    # should be ok
+    resp.set_cookie('non_unicode_ascii_name_1', 'ascii_value')
+    resp.set_cookie(u'unicode_ascii_name_1', 'ascii_value')
+    resp.set_cookie('non_unicode_ascii_name_2', u'unicode_ascii_value')
+    resp.set_cookie(u'unicode_ascii_name_2', u'unicode_ascii_value')
+
+
+@pytest.mark.parametrize(
+    'name',
+    (
         UNICODE_TEST_STRING,
         UNICODE_TEST_STRING.encode('utf-8'),
         42
     )
-    def test_non_ascii_name(self, name):
-        resp = falcon.Response()
-        self.assertRaises(KeyError, resp.set_cookie,
-                          name, 'ok_value')
+)
+def test_non_ascii_name(name):
+    resp = falcon.Response()
+    with pytest.raises(KeyError):
+        resp.set_cookie(name, 'ok_value')
 
-    @ddt.data(
+
+@pytest.mark.parametrize(
+    'value',
+    (
         UNICODE_TEST_STRING,
         UNICODE_TEST_STRING.encode('utf-8'),
         42
     )
-    def test_non_ascii_value(self, value):
-        resp = falcon.Response()
+)
+def test_non_ascii_value(value):
+    resp = falcon.Response()
 
-        # NOTE(tbug): we need to grab the exception to check
-        # that it is not instance of UnicodeEncodeError, so
-        # we cannot simply use assertRaises
-        try:
-            resp.set_cookie('ok_name', value)
-        except ValueError as e:
-            self.assertIsInstance(e, ValueError)
-            self.assertNotIsInstance(e, UnicodeEncodeError)
-        else:
-            self.fail('set_bad_cookie_value did not fail as expected')
+    # NOTE(tbug): we need to grab the exception to check
+    # that it is not instance of UnicodeEncodeError, so
+    # we cannot simply use pytest.raises
+    try:
+        resp.set_cookie('ok_name', value)
+    except ValueError as e:
+        assert isinstance(e, ValueError)
+        assert not isinstance(e, UnicodeEncodeError)
+    else:
+        pytest.fail('set_bad_cookie_value did not fail as expected')
