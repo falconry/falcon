@@ -9,10 +9,10 @@ matrix:
     include:
         - python: 2.7  # these are just to make travis's UI a bit prettier
           env: JYTHON=true
-        - python: pypy
+        - python: pypy-5.3
           env: TOXENV=pypy
-        - python: pypy3
-          env: TOXENV=pypy3
+        # - python: pypy3
+        #   env: TOXENV=pypy3
         - python: 2.7
           env: TOXENV=pep8
         - python: 2.6

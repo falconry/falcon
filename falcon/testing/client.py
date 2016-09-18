@@ -33,11 +33,15 @@ WSGI callable, without having to stand up a WSGI server.
 """
 
 import json
+import re
+import sys
 import wsgiref.validate
+
+from six.moves import http_cookies
 
 from falcon.testing import helpers
 from falcon.testing.srmock import StartResponseMock
-from falcon.util import CaseInsensitiveDict, to_query_str
+from falcon.util import CaseInsensitiveDict, http_date_to_dt, to_query_str
 
 
 class Result(object):
@@ -55,7 +59,19 @@ class Result(object):
         status (str): HTTP status string given in the response
         status_code (int): The code portion of the HTTP status string
         headers (CaseInsensitiveDict): A case-insensitive dictionary
-            containing all the headers in the response
+            containing all the headers in the response, except for
+            cookies, which may be accessed via the `cookies`
+            attribute.
+
+            Note:
+
+                Multiple instances of a header in the response are
+                currently not supported; it is unspecified which value
+                will "win" and be represented in `headers`.
+
+        cookies (dict): A dictionary of
+            :py:class:`falcon.testing.Cookie` values parsed from the
+            response, by name.
         encoding (str): Text encoding of the response body, or ``None``
             if the encoding can not be determined.
         content (bytes): Raw response body, or ``bytes`` if the
@@ -79,6 +95,41 @@ class Result(object):
         self._status_code = int(status[:3])
         self._headers = CaseInsensitiveDict(headers)
 
+        cookies = http_cookies.SimpleCookie()
+        for name, value in headers:
+            if name.lower() == 'set-cookie':
+                cookies.load(value)
+
+                if sys.version_info < (2, 7):
+                    match = re.match('([^=]+)=', value)
+                    assert match
+
+                    cookie_name = match.group(1)
+
+                    # NOTE(kgriffs): py26 has a bug that causes
+                    # SimpleCookie to incorrectly parse the "expires"
+                    # attribute, so we have to do it ourselves. This
+                    # algorithm is obviously very naive, but it should
+                    # work well enough until we stop supporting
+                    # 2.6, at which time we can remove this code.
+                    match = re.search('expires=([^;]+)', value)
+                    if match:
+                        cookies[cookie_name]['expires'] = match.group(1)
+
+                    # NOTE(kgriffs): py26's SimpleCookie won't parse
+                    # the "httponly" and "secure" attributes, so we
+                    # have to do it ourselves.
+                    if 'httponly' in value:
+                        cookies[cookie_name]['httponly'] = True
+
+                    if 'secure' in value:
+                        cookies[cookie_name]['secure'] = True
+
+        self._cookies = dict(
+            (morsel.key, Cookie(morsel))
+            for morsel in cookies.values()
+        )
+
         self._encoding = helpers.get_encoding_from_headers(self._headers)
 
     @property
@@ -92,6 +143,10 @@ class Result(object):
     @property
     def headers(self):
         return self._headers
+
+    @property
+    def cookies(self):
+        return self._cookies
 
     @property
     def encoding(self):
@@ -119,6 +174,81 @@ class Result(object):
     @property
     def json(self):
         return json.loads(self.text)
+
+
+class Cookie(object):
+    """Represents a cookie returned by a simulated request.
+
+    Args:
+        morsel: A ``Morsel`` object from which to derive the cookie
+            data.
+
+    Attributes:
+        name (str): The cookie's name.
+        value (str): The value of the cookie.
+        expires(datetime.datetime): Expiration timestamp for the cookie,
+            or ``None`` if not specified.
+        path (str): The path prefix to which this cookie is restricted,
+            or ``None`` if not specified.
+        domain (str): The domain to which this cookie is restricted,
+            or ``None`` if not specified.
+        max_age (int): The lifetime of the cookie in seconds, or
+            ``None`` if not specified.
+        secure (bool): Whether or not the cookie may only only be
+            transmitted from the client via HTTPS.
+        http_only (bool): Whether or not the cookie may only be
+            included in unscripted requests from the client.
+    """
+
+    def __init__(self, morsel):
+        self._name = morsel.key
+        self._value = morsel.value
+
+        for name in (
+            'expires',
+            'path',
+            'domain',
+            'max_age',
+            'secure',
+            'httponly',
+        ):
+            value = morsel[name.replace('_', '-')] or None
+            setattr(self, '_' + name, value)
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def value(self):
+        return self._value
+
+    @property
+    def expires(self):
+        if self._expires:
+            return http_date_to_dt(self._expires, obs_date=True)
+
+        return None
+
+    @property
+    def path(self):
+        return self._path
+
+    @property
+    def domain(self):
+        return self._domain
+
+    @property
+    def max_age(self):
+        return int(self._max_age) if self._max_age else None
+
+    @property
+    def secure(self):
+        return bool(self._secure)
+
+    @property
+    def http_only(self):
+        return bool(self._httponly)
 
 
 def simulate_request(app, method='GET', path='/', query_string=None,
