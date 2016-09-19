@@ -169,34 +169,68 @@ class Response(object):
 
         See Also:
             To learn more about setting cookies, see
-            :ref:`Setting Cookies <setting-cookies>`. The parameters listed
-            below correspond to those defined in `RFC 6265`_.
+            :ref:`Setting Cookies <setting-cookies>`. The parameters
+            listed below correspond to those defined in `RFC 6265`_.
 
         Args:
-            name (str):
-                Cookie name
-            value (str):
-                Cookie value
-            expires (datetime): Specifies when the cookie should expire. By
-                default, cookies expire when the user agent exits.
-            max_age (int): Defines the lifetime of the cookie in seconds.
-                After the specified number of seconds elapse, the client
-                should discard the cookie. Coercion to `int` is attempted
-                if provided with `float` or `str`.
-            domain (str): Specifies the domain for which the cookie is valid.
-                An explicitly specified domain must always start with a dot.
-                A value of 0 means the cookie should be discarded immediately.
-            path (str): Specifies the subset of URLs to
-                which this cookie applies.
-            secure (bool): Direct the client to only return the cookie in
-                subsequent requests if they are made over HTTPS
-                (default: ``True``). This prevents attackers from reading
-                sensitive cookie data. Note that for the `secure` cookie
-                attribute to be effective, your application will need to
-                enforce HTTPS. See also: `RFC 6265, Section 4.1.2.5`_.
-            http_only (bool): Direct the client to only transfer the cookie
-                with unscripted HTTP requests (default: ``True``). This is
-                intended to mitigate some forms of cross-site scripting.
+            name (str): Cookie name
+            value (str): Cookie value
+
+        Keyword Args:
+            expires (datetime): Specifies when the cookie should expire.
+                By default, cookies expire when the user agent exits.
+
+                (See also: RFC 6265, Section 4.1.2.1)
+            max_age (int): Defines the lifetime of the cookie in
+                seconds. By default, cookies expire when the user agent
+                exits. If both `max_age` and `expires` are set, the
+                latter is ignored by the user agent.
+
+                Note:
+                    Coercion to ``int`` is attempted if provided with
+                    ``float`` or ``str``.
+
+                (See also: RFC 6265, Section 4.1.2.2)
+
+            domain (str): Restricts the cookie to a specific domain and
+                any subdomains of that domain. By default, the user
+                agent will return the cookie only to the origin server.
+                When overriding this default behavior, the specified
+                domain must include the origin server. Otherwise, the
+                user agent will reject the cookie.
+
+                (See also: RFC 6265, Section 4.1.2.3)
+
+            path (str): Scopes the cookie to the given path plus any
+                subdirectories under that path (the "/" character is
+                interpreted as a directory separator). If the cookie
+                does not specify a path, the user agent defaults to the
+                path component of the requested URI.
+
+                Warning:
+                    User agent interfaces do not always isolate
+                    cookies by path, and so this should not be
+                    considered an effective security measure.
+
+                (See also: RFC 6265, Section 4.1.2.4)
+
+            secure (bool): Direct the client to only return the cookie
+                in subsequent requests if they are made over HTTPS
+                (default: ``True``). This prevents attackers from
+                reading sensitive cookie data.
+
+                Warning:
+                    For the `secure` cookie attribute to be effective,
+                    your application will need to enforce HTTPS.
+
+                (See also: RFC 6265, Section 4.1.2.5)
+
+            http_only (bool): Direct the client to only transfer the
+                cookie with unscripted HTTP requests
+                (default: ``True``). This is intended to mitigate some
+                forms of cross-site scripting.
+
+                (See also: RFC 6265, Section 4.1.2.6)
 
         Raises:
             KeyError: `name` is not a valid cookie name.
@@ -204,9 +238,6 @@ class Response(object):
 
         .. _RFC 6265:
             http://tools.ietf.org/html/rfc6265
-
-        .. _RFC 6265, Section 4.1.2.5:
-            https://tools.ietf.org/html/rfc6265#section-4.1.2.5
 
         """
 
@@ -269,10 +300,13 @@ class Response(object):
     def unset_cookie(self, name):
         """Unset a cookie in the response
 
-        Note:
-            This will clear the contents of the cookie, and instruct
-            the browser to immediately expire its own copy of the
-            cookie, if any.
+        Clears the contents of the cookie, and instructs the user
+        agent to immediately expire its own copy of the cookie.
+
+        Warning:
+            In order to successfully remove a cookie, both the
+            path and the domain must match the values that were
+            used when the cookie was created.
         """
         if self._cookies is None:
             self._cookies = SimpleCookie()
