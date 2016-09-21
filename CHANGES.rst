@@ -1,3 +1,100 @@
+1.1.0
+=====
+
+Breaking Changes
+----------------
+
+(None)
+
+New & Improved
+--------------
+
+- A new `bounded_stream` property was added to ``falcon.Request``
+  that can be used in place of the `stream` property to mitigate
+  the blocking behavior of input objects used by some WSGI servers.
+- A new `uri_template` property was added to ``falcon.Request``
+  to expose the template for the route corresponding to the
+  path requested by the user agent.
+- A `context` property was added to ``falcon.Response`` to mirror
+  the same property that is already available for
+  ``falcon.Request``.
+- JSON-encoded query parameter values can now be retrieved and decoded
+  in a single step via ``falcon.Request.get_param_as_dict()``.
+- CSV-style parsing of query parameter values can now be disabled.
+- Added the ``falcon.HTTPUriTooLong`` and
+  ``falcon.HTTPGone`` error classes.
+- When a title is not specified for ``falcon.HTTPError``, it now
+  defaults to the HTTP status text.
+- Cookie-related documentation has been clarified and expanded
+- The ``falcon.testing.Cookie`` class was added to represent a
+  cookie returned by a simulated request. ``falcon.testing.Result``
+  now exposes a `cookies` attribute for examining returned cookies.
+- pytest support was added to Falcon's testing framework. Apps can now
+  choose to either write unittest- or pytest-style tests.
+- The test runner for Falcon's own tests was switched from nose
+  to pytest.
+- When simulating a request using Falcon's testing framework, query
+  string parameters can now be specified as a ``dict``, as
+  an alternative to passing a raw query string.
+- A flag is now passed to the `process_request` middleware method to
+  signal whether or not an exception was raised while processing the
+  request. A shim was added to avoid breaking existing middleware
+  methods that do not yet accept this new parameter.
+- A new CLI utility, `falcon-print-routes`, was added that takes in a
+  module:callable, introspects the routes, and prints the
+  results to stdout. This utility is automatically installed along
+  with the framework::
+
+    $ falcon-print-routes commissaire:api
+    -> /api/v0/status
+    -> /api/v0/cluster/{name}
+    -> /api/v0/cluster/{name}/hosts
+    -> /api/v0/cluster/{name}/hosts/{address}
+
+- Custom attributes can now be attached to instances of
+  ``falcon.Request`` and ``falcon.Response``. This can be
+  used as an alternative to adding values to the `context` property,
+  or implementing custom subclasses.
+- ``falcon.get_http_status()`` was implemented to provide a way to
+  look up a full HTTP status line, given just a status code.
+
+Fixed
+-----
+
+- When ``auto_parse_form_urlencoded`` is set to ``True``, the
+  framework now checks the HTTP method before attempting to consume and
+  parse the body.
+- Before attempting to read a form-encoded POST, the framework now
+  checks the Content-Length header to ensure that a non-empty body
+  is expected. This helps prevent bad requests from causing a blocking
+  read when running behind certain WSGI servers.
+- When the requested method is not implemented for the target resource,
+  the framework now raises ``falcon.HTTPMethodNotAllowed``, rather
+  than modifying the ``falcon.Request`` object directly. This
+  improves visibility for custom error handlers and for middleware
+  methods.
+- Error class docstrings have been updated to reflect the latest RFCs.
+- When an error is raised by a resource method or a hook, the error
+  will now always be processed (including setting the appropriate
+  properties of the ``falcon.Response`` object) before middleware
+  methods are called.
+- A case was fixed in which middleware processing did not
+  continue when an instance of ``falcon.HTTPError`` or
+  ``falcon.HTTPStatus`` was raised.
+- The ``falcon.uri.encode()`` method will now attempt to detect
+  whether the specified string has already been encoded, and return
+  it unchanged if that is the case.
+- The default OPTIONS responder now explicitly sets Content-Length
+  to zero in the response.
+- ``falcon.testing.Result`` now assumes that the response body
+  is encoded as UTF-8 when the character set is not specified, rather
+  than raising an error when attempting to decode the response body.
+- ``import falcon.uri`` now works, in addition to
+  ``from falcon import uri``.
+- URI template fields are now validated up front, when the route is
+  added, to ensure they are valid Python identifiers. This prevents
+  cryptic errors from being raised later on when requests are routed.
+
 1.0.0
 =====
 
