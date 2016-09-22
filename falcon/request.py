@@ -381,10 +381,16 @@ class Request(object):
         # PERF(kgriffs): Technically, we should spend a few more
         # cycles and parse the content type for real, but
         # this heuristic will work virtually all the time.
-        if (self.options.auto_parse_form_urlencoded and
-                self.content_type is not None and
-                'application/x-www-form-urlencoded' in self.content_type and
-                self.method == 'POST'):
+        if (
+            self.options.auto_parse_form_urlencoded and
+            self.content_type is not None and
+            'application/x-www-form-urlencoded' in self.content_type and
+
+            # NOTE(kgriffs): POST is what we would normally expect, but
+            # just in case some apps like to color outside the lines,
+            # we'll allow PUT and PATCH to avoid breaking them.
+            self.method in ('POST', 'PUT', 'PATCH')
+        ):
             self._parse_form_urlencoded()
 
         if self.context_type is None:
