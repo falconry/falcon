@@ -164,7 +164,7 @@ Returns:
 
 """
 
-if six.PY2:
+if six.PY2:  # NOQA: C901 - Work around a bug in flake8 McCabe scoring
 
     # This map construction is based on urllib
     _HEX_TO_BYTE = dict((a + b, (chr(int(a + b, 16)), int(a + b, 16)))
@@ -213,10 +213,11 @@ if six.PY2:
         decoded_uri = tokens[0]
         for token in tokens[1:]:
             token_partial = token[:2]
-            if token_partial in _HEX_TO_BYTE:
+            try:
                 char, byte = _HEX_TO_BYTE[token_partial]
-            else:
+            except KeyError:
                 char, byte = '%', 0
+
             decoded_uri += char + (token[2:] if byte else token)
             only_ascii = only_ascii and (byte <= 127)
 
@@ -271,9 +272,9 @@ else:
         decoded_uri = tokens[0]
         for token in tokens[1:]:
             token_partial = token[:2]
-            if token_partial in _HEX_TO_BYTE:
+            try:
                 decoded_uri += _HEX_TO_BYTE[token_partial] + token[2:]
-            else:
+            except KeyError:
                 # malformed percentage like "x=%" or "y=%+"
                 decoded_uri += b'%' + token
 
