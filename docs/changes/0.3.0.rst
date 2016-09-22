@@ -23,7 +23,9 @@ New & Improved
 - A default value can now be specified when calling
   :py:meth:`Request.get_param`. This provides an alternative to using the
   pattern::
-      value = req.get_param(name) or default_value
+
+    value = req.get_param(name) or default_value
+
 - Friendly constants for status codes were added (e.g.,
   :py:attr:`falcon.HTTP_NO_CONTENT` vs. :py:attr:`falcon.HTTP_204`.)
 - Several minor performance optimizations were made to the code base.
