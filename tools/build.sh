@@ -77,7 +77,7 @@ pyenv uninstall -f $VENV_NAME
 #----------------------------------------------------------------------
 
 _echo_task "Building source distribution"
-_open_env 2.7.11
+_open_env 2.7.12
 
 python setup.py sdist -d $DIST_DIR
 
@@ -88,7 +88,7 @@ _close_env
 #----------------------------------------------------------------------
 
 _echo_task "Building universal wheel"
-_open_env 2.7.11
+_open_env 2.7.12
 
 python setup.py bdist_wheel -d $DIST_DIR
 
