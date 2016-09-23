@@ -1,7 +1,8 @@
-Kurt Griffiths (kgriffs) created Falcon and is its current maintainer.
+Kurt Griffiths (kgriffs) created Falcon and currently co-maintains the
+framework along with John Vrbanac (jmvrbanac).
 
-Many thanks to all the mighty fine contributors to the project, listed
-below in order of date of first contribution:
+Many thanks to all of the project's stylish and talented contributors,
+listed below by date of first contribution:
 
 * Alejandro Cabrera (cabrera)
 * Chad Lung (chadlung)
@@ -65,3 +66,16 @@ below in order of date of first contribution:
 * David Larlet (davidbgk)
 * Fran Fitzpatrick (fxfitz)
 * Matthew Miller (masterkale)
+* michaelboulton
+* Jesse Jarzynka (jessehudl)
+* Michael Olund (molund)
+* Yash Mehrotra (yashmehrotra)
+* Stephen Milner (ashcrow)
+* ksonj
+
+(et al.)
+
+For a full list of contributors, please visit:
+
+    https://github.com/falconry/falcon/graphs/contributors
+
