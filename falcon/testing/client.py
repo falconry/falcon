@@ -564,9 +564,9 @@ def simulate_delete(app, path, **kwargs):
 
 
 class TestClient(object):
-    """"Simulates requests to a WSGI application.
+    """Simulates requests to a WSGI application.
 
-    This class provides a contextual wrapper for Falcon's simulate_*
+    This class provides a contextual wrapper for Falcon's `simulate_*`
     test functions. It lets you replace this::
 
         simulate_get(app, '/messages')
