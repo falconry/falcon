@@ -88,7 +88,7 @@ class HTTPBadRequest(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title, description, **kwargs):
+    def __init__(self, title=None, description=None, **kwargs):
         super(HTTPBadRequest, self).__init__(status.HTTP_400, title,
                                              description, **kwargs)
 
