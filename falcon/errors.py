@@ -153,7 +153,7 @@ class HTTPUnauthorized(HTTPError):
 
     """
 
-    def __init__(self, title, description, challenges, **kwargs):
+    def __init__(self, title=None, description=None, challenges=None, **kwargs):
         headers = kwargs.setdefault('headers', {})
 
         if challenges:
@@ -219,7 +219,7 @@ class HTTPForbidden(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title, description, **kwargs):
+    def __init__(self, title=None, description=None, **kwargs):
         super(HTTPForbidden, self).__init__(status.HTTP_403, title,
                                             description, **kwargs)
 
@@ -458,7 +458,7 @@ class HTTPConflict(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title, description, **kwargs):
+    def __init__(self, title=None, description=None, **kwargs):
         super(HTTPConflict, self).__init__(status.HTTP_409, title,
                                            description, **kwargs)
 
@@ -573,7 +573,7 @@ class HTTPLengthRequired(HTTPError):
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
     """
-    def __init__(self, title, description, **kwargs):
+    def __init__(self, title=None, description=None, **kwargs):
         super(HTTPLengthRequired, self).__init__(status.HTTP_411,
                                                  title, description, **kwargs)
 
@@ -626,7 +626,7 @@ class HTTPPreconditionFailed(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title, description, **kwargs):
+    def __init__(self, title=None, description=None, **kwargs):
         super(HTTPPreconditionFailed, self).__init__(status.HTTP_412, title,
                                                      description, **kwargs)
 
@@ -685,7 +685,7 @@ class HTTPRequestEntityTooLarge(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title, description, retry_after=None, **kwargs):
+    def __init__(self, title=None, description=None, retry_after=None, **kwargs):
         headers = kwargs.setdefault('headers', {})
 
         if isinstance(retry_after, datetime):
@@ -801,7 +801,7 @@ class HTTPUnsupportedMediaType(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, description, **kwargs):
+    def __init__(self, description=None, **kwargs):
         super(HTTPUnsupportedMediaType, self).__init__(
             status.HTTP_415, 'Unsupported media type', description, **kwargs)
 
@@ -884,7 +884,7 @@ class HTTPUnprocessableEntity(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title, description, **kwargs):
+    def __init__(self, title=None, description=None, **kwargs):
         super(HTTPUnprocessableEntity, self).__init__(status.HTTP_422, title,
                                                       description, **kwargs)
 
@@ -942,7 +942,7 @@ class HTTPTooManyRequests(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title, description, retry_after=None, **kwargs):
+    def __init__(self, title=None, description=None, retry_after=None, **kwargs):
         headers = kwargs.setdefault('headers', {})
 
         if isinstance(retry_after, datetime):
@@ -1014,7 +1014,7 @@ class HTTPUnavailableForLegalReasons(OptionalRepresentation, HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title, **kwargs):
+    def __init__(self, title=None, **kwargs):
         super(HTTPUnavailableForLegalReasons, self).__init__(status.HTTP_451,
                                                              title, **kwargs)
 
@@ -1063,7 +1063,7 @@ class HTTPInternalServerError(HTTPError):
 
     """
 
-    def __init__(self, title, description, **kwargs):
+    def __init__(self, title=None, description=None, **kwargs):
         super(HTTPInternalServerError, self).__init__(status.HTTP_500, title,
                                                       description, **kwargs)
 
@@ -1113,7 +1113,7 @@ class HTTPBadGateway(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title, description, **kwargs):
+    def __init__(self, title=None, description=None, **kwargs):
         super(HTTPBadGateway, self).__init__(status.HTTP_502, title,
                                              description, **kwargs)
 
@@ -1174,7 +1174,7 @@ class HTTPServiceUnavailable(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title, description, retry_after, **kwargs):
+    def __init__(self, title=None, description=None, retry_after=None, **kwargs):
         headers = kwargs.setdefault('headers', {})
 
         if isinstance(retry_after, datetime):
@@ -1275,7 +1275,7 @@ class HTTPMissingHeader(HTTPBadRequest):
     """
 
     def __init__(self, header_name, **kwargs):
-        description = ('The {0} header is required.')
+        description = 'The {0} header is required.'
         description = description.format(header_name)
 
         super(HTTPMissingHeader, self).__init__('Missing header value',
