@@ -670,9 +670,10 @@ class TestReqVars(testing.TestBase):
         self.assertEqual(req.port, '443')
 
     def test_port_explicit(self):
-        PORT = 80
+        PORT = 9000
         req = Request(testing.create_environ(
             protocol='HTTP/1.0',
+            port=PORT,
             app=self.app,
             path='/hello',
             query_string=self.qs,
