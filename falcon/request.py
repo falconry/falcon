@@ -69,7 +69,8 @@ class Request(object):
         options (dict): Set of global options passed from the API handler.
 
     Attributes:
-        protocol (str): Either 'http' or 'https'.
+        protocol (str): Either 'http' or 'https' Depreciated.
+        scheme (str): Either 'http' or 'https'.
         method (str): HTTP method requested (e.g., 'GET', 'POST', etc.)
         host (str): Hostname requested by the client
         port (str): Port used for request
@@ -538,8 +539,13 @@ class Request(object):
         return self.env.get('SCRIPT_NAME', '')
 
     @property
-    def protocol(self):
+    def scheme(self):
         return self.env['wsgi.url_scheme']
+
+    @property
+    def protocol(self):
+        return self.scheme
+
 
     @property
     def uri(self):
