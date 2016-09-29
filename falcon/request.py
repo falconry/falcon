@@ -694,6 +694,10 @@ class Request(object):
     def port(self):
         return self.env.get('SERVER_PORT')
 
+    @property
+    def netloc(self):
+        return self.host+":"+self.port
+
     # ------------------------------------------------------------------------
     # Methods
     # ------------------------------------------------------------------------

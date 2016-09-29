@@ -702,3 +702,13 @@ class TestReqVars(testing.TestBase):
             query_string=self.qs,
             headers=self.headers))
         self.assertEqual(req.scheme, _scheme)
+
+    def test_netloc(self):
+        req = Request(testing.create_environ(
+            protocol='HTTP/1.0',
+            app=self.app,
+            path='/hello',
+            query_string=self.qs,
+            headers=self.headers))
+        _netloc = '{host}:{port}'.format(host=req.host, port=req.port)
+        self.assertEqual(req.netloc, _netloc)
