@@ -46,8 +46,8 @@ SimpleCookie = http_cookies.SimpleCookie
 DEFAULT_ERROR_LOG_FORMAT = (u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
                             u' {1} {2}{3} => ')
 
-TRUE_STRINGS = ('true', 'True', 'yes', '1')
-FALSE_STRINGS = ('false', 'False', 'no', '0')
+TRUE_STRINGS = ('true', 'True', 'yes', '1', 'on')
+FALSE_STRINGS = ('false', 'False', 'no', '0', 'off')
 WSGI_CONTENT_HEADERS = ('CONTENT_TYPE', 'CONTENT_LENGTH')
 
 # PERF(kgriffs): Avoid an extra namespace lookup when using these functions
@@ -948,8 +948,8 @@ class Request(object):
 
         The following boolean strings are supported::
 
-            TRUE_STRINGS = ('true', 'True', 'yes', '1')
-            FALSE_STRINGS = ('false', 'False', 'no', '0')
+            TRUE_STRINGS = ('true', 'True', 'yes', '1', 'on')
+            FALSE_STRINGS = ('false', 'False', 'no', '0', 'off')
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'detailed').

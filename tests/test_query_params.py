@@ -257,7 +257,8 @@ class _TestQueryParams(testing.TestBase):
 
     def test_boolean(self):
         query_string = ('echo=true&doit=false&bogus=bar&bogus2=foo&'
-                        't1=True&f1=False&t2=yes&f2=no&blank&one=1&zero=0')
+                        't1=True&f1=False&t2=yes&f2=no&blank&one=1&zero=0&'
+                        'checkbox1=on&checkbox2=off')
         self.simulate_request('/', query_string=query_string)
 
         req = self.resource.captured_req
@@ -284,6 +285,9 @@ class _TestQueryParams(testing.TestBase):
         self.assertEqual(req.get_param_as_bool('one'), True)
         self.assertEqual(req.get_param_as_bool('zero'), False)
         self.assertEqual(req.get_param('blank'), None)
+
+        self.assertEqual(req.get_param_as_bool('checkbox1'), True)
+        self.assertEqual(req.get_param_as_bool('checkbox2'), False)
 
         store = {}
         self.assertEqual(req.get_param_as_bool('echo', store=store), True)
