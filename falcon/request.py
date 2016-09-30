@@ -549,7 +549,6 @@ class Request(object):
         """
         return self.scheme
 
-
     @property
     def uri(self):
         if self._cached_uri is None:
@@ -699,7 +698,7 @@ class Request(object):
 
     @property
     def netloc(self):
-        return self.host+":"+self.port
+        return self.host + ':' + self.port
 
     # ------------------------------------------------------------------------
     # Methods
