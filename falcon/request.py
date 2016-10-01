@@ -542,12 +542,7 @@ class Request(object):
     def scheme(self):
         return self.env['wsgi.url_scheme']
 
-    @property
-    def protocol(self):
-        """
-        To be depreciated in favour of scheme
-        """
-        return self.scheme
+    protocol = scheme
 
     @property
     def uri(self):
