@@ -73,7 +73,7 @@ class Request(object):
         scheme (str): Either 'http' or 'https'.
         method (str): HTTP method requested (e.g., 'GET', 'POST', etc.)
         host (str): Hostname requested by the client
-        port (str): Port used for request
+        port (str): Port used for the request
         subdomain (str): Leftmost (i.e., most specific) subdomain from the
             hostname. If only a single domain name is given, `subdomain`
             will be ``None``.
