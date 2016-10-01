@@ -689,7 +689,12 @@ class Request(object):
 
     @property
     def port(self):
-        return self.env.get('SERVER_PORT')
+        try:
+            host_header = self.env['HTTP_HOST']
+            host, port = parse_host(host_header)
+        except KeyError:
+            port = self.env.get('SERVER_PORT')
+        return port
 
     @property
     def netloc(self):
