@@ -14,13 +14,12 @@
 
 """Hook decorators."""
 
-import functools
 from functools import wraps
-import inspect
 
 import six
 
 from falcon import HTTP_METHODS
+from falcon.util.misc import get_argnames
 
 
 def before(action):
@@ -136,28 +135,6 @@ def after(action):
 # -----------------------------------------------------------------------------
 
 
-def _has_resource_arg(action):
-    """Check if the given action function accepts a resource arg."""
-
-    if isinstance(action, functools.partial):
-        # NOTE(kgriffs): We special-case this, since versions of
-        # Python prior to 3.4 raise an error when trying to get the
-        # spec for a partial.
-        spec = inspect.getargspec(action.func)
-
-    elif inspect.isroutine(action):
-        # NOTE(kgriffs): We have to distinguish between instances of a
-        # callable class vs. a routine, since Python versions prior to
-        # 3.4 raise an error when trying to get the spec from
-        # a callable class instance.
-        spec = inspect.getargspec(action)
-
-    else:
-        spec = inspect.getargspec(action.__call__)
-
-    return 'resource' in spec.args
-
-
 def _wrap_with_after(action, responder):
     """Execute the given action function after a responder method.
 
@@ -169,7 +146,7 @@ def _wrap_with_after(action, responder):
 
     # NOTE(swistakm): create shim before checking what will be actually
     # decorated. This helps to avoid excessive nesting
-    if _has_resource_arg(action):
+    if 'resource' in get_argnames(action):
         shim = action
     else:
         # TODO(kgriffs): This decorator does not work on callable
@@ -198,7 +175,7 @@ def _wrap_with_before(action, responder):
 
     # NOTE(swistakm): create shim before checking what will be actually
     # decorated. This allows to avoid excessive nesting
-    if _has_resource_arg(action):
+    if 'resource' in get_argnames(action):
         shim = action
     else:
         # TODO(kgriffs): This decorator does not work on callable
