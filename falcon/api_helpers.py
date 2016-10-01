@@ -15,7 +15,6 @@
 """Utilities for the API class."""
 
 from functools import wraps
-import inspect
 
 from falcon import util
 
@@ -55,9 +54,9 @@ def prepare_middleware(middleware=None):
         if process_response:
             # NOTE(kgriffs): Shim older implementations to ensure
             # backwards-compatibility.
-            spec = inspect.getargspec(process_response)
+            args = util.get_argnames(process_response)
 
-            if len(spec.args) == 4:  # (self, req, resp, resource)
+            if len(args) == 3:  # (req, resp, resource)
                 def let(process_response=process_response):
                     @wraps(process_response)
                     def shim(req, resp, resource, req_succeeded):
