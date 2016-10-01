@@ -693,7 +693,10 @@ class Request(object):
 
     @property
     def netloc(self):
-        return self.host + ':' + self.port
+        try:
+            return self.env['HTTP_HOST']
+        except KeyError:
+            return self.host + ':' + self.port
 
     # ------------------------------------------------------------------------
     # Methods
