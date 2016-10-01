@@ -69,7 +69,7 @@ class Request(object):
         options (dict): Set of global options passed from the API handler.
 
     Attributes:
-        protocol (str): Either 'http' or 'https' Depreciated.
+        protocol (str): Deprecated alias for `scheme`. May be removed in a future release.
         scheme (str): Either 'http' or 'https'.
         method (str): HTTP method requested (e.g., 'GET', 'POST', etc.)
         host (str): Hostname requested by the client
