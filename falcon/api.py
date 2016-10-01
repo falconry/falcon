@@ -14,7 +14,6 @@
 
 """Falcon API class."""
 
-import inspect
 import re
 
 import six
@@ -26,6 +25,7 @@ from falcon.request import Request, RequestOptions
 import falcon.responders
 from falcon.response import Response
 import falcon.status_codes as status
+from falcon.util.misc import get_argnames
 
 
 class API(object):
@@ -475,8 +475,9 @@ class API(object):
 
         """
 
-        if len(inspect.getargspec(serializer).args) == 2:
+        if len(get_argnames(serializer)) == 2:
             serializer = helpers.wrap_old_error_serializer(serializer)
+
         self._serialize_error = serializer
 
     # ------------------------------------------------------------------------
