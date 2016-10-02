@@ -241,7 +241,7 @@ class TestError(testtools.TestCase):
                              'The title should be ' + status.HTTP_502 + ', but it is: ' + e.title)
             self.assertEqual(None, e.description, 'The description should be None')
 
-    def test_http_unprocessable_with_title_and_desc_and_challenges(self):
+    def test_http_bad_gateway_entity_with_title_and_desc_and_challenges(self):
         try:
             raise falcon.HTTPBadGateway(title="Test", description="Testdescription")
         except falcon.HTTPBadGateway as e:
