@@ -53,12 +53,10 @@ class HTTPBadRequest(HTTPError):
 
     (See also: RFC 7231, Section 6.5.1)
 
-    Args:
+    Keyword Args:
         title (str): Error title (e.g., 'TTL Out of Range').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-
-    Keyword Args:
         headers (dict or list): A ``dict`` of header names and values
             to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
             *value* must be of type ``str`` or ``StringType``, and only
@@ -114,7 +112,7 @@ class HTTPUnauthorized(HTTPError):
 
     (See also: RFC 7235, Section 3.1)
 
-    Args:
+    Keyword Args:
         title (str): Error title (e.g., 'Authentication Required').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
@@ -122,7 +120,6 @@ class HTTPUnauthorized(HTTPError):
             challenges to use as the value of the WWW-Authenticate header in
             the response (see also RFC 7235, Section 2.1).
 
-    Keyword Args:
         headers (dict or list): A ``dict`` of header names and values
             to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
             *value* must be of type ``str`` or ``StringType``, and only
@@ -184,12 +181,10 @@ class HTTPForbidden(HTTPError):
 
     (See also: RFC 7231, Section 6.5.4)
 
-    Args:
+    Keyword Args:
         title (str): Error title (e.g., 'Permission Denied').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-
-    Keyword Args:
         headers (dict or list): A ``dict`` of header names and values
             to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
             *value* must be of type ``str`` or ``StringType``, and only
@@ -362,11 +357,9 @@ class HTTPNotAcceptable(HTTPError):
 
     (See also: RFC 7231, Section 6.5.6)
 
-    Args:
+    Keyword Args:
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-
-    Keyword Args:
         headers (dict or list): A ``dict`` of header names and values
             to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
             *value* must be of type ``str`` or ``StringType``, and only
@@ -396,7 +389,7 @@ class HTTPNotAcceptable(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, description, **kwargs):
+    def __init__(self, description=None, **kwargs):
         super(HTTPNotAcceptable, self).__init__(status.HTTP_406,
                                                 'Media type not acceptable',
                                                 description, **kwargs)
@@ -423,12 +416,10 @@ class HTTPConflict(HTTPError):
 
     (See also: RFC 7231, Section 6.5.8)
 
-    Args:
+    Keyword Args:
         title (str): Error title (e.g., 'Editing Conflict').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-
-    Keyword Args:
         headers (dict or list): A ``dict`` of header names and values
             to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
             *value* must be of type ``str`` or ``StringType``, and only
@@ -539,12 +530,10 @@ class HTTPLengthRequired(HTTPError):
 
     (See also: RFC 7231, Section 6.5.10)
 
-    Args:
+    Keyword Args:
         title (str): Error title (e.g., 'Missing Content-Length').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-
-    Keyword Args:
         headers (dict or list): A ``dict`` of header names and values
             to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
             *value* must be of type ``str`` or ``StringType``, and only
@@ -591,12 +580,10 @@ class HTTPPreconditionFailed(HTTPError):
 
     (See also: RFC 7232, Section 4.2)
 
-    Args:
+    Keyword Args:
         title (str): Error title (e.g., 'Image Not Modified').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-
-    Keyword Args:
         headers (dict or list): A ``dict`` of header names and values
             to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
             *value* must be of type ``str`` or ``StringType``, and only
@@ -646,12 +633,12 @@ class HTTPRequestEntityTooLarge(HTTPError):
 
     (See also: RFC 7231, Section 6.5.11)
 
-    Args:
+    Keyword Args:
         title (str): Error title (e.g., 'Request Body Limit Exceeded').
+
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
 
-    Keyword Args:
         retry_after (datetime or int): Value for the Retry-After
             header. If a ``datetime`` object, will serialize as an HTTP date.
             Otherwise, a non-negative ``int`` is expected, representing the
@@ -767,11 +754,9 @@ class HTTPUnsupportedMediaType(HTTPError):
 
     (See also: RFC 7231, Section 6.5.13)
 
-    Args:
+    Keyword Args:
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-
-    Keyword Args:
         headers (dict or list): A ``dict`` of header names and values
             to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
             *value* must be of type ``str`` or ``StringType``, and only
@@ -849,12 +834,10 @@ class HTTPUnprocessableEntity(HTTPError):
 
     (See also: RFC 4918, Section 11.2)
 
-    Args:
+    Keyword Args:
         title (str): Error title (e.g., 'Missing title field').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-
-    Keyword Args:
         headers (dict or list): A ``dict`` of header names and values
             to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
             *value* must be of type ``str`` or ``StringType``, and only
@@ -903,12 +886,10 @@ class HTTPTooManyRequests(HTTPError):
 
     (See also: RFC 6585, Section 4)
 
-    Args:
+    Keyword Args:
         title (str): Error title (e.g., 'Too Many Requests').
         description (str): Human-friendly description of the rate limit that
             was exceeded.
-
-    Keyword Args:
         retry_after (datetime or int): Value for the Retry-After
             header. If a ``datetime`` object, will serialize as an HTTP date.
             Otherwise, a non-negative ``int`` is expected, representing the
@@ -979,10 +960,8 @@ class HTTPUnavailableForLegalReasons(OptionalRepresentation, HTTPError):
 
     (See also: RFC 7725, Section 3)
 
-    Args:
-        title (str): Error title (e.g., 'Legal reason: <reason>').
-
     Keyword Args:
+        title (str): Error title (e.g., 'Legal reason: <reason>').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two (default ``None``).
         headers (dict or list): A ``dict`` of header names and values
@@ -1027,12 +1006,10 @@ class HTTPInternalServerError(HTTPError):
 
     (See also: RFC 7231, Section 6.6.1)
 
-    Args:
+    Keyword Args:
         title (str): Error title (e.g., 'This Should Never Happen').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-
-    Keyword Args:
         headers (dict or list): A ``dict`` of header names and values
             to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
             *value* must be of type ``str`` or ``StringType``, and only
@@ -1077,13 +1054,11 @@ class HTTPBadGateway(HTTPError):
 
     (See also: RFC 7231, Section 6.6.3)
 
-    Args:
+    Keyword Args:
         title (str): Error title, for
             example: 'Upstream Server is Unavailable'.
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-
-    Keyword Args:
         headers (dict or list): A ``dict`` of header names and values
             to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
             *value* must be of type ``str`` or ``StringType``, and only
@@ -1135,7 +1110,7 @@ class HTTPServiceUnavailable(HTTPError):
 
     (See also: RFC 7231, Section 6.6.4)
 
-    Args:
+    Keyword Args:
         title (str): Error title (e.g., 'Temporarily Unavailable').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
@@ -1143,8 +1118,6 @@ class HTTPServiceUnavailable(HTTPError):
             ``datetime`` object, will serialize as an HTTP date. Otherwise,
             a non-negative ``int`` is expected, representing the number of
             seconds to wait.
-
-    Keyword Args:
         headers (dict or list): A ``dict`` of header names and values
             to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
             *value* must be of type ``str`` or ``StringType``, and only
@@ -1179,7 +1152,7 @@ class HTTPServiceUnavailable(HTTPError):
 
         if isinstance(retry_after, datetime):
             headers['Retry-After'] = util.dt_to_http(retry_after)
-        else:
+        elif retry_after is not None:
             headers['Retry-After'] = str(retry_after)
 
         super(HTTPServiceUnavailable, self).__init__(status.HTTP_503,
