@@ -17,7 +17,8 @@ class TestError(testtools.TestCase):
             raise falcon.HTTPBadRequest(title="Test", description="Testdescription")
         except falcon.HTTPBadRequest as e:
             self.assertEqual("Test", e.title, 'Title should be "Test"')
-            self.assertEqual('Testdescription', e.description, 'Description should be "Testdescription"')
+            self.assertEqual('Testdescription', e.description,
+                             'Description should be "Testdescription"')
 
     def test_http_unauthorized_no_title_and_desc_and_challenges(self):
         try:
@@ -26,14 +27,17 @@ class TestError(testtools.TestCase):
             self.assertEqual(status.HTTP_401, e.title,
                              'The title should be ' + status.HTTP_401 + ', but it is: ' + e.title)
             self.assertEqual(None, e.description, 'The description should be None')
-            self.assertNotIn('WWW-Authenticate', e.headers, 'Challenges should not be found in headers')
+            self.assertNotIn('WWW-Authenticate', e.headers,
+                             'Challenges should not be found in headers')
 
     def test_http_unauthorized_with_title_and_desc_and_challenges(self):
         try:
-            raise falcon.HTTPUnauthorized(title="Test", description="Testdescription", challenges=['Testch'])
+            raise falcon.HTTPUnauthorized(title="Test", description="Testdescription",
+                                          challenges=['Testch'])
         except falcon.HTTPUnauthorized as e:
             self.assertEqual("Test", e.title, 'Title should be "Test"')
-            self.assertEqual('Testdescription', e.description, 'Description should be "Testdescription"')
+            self.assertEqual('Testdescription', e.description,
+                             'Description should be "Testdescription"')
             self.assertEqual('Testch', e.headers['WWW-Authenticate'], 'Challenges should be None')
 
     def test_http_forbidden_no_title_and_desc_and_challenges(self):
@@ -49,7 +53,8 @@ class TestError(testtools.TestCase):
             raise falcon.HTTPForbidden(title="Test", description="Testdescription")
         except falcon.HTTPForbidden as e:
             self.assertEqual("Test", e.title, 'Title should be "Test"')
-            self.assertEqual('Testdescription', e.description, 'Description should be "Testdescription"')
+            self.assertEqual('Testdescription', e.description,
+                             'Description should be "Testdescription"')
 
     def test_http_not_acceptable_no_title_and_desc_and_challenges(self):
         try:
@@ -61,7 +66,8 @@ class TestError(testtools.TestCase):
         try:
             raise falcon.HTTPNotAcceptable(description="Testdescription")
         except falcon.HTTPNotAcceptable as e:
-            self.assertEqual('Testdescription', e.description, 'Description should be "Testdescription"')
+            self.assertEqual('Testdescription', e.description,
+                             'Description should be "Testdescription"')
 
     def test_http_conflict_no_title_and_desc_and_challenges(self):
         try:
@@ -76,7 +82,8 @@ class TestError(testtools.TestCase):
             raise falcon.HTTPConflict(title="Test", description="Testdescription")
         except falcon.HTTPConflict as e:
             self.assertEqual("Test", e.title, 'Title should be "Test"')
-            self.assertEqual('Testdescription', e.description, 'Description should be "Testdescription"')
+            self.assertEqual('Testdescription', e.description,
+                             'Description should be "Testdescription"')
 
     def test_http_length_required_no_title_and_desc_and_challenges(self):
         try:
@@ -91,7 +98,8 @@ class TestError(testtools.TestCase):
             raise falcon.HTTPLengthRequired(title="Test", description="Testdescription")
         except falcon.HTTPLengthRequired as e:
             self.assertEqual("Test", e.title, 'Title should be "Test"')
-            self.assertEqual('Testdescription', e.description, 'Description should be "Testdescription"')
+            self.assertEqual('Testdescription', e.description,
+                             'Description should be "Testdescription"')
 
     def test_http_precondition_failed_no_title_and_desc_and_challenges(self):
         try:
@@ -106,7 +114,8 @@ class TestError(testtools.TestCase):
             raise falcon.HTTPPreconditionFailed(title="Test", description="Testdescription")
         except falcon.HTTPPreconditionFailed as e:
             self.assertEqual("Test", e.title, 'Title should be "Test"')
-            self.assertEqual('Testdescription', e.description, 'Description should be "Testdescription"')
+            self.assertEqual('Testdescription', e.description,
+                             'Description should be "Testdescription"')
 
     def test_http_request_entity_too_large_no_title_and_desc_and_challenges(self):
         try:
@@ -119,10 +128,12 @@ class TestError(testtools.TestCase):
 
     def test_http_request_entity_too_large_with_title_and_desc_and_challenges(self):
         try:
-            raise falcon.HTTPRequestEntityTooLarge(title="Test", description="Testdescription", retry_after=123)
+            raise falcon.HTTPRequestEntityTooLarge(title="Test", description="Testdescription",
+                                                   retry_after=123)
         except falcon.HTTPRequestEntityTooLarge as e:
             self.assertEqual("Test", e.title, 'Title should be "Test"')
-            self.assertEqual('Testdescription', e.description, 'Description should be "Testdescription"')
+            self.assertEqual('Testdescription', e.description,
+                             'Description should be "Testdescription"')
             self.assertEqual('123', e.headers['Retry-After'], 'Retry-After should be 123')
 
     def test_http_uri_too_long_no_title_and_desc_and_challenges(self):
@@ -138,7 +149,8 @@ class TestError(testtools.TestCase):
             raise falcon.HTTPUriTooLong(title="Test", description="Testdescription")
         except falcon.HTTPUriTooLong as e:
             self.assertEqual("Test", e.title, 'Title should be "Test"')
-            self.assertEqual('Testdescription', e.description, 'Description should be "Testdescription"')
+            self.assertEqual('Testdescription', e.description,
+                             'Description should be "Testdescription"')
 
     def test_http_unsupported_media_type_no_title_and_desc_and_challenges(self):
         try:
@@ -150,7 +162,8 @@ class TestError(testtools.TestCase):
         try:
             raise falcon.HTTPUnsupportedMediaType(description="Testdescription")
         except falcon.HTTPUnsupportedMediaType as e:
-            self.assertEqual('Testdescription', e.description, 'Description should be "Testdescription"')
+            self.assertEqual('Testdescription', e.description,
+                             'Description should be "Testdescription"')
 
     def test_http_unprocessable_entity_no_title_and_desc_and_challenges(self):
         try:
@@ -165,7 +178,8 @@ class TestError(testtools.TestCase):
             raise falcon.HTTPUnprocessableEntity(title="Test", description="Testdescription")
         except falcon.HTTPUnprocessableEntity as e:
             self.assertEqual("Test", e.title, 'Title should be "Test"')
-            self.assertEqual('Testdescription', e.description, 'Description should be "Testdescription"')
+            self.assertEqual('Testdescription', e.description,
+                             'Description should be "Testdescription"')
 
     def test_http_too_many_requests_no_title_and_desc_and_challenges(self):
         try:
@@ -178,10 +192,12 @@ class TestError(testtools.TestCase):
 
     def test_http_too_many_requests_with_title_and_desc_and_challenges(self):
         try:
-            raise falcon.HTTPTooManyRequests(title="Test", description="Testdescription", retry_after=123)
+            raise falcon.HTTPTooManyRequests(title="Test", description="Testdescription",
+                                             retry_after=123)
         except falcon.HTTPTooManyRequests as e:
             self.assertEqual("Test", e.title, 'Title should be "Test"')
-            self.assertEqual('Testdescription', e.description, 'Description should be "Testdescription"')
+            self.assertEqual('Testdescription', e.description,
+                             'Description should be "Testdescription"')
             self.assertEqual('123', e.headers['Retry-After'], 'Retry-After should be 123')
 
     def test_http_unavailable_for_legal_reasons_no_title_and_desc_and_challenges(self):
@@ -194,10 +210,12 @@ class TestError(testtools.TestCase):
 
     def test_http_unavailable_for_legal_reasons_with_title_and_desc_and_challenges(self):
         try:
-            raise falcon.HTTPUnavailableForLegalReasons(title="Test", description="Testdescription")
+            raise falcon.HTTPUnavailableForLegalReasons(title="Test",
+                                                        description="Testdescription")
         except falcon.HTTPUnavailableForLegalReasons as e:
             self.assertEqual("Test", e.title, 'Title should be "Test"')
-            self.assertEqual('Testdescription', e.description, 'Description should be "Testdescription"')
+            self.assertEqual('Testdescription', e.description,
+                             'Description should be "Testdescription"')
 
     def test_http_internal_server_error_entity_no_title_and_desc_and_challenges(self):
         try:
@@ -212,7 +230,8 @@ class TestError(testtools.TestCase):
             raise falcon.HTTPInternalServerError(title="Test", description="Testdescription")
         except falcon.HTTPInternalServerError as e:
             self.assertEqual("Test", e.title, 'Title should be "Test"')
-            self.assertEqual('Testdescription', e.description, 'Description should be "Testdescription"')
+            self.assertEqual('Testdescription', e.description,
+                             'Description should be "Testdescription"')
 
     def test_http_bad_gateway_entity_no_title_and_desc_and_challenges(self):
         try:
@@ -227,7 +246,8 @@ class TestError(testtools.TestCase):
             raise falcon.HTTPBadGateway(title="Test", description="Testdescription")
         except falcon.HTTPBadGateway as e:
             self.assertEqual("Test", e.title, 'Title should be "Test"')
-            self.assertEqual('Testdescription', e.description, 'Description should be "Testdescription"')
+            self.assertEqual('Testdescription', e.description,
+                             'Description should be "Testdescription"')
 
     def test_http_service_unavailable_no_title_and_desc_and_challenges(self):
         try:
@@ -240,8 +260,10 @@ class TestError(testtools.TestCase):
 
     def test_http_service_unavailable_with_title_and_desc_and_challenges(self):
         try:
-            raise falcon.HTTPServiceUnavailable(title="Test", description="Testdescription", retry_after=123)
+            raise falcon.HTTPServiceUnavailable(title="Test", description="Testdescription",
+                                                retry_after=123)
         except falcon.HTTPServiceUnavailable as e:
             self.assertEqual("Test", e.title, 'Title should be "Test"')
-            self.assertEqual('Testdescription', e.description, 'Description should be "Testdescription"')
+            self.assertEqual('Testdescription', e.description,
+                             'Description should be "Testdescription"')
             self.assertEqual('123', e.headers['Retry-After'], 'Retry-After should be 123')
