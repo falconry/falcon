@@ -64,10 +64,10 @@ Fixed
 - When ``auto_parse_form_urlencoded`` is set to ``True``, the
   framework now checks the HTTP method before attempting to consume and
   parse the body.
-- Before attempting to read a form-encoded POST, the framework now
-  checks the Content-Length header to ensure that a non-empty body
-  is expected. This helps prevent bad requests from causing a blocking
-  read when running behind certain WSGI servers.
+- Before attempting to read the body of a form-encoded request, the
+  framework now checks the Content-Length header to ensure that a
+  non-empty body is expected. This helps prevent bad requests from
+  causing a blocking read when running behind certain WSGI servers.
 - When the requested method is not implemented for the target resource,
   the framework now raises ``falcon.HTTPMethodNotAllowed``, rather
   than modifying the ``falcon.Request`` object directly. This

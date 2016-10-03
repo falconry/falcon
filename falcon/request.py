@@ -386,10 +386,11 @@ class Request(object):
             self.content_type is not None and
             'application/x-www-form-urlencoded' in self.content_type and
 
-            # NOTE(kgriffs): POST is what we would normally expect, but
-            # just in case some apps like to color outside the lines,
-            # we'll allow PUT and PATCH to avoid breaking them.
-            self.method in ('POST', 'PUT', 'PATCH')
+            # NOTE(kgriffs): Within HTTP, a payload for a GET or HEAD
+            # request has no defined semantics, so we don't expect a
+            # body in those cases. We would normally not expect a body
+            # for OPTIONS either, but RFC 7231 does allow for it.
+            self.method not in ('GET', 'HEAD')
         ):
             self._parse_form_urlencoded()
 

@@ -8,11 +8,39 @@ from falcon.errors import HTTPInvalidParam
 import falcon.testing as testing
 
 
+class Resource(testing.SimpleTestResource):
+
+    @falcon.before(testing.capture_responder_args)
+    @falcon.before(testing.set_resp_defaults)
+    def on_put(self, req, resp, **kwargs):
+        pass
+
+    @falcon.before(testing.capture_responder_args)
+    @falcon.before(testing.set_resp_defaults)
+    def on_patch(self, req, resp, **kwargs):
+        pass
+
+    @falcon.before(testing.capture_responder_args)
+    @falcon.before(testing.set_resp_defaults)
+    def on_delete(self, req, resp, **kwargs):
+        pass
+
+    @falcon.before(testing.capture_responder_args)
+    @falcon.before(testing.set_resp_defaults)
+    def on_head(self, req, resp, **kwargs):
+        pass
+
+    @falcon.before(testing.capture_responder_args)
+    @falcon.before(testing.set_resp_defaults)
+    def on_options(self, req, resp, **kwargs):
+        pass
+
+
 @ddt.ddt
 class _TestQueryParams(testing.TestBase):
 
     def before(self):
-        self.resource = testing.SimpleTestResource()
+        self.resource = Resource()
         self.api.add_route('/', self.resource)
 
     def test_none(self):
@@ -566,22 +594,44 @@ class _TestQueryParams(testing.TestBase):
                           'payload')
 
 
+@ddt.ddt
 class PostQueryParams(_TestQueryParams):
     def before(self):
         super(PostQueryParams, self).before()
         self.api.req_options.auto_parse_form_urlencoded = True
 
     def simulate_request(self, path, query_string, **kwargs):
-
         headers = kwargs.setdefault('headers', {})
         headers['Content-Type'] = 'application/x-www-form-urlencoded'
 
+        if 'method' not in kwargs:
+            kwargs['method'] = 'POST'
+
         super(PostQueryParams, self).simulate_request(
             path,
-            method='POST',
             body=query_string,
             **kwargs
         )
+
+    @ddt.data('POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS')
+    def test_http_methods_body_expected(self, http_method):
+        query_string = 'marker=deadbeef&limit=25'
+        self.simulate_request('/', query_string=query_string,
+                              method=http_method)
+
+        req = self.resource.captured_req
+        self.assertEqual(req.get_param('marker'), 'deadbeef')
+        self.assertEqual(req.get_param('limit'), '25')
+
+    @ddt.data('GET', 'HEAD')
+    def test_http_methods_body_not_expected(self, http_method):
+        query_string = 'marker=deadbeef&limit=25'
+        self.simulate_request('/', query_string=query_string,
+                              method=http_method)
+
+        req = self.resource.captured_req
+        self.assertEqual(req.get_param('marker'), None)
+        self.assertEqual(req.get_param('limit'), None)
 
     def test_non_ascii(self):
         value = u'\u8c46\u74e3'
