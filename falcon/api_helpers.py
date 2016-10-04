@@ -19,19 +19,23 @@ from functools import wraps
 from falcon import util
 
 
-def prepare_middleware(middleware=None):
+def prepare_middleware(middleware=None, independent_middleware=False):
     """Check middleware interface and prepare it to iterate.
 
     Args:
-        middleware:  list (or object) of input middleware
+        middleware: list (or object) of input middleware
+        independent_middleware: bool whether should prepare request and
+            response middleware independently
 
     Returns:
-        list: A list of prepared middleware tuples
+        list: A tuple of prepared middleware lists
     """
 
     # PERF(kgriffs): do getattr calls once, in advance, so we don't
     # have to do them every time in the request path.
-    prepared_middleware = []
+    prepared_request_mw = []
+    prepared_resource_mw = []
+    prepared_response_mw = []
 
     if middleware is None:
         middleware = []
@@ -66,10 +70,22 @@ def prepare_middleware(middleware=None):
 
                 process_response = let()
 
-        prepared_middleware.append((process_request, process_resource,
-                                    process_response))
+        # NOTE: depending on whether we want to execute middleware
+        # independently, we group response and request middleware either
+        # together or separately.
+        if independent_middleware:
+            if process_request:
+                prepared_request_mw.append(process_request)
+            if process_response:
+                prepared_response_mw.insert(0, process_response)
+        else:
+            if process_request or process_response:
+                prepared_request_mw.append((process_request, process_response))
 
-    return prepared_middleware
+        if process_resource:
+            prepared_resource_mw.append(process_resource)
+
+    return (prepared_request_mw, prepared_resource_mw, prepared_response_mw)
 
 
 def default_serialize_error(req, resp, exception):

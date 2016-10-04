@@ -103,6 +103,10 @@ class API(object):
             to use in lieu of the default engine.
             See also: :ref:`Routing <routing>`.
 
+        independent_middleware (bool): set to true if response middleware
+            should be executed independently of whether or not request
+            middleware raises an exception.
+
     Attributes:
         req_options: A set of behavioral options related to incoming
             requests. See also: :py:class:`~.RequestOptions`
@@ -125,12 +129,15 @@ class API(object):
 
     def __init__(self, media_type=DEFAULT_MEDIA_TYPE,
                  request_type=Request, response_type=Response,
-                 middleware=None, router=None):
+                 middleware=None, router=None,
+                 independent_middleware=False):
         self._sinks = []
         self._media_type = media_type
 
         # set middleware
-        self._middleware = helpers.prepare_middleware(middleware)
+        self._middleware = helpers.prepare_middleware(
+            middleware, independent_middleware=independent_middleware)
+        self._independent_middleware = independent_middleware
 
         self._router = router or routing.DefaultRouter()
 
@@ -166,7 +173,8 @@ class API(object):
         resource = None
         params = {}
 
-        mw_pr_stack = []  # Keep track of executed middleware components
+        mw_req_stack, mw_rsrc_stack, mw_resp_stack = self._middleware
+
         req_succeeded = False
 
         try:
@@ -174,13 +182,18 @@ class API(object):
                 # NOTE(ealogar): The execution of request middleware
                 # should be before routing. This will allow request mw
                 # to modify the path.
-                for component in self._middleware:
-                    process_request, _, process_response = component
-                    if process_request is not None:
+                # NOTE: if flag set to use independent middleware, execute
+                # request middleware independently. Otherwise, only queue
+                # response middleware after request middleware succeeds.
+                if self._independent_middleware:
+                    for process_request in mw_req_stack:
                         process_request(req, resp)
-
-                    if process_response is not None:
-                        mw_pr_stack.append(process_response)
+                else:
+                    for process_request, process_response in mw_req_stack:
+                        if process_request:
+                            process_request(req, resp)
+                        if process_response:
+                            mw_resp_stack.append(process_response)
 
                 # NOTE(warsaw): Moved this to inside the try except
                 # because it is possible when using object-based
@@ -201,10 +214,8 @@ class API(object):
                     # resource middleware methods.
                     if resource is not None:
                         # Call process_resource middleware methods.
-                        for component in self._middleware:
-                            _, process_resource, _ = component
-                            if process_resource is not None:
-                                process_resource(req, resp, resource, params)
+                        for process_resource in mw_rsrc_stack:
+                            process_resource(req, resp, resource, params)
 
                     responder(req, resp, **params)
                     req_succeeded = True
@@ -220,8 +231,7 @@ class API(object):
             # reworked.
 
             # Call process_response middleware methods.
-            while mw_pr_stack:
-                process_response = mw_pr_stack.pop()
+            for process_response in mw_resp_stack:
                 try:
                     process_response(req, resp, resource, req_succeeded)
                 except Exception as ex:
