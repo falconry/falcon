@@ -125,7 +125,8 @@ class API(object):
 
     __slots__ = ('_request_type', '_response_type',
                  '_error_handlers', '_media_type', '_router', '_sinks',
-                 '_serialize_error', 'req_options', '_middleware')
+                 '_serialize_error', 'req_options',
+                 '_middleware', '_independent_middleware')
 
     def __init__(self, media_type=DEFAULT_MEDIA_TYPE,
                  request_type=Request, response_type=Response,
@@ -173,6 +174,7 @@ class API(object):
         resource = None
         params = {}
 
+        dependent_mw_resp_stack = []
         mw_req_stack, mw_rsrc_stack, mw_resp_stack = self._middleware
 
         req_succeeded = False
@@ -193,7 +195,7 @@ class API(object):
                         if process_request:
                             process_request(req, resp)
                         if process_response:
-                            mw_resp_stack.append(process_response)
+                            dependent_mw_resp_stack.insert(0, process_response)
 
                 # NOTE(warsaw): Moved this to inside the try except
                 # because it is possible when using object-based
@@ -231,7 +233,7 @@ class API(object):
             # reworked.
 
             # Call process_response middleware methods.
-            for process_response in mw_resp_stack:
+            for process_response in mw_resp_stack or dependent_mw_resp_stack:
                 try:
                     process_response(req, resp, resource, req_succeeded)
                 except Exception as ex:

@@ -28,14 +28,14 @@ def prepare_middleware(middleware=None, independent_middleware=False):
             response middleware independently
 
     Returns:
-        list: A tuple of prepared middleware lists
+        list: A tuple of prepared middleware tuples
     """
 
     # PERF(kgriffs): do getattr calls once, in advance, so we don't
     # have to do them every time in the request path.
-    prepared_request_mw = []
-    prepared_resource_mw = []
-    prepared_response_mw = []
+    request_mw = []
+    resource_mw = []
+    response_mw = []
 
     if middleware is None:
         middleware = []
@@ -75,17 +75,17 @@ def prepare_middleware(middleware=None, independent_middleware=False):
         # together or separately.
         if independent_middleware:
             if process_request:
-                prepared_request_mw.append(process_request)
+                request_mw.append(process_request)
             if process_response:
-                prepared_response_mw.insert(0, process_response)
+                response_mw.insert(0, process_response)
         else:
             if process_request or process_response:
-                prepared_request_mw.append((process_request, process_response))
+                request_mw.append((process_request, process_response))
 
         if process_resource:
-            prepared_resource_mw.append(process_resource)
+            resource_mw.append(process_resource)
 
-    return (prepared_request_mw, prepared_resource_mw, prepared_response_mw)
+    return (tuple(request_mw), tuple(resource_mw), tuple(response_mw))
 
 
 def default_serialize_error(req, resp, exception):
