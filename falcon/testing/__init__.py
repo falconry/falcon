@@ -74,7 +74,7 @@ supported::
 from falcon.testing.base import TestBase  # NOQA
 from falcon.testing.client import *  # NOQA
 from falcon.testing.helpers import *  # NOQA
-from falcon.testing.resource import capture_responder_args  # NOQA
+from falcon.testing.resource import capture_responder_args, set_resp_defaults  # NOQA
 from falcon.testing.resource import SimpleTestResource, TestResource  # NOQA
 from falcon.testing.srmock import StartResponseMock  # NOQA
 from falcon.testing.test_case import TestCase  # NOQA
