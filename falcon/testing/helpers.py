@@ -130,6 +130,23 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1',
     # the paths before setting PATH_INFO
     path = uri.decode(path)
 
+    if six.PY3:
+        # NOTE(kgriffs): The decoded path may contain UTF-8 characters.
+        # But according to the WSGI spec, no strings can contain chars
+        # outside ISO-8859-1. Therefore, to reconcile the URI
+        # encoding standard that allows UTF-8 with the WSGI spec
+        # that does not, WSGI servers tunnel the string via
+        # ISO-8859-1. falcon.testing.create_environ() mimics this
+        # behavior, e.g.:
+        #
+        #   tunnelled_path = path.encode('utf-8').decode('iso-8859-1')
+        #
+        # falcon.Request does the following to reverse the process:
+        #
+        #   path = tunnelled_path.encode('iso-8859-1').decode('utf-8', 'replace')
+        #
+        path = path.encode('utf-8').decode('iso-8859-1')
+
     if six.PY2 and isinstance(path, six.text_type):
         path = path.encode('utf-8')
 

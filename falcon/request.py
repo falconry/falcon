@@ -46,8 +46,8 @@ SimpleCookie = http_cookies.SimpleCookie
 DEFAULT_ERROR_LOG_FORMAT = (u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
                             u' {1} {2}{3} => ')
 
-TRUE_STRINGS = ('true', 'True', 'yes', '1')
-FALSE_STRINGS = ('false', 'False', 'no', '0')
+TRUE_STRINGS = ('true', 'True', 'yes', '1', 'on')
+FALSE_STRINGS = ('false', 'False', 'no', '0', 'off')
 WSGI_CONTENT_HEADERS = ('CONTENT_TYPE', 'CONTENT_LENGTH')
 
 # PERF(kgriffs): Avoid an extra namespace lookup when using these functions
@@ -386,10 +386,11 @@ class Request(object):
             self.content_type is not None and
             'application/x-www-form-urlencoded' in self.content_type and
 
-            # NOTE(kgriffs): POST is what we would normally expect, but
-            # just in case some apps like to color outside the lines,
-            # we'll allow PUT and PATCH to avoid breaking them.
-            self.method in ('POST', 'PUT', 'PATCH')
+            # NOTE(kgriffs): Within HTTP, a payload for a GET or HEAD
+            # request has no defined semantics, so we don't expect a
+            # body in those cases. We would normally not expect a body
+            # for OPTIONS either, but RFC 7231 does allow for it.
+            self.method not in ('GET', 'HEAD')
         ):
             self._parse_form_urlencoded()
 
@@ -948,8 +949,8 @@ class Request(object):
 
         The following boolean strings are supported::
 
-            TRUE_STRINGS = ('true', 'True', 'yes', '1')
-            FALSE_STRINGS = ('false', 'False', 'no', '0')
+            TRUE_STRINGS = ('true', 'True', 'yes', '1', 'on')
+            FALSE_STRINGS = ('false', 'False', 'no', '0', 'off')
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'detailed').
