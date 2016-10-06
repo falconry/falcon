@@ -54,7 +54,7 @@ class HTTPBadRequest(HTTPError):
     (See also: RFC 7231, Section 6.5.1)
 
     Keyword Args:
-        title (str): Error title (e.g., 'TTL Out of Range').
+        title (str): Error title (default '400 Bad Request').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         headers (dict or list): A ``dict`` of header names and values
@@ -79,8 +79,8 @@ class HTTPBadRequest(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
@@ -113,7 +113,7 @@ class HTTPUnauthorized(HTTPError):
     (See also: RFC 7235, Section 3.1)
 
     Keyword Args:
-        title (str): Error title (e.g., 'Authentication Required').
+        title (str): Error title (default '401 Unauthorized').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         challenges (iterable of str): One or more authentication
@@ -142,8 +142,8 @@ class HTTPUnauthorized(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
@@ -182,7 +182,7 @@ class HTTPForbidden(HTTPError):
     (See also: RFC 7231, Section 6.5.4)
 
     Keyword Args:
-        title (str): Error title (e.g., 'Permission Denied').
+        title (str): Error title (default '403 Forbidden').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         headers (dict or list): A ``dict`` of header names and values
@@ -207,8 +207,8 @@ class HTTPForbidden(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
@@ -264,8 +264,8 @@ class HTTPNotFound(OptionalRepresentation, HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
@@ -322,8 +322,8 @@ class HTTPMethodNotAllowed(OptionalRepresentation, HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
@@ -344,7 +344,7 @@ class HTTPNotAcceptable(HTTPError):
 
     The target resource does not have a current representation that
     would be acceptable to the user agent, according to the proactive
-    negotiation header fields received in the request1, and the server
+    negotiation header fields received in the request, and the server
     is unwilling to supply a default representation.
 
     The server SHOULD generate a payload containing a list of available
@@ -382,8 +382,8 @@ class HTTPNotAcceptable(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
@@ -417,7 +417,7 @@ class HTTPConflict(HTTPError):
     (See also: RFC 7231, Section 6.5.8)
 
     Keyword Args:
-        title (str): Error title (e.g., 'Editing Conflict').
+        title (str): Error title (default '409 Conflict').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         headers (dict or list): A ``dict`` of header names and values
@@ -442,8 +442,8 @@ class HTTPConflict(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
@@ -507,8 +507,8 @@ class HTTPGone(OptionalRepresentation, HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
@@ -531,7 +531,7 @@ class HTTPLengthRequired(HTTPError):
     (See also: RFC 7231, Section 6.5.10)
 
     Keyword Args:
-        title (str): Error title (e.g., 'Missing Content-Length').
+        title (str): Error title (default '411 Length Required').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         headers (dict or list): A ``dict`` of header names and values
@@ -556,8 +556,8 @@ class HTTPLengthRequired(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
@@ -581,7 +581,7 @@ class HTTPPreconditionFailed(HTTPError):
     (See also: RFC 7232, Section 4.2)
 
     Keyword Args:
-        title (str): Error title (e.g., 'Image Not Modified').
+        title (str): Error title (default '412 Precondition Failed').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         headers (dict or list): A ``dict`` of header names and values
@@ -606,8 +606,8 @@ class HTTPPreconditionFailed(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
@@ -634,7 +634,7 @@ class HTTPRequestEntityTooLarge(HTTPError):
     (See also: RFC 7231, Section 6.5.11)
 
     Keyword Args:
-        title (str): Error title (e.g., 'Request Body Limit Exceeded').
+        title (str): Error title (default '413 Request Entity Too Large').
 
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
@@ -665,8 +665,8 @@ class HTTPRequestEntityTooLarge(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
@@ -730,8 +730,8 @@ class HTTPUriTooLong(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
@@ -779,8 +779,8 @@ class HTTPUnsupportedMediaType(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
@@ -835,7 +835,7 @@ class HTTPUnprocessableEntity(HTTPError):
     (See also: RFC 4918, Section 11.2)
 
     Keyword Args:
-        title (str): Error title (e.g., 'Missing title field').
+        title (str): Error title (default '422 Unprocessable Entity').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         headers (dict or list): A ``dict`` of header names and values
@@ -860,8 +860,8 @@ class HTTPUnprocessableEntity(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
@@ -887,7 +887,7 @@ class HTTPTooManyRequests(HTTPError):
     (See also: RFC 6585, Section 4)
 
     Keyword Args:
-        title (str): Error title (e.g., 'Too Many Requests').
+        title (str): Error title (default '429 Too Many Requests').
         description (str): Human-friendly description of the rate limit that
             was exceeded.
         retry_after (datetime or int): Value for the Retry-After
@@ -916,8 +916,8 @@ class HTTPTooManyRequests(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
@@ -961,7 +961,7 @@ class HTTPUnavailableForLegalReasons(OptionalRepresentation, HTTPError):
     (See also: RFC 7725, Section 3)
 
     Keyword Args:
-        title (str): Error title (e.g., 'Legal reason: <reason>').
+        title (str): Error title (default '451 Unavailable For Legal Reasons').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two (default ``None``).
         headers (dict or list): A ``dict`` of header names and values
@@ -986,8 +986,8 @@ class HTTPUnavailableForLegalReasons(OptionalRepresentation, HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
@@ -1007,7 +1007,7 @@ class HTTPInternalServerError(HTTPError):
     (See also: RFC 7231, Section 6.6.1)
 
     Keyword Args:
-        title (str): Error title (e.g., 'This Should Never Happen').
+        title (str): Error title (default '500 Internal Server Error').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         headers (dict or list): A ``dict`` of header names and values
@@ -1032,8 +1032,8 @@ class HTTPInternalServerError(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
@@ -1055,8 +1055,7 @@ class HTTPBadGateway(HTTPError):
     (See also: RFC 7231, Section 6.6.3)
 
     Keyword Args:
-        title (str): Error title, for
-            example: 'Upstream Server is Unavailable'.
+        title (str): Error title (default '502 Bad Gateway').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         headers (dict or list): A ``dict`` of header names and values
@@ -1081,8 +1080,8 @@ class HTTPBadGateway(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
@@ -1111,7 +1110,7 @@ class HTTPServiceUnavailable(HTTPError):
     (See also: RFC 7231, Section 6.6.4)
 
     Keyword Args:
-        title (str): Error title (e.g., 'Temporarily Unavailable').
+        title (str): Error title (default '503 Service Unavailable').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         retry_after (datetime or int): Value for the Retry-After header. If a
@@ -1140,8 +1139,8 @@ class HTTPServiceUnavailable(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
@@ -1193,8 +1192,8 @@ class HTTPInvalidHeader(HTTPBadRequest):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
@@ -1240,8 +1239,8 @@ class HTTPMissingHeader(HTTPBadRequest):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
@@ -1289,8 +1288,8 @@ class HTTPInvalidParam(HTTPBadRequest):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
@@ -1337,8 +1336,8 @@ class HTTPMissingParam(HTTPBadRequest):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
