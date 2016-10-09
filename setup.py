@@ -104,11 +104,10 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=REQUIRES,
-    setup_requires=[],
+    setup_requires=['pytest-runner'],
     cmdclass=cmdclass,
     ext_modules=ext_modules,
-    test_suite='nose.collector',
-    tests_require=['nose', 'ddt', 'testtools', 'requests', 'pyyaml', 'pytest'],
+    tests_require=['ddt', 'testtools', 'requests', 'pyyaml', 'pytest'],
     entry_points={
         'console_scripts': [
             'falcon-bench = falcon.cmd.bench:main',
