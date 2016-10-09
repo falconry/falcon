@@ -21,10 +21,15 @@ New & Improved
 - JSON-encoded query parameter values can now be retrieved and decoded
   in a single step via ``falcon.Request.get_param_as_dict()``.
 - CSV-style parsing of query parameter values can now be disabled.
+- ``falcon.Request.get_param_as_bool()`` now recognizes "on" and
+  "off" in support of IE's default checkbox values.
+- An `accept_ranges` property was added to ``falcon.Request`` to
+  facilitate setting the Accept-Ranges header.
 - Added the ``falcon.HTTPUriTooLong`` and
   ``falcon.HTTPGone`` error classes.
 - When a title is not specified for ``falcon.HTTPError``, it now
   defaults to the HTTP status text.
+- All parameters are now optional for most error classes.
 - Cookie-related documentation has been clarified and expanded
 - The ``falcon.testing.Cookie`` class was added to represent a
   cookie returned by a simulated request. ``falcon.testing.Result``
@@ -89,11 +94,16 @@ Fixed
 - ``falcon.testing.Result`` now assumes that the response body
   is encoded as UTF-8 when the character set is not specified, rather
   than raising an error when attempting to decode the response body.
+- When simulating requests, Falcon's testing framework now properly
+  tunnels Unicode characters through the WSGI interface.
 - ``import falcon.uri`` now works, in addition to
   ``from falcon import uri``.
 - URI template fields are now validated up front, when the route is
   added, to ensure they are valid Python identifiers. This prevents
   cryptic errors from being raised later on when requests are routed.
+- When running under Python 3, ``inspect.signature()`` is used
+  instead of ``inspect.getargspec()`` to provide compatibility with
+  annotated functions.
 
 1.0.0
 =====
