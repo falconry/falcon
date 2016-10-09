@@ -78,8 +78,8 @@ class HTTPError(Exception):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
