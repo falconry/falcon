@@ -16,7 +16,7 @@ Quick Links
 -----------
 
 * `Read the docs <https://falcon.readthedocs.io/en/stable>`__.
-* `Subscribe to the community mailing list <https://falcon.readthedocs.io/en/stable/community/help.html#mailing-list>`__.
+* `Join the discussion group <https://groups.google.com/forum/#!forum/falconframework>`__.
 * `Hang out in #falconframework on freenode <https://kiwiirc.com/client/irc.freenode.net/?#falconframework>`__.
 
 Design Goals
