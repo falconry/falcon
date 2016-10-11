@@ -46,10 +46,20 @@ except ImportError:
 from falcon.bench import create  # NOQA
 import falcon.testing as helpers
 
+# NOTE(kgriffs): Based on testing, these values provide a ceiling that's
+# several times higher than fast x86 hardware can achieve today.
+#
+#   int(1.2**60) = 56347
+#
+ITER_DETECTION_MAX_ATTEMPTS = 60
+ITER_DETECTION_MULTIPLIER = 1.2
 
-def bench(name, iterations, env, stat_memory):
-    func = create_bench(name, env)
+# NOTE(kgriffs): Benchmark duration range, in seconds, to target
+ITER_DETECTION_DURATION_MIN = 0.2
+ITER_DETECTION_DURATION_MAX = 2.0
 
+
+def bench(func, iterations, stat_memory):
     gc.collect()
     heap_diff = None
 
@@ -66,7 +76,29 @@ def bench(name, iterations, env, stat_memory):
     sys.stdout.write('.')
     sys.stdout.flush()
 
-    return (name, sec_per_req, heap_diff)
+    return (sec_per_req, heap_diff)
+
+
+def determine_iterations(func):
+    # NOTE(kgriffs): Algorithm adapted from IPython's magic timeit
+    # function to determine iterations so that 0.2 <= total time < 2.0
+    iterations = ITER_DETECTION_MULTIPLIER
+    for __ in range(1, ITER_DETECTION_MAX_ATTEMPTS):
+        gc.collect()
+
+        total_sec = timeit.timeit(
+            func,
+            setup=gc.enable,
+            number=int(iterations)
+        )
+
+        if total_sec >= ITER_DETECTION_DURATION_MIN:
+            assert total_sec < ITER_DETECTION_DURATION_MAX
+            break
+
+        iterations *= ITER_DETECTION_MULTIPLIER
+
+    return int(iterations)
 
 
 def profile(name, env, filename=None, verbose=False):
@@ -186,6 +218,16 @@ def run(frameworks, trials, iterations, stat_memory):
         return
 
     datasets = []
+
+    benchmarks = []
+    for name in frameworks:
+        bm = create_bench(name, get_env(name))
+        bm_iterations = iterations if iterations else determine_iterations(bm)
+        benchmarks.append((name, bm_iterations, bm))
+        print('{}: {} iterations'.format(name, bm_iterations))
+
+    print()
+
     for r in range(trials):
         random.shuffle(frameworks)
 
@@ -193,9 +235,15 @@ def run(frameworks, trials, iterations, stat_memory):
                          (r + 1, trials))
         sys.stdout.flush()
 
-        dataset = [bench(framework, iterations,
-                         get_env(framework), stat_memory)
-                   for framework in frameworks]
+        dataset = []
+        for name, bm_iterations, bm in benchmarks:
+            sec_per_req, heap_diff = bench(
+                bm,
+                bm_iterations,
+                stat_memory
+            )
+
+            dataset.append((name, sec_per_req, heap_diff))
 
         datasets.append(dataset)
         print('done.')
@@ -216,8 +264,8 @@ def main():
     parser = argparse.ArgumentParser(description='Falcon benchmark runner')
     parser.add_argument('-b', '--benchmark', type=str, action='append',
                         choices=frameworks, dest='frameworks', nargs='+')
-    parser.add_argument('-i', '--iterations', type=int, default=50000)
-    parser.add_argument('-t', '--trials', type=int, default=3)
+    parser.add_argument('-i', '--iterations', type=int, default=0)
+    parser.add_argument('-t', '--trials', type=int, default=10)
     parser.add_argument('-p', '--profile', type=str,
                         choices=['standard', 'verbose'])
     parser.add_argument('-o', '--profile-output', type=str, default=None)
