@@ -109,14 +109,16 @@ class UnicodeHeaderResource(object):
             (u'X-auTH-toKEN', 'toomanysecrets'),
             ('Content-TYpE', u'application/json'),
             (u'X-symBOl', u'@'),
+        ])
 
-            # TODO(kgriffs): This will cause the wsgiref validator
-            # to raise an error. Falcon itself does not currently
-            # check for non-ASCII chars to save some CPU cycles. The
-            # app is responsible for doing the right thing, and
-            # validating its own output as needed.
-            #
-            # (u'X-symb\u00F6l', u'\u00FF'),
+    def on_post(self, req, resp):
+        resp.set_headers([
+            (u'X-symb\u00F6l', 'thing'),
+        ])
+
+    def on_put(self, req, resp):
+        resp.set_headers([
+            ('X-Thing', u'\u00FF'),
         ])
 
 
@@ -321,7 +323,8 @@ class TestHeaders(testing.TestCase):
         self.assertEqual(resp.content_range, content_range)
         self.assertEqual(result.headers['Content-Range'], content_range)
 
-        resp.content_range = (1, 499, 10 * 1024, 'bytes')
+        resp.content_range = (1, 499, 10 * 1024, u'bytes')
+        self.assertIsInstance(resp.content_range, str)
         self.assertEqual(resp.content_range, 'bytes 1-499/10240')
 
         self.assertEqual(resp.accept_ranges, 'bytes')
@@ -350,7 +353,7 @@ class TestHeaders(testing.TestCase):
                          '/%C3%A7runchy/bacon')
         self.assertEqual(result.headers['Location'], 'ab%C3%A7')
 
-    def test_unicode_headers(self):
+    def test_unicode_headers_convertable(self):
         self.api.add_route('/', UnicodeHeaderResource())
 
         result = self.simulate_get('/')
@@ -358,6 +361,14 @@ class TestHeaders(testing.TestCase):
         self.assertEqual(result.headers['Content-Type'], 'application/json')
         self.assertEqual(result.headers['X-Auth-Token'], 'toomanysecrets')
         self.assertEqual(result.headers['X-Symbol'], '@')
+
+    def test_unicode_headers_not_convertable(self):
+        if six.PY3:
+            self.skipTest('Test only applies to Python 2')
+
+        self.api.add_route('/', UnicodeHeaderResource())
+        self.assertRaises(UnicodeEncodeError, self.simulate_post, '/')
+        self.assertRaises(UnicodeEncodeError, self.simulate_put, '/')
 
     def test_response_set_and_get_header(self):
         resource = HeaderHelpersResource()
@@ -401,8 +412,8 @@ class TestHeaders(testing.TestCase):
 
     @ddt.data(
         (['accept-encoding'], 'accept-encoding'),
-        (['accept-encoding', 'x-auth-token'], 'accept-encoding, x-auth-token'),
-        (('accept-encoding', 'x-auth-token'), 'accept-encoding, x-auth-token'),
+        ([u'accept-encoding', 'x-auth-token'], 'accept-encoding, x-auth-token'),
+        (('accept-encoding', u'x-auth-token'), 'accept-encoding, x-auth-token'),
     )
     @ddt.unpack
     def test_vary_header(self, vary, expected_value):

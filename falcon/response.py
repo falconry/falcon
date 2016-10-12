@@ -22,8 +22,12 @@ from six import string_types as STRING_TYPES
 # See issue https://github.com/falconry/falcon/issues/556
 from six.moves import http_cookies
 
-from falcon.response_helpers import format_range, header_property
-from falcon.response_helpers import is_ascii_encodable
+from falcon.response_helpers import (
+    format_header_value_list,
+    format_range,
+    header_property,
+    is_ascii_encodable,
+)
 from falcon.util import dt_to_http, TimezoneGMT
 from falcon.util.uri import encode as uri_encode
 from falcon.util.uri import encode_value as uri_encode_value
@@ -346,11 +350,17 @@ class Response(object):
             name (str): Header name (case-insensitive). The restrictions
                 noted below for the header's value also apply here.
             value (str): Value for the header. Must be of type ``str`` or
-                ``StringType`` and contain only ISO-8859-1 characters.
+                ``StringType`` and contain only US-ASCII characters.
                 Under Python 2.x, the ``unicode`` type is also accepted,
-                although such strings are also limited to ISO-8859-1.
+                although such strings are also limited to US-ASCII.
         """
-        name, value = self._encode_header(name, value)
+        if PY2:
+            # NOTE(kgriffs): uwsgi fails with a TypeError if any header
+            # is not a str, so do the conversion here. It's actually
+            # faster to not do an isinstance check. str() will encode
+            # to US-ASCII.
+            name = str(name)
+            value = str(value)
 
         # NOTE(kgriffs): normalize name by lowercasing it
         self._headers[name.lower()] = value
@@ -370,12 +380,18 @@ class Response(object):
             name (str): Header name (case-insensitive). The restrictions
                 noted below for the header's value also apply here.
             value (str): Value for the header. Must be of type ``str`` or
-                ``StringType`` and contain only ISO-8859-1 characters.
+                ``StringType`` and contain only US-ASCII characters.
                 Under Python 2.x, the ``unicode`` type is also accepted,
-                although such strings are also limited to ISO-8859-1.
+                although such strings are also limited to US-ASCII.
 
         """
-        name, value = self._encode_header(name, value)
+        if PY2:
+            # NOTE(kgriffs): uwsgi fails with a TypeError if any header
+            # is not a str, so do the conversion here. It's actually
+            # faster to not do an isinstance check. str() will encode
+            # to US-ASCII.
+            name = str(name)
+            value = str(value)
 
         name = name.lower()
         if name in self._headers:
@@ -393,9 +409,9 @@ class Response(object):
             headers (dict or list): A dictionary of header names and values
                 to set, or a ``list`` of (*name*, *value*) tuples. Both *name*
                 and *value* must be of type ``str`` or ``StringType`` and
-                contain only ISO-8859-1 characters. Under Python 2.x, the
+                contain only US-ASCII characters. Under Python 2.x, the
                 ``unicode`` type is also accepted, although such strings are
-                also limited to ISO-8859-1.
+                also limited to US-ASCII.
 
                 Note:
                     Falcon can process a list of tuples slightly faster
@@ -412,9 +428,21 @@ class Response(object):
         # NOTE(kgriffs): We can't use dict.update because we have to
         # normalize the header names.
         _headers = self._headers
-        for name, value in headers:
-            name, value = self._encode_header(name, value)
-            _headers[name.lower()] = value
+
+        if PY2:
+            for name, value in headers:
+                # NOTE(kgriffs): uwsgi fails with a TypeError if any header
+                # is not a str, so do the conversion here. It's actually
+                # faster to not do an isinstance check. str() will encode
+                # to US-ASCII.
+                name = str(name)
+                value = str(value)
+
+                _headers[name.lower()] = value
+
+        else:
+            for name, value in headers:
+                _headers[name.lower()] = value
 
     def add_link(self, target, rel, title=None, title_star=None,
                  anchor=None, hreflang=None, type_hint=None):
@@ -523,6 +551,13 @@ class Response(object):
         if anchor is not None:
             value += '; anchor="' + uri_encode(anchor) + '"'
 
+        if PY2:
+            # NOTE(kgriffs): uwsgi fails with a TypeError if any header
+            # is not a str, so do the conversion here. It's actually
+            # faster to not do an isinstance check. str() will encode
+            # to US-ASCII.
+            value = str(value)
+
         _headers = self._headers
         if 'link' in _headers:
             _headers['link'] += ', ' + value
@@ -538,7 +573,7 @@ class Response(object):
         the value for the header.
 
         """,
-        lambda v: ', '.join(v))
+        format_header_value_list)
 
     content_location = header_property(
         'Content-Location',
@@ -623,7 +658,7 @@ class Response(object):
         See also: http://goo.gl/NGHdL
 
         """,
-        lambda v: ', '.join(v))
+        format_header_value_list)
 
     accept_ranges = header_property(
         'Accept-Ranges',
@@ -642,16 +677,6 @@ class Response(object):
             type.
 
         """)
-
-    def _encode_header(self, name, value, py2=PY2):
-        if py2:
-            if isinstance(name, unicode):
-                name = name.encode('ISO-8859-1')
-
-            if isinstance(value, unicode):
-                value = value.encode('ISO-8859-1')
-
-        return name, value
 
     def _wsgi_headers(self, media_type=None, py2=PY2):
         """Convert headers into the format expected by WSGI servers.
