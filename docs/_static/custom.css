@@ -1,0 +1,36 @@
+img.logo {
+    margin-right: 0;
+    padding-left: 7px;
+}
+
+h1.logo a {
+    display: none;
+}
+
+#gh-buttons {
+    margin-bottom: 2em;
+}
+
+h1.logo-text {
+    font-family: "Amethysta", "goudy old style", serif;
+    color: #333;
+    position: absolute;
+    z-index: 10;
+    top: 10px;
+    font-size: 20pt;
+}
+
+div.body h1,
+div.body h2,
+div.body h3,
+div.body h4,
+div.body h5,
+div.body h6 {
+    font-family: "Amethysta", "goudy old style", serif;
+    font-weight: bold;
+    color: #333;
+}
+
+table.field-list th {
+    width: 95px;
+}
