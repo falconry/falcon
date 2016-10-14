@@ -1,23 +1,33 @@
-img.logo {
-    margin-right: 0;
-    padding-left: 7px;
-}
-
-h1.logo a {
+/* Hide theme's default logo section */
+.logo a {
     display: none;
 }
 
-#gh-buttons {
-    margin-bottom: 2em;
+#logo a,
+#logo a:hover {
+    border-bottom: none;
 }
 
-h1.logo-text {
+#logo img {
+    margin: -32px 0 0 2px;
+    padding: 0;
+}
+
+#gh-buttons {
+    margin-top: 2em;
+}
+
+#logo-text {
     font-family: "Amethysta", "goudy old style", serif;
-    color: #333;
+    font-weight: bold;
+
+    font-size: 18pt;
+    color: #444;
     position: absolute;
-    z-index: 10;
-    top: 10px;
-    font-size: 20pt;
+
+    left: 9px;
+    top: 1px;
+    /*margin: -4px -4px 0 0;*/
 }
 
 div.body h1,
@@ -25,12 +35,56 @@ div.body h2,
 div.body h3,
 div.body h4,
 div.body h5,
-div.body h6 {
+div.body h6,
+div.sphinxsidebar h3 {
     font-family: "Amethysta", "goudy old style", serif;
     font-weight: bold;
-    color: #333;
+    color: #444;
 }
 
-table.field-list th {
-    width: 95px;
+div.sphinxsidebar h3 {
+    margin: 1.5em 0 0 0;
+}
+
+div input[type="text"] {
+    padding: 5px;
+    margin: 0 0 0.5em 0;
+    font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+}
+
+div input[type="submit"] {
+    font-size: 12px;
+    width: 64px;
+    height: 27px;
+    font-weight: 600;
+    font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+
+    border: 1px solid #d5d5d5;
+    border-radius: 3px;
+    padding: 0 10px;
+
+    color: #333;
+    background-color: #eee;
+    background-image: linear-gradient(to bottom,#fcfcfc,#eee);
+}
+
+div input[type="submit"]:hover {
+    background-color: #ddd;
+    background-image: linear-gradient(to bottom,#eee,#ddd);
+    border-color: #ccc;
+}
+
+div input[type="submit"]:active, #searchbox input[type="submit"]:active {
+    background-color: #dcdcdc;
+    background-image: none;
+    border-color: #b5b5b5;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,.15);
+}
+
+div input[type="submit"]:focus {
+    outline: none;
+}
+
+input[type=text]:focus {
+    outline: 1px solid #999;
 }
