@@ -7,10 +7,6 @@ In this tutorial we'll walk through building an API for a simple image sharing
 service. Along the way, we'll discuss Falcon's major features and introduce
 the terminology used by the framework.
 
-
-.. include:: big-picture-snip.rst
-
-
 First Steps
 -----------
 
