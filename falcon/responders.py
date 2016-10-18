@@ -15,8 +15,8 @@
 """Default responder implementations."""
 
 from falcon.errors import HTTPBadRequest
-from falcon.errors import HTTPNotFound
 from falcon.errors import HTTPMethodNotAllowed
+from falcon.errors import HTTPNotFound
 from falcon.status_codes import HTTP_204
 
 
