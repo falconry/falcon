@@ -77,6 +77,10 @@ cfg = configparser.SafeConfigParser()
 cfg.read('../setup.cfg')
 tag = cfg.get('egg_info', 'tag_build')
 
+html_context = {
+  'prerelease': bool(tag),  # True if tag is not the empty string
+}
+
 # The short X.Y version.
 version = '.'.join(falcon.__version__.split('.')[0:2]) + tag
 

@@ -30,6 +30,13 @@
     /*margin: -4px -4px 0 0;*/
 }
 
+#dev-warning {
+    background: #ffe;
+    border: 1px solid #aaa;
+    padding: 10px;
+    margin-bottom: 1em;
+}
+
 div.body h1,
 div.body h2,
 div.body h3,
