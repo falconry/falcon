@@ -46,6 +46,20 @@ div.sphinxsidebar h3 {
     margin: 1.5em 0 0 0;
 }
 
+div.admonition p.admonition-title {
+   display: block;
+   line-height: 1.4em;
+}
+
+dl dl pre, dd div.admonition {
+    margin-left: -29px;
+    padding-left: 29px;
+}
+
+div.admonition {
+    padding-bottom: 15px;
+}
+
 div input[type="text"] {
     padding: 5px;
     margin: 0 0 0.5em 0;
