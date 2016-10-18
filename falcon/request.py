@@ -143,6 +143,10 @@ class Request(object):
         relative_uri (str): The path + query string portion of the full URI.
         path (str): Path portion of the request URL (not including query
             string).
+
+            Note:
+                `req.path` may be set to a new value by a `process_request()`
+                middleware method in order to influence routing.
         query_string (str): Query string portion of the request URL, without
             the preceding '?' character.
         uri_template (str): The template for the route that was matched for
