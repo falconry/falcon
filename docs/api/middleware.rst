@@ -1,7 +1,7 @@
 .. _middleware:
 
-Middleware Components
-=====================
+Middleware
+==========
 
 Middleware components provide a way to execute logic before the
 framework routes each request, after each request is routed but before
