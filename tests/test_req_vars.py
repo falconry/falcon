@@ -683,7 +683,7 @@ class TestReqVars(testing.TestBase):
 
     def test_port_from_env(self):
         PORT = str(9000)
-        HTTP_HOST = "{0}:{1}".format("example.org", PORT)
+        HTTP_HOST = '{0}:{1}'.format('example.org', PORT)
         env = testing.create_environ(
             protocol='HTTP/1.0',
             port=PORT,
@@ -691,7 +691,7 @@ class TestReqVars(testing.TestBase):
             path='/hello',
             query_string=self.qs,
             headers=self.headers)
-        env.update({"HTTP_HOST": HTTP_HOST})
+        env.update({'HTTP_HOST': HTTP_HOST})
         req = Request(env)
         self.assertEqual(req.port, int(PORT))
 
@@ -729,7 +729,7 @@ class TestReqVars(testing.TestBase):
 
     def test_netloc_from_env(self):
         PORT = str(9000)
-        HTTP_HOST = "{0}:{1}".format("example.org", PORT)
+        HTTP_HOST = '{0}:{1}'.format('example.org', PORT)
         env = testing.create_environ(
             protocol='HTTP/1.0',
             port=PORT,
@@ -737,6 +737,6 @@ class TestReqVars(testing.TestBase):
             path='/hello',
             query_string=self.qs,
             headers=self.headers)
-        env.update({"HTTP_HOST": HTTP_HOST})
+        env.update({'HTTP_HOST': HTTP_HOST})
         req = Request(env)
         self.assertEqual(req.netloc, HTTP_HOST)
