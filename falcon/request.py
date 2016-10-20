@@ -694,6 +694,9 @@ class Request(object):
             host, port = parse_host(host_header)
         except KeyError:
             port = self.env['SERVER_PORT']
+
+        if not port:
+            port = '80' if self.scheme == 'http' else '443'
         return port
 
     @property

@@ -695,6 +695,31 @@ class TestReqVars(testing.TestBase):
         req = Request(env)
         self.assertEqual(req.port, int(PORT))
 
+    def test_port_from_scheme_http(self):
+        HTTP_HOST = 'example.com'
+        env = testing.create_environ(
+            protocol='HTTP/1.0',
+            app=self.app,
+            path='/hello',
+            query_string=self.qs,
+            headers=self.headers)
+        env.update({'HTTP_HOST': HTTP_HOST})
+        req = Request(env)
+        self.assertEqual(req.port, '80')
+
+    def test_port_from_scheme_https(self):
+        HTTP_HOST = 'example.com'
+        env = testing.create_environ(
+            protocol='HTTP/1.0',
+            scheme='https',
+            app=self.app,
+            path='/hello',
+            query_string=self.qs,
+            headers=self.headers)
+        env.update({'HTTP_HOST': HTTP_HOST})
+        req = Request(env)
+        self.assertEqual(req.port, '443')
+
     def test_scheme_https(self):
         _scheme = 'https'
         req = Request(testing.create_environ(
