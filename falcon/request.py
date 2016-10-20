@@ -693,7 +693,7 @@ class Request(object):
             host_header = self.env['HTTP_HOST']
             host, port = parse_host(host_header)
         except KeyError:
-            port = self.env.get('SERVER_PORT')
+            port = self.env['SERVER_PORT']
         return port
 
     @property

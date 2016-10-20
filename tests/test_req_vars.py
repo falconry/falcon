@@ -681,6 +681,20 @@ class TestReqVars(testing.TestBase):
 
         self.assertEqual(req.port, str(PORT))
 
+    def test_port_from_env(self):
+        PORT = str(9000)
+        HTTP_HOST = "{0}:{1}".format("example.org", PORT)
+        env = testing.create_environ(
+            protocol='HTTP/1.0',
+            port=PORT,
+            app=self.app,
+            path='/hello',
+            query_string=self.qs,
+            headers=self.headers)
+        env.update({"HTTP_HOST": HTTP_HOST})
+        req = Request(env)
+        self.assertEqual(req.port, int(PORT))
+
     def test_scheme_https(self):
         _scheme = 'https'
         req = Request(testing.create_environ(
@@ -712,3 +726,17 @@ class TestReqVars(testing.TestBase):
             headers=self.headers))
         _netloc = '{host}:{port}'.format(host=req.host, port=req.port)
         self.assertEqual(req.netloc, _netloc)
+
+    def test_netloc_from_env(self):
+        PORT = str(9000)
+        HTTP_HOST = "{0}:{1}".format("example.org", PORT)
+        env = testing.create_environ(
+            protocol='HTTP/1.0',
+            port=PORT,
+            app=self.app,
+            path='/hello',
+            query_string=self.qs,
+            headers=self.headers)
+        env.update({"HTTP_HOST": HTTP_HOST})
+        req = Request(env)
+        self.assertEqual(req.netloc, HTTP_HOST)
