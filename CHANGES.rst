@@ -23,7 +23,7 @@ New & Improved
 - CSV-style parsing of query parameter values can now be disabled.
 - ``falcon.Request.get_param_as_bool()`` now recognizes "on" and
   "off" in support of IE's default checkbox values.
-- An `accept_ranges` property was added to ``falcon.Request`` to
+- An `accept_ranges` property was added to ``falcon.Response`` to
   facilitate setting the Accept-Ranges header.
 - Added the ``falcon.HTTPUriTooLong`` and
   ``falcon.HTTPGone`` error classes.
