@@ -21,10 +21,15 @@ New & Improved
 - JSON-encoded query parameter values can now be retrieved and decoded
   in a single step via :meth:`~falcon.Request.get_param_as_dict`.
 - CSV-style parsing of query parameter values can now be disabled.
+- :meth:`~falcon.Request.get_param_as_bool` now recognizes "on" and
+  "off" in support of IE's default checkbox values.
+- An `accept_ranges` property was added to :class:`~falcon.Response` to
+  facilitate setting the Accept-Ranges header.
 - Added the :class:`~falcon.HTTPUriTooLong` and
   :class:`~falcon.HTTPGone` error classes.
 - When a title is not specified for :class:`~falcon.HTTPError`, it now
   defaults to the HTTP status text.
+- All parameters are now optional for most error classes.
 - Cookie-related documentation has been clarified and expanded
 - The :class:`falcon.testing.Cookie` class was added to represent a
   cookie returned by a simulated request. :class:`falcon.testing.Result`
@@ -64,10 +69,10 @@ Fixed
 - When :any:`auto_parse_form_urlencoded` is
   set to ``True``, the framework now checks the HTTP method before
   attempting to consume and parse the body.
-- Before attempting to read a form-encoded POST, the framework now
-  checks the Content-Length header to ensure that a non-empty body
-  is expected. This helps prevent bad requests from causing a blocking
-  read when running behind certain WSGI servers.
+- Before attempting to read the body of a form-encoded request, the
+  framework now checks the Content-Length header to ensure that a
+  non-empty body is expected. This helps prevent bad requests from
+  causing a blocking read when running behind certain WSGI servers.
 - When the requested method is not implemented for the target resource,
   the framework now raises :class:`~falcon.HTTPMethodNotAllowed`, rather
   than modifying the :class:`~falcon.Request` object directly. This
@@ -89,9 +94,14 @@ Fixed
 - :class:`falcon.testing.Result` now assumes that the response body
   is encoded as UTF-8 when the character set is not specified, rather
   than raising an error when attempting to decode the response body.
+- When simulating requests, Falcon's testing framework now properly
+  tunnels Unicode characters through the WSGI interface.
 - ``import falcon.uri`` now works, in addition to
   ``from falcon import uri``.
 - URI template fields are now validated up front, when the route is
   added, to ensure they are valid Python identifiers. This prevents
   cryptic errors from being raised later on when requests are routed.
+- When running under Python 3, :meth:`inspect.signature()` is used
+  instead of :meth:`inspect.getargspec()` to provide compatibility with
+  annotated functions.
 

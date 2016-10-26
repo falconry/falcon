@@ -1,0 +1,20 @@
+<link href='http://fonts.googleapis.com/css?family=Amethysta:400' rel='stylesheet'>
+<script async defer src="https://buttons.github.io/buttons.js"></script>
+
+{% if prerelease %}
+<script>
+$(document).ready(function() {
+    $('div.body').prepend('<div id="dev-warning">Warning: This is the documentation for the development version of Falcon.</div>')
+});
+</script>
+{% endif %}
+
+<div id="logo">
+    <div id="logo-text"><a href="{{ pathto(master_doc) }}">Falcon</a></div>
+    <a href="{{ pathto(master_doc) }}"><img src="{{ pathto('_static/img/logo.png', 1) }}" width="163" height="211" alt="Falcon Web Framework Logo"/></a>
+</div>
+
+<div id="gh-buttons">
+    <a class="github-button" href="https://github.com/falconry/falcon" data-icon="octicon-star" aria-label="Star falconry/falcon on GitHub" data-style="mega">Star</a>
+    <a class="github-button" href="https://github.com/falconry/falcon/issues" data-icon="octicon-issue-opened" aria-label="Issue falconry/falcon on GitHub" data-style="mega">Issue</a>
+</div>

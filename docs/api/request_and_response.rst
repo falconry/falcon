@@ -1,6 +1,6 @@
 .. _request:
 
-Req/Resp
+req/resp
 ========
 
 Instances of the Request and Response classes are passed into responders as the second

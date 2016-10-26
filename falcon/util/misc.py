@@ -40,6 +40,7 @@ __all__ = (
     'http_date_to_dt',
     'to_query_str',
     'get_bound_method',
+    'get_argnames',
     'get_http_status'
 )
 
@@ -226,8 +227,8 @@ def get_bound_method(obj, method_name):
         method_name: Name of the method to retrieve.
 
     Returns:
-    Bound method, or ``None`` if the method does not exist on
-    the object.
+        Bound method, or ``None`` if the method does not exist on
+        the object.
 
     Raises:
         AttributeError: The method exists, but it isn't
@@ -247,6 +248,41 @@ def get_bound_method(obj, method_name):
             raise AttributeError(msg)
 
     return method
+
+
+def get_argnames(func):
+    """Introspecs the arguments of a callable.
+
+    Args:
+        func: The callable to introspect
+
+    Returns:
+        A list of argument names, excluding *arg and **kwargs
+        arguments.
+    """
+
+    if six.PY2:
+        if isinstance(func, functools.partial):
+            spec = inspect.getargspec(func.func)
+        elif inspect.isroutine(func):
+            spec = inspect.getargspec(func)
+        else:
+            spec = inspect.getargspec(func.__call__)
+
+        # NOTE(kgriffs): inspect.signature does not include 'self',
+        # so remove it under PY2 if it is present.
+        args = [arg for arg in spec.args if arg != 'self']
+
+    else:
+        sig = inspect.signature(func)
+
+        args = [
+            param.name
+            for param in sig.parameters.values()
+            if param.kind not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
+        ]
+
+    return args
 
 
 def get_http_status(status_code, default_reason='Unknown'):

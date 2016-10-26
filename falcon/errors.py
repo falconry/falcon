@@ -53,12 +53,10 @@ class HTTPBadRequest(HTTPError):
 
     (See also: RFC 7231, Section 6.5.1)
 
-    Args:
-        title (str): Error title (e.g., 'TTL Out of Range').
+    Keyword Args:
+        title (str): Error title (default '400 Bad Request').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-
-    Keyword Args:
         headers (dict or list): A ``dict`` of header names and values
             to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
             *value* must be of type ``str`` or ``StringType``, and only
@@ -81,14 +79,14 @@ class HTTPBadRequest(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title, description, **kwargs):
+    def __init__(self, title=None, description=None, **kwargs):
         super(HTTPBadRequest, self).__init__(status.HTTP_400, title,
                                              description, **kwargs)
 
@@ -114,15 +112,14 @@ class HTTPUnauthorized(HTTPError):
 
     (See also: RFC 7235, Section 3.1)
 
-    Args:
-        title (str): Error title (e.g., 'Authentication Required').
+    Keyword Args:
+        title (str): Error title (default '401 Unauthorized').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         challenges (iterable of str): One or more authentication
             challenges to use as the value of the WWW-Authenticate header in
             the response (see also RFC 7235, Section 2.1).
 
-    Keyword Args:
         headers (dict or list): A ``dict`` of header names and values
             to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
             *value* must be of type ``str`` or ``StringType``, and only
@@ -145,15 +142,15 @@ class HTTPUnauthorized(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
 
     """
 
-    def __init__(self, title, description, challenges, **kwargs):
+    def __init__(self, title=None, description=None, challenges=None, **kwargs):
         headers = kwargs.setdefault('headers', {})
 
         if challenges:
@@ -184,12 +181,10 @@ class HTTPForbidden(HTTPError):
 
     (See also: RFC 7231, Section 6.5.4)
 
-    Args:
-        title (str): Error title (e.g., 'Permission Denied').
+    Keyword Args:
+        title (str): Error title (default '403 Forbidden').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-
-    Keyword Args:
         headers (dict or list): A ``dict`` of header names and values
             to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
             *value* must be of type ``str`` or ``StringType``, and only
@@ -212,14 +207,14 @@ class HTTPForbidden(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title, description, **kwargs):
+    def __init__(self, title=None, description=None, **kwargs):
         super(HTTPForbidden, self).__init__(status.HTTP_403, title,
                                             description, **kwargs)
 
@@ -269,8 +264,8 @@ class HTTPNotFound(OptionalRepresentation, HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
@@ -327,8 +322,8 @@ class HTTPMethodNotAllowed(OptionalRepresentation, HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
@@ -349,7 +344,7 @@ class HTTPNotAcceptable(HTTPError):
 
     The target resource does not have a current representation that
     would be acceptable to the user agent, according to the proactive
-    negotiation header fields received in the request1, and the server
+    negotiation header fields received in the request, and the server
     is unwilling to supply a default representation.
 
     The server SHOULD generate a payload containing a list of available
@@ -362,11 +357,9 @@ class HTTPNotAcceptable(HTTPError):
 
     (See also: RFC 7231, Section 6.5.6)
 
-    Args:
+    Keyword Args:
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-
-    Keyword Args:
         headers (dict or list): A ``dict`` of header names and values
             to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
             *value* must be of type ``str`` or ``StringType``, and only
@@ -389,14 +382,14 @@ class HTTPNotAcceptable(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, description, **kwargs):
+    def __init__(self, description=None, **kwargs):
         super(HTTPNotAcceptable, self).__init__(status.HTTP_406,
                                                 'Media type not acceptable',
                                                 description, **kwargs)
@@ -423,12 +416,10 @@ class HTTPConflict(HTTPError):
 
     (See also: RFC 7231, Section 6.5.8)
 
-    Args:
-        title (str): Error title (e.g., 'Editing Conflict').
+    Keyword Args:
+        title (str): Error title (default '409 Conflict').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-
-    Keyword Args:
         headers (dict or list): A ``dict`` of header names and values
             to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
             *value* must be of type ``str`` or ``StringType``, and only
@@ -451,14 +442,14 @@ class HTTPConflict(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title, description, **kwargs):
+    def __init__(self, title=None, description=None, **kwargs):
         super(HTTPConflict, self).__init__(status.HTTP_409, title,
                                            description, **kwargs)
 
@@ -516,8 +507,8 @@ class HTTPGone(OptionalRepresentation, HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
@@ -539,12 +530,10 @@ class HTTPLengthRequired(HTTPError):
 
     (See also: RFC 7231, Section 6.5.10)
 
-    Args:
-        title (str): Error title (e.g., 'Missing Content-Length').
+    Keyword Args:
+        title (str): Error title (default '411 Length Required').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-
-    Keyword Args:
         headers (dict or list): A ``dict`` of header names and values
             to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
             *value* must be of type ``str`` or ``StringType``, and only
@@ -567,13 +556,13 @@ class HTTPLengthRequired(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
     """
-    def __init__(self, title, description, **kwargs):
+    def __init__(self, title=None, description=None, **kwargs):
         super(HTTPLengthRequired, self).__init__(status.HTTP_411,
                                                  title, description, **kwargs)
 
@@ -591,12 +580,10 @@ class HTTPPreconditionFailed(HTTPError):
 
     (See also: RFC 7232, Section 4.2)
 
-    Args:
-        title (str): Error title (e.g., 'Image Not Modified').
+    Keyword Args:
+        title (str): Error title (default '412 Precondition Failed').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-
-    Keyword Args:
         headers (dict or list): A ``dict`` of header names and values
             to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
             *value* must be of type ``str`` or ``StringType``, and only
@@ -619,14 +606,14 @@ class HTTPPreconditionFailed(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title, description, **kwargs):
+    def __init__(self, title=None, description=None, **kwargs):
         super(HTTPPreconditionFailed, self).__init__(status.HTTP_412, title,
                                                      description, **kwargs)
 
@@ -646,12 +633,12 @@ class HTTPRequestEntityTooLarge(HTTPError):
 
     (See also: RFC 7231, Section 6.5.11)
 
-    Args:
-        title (str): Error title (e.g., 'Request Body Limit Exceeded').
+    Keyword Args:
+        title (str): Error title (default '413 Request Entity Too Large').
+
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
 
-    Keyword Args:
         retry_after (datetime or int): Value for the Retry-After
             header. If a ``datetime`` object, will serialize as an HTTP date.
             Otherwise, a non-negative ``int`` is expected, representing the
@@ -678,14 +665,14 @@ class HTTPRequestEntityTooLarge(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title, description, retry_after=None, **kwargs):
+    def __init__(self, title=None, description=None, retry_after=None, **kwargs):
         headers = kwargs.setdefault('headers', {})
 
         if isinstance(retry_after, datetime):
@@ -743,8 +730,8 @@ class HTTPUriTooLong(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
@@ -767,11 +754,9 @@ class HTTPUnsupportedMediaType(HTTPError):
 
     (See also: RFC 7231, Section 6.5.13)
 
-    Args:
+    Keyword Args:
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-
-    Keyword Args:
         headers (dict or list): A ``dict`` of header names and values
             to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
             *value* must be of type ``str`` or ``StringType``, and only
@@ -794,14 +779,14 @@ class HTTPUnsupportedMediaType(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, description, **kwargs):
+    def __init__(self, description=None, **kwargs):
         super(HTTPUnsupportedMediaType, self).__init__(
             status.HTTP_415, 'Unsupported media type', description, **kwargs)
 
@@ -849,12 +834,10 @@ class HTTPUnprocessableEntity(HTTPError):
 
     (See also: RFC 4918, Section 11.2)
 
-    Args:
-        title (str): Error title (e.g., 'Missing title field').
+    Keyword Args:
+        title (str): Error title (default '422 Unprocessable Entity').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-
-    Keyword Args:
         headers (dict or list): A ``dict`` of header names and values
             to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
             *value* must be of type ``str`` or ``StringType``, and only
@@ -877,14 +860,14 @@ class HTTPUnprocessableEntity(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title, description, **kwargs):
+    def __init__(self, title=None, description=None, **kwargs):
         super(HTTPUnprocessableEntity, self).__init__(status.HTTP_422, title,
                                                       description, **kwargs)
 
@@ -903,12 +886,10 @@ class HTTPTooManyRequests(HTTPError):
 
     (See also: RFC 6585, Section 4)
 
-    Args:
-        title (str): Error title (e.g., 'Too Many Requests').
+    Keyword Args:
+        title (str): Error title (default '429 Too Many Requests').
         description (str): Human-friendly description of the rate limit that
             was exceeded.
-
-    Keyword Args:
         retry_after (datetime or int): Value for the Retry-After
             header. If a ``datetime`` object, will serialize as an HTTP date.
             Otherwise, a non-negative ``int`` is expected, representing the
@@ -935,14 +916,14 @@ class HTTPTooManyRequests(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title, description, retry_after=None, **kwargs):
+    def __init__(self, title=None, description=None, retry_after=None, **kwargs):
         headers = kwargs.setdefault('headers', {})
 
         if isinstance(retry_after, datetime):
@@ -979,10 +960,8 @@ class HTTPUnavailableForLegalReasons(OptionalRepresentation, HTTPError):
 
     (See also: RFC 7725, Section 3)
 
-    Args:
-        title (str): Error title (e.g., 'Legal reason: <reason>').
-
     Keyword Args:
+        title (str): Error title (default '451 Unavailable For Legal Reasons').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two (default ``None``).
         headers (dict or list): A ``dict`` of header names and values
@@ -1007,14 +986,14 @@ class HTTPUnavailableForLegalReasons(OptionalRepresentation, HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title, **kwargs):
+    def __init__(self, title=None, **kwargs):
         super(HTTPUnavailableForLegalReasons, self).__init__(status.HTTP_451,
                                                              title, **kwargs)
 
@@ -1027,12 +1006,10 @@ class HTTPInternalServerError(HTTPError):
 
     (See also: RFC 7231, Section 6.6.1)
 
-    Args:
-        title (str): Error title (e.g., 'This Should Never Happen').
+    Keyword Args:
+        title (str): Error title (default '500 Internal Server Error').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-
-    Keyword Args:
         headers (dict or list): A ``dict`` of header names and values
             to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
             *value* must be of type ``str`` or ``StringType``, and only
@@ -1055,15 +1032,15 @@ class HTTPInternalServerError(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
 
     """
 
-    def __init__(self, title, description, **kwargs):
+    def __init__(self, title=None, description=None, **kwargs):
         super(HTTPInternalServerError, self).__init__(status.HTTP_500, title,
                                                       description, **kwargs)
 
@@ -1077,13 +1054,10 @@ class HTTPBadGateway(HTTPError):
 
     (See also: RFC 7231, Section 6.6.3)
 
-    Args:
-        title (str): Error title, for
-            example: 'Upstream Server is Unavailable'.
+    Keyword Args:
+        title (str): Error title (default '502 Bad Gateway').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-
-    Keyword Args:
         headers (dict or list): A ``dict`` of header names and values
             to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
             *value* must be of type ``str`` or ``StringType``, and only
@@ -1106,14 +1080,14 @@ class HTTPBadGateway(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title, description, **kwargs):
+    def __init__(self, title=None, description=None, **kwargs):
         super(HTTPBadGateway, self).__init__(status.HTTP_502, title,
                                              description, **kwargs)
 
@@ -1135,16 +1109,14 @@ class HTTPServiceUnavailable(HTTPError):
 
     (See also: RFC 7231, Section 6.6.4)
 
-    Args:
-        title (str): Error title (e.g., 'Temporarily Unavailable').
+    Keyword Args:
+        title (str): Error title (default '503 Service Unavailable').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         retry_after (datetime or int): Value for the Retry-After header. If a
             ``datetime`` object, will serialize as an HTTP date. Otherwise,
             a non-negative ``int`` is expected, representing the number of
             seconds to wait.
-
-    Keyword Args:
         headers (dict or list): A ``dict`` of header names and values
             to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
             *value* must be of type ``str`` or ``StringType``, and only
@@ -1167,19 +1139,19 @@ class HTTPServiceUnavailable(HTTPError):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title, description, retry_after, **kwargs):
+    def __init__(self, title=None, description=None, retry_after=None, **kwargs):
         headers = kwargs.setdefault('headers', {})
 
         if isinstance(retry_after, datetime):
             headers['Retry-After'] = util.dt_to_http(retry_after)
-        else:
+        elif retry_after is not None:
             headers['Retry-After'] = str(retry_after)
 
         super(HTTPServiceUnavailable, self).__init__(status.HTTP_503,
@@ -1220,8 +1192,8 @@ class HTTPInvalidHeader(HTTPBadRequest):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
@@ -1267,15 +1239,15 @@ class HTTPMissingHeader(HTTPBadRequest):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
     """
 
     def __init__(self, header_name, **kwargs):
-        description = ('The {0} header is required.')
+        description = 'The {0} header is required.'
         description = description.format(header_name)
 
         super(HTTPMissingHeader, self).__init__('Missing header value',
@@ -1316,8 +1288,8 @@ class HTTPInvalidParam(HTTPBadRequest):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
@@ -1364,8 +1336,8 @@ class HTTPMissingParam(HTTPBadRequest):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (defaults to "API documentation
-            for this error").
+            title/description for the link (default 'API documentation
+            for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).

@@ -7,6 +7,7 @@ import testtools
 import falcon
 from falcon.request import Request
 import falcon.testing as testing
+import falcon.uri
 
 
 @ddt.ddt
@@ -109,15 +110,35 @@ class TestReqVars(testing.TestBase):
 
         self.assertEqual(expected_uri, req.uri)
 
+    @ddt.data(
+        u'/hello_\u043f\u0440\u0438\u0432\u0435\u0442',
+        u'/test/%E5%BB%B6%E5%AE%89',
+        u'/test/%C3%A4%C3%B6%C3%BC%C3%9F%E2%82%AC',
+    )
     @testtools.skipUnless(six.PY3, 'Test only applies to Python 3')
-    def test_nonlatin_path(self):
-        cyrillic_path = u'/hello_\u043f\u0440\u0438\u0432\u0435\u0442'
-        cyrillic_path_decoded = cyrillic_path.encode('utf-8').decode('latin1')
+    def test_nonlatin_path(self, test_path):
+        # NOTE(kgriffs): When a request comes in, web servers decode
+        # the path.  The decoded path may contain UTF-8 characters,
+        # but according to the WSGI spec, no strings can contain chars
+        # outside ISO-8859-1. Therefore, to reconcile the URI
+        # encoding standard that allows UTF-8 with the WSGI spec
+        # that does not, WSGI servers tunnel the string via
+        # ISO-8859-1. falcon.testing.create_environ() mimics this
+        # behavior, e.g.:
+        #
+        #   tunnelled_path = path.encode('utf-8').decode('iso-8859-1')
+        #
+        # falcon.Request does the following to reverse the process:
+        #
+        #   path = tunnelled_path.encode('iso-8859-1').decode('utf-8', 'replace')
+        #
+
         req = Request(testing.create_environ(
             host='com',
-            path=cyrillic_path_decoded,
+            path=test_path,
             headers=self.headers))
-        self.assertEqual(req.path, cyrillic_path)
+
+        self.assertEqual(req.path, falcon.uri.decode(test_path))
 
     def test_uri(self):
         uri = ('http://' + testing.DEFAULT_HOST + ':8080' +

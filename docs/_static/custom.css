@@ -1,0 +1,111 @@
+/* Hide theme's default logo section */
+.logo a {
+    display: none;
+}
+
+#logo a,
+#logo a:hover {
+    border-bottom: none;
+}
+
+#logo img {
+    margin: -32px 0 0 2px;
+    padding: 0;
+}
+
+#gh-buttons {
+    margin-top: 2em;
+}
+
+#logo-text {
+    font-family: "Amethysta", "goudy old style", serif;
+    font-weight: bold;
+
+    font-size: 18pt;
+    color: #444;
+    position: absolute;
+
+    left: 9px;
+    top: 2px;
+    /*margin: -4px -4px 0 0;*/
+}
+
+#dev-warning {
+    background: #ffe;
+    border: 1px solid #aaa;
+    padding: 10px;
+    margin-bottom: 1em;
+}
+
+div.body h1,
+div.body h2,
+div.body h3,
+div.body h4,
+div.body h5,
+div.body h6,
+div.sphinxsidebar h3 {
+    font-family: "Amethysta", "goudy old style", serif;
+    font-weight: bold;
+    color: #444;
+}
+
+div.sphinxsidebar h3 {
+    margin: 1.5em 0 0 0;
+}
+
+div.admonition p.admonition-title {
+   display: block;
+   line-height: 1.4em;
+}
+
+dl dl pre, dd div.admonition {
+    margin-left: -29px;
+    padding-left: 29px;
+}
+
+div.admonition {
+    padding-bottom: 15px;
+}
+
+div input[type="text"] {
+    padding: 5px;
+    margin: 0 0 0.5em 0;
+    font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+}
+
+div input[type="submit"] {
+    font-size: 12px;
+    width: 64px;
+    height: 27px;
+    font-weight: 600;
+    font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+
+    border: 1px solid #d5d5d5;
+    border-radius: 3px;
+    padding: 0 10px;
+
+    color: #333;
+    background-color: #eee;
+    background-image: linear-gradient(to bottom,#fcfcfc,#eee);
+}
+
+div input[type="submit"]:hover {
+    background-color: #ddd;
+    background-image: linear-gradient(to bottom,#eee,#ddd);
+    border-color: #ccc;
+}
+
+div input[type="submit"]:active, #searchbox input[type="submit"]:active {
+    background-color: #dcdcdc;
+    background-image: none;
+    border-color: #b5b5b5;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,.15);
+}
+
+div input[type="submit"]:focus {
+    outline: none;
+}
+
+input[type=text]:focus {
+    outline: 1px solid #999;
+}
