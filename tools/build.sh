@@ -17,6 +17,7 @@
 set -e
 
 VENV_NAME=tmp-falcon-build
+BUILD_DIR=./build
 DIST_DIR=./dist
 
 #----------------------------------------------------------------------
@@ -67,6 +68,7 @@ _echo_task "Cleaning up old artifacts"
 
 tools/clean.sh .
 
+rm -rf $BUILD_DIR
 rm -rf $DIST_DIR
 
 pyenv shell system
