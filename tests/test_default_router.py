@@ -159,6 +159,10 @@ class TestComplexRouting(testing.TestBase):
             ValueError,
             self.router.add_route, template, {}, ResourceWithId(-1))
 
+    def test_single_character_field_name(self):
+        self.router.add_route(
+            '/search?q={q}', {}, ResourceWithId(22))
+
     def test_dump(self):
         print(self.router._src)
 

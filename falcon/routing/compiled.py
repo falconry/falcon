@@ -60,9 +60,10 @@ class CompiledRouter(object):
         # since they will be passed as kwargs to responders.
         fields = re.findall('{([^}]*)}', uri_template)
         for field in fields:
-            is_identifier = re.match('[A-Za-z_][A-Za-z0-9_]+$', field)
+            is_identifier = re.match('[A-Za-z_][A-Za-z0-9_]*$', field)
             if not is_identifier or field in keyword.kwlist:
-                raise ValueError('Field names must be valid identifiers.')
+                raise ValueError('Field names must be valid identifiers '
+                                 '(`{}` invalid).'.format(field))
 
         path = uri_template.strip('/').split('/')
 
