@@ -308,6 +308,7 @@ class TestHTTPError(testing.TestBase):
 
         body = self.simulate_request('/fail', headers=headers)
         self.assertEqual(self.srmock.status, headers['X-Error-Status'])
+        self.assertEqual(self.srmock.headers_dict['Vary'], 'Accept')
         self.assertEqual(body, [])
 
     def test_custom_old_error_serializer(self):

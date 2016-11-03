@@ -1017,7 +1017,8 @@ class Request(object):
 
         List items must be comma-separated or must be provided
         as multiple instances of the same param in the query string
-        ala *application/x-www-form-urlencoded*.
+        ala *application/x-www-form-urlencoded*. See also <parsing options>
+        and note whether this thing falls back to doing both or...?
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'ids').
@@ -1088,10 +1089,9 @@ class Request(object):
         """Return the value of a query string parameter as a date.
 
         Args:
-            name (str): Parameter name, case-sensitive (e.g., 'ids').
+            name (str): Parameter name, case-sensitive (e.g., 'start').
             format_string (str): String used to parse the param value into a
-                date.
-                Any format recognized by strptime() is supported.
+                date. Any format recognized by strptime() is supported.
                 (default ``"%Y-%m-%d"``)
             required (bool, optional): Set to ``True`` to raise
                 ``HTTPBadRequest`` instead of returning ``None`` when the
