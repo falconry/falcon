@@ -230,7 +230,7 @@ class Request(object):
 
             This is also safe::
 
-                doc = json.load(req.stream)
+                doc = json.load(req.bounded_stream)
 
         date (datetime): Value of the Date header, converted to a
             ``datetime`` instance. The header value is assumed to
