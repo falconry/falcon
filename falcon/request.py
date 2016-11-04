@@ -65,7 +65,7 @@ class Request(object):
         env (dict): A WSGI environment dict passed in from the server. See
             also PEP-3333.
 
-    Keyword Arguments
+    Keyword Arguments:
         options (dict): Set of global options passed from the API handler.
 
     Attributes:
