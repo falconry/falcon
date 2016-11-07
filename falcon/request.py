@@ -65,7 +65,7 @@ class Request(object):
         env (dict): A WSGI environment dict passed in from the server. See
             also PEP-3333.
 
-    Keyword Arguments
+    Keyword Arguments:
         options (dict): Set of global options passed from the API handler.
 
     Attributes:
@@ -230,7 +230,7 @@ class Request(object):
 
             This is also safe::
 
-                doc = json.load(req.stream)
+                doc = json.load(req.bounded_stream)
 
         date (datetime): Value of the Date header, converted to a
             ``datetime`` instance. The header value is assumed to
