@@ -125,6 +125,8 @@ class TestComplexRouting(testing.TestBase):
         self.router.add_route(
             '/gists/first', {}, ResourceWithId(20))
 
+        self.router.add_route('/item/{q}', {}, ResourceWithId(22))
+
     @ddt.data(
         '/teams/{collision}',  # simple vs simple
         '/emojis/signs/{id_too}',  # another simple vs simple
@@ -158,10 +160,6 @@ class TestComplexRouting(testing.TestBase):
         self.assertRaises(
             ValueError,
             self.router.add_route, template, {}, ResourceWithId(-1))
-
-    def test_single_character_field_name(self):
-        self.router.add_route(
-            '/search?q={q}', {}, ResourceWithId(22))
 
     def test_dump(self):
         print(self.router._src)
@@ -221,6 +219,10 @@ class TestComplexRouting(testing.TestBase):
 
         __, __, params, __ = self.router.find('/gists/42/raw')
         self.assertEqual(params, {'id': '42'})
+
+    def test_single_character_field_name(self):
+        __, __, params, __ = self.router.find('/item/1234')
+        self.assertEqual(params, {'q': '1234'})
 
     @ddt.data(
         ('/teams/default', 19),
