@@ -3,6 +3,9 @@
 Testing
 =======
 
+Reference
+---------
+
 .. automodule:: falcon.testing
     :members: Result, Cookie,
         simulate_request, simulate_get, simulate_head, simulate_post,
