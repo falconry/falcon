@@ -50,6 +50,13 @@ or Gunicorn. For example:
     $ pip install gunicorn
     $ gunicorn things:app
 
+On Windows where Gunicorn and uWSGI don't work yet you can use Waitress server
+
+.. code:: bash
+
+    $ pip install waitress
+    $ waitress-serve things:app
+    
 Then, in another terminal:
 
 .. code:: bash
