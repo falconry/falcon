@@ -55,13 +55,21 @@ On Windows where Gunicorn and uWSGI don't work yet you can use Waitress server
 .. code:: bash
 
     $ pip install waitress
-    $ waitress-serve things:app
+    $ waitress-serve --port=8000 things:app
     
 Then, in another terminal:
 
 .. code:: bash
 
     $ curl localhost:8000/things
+
+Curl is a bit of a pain to use, so let's install
+`HTTPie <https://github.com/jkbr/httpie>`_ and use it from now on.
+
+.. code:: bash
+
+    $ pip install --upgrade httpie
+    $ http localhost:8000/things
 
 .. _quickstart-more-features:
 
