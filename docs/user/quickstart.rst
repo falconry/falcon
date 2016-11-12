@@ -297,3 +297,9 @@ parameters, handling errors, and working with request and response bodies.
     if __name__ == '__main__':
         httpd = simple_server.make_server('127.0.0.1', 8000, app)
         httpd.serve_forever()
+
+To test this example go to the another terminal and run:
+
+.. code:: bash
+
+    $ http localhost:8000/1/things authorization:custom-token
