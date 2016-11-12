@@ -88,7 +88,14 @@ let's use something that you would actually deploy in production.
 .. code:: bash
 
     $ pip install gunicorn
-    $ gunicorn app
+    $ gunicorn app:api
+    
+Gunicorn has still limitation that is not working on Windows. If you are Windows user you can use Waitress server instead Gunicorn
+
+.. code:: bash
+
+    $ pip install waitress
+    $ waitress-serve --port=8000 app:api
 
 Now try querying it with curl:
 
