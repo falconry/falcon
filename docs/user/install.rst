@@ -84,7 +84,7 @@ ones out there, but anything that can load a WSGI app will do.
 
 All Windows developers can use Waitress production-quality pure-Python WSGI server with very acceptable performance. 
 Unfortunately Gunicorn is still not working on Windows and uWSGI need to have Cygwin on Windows installed. 
-Waitress can be good alternative for Windows users if you wnat quick start using Falcon on it.
+Waitress can be good alternative for Windows users if they want quick start using Falcon on it.
 
 .. code:: bash
 
