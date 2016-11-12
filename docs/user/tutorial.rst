@@ -309,7 +309,7 @@ Restart gunicorn, and then try sending a POST request to the resource
 
 .. code:: bash
 
-    $ http POST localhost:8000/images Content-Type:image/jpeg < test.jpg
+    $ http POST localhost:8000/images Content-Type:image/jpeg @/usr/local/images/test.jpg
 
 Now, if you check your storage directory, it should contain a copy of the
 image you just POSTed.
