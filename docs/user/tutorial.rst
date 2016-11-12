@@ -437,7 +437,7 @@ Now, restart gunicorn and post another picture to the service:
 
 .. code:: bash
 
-    $ http POST localhost:8000/images Content-Type:image/jpeg < test.jpg
+    $ http POST localhost:8000/images Content-Type:image/jpeg @/usr/local/images/test.jpg
 
 Make a note of the path returned in the Location header, and use it to
 try GETing the image:
@@ -543,7 +543,7 @@ POSTed, you can see it in action by passing in something nefarious:
 
 .. code:: bash
 
-    $ http POST localhost:8000/images Content-Type:image/jpx < test.jpx
+    $ http POST localhost:8000/images Content-Type:image/jpx @test.jpx
 
 That should return a ``400 Bad Request`` status and a nicely structured
 error body. When something goes wrong, you usually want to give your users
