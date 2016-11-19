@@ -33,8 +33,8 @@ WSGI callable, without having to stand up a WSGI server.
 """
 
 import json
+import platform
 import re
-import sys
 import wsgiref.validate
 
 from six.moves import http_cookies
@@ -42,6 +42,11 @@ from six.moves import http_cookies
 from falcon.testing import helpers
 from falcon.testing.srmock import StartResponseMock
 from falcon.util import CaseInsensitiveDict, http_date_to_dt, to_query_str
+
+_PYVER = platform.python_version_tuple()[:2]
+_PY26 = _PYVER == ('2', '6')
+_PY27 = _PYVER == ('2', '7')
+_JYTHON = platform.python_implementation() == 'Jython'
 
 
 class Result(object):
@@ -100,13 +105,13 @@ class Result(object):
             if name.lower() == 'set-cookie':
                 cookies.load(value)
 
-                if sys.version_info < (2, 7):
+                if _PY26 or (_PY27 and _JYTHON):
                     match = re.match('([^=]+)=', value)
                     assert match
 
                     cookie_name = match.group(1)
 
-                    # NOTE(kgriffs): py26 has a bug that causes
+                    # NOTE(kgriffs): py26/Jython has a bug that causes
                     # SimpleCookie to incorrectly parse the "expires"
                     # attribute, so we have to do it ourselves. This
                     # algorithm is obviously very naive, but it should
@@ -116,9 +121,9 @@ class Result(object):
                     if match:
                         cookies[cookie_name]['expires'] = match.group(1)
 
-                    # NOTE(kgriffs): py26's SimpleCookie won't parse
-                    # the "httponly" and "secure" attributes, so we
-                    # have to do it ourselves.
+                    # NOTE(kgriffs): py26/Jython's SimpleCookie won't
+                    # parse the "httponly" and "secure" attributes, so
+                    # we have to do it ourselves.
                     if 'httponly' in value:
                         cookies[cookie_name]['httponly'] = True
 
