@@ -1,5 +1,8 @@
 import functools
-import json
+try:
+    import ujson as json
+except ImportError:
+    import json
 
 import falcon
 from falcon import testing

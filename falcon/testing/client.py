@@ -32,7 +32,10 @@ This package includes utilities for simulating HTTP requests against a
 WSGI callable, without having to stand up a WSGI server.
 """
 
-import json
+try:
+    import ujson as json
+except ImportError:
+    import json
 import platform
 import re
 import wsgiref.validate

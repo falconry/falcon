@@ -1,5 +1,8 @@
 from datetime import datetime
-import json
+try:
+    import ujson as json
+except ImportError:
+    import json
 
 import falcon
 import falcon.testing as testing

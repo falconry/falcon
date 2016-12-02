@@ -14,7 +14,10 @@
 
 """HTTPError exception class."""
 
-import json
+try:
+    import ujson as json
+except ImportError:
+    import json
 import xml.etree.ElementTree as et
 
 try:
