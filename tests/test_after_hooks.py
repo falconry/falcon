@@ -182,11 +182,11 @@ class TestHooks(testing.TestCase):
     def test_output_validator(self):
         result = self.simulate_get()
         self.assertEqual(result.status_code, 723)
-        self.assertEqual(result.text, '{\n    "title": "Tricky"\n}')
+        self.assertEqual(result.text, json.dumps({"title": "Tricky"}))
 
     def test_serializer(self):
         result = self.simulate_put()
-        self.assertEqual('{"animal": "falcon"}', result.text)
+        self.assertEqual(result.text, json.dumps({"animal": "falcon"}))
 
     def test_hook_as_callable_class(self):
         result = self.simulate_post()
