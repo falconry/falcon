@@ -287,7 +287,7 @@ class TestHTTPError(testing.TestBase):
     def test_no_description_json(self):
         body = self.simulate_request('/fail', method='PATCH')
         self.assertEqual(self.srmock.status, falcon.HTTP_400)
-        self.assertEqual(body, [json.dumps({"title": "400 Bad Request"}).encode('utf8')])
+        self.assertEqual(body, [json.dumps({'title': '400 Bad Request'}).encode('utf8')])
 
     def test_no_description_xml(self):
         body = self.simulate_request('/fail', method='PATCH',
