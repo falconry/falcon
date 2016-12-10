@@ -872,6 +872,54 @@ class HTTPUnprocessableEntity(HTTPError):
                                                       description, **kwargs)
 
 
+class HTTPLocked(OptionalRepresentation, HTTPError):
+    """423 Locked.
+
+    The 423 (Locked) status code means the source or destination resource
+    of a method is locked. This response SHOULD contain an appropriate
+    precondition or postcondition code, such as 'lock-token-submitted' or
+    'no-conflicting-lock'.
+
+    (See also: RFC 4918, Section 11.3)
+
+    Keyword Args:
+        title (str): Error title (default '423 Locked').
+        description (str): Human-friendly description of the rate limit that
+            was exceeded.
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        headers (dict): Extra headers to return in the
+            response to the client (default ``None``).
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (default 'API documentation
+            for this error').
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
+    """
+
+    def __init__(self, title=None, description=None, **kwargs):
+        super(HTTPLocked, self).__init__(status.HTTP_423, title,
+                                         description, **kwargs)
+
+
 class HTTPTooManyRequests(HTTPError):
     """429 Too Many Requests.
 

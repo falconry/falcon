@@ -182,6 +182,22 @@ class TestError(testtools.TestCase):
             self.assertEqual('Testdescription', e.description,
                              'Description should be "Testdescription"')
 
+    def test_http_locked_no_title_and_desc_and_challenges(self):
+        try:
+            raise falcon.HTTPLocked()
+        except falcon.HTTPLocked as e:
+            self.assertEqual(status.HTTP_423, e.title,
+                             'The title should be ' + status.HTTP_423 + ', but it is: ' + e.title)
+            self.assertEqual(None, e.description, 'The description should be None')
+
+    def test_http_locked_with_title_and_desc_and_challenges(self):
+        try:
+            raise falcon.HTTPLocked(title='Test', description='Testdescription')
+        except falcon.HTTPLocked as e:
+            self.assertEqual('Test', e.title, 'Title should be "Test"')
+            self.assertEqual('Testdescription', e.description,
+                             'Description should be "Testdescription"')
+
     def test_http_too_many_requests_no_title_and_desc_and_challenges(self):
         try:
             raise falcon.HTTPTooManyRequests()
