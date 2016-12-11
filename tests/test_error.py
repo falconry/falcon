@@ -316,3 +316,19 @@ class TestError(testtools.TestCase):
             self.assertEqual('Test', e.title, 'Title should be "Test"')
             self.assertEqual('Testdescription', e.description,
                              'Description should be "Testdescription"')
+
+    def test_http_loop_detected_no_title_and_desc_and_challenges(self):
+        try:
+            raise falcon.HTTPLoopDetected()
+        except falcon.HTTPLoopDetected as e:
+            self.assertEqual(status.HTTP_508, e.title,
+                             'The title should be ' + status.HTTP_508 + ', but it is: ' + e.title)
+            self.assertEqual(None, e.description, 'The description should be None')
+
+    def test_http_loop_detected_with_title_and_desc_and_challenges(self):
+        try:
+            raise falcon.HTTPLoopDetected(title='Test', description='Testdescription')
+        except falcon.HTTPLoopDetected as e:
+            self.assertEqual('Test', e.title, 'Title should be "Test"')
+            self.assertEqual('Testdescription', e.description,
+                             'Description should be "Testdescription"')
