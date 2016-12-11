@@ -300,3 +300,19 @@ class TestError(testtools.TestCase):
             self.assertEqual('Testdescription', e.description,
                              'Description should be "Testdescription"')
             self.assertEqual('123', e.headers['Retry-After'], 'Retry-After should be 123')
+
+    def test_http_insufficient_storage_no_title_and_desc_and_challenges(self):
+        try:
+            raise falcon.HTTPInsufficientStorage()
+        except falcon.HTTPInsufficientStorage as e:
+            self.assertEqual(status.HTTP_507, e.title,
+                             'The title should be ' + status.HTTP_507 + ', but it is: ' + e.title)
+            self.assertEqual(None, e.description, 'The description should be None')
+
+    def test_http_insufficient_storage_with_title_and_desc_and_challenges(self):
+        try:
+            raise falcon.HTTPInsufficientStorage(title='Test', description='Testdescription')
+        except falcon.HTTPInsufficientStorage as e:
+            self.assertEqual('Test', e.title, 'Title should be "Test"')
+            self.assertEqual('Testdescription', e.description,
+                             'Description should be "Testdescription"')
