@@ -16,6 +16,7 @@ def application(environ, start_response):
 
     return [body]
 
+
 app = application
 
 
