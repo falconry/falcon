@@ -50,11 +50,26 @@ or Gunicorn. For example:
     $ pip install gunicorn
     $ gunicorn things:app
 
+On Windows where Gunicorn and uWSGI don't work yet you can use Waitress server
+
+.. code:: bash
+
+    $ pip install waitress
+    $ waitress-serve --port=8000 things:app
+    
 Then, in another terminal:
 
 .. code:: bash
 
     $ curl localhost:8000/things
+
+Curl is a bit of a pain to use, so let's install
+`HTTPie <https://github.com/jkbr/httpie>`_ and use it from now on.
+
+.. code:: bash
+
+    $ pip install --upgrade httpie
+    $ http localhost:8000/things
 
 .. _quickstart-more-features:
 
@@ -282,3 +297,9 @@ parameters, handling errors, and working with request and response bodies.
     if __name__ == '__main__':
         httpd = simple_server.make_server('127.0.0.1', 8000, app)
         httpd.serve_forever()
+
+To test this example go to the another terminal and run:
+
+.. code:: bash
+
+    $ http localhost:8000/1/things authorization:custom-token
