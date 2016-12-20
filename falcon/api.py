@@ -669,10 +669,6 @@ class API(object):
                                                  self._STREAM_BLOCK_SIZE)
                 else:
                     iterable = helpers.CloseableStreamIterator(stream, self._STREAM_BLOCK_SIZE)
-                    # iterable = iter(
-                    #     lambda: stream.read(self._STREAM_BLOCK_SIZE),
-                    #     b''
-                    # )
             else:
                 iterable = stream
 
