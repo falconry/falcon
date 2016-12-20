@@ -88,7 +88,14 @@ let's use something that you would actually deploy in production.
 .. code:: bash
 
     $ pip install gunicorn
-    $ gunicorn app
+    $ gunicorn app:api
+    
+Gunicorn has still limitation that is not working on Windows. If you are Windows user you can use Waitress server instead Gunicorn
+
+.. code:: bash
+
+    $ pip install waitress
+    $ waitress-serve --port=8000 app:api
 
 Now try querying it with curl:
 
@@ -302,7 +309,7 @@ Restart gunicorn, and then try sending a POST request to the resource
 
 .. code:: bash
 
-    $ http POST localhost:8000/images Content-Type:image/jpeg < test.jpg
+    $ http POST localhost:8000/images Content-Type:image/jpeg @/usr/local/images/test.jpg
 
 Now, if you check your storage directory, it should contain a copy of the
 image you just POSTed.
@@ -430,7 +437,7 @@ Now, restart gunicorn and post another picture to the service:
 
 .. code:: bash
 
-    $ http POST localhost:8000/images Content-Type:image/jpeg < test.jpg
+    $ http POST localhost:8000/images Content-Type:image/jpeg @/usr/local/images/test.jpg
 
 Make a note of the path returned in the Location header, and use it to
 try GETing the image:
@@ -536,7 +543,7 @@ POSTed, you can see it in action by passing in something nefarious:
 
 .. code:: bash
 
-    $ http POST localhost:8000/images Content-Type:image/jpx < test.jpx
+    $ http POST localhost:8000/images Content-Type:image/jpx @test.jpx
 
 That should return a ``400 Bad Request`` status and a nicely structured
 error body. When something goes wrong, you usually want to give your users
