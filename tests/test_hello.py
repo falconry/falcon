@@ -69,6 +69,34 @@ class HelloResource(object):
         self.on_get(req, resp)
 
 
+class ClosingBytesIO(io.BytesIO):
+
+    close_called = False
+
+    def close(self):
+        super().close()
+        self.close_called = True
+
+
+class ClosingFilelikeHelloResource(object):
+    sample_status = '200 OK'
+    sample_unicode = (u'Hello World! \x80' +
+                      six.text_type(testing.rand_string(0, 0)))
+
+    sample_utf8 = sample_unicode.encode('utf-8')
+
+    def __init__(self):
+        self.called = False
+        self.stream = ClosingBytesIO(self.sample_utf8)
+        self.stream_len = len(self.sample_utf8)
+
+    def on_get(self, req, resp):
+        self.called = True
+        self.req, self.resp = req, resp
+        resp.status = falcon.HTTP_200
+        resp.set_stream(self.stream, self.stream_len)
+
+
 class NoStatusResource(object):
     def on_get(self, req, resp):
         pass
@@ -157,6 +185,28 @@ class TestHelloWorld(testing.TestCase):
             actual_len = int(result.headers['content-length'])
             self.assertEqual(actual_len, expected_len)
             self.assertEqual(len(result.content), expected_len)
+
+        for file_wrapper in (None, FileWrapper):
+            result = self.simulate_get('/filelike', file_wrapper=file_wrapper)
+            self.assertTrue(resource.called)
+
+            expected_len = resource.resp.stream_len
+            actual_len = int(result.headers['content-length'])
+            self.assertEqual(actual_len, expected_len)
+            self.assertEqual(len(result.content), expected_len)
+
+    def test_filelike_closing(self):
+        resource = ClosingFilelikeHelloResource()
+        self.api.add_route('/filelike-closing', resource)
+
+        result = self.simulate_get('/filelike-closing', file_wrapper=None)
+        self.assertTrue(resource.called)
+
+        expected_len = resource.resp.stream_len
+        actual_len = int(result.headers['content-length'])
+        self.assertEqual(actual_len, expected_len)
+        self.assertEqual(len(result.content), expected_len)
+        self.assertTrue(resource.stream.close_called)
 
     def test_filelike_using_helper(self):
         resource = HelloResource('stream, stream_len, filelike, use_helper')

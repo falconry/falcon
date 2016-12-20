@@ -16,6 +16,8 @@
 
 from functools import wraps
 
+import six
+
 from falcon import util
 
 
@@ -150,3 +152,32 @@ def wrap_old_error_serializer(old_fn):
             resp.content_type = media_type
 
     return new_fn
+
+
+class CloseableStreamIterator(six.Iterator):
+    """
+    An iterator that returns next block-size number of bytes until response from stream is empty string (bytes).
+    """
+
+    def __init__(self, stream, block_size):
+        """
+        Args:
+            stream: Stream file-like object.
+            block_size: Number of bytes to read per iteration.
+        """
+        self.stream = stream
+        self.block_size = block_size
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        data = self.stream.read(self.block_size)
+        if data == b'':
+            raise StopIteration
+        else:
+            return data
+
+    def close(self):
+        if hasattr(self.stream, 'close') and callable(self.stream.close):
+            self.stream.close()
