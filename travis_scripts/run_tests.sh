@@ -1,4 +1,6 @@
 if [ "$JYTHON" = "true" ]; then
+    set -e
+
     $HOME/jython/bin/pytest tests
 
     # Smoke test
