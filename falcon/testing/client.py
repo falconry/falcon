@@ -261,7 +261,7 @@ class Cookie(object):
 
 def simulate_request(app, method='GET', path='/', query_string=None,
                      headers=None, body=None, file_wrapper=None,
-                     params=None, params_csv=True):
+                     params=None, params_csv=True, protocol='http'):
         """Simulates a request to a WSGI application.
 
         Performs a request against a WSGI application. Uses
@@ -273,6 +273,8 @@ def simulate_request(app, method='GET', path='/', query_string=None,
             method (str): An HTTP method to use in the request
                 (default: 'GET')
             path (str): The URL path to request (default: '/')
+            protocol: The protocol to use for the URL scheme
+                (default: 'http')
             params (dict): A dictionary of query string parameters,
                 where each key is a parameter name, and each value is
                 either a ``str`` or something that can be converted
@@ -329,6 +331,7 @@ def simulate_request(app, method='GET', path='/', query_string=None,
 
         env = helpers.create_environ(
             method=method,
+            scheme=protocol,
             path=path,
             query_string=(query_string or ''),
             headers=headers,
@@ -378,6 +381,8 @@ def simulate_get(app, path, **kwargs):
             environ (default: ``None``). This can be used to test
             high-performance file transmission when `resp.stream` is
             set to a file-like object.
+        protocol: The protocol to use for the URL scheme
+            (default: 'http')
     """
     return simulate_request(app, 'GET', path, **kwargs)
 
@@ -410,6 +415,8 @@ def simulate_head(app, path, **kwargs):
             `params`.
         headers (dict): Additional headers to include in the request
             (default: ``None``)
+        protocol: The protocol to use for the URL scheme
+            (default: 'http')
     """
     return simulate_request(app, 'HEAD', path, **kwargs)
 
@@ -443,6 +450,8 @@ def simulate_post(app, path, **kwargs):
             Accepts both byte strings and Unicode strings
             (default: ``None``). If a Unicode string is provided,
             it will be encoded as UTF-8 in the request.
+        protocol: The protocol to use for the URL scheme
+            (default: 'http')
     """
     return simulate_request(app, 'POST', path, **kwargs)
 
@@ -476,6 +485,8 @@ def simulate_put(app, path, **kwargs):
             Accepts both byte strings and Unicode strings
             (default: ``None``). If a Unicode string is provided,
             it will be encoded as UTF-8 in the request.
+        protocol: The protocol to use for the URL scheme
+            (default: 'http')
     """
     return simulate_request(app, 'PUT', path, **kwargs)
 
@@ -505,6 +516,8 @@ def simulate_options(app, path, **kwargs):
             values (e.g., 'thing=1,2,3'). Defaults to ``True``.
         headers (dict): Additional headers to include in the request
             (default: ``None``)
+        protocol: The protocol to use for the URL scheme
+            (default: 'http')
     """
     return simulate_request(app, 'OPTIONS', path, **kwargs)
 
@@ -538,6 +551,8 @@ def simulate_patch(app, path, **kwargs):
             Accepts both byte strings and Unicode strings
             (default: ``None``). If a Unicode string is provided,
             it will be encoded as UTF-8 in the request.
+        protocol: The protocol to use for the URL scheme
+            (default: 'http')
     """
     return simulate_request(app, 'PATCH', path, **kwargs)
 
@@ -567,6 +582,8 @@ def simulate_delete(app, path, **kwargs):
             values (e.g., 'thing=1,2,3'). Defaults to ``True``.
         headers (dict): Additional headers to include in the request
             (default: ``None``)
+        protocol: The protocol to use for the URL scheme
+            (default: 'http')
     """
     return simulate_request(app, 'DELETE', path, **kwargs)
 
