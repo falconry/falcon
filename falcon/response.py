@@ -608,10 +608,11 @@ class Response(object):
     content_type = header_property(
         'Content-Type',
         """Sets the Content-Type header.
-        
+
         Note:
-            You can use the following predefined content types: ``falcon.HTML``, ``falcon.XML``, ``falcon.JSON``,
-            ``falcon.TEXT``, ``falcon.JS``, ``falcon.JPG`` and ``falcon.PNG``
+            You can use the following predefined content types: ``falcon.HTML``,
+            ``falcon.XML``, ``falcon.JSON``,``falcon.TEXT``, ``falcon.JS``,
+            ``falcon.JPG`` and ``falcon.PNG``
         """)
 
     etag = header_property(
