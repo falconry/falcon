@@ -884,8 +884,8 @@ class HTTPLocked(OptionalRepresentation, HTTPError):
 
     Keyword Args:
         title (str): Error title (default '423 Locked').
-        description (str): Human-friendly description of the rate limit that
-            was exceeded.
+        description (str): Human-friendly description of the error, along with
+            a helpful suggestion or two.
         headers (dict or list): A ``dict`` of header names and values
             to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
             *value* must be of type ``str`` or ``StringType``, and only
@@ -933,8 +933,8 @@ class HTTPFailedDependency(OptionalRepresentation, HTTPError):
 
     Keyword Args:
         title (str): Error title (default '424 Failed Dependency').
-        description (str): Human-friendly description of the rate limit that
-            was exceeded.
+        description (str): Human-friendly description of the error, along with
+            a helpful suggestion or two.
         headers (dict or list): A ``dict`` of header names and values
             to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
             *value* must be of type ``str`` or ``StringType``, and only
