@@ -327,7 +327,8 @@ class Request(object):
                 # "bytes tunneled as latin-1" and must be encoded back
                 path = path.encode('latin1').decode('utf-8', 'replace')
 
-            if len(path) != 1 and path.endswith('/'):
+            if (self.options.strip_url_path_trailing_slash and
+                    len(path) != 1 and path.endswith('/')):
                 self.path = path[:-1]
             else:
                 self.path = path
@@ -1283,6 +1284,7 @@ class RequestOptions(object):
             For comma-separated values, this option also determines
             whether or not empty elements in the parsed list are
             retained.
+
         auto_parse_form_urlencoded: Set to ``True`` in order to
             automatically consume the request stream and merge the
             results into the request's query string params when the
@@ -1308,14 +1310,23 @@ class RequestOptions(object):
             occurrences of the same parameter, and when values may be
             encoded in alternative formats in which the comma character
             is significant.
+
+        strip_url_path_trailing_slash: Set to ``False`` in order to retain
+            a trailing slash, if exists, at the end of the url path
+            (default ``True``). When this option is enabled, such a
+            trailing slash, if exists, is stripped when normalizing the
+            url path.
+
     """
     __slots__ = (
         'keep_blank_qs_values',
         'auto_parse_form_urlencoded',
         'auto_parse_qs_csv',
+        'strip_url_path_trailing_slash',
     )
 
     def __init__(self):
         self.keep_blank_qs_values = False
         self.auto_parse_form_urlencoded = False
         self.auto_parse_qs_csv = True
+        self.strip_url_path_trailing_slash = True
