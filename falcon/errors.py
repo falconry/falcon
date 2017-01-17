@@ -967,6 +967,31 @@ class HTTPFailedDependency(OptionalRepresentation, HTTPError):
                                                    description, **kwargs)
 
 
+class HTTPPreconditionRequired(HTTPError):
+    """428 Precondition Required.
+
+    The 428 status code indicates that the origin server requires the
+    request to be conditional.
+    Its typical use is to avoid the "lost update" problem, where a client
+    GETs a resource's state, modifies it, and PUTs it back to the server,
+    when meanwhile a third party has modified the state on the server,
+    leading to a conflict.  By requiring requests to be conditional, the
+    server can assure that clients are working with the correct copies.
+    Responses using this status code SHOULD explain how to resubmit the
+    request successfully.
+
+    (See also: RFC 6585, Section 3)
+
+    Args:
+        description (str): Human-friendly description of the error, along with
+            a helpful suggestion or two.
+        kwargs (optional): Same as for ``HTTPError``.
+    """
+    def __init__(self, title=None, description=None, **kwargs):
+        super(HTTPPreconditionRequired, self).__init__(status.HTTP_428, title,
+                                                       description, **kwargs)
+
+
 class HTTPTooManyRequests(HTTPError):
     """429 Too Many Requests.
 
