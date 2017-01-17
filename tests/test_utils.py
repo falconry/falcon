@@ -3,7 +3,10 @@
 from datetime import datetime
 import functools
 import io
-import json
+try:
+    import ujson as json
+except ImportError:
+    import json
 import random
 import sys
 

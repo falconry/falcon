@@ -1,5 +1,8 @@
 from datetime import date
-import json
+try:
+    import ujson as json
+except ImportError:
+    import json
 
 import ddt
 
