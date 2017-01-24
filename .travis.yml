@@ -7,10 +7,11 @@ cache:
 
 matrix:
     include:
-        - python: 2.7  # these are just to make travis's UI a bit prettier
+        - python: 2.7
           env: JYTHON=true
-        - python: pypy-5.3
+        - python: pypy-5.4
           env: TOXENV=pypy
+        # TODO(kgriffs): Uncomment when pypy3 is more mature
         # - python: pypy3
         #   env: TOXENV=pypy3
         - python: 2.7
@@ -19,6 +20,8 @@ matrix:
           env: TOXENV=py26
         - python: 2.7
           env: TOXENV=py27
+        - python: 2.7
+          env: TOXENV=py27_ujson
         - python: 2.7
           env: TOXENV=py27_smoke
         - python: 2.7
@@ -35,6 +38,8 @@ matrix:
           env: TOXENV=py34_cython
         - python: 3.5
           env: TOXENV=py35
+        - python: 3.5
+          env: TOXENV=py35_ujson
         - python: 3.5
           env: TOXENV=py35_cython
         - python: 2.7

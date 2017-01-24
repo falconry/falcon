@@ -62,7 +62,7 @@ $ ~/jython/bin/pytest tests
 Pull requests must maintain 100% test coverage of all code branches. This helps ensure the quality of the Falcon framework. To check coverage before submitting a pull request:
 
 ```bash
-$ tox -e py26,py27,py34 && tools/combine_coverage.sh
+$ tox -e py26,py27,py35 && tools/combine_coverage.sh
 ```
 
 It is necessary to combine test coverage from all three of these environments in order to account for branches in the code that are only taken for a given Python version.

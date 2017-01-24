@@ -14,7 +14,10 @@
 
 """HTTPError exception class."""
 
-import json
+try:
+    import ujson as json
+except ImportError:
+    import json
 import xml.etree.ElementTree as et
 
 try:
@@ -170,8 +173,7 @@ class HTTPError(Exception):
         """
 
         obj = self.to_dict(OrderedDict)
-        return json.dumps(obj, indent=4, separators=(',', ': '),
-                          ensure_ascii=False)
+        return json.dumps(obj, ensure_ascii=False)
 
     def to_xml(self):
         """Returns an XML-encoded representation of the error.

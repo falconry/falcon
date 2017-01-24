@@ -32,7 +32,10 @@ This package includes utilities for simulating HTTP requests against a
 WSGI callable, without having to stand up a WSGI server.
 """
 
-import json
+try:
+    import ujson as json
+except ImportError:
+    import json
 import platform
 import re
 import wsgiref.validate
@@ -106,7 +109,7 @@ class Result(object):
                 cookies.load(value)
 
                 if _PY26 or (_PY27 and _JYTHON):
-                    match = re.match('([^=]+)=', value)
+                    match = re.match('\s*([^=;,]+)=', value)
                     assert match
 
                     cookie_name = match.group(1)
