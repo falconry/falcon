@@ -107,7 +107,17 @@ Installing it is as simple as:
 
     $ pip install falcon
 
-Installing the wheel is a great way to get up and running with Falcon
+If `ujson <https://pypi.python.org/pypi/ujson>`__ is available, Falcon
+will use it to speed up error response serialization and query string
+parsing. Note that ``ujson`` can actually be slower on PyPy than the
+standard ``json`` module due to ctypes overhead, and so we recommend only
+using ``ujson`` with CPython deployments:
+
+.. code:: bash
+
+    $ pip install ujson
+
+Installing the Falcon wheel is a great way to get up and running
 quickly in a development environment, but for an extra speed boost when
 deploying your application in production, Falcon can compile itself with
 Cython.
