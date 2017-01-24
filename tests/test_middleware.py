@@ -247,6 +247,29 @@ class TestSeveralMiddlewares(TestMiddleware):
         ]
         self.assertEqual(expectedExecutedMethods, context['executed_methods'])
 
+    def test_independent_middleware_execution_order(self):
+        global context
+        self.api = falcon.API(independent_middleware=True,
+                              middleware=[ExecutedFirstMiddleware(),
+                                          ExecutedLastMiddleware()])
+
+        self.api.add_route(self.test_route, MiddlewareClassResource())
+
+        body = self.simulate_json_request(self.test_route)
+        self.assertEqual(_EXPECTED_BODY, body)
+        self.assertEqual(self.srmock.status, falcon.HTTP_200)
+        # as the method registration is in a list, the order also is
+        # tested
+        expectedExecutedMethods = [
+            'ExecutedFirstMiddleware.process_request',
+            'ExecutedLastMiddleware.process_request',
+            'ExecutedFirstMiddleware.process_resource',
+            'ExecutedLastMiddleware.process_resource',
+            'ExecutedLastMiddleware.process_response',
+            'ExecutedFirstMiddleware.process_response'
+        ]
+        self.assertEqual(expectedExecutedMethods, context['executed_methods'])
+
     def test_multiple_reponse_mw_throw_exception(self):
         """Test that error in inner middleware leaves"""
         global context
@@ -395,6 +418,40 @@ class TestSeveralMiddlewares(TestMiddleware):
         ]
         self.assertEqual(expectedExecutedMethods, context['executed_methods'])
 
+    def test_order_independent_mw_executed_when_exception_in_resp(self):
+        """Test that error in inner middleware leaves"""
+        global context
+
+        class RaiseErrorMiddleware(object):
+
+            def process_response(self, req, resp, resource):
+                raise Exception('Always fail')
+
+        self.api = falcon.API(independent_middleware=True,
+                              middleware=[ExecutedFirstMiddleware(),
+                                          RaiseErrorMiddleware(),
+                                          ExecutedLastMiddleware()])
+
+        def handler(ex, req, resp, params):
+            pass
+
+        self.api.add_error_handler(Exception, handler)
+
+        self.api.add_route(self.test_route, MiddlewareClassResource())
+
+        self.simulate_request(self.test_route)
+
+        # Any mw is executed now...
+        expectedExecutedMethods = [
+            'ExecutedFirstMiddleware.process_request',
+            'ExecutedLastMiddleware.process_request',
+            'ExecutedFirstMiddleware.process_resource',
+            'ExecutedLastMiddleware.process_resource',
+            'ExecutedLastMiddleware.process_response',
+            'ExecutedFirstMiddleware.process_response'
+        ]
+        self.assertEqual(expectedExecutedMethods, context['executed_methods'])
+
     def test_order_mw_executed_when_exception_in_req(self):
         """Test that error in inner middleware leaves"""
         global context
@@ -424,6 +481,37 @@ class TestSeveralMiddlewares(TestMiddleware):
         ]
         self.assertEqual(expectedExecutedMethods, context['executed_methods'])
 
+    def test_order_independent_mw_executed_when_exception_in_req(self):
+        """Test that error in inner middleware leaves"""
+        global context
+
+        class RaiseErrorMiddleware(object):
+
+            def process_request(self, req, resp):
+                raise Exception('Always fail')
+
+        self.api = falcon.API(independent_middleware=True,
+                              middleware=[ExecutedFirstMiddleware(),
+                                          RaiseErrorMiddleware(),
+                                          ExecutedLastMiddleware()])
+
+        def handler(ex, req, resp, params):
+            pass
+
+        self.api.add_error_handler(Exception, handler)
+
+        self.api.add_route(self.test_route, MiddlewareClassResource())
+
+        self.simulate_request(self.test_route)
+
+        # All response middleware still executed...
+        expectedExecutedMethods = [
+            'ExecutedFirstMiddleware.process_request',
+            'ExecutedLastMiddleware.process_response',
+            'ExecutedFirstMiddleware.process_response'
+        ]
+        self.assertEqual(expectedExecutedMethods, context['executed_methods'])
+
     def test_order_mw_executed_when_exception_in_rsrc(self):
         """Test that error in inner middleware leaves"""
         global context
@@ -434,6 +522,39 @@ class TestSeveralMiddlewares(TestMiddleware):
                 raise Exception('Always fail')
 
         self.api = falcon.API(middleware=[ExecutedFirstMiddleware(),
+                                          RaiseErrorMiddleware(),
+                                          ExecutedLastMiddleware()])
+
+        def handler(ex, req, resp, params):
+            pass
+
+        self.api.add_error_handler(Exception, handler)
+
+        self.api.add_route(self.test_route, MiddlewareClassResource())
+
+        self.simulate_request(self.test_route)
+
+        # Any mw is executed now...
+        expectedExecutedMethods = [
+            'ExecutedFirstMiddleware.process_request',
+            'ExecutedLastMiddleware.process_request',
+            'ExecutedFirstMiddleware.process_resource',
+            'ExecutedLastMiddleware.process_response',
+            'ExecutedFirstMiddleware.process_response'
+        ]
+        self.assertEqual(expectedExecutedMethods, context['executed_methods'])
+
+    def test_order_independent_mw_executed_when_exception_in_rsrc(self):
+        """Test that error in inner middleware leaves"""
+        global context
+
+        class RaiseErrorMiddleware(object):
+
+            def process_resource(self, req, resp, resource):
+                raise Exception('Always fail')
+
+        self.api = falcon.API(independent_middleware=True,
+                              middleware=[ExecutedFirstMiddleware(),
                                           RaiseErrorMiddleware(),
                                           ExecutedLastMiddleware()])
 
