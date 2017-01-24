@@ -1,4 +1,7 @@
-import json
+try:
+    import ujson as json
+except ImportError:
+    import json
 import logging
 import uuid
 from wsgiref import simple_server

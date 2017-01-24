@@ -31,6 +31,10 @@ All classes are available directly from the `falcon` package namespace::
 
             # ...
 
+The default error serializer supports JSON and XML. You can override the
+default serializer by passing a callable to the :class:`~.API` method,
+:meth:`~.API.set_error_serializer`.
+
 Base Class
 ----------
 

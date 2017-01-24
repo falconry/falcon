@@ -14,7 +14,10 @@
 
 """HTTPError exception class."""
 
-import json
+try:
+    import ujson as json
+except ImportError:
+    import json
 import xml.etree.ElementTree as et
 
 try:
@@ -28,9 +31,19 @@ from falcon.util import uri
 class HTTPError(Exception):
     """Represents a generic HTTP error.
 
-    Raise this or a child class to have Falcon automagically return pretty
-    error responses (with an appropriate HTTP status code) to the client
-    when something goes wrong.
+    Raise an instance or subclass of ``HTTPError`` to have Falcon return
+    a formatted error response and an appropriate HTTP status code
+    to the client when something goes wrong. JSON and XML media types
+    are supported by default.
+
+    To customize the error presentation, implement a custom error
+    serializer and set it on the :class:`~.API` instance via
+    :meth:`~.API.set_error_serializer`.
+
+    To customize what data is passed to the serializer, subclass
+    ``HTTPError`` and override the ``to_dict()`` method (``to_json()``
+    is implemented via ``to_dict()``). To also support XML, override
+    the ``to_xml()`` method.
 
     Attributes:
         status (str): HTTP status line, e.g. '748 Confounded by Ponies'.
@@ -160,8 +173,7 @@ class HTTPError(Exception):
         """
 
         obj = self.to_dict(OrderedDict)
-        return json.dumps(obj, indent=4, separators=(',', ': '),
-                          ensure_ascii=False)
+        return json.dumps(obj, ensure_ascii=False)
 
     def to_xml(self):
         """Returns an XML-encoded representation of the error.

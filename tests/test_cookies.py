@@ -23,6 +23,7 @@ class TimezoneGMTPlus1(tzinfo):
     def dst(self, dt):
         return timedelta(hours=1)
 
+
 GMT_PLUS_ONE = TimezoneGMTPlus1()
 
 

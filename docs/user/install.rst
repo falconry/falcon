@@ -27,7 +27,17 @@ Installing it is as simple as:
 
     $ pip install falcon
 
-Installing the wheel is a great way to get up and running with Falcon
+If `ujson <https://pypi.python.org/pypi/ujson>`__ is available, Falcon
+will use it to speed up error response serialization and query string
+parsing. Note that ``ujson`` can actually be slower on PyPy than the
+standard ``json`` module due to ctypes overhead, and so we recommend only
+using ``ujson`` with CPython deployments:
+
+.. code:: bash
+
+    $ pip install ujson
+
+Installing the Falcon wheel is a great way to get up and running
 quickly in a development environment, but for an extra speed boost when
 deploying your application in production, Falcon can compile itself with
 Cython.
@@ -82,9 +92,13 @@ Falcon speaks WSGI, and so in order to serve a Falcon app, you will
 need a WSGI server. Gunicorn and uWSGI are some of the more popular
 ones out there, but anything that can load a WSGI app will do.
 
+All Windows developers can use Waitress production-quality pure-Python WSGI server with very acceptable performance.
+Unfortunately Gunicorn is still not working on Windows and uWSGI need to have Cygwin on Windows installed.
+Waitress can be good alternative for Windows users if they want quick start using Falcon on it.
+
 .. code:: bash
 
-    $ pip install [gunicorn|uwsgi]
+    $ pip install [gunicorn|uwsgi|waitress]
 
 Source Code
 -----------
