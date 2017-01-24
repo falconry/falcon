@@ -139,7 +139,6 @@ def default_serialize_error(req, resp, exception):
             preferred = 'application/xml'
 
     if preferred is not None:
-        resp.append_header('Vary', 'Accept')
         if preferred == 'application/json':
             representation = exception.to_json()
         else:
@@ -147,6 +146,8 @@ def default_serialize_error(req, resp, exception):
 
         resp.body = representation
         resp.content_type = preferred + '; charset=UTF-8'
+
+    resp.append_header('Vary', 'Accept')
 
 
 def wrap_old_error_serializer(old_fn):

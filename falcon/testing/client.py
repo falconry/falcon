@@ -12,29 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Copyright 2016 by Rackspace Hosting, Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 """WSGI test client utilities.
 
 This package includes utilities for simulating HTTP requests against a
 WSGI callable, without having to stand up a WSGI server.
 """
 
-import json
+try:
+    import ujson as json
+except ImportError:
+    import json
+import platform
 import re
-import sys
 import wsgiref.validate
 
 from six.moves import http_cookies
@@ -42,6 +31,11 @@ from six.moves import http_cookies
 from falcon.testing import helpers
 from falcon.testing.srmock import StartResponseMock
 from falcon.util import CaseInsensitiveDict, http_date_to_dt, to_query_str
+
+_PYVER = platform.python_version_tuple()[:2]
+_PY26 = _PYVER == ('2', '6')
+_PY27 = _PYVER == ('2', '7')
+_JYTHON = platform.python_implementation() == 'Jython'
 
 
 class Result(object):
@@ -100,13 +94,13 @@ class Result(object):
             if name.lower() == 'set-cookie':
                 cookies.load(value)
 
-                if sys.version_info < (2, 7):
-                    match = re.match('([^=]+)=', value)
+                if _PY26 or (_PY27 and _JYTHON):
+                    match = re.match('\s*([^=;,]+)=', value)
                     assert match
 
                     cookie_name = match.group(1)
 
-                    # NOTE(kgriffs): py26 has a bug that causes
+                    # NOTE(kgriffs): py26/Jython has a bug that causes
                     # SimpleCookie to incorrectly parse the "expires"
                     # attribute, so we have to do it ourselves. This
                     # algorithm is obviously very naive, but it should
@@ -116,9 +110,9 @@ class Result(object):
                     if match:
                         cookies[cookie_name]['expires'] = match.group(1)
 
-                    # NOTE(kgriffs): py26's SimpleCookie won't parse
-                    # the "httponly" and "secure" attributes, so we
-                    # have to do it ourselves.
+                    # NOTE(kgriffs): py26/Jython's SimpleCookie won't
+                    # parse the "httponly" and "secure" attributes, so
+                    # we have to do it ourselves.
                     if 'httponly' in value:
                         cookies[cookie_name]['httponly'] = True
 

@@ -471,6 +471,8 @@ class API(object):
                     resp.body = representation
                     resp.content_type = preferred
 
+                resp.append_header('Vary', 'Accept')
+
         Note:
             If a custom media type is used and the type includes a
             "+json" or "+xml" suffix, the default serializer will

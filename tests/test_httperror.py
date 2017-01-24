@@ -1,7 +1,10 @@
 # -*- coding: utf-8
 
 import datetime
-import json
+try:
+    import ujson as json
+except ImportError:
+    import json
 import xml.etree.ElementTree as et
 
 import ddt
@@ -284,7 +287,7 @@ class TestHTTPError(testing.TestBase):
     def test_no_description_json(self):
         body = self.simulate_request('/fail', method='PATCH')
         self.assertEqual(self.srmock.status, falcon.HTTP_400)
-        self.assertEqual(body, [b'{\n    "title": "400 Bad Request"\n}'])
+        self.assertEqual(body, [json.dumps({'title': '400 Bad Request'}).encode('utf8')])
 
     def test_no_description_xml(self):
         body = self.simulate_request('/fail', method='PATCH',
@@ -308,6 +311,7 @@ class TestHTTPError(testing.TestBase):
 
         body = self.simulate_request('/fail', headers=headers)
         self.assertEqual(self.srmock.status, headers['X-Error-Status'])
+        self.assertEqual(self.srmock.headers_dict['Vary'], 'Accept')
         self.assertEqual(body, [])
 
     def test_custom_old_error_serializer(self):

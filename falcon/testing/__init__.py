@@ -55,11 +55,14 @@ supported::
     import myapp
 
 
-    @pytest.fixture(scope='module')
+    # Depending on your testing strategy and how your application
+    # manages state, you may be able to broaden the fixture scope
+    # beyond the default 'function' scope used in this example.
+
+    @pytest.fixture()
     def client():
-        # Assume the hypothetical `myapp` package has a
-        # function called `create()` to initialize and
-        # return a `falcon.API` instance.
+        # Assume the hypothetical `myapp` package has a function called
+        # `create()` to initialize and return a `falcon.API` instance.
         return testing.TestClient(myapp.create())
 
 

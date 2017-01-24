@@ -24,7 +24,10 @@ directly from the `testing` package::
 
 """
 
-from json import dumps as json_dumps
+try:
+    from ujson import dumps as json_dumps
+except ImportError:
+    from json import dumps as json_dumps
 
 import falcon
 from .helpers import rand_string
