@@ -103,9 +103,9 @@ class API(object):
             to use in lieu of the default engine.
             See also: :ref:`Routing <routing>`.
 
-        independent_middleware (bool): set to true if response middleware
-            should be executed independently of whether or not request
-            middleware raises an exception.
+        independent_middleware (bool): Set to ``True`` if response
+            middleware should be executed independently of whether or
+            not request middleware raises an exception.
 
     Attributes:
         req_options: A set of behavioral options related to incoming
