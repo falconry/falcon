@@ -13,7 +13,10 @@
 """Request class."""
 
 from datetime import datetime
-import json
+try:
+    import ujson as json
+except ImportError:
+    import json
 
 try:
     # NOTE(kgrifs): In Python 2.6 and 2.7, socket._fileobject is a
