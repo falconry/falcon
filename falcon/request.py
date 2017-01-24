@@ -72,9 +72,11 @@ class Request(object):
         options (dict): Set of global options passed from the API handler.
 
     Attributes:
-        protocol (str): Either 'http' or 'https'.
+        protocol (str): Deprecated alias for `scheme`. May be removed in a future release.
+        scheme (str): Either 'http' or 'https'.
         method (str): HTTP method requested (e.g., 'GET', 'POST', etc.)
         host (str): Hostname requested by the client
+        port (str): Port used for the request
         subdomain (str): Leftmost (i.e., most specific) subdomain from the
             hostname. If only a single domain name is given, `subdomain`
             will be ``None``.
@@ -545,8 +547,10 @@ class Request(object):
         return self.env.get('SCRIPT_NAME', '')
 
     @property
-    def protocol(self):
+    def scheme(self):
         return self.env['wsgi.url_scheme']
+
+    protocol = scheme
 
     @property
     def uri(self):
@@ -690,6 +694,25 @@ class Request(object):
     @property
     def remote_addr(self):
         return self.env.get('REMOTE_ADDR')
+
+    @property
+    def port(self):
+        try:
+            host_header = self.env['HTTP_HOST']
+            host, port = parse_host(host_header)
+        except KeyError:
+            port = self.env['SERVER_PORT']
+
+        if not port:
+            port = '80' if self.scheme == 'http' else '443'
+        return port
+
+    @property
+    def netloc(self):
+        try:
+            return self.env['HTTP_HOST']
+        except KeyError:
+            return self.host + ':' + self.port
 
     # ------------------------------------------------------------------------
     # Methods
