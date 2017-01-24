@@ -9,11 +9,15 @@ from falcon.request import Request
 import falcon.testing as testing
 import falcon.uri
 
+_PROTOCOLS = ['HTTP/1.0', 'HTTP/1.1']
+
 
 @ddt.ddt
-class TestReqVars(testing.TestBase):
+class TestReqVars(testing.TestCase):
 
-    def before(self):
+    def setUp(self):
+        super(TestReqVars, self).setUp()
+
         self.qs = 'marker=deadbeef&limit=10'
 
         self.headers = {
@@ -641,6 +645,90 @@ class TestReqVars(testing.TestBase):
     def test_content_length_method(self):
         self.assertEqual(self.req.get_header('content-length'), '4829')
 
+    # TODO(kgriffs): Migrate to pytest and parametrized fixtures
+    # to DRY things up a bit.
+    @ddt.data(*_PROTOCOLS)
+    def test_port_explicit(self, protocol):
+        port = 9000
+        req = Request(testing.create_environ(
+            protocol=protocol,
+            port=port,
+            app=self.app,
+            path='/hello',
+            query_string=self.qs,
+            headers=self.headers))
+
+        self.assertEqual(req.port, port)
+
+    @ddt.data(*_PROTOCOLS)
+    def test_scheme_https(self, protocol):
+        scheme = 'https'
+        req = Request(testing.create_environ(
+            protocol=protocol,
+            scheme=scheme,
+            app=self.app,
+            path='/hello',
+            query_string=self.qs,
+            headers=self.headers))
+
+        self.assertEqual(req.scheme, scheme)
+        self.assertEqual(req.port, 443)
+
+    @ddt.data(*_PROTOCOLS)
+    def test_scheme_http(self, protocol):
+        scheme = 'http'
+        req = Request(testing.create_environ(
+            protocol=protocol,
+            scheme=scheme,
+            app=self.app,
+            path='/hello',
+            query_string=self.qs,
+            headers=self.headers))
+
+        self.assertEqual(req.scheme, scheme)
+        self.assertEqual(req.port, 80)
+
+    @ddt.data(*_PROTOCOLS)
+    def test_netloc_default_port(self, protocol):
+        req = Request(testing.create_environ(
+            protocol=protocol,
+            app=self.app,
+            path='/hello',
+            query_string=self.qs,
+            headers=self.headers))
+
+        self.assertEqual(req.netloc, 'falconframework.org')
+
+    @ddt.data(*_PROTOCOLS)
+    def test_netloc_nondefault_port(self, protocol):
+        req = Request(testing.create_environ(
+            protocol=protocol,
+            port='8080',
+            app=self.app,
+            path='/hello',
+            query_string=self.qs,
+            headers=self.headers))
+
+        self.assertEqual(req.netloc, 'falconframework.org:8080')
+
+    @ddt.data(*_PROTOCOLS)
+    def test_netloc_from_env(self, protocol):
+        port = 9000
+        host = 'example.org'
+        env = testing.create_environ(
+            protocol=protocol,
+            host=host,
+            port=port,
+            app=self.app,
+            path='/hello',
+            query_string=self.qs,
+            headers=self.headers)
+
+        req = Request(env)
+
+        self.assertEqual(req.port, port)
+        self.assertEqual(req.netloc, '{0}:{1}'.format(host, port))
+
     # -------------------------------------------------------------------------
     # Helpers
     # -------------------------------------------------------------------------
@@ -668,121 +756,3 @@ class TestReqVars(testing.TestBase):
         except error_type as ex:
             self.assertEqual(ex.title, title)
             self.assertEqual(ex.description, description)
-
-    def test_port_implicit_http(self):
-        req = Request(testing.create_environ(
-            protocol='HTTP/1.0',
-            app=self.app,
-            path='/hello',
-            query_string=self.qs,
-            headers=self.headers))
-
-        self.assertEqual(req.port, '80')
-
-    def test_port_implicit_https(self):
-        req = Request(testing.create_environ(
-            protocol='HTTP/1.0',
-            scheme='https',
-            app=self.app,
-            path='/hello',
-            query_string=self.qs,
-            headers=self.headers))
-
-        self.assertEqual(req.port, '443')
-
-    def test_port_explicit(self):
-        PORT = 9000
-        req = Request(testing.create_environ(
-            protocol='HTTP/1.0',
-            port=PORT,
-            app=self.app,
-            path='/hello',
-            query_string=self.qs,
-            headers=self.headers))
-
-        self.assertEqual(req.port, str(PORT))
-
-    def test_port_from_env(self):
-        PORT = str(9000)
-        HTTP_HOST = '{0}:{1}'.format('example.org', PORT)
-        env = testing.create_environ(
-            protocol='HTTP/1.0',
-            port=PORT,
-            app=self.app,
-            path='/hello',
-            query_string=self.qs,
-            headers=self.headers)
-        env.update({'HTTP_HOST': HTTP_HOST})
-        req = Request(env)
-        self.assertEqual(req.port, int(PORT))
-
-    def test_port_from_scheme_http(self):
-        HTTP_HOST = 'example.com'
-        env = testing.create_environ(
-            protocol='HTTP/1.0',
-            app=self.app,
-            path='/hello',
-            query_string=self.qs,
-            headers=self.headers)
-        env.update({'HTTP_HOST': HTTP_HOST})
-        req = Request(env)
-        self.assertEqual(req.port, '80')
-
-    def test_port_from_scheme_https(self):
-        HTTP_HOST = 'example.com'
-        env = testing.create_environ(
-            protocol='HTTP/1.0',
-            scheme='https',
-            app=self.app,
-            path='/hello',
-            query_string=self.qs,
-            headers=self.headers)
-        env.update({'HTTP_HOST': HTTP_HOST})
-        req = Request(env)
-        self.assertEqual(req.port, '443')
-
-    def test_scheme_https(self):
-        _scheme = 'https'
-        req = Request(testing.create_environ(
-            protocol='HTTP/1.0',
-            scheme=_scheme,
-            app=self.app,
-            path='/hello',
-            query_string=self.qs,
-            headers=self.headers))
-        self.assertEqual(req.scheme, _scheme)
-
-    def test_scheme_http(self):
-        _scheme = 'http'
-        req = Request(testing.create_environ(
-            protocol='HTTP/1.0',
-            scheme=_scheme,
-            app=self.app,
-            path='/hello',
-            query_string=self.qs,
-            headers=self.headers))
-        self.assertEqual(req.scheme, _scheme)
-
-    def test_netloc(self):
-        req = Request(testing.create_environ(
-            protocol='HTTP/1.0',
-            app=self.app,
-            path='/hello',
-            query_string=self.qs,
-            headers=self.headers))
-        _netloc = '{host}:{port}'.format(host=req.host, port=req.port)
-        self.assertEqual(req.netloc, _netloc)
-
-    def test_netloc_from_env(self):
-        PORT = str(9000)
-        HTTP_HOST = '{0}:{1}'.format('example.org', PORT)
-        env = testing.create_environ(
-            protocol='HTTP/1.0',
-            port=PORT,
-            app=self.app,
-            path='/hello',
-            query_string=self.qs,
-            headers=self.headers)
-        env.update({'HTTP_HOST': HTTP_HOST})
-        req = Request(env)
-        self.assertEqual(req.netloc, HTTP_HOST)

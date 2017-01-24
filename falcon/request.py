@@ -72,11 +72,17 @@ class Request(object):
         options (dict): Set of global options passed from the API handler.
 
     Attributes:
-        protocol (str): Deprecated alias for `scheme`. May be removed in a future release.
         scheme (str): Either 'http' or 'https'.
+        protocol (str): Deprecated alias for `scheme`. Will be removed
+            in a future release.
         method (str): HTTP method requested (e.g., 'GET', 'POST', etc.)
         host (str): Hostname requested by the client
-        port (str): Port used for the request
+        port (int): Port used for the request. If the request URL does
+            not specify a port, the default one for the given schema is
+            returned (80 for HTTP and 443 for HTTPS).
+        netloc (str): Returns the 'host:port' portion of the request
+            URL. The port may be ommitted if it is the default one for
+            the URL's schema (80 for HTTP and 443 for HTTPS).
         subdomain (str): Leftmost (i.e., most specific) subdomain from the
             hostname. If only a single domain name is given, `subdomain`
             will be ``None``.
@@ -550,36 +556,19 @@ class Request(object):
     def scheme(self):
         return self.env['wsgi.url_scheme']
 
+    # TODO(kgriffs): Remove this deprecated alias in Falcon 2.0
     protocol = scheme
 
     @property
     def uri(self):
         if self._cached_uri is None:
-            env = self.env
-            protocol = env['wsgi.url_scheme']
-
-            # NOTE(kgriffs): According to PEP-3333 we should first
-            # try to use the Host header if present.
-            #
-            # PERF(kgriffs): try..except is faster than .get
-            try:
-                host = env['HTTP_HOST']
-            except KeyError:
-                host = env['SERVER_NAME']
-                port = env['SERVER_PORT']
-
-                if protocol == 'https':
-                    if port != '443':
-                        host += ':' + port
-                else:
-                    if port != '80':
-                        host += ':' + port
+            protocol = self.env['wsgi.url_scheme']
 
             # PERF: For small numbers of items, '+' is faster
             # than ''.join(...). Concatenation is also generally
             # faster than formatting.
             value = (protocol + '://' +
-                     host +
+                     self.netloc +
                      self.app +
                      self.path)
 
@@ -699,20 +688,42 @@ class Request(object):
     def port(self):
         try:
             host_header = self.env['HTTP_HOST']
-            host, port = parse_host(host_header)
-        except KeyError:
-            port = self.env['SERVER_PORT']
 
-        if not port:
-            port = '80' if self.scheme == 'http' else '443'
+            default_port = 80 if self.env['wsgi.url_scheme'] == 'http' else 443
+            host, port = parse_host(host_header, default_port=default_port)
+        except KeyError:
+            # NOTE(kgriffs): Normalize to an int, since that is the type
+            # returned by parse_host().
+            #
+            # NOTE(kgriffs): In the case that SERVER_PORT was used,
+            # PEP-3333 requires that the port never be an empty string.
+            port = int(self.env['SERVER_PORT'])
+
         return port
 
     @property
     def netloc(self):
+        env = self.env
+        protocol = env['wsgi.url_scheme']
+
+        # NOTE(kgriffs): According to PEP-3333 we should first
+        # try to use the Host header if present.
+        #
+        # PERF(kgriffs): try..except is faster than .get
         try:
-            return self.env['HTTP_HOST']
+            netloc_value = env['HTTP_HOST']
         except KeyError:
-            return self.host + ':' + self.port
+            netloc_value = env['SERVER_NAME']
+
+            port = env['SERVER_PORT']
+            if protocol == 'https':
+                if port != '443':
+                    netloc_value += ':' + port
+            else:
+                if port != '80':
+                    netloc_value += ':' + port
+
+        return netloc_value
 
     # ------------------------------------------------------------------------
     # Methods
