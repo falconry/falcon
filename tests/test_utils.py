@@ -10,6 +10,7 @@ except ImportError:
 import random
 import sys
 
+import pytest
 import six
 import testtools
 
@@ -386,6 +387,34 @@ class TestFalconTesting(testing.TestBase):
 
     def test_httpnow_alias_for_backwards_compat(self):
         self.assertIs(testing.httpnow, util.http_now)
+
+
+@pytest.mark.parametrize(
+    'protocol,method',
+    zip(
+        ['https'] * len(falcon.HTTP_METHODS) + ['http'] * len(falcon.HTTP_METHODS),
+        falcon.HTTP_METHODS * 2
+    )
+)
+def test_simulate_request_protocol(protocol, method):
+    sink_called = [False]
+
+    def sink(req, resp):
+        sink_called[0] = True
+        assert req.protocol == protocol
+
+    app = falcon.API()
+    app.add_sink(sink, '/test')
+
+    client = testing.TestClient(app)
+
+    try:
+        simulate = client.getattr('simulate_' + method.lower())
+        simulate('/test', protocol=protocol)
+        assert sink_called[0]
+    except AttributeError:
+        # NOTE(kgriffs): simulate_* helpers do not exist for all methods
+        pass
 
 
 class TestFalconTestCase(testing.TestCase):
