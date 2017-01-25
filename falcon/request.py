@@ -1337,12 +1337,15 @@ class RequestOptions(object):
             encoded in alternative formats in which the comma character
             is significant.
 
-        strip_url_path_trailing_slash: Set to ``False`` in order to retain
-            a trailing slash, if exists, at the end of the url path
-            (default ``True``). When this option is enabled, such a
-            trailing slash, if exists, is stripped when normalizing the
-            url path.
-
+        strip_url_path_trailing_slash: Set to ``False`` in order to
+            retain a trailing slash, if present, at the end of the URL
+            path (default ``True``). When this option is enabled,
+            the URL path is normalized by stripping the trailing
+            slash when present. This lets the application define a
+            single route to a resource for a path that may or may
+            not end in a forward slash. However, this behavior can be
+            problematic in certain cases, such as when working with
+            authentication schemes that employ URL-based signatures.
     """
     __slots__ = (
         'keep_blank_qs_values',
