@@ -13,11 +13,13 @@ class TestRequestOptions(testing.TestBase):
         self.assertFalse(options.keep_blank_qs_values)
         self.assertFalse(options.auto_parse_form_urlencoded)
         self.assertTrue(options.auto_parse_qs_csv)
+        self.assertTrue(options.strip_url_path_trailing_slash)
 
     @ddt.data(
         'keep_blank_qs_values',
         'auto_parse_form_urlencoded',
         'auto_parse_qs_csv',
+        'strip_url_path_trailing_slash',
     )
     def test_options_toggle(self, option_name):
         options = RequestOptions()

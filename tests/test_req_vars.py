@@ -5,7 +5,7 @@ import six
 import testtools
 
 import falcon
-from falcon.request import Request
+from falcon.request import Request, RequestOptions
 import falcon.testing as testing
 import falcon.uri
 
@@ -272,6 +272,16 @@ class TestReqVars(testing.TestCase):
         # NOTE(kgriffs): Call twice to check caching works
         self.assertEqual(req_noapp.relative_uri, self.relative_uri)
         self.assertEqual(req_noapp.relative_uri, self.relative_uri)
+
+        options = RequestOptions()
+        options.strip_url_path_trailing_slash = False
+        req_noapp = Request(testing.create_environ(
+            path='/hello/',
+            query_string=self.qs,
+            headers=self.headers),
+            options=options)
+
+        self.assertEqual(req_noapp.relative_uri, '/hello/' + '?' + self.qs)
 
     def test_client_accepts(self):
         headers = {'Accept': 'application/xml'}
