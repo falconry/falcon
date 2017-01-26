@@ -152,7 +152,7 @@ html_theme_options = {
     'github_repo': 'falcon',
     'github_button': False,
     'github_banner': True,
-    'fixed_sidebar': True,
+    'fixed_sidebar': False,
     'show_powered_by': False,
     'extra_nav_links': {
       'Falcon Home': 'http://falconframework.org/',
