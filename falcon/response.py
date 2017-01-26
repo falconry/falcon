@@ -467,7 +467,7 @@ class Response(object):
                 "bookmark". See also http://goo.gl/618GHr for a list
                 of registered link relation types.
 
-        Kwargs:
+        Keyword Args:
             title (str): Human-readable label for the destination of
                 the link (default ``None``). If the title includes non-ASCII
                 characters, you will need to use `title_star` instead, or
