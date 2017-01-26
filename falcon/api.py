@@ -245,7 +245,13 @@ class API(object):
         #
         # Set status and headers
         #
-        if req.method == 'HEAD' or resp.status in self._BODILESS_STATUS_CODES:
+
+        # NOTE(kgriffs): While not specified in the spec that the status
+        # must be of type str (not unicode on Py27), some WSGI servers
+        # can complain when it is not.
+        resp_status = str(resp.status) if six.PY2 else resp.status
+
+        if req.method == 'HEAD' or resp_status in self._BODILESS_STATUS_CODES:
             body = []
         else:
             body, length = self._get_body(resp, env.get('wsgi.file_wrapper'))
@@ -256,15 +262,15 @@ class API(object):
         # RFC 2616, as commented in that module's source code. The
         # presence of the Content-Length header is not similarly
         # enforced.
-        if resp.status in (status.HTTP_204, status.HTTP_304):
+        if resp_status in (status.HTTP_204, status.HTTP_304):
             media_type = None
         else:
             media_type = self._media_type
 
         headers = resp._wsgi_headers(media_type)
 
-        # Return the response per the WSGI spec
-        start_response(resp.status, headers)
+        # Return the response per the WSGI spec.
+        start_response(resp_status, headers)
         return body
 
     def add_route(self, uri_template, resource, *args, **kwargs):
