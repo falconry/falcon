@@ -58,6 +58,8 @@ Predefined Errors
         HTTPNotAcceptable, HTTPConflict, HTTPGone, HTTPLengthRequired,
         HTTPPreconditionFailed, HTTPRequestEntityTooLarge, HTTPUriTooLong,
         HTTPUnsupportedMediaType, HTTPRangeNotSatisfiable,
-        HTTPUnprocessableEntity, HTTPTooManyRequests,
+        HTTPUnprocessableEntity, HTTPLocked, HTTPFailedDependency,
+        HTTPTooManyRequests,
         HTTPUnavailableForLegalReasons,
-        HTTPInternalServerError, HTTPBadGateway, HTTPServiceUnavailable
+        HTTPInternalServerError, HTTPBadGateway, HTTPServiceUnavailable,
+        HTTPInsufficientStorage, HTTPLoopDetected
