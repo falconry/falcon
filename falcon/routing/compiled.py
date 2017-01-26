@@ -83,9 +83,17 @@ class CompiledRouter(object):
                     return
 
                 if node.conflicts_with(segment):
-                    raise ValueError('The URI template for this route '
-                                     "conflicts with another route's "
-                                     'template.')
+                    msg = (
+                        'The URI template for this route conflicts with another'
+                        "route's template. This is usually caused by using "
+                        'different field names at the same level in the path. '
+                        'For example, given the route paths '
+                        "'/parents/{id}' and '/parents/{parent_id}/children', "
+                        'the conflict can be resolved by renaming one of the '
+                        'fields to match the other, i.e.: '
+                        "'/parents/{parent_id}' and '/parents/{parent_id}/children'."
+                    )
+                    raise ValueError(msg)
 
             # NOTE(richardolsson): If we got this far, the node doesn't already
             # exist and needs to be created. This builds a new branch of the
