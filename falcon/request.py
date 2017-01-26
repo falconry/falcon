@@ -783,10 +783,12 @@ class Request(object):
 
         Args:
             name (str): Header name, case-insensitive (e.g., 'Content-Type')
-            required (bool, optional): Set to ``True`` to raise
+
+        Keyword Args:
+            required (bool): Set to ``True`` to raise
                 ``HTTPBadRequest`` instead of returning gracefully when the
                 header is not found (default ``False``).
-            default (any, optional): Value to return if the header
+            default (any): Value to return if the header
                 is not found (default ``None``).
 
         Returns:
@@ -830,10 +832,12 @@ class Request(object):
 
         Args:
             name (str): Header name, case-insensitive (e.g., 'Date')
-            required (bool, optional): Set to ``True`` to raise
+
+        Keyword Args:
+            required (bool): Set to ``True`` to raise
                 ``HTTPBadRequest`` instead of returning gracefully when the
                 header is not found (default ``False``).
-            obs_date (bool, optional): Support obs-date formats according to
+            obs_date (bool): Support obs-date formats according to
                 RFC 7231, e.g.: "Sunday, 06-Nov-94 08:49:37 GMT"
                 (default ``False``).
 
@@ -883,12 +887,14 @@ class Request(object):
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'sort').
-            required (bool, optional): Set to ``True`` to raise
+
+        Keyword Args:
+            required (bool): Set to ``True`` to raise
                 ``HTTPBadRequest`` instead of returning ``None`` when the
                 parameter is not found (default ``False``).
-            store (dict, optional): A ``dict``-like object in which to place
+            store (dict): A ``dict``-like object in which to place
                 the value of the param, but only if the param is present.
-            default (any, optional): If the param is not found returns the
+            default (any): If the param is not found returns the
                 given value instead of None
 
         Returns:
@@ -928,17 +934,19 @@ class Request(object):
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'limit').
-            required (bool, optional): Set to ``True`` to raise
+
+        Keyword Args:
+            required (bool): Set to ``True`` to raise
                 ``HTTPBadRequest`` instead of returning ``None`` when the
                 parameter is not found or is not an integer (default
                 ``False``).
-            min (int, optional): Set to the minimum value allowed for this
+            min (int): Set to the minimum value allowed for this
                 param. If the param is found and it is less than min, an
                 ``HTTPError`` is raised.
-            max (int, optional): Set to the maximum value allowed for this
+            max (int): Set to the maximum value allowed for this
                 param. If the param is found and its value is greater than
                 max, an ``HTTPError`` is raised.
-            store (dict, optional): A ``dict``-like object in which to place
+            store (dict): A ``dict``-like object in which to place
                 the value of the param, but only if the param is found
                 (default ``None``).
 
@@ -999,19 +1007,21 @@ class Request(object):
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'detailed').
-            required (bool, optional): Set to ``True`` to raise
+
+        Keyword Args:
+            required (bool): Set to ``True`` to raise
                 ``HTTPBadRequest`` instead of returning ``None`` when the
                 parameter is not found or is not a recognized boolean
                 string (default ``False``).
-            store (dict, optional): A ``dict``-like object in which to place
+            store (dict): A ``dict``-like object in which to place
                 the value of the param, but only if the param is found (default
                 ``None``).
             blank_as_true (bool): If ``True``, an empty string value will be
-                treated as ``True``. Normally empty strings are ignored; if
-                you would like to recognize such parameters, you must set the
-                `keep_blank_qs_values` request option to ``True``. Request
-                options are set globally for each instance of ``falcon.API``
-                through the `req_options` attribute.
+                treated as ``True`` (default ``False``). Normally empty strings
+                are ignored; if you would like to recognize such parameters, you
+                must set the `keep_blank_qs_values` request option to ``True``.
+                Request options are set globally for each instance of
+                ``falcon.API`` through the `req_options` attribute.
 
         Returns:
             bool: The value of the param if it is found and can be converted
@@ -1062,15 +1072,17 @@ class Request(object):
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'ids').
-            transform (callable, optional): An optional transform function
+
+        Keyword Args:
+            transform (callable): An optional transform function
                 that takes as input each element in the list as a ``str`` and
                 outputs a transformed element for inclusion in the list that
                 will be returned. For example, passing ``int`` will
                 transform list items into numbers.
-            required (bool, optional): Set to ``True`` to raise
-                ``HTTPBadRequest`` instead of returning ``None`` when the
-                parameter is not found (default ``False``).
-            store (dict, optional): A ``dict``-like object in which to place
+            required (bool): Set to ``True`` to raise ``HTTPBadRequest``
+                instead of returning ``None`` when the parameter is not
+                found (default ``False``).
+            store (dict): A ``dict``-like object in which to place
                 the value of the param, but only if the param is found (default
                 ``None``).
 
@@ -1130,14 +1142,15 @@ class Request(object):
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'ids').
-            format_string (str): String used to parse the param value into a
-                date.
-                Any format recognized by strptime() is supported.
-                (default ``"%Y-%m-%d"``)
-            required (bool, optional): Set to ``True`` to raise
+
+        Keyword Args:
+            format_string (str): String used to parse the param value
+                into a date. Any format recognized by strptime() is
+                supported (default ``"%Y-%m-%d"``).
+            required (bool): Set to ``True`` to raise
                 ``HTTPBadRequest`` instead of returning ``None`` when the
                 parameter is not found (default ``False``).
-            store (dict, optional): A ``dict``-like object in which to place
+            store (dict): A ``dict``-like object in which to place
                 the value of the param, but only if the param is found (default
                 ``None``).
         Returns:
@@ -1175,12 +1188,14 @@ class Request(object):
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'payload').
-            required (bool, optional): Set to ``True`` to raise
-                ``HTTPBadRequest`` instead of returning ``None`` when the
-                parameter is not found (default ``False``).
-            store (dict, optional): A ``dict``-like object in which to place
-                the value of the param, but only if the param is found (default
-                ``None``).
+
+        Keyword Args:
+            required (bool): Set to ``True`` to raise ``HTTPBadRequest``
+                instead of returning ``None`` when the parameter is not
+                found (default ``False``).
+            store (dict): A ``dict``-like object in which to place the
+                value of the param, but only if the param is found
+                (default ``None``).
 
         Returns:
             dict: The value of the param if it is found. Otherwise, returns

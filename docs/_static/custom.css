@@ -9,6 +9,27 @@
     width: 110px;  /* Prevent "Return type:" from wrapping. */
 }
 
+table.field-list th, table.field-list td {
+    padding-top: 1em;
+}
+
+code.docutils.literal {
+    background-color: rgba(0, 0, 0, 0.06);
+    padding: 2px 5px 1px 5px;
+    font-size: 0.88em;
+}
+
+code.xref.docutils.literal {
+    background-color: transparent;
+    padding: 0;
+    font-size: 0.9em;
+}
+
+.field-body cite {
+    font-style: normal;
+    font-weight: bold;
+}
+
 /* Hide theme's default logo section */
 .logo a {
     display: none;
