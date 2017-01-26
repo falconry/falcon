@@ -186,6 +186,9 @@ class TestHeaders(testing.TestCase):
         value = req.get_header('X-Not-Found') or '876'
         self.assertEqual(value, '876')
 
+        value = req.get_header('X-Not-Found', default='some-value')
+        self.assertEqual(value, 'some-value')
+
     def test_required_header(self):
         self.simulate_get()
 

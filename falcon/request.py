@@ -778,7 +778,7 @@ class Request(object):
 
         return (preferred_type if preferred_type else None)
 
-    def get_header(self, name, required=False):
+    def get_header(self, name, required=False, default=None):
         """Retrieve the raw string value for the given header.
 
         Args:
@@ -786,10 +786,13 @@ class Request(object):
             required (bool, optional): Set to ``True`` to raise
                 ``HTTPBadRequest`` instead of returning gracefully when the
                 header is not found (default ``False``).
+            default (any, optional): Value to return if the header
+                is not found (default ``None``).
 
         Returns:
-            str: The value of the specified header if it exists, or ``None`` if
-            the header is not found and is not required.
+            str: The value of the specified header if it exists, or
+            the default value if the header is not found and is not
+            required.
 
         Raises:
             HTTPBadRequest: The header was not found in the request, but
@@ -818,7 +821,7 @@ class Request(object):
                     pass
 
             if not required:
-                return None
+                return default
 
             raise errors.HTTPMissingHeader(name)
 
