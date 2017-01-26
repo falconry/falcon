@@ -12,6 +12,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+from collections import OrderedDict
 import sys
 import os
 
@@ -154,10 +155,11 @@ html_theme_options = {
     'github_banner': True,
     'fixed_sidebar': False,
     'show_powered_by': False,
-    'extra_nav_links': {
-      'Falcon Home': 'http://falconframework.org/',
-      'Get Help': 'community/help.html',
-    },
+    'extra_nav_links': OrderedDict([
+      ('Falcon Home', 'http://falconframework.org/'),
+      ('Falcon Wiki', 'https://github.com/falconry/falcon/wiki'),
+      ('Get Help', 'community/help.html'),
+    ]),
 }
 
 # The name for this set of Sphinx documents.  If None, it defaults to
