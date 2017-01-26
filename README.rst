@@ -546,7 +546,7 @@ Falcon framework, with the generous help of a number of stylish and
 talented contributors.
 
 Pull requests are always welcome. We use the GitHub issue tracker to
-organize our work, put you do not need to open a new issue before
+organize our work, but you do not need to open a new issue before
 submitting a PR.
 
 Before submitting a pull request, please ensure you have added/updated
