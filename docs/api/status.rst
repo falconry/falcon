@@ -40,9 +40,11 @@ HTTPStatus
 
     HTTP_CONTINUE = HTTP_100
     HTTP_SWITCHING_PROTOCOLS = HTTP_101
+    HTTP_PROCESSING = HTTP_102
 
     HTTP_100 = '100 Continue'
     HTTP_101 = '101 Switching Protocols'
+    HTTP_102 = '102 Processing'
 
 2xx Success
 -----------
@@ -51,6 +53,14 @@ HTTPStatus
 
     HTTP_OK = HTTP_200
     HTTP_CREATED = HTTP_201
+    HTTP_ACCEPTED = HTTP_202
+    HTTP_NON_AUTHORITATIVE_INFORMATION = HTTP_203
+    HTTP_NO_CONTENT = HTTP_204
+    HTTP_RESET_CONTENT = HTTP_205
+    HTTP_PARTIAL_CONTENT = HTTP_206
+    HTTP_MULTI_STATUS = HTTP_207
+    HTTP_ALREADY_REPORTED = HTTP_208
+    HTTP_IM_USED = HTTP_226
 
     HTTP_200 = '200 OK'
     HTTP_201 = '201 Created'
@@ -59,6 +69,8 @@ HTTPStatus
     HTTP_204 = '204 No Content'
     HTTP_205 = '205 Reset Content'
     HTTP_206 = '206 Partial Content'
+    HTTP_207 = '207 Multi-Status'
+    HTTP_208 = '208 Already Reported'
     HTTP_226 = '226 IM Used'
 
 3xx Redirection
@@ -73,6 +85,7 @@ HTTPStatus
     HTTP_NOT_MODIFIED = HTTP_304
     HTTP_USE_PROXY = HTTP_305
     HTTP_TEMPORARY_REDIRECT = HTTP_307
+    HTTP_PERMANENT_REDIRECT = HTTP_308
 
     HTTP_300 = '300 Multiple Choices'
     HTTP_301 = '301 Moved Permanently'
@@ -81,6 +94,7 @@ HTTPStatus
     HTTP_304 = '304 Not Modified'
     HTTP_305 = '305 Use Proxy'
     HTTP_307 = '307 Temporary Redirect'
+    HTTP_308 = '308 Permanent Redirect'
 
 4xx Client Error
 ----------------
@@ -107,6 +121,8 @@ HTTPStatus
     HTTP_EXPECTATION_FAILED = HTTP_417
     HTTP_IM_A_TEAPOT = HTTP_418
     HTTP_UNPROCESSABLE_ENTITY = HTTP_422
+    HTTP_LOCKED = HTTP_423
+    HTTP_FAILED_DEPENDENCY = HTTP_424
     HTTP_UPGRADE_REQUIRED = HTTP_426
     HTTP_PRECONDITION_REQUIRED = HTTP_428
     HTTP_TOO_MANY_REQUESTS = HTTP_429
@@ -133,6 +149,8 @@ HTTPStatus
     HTTP_417 = '417 Expectation Failed'
     HTTP_418 = "418 I'm a teapot"
     HTTP_422 = "422 Unprocessable Entity"
+    HTTP_423 = '423 Locked'
+    HTTP_424 = '424 Failed Dependency'
     HTTP_426 = '426 Upgrade Required'
     HTTP_428 = '428 Precondition Required'
     HTTP_429 = '429 Too Many Requests'
@@ -150,6 +168,8 @@ HTTPStatus
     HTTP_SERVICE_UNAVAILABLE = HTTP_503
     HTTP_GATEWAY_TIMEOUT = HTTP_504
     HTTP_HTTP_VERSION_NOT_SUPPORTED = HTTP_505
+    HTTP_INSUFFICIENT_STORAGE = HTTP_507
+    HTTP_LOOP_DETECTED = HTTP_508
     HTTP_NETWORK_AUTHENTICATION_REQUIRED = HTTP_511
 
     HTTP_500 = '500 Internal Server Error'
@@ -158,4 +178,6 @@ HTTPStatus
     HTTP_503 = '503 Service Unavailable'
     HTTP_504 = '504 Gateway Time-out'
     HTTP_505 = '505 HTTP Version not supported'
+    HTTP_507 = '507 Insufficient Storage'
+    HTTP_508 = '508 Loop Detected'
     HTTP_511 = '511 Network Authentication Required'
