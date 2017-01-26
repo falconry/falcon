@@ -40,7 +40,9 @@ class TestStatusResource:
 
     @falcon.after(after_hook)
     def on_put(self, req, resp):
-        resp.status = falcon.HTTP_500
+        # NOTE(kgriffs): Test that passing a unicode status string
+        # works just fine.
+        resp.status = u'500 Internal Server Error'
         resp.set_header('X-Failed', 'True')
         resp.body = 'Fail'
 
