@@ -1,3 +1,14 @@
+
+.field-name {
+    /* Fix for https://github.com/bitprophet/alabaster/issues/95 */
+    -moz-hyphens: manual;
+    -ms-hyphens: manual;
+    -webkit-hyphens: manual;
+    hyphens: manual;
+
+    width: 110px;  /* Prevent "Return type:" from wrapping. */
+}
+
 /* Hide theme's default logo section */
 .logo a {
     display: none;
@@ -31,10 +42,15 @@
 }
 
 #dev-warning {
-    background: #ffe;
-    border: 1px solid #aaa;
+    background-color: #ffe;
+    border: 1px solid #ccc;
     padding: 10px;
     margin-bottom: 1em;
+ }
+
+div.warning {
+    background-color: #ffe;
+    border: 1px solid #ccc;
 }
 
 div.body h1,
@@ -58,10 +74,21 @@ div.admonition p.admonition-title {
    line-height: 1.4em;
 }
 
-dl dl pre, dd div.admonition {
+/* Fix notes not aligning with the left side of the property text. */
+dd .highlight pre, dd div.admonition {
     margin-left: -29px;
     padding-left: 29px;
 }
+
+.highlight pre {
+    font-size: smaller;
+}
+
+/* Fix drifting to the left in some parameters lists. */
+li .highlight pre {
+    float: right;
+}
+
 
 div.admonition {
     padding-bottom: 15px;
