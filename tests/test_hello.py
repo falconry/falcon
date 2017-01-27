@@ -78,6 +78,12 @@ class ClosingBytesIO(io.BytesIO):
         self.close_called = True
 
 
+class NonClosingBytesIO(io.BytesIO):
+
+    # Not callable; test that CloseableStreamIterator ignores it
+    close = False
+
+
 class ClosingFilelikeHelloResource(object):
     sample_status = '200 OK'
     sample_unicode = (u'Hello World! \x80' +
@@ -85,9 +91,9 @@ class ClosingFilelikeHelloResource(object):
 
     sample_utf8 = sample_unicode.encode('utf-8')
 
-    def __init__(self):
+    def __init__(self, stream_factory):
         self.called = False
-        self.stream = ClosingBytesIO(self.sample_utf8)
+        self.stream = stream_factory(self.sample_utf8)
         self.stream_len = len(self.sample_utf8)
 
     def on_get(self, req, resp):
@@ -195,8 +201,13 @@ class TestHelloWorld(testing.TestCase):
             self.assertEqual(actual_len, expected_len)
             self.assertEqual(len(result.content), expected_len)
 
-    def test_filelike_closing(self):
-        resource = ClosingFilelikeHelloResource()
+    @ddt.data(
+        (ClosingBytesIO, True),  # Implements close()
+        (NonClosingBytesIO, False),  # Has a non-callable "close" attr
+    )
+    @ddt.unpack
+    def test_filelike_closing(self, stream_factory, assert_closed):
+        resource = ClosingFilelikeHelloResource(stream_factory)
         self.api.add_route('/filelike-closing', resource)
 
         result = self.simulate_get('/filelike-closing', file_wrapper=None)
@@ -206,7 +217,9 @@ class TestHelloWorld(testing.TestCase):
         actual_len = int(result.headers['content-length'])
         self.assertEqual(actual_len, expected_len)
         self.assertEqual(len(result.content), expected_len)
-        self.assertTrue(resource.stream.close_called)
+
+        if assert_closed:
+            self.assertTrue(resource.stream.close_called)
 
     def test_filelike_using_helper(self):
         resource = HelloResource('stream, stream_len, filelike, use_helper')
