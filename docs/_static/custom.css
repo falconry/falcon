@@ -1,6 +1,51 @@
+
+.field-name {
+    /* Fix for https://github.com/bitprophet/alabaster/issues/95 */
+    -moz-hyphens: manual;
+    -ms-hyphens: manual;
+    -webkit-hyphens: manual;
+    hyphens: manual;
+
+    width: 110px;  /* Prevent "Return type:" from wrapping. */
+}
+
+table.field-list th, table.field-list td {
+    padding-top: 1em;
+}
+
+code.docutils.literal {
+    background-color: rgba(0, 0, 0, 0.06);
+    padding: 2px 5px 1px 5px;
+    font-size: 0.88em;
+}
+
+code.xref.docutils.literal {
+    background-color: transparent;
+    padding: 0;
+    font-size: 0.9em;
+}
+
+a.reference.internal:hover code {
+    color: #6D4100;
+    border-bottom: 1px solid #6D4100;
+}
+
+a code.literal {
+    color: #004B6B;
+}
+
+.field-body cite {
+    font-style: normal;
+    font-weight: bold;
+}
+
 /* Hide theme's default logo section */
 .logo a {
     display: none;
+}
+
+#logo {
+    position: relative;
 }
 
 #logo a,
@@ -21,20 +66,25 @@
     font-family: "Amethysta", "goudy old style", serif;
     font-weight: bold;
 
-    font-size: 18pt;
+    font-size: 16pt;
     color: #444;
     position: absolute;
 
-    left: 9px;
-    top: 2px;
+    left: 10px;
+    top: -14px;
     /*margin: -4px -4px 0 0;*/
 }
 
 #dev-warning {
-    background: #ffe;
-    border: 1px solid #aaa;
+    background-color: #ffe;
+    border: 1px solid #ccc;
     padding: 10px;
     margin-bottom: 1em;
+ }
+
+div.warning {
+    background-color: #ffe;
+    border: 1px solid #ccc;
 }
 
 div.body h1,
@@ -58,10 +108,21 @@ div.admonition p.admonition-title {
    line-height: 1.4em;
 }
 
-dl dl pre, dd div.admonition {
+/* Fix notes not aligning with the left side of the property text. */
+dd .highlight pre, dd div.admonition {
     margin-left: -29px;
     padding-left: 29px;
 }
+
+.highlight pre {
+    font-size: smaller;
+}
+
+/* Fix drifting to the left in some parameters lists. */
+li .highlight pre {
+    float: right;
+}
+
 
 div.admonition {
     padding-bottom: 15px;

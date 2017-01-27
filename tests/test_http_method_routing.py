@@ -89,6 +89,7 @@ class MiscResource(object):
         pass
 
     def on_options(self, req, resp):
+        # NOTE(kgriffs): The default responder returns 200
         resp.status = falcon.HTTP_204
 
         # NOTE(kgriffs): This is incorrect, but only return GET so
@@ -192,16 +193,16 @@ class TestHttpMethodRouting(testing.TestBase):
 
             self.assertThat(headers, Contains(allow_header))
 
-    def test_on_options(self):
+    def test_default_on_options(self):
         self.simulate_request('/things/84/stuff/65', method='OPTIONS')
-        self.assertEqual(self.srmock.status, falcon.HTTP_204)
+        self.assertEqual(self.srmock.status, falcon.HTTP_200)
 
         headers = self.srmock.headers
         allow_header = ('allow', 'GET, HEAD, PUT')
 
         self.assertThat(headers, Contains(allow_header))
 
-    def test_default_on_options(self):
+    def test_on_options(self):
         self.simulate_request('/misc', method='OPTIONS')
         self.assertEqual(self.srmock.status, falcon.HTTP_204)
 

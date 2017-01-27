@@ -44,6 +44,9 @@ class Response(object):
     Note:
         `Response` is not meant to be instantiated directly by responders.
 
+    Keyword Arguments:
+        options (dict): Set of global options passed from the API handler.
+
     Attributes:
         status (str): HTTP status line (e.g., '200 OK'). Falcon requires the
             full status line, not just the code (e.g., 200). This design
@@ -109,6 +112,8 @@ class Response(object):
                 opposed to a class), the function is called like a method of
                 the current Response instance. Therefore the first argument is
                 the Response instance itself (self).
+
+        options (dict): Set of global options passed from the API handler.
     """
 
     __slots__ = (
@@ -120,15 +125,18 @@ class Response(object):
         'stream',
         'stream_len',
         'context',
+        'options',
         '__dict__',
     )
 
     # Child classes may override this
     context_type = None
 
-    def __init__(self):
+    def __init__(self, options=None):
         self.status = '200 OK'
         self._headers = {}
+
+        self.options = ResponseOptions() if options is None else options
 
         # NOTE(tbug): will be set to a SimpleCookie object
         # when cookie is set via set_cookie
@@ -164,7 +172,7 @@ class Response(object):
         self.stream_len = stream_len
 
     def set_cookie(self, name, value, expires=None, max_age=None,
-                   domain=None, path=None, secure=True, http_only=True):
+                   domain=None, path=None, secure=None, http_only=True):
         """Set a response cookie.
 
         Note:
@@ -222,6 +230,12 @@ class Response(object):
                 in subsequent requests if they are made over HTTPS
                 (default: ``True``). This prevents attackers from
                 reading sensitive cookie data.
+
+                Note:
+                    The default value for this argument is normally
+                    ``True``, but can be modified by setting
+                    :py:attr:`~.ResponseOptions.secure_cookies_by_default`
+                    via :any:`API.resp_options`.
 
                 Warning:
                     For the `secure` cookie attribute to be effective,
@@ -295,8 +309,13 @@ class Response(object):
         if path:
             self._cookies[name]['path'] = path
 
-        if secure:
-            self._cookies[name]['secure'] = secure
+        if secure is None:
+            is_secure = self.options.secure_cookies_by_default
+        else:
+            is_secure = secure
+
+        if is_secure:
+            self._cookies[name]['secure'] = True
 
         if http_only:
             self._cookies[name]['httponly'] = http_only
@@ -467,7 +486,7 @@ class Response(object):
                 "bookmark". See also http://goo.gl/618GHr for a list
                 of registered link relation types.
 
-        Kwargs:
+        Keyword Args:
             title (str): Human-readable label for the destination of
                 the link (default ``None``). If the title includes non-ASCII
                 characters, you will need to use `title_star` instead, or
@@ -716,3 +735,24 @@ class Response(object):
             items += [('set-cookie', c.OutputString())
                       for c in self._cookies.values()]
         return items
+
+
+class ResponseOptions(object):
+    """Defines a set of configurable response options.
+
+    An instance of this class is exposed via :any:`API.resp_options` for
+    configuring certain :py:class:`~.Response` behaviors.
+
+    Attributes:
+        secure_cookies_by_default (bool): Set to ``False`` in development
+            environments to make the `secure` attribute for all cookies
+            default to ``False``. This can make testing easier by
+            not requiring HTTPS. Note, however, that this setting can
+            be overridden via `set_cookie()`'s `secure` kwarg.
+    """
+    __slots__ = (
+        'secure_cookies_by_default',
+    )
+
+    def __init__(self):
+        self.secure_cookies_by_default = True

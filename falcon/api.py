@@ -23,7 +23,7 @@ from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 from falcon.request import Request, RequestOptions
 import falcon.responders
-from falcon.response import Response
+from falcon.response import Response, ResponseOptions
 import falcon.status_codes as status
 from falcon.util.misc import get_argnames
 
@@ -110,6 +110,8 @@ class API(object):
     Attributes:
         req_options: A set of behavioral options related to incoming
             requests. See also: :py:class:`~.RequestOptions`
+        resp_options: A set of behavioral options related to outgoing
+            responses. See also: :py:class:`~.ResponseOptions`
     """
 
     # PERF(kgriffs): Reference via self since that is faster than
@@ -125,7 +127,7 @@ class API(object):
 
     __slots__ = ('_request_type', '_response_type',
                  '_error_handlers', '_media_type', '_router', '_sinks',
-                 '_serialize_error', 'req_options',
+                 '_serialize_error', 'req_options', 'resp_options',
                  '_middleware', '_independent_middleware')
 
     def __init__(self, media_type=DEFAULT_MEDIA_TYPE,
@@ -147,7 +149,9 @@ class API(object):
 
         self._error_handlers = []
         self._serialize_error = helpers.default_serialize_error
+
         self.req_options = RequestOptions()
+        self.resp_options = ResponseOptions()
 
         # NOTE(kgriffs): Add default error handlers
         self.add_error_handler(falcon.HTTPError, self._http_error_handler)
@@ -170,7 +174,7 @@ class API(object):
         """
 
         req = self._request_type(env, options=self.req_options)
-        resp = self._response_type()
+        resp = self._response_type(options=self.resp_options)
         resource = None
         params = {}
 
@@ -245,7 +249,13 @@ class API(object):
         #
         # Set status and headers
         #
-        if req.method == 'HEAD' or resp.status in self._BODILESS_STATUS_CODES:
+
+        # NOTE(kgriffs): While not specified in the spec that the status
+        # must be of type str (not unicode on Py27), some WSGI servers
+        # can complain when it is not.
+        resp_status = str(resp.status) if six.PY2 else resp.status
+
+        if req.method == 'HEAD' or resp_status in self._BODILESS_STATUS_CODES:
             body = []
         else:
             body, length = self._get_body(resp, env.get('wsgi.file_wrapper'))
@@ -256,15 +266,15 @@ class API(object):
         # RFC 2616, as commented in that module's source code. The
         # presence of the Content-Length header is not similarly
         # enforced.
-        if resp.status in (status.HTTP_204, status.HTTP_304):
+        if resp_status in (status.HTTP_204, status.HTTP_304):
             media_type = None
         else:
             media_type = self._media_type
 
         headers = resp._wsgi_headers(media_type)
 
-        # Return the response per the WSGI spec
-        start_response(resp.status, headers)
+        # Return the response per the WSGI spec.
+        start_response(resp_status, headers)
         return body
 
     def add_route(self, uri_template, resource, *args, **kwargs):

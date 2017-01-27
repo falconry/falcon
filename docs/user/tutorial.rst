@@ -89,7 +89,7 @@ let's use something that you would actually deploy in production.
 
     $ pip install gunicorn
     $ gunicorn app:api
-    
+
 Gunicorn has still limitation that is not working on Windows. If you are Windows user you can use Waitress server instead Gunicorn
 
 .. code:: bash
@@ -659,7 +659,10 @@ such as `IPython <http://ipython.org/>`_ or
 
 Also, don't be shy about pulling up Falcon's source code on GitHub or in your
 favorite text editor. The team has tried to make the code as straightforward
-and readable as possible; where other documentation may fall short, the code basically
-"can't be wrong."
+and readable as possible; where other documentation may fall short, the code
+basically "can't be wrong."
 
-
+A number of Falcon add-ons, templates, and complimentary packages are
+available for use in your projects. We've listed several of these on the
+`Falcon wiki <https://github.com/falconry/falcon/wiki>`_ as a starting
+point, but you may also wish to search PyPI for additional resources.

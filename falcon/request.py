@@ -72,11 +72,17 @@ class Request(object):
         options (dict): Set of global options passed from the API handler.
 
     Attributes:
-        protocol (str): Deprecated alias for `scheme`. May be removed in a future release.
         scheme (str): Either 'http' or 'https'.
+        protocol (str): Deprecated alias for `scheme`. Will be removed
+            in a future release.
         method (str): HTTP method requested (e.g., 'GET', 'POST', etc.)
         host (str): Hostname requested by the client
-        port (str): Port used for the request
+        port (int): Port used for the request. If the request URL does
+            not specify a port, the default one for the given schema is
+            returned (80 for HTTP and 443 for HTTPS).
+        netloc (str): Returns the 'host:port' portion of the request
+            URL. The port may be ommitted if it is the default one for
+            the URL's schema (80 for HTTP and 443 for HTTPS).
         subdomain (str): Leftmost (i.e., most specific) subdomain from the
             hostname. If only a single domain name is given, `subdomain`
             will be ``None``.
@@ -280,12 +286,11 @@ class Request(object):
             string, the value mapped to that parameter key will be a list of
             all the values in the order seen.
 
-        options (dict): Set of global options passed from the API handler.
-
         cookies (dict):
             A dict of name/value cookie pairs.
             See also: :ref:`Getting Cookies <getting-cookies>`
 
+        options (dict): Set of global options passed from the API handler.
     """
 
     __slots__ = (
@@ -332,7 +337,8 @@ class Request(object):
                 # "bytes tunneled as latin-1" and must be encoded back
                 path = path.encode('latin1').decode('utf-8', 'replace')
 
-            if len(path) != 1 and path.endswith('/'):
+            if (self.options.strip_url_path_trailing_slash and
+                    len(path) != 1 and path.endswith('/')):
                 self.path = path[:-1]
             else:
                 self.path = path
@@ -550,36 +556,19 @@ class Request(object):
     def scheme(self):
         return self.env['wsgi.url_scheme']
 
+    # TODO(kgriffs): Remove this deprecated alias in Falcon 2.0
     protocol = scheme
 
     @property
     def uri(self):
         if self._cached_uri is None:
-            env = self.env
-            protocol = env['wsgi.url_scheme']
-
-            # NOTE(kgriffs): According to PEP-3333 we should first
-            # try to use the Host header if present.
-            #
-            # PERF(kgriffs): try..except is faster than .get
-            try:
-                host = env['HTTP_HOST']
-            except KeyError:
-                host = env['SERVER_NAME']
-                port = env['SERVER_PORT']
-
-                if protocol == 'https':
-                    if port != '443':
-                        host += ':' + port
-                else:
-                    if port != '80':
-                        host += ':' + port
+            protocol = self.env['wsgi.url_scheme']
 
             # PERF: For small numbers of items, '+' is faster
             # than ''.join(...). Concatenation is also generally
             # faster than formatting.
             value = (protocol + '://' +
-                     host +
+                     self.netloc +
                      self.app +
                      self.path)
 
@@ -699,20 +688,42 @@ class Request(object):
     def port(self):
         try:
             host_header = self.env['HTTP_HOST']
-            host, port = parse_host(host_header)
-        except KeyError:
-            port = self.env['SERVER_PORT']
 
-        if not port:
-            port = '80' if self.scheme == 'http' else '443'
+            default_port = 80 if self.env['wsgi.url_scheme'] == 'http' else 443
+            host, port = parse_host(host_header, default_port=default_port)
+        except KeyError:
+            # NOTE(kgriffs): Normalize to an int, since that is the type
+            # returned by parse_host().
+            #
+            # NOTE(kgriffs): In the case that SERVER_PORT was used,
+            # PEP-3333 requires that the port never be an empty string.
+            port = int(self.env['SERVER_PORT'])
+
         return port
 
     @property
     def netloc(self):
+        env = self.env
+        protocol = env['wsgi.url_scheme']
+
+        # NOTE(kgriffs): According to PEP-3333 we should first
+        # try to use the Host header if present.
+        #
+        # PERF(kgriffs): try..except is faster than .get
         try:
-            return self.env['HTTP_HOST']
+            netloc_value = env['HTTP_HOST']
         except KeyError:
-            return self.host + ':' + self.port
+            netloc_value = env['SERVER_NAME']
+
+            port = env['SERVER_PORT']
+            if protocol == 'https':
+                if port != '443':
+                    netloc_value += ':' + port
+            else:
+                if port != '80':
+                    netloc_value += ':' + port
+
+        return netloc_value
 
     # ------------------------------------------------------------------------
     # Methods
@@ -766,18 +777,23 @@ class Request(object):
 
         return (preferred_type if preferred_type else None)
 
-    def get_header(self, name, required=False):
+    def get_header(self, name, required=False, default=None):
         """Retrieve the raw string value for the given header.
 
         Args:
             name (str): Header name, case-insensitive (e.g., 'Content-Type')
-            required (bool, optional): Set to ``True`` to raise
+
+        Keyword Args:
+            required (bool): Set to ``True`` to raise
                 ``HTTPBadRequest`` instead of returning gracefully when the
                 header is not found (default ``False``).
+            default (any): Value to return if the header
+                is not found (default ``None``).
 
         Returns:
-            str: The value of the specified header if it exists, or ``None`` if
-            the header is not found and is not required.
+            str: The value of the specified header if it exists, or
+            the default value if the header is not found and is not
+            required.
 
         Raises:
             HTTPBadRequest: The header was not found in the request, but
@@ -806,7 +822,7 @@ class Request(object):
                     pass
 
             if not required:
-                return None
+                return default
 
             raise errors.HTTPMissingHeader(name)
 
@@ -815,10 +831,12 @@ class Request(object):
 
         Args:
             name (str): Header name, case-insensitive (e.g., 'Date')
-            required (bool, optional): Set to ``True`` to raise
+
+        Keyword Args:
+            required (bool): Set to ``True`` to raise
                 ``HTTPBadRequest`` instead of returning gracefully when the
                 header is not found (default ``False``).
-            obs_date (bool, optional): Support obs-date formats according to
+            obs_date (bool): Support obs-date formats according to
                 RFC 7231, e.g.: "Sunday, 06-Nov-94 08:49:37 GMT"
                 (default ``False``).
 
@@ -868,12 +886,14 @@ class Request(object):
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'sort').
-            required (bool, optional): Set to ``True`` to raise
+
+        Keyword Args:
+            required (bool): Set to ``True`` to raise
                 ``HTTPBadRequest`` instead of returning ``None`` when the
                 parameter is not found (default ``False``).
-            store (dict, optional): A ``dict``-like object in which to place
+            store (dict): A ``dict``-like object in which to place
                 the value of the param, but only if the param is present.
-            default (any, optional): If the param is not found returns the
+            default (any): If the param is not found returns the
                 given value instead of None
 
         Returns:
@@ -913,17 +933,19 @@ class Request(object):
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'limit').
-            required (bool, optional): Set to ``True`` to raise
+
+        Keyword Args:
+            required (bool): Set to ``True`` to raise
                 ``HTTPBadRequest`` instead of returning ``None`` when the
                 parameter is not found or is not an integer (default
                 ``False``).
-            min (int, optional): Set to the minimum value allowed for this
+            min (int): Set to the minimum value allowed for this
                 param. If the param is found and it is less than min, an
                 ``HTTPError`` is raised.
-            max (int, optional): Set to the maximum value allowed for this
+            max (int): Set to the maximum value allowed for this
                 param. If the param is found and its value is greater than
                 max, an ``HTTPError`` is raised.
-            store (dict, optional): A ``dict``-like object in which to place
+            store (dict): A ``dict``-like object in which to place
                 the value of the param, but only if the param is found
                 (default ``None``).
 
@@ -984,19 +1006,21 @@ class Request(object):
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'detailed').
-            required (bool, optional): Set to ``True`` to raise
+
+        Keyword Args:
+            required (bool): Set to ``True`` to raise
                 ``HTTPBadRequest`` instead of returning ``None`` when the
                 parameter is not found or is not a recognized boolean
                 string (default ``False``).
-            store (dict, optional): A ``dict``-like object in which to place
+            store (dict): A ``dict``-like object in which to place
                 the value of the param, but only if the param is found (default
                 ``None``).
             blank_as_true (bool): If ``True``, an empty string value will be
-                treated as ``True``. Normally empty strings are ignored; if
-                you would like to recognize such parameters, you must set the
-                `keep_blank_qs_values` request option to ``True``. Request
-                options are set globally for each instance of ``falcon.API``
-                through the `req_options` attribute.
+                treated as ``True`` (default ``False``). Normally empty strings
+                are ignored; if you would like to recognize such parameters, you
+                must set the `keep_blank_qs_values` request option to ``True``.
+                Request options are set globally for each instance of
+                ``falcon.API`` through the `req_options` attribute.
 
         Returns:
             bool: The value of the param if it is found and can be converted
@@ -1047,15 +1071,17 @@ class Request(object):
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'ids').
-            transform (callable, optional): An optional transform function
+
+        Keyword Args:
+            transform (callable): An optional transform function
                 that takes as input each element in the list as a ``str`` and
                 outputs a transformed element for inclusion in the list that
                 will be returned. For example, passing ``int`` will
                 transform list items into numbers.
-            required (bool, optional): Set to ``True`` to raise
-                ``HTTPBadRequest`` instead of returning ``None`` when the
-                parameter is not found (default ``False``).
-            store (dict, optional): A ``dict``-like object in which to place
+            required (bool): Set to ``True`` to raise ``HTTPBadRequest``
+                instead of returning ``None`` when the parameter is not
+                found (default ``False``).
+            store (dict): A ``dict``-like object in which to place
                 the value of the param, but only if the param is found (default
                 ``None``).
 
@@ -1115,14 +1141,15 @@ class Request(object):
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'ids').
-            format_string (str): String used to parse the param value into a
-                date.
-                Any format recognized by strptime() is supported.
-                (default ``"%Y-%m-%d"``)
-            required (bool, optional): Set to ``True`` to raise
+
+        Keyword Args:
+            format_string (str): String used to parse the param value
+                into a date. Any format recognized by strptime() is
+                supported (default ``"%Y-%m-%d"``).
+            required (bool): Set to ``True`` to raise
                 ``HTTPBadRequest`` instead of returning ``None`` when the
                 parameter is not found (default ``False``).
-            store (dict, optional): A ``dict``-like object in which to place
+            store (dict): A ``dict``-like object in which to place
                 the value of the param, but only if the param is found (default
                 ``None``).
         Returns:
@@ -1160,12 +1187,14 @@ class Request(object):
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'payload').
-            required (bool, optional): Set to ``True`` to raise
-                ``HTTPBadRequest`` instead of returning ``None`` when the
-                parameter is not found (default ``False``).
-            store (dict, optional): A ``dict``-like object in which to place
-                the value of the param, but only if the param is found (default
-                ``None``).
+
+        Keyword Args:
+            required (bool): Set to ``True`` to raise ``HTTPBadRequest``
+                instead of returning ``None`` when the parameter is not
+                found (default ``False``).
+            store (dict): A ``dict``-like object in which to place the
+                value of the param, but only if the param is found
+                (default ``None``).
 
         Returns:
             dict: The value of the param if it is found. Otherwise, returns
@@ -1309,6 +1338,7 @@ class RequestOptions(object):
             For comma-separated values, this option also determines
             whether or not empty elements in the parsed list are
             retained.
+
         auto_parse_form_urlencoded: Set to ``True`` in order to
             automatically consume the request stream and merge the
             results into the request's query string params when the
@@ -1334,14 +1364,26 @@ class RequestOptions(object):
             occurrences of the same parameter, and when values may be
             encoded in alternative formats in which the comma character
             is significant.
+
+        strip_url_path_trailing_slash: Set to ``False`` in order to
+            retain a trailing slash, if present, at the end of the URL
+            path (default ``True``). When this option is enabled,
+            the URL path is normalized by stripping the trailing
+            slash when present. This lets the application define a
+            single route to a resource for a path that may or may
+            not end in a forward slash. However, this behavior can be
+            problematic in certain cases, such as when working with
+            authentication schemes that employ URL-based signatures.
     """
     __slots__ = (
         'keep_blank_qs_values',
         'auto_parse_form_urlencoded',
         'auto_parse_qs_csv',
+        'strip_url_path_trailing_slash',
     )
 
     def __init__(self):
         self.keep_blank_qs_values = False
         self.auto_parse_form_urlencoded = False
         self.auto_parse_qs_csv = True
+        self.strip_url_path_trailing_slash = True

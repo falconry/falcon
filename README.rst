@@ -76,9 +76,29 @@ If you are using the Falcon framework for a community or commercial
 project, please consider adding your information to our wiki under
 `Who's Using Falcon? <https://github.com/falconry/falcon/wiki/Who's-using-Falcon%3F>`_
 
-You might also like to view our
-`Add-on Catalog <https://github.com/falconry/falcon/wiki/Add-on-Catalog>`_,
-where you can find a list of add-ons maintained by the community.
+Community
+---------
+
+A number of Falcon add-ons, templates, and complimentary packages are
+available for use in your projects. We've listed several of these on the
+`Falcon wiki <https://github.com/falconry/falcon/wiki>`_ as a starting
+point, but you may also wish to search PyPI for additional resources.
+
+The Falcon community maintains a discussion group that you can use to
+share your ideas and ask questions about the framework. To join the
+discussion, please visit https://groups.google.com/d/forum/falconframework.
+
+Per our
+`Code of Conduct <https://github.com/falconry/falcon/blob/master/CODEOFCONDUCT.md>`_,
+we expect everyone who participates in community discussions to act
+professionally, and lead by example in encouraging constructive
+discussions. Each individual in the community is responsible for
+creating a positive, constructive, and productive culture.
+
+We also hang out in
+`#falconframework <https://kiwiirc.com/client/irc.freenode.net/?#falconframework>`_
+on freenode, where everyone is always welcome to ask questions and share
+ideas.
 
 Installation
 ------------
@@ -518,26 +538,6 @@ bodies.
         httpd = simple_server.make_server('127.0.0.1', 8000, app)
         httpd.serve_forever()
 
-
-Community
----------
-
-The Falcon community maintains a discussion group that you can use to
-share your ideas and ask questions about the framework. To join the
-discussion, please visit https://groups.google.com/d/forum/falconframework.
-
-Per our
-`Code of Conduct <https://github.com/falconry/falcon/blob/master/CODEOFCONDUCT.md>`_,
-we expect everyone who participates in community discussions to act
-professionally, and lead by example in encouraging constructive
-discussions. Each individual in the community is responsible for
-creating a positive, constructive, and productive culture.
-
-We also hang out in
-`#falconframework <https://kiwiirc.com/client/irc.freenode.net/?#falconframework>`_
-on freenode, where everyone is always welcome to ask questions and share
-ideas.
-
 Contributing
 ------------
 
@@ -546,7 +546,7 @@ Falcon framework, with the generous help of a number of stylish and
 talented contributors.
 
 Pull requests are always welcome. We use the GitHub issue tracker to
-organize our work, put you do not need to open a new issue before
+organize our work, but you do not need to open a new issue before
 submitting a PR.
 
 Before submitting a pull request, please ensure you have added/updated

@@ -1,7 +1,7 @@
 .. _request:
 
-req/resp
-========
+Request & Response
+==================
 
 Instances of the Request and Response classes are passed into responders as the second
 and third arguments, respectively.
