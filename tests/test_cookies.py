@@ -58,7 +58,7 @@ class CookieResourceMaxAgeFloatString:
             'foostring', 'bar', max_age='15', secure=False, http_only=False)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture()
 def client():
     app = falcon.API()
     app.add_route('/', CookieResource())
@@ -89,6 +89,18 @@ def test_response_base_case(client):
     assert cookie.expires is None
 
     assert cookie.path == '/'
+    assert cookie.secure
+
+
+def test_response_disable_secure_globally(client):
+    client.app.resp_options.secure_cookies_by_default = False
+    result = client.simulate_get('/')
+    cookie = result.cookies['foo']
+    assert not cookie.secure
+
+    client.app.resp_options.secure_cookies_by_default = True
+    result = client.simulate_get('/')
+    cookie = result.cookies['foo']
     assert cookie.secure
 
 

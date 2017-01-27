@@ -98,14 +98,15 @@ the request.
 
 .. warning::
 
-    For this attribute to be effective, your application will need to
-    enforce HTTPS when setting the cookie, as well as in all
-    subsequent requests that require the cookie to be sent back from
-    the client.
+    For this attribute to be effective, your web server or load
+    balancer will need to enforce HTTPS when setting the cookie, as
+    well as in all subsequent requests that require the cookie to be
+    sent back from the client.
 
 When running your application in a development environment, you can
-disable this behavior by passing `secure=False` to
-:py:meth:`~.Response.set_cookie`. This lets you test your app locally
+disable this default behavior by setting
+:py:attr:`~.ResponseOptions.secure_cookies_by_default` to ``False``
+via :any:`API.resp_options`. This lets you test your app locally
 without having to set up TLS. You can make this option configurable to
 easily switch between development and production environments.
 

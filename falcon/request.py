@@ -286,12 +286,11 @@ class Request(object):
             string, the value mapped to that parameter key will be a list of
             all the values in the order seen.
 
-        options (dict): Set of global options passed from the API handler.
-
         cookies (dict):
             A dict of name/value cookie pairs.
             See also: :ref:`Getting Cookies <getting-cookies>`
 
+        options (dict): Set of global options passed from the API handler.
     """
 
     __slots__ = (

@@ -18,4 +18,6 @@ standard-compliant WSGI server.
 .. autoclass:: falcon.RequestOptions
     :members:
 
+.. autoclass:: falcon.ResponseOptions
+    :members:
 
