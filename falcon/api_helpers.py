@@ -206,4 +206,3 @@ class CloseableStreamIterator(six.Iterator):
     def close(self):
         if hasattr(self.stream, 'close') and callable(self.stream.close):
             self.stream.close()
-            
