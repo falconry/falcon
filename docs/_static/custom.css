@@ -25,6 +25,15 @@ code.xref.docutils.literal {
     font-size: 0.9em;
 }
 
+a.reference.internal:hover code {
+    color: #6D4100;
+    border-bottom: 1px solid #6D4100;
+}
+
+a code.literal {
+    color: #004B6B;
+}
+
 .field-body cite {
     font-style: normal;
     font-weight: bold;
