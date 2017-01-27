@@ -173,7 +173,15 @@ def wrap_old_error_serializer(old_fn):
 
 class CloseableStreamIterator(six.Iterator):
     """
-    An iterator that returns next block-size number of bytes until response from stream is empty string (bytes).
+    Iterator that wraps stream and supports closing underlying stream.
+
+    This iterator can be used to read from an underlying stream in
+    block_size-chunks until response from stream is empty string (bytes).
+
+    This class is used to wrap wsgi response streams (when no explicit
+    wsgi_file_wrapper is specified).  The fact that it also supports closing
+    the underlying stream allows use of (e.g.) python tempfile resources that
+    would be deleted upon close.
     """
 
     def __init__(self, stream, block_size):
