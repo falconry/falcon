@@ -17,7 +17,7 @@
 from falcon.errors import HTTPBadRequest
 from falcon.errors import HTTPMethodNotAllowed
 from falcon.errors import HTTPNotFound
-from falcon.status_codes import HTTP_204
+from falcon.status_codes import HTTP_200
 
 
 def path_not_found(req, resp, **kwargs):
@@ -56,7 +56,7 @@ def create_default_options(allowed_methods):
     allowed = ', '.join(allowed_methods)
 
     def on_options(req, resp, **kwargs):
-        resp.status = HTTP_204
+        resp.status = HTTP_200
         resp.set_header('Allow', allowed)
         resp.set_header('Content-Length', '0')
 
