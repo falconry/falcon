@@ -182,14 +182,13 @@ class CloseableStreamIterator(six.Iterator):
     wsgi_file_wrapper is not provided by the server.  The fact that it
     also supports closing the underlying stream allows use of (e.g.)
     Python tempfile resources that would be deleted upon close.
+
+    Args:
+        stream (object): Readable file-like stream object.
+        block_size (int): Number of bytes to read per iteration.
     """
 
     def __init__(self, stream, block_size):
-        """
-        Args:
-            stream: Stream file-like object.
-            block_size: Number of bytes to read per iteration.
-        """
         self.stream = stream
         self.block_size = block_size
 
