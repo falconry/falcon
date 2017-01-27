@@ -1,0 +1,70 @@
+Changelog for Falcon 1.2.0
+==========================
+
+Breaking Changes
+----------------
+
+(None)
+
+New & Improved
+--------------
+
+- A new `default` kwarg was added to :meth:`~falcon.Request.get_header`.
+- Several new HTTP status codes and error classes were added, such as
+  :class:`falcon.HTTPFailedDependency`.
+- If `ujson` is installed it will be used in lieu of `json` to speed up
+  error serialization and query string parsing under CPython. PyPy users
+  should continue to use `json`.
+- The `independent_middleware` kwarg was added to :class:`falcon.API` to
+  enable the execution of `process_response()` middleware methods, even
+  when `process_request()` raises an error.
+- Single-character field names are now allowed in URL templates when
+  specifying a route.
+- A detailed error message is now returned when an attempt is made to
+  add a route that conflicts with one that has already been added.
+- The HTTP protocol version can now be specified when simulating
+  requests with the testing framework.
+- The :class:`falcon.ResponseOptions` class was added, along with a
+  `secure_cookies_by_default` option to control the default value of
+  the "secure" attribute when setting cookies. This can make testing
+  easier by providing a way to toggle whether or not HTTPS is required.
+- `port`, `netloc` and `scheme` properties were added to the
+  :class:`falcon.Request` class. The `protocol` property is now
+  deprecated and will be removed in a future release.
+- The `strip_url_path_trailing_slash` was added
+  to :class:`falcon.RequestOptions` to control whether or not to retain
+  the trailing slash in the URL path, if one is present. When this
+  option is enabled (the default), the URL path is normalized by
+  stripping the trailing slash when present. This lets the application
+  define a single route to a resource for a path that may or may not end
+  in a forward slash. However, this behavior can be problematic in
+  certain cases, such as when working with authentication schemes that
+  employ URL-based signatures. Therefore, the
+  `strip_url_path_trailing_slash` option was introduced to make this
+  behavior configurable.
+- Improved the documentation for :class:`falcon.HTTPError`, particularly
+  around customizing error serialization.
+- Misc. improvements to the look and feel of Falcon's documentation.
+
+Fixed
+-----
+
+- When the WSGI server does not provide a `wsgi.file_wrapper` object,
+  Falcon wraps :attr:`Response.stream` in a simple iterator
+  object that does not implement `close()`. The iterator should be
+  modified to implement a `close()` method that calls the underlying
+  stream's `close()` to free system resources.
+- The testing framework does not correctly parse cookies under Jython.
+- Whitespace is not stripped when parsing cookies in the testing
+  framework.
+- The Vary header is not always set by the default error serializer.
+- While not specified in PEP-3333 that the status returned to the WSGI
+  server must be of type `str`, setting the status on the response to a
+  `unicode` string under Python 2.6 or 2.7 can cause WSGI servers to
+  raise an error. Therefore, the status string must first be converted
+  if it is of the wrong type.
+- The default OPTIONS responder returns 204, when it should return
+  200. RFC 7231 specifically states that Content-Length should be zero
+  in the response to an OPTIONS request, which implies a status code of
+  200 since RFC 7230 states that Content-Length must not be set in any
+  response with a status code of 204.
