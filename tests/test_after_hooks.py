@@ -210,7 +210,7 @@ class TestHooks(testing.TestCase):
 
         # Decorator should not affect the default on_options responder
         result = self.simulate_options('/wrapped')
-        self.assertEqual(result.status_code, 204)
+        self.assertEqual(result.status_code, 200)
         self.assertFalse(result.text)
 
     def test_wrapped_resource_with_hooks_aware_of_resource(self):
@@ -230,5 +230,5 @@ class TestHooks(testing.TestCase):
 
         # Decorator should not affect the default on_options responder
         result = self.simulate_options('/wrapped_aware')
-        self.assertEqual(result.status_code, 204)
+        self.assertEqual(result.status_code, 200)
         self.assertFalse(result.text)
