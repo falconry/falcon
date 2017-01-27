@@ -690,10 +690,7 @@ class API(object):
                     iterable = wsgi_file_wrapper(stream,
                                                  self._STREAM_BLOCK_SIZE)
                 else:
-                    iterable = iter(
-                        lambda: stream.read(self._STREAM_BLOCK_SIZE),
-                        b''
-                    )
+                    iterable = helpers.CloseableStreamIterator(stream, self._STREAM_BLOCK_SIZE)
             else:
                 iterable = stream
 

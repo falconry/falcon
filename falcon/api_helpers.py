@@ -16,6 +16,8 @@
 
 from functools import wraps
 
+import six
+
 from falcon import util
 
 
@@ -167,3 +169,39 @@ def wrap_old_error_serializer(old_fn):
             resp.content_type = media_type
 
     return new_fn
+
+
+class CloseableStreamIterator(six.Iterator):
+    """Iterator that wraps a file-like stream with support for close().
+
+    This iterator can be used to read from an underlying file-like stream
+    in block_size-chunks until the response from the stream is an empty
+    byte string.
+
+    This class is used to wrap WSGI response streams when a
+    wsgi_file_wrapper is not provided by the server.  The fact that it
+    also supports closing the underlying stream allows use of (e.g.)
+    Python tempfile resources that would be deleted upon close.
+
+    Args:
+        stream (object): Readable file-like stream object.
+        block_size (int): Number of bytes to read per iteration.
+    """
+
+    def __init__(self, stream, block_size):
+        self.stream = stream
+        self.block_size = block_size
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        data = self.stream.read(self.block_size)
+        if data == b'':
+            raise StopIteration
+        else:
+            return data
+
+    def close(self):
+        if hasattr(self.stream, 'close') and callable(self.stream.close):
+            self.stream.close()
