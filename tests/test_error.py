@@ -365,3 +365,20 @@ class TestError(testtools.TestCase):
             self.assertEqual('Test', e.title, 'Title should be "Test"')
             self.assertEqual('Testdescription', e.description,
                              'Description should be "Testdescription"')
+
+    def test_http_network_authentication_required_no_title_and_desc_and_challenges(self):
+        try:
+            raise falcon.HTTPNetworkAuthenticationRequired()
+        except falcon.HTTPNetworkAuthenticationRequired as e:
+            self.assertEqual(status.HTTP_511, e.title,
+                             'The title should be ' + status.HTTP_511 + ', but it is: ' + e.title)
+            self.assertEqual(None, e.description, 'The description should be None')
+
+    def test_http_network_authentication_required_with_title_and_desc_and_challenges(self):
+        try:
+            raise falcon.HTTPNetworkAuthenticationRequired(title='Test',
+                                                           description='Testdescription')
+        except falcon.HTTPNetworkAuthenticationRequired as e:
+            self.assertEqual('Test', e.title, 'Title should be "Test"')
+            self.assertEqual('Testdescription', e.description,
+                             'Description should be "Testdescription"')
