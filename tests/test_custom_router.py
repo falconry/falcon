@@ -81,3 +81,33 @@ class TestCustomRouter(testing.TestBase):
 
         self.assertEqual(len(check), 2)
         self.assertIn('my-url-name-arg', check)
+
+    def test_custom_router_search_by_request(self):
+
+        def resource(req, resp, **kwargs):
+            resp.body = 'OK'
+
+        class CustomRouter(object):
+            def search(self, req):
+                if req.path == '/test':
+                    return resource, {'GET': resource}, {}, '/test'
+
+        router = CustomRouter()
+        self.api = falcon.API(router=router)
+        body = self.simulate_request('/test')
+        self.assertEqual(body, [b'OK'])
+
+    def test_custom_router_search_by_request_alternate_method_name(self):
+
+        def resource(req, resp, **kwargs):
+            resp.body = 'OK'
+
+        class CustomRouter(object):
+            def custom_search(self, req):
+                if req.path == '/test':
+                    return resource, {'GET': resource}, {}, '/test'
+
+        router = CustomRouter()
+        self.api = falcon.API(router=router, router_search_method='custom_search')
+        body = self.simulate_request('/test')
+        self.assertEqual(body, [b'OK'])

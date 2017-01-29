@@ -103,6 +103,10 @@ class API(object):
             to use in lieu of the default engine.
             See also: :ref:`Routing <routing>`.
 
+        router_search_method (str, optional): The name of a custom router method
+            which searches for a route given a ``Request`` object. (default
+            ``"search"``)
+
         independent_middleware (bool): Set to ``True`` if response
             middleware should be executed independently of whether or
             not request middleware raises an exception.
@@ -128,11 +132,11 @@ class API(object):
     __slots__ = ('_request_type', '_response_type',
                  '_error_handlers', '_media_type', '_router', '_sinks',
                  '_serialize_error', 'req_options', 'resp_options',
-                 '_middleware', '_independent_middleware')
+                 '_middleware', '_independent_middleware', '_router_search')
 
     def __init__(self, media_type=DEFAULT_MEDIA_TYPE,
                  request_type=Request, response_type=Response,
-                 middleware=None, router=None,
+                 middleware=None, router=None, router_search_method='search',
                  independent_middleware=False):
         self._sinks = []
         self._media_type = media_type
@@ -143,6 +147,7 @@ class API(object):
         self._independent_middleware = independent_middleware
 
         self._router = router or routing.DefaultRouter()
+        self._router_search = getattr(self._router, router_search_method, None)
 
         self._request_type = request_type
         self._response_type = response_type
@@ -535,7 +540,10 @@ class API(object):
         method = req.method
         uri_template = None
 
-        route = self._router.find(path)
+        if self._router_search is not None:
+            route = self._router_search(req)
+        else:
+            route = self._router.find(path)
 
         if route is not None:
             try:
