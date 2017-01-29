@@ -249,6 +249,23 @@ class TestError(testtools.TestCase):
                              'Description should be "Testdescription"')
             self.assertEqual('123', e.headers['Retry-After'], 'Retry-After should be 123')
 
+    def test_http_request_header_fields_too_large_no_title_and_desc_and_challenges(self):
+        try:
+            raise falcon.HTTPRequestHeaderFieldsTooLarge()
+        except falcon.HTTPRequestHeaderFieldsTooLarge as e:
+            self.assertEqual(status.HTTP_431, e.title,
+                             'The title should be ' + status.HTTP_431 + ', but it is: ' + e.title)
+            self.assertEqual(None, e.description, 'The description should be None')
+
+    def test_http_request_header_fields_too_large_with_title_and_desc_and_challenges(self):
+        try:
+            raise falcon.HTTPRequestHeaderFieldsTooLarge(title='Test',
+                                                         description='Testdescription')
+        except falcon.HTTPRequestHeaderFieldsTooLarge as e:
+            self.assertEqual('Test', e.title, 'Title should be "Test"')
+            self.assertEqual('Testdescription', e.description,
+                             'Description should be "Testdescription"')
+
     def test_http_unavailable_for_legal_reasons_no_title_and_desc_and_challenges(self):
         try:
             raise falcon.HTTPUnavailableForLegalReasons()
