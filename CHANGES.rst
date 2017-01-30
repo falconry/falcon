@@ -35,7 +35,7 @@ New & Improved
   to ``falcon.RequestOptions`` to control whether or not to retain
   the trailing slash in the URL path, if one is present. When this
   option is enabled (the default), the URL path is normalized by
-  stripping the trailing slash when present. This lets the application
+  stripping the trailing slash character. This lets the application
   define a single route to a resource for a path that may or may not end
   in a forward slash. However, this behavior can be problematic in
   certain cases, such as when working with authentication schemes that

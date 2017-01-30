@@ -1368,12 +1368,12 @@ class RequestOptions(object):
         strip_url_path_trailing_slash: Set to ``False`` in order to
             retain a trailing slash, if present, at the end of the URL
             path (default ``True``). When this option is enabled,
-            the URL path is normalized by stripping the trailing
-            slash when present. This lets the application define a
-            single route to a resource for a path that may or may
-            not end in a forward slash. However, this behavior can be
-            problematic in certain cases, such as when working with
-            authentication schemes that employ URL-based signatures.
+            the URL path is normalized by stripping the trailing slash
+            character. This lets the application define a single route
+            to a resource for a path that may or may not end in a
+            forward slash. However, this behavior can be problematic in
+            certain cases, such as when working with authentication
+            schemes that employ URL-based signatures.
     """
     __slots__ = (
         'keep_blank_qs_values',
