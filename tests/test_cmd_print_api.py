@@ -41,7 +41,7 @@ class TestPrintRoutes(testtools.TestCase):
         route, options = self.output.getvalue().strip().split('\n')
         self.assertEquals('-> /test', route)
         self.assertTrue('OPTIONS' in options)
-        self.assertTrue('falcon/falcon/responders.py:' in options)
+        self.assertTrue('falcon/responders.py:' in options)
 
     def test_traverse(self):
         """Ensure traverse finds the proper routes."""

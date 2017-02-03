@@ -110,7 +110,7 @@ class TestError(testtools.TestCase):
                              'The title should be ' + status.HTTP_412 + ', but it is: ' + e.title)
             self.assertEqual(None, e.description, 'The description should be None')
 
-    def test_http_precondition_faild_with_title_and_desc_and_challenges(self):
+    def test_http_precondition_failed_with_title_and_desc_and_challenges(self):
         try:
             raise falcon.HTTPPreconditionFailed(title='Test', description='Testdescription')
         except falcon.HTTPPreconditionFailed as e:
@@ -214,6 +214,22 @@ class TestError(testtools.TestCase):
             self.assertEqual('Testdescription', e.description,
                              'Description should be "Testdescription"')
 
+    def test_http_precondition_required_no_title_and_desc_and_challenges(self):
+        try:
+            raise falcon.HTTPPreconditionRequired()
+        except falcon.HTTPPreconditionRequired as e:
+            self.assertEqual(status.HTTP_428, e.title,
+                             'The title should be ' + status.HTTP_428 + ', but it is: ' + e.title)
+            self.assertEqual(None, e.description, 'The description should be None')
+
+    def test_http_precondition_required_with_title_and_desc_and_challenges(self):
+        try:
+            raise falcon.HTTPPreconditionRequired(title='Test', description='Testdescription')
+        except falcon.HTTPPreconditionRequired as e:
+            self.assertEqual('Test', e.title, 'Title should be "Test"')
+            self.assertEqual('Testdescription', e.description,
+                             'Description should be "Testdescription"')
+
     def test_http_too_many_requests_no_title_and_desc_and_challenges(self):
         try:
             raise falcon.HTTPTooManyRequests()
@@ -232,6 +248,23 @@ class TestError(testtools.TestCase):
             self.assertEqual('Testdescription', e.description,
                              'Description should be "Testdescription"')
             self.assertEqual('123', e.headers['Retry-After'], 'Retry-After should be 123')
+
+    def test_http_request_header_fields_too_large_no_title_and_desc_and_challenges(self):
+        try:
+            raise falcon.HTTPRequestHeaderFieldsTooLarge()
+        except falcon.HTTPRequestHeaderFieldsTooLarge as e:
+            self.assertEqual(status.HTTP_431, e.title,
+                             'The title should be ' + status.HTTP_431 + ', but it is: ' + e.title)
+            self.assertEqual(None, e.description, 'The description should be None')
+
+    def test_http_request_header_fields_too_large_with_title_and_desc_and_challenges(self):
+        try:
+            raise falcon.HTTPRequestHeaderFieldsTooLarge(title='Test',
+                                                         description='Testdescription')
+        except falcon.HTTPRequestHeaderFieldsTooLarge as e:
+            self.assertEqual('Test', e.title, 'Title should be "Test"')
+            self.assertEqual('Testdescription', e.description,
+                             'Description should be "Testdescription"')
 
     def test_http_unavailable_for_legal_reasons_no_title_and_desc_and_challenges(self):
         try:
@@ -329,6 +362,23 @@ class TestError(testtools.TestCase):
         try:
             raise falcon.HTTPLoopDetected(title='Test', description='Testdescription')
         except falcon.HTTPLoopDetected as e:
+            self.assertEqual('Test', e.title, 'Title should be "Test"')
+            self.assertEqual('Testdescription', e.description,
+                             'Description should be "Testdescription"')
+
+    def test_http_network_authentication_required_no_title_and_desc_and_challenges(self):
+        try:
+            raise falcon.HTTPNetworkAuthenticationRequired()
+        except falcon.HTTPNetworkAuthenticationRequired as e:
+            self.assertEqual(status.HTTP_511, e.title,
+                             'The title should be ' + status.HTTP_511 + ', but it is: ' + e.title)
+            self.assertEqual(None, e.description, 'The description should be None')
+
+    def test_http_network_authentication_required_with_title_and_desc_and_challenges(self):
+        try:
+            raise falcon.HTTPNetworkAuthenticationRequired(title='Test',
+                                                           description='Testdescription')
+        except falcon.HTTPNetworkAuthenticationRequired as e:
             self.assertEqual('Test', e.title, 'Title should be "Test"')
             self.assertEqual('Testdescription', e.description,
                              'Description should be "Testdescription"')

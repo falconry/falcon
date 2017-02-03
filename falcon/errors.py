@@ -967,6 +967,60 @@ class HTTPFailedDependency(OptionalRepresentation, HTTPError):
                                                    description, **kwargs)
 
 
+class HTTPPreconditionRequired(HTTPError):
+    """428 Precondition Required.
+
+    The 428 status code indicates that the origin server requires the
+    request to be conditional.
+
+    Its typical use is to avoid the "lost update" problem, where a client
+    GETs a resource's state, modifies it, and PUTs it back to the server,
+    when meanwhile a third party has modified the state on the server,
+    leading to a conflict.  By requiring requests to be conditional, the
+    server can assure that clients are working with the correct copies.
+
+    Responses using this status code SHOULD explain how to resubmit the
+    request successfully.
+
+    (See also: RFC 6585, Section 3)
+
+    Keyword Args:
+        title (str): Error title (default '428 Precondition Required').
+        description (str): Human-friendly description of the error, along with
+            a helpful suggestion or two.
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        headers (dict): Extra headers to return in the
+            response to the client (default ``None``).
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (default 'API documentation
+            for this error').
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
+    """
+    def __init__(self, title=None, description=None, **kwargs):
+        super(HTTPPreconditionRequired, self).__init__(status.HTTP_428, title,
+                                                       description, **kwargs)
+
+
 class HTTPTooManyRequests(HTTPError):
     """429 Too Many Requests.
 
@@ -1030,6 +1084,62 @@ class HTTPTooManyRequests(HTTPError):
                                                   title,
                                                   description,
                                                   **kwargs)
+
+
+class HTTPRequestHeaderFieldsTooLarge(HTTPError):
+    """431 Request Header Fields Too Large.
+
+    The 431 status code indicates that the server is unwilling to process
+    the request because its header fields are too large.  The request MAY
+    be resubmitted after reducing the size of the request header fields.
+
+    It can be used both when the set of request header fields in total is
+    too large, and when a single header field is at fault.  In the latter
+    case, the response representation SHOULD specify which header field
+    was too large.
+
+    Responses with the 431 status code MUST NOT be stored by a cache.
+
+    (See also: RFC 6585, Section 5)
+
+    Keyword Args:
+        title (str): Error title (default '431 Request Header Fields Too Large').
+        description (str): Human-friendly description of the rate limit that
+            was exceeded.
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        headers (dict): Extra headers to return in the
+            response to the client (default ``None``).
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (default 'API documentation
+            for this error').
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
+    """
+
+    def __init__(self, title=None, description=None, **kwargs):
+        super(HTTPRequestHeaderFieldsTooLarge, self).__init__(status.HTTP_431,
+                                                              title,
+                                                              description,
+                                                              **kwargs)
 
 
 class HTTPUnavailableForLegalReasons(OptionalRepresentation, HTTPError):
@@ -1352,6 +1462,68 @@ class HTTPLoopDetected(HTTPError):
     def __init__(self, title=None, description=None, **kwargs):
         super(HTTPLoopDetected, self).__init__(status.HTTP_508, title,
                                                description, **kwargs)
+
+
+class HTTPNetworkAuthenticationRequired(HTTPError):
+    """511 Network Authentication Required.
+
+    The 511 status code indicates that the client needs to authenticate
+    to gain network access.
+
+    The response representation SHOULD contain a link to a resource that
+    allows the user to submit credentials.
+
+    Note that the 511 response SHOULD NOT contain a challenge or the
+    authentication interface itself, because clients would show the
+    interface as being associated with the originally requested URL,
+    which may cause confusion.
+
+    The 511 status SHOULD NOT be generated by origin servers; it is
+    intended for use by intercepting proxies that are interposed as a
+    means of controlling access to the network.
+
+    Responses with the 511 status code MUST NOT be stored by a cache.
+
+    (See also: RFC 6585, Section 6)
+
+    Keyword Args:
+        title (str): Error title (default '511 Network Authentication Required').
+        description (str): Human-friendly description of the error, along with
+            a helpful suggestion or two.
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        headers (dict): Extra headers to return in the
+            response to the client (default ``None``).
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (default 'API documentation
+            for this error').
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
+    """
+
+    def __init__(self, title=None, description=None, **kwargs):
+        super(HTTPNetworkAuthenticationRequired, self).__init__(status.HTTP_511,
+                                                                title,
+                                                                description,
+                                                                **kwargs)
 
 
 class HTTPInvalidHeader(HTTPBadRequest):

@@ -59,7 +59,9 @@ Predefined Errors
         HTTPPreconditionFailed, HTTPRequestEntityTooLarge, HTTPUriTooLong,
         HTTPUnsupportedMediaType, HTTPRangeNotSatisfiable,
         HTTPUnprocessableEntity, HTTPLocked, HTTPFailedDependency,
-        HTTPTooManyRequests,
+        HTTPPreconditionRequired, HTTPTooManyRequests,
+        HTTPRequestHeaderFieldsTooLarge,
         HTTPUnavailableForLegalReasons,
         HTTPInternalServerError, HTTPBadGateway, HTTPServiceUnavailable,
-        HTTPInsufficientStorage, HTTPLoopDetected
+        HTTPInsufficientStorage, HTTPLoopDetected,
+        HTTPNetworkAuthenticationRequired
