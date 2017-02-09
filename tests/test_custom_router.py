@@ -12,6 +12,9 @@ class TestCustomRouter(testing.TestBase):
             def add_route(self, uri_template, *args, **kwargs):
                 check.append(uri_template)
 
+            def find(self, uri):
+                pass
+
         api = falcon.API(router=CustomRouter())
         api.add_route('/test', 'resource')
 
@@ -70,6 +73,9 @@ class TestCustomRouter(testing.TestBase):
                 self._index = {name: uri_template}
                 check.append(name)
 
+            def find(self, uri):
+                pass
+
         api = falcon.API(router=CustomRouter())
         api.add_route('/test', 'resource', name='my-url-name')
 
@@ -81,3 +87,31 @@ class TestCustomRouter(testing.TestBase):
 
         self.assertEqual(len(check), 2)
         self.assertIn('my-url-name-arg', check)
+
+    def test_custom_router_takes_req_positional_argument(self):
+        def responder(req, resp):
+            resp.body = 'OK'
+
+        class CustomRouter(object):
+            def find(self, uri, req):
+                if uri == '/test' and isinstance(req, falcon.Request):
+                    return responder, {'GET': responder}, {}, None
+
+        router = CustomRouter()
+        self.api = falcon.API(router=router)
+        body = self.simulate_request('/test')
+        self.assertEqual(body[0], b'OK')
+
+    def test_custom_router_takes_req_keyword_argument(self):
+        def responder(req, resp):
+            resp.body = 'OK'
+
+        class CustomRouter(object):
+            def find(self, uri, req=None):
+                if uri == '/test' and isinstance(req, falcon.Request):
+                    return responder, {'GET': responder}, {}, None
+
+        router = CustomRouter()
+        self.api = falcon.API(router=router)
+        body = self.simulate_request('/test')
+        self.assertEqual(body[0], b'OK')

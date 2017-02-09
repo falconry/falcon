@@ -250,6 +250,37 @@ def get_bound_method(obj, method_name):
     return method
 
 
+def _get_func_if_nested(callable):
+    """Returns the function object of a given callable
+    """
+    if isinstance(callable, functools.partial):
+        return callable.func
+    if inspect.isroutine(callable):
+        return callable
+    return callable.__call__
+
+
+def _get_argspec(func):
+    """Returns an inspect.ArgSpec instance given a function object.
+
+    We prefer this implementation rather than the inspect module's getargspec
+    since the latter has a strict check that the passed function is an instance
+    of FunctionType. Cython functions do not pass this check, but they do implement
+    the `func_code` and `func_defaults` attributes that we need to produce an Argspec.
+
+    This implementation re-uses much of inspect.getargspec but removes the strict
+    check allowing interface failures to be raised as AttributeError.
+
+    See Also:
+        https://github.com/python/cpython/blob/2.7/Lib/inspect.py
+    """
+    if inspect.ismethod(func):
+        func = func.im_func
+
+    args, varargs, varkw = inspect.getargs(func.func_code)
+    return inspect.ArgSpec(args, varargs, varkw, func.func_defaults)
+
+
 def get_argnames(func):
     """Introspecs the arguments of a callable.
 
@@ -262,12 +293,8 @@ def get_argnames(func):
     """
 
     if six.PY2:
-        if isinstance(func, functools.partial):
-            spec = inspect.getargspec(func.func)
-        elif inspect.isroutine(func):
-            spec = inspect.getargspec(func)
-        else:
-            spec = inspect.getargspec(func.__call__)
+        func_object = _get_func_if_nested(func)
+        spec = _get_argspec(func_object)
 
         # NOTE(kgriffs): inspect.signature does not include 'self',
         # so remove it under PY2 if it is present.
