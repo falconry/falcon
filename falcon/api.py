@@ -28,22 +28,6 @@ import falcon.status_codes as status
 from falcon.util.misc import get_argnames
 
 
-def _make_router_search(router):
-    """Given a router instance returns a function that accepts a request
-    and invokes the router's find method.
-    """
-    arg_names = get_argnames(router.find)
-    supports_req = 'req' in arg_names and len(arg_names) > 1
-
-    if supports_req:
-        return router.find
-
-    def search_shim(path, req):
-        return router.find(path)
-
-    return search_shim
-
-
 class API(object):
     """This class is the main entry point into a Falcon-based app.
 
@@ -159,7 +143,7 @@ class API(object):
         self._independent_middleware = independent_middleware
 
         self._router = router or routing.DefaultRouter()
-        self._router_search = _make_router_search(self._router)
+        self._router_search = helpers.make_router_search(self._router)
 
         self._request_type = request_type
         self._response_type = response_type

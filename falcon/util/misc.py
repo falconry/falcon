@@ -251,12 +251,14 @@ def get_bound_method(obj, method_name):
 
 
 def _get_func_if_nested(callable):
-    """Returns the function object of a given callable
-    """
+    """Returns the function object of a given callable."""
+
     if isinstance(callable, functools.partial):
         return callable.func
+
     if inspect.isroutine(callable):
         return callable
+
     return callable.__call__
 
 
