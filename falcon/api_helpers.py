@@ -21,6 +21,30 @@ import six
 from falcon import util
 
 
+def make_router_search(router):
+    """Create a search function for routing requests.
+
+    Args:
+        router(object): An object that implements the routing engine
+            interface.
+
+    Returns:
+        callable: A function that accepts a request and invokes the
+            router's find method.
+    """
+
+    arg_names = util.get_argnames(router.find)
+    supports_req = 'req' in arg_names and len(arg_names) > 1
+
+    if supports_req:
+        return router.find
+
+    def search_shim(path, req):
+        return router.find(path)
+
+    return search_shim
+
+
 def prepare_middleware(middleware=None, independent_middleware=False):
     """Check middleware interface and prepare it to iterate.
 

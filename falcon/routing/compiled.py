@@ -110,16 +110,22 @@ class CompiledRouter(object):
         insert(self._roots)
         self._find = self._compile()
 
-    def find(self, uri):
+    def find(self, uri, req=None):
         """Search for a route that matches the given partial URI.
 
         Args:
-            uri(str): The requested path to route
+            uri(str): The requested path to route.
+
+        Keyword Args:
+            req(Request): The Request object that will be passed to
+                the routed responder. Currently the value of this
+                argument is ignored by :class:`~.CompiledRouter`.
+                Routing is based solely on the path.
 
         Returns:
             tuple: A 4-member tuple composed of (resource, method_map,
                 params, uri_template), or ``None`` if no route matches
-                the requested path
+                the requested path.
         """
 
         path = uri.lstrip('/').split('/')
