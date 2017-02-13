@@ -30,8 +30,12 @@ A custom router is any class that implements the following interface:
                 uri(str): The requested path to route.
 
             Keyword Args:
-                req(Request): The Request object that will be passed to
-                    the routed responder.
+                 req(Request): The Request object that will be passed to
+                    the routed responder. The router may use `req` to
+                    further differentiate the requested route. For
+                    example, a header may be used to determine the
+                    desired API version and route the request
+                    accordingly.
 
                     Note:
                         The `req` keyword argument was added in version
