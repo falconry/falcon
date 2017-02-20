@@ -185,7 +185,13 @@ class Request(object):
         content_length (int): Value of the Content-Length header converted
             to an ``int``, or ``None`` if the header is missing.
         stream: File-like input object for reading the body of the
-            request, if any. Since this object is provided by the WSGI
+            request, if any. This object provides direct access to the
+            server's data stream and is non-seekable. In order to
+            avoid unintended side effects, and to provide maximum
+            flexibility to the application, Falcon itself does not
+            buffer or spool the data in any way.
+
+            Since this object is provided by the WSGI
             server itself, rather than by Falcon, it may behave
             differently depending on how you host your app. For example,
             attempting to read more bytes than are expected (as

@@ -7,6 +7,10 @@ The *falcon.routing* module contains utilities used internally by
 :py:meth:`falcon.API` to route requests. They are exposed here for use by
 custom routing engines.
 
+Custom routers may derive from the default :py:class:`~.CompiledRouter`
+engine, or implement a completely different routing strategy (such as
+object-based routing).
+
 A custom router is any class that implements the following interface:
 
 .. code:: python
