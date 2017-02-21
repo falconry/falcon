@@ -291,28 +291,47 @@ class API(object):
         which HTTP method they handle, as in `on_get`, `on_post`, `on_put`,
         etc.
 
-        If your resource does not support a particular
-        HTTP method, simply omit the corresponding responder and
-        Falcon will reply with "405 Method not allowed" if that
-        method is ever requested.
+        Note:
+            If your resource does not support a particular
+            HTTP method, simply omit the corresponding responder and
+            Falcon will reply with "405 Method not allowed" if that
+            method is ever requested.
 
         Responders must always define at least two arguments to receive
-        request and response objects, respectively. For example::
+        :class:`~.Request` and :class:`~.Response` objects, respectively.
+        For example::
 
             def on_post(self, req, resp):
                 pass
 
-        In addition, if the route's template contains field
-        expressions, any responder that desires to receive requests
-        for that route must accept arguments named after the respective
-        field names defined in the template. A field expression consists
-        of a bracketed field name.
+        The :class:`~.Request` object represents the incoming HTTP
+        request. It exposes properties and methods for examining headers,
+        query string parameters, and other metadata associated with
+        the request. A file-like stream is also provided for reading
+        any data that was included in the body of the request.
+
+        The :class:`~.Response` object represents the application's
+        HTTP response to the above request. It provides properties
+        and methods for setting status, header and body data. The
+        :class:`~.Response` object also exposes a dict-like
+        :attr:`~.Response.context` property for passing arbitrary
+        data to hooks and middleware methods. This property could be
+        used, for example, to provide a resource representation to a
+        middleware component that would then serialize the
+        representation according to the client's preferred media type.
 
         Note:
-            Since field names correspond to argument names in responder
-            methods, they must be valid Python identifiers.
+            Rather than directly manipulate the :class:`~.Response`
+            object, a responder may raise an instance of either
+            :class:`~.HTTPError` or :class:`~.HTTPStatus`.
 
-        For example, given the following template::
+        In addition to the standard `req` and `resp` parameters, if the
+        route's template contains field expressions, any responder that
+        desires to receive requests for that route must accept arguments
+        named after the respective field names defined in the template.
+
+        A field expression consists of a bracketed field name. For
+        example, given the following template::
 
             /user/{name}
 
@@ -325,6 +344,10 @@ class API(object):
         expressions::
 
             /repos/{org}/{repo}/compare/{usr0}:{branch0}...{usr1}:{branch1}
+
+        Note:
+            Because field names correspond to argument names in responder
+            methods, they must be valid Python identifiers.
 
         Args:
             uri_template (str): A templatized URI. Care must be

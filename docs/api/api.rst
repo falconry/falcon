@@ -1,7 +1,7 @@
 .. _api:
 
-API Class
-=========
+The API Class
+=============
 
 Falcon's API class is a WSGI "application" that you can host with any
 standard-compliant WSGI server.
@@ -10,7 +10,7 @@ standard-compliant WSGI server.
 
     import falcon
 
-    api = application = falcon.API()
+    app = falcon.API()
 
 .. autoclass:: falcon.API
     :members:
