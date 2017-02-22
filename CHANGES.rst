@@ -1,3 +1,24 @@
+1.3.0
+=====
+
+Breaking Changes
+----------------
+
+(None)
+
+New & Improved
+--------------
+
+- A number of properties were added to ``falcon.Request`` to
+  expose information added by proxies in front of the application
+  server. These include the `forwarded`, `forwarded_uri`,
+  `forwarded_scheme`, `forwarded_host`, and `forwarded_prefix`
+  properties. The `prefix` attribute was also added as part of this
+  work.
+
+Fixed
+-----
+
 1.2.0
 =====
 

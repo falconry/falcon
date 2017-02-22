@@ -54,5 +54,5 @@ import falcon.uri  # NOQA
 from falcon.util import *  # NOQA
 
 from falcon.hooks import before, after  # NOQA
-from falcon.request import Request, RequestOptions  # NOQA
+from falcon.request import Request, RequestOptions, Forwarded  # NOQA
 from falcon.response import Response, ResponseOptions  # NOQA

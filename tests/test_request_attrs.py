@@ -1,4 +1,5 @@
 import datetime
+import itertools
 
 import pytest
 import six
@@ -11,7 +12,7 @@ import falcon.uri
 _PROTOCOLS = ['HTTP/1.0', 'HTTP/1.1']
 
 
-class TestReqVars(object):
+class TestRequestAttributes(object):
 
     def setup_method(self, method):
         self.qs = 'marker=deadbeef&limit=10'
@@ -105,10 +106,12 @@ class TestReqVars(object):
         path = req.path
         query_string = req.query_string
 
-        expected_uri = ''.join([scheme, '://', host, app, path,
-                                '?', query_string])
+        expected_prefix = ''.join([scheme, '://', host, app])
+        expected_uri = ''.join([expected_prefix, path, '?', query_string])
 
-        assert expected_uri == req.uri
+        assert req.uri == expected_uri
+        assert req.prefix == expected_prefix
+        assert req.prefix == expected_prefix  # Check cached value
 
     @pytest.mark.skipif(not six.PY3, reason='Test only applies to Python 3')
     @pytest.mark.parametrize('test_path', [
@@ -141,10 +144,11 @@ class TestReqVars(object):
         assert req.path == falcon.uri.decode(test_path)
 
     def test_uri(self):
-        uri = ('http://' + testing.DEFAULT_HOST + ':8080' +
-               self.app + self.relative_uri)
+        prefix = 'http://' + testing.DEFAULT_HOST + ':8080' + self.app
+        uri = prefix + self.relative_uri
 
         assert self.req.url == uri
+        assert self.req.prefix == prefix
 
         # NOTE(kgriffs): Call twice to check caching works
         assert self.req.uri == uri
@@ -695,19 +699,34 @@ class TestReqVars(object):
         assert req.scheme == scheme
         assert req.port == 443
 
-    @pytest.mark.parametrize('protocol', _PROTOCOLS)
-    def test_scheme_http(self, protocol):
+    @pytest.mark.parametrize(
+        'protocol, set_forwarded_proto',
+        list(itertools.product(_PROTOCOLS, [True, False]))
+    )
+    def test_scheme_http(self, protocol, set_forwarded_proto):
         scheme = 'http'
+        forwarded_scheme = 'HttPs'
+
+        headers = dict(self.headers)
+
+        if set_forwarded_proto:
+            headers['X-Forwarded-Proto'] = forwarded_scheme
+
         req = Request(testing.create_environ(
             protocol=protocol,
             scheme=scheme,
             app=self.app,
             path='/hello',
             query_string=self.qs,
-            headers=self.headers))
+            headers=headers))
 
         assert req.scheme == scheme
         assert req.port == 80
+
+        if set_forwarded_proto:
+            assert req.forwarded_scheme == forwarded_scheme.lower()
+        else:
+            assert req.forwarded_scheme == scheme
 
     @pytest.mark.parametrize('protocol', _PROTOCOLS)
     def test_netloc_default_port(self, protocol):
@@ -749,6 +768,21 @@ class TestReqVars(object):
 
         assert req.port == port
         assert req.netloc == '{0}:{1}'.format(host, port)
+
+    def test_app_present(self):
+        req = Request(testing.create_environ(app='/moving-pictures'))
+        assert req.app == '/moving-pictures'
+
+    def test_app_blank(self):
+        req = Request(testing.create_environ(app=''))
+        assert req.app == ''
+
+    def test_app_missing(self):
+        env = testing.create_environ()
+        del env['SCRIPT_NAME']
+        req = Request(env)
+
+        assert req.app == ''
 
     # -------------------------------------------------------------------------
     # Helpers

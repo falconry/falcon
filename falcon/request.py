@@ -74,12 +74,59 @@ class Request(object):
         options (dict): Set of global options passed from the API handler.
 
     Attributes:
-        scheme (str): Either 'http' or 'https'.
+        scheme (str): URL scheme used for the request. Either 'http' or
+            'https'.
+
+            Note:
+                If the request was proxied, the scheme may not
+                match what was originally requested by the client.
+                :py:attr:`forwarded_scheme` can be used, instead,
+                to handle such cases.
+
+        forwarded_scheme (str): Original URL scheme requested by the
+            user agent, if the request was proxied. Typical values are
+            'http' or 'https'.
+
+            The following request headers are checked, in order of
+            preference, to determine the forwarded scheme:
+
+                - ``Forwarded``
+                - ``X-Forwarded-For``
+
+            If none of these headers are available, or if the
+            Forwarded header is available but does not contain a
+            "proto" parameter in the first hop, the value of
+            :attr:`scheme` is returned instead.
+
+            (See also: RFC 7239, Section 1)
+
         protocol (str): Deprecated alias for `scheme`. Will be removed
             in a future release.
         method (str): HTTP method requested (e.g., 'GET', 'POST', etc.)
-        host (str): Hostname requested by the client
-        port (int): Port used for the request. If the request URL does
+        host (str): Host request header field
+        forwarded_host (str): Original host request header as received
+            by the first proxy in front of the application server.
+
+            The following request headers are checked, in order of
+            preference, to determine the forwarded scheme:
+
+                - ``Forwarded``
+                - ``X-Forwarded-Host``
+
+            If none of the above headers are available, or if the
+            Forwarded header is available but the "host"
+            parameter is not included in the first hop, the value of
+            :attr:`host` is returned instead.
+
+            Note:
+                Reverse proxies are often configured to set the Host
+                header directly to the one that was originally
+                requested by the user agent; in that case, using
+                :attr:`host` is sufficient.
+
+            (See also: RFC 7239, Section 4)
+
+        port (int): Port used for the request. If the request URI does
             not specify a port, the default one for the given schema is
             returned (80 for HTTP and 443 for HTTPS).
         netloc (str): Returns the 'host:port' portion of the request
@@ -94,9 +141,15 @@ class Request(object):
                 for `subdomain` is undefined.
 
         env (dict): Reference to the WSGI environ ``dict`` passed in from the
-            server. See also PEP-3333.
-        app (str): Name of the WSGI app (if using WSGI's notion of virtual
-            hosting).
+            server. (See also PEP-3333.)
+        app (str): The initial portion of the request URI's path that
+            corresponds to the application object, so that the
+            application knows its virtual "location". This may be an
+            empty string, if the application corresponds to the "root"
+            of the server.
+
+            (Corresponds to the "SCRIPT_NAME" environ variable defined
+            by PEP-3333.)
         access_route(list): IP address of the original client, as well
             as any known addresses of proxies fronting the WSGI server.
 
@@ -152,15 +205,26 @@ class Request(object):
                 the current Request instance. Therefore the first argument is
                 the Request instance itself (self).
         uri (str): The fully-qualified URI for the request.
-        url (str): alias for `uri`.
-        relative_uri (str): The path + query string portion of the full URI.
-        path (str): Path portion of the request URL (not including query
+        url (str): Alias for `uri`.
+        forwarded_uri (str): Original URI for proxied requests. Uses
+            :attr:`forwarded_scheme` and :attr:`forwarded_host` in
+            order to reconstruct the original URI requested by the user
+            agent.
+        relative_uri (str): The path and query string portion of the
+            request URI, omitting the scheme and host.
+        prefix (str): The prefix of the request URI, including scheme,
+            host, and WSGI app (if any).
+        forwarded_prefix (str): The prefix of the original URI for
+            proxied requests. Uses :attr:`forwarded_scheme` and
+            :attr:`forwarded_host` in order to reconstruct the
+            original URI.
+        path (str): Path portion of the request URI (not including query
             string).
 
             Note:
                 `req.path` may be set to a new value by a `process_request()`
                 middleware method in order to influence routing.
-        query_string (str): Query string portion of the request URL, without
+        query_string (str): Query string portion of the request URI, without
             the preceding '?' character.
         uri_template (str): The template for the route that was matched for
             this request. May be ``None`` if the request has not yet been
@@ -168,7 +232,11 @@ class Request(object):
             methods. May also be ``None`` if your app uses a custom routing
             engine and the engine does not provide the URI template when
             resolving a route.
+        forwarded (list): Value of the Forwarded header, as a parsed list
+            of :class:`falcon.Forwarded` objects, or ``None`` if the header
+            is missing.
 
+            (See also: RFC 7239, Section 4)
         user_agent (str): Value of the User-Agent header, or ``None`` if the
             header is missing.
         referer (str): Value of Referer header, or ``None`` if
@@ -316,23 +384,27 @@ class Request(object):
     """
 
     __slots__ = (
+        '__dict__',
+        '_bounded_stream',
+        '_cached_access_route',
+        '_cached_forwarded',
+        '_cached_forwarded_prefix',
+        '_cached_forwarded_uri',
         '_cached_headers',
-        '_cached_uri',
+        '_cached_prefix',
         '_cached_relative_uri',
+        '_cached_uri',
+        '_cookies',
+        '_params',
+        '_wsgierrors',
         'content_type',
+        'context',
         'env',
         'method',
-        '_params',
+        'options',
         'path',
         'query_string',
         'stream',
-        '_bounded_stream',
-        'context',
-        '_wsgierrors',
-        'options',
-        '_cookies',
-        '_cached_access_route',
-        '__dict__',
         'uri_template',
         '_media',
     )
@@ -388,10 +460,14 @@ class Request(object):
 
         self._cookies = None
 
-        self._cached_headers = None
-        self._cached_uri = None
-        self._cached_relative_uri = None
         self._cached_access_route = None
+        self._cached_forwarded = None
+        self._cached_forwarded_prefix = None
+        self._cached_forwarded_uri = None
+        self._cached_headers = None
+        self._cached_prefix = None
+        self._cached_relative_uri = None
+        self._cached_uri = None
 
         try:
             self.content_type = self.env['CONTENT_TYPE']
@@ -456,6 +532,70 @@ class Request(object):
     if_range = helpers.header_property('HTTP_IF_RANGE')
 
     referer = helpers.header_property('HTTP_REFERER')
+
+    @property
+    def forwarded(self):
+        # PERF(kgriffs): We could DRY up this memoization pattern using
+        # a decorator, but that would incur additional overhead without
+        # resorting to some trickery to rewrite the body of the method
+        # itself (vs. simply wrapping it with some memoization logic).
+        # At some point we might look into this but I don't think
+        # it's worth it right now.
+        if self._cached_forwarded is None:
+            # PERF(kgriffs): If someone is calling this, they are probably
+            # confident that the header exists, so most of the time we
+            # expect this call to succeed. Therefore, we won't need to
+            # pay the penalty of a raised exception in most cases, and
+            # there is no need to spend extra cycles calling get() or
+            # checking beforehand whether the key is in the dict.
+            try:
+                forwarded = self.env['HTTP_FORWARDED']
+            except KeyError:
+                return None
+
+            parsed_elements = []
+
+            for element in forwarded.split(','):
+                parsed_element = Forwarded()
+
+                # NOTE(kgriffs): Calling strip() is necessary here since
+                # "an HTTP list allows white spaces to occur between the
+                # identifiers" (see also RFC 7239, Section 7.1).
+                for param in element.strip().split(';'):
+                    # PERF(kgriffs): partition() is faster than split().
+                    name, __, value = param.partition('=')
+                    if not value:
+                        # NOTE(kgriffs): The '=' separator was not found or
+                        # the value was missing. Ignore this malformed
+                        # param.
+                        continue
+
+                    # NOTE(kgriffs): According to RFC 7239, parameter
+                    # names are case-insensitive.
+                    name = name.lower()
+                    value = unquote_string(value)
+                    if name == 'by':
+                        parsed_element.dest = value
+                    elif name == 'for':
+                        parsed_element.src = value
+                    elif name == 'host':
+                        parsed_element.host = value
+                    elif name == 'proto':
+                        # NOTE(kgriffs): RFC 7239 only requires that
+                        # the "proto" value conform to the Host ABNF
+                        # described in RFC 7230. The Host ABNF, in turn,
+                        # does not require that the scheme be in any
+                        # particular case, so we normalize it here to be
+                        # consistent with the WSGI spec that *does*
+                        # require the value of 'wsgi.url_scheme' to be
+                        # either 'http' or 'https' (case-sensitive).
+                        parsed_element.scheme = value.lower()
+
+                parsed_elements.append(parsed_element)
+
+            self._cached_forwarded = parsed_elements
+
+        return self._cached_forwarded
 
     @property
     def client_accepts_json(self):
@@ -579,11 +719,41 @@ class Request(object):
 
     @property
     def app(self):
-        return self.env.get('SCRIPT_NAME', '')
+        # PERF(kgriffs): try..except is faster than get() assuming that
+        # we normally expect the key to exist. Even though PEP-3333
+        # allows WSGI servers to omit the key when the value is an
+        # empty string, uwsgi, gunicorn, waitress, and wsgiref all
+        # include it even in that case.
+        try:
+            return self.env['SCRIPT_NAME']
+        except KeyError:
+            return ''
 
     @property
     def scheme(self):
         return self.env['wsgi.url_scheme']
+
+    @property
+    def forwarded_scheme(self):
+        # PERF(kgriffs): Since the Forwarded header is still relatively
+        # new, we expect X-Forwarded-Proto to be more common, so
+        # try to avoid calling self.forwarded if we can, since it uses a
+        # try...catch that will usually result in a relatively expensive
+        # raised exception.
+        if 'HTTP_FORWARDED' in self.env:
+            first_hop = self.forwarded[0]
+            scheme = first_hop.scheme or self.scheme
+        else:
+            # PERF(kgriffs): This call should normally succeed, so
+            # just go for it without wasting time checking it
+            # first. Note also that the indexing operator is
+            # slightly faster than using get().
+            try:
+                scheme = self.env['HTTP_X_FORWARDED_PROTO'].lower()
+            except KeyError:
+                scheme = self.env['wsgi.url_scheme']
+
+        return scheme
 
     # TODO(kgriffs): Remove this deprecated alias in Falcon 2.0
     protocol = scheme
@@ -591,24 +761,67 @@ class Request(object):
     @property
     def uri(self):
         if self._cached_uri is None:
-            protocol = self.env['wsgi.url_scheme']
+            scheme = self.env['wsgi.url_scheme']
 
             # PERF: For small numbers of items, '+' is faster
             # than ''.join(...). Concatenation is also generally
             # faster than formatting.
-            value = (protocol + '://' +
+            value = (scheme + '://' +
                      self.netloc +
-                     self.app +
-                     self.path)
-
-            if self.query_string:
-                value = value + '?' + self.query_string
+                     self.relative_uri)
 
             self._cached_uri = value
 
         return self._cached_uri
 
     url = uri
+
+    @property
+    def forwarded_uri(self):
+        if self._cached_forwarded_uri is None:
+            # PERF: For small numbers of items, '+' is faster
+            # than ''.join(...). Concatenation is also generally
+            # faster than formatting.
+            value = (self.forwarded_scheme + '://' +
+                     self.forwarded_host +
+                     self.relative_uri)
+
+            self._cached_forwarded_uri = value
+
+        return self._cached_forwarded_uri
+
+    @property
+    def relative_uri(self):
+        if self._cached_relative_uri is None:
+            if self.query_string:
+                self._cached_relative_uri = (self.app + self.path + '?' +
+                                             self.query_string)
+            else:
+                self._cached_relative_uri = self.app + self.path
+
+        return self._cached_relative_uri
+
+    @property
+    def prefix(self):
+        if self._cached_prefix is None:
+            self._cached_prefix = (
+                self.env['wsgi.url_scheme'] + '://' +
+                self.netloc +
+                self.app
+            )
+
+        return self._cached_prefix
+
+    @property
+    def forwarded_prefix(self):
+        if self._cached_forwarded_prefix is None:
+            self._cached_forwarded_prefix = (
+                self.forwarded_scheme + '://' +
+                self.forwarded_host +
+                self.app
+            )
+
+        return self._cached_forwarded_prefix
 
     @property
     def host(self):
@@ -626,21 +839,32 @@ class Request(object):
         return host
 
     @property
+    def forwarded_host(self):
+        # PERF(kgriffs): Since the Forwarded header is still relatively
+        # new, we expect X-Forwarded-Host to be more common, so
+        # try to avoid calling self.forwarded if we can, since it uses a
+        # try...catch that will usually result in a relatively expensive
+        # raised exception.
+        if 'HTTP_FORWARDED' in self.env:
+            first_hop = self.forwarded[0]
+            host = first_hop.host or self.host
+        else:
+            # PERF(kgriffs): This call should normally succeed, assuming
+            # that the caller is expecting a forwarded header, so
+            # just go for it without wasting time checking it
+            # first.
+            try:
+                host = self.env['HTTP_X_FORWARDED_HOST']
+            except KeyError:
+                host = self.host
+
+        return host
+
+    @property
     def subdomain(self):
         # PERF(kgriffs): .partition is slightly faster than .split
         subdomain, sep, remainder = self.host.partition('.')
         return subdomain if sep else None
-
-    @property
-    def relative_uri(self):
-        if self._cached_relative_uri is None:
-            if self.query_string:
-                self._cached_relative_uri = (self.app + self.path + '?' +
-                                             self.query_string)
-            else:
-                self._cached_relative_uri = self.app + self.path
-
-        return self._cached_relative_uri
 
     @property
     def headers(self):
@@ -696,7 +920,11 @@ class Request(object):
             # aware that an upstream proxy is malfunctioning.
 
             if 'HTTP_FORWARDED' in self.env:
-                self._cached_access_route = self._parse_rfc_forwarded()
+                self._cached_access_route = []
+                for hop in self.forwarded:
+                    if hop.src is not None:
+                        host, __ = parse_host(hop.src)
+                        self._cached_access_route.append(host)
             elif 'HTTP_X_FORWARDED_FOR' in self.env:
                 addresses = self.env['HTTP_X_FORWARDED_FOR'].split(',')
                 self._cached_access_route = [ip.strip() for ip in addresses]
@@ -738,7 +966,8 @@ class Request(object):
         # NOTE(kgriffs): According to PEP-3333 we should first
         # try to use the Host header if present.
         #
-        # PERF(kgriffs): try..except is faster than .get
+        # PERF(kgriffs): try..except is faster than get() when we
+        # expect the key to be present most of the time.
         try:
             netloc_value = env['HTTP_HOST']
         except KeyError:
@@ -1383,33 +1612,6 @@ class Request(object):
 
             self._params.update(extra_params)
 
-    def _parse_rfc_forwarded(self):
-        """Parse RFC 7239 "Forwarded" header.
-
-        Returns:
-            list: addresses derived from "for" parameters.
-        """
-
-        addr = []
-
-        for forwarded in self.env['HTTP_FORWARDED'].split(','):
-            for param in forwarded.split(';'):
-                # PERF(kgriffs): Partition() is faster than split().
-                key, _, val = param.strip().partition('=')
-                if not val:
-                    # NOTE(kgriffs): The '=' separator was not found or
-                    # it was, but the value was missing.
-                    continue
-
-                if key.lower() != 'for':
-                    # We only want "for" params
-                    continue
-
-                host, _ = parse_host(unquote_string(val))
-                addr.append(host)
-
-        return addr
-
 
 # PERF: To avoid typos and improve storage space and speed over a dict.
 class RequestOptions(object):
@@ -1495,3 +1697,36 @@ class RequestOptions(object):
         self.strip_url_path_trailing_slash = True
         self.default_media_type = DEFAULT_MEDIA_TYPE
         self.media_handlers = Handlers()
+
+
+class Forwarded(object):
+    """Represents a parsed Forwarded header.
+
+    (See also: RFC 7239, Section 4)
+
+    Attributes:
+        src (str): The value of the "for" parameter, or
+            ``None`` if the parameter is absent. Identifies the
+            node making the request to the proxy.
+        dest (str): The value of the "by" parameter, or
+            ``None`` if the parameter is absent. Identifies the
+            client-facing interface of the proxy.
+        host (str): The value of the "host" parameter, or
+            ``None`` if the parameter is absent. Provides the host
+            request header field as received by the proxy.
+        scheme (str): The value of the "proto" parameter, or
+            ``None`` if the parameter is absent. Indicates the
+            protocol that was used to make the request to
+            the proxy.
+    """
+
+    # NOTE(kgriffs): Use "client" since "for" is a keyword, and
+    # "scheme" instead of "proto" to be consistent with the
+    # falcon.Request interface.
+    __slots__ = ('src', 'dest', 'host', 'scheme')
+
+    def __init__(self):
+        self.src = None
+        self.dest = None
+        self.host = None
+        self.scheme = None

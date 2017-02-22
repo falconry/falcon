@@ -23,6 +23,9 @@ Request
 .. autoclass:: falcon.Request
     :members:
 
+.. autoclass:: falcon.Forwarded
+    :members:
+
 Response
 --------
 
