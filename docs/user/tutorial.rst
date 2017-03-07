@@ -10,21 +10,40 @@ the terminology used by the framework.
 First Steps
 -----------
 
-Before continuing, be sure you've got Falcon :ref:`installed <install>`. Then,
-create a new project folder called "look" and cd into it:
+Before continuing, be sure you've got Falcon :ref:`installed <install>` inside
+a `virtualenv <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_.
+Then, create a new project folder called "look" and cd into it:
 
 .. code:: bash
 
     $ mkdir look
     $ cd look
 
+It's customary for the project's top-level module to be called the same as the
+project, so let's create another "look" folder inside the first one and mark
+it as a python module by creating an empty ``__init__.py`` file in it:
+
+.. code:: bash
+
+    $ mkdir look
+    $ touch look/__init__.py
+
 Next, let's create a new file that will be the entry point into your app:
 
 .. code:: bash
 
-    $ touch app.py
+    $ touch look/app.py
 
-Open that file in your favorite text editor and add the following lines:
+The file hierarchy should look like this:
+
+.. code:: bash
+
+    look
+    └── look
+        ├── app.py
+        └── __init__.py
+
+Now, open ``app.py`` in your favorite text editor and add the following lines:
 
 .. code:: python
 
@@ -73,9 +92,10 @@ what you need.
 
 .. tip::
 
-    `bpython <http://bpython-interpreter.org/>`_ is another super-
-    powered REPL that is good to have in your toolbox when
-    exploring a new library.
+    `bpython <http://bpython-interpreter.org/>`_ or
+    `ptpython <https://github.com/jonathanslenders/ptpython>`_ are other
+    super-powered REPLs that are good to have in your toolbox when exploring
+    a new library.
 
 
 Hosting Your App
@@ -88,14 +108,15 @@ let's use something that you would actually deploy in production.
 .. code:: bash
 
     $ pip install gunicorn
-    $ gunicorn app:api
+    $ gunicorn look.app
 
-Gunicorn has still limitation that is not working on Windows. If you are Windows user you can use Waitress server instead Gunicorn
+If you are a Windows user, then use Waitress instead of Gunicorn, since the latter
+doesn't work under Windows.
 
 .. code:: bash
 
     $ pip install waitress
-    $ waitress-serve --port=8000 app:api
+    $ waitress-serve --port=8000 look.app
 
 Now try querying it with curl:
 
@@ -132,8 +153,8 @@ an action that the API client can request be performed in order to fetch
 or transform the resource in question.
 
 Since we are building an image-sharing API, let's create an "images"
-resource. Create a new file, ``images.py`` within your project directory,
-and add the following to it:
+resource. Create a new file, ``images.py`` next to ``app.py``, and add the
+following to it:
 
 .. code:: python
 
@@ -144,6 +165,8 @@ and add the following to it:
 
         def on_get(self, req, resp):
             resp.body = '{"message": "Hello world!"}'
+            # This line can be ommited, because 200 is the default code falcon
+            # returns, but it shows how you can set a status code.
             resp.status = falcon.HTTP_200
 
 As you can see, ``Resource`` is just a regular class. You can name the
@@ -197,24 +220,98 @@ OK, now let's wire up this resource and see it in action. Go back to
 
     import falcon
 
-    import images
+    from .images import Resource
 
 
     api = application = falcon.API()
 
-    images = images.Resource()
+    images = Resource()
     api.add_route('/images', images)
 
 Now, when a request comes in for "/images", Falcon will call the
 responder on the images resource that corresponds to the requested
 HTTP method.
 
-Restart gunicorn, and then try sending a GET request to the resource:
+Restart Gunicorn, and then try sending a GET request to the resource:
 
 .. code:: bash
 
     $ http GET localhost:8000/images
 
+Testing your application
+------------------------
+
+Up to this point we didn't care about tests, but fully exercising your code is critical
+to creating robust applications with a great user experience.
+So, to practise that, we'll create
+the next piece of code in accordance with Test Driven Development (TDD).
+
+.. note:: There's a good book on TDD called
+   `Test Driven Development with Python
+   <http://www.obeythetestinggoat.com/book/praise.harry.html>`_.
+   The examples in the book use the Django framework and even JavaScript, but the presented
+   testing principles can be applied to all web development.
+
+But let's first write the missing tests for the current behavior of the application.
+Create a ``tests`` directory with ``__init__.py`` and the test file (``test_app.py``)
+inside it. The project's structure should look like this:
+
+.. code:: bash
+
+    look
+    ├── look
+    │   ├── app.py
+    │   ├── images.py
+    │   └── __init__.py
+    └── tests
+        ├── __init__.py
+        └── test_app.py
+
+Falcon supports unit testing its API object by simulating HTTP requests.
+There are two styles of writing tests - using built-in unittest module, and with pytest
+(more details can be found in :ref:`testing reference <testing>`). pytest may not
+be a part of Python's standard library, but it allows for more "pythonic" test code
+than unittest which is highly influenced by Java's JUnit;
+therefore, we'll stick with pytest. Let's install it
+
+.. code:: bash
+
+    $ pip install pytest
+
+and edit ``test_app.py`` to look like this:
+
+.. code:: python
+
+    import falcon
+    from falcon import testing
+    import msgpack
+    import pytest
+
+    from look.app import api
+
+
+    @pytest.fixture
+    def client():
+        return testing.TestClient(api)
+
+
+    # pytest will inject the object returned by the "client" function as a parameter
+    # for this function.
+    def test_get_message(client):
+        doc = {u'message': u'Hello world!'}
+
+        response = client.simulate_get('/images')
+        result_doc = msgpack.unpackb(response.content, encoding='utf-8')
+
+        assert result_doc == doc
+        assert response.status == falcon.HTTP_OK
+
+See your tests pass by running pytest against the ``tests`` directory while in the main
+project directory.
+
+.. code:: bash
+
+    py.test tests/
 
 Request and Response Objects
 ----------------------------
@@ -237,21 +334,49 @@ Response class members using the same technique used above:
 
     In [3]: help(falcon.Response)
 
-Let's see how this works. When a client POSTs to our images collection, we
-want to create a new image resource. First, we'll need to specify where the
-images will be saved (for a real service, you would want to use an object
-storage service instead, such as Cloud Files or S3).
-
-Edit your ``images.py`` file and add the following to the resource:
+This will be useful when creating a POST endpoint in the application that can
+add new image resources to our collection. Because we decided to do TDD, we need
+to create a test for this feature **before** we write the code for it.
+That way we define precisely what we want the application to do, and then code until
+the tests tell us that we're done.
+To that end, let's add some imports in ``test_app.py``:
 
 .. code:: python
 
-    def __init__(self, storage_path):
-        self.storage_path = storage_path
+    from unittest.mock import mock_open, call
 
-Then, edit ``app.py`` and pass in a path to the resource initializer.
+...and then add a new test:
 
-Next, let's implement the POST responder:
+.. code:: python
+
+    # "monkeypatch" is a special built-it fixture that can be used to mock out various things.
+    def test_posted_image_gets_saved(client, monkeypatch):
+        mock_file_open = mock_open()
+        fake_uuid = 'blablabla'
+        fake_image_bytes = b'fake-image-bytes'
+        monkeypatch.setattr('builtins.open', mock_file_open)
+        monkeypatch.setattr('look.images.uuid.uuid4', lambda: fake_uuid)
+
+        # When the service receives an image through POST...
+        response = client.simulate_post('/images',
+                                        body=fake_image_bytes,
+                                        headers={'content-type': 'image/png'})
+
+        # ...it must return a 201 code, save the file, and return the image's resource location.
+        assert response.status == falcon.HTTP_CREATED
+        assert call().write(fake_image_bytes) in mock_file_open.mock_calls
+        assert response.headers['location'] == '/images/{}.png'.format(fake_uuid)
+
+As you can see, this test relies heavily on mocking, thus making
+it fragile in the face of implementation changes. We'll deal with this later.
+But for now, run the tests again to see that they fail.
+Making sure that your tests **don't** pass when they shouldn't is an integral part of TDD.
+
+Now, we can finally get to the resource implementation. We'll need to add a new method for
+handling POSTs, and specify where the images will be saved (for a real service, you would
+want to use an object storage service instead, such as Cloud Files or S3).
+
+Next, let's implement the POST responder in ``images.py``:
 
 .. code:: python
 
@@ -260,12 +385,20 @@ Next, let's implement the POST responder:
     import mimetypes
 
     import falcon
+    import msgpack
 
 
     class Resource(object):
 
+        # the resource object must now be initialized with a path used during POST
         def __init__(self, storage_path):
             self.storage_path = storage_path
+
+        # this is the method we implemented before
+        def on_get(self, req, resp):
+            resp.data = msgpack.packb({'message': 'Hello world!'})
+            resp.content_type = 'application/msgpack'
+            resp.status = falcon.HTTP_200
 
         def on_post(self, req, resp):
             ext = mimetypes.guess_extension(req.content_type)
@@ -304,15 +437,288 @@ attributes for reading and setting common headers, but you can always
 access any header by name with the ``req.get_header`` and ``resp.set_header``
 methods.
 
-Restart gunicorn, and then try sending a POST request to the resource
-(substituting test.jpg for a path to any JPEG you like.)
+With that explained, we can move onto making our service work.
+Edit ``app.py`` and pass in a path to the resource initializer.
+For now, it can be the working directory from which you started the service.
+
+.. code:: python
+
+    images = Resource(storage_path='.')
+
+Now you can run the tests again and see them pass!
+
+You can also restart Gunicorn, and then try sending a POST request to the resource
+yourself (substituting ``test.png`` for a path to any PNG you like.)
 
 .. code:: bash
 
-    $ http POST localhost:8000/images Content-Type:image/jpeg @/usr/local/images/test.jpg
+    $ http POST localhost:8000/images Content-Type:image/png < test.png
 
 Now, if you check your storage directory, it should contain a copy of the
 image you just POSTed.
+
+
+Refactoring for testability
+---------------------------
+
+As you remember, our POST test had a lot of mocks and could break easily if
+the underlying implementation changed. To remedy this situation, we not only
+need to refactor the tests, but also the code, to facilitate easier testing.
+
+First, let's separate the "business logic" from the POST resource's
+code in ``images.py`` by factoring out the saving of a file.
+
+.. code:: python
+
+    import mimetypes
+    import os
+    import uuid
+
+    import falcon
+    import msgpack
+
+
+    class Resource(object):
+
+        def __init__(self, image_saver):
+            self.image_saver = image_saver
+
+        def on_get(self, req, resp):
+            resp.data = msgpack.packb({'message': 'Hello world!'})
+            resp.content_type = 'application/msgpack'
+            resp.status = falcon.HTTP_200
+
+        def on_post(self, req, resp):
+            filename = self.image_saver.save(req.stream, req.content_type)
+            resp.status = falcon.HTTP_201
+            resp.location = '/images/' + filename
+
+
+    class ImageSaver:
+
+        def __init__(self, storage_path):
+            self.storage_path = storage_path
+
+        def save(self, image_stream, image_content_type):
+            ext = mimetypes.guess_extension(image_content_type)
+            filename = '{uuid}{ext}'.format(uuid=uuid.uuid4(), ext=ext)
+            image_path = os.path.join(self.storage_path, filename)
+
+            with open(image_path, 'wb') as image_file:
+                while True:
+                    chunk = image_stream.read(4096)
+                    if not chunk:
+                        break
+
+                    image_file.write(chunk)
+            return filename
+
+By our careless meddling, we, of course, broke the application, and running the tests
+assures us of that. But the power of tests lie in that they will show us when the
+application works again and the refactor is complete.
+You can run them after every code change from now on to observe when that happens.
+
+Let's adjust ``app.py``:
+
+.. code:: python
+
+    import falcon
+
+    from .images import ImageSaver, Resource
+
+
+    def create_app(image_saver):
+        image_resource = Resource(image_saver)
+        api = falcon.API()
+        api.add_route('/images', image_resource)
+        return api
+
+
+    def get_app():
+        image_saver = ImageSaver('.')
+        return create_app(image_saver)
+
+``create_app`` can be used to obtain a unit-testable or production API object.
+``get_app`` holds the service's "production" (real running) configuration.
+You can configure logging there, set up production resources, etc.
+Most of the time a function like this will get in the way of unit testing,
+so we can keep it here to be used when the app is run by Gunicorn.
+The command to run the application is now:
+
+.. code:: bash
+
+    $ gunicorn 'look.app:get_app()'
+
+On to the tests that we wanted to redo in the first place:
+
+.. code:: python
+
+    import io
+    from unittest.mock import call, MagicMock, mock_open
+
+    import falcon
+    from falcon import testing
+    import msgpack
+    import pytest
+
+    import look.app
+    import look.images
+
+
+    @pytest.fixture
+    def mock_saver():
+        return MagicMock()
+
+
+    @pytest.fixture
+    def client(mock_saver):
+        api = look.app.create_app(mock_saver)
+        return testing.TestClient(api)
+
+
+    def test_get_message(client):
+        doc = {u'message': u'Hello world!'}
+
+        response = client.simulate_get('/images')
+        result_doc = msgpack.unpackb(response.content, encoding='utf-8')
+
+        assert result_doc == doc
+        assert response.status == falcon.HTTP_OK
+
+
+    # With clever composition of fixtures, we can observe what happens with
+    # the mock injected into the image resource.
+    def test_post_image(client, mock_saver):
+        file_name = 'fake-image-name.xyz'
+        # we need to know what ImageSaver method will be used
+        mock_saver.save.return_value = file_name
+        image_content_type = 'image/xyz'
+
+        response = client.simulate_post('/images',
+                                        body=b'some-fake-bytes',
+                                        headers={'content-type': image_content_type})
+
+        assert response.status == falcon.HTTP_CREATED
+        assert response.headers['location'] == '/images/{}'.format(file_name)
+        saver_call = mock_saver.save.call_args
+        # saver_call is a unittest.mock.call tuple.
+        # It's first element is a tuple of positional arguments supplied when calling the mock.
+        assert isinstance(saver_call[0][0], falcon.request_helpers.BoundedStream)
+        assert saver_call[0][1] == image_content_type
+
+As you can see, we've redone the POST. While there are fewer mocks, the assertions
+have gotten more elaborate to properly check the interactions on interface boundaries;
+we're also not covering the actual saving now (test coverage reports are useful to
+detect this kind of situations), so let's add that.
+
+.. code:: python
+
+    def test_saving_image(monkeypatch):
+        mock_file_open = mock_open()
+        monkeypatch.setattr('builtins.open', mock_file_open)
+        fake_uuid = 'blablabla'
+        monkeypatch.setattr('look.images.uuid.uuid4', lambda: fake_uuid)
+
+        fake_image_bytes = b'fake-image-bytes'
+        fake_request_stream = io.BytesIO(fake_image_bytes)
+        storage_path = 'fake-storage-path'
+        saver = look.images.ImageSaver(storage_path)
+
+        assert saver.save(fake_request_stream, 'image/png') == fake_uuid + '.png'
+        assert call().write(fake_image_bytes) in mock_file_open.mock_calls
+
+Like the former test, this one is also still plagued by mocks and the ensuing brittleness.
+But the logical structure of the code is better, so the resource and image saving
+(and their tests) can be develop independently in the future, reducing the impact
+of tying tests to implementation.
+
+It's also worth noting that the purpose of this whole refactor is to demonstrate a useful
+technique for real-life projects, rather than simply making our minimal application's
+tests better.
+
+Also, it seems that we didn't actually obey TDD by changing the code first and the tests later.
+But it would be really hard to write the tests without first knowing the implementation,
+as well as how the mocks should be defined and injected, right? Of course!
+That's why real TDD usually employs a second layer of tests, called functional (or integration,
+or other names; it's a nuanced thing worth looking into on your own) tests.
+They exercise the application as a whole, not bothering with mocking, the same way its
+normal user (which can be a different program or a human) would.
+
+
+Functional tests
+----------------
+
+Functional tests define the application's behavior from the outside. They are much
+easier to write before the code than unit tests that will require mocking (not all
+of them do, though). In the case of the refactoring work from the last section, we could have
+inadvertently introduced a bug into the application that might have been masked when we rewrote
+the tests to make them pass. Functional tests would prevent us from doing that. They should
+actually be written before any unit tests or application code, but we wanted to get into Falcon
+testing before going over good TDD practices.
+
+In our case (and in the case of most web applications) the idea behind a functional test
+is to run the application as a normal, separate process (e.g. with Gunicorn) and
+then to interract with it as a normal client would - through HTTP calls. Before we
+implement that, it would be useful to add the ability to configure the image
+storage directory through an environment variable in ``app.py``.
+
+.. code:: python
+
+    def get_app():
+        storage_path = os.environ.get('LOOK_STORAGE', '.')
+        image_saver = ImageSaver(storage_path)
+        return create_app(image_saver)
+
+To run the app with a non-default storage directory, just do:
+
+.. code:: bash
+
+    $ LOOK_STORAGE=/tmp gunicorn 'look.app:get_app()'
+
+Now, put this functional test in a new test file (e.g. ``tests/test_functional.py``):
+
+.. code:: python
+
+    import requests
+
+
+    def test_posted_image_gets_saved():
+        location_prefix = '/images/'
+        fake_image_bytes = b'fake-image-bytes'
+
+        response = requests.post('http://localhost:8000/images',
+                      data=fake_image_bytes,
+                      headers={'content-type': 'image/png'})
+
+        assert response.status_code == 201
+        location = response.headers['location']
+        assert location.startswith(location_prefix)
+        filename = location.replace(location_prefix, '')
+        # assuming that the storage path is "/tmp"
+        with open('/tmp/' + filename, 'rb') as image_file:
+            assert image_file.read() == fake_image_bytes
+
+Running this test isn't ideal. You need to manually start the service beforehand
+(with the proper hardcoded storage path), stop the service and clean up the image
+files afterwards. Of course, you could automate the process of starting, stopping,
+and cleaning up after the application. And put that automation into the test code
+itself, hopefully in some fixtures. Libraries such as `mountepy <https://github.com/butla/mountepy>`_
+can help with these tasks.
+
+Anyway, with the new integration test in place we can remove the assertions that check
+the parameters with which ``ImageSaver.save`` was called by the POST resource. Well, actually,
+we could remove both ``test_post_image`` and ``test_saving_image``, because
+they don't check anything more than ``test_posted_image_gets_saved``. But we can
+do that only because our application's logic is rather simple.
+
+Normally, you would check component integration and all primary logic paths
+throughout the entire application with functional tests, and leave the bulk of testing
+to unit tests. But the actual ratio of unit/functional tests depends entirely
+on each application's problem domain, and will vary.
+
+After this section we'll omit the TDD instructions, as you should have a good grip
+of testing Falcon applications by now. Instead, we'll focus on showcasing some more of the
+framework's features.
 
 .. _tutorial-serving-images:
 
@@ -433,18 +839,18 @@ argument.
 
         /repos/{org}/{repo}/compare/{usr0}:{branch0}...{usr1}:{branch1}
 
-Now, restart gunicorn and post another picture to the service:
+Now, restart Gunicorn and post another picture to the service:
 
 .. code:: bash
 
-    $ http POST localhost:8000/images Content-Type:image/jpeg @/usr/local/images/test.jpg
+    $ http POST localhost:8000/images Content-Type:image/png < test.png
 
 Make a note of the path returned in the Location header, and use it to
 try GETing the image:
 
 .. code:: bash
 
-    $ http localhost:8000/images/6daa465b7b.jpeg
+    $ http localhost:8000/images/6daa465b7b.png
 
 HTTPie won't download the image by default, but you can see that the response
 headers were set correctly. Just for fun, go ahead and paste the above URI
