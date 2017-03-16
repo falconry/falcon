@@ -12,15 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Testing utilities.
+"""Functional testing framework for Falcon apps and Falcon itself.
 
-This package contains various test classes and utility functions to
-support functional testing for both Falcon-based apps and the Falcon
-framework itself. Both unittest-style and pytest-style tests are
-supported::
+Falcon's testing module contains various test classes and utility
+functions to support functional testing for both Falcon-based apps and
+the Falcon framework itself.
+
+The testing framework supports both unittest and pytest::
 
     # -----------------------------------------------------------------
-    # unittest-style
+    # unittest
     # -----------------------------------------------------------------
 
     from falcon import testing
@@ -46,7 +47,7 @@ supported::
 
 
     # -----------------------------------------------------------------
-    # pytest-style
+    # pytest
     # -----------------------------------------------------------------
 
     from falcon import testing

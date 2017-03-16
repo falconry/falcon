@@ -1,17 +1,18 @@
 import os
 
 import falcon
-from .images import ImageSaver, Resource
+
+from .images import ImageStore, Resource
 
 
-def create_app(image_saver):
-    image_resource = Resource(image_saver)
+def create_app(image_store):
+    image_resource = Resource(image_store)
     api = falcon.API()
     api.add_route('/images', image_resource)
     return api
 
 
 def get_app():
-    storage_path = os.environ.get('LOOK_STORAGE', '.')
-    image_saver = ImageSaver(storage_path)
-    return create_app(image_saver)
+    storage_path = os.environ.get('LOOK_STORAGE_PATH', '.')
+    image_store = ImageStore(storage_path)
+    return create_app(image_store)

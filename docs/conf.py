@@ -156,9 +156,9 @@ html_theme_options = {
     'fixed_sidebar': False,
     'show_powered_by': False,
     'extra_nav_links': OrderedDict([
-      ('Falcon Home', 'http://falconframework.org/'),
+      ('Falcon Home', 'https://falconframework.org/'),
       ('Falcon Wiki', 'https://github.com/falconry/falcon/wiki'),
-      ('Get Help', 'community/help.html'),
+      ('Get Help', '/community/help.html'),
     ]),
 }
 

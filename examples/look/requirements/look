@@ -1,0 +1,2 @@
+falcon>=1.1.0
+msgpack-python>=0.4.8
