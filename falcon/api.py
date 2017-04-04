@@ -428,8 +428,13 @@ class API(object):
     def add_error_handler(self, exception, handler=None):
         """Registers a handler for a given exception error type.
 
-        A handler can raise an instance of ``HTTPError`` or
-        ``HTTPStatus`` to communicate information about the issue to
+        Error handlers may be registered for any type, including
+        :class:`~.HTTPError`. This feature provides a central location
+        for logging and otherwise handling exceptions raised by
+        responders, hooks, and middleware components.
+
+        A handler can raise an instance of :class:`~.HTTPError` or
+        :class:`~.HTTPStatus` to communicate information about the issue to
         the client.  Alternatively, a handler may modify `resp`
         directly.
 
@@ -438,8 +443,8 @@ class API(object):
         more than one handler matches the exception type, the framework
         will choose the one that was most recently registered.
         Therefore, more general error handlers (e.g., for the
-        ``Exception`` type) should be added first, to avoid masking more
-        specific handlers for subclassed types.
+        standard ``Exception`` type) should be added first, to avoid
+        masking more specific handlers for subclassed types.
 
         Args:
             exception (type): Whenever an error occurs when handling a request
@@ -479,16 +484,22 @@ class API(object):
         self._error_handlers.insert(0, (exception, handler))
 
     def set_error_serializer(self, serializer):
-        """Override the default serializer for instances of HTTPError.
+        """Override the default serializer for instances of :class:`~.HTTPError`.
 
-        When a responder raises an instance of HTTPError, Falcon converts
-        it to an HTTP response automatically. The default serializer
-        supports JSON and XML, but may be overridden by this method to
-        use a custom serializer in order to support other media types.
+        When a responder raises an instance of :class:`~.HTTPError`,
+        Falcon converts it to an HTTP response automatically. The
+        default serializer supports JSON and XML, but may be overridden
+        by this method to use a custom serializer in order to support
+        other media types.
 
-        The ``falcon.HTTPError`` class contains helper methods, such as
-        `to_json()` and `to_dict()`, that can be used from within
-        custom serializers. For example::
+        Note:
+            If a custom media type is used and the type includes a
+            "+json" or "+xml" suffix, the default serializer will
+            convert the error to JSON or XML, respectively.
+
+        The :class:`~.HTTPError` class contains helper methods,
+        such as `to_json()` and `to_dict()`, that can be used from
+        within custom serializers. For example::
 
             def my_serializer(req, resp, exception):
                 representation = None
@@ -506,13 +517,6 @@ class API(object):
                     resp.content_type = preferred
 
                 resp.append_header('Vary', 'Accept')
-
-        Note:
-            If a custom media type is used and the type includes a
-            "+json" or "+xml" suffix, the default serializer will
-            convert the error to JSON or XML, respectively. If this
-            is not desirable, a custom error serializer may be used
-            to override this behavior.
 
         Args:
             serializer (callable): A function taking the form

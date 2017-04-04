@@ -3,19 +3,28 @@
 Error Handling
 ==============
 
-When a request results in an error condition, you can manually set the
-error status, appropriate response headers, and even an error body using the
-``resp`` object. However, Falcon tries to make things a bit easier and more
-consistent by providing a set of error classes you can raise from within
-your app. Falcon catches any exception that inherits from
-``falcon.HTTPError``, and automatically converts it to an appropriate HTTP
-response.
+When it comes to error handling, you can always directly set the error
+status, appropriate response headers, and error body using the ``resp``
+object. However, Falcon tries to make things a little easier by
+providing a set of error classes you can raise when something goes
+wrong. All of these classes inherit from :class:`~.HTTPError`.
 
-You may raise an instance of ``falcon.HTTPError`` directly, or use any one
-of a number of predefined error classes that try to be idiomatic in
-setting appropriate headers and bodies.
+Falcon will convert any instance or subclass of :class:`~.HTTPError`
+raised by a responder, hook, or middleware component into an appropriate
+HTTP response. The default error serializer supports both JSON and XML.
+If the client indicates acceptance of both JSON and XML with equal
+weight, JSON will be chosen. Other media types may be supported by
+overriding the default serializer via
+:meth:`~.API.set_error_serializer`.
 
-All classes are available directly from the `falcon` package namespace::
+.. note::
+
+    If a custom media type is used and the type includes a "+json" or
+    "+xml" suffix, the default serializer will convert the error to JSON
+    or XML, respectively.
+
+Error classes are available directly from the `falcon` package
+namespace::
 
     import falcon
 
@@ -31,9 +40,11 @@ All classes are available directly from the `falcon` package namespace::
 
             # ...
 
-The default error serializer supports JSON and XML. You can override the
-default serializer by passing a callable to the :class:`~.API` method,
-:meth:`~.API.set_error_serializer`.
+Note also that any exception (not just instances of
+:class:`~.HTTPError`) can be caught, logged, and otherwise handled
+at the global level by registering one or more custom error handlers.
+See also :meth:`~.API.add_error_handler` to learn more about this
+feature.
 
 Base Class
 ----------
