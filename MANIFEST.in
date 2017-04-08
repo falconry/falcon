@@ -3,6 +3,7 @@ recursive-include doc *.rst
 include .coveragerc
 include tox.ini
 include README.md
+include LICENSE
 include doc/conf.py doc/Makefile
 graft doc/_static
 graft doc/_themes
