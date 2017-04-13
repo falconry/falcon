@@ -89,6 +89,7 @@ class SimpleTestResource(object):
             responses
 
     Attributes:
+        called (bool): Whether or not a req/resp was captured.
         captured_req (falcon.Request): The last Request object passed
             into any one of the responder methods.
         captured_resp (falcon.Response): The last Response object passed
@@ -115,6 +116,10 @@ class SimpleTestResource(object):
         self.captured_req = None
         self.captured_resp = None
         self.captured_kwargs = None
+
+    @property
+    def called(self):
+        return self.captured_req is not None
 
     @falcon.before(capture_responder_args)
     @falcon.before(set_resp_defaults)
