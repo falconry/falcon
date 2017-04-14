@@ -23,8 +23,7 @@ overriding the default serializer via
     "+xml" suffix, the default serializer will convert the error to JSON
     or XML, respectively.
 
-Error classes are available directly from the `falcon` package
-namespace::
+All classes are available directly in the ``falcon`` package namespace::
 
     import falcon
 
@@ -57,6 +56,8 @@ Mixins
 
 .. autoclass:: falcon.http_error.NoRepresentation
     :members:
+
+.. _predefined_errors:
 
 Predefined Errors
 -----------------

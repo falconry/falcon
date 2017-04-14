@@ -1,6 +1,0 @@
-falcon==1.1.0rc1
-gunicorn==19.6.0
-msgpack-python==0.4.8
-python-mimeparse==1.6.0
-requests==2.11.1
-six==1.10.0
