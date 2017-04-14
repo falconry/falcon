@@ -1,3 +1,4 @@
+import os
 import sys
 import time
 from wsgiref.simple_server import make_server
@@ -15,7 +16,7 @@ from falcon.request_helpers import BoundedStream
 import falcon.testing as testing
 
 _SERVER_HOST = 'localhost'
-_SERVER_PORT = 9809
+_SERVER_PORT = 9800 + os.getpid() % 100  # Facilitates parallel test execution
 _SERVER_BASE_URL = 'http://{0}:{1}/'.format(_SERVER_HOST, _SERVER_PORT)
 _SIZE_1_KB = 1024
 

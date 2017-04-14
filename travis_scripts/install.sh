@@ -7,6 +7,9 @@ if [ "$JYTHON" = "true" ]; then
     # bug: http://bugs.jython.org/issue527524).
     $HOME/jython/bin/pip install https://github.com/kennethreitz/requests/archive/v2.11.0.zip
     $HOME/jython/bin/pip install -r tools/test-requires
+
+    # python-xdist is not compatible with Jython
+    $HOME/jython/bin/pip uninstall -y pytest-xdist
 else
     pip install tox coveralls
 fi
