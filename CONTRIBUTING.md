@@ -42,13 +42,14 @@ In addition to the tests run with tox against CPython, Cython, and PyPy, Travis 
 First, install JDK 7 or better. Then install Jython at `~/jython`:
 
 ```bash
-$ travis_scripts/install_jython2.7.sh
+$ tools/travis/install_jython2.7.sh
 ```
 
-Now install all testing dependencies (if you get an error, you may need to `export JYTHON_HOME=~/jython`):
+Now install all testing dependencies. If you get an error, you may need to `export JYTHON_HOME=~/jython`. Also note that *pytest-xdist* and *pytest-cov* are not compatible with Jython, and therefore must be removed:
  
 ```bash
-$ ~/jython/bin/pip install -r tools/test-requires 
+$ ~/jython/bin/pip install -r requirements/tests 
+$ ~/jython/bin/pip uninstall -y pytest-xdist pytest-cov
 ```
 
 Finally, run the tests:
@@ -62,7 +63,7 @@ $ ~/jython/bin/pytest tests
 Pull requests must maintain 100% test coverage of all code branches. This helps ensure the quality of the Falcon framework. To check coverage before submitting a pull request:
 
 ```bash
-$ tox -e py26,py27,py35 && tools/combine_coverage.sh
+$ tox -e py26,py27,py35 && tools/testing/combine_coverage.sh
 ```
 
 It is necessary to combine test coverage from all three of these environments in order to account for branches in the code that are only taken for a given Python version.
