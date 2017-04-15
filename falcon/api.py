@@ -341,9 +341,11 @@ class API(object):
                 pass
 
         Individual path segments may contain one or more field
-        expressions::
+        expressions, and fields need not span the entire path
+        segment. For example::
 
             /repos/{org}/{repo}/compare/{usr0}:{branch0}...{usr1}:{branch1}
+            /serviceRoot/People('{name}')
 
         Note:
             Because field names correspond to argument names in responder

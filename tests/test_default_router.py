@@ -105,7 +105,7 @@ class ResourceWithId(object):
 # =====================================================================
 
 
-def test_regression_versioned_url():
+def test_user_regression_versioned_url():
     router = DefaultRouter()
     router.add_route('/{version}/messages', {}, ResourceWithId(2))
 
@@ -127,7 +127,7 @@ def test_regression_versioned_url():
     assert route is None
 
 
-def test_regression_case_recipes():
+def test_user_regression_recipes():
     router = DefaultRouter()
     router.add_route(
         '/recipes/{activity}/{type_id}', {}, ResourceWithId(1))
@@ -142,6 +142,63 @@ def test_regression_case_recipes():
 
     route = router.find('/recipes/grilling')
     assert route is None
+
+
+@pytest.mark.parametrize('uri_template,path,expected_params', [
+    ('/serviceRoot/People|{field}', '/serviceRoot/People|susie', {'field': 'susie'}),
+    ('/serviceRoot/People[{field}]', "/serviceRoot/People['calvin']", {'field': "'calvin'"}),
+    ('/serviceRoot/People({field})', "/serviceRoot/People('hobbes')", {'field': "'hobbes'"}),
+    ('/serviceRoot/People({field})', "/serviceRoot/People('hob)bes')", {'field': "'hob)bes'"}),
+    ('/serviceRoot/People({field})(z)', '/serviceRoot/People(hobbes)(z)', {'field': 'hobbes'}),
+    ("/serviceRoot/People('{field}')", "/serviceRoot/People('rosalyn')", {'field': 'rosalyn'}),
+    ('/^{field}', '/^42', {'field': '42'}),
+    ('/+{field}', '/+42', {'field': '42'}),
+    (
+        '/foo/{first}_{second}/bar',
+        '/foo/abc_def_ghijk/bar',
+
+        # NOTE(kgriffs): The regex pattern is greedy, so this is
+        # expected. We can not change this behavior in a minor
+        # release, since it would be a breaking change. If there
+        # is enough demand for it, we could introduce an option
+        # to toggle this behavior.
+        {'first': 'abc_def', 'second': 'ghijk'},
+    ),
+
+    # NOTE(kgriffs): Why someone would use a question mark like this
+    # I have no idea (esp. since it would have to be encoded to avoid
+    # being mistaken for the query string separator). Including it only
+    # for completeness.
+    ('/items/{x}?{y}', '/items/1080?768', {'x': '1080', 'y': '768'}),
+
+    ('/items/{x}|{y}', '/items/1080|768', {'x': '1080', 'y': '768'}),
+    ('/items/{x},{y}', '/items/1080,768', {'x': '1080', 'y': '768'}),
+    ('/items/{x}^^{y}', '/items/1080^^768', {'x': '1080', 'y': '768'}),
+    ('/items/{x}*{y}*', '/items/1080*768*', {'x': '1080', 'y': '768'}),
+    ('/thing-2/something+{field}+', '/thing-2/something+42+', {'field': '42'}),
+    ('/thing-2/something*{field}/notes', '/thing-2/something*42/notes', {'field': '42'}),
+    (
+        '/thing-2/something+{field}|{q}/notes',
+        '/thing-2/something+else|z/notes',
+        {'field': 'else', 'q': 'z'},
+    ),
+    (
+        "serviceRoot/$metadata#Airports('{field}')/Name",
+        "serviceRoot/$metadata#Airports('KSFO')/Name",
+        {'field': 'KSFO'},
+    ),
+])
+def test_user_regression_special_chars(uri_template, path, expected_params):
+    router = DefaultRouter()
+
+    router.add_route(uri_template, {}, ResourceWithId(1))
+
+    route = router.find(path)
+    assert route is not None
+
+    resource, __, params, __ = route
+    assert resource.resource_id == 1
+    assert params == expected_params
 
 
 # =====================================================================
@@ -166,6 +223,33 @@ def test_root_path():
 
     resource, __, __, __ = router.find('/')
     assert resource.resource_id == 42
+
+
+@pytest.mark.parametrize('uri_template', [
+    '/{field}{field}',
+    '/{field}...{field}',
+    '/{field}/{another}/{field}',
+    '/{field}/something/something/{field}/something',
+])
+def test_duplicate_field_names(uri_template):
+    router = DefaultRouter()
+    with pytest.raises(ValueError):
+        router.add_route(uri_template, {}, ResourceWithId(1))
+
+
+@pytest.mark.parametrize('uri_template,path', [
+    ('/items/thing', '/items/t'),
+    ('/items/{x}|{y}|', '/items/1080|768'),
+    ('/items/{x}*{y}foo', '/items/1080*768foobar'),
+    ('/items/{x}*768*', '/items/1080*768***'),
+])
+def test_match_entire_path(uri_template, path):
+    router = DefaultRouter()
+
+    router.add_route(uri_template, {}, ResourceWithId(1))
+
+    route = router.find(path)
+    assert route is None
 
 
 @pytest.mark.parametrize('uri_template', [
