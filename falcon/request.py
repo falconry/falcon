@@ -766,7 +766,8 @@ class Request(object):
         Args:
             media_types (iterable of str): One or more Internet media types
                 from which to choose the client's preferred type. This value
-                **must** be an iterable collection of strings.
+                **must** be an iterable collection of strings. The iterable
+                should be sorted in the order of increasing desirability.
 
         Returns:
             str: The client's preferred media type, based on the Accept
