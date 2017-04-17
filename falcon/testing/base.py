@@ -108,10 +108,17 @@ class TestBase(unittest.TestCase):  # pragma nocover
 
         """
 
+        qs = ''
         if not path:
             path = '/'
+        else:
+            pos = path.find('?')
+            if pos != -1:
+                qs = path[pos + 1:]
+                path = path[0:pos]
 
-        result = self.api(create_environ(path=path, **kwargs),
+        result = self.api(create_environ(path=path,
+                          query_string=qs, **kwargs),
                           self.srmock)
 
         if decode is not None:
