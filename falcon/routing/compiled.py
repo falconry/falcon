@@ -18,7 +18,8 @@ import keyword
 import re
 
 
-TAB_STR = ' ' * 4
+_FIELD_REGEX = re.compile('{([^}]*)}')
+_TAB_STR = ' ' * 4
 
 
 class CompiledRouter(object):
@@ -57,13 +58,27 @@ class CompiledRouter(object):
             raise ValueError('URI templates may not include whitespace.')
 
         # NOTE(kgriffs): Ensure fields are valid Python identifiers,
-        # since they will be passed as kwargs to responders.
-        fields = re.findall('{([^}]*)}', uri_template)
-        for field in fields:
-            is_identifier = re.match('[A-Za-z_][A-Za-z0-9_]*$', field)
-            if not is_identifier or field in keyword.kwlist:
+        # since they will be passed as kwargs to responders. Also
+        # ensure there are no duplicate names, since that causes the
+        # following problems:
+        #
+        #   1. For simple nodes, values from deeper nodes overwrite
+        #      values from more shallow nodes.
+        #   2. For complex nodes, re.compile() raises a nasty error
+        #
+        fields = _FIELD_REGEX.findall(uri_template)
+        used_names = set()
+        for name in fields:
+            is_identifier = re.match('[A-Za-z_][A-Za-z0-9_]*$', name)
+            if not is_identifier or name in keyword.kwlist:
                 raise ValueError('Field names must be valid identifiers '
-                                 '(`{}` invalid).'.format(field))
+                                 "('{}' is not valid).".format(name))
+
+            if name in used_names:
+                raise ValueError('Field names may not be duplicated '
+                                 "('{}' was used more than once)".format(name))
+
+            used_names.add(name)
 
         path = uri_template.strip('/').split('/')
 
@@ -141,7 +156,7 @@ class CompiledRouter(object):
         """Generates Python code for a routing tree or subtree."""
 
         def line(text, indent_offset=0):
-            pad = TAB_STR * (indent + indent_offset)
+            pad = _TAB_STR * (indent + indent_offset)
             self._code_lines.append(pad + text)
 
         # NOTE(kgriffs): Base case
@@ -246,14 +261,14 @@ class CompiledRouter(object):
         self._expressions = []
         self._code_lines = [
             'def find(path, return_values, expressions, params):',
-            TAB_STR + 'path_len = len(path)',
+            _TAB_STR + 'path_len = len(path)',
         ]
 
         self._compile_tree(self._roots)
 
         self._code_lines.append(
             # PERF(kgriffs): Explicit return of None is faster than implicit
-            TAB_STR + 'return None'
+            _TAB_STR + 'return None'
         )
 
         self._src = '\n'.join(self._code_lines)
@@ -266,8 +281,6 @@ class CompiledRouter(object):
 
 class CompiledRouterNode(object):
     """Represents a single URI segment in a URI."""
-
-    _regex_vars = re.compile('{([-_a-zA-Z0-9]+)}')
 
     def __init__(self, raw_segment,
                  method_map=None, resource=None, uri_template=None):
@@ -282,39 +295,50 @@ class CompiledRouterNode(object):
         self.is_complex = False
         self.var_name = None
 
-        seg = raw_segment.replace('.', '\\.')
+        # NOTE(kgriffs): CompiledRouter.add_route validates field names,
+        # so here we can just assume they are OK and use the simple
+        # _FIELD_REGEX to match them.
+        matches = list(_FIELD_REGEX.finditer(raw_segment))
 
-        matches = list(self._regex_vars.finditer(seg))
-        if matches:
+        if not matches:
+            self.is_var = False
+        else:
             self.is_var = True
-            # NOTE(richardolsson): if there is a single variable and it spans
-            # the entire segment, the segment is uncomplex and the variable
-            # name is simply the string contained within curly braces.
-            if len(matches) == 1 and matches[0].span() == (0, len(seg)):
+
+            if len(matches) == 1 and matches[0].span() == (0, len(raw_segment)):
+                # NOTE(richardolsson): if there is a single variable and
+                # it spans the entire segment, the segment is not
+                # complex and the variable name is simply the string
+                # contained within curly braces.
                 self.is_complex = False
                 self.var_name = raw_segment[1:-1]
             else:
-                # NOTE(richardolsson): Complex segments need to be converted
-                # into regular expressions will be used to match and extract
-                # variable values. The regular expressions contain both
-                # literal spans and named group expressions for the variables.
+                # NOTE(richardolsson): Complex segments need to be
+                # converted into regular expressions in order to match
+                # and extract variable values. The regular expressions
+                # contain both literal spans and named group expressions
+                # for the variables.
+
+                # NOTE(kgriffs): Don't use re.escape() since we do not
+                # want to escape '{' or '}', and we don't want to
+                # introduce any unexpected side-effects by escaping
+                # non-ASCII characters (it is probably safe, but let's
+                # not take that chance in a minor point release).
+                #
+                # NOTE(kgriffs): The substitution template parser in the
+                # re library does not look ahead when collapsing '\\':
+                # therefore in the case of r'\\g<0>' the first r'\\'
+                # would be consumed and collapsed to r'\', and then the
+                # parser would examine 'g<0>' and not realize it is a
+                # group-escape sequence. So we add an extra backslash to
+                # trick the parser into doing the right thing.
+                escaped_segment = re.sub(r'[\.\(\)\[\]\?\$\*\+\^\|]', r'\\\g<0>', raw_segment)
+
+                seg_pattern = _FIELD_REGEX.sub(r'(?P<\1>.+)', escaped_segment)
+                seg_pattern = '^' + seg_pattern + '$'
+
                 self.is_complex = True
-                seg_fields = []
-                prev_end_idx = 0
-                for match in matches:
-                    var_start_idx, var_end_idx = match.span()
-                    seg_fields.append(seg[prev_end_idx:var_start_idx])
-
-                    var_name = match.groups()[0].replace('-', '_')
-                    seg_fields.append('(?P<%s>[^/]+)' % var_name)
-
-                    prev_end_idx = var_end_idx
-
-                seg_fields.append(seg[prev_end_idx:])
-                seg_pattern = ''.join(seg_fields)
                 self.var_regex = re.compile(seg_pattern)
-        else:
-            self.is_var = False
 
     def matches(self, segment):
         """Returns True if this node matches the supplied template segment."""
@@ -365,8 +389,8 @@ class CompiledRouterNode(object):
             #
             if self.is_complex:
                 if other.is_complex:
-                    return (self._regex_vars.sub('v', self.raw_segment) ==
-                            self._regex_vars.sub('v', segment))
+                    return (_FIELD_REGEX.sub('v', self.raw_segment) ==
+                            _FIELD_REGEX.sub('v', segment))
 
                 return False
             else:
