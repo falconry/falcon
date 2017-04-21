@@ -58,6 +58,5 @@ def create_default_options(allowed_methods):
     def on_options(req, resp, **kwargs):
         resp.status = HTTP_200
         resp.set_header('Allow', allowed)
-        resp.set_header('Content-Length', '0')
 
     return on_options
