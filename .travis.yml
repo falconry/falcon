@@ -7,8 +7,10 @@ cache:
 
 matrix:
     include:
-        - python: 2.7
-          env: JYTHON=true
+        # TODO(kgriffs): Uncomment when Travis no longer stalls and
+        # errors out on Jython tests.
+        # - python: 2.7
+        #   env: JYTHON=true
         - python: pypy-5.4
           env: TOXENV=pypy
         # TODO(kgriffs): Uncomment when pypy3 is more mature
