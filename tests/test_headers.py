@@ -52,6 +52,12 @@ class HeaderHelpersResource(object):
 
         resp.accept_ranges = 'bytes'
 
+        # Test the removal of headers
+        resp.set_header('X-Client-Should-Never-See-This', 'abc')
+        # Confirm that the header was set
+        assert resp.get_header('x-client-should-never-see-this') == 'abc'
+        resp.delete_header('x-client-should-never-see-this')
+
         self.resp = resp
 
     def on_head(self, req, resp):
@@ -396,6 +402,9 @@ class TestHeaders(testing.TestCase):
             for name, value in result.headers.items():
                 hist[name] += 1
                 self.assertEqual(hist[name], 1)
+
+            # Ensure that deleted headers were not sent
+            self.assertEqual(resource.resp.get_header('x-client-should-never-see-this'), None)
 
     def test_response_append_header(self):
         self.api.add_route('/', AppendHeaderResource())
