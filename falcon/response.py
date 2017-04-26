@@ -384,6 +384,20 @@ class Response(object):
         # NOTE(kgriffs): normalize name by lowercasing it
         self._headers[name.lower()] = value
 
+    def delete_header(self, name):
+        """Delete a header for this response.
+
+        If the header was not previously set, do nothing.
+
+        Args:
+            name (str): Header name (case-insensitive).  Must be of type
+                ``str`` or ``StringType`` and contain only US-ASCII characters.
+                Under Python 2.x, the ``unicode`` type is also accepted,
+                although such strings are also limited to US-ASCII.
+        """
+        # NOTE(kgriffs): normalize name by lowercasing it
+        self._headers.pop(name.lower(), None)
+
     def append_header(self, name, value):
         """Set or append a header for this response.
 
