@@ -384,6 +384,20 @@ class Response(object):
         # NOTE(kgriffs): normalize name by lowercasing it
         self._headers[name.lower()] = value
 
+    def delete_header(self, name):
+        """Delete a header for this response.
+
+        If the header was not previously set, do nothing.
+
+        Args:
+            name (str): Header name (case-insensitive).  Must be of type
+                ``str`` or ``StringType`` and contain only US-ASCII characters.
+                Under Python 2.x, the ``unicode`` type is also accepted,
+                although such strings are also limited to US-ASCII.
+        """
+        # NOTE(kgriffs): normalize name by lowercasing it
+        self._headers.pop(name.lower(), None)
+
     def append_header(self, name, value):
         """Set or append a header for this response.
 
@@ -465,8 +479,7 @@ class Response(object):
 
     def add_link(self, target, rel, title=None, title_star=None,
                  anchor=None, hreflang=None, type_hint=None):
-        """
-        Add a link header to the response.
+        """Add a link header to the response.
 
         See also: https://tools.ietf.org/html/rfc5988
 
@@ -585,7 +598,7 @@ class Response(object):
 
     cache_control = header_property(
         'Cache-Control',
-        """Sets the Cache-Control header.
+        """Set the Cache-Control header.
 
         Used to set a list of cache directives to use as the value of the
         Cache-Control header. The list will be joined with ", " to produce
@@ -596,7 +609,7 @@ class Response(object):
 
     content_location = header_property(
         'Content-Location',
-        """Sets the Content-Location header.
+        """Set the Content-Location header.
 
         This value will be URI encoded per RFC 3986. If the value that is
         being set is already URI encoded it should be decoded first or the
@@ -626,15 +639,15 @@ class Response(object):
 
     content_type = header_property(
         'Content-Type',
-        'Sets the Content-Type header.')
+        'Set the Content-Type header.')
 
     etag = header_property(
         'ETag',
-        'Sets the ETag header.')
+        'Set the ETag header.')
 
     last_modified = header_property(
         'Last-Modified',
-        """Sets the Last-Modified header. Set to a ``datetime`` (UTC) instance.
+        """Set the Last-Modified header. Set to a ``datetime`` (UTC) instance.
 
         Note:
             Falcon will format the ``datetime`` as an HTTP date string.
@@ -643,7 +656,7 @@ class Response(object):
 
     location = header_property(
         'Location',
-        """Sets the Location header.
+        """Set the Location header.
 
         This value will be URI encoded per RFC 3986. If the value that is
         being set is already URI encoded it should be decoded first or the
@@ -653,7 +666,7 @@ class Response(object):
 
     retry_after = header_property(
         'Retry-After',
-        """Sets the Retry-After header.
+        """Set the Retry-After header.
 
         The expected value is an integral number of seconds to use as the
         value for the header. The HTTP-date syntax is not supported.
@@ -681,7 +694,7 @@ class Response(object):
 
     accept_ranges = header_property(
         'Accept-Ranges',
-        """Sets the Accept-Ranges header.
+        """Set the Accept-Ranges header.
 
         The Accept-Ranges header field indicates to the client which
         range units are supported (e.g. "bytes") for the target
