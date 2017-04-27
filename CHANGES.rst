@@ -10,6 +10,7 @@ New & Improved
 --------------
 
 - A new `default` kwarg was added to ``falcon.Request.get_header``.
+- A `delete_header()` method was added to ``falcon.Response``.
 - Several new HTTP status codes and error classes were added, such as
   ``falcon.HTTPFailedDependency``.
 - If `ujson` is installed it will be used in lieu of `json` to speed up
