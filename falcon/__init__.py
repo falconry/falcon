@@ -37,7 +37,13 @@ HTTP_METHODS = (
 )
 
 DEFAULT_MEDIA_TYPE = 'application/json; charset=UTF-8'
-
+HTML = 'text/html; charset=utf-8'
+JSON = DEFAULT_MEDIA_TYPE
+JS = 'text/javascript; charset=utf-8'
+XML = 'text/javascript; charset=utf-8'
+TEXT = 'text/plain; charset=utf-8'
+JPEG = 'image/jpeg; charset=utf-8'
+PNG = 'image/png; charset-utf-8'
 
 # Hoist classes and functions into the falcon namespace
 from falcon.version import __version__  # NOQA

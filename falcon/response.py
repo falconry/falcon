@@ -640,7 +640,13 @@ class Response(object):
 
     content_type = header_property(
         'Content-Type',
-        'Sets the Content-Type header.')
+        """Sets the Content-Type header.
+
+        Note:
+            You can use the following predefined content types: ``falcon.HTML``,
+            ``falcon.XML``, ``falcon.JSON``,``falcon.TEXT``, ``falcon.JS``,
+            ``falcon.JPG`` and ``falcon.PNG``
+        """)
 
     etag = header_property(
         'ETag',
@@ -710,6 +716,18 @@ class Response(object):
             type.
 
         """)
+
+    def set_media_type(self, media_type):
+        """wrapper around set_header to set a content-type
+
+        Args:
+            media_type: media type to use for the Content-Type
+                header.
+
+        """
+
+        if media_type is not None:
+            self.set_header('content-type', media_type)
 
     def _wsgi_headers(self, media_type=None, py2=PY2):
         """Convert headers into the format expected by WSGI servers.
