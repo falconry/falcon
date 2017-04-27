@@ -45,10 +45,15 @@ New & Improved
 - Improved the documentation for ``falcon.HTTPError``, particularly
   around customizing error serialization.
 - Misc. improvements to the look and feel of Falcon's documentation.
+- The tutorial in the docs was revamped, and now includes guidance on
+  testing Falcon applications.
 
 Fixed
 -----
 
+- Certain non-alphanumeric characters, such as parenthesis, are not
+  handled properly in complex URI template path segments that are
+  comprised of both literal text and field definitions.
 - When the WSGI server does not provide a `wsgi.file_wrapper` object,
   Falcon wraps ``Response.stream`` in a simple iterator
   object that does not implement `close()`. The iterator should be
