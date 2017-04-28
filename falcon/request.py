@@ -175,6 +175,8 @@ class Request(object):
             header is missing.
         client_accepts_json (bool): ``True`` if the Accept header indicates
             that the client is willing to receive JSON, otherwise ``False``.
+        client_accepts_jsonapi (bool): ``True`` if the Accept header indicates
+            that the client is willing to receive JSONAPI, otherwise ``False``.
         client_accepts_msgpack (bool): ``True`` if the Accept header indicates
             that the client is willing to receive MessagePack, otherwise
             ``False``.
@@ -437,6 +439,10 @@ class Request(object):
     @property
     def client_accepts_json(self):
         return self.client_accepts('application/json')
+
+    @property
+    def client_accepts_jsonapi(self):
+        return self.client_accepts('application/vnd.api+json')
 
     @property
     def client_accepts_msgpack(self):
