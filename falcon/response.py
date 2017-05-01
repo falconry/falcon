@@ -153,6 +153,9 @@ class Response(object):
         else:
             self.context = self.context_type()
 
+    def __repr__(self):
+        return '<%s: %s>' % (self.__class__.__name__, self.status)
+
     def set_stream(self, stream, stream_len):
         """Convenience method for setting both `stream` and `stream_len`.
 
