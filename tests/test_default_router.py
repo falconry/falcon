@@ -1,3 +1,5 @@
+import textwrap
+
 import pytest
 
 import falcon
@@ -224,6 +226,20 @@ def test_root_path():
     resource, __, __, __ = router.find('/')
     assert resource.resource_id == 42
 
+    expected_src = textwrap.dedent("""
+        def find(path, return_values, patterns, params):
+            path_len = len(path)
+            if path_len > 0:
+                if path[0] == '':
+                    if path_len == 1:
+                        return return_values[0]
+                    return None
+                return None
+            return None
+    """).strip()
+
+    assert router.finder_src == expected_src
+
 
 @pytest.mark.parametrize('uri_template', [
     '/{field}{field}',
@@ -309,8 +325,14 @@ def test_invalid_field_name(router, uri_template):
         router.add_route(uri_template, {}, ResourceWithId(-1))
 
 
-def test_dump(router):
-    print(router._src)
+def test_print_src(router):
+    """Diagnostic test that simply prints the router's find() source code.
+
+    Example:
+
+        $ tox -e py27_debug -- -k test_print_src -s
+    """
+    print('\n\n' + router.finder_src + '\n')
 
 
 def test_override(router):
