@@ -11,11 +11,10 @@ matrix:
         # errors out on Jython tests.
         # - python: 2.7
         #   env: JYTHON=true
-        - python: pypy-5.4
+        - python: pypy-5.7.1
           env: TOXENV=pypy
-        # TODO(kgriffs): Uncomment when pypy3 is more mature
-        # - python: pypy3
-        #   env: TOXENV=pypy3
+        - python: pypy3-5.7.1
+          env: TOXENV=pypy3
         - python: 2.7
           env: TOXENV=pep8
         - python: 2.7
