@@ -227,7 +227,7 @@ directory of the cloned repo and then running pytest:
 .. code:: bash
 
     $ cd falcon
-    $ pip install -r tools/test-requires
+    $ pip install -r requirements/tests
     $ pytest tests
 
 Or, to run the default set of tests:

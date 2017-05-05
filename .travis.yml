@@ -1,6 +1,6 @@
 language: python
 sudo: false
-install: travis_scripts/install.sh
+install: tools/travis/install.sh
 cache:
     directories:
         - $HOME/.cache/pip
@@ -11,11 +11,10 @@ matrix:
         # errors out on Jython tests.
         # - python: 2.7
         #   env: JYTHON=true
-        - python: pypy-5.4
+        - python: pypy-5.7.1
           env: TOXENV=pypy
-        # TODO(kgriffs): Uncomment when pypy3 is more mature
-        # - python: pypy3
-        #   env: TOXENV=pypy3
+        - python: pypy3-5.7.1
+          env: TOXENV=pypy3
         - python: 2.7
           env: TOXENV=pep8
         - python: 2.7
@@ -48,8 +47,10 @@ matrix:
           env: TOXENV=py35_cython
         - python: 2.7
           env: TOXENV=docs
+        - python: 3.5
+          env: TOXENV=py35_hug
 
-script: travis_scripts/run_tests.sh
+script: tools/travis/run_tests.sh
 notifications:
   irc:
     channels:

@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 if [ "$JYTHON" = "true" ]; then
     set -e
 
