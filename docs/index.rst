@@ -109,7 +109,7 @@ Documentation
 .. toctree::
    :maxdepth: 2
 
-   community/index
    user/index
    api/index
+   community/index
    changes/index
