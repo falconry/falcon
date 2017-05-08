@@ -176,7 +176,20 @@ attribute. For example:
 
     api.req_options.keep_blank_qs_values = True
 
+How can I access POSTed form params?
+------------------------------------
+By default, Falcon does not consume request bodies. However, setting
+the :attr:`~RequestOptions.auto_parse_form_urlencoded` to ``True``
+will cause the framework to consume the request body when the
+content type is `application/x-www-form-urlencoded`, making
+the form parameters accessible via :attr:`~.Request.params`,
+:meth:`~.Request.get_param`, etc.
 
-.. If Falcon is designed for building web APIs, why does it support forms?
-.. ----
-.. Doesn't support files, allows same code to handle both...
+.. code:: python
+
+    api.req_options.auto_parse_form_urlencoded = True
+
+Alternatively, POSTed form parameters may be read directly from
+:attr:`~.Request.stream` and parsed via
+:meth:`falcon.uri.parse_query_string` or
+`urllib.parse.parse_qs() <https://docs.python.org/3.6/library/urllib.parse.html#urllib.parse.parse_qs>`_.

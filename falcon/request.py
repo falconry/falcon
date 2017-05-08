@@ -1351,8 +1351,15 @@ class RequestOptions(object):
             automatically consume the request stream and merge the
             results into the request's query string params when the
             request's content type is
-            *application/x-www-form-urlencoded* (default ``False``). In
-            this case, the request's content stream will be left at EOF.
+            *application/x-www-form-urlencoded* (default ``False``).
+
+            Enabling this option makes the form parameters accessible
+            via :attr:`~.params`, :meth:`~.get_param`, etc.
+
+            Warning:
+                When this option is enabled, the request's body
+                stream will be left at EOF. The original data is
+                not retained by the framework.
 
             Note:
                 The character encoding for fields, before
