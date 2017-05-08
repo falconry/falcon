@@ -1,5 +1,3 @@
-*.py[cod]
-
 # C extensions
 *.c
 *.so
@@ -7,33 +5,34 @@
 # Jython
 *$py.class
 
-# Packages
+# Build artifacts
 *.egg
 *.egg-info
-dist
-build
-eggs
+*.py[cod]
 .eggs
-parts
-var
-sdist
-develop-eggs
 .installed.cfg
+build
+develop-eggs
+dist
+eggs
 lib
 lib64
+parts
+sdist
+var
 
 # Installer logs
 pip-log.txt
 
-# Unit test / coverage reports
-.coverage
-.coverage_*
-.tox
-nosetests.xml
-htmlcov
+# Test artifacts
 *.dat
 .cache
-
+.coverage
+.coverage_*
+.ecosystem
+.tox
+htmlcov
+nosetests.xml
 
 # Docs
 docs/_build
