@@ -8,3 +8,4 @@ User Guide
    install
    quickstart
    tutorial
+   faq
