@@ -382,3 +382,8 @@ class TestError(testtools.TestCase):
             self.assertEqual('Test', e.title, 'Title should be "Test"')
             self.assertEqual('Testdescription', e.description,
                              'Description should be "Testdescription"')
+
+    def test_http_error_repr(self):
+        error = falcon.HTTPBadRequest()
+        _repr = '<%s: %s>' % (error.__class__.__name__, error.status)
+        self.assertEqual(error.__repr__(), _repr)

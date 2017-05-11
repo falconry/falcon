@@ -421,6 +421,9 @@ class Request(object):
         else:
             self.context = self.context_type()
 
+    def __repr__(self):
+        return '<%s: %s %r>' % (self.__class__.__name__, self.method, self.url)
+
     # ------------------------------------------------------------------------
     # Properties
     # ------------------------------------------------------------------------

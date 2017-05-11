@@ -72,7 +72,6 @@ class TestRequestBody(testing.TestBase):
         # each time the property is called. Also ensures branch
         # coverage of the property implementation.
         assert bounded_stream is req.bounded_stream
-
         data = bounded_stream.read()
         self.assertEqual(len(data), 0)
 
@@ -142,3 +141,9 @@ class TestRequestBody(testing.TestBase):
         body = request_helpers.Body(stream, expected_len)
         for i, line in enumerate(body):
             self.assertEqual(line, expected_lines[i])
+
+    def test_request_repr(self):
+        environ = testing.create_environ()
+        req = falcon.Request(environ)
+        _repr = '<%s: %s %r>' % (req.__class__.__name__, req.method, req.url)
+        self.assertEquals(req.__repr__(), _repr)
