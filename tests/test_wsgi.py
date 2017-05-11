@@ -128,7 +128,7 @@ def _run_server(stop_event):
 
 
 @pytest.fixture
-def _setup_wsgi_server():
+def _setup_wsgi_server(request):
     stop_event = multiprocessing.Event()
     process = multiprocessing.Process(
         target=_run_server,
@@ -140,16 +140,17 @@ def _setup_wsgi_server():
     # NOTE(kgriffs): Let the server start up
     time.sleep(0.2)
 
-    yield
+    def teardown():
+        stop_event.set()
 
-    stop_event.set()
+        # NOTE(kgriffs): Pump the request handler loop in case execution
+        # made it to the next server.handle_request() before we sent the
+        # event.
+        try:
+            requests.get(_SERVER_BASE_URL)
+        except Exception:
+            pass  # Thread already exited
 
-    # NOTE(kgriffs): Pump the request handler loop in case execution
-    # made it to the next server.handle_request() before we sent the
-    # event.
-    try:
-        requests.get(_SERVER_BASE_URL)
-    except Exception:
-        pass  # Thread already exited
+        process.join()
 
-    process.join()
+    request.addfinalizer(teardown)

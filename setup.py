@@ -12,8 +12,18 @@ MYDIR = path.abspath(os.path.dirname(__file__))
 VERSION = imp.load_source('version', path.join('.', 'falcon', 'version.py'))
 VERSION = VERSION.__version__
 
-# NOTE(kgriffs): python-mimeparse is better-maintained fork of mimeparse
+# NOTE(kgriffs): python-mimeparse is a better-maintained fork of mimeparse
 REQUIRES = ['six>=1.4.0', 'python-mimeparse>=1.5.2']
+
+# NOTE(kgriffs):
+TESTS_REQUIRE = [
+    'ddt',
+    'pytest',
+    'pytest-runner'
+    'pyyaml',
+    'requests',
+    'testtools',
+]
 
 JYTHON = 'java' in sys.platform
 
@@ -105,10 +115,9 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=REQUIRES,
+    tests_require=TESTS_REQUIRE,
     cmdclass=cmdclass,
     ext_modules=ext_modules,
-    tests_require=['ddt', 'testtools', 'requests', 'pyyaml', 'pytest',
-                   'pytest-runner'],
     entry_points={
         'console_scripts': [
             'falcon-bench = falcon.cmd.bench:main',
