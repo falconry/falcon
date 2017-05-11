@@ -38,7 +38,7 @@ and deploy.
 databases, rendering content, authorizing requests, etc. You are free to
 mix and match your own favorite libraries. Falcon apps work with
 any WSGI server, and run great under `CPython 2.6-2.7, PyPy, Jython 2.7,
-and CPython 3.3-3.5 <https://travis-ci.org/falconry/falcon>`__.
+and CPython 3.3-3.6 <https://travis-ci.org/falconry/falcon>`__.
 
 Features
 --------
@@ -52,7 +52,7 @@ Features
 -  Idiomatic HTTP error responses
 -  Straightforward exception handling
 -  Snappy unit testing through WSGI helpers and mocks
--  CPython 2.6-2.7, PyPy, Jython 2.7, and CPython 3.3-3.5 support
+-  CPython 2.6-2.7, PyPy 2.7, Jython 2.7, and CPython 3.3-3.6 support
 -  ~20% speed boost when Cython is available
 
 Who's Using Falcon?
@@ -118,7 +118,7 @@ CPython
 ^^^^^^^
 
 Falcon also fully supports
-`CPython <https://www.python.org/downloads/>`__ 2.6-3.5.
+`CPython <https://www.python.org/downloads/>`__ 2.6-3.6.
 
 A universal wheel is available on PyPI for the the Falcon framework.
 Installing it is as simple as:

@@ -18,7 +18,7 @@ CPython
 -------
 
 Falcon also fully supports
-`CPython <https://www.python.org/downloads/>`__ 2.6-3.5.
+`CPython <https://www.python.org/downloads/>`__ 2.6-3.6.
 
 A universal wheel is available on PyPI for the the Falcon framework.
 Installing it is as simple as:
