@@ -131,6 +131,54 @@ def test_single(client, resource, field_name):
     assert resource.captured_kwargs[field_name] == '123'
 
 
+@pytest.mark.parametrize('uri_template,', [
+    '/{id:int}',
+    '/{id:int(3)}',
+    '/{id:int(min=123)}',
+    '/{id:int(min=123, max=123)}',
+])
+def test_converter(client, uri_template):
+    resource1 = IDResource()
+    client.app.add_route(uri_template, resource1)
+
+    result = client.simulate_get('/123')
+
+    assert result.status_code == 200
+    assert resource1.called
+    assert resource1.id == 123
+    assert resource1.req.path == '/123'
+
+
+@pytest.mark.parametrize('uri_template,', [
+    '/{id:int(2)}',
+    '/{id:int(min=124)}',
+    '/{id:int(num_digits=3, max=100)}',
+])
+def test_converter_rejections(client, uri_template):
+    resource1 = IDResource()
+    client.app.add_route(uri_template, resource1)
+
+    result = client.simulate_get('/123')
+
+    assert result.status_code == 404
+    assert not resource1.called
+
+
+def test_converter_custom(client, resource):
+    class SpamConverter(object):
+        def convert(self, fragment):
+            return 'spam!'
+
+    client.app.router_options.converters['spam'] = SpamConverter
+    client.app.add_route('/{food:spam}', resource)
+
+    result = client.simulate_get('/something')
+
+    assert result.status_code == 200
+    assert resource.called
+    assert resource.captured_kwargs['food'] == 'spam!'
+
+
 def test_single_trailing_slash(client):
     resource1 = IDResource()
     client.app.add_route('/1/{id}/', resource1)

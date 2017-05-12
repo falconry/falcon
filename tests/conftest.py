@@ -2,7 +2,6 @@ import platform
 
 import pytest
 
-
 import falcon
 
 

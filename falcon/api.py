@@ -113,6 +113,11 @@ class API(object):
             requests. See also: :py:class:`~.RequestOptions`
         resp_options: A set of behavioral options related to outgoing
             responses. See also: :py:class:`~.ResponseOptions`
+        router_options: Configuration options for the router. If a
+            custom router is in use, and it does not expose any
+            configurable options, referencing this attribute will raise
+            an instance of ``AttributeError``. See also:
+            :py:class:`falcon.routing.CompiledRouterOptions`.
     """
 
     # PERF(kgriffs): Reference via self since that is faster than
@@ -278,6 +283,10 @@ class API(object):
         # Return the response per the WSGI spec.
         start_response(resp_status, headers)
         return body
+
+    @property
+    def router_options(self):
+        return self._router.options
 
     def add_route(self, uri_template, resource, *args, **kwargs):
         """Associates a templatized URI path with a resource.
