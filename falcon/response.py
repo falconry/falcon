@@ -22,6 +22,7 @@ from six import string_types as STRING_TYPES
 # See issue https://github.com/falconry/falcon/issues/556
 from six.moves import http_cookies
 
+from falcon.media_handlers import Handlers
 from falcon.response_helpers import (
     format_header_value_list,
     format_range,
@@ -141,6 +142,7 @@ class Response(object):
         # NOTE(tbug): will be set to a SimpleCookie object
         # when cookie is set via set_cookie
         self._cookies = None
+        self._media = None
 
         self.body = None
         self.data = None
@@ -152,6 +154,19 @@ class Response(object):
             self.context = {}
         else:
             self.context = self.context_type()
+
+    @property
+    def media(self):
+        return self._media
+
+    @media.setter
+    def media(self, obj):
+        self._media = obj
+        handler = self.options.media_handlers.find_by_media_type(
+            self.content_type,
+            self.options.default_media_type
+        )
+        self.data = handler.serialize(self._media)
 
     def __repr__(self):
         return '<%s: %s>' % (self.__class__.__name__, self.status)
@@ -785,7 +800,11 @@ class ResponseOptions(object):
     """
     __slots__ = (
         'secure_cookies_by_default',
+        'default_media_type',
+        'media_handlers',
     )
 
     def __init__(self):
         self.secure_cookies_by_default = True
+        self.default_media_type = 'application/json'
+        self.media_handlers = Handlers()

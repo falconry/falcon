@@ -39,6 +39,7 @@ from six.moves import http_cookies
 from falcon import errors
 from falcon import request_helpers as helpers
 from falcon import util
+from falcon.media_handlers import Handlers
 from falcon.util.uri import parse_host, parse_query_string, unquote_string
 
 # NOTE(tbug): In some cases, http_cookies is not a module
@@ -320,6 +321,7 @@ class Request(object):
         '_cached_access_route',
         '__dict__',
         'uri_template',
+        '_media',
     )
 
     # Child classes may override this
@@ -336,6 +338,7 @@ class Request(object):
         self.method = env['REQUEST_METHOD']
 
         self.uri_template = None
+        self._media = None
 
         # Normalize path
         path = env['PATH_INFO']
@@ -737,6 +740,29 @@ class Request(object):
                     netloc_value += ':' + port
 
         return netloc_value
+
+    @property
+    def media(self):
+        if self._media:
+            return self._media
+
+        handler = self.options.media_handlers.find_by_media_type(
+            self.accept,
+            self.options.default_media_type
+        )
+
+        # Consume the stream
+        try:
+            raw = self.stream.read()
+        except Exception:
+            raise errors.HTTPBadRequest(
+                'Invalid Data',
+                'Couldn\'t parse request body'
+            )
+
+        # Deserialize and Return
+        self._media = handler.deserialize(raw)
+        return self._media
 
     # ------------------------------------------------------------------------
     # Methods
@@ -1400,6 +1426,8 @@ class RequestOptions(object):
         'auto_parse_form_urlencoded',
         'auto_parse_qs_csv',
         'strip_url_path_trailing_slash',
+        'default_media_type',
+        'media_handlers',
     )
 
     def __init__(self):
@@ -1407,3 +1435,5 @@ class RequestOptions(object):
         self.auto_parse_form_urlencoded = False
         self.auto_parse_qs_csv = True
         self.strip_url_path_trailing_slash = True
+        self.default_media_type = 'application/json'
+        self.media_handlers = Handlers()

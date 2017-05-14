@@ -6,3 +6,6 @@ pyyaml
 requests
 six
 testtools
+
+# Handler Specific
+msgpack-python
