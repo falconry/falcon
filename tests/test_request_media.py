@@ -54,12 +54,63 @@ def test_msgpack(accept):
     assert media.get(b'something') is True
 
 
-def test_unknown_media_type():
+@pytest.mark.parametrize('media_type', [
+    ('nope/json'),
+])
+def test_unknown_media_type(media_type):
     client = create_client()
-    headers = {'Accept': 'nope/json'}
+    headers = {'Accept': media_type}
     client.simulate_get('/', headers=headers)
 
     with pytest.raises(errors.HTTPUnsupportedMediaType) as err:
         client.resource.captured_req.media
 
-    assert err.value.description == 'nope/json is a unsupported media type.'
+    msg = '{0} is a unsupported media type.'.format(media_type)
+    assert err.value.description == msg
+
+
+def test_invalid_json():
+    client = create_client()
+    expected_body = b'{'
+    headers = {'Accept': 'application/json'}
+    client.simulate_post('/', body=expected_body, headers=headers)
+
+    with pytest.raises(errors.HTTPBadRequest) as err:
+        client.resource.captured_req.media
+
+    assert err.value.description == 'Could not parse JSON body'
+
+
+def test_invalid_msgpack():
+    client = create_client({'application/msgpack': media_handlers.MessagePack})
+    expected_body = '/////////'
+    headers = {'Accept': 'application/msgpack'}
+    client.simulate_post('/', body=expected_body, headers=headers)
+
+    with pytest.raises(errors.HTTPBadRequest) as err:
+        client.resource.captured_req.media
+
+    assert err.value.description == 'Could not parse MessagePack body'
+
+
+def test_invalid_stream_fails_gracefully():
+    client = create_client()
+    client.simulate_post('/')
+
+    req = client.resource.captured_req
+    req.stream = None
+
+    with pytest.raises(errors.HTTPBadRequest) as err:
+        req.media
+
+    assert err.value.description == 'Could not parse request body'
+
+
+def test_use_cached_media():
+    client = create_client()
+    client.simulate_post('/')
+
+    req = client.resource.captured_req
+    req._media = {'something': True}
+
+    assert req.media == {'something': True}

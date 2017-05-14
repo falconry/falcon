@@ -64,3 +64,15 @@ def test_unknown_media_type():
         resp.media = {'something': True}
 
     assert err.value.description == 'nope/json is a unsupported media type.'
+
+
+def test_use_cached_media():
+    expected = {'something': True}
+
+    client = create_client()
+    client.simulate_get('/')
+
+    resp = client.resource.captured_resp
+    resp._media = expected
+
+    assert resp.media == expected

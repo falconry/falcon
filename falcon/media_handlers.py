@@ -35,13 +35,7 @@ class Handlers(UserDict):
 
         # Fallback to the slower method
         else:
-            try:
-                resolved = mimeparse.best_match(
-                    supported_media_types,
-                    media_type
-                )
-            except ValueError:
-                resolved = None
+            resolved = mimeparse.best_match(supported_media_types, media_type)
 
         if resolved == '*/*':
             resolved = default

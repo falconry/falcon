@@ -757,7 +757,7 @@ class Request(object):
         except Exception:
             raise errors.HTTPBadRequest(
                 'Invalid Data',
-                'Couldn\'t parse request body'
+                'Could not parse request body'
             )
 
         # Deserialize and Return
