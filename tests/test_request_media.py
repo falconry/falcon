@@ -19,15 +19,16 @@ def create_client(handlers=None):
     return client
 
 
-@pytest.mark.parametrize('accept', [
+@pytest.mark.parametrize('media_type', [
+    (None),
     ('*/*'),
     ('application/json'),
     ('application/json; charset=utf-8'),
 ])
-def test_json(accept):
+def test_json(media_type):
     client = create_client()
     expected_body = b'{"something": true}'
-    headers = {'Accept': accept}
+    headers = {'Content-Type': media_type}
     client.simulate_post('/', body=expected_body, headers=headers)
 
     media = client.resource.captured_req.media
@@ -35,18 +36,18 @@ def test_json(accept):
     assert media.get('something') is True
 
 
-@pytest.mark.parametrize('accept', [
+@pytest.mark.parametrize('media_type', [
     ('application/msgpack'),
     ('application/msgpack; charset=utf-8'),
     ('application/x-msgpack'),
 ])
-def test_msgpack(accept):
+def test_msgpack(media_type):
     client = create_client({
         'application/msgpack': media_handlers.MessagePack,
         'application/x-msgpack': media_handlers.MessagePack,
     })
     expected_body = b'\x81\xa9something\xc3'
-    headers = {'Accept': accept}
+    headers = {'Content-Type': media_type}
     client.simulate_post('/', body=expected_body, headers=headers)
 
     media = client.resource.captured_req.media
@@ -59,8 +60,8 @@ def test_msgpack(accept):
 ])
 def test_unknown_media_type(media_type):
     client = create_client()
-    headers = {'Accept': media_type}
-    client.simulate_get('/', headers=headers)
+    headers = {'Content-Type': media_type}
+    client.simulate_post('/', body='', headers=headers)
 
     with pytest.raises(errors.HTTPUnsupportedMediaType) as err:
         client.resource.captured_req.media
@@ -72,7 +73,7 @@ def test_unknown_media_type(media_type):
 def test_invalid_json():
     client = create_client()
     expected_body = b'{'
-    headers = {'Accept': 'application/json'}
+    headers = {'Content-Type': 'application/json'}
     client.simulate_post('/', body=expected_body, headers=headers)
 
     with pytest.raises(errors.HTTPBadRequest) as err:
@@ -84,7 +85,7 @@ def test_invalid_json():
 def test_invalid_msgpack():
     client = create_client({'application/msgpack': media_handlers.MessagePack})
     expected_body = '/////////'
-    headers = {'Accept': 'application/msgpack'}
+    headers = {'Content-Type': 'application/msgpack'}
     client.simulate_post('/', body=expected_body, headers=headers)
 
     with pytest.raises(errors.HTTPBadRequest) as err:
@@ -98,6 +99,7 @@ def test_invalid_stream_fails_gracefully():
     client.simulate_post('/')
 
     req = client.resource.captured_req
+    req.headers['Content-Type'] = 'application/json'
     req.stream = None
 
     with pytest.raises(errors.HTTPBadRequest) as err:

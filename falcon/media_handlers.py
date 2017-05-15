@@ -29,17 +29,24 @@ class Handlers(UserDict):
         supported_media_types = self.data.keys()
         resolved = None
 
-        # Check via a quick method first for performance
-        if media_type in supported_media_types or media_type == '*/*':
+        # Check via a quick methods first for performance
+        if media_type in supported_media_types:
             resolved = media_type
+
+        elif media_type == '*/*' or not media_type:
+            resolved = default
 
         # Fallback to the slower method
         else:
-            resolved = mimeparse.best_match(supported_media_types, media_type)
+            try:
+                resolved = mimeparse.best_match(
+                    supported_media_types,
+                    media_type
+                )
+            except:
+                pass
 
-        if resolved == '*/*':
-            resolved = default
-        elif not resolved:
+        if not resolved:
             raise errors.HTTPUnsupportedMediaType(
                 '{0} is a unsupported media type.'.format(media_type)
             )
