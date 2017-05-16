@@ -87,6 +87,14 @@ class Response(object):
                 ensure Unicode characters are properly encoded in the
                 HTTP response.
 
+        media (object): A serializable object supported by the media handlers
+            configured via response options.
+
+            Note:
+                This operation will consume the response stream the first time
+                it's called and cache the results. Follow-up calls, will just
+                retrieve the cached version of the object.
+
         stream: Either a file-like object with a `read()` method that takes
             an optional size argument and returns a block of bytes, or an
             iterable object, representing response content, and yielding
@@ -801,6 +809,12 @@ class ResponseOptions(object):
             default to ``False``. This can make testing easier by
             not requiring HTTPS. Note, however, that this setting can
             be overridden via `set_cookie()`'s `secure` kwarg.
+
+        default_media_type (str): The default media-type to use when
+            deserializing a response.
+
+        media_handlers (Handlers): A dict-like object that allows for you
+            to configure the media-types that you would like to handle.
     """
     __slots__ = (
         'secure_cookies_by_default',

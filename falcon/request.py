@@ -252,6 +252,16 @@ class Request(object):
 
                 doc = json.load(req.bounded_stream)
 
+        media (object): Returns a deserialized form of the request stream.
+            When called, it will attempt to deserialize the request stream
+            using the Content-Type header as well as the media-type handlers
+            configured in the request options.
+
+            Note:
+                This operation will consume the request stream the first time
+                it's called and cache the results. Follow-up calls, will just
+                retrieve a cached version of object.
+
         date (datetime): Value of the Date header, converted to a
             ``datetime`` instance. The header value is assumed to
             conform to RFC 1123.
@@ -1420,6 +1430,12 @@ class RequestOptions(object):
             forward slash. However, this behavior can be problematic in
             certain cases, such as when working with authentication
             schemes that employ URL-based signatures.
+
+        default_media_type (str): The default media-type to use when
+            deserializing a response.
+
+        media_handlers (Handlers): A dict-like object that allows for you to
+            configure the media-types that you would like to handle.
     """
     __slots__ = (
         'keep_blank_qs_values',
