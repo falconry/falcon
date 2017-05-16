@@ -10,7 +10,7 @@ class Handlers(UserDict):
     Attempts to load any imports for handlers as they are added.
     """
     def __init__(self, initial=None):
-        handlers = initial or {'application/json': Json}
+        handlers = initial or {'application/json; charset=UTF-8': Json}
 
         # Directly calling UserDict as it's not inheritable.
         UserDict.__init__(self, handlers)

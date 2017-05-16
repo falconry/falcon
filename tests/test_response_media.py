@@ -76,3 +76,15 @@ def test_use_cached_media():
     resp._media = expected
 
     assert resp.media == expected
+
+
+def test_default_media_type():
+    client = create_client()
+    client.simulate_get('/')
+
+    resp = client.resource.captured_resp
+    resp.content_type = ''
+    resp.media = {'something': True}
+
+    assert resp.data == '{"something": true}'
+    assert resp.content_type == 'application/json; charset=UTF-8'

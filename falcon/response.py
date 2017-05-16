@@ -162,6 +162,10 @@ class Response(object):
     @media.setter
     def media(self, obj):
         self._media = obj
+
+        if not self.content_type:
+            self.content_type = self.options.default_media_type
+
         handler = self.options.media_handlers.find_by_media_type(
             self.content_type,
             self.options.default_media_type
