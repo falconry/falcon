@@ -5,7 +5,6 @@ from falcon import testing
 class TestCustomRouter(testing.TestBase):
 
     def test_custom_router_add_route_should_be_used(self):
-
         check = []
 
         class CustomRouter(object):

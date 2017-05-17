@@ -18,7 +18,7 @@ import keyword
 import re
 
 
-_FIELD_REGEX = re.compile('{([^}]*)}')
+_FIELD_PATTERN = re.compile('{([^}]*)}')
 _TAB_STR = ' ' * 4
 
 
@@ -35,13 +35,25 @@ class CompiledRouter(object):
     processing quite fast.
     """
 
+    __slots__ = (
+        '_ast',
+        '_find',
+        '_finder_src',
+        '_patterns',
+        '_return_values',
+        '_roots',
+    )
+
     def __init__(self):
         self._roots = []
         self._find = self._compile()
-        self._code_lines = None
-        self._src = None
-        self._expressions = None
+        self._finder_src = None
+        self._patterns = None
         self._return_values = None
+
+    @property
+    def finder_src(self):
+        return self._finder_src
 
     def add_route(self, uri_template, method_map, resource):
         """Adds a route between a URI path template and a resource.
@@ -66,7 +78,7 @@ class CompiledRouter(object):
         #      values from more shallow nodes.
         #   2. For complex nodes, re.compile() raises a nasty error
         #
-        fields = _FIELD_REGEX.findall(uri_template)
+        fields = _FIELD_PATTERN.findall(uri_template)
         used_names = set()
         for name in fields:
             is_identifier = re.match('[A-Za-z_][A-Za-z0-9_]*$', name)
@@ -145,28 +157,28 @@ class CompiledRouter(object):
 
         path = uri.lstrip('/').split('/')
         params = {}
-        node = self._find(path, self._return_values, self._expressions, params)
+        node = self._find(path, self._return_values, self._patterns, params)
 
         if node is not None:
             return node.resource, node.method_map, params, node.uri_template
         else:
             return None
 
-    def _compile_tree(self, nodes, indent=1, level=0, fast_return=True):
-        """Generates Python code for a routing tree or subtree."""
+    # -----------------------------------------------------------------
+    # Private
+    # -----------------------------------------------------------------
 
-        def line(text, indent_offset=0):
-            pad = _TAB_STR * (indent + indent_offset)
-            self._code_lines.append(pad + text)
+    def _generate_ast(self, nodes, parent, return_values, patterns, level=0, fast_return=True):
+        """Generates a coarse AST for the router."""
 
         # NOTE(kgriffs): Base case
         if not nodes:
             return
 
-        line('if path_len > %d:' % level)
-        indent += 1
+        outer_parent = _CxIfPathLength('>', level)
+        parent.append(outer_parent)
+        parent = outer_parent
 
-        level_indent = indent
         found_simple = False
 
         # NOTE(kgriffs & philiptzou): Sort nodes in this sequence:
@@ -195,20 +207,18 @@ class CompiledRouter(object):
                     # contain anything more than a single literal or variable,
                     # and they need to be checked using a pre-compiled regular
                     # expression.
-                    expression_idx = len(self._expressions)
-                    self._expressions.append(node.var_regex)
+                    pattern_idx = len(patterns)
+                    patterns.append(node.var_pattern)
 
-                    line('match = expressions[%d].match(path[%d]) # %s' % (
-                        expression_idx, level, node.var_regex.pattern))
-
-                    line('if match is not None:')
-                    indent += 1
-                    line('params.update(match.groupdict())')
+                    construct = _CxIfPathSegmentPattern(level, pattern_idx,
+                                                        node.var_pattern.pattern)
+                    parent.append(construct)
+                    parent = construct
 
                 else:
                     # NOTE(kgriffs): Simple nodes just capture the entire path
                     # segment as the value for the param.
-                    line('params["%s"] = path[%d]' % (node.var_name, level))
+                    parent.append(_CxSetParam(node.var_name, level))
 
                     # NOTE(kgriffs): We don't allow multiple simple var nodes
                     # to exist at the same level, e.g.:
@@ -222,59 +232,78 @@ class CompiledRouter(object):
 
             else:
                 # NOTE(kgriffs): Not a param, so must match exactly
-                line('if path[%d] == "%s":' % (level, node.raw_segment))
-                indent += 1
+                construct = _CxIfPathSegmentLiteral(level, node.raw_segment)
+                parent.append(construct)
+                parent = construct
 
             if node.resource is not None:
                 # NOTE(kgriffs): This is a valid route, so we will want to
                 # return the relevant information.
-                resource_idx = len(self._return_values)
-                self._return_values.append(node)
+                resource_idx = len(return_values)
+                return_values.append(node)
 
-            self._compile_tree(node.children, indent, level + 1, fast_return)
+            self._generate_ast(
+                node.children,
+                parent,
+                return_values,
+                patterns,
+                level + 1,
+                fast_return
+            )
 
             if node.resource is None:
                 if fast_return:
-                    line('return None')
+                    parent.append(_CxReturnNone())
             else:
                 # NOTE(kgriffs): Make sure that we have consumed all of
                 # the segments for the requested route; otherwise we could
                 # mistakenly match "/foo/23/bar" against "/foo/{id}".
-                line('if path_len == %d:' % (level + 1))
-                line('return return_values[%d]' % resource_idx, 1)
+                construct = _CxIfPathLength('==', level + 1)
+                construct.append(_CxReturnValue(resource_idx))
+                parent.append(construct)
 
                 if fast_return:
-                    line('return None')
+                    parent.append(_CxReturnNone())
 
-            indent = level_indent
+            parent = outer_parent
 
         if not found_simple and fast_return:
-            line('return None')
+            parent.append(_CxReturnNone())
 
     def _compile(self):
-        """Generates Python code for entire routing tree.
+        """Generates Python code for the entire routing tree.
 
-        The generated code is compiled and the resulting Python method is
-        returned.
+        The generated code is compiled and the resulting Python method
+        is returned.
         """
-        self._return_values = []
-        self._expressions = []
-        self._code_lines = [
-            'def find(path, return_values, expressions, params):',
+
+        src_lines = [
+            'def find(path, return_values, patterns, params):',
             _TAB_STR + 'path_len = len(path)',
         ]
 
-        self._compile_tree(self._roots)
+        self._return_values = []
+        self._patterns = []
 
-        self._code_lines.append(
+        self._ast = _CxParent()
+        self._generate_ast(
+            self._roots,
+            self._ast,
+            self._return_values,
+            self._patterns
+        )
+
+        src_lines.append(self._ast.src(0))
+
+        src_lines.append(
             # PERF(kgriffs): Explicit return of None is faster than implicit
             _TAB_STR + 'return None'
         )
 
-        self._src = '\n'.join(self._code_lines)
+        self._finder_src = '\n'.join(src_lines)
 
         scope = {}
-        exec(compile(self._src, '<string>', 'exec'), scope)
+        exec(compile(self._finder_src, '<string>', 'exec'), scope)
 
         return scope['find']
 
@@ -294,11 +323,12 @@ class CompiledRouterNode(object):
         self.is_var = False
         self.is_complex = False
         self.var_name = None
+        self.var_pattern = None
 
         # NOTE(kgriffs): CompiledRouter.add_route validates field names,
         # so here we can just assume they are OK and use the simple
-        # _FIELD_REGEX to match them.
-        matches = list(_FIELD_REGEX.finditer(raw_segment))
+        # _FIELD_PATTERN to match them.
+        matches = list(_FIELD_PATTERN.finditer(raw_segment))
 
         if not matches:
             self.is_var = False
@@ -334,11 +364,11 @@ class CompiledRouterNode(object):
                 # trick the parser into doing the right thing.
                 escaped_segment = re.sub(r'[\.\(\)\[\]\?\$\*\+\^\|]', r'\\\g<0>', raw_segment)
 
-                seg_pattern = _FIELD_REGEX.sub(r'(?P<\1>.+)', escaped_segment)
-                seg_pattern = '^' + seg_pattern + '$'
+                pattern_text = _FIELD_PATTERN.sub(r'(?P<\1>.+)', escaped_segment)
+                pattern_text = '^' + pattern_text + '$'
 
                 self.is_complex = True
-                self.var_regex = re.compile(seg_pattern)
+                self.var_pattern = re.compile(pattern_text)
 
     def matches(self, segment):
         """Returns True if this node matches the supplied template segment."""
@@ -360,7 +390,7 @@ class CompiledRouterNode(object):
         #   simple, complex ==> False
         #   simple, string ==> False
         #   complex, simple ==> False
-        #   complex, complex ==> (Depend)
+        #   complex, complex ==> (Maybe)
         #   complex, string ==> False
         #   string, simple ==> False
         #   string, complex ==> False
@@ -389,8 +419,8 @@ class CompiledRouterNode(object):
             #
             if self.is_complex:
                 if other.is_complex:
-                    return (_FIELD_REGEX.sub('v', self.raw_segment) ==
-                            _FIELD_REGEX.sub('v', segment))
+                    return (_FIELD_PATTERN.sub('v', self.raw_segment) ==
+                            _FIELD_PATTERN.sub('v', segment))
 
                 return False
             else:
@@ -399,3 +429,125 @@ class CompiledRouterNode(object):
         # NOTE(kgriffs): If self is a static string match, then all the cases
         # for other are False, so no need to check.
         return False
+
+
+# --------------------------------------------------------------------
+# AST Constructs
+#
+# NOTE(kgriffs): These constructs are used to create a very coarse
+#   AST that can then be used to generate Python source code for the
+#   router. Using an AST like this makes it easier to reason about
+#   the compilation process, and affords syntactical transformations
+#   that would otherwise be at best confusing and at worst extremely
+#   tedious and error-prone if they were to be attempted directly
+#   against the Python source code.
+# --------------------------------------------------------------------
+
+
+class _CxParent(object):
+    def __init__(self):
+        self._children = []
+
+    def append(self, construct):
+        self._children.append(construct)
+
+    def src(self, indentation):
+        return self._children_src(indentation + 1)
+
+    def _children_src(self, indentation):
+        src_lines = [
+            child.src(indentation)
+            for child in self._children
+        ]
+
+        return '\n'.join(src_lines)
+
+
+class _CxIfPathLength(_CxParent):
+    def __init__(self, comparison, length):
+        super(_CxIfPathLength, self).__init__()
+        self._comparison = comparison
+        self._length = length
+
+    def src(self, indentation):
+        template = '{0}if path_len {1} {2}:\n{3}'
+        return template.format(
+            _TAB_STR * indentation,
+            self._comparison,
+            self._length,
+            self._children_src(indentation + 1)
+        )
+
+
+class _CxIfPathSegmentLiteral(_CxParent):
+    def __init__(self, segment_idx, literal):
+        super(_CxIfPathSegmentLiteral, self).__init__()
+        self._segment_idx = segment_idx
+        self._literal = literal
+
+    def src(self, indentation):
+        template = "{0}if path[{1}] == '{2}':\n{3}"
+        return template.format(
+            _TAB_STR * indentation,
+            self._segment_idx,
+            self._literal,
+            self._children_src(indentation + 1)
+        )
+
+
+class _CxIfPathSegmentPattern(_CxParent):
+    def __init__(self, segment_idx, pattern_idx, pattern_text):
+        super(_CxIfPathSegmentPattern, self).__init__()
+        self._segment_idx = segment_idx
+        self._pattern_idx = pattern_idx
+        self._pattern_text = pattern_text
+
+    def src(self, indentation):
+        lines = []
+
+        lines.append(
+            '{0}match = patterns[{1}].match(path[{2}])  # {3}'.format(
+                _TAB_STR * indentation,
+                self._pattern_idx,
+                self._segment_idx,
+                self._pattern_text,
+            )
+        )
+
+        lines.append('{0}if match is not None:'.format(_TAB_STR * indentation))
+        lines.append('{0}params.update(match.groupdict())'.format(
+            _TAB_STR * (indentation + 1)
+        ))
+
+        lines.append(self._children_src(indentation + 1))
+
+        return '\n'.join(lines)
+
+
+class _CxReturnNone(object):
+    def src(self, indentation):
+        return '{0}return None'.format(_TAB_STR * indentation)
+
+
+class _CxReturnValue(object):
+    def __init__(self, value_idx):
+        self._value_idx = value_idx
+
+    def src(self, indentation):
+        return '{0}return return_values[{1}]'.format(
+            _TAB_STR * indentation,
+            self._value_idx
+        )
+
+
+class _CxSetParam(object):
+    def __init__(self, param_name, segment_idx):
+        self._param_name = param_name
+        self._segment_idx = segment_idx
+
+    def src(self, indentation):
+        return "{0}params['{1}'] = path[{2}]".format(
+            _TAB_STR * indentation,
+            self._param_name,
+            self._segment_idx,
+        )
