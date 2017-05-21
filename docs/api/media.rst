@@ -33,6 +33,10 @@ lifting for you.
             resp.media = {'message': message}
             resp.status = falcon.HTTP_200
 
+.. warning::
+
+    Once `media` is called on a request, it'll consume the request's stream.
+
 Validating Media
 ----------------
 

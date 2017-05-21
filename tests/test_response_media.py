@@ -1,4 +1,5 @@
 import pytest
+import six
 
 import falcon
 from falcon import errors, media_handlers, testing
@@ -78,12 +79,16 @@ def test_use_cached_media():
     assert resp.media == expected
 
 
-def test_default_media_type():
+@pytest.mark.parametrize('media_type', [
+    (''),
+    pytest.mark.skipif(six.PY2, reason='PY3 only')(None),
+])
+def test_default_media_type(media_type):
     client = create_client()
     client.simulate_get('/')
 
     resp = client.resource.captured_resp
-    resp.content_type = ''
+    resp.content_type = media_type
     resp.media = {'something': True}
 
     assert resp.data == '{"something": true}'

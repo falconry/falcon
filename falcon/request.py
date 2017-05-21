@@ -257,7 +257,7 @@ class Request(object):
             using the Content-Type header as well as the media-type handlers
             configured in the request options.
 
-            Note:
+            Warning:
                 This operation will consume the request stream the first time
                 it's called and cache the results. Follow-up calls, will just
                 retrieve a cached version of object.
@@ -755,6 +755,9 @@ class Request(object):
     def media(self):
         if self._media:
             return self._media
+
+        if not self.content_type:
+            self.content_type = self.options.default_media_type
 
         handler = self.options.media_handlers.find_by_media_type(
             self.content_type,
