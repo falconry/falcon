@@ -1148,6 +1148,51 @@ class Request(object):
 
         raise errors.HTTPMissingParam(name)
 
+    def get_param_as_datetime(self, name, format_string='%Y-%m-%dT%H:%M:%S',
+                              required=False, store=None):
+        """Return the value of a query string parameter as a datetime.
+
+        Args:
+            name (str): Parameter name, case-sensitive (e.g., 'ids').
+
+        Keyword Args:
+            format_string (str): String used to parse the param value
+                into a datetime. Any format recognized by strptime() is
+                supported (default ``"%Y-%m-%dT%H:%M:%S"``).
+            required (bool): Set to ``True`` to raise
+                ``HTTPBadRequest`` instead of returning ``None`` when the
+                parameter is not found (default ``False``).
+            store (dict): A ``dict``-like object in which to place
+                the value of the param, but only if the param is found (default
+                ``None``).
+        Returns:
+            datetime.datetime: The value of the param if it is found and can be
+            converted to a ``datetime`` according to the supplied format
+            string. If the param is not found, returns ``None`` unless
+            required is ``True``.
+
+        Raises:
+            HTTPBadRequest: A required param is missing from the request.
+            HTTPInvalidParam: A transform function raised an instance of
+                ``ValueError``.
+        """
+
+        param_value = self.get_param(name, required=required)
+
+        if param_value is None:
+            return None
+
+        try:
+            date_time = strptime(param_value, format_string)
+        except ValueError:
+            msg = 'The date value does not match the required format.'
+            raise errors.HTTPInvalidParam(msg, name)
+
+        if store is not None:
+            store[name] = date_time
+
+        return date_time
+
     def get_param_as_date(self, name, format_string='%Y-%m-%d',
                           required=False, store=None):
         """Return the value of a query string parameter as a date.
@@ -1177,16 +1222,11 @@ class Request(object):
                 ``ValueError``.
         """
 
-        param_value = self.get_param(name, required=required)
-
-        if param_value is None:
+        date_time = self.get_param_as_datetime(name, format_string, required)
+        if date_time:
+            date = date_time.date()
+        else:
             return None
-
-        try:
-            date = strptime(param_value, format_string).date()
-        except ValueError:
-            msg = 'The date value does not match the required format.'
-            raise errors.HTTPInvalidParam(msg, name)
 
         if store is not None:
             store[name] = date
