@@ -756,9 +756,6 @@ class Request(object):
         if self._media:
             return self._media
 
-        if not self.content_type:
-            self.content_type = self.options.default_media_type
-
         handler = self.options.media_handlers.find_by_media_type(
             self.content_type,
             self.options.default_media_type

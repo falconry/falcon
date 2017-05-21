@@ -93,3 +93,14 @@ def test_default_media_type(media_type):
 
     assert resp.data == '{"something": true}'
     assert resp.content_type == 'application/json; charset=UTF-8'
+
+
+@pytest.mark.skipif(six.PY3, reason='Python 2 edge-case only')
+def test_mimeparse_edgecases():
+    client = create_client()
+    client.simulate_get('/')
+
+    resp = client.resource.captured_resp
+    with pytest.raises(errors.HTTPUnsupportedMediaType):
+        resp.content_type = None
+        resp.media = {'something': True}
