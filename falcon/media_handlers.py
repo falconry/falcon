@@ -22,6 +22,9 @@ class Handlers(UserDict):
         UserDict.update(self, input_dict)
 
     def __setitem__(self, key, item):
+        if not key:
+            raise ValueError('Media Type cannot be None or empty string')
+
         item.load()
         self.data[key] = item
 
@@ -46,6 +49,8 @@ class Handlers(UserDict):
             except:
                 pass
 
+        # NOTE(jmvrbanac): Mimeparse will return an empty string if it can
+        # parse the media type, but cannot find a suitable type.
         if not resolved:
             raise errors.HTTPUnsupportedMediaType(
                 '{0} is a unsupported media type.'.format(media_type)
@@ -64,10 +69,10 @@ class Json(object):
     def deserialize(cls, raw):
         try:
             return cls.json.loads(raw.decode('utf-8'))
-        except ValueError:
+        except ValueError as err:
             raise errors.HTTPBadRequest(
                 'Invalid JSON',
-                'Could not parse JSON body'
+                'Could not parse JSON body - {0}'.format(err)
             )
 
     @classmethod
@@ -85,10 +90,10 @@ class MessagePack(object):
     def deserialize(cls, raw):
         try:
             return cls.msgpack.unpackb(raw)
-        except ValueError:
+        except ValueError as err:
             raise errors.HTTPBadRequest(
                 'Invalid MessagePack',
-                'Could not parse MessagePack body'
+                'Could not parse MessagePack body - {0}'.format(err)
             )
 
     @classmethod

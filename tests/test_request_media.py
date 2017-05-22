@@ -79,7 +79,7 @@ def test_invalid_json():
     with pytest.raises(errors.HTTPBadRequest) as err:
         client.resource.captured_req.media
 
-    assert err.value.description == 'Could not parse JSON body'
+    assert 'Could not parse JSON body' in err.value.description
 
 
 def test_invalid_msgpack():
@@ -91,7 +91,8 @@ def test_invalid_msgpack():
     with pytest.raises(errors.HTTPBadRequest) as err:
         client.resource.captured_req.media
 
-    assert err.value.description == 'Could not parse MessagePack body'
+    desc = 'Could not parse MessagePack body - unpack(b) received extra data.'
+    assert err.value.description == desc
 
 
 def test_invalid_stream_fails_gracefully():
@@ -100,12 +101,12 @@ def test_invalid_stream_fails_gracefully():
 
     req = client.resource.captured_req
     req.headers['Content-Type'] = 'application/json'
-    req.stream = None
+    req._bounded_stream = None
 
     with pytest.raises(errors.HTTPBadRequest) as err:
         req.media
 
-    assert err.value.description == 'Could not parse request body'
+    assert 'Could not parse JSON body' in err.value.description
 
 
 def test_use_cached_media():

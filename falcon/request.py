@@ -762,13 +762,7 @@ class Request(object):
         )
 
         # Consume the stream
-        try:
-            raw = self.stream.read()
-        except Exception:
-            raise errors.HTTPBadRequest(
-                'Invalid Data',
-                'Could not parse request body'
-            )
+        raw = self.bounded_stream.read()
 
         # Deserialize and Return
         self._media = handler.deserialize(raw)
