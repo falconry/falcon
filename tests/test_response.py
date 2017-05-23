@@ -1,6 +1,6 @@
 import falcon
 import falcon.testing as testing
-from falcon import DEFAULT_MEDIA_TYPE, MEDIA_TEXT
+from falcon import MEDIA_TEXT
 
 
 def test_response_set_content_type():
