@@ -239,12 +239,12 @@ def test_request_cookie_parsing():
     headers = [
         (
             'Cookie',
-            '''
+            """
             logged_in=no;_gh_sess=eyJzZXXzaW9uX2lkIjoiN2;
             tz=Europe/Berlin; _ga=GA1.2.332347814.1422308165;
             _gat=1;
             _octo=GH1.1.201722077.1422308165
-            '''
+            """
         ),
     ]
 

@@ -2,13 +2,11 @@
 
 from datetime import datetime
 import functools
-import io
 try:
     import ujson as json
 except ImportError:
     import json
 import random
-import sys
 
 import pytest
 import six
@@ -44,18 +42,11 @@ class TestFalconUtils(testtools.TestCase):
         def old_thing():
             pass
 
-        if six.PY3:
-            stream = io.StringIO()
-        else:
-            stream = io.BytesIO()
+        with pytest.warns(UserWarning) as rec:
+            old_thing()
 
-        old_stderr = sys.stderr
-        sys.stderr = stream
-
-        old_thing()
-
-        sys.stderr = old_stderr
-        self.assertIn(msg, stream.getvalue())
+        warn = rec.pop()
+        assert msg in str(warn.message)
 
     def test_http_now(self):
         expected = datetime.utcnow()
