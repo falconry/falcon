@@ -38,7 +38,7 @@ HTTP_METHODS = (
 
 # Hoist classes and functions into the falcon namespace
 from falcon.version import __version__  # NOQA
-from falcon.constants.content_types import *  # NOQA
+from falcon.constants.media_types import *  # NOQA
 from falcon.api import API  # NOQA
 from falcon.status_codes import *  # NOQA
 from falcon.errors import *  # NOQA
