@@ -720,7 +720,7 @@ class Response(object):
 
         """)
 
-    def set_media_type(self, media_type):
+    def _set_media_type(self, media_type=None):
         """wrapper around set_header to set a content-type
 
         Args:
@@ -729,7 +729,12 @@ class Response(object):
 
         """
 
-        if media_type is not None:
+        # PERF(kgriffs): Using "in" like this is faster than using
+        # dict.setdefault (tested on py27).
+        set_content_type = (media_type is not None and
+                            'content-type' not in self._headers)
+
+        if set_content_type:
             self.set_header('content-type', media_type)
 
     def _wsgi_headers(self, media_type=None, py2=PY2):
@@ -742,14 +747,7 @@ class Response(object):
         """
 
         headers = self._headers
-
-        # PERF(kgriffs): Using "in" like this is faster than using
-        # dict.setdefault (tested on py27).
-        set_content_type = (media_type is not None and
-                            'content-type' not in headers)
-
-        if set_content_type:
-            headers['content-type'] = media_type
+        self._set_media_type(media_type)
 
         if py2:
             # PERF(kgriffs): Don't create an extra list object if
