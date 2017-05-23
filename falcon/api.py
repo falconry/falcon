@@ -36,7 +36,7 @@ class API(object):
     Args:
         media_type (str, optional): Default media type to use as the value for
             the Content-Type header on responses (default 'application/json').
-            It is possible to use default types like falcon.HTML, falcom.XML etc.
+            It is possible to use default types like falcon.MEDIA_YAML, falcon.MEDIA_XML etc.
         middleware(object or list, optional): One or more objects
             (instantiated classes) that implement the following middleware
             component interface::
