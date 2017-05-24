@@ -296,6 +296,9 @@ class Request(object):
             A dict of name/value cookie pairs.
             See also: :ref:`Getting Cookies <getting-cookies>`
 
+        referer (str): Value of Referer header, or ``None`` if
+            the header is missing.
+
         options (dict): Set of global options passed from the API handler.
     """
 
@@ -436,6 +439,8 @@ class Request(object):
     if_match = helpers.header_property('HTTP_IF_MATCH')
     if_none_match = helpers.header_property('HTTP_IF_NONE_MATCH')
     if_range = helpers.header_property('HTTP_IF_RANGE')
+
+    referer = helpers.header_property('HTTP_REFERER')
 
     @property
     def client_accepts_json(self):

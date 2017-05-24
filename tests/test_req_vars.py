@@ -622,6 +622,7 @@ class TestReqVars(testing.TestCase):
         auth = 'HMAC_SHA1 c590afa9bb59191ffab30f223791e82d3fd3e3af'
         agent = 'testing/1.0.1'
         default_agent = 'curl/7.24.0 (x86_64-apple-darwin12.0)'
+        referer = 'google.com'
 
         self._test_attribute_header('Accept', 'x-falcon', 'accept',
                                     default='*/*')
@@ -638,6 +639,7 @@ class TestReqVars(testing.TestCase):
 
         self._test_attribute_header('User-Agent', agent, 'user_agent',
                                     default=default_agent)
+        self._test_attribute_header('Referer', referer, 'referer')
 
     def test_method(self):
         self.assertEqual(self.req.method, 'GET')
