@@ -5,6 +5,7 @@ MEDIA_XML = 'application/xml'
 MEDIA_TEXT = 'text/plain; charset=utf-8'
 MEDIA_JPEG = 'image/jpeg'
 MEDIA_PNG = 'image/png'
-MEDIA_YAML = 'application/x-yaml'
+MEDIA_YAML = 'application/yaml'
+MEDIA_MSGPACK = 'application/msgpack'
 
 DEFAULT_MEDIA_TYPE = MEDIA_JSON

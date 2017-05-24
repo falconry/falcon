@@ -647,8 +647,8 @@ class Response(object):
         Note:
             You can use the following predefined content types: ``falcon.MEDIA_JSON``,
             ``falcon.MEDIA_HTML``, ``falcon.MEDIA_JS``, ``falcon.MEDIA_XML``,
-            ``falcon.MEDIA_TEXT``, ``falcon.MEDIA_JPEG``, ``falcon.MEDIA_PNG``
-            and ``falcon.MEDIA_YAML``
+            ``falcon.MEDIA_TEXT``, ``falcon.MEDIA_JPEG``, ``falcon.MEDIA_PNG``,
+            ``falcon.MEDIA_YAML`` and ``MEDIA_MSGPACK``
         """)
 
     etag = header_property(
@@ -721,10 +721,10 @@ class Response(object):
         """)
 
     def _set_media_type(self, media_type=None):
-        """wrapper around set_header to set a content-type
+        """Wrapper around set_header to set a content-type.
 
         Args:
-            media_type: media type to use for the Content-Type
+            media_type: Media type to use for the Content-Type
                 header.
 
         """
