@@ -1,4 +1,7 @@
 import functools
+
+import pytest
+
 try:
     import ujson as json
 except ImportError:
@@ -6,6 +9,31 @@ except ImportError:
 
 import falcon
 from falcon import testing
+
+
+# --------------------------------------------------------------------
+# Fixtures
+# --------------------------------------------------------------------
+
+
+@pytest.fixture
+def wrapped_resource_aware():
+    return ClassResourceWithAwareHooks()
+
+
+@pytest.fixture
+def wrapped_resource():
+    return WrappedClassResource()
+
+
+@pytest.fixture
+def client():
+    app = falcon.API()
+
+    resource = WrappedRespondersResource()
+    app.add_route('/', resource)
+
+    return testing.TestClient(app)
 
 
 # --------------------------------------------------------------------
@@ -165,70 +193,64 @@ class ClassResourceWithAwareHooks(object):
 # --------------------------------------------------------------------
 
 
-class TestHooks(testing.TestCase):
+class TestHooks(object):
 
-    def setUp(self):
-        super(TestHooks, self).setUp()
+    def test_output_validator(self, client):
+        result = client.simulate_get()
+        assert result.status_code == 723
+        assert result.text == json.dumps({'title': 'Tricky'})
 
-        self.resource = WrappedRespondersResource()
-        self.api.add_route('/', self.resource)
+    def test_serializer(self, client):
+        result = client.simulate_put()
+        assert result.text == json.dumps({'animal': 'falcon'})
 
-        self.wrapped_resource = WrappedClassResource()
-        self.api.add_route('/wrapped', self.wrapped_resource)
+    def test_hook_as_callable_class(self, client):
+        result = client.simulate_post()
+        assert 'smart' == result.text
 
-        self.wrapped_resource_aware = ClassResourceWithAwareHooks()
-        self.api.add_route('/wrapped_aware', self.wrapped_resource_aware)
+    def test_wrapped_resource(self, client, wrapped_resource):
+        client.app.add_route('/wrapped', wrapped_resource)
+        result = client.simulate_get('/wrapped')
+        assert result.status_code == 200
+        assert result.text == 'fluffy and cute'
 
-    def test_output_validator(self):
-        result = self.simulate_get()
-        self.assertEqual(result.status_code, 723)
-        self.assertEqual(result.text, json.dumps({'title': 'Tricky'}))
+        result = client.simulate_head('/wrapped')
+        assert result.status_code == 200
+        assert result.headers['X-Fluffiness'] == 'fluffy'
+        assert result.headers['X-Cuteness'] == 'cute'
 
-    def test_serializer(self):
-        result = self.simulate_put()
-        self.assertEqual(result.text, json.dumps({'animal': 'falcon'}))
+        result = client.simulate_post('/wrapped')
+        assert result.status_code == 405
 
-    def test_hook_as_callable_class(self):
-        result = self.simulate_post()
-        self.assertEqual('smart', result.text)
-
-    def test_wrapped_resource(self):
-        result = self.simulate_get('/wrapped')
-        self.assertEqual(result.status_code, 200)
-        self.assertEqual(result.text, 'fluffy and cute', )
-
-        result = self.simulate_head('/wrapped')
-        self.assertEqual(result.status_code, 200)
-        self.assertEqual(result.headers['X-Fluffiness'], 'fluffy')
-        self.assertEqual(result.headers['X-Cuteness'], 'cute')
-
-        result = self.simulate_post('/wrapped')
-        self.assertEqual(result.status_code, 405)
-
-        result = self.simulate_patch('/wrapped')
-        self.assertEqual(result.status_code, 405)
+        result = client.simulate_patch('/wrapped')
+        assert result.status_code == 405
 
         # Decorator should not affect the default on_options responder
-        result = self.simulate_options('/wrapped')
-        self.assertEqual(result.status_code, 200)
-        self.assertFalse(result.text)
+        result = client.simulate_options('/wrapped')
+        assert result.status_code == 200
+        assert not result.text
 
-    def test_wrapped_resource_with_hooks_aware_of_resource(self):
+    def test_wrapped_resource_with_hooks_aware_of_resource(self, client, wrapped_resource_aware):
+        client.app.add_route('/wrapped_aware', wrapped_resource_aware)
         expected = 'fluffy and cute'
 
-        result = self.simulate_get('/wrapped_aware')
-        self.assertEqual(result.status_code, 200)
-        self.assertEqual(expected, result.text)
+        result = client.simulate_get('/wrapped_aware')
+        assert result.status_code == 200
+        assert expected == result.text
 
-        for test in (self.simulate_head, self.simulate_put, self.simulate_post):
-            result = test('/wrapped_aware')
-            self.assertEqual(result.status_code, 200)
-            self.assertEqual(self.wrapped_resource_aware.resp.body, expected)
+        for test in (
+            client.simulate_head,
+            client.simulate_put,
+            client.simulate_post,
+        ):
+            result = test(path='/wrapped_aware')
+            assert result.status_code == 200
+            assert wrapped_resource_aware.resp.body == expected
 
-        result = self.simulate_patch('/wrapped_aware')
-        self.assertEqual(result.status_code, 405)
+        result = client.simulate_patch('/wrapped_aware')
+        assert result.status_code == 405
 
         # Decorator should not affect the default on_options responder
-        result = self.simulate_options('/wrapped_aware')
-        self.assertEqual(result.status_code, 200)
-        self.assertFalse(result.text)
+        result = client.simulate_options('/wrapped_aware')
+        assert result.status_code == 200
+        assert not result.text

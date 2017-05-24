@@ -107,8 +107,7 @@ setup(
     install_requires=REQUIRES,
     cmdclass=cmdclass,
     ext_modules=ext_modules,
-    tests_require=['ddt', 'testtools', 'requests', 'pyyaml', 'pytest',
-                   'pytest-runner'],
+    tests_require=['testtools', 'requests', 'pyyaml', 'pytest', 'pytest-runner'],
     entry_points={
         'console_scripts': [
             'falcon-bench = falcon.cmd.bench:main',

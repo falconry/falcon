@@ -1,10 +1,15 @@
 import io
 
-import ddt
+import pytest
 import six
 
 import falcon
 import falcon.testing as testing
+
+
+@pytest.fixture
+def client():
+    return testing.TestClient(falcon.API())
 
 
 # NOTE(kgriffs): Concept from Gunicorn's source (wsgi.py)
@@ -108,135 +113,129 @@ class NoStatusResource(object):
         pass
 
 
-@ddt.ddt
-class TestHelloWorld(testing.TestCase):
-
-    def setUp(self):
-        super(TestHelloWorld, self).setUp()
+class TestHelloWorld(object):
 
     def test_env_headers_list_of_tuples(self):
         env = testing.create_environ(headers=[('User-Agent', 'Falcon-Test')])
-        self.assertEqual(env['HTTP_USER_AGENT'], 'Falcon-Test')
+        assert env['HTTP_USER_AGENT'] == 'Falcon-Test'
 
-    def test_root_route(self):
+    def test_root_route(self, client):
         doc = {u'message': u'Hello world!'}
         resource = testing.SimpleTestResource(json=doc)
-        self.api.add_route('/', resource)
+        client.app.add_route('/', resource)
 
-        result = self.simulate_get()
-        self.assertEqual(result.json, doc)
+        result = client.simulate_get()
+        assert result.json == doc
 
-    def test_no_route(self):
-        result = self.simulate_get('/seenoevil')
-        self.assertEqual(result.status_code, 404)
+    def test_no_route(self, client):
+        result = client.simulate_get('/seenoevil')
+        assert result.status_code == 404
 
-    @ddt.data(
+    @pytest.mark.parametrize('path,resource,get_body', [
         ('/body', HelloResource('body'), lambda r: r.body.encode('utf-8')),
         ('/bytes', HelloResource('body, bytes'), lambda r: r.body),
         ('/data', HelloResource('data'), lambda r: r.data),
-    )
-    @ddt.unpack
-    def test_body(self, path, resource, get_body):
-        self.api.add_route(path, resource)
+    ])
+    def test_body(self, client, path, resource, get_body):
+        client.app.add_route(path, resource)
 
-        result = self.simulate_get(path)
+        result = client.simulate_get(path)
         resp = resource.resp
 
         content_length = int(result.headers['content-length'])
-        self.assertEqual(content_length, len(resource.sample_utf8))
+        assert content_length == len(resource.sample_utf8)
 
-        self.assertEqual(result.status, resource.sample_status)
-        self.assertEqual(resp.status, resource.sample_status)
-        self.assertEqual(get_body(resp), resource.sample_utf8)
-        self.assertEqual(result.content, resource.sample_utf8)
+        assert result.status == resource.sample_status
+        assert resp.status == resource.sample_status
+        assert get_body(resp) == resource.sample_utf8
+        assert result.content == resource.sample_utf8
 
-    def test_no_body_on_head(self):
-        self.api.add_route('/body', HelloResource('body'))
-        result = self.simulate_head('/body')
+    def test_no_body_on_head(self, client):
+        client.app.add_route('/body', HelloResource('body'))
+        result = client.simulate_head('/body')
 
-        self.assertFalse(result.content)
-        self.assertEqual(result.status_code, 200)
+        assert not result.content
+        assert result.status_code == 200
 
-    def test_stream_chunked(self):
+    def test_stream_chunked(self, client):
         resource = HelloResource('stream')
-        self.api.add_route('/chunked-stream', resource)
+        client.app.add_route('/chunked-stream', resource)
 
-        result = self.simulate_get('/chunked-stream')
+        result = client.simulate_get('/chunked-stream')
 
-        self.assertEqual(result.content, resource.sample_utf8)
-        self.assertNotIn('content-length', result.headers)
+        assert result.content == resource.sample_utf8
+        assert 'content-length' not in result.headers
 
-    def test_stream_known_len(self):
+    def test_stream_known_len(self, client):
         resource = HelloResource('stream, stream_len')
-        self.api.add_route('/stream', resource)
+        client.app.add_route('/stream', resource)
 
-        result = self.simulate_get('/stream')
-        self.assertTrue(resource.called)
+        result = client.simulate_get('/stream')
+        assert resource.called
 
         expected_len = resource.resp.stream_len
         actual_len = int(result.headers['content-length'])
-        self.assertEqual(actual_len, expected_len)
-        self.assertEqual(len(result.content), expected_len)
-        self.assertEqual(result.content, resource.sample_utf8)
+        assert actual_len == expected_len
+        assert len(result.content) == expected_len
+        assert result.content == resource.sample_utf8
 
-    def test_filelike(self):
+    def test_filelike(self, client):
         resource = HelloResource('stream, stream_len, filelike')
-        self.api.add_route('/filelike', resource)
+        client.app.add_route('/filelike', resource)
 
         for file_wrapper in (None, FileWrapper):
-            result = self.simulate_get('/filelike', file_wrapper=file_wrapper)
-            self.assertTrue(resource.called)
+            result = client.simulate_get('/filelike', file_wrapper=file_wrapper)
+            assert resource.called
 
             expected_len = resource.resp.stream_len
             actual_len = int(result.headers['content-length'])
-            self.assertEqual(actual_len, expected_len)
-            self.assertEqual(len(result.content), expected_len)
+            assert actual_len == expected_len
+            assert len(result.content) == expected_len
 
         for file_wrapper in (None, FileWrapper):
-            result = self.simulate_get('/filelike', file_wrapper=file_wrapper)
-            self.assertTrue(resource.called)
+            result = client.simulate_get('/filelike', file_wrapper=file_wrapper)
+            assert resource.called
 
             expected_len = resource.resp.stream_len
             actual_len = int(result.headers['content-length'])
-            self.assertEqual(actual_len, expected_len)
-            self.assertEqual(len(result.content), expected_len)
+            assert actual_len == expected_len
+            assert len(result.content) == expected_len
 
-    @ddt.data(
+    @pytest.mark.parametrize('stream_factory,assert_closed', [
         (ClosingBytesIO, True),  # Implements close()
         (NonClosingBytesIO, False),  # Has a non-callable "close" attr
-    )
-    @ddt.unpack
-    def test_filelike_closing(self, stream_factory, assert_closed):
+    ])
+    def test_filelike_closing(self, client, stream_factory, assert_closed):
         resource = ClosingFilelikeHelloResource(stream_factory)
-        self.api.add_route('/filelike-closing', resource)
+        client.app.add_route('/filelike-closing', resource)
 
-        result = self.simulate_get('/filelike-closing', file_wrapper=None)
-        self.assertTrue(resource.called)
+        result = client.simulate_get('/filelike-closing', file_wrapper=None)
+        assert resource.called
 
         expected_len = resource.resp.stream_len
         actual_len = int(result.headers['content-length'])
-        self.assertEqual(actual_len, expected_len)
-        self.assertEqual(len(result.content), expected_len)
+        assert actual_len == expected_len
+        assert len(result.content) == expected_len
 
         if assert_closed:
-            self.assertTrue(resource.stream.close_called)
+            assert resource.stream.close_called
 
-    def test_filelike_using_helper(self):
+    def test_filelike_using_helper(self, client):
         resource = HelloResource('stream, stream_len, filelike, use_helper')
-        self.api.add_route('/filelike-helper', resource)
+        client.app.add_route('/filelike-helper', resource)
 
-        result = self.simulate_get('/filelike-helper')
-        self.assertTrue(resource.called)
+        result = client.simulate_get('/filelike-helper')
+        assert resource.called
 
         expected_len = resource.resp.stream_len
         actual_len = int(result.headers['content-length'])
-        self.assertEqual(actual_len, expected_len)
-        self.assertEqual(len(result.content), expected_len)
+        assert actual_len == expected_len
+        assert len(result.content) == expected_len
 
-    def test_status_not_set(self):
-        self.api.add_route('/nostatus', NoStatusResource())
+    def test_status_not_set(self, client):
+        client.app.add_route('/nostatus', NoStatusResource())
 
-        result = self.simulate_get('/nostatus')
+        result = client.simulate_get('/nostatus')
 
-        self.assertFalse(result.content)
-        self.assertEqual(result.status_code, 200)
+        assert not result.content
+        assert result.status_code == 200

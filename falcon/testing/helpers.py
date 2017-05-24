@@ -24,6 +24,7 @@ directly from the `testing` package::
 """
 
 import cgi
+import contextlib
 import io
 import random
 import sys
@@ -205,6 +206,24 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1',
 
     return env
 
+
+@contextlib.contextmanager
+def redirected(stdout=sys.stdout, stderr=sys.stderr):
+    """
+    A context manager to temporarily redirect stdout or stderr
+
+    e.g.:
+
+    with redirected(stderr=os.devnull):
+        ...
+    """
+
+    old_stdout, old_stderr = sys.stdout, sys.stderr
+    sys.stdout, sys.stderr = stdout, stderr
+    try:
+        yield
+    finally:
+        sys.stderr, sys.stdout = old_stderr, old_stdout
 
 # ---------------------------------------------------------------------
 # Private

@@ -1,12 +1,13 @@
+import pytest
+
 from falcon import Response
-import falcon.testing as testing
 
 
-class TestRequestContext(testing.TestBase):
+class TestRequestContext(object):
 
     def test_default_response_context(self):
         resp = Response()
-        self.assertIsInstance(resp.context, dict)
+        assert isinstance(resp.context, dict)
 
     def test_custom_response_context(self):
 
@@ -17,14 +18,15 @@ class TestRequestContext(testing.TestBase):
             context_type = MyCustomContextType
 
         resp = MyCustomResponse()
-        self.assertIsInstance(resp.context, MyCustomContextType)
+        assert isinstance(resp.context, MyCustomContextType)
 
     def test_custom_response_context_failure(self):
 
         class MyCustomResponse(Response):
             context_type = False
 
-        self.assertRaises(TypeError, MyCustomResponse)
+        with pytest.raises(TypeError):
+            MyCustomResponse()
 
     def test_custom_response_context_factory(self):
 
@@ -35,5 +37,5 @@ class TestRequestContext(testing.TestBase):
             context_type = create_context
 
         resp = MyCustomResponse()
-        self.assertIsInstance(resp.context, dict)
-        self.assertIs(resp.context['resp'], resp)
+        assert isinstance(resp.context, dict)
+        assert resp.context['resp'] is resp

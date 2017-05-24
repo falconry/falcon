@@ -1,3 +1,5 @@
+import pytest
+
 import falcon
 from falcon import testing
 
@@ -40,70 +42,75 @@ class ErroredClassResource(object):
         raise CustomException('CustomException')
 
 
-class TestErrorHandler(testing.TestCase):
+@pytest.fixture
+def client():
+    app = falcon.API()
+    app.add_route('/', ErroredClassResource())
+    return testing.TestClient(app)
 
-    def setUp(self):
-        super(TestErrorHandler, self).setUp()
-        self.api.add_route('/', ErroredClassResource())
 
-    def test_caught_error(self):
-        self.api.add_error_handler(Exception, capture_error)
+class TestErrorHandler(object):
 
-        result = self.simulate_get()
-        self.assertEqual(result.text, 'error: Plain Exception')
+    def test_caught_error(self, client):
+        client.app.add_error_handler(Exception, capture_error)
 
-        result = self.simulate_head()
-        self.assertEqual(result.status_code, 723)
-        self.assertFalse(result.content)
+        result = client.simulate_get()
+        assert result.text == 'error: Plain Exception'
 
-    def test_uncaught_error(self):
-        self.api.add_error_handler(CustomException, capture_error)
-        self.assertRaises(Exception, self.simulate_get)
+        result = client.simulate_head()
+        assert result.status_code == 723
+        assert not result.content
 
-    def test_uncaught_error_else(self):
-        self.assertRaises(Exception, self.simulate_get)
+    def test_uncaught_error(self, client):
+        client.app.add_error_handler(CustomException, capture_error)
+        with pytest.raises(Exception):
+            client.simulate_get()
 
-    def test_converted_error(self):
-        self.api.add_error_handler(CustomException)
+    def test_uncaught_error_else(self, client):
+        with pytest.raises(Exception):
+            client.simulate_get()
 
-        result = self.simulate_delete()
-        self.assertEqual(result.status_code, 792)
-        self.assertEqual(result.json[u'title'], u'Internet crashed!')
+    def test_converted_error(self, client):
+        client.app.add_error_handler(CustomException)
 
-    def test_handle_not_defined(self):
-        self.assertRaises(AttributeError,
-                          self.api.add_error_handler, CustomBaseException)
+        result = client.simulate_delete()
+        assert result.status_code == 792
+        assert result.json[u'title'] == u'Internet crashed!'
 
-    def test_subclass_error(self):
-        self.api.add_error_handler(CustomBaseException, capture_error)
+    def test_handle_not_defined(self, client):
+        with pytest.raises(AttributeError):
+            client.app.add_error_handler(CustomBaseException)
 
-        result = self.simulate_delete()
-        self.assertEqual(result.status_code, 723)
-        self.assertEqual(result.text, 'error: CustomException')
+    def test_subclass_error(self, client):
+        client.app.add_error_handler(CustomBaseException, capture_error)
 
-    def test_error_order_duplicate(self):
-        self.api.add_error_handler(Exception, capture_error)
-        self.api.add_error_handler(Exception, handle_error_first)
+        result = client.simulate_delete()
+        assert result.status_code == 723
+        assert result.text == 'error: CustomException'
 
-        result = self.simulate_get()
-        self.assertEqual(result.text, 'first error handler')
+    def test_error_order_duplicate(self, client):
+        client.app.add_error_handler(Exception, capture_error)
+        client.app.add_error_handler(Exception, handle_error_first)
 
-    def test_error_order_subclass(self):
-        self.api.add_error_handler(Exception, capture_error)
-        self.api.add_error_handler(CustomException, handle_error_first)
+        result = client.simulate_get()
+        assert result.text == 'first error handler'
 
-        result = self.simulate_delete()
-        self.assertEqual(result.status_code, 200)
-        self.assertEqual(result.text, 'first error handler')
+    def test_error_order_subclass(self, client):
+        client.app.add_error_handler(Exception, capture_error)
+        client.app.add_error_handler(CustomException, handle_error_first)
 
-        result = self.simulate_get()
-        self.assertEqual(result.status_code, 723)
-        self.assertEqual(result.text, 'error: Plain Exception')
+        result = client.simulate_delete()
+        assert result.status_code == 200
+        assert result.text == 'first error handler'
 
-    def test_error_order_subclass_masked(self):
-        self.api.add_error_handler(CustomException, handle_error_first)
-        self.api.add_error_handler(Exception, capture_error)
+        result = client.simulate_get()
+        assert result.status_code == 723
+        assert result.text == 'error: Plain Exception'
 
-        result = self.simulate_delete()
-        self.assertEqual(result.status_code, 723)
-        self.assertEqual(result.text, 'error: CustomException')
+    def test_error_order_subclass_masked(self, client):
+        client.app.add_error_handler(CustomException, handle_error_first)
+        client.app.add_error_handler(Exception, capture_error)
+
+        result = client.simulate_delete()
+        assert result.status_code == 723
+        assert result.text == 'error: CustomException'

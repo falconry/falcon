@@ -1,13 +1,15 @@
+import pytest
+
 from falcon.request import Request
 import falcon.testing as testing
 
 
-class TestRequestContext(testing.TestBase):
+class TestRequestContext(object):
 
     def test_default_request_context(self):
         env = testing.create_environ()
         req = Request(env)
-        self.assertIsInstance(req.context, dict)
+        assert isinstance(req.context, dict)
 
     def test_custom_request_context(self):
 
@@ -20,7 +22,7 @@ class TestRequestContext(testing.TestBase):
 
         env = testing.create_environ()
         req = MyCustomRequest(env)
-        self.assertIsInstance(req.context, MyCustomContextType)
+        assert isinstance(req.context, MyCustomContextType)
 
     def test_custom_request_context_failure(self):
 
@@ -29,7 +31,8 @@ class TestRequestContext(testing.TestBase):
             context_type = False
 
         env = testing.create_environ()
-        self.assertRaises(TypeError, MyCustomRequest, env)
+        with pytest.raises(TypeError):
+            MyCustomRequest(env)
 
     def test_custom_request_context_request_access(self):
 
@@ -42,5 +45,5 @@ class TestRequestContext(testing.TestBase):
 
         env = testing.create_environ()
         req = MyCustomRequest(env)
-        self.assertIsInstance(req.context, dict)
-        self.assertEqual(req.context['uri'], req.uri)
+        assert isinstance(req.context, dict)
+        assert req.context['uri'] == req.uri

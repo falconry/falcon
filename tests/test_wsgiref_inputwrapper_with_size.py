@@ -19,21 +19,19 @@ class TypeResource(testing.SimpleTestResource):
         resp.body = json.dumps({'data': req.stream.read().decode('utf-8')})
 
 
-class TestWsgiRefInputWrapper(testing.TestCase):
-    def setUp(self):
-        super(TestWsgiRefInputWrapper, self).setUp()
-
-        # Set up a route to our TypeResoure
-        self.type_route = '/type'
-        self.api.add_route(self.type_route, TypeResource())
-
+class TestWsgiRefInputWrapper(object):
     def test_resources_can_read_request_stream_during_tests(self):
         """Make sure we can perform a simple request during testing.
 
         Originally, testing would fail after performing a request because no
         size was specified when calling `wsgiref.validate.InputWrapper.read()`
         via `req.stream.read()`"""
-        result = self.simulate_post(path=self.type_route, body='hello')
+        app = falcon.API()
+        type_route = '/type'
+        app.add_route(type_route, TypeResource())
+        client = testing.TestClient(app)
 
-        self.assertEqual(result.status, falcon.HTTP_200)
-        self.assertEqual(result.json, {'data': 'hello'})
+        result = client.simulate_post(path=type_route, body='hello')
+
+        assert result.status == falcon.HTTP_200
+        assert result.json == {'data': 'hello'}

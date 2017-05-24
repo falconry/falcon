@@ -1,6 +1,6 @@
 from functools import wraps
 
-from testtools.matchers import Contains
+import pytest
 
 import falcon
 import falcon.testing as testing
@@ -16,6 +16,44 @@ HTTP_METHODS = (
     'TRACE',
     'PATCH'
 )
+
+
+@pytest.fixture
+def stonewall():
+    return Stonewall()
+
+
+@pytest.fixture
+def resource_things():
+    return ThingsResource()
+
+
+@pytest.fixture
+def resource_misc():
+    return MiscResource()
+
+
+@pytest.fixture
+def resource_get_with_faulty_put():
+    return GetWithFaultyPutResource()
+
+
+@pytest.fixture
+def client():
+    app = falcon.API()
+
+    app.add_route('/stonewall', Stonewall())
+
+    resource_things = ThingsResource()
+    app.add_route('/things', resource_things)
+    app.add_route('/things/{id}/stuff/{sid}', resource_things)
+
+    resource_misc = MiscResource()
+    app.add_route('/misc', resource_misc)
+
+    resource_get_with_faulty_put = GetWithFaultyPutResource()
+    app.add_route('/get_with_param/{param}', resource_get_with_faulty_put)
+    return testing.TestClient(app)
 
 
 class ThingsResource(object):
@@ -117,101 +155,96 @@ class FaultyDecoratedResource(object):
         pass
 
 
-class TestHttpMethodRouting(testing.TestBase):
+class TestHttpMethodRouting(object):
 
-    def before(self):
-        self.api.add_route('/stonewall', Stonewall())
+    def test_get(self, client, resource_things):
+        client.app.add_route('/things', resource_things)
+        client.app.add_route('/things/{id}/stuff/{sid}', resource_things)
+        response = client.simulate_request(path='/things/42/stuff/57')
+        assert response.status == falcon.HTTP_204
+        assert resource_things.called
 
-        self.resource_things = ThingsResource()
-        self.api.add_route('/things', self.resource_things)
-        self.api.add_route('/things/{id}/stuff/{sid}', self.resource_things)
+    def test_put(self, client, resource_things):
+        client.app.add_route('/things', resource_things)
+        client.app.add_route('/things/{id}/stuff/{sid}', resource_things)
+        response = client.simulate_request(path='/things/42/stuff/1337', method='PUT')
+        assert response.status == falcon.HTTP_201
+        assert resource_things.called
 
-        self.resource_misc = MiscResource()
-        self.api.add_route('/misc', self.resource_misc)
+    def test_post_not_allowed(self, client, resource_things):
+        client.app.add_route('/things', resource_things)
+        client.app.add_route('/things/{id}/stuff/{sid}', resource_things)
+        response = client.simulate_request(path='/things/42/stuff/1337', method='POST')
+        assert response.status == falcon.HTTP_405
+        assert not resource_things.called
 
-        self.resource_get_with_faulty_put = GetWithFaultyPutResource()
-        self.api.add_route('/get_with_param/{param}',
-                           self.resource_get_with_faulty_put)
-
-    def test_get(self):
-        self.simulate_request('/things/42/stuff/57')
-        self.assertEqual(self.srmock.status, falcon.HTTP_204)
-        self.assertTrue(self.resource_things.called)
-
-    def test_put(self):
-        self.simulate_request('/things/42/stuff/1337', method='PUT')
-        self.assertEqual(self.srmock.status, falcon.HTTP_201)
-        self.assertTrue(self.resource_things.called)
-
-    def test_post_not_allowed(self):
-        self.simulate_request('/things/42/stuff/1337', method='POST')
-        self.assertEqual(self.srmock.status, falcon.HTTP_405)
-        self.assertFalse(self.resource_things.called)
-
-    def test_misc(self):
+    def test_misc(self, client, resource_misc):
+        client.app.add_route('/misc', resource_misc)
         for method in ['GET', 'HEAD', 'PUT', 'PATCH']:
-            self.resource_misc.called = False
-            self.simulate_request('/misc', method=method)
-            self.assertTrue(self.resource_misc.called)
-            self.assertEqual(self.resource_misc.req.method, method)
+            resource_misc.called = False
+            client.simulate_request(path='/misc', method=method)
+            assert resource_misc.called
+            assert resource_misc.req.method == method
 
-    def test_methods_not_allowed_simple(self):
+    def test_methods_not_allowed_simple(self, client, stonewall):
+        client.app.add_route('/stonewall', stonewall)
         for method in ['GET', 'HEAD', 'PUT', 'PATCH']:
-            self.simulate_request('/stonewall', method=method)
-            self.assertEqual(self.srmock.status, falcon.HTTP_405)
+            response = client.simulate_request(path='/stonewall', method=method)
+            assert response.status == falcon.HTTP_405
 
-    def test_methods_not_allowed_complex(self):
+    def test_methods_not_allowed_complex(self, client, resource_things):
+        client.app.add_route('/things', resource_things)
+        client.app.add_route('/things/{id}/stuff/{sid}', resource_things)
         for method in HTTP_METHODS:
             if method in ('GET', 'PUT', 'HEAD', 'OPTIONS'):
                 continue
 
-            self.resource_things.called = False
-            self.simulate_request('/things/84/stuff/65', method=method)
+            resource_things.called = False
+            response = client.simulate_request(path='/things/84/stuff/65', method=method)
 
-            self.assertFalse(self.resource_things.called)
-            self.assertEqual(self.srmock.status, falcon.HTTP_405)
+            assert not resource_things.called
+            assert response.status == falcon.HTTP_405
 
-            headers = self.srmock.headers
-            allow_header = ('allow', 'GET, HEAD, PUT, OPTIONS')
+            headers = response.headers
+            assert headers['allow'] == 'GET, HEAD, PUT, OPTIONS'
 
-            self.assertThat(headers, Contains(allow_header))
-
-    def test_method_not_allowed_with_param(self):
+    def test_method_not_allowed_with_param(self, client, resource_get_with_faulty_put):
+        client.app.add_route('/get_with_param/{param}', resource_get_with_faulty_put)
         for method in HTTP_METHODS:
             if method in ('GET', 'PUT', 'OPTIONS'):
                 continue
 
-            self.resource_get_with_faulty_put.called = False
-            self.simulate_request(
-                '/get_with_param/bogus_param', method=method)
+            resource_get_with_faulty_put.called = False
+            response = client.simulate_request(
+                method=method,
+                path='/get_with_param/bogus_param',
+            )
 
-            self.assertFalse(self.resource_get_with_faulty_put.called)
-            self.assertEqual(self.srmock.status, falcon.HTTP_405)
+            assert not resource_get_with_faulty_put.called
+            assert response.status == falcon.HTTP_405
 
-            headers = self.srmock.headers
-            allow_header = ('allow', 'GET, PUT, OPTIONS')
+            headers = response.headers
+            assert headers['allow'] == 'GET, PUT, OPTIONS'
 
-            self.assertThat(headers, Contains(allow_header))
+    def test_default_on_options(self, client, resource_things):
+        client.app.add_route('/things', resource_things)
+        client.app.add_route('/things/{id}/stuff/{sid}', resource_things)
+        response = client.simulate_request(path='/things/84/stuff/65', method='OPTIONS')
+        assert response.status == falcon.HTTP_200
 
-    def test_default_on_options(self):
-        self.simulate_request('/things/84/stuff/65', method='OPTIONS')
-        self.assertEqual(self.srmock.status, falcon.HTTP_200)
+        headers = response.headers
+        assert headers['allow'] == 'GET, HEAD, PUT'
 
-        headers = self.srmock.headers
-        allow_header = ('allow', 'GET, HEAD, PUT')
+    def test_on_options(self, client):
+        response = client.simulate_request(path='/misc', method='OPTIONS')
+        assert response.status == falcon.HTTP_204
 
-        self.assertThat(headers, Contains(allow_header))
+        headers = response.headers
+        assert headers['allow'] == 'GET'
 
-    def test_on_options(self):
-        self.simulate_request('/misc', method='OPTIONS')
-        self.assertEqual(self.srmock.status, falcon.HTTP_204)
-
-        headers = self.srmock.headers
-        allow_header = ('allow', 'GET')
-
-        self.assertThat(headers, Contains(allow_header))
-
-    def test_bogus_method(self):
-        self.simulate_request('/things', method=self.getUniqueString())
-        self.assertFalse(self.resource_things.called)
-        self.assertEqual(self.srmock.status, falcon.HTTP_400)
+    def test_bogus_method(self, client, resource_things):
+        client.app.add_route('/things', resource_things)
+        client.app.add_route('/things/{id}/stuff/{sid}', resource_things)
+        response = client.simulate_request(path='/things', method=testing.rand_string(3, 4))
+        assert not resource_things.called
+        assert response.status == falcon.HTTP_400

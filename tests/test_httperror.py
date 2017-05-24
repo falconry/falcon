@@ -7,12 +7,21 @@ except ImportError:
     import json
 import xml.etree.ElementTree as et
 
-import ddt
-from testtools.matchers import Not, raises
+import pytest
 import yaml
 
 import falcon
 import falcon.testing as testing
+
+
+@pytest.fixture
+def client():
+    app = falcon.API()
+
+    resource = FaultyResource()
+    app.add_route('/fail', resource)
+
+    return testing.TestClient(app)
 
 
 class FaultyResource:
@@ -237,20 +246,15 @@ class MissingParamResource:
         raise falcon.HTTPMissingParam('id', code='P1003')
 
 
-@ddt.ddt
-class TestHTTPError(testing.TestBase):
+class TestHTTPError(object):
 
-    def before(self):
-        self.resource = FaultyResource()
-        self.api.add_route('/fail', self.resource)
+    def _misc_test(self, client, exception, status, needs_title=True):
+        client.app.add_route('/misc', MiscErrorsResource(exception, needs_title))
 
-    def _misc_test(self, exception, status, needs_title=True):
-        self.api.add_route('/misc', MiscErrorsResource(exception, needs_title))
+        response = client.simulate_request(path='/misc')
+        assert response.status == status
 
-        self.simulate_request('/misc')
-        self.assertEqual(self.srmock.status, status)
-
-    def test_base_class(self):
+    def test_base_class(self, client):
         headers = {
             'X-Error-Title': 'Storage service down',
             'X-Error-Description': ('The configured storage service is not '
@@ -269,37 +273,36 @@ class TestHTTPError(testing.TestBase):
 
         # Try it with Accept: */*
         headers['Accept'] = '*/*'
-        body = self.simulate_request('/fail', headers=headers, decode='utf-8')
+        response = client.simulate_request(path='/fail', headers=headers)
 
-        self.assertEqual(self.srmock.status, headers['X-Error-Status'])
-        self.assertIn(('vary', 'Accept'), self.srmock.headers)
-        self.assertThat(lambda: json.loads(body), Not(raises(ValueError)))
-        self.assertEqual(expected_body, json.loads(body))
+        assert response.status == headers['X-Error-Status']
+        assert response.headers['vary'] == 'Accept'
+        assert expected_body == response.json
 
         # Now try it with application/json
         headers['Accept'] = 'application/json'
-        body = self.simulate_request('/fail', headers=headers, decode='utf-8')
+        response = client.simulate_request(path='/fail', headers=headers)
 
-        self.assertEqual(self.srmock.status, headers['X-Error-Status'])
-        self.assertThat(lambda: json.loads(body), Not(raises(ValueError)))
-        self.assertEqual(json.loads(body), expected_body)
+        assert response.status == headers['X-Error-Status']
+        assert response.json == expected_body
 
-    def test_no_description_json(self):
-        body = self.simulate_request('/fail', method='PATCH')
-        self.assertEqual(self.srmock.status, falcon.HTTP_400)
-        self.assertEqual(body, [json.dumps({'title': '400 Bad Request'}).encode('utf8')])
+    def test_no_description_json(self, client):
+        response = client.simulate_patch('/fail')
+        assert response.status == falcon.HTTP_400
+        assert response.json == {'title': '400 Bad Request'}
 
-    def test_no_description_xml(self):
-        body = self.simulate_request('/fail', method='PATCH',
-                                     headers={'Accept': 'application/xml'})
-        self.assertEqual(self.srmock.status, falcon.HTTP_400)
+    def test_no_description_xml(self, client):
+        response = client.simulate_patch(
+            path='/fail', headers={'Accept': 'application/xml'}
+        )
+        assert response.status == falcon.HTTP_400
 
         expected_xml = (b'<?xml version="1.0" encoding="UTF-8"?><error>'
                         b'<title>400 Bad Request</title></error>')
 
-        self.assertEqual(body, [expected_xml])
+        assert response.content == expected_xml
 
-    def test_client_does_not_accept_json_or_xml(self):
+    def test_client_does_not_accept_json_or_xml(self, client):
         headers = {
             'Accept': 'application/x-yaml',
             'X-Error-Title': 'Storage service down',
@@ -309,12 +312,12 @@ class TestHTTPError(testing.TestBase):
             'X-Error-Status': falcon.HTTP_503
         }
 
-        body = self.simulate_request('/fail', headers=headers)
-        self.assertEqual(self.srmock.status, headers['X-Error-Status'])
-        self.assertEqual(self.srmock.headers_dict['Vary'], 'Accept')
-        self.assertEqual(body, [])
+        response = client.simulate_request(path='/fail', headers=headers)
+        assert response.status == headers['X-Error-Status']
+        assert response.headers['Vary'] == 'Accept'
+        assert not response.content
 
-    def test_custom_old_error_serializer(self):
+    def test_custom_old_error_serializer(self, client):
         headers = {
             'X-Error-Title': 'Storage service down',
             'X-Error-Description': ('The configured storage service is not '
@@ -348,24 +351,28 @@ class TestHTTPError(testing.TestBase):
 
         def _check(media_type, deserializer):
             headers['Accept'] = media_type
-            self.api.set_error_serializer(_my_serializer)
-            body = self.simulate_request('/fail', headers=headers)
-            self.assertEqual(self.srmock.status, headers['X-Error-Status'])
+            client.app.set_error_serializer(_my_serializer)
+            response = client.simulate_request(path='/fail', headers=headers)
+            assert response.status == headers['X-Error-Status']
 
-            actual_doc = deserializer(body[0].decode('utf-8'))
-            self.assertEqual(expected_doc, actual_doc)
+            actual_doc = deserializer(response.content.decode('utf-8'))
+            assert expected_doc == actual_doc
 
         _check('application/x-yaml', yaml.load)
         _check('application/json', json.loads)
 
-    def test_custom_old_error_serializer_no_body(self):
+    def test_custom_old_error_serializer_no_body(self, client):
+        headers = {
+            'X-Error-Status': falcon.HTTP_503
+        }
+
         def _my_serializer(req, exception):
-            return (None, None)
+            return None, None
 
-        self.api.set_error_serializer(_my_serializer)
-        self.simulate_request('/fail')
+        client.app.set_error_serializer(_my_serializer)
+        client.simulate_request(path='/fail', headers=headers)
 
-    def test_custom_new_error_serializer(self):
+    def test_custom_new_error_serializer(self, client):
         headers = {
             'X-Error-Title': 'Storage service down',
             'X-Error-Description': ('The configured storage service is not '
@@ -400,17 +407,17 @@ class TestHTTPError(testing.TestBase):
 
         def _check(media_type, deserializer):
             headers['Accept'] = media_type
-            self.api.set_error_serializer(_my_serializer)
-            body = self.simulate_request('/fail', headers=headers)
-            self.assertEqual(self.srmock.status, headers['X-Error-Status'])
+            client.app.set_error_serializer(_my_serializer)
+            response = client.simulate_request(path='/fail', headers=headers)
+            assert response.status == headers['X-Error-Status']
 
-            actual_doc = deserializer(body[0].decode('utf-8'))
-            self.assertEqual(expected_doc, actual_doc)
+            actual_doc = deserializer(response.content.decode('utf-8'))
+            assert expected_doc == actual_doc
 
         _check('application/x-yaml', yaml.load)
         _check('application/json', json.loads)
 
-    def test_client_does_not_accept_anything(self):
+    def test_client_does_not_accept_anything(self, client):
         headers = {
             'Accept': '45087gigo;;;;',
             'X-Error-Title': 'Storage service down',
@@ -420,16 +427,16 @@ class TestHTTPError(testing.TestBase):
             'X-Error-Status': falcon.HTTP_503
         }
 
-        body = self.simulate_request('/fail', headers=headers)
-        self.assertEqual(self.srmock.status, headers['X-Error-Status'])
-        self.assertEqual(body, [])
+        response = client.simulate_request(path='/fail', headers=headers)
+        assert response.status == headers['X-Error-Status']
+        assert not response.content
 
-    @ddt.data(
+    @pytest.mark.parametrize('media_type', [
         'application/json',
         'application/vnd.company.system.project.resource+json;v=1.1',
         'application/json-patch+json',
-    )
-    def test_forbidden(self, media_type):
+    ])
+    def test_forbidden(self, client, media_type):
         headers = {'Accept': media_type}
 
         expected_body = {
@@ -443,14 +450,12 @@ class TestHTTPError(testing.TestBase):
             },
         }
 
-        body = self.simulate_request('/fail', headers=headers, method='POST',
-                                     decode='utf-8')
+        response = client.simulate_post(path='/fail', headers=headers)
 
-        self.assertEqual(self.srmock.status, falcon.HTTP_403)
-        self.assertThat(lambda: json.loads(body), Not(raises(ValueError)))
-        self.assertEqual(json.loads(body), expected_body)
+        assert response.status == falcon.HTTP_403
+        assert response.json == expected_body
 
-    def test_epic_fail_json(self):
+    def test_epic_fail_json(self, client):
         headers = {'Accept': 'application/json'}
 
         expected_body = {
@@ -464,20 +469,18 @@ class TestHTTPError(testing.TestBase):
             },
         }
 
-        body = self.simulate_request('/fail', headers=headers, method='PUT',
-                                     decode='utf-8')
+        response = client.simulate_put('/fail', headers=headers)
 
-        self.assertEqual(self.srmock.status, falcon.HTTP_792)
-        self.assertThat(lambda: json.loads(body), Not(raises(ValueError)))
-        self.assertEqual(json.loads(body), expected_body)
+        assert response.status == falcon.HTTP_792
+        assert response.json == expected_body
 
-    @ddt.data(
+    @pytest.mark.parametrize('media_type', [
         'text/xml',
         'application/xml',
         'application/vnd.company.system.project.resource+xml;v=1.1',
         'application/atom+xml',
-    )
-    def test_epic_fail_xml(self, media_type):
+    ])
+    def test_epic_fail_xml(self, client, media_type):
         headers = {'Accept': media_type}
 
         expected_body = ('<?xml version="1.0" encoding="UTF-8"?>' +
@@ -494,14 +497,16 @@ class TestHTTPError(testing.TestBase):
                          '</link>' +
                          '</error>')
 
-        body = self.simulate_request('/fail', headers=headers, method='PUT',
-                                     decode='utf-8')
+        response = client.simulate_put(path='/fail', headers=headers)
 
-        self.assertEqual(self.srmock.status, falcon.HTTP_792)
-        self.assertThat(lambda: et.fromstring(body), Not(raises(ValueError)))
-        self.assertEqual(body, expected_body)
+        assert response.status == falcon.HTTP_792
+        try:
+            et.fromstring(response.content.decode('utf-8'))
+        except ValueError:
+            pytest.fail()
+        assert response.text == expected_body
 
-    def test_unicode_json(self):
+    def test_unicode_json(self, client):
         unicode_resource = UnicodeFaultyResource()
 
         expected_body = {
@@ -514,14 +519,14 @@ class TestHTTPError(testing.TestBase):
             },
         }
 
-        self.api.add_route('/unicode', unicode_resource)
-        body = self.simulate_request('/unicode', decode='utf-8')
+        client.app.add_route('/unicode', unicode_resource)
+        response = client.simulate_request(path='/unicode')
 
-        self.assertTrue(unicode_resource.called)
-        self.assertEqual(self.srmock.status, falcon.HTTP_792)
-        self.assertEqual(expected_body, json.loads(body))
+        assert unicode_resource.called
+        assert response.status == falcon.HTTP_792
+        assert expected_body == response.json
 
-    def test_unicode_xml(self):
+    def test_unicode_xml(self, client):
         unicode_resource = UnicodeFaultyResource()
 
         expected_body = (u'<?xml version="1.0" encoding="UTF-8"?>' +
@@ -537,256 +542,255 @@ class TestHTTPError(testing.TestBase):
                          u'</link>' +
                          u'</error>')
 
-        self.api.add_route('/unicode', unicode_resource)
-        body = self.simulate_request('/unicode', decode='utf-8',
-                                     headers={'accept': 'application/xml'})
+        client.app.add_route('/unicode', unicode_resource)
+        response = client.simulate_request(
+            path='/unicode',
+            headers={'accept': 'application/xml'}
+        )
 
-        self.assertTrue(unicode_resource.called)
-        self.assertEqual(self.srmock.status, falcon.HTTP_792)
-        self.assertEqual(expected_body, body)
+        assert unicode_resource.called
+        assert response.status == falcon.HTTP_792
+        assert expected_body == response.text
 
-    def test_401(self):
-        self.api.add_route('/401', UnauthorizedResource())
-        self.simulate_request('/401')
+    def test_401(self, client):
+        client.app.add_route('/401', UnauthorizedResource())
+        response = client.simulate_request(path='/401')
 
-        self.assertEqual(self.srmock.status, falcon.HTTP_401)
-        self.assertIn(('www-authenticate', 'Basic realm="simple"'),
-                      self.srmock.headers)
+        assert response.status == falcon.HTTP_401
+        assert response.headers['www-authenticate'] == 'Basic realm="simple"'
 
-        self.simulate_request('/401', method='POST')
+        response = client.simulate_post('/401')
 
-        self.assertEqual(self.srmock.status, falcon.HTTP_401)
-        self.assertIn(('www-authenticate', 'Newauth realm="apps", '
-                      'Basic realm="simple"'),
-                      self.srmock.headers)
+        assert response.status == falcon.HTTP_401
+        assert response.headers['www-authenticate'] == 'Newauth realm="apps", Basic realm="simple"'
 
-        self.simulate_request('/401', method='PUT')
+        response = client.simulate_put('/401')
 
-        self.assertEqual(self.srmock.status, falcon.HTTP_401)
-        self.assertNotIn(('www-authenticate', []), self.srmock.headers)
+        assert response.status == falcon.HTTP_401
+        assert 'www-authenticate' not in response.headers
 
-    def test_404_without_body(self):
-        self.api.add_route('/404', NotFoundResource())
-        body = self.simulate_request('/404')
+    def test_404_without_body(self, client):
+        client.app.add_route('/404', NotFoundResource())
+        response = client.simulate_request(path='/404')
 
-        self.assertEqual(self.srmock.status, falcon.HTTP_404)
-        self.assertEqual(body, [])
+        assert response.status == falcon.HTTP_404
+        assert not response.content
 
-    def test_404_with_body(self):
-        self.api.add_route('/404', NotFoundResourceWithBody())
+    def test_404_with_body(self, client):
+        client.app.add_route('/404', NotFoundResourceWithBody())
 
-        response = self.simulate_request('/404', decode='utf-8')
-        self.assertEqual(self.srmock.status, falcon.HTTP_404)
-        self.assertNotEqual(response, [])
+        response = client.simulate_request(path='/404')
+        assert response.status == falcon.HTTP_404
+        assert response.content
         expected_body = {
             u'title': u'404 Not Found',
             u'description': u'Not Found'
         }
-        self.assertEqual(json.loads(response), expected_body)
+        assert response.json == expected_body
 
-    def test_405_without_body(self):
-        self.api.add_route('/405', MethodNotAllowedResource())
+    def test_405_without_body(self, client):
+        client.app.add_route('/405', MethodNotAllowedResource())
 
-        response = self.simulate_request('/405')
-        self.assertEqual(self.srmock.status, falcon.HTTP_405)
-        self.assertEqual(response, [])
-        self.assertIn(('allow', 'PUT'), self.srmock.headers)
+        response = client.simulate_request(path='/405')
+        assert response.status == falcon.HTTP_405
+        assert not response.content
+        assert response.headers['allow'] == 'PUT'
 
-    def test_405_without_body_with_extra_headers(self):
-        self.api.add_route('/405', MethodNotAllowedResourceWithHeaders())
+    def test_405_without_body_with_extra_headers(self, client):
+        client.app.add_route('/405', MethodNotAllowedResourceWithHeaders())
 
-        response = self.simulate_request('/405')
-        self.assertEqual(self.srmock.status, falcon.HTTP_405)
-        self.assertEqual(response, [])
-        self.assertIn(('allow', 'PUT'), self.srmock.headers)
-        self.assertIn(('x-ping', 'pong'), self.srmock.headers)
+        response = client.simulate_request(path='/405')
+        assert response.status == falcon.HTTP_405
+        assert not response.content
+        assert response.headers['allow'] == 'PUT'
+        assert response.headers['x-ping'] == 'pong'
 
-    def test_405_without_body_with_extra_headers_double_check(self):
-        self.api.add_route('/405',
-                           MethodNotAllowedResourceWithHeadersWithAccept())
+    def test_405_without_body_with_extra_headers_double_check(self, client):
+        client.app.add_route(
+            '/405/', MethodNotAllowedResourceWithHeadersWithAccept()
+        )
 
-        response = self.simulate_request('/405')
-        self.assertEqual(self.srmock.status, falcon.HTTP_405)
-        self.assertEqual(response, [])
-        self.assertIn(('allow', 'PUT'), self.srmock.headers)
-        self.assertNotIn(('allow', 'GET,PUT'), self.srmock.headers)
-        self.assertNotIn(('allow', 'GET'), self.srmock.headers)
-        self.assertIn(('x-ping', 'pong'), self.srmock.headers)
+        response = client.simulate_request(path='/405')
+        assert response.status == falcon.HTTP_405
+        assert not response.content
+        assert response.headers['allow'] == 'PUT'
+        assert response.headers['allow'] != 'GET,PUT'
+        assert response.headers['allow'] != 'GET'
+        assert response.headers['x-ping'] == 'pong'
 
-    def test_405_with_body(self):
-        self.api.add_route('/405', MethodNotAllowedResourceWithBody())
+    def test_405_with_body(self, client):
+        client.app.add_route('/405', MethodNotAllowedResourceWithBody())
 
-        response = self.simulate_request('/405', decode='utf-8')
-        self.assertEqual(self.srmock.status, falcon.HTTP_405)
-        self.assertNotEqual(response, [])
+        response = client.simulate_request(path='/405')
+        assert response.status == falcon.HTTP_405
+        assert response.content
         expected_body = {
             u'title': u'405 Method Not Allowed',
             u'description': u'Not Allowed'
         }
-        self.assertEqual(json.loads(response), expected_body)
-        self.assertIn(('allow', 'PUT'), self.srmock.headers)
+        assert response.json == expected_body
+        assert response.headers['allow'] == 'PUT'
 
-    def test_410_without_body(self):
-        self.api.add_route('/410', GoneResource())
-        body = self.simulate_request('/410')
+    def test_410_without_body(self, client):
+        client.app.add_route('/410', GoneResource())
+        response = client.simulate_request(path='/410')
 
-        self.assertEqual(self.srmock.status, falcon.HTTP_410)
-        self.assertEqual(body, [])
+        assert response.status == falcon.HTTP_410
+        assert not response.content
 
-    def test_410_with_body(self):
-        self.api.add_route('/410', GoneResourceWithBody())
+    def test_410_with_body(self, client):
+        client.app.add_route('/410', GoneResourceWithBody())
 
-        response = self.simulate_request('/410', decode='utf-8')
-        self.assertEqual(self.srmock.status, falcon.HTTP_410)
-        self.assertNotEqual(response, [])
+        response = client.simulate_request(path='/410')
+        assert response.status == falcon.HTTP_410
+        assert response.content
         expected_body = {
             u'title': u'410 Gone',
             u'description': u'Gone with the wind'
         }
-        self.assertEqual(json.loads(response), expected_body)
+        assert response.json == expected_body
 
-    def test_411(self):
-        self.api.add_route('/411', LengthRequiredResource())
-        body = self.simulate_request('/411')
-        parsed_body = json.loads(body[0].decode())
+    def test_411(self, client):
+        client.app.add_route('/411', LengthRequiredResource())
+        response = client.simulate_request(path='/411')
+        assert response.status == falcon.HTTP_411
 
-        self.assertEqual(self.srmock.status, falcon.HTTP_411)
-        self.assertEqual(parsed_body['title'], 'title')
-        self.assertEqual(parsed_body['description'], 'description')
+        parsed_body = response.json
+        assert parsed_body['title'] == 'title'
+        assert parsed_body['description'] == 'description'
 
-    def test_413(self):
-        self.api.add_route('/413', RequestEntityTooLongResource())
-        body = self.simulate_request('/413')
-        parsed_body = json.loads(body[0].decode())
+    def test_413(self, client):
+        client.app.add_route('/413', RequestEntityTooLongResource())
+        response = client.simulate_request(path='/413')
+        assert response.status == falcon.HTTP_413
 
-        self.assertEqual(self.srmock.status, falcon.HTTP_413)
-        self.assertEqual(parsed_body['title'], 'Request Rejected')
-        self.assertEqual(parsed_body['description'], 'Request Body Too Large')
-        self.assertNotIn('retry-after', self.srmock.headers)
+        parsed_body = response.json
+        assert parsed_body['title'] == 'Request Rejected'
+        assert parsed_body['description'] == 'Request Body Too Large'
+        assert 'retry-after' not in response.headers
 
-    def test_temporary_413_integer_retry_after(self):
-        self.api.add_route('/413', TemporaryRequestEntityTooLongResource('6'))
-        body = self.simulate_request('/413')
-        parsed_body = json.loads(body[0].decode())
+    def test_temporary_413_integer_retry_after(self, client):
+        client.app.add_route('/413', TemporaryRequestEntityTooLongResource('6'))
+        response = client.simulate_request(path='/413')
+        assert response.status == falcon.HTTP_413
 
-        self.assertEqual(self.srmock.status, falcon.HTTP_413)
-        self.assertEqual(parsed_body['title'], 'Request Rejected')
-        self.assertEqual(parsed_body['description'], 'Request Body Too Large')
-        self.assertIn(('retry-after', '6'), self.srmock.headers)
+        parsed_body = response.json
+        assert parsed_body['title'] == 'Request Rejected'
+        assert parsed_body['description'] == 'Request Body Too Large'
+        assert response.headers['retry-after'] == '6'
 
-    def test_temporary_413_datetime_retry_after(self):
+    def test_temporary_413_datetime_retry_after(self, client):
         date = datetime.datetime.now() + datetime.timedelta(minutes=5)
-        self.api.add_route('/413',
-                           TemporaryRequestEntityTooLongResource(date))
-        body = self.simulate_request('/413')
-        parsed_body = json.loads(body[0].decode())
+        client.app.add_route(
+            '/413',
+            TemporaryRequestEntityTooLongResource(date)
+        )
+        response = client.simulate_request(path='/413')
 
-        self.assertEqual(self.srmock.status, falcon.HTTP_413)
-        self.assertEqual(parsed_body['title'], 'Request Rejected')
-        self.assertEqual(parsed_body['description'], 'Request Body Too Large')
-        self.assertIn(('retry-after', falcon.util.dt_to_http(date)),
-                      self.srmock.headers)
+        assert response.status == falcon.HTTP_413
 
-    def test_414(self):
-        self.api.add_route('/414', UriTooLongResource())
-        self.simulate_request('/414')
-        self.assertEqual(self.srmock.status, falcon.HTTP_414)
+        parsed_body = response.json
+        assert parsed_body['title'] == 'Request Rejected'
+        assert parsed_body['description'] == 'Request Body Too Large'
+        assert response.headers['retry-after'] == falcon.util.dt_to_http(date)
 
-    def test_414_with_title(self):
+    def test_414(self, client):
+        client.app.add_route('/414', UriTooLongResource())
+        response = client.simulate_request(path='/414')
+        assert response.status == falcon.HTTP_414
+
+    def test_414_with_title(self, client):
         title = 'Argh! Error!'
-        self.api.add_route('/414', UriTooLongResource(title=title))
-        body = self.simulate_request('/414', headers={})
-        parsed_body = json.loads(body[0].decode())
-        self.assertEqual(parsed_body['title'], title)
+        client.app.add_route('/414', UriTooLongResource(title=title))
+        response = client.simulate_request(path='/414', headers={})
+        parsed_body = json.loads(response.content.decode())
+        assert parsed_body['title'] == title
 
-    def test_414_with_description(self):
+    def test_414_with_description(self, client):
         description = 'Be short please.'
-        self.api.add_route('/414', UriTooLongResource(description=description))
-        body = self.simulate_request('/414', headers={})
-        parsed_body = json.loads(body[0].decode())
-        self.assertEqual(parsed_body['description'], description)
+        client.app.add_route('/414', UriTooLongResource(description=description))
+        response = client.simulate_request(path='/414', headers={})
+        parsed_body = json.loads(response.content.decode())
+        assert parsed_body['description'] == description
 
-    def test_414_with_custom_kwargs(self):
+    def test_414_with_custom_kwargs(self, client):
         code = 'someid'
-        self.api.add_route('/414', UriTooLongResource(code=code))
-        body = self.simulate_request('/414', headers={})
-        parsed_body = json.loads(body[0].decode())
-        self.assertEqual(parsed_body['code'], code)
+        client.app.add_route('/414', UriTooLongResource(code=code))
+        response = client.simulate_request(path='/414', headers={})
+        parsed_body = json.loads(response.content.decode())
+        assert parsed_body['code'] == code
 
-    def test_416(self):
-        self.api = falcon.API()
-        self.api.add_route('/416', RangeNotSatisfiableResource())
-        body = self.simulate_request('/416', headers={'accept': 'text/xml'})
+    def test_416(self, client):
+        client.app = falcon.API()
+        client.app.add_route('/416', RangeNotSatisfiableResource())
+        response = client.simulate_request(path='/416', headers={'accept': 'text/xml'})
 
-        self.assertEqual(self.srmock.status, falcon.HTTP_416)
-        self.assertEqual(body, [])
-        self.assertIn(('content-range', 'bytes */123456'), self.srmock.headers)
-        self.assertIn(('content-length', '0'), self.srmock.headers)
+        assert response.status == falcon.HTTP_416
+        assert not response.content
+        assert response.headers['content-range'] == 'bytes */123456'
+        assert response.headers['content-length'] == '0'
 
-    def test_429_no_retry_after(self):
-        self.api.add_route('/429', TooManyRequestsResource())
-        body = self.simulate_request('/429')
-        parsed_body = json.loads(body[0].decode())
+    def test_429_no_retry_after(self, client):
+        client.app.add_route('/429', TooManyRequestsResource())
+        response = client.simulate_request(path='/429')
+        parsed_body = response.json
 
-        self.assertEqual(self.srmock.status, falcon.HTTP_429)
-        self.assertEqual(parsed_body['title'], 'Too many requests')
-        self.assertEqual(parsed_body['description'], '1 per minute')
-        self.assertNotIn('retry-after', self.srmock.headers)
+        assert response.status == falcon.HTTP_429
+        assert parsed_body['title'] == 'Too many requests'
+        assert parsed_body['description'] == '1 per minute'
+        assert 'retry-after' not in response.headers
 
-    def test_429(self):
-        self.api.add_route('/429', TooManyRequestsResource(60))
-        body = self.simulate_request('/429')
-        parsed_body = json.loads(body[0].decode())
+    def test_429(self, client):
+        client.app.add_route('/429', TooManyRequestsResource(60))
+        response = client.simulate_request(path='/429')
+        parsed_body = response.json
 
-        self.assertEqual(self.srmock.status, falcon.HTTP_429)
-        self.assertEqual(parsed_body['title'], 'Too many requests')
-        self.assertEqual(parsed_body['description'], '1 per minute')
-        self.assertIn(('retry-after', '60'), self.srmock.headers)
+        assert response.status == falcon.HTTP_429
+        assert parsed_body['title'] == 'Too many requests'
+        assert parsed_body['description'] == '1 per minute'
+        assert response.headers['retry-after'] == '60'
 
-    def test_429_datetime(self):
+    def test_429_datetime(self, client):
         date = datetime.datetime.now() + datetime.timedelta(minutes=1)
-        self.api.add_route('/429', TooManyRequestsResource(date))
-        body = self.simulate_request('/429')
-        parsed_body = json.loads(body[0].decode())
+        client.app.add_route('/429', TooManyRequestsResource(date))
+        response = client.simulate_request(path='/429')
+        parsed_body = response.json
 
-        self.assertEqual(self.srmock.status, falcon.HTTP_429)
-        self.assertEqual(parsed_body['title'], 'Too many requests')
-        self.assertEqual(parsed_body['description'], '1 per minute')
-        self.assertIn(('retry-after', falcon.util.dt_to_http(date)),
-                      self.srmock.headers)
+        assert response.status == falcon.HTTP_429
+        assert parsed_body['title'] == 'Too many requests'
+        assert parsed_body['description'] == '1 per minute'
+        assert response.headers['retry-after'] == falcon.util.dt_to_http(date)
 
-    def test_503_integer_retry_after(self):
-        self.api.add_route('/503', ServiceUnavailableResource(60))
-        body = self.simulate_request('/503', decode='utf-8')
+    def test_503_integer_retry_after(self, client):
+        client.app.add_route('/503', ServiceUnavailableResource(60))
+        response = client.simulate_request(path='/503')
 
         expected_body = {
             u'title': u'Oops',
             u'description': u'Stand by...',
         }
 
-        self.assertEqual(self.srmock.status, falcon.HTTP_503)
-        self.assertEqual(json.loads(body), expected_body)
-        self.assertIn(('retry-after', '60'), self.srmock.headers)
+        assert response.status == falcon.HTTP_503
+        assert response.json == expected_body
+        assert response.headers['retry-after'] == '60'
 
-    def test_503_datetime_retry_after(self):
+    def test_503_datetime_retry_after(self, client):
         date = datetime.datetime.now() + datetime.timedelta(minutes=5)
-        self.api.add_route('/503',
-                           ServiceUnavailableResource(date))
-        body = self.simulate_request('/503', decode='utf-8')
+        client.app.add_route('/503', ServiceUnavailableResource(date))
+        response = client.simulate_request(path='/503')
 
         expected_body = {
             u'title': u'Oops',
             u'description': u'Stand by...',
         }
 
-        self.assertEqual(self.srmock.status, falcon.HTTP_503)
-        self.assertEqual(json.loads(body), expected_body)
-        self.assertIn(('retry-after', falcon.util.dt_to_http(date)),
-                      self.srmock.headers)
+        assert response.status == falcon.HTTP_503
+        assert response.json == expected_body
+        assert response.headers['retry-after'] == falcon.util.dt_to_http(date)
 
-    def test_invalid_header(self):
-        self.api.add_route('/400', InvalidHeaderResource())
-        body = self.simulate_request('/400', decode='utf-8')
+    def test_invalid_header(self, client):
+        client.app.add_route('/400', InvalidHeaderResource())
+        response = client.simulate_request(path='/400')
 
         expected_desc = (u'The value provided for the X-Auth-Token '
                          u'header is invalid. Please provide a valid token.')
@@ -797,24 +801,24 @@ class TestHTTPError(testing.TestBase):
             u'code': u'A1001',
         }
 
-        self.assertEqual(self.srmock.status, falcon.HTTP_400)
-        self.assertEqual(json.loads(body), expected_body)
+        assert response.status == falcon.HTTP_400
+        assert response.json == expected_body
 
-    def test_missing_header(self):
-        self.api.add_route('/400', MissingHeaderResource())
-        body = self.simulate_request('/400', decode='utf-8')
+    def test_missing_header(self, client):
+        client.app.add_route('/400', MissingHeaderResource())
+        response = client.simulate_request(path='/400')
 
         expected_body = {
             u'title': u'Missing header value',
             u'description': u'The X-Auth-Token header is required.',
         }
 
-        self.assertEqual(self.srmock.status, falcon.HTTP_400)
-        self.assertEqual(json.loads(body), expected_body)
+        assert response.status == falcon.HTTP_400
+        assert response.json == expected_body
 
-    def test_invalid_param(self):
-        self.api.add_route('/400', InvalidParamResource())
-        body = self.simulate_request('/400', decode='utf-8')
+    def test_invalid_param(self, client):
+        client.app.add_route('/400', InvalidParamResource())
+        response = client.simulate_request(path='/400')
 
         expected_desc = (u'The "id" parameter is invalid. The '
                          u'value must be a hex-encoded UUID.')
@@ -824,12 +828,12 @@ class TestHTTPError(testing.TestBase):
             u'code': u'P1002',
         }
 
-        self.assertEqual(self.srmock.status, falcon.HTTP_400)
-        self.assertEqual(json.loads(body), expected_body)
+        assert response.status == falcon.HTTP_400
+        assert response.json == expected_body
 
-    def test_missing_param(self):
-        self.api.add_route('/400', MissingParamResource())
-        body = self.simulate_request('/400', decode='utf-8')
+    def test_missing_param(self, client):
+        client.app.add_route('/400', MissingParamResource())
+        response = client.simulate_request(path='/400')
 
         expected_body = {
             u'title': u'Missing parameter',
@@ -837,30 +841,29 @@ class TestHTTPError(testing.TestBase):
             u'code': u'P1003',
         }
 
-        self.assertEqual(self.srmock.status, falcon.HTTP_400)
-        self.assertEqual(json.loads(body), expected_body)
+        assert response.status == falcon.HTTP_400
+        assert response.json == expected_body
 
-    def test_misc(self):
-        self._misc_test(falcon.HTTPBadRequest, falcon.HTTP_400)
-        self._misc_test(falcon.HTTPNotAcceptable, falcon.HTTP_406,
+    def test_misc(self, client):
+        self._misc_test(client, falcon.HTTPBadRequest, falcon.HTTP_400)
+        self._misc_test(client, falcon.HTTPNotAcceptable, falcon.HTTP_406,
                         needs_title=False)
-        self._misc_test(falcon.HTTPConflict, falcon.HTTP_409)
-        self._misc_test(falcon.HTTPPreconditionFailed, falcon.HTTP_412)
-        self._misc_test(falcon.HTTPUnsupportedMediaType, falcon.HTTP_415,
+        self._misc_test(client, falcon.HTTPConflict, falcon.HTTP_409)
+        self._misc_test(client, falcon.HTTPPreconditionFailed, falcon.HTTP_412)
+        self._misc_test(client, falcon.HTTPUnsupportedMediaType, falcon.HTTP_415,
                         needs_title=False)
-        self._misc_test(falcon.HTTPUnprocessableEntity, falcon.HTTP_422)
-        self._misc_test(falcon.HTTPUnavailableForLegalReasons, falcon.HTTP_451,
+        self._misc_test(client, falcon.HTTPUnprocessableEntity, falcon.HTTP_422)
+        self._misc_test(client, falcon.HTTPUnavailableForLegalReasons, falcon.HTTP_451,
                         needs_title=False)
-        self._misc_test(falcon.HTTPInternalServerError, falcon.HTTP_500)
-        self._misc_test(falcon.HTTPBadGateway, falcon.HTTP_502)
+        self._misc_test(client, falcon.HTTPInternalServerError, falcon.HTTP_500)
+        self._misc_test(client, falcon.HTTPBadGateway, falcon.HTTP_502)
 
-    def test_title_default_message_if_none(self):
+    def test_title_default_message_if_none(self, client):
         headers = {
             'X-Error-Status': falcon.HTTP_503
         }
 
-        body = self.simulate_request('/fail', headers=headers, decode='utf-8')
-        body_json = json.loads(body)
+        response = client.simulate_request(path='/fail', headers=headers)
 
-        self.assertEqual(self.srmock.status, headers['X-Error-Status'])
-        self.assertEqual(body_json['title'], headers['X-Error-Status'])
+        assert response.status == headers['X-Error-Status']
+        assert response.json['title'] == headers['X-Error-Status']

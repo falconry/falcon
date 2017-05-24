@@ -246,7 +246,7 @@ class Cookie(object):
 
 
 def simulate_request(app, method='GET', path='/', query_string=None,
-                     headers=None, body=None, file_wrapper=None,
+                     headers=None, body=None, file_wrapper=None, wsgierrors=None,
                      params=None, params_csv=True, protocol='http'):
         """Simulates a request to a WSGI application.
 
@@ -286,6 +286,8 @@ def simulate_request(app, method='GET', path='/', query_string=None,
                 environ (default: ``None``). This can be used to test
                 high-performance file transmission when `resp.stream` is
                 set to a file-like object.
+            wsgierrors (io): The stream to use as *wsgierrors*
+                (default ``sys.stderr``)
 
         Returns:
             :py:class:`~.Result`: The result of the request
@@ -323,6 +325,7 @@ def simulate_request(app, method='GET', path='/', query_string=None,
             headers=headers,
             body=body,
             file_wrapper=file_wrapper,
+            wsgierrors=wsgierrors,
         )
 
         srmock = StartResponseMock()
