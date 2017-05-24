@@ -642,7 +642,14 @@ class Response(object):
 
     content_type = header_property(
         'Content-Type',
-        'Set the Content-Type header.')
+        """Sets the Content-Type header.
+
+        Note:
+            You can use the following predefined content types: ``falcon.MEDIA_JSON``,
+            ``falcon.MEDIA_HTML``, ``falcon.MEDIA_JS``, ``falcon.MEDIA_XML``,
+            ``falcon.MEDIA_TEXT``, ``falcon.MEDIA_JPEG``, ``falcon.MEDIA_PNG``,
+            ``falcon.MEDIA_YAML`` and ``MEDIA_MSGPACK``
+        """)
 
     etag = header_property(
         'ETag',
@@ -713,6 +720,23 @@ class Response(object):
 
         """)
 
+    def _set_media_type(self, media_type=None):
+        """Wrapper around set_header to set a content-type.
+
+        Args:
+            media_type: Media type to use for the Content-Type
+                header.
+
+        """
+
+        # PERF(kgriffs): Using "in" like this is faster than using
+        # dict.setdefault (tested on py27).
+        set_content_type = (media_type is not None and
+                            'content-type' not in self._headers)
+
+        if set_content_type:
+            self.set_header('content-type', media_type)
+
     def _wsgi_headers(self, media_type=None, py2=PY2):
         """Convert headers into the format expected by WSGI servers.
 
@@ -723,14 +747,7 @@ class Response(object):
         """
 
         headers = self._headers
-
-        # PERF(kgriffs): Using "in" like this is faster than using
-        # dict.setdefault (tested on py27).
-        set_content_type = (media_type is not None and
-                            'content-type' not in headers)
-
-        if set_content_type:
-            headers['content-type'] = media_type
+        self._set_media_type(media_type)
 
         if py2:
             # PERF(kgriffs): Don't create an extra list object if

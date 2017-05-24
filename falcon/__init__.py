@@ -36,12 +36,10 @@ HTTP_METHODS = (
     'TRACE',
 )
 
-DEFAULT_MEDIA_TYPE = 'application/json; charset=UTF-8'
-
-
 # Hoist classes and functions into the falcon namespace
 from falcon.version import __version__  # NOQA
-from falcon.api import API, DEFAULT_MEDIA_TYPE  # NOQA
+from falcon.constants.media_types import *  # NOQA
+from falcon.api import API  # NOQA
 from falcon.status_codes import *  # NOQA
 from falcon.errors import *  # NOQA
 from falcon.redirects import *  # NOQA
