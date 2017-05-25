@@ -169,6 +169,8 @@ class Request(object):
 
         user_agent (str): Value of the User-Agent header, or ``None`` if the
             header is missing.
+        referer (str): Value of Referer header, or ``None`` if
+            the header is missing.
         accept (str): Value of the Accept header, or '*/*' if the header is
             missing.
         auth (str): Value of the Authorization header, or ``None`` if the
@@ -436,6 +438,8 @@ class Request(object):
     if_match = helpers.header_property('HTTP_IF_MATCH')
     if_none_match = helpers.header_property('HTTP_IF_NONE_MATCH')
     if_range = helpers.header_property('HTTP_IF_RANGE')
+
+    referer = helpers.header_property('HTTP_REFERER')
 
     @property
     def client_accepts_json(self):
