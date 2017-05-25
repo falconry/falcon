@@ -193,64 +193,66 @@ class ClassResourceWithAwareHooks(object):
 # --------------------------------------------------------------------
 
 
-class TestHooks(object):
+def test_output_validator(client):
+    result = client.simulate_get()
+    assert result.status_code == 723
+    assert result.text == json.dumps({'title': 'Tricky'})
 
-    def test_output_validator(self, client):
-        result = client.simulate_get()
-        assert result.status_code == 723
-        assert result.text == json.dumps({'title': 'Tricky'})
 
-    def test_serializer(self, client):
-        result = client.simulate_put()
-        assert result.text == json.dumps({'animal': 'falcon'})
+def test_serializer(client):
+    result = client.simulate_put()
+    assert result.text == json.dumps({'animal': 'falcon'})
 
-    def test_hook_as_callable_class(self, client):
-        result = client.simulate_post()
-        assert 'smart' == result.text
 
-    def test_wrapped_resource(self, client, wrapped_resource):
-        client.app.add_route('/wrapped', wrapped_resource)
-        result = client.simulate_get('/wrapped')
+def test_hook_as_callable_class(client):
+    result = client.simulate_post()
+    assert 'smart' == result.text
+
+
+def test_wrapped_resource(client, wrapped_resource):
+    client.app.add_route('/wrapped', wrapped_resource)
+    result = client.simulate_get('/wrapped')
+    assert result.status_code == 200
+    assert result.text == 'fluffy and cute'
+
+    result = client.simulate_head('/wrapped')
+    assert result.status_code == 200
+    assert result.headers['X-Fluffiness'] == 'fluffy'
+    assert result.headers['X-Cuteness'] == 'cute'
+
+    result = client.simulate_post('/wrapped')
+    assert result.status_code == 405
+
+    result = client.simulate_patch('/wrapped')
+    assert result.status_code == 405
+
+    # Decorator should not affect the default on_options responder
+    result = client.simulate_options('/wrapped')
+    assert result.status_code == 200
+    assert not result.text
+
+
+def test_wrapped_resource_with_hooks_aware_of_resource(client, wrapped_resource_aware):
+    client.app.add_route('/wrapped_aware', wrapped_resource_aware)
+    expected = 'fluffy and cute'
+
+    result = client.simulate_get('/wrapped_aware')
+    assert result.status_code == 200
+    assert expected == result.text
+
+    for test in (
+        client.simulate_head,
+        client.simulate_put,
+        client.simulate_post,
+    ):
+        result = test(path='/wrapped_aware')
         assert result.status_code == 200
-        assert result.text == 'fluffy and cute'
+        assert wrapped_resource_aware.resp.body == expected
 
-        result = client.simulate_head('/wrapped')
-        assert result.status_code == 200
-        assert result.headers['X-Fluffiness'] == 'fluffy'
-        assert result.headers['X-Cuteness'] == 'cute'
+    result = client.simulate_patch('/wrapped_aware')
+    assert result.status_code == 405
 
-        result = client.simulate_post('/wrapped')
-        assert result.status_code == 405
-
-        result = client.simulate_patch('/wrapped')
-        assert result.status_code == 405
-
-        # Decorator should not affect the default on_options responder
-        result = client.simulate_options('/wrapped')
-        assert result.status_code == 200
-        assert not result.text
-
-    def test_wrapped_resource_with_hooks_aware_of_resource(self, client, wrapped_resource_aware):
-        client.app.add_route('/wrapped_aware', wrapped_resource_aware)
-        expected = 'fluffy and cute'
-
-        result = client.simulate_get('/wrapped_aware')
-        assert result.status_code == 200
-        assert expected == result.text
-
-        for test in (
-            client.simulate_head,
-            client.simulate_put,
-            client.simulate_post,
-        ):
-            result = test(path='/wrapped_aware')
-            assert result.status_code == 200
-            assert wrapped_resource_aware.resp.body == expected
-
-        result = client.simulate_patch('/wrapped_aware')
-        assert result.status_code == 405
-
-        # Decorator should not affect the default on_options responder
-        result = client.simulate_options('/wrapped_aware')
-        assert result.status_code == 200
-        assert not result.text
+    # Decorator should not affect the default on_options responder
+    result = client.simulate_options('/wrapped_aware')
+    assert result.status_code == 200
+    assert not result.text
