@@ -622,7 +622,7 @@ class TestReqVars(testing.TestCase):
         auth = 'HMAC_SHA1 c590afa9bb59191ffab30f223791e82d3fd3e3af'
         agent = 'testing/1.0.1'
         default_agent = 'curl/7.24.0 (x86_64-apple-darwin12.0)'
-        referer = 'google.com'
+        referer = 'https://www.google.com/'
 
         self._test_attribute_header('Accept', 'x-falcon', 'accept',
                                     default='*/*')

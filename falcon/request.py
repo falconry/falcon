@@ -169,6 +169,8 @@ class Request(object):
 
         user_agent (str): Value of the User-Agent header, or ``None`` if the
             header is missing.
+        referer (str): Value of Referer header, or ``None`` if
+            the header is missing.
         accept (str): Value of the Accept header, or '*/*' if the header is
             missing.
         auth (str): Value of the Authorization header, or ``None`` if the
@@ -295,9 +297,6 @@ class Request(object):
         cookies (dict):
             A dict of name/value cookie pairs.
             See also: :ref:`Getting Cookies <getting-cookies>`
-
-        referer (str): Value of Referer header, or ``None`` if
-            the header is missing.
 
         options (dict): Set of global options passed from the API handler.
     """
