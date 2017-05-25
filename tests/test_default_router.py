@@ -132,9 +132,15 @@ def test_user_regression_versioned_url():
 def test_user_regression_recipes():
     router = DefaultRouter()
     router.add_route(
-        '/recipes/{activity}/{type_id}', {}, ResourceWithId(1))
+        '/recipes/{activity}/{type_id}',
+        {},
+        ResourceWithId(1)
+    )
     router.add_route(
-        '/recipes/baking', {}, ResourceWithId(2))
+        '/recipes/baking',
+        {},
+        ResourceWithId(2)
+    )
 
     resource, __, __, __ = router.find('/recipes/baking/4242')
     assert resource.resource_id == 1
