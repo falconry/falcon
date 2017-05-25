@@ -1,7 +1,17 @@
-import ddt
+import pytest
 
 import falcon
 import falcon.testing as testing
+
+
+@pytest.fixture
+def client():
+    app = falcon.API()
+
+    resource = RedirectingResource()
+    app.add_route('/', resource)
+
+    return testing.TestClient(app)
 
 
 class RedirectingResource(object):
@@ -26,24 +36,18 @@ class RedirectingResource(object):
         raise falcon.HTTPPermanentRedirect('/perm/redirect')
 
 
-@ddt.ddt
-class TestRedirects(testing.TestBase):
+class TestRedirects(object):
 
-    def before(self):
-        self.api.add_route('/', RedirectingResource())
-
-    @ddt.data(
+    @pytest.mark.parametrize('method,expected_status,expected_location', [
         ('GET', falcon.HTTP_301, '/moved/perm'),
         ('POST', falcon.HTTP_302, '/found'),
         ('PUT', falcon.HTTP_303, '/see/other'),
         ('DELETE', falcon.HTTP_307, '/tmp/redirect'),
         ('HEAD', falcon.HTTP_308, '/perm/redirect'),
-    )
-    @ddt.unpack
-    def test_redirect(self, method, expected_status, expected_location):
-        result = self.simulate_request('/', method=method)
+    ])
+    def test_redirect(self, client, method, expected_status, expected_location):
+        result = client.simulate_request(path='/', method=method)
 
-        self.assertEqual(result, [])
-        self.assertEqual(self.srmock.status, expected_status)
-        self.assertEqual(self.srmock.headers_dict['location'],
-                         expected_location)
+        assert not result.content
+        assert result.status == expected_status
+        assert result.headers['location'] == expected_location

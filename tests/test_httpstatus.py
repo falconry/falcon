@@ -47,8 +47,7 @@ class TestStatusResource:
         resp.body = 'Fail'
 
     def on_patch(self, req, resp):
-        raise HTTPStatus(falcon.HTTP_200,
-                         body=None)
+        raise HTTPStatus(falcon.HTTP_200, body=None)
 
     @falcon.after(noop_after_hook)
     def on_delete(self, req, resp):
@@ -74,50 +73,62 @@ class TestHookResource:
                          body='Pass')
 
 
-class TestHTTPStatus(testing.TestBase):
-    def before(self):
-        self.resource = TestStatusResource()
-        self.api.add_route('/status', self.resource)
-
+class TestHTTPStatus(object):
     def test_raise_status_in_before_hook(self):
         """ Make sure we get the 200 raised by before hook """
-        body = self.simulate_request('/status', method='GET', decode='utf-8')
-        self.assertEqual(self.srmock.status, falcon.HTTP_200)
-        self.assertIn(('x-failed', 'False'), self.srmock.headers)
-        self.assertEqual(body, 'Pass')
+        app = falcon.API()
+        app.add_route('/status', TestStatusResource())
+        client = testing.TestClient(app)
+
+        response = client.simulate_request(path='/status', method='GET')
+        assert response.status == falcon.HTTP_200
+        assert response.headers['x-failed'] == 'False'
+        assert response.text == 'Pass'
 
     def test_raise_status_in_responder(self):
         """ Make sure we get the 200 raised by responder """
-        body = self.simulate_request('/status', method='POST', decode='utf-8')
-        self.assertEqual(self.srmock.status, falcon.HTTP_200)
-        self.assertIn(('x-failed', 'False'), self.srmock.headers)
-        self.assertEqual(body, 'Pass')
+        app = falcon.API()
+        app.add_route('/status', TestStatusResource())
+        client = testing.TestClient(app)
+
+        response = client.simulate_request(path='/status', method='POST')
+        assert response.status == falcon.HTTP_200
+        assert response.headers['x-failed'] == 'False'
+        assert response.text == 'Pass'
 
     def test_raise_status_runs_after_hooks(self):
         """ Make sure after hooks still run """
-        body = self.simulate_request('/status', method='PUT', decode='utf-8')
-        self.assertEqual(self.srmock.status, falcon.HTTP_200)
-        self.assertIn(('x-failed', 'False'), self.srmock.headers)
-        self.assertEqual(body, 'Pass')
+        app = falcon.API()
+        app.add_route('/status', TestStatusResource())
+        client = testing.TestClient(app)
+
+        response = client.simulate_request(path='/status', method='PUT')
+        assert response.status == falcon.HTTP_200
+        assert response.headers['x-failed'] == 'False'
+        assert response.text == 'Pass'
 
     def test_raise_status_survives_after_hooks(self):
         """ Make sure after hook doesn't overwrite our status """
-        body = self.simulate_request('/status', method='DELETE',
-                                     decode='utf-8')
-        self.assertEqual(self.srmock.status, falcon.HTTP_200)
-        self.assertIn(('x-failed', 'False'), self.srmock.headers)
-        self.assertEqual(body, 'Pass')
+        app = falcon.API()
+        app.add_route('/status', TestStatusResource())
+        client = testing.TestClient(app)
+
+        response = client.simulate_request(path='/status', method='DELETE')
+        assert response.status == falcon.HTTP_200
+        assert response.headers['x-failed'] == 'False'
+        assert response.text == 'Pass'
 
     def test_raise_status_empty_body(self):
         """ Make sure passing None to body results in empty body """
-        body = self.simulate_request('/status', method='PATCH', decode='utf-8')
-        self.assertEqual(body, '')
+        app = falcon.API()
+        app.add_route('/status', TestStatusResource())
+        client = testing.TestClient(app)
+
+        response = client.simulate_request(path='/status', method='PATCH')
+        assert response.text == ''
 
 
-class TestHTTPStatusWithMiddleware(testing.TestBase):
-    def before(self):
-        self.resource = TestHookResource()
-
+class TestHTTPStatusWithMiddleware(object):
     def test_raise_status_in_process_request(self):
         """ Make sure we can raise status from middleware process request """
         class TestMiddleware:
@@ -126,13 +137,14 @@ class TestHTTPStatusWithMiddleware(testing.TestBase):
                                  headers={'X-Failed': 'False'},
                                  body='Pass')
 
-        self.api = falcon.API(middleware=TestMiddleware())
-        self.api.add_route('/status', self.resource)
+        app = falcon.API(middleware=TestMiddleware())
+        app.add_route('/status', TestHookResource())
+        client = testing.TestClient(app)
 
-        body = self.simulate_request('/status', method='GET', decode='utf-8')
-        self.assertEqual(self.srmock.status, falcon.HTTP_200)
-        self.assertIn(('x-failed', 'False'), self.srmock.headers)
-        self.assertEqual(body, 'Pass')
+        response = client.simulate_request(path='/status', method='GET')
+        assert response.status == falcon.HTTP_200
+        assert response.headers['x-failed'] == 'False'
+        assert response.text == 'Pass'
 
     def test_raise_status_in_process_resource(self):
         """ Make sure we can raise status from middleware process resource """
@@ -142,13 +154,14 @@ class TestHTTPStatusWithMiddleware(testing.TestBase):
                                  headers={'X-Failed': 'False'},
                                  body='Pass')
 
-        self.api = falcon.API(middleware=TestMiddleware())
-        self.api.add_route('/status', self.resource)
+        app = falcon.API(middleware=TestMiddleware())
+        app.add_route('/status', TestHookResource())
+        client = testing.TestClient(app)
 
-        body = self.simulate_request('/status', method='GET', decode='utf-8')
-        self.assertEqual(self.srmock.status, falcon.HTTP_200)
-        self.assertIn(('x-failed', 'False'), self.srmock.headers)
-        self.assertEqual(body, 'Pass')
+        response = client.simulate_request(path='/status', method='GET')
+        assert response.status == falcon.HTTP_200
+        assert response.headers['x-failed'] == 'False'
+        assert response.text == 'Pass'
 
     def test_raise_status_runs_process_response(self):
         """ Make sure process_response still runs """
@@ -158,10 +171,11 @@ class TestHTTPStatusWithMiddleware(testing.TestBase):
                 resp.set_header('X-Failed', 'False')
                 resp.body = 'Pass'
 
-        self.api = falcon.API(middleware=TestMiddleware())
-        self.api.add_route('/status', self.resource)
+        app = falcon.API(middleware=TestMiddleware())
+        app.add_route('/status', TestHookResource())
+        client = testing.TestClient(app)
 
-        body = self.simulate_request('/status', method='GET', decode='utf-8')
-        self.assertEqual(self.srmock.status, falcon.HTTP_200)
-        self.assertIn(('x-failed', 'False'), self.srmock.headers)
-        self.assertEqual(body, 'Pass')
+        response = client.simulate_request(path='/status', method='GET')
+        assert response.status == falcon.HTTP_200
+        assert response.headers['x-failed'] == 'False'
+        assert response.text == 'Pass'

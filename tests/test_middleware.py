@@ -1,4 +1,7 @@
 from datetime import datetime
+
+import pytest
+
 try:
     import ujson as json
 except ImportError:
@@ -10,6 +13,7 @@ import falcon.testing as testing
 _EXPECTED_BODY = {u'status': u'ok'}
 
 context = {'executed_methods': []}
+TEST_ROUTE = '/test_path'
 
 
 class CaptureResponseMiddleware(object):
@@ -100,34 +104,28 @@ class MiddlewareClassResource(object):
         raise falcon.HTTPForbidden(falcon.HTTP_403, 'Setec Astronomy')
 
 
-class TestMiddleware(testing.TestBase):
-
-    def setUp(self):
+class TestMiddleware(object):
+    def setup_method(self, method):
         # Clear context
         global context
         context = {'executed_methods': []}
-        testing.TestBase.setUp(self)
-
-    # TODO(kgriffs): Consider adding this to TestBase
-    def simulate_json_request(self, *args, **kwargs):
-        result = self.simulate_request(*args, decode='utf-8', **kwargs)
-        return json.loads(result)
 
 
 class TestRequestTimeMiddleware(TestMiddleware):
 
     def test_skip_process_resource(self):
         global context
-        self.api = falcon.API(middleware=[RequestTimeMiddleware()])
+        app = falcon.API(middleware=[RequestTimeMiddleware()])
 
-        self.api.add_route('/', MiddlewareClassResource())
+        app.add_route('/', MiddlewareClassResource())
+        client = testing.TestClient(app)
 
-        self.simulate_request('/404')
-        self.assertEqual(self.srmock.status, falcon.HTTP_404)
-        self.assertIn('start_time', context)
-        self.assertNotIn('mid_time', context)
-        self.assertIn('end_time', context)
-        self.assertFalse(context['req_succeeded'])
+        response = client.simulate_request(path='/404')
+        assert response.status == falcon.HTTP_404
+        assert 'start_time' in context
+        assert 'mid_time' not in context
+        assert 'end_time' in context
+        assert not context['req_succeeded']
 
     def test_add_invalid_middleware(self):
         """Test than an invalid class can not be added as middleware"""
@@ -136,11 +134,14 @@ class TestRequestTimeMiddleware(TestMiddleware):
                 pass
 
         mw_list = [RequestTimeMiddleware(), InvalidMiddleware]
-        self.assertRaises(AttributeError, falcon.API, middleware=mw_list)
+        with pytest.raises(AttributeError):
+            falcon.API(middleware=mw_list)
         mw_list = [RequestTimeMiddleware(), 'InvalidMiddleware']
-        self.assertRaises(TypeError, falcon.API, middleware=mw_list)
+        with pytest.raises(TypeError):
+            falcon.API(middleware=mw_list)
         mw_list = [{'process_request': 90}]
-        self.assertRaises(TypeError, falcon.API, middleware=mw_list)
+        with pytest.raises(TypeError):
+            falcon.API(middleware=mw_list)
 
     def test_response_middleware_raises_exception(self):
         """Test that error in response middleware is propagated up"""
@@ -149,92 +150,97 @@ class TestRequestTimeMiddleware(TestMiddleware):
             def process_response(self, req, resp, resource):
                 raise Exception('Always fail')
 
-        self.api = falcon.API(middleware=[RaiseErrorMiddleware()])
+        app = falcon.API(middleware=[RaiseErrorMiddleware()])
 
-        self.api.add_route(self.test_route, MiddlewareClassResource())
+        app.add_route(TEST_ROUTE, MiddlewareClassResource())
+        client = testing.TestClient(app)
 
-        self.assertRaises(Exception, self.simulate_request, self.test_route)
+        with pytest.raises(Exception):
+            client.simulate_request(path=TEST_ROUTE)
 
     def test_log_get_request(self):
         """Test that Log middleware is executed"""
         global context
-        self.api = falcon.API(middleware=[RequestTimeMiddleware()])
+        app = falcon.API(middleware=[RequestTimeMiddleware()])
 
-        self.api.add_route(self.test_route, MiddlewareClassResource())
+        app.add_route(TEST_ROUTE, MiddlewareClassResource())
+        client = testing.TestClient(app)
 
-        body = self.simulate_json_request(self.test_route)
-        self.assertEqual(_EXPECTED_BODY, body)
-        self.assertEqual(self.srmock.status, falcon.HTTP_200)
+        response = client.simulate_request(path=TEST_ROUTE)
+        assert _EXPECTED_BODY == response.json
+        assert response.status == falcon.HTTP_200
 
-        self.assertIn('start_time', context)
-        self.assertIn('mid_time', context)
-        self.assertIn('end_time', context)
-        self.assertTrue(context['mid_time'] >= context['start_time'],
-                        'process_resource not executed after request')
-        self.assertTrue(context['end_time'] >= context['start_time'],
-                        'process_response not executed after request')
+        assert 'start_time' in context
+        assert 'mid_time' in context
+        assert 'end_time' in context
+        assert context['mid_time'] >= context['start_time'], \
+            'process_resource not executed after request'
+        assert context['end_time'] >= context['start_time'], \
+            'process_response not executed after request'
 
-        self.assertTrue(context['req_succeeded'])
+        assert context['req_succeeded']
 
 
 class TestTransactionIdMiddleware(TestMiddleware):
-
     def test_generate_trans_id_with_request(self):
         """Test that TransactionIdmiddleware is executed"""
         global context
-        self.api = falcon.API(middleware=TransactionIdMiddleware())
+        app = falcon.API(middleware=TransactionIdMiddleware())
 
-        self.api.add_route(self.test_route, MiddlewareClassResource())
+        app.add_route(TEST_ROUTE, MiddlewareClassResource())
+        client = testing.TestClient(app)
 
-        body = self.simulate_json_request(self.test_route)
-        self.assertEqual(_EXPECTED_BODY, body)
-        self.assertEqual(self.srmock.status, falcon.HTTP_200)
-        self.assertIn('transaction_id', context)
-        self.assertEqual('unique-req-id', context['transaction_id'])
+        response = client.simulate_request(path=TEST_ROUTE)
+        assert _EXPECTED_BODY == response.json
+        assert response.status == falcon.HTTP_200
+        assert 'transaction_id' in context
+        assert 'unique-req-id' == context['transaction_id']
 
 
 class TestSeveralMiddlewares(TestMiddleware):
-
     def test_generate_trans_id_and_time_with_request(self):
         global context
-        self.api = falcon.API(middleware=[TransactionIdMiddleware(),
-                                          RequestTimeMiddleware()])
+        app = falcon.API(middleware=[TransactionIdMiddleware(),
+                                     RequestTimeMiddleware()])
 
-        self.api.add_route(self.test_route, MiddlewareClassResource())
+        app.add_route(TEST_ROUTE, MiddlewareClassResource())
+        client = testing.TestClient(app)
 
-        body = self.simulate_json_request(self.test_route)
-        self.assertEqual(_EXPECTED_BODY, body)
-        self.assertEqual(self.srmock.status, falcon.HTTP_200)
-        self.assertIn('transaction_id', context)
-        self.assertEqual('unique-req-id', context['transaction_id'])
-        self.assertIn('start_time', context)
-        self.assertIn('mid_time', context)
-        self.assertIn('end_time', context)
-        self.assertTrue(context['mid_time'] >= context['start_time'],
-                        'process_resource not executed after request')
-        self.assertTrue(context['end_time'] >= context['start_time'],
-                        'process_response not executed after request')
+        response = client.simulate_request(path=TEST_ROUTE)
+        assert _EXPECTED_BODY == response.json
+        assert response.status == falcon.HTTP_200
+        assert 'transaction_id' in context
+        assert 'unique-req-id' == context['transaction_id']
+        assert 'start_time' in context
+        assert 'mid_time' in context
+        assert 'end_time' in context
+        assert context['mid_time'] >= context['start_time'], \
+            'process_resource not executed after request'
+        assert context['end_time'] >= context['start_time'], \
+            'process_response not executed after request'
 
     def test_legacy_middleware_called_with_correct_args(self):
         global context
-        self.api = falcon.API(middleware=[ExecutedFirstMiddleware()])
-        self.api.add_route(self.test_route, MiddlewareClassResource())
+        app = falcon.API(middleware=[ExecutedFirstMiddleware()])
+        app.add_route(TEST_ROUTE, MiddlewareClassResource())
+        client = testing.TestClient(app)
 
-        self.simulate_request(self.test_route)
-        self.assertIsInstance(context['req'], falcon.Request)
-        self.assertIsInstance(context['resp'], falcon.Response)
-        self.assertIsInstance(context['resource'], MiddlewareClassResource)
+        client.simulate_request(path=TEST_ROUTE)
+        assert isinstance(context['req'], falcon.Request)
+        assert isinstance(context['resp'], falcon.Response)
+        assert isinstance(context['resource'], MiddlewareClassResource)
 
     def test_middleware_execution_order(self):
         global context
-        self.api = falcon.API(middleware=[ExecutedFirstMiddleware(),
-                                          ExecutedLastMiddleware()])
+        app = falcon.API(middleware=[ExecutedFirstMiddleware(),
+                                     ExecutedLastMiddleware()])
 
-        self.api.add_route(self.test_route, MiddlewareClassResource())
+        app.add_route(TEST_ROUTE, MiddlewareClassResource())
+        client = testing.TestClient(app)
 
-        body = self.simulate_json_request(self.test_route)
-        self.assertEqual(_EXPECTED_BODY, body)
-        self.assertEqual(self.srmock.status, falcon.HTTP_200)
+        response = client.simulate_request(path=TEST_ROUTE)
+        assert _EXPECTED_BODY == response.json
+        assert response.status == falcon.HTTP_200
         # as the method registration is in a list, the order also is
         # tested
         expectedExecutedMethods = [
@@ -245,19 +251,20 @@ class TestSeveralMiddlewares(TestMiddleware):
             'ExecutedLastMiddleware.process_response',
             'ExecutedFirstMiddleware.process_response'
         ]
-        self.assertEqual(expectedExecutedMethods, context['executed_methods'])
+        assert expectedExecutedMethods == context['executed_methods']
 
     def test_independent_middleware_execution_order(self):
         global context
-        self.api = falcon.API(independent_middleware=True,
-                              middleware=[ExecutedFirstMiddleware(),
-                                          ExecutedLastMiddleware()])
+        app = falcon.API(independent_middleware=True,
+                         middleware=[ExecutedFirstMiddleware(),
+                                     ExecutedLastMiddleware()])
 
-        self.api.add_route(self.test_route, MiddlewareClassResource())
+        app.add_route(TEST_ROUTE, MiddlewareClassResource())
+        client = testing.TestClient(app)
 
-        body = self.simulate_json_request(self.test_route)
-        self.assertEqual(_EXPECTED_BODY, body)
-        self.assertEqual(self.srmock.status, falcon.HTTP_200)
+        response = client.simulate_request(path=TEST_ROUTE)
+        assert _EXPECTED_BODY == response.json
+        assert response.status == falcon.HTTP_200
         # as the method registration is in a list, the order also is
         # tested
         expectedExecutedMethods = [
@@ -268,7 +275,7 @@ class TestSeveralMiddlewares(TestMiddleware):
             'ExecutedLastMiddleware.process_response',
             'ExecutedFirstMiddleware.process_response'
         ]
-        self.assertEqual(expectedExecutedMethods, context['executed_methods'])
+        assert expectedExecutedMethods == context['executed_methods']
 
     def test_multiple_reponse_mw_throw_exception(self):
         """Test that error in inner middleware leaves"""
@@ -289,20 +296,22 @@ class TestSeveralMiddlewares(TestMiddleware):
                 context['executed_methods'].append('process_response')
                 context['req_succeeded'].append(req_succeeded)
 
-        self.api = falcon.API(middleware=[ProcessResponseMiddleware(),
-                                          RaiseErrorMiddleware(),
-                                          ProcessResponseMiddleware(),
-                                          RaiseStatusMiddleware(),
-                                          ProcessResponseMiddleware()])
+        app = falcon.API(middleware=[ProcessResponseMiddleware(),
+                                     RaiseErrorMiddleware(),
+                                     ProcessResponseMiddleware(),
+                                     RaiseStatusMiddleware(),
+                                     ProcessResponseMiddleware()])
 
-        self.api.add_route(self.test_route, MiddlewareClassResource())
-        self.simulate_request(self.test_route)
+        app.add_route(TEST_ROUTE, MiddlewareClassResource())
+        client = testing.TestClient(app)
 
-        self.assertEqual(self.srmock.status, falcon.HTTP_748)
+        response = client.simulate_request(path=TEST_ROUTE)
+
+        assert response.status == falcon.HTTP_748
 
         expected_methods = ['process_response'] * 3
-        self.assertEqual(context['executed_methods'], expected_methods)
-        self.assertEqual(context['req_succeeded'], [True, False, False])
+        assert context['executed_methods'] == expected_methods
+        assert context['req_succeeded'] == [True, False, False]
 
     def test_inner_mw_throw_exception(self):
         """Test that error in inner middleware leaves"""
@@ -313,19 +322,21 @@ class TestSeveralMiddlewares(TestMiddleware):
             def process_request(self, req, resp):
                 raise Exception('Always fail')
 
-        self.api = falcon.API(middleware=[TransactionIdMiddleware(),
-                                          RequestTimeMiddleware(),
-                                          RaiseErrorMiddleware()])
+        app = falcon.API(middleware=[TransactionIdMiddleware(),
+                                     RequestTimeMiddleware(),
+                                     RaiseErrorMiddleware()])
 
-        self.api.add_route(self.test_route, MiddlewareClassResource())
+        app.add_route(TEST_ROUTE, MiddlewareClassResource())
+        client = testing.TestClient(app)
 
-        self.assertRaises(Exception, self.simulate_request, self.test_route)
+        with pytest.raises(Exception):
+            client.simulate_request(path=TEST_ROUTE)
 
         # RequestTimeMiddleware process_response should be executed
-        self.assertIn('transaction_id', context)
-        self.assertIn('start_time', context)
-        self.assertNotIn('mid_time', context)
-        self.assertIn('end_time', context)
+        assert 'transaction_id' in context
+        assert 'start_time' in context
+        assert 'mid_time' not in context
+        assert 'end_time' in context
 
     def test_inner_mw_with_ex_handler_throw_exception(self):
         """Test that error in inner middleware leaves"""
@@ -336,25 +347,26 @@ class TestSeveralMiddlewares(TestMiddleware):
             def process_request(self, req, resp, resource):
                 raise Exception('Always fail')
 
-        self.api = falcon.API(middleware=[TransactionIdMiddleware(),
-                                          RequestTimeMiddleware(),
-                                          RaiseErrorMiddleware()])
+        app = falcon.API(middleware=[TransactionIdMiddleware(),
+                                     RequestTimeMiddleware(),
+                                     RaiseErrorMiddleware()])
 
         def handler(ex, req, resp, params):
             context['error_handler'] = True
 
-        self.api.add_error_handler(Exception, handler)
+        app.add_error_handler(Exception, handler)
 
-        self.api.add_route(self.test_route, MiddlewareClassResource())
+        app.add_route(TEST_ROUTE, MiddlewareClassResource())
+        client = testing.TestClient(app)
 
-        self.simulate_request(self.test_route)
+        client.simulate_request(path=TEST_ROUTE)
 
         # RequestTimeMiddleware process_response should be executed
-        self.assertIn('transaction_id', context)
-        self.assertIn('start_time', context)
-        self.assertNotIn('mid_time', context)
-        self.assertIn('end_time', context)
-        self.assertIn('error_handler', context)
+        assert 'transaction_id' in context
+        assert 'start_time' in context
+        assert 'mid_time' not in context
+        assert 'end_time' in context
+        assert 'error_handler' in context
 
     def test_outer_mw_with_ex_handler_throw_exception(self):
         """Test that error in inner middleware leaves"""
@@ -365,25 +377,26 @@ class TestSeveralMiddlewares(TestMiddleware):
             def process_request(self, req, resp):
                 raise Exception('Always fail')
 
-        self.api = falcon.API(middleware=[TransactionIdMiddleware(),
-                                          RaiseErrorMiddleware(),
-                                          RequestTimeMiddleware()])
+        app = falcon.API(middleware=[TransactionIdMiddleware(),
+                                     RaiseErrorMiddleware(),
+                                     RequestTimeMiddleware()])
 
         def handler(ex, req, resp, params):
             context['error_handler'] = True
 
-        self.api.add_error_handler(Exception, handler)
+        app.add_error_handler(Exception, handler)
 
-        self.api.add_route(self.test_route, MiddlewareClassResource())
+        app.add_route(TEST_ROUTE, MiddlewareClassResource())
+        client = testing.TestClient(app)
 
-        self.simulate_request(self.test_route)
+        client.simulate_request(path=TEST_ROUTE)
 
         # Any mw is executed now...
-        self.assertIn('transaction_id', context)
-        self.assertNotIn('start_time', context)
-        self.assertNotIn('mid_time', context)
-        self.assertNotIn('end_time', context)
-        self.assertIn('error_handler', context)
+        assert 'transaction_id' in context
+        assert 'start_time' not in context
+        assert 'mid_time' not in context
+        assert 'end_time' not in context
+        assert 'error_handler' in context
 
     def test_order_mw_executed_when_exception_in_resp(self):
         """Test that error in inner middleware leaves"""
@@ -394,18 +407,19 @@ class TestSeveralMiddlewares(TestMiddleware):
             def process_response(self, req, resp, resource):
                 raise Exception('Always fail')
 
-        self.api = falcon.API(middleware=[ExecutedFirstMiddleware(),
-                                          RaiseErrorMiddleware(),
-                                          ExecutedLastMiddleware()])
+        app = falcon.API(middleware=[ExecutedFirstMiddleware(),
+                                     RaiseErrorMiddleware(),
+                                     ExecutedLastMiddleware()])
 
         def handler(ex, req, resp, params):
             pass
 
-        self.api.add_error_handler(Exception, handler)
+        app.add_error_handler(Exception, handler)
 
-        self.api.add_route(self.test_route, MiddlewareClassResource())
+        app.add_route(TEST_ROUTE, MiddlewareClassResource())
+        client = testing.TestClient(app)
 
-        self.simulate_request(self.test_route)
+        client.simulate_request(path=TEST_ROUTE)
 
         # Any mw is executed now...
         expectedExecutedMethods = [
@@ -416,7 +430,7 @@ class TestSeveralMiddlewares(TestMiddleware):
             'ExecutedLastMiddleware.process_response',
             'ExecutedFirstMiddleware.process_response'
         ]
-        self.assertEqual(expectedExecutedMethods, context['executed_methods'])
+        assert expectedExecutedMethods == context['executed_methods']
 
     def test_order_independent_mw_executed_when_exception_in_resp(self):
         """Test that error in inner middleware leaves"""
@@ -427,19 +441,20 @@ class TestSeveralMiddlewares(TestMiddleware):
             def process_response(self, req, resp, resource):
                 raise Exception('Always fail')
 
-        self.api = falcon.API(independent_middleware=True,
-                              middleware=[ExecutedFirstMiddleware(),
-                                          RaiseErrorMiddleware(),
-                                          ExecutedLastMiddleware()])
+        app = falcon.API(independent_middleware=True,
+                         middleware=[ExecutedFirstMiddleware(),
+                                     RaiseErrorMiddleware(),
+                                     ExecutedLastMiddleware()])
 
         def handler(ex, req, resp, params):
             pass
 
-        self.api.add_error_handler(Exception, handler)
+        app.add_error_handler(Exception, handler)
 
-        self.api.add_route(self.test_route, MiddlewareClassResource())
+        app.add_route(TEST_ROUTE, MiddlewareClassResource())
+        client = testing.TestClient(app)
 
-        self.simulate_request(self.test_route)
+        client.simulate_request(path=TEST_ROUTE)
 
         # Any mw is executed now...
         expectedExecutedMethods = [
@@ -450,7 +465,7 @@ class TestSeveralMiddlewares(TestMiddleware):
             'ExecutedLastMiddleware.process_response',
             'ExecutedFirstMiddleware.process_response'
         ]
-        self.assertEqual(expectedExecutedMethods, context['executed_methods'])
+        assert expectedExecutedMethods == context['executed_methods']
 
     def test_order_mw_executed_when_exception_in_req(self):
         """Test that error in inner middleware leaves"""
@@ -461,25 +476,26 @@ class TestSeveralMiddlewares(TestMiddleware):
             def process_request(self, req, resp):
                 raise Exception('Always fail')
 
-        self.api = falcon.API(middleware=[ExecutedFirstMiddleware(),
-                                          RaiseErrorMiddleware(),
-                                          ExecutedLastMiddleware()])
+        app = falcon.API(middleware=[ExecutedFirstMiddleware(),
+                                     RaiseErrorMiddleware(),
+                                     ExecutedLastMiddleware()])
 
         def handler(ex, req, resp, params):
             pass
 
-        self.api.add_error_handler(Exception, handler)
+        app.add_error_handler(Exception, handler)
 
-        self.api.add_route(self.test_route, MiddlewareClassResource())
+        app.add_route(TEST_ROUTE, MiddlewareClassResource())
+        client = testing.TestClient(app)
 
-        self.simulate_request(self.test_route)
+        client.simulate_request(path=TEST_ROUTE)
 
         # Any mw is executed now...
         expectedExecutedMethods = [
             'ExecutedFirstMiddleware.process_request',
             'ExecutedFirstMiddleware.process_response'
         ]
-        self.assertEqual(expectedExecutedMethods, context['executed_methods'])
+        assert expectedExecutedMethods == context['executed_methods']
 
     def test_order_independent_mw_executed_when_exception_in_req(self):
         """Test that error in inner middleware leaves"""
@@ -490,19 +506,20 @@ class TestSeveralMiddlewares(TestMiddleware):
             def process_request(self, req, resp):
                 raise Exception('Always fail')
 
-        self.api = falcon.API(independent_middleware=True,
-                              middleware=[ExecutedFirstMiddleware(),
-                                          RaiseErrorMiddleware(),
-                                          ExecutedLastMiddleware()])
+        app = falcon.API(independent_middleware=True,
+                         middleware=[ExecutedFirstMiddleware(),
+                                     RaiseErrorMiddleware(),
+                                     ExecutedLastMiddleware()])
 
         def handler(ex, req, resp, params):
             pass
 
-        self.api.add_error_handler(Exception, handler)
+        app.add_error_handler(Exception, handler)
 
-        self.api.add_route(self.test_route, MiddlewareClassResource())
+        app.add_route(TEST_ROUTE, MiddlewareClassResource())
+        client = testing.TestClient(app)
 
-        self.simulate_request(self.test_route)
+        client.simulate_request(path=TEST_ROUTE)
 
         # All response middleware still executed...
         expectedExecutedMethods = [
@@ -510,7 +527,7 @@ class TestSeveralMiddlewares(TestMiddleware):
             'ExecutedLastMiddleware.process_response',
             'ExecutedFirstMiddleware.process_response'
         ]
-        self.assertEqual(expectedExecutedMethods, context['executed_methods'])
+        assert expectedExecutedMethods == context['executed_methods']
 
     def test_order_mw_executed_when_exception_in_rsrc(self):
         """Test that error in inner middleware leaves"""
@@ -521,18 +538,19 @@ class TestSeveralMiddlewares(TestMiddleware):
             def process_resource(self, req, resp, resource):
                 raise Exception('Always fail')
 
-        self.api = falcon.API(middleware=[ExecutedFirstMiddleware(),
-                                          RaiseErrorMiddleware(),
-                                          ExecutedLastMiddleware()])
+        app = falcon.API(middleware=[ExecutedFirstMiddleware(),
+                                     RaiseErrorMiddleware(),
+                                     ExecutedLastMiddleware()])
 
         def handler(ex, req, resp, params):
             pass
 
-        self.api.add_error_handler(Exception, handler)
+        app.add_error_handler(Exception, handler)
 
-        self.api.add_route(self.test_route, MiddlewareClassResource())
+        app.add_route(TEST_ROUTE, MiddlewareClassResource())
+        client = testing.TestClient(app)
 
-        self.simulate_request(self.test_route)
+        client.simulate_request(path=TEST_ROUTE)
 
         # Any mw is executed now...
         expectedExecutedMethods = [
@@ -542,7 +560,7 @@ class TestSeveralMiddlewares(TestMiddleware):
             'ExecutedLastMiddleware.process_response',
             'ExecutedFirstMiddleware.process_response'
         ]
-        self.assertEqual(expectedExecutedMethods, context['executed_methods'])
+        assert expectedExecutedMethods == context['executed_methods']
 
     def test_order_independent_mw_executed_when_exception_in_rsrc(self):
         """Test that error in inner middleware leaves"""
@@ -553,19 +571,20 @@ class TestSeveralMiddlewares(TestMiddleware):
             def process_resource(self, req, resp, resource):
                 raise Exception('Always fail')
 
-        self.api = falcon.API(independent_middleware=True,
-                              middleware=[ExecutedFirstMiddleware(),
-                                          RaiseErrorMiddleware(),
-                                          ExecutedLastMiddleware()])
+        app = falcon.API(independent_middleware=True,
+                         middleware=[ExecutedFirstMiddleware(),
+                                     RaiseErrorMiddleware(),
+                                     ExecutedLastMiddleware()])
 
         def handler(ex, req, resp, params):
             pass
 
-        self.api.add_error_handler(Exception, handler)
+        app.add_error_handler(Exception, handler)
 
-        self.api.add_route(self.test_route, MiddlewareClassResource())
+        app.add_route(TEST_ROUTE, MiddlewareClassResource())
+        client = testing.TestClient(app)
 
-        self.simulate_request(self.test_route)
+        client.simulate_request(path=TEST_ROUTE)
 
         # Any mw is executed now...
         expectedExecutedMethods = [
@@ -575,27 +594,26 @@ class TestSeveralMiddlewares(TestMiddleware):
             'ExecutedLastMiddleware.process_response',
             'ExecutedFirstMiddleware.process_response'
         ]
-        self.assertEqual(expectedExecutedMethods, context['executed_methods'])
+        assert expectedExecutedMethods == context['executed_methods']
 
 
 class TestRemoveBasePathMiddleware(TestMiddleware):
-
     def test_base_path_is_removed_before_routing(self):
         """Test that RemoveBasePathMiddleware is executed before routing"""
-        self.api = falcon.API(middleware=RemoveBasePathMiddleware())
+        app = falcon.API(middleware=RemoveBasePathMiddleware())
 
         # We dont include /base_path as it will be removed in middleware
-        self.api.add_route('/sub_path', MiddlewareClassResource())
+        app.add_route('/sub_path', MiddlewareClassResource())
+        client = testing.TestClient(app)
 
-        body = self.simulate_json_request('/base_path/sub_path')
-        self.assertEqual(_EXPECTED_BODY, body)
-        self.assertEqual(self.srmock.status, falcon.HTTP_200)
-        self.simulate_request('/base_pathIncorrect/sub_path')
-        self.assertEqual(self.srmock.status, falcon.HTTP_404)
+        response = client.simulate_request(path='/base_path/sub_path')
+        assert _EXPECTED_BODY == response.json
+        assert response.status == falcon.HTTP_200
+        response = client.simulate_request(path='/base_pathIncorrect/sub_path')
+        assert response.status == falcon.HTTP_404
 
 
 class TestResourceMiddleware(TestMiddleware):
-
     def test_can_access_resource_params(self):
         """Test that params can be accessed from within process_resource"""
         global context
@@ -604,49 +622,51 @@ class TestResourceMiddleware(TestMiddleware):
             def on_get(self, req, resp, **params):
                 resp.body = json.dumps(params)
 
-        self.api = falcon.API(middleware=AccessParamsMiddleware())
-        self.api.add_route('/path/{id}', Resource())
-        body = self.simulate_json_request('/path/22')
+        app = falcon.API(middleware=AccessParamsMiddleware())
+        app.add_route('/path/{id}', Resource())
+        client = testing.TestClient(app)
+        response = client.simulate_request(path='/path/22')
 
-        self.assertIn('params', context)
-        self.assertTrue(context['params'])
-        self.assertEqual(context['params']['id'], '22')
-        self.assertEqual(body, {'added': True, 'id': '22'})
+        assert 'params' in context
+        assert context['params']
+        assert context['params']['id'] == '22'
+        assert response.json == {'added': True, 'id': '22'}
 
 
 class TestErrorHandling(TestMiddleware):
-
-    def setUp(self):
-        super(TestErrorHandling, self).setUp()
-
-        self.mw = CaptureResponseMiddleware()
-
-        self.api = falcon.API(middleware=self.mw)
-        self.api.add_route('/', MiddlewareClassResource())
-
     def test_error_composed_before_resp_middleware_called(self):
-        self.simulate_request('/', method='POST')
-        self.assertEqual(self.srmock.status, falcon.HTTP_403)
-        self.assertEqual(self.mw.resp.status, self.srmock.status)
+        mw = CaptureResponseMiddleware()
+        app = falcon.API(middleware=mw)
+        app.add_route('/', MiddlewareClassResource())
+        client = testing.TestClient(app)
 
-        composed_body = json.loads(self.mw.resp.body)
-        self.assertEqual(composed_body['title'], self.srmock.status)
+        response = client.simulate_request(path='/', method='POST')
+        assert response.status == falcon.HTTP_403
+        assert mw.resp.status == response.status
 
-        self.assertFalse(self.mw.req_succeeded)
+        composed_body = json.loads(mw.resp.body)
+        assert composed_body['title'] == response.status
+
+        assert not mw.req_succeeded
 
         # NOTE(kgriffs): Sanity-check the other params passed to
         # process_response()
-        self.assertIsInstance(self.mw.req, falcon.Request)
-        self.assertIsInstance(self.mw.resource, MiddlewareClassResource)
+        assert isinstance(mw.req, falcon.Request)
+        assert isinstance(mw.resource, MiddlewareClassResource)
 
     def test_http_status_raised_from_error_handler(self):
+        mw = CaptureResponseMiddleware()
+        app = falcon.API(middleware=mw)
+        app.add_route('/', MiddlewareClassResource())
+        client = testing.TestClient(app)
+
         def _http_error_handler(error, req, resp, params):
             raise falcon.HTTPStatus(falcon.HTTP_201)
 
         # NOTE(kgriffs): This will take precedence over the default
         # handler for facon.HTTPError.
-        self.api.add_error_handler(falcon.HTTPError, _http_error_handler)
+        app.add_error_handler(falcon.HTTPError, _http_error_handler)
 
-        self.simulate_request('/', method='POST')
-        self.assertEqual(self.srmock.status, falcon.HTTP_201)
-        self.assertEqual(self.mw.resp.status, self.srmock.status)
+        response = client.simulate_request(path='/', method='POST')
+        assert response.status == falcon.HTTP_201
+        assert mw.resp.status == response.status

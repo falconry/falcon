@@ -1,8 +1,7 @@
 import datetime
 
-import ddt
+import pytest
 import six
-import testtools
 
 import falcon
 from falcon.request import Request, RequestOptions
@@ -12,12 +11,9 @@ import falcon.uri
 _PROTOCOLS = ['HTTP/1.0', 'HTTP/1.1']
 
 
-@ddt.ddt
-class TestReqVars(testing.TestCase):
+class TestReqVars(object):
 
-    def setUp(self):
-        super(TestReqVars, self).setUp()
-
+    def setup_method(self, method):
         self.qs = 'marker=deadbeef&limit=10'
 
         self.headers = {
@@ -51,36 +47,36 @@ class TestReqVars(testing.TestCase):
         Request(env)
 
     def test_empty(self):
-        self.assertIs(self.req.auth, None)
+        assert self.req.auth is None
 
     def test_host(self):
-        self.assertEqual(self.req.host, testing.DEFAULT_HOST)
+        assert self.req.host == testing.DEFAULT_HOST
 
     def test_subdomain(self):
         req = Request(testing.create_environ(
             host='com',
             path='/hello',
             headers=self.headers))
-        self.assertIs(req.subdomain, None)
+        assert req.subdomain is None
 
         req = Request(testing.create_environ(
             host='example.com',
             path='/hello',
             headers=self.headers))
-        self.assertEqual(req.subdomain, 'example')
+        assert req.subdomain == 'example'
 
         req = Request(testing.create_environ(
             host='highwire.example.com',
             path='/hello',
             headers=self.headers))
-        self.assertEqual(req.subdomain, 'highwire')
+        assert req.subdomain == 'highwire'
 
         req = Request(testing.create_environ(
             host='lb01.dfw01.example.com',
             port=8080,
             path='/hello',
             headers=self.headers))
-        self.assertEqual(req.subdomain, 'lb01')
+        assert req.subdomain == 'lb01'
 
         # NOTE(kgriffs): Behavior for IP addresses is undefined,
         # so just make sure it doesn't blow up.
@@ -88,7 +84,7 @@ class TestReqVars(testing.TestCase):
             host='127.0.0.1',
             path='/hello',
             headers=self.headers))
-        self.assertEqual(type(req.subdomain), str)
+        assert type(req.subdomain) == str
 
         # NOTE(kgriffs): Test fallback to SERVER_NAME by using
         # HTTP 1.0, which will cause .create_environ to not set
@@ -98,7 +94,7 @@ class TestReqVars(testing.TestCase):
             host='example.com',
             path='/hello',
             headers=self.headers))
-        self.assertEqual(req.subdomain, 'example')
+        assert req.subdomain == 'example'
 
     def test_reconstruct_url(self):
         req = self.req
@@ -112,14 +108,14 @@ class TestReqVars(testing.TestCase):
         expected_uri = ''.join([scheme, '://', host, app, path,
                                 '?', query_string])
 
-        self.assertEqual(expected_uri, req.uri)
+        assert expected_uri == req.uri
 
-    @ddt.data(
+    @pytest.mark.skipif(not six.PY3, reason='Test only applies to Python 3')
+    @pytest.mark.parametrize('test_path', [
         u'/hello_\u043f\u0440\u0438\u0432\u0435\u0442',
         u'/test/%E5%BB%B6%E5%AE%89',
         u'/test/%C3%A4%C3%B6%C3%BC%C3%9F%E2%82%AC',
-    )
-    @testtools.skipUnless(six.PY3, 'Test only applies to Python 3')
+    ])
     def test_nonlatin_path(self, test_path):
         # NOTE(kgriffs): When a request comes in, web servers decode
         # the path.  The decoded path may contain UTF-8 characters,
@@ -142,20 +138,20 @@ class TestReqVars(testing.TestCase):
             path=test_path,
             headers=self.headers))
 
-        self.assertEqual(req.path, falcon.uri.decode(test_path))
+        assert req.path == falcon.uri.decode(test_path)
 
     def test_uri(self):
         uri = ('http://' + testing.DEFAULT_HOST + ':8080' +
                self.app + self.relative_uri)
 
-        self.assertEqual(self.req.url, uri)
+        assert self.req.url == uri
 
         # NOTE(kgriffs): Call twice to check caching works
-        self.assertEqual(self.req.uri, uri)
-        self.assertEqual(self.req.uri, uri)
+        assert self.req.uri == uri
+        assert self.req.uri == uri
 
         uri_noqs = ('http://' + testing.DEFAULT_HOST + self.app + self.path)
-        self.assertEqual(self.req_noqs.uri, uri_noqs)
+        assert self.req_noqs.uri == uri_noqs
 
     def test_uri_https(self):
         # =======================================================
@@ -165,7 +161,7 @@ class TestReqVars(testing.TestCase):
             path='/hello', scheme='https'))
         uri = ('https://' + testing.DEFAULT_HOST + '/hello')
 
-        self.assertEqual(req.uri, uri)
+        assert req.uri == uri
 
         # =======================================================
         # Default port, explicit
@@ -174,7 +170,7 @@ class TestReqVars(testing.TestCase):
             path='/hello', scheme='https', port=443))
         uri = ('https://' + testing.DEFAULT_HOST + '/hello')
 
-        self.assertEqual(req.uri, uri)
+        assert req.uri == uri
 
         # =======================================================
         # Non-default port
@@ -183,7 +179,7 @@ class TestReqVars(testing.TestCase):
             path='/hello', scheme='https', port=22))
         uri = ('https://' + testing.DEFAULT_HOST + ':22/hello')
 
-        self.assertEqual(req.uri, uri)
+        assert req.uri == uri
 
     def test_uri_http_1_0(self):
         # =======================================================
@@ -200,7 +196,7 @@ class TestReqVars(testing.TestCase):
         uri = ('http://' + testing.DEFAULT_HOST +
                self.app + self.relative_uri)
 
-        self.assertEqual(req.uri, uri)
+        assert req.uri == uri
 
         # =======================================================
         # HTTP, 80
@@ -216,7 +212,7 @@ class TestReqVars(testing.TestCase):
         uri = ('http://' + testing.DEFAULT_HOST + ':8080' +
                self.app + self.relative_uri)
 
-        self.assertEqual(req.uri, uri)
+        assert req.uri == uri
 
         # =======================================================
         # HTTP, 80
@@ -233,7 +229,7 @@ class TestReqVars(testing.TestCase):
         uri = ('https://' + testing.DEFAULT_HOST +
                self.app + self.relative_uri)
 
-        self.assertEqual(req.uri, uri)
+        assert req.uri == uri
 
         # =======================================================
         # HTTP, 80
@@ -250,19 +246,18 @@ class TestReqVars(testing.TestCase):
         uri = ('https://' + testing.DEFAULT_HOST + ':22' +
                self.app + self.relative_uri)
 
-        self.assertEqual(req.uri, uri)
+        assert req.uri == uri
 
     def test_relative_uri(self):
-        self.assertEqual(self.req.relative_uri, self.app + self.relative_uri)
-        self.assertEqual(
-            self.req_noqs.relative_uri, self.app + self.path)
+        assert self.req.relative_uri == self.app + self.relative_uri
+        assert self.req_noqs.relative_uri == self.app + self.path
 
         req_noapp = Request(testing.create_environ(
             path='/hello',
             query_string=self.qs,
             headers=self.headers))
 
-        self.assertEqual(req_noapp.relative_uri, self.relative_uri)
+        assert req_noapp.relative_uri == self.relative_uri
 
         req_noapp = Request(testing.create_environ(
             path='/hello/',
@@ -270,8 +265,8 @@ class TestReqVars(testing.TestCase):
             headers=self.headers))
 
         # NOTE(kgriffs): Call twice to check caching works
-        self.assertEqual(req_noapp.relative_uri, self.relative_uri)
-        self.assertEqual(req_noapp.relative_uri, self.relative_uri)
+        assert req_noapp.relative_uri == self.relative_uri
+        assert req_noapp.relative_uri == self.relative_uri
 
         options = RequestOptions()
         options.strip_url_path_trailing_slash = False
@@ -281,192 +276,195 @@ class TestReqVars(testing.TestCase):
             headers=self.headers),
             options=options)
 
-        self.assertEqual(req_noapp.relative_uri, '/hello/' + '?' + self.qs)
+        assert req_noapp.relative_uri == '/hello/' + '?' + self.qs
 
     def test_client_accepts(self):
         headers = {'Accept': 'application/xml'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertTrue(req.client_accepts('application/xml'))
+        assert req.client_accepts('application/xml')
 
         headers = {'Accept': '*/*'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertTrue(req.client_accepts('application/xml'))
-        self.assertTrue(req.client_accepts('application/json'))
-        self.assertTrue(req.client_accepts('application/x-msgpack'))
+        assert req.client_accepts('application/xml')
+        assert req.client_accepts('application/json')
+        assert req.client_accepts('application/x-msgpack')
 
         headers = {'Accept': 'application/x-msgpack'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertFalse(req.client_accepts('application/xml'))
-        self.assertFalse(req.client_accepts('application/json'))
-        self.assertTrue(req.client_accepts('application/x-msgpack'))
+        assert not req.client_accepts('application/xml')
+        assert not req.client_accepts('application/json')
+        assert req.client_accepts('application/x-msgpack')
 
         headers = {}  # NOTE(kgriffs): Equivalent to '*/*' per RFC
         req = Request(testing.create_environ(headers=headers))
-        self.assertTrue(req.client_accepts('application/xml'))
+        assert req.client_accepts('application/xml')
 
         headers = {'Accept': 'application/json'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertFalse(req.client_accepts('application/xml'))
+        assert not req.client_accepts('application/xml')
 
         headers = {'Accept': 'application/x-msgpack'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertTrue(req.client_accepts('application/x-msgpack'))
+        assert req.client_accepts('application/x-msgpack')
 
         headers = {'Accept': 'application/xm'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertFalse(req.client_accepts('application/xml'))
+        assert not req.client_accepts('application/xml')
 
         headers = {'Accept': 'application/*'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertTrue(req.client_accepts('application/json'))
-        self.assertTrue(req.client_accepts('application/xml'))
-        self.assertTrue(req.client_accepts('application/x-msgpack'))
+        assert req.client_accepts('application/json')
+        assert req.client_accepts('application/xml')
+        assert req.client_accepts('application/x-msgpack')
 
         headers = {'Accept': 'text/*'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertTrue(req.client_accepts('text/plain'))
-        self.assertTrue(req.client_accepts('text/csv'))
-        self.assertFalse(req.client_accepts('application/xhtml+xml'))
+        assert req.client_accepts('text/plain')
+        assert req.client_accepts('text/csv')
+        assert not req.client_accepts('application/xhtml+xml')
 
         headers = {'Accept': 'text/*, application/xhtml+xml; q=0.0'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertTrue(req.client_accepts('text/plain'))
-        self.assertTrue(req.client_accepts('text/csv'))
-        self.assertFalse(req.client_accepts('application/xhtml+xml'))
+        assert req.client_accepts('text/plain')
+        assert req.client_accepts('text/csv')
+        assert not req.client_accepts('application/xhtml+xml')
 
         headers = {'Accept': 'text/*; q=0.1, application/xhtml+xml; q=0.5'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertTrue(req.client_accepts('text/plain'))
-        self.assertTrue(req.client_accepts('application/xhtml+xml'))
+        assert req.client_accepts('text/plain')
+        assert req.client_accepts('application/xhtml+xml')
 
         headers = {'Accept': 'text/*,         application/*'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertTrue(req.client_accepts('text/plain'))
-        self.assertTrue(req.client_accepts('application/xml'))
-        self.assertTrue(req.client_accepts('application/json'))
-        self.assertTrue(req.client_accepts('application/x-msgpack'))
+        assert req.client_accepts('text/plain')
+        assert req.client_accepts('application/xml')
+        assert req.client_accepts('application/json')
+        assert req.client_accepts('application/x-msgpack')
 
         headers = {'Accept': 'text/*,application/*'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertTrue(req.client_accepts('text/plain'))
-        self.assertTrue(req.client_accepts('application/xml'))
-        self.assertTrue(req.client_accepts('application/json'))
-        self.assertTrue(req.client_accepts('application/x-msgpack'))
+        assert req.client_accepts('text/plain')
+        assert req.client_accepts('application/xml')
+        assert req.client_accepts('application/json')
+        assert req.client_accepts('application/x-msgpack')
 
     def test_client_accepts_bogus(self):
         headers = {'Accept': '~'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertFalse(req.client_accepts('text/plain'))
-        self.assertFalse(req.client_accepts('application/json'))
+        assert not req.client_accepts('text/plain')
+        assert not req.client_accepts('application/json')
 
     def test_client_accepts_props(self):
         headers = {'Accept': 'application/xml'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertTrue(req.client_accepts_xml)
-        self.assertFalse(req.client_accepts_json)
-        self.assertFalse(req.client_accepts_msgpack)
+        assert req.client_accepts_xml
+        assert not req.client_accepts_json
+        assert not req.client_accepts_msgpack
 
         headers = {'Accept': 'application/*'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertTrue(req.client_accepts_xml)
-        self.assertTrue(req.client_accepts_json)
-        self.assertTrue(req.client_accepts_msgpack)
+        assert req.client_accepts_xml
+        assert req.client_accepts_json
+        assert req.client_accepts_msgpack
 
         headers = {'Accept': 'application/json'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertFalse(req.client_accepts_xml)
-        self.assertTrue(req.client_accepts_json)
-        self.assertFalse(req.client_accepts_msgpack)
+        assert not req.client_accepts_xml
+        assert req.client_accepts_json
+        assert not req.client_accepts_msgpack
 
         headers = {'Accept': 'application/x-msgpack'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertFalse(req.client_accepts_xml)
-        self.assertFalse(req.client_accepts_json)
-        self.assertTrue(req.client_accepts_msgpack)
+        assert not req.client_accepts_xml
+        assert not req.client_accepts_json
+        assert req.client_accepts_msgpack
 
         headers = {'Accept': 'application/msgpack'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertFalse(req.client_accepts_xml)
-        self.assertFalse(req.client_accepts_json)
-        self.assertTrue(req.client_accepts_msgpack)
+        assert not req.client_accepts_xml
+        assert not req.client_accepts_json
+        assert req.client_accepts_msgpack
 
         headers = {
             'Accept': 'application/json,application/xml,application/x-msgpack'
         }
         req = Request(testing.create_environ(headers=headers))
-        self.assertTrue(req.client_accepts_xml)
-        self.assertTrue(req.client_accepts_json)
-        self.assertTrue(req.client_accepts_msgpack)
+        assert req.client_accepts_xml
+        assert req.client_accepts_json
+        assert req.client_accepts_msgpack
 
     def test_client_prefers(self):
         headers = {'Accept': 'application/xml'}
         req = Request(testing.create_environ(headers=headers))
         preferred_type = req.client_prefers(['application/xml'])
-        self.assertEqual(preferred_type, 'application/xml')
+        assert preferred_type == 'application/xml'
 
         headers = {'Accept': '*/*'}
         preferred_type = req.client_prefers(('application/xml',
                                              'application/json'))
 
         # NOTE(kgriffs): If client doesn't care, "prefer" the first one
-        self.assertEqual(preferred_type, 'application/xml')
+        assert preferred_type == 'application/xml'
 
         headers = {'Accept': 'text/*; q=0.1, application/xhtml+xml; q=0.5'}
         req = Request(testing.create_environ(headers=headers))
         preferred_type = req.client_prefers(['application/xhtml+xml'])
-        self.assertEqual(preferred_type, 'application/xhtml+xml')
+        assert preferred_type == 'application/xhtml+xml'
 
         headers = {'Accept': '3p12845j;;;asfd;'}
         req = Request(testing.create_environ(headers=headers))
         preferred_type = req.client_prefers(['application/xhtml+xml'])
-        self.assertEqual(preferred_type, None)
+        assert preferred_type is None
 
     def test_range(self):
         headers = {'Range': 'bytes=10-'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEqual(req.range, (10, -1))
+        assert req.range == (10, -1)
 
         headers = {'Range': 'bytes=10-20'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEqual(req.range, (10, 20))
+        assert req.range == (10, 20)
 
         headers = {'Range': 'bytes=-10240'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEqual(req.range, (-10240, -1))
+        assert req.range == (-10240, -1)
 
         headers = {'Range': 'bytes=0-2'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEqual(req.range, (0, 2))
+        assert req.range == (0, 2)
 
         headers = {'Range': ''}
         req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.HTTPInvalidHeader, lambda: req.range)
+        with pytest.raises(falcon.HTTPInvalidHeader):
+            req.range
 
         req = Request(testing.create_environ())
-        self.assertIs(req.range, None)
+        assert req.range is None
 
     def test_range_unit(self):
         headers = {'Range': 'bytes=10-'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEqual(req.range, (10, -1))
-        self.assertEqual(req.range_unit, 'bytes')
+        assert req.range == (10, -1)
+        assert req.range_unit == 'bytes'
 
         headers = {'Range': 'items=10-'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEqual(req.range, (10, -1))
-        self.assertEqual(req.range_unit, 'items')
+        assert req.range == (10, -1)
+        assert req.range_unit == 'items'
 
         headers = {'Range': ''}
         req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.HTTPInvalidHeader, lambda: req.range_unit)
+        with pytest.raises(falcon.HTTPInvalidHeader):
+            req.range_unit
 
         req = Request(testing.create_environ())
-        self.assertIs(req.range_unit, None)
+        assert req.range_unit is None
 
     def test_range_invalid(self):
         headers = {'Range': 'bytes=10240'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.range
 
         headers = {'Range': 'bytes=-'}
         expected_desc = ('The value provided for the Range header is '
@@ -477,47 +475,58 @@ class TestReqVars(testing.TestCase):
 
         headers = {'Range': 'bytes=--'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.range
 
         headers = {'Range': 'bytes=-3-'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.range
 
         headers = {'Range': 'bytes=-3-4'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.range
 
         headers = {'Range': 'bytes=3-3-4'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.range
 
         headers = {'Range': 'bytes=3-3-'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.range
 
         headers = {'Range': 'bytes=3-3- '}
         req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.range
 
         headers = {'Range': 'bytes=fizbit'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.range
 
         headers = {'Range': 'bytes=a-'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.range
 
         headers = {'Range': 'bytes=a-3'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.range
 
         headers = {'Range': 'bytes=-b'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.range
 
         headers = {'Range': 'bytes=3-b'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertRaises(falcon.HTTPBadRequest, lambda: req.range)
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.range
 
         headers = {'Range': 'bytes=x-y'}
         expected_desc = ('The value provided for the Range header is '
@@ -545,19 +554,19 @@ class TestReqVars(testing.TestCase):
 
     def test_missing_attribute_header(self):
         req = Request(testing.create_environ())
-        self.assertEqual(req.range, None)
+        assert req.range is None
 
         req = Request(testing.create_environ())
-        self.assertEqual(req.content_length, None)
+        assert req.content_length is None
 
     def test_content_length(self):
         headers = {'content-length': '5656'}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEqual(req.content_length, 5656)
+        assert req.content_length == 5656
 
         headers = {'content-length': ''}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEqual(req.content_length, None)
+        assert req.content_length is None
 
     def test_bogus_content_length_nan(self):
         headers = {'content-length': 'fuzzy-bunnies'}
@@ -577,22 +586,22 @@ class TestReqVars(testing.TestCase):
                                  falcon.HTTPInvalidHeader,
                                  'Invalid header value', expected_desc)
 
-    @ddt.data(('Date', 'date'),
-              ('If-Modified-since', 'if_modified_since'),
-              ('If-Unmodified-since', 'if_unmodified_since'),
-              )
-    @ddt.unpack
+    @pytest.mark.parametrize('header,attr', [
+        ('Date', 'date'),
+        ('If-Modified-Since', 'if_modified_since'),
+        ('If-Unmodified-Since', 'if_unmodified_since'),
+    ])
     def test_date(self, header, attr):
         date = datetime.datetime(2013, 4, 4, 5, 19, 18)
         date_str = 'Thu, 04 Apr 2013 05:19:18 GMT'
 
         self._test_header_expected_value(header, date_str, attr, date)
 
-    @ddt.data(('Date', 'date'),
-              ('If-Modified-Since', 'if_modified_since'),
-              ('If-Unmodified-Since', 'if_unmodified_since'),
-              )
-    @ddt.unpack
+    @pytest.mark.parametrize('header,attr', [
+        ('Date', 'date'),
+        ('If-Modified-Since', 'if_modified_since'),
+        ('If-Unmodified-Since', 'if_unmodified_since'),
+    ])
     def test_date_invalid(self, header, attr):
 
         # Date formats don't conform to RFC 1123
@@ -612,10 +621,10 @@ class TestReqVars(testing.TestCase):
                                  'Invalid header value',
                                  expected_desc.format(header))
 
-    @ddt.data('date', 'if_modified_since', 'if_unmodified_since')
+    @pytest.mark.parametrize('attr', ('date', 'if_modified_since', 'if_unmodified_since'))
     def test_date_missing(self, attr):
         req = Request(testing.create_environ())
-        self.assertIs(getattr(req, attr), None)
+        assert getattr(req, attr) is None
 
     def test_attribute_headers(self):
         hash = 'fa0d1a60ef6616bb28038515c8ea4cb2'
@@ -642,24 +651,24 @@ class TestReqVars(testing.TestCase):
         self._test_attribute_header('Referer', referer, 'referer')
 
     def test_method(self):
-        self.assertEqual(self.req.method, 'GET')
+        assert self.req.method == 'GET'
 
         self.req = Request(testing.create_environ(path='', method='HEAD'))
-        self.assertEqual(self.req.method, 'HEAD')
+        assert self.req.method == 'HEAD'
 
     def test_empty_path(self):
         self.req = Request(testing.create_environ(path=''))
-        self.assertEqual(self.req.path, '/')
+        assert self.req.path == '/'
 
     def test_content_type_method(self):
-        self.assertEqual(self.req.get_header('content-type'), 'text/plain')
+        assert self.req.get_header('content-type') == 'text/plain'
 
     def test_content_length_method(self):
-        self.assertEqual(self.req.get_header('content-length'), '4829')
+        assert self.req.get_header('content-length') == '4829'
 
     # TODO(kgriffs): Migrate to pytest and parametrized fixtures
     # to DRY things up a bit.
-    @ddt.data(*_PROTOCOLS)
+    @pytest.mark.parametrize('protocol', _PROTOCOLS)
     def test_port_explicit(self, protocol):
         port = 9000
         req = Request(testing.create_environ(
@@ -670,9 +679,9 @@ class TestReqVars(testing.TestCase):
             query_string=self.qs,
             headers=self.headers))
 
-        self.assertEqual(req.port, port)
+        assert req.port == port
 
-    @ddt.data(*_PROTOCOLS)
+    @pytest.mark.parametrize('protocol', _PROTOCOLS)
     def test_scheme_https(self, protocol):
         scheme = 'https'
         req = Request(testing.create_environ(
@@ -683,10 +692,10 @@ class TestReqVars(testing.TestCase):
             query_string=self.qs,
             headers=self.headers))
 
-        self.assertEqual(req.scheme, scheme)
-        self.assertEqual(req.port, 443)
+        assert req.scheme == scheme
+        assert req.port == 443
 
-    @ddt.data(*_PROTOCOLS)
+    @pytest.mark.parametrize('protocol', _PROTOCOLS)
     def test_scheme_http(self, protocol):
         scheme = 'http'
         req = Request(testing.create_environ(
@@ -697,10 +706,10 @@ class TestReqVars(testing.TestCase):
             query_string=self.qs,
             headers=self.headers))
 
-        self.assertEqual(req.scheme, scheme)
-        self.assertEqual(req.port, 80)
+        assert req.scheme == scheme
+        assert req.port == 80
 
-    @ddt.data(*_PROTOCOLS)
+    @pytest.mark.parametrize('protocol', _PROTOCOLS)
     def test_netloc_default_port(self, protocol):
         req = Request(testing.create_environ(
             protocol=protocol,
@@ -709,9 +718,9 @@ class TestReqVars(testing.TestCase):
             query_string=self.qs,
             headers=self.headers))
 
-        self.assertEqual(req.netloc, 'falconframework.org')
+        assert req.netloc == 'falconframework.org'
 
-    @ddt.data(*_PROTOCOLS)
+    @pytest.mark.parametrize('protocol', _PROTOCOLS)
     def test_netloc_nondefault_port(self, protocol):
         req = Request(testing.create_environ(
             protocol=protocol,
@@ -721,9 +730,9 @@ class TestReqVars(testing.TestCase):
             query_string=self.qs,
             headers=self.headers))
 
-        self.assertEqual(req.netloc, 'falconframework.org:8080')
+        assert req.netloc == 'falconframework.org:8080'
 
-    @ddt.data(*_PROTOCOLS)
+    @pytest.mark.parametrize('protocol', _PROTOCOLS)
     def test_netloc_from_env(self, protocol):
         port = 9000
         host = 'example.org'
@@ -738,8 +747,8 @@ class TestReqVars(testing.TestCase):
 
         req = Request(env)
 
-        self.assertEqual(req.port, port)
-        self.assertEqual(req.netloc, '{0}:{1}'.format(host, port))
+        assert req.port == port
+        assert req.netloc == '{0}:{1}'.format(host, port)
 
     # -------------------------------------------------------------------------
     # Helpers
@@ -748,15 +757,15 @@ class TestReqVars(testing.TestCase):
     def _test_attribute_header(self, name, value, attr, default=None):
         headers = {name: value}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEqual(getattr(req, attr), value)
+        assert getattr(req, attr) == value
 
         req = Request(testing.create_environ())
-        self.assertEqual(getattr(req, attr), default)
+        assert getattr(req, attr) == default
 
     def _test_header_expected_value(self, name, value, attr, expected_value):
         headers = {name: value}
         req = Request(testing.create_environ(headers=headers))
-        self.assertEqual(getattr(req, attr), expected_value)
+        assert getattr(req, attr) == expected_value
 
     def _test_error_details(self, headers, attr_name,
                             error_type, title, description):
@@ -764,7 +773,7 @@ class TestReqVars(testing.TestCase):
 
         try:
             getattr(req, attr_name)
-            self.fail('{0} not raised'.format(error_type.__name__))
+            pytest.fail('{0} not raised'.format(error_type.__name__))
         except error_type as ex:
-            self.assertEqual(ex.title, title)
-            self.assertEqual(ex.description, description)
+            assert ex.title == title
+            assert ex.description == description

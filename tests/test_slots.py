@@ -1,8 +1,10 @@
+import pytest
+
 from falcon import Request, Response
 import falcon.testing as testing
 
 
-class TestSlots(testing.TestBase):
+class TestSlots(object):
 
     def test_slots_request(self):
         env = testing.create_environ()
@@ -11,7 +13,7 @@ class TestSlots(testing.TestBase):
         try:
             req.doesnt = 'exist'
         except AttributeError:
-            self.fail('Unable to add additional variables dynamically')
+            pytest.fail('Unable to add additional variables dynamically')
 
     def test_slots_response(self):
         resp = Response()
@@ -19,4 +21,4 @@ class TestSlots(testing.TestBase):
         try:
             resp.doesnt = 'exist'
         except AttributeError:
-            self.fail('Unable to add additional variables dynamically')
+            pytest.fail('Unable to add additional variables dynamically')

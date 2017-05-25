@@ -1,34 +1,32 @@
-import ddt
+import pytest
 
 from falcon.request import RequestOptions
-import falcon.testing as testing
 
 
-@ddt.ddt
-class TestRequestOptions(testing.TestBase):
+class TestRequestOptions(object):
 
     def test_option_defaults(self):
         options = RequestOptions()
 
-        self.assertFalse(options.keep_blank_qs_values)
-        self.assertFalse(options.auto_parse_form_urlencoded)
-        self.assertTrue(options.auto_parse_qs_csv)
-        self.assertTrue(options.strip_url_path_trailing_slash)
+        assert not options.keep_blank_qs_values
+        assert not options.auto_parse_form_urlencoded
+        assert options.auto_parse_qs_csv
+        assert options.strip_url_path_trailing_slash
 
-    @ddt.data(
+    @pytest.mark.parametrize('option_name', [
         'keep_blank_qs_values',
         'auto_parse_form_urlencoded',
         'auto_parse_qs_csv',
         'strip_url_path_trailing_slash',
-    )
+    ])
     def test_options_toggle(self, option_name):
         options = RequestOptions()
 
         setattr(options, option_name, True)
-        self.assertTrue(getattr(options, option_name))
+        assert getattr(options, option_name)
 
         setattr(options, option_name, False)
-        self.assertFalse(getattr(options, option_name))
+        assert not getattr(options, option_name)
 
     def test_incorrect_options(self):
         options = RequestOptions()
@@ -36,4 +34,5 @@ class TestRequestOptions(testing.TestBase):
         def _assign_invalid():
             options.invalid_option_and_attribute = True
 
-        self.assertRaises(AttributeError, _assign_invalid)
+        with pytest.raises(AttributeError):
+            _assign_invalid()

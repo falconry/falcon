@@ -2,7 +2,7 @@ import falcon
 from falcon import testing
 
 
-class TestCustomRouter(testing.TestBase):
+class TestCustomRouter(object):
 
     def test_custom_router_add_route_should_be_used(self):
         check = []
@@ -14,11 +14,11 @@ class TestCustomRouter(testing.TestBase):
             def find(self, uri):
                 pass
 
-        api = falcon.API(router=CustomRouter())
-        api.add_route('/test', 'resource')
+        app = falcon.API(router=CustomRouter())
+        app.add_route('/test', 'resource')
 
-        self.assertEqual(len(check), 1)
-        self.assertIn('/test', check)
+        assert len(check) == 1
+        assert '/test' in check
 
     def test_custom_router_find_should_be_used(self):
 
@@ -46,22 +46,24 @@ class TestCustomRouter(testing.TestBase):
                 return None
 
         router = CustomRouter()
-        self.api = falcon.API(router=router)
-        body = self.simulate_request('/test/42')
-        self.assertEqual(body, [b'{"uri_template": "/test/{id}"}'])
+        app = falcon.API(router=router)
+        client = testing.TestClient(app)
 
-        body = self.simulate_request('/test/42/no-uri-template')
-        self.assertEqual(body, [b'{"uri_template": "None"}'])
+        response = client.simulate_request(path='/test/42')
+        assert response.content == b'{"uri_template": "/test/{id}"}'
 
-        body = self.simulate_request('/test/42/uri-template/backwards-compat')
-        self.assertEqual(body, [b'{"uri_template": "None"}'])
+        response = client.simulate_request(path='/test/42/no-uri-template')
+        assert response.content == b'{"uri_template": "None"}'
+
+        response = client.simulate_request(path='/test/42/uri-template/backwards-compat')
+        assert response.content == b'{"uri_template": "None"}'
 
         for uri in ('/404', '/404/backwards-compat'):
-            body = self.simulate_request(uri)
-            self.assertFalse(body)
-            self.assertEqual(self.srmock.status, falcon.HTTP_404)
+            response = client.simulate_request(path=uri)
+            assert not response.content
+            assert response.status == falcon.HTTP_404
 
-        self.assertTrue(router.reached_backwards_compat)
+        assert router.reached_backwards_compat
 
     def test_can_pass_additional_params_to_add_route(self):
 
@@ -75,17 +77,17 @@ class TestCustomRouter(testing.TestBase):
             def find(self, uri):
                 pass
 
-        api = falcon.API(router=CustomRouter())
-        api.add_route('/test', 'resource', name='my-url-name')
+        app = falcon.API(router=CustomRouter())
+        app.add_route('/test', 'resource', name='my-url-name')
 
-        self.assertEqual(len(check), 1)
-        self.assertIn('my-url-name', check)
+        assert len(check) == 1
+        assert 'my-url-name' in check
 
         # Also as arg.
-        api.add_route('/test', 'resource', 'my-url-name-arg')
+        app.add_route('/test', 'resource', 'my-url-name-arg')
 
-        self.assertEqual(len(check), 2)
-        self.assertIn('my-url-name-arg', check)
+        assert len(check) == 2
+        assert 'my-url-name-arg' in check
 
     def test_custom_router_takes_req_positional_argument(self):
         def responder(req, resp):
@@ -97,9 +99,10 @@ class TestCustomRouter(testing.TestBase):
                     return responder, {'GET': responder}, {}, None
 
         router = CustomRouter()
-        self.api = falcon.API(router=router)
-        body = self.simulate_request('/test')
-        self.assertEqual(body[0], b'OK')
+        app = falcon.API(router=router)
+        client = testing.TestClient(app)
+        response = client.simulate_request(path='/test')
+        assert response.content == b'OK'
 
     def test_custom_router_takes_req_keyword_argument(self):
         def responder(req, resp):
@@ -111,6 +114,7 @@ class TestCustomRouter(testing.TestBase):
                     return responder, {'GET': responder}, {}, None
 
         router = CustomRouter()
-        self.api = falcon.API(router=router)
-        body = self.simulate_request('/test')
-        self.assertEqual(body[0], b'OK')
+        app = falcon.API(router=router)
+        client = testing.TestClient(app)
+        response = client.simulate_request(path='/test')
+        assert response.content == b'OK'

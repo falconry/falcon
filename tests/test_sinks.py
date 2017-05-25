@@ -1,5 +1,7 @@
 import re
 
+import pytest
+
 import falcon
 import falcon.testing as testing
 
@@ -27,90 +29,102 @@ class BookCollection(testing.TestResource):
     pass
 
 
-class TestDefaultRouting(testing.TestBase):
+@pytest.fixture
+def resource():
+    return BookCollection()
 
-    def before(self):
-        self.sink = Sink()
-        self.resource = BookCollection()
 
-    def test_single_default_pattern(self):
-        self.api.add_sink(self.sink)
+@pytest.fixture
+def sink():
+    return Sink()
 
-        self.simulate_request('/')
-        self.assertEqual(self.srmock.status, falcon.HTTP_503)
 
-    def test_single_simple_pattern(self):
-        self.api.add_sink(self.sink, r'/foo')
+@pytest.fixture
+def client():
+    app = falcon.API()
+    return testing.TestClient(app)
 
-        self.simulate_request('/foo/bar')
-        self.assertEqual(self.srmock.status, falcon.HTTP_503)
 
-    def test_single_compiled_pattern(self):
-        self.api.add_sink(self.sink, re.compile(r'/foo'))
+class TestDefaultRouting(object):
 
-        self.simulate_request('/foo/bar')
-        self.assertEqual(self.srmock.status, falcon.HTTP_503)
+    def test_single_default_pattern(self, client, sink, resource):
+        client.app.add_sink(sink)
 
-        self.simulate_request('/auth')
-        self.assertEqual(self.srmock.status, falcon.HTTP_404)
+        response = client.simulate_request(path='/')
+        assert response.status == falcon.HTTP_503
 
-    def test_named_groups(self):
-        self.api.add_sink(self.sink, r'/user/(?P<id>\d+)')
+    def test_single_simple_pattern(self, client, sink, resource):
+        client.app.add_sink(sink, r'/foo')
 
-        self.simulate_request('/user/309')
-        self.assertEqual(self.srmock.status, falcon.HTTP_503)
-        self.assertEqual(self.sink.kwargs['id'], '309')
+        response = client.simulate_request(path='/foo/bar')
+        assert response.status == falcon.HTTP_503
 
-        self.simulate_request('/user/sally')
-        self.assertEqual(self.srmock.status, falcon.HTTP_404)
+    def test_single_compiled_pattern(self, client, sink, resource):
+        client.app.add_sink(sink, re.compile(r'/foo'))
 
-    def test_multiple_patterns(self):
-        self.api.add_sink(self.sink, r'/foo')
-        self.api.add_sink(sink_too, r'/foo')  # Last duplicate wins
+        response = client.simulate_request(path='/foo/bar')
+        assert response.status == falcon.HTTP_503
 
-        self.api.add_sink(self.sink, r'/katza')
+        response = client.simulate_request(path='/auth')
+        assert response.status == falcon.HTTP_404
 
-        self.simulate_request('/foo/bar')
-        self.assertEqual(self.srmock.status, falcon.HTTP_781)
+    def test_named_groups(self, client, sink, resource):
+        client.app.add_sink(sink, r'/user/(?P<id>\d+)')
 
-        self.simulate_request('/katza')
-        self.assertEqual(self.srmock.status, falcon.HTTP_503)
+        response = client.simulate_request(path='/user/309')
+        assert response.status == falcon.HTTP_503
+        assert sink.kwargs['id'] == '309'
 
-    def test_with_route(self):
-        self.api.add_route('/books', self.resource)
-        self.api.add_sink(self.sink, '/proxy')
+        response = client.simulate_request(path='/user/sally')
+        assert response.status == falcon.HTTP_404
 
-        self.simulate_request('/proxy/books')
-        self.assertFalse(self.resource.called)
-        self.assertEqual(self.srmock.status, falcon.HTTP_503)
+    def test_multiple_patterns(self, client, sink, resource):
+        client.app.add_sink(sink, r'/foo')
+        client.app.add_sink(sink_too, r'/foo')  # Last duplicate wins
 
-        self.simulate_request('/books')
-        self.assertTrue(self.resource.called)
-        self.assertEqual(self.srmock.status, falcon.HTTP_200)
+        client.app.add_sink(sink, r'/katza')
 
-    def test_route_precedence(self):
+        response = client.simulate_request(path='/foo/bar')
+        assert response.status == falcon.HTTP_781
+
+        response = client.simulate_request(path='/katza')
+        assert response.status == falcon.HTTP_503
+
+    def test_with_route(self, client, sink, resource):
+        client.app.add_route('/books', resource)
+        client.app.add_sink(sink, '/proxy')
+
+        response = client.simulate_request(path='/proxy/books')
+        assert not resource.called
+        assert response.status == falcon.HTTP_503
+
+        response = client.simulate_request(path='/books')
+        assert resource.called
+        assert response.status == falcon.HTTP_200
+
+    def test_route_precedence(self, client, sink, resource):
         # NOTE(kgriffs): In case of collision, the route takes precedence.
-        self.api.add_route('/books', self.resource)
-        self.api.add_sink(self.sink, '/books')
+        client.app.add_route('/books', resource)
+        client.app.add_sink(sink, '/books')
 
-        self.simulate_request('/books')
-        self.assertTrue(self.resource.called)
-        self.assertEqual(self.srmock.status, falcon.HTTP_200)
+        response = client.simulate_request(path='/books')
+        assert resource.called
+        assert response.status == falcon.HTTP_200
 
-    def test_route_precedence_with_id(self):
+    def test_route_precedence_with_id(self, client, sink, resource):
         # NOTE(kgriffs): In case of collision, the route takes precedence.
-        self.api.add_route('/books/{id}', self.resource)
-        self.api.add_sink(self.sink, '/books')
+        client.app.add_route('/books/{id}', resource)
+        client.app.add_sink(sink, '/books')
 
-        self.simulate_request('/books')
-        self.assertFalse(self.resource.called)
-        self.assertEqual(self.srmock.status, falcon.HTTP_503)
+        response = client.simulate_request(path='/books')
+        assert not resource.called
+        assert response.status == falcon.HTTP_503
 
-    def test_route_precedence_with_both_id(self):
+    def test_route_precedence_with_both_id(self, client, sink, resource):
         # NOTE(kgriffs): In case of collision, the route takes precedence.
-        self.api.add_route('/books/{id}', self.resource)
-        self.api.add_sink(self.sink, '/books/\d+')
+        client.app.add_route('/books/{id}', resource)
+        client.app.add_sink(sink, '/books/\d+')
 
-        self.simulate_request('/books/123')
-        self.assertTrue(self.resource.called)
-        self.assertEqual(self.srmock.status, falcon.HTTP_200)
+        response = client.simulate_request(path='/books/123')
+        assert resource.called
+        assert response.status == falcon.HTTP_200
