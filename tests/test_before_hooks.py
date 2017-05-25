@@ -77,11 +77,17 @@ def things_in_the_head(header, value, req, resp, resource, params):
     resp.set_header(header, value)
 
 
-bunnies_in_the_head = functools.partial(things_in_the_head,
-                                        'X-Bunnies', 'fluffy')
+bunnies_in_the_head = functools.partial(
+    things_in_the_head,
+    'X-Bunnies',
+    'fluffy'
+)
 
-frogs_in_the_head = functools.partial(things_in_the_head,
-                                      'X-Frogs', 'not fluffy')
+frogs_in_the_head = functools.partial(
+    things_in_the_head,
+    'X-Frogs',
+    'not fluffy'
+)
 
 
 class WrappedRespondersResource(object):
@@ -206,80 +212,85 @@ def client(resource):
     return testing.TestClient(app)
 
 
-class TestHooks(object):
-    def test_multiple_resource_hooks(self, client):
-        zoo_resource = ZooResource()
-        client.app.add_route('/', zoo_resource)
+def test_multiple_resource_hooks(client):
+    zoo_resource = ZooResource()
+    client.app.add_route('/', zoo_resource)
 
-        result = client.simulate_get('/')
+    result = client.simulate_get('/')
 
-        assert 'not fluffy' == result.headers['X-Frogs']
-        assert 'fluffy' == result.headers['X-Bunnies']
+    assert 'not fluffy' == result.headers['X-Frogs']
+    assert 'fluffy' == result.headers['X-Bunnies']
 
-        assert 'fluffy' == zoo_resource.bunnies
-        assert 'not fluffy' == zoo_resource.frogs
-        assert 'slippery' == zoo_resource.fish
+    assert 'fluffy' == zoo_resource.bunnies
+    assert 'not fluffy' == zoo_resource.frogs
+    assert 'slippery' == zoo_resource.fish
 
-    def test_input_validator(self, client):
-        result = client.simulate_put('/')
-        assert result.status_code == 400
 
-    def test_param_validator(self, client):
-        result = client.simulate_get('/', query_string='limit=10', body='{}')
-        assert result.status_code == 200
+def test_input_validator(client):
+    result = client.simulate_put('/')
+    assert result.status_code == 400
 
-        result = client.simulate_get('/', query_string='limit=101')
-        assert result.status_code == 400
 
-    def test_field_validator(self, client, field_resource):
-        client.app.add_route('/queue/{id}/messages', field_resource)
-        result = client.simulate_get('/queue/10/messages')
-        assert result.status_code == 200
-        assert field_resource.id == 10
+def test_param_validator(client):
+    result = client.simulate_get('/', query_string='limit=10', body='{}')
+    assert result.status_code == 200
 
-        result = client.simulate_get('/queue/bogus/messages')
-        assert result.status_code == 400
+    result = client.simulate_get('/', query_string='limit=101')
+    assert result.status_code == 400
 
-    def test_parser(self, client, resource):
-        client.simulate_get('/', body=json.dumps({'animal': 'falcon'}))
-        assert resource.doc == {'animal': 'falcon'}
 
-    def test_wrapped_resource(self, client, wrapped_resource):
-        client.app.add_route('/wrapped', wrapped_resource)
-        result = client.simulate_patch('/wrapped')
-        assert result.status_code == 405
+def test_field_validator(client, field_resource):
+    client.app.add_route('/queue/{id}/messages', field_resource)
+    result = client.simulate_get('/queue/10/messages')
+    assert result.status_code == 200
+    assert field_resource.id == 10
 
-        result = client.simulate_get('/wrapped', query_string='limit=10')
-        assert result.status_code == 200
-        assert 'fuzzy' == wrapped_resource.bunnies
+    result = client.simulate_get('/queue/bogus/messages')
+    assert result.status_code == 400
 
-        result = client.simulate_head('/wrapped')
-        assert result.status_code == 200
-        assert 'fuzzy' == wrapped_resource.bunnies
 
-        result = client.simulate_post('/wrapped')
-        assert result.status_code == 200
-        assert 'slippery' == wrapped_resource.fish
+def test_parser(client, resource):
+    client.simulate_get('/', body=json.dumps({'animal': 'falcon'}))
+    assert resource.doc == {'animal': 'falcon'}
 
-        result = client.simulate_get('/wrapped', query_string='limit=101')
-        assert result.status_code == 400
-        assert wrapped_resource.bunnies == 'fuzzy'
 
-    def test_wrapped_resource_with_hooks_aware_of_resource(self, client, wrapped_aware_resource):
-        client.app.add_route('/wrapped_aware', wrapped_aware_resource)
+def test_wrapped_resource(client, wrapped_resource):
+    client.app.add_route('/wrapped', wrapped_resource)
+    result = client.simulate_patch('/wrapped')
+    assert result.status_code == 405
 
-        result = client.simulate_patch('/wrapped_aware')
-        assert result.status_code == 405
+    result = client.simulate_get('/wrapped', query_string='limit=10')
+    assert result.status_code == 200
+    assert 'fuzzy' == wrapped_resource.bunnies
 
-        result = client.simulate_get('/wrapped_aware', query_string='limit=10')
+    result = client.simulate_head('/wrapped')
+    assert result.status_code == 200
+    assert 'fuzzy' == wrapped_resource.bunnies
+
+    result = client.simulate_post('/wrapped')
+    assert result.status_code == 200
+    assert 'slippery' == wrapped_resource.fish
+
+    result = client.simulate_get('/wrapped', query_string='limit=101')
+    assert result.status_code == 400
+    assert wrapped_resource.bunnies == 'fuzzy'
+
+
+def test_wrapped_resource_with_hooks_aware_of_resource(client, wrapped_aware_resource):
+    client.app.add_route('/wrapped_aware', wrapped_aware_resource)
+
+    result = client.simulate_patch('/wrapped_aware')
+    assert result.status_code == 405
+
+    result = client.simulate_get('/wrapped_aware', query_string='limit=10')
+    assert result.status_code == 200
+    assert wrapped_aware_resource.bunnies == 'fuzzy'
+
+    for method in ('HEAD', 'PUT', 'POST'):
+        result = client.simulate_request(method, '/wrapped_aware')
         assert result.status_code == 200
         assert wrapped_aware_resource.bunnies == 'fuzzy'
 
-        for method in ('HEAD', 'PUT', 'POST'):
-            result = client.simulate_request(method, '/wrapped_aware')
-            assert result.status_code == 200
-            assert wrapped_aware_resource.bunnies == 'fuzzy'
-
-        result = client.simulate_get('/wrapped_aware', query_string='limit=101')
-        assert result.status_code == 400
-        assert wrapped_aware_resource.bunnies == 'fuzzy'
+    result = client.simulate_get('/wrapped_aware', query_string='limit=101')
+    assert result.status_code == 400
+    assert wrapped_aware_resource.bunnies == 'fuzzy'
