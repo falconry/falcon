@@ -1250,6 +1250,59 @@ class HTTPInternalServerError(HTTPError):
                                                       description, **kwargs)
 
 
+class HTTPNotImplemented(HTTPError):
+    """501 Not Implemented.
+
+    The 501 (Not Implemented) status code indicates that the server does
+    not support the functionality required to fulfill the request.  This
+    is the appropriate response when the server does not recognize the
+    request method and is not capable of supporting it for any resource.
+
+    A 501 response is cacheable by default; i.e., unless otherwise
+    indicated by the method definition or explicit cache controls (see
+    Section 4.2.2 of [RFC7234]).
+
+    (See also: RFC 7231, Section 6.6.2)
+
+    Keyword Args:
+        title (str): Error title (default '500 Internal Server Error').
+        description (str): Human-friendly description of the error, along with
+            a helpful suggestion or two.
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        headers (dict): Extra headers to return in the
+            response to the client (default ``None``).
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (default 'API documentation
+            for this error').
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
+
+    """
+
+    def __init__(self, title=None, description=None, **kwargs):
+        super(HTTPNotImplemented, self).__init__(status.HTTP_501, title,
+                                                 description, **kwargs)
+
+
 class HTTPBadGateway(HTTPError):
     """502 Bad Gateway.
 
