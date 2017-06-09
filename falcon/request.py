@@ -1148,7 +1148,7 @@ class Request(object):
 
         raise errors.HTTPMissingParam(name)
 
-    def get_param_as_datetime(self, name, format_string='%Y-%m-%dT%H:%M:%S',
+    def get_param_as_datetime(self, name, format_string='%Y-%m-%dT%H:%M:%SZ',
                               required=False, store=None):
         """Return the value of a query string parameter as a datetime.
 
@@ -1158,7 +1158,7 @@ class Request(object):
         Keyword Args:
             format_string (str): String used to parse the param value
                 into a datetime. Any format recognized by strptime() is
-                supported (default ``"%Y-%m-%dT%H:%M:%S"``).
+                supported (default ``'%Y-%m-%dT%H:%M:%SZ'``).
             required (bool): Set to ``True`` to raise
                 ``HTTPBadRequest`` instead of returning ``None`` when the
                 parameter is not found (default ``False``).
