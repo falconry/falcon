@@ -581,7 +581,7 @@ class TestQueryParams(object):
 
     def test_get_datetime_valid(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
-        date_value = '2015-04-20T10:10:10'
+        date_value = '2015-04-20T10:10:10Z'
         query_string = 'thedate={0}'.format(date_value)
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
@@ -589,7 +589,7 @@ class TestQueryParams(object):
 
     def test_get_datetime_missing_param(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
-        query_string = 'notthedate=2015-04-20T10:10:10'
+        query_string = 'notthedate=2015-04-20T10:10:10Z'
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
         assert req.get_param_as_datetime('thedate') is None
@@ -606,7 +606,7 @@ class TestQueryParams(object):
 
     def test_get_datetime_store(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
-        datetime_value = '2015-04-20T10:10:10'
+        datetime_value = '2015-04-20T10:10:10Z'
         query_string = 'thedate={0}'.format(datetime_value)
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
