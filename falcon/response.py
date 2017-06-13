@@ -23,7 +23,7 @@ from six import string_types as STRING_TYPES
 from six.moves import http_cookies
 
 from falcon import DEFAULT_MEDIA_TYPE
-from falcon.media_handlers import Handlers
+from falcon.media import Handlers
 from falcon.response_helpers import (
     format_header_value_list,
     format_range,

@@ -1,11 +1,11 @@
 import pytest
 
-from falcon import media_handlers
+from falcon import media
 
 
 @pytest.mark.parametrize('key', ['', None])
 def test_set_invalid_handlers(key):
-    handlers = media_handlers.Handlers()
+    handlers = media.Handlers()
 
     with pytest.raises(ValueError) as err:
         handlers[''] = 'nope'

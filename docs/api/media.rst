@@ -82,18 +82,18 @@ Replacing The Default Handlers
 When creating your API object you can either add or completely
 replace all of the handlers. For example, lets say you want to write an API
 that sends and receives MessagePack. We can easily do this by telling our
-Falcon API that we want a default media-type of `application/msgpack` and
-then create a new ``Handlers`` object specifying the desired media type and
+Falcon API that we want a default media-type of ``application/msgpack`` and
+then create a new :any:`Handlers` object specifying the desired media type and
 a handler that can process that data.
 
 .. code:: python
 
     import falcon
-    from falcon import media_handlers
+    from falcon import media
 
 
-    handlers = media_handlers.Handlers({
-        'application/msgpack': media_handlers.MessagePack,
+    handlers = media.Handlers({
+        'application/msgpack': media.MessagePackHandler,
     })
 
     api = falcon.API(media_type='application/msgpack')
@@ -106,9 +106,16 @@ Custom Handlers
 ---------------
 
 Currently Falcon only supports a handful of media handlers out of the box;
-however, you can easily create your own. All you need is an object that
-contains the following class methods:
+however, you can easily create your own using the following abstract base
+class:
 
- * ``load(cls)``
- * ``deserialize(cls, raw)``
- * ``serialize(cls, media)``
+.. autoclass:: falcon.media.BaseHandler
+    :members:
+    :member-order: bysource
+
+
+Handlers
+--------
+
+.. autoclass:: falcon.media.Handlers
+    :members:

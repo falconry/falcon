@@ -40,7 +40,7 @@ from falcon import DEFAULT_MEDIA_TYPE
 from falcon import errors
 from falcon import request_helpers as helpers
 from falcon import util
-from falcon.media_handlers import Handlers
+from falcon.media import Handlers
 from falcon.util.uri import parse_host, parse_query_string, unquote_string
 
 # NOTE(tbug): In some cases, http_cookies is not a module

@@ -2,7 +2,7 @@ import pytest
 import six
 
 import falcon
-from falcon import errors, media_handlers, testing
+from falcon import errors, media, testing
 
 
 def create_client(handlers=None):
@@ -33,7 +33,7 @@ def test_json(media_type):
     resp.content_type = media_type
     resp.media = {'something': True}
 
-    assert resp.data == '{"something": true}'
+    assert resp.data == b'{"something": true}'
 
 
 @pytest.mark.parametrize('media_type', [
@@ -43,8 +43,8 @@ def test_json(media_type):
 ])
 def test_msgpack(media_type):
     client = create_client({
-        'application/msgpack': media_handlers.MessagePack,
-        'application/x-msgpack': media_handlers.MessagePack,
+        'application/msgpack': media.MessagePackHandler,
+        'application/x-msgpack': media.MessagePackHandler,
     })
     client.simulate_get('/')
 
@@ -91,7 +91,7 @@ def test_default_media_type(media_type):
     resp.content_type = media_type
     resp.media = {'something': True}
 
-    assert resp.data == '{"something": true}'
+    assert resp.data == b'{"something": true}'
     assert resp.content_type == 'application/json; charset=UTF-8'
 
 
