@@ -10,4 +10,4 @@ def test_set_invalid_handlers(key):
     with pytest.raises(ValueError) as err:
         handlers[''] = 'nope'
 
-    assert str(err.value) == 'Media Type cannot be None or empty string'
+    assert str(err.value) == 'Media Type cannot be None or an empty string'

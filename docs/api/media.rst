@@ -3,21 +3,21 @@
 Media
 =====
 
-Falcon allows for easy and customizable media handling. By default
-Falcon only enables a single JSON handler. However, other/multiple handlers
+Falcon allows for easy and customizable internet media type handling. By default
+Falcon only enables a single JSON handler. However, additional handlers
 can be configured through the :any:`falcon.RequestOptions` and
 :any:`falcon.ResponseOptions` objects specified on your :any:`falcon.API`.
 
 .. note::
 
-    For performance concerns, Falcon will not attempt to handle request
-    media until the first time it's accessed. Once it has procesed the
-    request, it'll use the cached result for subsequent interactions.
+    To avoid unnecessary overhead, Falcon will only process request media
+    the first time the media property is referenced. Once it has been
+    referenced, it'll use the cached result for subsequent interactions.
 
 Usage
 -----
 
-If you're creating a JSON API then zero configuration is needed. Just access
+Zero configuration is needed if you're creating a JSON API. Just access
 or set the ``media`` attribute as appropriate and let Falcon do the heavy
 lifting for you.
 
@@ -76,7 +76,7 @@ Given that decorator you could use it on the resource as such:
     # -- snip --
 
 
-Replacing the default handlers
+Replacing The Default Handlers
 ------------------------------
 
 When creating your API object you can either add or completely

@@ -36,6 +36,7 @@ import mimeparse
 import six
 from six.moves import http_cookies
 
+from falcon import DEFAULT_MEDIA_TYPE
 from falcon import errors
 from falcon import request_helpers as helpers
 from falcon import util
@@ -255,12 +256,14 @@ class Request(object):
         media (object): Returns a deserialized form of the request stream.
             When called, it will attempt to deserialize the request stream
             using the Content-Type header as well as the media-type handlers
-            configured in the request options.
+            configured via :class:`falcon.RequestOptions`.
+
+            See :ref:`media` for more information regarding media handling.
 
             Warning:
                 This operation will consume the request stream the first time
-                it's called and cache the results. Follow-up calls, will just
-                retrieve a cached version of object.
+                it's called and cache the results. Follow-up calls will just
+                retrieve a cached version of the object.
 
         date (datetime): Value of the Date header, converted to a
             ``datetime`` instance. The header value is assumed to
@@ -1426,10 +1429,15 @@ class RequestOptions(object):
             schemes that employ URL-based signatures.
 
         default_media_type (str): The default media-type to use when
-            deserializing a response.
+            deserializing a response. This value is normally set to the media
+            type provided when a :class:`falcon.API` is initialized; however,
+            if created independently, this will default to the
+            ``DEFAULT_MEDIA_TYPE`` specified by Falcon.
 
         media_handlers (Handlers): A dict-like object that allows for you to
             configure the media-types that you would like to handle.
+            By default, a handler is provided for the ``application/json``
+            media type.
     """
     __slots__ = (
         'keep_blank_qs_values',
@@ -1445,5 +1453,5 @@ class RequestOptions(object):
         self.auto_parse_form_urlencoded = False
         self.auto_parse_qs_csv = True
         self.strip_url_path_trailing_slash = True
-        self.default_media_type = 'application/json'
+        self.default_media_type = DEFAULT_MEDIA_TYPE
         self.media_handlers = Handlers()

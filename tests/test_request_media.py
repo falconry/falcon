@@ -46,7 +46,7 @@ def test_msgpack(media_type):
         'application/msgpack': media_handlers.MessagePack,
         'application/x-msgpack': media_handlers.MessagePack,
     })
-    expected_body = b'\x81\xa9something\xc3'
+    expected_body = b'\x81\xc4\tsomething\xc3'
     headers = {'Content-Type': media_type}
     client.simulate_post('/', body=expected_body, headers=headers)
 
@@ -66,7 +66,7 @@ def test_unknown_media_type(media_type):
     with pytest.raises(errors.HTTPUnsupportedMediaType) as err:
         client.resource.captured_req.media
 
-    msg = '{0} is a unsupported media type.'.format(media_type)
+    msg = '{0} is an unsupported media type.'.format(media_type)
     assert err.value.description == msg
 
 
@@ -84,7 +84,7 @@ def test_invalid_json():
 
 def test_invalid_msgpack():
     client = create_client({'application/msgpack': media_handlers.MessagePack})
-    expected_body = '/////////'
+    expected_body = '/////////////////////'
     headers = {'Content-Type': 'application/msgpack'}
     client.simulate_post('/', body=expected_body, headers=headers)
 

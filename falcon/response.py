@@ -22,6 +22,7 @@ from six import string_types as STRING_TYPES
 # See issue https://github.com/falconry/falcon/issues/556
 from six.moves import http_cookies
 
+from falcon import DEFAULT_MEDIA_TYPE
 from falcon.media_handlers import Handlers
 from falcon.response_helpers import (
     format_header_value_list,
@@ -88,12 +89,9 @@ class Response(object):
                 HTTP response.
 
         media (object): A serializable object supported by the media handlers
-            configured via response options.
+            configured via :class:`falcon.RequestOptions`.
 
-            Note:
-                This operation will consume the response stream the first time
-                it's called and cache the results. Follow-up calls, will just
-                retrieve the cached version of the object.
+            See :ref:`media` for more information regarding media handling.
 
         stream: Either a file-like object with a `read()` method that takes
             an optional size argument and returns a block of bytes, or an
@@ -811,10 +809,15 @@ class ResponseOptions(object):
             be overridden via `set_cookie()`'s `secure` kwarg.
 
         default_media_type (str): The default media-type to use when
-            deserializing a response.
+            deserializing a response. This value is normally set to the media
+            type provided when a :class:`falcon.API` is initialized; however,
+            if created independently, this will default to the
+            ``DEFAULT_MEDIA_TYPE`` specified by Falcon.
 
-        media_handlers (Handlers): A dict-like object that allows for you
-            to configure the media-types that you would like to handle.
+        media_handlers (Handlers): A dict-like object that allows for you to
+            configure the media-types that you would like to handle.
+            By default, a handler is provided for the ``application/json``
+            media type.
     """
     __slots__ = (
         'secure_cookies_by_default',
@@ -824,5 +827,5 @@ class ResponseOptions(object):
 
     def __init__(self):
         self.secure_cookies_by_default = True
-        self.default_media_type = 'application/json'
+        self.default_media_type = DEFAULT_MEDIA_TYPE
         self.media_handlers = Handlers()
