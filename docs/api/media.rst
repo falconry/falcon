@@ -47,6 +47,15 @@ media type that JSON also supports (i.e. dicts, lists, etc).
 .. autofunction:: falcon.media.validators.jsonschema.validate
 
 
+Content-Type Negotiation
+------------------------
+
+Falcon currently only supports partial negotiation out of the box. By default,
+when the ``media`` attribute is used it attempts to de/serialize based on the
+``Content-Type`` header value. The missing link that Falcon doesn't provide
+is the connection between the :any:`falcon.Request` ``Accept`` header provided
+by a user and the :any:`falcon.Response` ``Content-Type`` header.
+
 
 Replacing The Default Handlers
 ------------------------------
