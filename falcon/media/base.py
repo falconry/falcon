@@ -14,7 +14,6 @@ class BaseHandler(object):
         Allows for implementors to specify runtime configuration
         and/or dependencies.
         """
-        pass
 
     @abc.abstractmethod
     def serialize(self, obj):
@@ -26,7 +25,6 @@ class BaseHandler(object):
         Returns:
             bytes: The resulting serialized bytes from the input object.
         """
-        pass
 
     @abc.abstractmethod
     def deserialize(self, raw):
@@ -38,4 +36,3 @@ class BaseHandler(object):
         Returns:
             object: A deserialized object.
         """
-        pass
