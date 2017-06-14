@@ -43,8 +43,8 @@ def test_json(media_type):
 ])
 def test_msgpack(media_type):
     client = create_client({
-        'application/msgpack': media.MessagePackHandler,
-        'application/x-msgpack': media.MessagePackHandler,
+        'application/msgpack': media.MessagePackHandler(),
+        'application/x-msgpack': media.MessagePackHandler(),
     })
     expected_body = b'\x81\xc4\tsomething\xc3'
     headers = {'Content-Type': media_type}
@@ -83,7 +83,7 @@ def test_invalid_json():
 
 
 def test_invalid_msgpack():
-    client = create_client({'application/msgpack': media.MessagePackHandler})
+    client = create_client({'application/msgpack': media.MessagePackHandler()})
     expected_body = '/////////////////////'
     headers = {'Content-Type': 'application/msgpack'}
     client.simulate_post('/', body=expected_body, headers=headers)

@@ -7,14 +7,14 @@ from falcon.media import JSONHandler
 
 
 class Handlers(UserDict):
-    """Manages media type handlers.
+    """A dictionary like object that manages internet media type handlers.
 
     Attempts to load any imports for handlers as they are added.
     """
     def __init__(self, initial=None):
         handlers = initial or {
-            'application/json': JSONHandler,
-            'application/json; charset=UTF-8': JSONHandler
+            'application/json': JSONHandler(),
+            'application/json; charset=UTF-8': JSONHandler(),
         }
 
         # NOTE(jmvrbanac): Directly calling UserDict as it's not inheritable.

@@ -43,8 +43,8 @@ def test_json(media_type):
 ])
 def test_msgpack(media_type):
     client = create_client({
-        'application/msgpack': media.MessagePackHandler,
-        'application/x-msgpack': media.MessagePackHandler,
+        'application/msgpack': media.MessagePackHandler(),
+        'application/x-msgpack': media.MessagePackHandler(),
     })
     client.simulate_get('/')
 

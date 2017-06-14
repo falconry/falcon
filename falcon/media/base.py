@@ -7,9 +7,8 @@ import six
 class BaseHandler(object):
     """Abstract Base Class for an internet media type handler"""
 
-    @classmethod
     @abc.abstractmethod
-    def load(cls):
+    def load(self):
         """Loads any required imports and configuration.
 
         Allows for implementors to specify runtime configuration
@@ -17,9 +16,8 @@ class BaseHandler(object):
         """
         pass
 
-    @classmethod
     @abc.abstractmethod
-    def serialize(cls, obj):
+    def serialize(self, obj):
         """Serialize the media object on a :any:`falcon.Response`
 
         Args:
@@ -30,9 +28,8 @@ class BaseHandler(object):
         """
         pass
 
-    @classmethod
     @abc.abstractmethod
-    def deserialize(cls, raw):
+    def deserialize(self, raw):
         """Deserialize the :any:`falcon.Request` body.
 
         Args:

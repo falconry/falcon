@@ -93,7 +93,7 @@ a handler that can process that data.
 
 
     handlers = media.Handlers({
-        'application/msgpack': media.MessagePackHandler,
+        'application/msgpack': media.MessagePackHandler(),
     })
 
     api = falcon.API(media_type='application/msgpack')
@@ -101,13 +101,21 @@ a handler that can process that data.
     api.req_options.media_handlers = handlers
     api.resp_options.media_handlers = handlers
 
+Supported Handler Types
+-----------------------
 
-Custom Handlers
----------------
+.. autoclass:: falcon.media.JSONHandler
+    :members:
 
-Currently Falcon only supports a handful of media handlers out of the box;
-however, you can easily create your own using the following abstract base
-class:
+.. autoclass:: falcon.media.MessagePackHandler
+    :members:
+
+Custom Handler Type
+-------------------
+
+If Falcon doesn't have a internet media type handler that supports your
+use-case. You can easily implement your own using the abstract base class
+provided by Falcon:
 
 .. autoclass:: falcon.media.BaseHandler
     :members:
