@@ -40,40 +40,12 @@ lifting for you.
 Validating Media
 ----------------
 
-Falcon currently does not validate media for you as requirements and tooling
-vary quite largely between projects; however, here is an example of how you
-might go about implementing a JSON Schema validator using a decorator.
+Falcon currently only supports a JSONSchema media type handler; however,
+JSONSchema is very versatile and can be used to validate any deserialized
+media type that JSON also supports (i.e. dicts, lists, etc).
 
-.. code:: python
+.. autofunction:: falcon.media.validators.jsonschema.validate
 
-    import jsonschema
-
-
-    def validate(schema):
-        def decorator(func):
-            def wrapper(self, req, resp, *args, **kwargs):
-                try:
-                    jsonschema.validate(req.media, schema)
-                except jsonschema.ValidationError as e:
-                    raise falcon.HTTPBadRequest(
-                        'Failed data validation',
-                        e.message
-                    )
-
-                return func(self, req, resp, *args, **kwargs)
-            return wrapper
-        return decorator
-
-
-Given that decorator you could use it on the resource as such:
-
-.. code:: python
-
-    # -- snip --
-
-    @validate(my_post_schema)
-    def on_post(self, req, resp):
-    # -- snip --
 
 
 Replacing The Default Handlers
