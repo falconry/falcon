@@ -9,6 +9,7 @@ Classes and Functions
    cookies
    status
    errors
+   media
    redirects
    middleware
    hooks
