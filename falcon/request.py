@@ -36,9 +36,11 @@ import mimeparse
 import six
 from six.moves import http_cookies
 
+from falcon import DEFAULT_MEDIA_TYPE
 from falcon import errors
 from falcon import request_helpers as helpers
 from falcon import util
+from falcon.media import Handlers
 from falcon.util.uri import parse_host, parse_query_string, unquote_string
 
 # NOTE(tbug): In some cases, http_cookies is not a module
@@ -251,6 +253,18 @@ class Request(object):
 
                 doc = json.load(req.bounded_stream)
 
+        media (object): Returns a deserialized form of the request stream.
+            When called, it will attempt to deserialize the request stream
+            using the Content-Type header as well as the media-type handlers
+            configured via :class:`falcon.RequestOptions`.
+
+            See :ref:`media` for more information regarding media handling.
+
+            Warning:
+                This operation will consume the request stream the first time
+                it's called and cache the results. Follow-up calls will just
+                retrieve a cached version of the object.
+
         date (datetime): Value of the Date header, converted to a
             ``datetime`` instance. The header value is assumed to
             conform to RFC 1123.
@@ -320,6 +334,7 @@ class Request(object):
         '_cached_access_route',
         '__dict__',
         'uri_template',
+        '_media',
     )
 
     # Child classes may override this
@@ -336,6 +351,7 @@ class Request(object):
         self.method = env['REQUEST_METHOD']
 
         self.uri_template = None
+        self._media = None
 
         # Normalize path
         path = env['PATH_INFO']
@@ -737,6 +753,23 @@ class Request(object):
                     netloc_value += ':' + port
 
         return netloc_value
+
+    @property
+    def media(self):
+        if self._media:
+            return self._media
+
+        handler = self.options.media_handlers.find_by_media_type(
+            self.content_type,
+            self.options.default_media_type
+        )
+
+        # Consume the stream
+        raw = self.bounded_stream.read()
+
+        # Deserialize and Return
+        self._media = handler.deserialize(raw)
+        return self._media
 
     # ------------------------------------------------------------------------
     # Methods
@@ -1434,12 +1467,25 @@ class RequestOptions(object):
             forward slash. However, this behavior can be problematic in
             certain cases, such as when working with authentication
             schemes that employ URL-based signatures.
+
+        default_media_type (str): The default media-type to use when
+            deserializing a response. This value is normally set to the media
+            type provided when a :class:`falcon.API` is initialized; however,
+            if created independently, this will default to the
+            ``DEFAULT_MEDIA_TYPE`` specified by Falcon.
+
+        media_handlers (Handlers): A dict-like object that allows you to
+            configure the media-types that you would like to handle.
+            By default, a handler is provided for the ``application/json``
+            media type.
     """
     __slots__ = (
         'keep_blank_qs_values',
         'auto_parse_form_urlencoded',
         'auto_parse_qs_csv',
         'strip_url_path_trailing_slash',
+        'default_media_type',
+        'media_handlers',
     )
 
     def __init__(self):
@@ -1447,3 +1493,5 @@ class RequestOptions(object):
         self.auto_parse_form_urlencoded = False
         self.auto_parse_qs_csv = True
         self.strip_url_path_trailing_slash = True
+        self.default_media_type = DEFAULT_MEDIA_TYPE
+        self.media_handlers = Handlers()

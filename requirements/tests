@@ -6,3 +6,9 @@ pyyaml
 requests
 six
 testtools
+
+# Handler Specific
+msgpack-python
+
+# Validator Specific
+jsonschema
