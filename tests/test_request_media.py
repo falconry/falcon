@@ -46,13 +46,21 @@ def test_msgpack(media_type):
         'application/msgpack': media.MessagePackHandler(),
         'application/x-msgpack': media.MessagePackHandler(),
     })
-    expected_body = b'\x81\xc4\tsomething\xc3'
     headers = {'Content-Type': media_type}
+
+    # Bytes
+    expected_body = b'\x81\xc4\tsomething\xc3'
     client.simulate_post('/', body=expected_body, headers=headers)
 
     req_media = client.resource.captured_req.media
-    assert req_media is not None
     assert req_media.get(b'something') is True
+
+    # Unicode
+    expected_body = b'\x81\xa9something\xc3'
+    client.simulate_post('/', body=expected_body, headers=headers)
+
+    req_media = client.resource.captured_req.media
+    assert req_media.get(u'something') is True
 
 
 @pytest.mark.parametrize('media_type', [

@@ -814,7 +814,7 @@ class ResponseOptions(object):
             if created independently, this will default to the
             ``DEFAULT_MEDIA_TYPE`` specified by Falcon.
 
-        media_handlers (Handlers): A dict-like object that allows for you to
+        media_handlers (Handlers): A dict-like object that allows you to
             configure the media-types that you would like to handle.
             By default, a handler is provided for the ``application/json``
             media type.

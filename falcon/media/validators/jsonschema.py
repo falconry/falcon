@@ -9,10 +9,10 @@ except ImportError:
 
 
 def validate(schema):
-    """Decorator that validates ``req.media`` using JSONSchema
+    """Decorator that validates ``req.media`` using JSON Schema
 
     Args:
-        schema (dict): A dictionary that follows the JSONSchema specification.
+        schema (dict): A dictionary that follows the JSON Schema specification.
             See `json-schema.org <http://json-schema.org/>`_ for more
             information on defining a compatible dictionary.
 
@@ -28,9 +28,9 @@ def validate(schema):
 
             # -- snip --
 
-
     Note:
-        The ``jsonschema`` library requires Python 2.7+.
+        This validator requires the ``jsonschema`` library available via
+        PyPI. The library also requires Python 2.7+.
     """
     def decorator(func):
         def wrapper(self, req, resp, *args, **kwargs):

@@ -40,8 +40,8 @@ lifting for you.
 Validating Media
 ----------------
 
-Falcon currently only supports a JSONSchema media type handler; however,
-JSONSchema is very versatile and can be used to validate any deserialized
+Falcon currently only provides a JSON Schema media validator; however,
+JSON Schema is very versatile and can be used to validate any deserialized
 media type that JSON also supports (i.e. dicts, lists, etc).
 
 .. autofunction:: falcon.media.validators.jsonschema.validate
@@ -56,8 +56,17 @@ when the ``media`` attribute is used it attempts to de/serialize based on the
 is the connection between the :any:`falcon.Request` ``Accept`` header provided
 by a user and the :any:`falcon.Response` ``Content-Type`` header.
 
+If you do need full negotiation, it is very easy to bridge the gap using
+middleware. Here is an example of how this can be done:
 
-Replacing The Default Handlers
+.. code-block:: python
+
+    class NegotiationMiddleware(object):
+        def process_request(self, req, resp):
+            resp.content_type = req.accept
+
+
+Replacing the Default Handlers
 ------------------------------
 
 When creating your API object you can either add or completely
@@ -82,6 +91,25 @@ a handler that can process that data.
     api.req_options.media_handlers = handlers
     api.resp_options.media_handlers = handlers
 
+Alternatively, if you would like to add an additional handler such as
+MessagePack, this can be easily done in the following manner:
+
+.. code-block:: python
+
+    import falcon
+    from falcon import media
+
+
+    extra_handlers = {
+        'application/msgpack': media.MessagePackHandler(),
+    }
+
+    api = falcon.API()
+
+    api.req_options.media_handlers.update(extra_handlers)
+    api.resp_options.media_handlers.update(extra_handlers)
+
+
 Supported Handler Types
 -----------------------
 
@@ -94,8 +122,8 @@ Supported Handler Types
 Custom Handler Type
 -------------------
 
-If Falcon doesn't have a internet media type handler that supports your
-use-case. You can easily implement your own using the abstract base class
+If Falcon doesn't have an internet media type handler that supports your
+use case, you can easily implement your own using the abstract base class
 provided by Falcon:
 
 .. autoclass:: falcon.media.BaseHandler

@@ -50,9 +50,14 @@ def test_msgpack(media_type):
 
     resp = client.resource.captured_resp
     resp.content_type = media_type
-    resp.media = {b'something': True}
 
+    # Bytes
+    resp.media = {b'something': True}
     assert resp.data == b'\x81\xc4\tsomething\xc3'
+
+    # Unicode
+    resp.media = {u'something': True}
+    assert resp.data == b'\x81\xa9something\xc3'
 
 
 def test_unknown_media_type():

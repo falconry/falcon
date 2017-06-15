@@ -8,14 +8,6 @@ class BaseHandler(object):
     """Abstract Base Class for an internet media type handler"""
 
     @abc.abstractmethod
-    def load(self):
-        """Loads any required imports and configuration.
-
-        Allows for implementors to specify runtime configuration
-        and/or dependencies.
-        """
-
-    @abc.abstractmethod
     def serialize(self, obj):
         """Serialize the media object on a :any:`falcon.Response`
 
