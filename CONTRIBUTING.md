@@ -27,10 +27,10 @@ Per our [Code of Conduct][coc], we expect everyone who participates in community
 
 Before submitting a pull request, please ensure you have added or updated tests as appropriate, and that all existing tests still pass with your changes on both Python 2 and Python 3. Please also ensure that your coding style follows PEP 8.
 
-You can check all this by running the following from within the falcon project directory (requires Python 2.7 and Python 3.5 to be installed on your system):
+You can check all this by running the following from within the Falcon project directory (requires Python 2.7 and Python 3.6 to be installed on your system):
 
 ```bash
-$ tox -e py27,py35,pep8
+$ tox -e py27,py36,pep8
 ```
 
 You may also use Python 3.3 or 3.4 if you don't have 3.5 installed on your system. This is just a quick sanity check to verify that your patch works across both Python 2 and Python 3.
@@ -63,12 +63,25 @@ $ ~/jython/bin/pytest tests
 Pull requests must maintain 100% test coverage of all code branches. This helps ensure the quality of the Falcon framework. To check coverage before submitting a pull request:
 
 ```bash
-$ tox -e py26,py27,py35 && tools/testing/combine_coverage.sh
+$ tools/mintest.sh
 ```
 
-It is necessary to combine test coverage from all three of these environments in order to account for branches in the code that are only taken for a given Python version.
+It is necessary to combine test coverage from multiple environments in order to account for branches in the code that are only taken for a given Python version.
 
-The `combine_coverage.sh` script generates an HTML coverage report that can be viewed by simply opening `.coverage_html/index.html` in a browser. This can be helpful in tracking down specific lines or branches that are missing coverage.
+The script generates an HTML coverage report that can be viewed by simply opening `.coverage_html/index.html` in a browser. This can be helpful in tracking down specific lines or branches that are missing coverage.
+
+### Debugging
+
+We use pytest to run all of our tests. Pytest supports pdb and will break as expected on any
+`pdb.set_trace()` calls. If you would like to use pdb++ instead of the standard Python
+debugger, run one of the following tox environments:
+
+```bash
+$ tox -e py2_debug
+$ tox -e py3_debug 
+```
+
+If you wish, you can customize Falcon's `tox.ini` to install alternative debuggers, such as ipdb or pudb.
 
 ### Documentation
 
