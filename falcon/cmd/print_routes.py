@@ -54,8 +54,8 @@ def traverse(roots, parent='', verbose=False):
                     if func.__name__ != 'method_not_allowed':
                         print('-->{0} {1}:{2}'.format(
                             method,
-                            inspect.getsourcefile(func),
-                            inspect.getsourcelines(func)[1]))
+                            inspect.getsourcefile(func.func),
+                            inspect.getsourcelines(func.func)[1]))
         if root.children:
             traverse(root.children, parent + '/' + root.raw_segment, verbose)
 
