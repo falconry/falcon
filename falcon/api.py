@@ -160,6 +160,9 @@ class API(object):
         self.req_options = RequestOptions()
         self.resp_options = ResponseOptions()
 
+        self.req_options.default_media_type = media_type
+        self.resp_options.default_media_type = media_type
+
         # NOTE(kgriffs): Add default error handlers
         self.add_error_handler(falcon.HTTPError, self._http_error_handler)
         self.add_error_handler(falcon.HTTPStatus, self._http_status_handler)

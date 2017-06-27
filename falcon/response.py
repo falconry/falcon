@@ -22,6 +22,8 @@ from six import string_types as STRING_TYPES
 # See issue https://github.com/falconry/falcon/issues/556
 from six.moves import http_cookies
 
+from falcon import DEFAULT_MEDIA_TYPE
+from falcon.media import Handlers
 from falcon.response_helpers import (
     format_header_value_list,
     format_range,
@@ -86,6 +88,11 @@ class Response(object):
                 ensure Unicode characters are properly encoded in the
                 HTTP response.
 
+        media (object): A serializable object supported by the media handlers
+            configured via :class:`falcon.RequestOptions`.
+
+            See :ref:`media` for more information regarding media handling.
+
         stream: Either a file-like object with a `read()` method that takes
             an optional size argument and returns a block of bytes, or an
             iterable object, representing response content, and yielding
@@ -141,6 +148,7 @@ class Response(object):
         # NOTE(tbug): will be set to a SimpleCookie object
         # when cookie is set via set_cookie
         self._cookies = None
+        self._media = None
 
         self.body = None
         self.data = None
@@ -152,6 +160,23 @@ class Response(object):
             self.context = {}
         else:
             self.context = self.context_type()
+
+    @property
+    def media(self):
+        return self._media
+
+    @media.setter
+    def media(self, obj):
+        self._media = obj
+
+        if not self.content_type:
+            self.content_type = self.options.default_media_type
+
+        handler = self.options.media_handlers.find_by_media_type(
+            self.content_type,
+            self.options.default_media_type
+        )
+        self.data = handler.serialize(self._media)
 
     def __repr__(self):
         return '<%s: %s>' % (self.__class__.__name__, self.status)
@@ -782,10 +807,25 @@ class ResponseOptions(object):
             default to ``False``. This can make testing easier by
             not requiring HTTPS. Note, however, that this setting can
             be overridden via `set_cookie()`'s `secure` kwarg.
+
+        default_media_type (str): The default media-type to use when
+            deserializing a response. This value is normally set to the media
+            type provided when a :class:`falcon.API` is initialized; however,
+            if created independently, this will default to the
+            ``DEFAULT_MEDIA_TYPE`` specified by Falcon.
+
+        media_handlers (Handlers): A dict-like object that allows you to
+            configure the media-types that you would like to handle.
+            By default, a handler is provided for the ``application/json``
+            media type.
     """
     __slots__ = (
         'secure_cookies_by_default',
+        'default_media_type',
+        'media_handlers',
     )
 
     def __init__(self):
         self.secure_cookies_by_default = True
+        self.default_media_type = DEFAULT_MEDIA_TYPE
+        self.media_handlers = Handlers()

@@ -1,8 +1,13 @@
 coverage>=4.1
 pytest>=3.0.1
 pytest-cov
-pytest-xdist
 pyyaml
 requests
 six
 testtools
+
+# Handler Specific
+msgpack-python
+
+# Validator Specific
+jsonschema
