@@ -88,6 +88,29 @@ def router():
 
     router.add_route('/item/{q}', {}, ResourceWithId(28))
 
+    # ----------------------------------------------------------------
+    # Routes with field converters
+    # ----------------------------------------------------------------
+
+    router.add_route(
+        '/cvt/teams/{id:int(min=7)}', {}, ResourceWithId(29))
+    router.add_route(
+        '/cvt/teams/{id:int(min=7)}/members', {}, ResourceWithId(30))
+    router.add_route(
+        '/cvt/teams/default', {}, ResourceWithId(31))
+    router.add_route(
+        '/cvt/teams/default/members/{id:int}-{tenure:int}', {}, ResourceWithId(32))
+
+    router.add_route(
+        '/cvt/repos/{org}/{repo}/compare/{usr0}:{branch0:int}...{usr1}:{branch1:int}/part',
+        {}, ResourceWithId(33))
+    router.add_route(
+        '/cvt/repos/{org}/{repo}/compare/{usr0}:{branch0:int}',
+        {}, ResourceWithId(34))
+    router.add_route(
+        '/cvt/repos/{org}/{repo}/compare/{usr0}:{branch0:int}/full',
+        {}, ResourceWithId(35))
+
     return router
 
 
@@ -100,6 +123,19 @@ class ResourceWithId(object):
 
     def on_get(self, req, resp):
         resp.body = self.resource_id
+
+
+class SpamConverter(object):
+    def __init__(self, times, eggs=False):
+        self._times = times
+        self._eggs = eggs
+
+    def convert(self, fragment):
+        item = fragment
+        if self._eggs:
+            item += '&eggs'
+
+        return ', '.join(item for i in range(self._times))
 
 
 # =====================================================================
@@ -233,7 +269,7 @@ def test_root_path():
     assert resource.resource_id == 42
 
     expected_src = textwrap.dedent("""
-        def find(path, return_values, patterns, params):
+        def find(path, return_values, patterns, converters, params):
             path_len = len(path)
             if path_len > 0:
                 if path[0] == '':
@@ -275,11 +311,12 @@ def test_match_entire_path(uri_template, path):
 
 
 @pytest.mark.parametrize('uri_template', [
-    '/teams/{collision}',  # simple vs simple
+    '/teams/{conflict}',  # simple vs simple
     '/emojis/signs/{id_too}',  # another simple vs simple
-    '/repos/{org}/{repo}/compare/{complex}:{vs}...{complex2}:{collision}',
+    '/repos/{org}/{repo}/compare/{complex}:{vs}...{complex2}:{conflict}',
+    '/teams/{id:int}/settings',  # converted vs. non-converted
 ])
-def test_collision(router, uri_template):
+def test_conflict(router, uri_template):
     with pytest.raises(ValueError):
         router.add_route(uri_template, {}, ResourceWithId(-1))
 
@@ -289,7 +326,7 @@ def test_collision(router, uri_template):
     '/repos/{complex}.{vs}.{simple}',
     '/repos/{org}/{repo}/compare/{complex}:{vs}...{complex2}/full',
 ])
-def test_non_collision(router, uri_template):
+def test_non_conflict(router, uri_template):
     router.add_route(uri_template, {}, ResourceWithId(-1))
 
 
@@ -365,29 +402,81 @@ def test_literal_segment(router):
     assert route is None
 
 
-@pytest.mark.parametrize('uri_template', [
+@pytest.mark.parametrize('path', [
     '/teams',
     '/emojis/signs',
     '/gists',
     '/gists/42',
 ])
-def test_dead_segment(router, uri_template):
-    route = router.find(uri_template)
+def test_dead_segment(router, path):
+    route = router.find(path)
     assert route is None
 
 
-@pytest.mark.parametrize('uri_template', [
+@pytest.mark.parametrize('path', [
     '/repos/racker/falcon/compare/foo',
     '/repos/racker/falcon/compare/foo/full',
 ])
-def test_malformed_pattern(router, uri_template):
-    route = router.find(uri_template)
+def test_malformed_pattern(router, path):
+    route = router.find(path)
     assert route is None
 
 
 def test_literal(router):
     resource, __, __, __ = router.find('/user/memberships')
     assert resource.resource_id == 8
+
+
+@pytest.mark.parametrize('path,expected_params', [
+    ('/cvt/teams/007', {'id': 7}),
+    ('/cvt/teams/1234/members', {'id': 1234}),
+    ('/cvt/teams/default/members/700-5', {'id': 700, 'tenure': 5}),
+    (
+        '/cvt/repos/org/repo/compare/xkcd:353',
+        {'org': 'org', 'repo': 'repo', 'usr0': 'xkcd', 'branch0': 353},
+    ),
+    (
+        '/cvt/repos/org/repo/compare/gunmachan:1234...kumamon:5678/part',
+        {
+            'org': 'org',
+            'repo': 'repo',
+            'usr0': 'gunmachan',
+            'branch0': 1234,
+            'usr1': 'kumamon',
+            'branch1': 5678,
+        }
+    ),
+    (
+        '/cvt/repos/xkcd/353/compare/susan:0001/full',
+        {'org': 'xkcd', 'repo': '353', 'usr0': 'susan', 'branch0': 1},
+    )
+])
+def test_converters(router, path, expected_params):
+    __, __, params, __ = router.find(path)
+    assert params == expected_params
+
+
+@pytest.mark.parametrize('uri_template', [
+    '/foo/{bar:int(0)}',
+    '/foo/{bar:int(num_digits=0)}',
+    '/foo/{bar:int(-1)}/baz',
+    '/foo/{bar:int(num_digits=-1)}/baz',
+])
+def test_converters_with_invalid_options(router, uri_template):
+    # NOTE(kgriffs): Sanity-check that errors are properly bubbled up
+    # when calling add_route(). Additional checks can be found
+    # in test_uri_converters.py
+    with pytest.raises(ValueError):
+        router.add_route(uri_template, {}, ResourceWithId(1))
+
+
+@pytest.mark.parametrize('uri_template', [
+    '/foo/{bar:}',
+    '/foo/{bar:unknown}/baz',
+])
+def test_converters_malformed_specification(router, uri_template):
+    with pytest.raises(ValueError):
+        router.add_route(uri_template, {}, ResourceWithId(1))
 
 
 def test_variable(router):
@@ -413,8 +502,10 @@ def test_single_character_field_name(router):
 @pytest.mark.parametrize('path,expected_id', [
     ('/teams/default', 19),
     ('/teams/default/members', 7),
-    ('/teams/foo', 6),
-    ('/teams/foo/members', 7),
+    ('/cvt/teams/default', 31),
+    ('/cvt/teams/default/members/1234-10', 32),
+    ('/teams/1234', 6),
+    ('/teams/1234/members', 7),
     ('/gists/first', 20),
     ('/gists/first/raw', 18),
     ('/gists/first/pdf', 21),
@@ -445,6 +536,11 @@ def test_literal_vs_variable(router, path, expected_id):
     '/teams/default/members/thing/undefined/segments',
     '/teams/default/undefined',
     '/teams/default/undefined/segments',
+
+    # Literal vs. variable (converters)
+    '/cvt/teams/default/members',  # 'default' can't be converted to an int
+    '/cvt/teams/NaN',
+    '/cvt/teams/default/members/NaN',
 
     # Literal vs variable (emojis)
     '/emojis/signs',
@@ -512,3 +608,51 @@ def test_complex_alt(router, url_postfix, resource_id, expected_template):
         'branch0': 'master',
     })
     assert uri_template == expected_template
+
+
+def test_options_converters_set(router):
+    router.options.converters['spam'] = SpamConverter
+
+    router.add_route('/{food:spam(3, eggs=True)}', {}, ResourceWithId(1))
+    resource, __, params, __ = router.find('/spam')
+
+    assert params == {'food': 'spam&eggs, spam&eggs, spam&eggs'}
+
+
+@pytest.mark.parametrize('converter_name', [
+    'spam',
+    'spam_2'
+])
+def test_options_converters_update(router, converter_name):
+    router.options.converters.update({
+        'spam': SpamConverter,
+        'spam_2': SpamConverter,
+    })
+
+    template = '/{food:' + converter_name + '(3, eggs=True)}'
+    router.add_route(template, {}, ResourceWithId(1))
+    resource, __, params, __ = router.find('/spam')
+
+    assert params == {'food': 'spam&eggs, spam&eggs, spam&eggs'}
+
+
+@pytest.mark.parametrize('name', [
+    'has whitespace',
+    'whitespace ',
+    ' whitespace ',
+    ' whitespace',
+    'funky$character',
+    '42istheanswer',
+    'with-hyphen',
+])
+def test_options_converters_invalid_name(router, name):
+    with pytest.raises(ValueError):
+        router.options.converters[name] = object
+
+
+def test_options_converters_invalid_name_on_update(router):
+    with pytest.raises(ValueError):
+        router.options.converters.update({
+            'valid_name': SpamConverter,
+            '7eleven': SpamConverter,
+        })

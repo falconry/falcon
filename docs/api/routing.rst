@@ -63,4 +63,5 @@ A custom routing engine may be specified when instantiating
     api = API(router=fancy)
 
 .. automodule:: falcon.routing
-    :members: create_http_method_map, compile_uri_template, CompiledRouter
+    :members: create_http_method_map, compile_uri_template,
+        CompiledRouter, CompiledRouterOptions
