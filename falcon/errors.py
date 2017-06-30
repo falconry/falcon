@@ -73,9 +73,6 @@ class HTTPBadRequest(HTTPError):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -136,9 +133,6 @@ class HTTPUnauthorized(HTTPError):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -201,9 +195,6 @@ class HTTPForbidden(HTTPError):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -258,9 +249,6 @@ class HTTPNotFound(OptionalRepresentation, HTTPError):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -316,9 +304,6 @@ class HTTPMethodNotAllowed(OptionalRepresentation, HTTPError):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -376,9 +361,6 @@ class HTTPNotAcceptable(HTTPError):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -436,9 +418,6 @@ class HTTPConflict(HTTPError):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -501,9 +480,6 @@ class HTTPGone(OptionalRepresentation, HTTPError):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -550,9 +526,6 @@ class HTTPLengthRequired(HTTPError):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -600,9 +573,6 @@ class HTTPPreconditionFailed(HTTPError):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -659,9 +629,6 @@ class HTTPRequestEntityTooLarge(HTTPError):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -724,9 +691,6 @@ class HTTPUriTooLong(HTTPError):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -773,9 +737,6 @@ class HTTPUnsupportedMediaType(HTTPError):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -854,9 +815,6 @@ class HTTPUnprocessableEntity(HTTPError):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -902,9 +860,6 @@ class HTTPLocked(OptionalRepresentation, HTTPError):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -949,9 +904,6 @@ class HTTPFailedDependency(OptionalRepresentation, HTTPError):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -1004,9 +956,6 @@ class HTTPPreconditionRequired(HTTPError):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -1059,9 +1008,6 @@ class HTTPTooManyRequests(HTTPError):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -1122,9 +1068,6 @@ class HTTPRequestHeaderFieldsTooLarge(HTTPError):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -1185,9 +1128,6 @@ class HTTPUnavailableForLegalReasons(OptionalRepresentation, HTTPError):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -1231,9 +1171,6 @@ class HTTPInternalServerError(HTTPError):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -1330,9 +1267,6 @@ class HTTPBadGateway(HTTPError):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -1389,9 +1323,6 @@ class HTTPServiceUnavailable(HTTPError):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -1546,9 +1477,6 @@ class HTTPInsufficientStorage(HTTPError):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -1594,9 +1522,6 @@ class HTTPLoopDetected(HTTPError):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -1654,9 +1579,6 @@ class HTTPNetworkAuthenticationRequired(HTTPError):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -1700,9 +1622,6 @@ class HTTPInvalidHeader(HTTPBadRequest):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -1747,9 +1666,6 @@ class HTTPMissingHeader(HTTPBadRequest):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -1796,9 +1712,6 @@ class HTTPInvalidParam(HTTPBadRequest):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -1844,9 +1757,6 @@ class HTTPMissingParam(HTTPBadRequest):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
-
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
