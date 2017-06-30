@@ -70,6 +70,11 @@ notifications:
     on_failure: always
     use_notice: true
     skip_join: true
+  webhooks:
+    urls:
+      secure: "R4Hr754P2v69tWoy6vKz/4csb6ZHYRM/+8vTVV6ioDWyqsPqyGXAPiXDfZ617C7TLxJiTlbFIJPjlcH64estPg+RZ1NA4D8BrDKS2nKqHJ2Z5Jv6X5Ds6HkEUNnYXsuwsqNvZzhpPRcCKXXRpvmAbkNUSe8ftn4kz2zCOA9MBSY="
+    on_success: change
+    on_failure: always
 
 before_install:
   - pip install codecov
