@@ -74,6 +74,7 @@ Predefined Errors
         HTTPPreconditionRequired, HTTPTooManyRequests,
         HTTPRequestHeaderFieldsTooLarge,
         HTTPUnavailableForLegalReasons,
-        HTTPInternalServerError, HTTPBadGateway, HTTPServiceUnavailable,
+        HTTPInternalServerError, HTTPNotImplemented, HTTPBadGateway,
+        HTTPServiceUnavailable, HTTPGatewayTimeout, HTTPVersionNotSupported,
         HTTPInsufficientStorage, HTTPLoopDetected,
         HTTPNetworkAuthenticationRequired

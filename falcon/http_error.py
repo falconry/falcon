@@ -86,8 +86,6 @@ class HTTPError(Exception):
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
 
-        headers (dict): Extra headers to return in the
-            response to the client (default ``None``).
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
