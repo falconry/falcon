@@ -16,10 +16,18 @@
 
 import keyword
 import re
+import textwrap
+
+from six.moves import UserDict
+
+from falcon.routing import converters
 
 
-_FIELD_PATTERN = re.compile('{([^}]*)}')
 _TAB_STR = ' ' * 4
+_FIELD_PATTERN = re.compile(
+    '{((?P<fname>[^}:]*)((?P<cname_sep>:(?P<cname>[^}\(]*))(\((?P<argstr>.*)\))?)?)}'
+)
+_IDENTIFIER_PATTERN = re.compile('[A-Za-z_][A-Za-z0-9_]*$')
 
 
 class CompiledRouter(object):
@@ -37,19 +45,38 @@ class CompiledRouter(object):
 
     __slots__ = (
         '_ast',
+        '_converter_map',
+        '_converters',
         '_find',
         '_finder_src',
+        '_options',
         '_patterns',
         '_return_values',
         '_roots',
     )
 
     def __init__(self):
-        self._roots = []
-        self._find = self._compile()
+        self._ast = None
+        self._converters = None
         self._finder_src = None
+
+        self._options = CompiledRouterOptions()
+
+        # PERF(kgriffs): This is usually an anti-pattern, but we do it
+        # here to reduce lookup time.
+        self._converter_map = self._options.converters.data
+
         self._patterns = None
         self._return_values = None
+        self._roots = []
+
+        # NOTE(kgriffs): Call _compile() last since it depends on
+        # the variables above.
+        self._find = self._compile()
+
+    @property
+    def options(self):
+        return self._options
 
     @property
     def finder_src(self):
@@ -66,33 +93,16 @@ class CompiledRouter(object):
                 the URI template.
         """
 
-        if re.search('\s', uri_template):
+        # NOTE(kgriffs): Fields may have whitespace in them, so sub
+        # those before checking the rest of the URI template.
+        if re.search('\s', _FIELD_PATTERN.sub('{FIELD}', uri_template)):
             raise ValueError('URI templates may not include whitespace.')
 
-        # NOTE(kgriffs): Ensure fields are valid Python identifiers,
-        # since they will be passed as kwargs to responders. Also
-        # ensure there are no duplicate names, since that causes the
-        # following problems:
-        #
-        #   1. For simple nodes, values from deeper nodes overwrite
-        #      values from more shallow nodes.
-        #   2. For complex nodes, re.compile() raises a nasty error
-        #
-        fields = _FIELD_PATTERN.findall(uri_template)
-        used_names = set()
-        for name in fields:
-            is_identifier = re.match('[A-Za-z_][A-Za-z0-9_]*$', name)
-            if not is_identifier or name in keyword.kwlist:
-                raise ValueError('Field names must be valid identifiers '
-                                 "('{}' is not valid).".format(name))
-
-            if name in used_names:
-                raise ValueError('Field names may not be duplicated '
-                                 "('{}' was used more than once)".format(name))
-
-            used_names.add(name)
-
         path = uri_template.strip('/').split('/')
+
+        used_names = set()
+        for segment in path:
+            self._validate_template_segment(segment, used_names)
 
         def insert(nodes, path_index=0):
             for node in nodes:
@@ -110,16 +120,13 @@ class CompiledRouter(object):
                     return
 
                 if node.conflicts_with(segment):
-                    msg = (
-                        'The URI template for this route conflicts with another'
-                        "route's template. This is usually caused by using "
-                        'different field names at the same level in the path. '
-                        'For example, given the route paths '
-                        "'/parents/{id}' and '/parents/{parent_id}/children', "
-                        'the conflict can be resolved by renaming one of the '
-                        'fields to match the other, i.e.: '
-                        "'/parents/{parent_id}' and '/parents/{parent_id}/children'."
-                    )
+                    msg = textwrap.dedent("""
+                        The URI template for this route is inconsistent or conflicts with another
+                        route's template. This is usually caused by configuring a field converter
+                        differently for the same field in two different routes, or by using
+                        different field names at the same level in the path (e.g.,
+                        '/parents/{id}' and '/parents/{parent_id}/children')
+                    """).strip().replace('\n', ' ')
                     raise ValueError(msg)
 
             # NOTE(richardolsson): If we got this far, the node doesn't already
@@ -157,7 +164,8 @@ class CompiledRouter(object):
 
         path = uri.lstrip('/').split('/')
         params = {}
-        node = self._find(path, self._return_values, self._patterns, params)
+        node = self._find(path, self._return_values, self._patterns,
+                          self._converters, params)
 
         if node is not None:
             return node.resource, node.method_map, params, node.uri_template
@@ -168,6 +176,48 @@ class CompiledRouter(object):
     # Private
     # -----------------------------------------------------------------
 
+    def _validate_template_segment(self, segment, used_names):
+        """Validates a single path segment of a URI template.
+
+        1. Ensure field names are valid Python identifiers, since they
+           will be passed as kwargs to responders.
+        2. Check that there are no duplicate names, since that causes
+           (at least) the following problems:
+
+              a. For simple nodes, values from deeper nodes overwrite
+                 values from more shallow nodes.
+              b. For complex nodes, re.compile() raises a nasty error
+        3. Check that when the converter syntax is used, the named
+           converter exists.
+        """
+
+        for field in _FIELD_PATTERN.finditer(segment):
+            name = field.group('fname')
+
+            is_identifier = _IDENTIFIER_PATTERN.match(name)
+            if not is_identifier or name in keyword.kwlist:
+                msg_template = ('Field names must be valid identifiers '
+                                '("{0}" is not valid)')
+                msg = msg_template.format(name)
+                raise ValueError(msg)
+
+            if name in used_names:
+                msg_template = ('Field names may not be duplicated '
+                                '("{0}" was used more than once)')
+                msg = msg_template.format(name)
+                raise ValueError(msg)
+
+            used_names.add(name)
+
+            if field.group('cname_sep') == ':':
+                msg = 'Missing converter for field "{0}"'.format(name)
+                raise ValueError(msg)
+
+            name = field.group('cname')
+            if name and name not in self._converter_map:
+                msg = 'Unknown converter: "{0}"'.format(name)
+                raise ValueError(msg)
+
     def _generate_ast(self, nodes, parent, return_values, patterns, level=0, fast_return=True):
         """Generates a coarse AST for the router."""
 
@@ -176,7 +226,7 @@ class CompiledRouter(object):
             return
 
         outer_parent = _CxIfPathLength('>', level)
-        parent.append(outer_parent)
+        parent.append_child(outer_parent)
         parent = outer_parent
 
         found_simple = False
@@ -212,13 +262,45 @@ class CompiledRouter(object):
 
                     construct = _CxIfPathSegmentPattern(level, pattern_idx,
                                                         node.var_pattern.pattern)
-                    parent.append(construct)
+                    parent.append_child(construct)
                     parent = construct
+
+                    if node.var_converter_map:
+                        parent.append_child(_CxPrefetchGroupsFromPatternMatch())
+                        parent = self._generate_conversion_ast(parent, node)
+
+                    else:
+                        parent.append_child(_CxSetParamsFromPatternMatch())
 
                 else:
                     # NOTE(kgriffs): Simple nodes just capture the entire path
                     # segment as the value for the param.
-                    parent.append(_CxSetParam(node.var_name, level))
+
+                    if node.var_converter_map:
+                        assert len(node.var_converter_map) == 1
+
+                        parent.append_child(_CxSetFragmentFromPath(level))
+
+                        field_name = node.var_name
+                        __, converter_name, converter_argstr = node.var_converter_map[0]
+                        converter_class = self._converter_map[converter_name]
+
+                        converter_obj = self._instantiate_converter(
+                            converter_class,
+                            converter_argstr
+                        )
+                        converter_idx = len(self._converters)
+                        self._converters.append(converter_obj)
+
+                        construct = _CxIfConverterField(
+                            field_name,
+                            converter_idx,
+                        )
+
+                        parent.append_child(construct)
+                        parent = construct
+                    else:
+                        parent.append_child(_CxSetParam(node.var_name, level))
 
                     # NOTE(kgriffs): We don't allow multiple simple var nodes
                     # to exist at the same level, e.g.:
@@ -233,7 +315,7 @@ class CompiledRouter(object):
             else:
                 # NOTE(kgriffs): Not a param, so must match exactly
                 construct = _CxIfPathSegmentLiteral(level, node.raw_segment)
-                parent.append(construct)
+                parent.append_child(construct)
                 parent = construct
 
             if node.resource is not None:
@@ -253,22 +335,52 @@ class CompiledRouter(object):
 
             if node.resource is None:
                 if fast_return:
-                    parent.append(_CxReturnNone())
+                    parent.append_child(_CxReturnNone())
             else:
                 # NOTE(kgriffs): Make sure that we have consumed all of
                 # the segments for the requested route; otherwise we could
                 # mistakenly match "/foo/23/bar" against "/foo/{id}".
                 construct = _CxIfPathLength('==', level + 1)
-                construct.append(_CxReturnValue(resource_idx))
-                parent.append(construct)
+                construct.append_child(_CxReturnValue(resource_idx))
+                parent.append_child(construct)
 
                 if fast_return:
-                    parent.append(_CxReturnNone())
+                    parent.append_child(_CxReturnNone())
 
             parent = outer_parent
 
         if not found_simple and fast_return:
-            parent.append(_CxReturnNone())
+            parent.append_child(_CxReturnNone())
+
+    def _generate_conversion_ast(self, parent, node):
+        # NOTE(kgriffs): Unroll the converter loop into
+        # a series of nested "if" constructs.
+        for field_name, converter_name, converter_argstr in node.var_converter_map:
+            converter_class = self._converter_map[converter_name]
+
+            converter_obj = self._instantiate_converter(
+                converter_class,
+                converter_argstr
+            )
+            converter_idx = len(self._converters)
+            self._converters.append(converter_obj)
+
+            parent.append_child(_CxSetFragmentFromField(field_name))
+
+            construct = _CxIfConverterField(
+                field_name,
+                converter_idx,
+            )
+
+            parent.append_child(construct)
+            parent = construct
+
+        # NOTE(kgriffs): Add remaining fields that were not
+        # converted, if any.
+        if node.num_fields > len(node.var_converter_map):
+            parent.append_child(_CxSetParamsFromPatternMatchPrefetched())
+
+        return parent
 
     def _compile(self):
         """Generates Python code for the entire routing tree.
@@ -278,12 +390,13 @@ class CompiledRouter(object):
         """
 
         src_lines = [
-            'def find(path, return_values, patterns, params):',
+            'def find(path, return_values, patterns, converters, params):',
             _TAB_STR + 'path_len = len(path)',
         ]
 
         self._return_values = []
         self._patterns = []
+        self._converters = []
 
         self._ast = _CxParent()
         self._generate_ast(
@@ -307,6 +420,14 @@ class CompiledRouter(object):
 
         return scope['find']
 
+    def _instantiate_converter(self, klass, argstr=None):
+        if argstr is None:
+            return klass()
+
+        # NOTE(kgriffs): Don't try this at home. ;)
+        src = '{0}({1})'.format(klass.__name__, argstr)
+        return eval(src, {klass.__name__: klass})
+
 
 class CompiledRouterNode(object):
     """Represents a single URI segment in a URI."""
@@ -322,8 +443,13 @@ class CompiledRouterNode(object):
 
         self.is_var = False
         self.is_complex = False
+        self.num_fields = 0
+
+        # TODO(kgriffs): Rename these since the docs talk about "fields"
+        # or "field expressions", not "vars" or "variables".
         self.var_name = None
         self.var_pattern = None
+        self.var_converter_map = []
 
         # NOTE(kgriffs): CompiledRouter.add_route validates field names,
         # so here we can just assume they are OK and use the simple
@@ -334,14 +460,34 @@ class CompiledRouterNode(object):
             self.is_var = False
         else:
             self.is_var = True
+            self.num_fields = len(matches)
 
-            if len(matches) == 1 and matches[0].span() == (0, len(raw_segment)):
-                # NOTE(richardolsson): if there is a single variable and
-                # it spans the entire segment, the segment is not
-                # complex and the variable name is simply the string
-                # contained within curly braces.
+            for field in matches:
+                # NOTE(kgriffs): We already validated the field
+                # expression to disallow blank converter names, or names
+                # that don't match a known converter, so if a name is
+                # given, we can just go ahead and use it.
+                if field.group('cname'):
+                    self.var_converter_map.append(
+                        (
+                            field.group('fname'),
+                            field.group('cname'),
+                            field.group('argstr'),
+                        )
+                    )
+
+            if matches[0].span() == (0, len(raw_segment)):
+                # NOTE(kgriffs): Single field, spans entire segment
+                assert len(matches) == 1
+
+                # TODO(kgriffs): It is not "complex" because it only
+                # contains a single field. Rename this variable to make
+                # it more descriptive.
                 self.is_complex = False
-                self.var_name = raw_segment[1:-1]
+
+                field = matches[0]
+                self.var_name = field.group('fname')
+
             else:
                 # NOTE(richardolsson): Complex segments need to be
                 # converted into regular expressions in order to match
@@ -364,11 +510,14 @@ class CompiledRouterNode(object):
                 # trick the parser into doing the right thing.
                 escaped_segment = re.sub(r'[\.\(\)\[\]\?\$\*\+\^\|]', r'\\\g<0>', raw_segment)
 
-                pattern_text = _FIELD_PATTERN.sub(r'(?P<\1>.+)', escaped_segment)
+                pattern_text = _FIELD_PATTERN.sub(r'(?P<\2>.+)', escaped_segment)
                 pattern_text = '^' + pattern_text + '$'
 
                 self.is_complex = True
                 self.var_pattern = re.compile(pattern_text)
+
+        if self.is_complex:
+            assert self.is_var
 
     def matches(self, segment):
         """Returns True if this node matches the supplied template segment."""
@@ -431,6 +580,111 @@ class CompiledRouterNode(object):
         return False
 
 
+class ConverterDict(UserDict):
+    """A dict-like class for storing field converters."""
+
+    def update(self, other):
+        try:
+            # NOTE(kgriffs): If it is a mapping type, it should
+            # implement keys().
+            names = other.keys()
+        except AttributeError:
+            # NOTE(kgriffs): Not a mapping type, so assume it is an
+            # iterable of 2-item iterables. But we need to make it
+            # re-iterable if it is a generator, for when we pass
+            # it on to the parent's update().
+            other = list(other)
+            names = [n for n, __ in other]
+
+        for n in names:
+            self._validate(n)
+
+        UserDict.update(self, other)
+
+    def __setitem__(self, name, converter):
+        self._validate(name)
+        UserDict.__setitem__(self, name, converter)
+
+    def _validate(self, name):
+        if not _IDENTIFIER_PATTERN.match(name):
+            raise ValueError(
+                'Invalid converter name. Names may not be blank, and may '
+                'only use ASCII letters, digits, and underscores. Names'
+                'must begin with a letter or underscore.'
+            )
+
+
+class CompiledRouterOptions(object):
+    """Defines a set of configurable router options.
+
+    An instance of this class is exposed via :any:`API.router_options`
+    for configuring certain :py:class:`~.CompiledRouter` behaviors.
+
+    Attributes:
+        converters: Represents the collection of named
+            converters that may be referenced in URI template field
+            expressions. Adding additional converters is simply a
+            matter of mapping a name to a converter class::
+
+                api.router_options.converters['myconverter'] = MyConverter
+
+            Note:
+
+                Converter names may only contain ASCII letters, digits,
+                and underscores, and must start with either a letter or
+                an underscore.
+
+            A converter is any class that implements the following
+            method::
+
+                def convert(self, fragment):
+                    # TODO: Convert the matched URI path fragment and
+                    # return the result, or None to reject the fragment
+                    # if it is not in the expected format or otherwise
+                    # can not be converted.
+                    pass
+
+            Converters are instantiated with the argument specification
+            given in the field expression. These specifications follow
+            the standard Python syntax for passing arguments. For
+            example, the comments in the following code show how a
+            converter would be instantiated given different
+            argument specifications in the URI template::
+
+                # MyConverter()
+                api.add_route(
+                    '/a/{some_field:myconverter}',
+                    some_resource
+                )
+
+                # MyConverter(True)
+                api.add_route(
+                    '/b/{some_field:myconverter(True)}',
+                    some_resource
+                )
+
+                # MyConverter(True, some_kwarg=10)
+                api.add_route(
+                    '/c/{some_field:myconverter(True, some_kwarg=10)}',
+                    some_resource
+                )
+
+            Warning:
+
+                Converter instances are shared between requests.
+                Therefore, in threaded deployments, care must be taken
+                to implement custom converters in a thread-safe
+                manner.
+    """
+
+    __slots__ = ('converters',)
+
+    def __init__(self):
+        self.converters = ConverterDict(
+            (name, converter) for name, converter in converters.BUILTIN
+        )
+
+
 # --------------------------------------------------------------------
 # AST Constructs
 #
@@ -448,7 +702,7 @@ class _CxParent(object):
     def __init__(self):
         self._children = []
 
-    def append(self, construct):
+    def append_child(self, construct):
         self._children.append(construct)
 
     def src(self, indentation):
@@ -503,25 +757,84 @@ class _CxIfPathSegmentPattern(_CxParent):
         self._pattern_text = pattern_text
 
     def src(self, indentation):
-        lines = []
-
-        lines.append(
+        lines = [
             '{0}match = patterns[{1}].match(path[{2}])  # {3}'.format(
                 _TAB_STR * indentation,
                 self._pattern_idx,
                 self._segment_idx,
                 self._pattern_text,
-            )
-        )
-
-        lines.append('{0}if match is not None:'.format(_TAB_STR * indentation))
-        lines.append('{0}params.update(match.groupdict())'.format(
-            _TAB_STR * (indentation + 1)
-        ))
-
-        lines.append(self._children_src(indentation + 1))
+            ),
+            '{0}if match is not None:'.format(_TAB_STR * indentation),
+            self._children_src(indentation + 1),
+        ]
 
         return '\n'.join(lines)
+
+
+class _CxIfConverterField(_CxParent):
+    def __init__(self, field_name, converter_idx):
+        super(_CxIfConverterField, self).__init__()
+        self._field_name = field_name
+        self._converter_idx = converter_idx
+
+    def src(self, indentation):
+        lines = [
+            '{0}field_value = converters[{1}].convert(fragment)'.format(
+                _TAB_STR * indentation,
+                self._converter_idx,
+            ),
+            '{0}if field_value is not None:'.format(_TAB_STR * indentation),
+            "{0}params['{1}'] = field_value".format(
+                _TAB_STR * (indentation + 1),
+                self._field_name,
+            ),
+            self._children_src(indentation + 1),
+        ]
+
+        return '\n'.join(lines)
+
+
+class _CxSetFragmentFromField(object):
+    def __init__(self, field_name):
+        self._field_name = field_name
+
+    def src(self, indentation):
+        return "{0}fragment = groups.pop('{1}')".format(
+            _TAB_STR * indentation,
+            self._field_name,
+        )
+
+
+class _CxSetFragmentFromPath(object):
+    def __init__(self, segment_idx):
+        self._segment_idx = segment_idx
+
+    def src(self, indentation):
+        return '{0}fragment = path[{1}]'.format(
+            _TAB_STR * indentation,
+            self._segment_idx,
+        )
+
+
+class _CxSetParamsFromPatternMatch(object):
+    def src(self, indentation):
+        return '{0}params.update(match.groupdict())'.format(
+            _TAB_STR * indentation
+        )
+
+
+class _CxSetParamsFromPatternMatchPrefetched(object):
+    def src(self, indentation):
+        return '{0}params.update(groups)'.format(
+            _TAB_STR * indentation
+        )
+
+
+class _CxPrefetchGroupsFromPatternMatch(object):
+    def src(self, indentation):
+        return '{0}groups = match.groupdict()'.format(
+            _TAB_STR * indentation
+        )
 
 
 class _CxReturnNone(object):

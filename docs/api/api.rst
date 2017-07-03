@@ -21,3 +21,5 @@ standard-compliant WSGI server.
 .. autoclass:: falcon.ResponseOptions
     :members:
 
+.. autoclass:: falcon.routing.CompiledRouterOptions
+    :noindex:
