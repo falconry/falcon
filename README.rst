@@ -1,44 +1,66 @@
 Falcon |Docs| |Build Status| |codecov.io|
 =========================================
 
+We believe in using the best tool for the job. We also believe that the
+best tools are simple, reliable and versatile.
+
     Perfection is finally attained not when there is no longer anything
     to add, but when there is no longer anything to take away.
 
     *- Antoine de Saint-Exupéry*
 
-Falcon is a `high-performance Python
-framework <http://falconframework.org/index.html>`__ for building cloud
-APIs. It encourages the REST architectural style, and tries to do as
-little as possible while remaining `highly
-effective <http://falconframework.org/index.html#Benefits>`__.
+`Falcon <http://falconframework.org/index.html>`__ is a reliable,
+high-performance Python web framework for building
+large-scale app backends and microservices. It encourages the REST
+architectural style, and tries to do as little as possible while
+remaining highly effective.
+
+Falcon apps work with any WSGI server, and run great under
+CPython 2.7, PyPy, and CPython 3.3+.
 
 Quick Links
 -----------
 
-* `Read the docs <https://falcon.readthedocs.io/en/stable>`__.
-* `Join the discussion group <https://groups.google.com/forum/#!forum/falconframework>`__.
-* `Hang out in #falconframework on freenode <https://kiwiirc.com/client/irc.freenode.net/?#falconframework>`__.
+* `Read the docs <https://falcon.readthedocs.io/en/stable>`__
+* `Join the discussion group <https://groups.google.com/forum/#!forum/falconframework>`__
+* `Hang out in #falconframework on freenode <https://kiwiirc.com/client/irc.freenode.net/?#falconframework>`__
 
 Design Goals
 ------------
+
+We designed Falcon to support the demanding needs of large-scale cloud
+services and responsive app backends. Falcon complements more general
+Python web frameworks by providing bare-metal performance, reliability,
+and flexibility wherever you need it.
 
 **Fast.** Cloud APIs need to turn around requests quickly, and make
 efficient use of hardware. This is particularly important when serving
 many concurrent requests. Falcon is among the fastest WSGI frameworks
 available, processing requests
 `several times faster <http://falconframework.org/#Metrics>`__ than
-other Python web frameworks.
+other Python web frameworks. For
+an extra speed boost, Falcon compiles itself with Cython when
+available, and also works well with `PyPy <https://pypy.org>`__.
+Considering a move to another programming language? Benchmark with
+Falcon + PyPy first.
 
 **Light.** Only the essentials are included, with *six* and *mimeparse*
 being the only dependencies outside the standard library. We work hard
 to keep the code lean, making Falcon easier to test, secure, optimize,
 and deploy.
 
+**Reliable.** We go to great lengths to avoid introducing
+breaking changes, and when we do they are fully documented and only
+introduced (in the spirit of
+`SemVer <http://semver.org/>`__) with a major version
+increment. The code is rigorously tested with numerous inputs and we
+require 100% coverage at all times. Six and mimeparse are the only
+third-party dependencies.
+
 **Flexible.** Falcon is not opinionated when it comes to talking to
 databases, rendering content, authorizing requests, etc. You are free to
-mix and match your own favorite libraries. Falcon apps work with
-any WSGI server, and run great under `CPython 2.6-2.7, PyPy, Jython 2.7,
-and CPython 3.3-3.6 <https://travis-ci.org/falconry/falcon>`__.
+mix and match your own favorite libraries. Falcon apps work with any
+WSGI server, and run great under CPython 2.7, PyPy, and CPython 3.3+.
 
 Features
 --------

@@ -3,20 +3,62 @@
 Introduction
 ============
 
-Falcon is a minimalist, high-performance web framework for building RESTful services and app backends with Python. Falcon works with any WSGI container that is compliant with PEP-3333, and works great with Python 2.6, Python 2.7, Python 3.3, Python 3.4 and PyPy, giving you a wide variety of deployment options.
+We believe in using the best tool for the job. We also believe that the
+best tools are simple, reliable and versatile.
 
+    Perfection is finally attained not when there is no longer anything
+    to add, but when there is no longer anything to take away.
+
+    *- Antoine de Saint-Exupéry*
+
+`Falcon <http://falconframework.org/index.html>`__ is a reliable,
+high-performance Python web framework for building
+large-scale app backends and microservices. It encourages the REST
+architectural style, and tries to do as little as possible while
+remaining highly effective.
+
+Falcon apps work with any WSGI server, and run great under
+CPython 2.7, PyPy, and CPython 3.3+.
 
 How is Falcon different?
 ------------------------
 
-First, Falcon is one of the fastest WSGI frameworks available. When there is a conflict between saving the developer a few keystrokes and saving a few microseconds to serve a request, Falcon is strongly biased toward the latter. That being said, Falcon strives to strike a good balance between usability and speed.
+We designed Falcon to support the demanding needs of large-scale cloud
+services and responsive app backends. Falcon complements more general
+Python web frameworks by providing bare-metal performance, reliability,
+and flexibility wherever you need it.
 
-Second, Falcon is lean. It doesn't try to be everything to everyone, focusing instead on a single use case: HTTP APIs. Falcon doesn't include a template engine, form helpers, or an ORM (although those are easy enough to add yourself). When you sit down to write a web service with Falcon, you choose your own adventure in terms of async I/O, serialization, data access, etc. In fact, Falcon only has two dependencies: `six`_, to make it easier to support both Python 2 and 3, and `mimeparse`_ for handling complex Accept headers. Neither of these packages pull in any further dependencies of their own.
+**Fast.** Same hardware, more requests. Falcon turns around
+requests several times faster than most other Python frameworks. For
+an extra speed boost, Falcon compiles itself with Cython when
+available, and also works well with `PyPy <https://pypy.org>`__.
+Considering a move to another programming language? Benchmark with
+Falcon + PyPy first.
 
-Third, Falcon eschews magic. When you use the framework, it's pretty obvious which inputs lead to which outputs. Also, it's blatantly obvious where variables originate. All this makes it easier to reason about the code and to debug edge cases in large-scale deployments of your application.
+**Reliable.** We go to great lengths to avoid introducing
+breaking changes, and when we do they are fully documented and only
+introduced (in the spirit of
+`SemVer <http://semver.org/>`__) with a major version
+increment. The code is rigorously tested with numerous inputs and we
+require 100% coverage at all times. Six and mimeparse are the only
+third-party dependencies.
 
-.. _`six`: http://pythonhosted.org/six/
-.. _`mimeparse`: https://code.google.com/p/mimeparse/
+**Flexible.** Falcon leaves a lot of decisions and implementation
+details to you, the API developer. This gives you a lot of freedom to
+customize and tune your implementation. Due to Falcon's minimalist
+design, Python community members are free to independently innovate on
+Falcon add-ons and complimentary packages. You can also extend the
+framework yourself in a variety of ways.
+
+**Debuggable.** Falcon eschews magic. When you use the framework, it's
+obvious which inputs lead to which outputs, and where variables
+originate. Any potentially surprising behaviors, such as automatic
+request body parsing, are well-documented and disabled by default.
+Falcon doesn't mask exceptions. All this makes it easier to reason about
+the code and to debug edge cases in large-scale deployments. Finally,
+when it comes to the framework itself, we've taken care to keep logic
+paths simple and understandable so that if there ever is a problem, the
+cause can be quickly found and fixed.
 
 
 About Apache 2.0
