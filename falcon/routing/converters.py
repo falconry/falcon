@@ -12,6 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from datetime import datetime
+
+
+# PERF(kgriffs): Avoid an extra namespace lookup when using this function
+strptime = datetime.strptime
+
 
 class IntConverter(object):
     """Converts a field value to an int.
@@ -59,6 +65,28 @@ class IntConverter(object):
         return value
 
 
+class DateTimeConverter(object):
+    """Converts a field value to a datetime.
+
+    Keyword Args:
+        format_string (str): String used to parse the param value
+            into a datetime. Any format recognized by strptime() is
+            supported (default ``'%Y-%m-%dT%H:%M:%SZ'``).
+    """
+
+    __slots__ = ('_format_string', '_strptime')
+
+    def __init__(self, format_string='%Y-%m-%dT%H:%M:%SZ'):
+        self._format_string = format_string
+
+    def convert(self, fragment):
+        try:
+            return strptime(fragment, self._format_string)
+        except ValueError:
+            return None
+
+
 BUILTIN = (
     ('int', IntConverter),
+    ('dt', DateTimeConverter),
 )

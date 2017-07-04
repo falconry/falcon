@@ -5,6 +5,8 @@ a collection of sanity-checks that exercise the full framework code
 path via simulate_get(), vs. probing the router directly.
 """
 
+from datetime import datetime
+
 import pytest
 import six
 
@@ -137,7 +139,7 @@ def test_single(client, resource, field_name):
     '/{id:int(min=123)}',
     '/{id:int(min=123, max=123)}',
 ])
-def test_converter(client, uri_template):
+def test_int_converter(client, uri_template):
     resource1 = IDResource()
     client.app.add_route(uri_template, resource1)
 
@@ -154,7 +156,7 @@ def test_converter(client, uri_template):
     '/{id:int(min=124)}',
     '/{id:int(num_digits=3, max=100)}',
 ])
-def test_converter_rejections(client, uri_template):
+def test_int_converter_rejections(client, uri_template):
     resource1 = IDResource()
     client.app.add_route(uri_template, resource1)
 
@@ -162,6 +164,43 @@ def test_converter_rejections(client, uri_template):
 
     assert result.status_code == 404
     assert not resource1.called
+
+
+@pytest.mark.parametrize('uri_template, path, dt_expected', [
+    (
+        '/{start_year:int}-to-{timestamp:dt}',
+        '/1961-to-1969-07-21T02:56:00Z',
+        datetime(1969, 7, 21, 2, 56, 0)
+    ),
+    (
+        '/{start_year:int}-to-{timestamp:dt("%Y-%m-%d")}',
+        '/1961-to-1969-07-21',
+        datetime(1969, 7, 21)
+    ),
+    (
+        '/{start_year:int}/{timestamp:dt("%Y-%m-%d %H:%M")}',
+        '/1961/1969-07-21 14:30',
+        datetime(1969, 7, 21, 14, 30)
+    ),
+    (
+        '/{start_year:int}-to-{timestamp:dt("%Y-%m")}',
+        '/1961-to-1969-07-21',
+        None
+    ),
+])
+def test_datetime_converter(client, resource, uri_template, path, dt_expected):
+    client.app.add_route(uri_template, resource)
+
+    result = client.simulate_get(path)
+
+    if dt_expected is None:
+        assert result.status_code == 404
+        assert not resource.called
+    else:
+        assert result.status_code == 200
+        assert resource.called
+        assert resource.captured_kwargs['start_year'] == 1961
+        assert resource.captured_kwargs['timestamp'] == dt_expected
 
 
 def test_converter_custom(client, resource):
