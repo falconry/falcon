@@ -74,7 +74,7 @@ class DateTimeConverter(object):
             supported (default ``'%Y-%m-%dT%H:%M:%SZ'``).
     """
 
-    __slots__ = ('_format_string', '_strptime')
+    __slots__ = ('_format_string',)
 
     def __init__(self, format_string='%Y-%m-%dT%H:%M:%SZ'):
         self._format_string = format_string
