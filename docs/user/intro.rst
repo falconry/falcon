@@ -3,9 +3,6 @@
 Introduction
 ============
 
-We believe in using the best tool for the job. We also believe that the
-best tools are simple, reliable and versatile.
-
     Perfection is finally attained not when there is no longer anything
     to add, but when there is no longer anything to take away.
 
@@ -23,10 +20,10 @@ CPython 2.7, PyPy, and CPython 3.3+.
 How is Falcon different?
 ------------------------
 
-We designed Falcon to support the demanding needs of large-scale cloud
-services and responsive app backends. Falcon complements more general
-Python web frameworks by providing bare-metal performance, reliability,
-and flexibility wherever you need it.
+We designed Falcon to support the demanding needs of large-scale
+microservices and responsive app backends. Falcon complements more
+general Python web frameworks by providing bare-metal performance,
+reliability, and flexibility wherever you need it.
 
 **Fast.** Same hardware, more requests. Falcon turns around
 requests several times faster than most other Python frameworks. For
@@ -47,19 +44,29 @@ third-party dependencies.
 details to you, the API developer. This gives you a lot of freedom to
 customize and tune your implementation. Due to Falcon's minimalist
 design, Python community members are free to independently innovate on
-Falcon add-ons and complimentary packages. You can also extend the
-framework yourself in a variety of ways.
+`Falcon add-ons and complimentary packages <https://github.com/falconry/falcon/wiki>`__.
 
-**Debuggable.** Falcon eschews magic. When you use the framework, it's
-obvious which inputs lead to which outputs, and where variables
-originate. Any potentially surprising behaviors, such as automatic
-request body parsing, are well-documented and disabled by default.
-Falcon doesn't mask exceptions. All this makes it easier to reason about
-the code and to debug edge cases in large-scale deployments. Finally,
-when it comes to the framework itself, we've taken care to keep logic
-paths simple and understandable so that if there ever is a problem, the
-cause can be quickly found and fixed.
+**Debuggable.** Falcon eschews magic. It's easy to tell which inputs
+lead to which outputs. Unhandled exceptions are never encapsulated or
+masked. Potentially surprising behaviors, such as automatic request body
+parsing, are well-documented and disabled by default. Finally, when it
+comes to the framework itself, we take care to keep logic paths simple
+and understandable. All this makes it easier to reason about the code
+and to debug edge cases in large-scale deployments.
 
+Features
+--------
+
+-  Highly-optimized, extensible code base
+-  Intuitive routing via URI templates and REST-inspired resource
+   classes
+-  Easy access to headers and bodies through request and response
+   classes
+-  DRY request processing via middleware components and hooks
+-  Idiomatic HTTP error responses
+-  Straightforward exception handling
+-  Snappy unit testing through WSGI helpers and mocks
+-  CPython 2.6-2.7, PyPy 2.7, Jython 2.7, and
 
 About Apache 2.0
 ----------------
