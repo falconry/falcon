@@ -5,23 +5,17 @@ developers of all skill levels. To get started, simply fork the master branch
 on GitHub to your personal account and then clone the fork into your
 development environment.
 
-Kurt Griffiths (**kgriffs** on IRC and Twitter) is the original creator of the
-Falcon framework, and currently co-maintains the project along with John Vrbanac (**jvrbanac** on IRC and Twitter). Falcon is developed by a growing
-community of users and contributors just like you.
+Kurt Griffiths (**kgriffs** on GH, Gitter, and Twitter) is the original
+creator of the Falcon framework, and currently co-maintains the project
+along with John Vrbanac (**jmvrbanac** on GH and Gitter, and
+**jvrbanac** on Twitter). Falcon is developed by a growing community of
+users and contributors just like you.
 
 Please don't hesitate to reach out if you have any questions, or just need a
 little help getting started. You can find us in
-the [#falconframework][irc-channel] IRC channel on [Freenode][freenode]. It's the best way to discuss ideas, ask questions, and generally stay in touch with fellow contributors.
+[falconry/dev][gitter] on Gitter.
 
 Please note that all contributors and maintainers of this project are subject to our [Code of Conduct][coc].
-
-### Discussion Group
-
-The Falcon community maintains a discussion group that you can use to
-share your ideas and ask questions about the framework. To join the
-discussion, please visit https://groups.google.com/d/forum/falconframework.
-
-Per our [Code of Conduct][coc], we expect everyone who participates in community discussions to act professionally, and lead by example in encouraging constructive discussions. Each individual in the community is responsible for creating a positive, constructive, and productive culture.
 
 ### Pull Requests
 
@@ -176,6 +170,6 @@ The footer should contain any information about **Breaking Changes** and is also
 [rtd]: https://falcon.readthedocs.io
 [coc]: https://github.com/falconry/falcon/blob/master/CODEOFCONDUCT.md
 [freenode]: https://www.freenode.net/
-[irc-channel]: https://kiwiirc.com/client/irc.freenode.net/?#falconframework
+[gitter]: https://gitter.im/falconry/dev
 [ml-join]: mailto:users-join@mail.falconframework.org?subject=join
 [ml-archive]: https://mail.falconframework.org/archives/list/users@mail.falconframework.org/
