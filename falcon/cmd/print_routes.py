@@ -18,6 +18,8 @@ Script that prints out the routes of an API instance.
 
 from __future__ import print_function
 
+from functools import partial
+
 import inspect
 
 import falcon
@@ -52,10 +54,16 @@ def traverse(roots, parent='', verbose=False):
             if verbose:
                 for method, func in root.method_map.items():
                     if func.__name__ != 'method_not_allowed':
-                        print('-->{0} {1}:{2}'.format(
-                            method,
-                            inspect.getsourcefile(func),
-                            inspect.getsourcelines(func)[1]))
+                        if isinstance(func, partial):
+                            print('-->{0} {1}:{2}'.format(
+                                method,
+                                inspect.getsourcefile(func.func),
+                                inspect.getsourcelines(func.func)[1]))
+                        else:
+                            print('-->{0} {1}:{2}'.format(
+                                method,
+                                inspect.getsourcefile(func),
+                                inspect.getsourcelines(func)[1]))
         if root.children:
             traverse(root.children, parent + '/' + root.raw_segment, verbose)
 

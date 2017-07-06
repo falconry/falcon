@@ -14,6 +14,8 @@
 
 """Default responder implementations."""
 
+from functools import partial, update_wrapper
+
 from falcon.errors import HTTPBadRequest
 from falcon.errors import HTTPMethodNotAllowed
 from falcon.errors import HTTPNotFound
@@ -30,6 +32,11 @@ def bad_request(req, resp, **kwargs):
     raise HTTPBadRequest('Bad request', 'Invalid HTTP method')
 
 
+def method_not_allowed(allowed_methods, req, resp, **kwargs):
+    """Raise 405 HTTPMethodNotAllowed error"""
+    raise HTTPMethodNotAllowed(allowed_methods)
+
+
 def create_method_not_allowed(allowed_methods):
     """Creates a responder for "405 Method Not Allowed"
 
@@ -38,11 +45,15 @@ def create_method_not_allowed(allowed_methods):
             returned in the Allow header.
 
     """
-    def method_not_allowed(req, resp, **kwargs):
-        """Raise 405 HTTPMethodNotAllowed error"""
-        raise HTTPMethodNotAllowed(allowed_methods)
+    partial_method_not_allowed = partial(method_not_allowed, allowed_methods)
+    update_wrapper(partial_method_not_allowed, method_not_allowed)
+    return partial_method_not_allowed
 
-    return method_not_allowed
+
+def on_options(allowed, req, resp, **kwargs):
+    resp.status = HTTP_200
+    resp.set_header('Allow', allowed)
+    resp.set_header('Content-Length', '0')
 
 
 def create_default_options(allowed_methods):
@@ -54,10 +65,6 @@ def create_default_options(allowed_methods):
 
     """
     allowed = ', '.join(allowed_methods)
-
-    def on_options(req, resp, **kwargs):
-        resp.status = HTTP_200
-        resp.set_header('Allow', allowed)
-        resp.set_header('Content-Length', '0')
-
-    return on_options
+    partial_on_options = partial(on_options, allowed)
+    update_wrapper(partial_on_options, on_options)
+    return partial_on_options
