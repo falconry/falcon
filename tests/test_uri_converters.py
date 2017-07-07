@@ -1,9 +1,15 @@
 from datetime import datetime
 import string
+import uuid
 
 import pytest
 
 from falcon.routing import converters
+
+
+_TEST_UUID = uuid.uuid4()
+_TEST_UUID_STR = str(_TEST_UUID)
+_TEST_UUID_STR_SANS_HYPHENS = _TEST_UUID_STR.replace('-', '')
 
 
 @pytest.mark.parametrize('fragment, num_digits, min, max, expected', [
@@ -60,8 +66,9 @@ def test_int_converter_invalid_config(num_digits):
     ('07-03-17 ', '%m-%d-%y ', datetime(2017, 7, 3)),
     ('2017-07-03T14:30:01Z', '%Y-%m-%dT%H:%M:%SZ', datetime(2017, 7, 3, 14, 30, 1)),
     ('2017-07-03T14:30:01', '%Y-%m-%dT%H:%M:%S', datetime(2017, 7, 3, 14, 30, 1)),
-    ('2017-07-03T14:30:01', '%Y-%m-%dT%H:%M:%SZ', None),
     ('2017_19', '%Y_%H', datetime(2017, 1, 1, 19, 0)),
+
+    ('2017-07-03T14:30:01', '%Y-%m-%dT%H:%M:%SZ', None),
     ('07-03-17 ', '%m-%d-%y', None),
     (' 07-03-17', '%m-%d-%y', None),
     ('07 -03-17', '%m-%d-%y', None),
@@ -74,3 +81,23 @@ def test_datetime_converter(fragment, format_string, expected):
 def test_datetime_converter_default_format():
     c = converters.DateTimeConverter()
     assert c.convert('2017-07-03T14:30:01Z') == datetime(2017, 7, 3, 14, 30, 1)
+
+
+@pytest.mark.parametrize('fragment, expected', [
+    (_TEST_UUID_STR, _TEST_UUID),
+    (_TEST_UUID_STR.replace('-', '', 1), _TEST_UUID),
+    (_TEST_UUID_STR_SANS_HYPHENS, _TEST_UUID),
+    ('urn:uuid:' + _TEST_UUID_STR, _TEST_UUID),
+    ('urn:uuid:' + _TEST_UUID_STR_SANS_HYPHENS, _TEST_UUID),
+
+    (' ', None),
+    (_TEST_UUID_STR + ' ', None),
+    (' ' + _TEST_UUID_STR, None),
+    (_TEST_UUID_STR[:-1], None),
+    (_TEST_UUID_STR[0], None),
+    (_TEST_UUID_STR[:-1] + 'g', None),
+    (_TEST_UUID_STR.replace('-', '_'), None),
+])
+def test_uuid_converter(fragment, expected):
+    c = converters.UUIDConverter()
+    assert c.convert(fragment) == expected

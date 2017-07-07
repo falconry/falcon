@@ -6,12 +6,18 @@ path via simulate_get(), vs. probing the router directly.
 """
 
 from datetime import datetime
+import uuid
 
 import pytest
 import six
 
 import falcon
 from falcon import testing
+
+
+_TEST_UUID = uuid.uuid4()
+_TEST_UUID_STR = str(_TEST_UUID)
+_TEST_UUID_STR_SANS_HYPHENS = _TEST_UUID_STR.replace('-', '')
 
 
 class IDResource(object):
@@ -201,6 +207,54 @@ def test_datetime_converter(client, resource, uri_template, path, dt_expected):
         assert resource.called
         assert resource.captured_kwargs['start_year'] == 1961
         assert resource.captured_kwargs['timestamp'] == dt_expected
+
+
+@pytest.mark.parametrize('uri_template, path, uuid_expected', [
+    (
+        '/widgets/{widget_id:uuid}',
+        '/widgets/' + _TEST_UUID_STR,
+        _TEST_UUID
+    ),
+    (
+        '/widgets/{widget_id:uuid}/orders',
+        '/widgets/' + _TEST_UUID_STR_SANS_HYPHENS + '/orders',
+        _TEST_UUID
+    ),
+    (
+        '/widgets/{widget_id:uuid}/orders',
+        '/widgets/' + _TEST_UUID_STR_SANS_HYPHENS[:-1] + '/orders',
+        None
+    ),
+])
+def test_uuid_converter(client, resource, uri_template, path, uuid_expected):
+    client.app.add_route(uri_template, resource)
+
+    result = client.simulate_get(path)
+
+    if uuid_expected is None:
+        assert result.status_code == 404
+        assert not resource.called
+    else:
+        assert result.status_code == 200
+        assert resource.called
+        assert resource.captured_kwargs['widget_id'] == uuid_expected
+
+
+def test_uuid_converter_complex_segment(client, resource):
+    client.app.add_route('/pages/{first:uuid}...{last:uuid}', resource)
+
+    first_uuid = uuid.uuid4()
+    last_uuid = uuid.uuid4()
+
+    result = client.simulate_get('/pages/{0}...{1}'.format(
+        first_uuid,
+        last_uuid
+    ))
+
+    assert result.status_code == 200
+    assert resource.called
+    assert resource.captured_kwargs['first'] == first_uuid
+    assert resource.captured_kwargs['last'] == last_uuid
 
 
 def test_converter_custom(client, resource):
