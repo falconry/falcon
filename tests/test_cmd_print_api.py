@@ -17,27 +17,29 @@ _api.add_route('/test', DummyResource())
 
 
 def test_traverse_with_verbose():
-    """Ensure traverse finds the proper routes and adds verbose output
-    for a method function as well as the OPTIONS partial."""
+    """Ensure traverse() finds the proper routes and outputs verbose info."""
+
     output = six.moves.StringIO()
     with redirected(stdout=output):
         print_routes.traverse(_api._router._roots, verbose=True)
 
-    route, method, options = output.getvalue().strip().split('\n')
+    route, get_info, options_info = output.getvalue().strip().split('\n')
     assert '-> /test' == route
-    # Check in both methods and options for the GET method
-    # because method map is not ordered
-    assert 'GET' in method + options
-    if 'GET' in method:
-        assert 'OPTIONS' in options
-        assert 'falcon/responders.py:' in options
-    else:
-        assert 'OPTIONS' in method
-        assert 'falcon/responders.py:' in method
+
+    # NOTE(kgriffs) We might receive these in either order, since the
+    # method map is not ordered, so check and swap if necessary.
+    if options_info.startswith('-->GET'):
+        get_info, options_info = options_info, get_info
+
+    assert options_info.startswith('-->OPTIONS')
+    assert 'falcon/responders.py:' in options_info
+
+    assert get_info.startswith('-->GET')
+    assert 'tests/test_cmd_print_api.py:' in get_info
 
 
 def test_traverse():
-    """Ensure traverse finds the proper routes."""
+    """Ensure traverse() finds the proper routes."""
     output = six.moves.StringIO()
     with redirected(stdout=output):
         print_routes.traverse(_api._router._roots, verbose=False)
