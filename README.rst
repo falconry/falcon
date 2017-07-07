@@ -19,8 +19,8 @@ Quick Links
 -----------
 
 * `Read the docs <https://falcon.readthedocs.io/en/stable>`__
-* `Join the discussion group <https://groups.google.com/forum/#!forum/falconframework>`__
-* `Hang out in #falconframework on freenode <https://kiwiirc.com/client/irc.freenode.net/?#falconframework>`__
+* `falconry/user <https://gitter.im/falconry/user>`__ @ Gitter
+* `falconry/dev <https://gitter.im/falconry/dev>`__ @ Gitter
 
 How is Falcon different?
 ------------------------
@@ -103,9 +103,11 @@ available for use in your projects. We've listed several of these on the
 `Falcon wiki <https://github.com/falconry/falcon/wiki>`_ as a starting
 point, but you may also wish to search PyPI for additional resources.
 
-The Falcon community maintains a discussion group that you can use to
-share your ideas and ask questions about the framework. To join the
-discussion, please visit https://groups.google.com/d/forum/falconframework.
+The Falconry community on Gitter is a great place to ask questions and
+share your ideas. You can find us in `falconry/user
+<https://gitter.im/falconry/user>`_. We also have a
+`falconry/dev <https://gitter.im/falconry/dev>`_ room for discussing
+the design and development of the framework itself.
 
 Per our
 `Code of Conduct <https://github.com/falconry/falcon/blob/master/CODEOFCONDUCT.md>`_,
@@ -113,11 +115,6 @@ we expect everyone who participates in community discussions to act
 professionally, and lead by example in encouraging constructive
 discussions. Each individual in the community is responsible for
 creating a positive, constructive, and productive culture.
-
-We also hang out in
-`#falconframework <https://kiwiirc.com/client/irc.freenode.net/?#falconframework>`_
-on freenode, where everyone is always welcome to ask questions and share
-ideas.
 
 Installation
 ------------
