@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from datetime import datetime
+import uuid
 
 
 # PERF(kgriffs): Avoid an extra namespace lookup when using this function
@@ -69,7 +70,7 @@ class DateTimeConverter(object):
     """Converts a field value to a datetime.
 
     Keyword Args:
-        format_string (str): String used to parse the param value
+        format_string (str): String used to parse the field value
             into a datetime. Any format recognized by strptime() is
             supported (default ``'%Y-%m-%dT%H:%M:%SZ'``).
     """
@@ -86,7 +87,23 @@ class DateTimeConverter(object):
             return None
 
 
+class UUIDConverter(object):
+    """Converts a field value to a uuid.UUID.
+
+    In order to be converted, the field value must consist of a
+    string of 32 hexadecimal digits, as defined in RFC 4122, Section 3.
+    Note, however, that hyphens and the URN prefix are optional.
+    """
+
+    def convert(self, fragment):
+        try:
+            return uuid.UUID(fragment)
+        except ValueError:
+            return None
+
+
 BUILTIN = (
     ('int', IntConverter),
     ('dt', DateTimeConverter),
+    ('uuid', UUIDConverter),
 )
