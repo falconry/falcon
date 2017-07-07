@@ -55,15 +55,18 @@ def traverse(roots, parent='', verbose=False):
                 for method, func in root.method_map.items():
                     if func.__name__ != 'method_not_allowed':
                         if isinstance(func, partial):
-                            print('-->{0} {1}:{2}'.format(
-                                method,
-                                inspect.getsourcefile(func.func),
-                                inspect.getsourcelines(func.func)[1]))
+                            real_func = func.func
                         else:
-                            print('-->{0} {1}:{2}'.format(
-                                method,
-                                inspect.getsourcefile(func),
-                                inspect.getsourcelines(func)[1]))
+                            real_func = func
+
+                        source_file = inspect.getsourcefile(real_func)
+
+                        print('-->{0} {1}:{2}'.format(
+                            method,
+                            source_file,
+                            source_file[1]
+                        ))
+
         if root.children:
             traverse(root.children, parent + '/' + root.raw_segment, verbose)
 
