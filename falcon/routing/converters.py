@@ -12,22 +12,42 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import abc
 from datetime import datetime
 import uuid
+
+import six
 
 
 # PERF(kgriffs): Avoid an extra namespace lookup when using this function
 strptime = datetime.strptime
 
 
-class IntConverter(object):
+@six.add_metaclass(abc.ABCMeta)
+class BaseConverter(object):
+    """Abstract base class for URI template field converters."""
+
+    @abc.abstractmethod  # pragma: no cover
+    def convert(self, value):
+        """Convert a URI template field value to another format or type.
+
+        Args:
+            value (str): Original string to convert.
+
+        Returns:
+            object: Converted field value, or ``None`` if the field
+                can not be converted.
+        """
+
+
+class IntConverter(BaseConverter):
     """Converts a field value to an int.
 
     Keyword Args:
         num_digits (int): Require the value to have the given
             number of digits.
-        min (int): Reject the value if it is less than this value.
-        max (int): Reject the value if it is greater than this value.
+        min (int): Reject the value if it is less than this number.
+        max (int): Reject the value if it is greater than this number.
     """
 
     __slots__ = ('_num_digits', '_min', '_max')
@@ -40,20 +60,20 @@ class IntConverter(object):
         self._min = min
         self._max = max
 
-    def convert(self, fragment):
-        if self._num_digits is not None and len(fragment) != self._num_digits:
+    def convert(self, value):
+        if self._num_digits is not None and len(value) != self._num_digits:
             return None
 
         # NOTE(kgriffs): int() will accept numbers with preceding or
         # trailing whitespace, so we need to do our own check. Using
         # strip() is faster than either a regex or a series of or'd
         # membership checks via "in", esp. as the length of contiguous
-        # numbers in the fragment grows.
-        if fragment.strip() != fragment:
+        # numbers in the value grows.
+        if value.strip() != value:
             return None
 
         try:
-            value = int(fragment)
+            value = int(value)
         except ValueError:
             return None
 
@@ -66,7 +86,7 @@ class IntConverter(object):
         return value
 
 
-class DateTimeConverter(object):
+class DateTimeConverter(BaseConverter):
     """Converts a field value to a datetime.
 
     Keyword Args:
@@ -80,14 +100,14 @@ class DateTimeConverter(object):
     def __init__(self, format_string='%Y-%m-%dT%H:%M:%SZ'):
         self._format_string = format_string
 
-    def convert(self, fragment):
+    def convert(self, value):
         try:
-            return strptime(fragment, self._format_string)
+            return strptime(value, self._format_string)
         except ValueError:
             return None
 
 
-class UUIDConverter(object):
+class UUIDConverter(BaseConverter):
     """Converts a field value to a uuid.UUID.
 
     In order to be converted, the field value must consist of a
@@ -95,9 +115,9 @@ class UUIDConverter(object):
     Note, however, that hyphens and the URN prefix are optional.
     """
 
-    def convert(self, fragment):
+    def convert(self, value):
         try:
-            return uuid.UUID(fragment)
+            return uuid.UUID(value)
         except ValueError:
             return None
 
