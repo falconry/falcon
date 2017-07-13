@@ -12,7 +12,7 @@ _TEST_UUID_STR = str(_TEST_UUID)
 _TEST_UUID_STR_SANS_HYPHENS = _TEST_UUID_STR.replace('-', '')
 
 
-@pytest.mark.parametrize('fragment, num_digits, min, max, expected', [
+@pytest.mark.parametrize('value, num_digits, min, max, expected', [
     ('123', None, None, None, 123),
     ('01', None, None, None, 1),
     ('001', None, None, None, 1),
@@ -40,19 +40,19 @@ _TEST_UUID_STR_SANS_HYPHENS = _TEST_UUID_STR.replace('-', '')
     ('12', 2, 13, 12, None),
     ('12', 2, 13, 13, None),
 ])
-def test_int_converter(fragment, num_digits, min, max, expected):
+def test_int_converter(value, num_digits, min, max, expected):
     c = converters.IntConverter(num_digits, min, max)
-    assert c.convert(fragment) == expected
+    assert c.convert(value) == expected
 
 
-@pytest.mark.parametrize('fragment', (
+@pytest.mark.parametrize('value', (
     ['0x0F', 'something', '', ' '] +
     ['123' + w for w in string.whitespace] +
     [w + '123' for w in string.whitespace]
 ))
-def test_int_converter_malformed(fragment):
+def test_int_converter_malformed(value):
     c = converters.IntConverter()
-    assert c.convert(fragment) is None
+    assert c.convert(value) is None
 
 
 @pytest.mark.parametrize('num_digits', [0, -1, -10])
@@ -61,7 +61,7 @@ def test_int_converter_invalid_config(num_digits):
         converters.IntConverter(num_digits)
 
 
-@pytest.mark.parametrize('fragment, format_string, expected', [
+@pytest.mark.parametrize('value, format_string, expected', [
     ('07-03-17', '%m-%d-%y', datetime(2017, 7, 3)),
     ('07-03-17 ', '%m-%d-%y ', datetime(2017, 7, 3)),
     ('2017-07-03T14:30:01Z', '%Y-%m-%dT%H:%M:%SZ', datetime(2017, 7, 3, 14, 30, 1)),
@@ -73,9 +73,9 @@ def test_int_converter_invalid_config(num_digits):
     (' 07-03-17', '%m-%d-%y', None),
     ('07 -03-17', '%m-%d-%y', None),
 ])
-def test_datetime_converter(fragment, format_string, expected):
+def test_datetime_converter(value, format_string, expected):
     c = converters.DateTimeConverter(format_string)
-    assert c.convert(fragment) == expected
+    assert c.convert(value) == expected
 
 
 def test_datetime_converter_default_format():
@@ -83,7 +83,7 @@ def test_datetime_converter_default_format():
     assert c.convert('2017-07-03T14:30:01Z') == datetime(2017, 7, 3, 14, 30, 1)
 
 
-@pytest.mark.parametrize('fragment, expected', [
+@pytest.mark.parametrize('value, expected', [
     (_TEST_UUID_STR, _TEST_UUID),
     (_TEST_UUID_STR.replace('-', '', 1), _TEST_UUID),
     (_TEST_UUID_STR_SANS_HYPHENS, _TEST_UUID),
@@ -98,6 +98,6 @@ def test_datetime_converter_default_format():
     (_TEST_UUID_STR[:-1] + 'g', None),
     (_TEST_UUID_STR.replace('-', '_'), None),
 ])
-def test_uuid_converter(fragment, expected):
+def test_uuid_converter(value, expected):
     c = converters.UUIDConverter()
-    assert c.convert(fragment) == expected
+    assert c.convert(value) == expected
