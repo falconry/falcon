@@ -151,6 +151,9 @@ user-friendly alternative. Let's install HTTPie and use it from now on:
     $ pip install httpie
     $ http localhost:8000
 
+
+.. _tutorial_resources:
+
 Creating Resources
 ------------------
 
