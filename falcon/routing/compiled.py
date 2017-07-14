@@ -25,7 +25,14 @@ from falcon.routing import converters
 
 _TAB_STR = ' ' * 4
 _FIELD_PATTERN = re.compile(
-    '{((?P<fname>[^}:]*)((?P<cname_sep>:(?P<cname>[^}\(]*))(\((?P<argstr>.*)\))?)?)}'
+    # NOTE(kgriffs): This disallows the use of the '}' character within
+    # an argstr. However, we don't really have a way of escaping
+    # curly brackets in URI templates at the moment, so users should
+    # see this as a similar restriction and so somewhat unsurprising.
+    #
+    # We may want to create a contextual parser at some point to
+    # work around this problem.
+    '{((?P<fname>[^}:]*)((?P<cname_sep>:(?P<cname>[^}\(]*))(\((?P<argstr>[^}]*)\))?)?)}'
 )
 _IDENTIFIER_PATTERN = re.compile('[A-Za-z_][A-Za-z0-9_]*$')
 
