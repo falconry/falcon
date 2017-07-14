@@ -16,7 +16,9 @@ from falcon import testing
 
 
 _TEST_UUID = uuid.uuid4()
+_TEST_UUID_2 = uuid.uuid4()
 _TEST_UUID_STR = str(_TEST_UUID)
+_TEST_UUID_STR_2 = str(_TEST_UUID_2)
 _TEST_UUID_STR_SANS_HYPHENS = _TEST_UUID_STR.replace('-', '')
 
 
@@ -209,16 +211,31 @@ def test_datetime_converter(client, resource, uri_template, path, dt_expected):
         assert resource.captured_kwargs['timestamp'] == dt_expected
 
 
-@pytest.mark.parametrize('uri_template, path, uuid_expected', [
+@pytest.mark.parametrize('uri_template, path, expected', [
     (
         '/widgets/{widget_id:uuid}',
         '/widgets/' + _TEST_UUID_STR,
-        _TEST_UUID
+        {'widget_id': _TEST_UUID}
     ),
     (
         '/widgets/{widget_id:uuid}/orders',
         '/widgets/' + _TEST_UUID_STR_SANS_HYPHENS + '/orders',
-        _TEST_UUID
+        {'widget_id': _TEST_UUID}
+    ),
+    (
+        '/versions/diff/{left:uuid()}...{right:uuid()}',
+        '/versions/diff/{0}...{1}'.format(_TEST_UUID_STR, _TEST_UUID_STR_2),
+        {'left': _TEST_UUID, 'right': _TEST_UUID_2, }
+    ),
+    (
+        '/versions/diff/{left:uuid}...{right:uuid()}',
+        '/versions/diff/{0}...{1}'.format(_TEST_UUID_STR, _TEST_UUID_STR_2),
+        {'left': _TEST_UUID, 'right': _TEST_UUID_2, }
+    ),
+    (
+        '/versions/diff/{left:uuid()}...{right:uuid}',
+        '/versions/diff/{0}...{1}'.format(_TEST_UUID_STR, _TEST_UUID_STR_2),
+        {'left': _TEST_UUID, 'right': _TEST_UUID_2, }
     ),
     (
         '/widgets/{widget_id:uuid}/orders',
@@ -226,18 +243,18 @@ def test_datetime_converter(client, resource, uri_template, path, dt_expected):
         None
     ),
 ])
-def test_uuid_converter(client, resource, uri_template, path, uuid_expected):
+def test_uuid_converter(client, resource, uri_template, path, expected):
     client.app.add_route(uri_template, resource)
 
     result = client.simulate_get(path)
 
-    if uuid_expected is None:
+    if expected is None:
         assert result.status_code == 404
         assert not resource.called
     else:
         assert result.status_code == 200
         assert resource.called
-        assert resource.captured_kwargs['widget_id'] == uuid_expected
+        assert resource.captured_kwargs == expected
 
 
 def test_uuid_converter_complex_segment(client, resource):
@@ -257,19 +274,39 @@ def test_uuid_converter_complex_segment(client, resource):
     assert resource.captured_kwargs['last'] == last_uuid
 
 
-def test_converter_custom(client, resource):
+@pytest.mark.parametrize('uri_template, path, expected', [
+    (
+        '/{food:spam}',
+        '/something',
+        {'food': 'spam!'}
+    ),
+    (
+        '/{food:spam(")")}:{food_too:spam("()")}',
+        '/bacon:eggs',
+        {'food': 'spam!', 'food_too': 'spam!'}
+    ),
+    (
+        '/({food:spam()}){food_too:spam("()")}',
+        '/(bacon)eggs',
+        {'food': 'spam!', 'food_too': 'spam!'}
+    ),
+])
+def test_converter_custom(client, resource, uri_template, path, expected):
     class SpamConverter(object):
+        def __init__(self, useless_text=None):
+            pass
+
         def convert(self, fragment):
             return 'spam!'
 
     client.app.router_options.converters['spam'] = SpamConverter
-    client.app.add_route('/{food:spam}', resource)
+    client.app.add_route(uri_template, resource)
 
-    result = client.simulate_get('/something')
+    result = client.simulate_get(path)
 
     assert result.status_code == 200
     assert resource.called
-    assert resource.captured_kwargs['food'] == 'spam!'
+    assert resource.captured_kwargs == expected
 
 
 def test_single_trailing_slash(client):
