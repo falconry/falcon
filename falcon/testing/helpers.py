@@ -157,6 +157,12 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1',
     else:
         port = str(port)
 
+    # NOTE(kgriffs): Judging by the algorithm given in PEP-3333 for
+    # reconstructing the URL, SCRIPT_NAME is expected to contain a
+    # preceding slash character.
+    if app and not app.startswith('/'):
+        app = '/' + app
+
     env = {
         'SERVER_PROTOCOL': protocol,
         'SERVER_SOFTWARE': 'gunicorn/0.17.0',

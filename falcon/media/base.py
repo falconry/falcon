@@ -7,7 +7,7 @@ import six
 class BaseHandler(object):
     """Abstract Base Class for an internet media type handler"""
 
-    @abc.abstractmethod
+    @abc.abstractmethod  # pragma: no cover
     def serialize(self, obj):
         """Serialize the media object on a :any:`falcon.Response`
 
@@ -18,7 +18,7 @@ class BaseHandler(object):
             bytes: The resulting serialized bytes from the input object.
         """
 
-    @abc.abstractmethod
+    @abc.abstractmethod  # pragma: no cover
     def deserialize(self, raw):
         """Deserialize the :any:`falcon.Request` body.
 
