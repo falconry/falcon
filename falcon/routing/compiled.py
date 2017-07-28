@@ -631,50 +631,18 @@ class CompiledRouterOptions(object):
         converters: Represents the collection of named
             converters that may be referenced in URI template field
             expressions. Adding additional converters is simply a
-            matter of mapping a name to a converter class::
+            matter of mapping an identifier to a converter class::
 
-                api.router_options.converters['myconverter'] = MyConverter
+                api.router_options.converters['mc'] = MyConverter
 
-            Note:
+            The identifier can then be used to employ the converter
+            within a URI template::
 
-                Converter names may only contain ASCII letters, digits,
-                and underscores, and must start with either a letter or
-                an underscore.
+                api.add_route('/{some_field:mc}', some_resource)
 
-            A converter is any class that implements the following
-            method::
-
-                def convert(self, fragment):
-                    # TODO: Convert the matched URI path fragment and
-                    # return the result, or None to reject the fragment
-                    # if it is not in the expected format or otherwise
-                    # can not be converted.
-                    pass
-
-            Converters are instantiated with the argument specification
-            given in the field expression. These specifications follow
-            the standard Python syntax for passing arguments. For
-            example, the comments in the following code show how a
-            converter would be instantiated given different
-            argument specifications in the URI template::
-
-                # MyConverter()
-                api.add_route(
-                    '/a/{some_field:myconverter}',
-                    some_resource
-                )
-
-                # MyConverter(True)
-                api.add_route(
-                    '/b/{some_field:myconverter(True)}',
-                    some_resource
-                )
-
-                # MyConverter(True, some_kwarg=10)
-                api.add_route(
-                    '/c/{some_field:myconverter(True, some_kwarg=10)}',
-                    some_resource
-                )
+            Converter names may only contain ASCII letters, digits,
+            and underscores, and must start with either a letter or
+            an underscore.
 
             Warning:
 
@@ -682,6 +650,8 @@ class CompiledRouterOptions(object):
                 Therefore, in threaded deployments, care must be taken
                 to implement custom converters in a thread-safe
                 manner.
+
+            (See also: :ref:`Field Converters <routing_field_converters>`)
     """
 
     __slots__ = ('converters',)

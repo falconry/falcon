@@ -9,8 +9,16 @@
     width: 110px;  /* Prevent "Return type:" from wrapping. */
 }
 
+dd ul, dd table {
+    margin-bottom: 1.4em;
+}
+
 table.field-list th, table.field-list td {
     padding-top: 1em;
+}
+
+table.field-list tbody tr:first-child th, table.field-list tbody tr:first-child td {
+    padding-top: 0;
 }
 
 code.docutils.literal {
@@ -32,6 +40,10 @@ a.reference.internal:hover code {
 
 a code.literal {
     color: #004B6B;
+}
+
+.highlight pre span {
+    line-height: 1.5em;
 }
 
 .field-body cite {
