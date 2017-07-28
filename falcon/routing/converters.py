@@ -19,6 +19,14 @@ import uuid
 import six
 
 
+__all__ = (
+    'BaseConverter',
+    'IntConverter',
+    'DateTimeConverter',
+    'UUIDConverter',
+)
+
+
 # PERF(kgriffs): Avoid an extra namespace lookup when using this function
 strptime = datetime.strptime
 
@@ -42,6 +50,8 @@ class BaseConverter(object):
 
 class IntConverter(BaseConverter):
     """Converts a field value to an int.
+
+    Identifier: `int`
 
     Keyword Args:
         num_digits (int): Require the value to have the given
@@ -89,6 +99,8 @@ class IntConverter(BaseConverter):
 class DateTimeConverter(BaseConverter):
     """Converts a field value to a datetime.
 
+    Identifier: `dt`
+
     Keyword Args:
         format_string (str): String used to parse the field value
             into a datetime. Any format recognized by strptime() is
@@ -109,6 +121,8 @@ class DateTimeConverter(BaseConverter):
 
 class UUIDConverter(BaseConverter):
     """Converts a field value to a uuid.UUID.
+
+    Identifier: `uuid`
 
     In order to be converted, the field value must consist of a
     string of 32 hexadecimal digits, as defined in RFC 4122, Section 3.
