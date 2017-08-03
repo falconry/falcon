@@ -31,12 +31,15 @@ from falcon.util.misc import get_argnames
 class API(object):
     """This class is the main entry point into a Falcon-based app.
 
-    Each API instance provides a callable WSGI interface and a routing engine.
+    Each API instance provides a callable WSGI interface and a routing
+    engine.
 
     Args:
-        media_type (str, optional): Default media type to use as the value for
-            the Content-Type header on responses (default 'application/json').
-            It is possible to use default types like falcon.MEDIA_YAML, falcon.MEDIA_XML etc.
+        media_type (str, optional): Default media type to use as the
+            value for the Content-Type header on responses (default
+            'application/json'). The ``falcon`` module provides a
+            number of constants for common media types, such as
+            ``falcon.MEDIA_YAML``, ``falcon.MEDIA_XML``, etc.
         middleware(object or list, optional): One or more objects
             (instantiated classes) that implement the following middleware
             component interface::
