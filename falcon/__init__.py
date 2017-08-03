@@ -24,21 +24,9 @@ the framework's classes, functions, and variables::
 
 """
 
-HTTP_METHODS = (
-    'CONNECT',
-    'DELETE',
-    'GET',
-    'HEAD',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
-    'TRACE',
-)
-
 # Hoist classes and functions into the falcon namespace
 from falcon.version import __version__  # NOQA
-from falcon.constants.media_types import *  # NOQA
+from falcon.constants import *  # NOQA
 from falcon.api import API  # NOQA
 from falcon.status_codes import *  # NOQA
 from falcon.errors import *  # NOQA

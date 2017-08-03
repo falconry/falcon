@@ -1,3 +1,15 @@
+HTTP_METHODS = (
+    'CONNECT',
+    'DELETE',
+    'GET',
+    'HEAD',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+    'TRACE',
+)
+
 MEDIA_JSON = 'application/json; charset=UTF-8'
 MEDIA_HTML = 'text/html; charset=utf-8'
 MEDIA_JS = 'text/javascript; charset=utf-8'
