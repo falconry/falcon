@@ -39,7 +39,8 @@ class API(object):
             value for the Content-Type header on responses (default
             'application/json'). The ``falcon`` module provides a
             number of constants for common media types, such as
-            ``falcon.MEDIA_YAML``, ``falcon.MEDIA_XML``, etc.
+            ``falcon.MEDIA_MSGPACK``, ``falcon.MEDIA_YAML``,
+            ``falcon.MEDIA_XML``, etc.
         middleware(object or list, optional): One or more objects
             (instantiated classes) that implement the following middleware
             component interface::

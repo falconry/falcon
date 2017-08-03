@@ -378,10 +378,10 @@ realize a small performance gain by assigning directly to ``resp.data``.
 
 Also note the use of ``falcon.MEDIA_MSGPACK``. The ``falcon`` module
 provides a number of constants for common media types, including
-``falcon.MEDIA_JSON``, ``falcon.MEDIA_HTML``, ``falcon.MEDIA_JS``,
-``falcon.MEDIA_XML``, ``falcon.MEDIA_TEXT``, ``falcon.MEDIA_JPEG``,
-``falcon.MEDIA_PNG``, ``falcon.MEDIA_YAML`` and
-``falcon.MEDIA_MSGPACK``.
+``falcon.MEDIA_JSON``, ``falcon.MEDIA_MSGPACK``, ``falcon.MEDIA_YAML``,
+``falcon.MEDIA_XML``, ``falcon.MEDIA_HTML``, ``falcon.MEDIA_JS``,
+``falcon.MEDIA_TEXT``, ``falcon.MEDIA_JPEG``, ``falcon.MEDIA_PNG``,
+and ``falcon.MEDIA_GIF``.
 
 Restart Gunicorn (unless you're using ``--reload``), and then try
 sending a GET request to the revised resource:
