@@ -3,6 +3,18 @@
 FAQ
 ===
 
+Why doesn't Falcon come with batteries included?
+------------------------------------------------
+Falcon is designed for applications that require a high level of
+customization or performance tuning. The framework's minimalist design
+frees the developer to select the best strategies and 3rd-party
+packages for the task at hand.
+
+The Python ecosystem offers a number of great packages that you can
+use from within your responders, hooks, and middleware components. As
+a starting point, the community maintains a list of `Falcon add-ons
+and complimentary packages <https://github.com/falconry/falcon/wiki>`_.
+
 How do I use WSGI middleware with Falcon?
 -----------------------------------------
 Instances of `falcon.API` are first-class WSGI apps, so you can use the
@@ -17,13 +29,6 @@ simply wrap your api instance with a middleware app. For example:
     app = some_middleware.DoSomethingFancy(my_restful_service.api)
 
 See also the `WSGI middleware example <http://legacy.python.org/dev/peps/pep-3333/#middleware-components-that-play-both-sides>`_ given in PEP-3333.
-
-Why doesn't Falcon come with batteries included?
-------------------------------------------------
-The Python ecosystem offers a bunch of great libraries that you are welcome
-to use from within your responders, hooks, and middleware components. Falcon
-doesn't try to dictate what you should use, since that would take away your
-freedom to choose the best tool for the job.
 
 How do I authenticate requests?
 -------------------------------
