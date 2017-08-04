@@ -669,11 +669,12 @@ class Response(object):
         'Content-Type',
         """Sets the Content-Type header.
 
-        Note:
-            You can use the following predefined content types: ``falcon.MEDIA_JSON``,
-            ``falcon.MEDIA_HTML``, ``falcon.MEDIA_JS``, ``falcon.MEDIA_XML``,
-            ``falcon.MEDIA_TEXT``, ``falcon.MEDIA_JPEG``, ``falcon.MEDIA_PNG``,
-            ``falcon.MEDIA_YAML`` and ``MEDIA_MSGPACK``
+        The ``falcon`` module provides a number of constants for
+        common media types, including ``falcon.MEDIA_JSON``,
+        ``falcon.MEDIA_HTML``, ``falcon.MEDIA_JS``,
+        ``falcon.MEDIA_XML``, ``falcon.MEDIA_TEXT``,
+        ``falcon.MEDIA_JPEG``, ``falcon.MEDIA_PNG``,
+        ``falcon.MEDIA_YAML`` and ``falcon.MEDIA_MSGPACK``.
         """)
 
     etag = header_property(

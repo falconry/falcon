@@ -369,12 +369,19 @@ Then, update the responder to use the new media type:
             }
 
             resp.data = msgpack.packb(doc, use_bin_type=True)
-            resp.content_type = 'application/msgpack'
+            resp.content_type = falcon.MEDIA_MSGPACK
             resp.status = falcon.HTTP_200
 
 Note the use of ``resp.data`` in lieu of ``resp.body``. If you assign a
 bytestring to the latter, Falcon will figure it out, but you can
 realize a small performance gain by assigning directly to ``resp.data``.
+
+Also note the use of ``falcon.MEDIA_MSGPACK``. The ``falcon`` module
+provides a number of constants for common media types, including
+``falcon.MEDIA_JSON``, ``falcon.MEDIA_HTML``, ``falcon.MEDIA_JS``,
+``falcon.MEDIA_XML``, ``falcon.MEDIA_TEXT``, ``falcon.MEDIA_JPEG``,
+``falcon.MEDIA_PNG``, ``falcon.MEDIA_YAML`` and
+``falcon.MEDIA_MSGPACK``.
 
 Restart Gunicorn (unless you're using ``--reload``), and then try
 sending a GET request to the revised resource:
@@ -597,7 +604,7 @@ POSTs. Open ``images.py`` and add a POST responder to the
             }
 
             resp.data = msgpack.packb(doc, use_bin_type=True)
-            resp.content_type = 'application/msgpack'
+            resp.content_type = falcon.MEDIA_MSGPACK
             resp.status = falcon.HTTP_200
 
         def on_post(self, req, resp):
@@ -715,7 +722,7 @@ operation:
             }
 
             resp.data = msgpack.packb(doc, use_bin_type=True)
-            resp.content_type = 'application/msgpack'
+            resp.content_type = falcon.MEDIA_MSGPACK
             resp.status = falcon.HTTP_200
 
         def on_post(self, req, resp):
@@ -1120,7 +1127,7 @@ Go ahead and edit your ``images.py`` file to look something like this:
             }
 
             resp.data = msgpack.packb(doc, use_bin_type=True)
-            resp.content_type = 'application/msgpack'
+            resp.content_type = falcon.MEDIA_MSGPACK
             resp.status = falcon.HTTP_200
 
         def on_post(self, req, resp):
