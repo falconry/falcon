@@ -63,10 +63,18 @@ class Response(object):
                 codes. They all start with the ``HTTP_`` prefix, as in:
                 ``falcon.HTTP_204``.
 
-        body (str or unicode): String representing response content. If
-            Unicode, Falcon will encode as UTF-8 in the response. If
-            data is already a byte string, use the data attribute
-            instead (it's faster).
+        media (object): A serializable object supported by the media handlers
+            configured via :class:`falcon.RequestOptions`.
+
+            See :ref:`media` for more information regarding media handling.
+
+        body (str or unicode): String representing response content.
+
+            If set to a Unicode type (``unicode`` in Python 2, or
+            ``str`` in Python 3), Falcon will encode the text as UTF-8
+            in the response. If the content is already a byte string,
+            use the :attr:`data` attribute instead (it's faster).
+
         data (bytes): Byte string representing response content.
 
             Use this attribute in lieu of `body` when your content is
@@ -88,11 +96,6 @@ class Response(object):
                 ensure Unicode characters are properly encoded in the
                 HTTP response.
 
-        media (object): A serializable object supported by the media handlers
-            configured via :class:`falcon.RequestOptions`.
-
-            See :ref:`media` for more information regarding media handling.
-
         stream: Either a file-like object with a `read()` method that takes
             an optional size argument and returns a block of bytes, or an
             iterable object, representing response content, and yielding
@@ -104,6 +107,7 @@ class Response(object):
             Content-Length header to the WSGI server. Consequently, the
             server may choose to use chunked encoding or one of the
             other strategies suggested by PEP-3333.
+
         context (dict): Dictionary to hold any data about the response which is
             specific to your app. Falcon itself will not interact with this
             attribute after it has been initialized.

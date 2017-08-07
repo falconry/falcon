@@ -74,6 +74,23 @@ class Request(object):
         options (dict): Set of global options passed from the API handler.
 
     Attributes:
+        env (dict): Reference to the WSGI environ ``dict`` passed in from the
+            server. (See also PEP-3333.)
+        context (dict): Dictionary to hold any data about the request which is
+            specific to your app (e.g. session object). Falcon itself will
+            not interact with this attribute after it has been initialized.
+        context_type (class): Class variable that determines the factory or
+            type to use for initializing the `context` attribute. By default,
+            the framework will instantiate standard ``dict`` objects. However,
+            you may override this behavior by creating a custom child class of
+            ``falcon.Request``, and then passing that new class to
+            `falcon.API()` by way of the latter's `request_type` parameter.
+
+            Note:
+                When overriding `context_type` with a factory function (as
+                opposed to a class), the function is called like a method of
+                the current Request instance. Therefore the first argument is
+                the Request instance itself (self).
         scheme (str): URL scheme used for the request. Either 'http' or
             'https'.
 
@@ -140,8 +157,6 @@ class Request(object):
                 If the hostname in the request is an IP address, the value
                 for `subdomain` is undefined.
 
-        env (dict): Reference to the WSGI environ ``dict`` passed in from the
-            server. (See also PEP-3333.)
         app (str): The initial portion of the request URI's path that
             corresponds to the application object, so that the
             application knows its virtual "location". This may be an
@@ -150,60 +165,6 @@ class Request(object):
 
             (Corresponds to the "SCRIPT_NAME" environ variable defined
             by PEP-3333.)
-        access_route(list): IP address of the original client, as well
-            as any known addresses of proxies fronting the WSGI server.
-
-            The following request headers are checked, in order of
-            preference, to determine the addresses:
-
-                - ``Forwarded``
-                - ``X-Forwarded-For``
-                - ``X-Real-IP``
-
-            If none of these headers are available, the value of
-            :py:attr:`~.remote_addr` is used instead.
-
-            Note:
-                Per `RFC 7239`_, the access route may contain "unknown"
-                and obfuscated identifiers, in addition to IPv4 and
-                IPv6 addresses
-
-                .. _RFC 7239: https://tools.ietf.org/html/rfc7239
-
-            Warning:
-                Headers can be forged by any client or proxy. Use this
-                property with caution and validate all values before
-                using them. Do not rely on the access route to authorize
-                requests.
-
-        remote_addr(str): IP address of the closest client or proxy to
-            the WSGI server.
-
-            This property is determined by the value of ``REMOTE_ADDR``
-            in the WSGI environment dict. Since this address is not
-            derived from an HTTP header, clients and proxies can not
-            forge it.
-
-            Note:
-                If your application is behind one or more reverse
-                proxies, you can use :py:attr:`~.access_route`
-                to retrieve the real IP address of the client.
-
-        context (dict): Dictionary to hold any data about the request which is
-            specific to your app (e.g. session object). Falcon itself will
-            not interact with this attribute after it has been initialized.
-        context_type (class): Class variable that determines the factory or
-            type to use for initializing the `context` attribute. By default,
-            the framework will instantiate standard ``dict`` objects. However,
-            you may override this behavior by creating a custom child class of
-            ``falcon.Request``, and then passing that new class to
-            `falcon.API()` by way of the latter's `request_type` parameter.
-
-            Note:
-                When overriding `context_type` with a factory function (as
-                opposed to a class), the function is called like a method of
-                the current Request instance. Therefore the first argument is
-                the Request instance itself (self).
         uri (str): The fully-qualified URI for the request.
         url (str): Alias for `uri`.
         forwarded_uri (str): Original URI for proxied requests. Uses
@@ -232,19 +193,60 @@ class Request(object):
             methods. May also be ``None`` if your app uses a custom routing
             engine and the engine does not provide the URI template when
             resolving a route.
+        remote_addr(str): IP address of the closest client or proxy to
+            the WSGI server.
+
+            This property is determined by the value of ``REMOTE_ADDR``
+            in the WSGI environment dict. Since this address is not
+            derived from an HTTP header, clients and proxies can not
+            forge it.
+
+            Note:
+                If your application is behind one or more reverse
+                proxies, you can use :py:attr:`~.access_route`
+                to retrieve the real IP address of the client.
+        access_route(list): IP address of the original client, as well
+            as any known addresses of proxies fronting the WSGI server.
+
+            The following request headers are checked, in order of
+            preference, to determine the addresses:
+
+                - ``Forwarded``
+                - ``X-Forwarded-For``
+                - ``X-Real-IP``
+
+            If none of these headers are available, the value of
+            :py:attr:`~.remote_addr` is used instead.
+
+            Note:
+                Per `RFC 7239`_, the access route may contain "unknown"
+                and obfuscated identifiers, in addition to IPv4 and
+                IPv6 addresses
+
+                .. _RFC 7239: https://tools.ietf.org/html/rfc7239
+
+            Warning:
+                Headers can be forged by any client or proxy. Use this
+                property with caution and validate all values before
+                using them. Do not rely on the access route to authorize
+                requests.
+
         forwarded (list): Value of the Forwarded header, as a parsed list
             of :class:`falcon.Forwarded` objects, or ``None`` if the header
             is missing.
 
             (See also: RFC 7239, Section 4)
+        date (datetime): Value of the Date header, converted to a
+            ``datetime`` instance. The header value is assumed to
+            conform to RFC 1123.
+        auth (str): Value of the Authorization header, or ``None`` if the
+            header is missing.
         user_agent (str): Value of the User-Agent header, or ``None`` if the
             header is missing.
-        referer (str): Value of Referer header, or ``None`` if
+        referer (str): Value of the Referer header, or ``None`` if
             the header is missing.
         accept (str): Value of the Accept header, or '*/*' if the header is
             missing.
-        auth (str): Value of the Authorization header, or ``None`` if the
-            header is missing.
         client_accepts_json (bool): ``True`` if the Accept header indicates
             that the client is willing to receive JSON, otherwise ``False``.
         client_accepts_msgpack (bool): ``True`` if the Accept header indicates
@@ -252,6 +254,9 @@ class Request(object):
             ``False``.
         client_accepts_xml (bool): ``True`` if the Accept header indicates that
             the client is willing to receive XML, otherwise ``False``.
+        cookies (dict):
+            A dict of name/value cookie pairs.
+            See also: :ref:`Getting Cookies <getting-cookies>`
         content_type (str): Value of the Content-Type header, or ``None`` if
             the header is missing.
         content_length (int): Value of the Content-Length header converted
@@ -321,6 +326,8 @@ class Request(object):
 
                 doc = json.load(req.bounded_stream)
 
+        expect (str): Value of the Expect header, or ``None`` if the
+            header is missing.
         media (object): Returns a deserialized form of the request stream.
             When called, it will attempt to deserialize the request stream
             using the Content-Type header as well as the media-type handlers
@@ -333,11 +340,6 @@ class Request(object):
                 it's called and cache the results. Follow-up calls will just
                 retrieve a cached version of the object.
 
-        date (datetime): Value of the Date header, converted to a
-            ``datetime`` instance. The header value is assumed to
-            conform to RFC 1123.
-        expect (str): Value of the Expect header, or ``None`` if the
-            header is missing.
         range (tuple of int): A 2-member ``tuple`` parsed from the value of the
             Range header.
 
@@ -375,10 +377,6 @@ class Request(object):
             values.  Where the parameter appears multiple times in the query
             string, the value mapped to that parameter key will be a list of
             all the values in the order seen.
-
-        cookies (dict):
-            A dict of name/value cookie pairs.
-            See also: :ref:`Getting Cookies <getting-cookies>`
 
         options (dict): Set of global options passed from the API handler.
     """
