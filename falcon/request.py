@@ -408,7 +408,7 @@ class Request(object):
     )
 
     # Child classes may override this
-    context_type = None
+    context_type = dict
 
     _wsgi_input_type_known = False
     _always_wrap_wsgi_input = False
@@ -423,21 +423,20 @@ class Request(object):
         self.uri_template = None
         self._media = None
 
-        # Normalize path
-        path = env['PATH_INFO']
-        if path:
-            if six.PY3:
-                # PEP 3333 specifies that PATH_INFO variable are always
-                # "bytes tunneled as latin-1" and must be encoded back
-                path = path.encode('latin1').decode('utf-8', 'replace')
+        # NOTE(kgriffs): PEP 3333 specifies that PATH_INFO may be the
+        # empty string, so normalize it in that case.
+        path = env['PATH_INFO'] or '/'
 
-            if (self.options.strip_url_path_trailing_slash and
-                    len(path) != 1 and path.endswith('/')):
-                self.path = path[:-1]
-            else:
-                self.path = path
+        if six.PY3:
+            # PEP 3333 specifies that PATH_INFO variable are always
+            # "bytes tunneled as latin-1" and must be encoded back
+            path = path.encode('latin1').decode('utf-8', 'replace')
+
+        if (self.options.strip_url_path_trailing_slash and
+                len(path) != 1 and path.endswith('/')):
+            self.path = path[:-1]
         else:
-            self.path = '/'
+            self.path = path
 
         # PERF(ueg1990): try/catch cheaper and faster (and more Pythonic)
         try:
@@ -474,7 +473,12 @@ class Request(object):
 
         # NOTE(kgriffs): Wrap wsgi.input if needed to make read() more robust,
         # normalizing semantics between, e.g., gunicorn and wsgiref.
-        if not Request._wsgi_input_type_known:
+        #
+        # PERF(kgriffs): Accessing via self when reading is faster than
+        # via the class name. But we must set the variables using the
+        # class name so they are picked up by all future instantiations
+        # of the class.
+        if not self._wsgi_input_type_known:
             Request._always_wrap_wsgi_input = isinstance(
                 env['wsgi.input'],
                 (NativeStream, InputWrapper)
@@ -482,7 +486,7 @@ class Request(object):
 
             Request._wsgi_input_type_known = True
 
-        if Request._always_wrap_wsgi_input:
+        if self._always_wrap_wsgi_input:
             # TODO(kgriffs): In Falcon 2.0, stop wrapping stream since it is
             # less useful now that we have bounded_stream.
             self.stream = self._get_wrapped_wsgi_input()
@@ -507,11 +511,7 @@ class Request(object):
         ):
             self._parse_form_urlencoded()
 
-        if self.context_type is None:
-            # Literal syntax is more efficient than using dict()
-            self.context = {}
-        else:
-            self.context = self.context_type()
+        self.context = self.context_type()
 
     def __repr__(self):
         return '<%s: %s %r>' % (self.__class__.__name__, self.method, self.url)

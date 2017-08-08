@@ -141,13 +141,13 @@ class Response(object):
     )
 
     # Child classes may override this
-    context_type = None
+    context_type = dict
 
     def __init__(self, options=None):
         self.status = '200 OK'
         self._headers = {}
 
-        self.options = ResponseOptions() if options is None else options
+        self.options = options if options else ResponseOptions()
 
         # NOTE(tbug): will be set to a SimpleCookie object
         # when cookie is set via set_cookie
@@ -159,11 +159,7 @@ class Response(object):
         self.stream = None
         self.stream_len = None
 
-        if self.context_type is None:
-            # PERF(kgriffs): The literal syntax is more efficient than dict().
-            self.context = {}
-        else:
-            self.context = self.context_type()
+        self.context = self.context_type()
 
     @property
     def media(self):
