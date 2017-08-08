@@ -46,6 +46,8 @@ media type that JSON also supports (i.e. dicts, lists, etc).
 
 .. autofunction:: falcon.media.validators.jsonschema.validate
 
+If JSON Schema does not meet your needs, a custom validator may be 
+implemented in a similar manner to the one above.
 
 Content-Type Negotiation
 ------------------------
