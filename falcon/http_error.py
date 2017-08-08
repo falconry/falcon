@@ -52,7 +52,9 @@ class HTTPError(Exception):
             the HTTP response. In ``HTTPError`` this property always
             returns ``True``, but child classes may override it
             in order to return ``False`` when an empty HTTP body is desired.
-            See also the ``falcon.http_error.NoRepresentation`` mixin.
+
+            (See also: :class:`falcon.http_error.NoRepresentation`)
+
         title (str): Error title to send to the client.
         description (str): Description of the error to send to the client.
         headers (dict): Extra headers to add to the response.

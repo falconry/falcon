@@ -509,7 +509,7 @@ class Response(object):
                  anchor=None, hreflang=None, type_hint=None):
         """Add a link header to the response.
 
-        See also: https://tools.ietf.org/html/rfc5988
+        (See also: RFC 5988, Section 1)
 
         Note:
             Calling this method repeatedly will cause each link to be
@@ -524,8 +524,9 @@ class Response(object):
                 link. Will be converted to a URI, if necessary, per
                 RFC 3987, Section 3.1.
             rel (str): Relation type of the link, such as "next" or
-                "bookmark". See also http://goo.gl/618GHr for a list
-                of registered link relation types.
+                "bookmark".
+
+                (See also: http://www.iana.org/assignments/link-relations/link-relations.xhtml)
 
         Keyword Args:
             title (str): Human-readable label for the destination of
@@ -661,7 +662,7 @@ class Response(object):
             case, raising ``falcon.HTTPRangeNotSatisfiable`` will do the right
             thing.
 
-            See also: http://goo.gl/Iglhp
+        (See also: RFC 7233, Section 4.2)
         """,
         format_range)
 
@@ -715,17 +716,17 @@ class Response(object):
         """Value to use for the Vary header.
 
         Set this property to an iterable of header names. For a single
-        asterisk or field value, simply pass a single-element ``list`` or
-        ``tuple``.
+        asterisk or field value, simply pass a single-element ``list``
+        or ``tuple``.
 
-        "Tells downstream proxies how to match future request headers
-        to decide whether the cached response can be used rather than
-        requesting a fresh one from the origin server."
+        The "Vary" header field in a response describes what parts of
+        a request message, aside from the method, Host header field,
+        and request target, might influence the origin server's
+        process for selecting and representing this response.  The
+        value consists of either a single asterisk ("*") or a list of
+        header field names (case-insensitive).
 
-        (Wikipedia)
-
-        See also: http://goo.gl/NGHdL
-
+        (See also: RFC 7231, Section 7.1.4)
         """,
         format_header_value_list)
 
