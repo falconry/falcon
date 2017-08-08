@@ -395,8 +395,10 @@ def parse_host(host, default_port=None):
     Args:
         host (str): Host string to parse, optionally containing a
             port number.
-        default_port (int, optional): Port number to return when
-            the host string does not contain one (default ``None``).
+
+    Keyword Arguments:
+        default_port (int): Port number to return when the host string
+            does not contain one (default ``None``).
 
     Returns:
         tuple: A parsed (*host*, *port*) tuple from the given

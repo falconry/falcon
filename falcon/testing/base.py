@@ -98,7 +98,9 @@ class TestBase(unittest.TestCase):  # pragma nocover
 
         Args:
             path (str): The path to request.
-            decode (str, optional): If this is set to a character encoding,
+
+        Keyword Arguments:
+            decode (str): If this is set to a character encoding,
                 such as 'utf-8', `simulate_request` will assume the
                 response is a single byte string, and will decode it as the
                 result of the request, rather than simply returning the
