@@ -6,18 +6,42 @@ Breaking Changes
 
 (None)
 
+Changes to Supported Platforms
+------------------------------
+
+- CPython 3.6 is now fully supported.
+- Falcon appears to work well on PyPy3.5, but we are waiting until
+  that platform is out of beta before officially supporting it.
+- Support for both CPython 2.6 and Jython 2.7 is now deprecated and
+  will be discontinued in Falcon 2.0.
+
 New & Improved
 --------------
 
-- A number of properties were added to ``falcon.Request`` to
-  expose information added by proxies in front of the application
-  server. These include the `forwarded`, `forwarded_uri`,
-  `forwarded_scheme`, `forwarded_host`, and `forwarded_prefix`
-  properties. The `prefix` attribute was also added as part of this
-  work.
+- We added built-in resource representation serialization and
+  deserialization, including input validation based on JSON Schema.
+- URI template field converters are now supported. We expect to expand
+  this feature over time.
+- A new method, `get_param_as_datetime()`, was added to
+  the ``Request`` class.
+- A number of attributes were added to the ``Request`` class to
+  make proxy information easier to consume. These include the
+  `forwarded`, `forwarded_uri`, `forwarded_scheme`, `forwarded_host`,
+  and `forwarded_prefix` attributes. The `prefix` attribute was also
+  added as part of this work.
+- A `referer` attribute was added to the ``Request`` class.
+- We implemented `__repr__()` for ``Request``, ``Response``, and
+  ``HTTPError`` to aid in debugging.
+- A number of Internet media type constants were defined to make it
+  easier to check and set content type headers.
+- Several new 5xx error classes were implemented.
+
 
 Fixed
 -----
+
+- ``API`` instances are now pickleable.
+- Numerous fixes and tweaks were made to the documentation.
 
 1.2.0
 =====
