@@ -138,3 +138,24 @@ Handlers
 
 .. autoclass:: falcon.media.Handlers
     :members:
+
+
+.. _media_type_constants:
+Media Type Constants
+--------------------
+
+The ``falcon`` module provides a number of constants for
+common media types, including the following:
+
+.. code:: python
+
+    falcon.MEDIA_JSON
+    falcon.MEDIA_MSGPACK
+    falcon.MEDIA_YAML
+    falcon.MEDIA_XML
+    falcon.MEDIA_HTML
+    falcon.MEDIA_JS
+    falcon.MEDIA_TEXT
+    falcon.MEDIA_JPEG
+    falcon.MEDIA_PNG
+    falcon.MEDIA_GIF
