@@ -329,6 +329,8 @@ def parse_query_string(query_string, keep_blank_qs_values=False,
 
     params = {}
 
+    is_encoded = '+' in query_string or '%' in query_string
+
     # PERF(kgriffs): This was found to be faster than using a regex, for
     # both short and long query strings. Tested on both CPython 2.7 and 3.4,
     # and on PyPy 2.3.
@@ -339,7 +341,8 @@ def parse_query_string(query_string, keep_blank_qs_values=False,
 
         # Note(steffgrez): Falcon first decode name parameter for handle
         # utf8 character.
-        k = decode(k)
+        if is_encoded:
+            k = decode(k)
 
         # NOTE(steffgrez): Falcon decode value at the last moment. So query
         # parser won't mix up between percent-encoded comma (as value) and
@@ -348,10 +351,14 @@ def parse_query_string(query_string, keep_blank_qs_values=False,
             # The key was present more than once in the POST data.  Convert to
             # a list, or append the next value to the list.
             old_value = params[k]
+
+            if is_encoded:
+                v = decode(v)
+
             if isinstance(old_value, list):
-                old_value.append(decode(v))
+                old_value.append(v)
             else:
-                params[k] = [old_value, decode(v)]
+                params[k] = [old_value, v]
 
         else:
             if parse_qs_csv and ',' in v:
@@ -369,8 +376,10 @@ def parse_query_string(query_string, keep_blank_qs_values=False,
                     params[k] = [decode(element) for element in v if element]
                 else:
                     params[k] = [decode(element) for element in v]
-            else:
+            elif is_encoded:
                 params[k] = decode(v)
+            else:
+                params[k] = v
 
     return params
 
