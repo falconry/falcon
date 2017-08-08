@@ -671,10 +671,11 @@ class Response(object):
 
         The ``falcon`` module provides a number of constants for
         common media types, including ``falcon.MEDIA_JSON``,
-        ``falcon.MEDIA_HTML``, ``falcon.MEDIA_JS``,
-        ``falcon.MEDIA_XML``, ``falcon.MEDIA_TEXT``,
+        ``falcon.MEDIA_MSGPACK``, ``falcon.MEDIA_YAML``,
+        ``falcon.MEDIA_XML``, ``falcon.MEDIA_HTML``,
+        ``falcon.MEDIA_JS``, ``falcon.MEDIA_TEXT``,
         ``falcon.MEDIA_JPEG``, ``falcon.MEDIA_PNG``,
-        ``falcon.MEDIA_YAML`` and ``falcon.MEDIA_MSGPACK``.
+        and ``falcon.MEDIA_GIF``.
         """)
 
     etag = header_property(

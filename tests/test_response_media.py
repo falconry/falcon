@@ -22,7 +22,7 @@ def create_client(handlers=None):
 
 @pytest.mark.parametrize('media_type', [
     ('*/*'),
-    ('application/json'),
+    (falcon.MEDIA_JSON),
     ('application/json; charset=utf-8'),
 ])
 def test_json(media_type):
@@ -37,7 +37,7 @@ def test_json(media_type):
 
 
 @pytest.mark.parametrize('media_type', [
-    ('application/msgpack'),
+    (falcon.MEDIA_MSGPACK),
     ('application/msgpack; charset=utf-8'),
     ('application/x-msgpack'),
 ])
