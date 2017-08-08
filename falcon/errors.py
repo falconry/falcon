@@ -115,7 +115,9 @@ class HTTPUnauthorized(HTTPError):
             a helpful suggestion or two.
         challenges (iterable of str): One or more authentication
             challenges to use as the value of the WWW-Authenticate header in
-            the response (see also RFC 7235, Section 2.1).
+            the response.
+
+            (See also: RFC 7235, Section 2.1)
 
         headers (dict or list): A ``dict`` of header names and values
             to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and

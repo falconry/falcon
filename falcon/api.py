@@ -92,7 +92,7 @@ class API(object):
                                 request; otherwise False.
                         \"\"\"
 
-            See also :ref:`Middleware <middleware>`.
+            (See also: :ref:`Middleware <middleware>`)
 
         request_type (Request, optional): ``Request``-like class to use instead
             of Falcon's default class. Among other things, this feature
@@ -106,7 +106,7 @@ class API(object):
 
         router (object, optional): An instance of a custom router
             to use in lieu of the default engine.
-            See also: :ref:`Custom Routers <routing_custom>`.
+            (See also: :ref:`Custom Routers <routing_custom>`)
 
         independent_middleware (bool): Set to ``True`` if response
             middleware should be executed independently of whether or
@@ -114,14 +114,15 @@ class API(object):
 
     Attributes:
         req_options: A set of behavioral options related to incoming
-            requests. See also: :py:class:`~.RequestOptions`
+            requests. (See also: :py:class:`~.RequestOptions`)
         resp_options: A set of behavioral options related to outgoing
-            responses. See also: :py:class:`~.ResponseOptions`
+            responses. (See also: :py:class:`~.ResponseOptions`)
         router_options: Configuration options for the router. If a
             custom router is in use, and it does not expose any
             configurable options, referencing this attribute will raise
-            an instance of ``AttributeError``. See also:
-            :py:class:`falcon.routing.CompiledRouterOptions`.
+            an instance of ``AttributeError``.
+
+            (See also: :ref:`CompiledRouterOptions <compiled_router_options>`)
     """
 
     # PERF(kgriffs): Reference via self since that is faster than
@@ -178,7 +179,7 @@ class API(object):
         host an API or called directly in order to simulate requests when
         testing the API.
 
-        See also PEP 3333.
+        (See also: PEP 3333)
 
         Args:
             env (dict): A WSGI environment dictionary
@@ -312,7 +313,10 @@ class API(object):
         Args:
             uri_template (str): A templatized URI. Care must be
                 taken to ensure the template does not mask any sink
-                patterns, if any are registered (see also :meth:`~.add_sink`).
+                patterns, if any are registered.
+
+                (See also: :meth:`~.add_sink`)
+
             resource (instance): Object which represents a REST
                 resource. Falcon will pass "GET" requests to on_get,
                 "PUT" requests to on_put, etc. If any HTTP methods are not
@@ -371,8 +375,9 @@ class API(object):
 
                 Warning:
                     If the prefix overlaps a registered route template,
-                    the route will take precedence and mask the sink
-                    (see also `add_route`).
+                    the route will take precedence and mask the sink.
+
+                    (See also: :meth:`~.add_route`)
 
         """
 

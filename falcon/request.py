@@ -255,8 +255,8 @@ class Request(object):
         client_accepts_xml (bool): ``True`` if the Accept header indicates that
             the client is willing to receive XML, otherwise ``False``.
         cookies (dict):
-            A dict of name/value cookie pairs.
-            See also: :ref:`Getting Cookies <getting-cookies>`
+            A dict of name/value cookie pairs. (See also:
+            :ref:`Getting Cookies <getting-cookies>`)
         content_type (str): Value of the Content-Type header, or ``None`` if
             the header is missing.
         content_length (int): Value of the Content-Length header converted
@@ -558,7 +558,9 @@ class Request(object):
 
                 # NOTE(kgriffs): Calling strip() is necessary here since
                 # "an HTTP list allows white spaces to occur between the
-                # identifiers" (see also RFC 7239, Section 7.1).
+                # identifiers".
+
+                # (See also: RFC 7239, Section 7.1)
                 for param in element.strip().split(';'):
                     # PERF(kgriffs): partition() is faster than split().
                     name, __, value = param.partition('=')

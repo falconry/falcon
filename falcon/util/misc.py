@@ -273,8 +273,7 @@ def _get_argspec(func):
     This implementation re-uses much of inspect.getargspec but removes the strict
     check allowing interface failures to be raised as AttributeError.
 
-    See Also:
-        https://github.com/python/cpython/blob/2.7/Lib/inspect.py
+    (See also: https://github.com/python/cpython/blob/2.7/Lib/inspect.py)
     """
     if inspect.ismethod(func):
         func = func.im_func
