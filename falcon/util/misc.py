@@ -123,7 +123,9 @@ def http_date_to_dt(http_date, obs_date=False):
     Args:
         http_date (str): An RFC 1123 date string, e.g.:
             "Tue, 15 Nov 1994 12:45:26 GMT".
-        obs_date (bool, optional): Support obs-date formats according to
+
+    Keyword Arguments:
+        obs_date (bool): Support obs-date formats according to
             RFC 7231, e.g.:
             "Sunday, 06-Nov-94 08:49:37 GMT" (default ``False``).
 

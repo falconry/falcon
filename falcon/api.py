@@ -34,16 +34,16 @@ class API(object):
     Each API instance provides a callable WSGI interface and a routing
     engine.
 
-    Args:
-        media_type (str, optional): Default media type to use as the
+    Keyword Arguments:
+        media_type (str): Default media type to use as the
             value for the Content-Type header on responses (default
             'application/json'). The ``falcon`` module provides a
             number of constants for common media types, such as
             ``falcon.MEDIA_MSGPACK``, ``falcon.MEDIA_YAML``,
             ``falcon.MEDIA_XML``, etc.
-        middleware(object or list, optional): One or more objects
-            (instantiated classes) that implement the following middleware
-            component interface::
+        middleware(object or list): Either a single object or a list
+            of objects (instantiated classes) that implement the
+            following middleware component interface::
 
                 class ExampleComponent(object):
                     def process_request(self, req, resp):
@@ -94,23 +94,24 @@ class API(object):
 
             (See also: :ref:`Middleware <middleware>`)
 
-        request_type (Request, optional): ``Request``-like class to use instead
+        request_type (Request): ``Request``-like class to use instead
             of Falcon's default class. Among other things, this feature
             affords inheriting from ``falcon.request.Request`` in order
             to override the ``context_type`` class variable.
             (default ``falcon.request.Request``)
 
-        response_type (Response, optional): ``Response``-like class to use
+        response_type (Response): ``Response``-like class to use
             instead of Falcon's default class. (default
             ``falcon.response.Response``)
 
-        router (object, optional): An instance of a custom router
+        router (object): An instance of a custom router
             to use in lieu of the default engine.
             (See also: :ref:`Custom Routers <routing_custom>`)
 
         independent_middleware (bool): Set to ``True`` if response
             middleware should be executed independently of whether or
-            not request middleware raises an exception.
+            not request middleware raises an exception (default
+            ``False``).
 
     Attributes:
         req_options: A set of behavioral options related to incoming
