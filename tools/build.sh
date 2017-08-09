@@ -19,6 +19,7 @@ set -e
 VENV_NAME=tmp-falcon-build
 BUILD_DIR=./build
 DIST_DIR=./dist
+PY2_VERSION=2.7.13
 
 #----------------------------------------------------------------------
 # Helpers
@@ -79,7 +80,7 @@ pyenv uninstall -f $VENV_NAME
 #----------------------------------------------------------------------
 
 _echo_task "Building source distribution"
-_open_env 2.7.12
+_open_env $PY2_VERSION
 
 python setup.py sdist -d $DIST_DIR
 
@@ -90,7 +91,7 @@ _close_env
 #----------------------------------------------------------------------
 
 _echo_task "Building universal wheel"
-_open_env 2.7.12
+_open_env $PY2_VERSION
 
 python setup.py bdist_wheel -d $DIST_DIR
 
