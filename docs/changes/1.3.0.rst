@@ -6,15 +6,47 @@ Breaking Changes
 
 (None)
 
+Changes to Supported Platforms
+------------------------------
+
+- CPython 3.6 is now fully supported.
+- Falcon appears to work well on PyPy3.5, but we are waiting until
+  that platform is out of beta before officially supporting it.
+- Support for both CPython 2.6 and Jython 2.7 is now deprecated and
+  will be discontinued in Falcon 2.0.
+
 New & Improved
 --------------
 
-- A number of attributes were added to :class:`falcon.Request` to
-  expose information added by proxies in front of the application
-  server. These include the `forwarded`, `forwarded_uri`,
-  `forwarded_scheme`, `forwarded_host`, and `forwarded_prefix`
-  attribute. The `prefix` attribute was also added as part of this
+- We added built-in resource representation serialization and
+  deserialization, including input validation based on JSON Schema.
+  (See also: :ref:`Media <media>`)
+- URI template field converters are now supported. We expect to expand
+  this feature over time. (See also:
+  :ref:`Field Converters <routing_field_converters>`)
+- A new method, :meth:`~.Request.get_param_as_datetime`, was added to
+  :class:`~.Request`.
+- A number of attributes were added to :class:`~.Request` to
+  make proxy information easier to consume. These include the
+  :attr:`~.Request.forwarded`, :attr:`~.Request.forwarded_uri`,
+  :attr:`~.Request.forwarded_scheme`, :attr:`~.Request.forwarded_host`,
+  and :attr:`~.Request.forwarded_prefix` attributes. The
+  :attr:`~.Request.prefix` attribute was also added as part of this
   work.
+- A :attr:`~.Request.referer` attribute was added to
+  :class:`~.Request`.
+- We implemented ``__repr__()`` for :class:`~.Request`,
+  :class:`~.Response`, and :class:`~.HTTPError` to aid in
+  debugging.
+- A number of Internet media type constants were defined to make it
+  easier to check and set content type headers. (See also:
+  :ref:`Media Type Constants <media_type_constants>`)
+- Several new 5xx error classes were implemented. (See also:
+  :ref:`Error Handling <errors>`)
+
 
 Fixed
 -----
+
+- :class:`~.API` instances are now pickleable.
+- Numerous fixes and tweaks were made to the documentation.
