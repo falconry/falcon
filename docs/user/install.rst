@@ -57,6 +57,13 @@ default C compiler.
     $ pip install cython
     $ pip install --no-binary :all: falcon
 
+If you want to verify that Cython is being invoked, simply
+pass `-v` to pip in order to echo the compilation commands:
+
+.. code:: bash
+
+    $ pip install -v --no-binary :all: falcon
+
 **Installing on OS X**
 
 Xcode Command Line Tools are required to compile Cython. Install them
