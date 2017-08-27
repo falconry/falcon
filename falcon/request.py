@@ -896,7 +896,13 @@ class Request(object):
             # NOTE(tbug): We might want to look into parsing
             # cookies ourselves. The SimpleCookie is doing a
             # lot if stuff only required to SEND cookies.
-            parser = SimpleCookie(self.get_header('Cookie'))
+            cookie_header = self.get_header('Cookie', default='')
+            parser = SimpleCookie()
+            for cookie_part in cookie_header.split('; '):
+                try:
+                    parser.load(cookie_part)
+                except http_cookies.CookieError:
+                    pass
             cookies = {}
             for morsel in parser.values():
                 cookies[morsel.key] = morsel.value

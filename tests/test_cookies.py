@@ -263,6 +263,30 @@ def test_request_cookie_parsing():
     assert '_octo' in req.cookies
 
 
+def test_invalid_cookies_are_ignored():
+    headers = [
+        (
+            'Cookie',
+            """
+            good_cookie=foo;
+            bad{cookie=bar
+            """
+        ),
+    ]
+
+    environ = testing.create_environ(headers=headers)
+    req = falcon.Request(environ)
+
+    assert req.cookies['good_cookie'] == 'foo'
+    assert 'bad{cookie' not in req.cookies
+
+
+def test_cookie_header_is_missing():
+    environ = testing.create_environ(headers={})
+    req = falcon.Request(environ)
+    assert req.cookies == {}
+
+
 def test_unicode_inside_ascii_range():
     resp = falcon.Response()
 
