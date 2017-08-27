@@ -468,10 +468,10 @@ bodies.
                                        'UTF-8.')
 
         def process_response(self, req, resp, resource):
-            if 'result' not in req.context:
+            if 'result' not in resp.context:
                 return
 
-            resp.body = json.dumps(req.context['result'])
+            resp.body = json.dumps(resp.context['result'])
 
 
     def max_body(limit):
