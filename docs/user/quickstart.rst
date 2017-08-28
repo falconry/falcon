@@ -175,6 +175,8 @@ parameters, handling errors, and working with request and response bodies.
 
 
     class JSONTranslator(object):
+        # NOTE: Starting with Falcon 1.3, you can simply 
+        # use req.media and resp.media for this instead.
 
         def process_request(self, req, resp):
             # req.stream corresponds to the WSGI wsgi.input environ variable,
@@ -201,10 +203,10 @@ parameters, handling errors, and working with request and response bodies.
                                        'UTF-8.')
 
         def process_response(self, req, resp, resource):
-            if 'result' not in req.context:
+            if 'result' not in resp.context:
                 return
 
-            resp.body = json.dumps(req.context['result'])
+            resp.body = json.dumps(resp.context['result'])
 
 
     def max_body(limit):
@@ -249,7 +251,10 @@ parameters, handling errors, and working with request and response bodies.
             # create a custom class that inherits from falcon.Request. This
             # class could, for example, have an additional 'doc' property
             # that would serialize to JSON under the covers.
-            req.context['result'] = result
+            #
+            # NOTE: Starting with Falcon 1.3, you can simply 
+            # use resp.media for this instead.
+            resp.context['result'] = result
 
             resp.set_header('Powered-By', 'Falcon')
             resp.status = falcon.HTTP_200
