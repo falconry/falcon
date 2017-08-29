@@ -40,8 +40,11 @@ New & Improved
 Fixed
 -----
 
-- ``API`` instances are now pickleable.
-- Numerous fixes and tweaks were made to the documentation.
+- If even a single cookie in the request to the server is malformed, 
+  none of the cookies will be parsed (all-or-nothing). Change the 
+  parser to simply skip bad cookies (best-effort).
+- ``API`` instances are not pickleable. Modify the default router 
+  to fix this.
 
 1.2.0
 =====
