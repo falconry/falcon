@@ -1461,7 +1461,7 @@ favorite text editor. The team has tried to make the code as straightforward
 and readable as possible; where other documentation may fall short, the code
 basically can't be wrong.
 
-A number of Falcon add-ons, templates, and complimentary packages are
+A number of Falcon add-ons, templates, and complementary packages are
 available for use in your projects. We've listed several of these on the
 `Falcon wiki <https://github.com/falconry/falcon/wiki>`_ as a starting
 point, but you may also wish to search PyPI for additional resources.
