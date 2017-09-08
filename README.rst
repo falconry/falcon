@@ -22,7 +22,7 @@ Quick Links
 -----------
 
 * `Read the docs <https://falcon.readthedocs.io/en/stable>`__
-* `Falcon add-ons and complimentary packages <https://github.com/falconry/falcon/wiki>`__
+* `Falcon add-ons and complementary packages <https://github.com/falconry/falcon/wiki>`__
 * `falconry/user <https://gitter.im/falconry/user>`__ @ Gitter
 * `falconry/dev <https://gitter.im/falconry/dev>`__ @ Gitter
 
@@ -53,7 +53,7 @@ third-party dependencies.
 details to you, the API developer. This gives you a lot of freedom to
 customize and tune your implementation. Due to Falcon's minimalist
 design, Python community members are free to independently innovate on
-`Falcon add-ons and complimentary packages <https://github.com/falconry/falcon/wiki>`__.
+`Falcon add-ons and complementary packages <https://github.com/falconry/falcon/wiki>`__.
 
 **Debuggable.** Falcon eschews magic. It's easy to tell which inputs
 lead to which outputs. Unhandled exceptions are never encapsulated or
@@ -102,7 +102,7 @@ project, please consider adding your information to our wiki under
 Community
 ---------
 
-A number of Falcon add-ons, templates, and complimentary packages are
+A number of Falcon add-ons, templates, and complementary packages are
 available for use in your projects. We've listed several of these on the
 `Falcon wiki <https://github.com/falconry/falcon/wiki>`_ as a starting
 point, but you may also wish to search PyPI for additional resources.
