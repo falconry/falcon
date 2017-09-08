@@ -13,7 +13,7 @@ packages for the task at hand.
 The Python ecosystem offers a number of great packages that you can
 use from within your responders, hooks, and middleware components. As
 a starting point, the community maintains a list of `Falcon add-ons
-and complimentary packages <https://github.com/falconry/falcon/wiki>`_.
+and complementary packages <https://github.com/falconry/falcon/wiki>`_.
 
 How do I use WSGI middleware with Falcon?
 -----------------------------------------
