@@ -575,13 +575,18 @@ bodies.
 Contributing
 ------------
 
-Kurt Griffiths (kgriffs) is the creator and current maintainer of the
-Falcon framework, with the generous help of a number of stylish and
-talented contributors.
+Thanks for your interest in the project! We welcome pull requests from
+developers of all skill levels. To get started, simply fork the master branch
+on GitHub to your personal account and then clone the fork into your
+development environment.
 
-Pull requests are always welcome. We use the GitHub issue tracker to
-organize our work, but you do not need to open a new issue before
-submitting a PR.
+If you would like to contribute but don't already have something in mind, 
+we invite you to take a look at the issues listed under our 
+`next milestone <https://github.com/falconry/falcon/milestones>`_.
+If you see one you'd like to work on, please leave a quick comment so that we don't
+end up with duplicated effort. Thanks in advance!
+
+Please note that all contributors and maintainers of this project are subject to our `Code of Conduct <https://github.com/falconry/falcon/blob/master/CODEOFCONDUCT.md>`_.
 
 Before submitting a pull request, please ensure you have added/updated
 the appropriate tests (and that all existing tests still pass with your
@@ -599,6 +604,16 @@ GitHub nick and an appropriate prefix:
 - NOTE(riker): Well, that's certainly good to know.
 - PERF(riker): Travel time to the nearest starbase?
 - APPSEC(riker): In all trust, there is the possibility for betrayal.
+
+Kurt Griffiths (**kgriffs** on GH, Gitter, and Twitter) is the original
+creator of the Falcon framework, and currently co-maintains the project
+along with John Vrbanac (**jmvrbanac** on GH and Gitter, and
+**jvrbanac** on Twitter). Falcon is developed by a growing community of
+stylish users and contributors just like you.
+
+Please don't hesitate to reach out if you have any questions, or just need a
+little help getting started. You can find us in
+`falconry/dev <https://gitter.im/falconry/dev>`_ on Gitter.
 
 See also: `CONTRIBUTING.md <https://github.com/falconry/falcon/blob/master/CONTRIBUTING.md>`__
 
