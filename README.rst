@@ -620,7 +620,7 @@ See also: `CONTRIBUTING.md <https://github.com/falconry/falcon/blob/master/CONTR
 Legal
 -----
 
-Copyright 2013-2016 by Rackspace Hosting, Inc. and other contributors as
+Copyright 2013-2017 by Rackspace Hosting, Inc. and other contributors as
 noted in the individual source files.
 
 Falcon image courtesy of `John
