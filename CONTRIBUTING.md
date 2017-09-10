@@ -10,8 +10,6 @@ we invite you to take a look at the issues listed under our [next milestone][ms]
 If you see one you'd like to work on, please leave a quick comment so that we don't
 end up with duplicated effort. Thanks in advance!
 
----
-
 Kurt Griffiths (**kgriffs** on GH, Gitter, and Twitter) is the original
 creator of the Falcon framework, and currently co-maintains the project
 along with John Vrbanac (**jmvrbanac** on GH and Gitter, and
