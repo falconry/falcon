@@ -5,6 +5,13 @@ developers of all skill levels. To get started, simply fork the master branch
 on GitHub to your personal account and then clone the fork into your
 development environment.
 
+If you would like to contribute but don't already have something in mind, 
+we invite you to take a look at the issues listed under our [next milestone][ms].
+If you see one you'd like to work on, please leave a quick comment so that we don't
+end up with duplicated effort. Thanks in advance!
+
+---
+
 Kurt Griffiths (**kgriffs** on GH, Gitter, and Twitter) is the original
 creator of the Falcon framework, and currently co-maintains the project
 along with John Vrbanac (**jmvrbanac** on GH and Gitter, and
@@ -173,3 +180,4 @@ The footer should contain any information about **Breaking Changes** and is also
 [gitter]: https://gitter.im/falconry/dev
 [ml-join]: mailto:users-join@mail.falconframework.org?subject=join
 [ml-archive]: https://mail.falconframework.org/archives/list/users@mail.falconframework.org/
+[ms]: https://github.com/falconry/falcon/milestones
