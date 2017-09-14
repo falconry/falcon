@@ -184,7 +184,8 @@ attribute. For example:
 How can I access POSTed form params?
 ------------------------------------
 By default, Falcon does not consume request bodies. However, setting
-the :attr:`~RequestOptions.auto_parse_form_urlencoded` to ``True``
+the :attr:`~RequestOptions.auto_parse_form_urlencoded` to ``True`` 
+on an instance of ``falcon.API`` 
 will cause the framework to consume the request body when the
 content type is `application/x-www-form-urlencoded`, making
 the form parameters accessible via :attr:`~.Request.params`,
@@ -198,3 +199,31 @@ Alternatively, POSTed form parameters may be read directly from
 :attr:`~.Request.stream` and parsed via
 :meth:`falcon.uri.parse_query_string` or
 `urllib.parse.parse_qs() <https://docs.python.org/3.6/library/urllib.parse.html#urllib.parse.parse_qs>`_.
+
+How do I consume a query string that has a JSON value?
+------------------------------------------------------
+Falcon will by default treat commas in a query string as literal characters
+delimiting a comma separated list. For example, if you had 
+the query string ``?c=1,2,3`` by default Falcon will add this to your 
+``request.params`` dictionary as ``{'c': ['1', '2', '3']}``. If you attempt 
+to use JSON in the value of the query string, for example ``?c={'a':1,'b':2}``,
+then it will get added to your ``request.params`` in a way you
+are probably not hoping for: ``{'c': ["{'a':1", "'b':2}"]}``.
+
+Commas are a reserved character that can be escaped according to 
+`RFC 3986 - 2.2. Reserved Characters <https://tools.ietf.org/html/rfc3986#section-2.2>`_,
+so one possible solution is to percent encode any commas that appear in your 
+JSON query string. The other option is to switch the way Falcon 
+handles commas in a query string by setting the
+:attr:`~RequestOptions.auto_parse_qs_csv` to ``False`` on an instance of 
+``falcon.API``. For example:
+
+.. code:: python 
+  
+    api.auto_parse_qs_csv = False
+
+If :attr:`~RequestOptions.auto_parse_qs_csv` is set to ``False``, Then the 
+value of the query string ``?c={'a':1,'b':2}`` will be added to 
+your ``request.params`` dictionary as  ``{'c': "{'a':1,'b':2}"}``. 
+This will allow you to consume JSON with non-percent-escaped commas 
+in your query strings.
