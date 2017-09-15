@@ -202,13 +202,13 @@ Alternatively, POSTed form parameters may be read directly from
 
 How do I consume a query string that has a JSON value?
 ------------------------------------------------------
-Falcon will by default treat commas in a query string as literal characters
-delimiting a comma separated list. For example, if you had 
-the query string ``?c=1,2,3`` by default Falcon will add this to your 
+Falcon defaults to treating commas in a query string as literal characters
+delimiting a comma separated list. For example, given 
+the query string ``?c=1,2,3``, Falcon defaults to adding this to your 
 ``request.params`` dictionary as ``{'c': ['1', '2', '3']}``. If you attempt 
 to use JSON in the value of the query string, for example ``?c={'a':1,'b':2}``,
-then it will get added to your ``request.params`` in a way you
-are probably not hoping for: ``{'c': ["{'a':1", "'b':2}"]}``.
+the value will get added to your ``request.params`` in a way that you probably 
+don't expect: ``{'c': ["{'a':1", "'b':2}"]}``.
 
 Commas are a reserved character that can be escaped according to 
 `RFC 3986 - 2.2. Reserved Characters <https://tools.ietf.org/html/rfc3986#section-2.2>`_,
@@ -222,8 +222,8 @@ handles commas in a query string by setting the
   
     api.auto_parse_qs_csv = False
 
-If :attr:`~RequestOptions.auto_parse_qs_csv` is set to ``False``, Then the 
+When :attr:`~RequestOptions.auto_parse_qs_csv` is set to ``False``, the 
 value of the query string ``?c={'a':1,'b':2}`` will be added to 
 your ``request.params`` dictionary as  ``{'c': "{'a':1,'b':2}"}``. 
-This will allow you to consume JSON with non-percent-escaped commas 
-in your query strings.
+This lets you consume JSON whether or not the client chooses to escape 
+commas in the request.
