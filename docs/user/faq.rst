@@ -222,8 +222,7 @@ handles commas in a query string by setting the
   
     api.auto_parse_qs_csv = False
 
-If :attr:`~RequestOptions.auto_parse_qs_csv` is set to ``False``, Then the 
+When :attr:`~RequestOptions.auto_parse_qs_csv` is set to ``False``, the 
 value of the query string ``?c={'a':1,'b':2}`` will be added to 
 your ``request.params`` dictionary as  ``{'c': "{'a':1,'b':2}"}``. 
-This will allow you to consume JSON with non-percent-escaped commas 
-in your query strings.
+This lets you consume JSON whether or not the client escapes commas in the request.
