@@ -592,6 +592,18 @@ class TestClient(object):
         client.simulate_get('/messages')
         client.simulate_head('/messages')
 
+    The methods all call `simulate_request` for convenient overriding
+    of requests like this::
+
+        class AuthenticatedClient(TestClient):
+
+            def simulate_request(self, *args, **kwargs):
+                original_headers = kwargs.get('headers', {})
+                kwargs['headers'] = original_headers.update(
+                    {'Authorization': 'Bearer API_KEY'}
+                )
+                return super().simulate_request(self, *args, **kwargs)
+
     Args:
         app (callable): A WSGI application to target when simulating
             requests
