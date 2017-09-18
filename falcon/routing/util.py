@@ -92,7 +92,7 @@ def create_http_method_map(resource):
             ``on_post(self, req, resp)``.
 
     Returns:
-        dict: A mapping of HTTP methods to responders.
+        dict: A mapping of HTTP methods to explicitly defined resource responders.
 
     """
 
@@ -108,6 +108,20 @@ def create_http_method_map(resource):
             # Usually expect a method, but any callable will do
             if callable(responder):
                 method_map[method] = responder
+
+    return method_map
+
+
+def set_default_responders(method_map):
+    """Maps HTTP methods not explicitly defined on a resource to default responders
+
+    Args:
+        method_map: A dict with HTTP methods mapped to responders explicitly
+            defined in a resource
+
+    Returns:
+        dict: a mapping of HTTP methods to responders
+    """
 
     # Attach a resource for unsupported HTTP methods
     allowed_methods = sorted(list(method_map.keys()))
