@@ -200,6 +200,39 @@ Alternatively, POSTed form parameters may be read directly from
 :meth:`falcon.uri.parse_query_string` or
 `urllib.parse.parse_qs() <https://docs.python.org/3.6/library/urllib.parse.html#urllib.parse.parse_qs>`_.
 
+How can I access POSTed files?
+------------------------------
+Falcon does not currently support parsing files submitted by
+an HTTP form (``multipart/form-data``), although we do plan
+to add this feature in a future version. In the meantime,
+you can use the standard ``cgi.FieldStorage`` class to
+parse the request:
+
+.. code:: python
+
+    # TODO: Either validate that content type is multipart/form-data
+    # here, or in another hook before allowing execution to proceed.
+
+    # This must be done to avoid a bug in cgi.FieldStorage
+    env = req.env
+    env.setdefault('QUERY_STRING', '')
+
+    # TODO: Add error handling, when the request is not formatted
+    # correctly or does not contain the desired field...
+
+    # TODO: Consider overriding make_file, so that you can
+    # stream directly to the destination rather than
+    # buffering using TemporaryFile (see http://goo.gl/Yo8h3P)
+    form = cgi.FieldStorage(fp=req.stream, environ=env)
+
+    file_item = form[name]
+    if file_item.file:
+        # TODO: It's an uploaded file... read it in
+    else:
+        # TODO: Raise an error
+
+You might also try this `streaming_form_data <https://streaming-form-data.readthedocs.io/en/latest/>`_ package by Siddhant Goel.
+
 How do I consume a query string that has a JSON value?
 ------------------------------------------------------
 Falcon defaults to treating commas in a query string as literal characters
