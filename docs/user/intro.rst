@@ -44,7 +44,7 @@ third-party dependencies.
 details to you, the API developer. This gives you a lot of freedom to
 customize and tune your implementation. Due to Falcon's minimalist
 design, Python community members are free to independently innovate on
-`Falcon add-ons and complimentary packages <https://github.com/falconry/falcon/wiki>`__.
+`Falcon add-ons and complementary packages <https://github.com/falconry/falcon/wiki>`__.
 
 **Debuggable.** Falcon eschews magic. It's easy to tell which inputs
 lead to which outputs. Unhandled exceptions are never encapsulated or

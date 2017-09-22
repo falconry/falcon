@@ -5,6 +5,11 @@ developers of all skill levels. To get started, simply fork the master branch
 on GitHub to your personal account and then clone the fork into your
 development environment.
 
+If you would like to contribute but don't already have something in mind, 
+we invite you to take a look at the issues listed under our [next milestone][ms].
+If you see one you'd like to work on, please leave a quick comment so that we don't
+end up with duplicated effort. Thanks in advance!
+
 Kurt Griffiths (**kgriffs** on GH, Gitter, and Twitter) is the original
 creator of the Falcon framework, and currently co-maintains the project
 along with John Vrbanac (**jmvrbanac** on GH and Gitter, and
@@ -24,10 +29,17 @@ Before submitting a pull request, please ensure you have added or updated tests 
 You can check all this by running the following from within the Falcon project directory (requires Python 2.7 and Python 3.6 to be installed on your system):
 
 ```bash
+$ pip install tox
 $ tox -e py27,py36,pep8
 ```
 
 You may also use Python 3.3 or 3.4 if you don't have 3.5 installed on your system. This is just a quick sanity check to verify that your patch works across both Python 2 and Python 3.
+
+If you are using pyenv and get an error along the lines of "failed to get version_info", you will need to activate all the Python versions required by tox before trying again. For example:
+
+```bash
+$ pyenv shell 2.7.13 3.6.2
+```
 
 ### Running tests against Jython
 
@@ -76,6 +88,33 @@ $ tox -e py3_debug
 ```
 
 If you wish, you can customize Falcon's `tox.ini` to install alternative debuggers, such as ipdb or pudb.
+
+### Benchmarking
+
+A few simple benchmarks are included with the source under ``falcon/bench``. These can be taken as a rough measure of the performance impact (if any) that your changes have on the framework. You can run these tests by invoking one of the tox environments included for this purpose (see also the ``tox.ini`` file). For example:
+
+```bash
+$ tox -e py27_bench
+```
+
+Note that you may pass additional arguments via tox to the falcon-bench command:
+
+```bash
+$ tox -e py27_bench -- -h
+$ tox -e py27_bench -- -b falcon -i 20000
+```
+
+Alternatively, you may run falcon-bench directly by creating a new virtual environment and installing falcon directly in development mode. In this example we use pyenv with pyenv-virtualenv from within a falcon source directory:
+
+```bash
+$ pyenv virtualenv 3.6.2 falcon-sandbox-36
+$ pyenv shell falcon-sandbox-36
+$ pip install -r requirements/bench
+$ pip install -e .
+$ falcon-bench
+```
+
+Note that benchmark results for the same code will vary between runs based on a number of factors, including overall system load and CPU scheduling. These factors may be somewhat mitigated by running the benchmarks on a Linux server dedicated to this purpose, and pinning the benchmark process to a specific CPU core.
 
 ### Documentation
 
@@ -173,3 +212,4 @@ The footer should contain any information about **Breaking Changes** and is also
 [gitter]: https://gitter.im/falconry/dev
 [ml-join]: mailto:users-join@mail.falconframework.org?subject=join
 [ml-archive]: https://mail.falconframework.org/archives/list/users@mail.falconframework.org/
+[ms]: https://github.com/falconry/falcon/milestones

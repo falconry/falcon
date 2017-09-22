@@ -13,7 +13,7 @@ packages for the task at hand.
 The Python ecosystem offers a number of great packages that you can
 use from within your responders, hooks, and middleware components. As
 a starting point, the community maintains a list of `Falcon add-ons
-and complimentary packages <https://github.com/falconry/falcon/wiki>`_.
+and complementary packages <https://github.com/falconry/falcon/wiki>`_.
 
 How do I use WSGI middleware with Falcon?
 -----------------------------------------
@@ -184,7 +184,8 @@ attribute. For example:
 How can I access POSTed form params?
 ------------------------------------
 By default, Falcon does not consume request bodies. However, setting
-the :attr:`~RequestOptions.auto_parse_form_urlencoded` to ``True``
+the :attr:`~RequestOptions.auto_parse_form_urlencoded` to ``True`` 
+on an instance of ``falcon.API`` 
 will cause the framework to consume the request body when the
 content type is `application/x-www-form-urlencoded`, making
 the form parameters accessible via :attr:`~.Request.params`,
@@ -198,3 +199,64 @@ Alternatively, POSTed form parameters may be read directly from
 :attr:`~.Request.stream` and parsed via
 :meth:`falcon.uri.parse_query_string` or
 `urllib.parse.parse_qs() <https://docs.python.org/3.6/library/urllib.parse.html#urllib.parse.parse_qs>`_.
+
+How can I access POSTed files?
+------------------------------
+Falcon does not currently support parsing files submitted by
+an HTTP form (``multipart/form-data``), although we do plan
+to add this feature in a future version. In the meantime,
+you can use the standard ``cgi.FieldStorage`` class to
+parse the request:
+
+.. code:: python
+
+    # TODO: Either validate that content type is multipart/form-data
+    # here, or in another hook before allowing execution to proceed.
+
+    # This must be done to avoid a bug in cgi.FieldStorage
+    env = req.env
+    env.setdefault('QUERY_STRING', '')
+
+    # TODO: Add error handling, when the request is not formatted
+    # correctly or does not contain the desired field...
+
+    # TODO: Consider overriding make_file, so that you can
+    # stream directly to the destination rather than
+    # buffering using TemporaryFile (see http://goo.gl/Yo8h3P)
+    form = cgi.FieldStorage(fp=req.stream, environ=env)
+
+    file_item = form[name]
+    if file_item.file:
+        # TODO: It's an uploaded file... read it in
+    else:
+        # TODO: Raise an error
+
+You might also try this `streaming_form_data <https://streaming-form-data.readthedocs.io/en/latest/>`_ package by Siddhant Goel.
+
+How do I consume a query string that has a JSON value?
+------------------------------------------------------
+Falcon defaults to treating commas in a query string as literal characters
+delimiting a comma separated list. For example, given 
+the query string ``?c=1,2,3``, Falcon defaults to adding this to your 
+``request.params`` dictionary as ``{'c': ['1', '2', '3']}``. If you attempt 
+to use JSON in the value of the query string, for example ``?c={'a':1,'b':2}``,
+the value will get added to your ``request.params`` in a way that you probably 
+don't expect: ``{'c': ["{'a':1", "'b':2}"]}``.
+
+Commas are a reserved character that can be escaped according to 
+`RFC 3986 - 2.2. Reserved Characters <https://tools.ietf.org/html/rfc3986#section-2.2>`_,
+so one possible solution is to percent encode any commas that appear in your 
+JSON query string. The other option is to switch the way Falcon 
+handles commas in a query string by setting the
+:attr:`~RequestOptions.auto_parse_qs_csv` to ``False`` on an instance of 
+``falcon.API``. For example:
+
+.. code:: python 
+  
+    api.auto_parse_qs_csv = False
+
+When :attr:`~RequestOptions.auto_parse_qs_csv` is set to ``False``, the 
+value of the query string ``?c={'a':1,'b':2}`` will be added to 
+your ``request.params`` dictionary as  ``{'c': "{'a':1,'b':2}"}``. 
+This lets you consume JSON whether or not the client chooses to escape 
+commas in the request.
