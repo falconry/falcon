@@ -129,7 +129,7 @@ since the latter doesn't work under Windows:
 .. code:: bash
 
     $ pip install waitress
-    $ waitress-serve --port=8000 look.app
+    $ waitress-serve --port=8000 look:app
 
 Now, in a different terminal, try querying the running app with curl:
 
