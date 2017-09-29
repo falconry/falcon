@@ -1,5 +1,7 @@
-Falcon |Docs| |Build Status| |codecov.io|
-=========================================
+|Docs| |Build Status| |codecov.io|
+
+|Logo| The Falcon Web Framework
+===========================
 
     Perfection is finally attained not when there is no longer anything
     to add, but when there is no longer anything to take away.
@@ -442,7 +444,7 @@ bodies.
 
 
     class JSONTranslator(object):
-        # NOTE: Starting with Falcon 1.3, you can simply 
+        # NOTE: Starting with Falcon 1.3, you can simply
         # use req.media and resp.media for this instead.
 
         def process_request(self, req, resp):
@@ -519,7 +521,7 @@ bodies.
             # class could, for example, have an additional 'doc' property
             # that would serialize to JSON under the covers.
             #
-            # NOTE: Starting with Falcon 1.3, you can simply 
+            # NOTE: Starting with Falcon 1.3, you can simply
             # use resp.media for this instead.
             resp.context['result'] = result
 
@@ -529,7 +531,7 @@ bodies.
         @falcon.before(max_body(64 * 1024))
         def on_post(self, req, resp, user_id):
             try:
-                # NOTE: Starting with Falcon 1.3, you can simply 
+                # NOTE: Starting with Falcon 1.3, you can simply
                 # use req.media for this instead.
                 doc = req.context['doc']
             except KeyError:
@@ -580,8 +582,8 @@ developers of all skill levels. To get started, simply fork the master branch
 on GitHub to your personal account and then clone the fork into your
 development environment.
 
-If you would like to contribute but don't already have something in mind, 
-we invite you to take a look at the issues listed under our 
+If you would like to contribute but don't already have something in mind,
+we invite you to take a look at the issues listed under our
 `next milestone <https://github.com/falconry/falcon/milestones>`_.
 If you see one you'd like to work on, please leave a quick comment so that we don't
 end up with duplicated effort. Thanks in advance!
@@ -638,6 +640,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
+.. |Logo| image:: logo/logo.svg
+    :width: 30
+    :height: 30
 .. |Docs| image:: https://readthedocs.org/projects/falcon/badge/?version=stable
     :target: https://falcon.readthedocs.io/en/stable/?badge=stable
     :alt: Falcon web framework docs
