@@ -24,32 +24,25 @@ from falcon import HTTP_METHODS, responders
 # NOTE(kgriffs): Published method; take care to avoid breaking changes.
 def compile_uri_template(template):
     """Compile the given URI template string into a pattern matcher.
-
     This function can be used to construct custom routing engines that
     iterate through a list of possible routes, attempting to match
     an incoming request against each route's compiled regular expression.
-
     Each field is converted to a named group, so that when a match
     is found, the fields can be easily extracted using
     :py:meth:`re.MatchObject.groupdict`.
-
     This function does not support the more flexible templating
     syntax used in the default router. Only simple paths with bracketed
     field expressions are recognized. For example::
-
         /
         /books
         /books/{isbn}
         /books/{isbn}/characters
         /books/{isbn}/characters/{name}
-
     Also, note that if the template contains a trailing slash character,
     it will be stripped in order to normalize the routing logic.
-
     Args:
         template(str): The template to compile. Note that field names are
             restricted to ASCII a-z, A-Z, and the underscore character.
-
     Returns:
         tuple: (template_field_names, template_regex)
     """
@@ -83,17 +76,14 @@ def compile_uri_template(template):
 
 def create_http_method_map(resource):
     """Maps HTTP methods (e.g., 'GET', 'POST') to methods of a resource object.
-
     Args:
         resource: An object with *responder* methods, following the naming
             convention *on_\**, that correspond to each method the resource
             supports. For example, if a resource supports GET and POST, it
             should define ``on_get(self, req, resp)`` and
             ``on_post(self, req, resp)``.
-
     Returns:
-        dict: A mapping of HTTP methods to explicitly defined resource responders.
-
+        dict: A mapping of HTTP methods to responders.
     """
 
     method_map = {}
@@ -108,20 +98,6 @@ def create_http_method_map(resource):
             # Usually expect a method, but any callable will do
             if callable(responder):
                 method_map[method] = responder
-
-    return method_map
-
-
-def set_default_responders(method_map):
-    """Maps HTTP methods not explicitly defined on a resource to default responders
-
-    Args:
-        method_map: A dict with HTTP methods mapped to responders explicitly
-            defined in a resource
-
-    Returns:
-        dict: a mapping of HTTP methods to responders
-    """
 
     # Attach a resource for unsupported HTTP methods
     allowed_methods = sorted(list(method_map.keys()))

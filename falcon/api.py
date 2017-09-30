@@ -346,7 +346,6 @@ class API(object):
             raise ValueError("uri_template may not contain '//'")
 
         method_map = routing.create_http_method_map(resource)
-        method_map = routing.set_default_responders(method_map)
         self._router.add_route(uri_template, method_map, resource, *args,
                                **kwargs)
 
