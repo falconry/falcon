@@ -51,3 +51,7 @@ docs/_build
 
 # VIM temp files
 *~
+
+# VSCode
+
+.vscode

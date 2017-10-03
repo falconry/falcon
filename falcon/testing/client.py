@@ -592,6 +592,18 @@ class TestClient(object):
         client.simulate_get('/messages')
         client.simulate_head('/messages')
 
+    The methods all call `simulate_request` for convenient overriding
+    of requests like this::
+
+        class AuthenticatedClient(TestClient):
+
+            def simulate_request(self, *args, **kwargs):
+                original_headers = kwargs.get('headers', {})
+                kwargs['headers'] = original_headers.update(
+                    {'Authorization': 'Bearer API_KEY'}
+                )
+                return super().simulate_request(self, *args, **kwargs)
+
     Args:
         app (callable): A WSGI application to target when simulating
             requests
@@ -605,49 +617,49 @@ class TestClient(object):
 
         (See also: :py:meth:`falcon.testing.simulate_get`)
         """
-        return simulate_get(self.app, path, **kwargs)
+        return simulate_request(self.app, 'GET', path, **kwargs)
 
     def simulate_head(self, path='/', **kwargs):
         """Simulates a HEAD request to a WSGI application.
 
         (See also: :py:meth:`falcon.testing.simulate_head`)
         """
-        return simulate_head(self.app, path, **kwargs)
+        return simulate_request(self.app, 'HEAD', path, **kwargs)
 
     def simulate_post(self, path='/', **kwargs):
         """Simulates a POST request to a WSGI application.
 
         (See also: :py:meth:`falcon.testing.simulate_post`)
         """
-        return simulate_post(self.app, path, **kwargs)
+        return simulate_request(self.app, 'POST', path, **kwargs)
 
     def simulate_put(self, path='/', **kwargs):
         """Simulates a PUT request to a WSGI application.
 
         (See also: :py:meth:`falcon.testing.simulate_put`)
         """
-        return simulate_put(self.app, path, **kwargs)
+        return simulate_request(self.app, 'PUT', path, **kwargs)
 
     def simulate_options(self, path='/', **kwargs):
         """Simulates an OPTIONS request to a WSGI application.
 
         (See also: :py:meth:`falcon.testing.simulate_options`)
         """
-        return simulate_options(self.app, path, **kwargs)
+        return simulate_request(self.app, 'OPTIONS', path, **kwargs)
 
     def simulate_patch(self, path='/', **kwargs):
         """Simulates a PATCH request to a WSGI application.
 
         (See also: :py:meth:`falcon.testing.simulate_patch`)
         """
-        return simulate_patch(self.app, path, **kwargs)
+        return simulate_request(self.app, 'PATCH', path, **kwargs)
 
     def simulate_delete(self, path='/', **kwargs):
         """Simulates a DELETE request to a WSGI application.
 
         (See also: :py:meth:`falcon.testing.simulate_delete`)
         """
-        return simulate_delete(self.app, path, **kwargs)
+        return simulate_request(self.app, 'DELETE', path, **kwargs)
 
     def simulate_request(self, *args, **kwargs):
         """Simulates a request to a WSGI application.
