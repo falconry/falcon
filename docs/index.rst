@@ -45,7 +45,7 @@ middle. Falcon seems like the requests of backend."
 "The source code for falcon is so good, I almost prefer it to
 documentation. It basically can't be wrong."
 
-"What other framework has integrated support for '786 TRY IT NOW' ?"
+"What other framework has integrated support for 786 TRY IT NOW ?"
 
 Features
 --------
