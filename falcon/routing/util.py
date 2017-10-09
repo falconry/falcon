@@ -81,7 +81,7 @@ def compile_uri_template(template):
     return fields, re.compile(pattern, re.IGNORECASE)
 
 
-def create_http_method_map(resource):
+def create_http_method_map(resource): # pragma: nocover
     """Maps HTTP methods (e.g., 'GET', 'POST') to methods of a resource object.
 
     Warning:
