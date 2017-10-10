@@ -1,3 +1,7 @@
+body {
+    font-family: Oxygen, 'goudy old style', 'minion pro', 'bell mt', Georgia, 'Hiragino Mincho Pro', serif;
+}
+
 
 .field-name {
     /* Fix for https://github.com/bitprophet/alabaster/issues/95 */
@@ -33,13 +37,14 @@ code.xref.docutils.literal {
     font-size: 0.9em;
 }
 
-a.reference.internal:hover code {
-    color: #6D4100;
-    border-bottom: 1px solid #6D4100;
+a:hover, div.sphinxsidebar a:hover, a.reference:hover, a.reference.internal:hover code {
+    color: #f0ad4e;
+    border-bottom: 1px solid #f0ad4e;
 }
 
-a code.literal {
-    color: #004B6B;
+a, div.sphinxsidebar a, a.reference, a code.literal {
+    color: #c77c11;
+    border: none;
 }
 
 .highlight pre span {
@@ -58,6 +63,7 @@ a code.literal {
 
 #logo {
     position: relative;
+    left: -13px;
 }
 
 #logo a,
@@ -66,25 +72,12 @@ a code.literal {
 }
 
 #logo img {
-    margin: -32px 0 0 2px;
+    margin: 0;
     padding: 0;
 }
 
 #gh-buttons {
     margin-top: 2em;
-}
-
-#logo-text {
-    font-family: "Amethysta", "goudy old style", serif;
-    font-weight: bold;
-
-    font-size: 16pt;
-    color: #444;
-    position: absolute;
-
-    left: 10px;
-    top: -14px;
-    /*margin: -4px -4px 0 0;*/
 }
 
 #dev-warning {
@@ -99,6 +92,10 @@ div.warning {
     border: 1px solid #ccc;
 }
 
+div.note, div.admonition {
+    background-color: inherit;
+}
+
 div.body h1,
 div.body h2,
 div.body h3,
@@ -106,7 +103,7 @@ div.body h4,
 div.body h5,
 div.body h6,
 div.sphinxsidebar h3 {
-    font-family: "Amethysta", "goudy old style", serif;
+    font-family: Oxygen, 'goudy old style', serif;
     font-weight: bold;
     color: #444;
 }
@@ -115,9 +112,23 @@ div.sphinxsidebar h3 {
     margin: 1.5em 0 0 0;
 }
 
+div.sphinxsidebar h4 {
+    font-family: Oxygen, Garamond, Georgia, serif;
+}
+
+div.sphinxsidebarwrapper {
+    padding-top: 0;
+}
+
 div.admonition p.admonition-title {
    display: block;
    line-height: 1.4em;
+   font-family: Oxygen, Garamond, Georgia, serif;
+}
+
+pre {
+    background-color: #212529;
+    padding: 1.25em 30px;
 }
 
 /* Fix notes not aligning with the left side of the property text. */
@@ -143,15 +154,15 @@ div.admonition {
 div input[type="text"] {
     padding: 5px;
     margin: 0 0 0.5em 0;
-    font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    font-family: Oxygen, Garamond, Georgia, serif;
 }
 
 div input[type="submit"] {
-    font-size: 12px;
-    width: 64px;
+    font-size: 14px;
+    width: 72px;
     height: 27px;
     font-weight: 600;
-    font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    font-family: Oxygen, Garamond, Georgia, serif;
 
     border: 1px solid #d5d5d5;
     border-radius: 3px;
