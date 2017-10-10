@@ -186,5 +186,3 @@ def set_default_responders(method_map):
     for method in HTTP_METHODS:
         if method not in allowed_methods:
             method_map[method] = na_responder
-
-    return method_map
