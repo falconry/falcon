@@ -162,14 +162,11 @@ def map_http_methods(resource):
 
 
 def set_default_responders(method_map):
-    """Maps HTTP methods not explicitly defined on a resource to default responders
+    """Maps HTTP methods not explicitly defined on a resource to default responders.
 
     Args:
         method_map: A dict with HTTP methods mapped to responders explicitly
-            defined in a resource
-
-    Returns:
-        dict: a mapping of HTTP methods to responders
+            defined in a resource.
     """
 
     # Attach a resource for unsupported HTTP methods
