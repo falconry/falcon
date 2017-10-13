@@ -25,6 +25,7 @@ from falcon.request import Request, RequestOptions
 import falcon.responders
 from falcon.response import Response, ResponseOptions
 import falcon.status_codes as status
+from falcon.statics import StaticSink
 from falcon.util.misc import get_argnames
 
 
@@ -349,6 +350,9 @@ class API(object):
         routing.set_default_responders(method_map)
         self._router.add_route(uri_template, method_map, resource, *args,
                                **kwargs)
+
+    def add_static_route(self, prefix, folder):
+        self.add_sink(StaticSink(prefix, folder), prefix)
 
     def add_sink(self, sink, prefix=r'/'):
         """Registers a sink method for the API.
