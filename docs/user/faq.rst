@@ -3,6 +3,42 @@
 FAQ
 ===
 
+  - :ref:`why-no-batteries`
+
+  - :ref:`wsgi-middleware`
+
+  - :ref:`authenticate`
+
+  - :ref:`why-no-new-resource`
+
+  - :ref:`thread-safe`
+
+  - :ref:`post-and-get`
+
+  - :ref:`data-between-hooks`
+
+  - :ref:`content-length`
+
+  - :ref:`response-body-not-returned`
+
+  - :ref:`cookie-not-working`
+  
+  - :ref:`resource-error-crashes-app`
+
+  - :ref:`trailing-slashes-trimmed`
+
+  - :ref:`why-field-names-restricted`
+
+  - :ref:`why-query-param-missing`
+
+  - :ref:`access-posted-form-params`
+
+  - :ref:`access-posted-files`
+
+  - :ref:`query-string-json`
+
+.. _why-no-batteries:
+
 Why doesn't Falcon come with batteries included?
 ------------------------------------------------
 Falcon is designed for applications that require a high level of
@@ -14,6 +50,8 @@ The Python ecosystem offers a number of great packages that you can
 use from within your responders, hooks, and middleware components. As
 a starting point, the community maintains a list of `Falcon add-ons
 and complementary packages <https://github.com/falconry/falcon/wiki>`_.
+
+.. _wsgi-middleware:
 
 How do I use WSGI middleware with Falcon?
 -----------------------------------------
@@ -30,6 +68,8 @@ simply wrap your api instance with a middleware app. For example:
 
 See also the `WSGI middleware example <http://legacy.python.org/dev/peps/pep-3333/#middleware-components-that-play-both-sides>`_ given in PEP-3333.
 
+.. _authenticate:
+
 How do I authenticate requests?
 -------------------------------
 Hooks and middleware components can be used together to authenticate and
@@ -39,6 +79,8 @@ Downstream components or hooks could then use this information to
 authorize the request, taking into account the user's role and the requested
 resource.
 
+.. _why-no-new-resource:
+
 Why doesn't Falcon create a new Resource instance for every request?
 --------------------------------------------------------------------
 Falcon generally tries to minimize the number of objects that it
@@ -47,6 +89,8 @@ creating the object, and second to reduce memory usage. Therefore, when
 adding a route, Falcon requires an *instance* of your resource class, rather
 than the class type. That same instance will be used to serve all requests
 coming in on that route.
+
+.. _thread-safe:
 
 Is Falcon thread-safe?
 ----------------------
@@ -62,6 +106,8 @@ concurrently, so there may be some edge cases where Falcon is not
 thread-safe that haven't been discovered yet.
 
 *Caveat emptor!*
+
+.. _post-and-get:
 
 How do I implement both POSTing and GETing items for the same resource?
 -----------------------------------------------------------------------
@@ -88,11 +134,15 @@ discover another way.
 
 See also :ref:`this section of the tutorial <tutorial-serving-images>`.
 
+.. _data-between-hooks:
+
 How can I pass data from a hook to a responder, and between hooks?
 ------------------------------------------------------------------
 You can inject extra responder kwargs from a hook by adding them
 to the *params* dict passed into the hook. You can also add custom data to
 the ``req.context`` dict, as a way of passing contextual information around.
+
+.. _content-length:
 
 Does Falcon set Content-Length or do I need to do that explicitly?
 ------------------------------------------------------------------
@@ -107,6 +157,8 @@ it to enable keep-alive).
 
 .. note:: PEP-333 prohibits apps from setting hop-by-hop headers itself,
     such as Transfer-Encoding.
+
+.. _response-body-not-returned:
 
 I'm setting a response body, but it isn't getting returned. What's going on?
 ----------------------------------------------------------------------------
@@ -125,11 +177,15 @@ If you have another case where you body isn't being returned to the
 client, it's probably a bug! Let us know in IRC or on the mailing list so
 we can help.
 
+.. _cookie-not-working:
+
 My app is setting a cookie, but it isn't being passed back in subsequent requests.
 ----------------------------------------------------------------------------------
 By default, Falcon enables the `secure` cookie attribute. Therefore, if you are
 testing your app over HTTP (instead of HTTPS), the client will not send the
 cookie in subsequent requests. See also :ref:`the cookie documentation <cookie-secure-attribute>`
+
+.. _resource-error-crashes-app:
 
 Why does raising an error inside a resource crash my app?
 ---------------------------------------------------------
@@ -150,6 +206,8 @@ that in mind, writing a high-quality API based on Falcon requires that:
     ``falcon.HTTPError`` unless you have registered a custom error
     handler for that type (see also: :ref:`falcon.API <api>`).
 
+.. _trailing-slashes-trimmed:
+
 Why are trailing slashes trimmed from req.path?
 -----------------------------------------------
 Falcon normalizes incoming URI paths to simplify later processing and
@@ -160,11 +218,15 @@ Note also that routing is also normalized, so adding a route for "/foo/bar"
 also implicitly adds a route for "/foo/bar/". Requests coming in for either
 path will be sent to the same resource.
 
+.. _why-field-names-restricted:
+
 Why are field names in URI templates restricted to certain characters?
 ----------------------------------------------------------------------
 Field names are restricted to the ASCII characters in the set ``[a-zA-Z_]``.
 Using a restricted set of characters allows the framework to make
 simplifying assumptions that reduce the overhead of parsing incoming requests.
+
+.. _why-query-param-missing:
 
 Why is my query parameter missing from the req object?
 ------------------------------------------------------
@@ -180,6 +242,8 @@ attribute. For example:
 .. code:: python
 
     api.req_options.keep_blank_qs_values = True
+
+.. _access-posted-form-params:
 
 How can I access POSTed form params?
 ------------------------------------
@@ -199,6 +263,8 @@ Alternatively, POSTed form parameters may be read directly from
 :attr:`~.Request.stream` and parsed via
 :meth:`falcon.uri.parse_query_string` or
 `urllib.parse.parse_qs() <https://docs.python.org/3.6/library/urllib.parse.html#urllib.parse.parse_qs>`_.
+
+.. _access-posted-files:
 
 How can I access POSTed files?
 ------------------------------
@@ -232,6 +298,8 @@ parse the request:
         # TODO: Raise an error
 
 You might also try this `streaming_form_data <https://streaming-form-data.readthedocs.io/en/latest/>`_ package by Siddhant Goel.
+
+.. _query-string-json:
 
 How do I consume a query string that has a JSON value?
 ------------------------------------------------------
