@@ -36,6 +36,8 @@ What People are Saying
 tiny server of mine and was ~40% faster with only 20 minutes of
 work."
 
+"Falcon is rock solid and it's fast."
+
 "I'm loving #falconframework! Super clean and simple, I finally
 have the speed and flexibility I need!"
 

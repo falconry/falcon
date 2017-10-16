@@ -3,41 +3,7 @@
 FAQ
 ===
 
-  - :ref:`why-no-batteries`
-
-  - :ref:`wsgi-middleware`
-
-  - :ref:`authenticate`
-
-  - :ref:`why-no-new-resource`
-
-  - :ref:`thread-safe`
-
-  - :ref:`post-and-get`
-
-  - :ref:`data-between-hooks`
-
-  - :ref:`content-length`
-
-  - :ref:`response-body-not-returned`
-
-  - :ref:`cookie-not-working`
-  
-  - :ref:`resource-error-crashes-app`
-
-  - :ref:`trailing-slashes-trimmed`
-
-  - :ref:`why-field-names-restricted`
-
-  - :ref:`why-query-param-missing`
-
-  - :ref:`access-posted-form-params`
-
-  - :ref:`access-posted-files`
-
-  - :ref:`query-string-json`
-
-.. _why-no-batteries:
+.. contents:: :local:
 
 Why doesn't Falcon come with batteries included?
 ------------------------------------------------
@@ -50,8 +16,6 @@ The Python ecosystem offers a number of great packages that you can
 use from within your responders, hooks, and middleware components. As
 a starting point, the community maintains a list of `Falcon add-ons
 and complementary packages <https://github.com/falconry/falcon/wiki>`_.
-
-.. _wsgi-middleware:
 
 How do I use WSGI middleware with Falcon?
 -----------------------------------------
@@ -68,7 +32,6 @@ simply wrap your api instance with a middleware app. For example:
 
 See also the `WSGI middleware example <http://legacy.python.org/dev/peps/pep-3333/#middleware-components-that-play-both-sides>`_ given in PEP-3333.
 
-.. _authenticate:
 
 How do I authenticate requests?
 -------------------------------
@@ -79,7 +42,6 @@ Downstream components or hooks could then use this information to
 authorize the request, taking into account the user's role and the requested
 resource.
 
-.. _why-no-new-resource:
 
 Why doesn't Falcon create a new Resource instance for every request?
 --------------------------------------------------------------------
@@ -90,7 +52,6 @@ adding a route, Falcon requires an *instance* of your resource class, rather
 than the class type. That same instance will be used to serve all requests
 coming in on that route.
 
-.. _thread-safe:
 
 Is Falcon thread-safe?
 ----------------------
@@ -107,7 +68,6 @@ thread-safe that haven't been discovered yet.
 
 *Caveat emptor!*
 
-.. _post-and-get:
 
 How do I implement both POSTing and GETing items for the same resource?
 -----------------------------------------------------------------------
@@ -134,7 +94,6 @@ discover another way.
 
 See also :ref:`this section of the tutorial <tutorial-serving-images>`.
 
-.. _data-between-hooks:
 
 How can I pass data from a hook to a responder, and between hooks?
 ------------------------------------------------------------------
@@ -142,7 +101,6 @@ You can inject extra responder kwargs from a hook by adding them
 to the *params* dict passed into the hook. You can also add custom data to
 the ``req.context`` dict, as a way of passing contextual information around.
 
-.. _content-length:
 
 Does Falcon set Content-Length or do I need to do that explicitly?
 ------------------------------------------------------------------
@@ -158,7 +116,6 @@ it to enable keep-alive).
 .. note:: PEP-333 prohibits apps from setting hop-by-hop headers itself,
     such as Transfer-Encoding.
 
-.. _response-body-not-returned:
 
 I'm setting a response body, but it isn't getting returned. What's going on?
 ----------------------------------------------------------------------------
@@ -177,7 +134,6 @@ If you have another case where you body isn't being returned to the
 client, it's probably a bug! Let us know in IRC or on the mailing list so
 we can help.
 
-.. _cookie-not-working:
 
 My app is setting a cookie, but it isn't being passed back in subsequent requests.
 ----------------------------------------------------------------------------------
@@ -185,7 +141,6 @@ By default, Falcon enables the `secure` cookie attribute. Therefore, if you are
 testing your app over HTTP (instead of HTTPS), the client will not send the
 cookie in subsequent requests. See also :ref:`the cookie documentation <cookie-secure-attribute>`
 
-.. _resource-error-crashes-app:
 
 Why does raising an error inside a resource crash my app?
 ---------------------------------------------------------
@@ -206,7 +161,6 @@ that in mind, writing a high-quality API based on Falcon requires that:
     ``falcon.HTTPError`` unless you have registered a custom error
     handler for that type (see also: :ref:`falcon.API <api>`).
 
-.. _trailing-slashes-trimmed:
 
 Why are trailing slashes trimmed from req.path?
 -----------------------------------------------
@@ -218,7 +172,6 @@ Note also that routing is also normalized, so adding a route for "/foo/bar"
 also implicitly adds a route for "/foo/bar/". Requests coming in for either
 path will be sent to the same resource.
 
-.. _why-field-names-restricted:
 
 Why are field names in URI templates restricted to certain characters?
 ----------------------------------------------------------------------
@@ -226,7 +179,6 @@ Field names are restricted to the ASCII characters in the set ``[a-zA-Z_]``.
 Using a restricted set of characters allows the framework to make
 simplifying assumptions that reduce the overhead of parsing incoming requests.
 
-.. _why-query-param-missing:
 
 Why is my query parameter missing from the req object?
 ------------------------------------------------------
@@ -243,13 +195,12 @@ attribute. For example:
 
     api.req_options.keep_blank_qs_values = True
 
-.. _access-posted-form-params:
 
 How can I access POSTed form params?
 ------------------------------------
 By default, Falcon does not consume request bodies. However, setting
-the :attr:`~RequestOptions.auto_parse_form_urlencoded` to ``True`` 
-on an instance of ``falcon.API`` 
+the :attr:`~RequestOptions.auto_parse_form_urlencoded` to ``True``
+on an instance of ``falcon.API``
 will cause the framework to consume the request body when the
 content type is `application/x-www-form-urlencoded`, making
 the form parameters accessible via :attr:`~.Request.params`,
@@ -264,7 +215,6 @@ Alternatively, POSTed form parameters may be read directly from
 :meth:`falcon.uri.parse_query_string` or
 `urllib.parse.parse_qs() <https://docs.python.org/3.6/library/urllib.parse.html#urllib.parse.parse_qs>`_.
 
-.. _access-posted-files:
 
 How can I access POSTed files?
 ------------------------------
@@ -299,32 +249,76 @@ parse the request:
 
 You might also try this `streaming_form_data <https://streaming-form-data.readthedocs.io/en/latest/>`_ package by Siddhant Goel.
 
-.. _query-string-json:
 
 How do I consume a query string that has a JSON value?
 ------------------------------------------------------
 Falcon defaults to treating commas in a query string as literal characters
-delimiting a comma separated list. For example, given 
-the query string ``?c=1,2,3``, Falcon defaults to adding this to your 
-``request.params`` dictionary as ``{'c': ['1', '2', '3']}``. If you attempt 
+delimiting a comma separated list. For example, given
+the query string ``?c=1,2,3``, Falcon defaults to adding this to your
+``request.params`` dictionary as ``{'c': ['1', '2', '3']}``. If you attempt
 to use JSON in the value of the query string, for example ``?c={'a':1,'b':2}``,
-the value will get added to your ``request.params`` in a way that you probably 
+the value will get added to your ``request.params`` in a way that you probably
 don't expect: ``{'c': ["{'a':1", "'b':2}"]}``.
 
-Commas are a reserved character that can be escaped according to 
+Commas are a reserved character that can be escaped according to
 `RFC 3986 - 2.2. Reserved Characters <https://tools.ietf.org/html/rfc3986#section-2.2>`_,
-so one possible solution is to percent encode any commas that appear in your 
-JSON query string. The other option is to switch the way Falcon 
+so one possible solution is to percent encode any commas that appear in your
+JSON query string. The other option is to switch the way Falcon
 handles commas in a query string by setting the
-:attr:`~RequestOptions.auto_parse_qs_csv` to ``False`` on an instance of 
+:attr:`~RequestOptions.auto_parse_qs_csv` to ``False`` on an instance of
 ``falcon.API``. For example:
 
-.. code:: python 
-  
+.. code:: python
+
     api.auto_parse_qs_csv = False
 
-When :attr:`~RequestOptions.auto_parse_qs_csv` is set to ``False``, the 
-value of the query string ``?c={'a':1,'b':2}`` will be added to 
-your ``request.params`` dictionary as  ``{'c': "{'a':1,'b':2}"}``. 
-This lets you consume JSON whether or not the client chooses to escape 
+When :attr:`~RequestOptions.auto_parse_qs_csv` is set to ``False``, the
+value of the query string ``?c={'a':1,'b':2}`` will be added to
+your ``request.params`` dictionary as  ``{'c': "{'a':1,'b':2}"}``.
+This lets you consume JSON whether or not the client chooses to escape
 commas in the request.
+
+
+How do I generate API documentation for my Falcon API?
+------------------------------------------------------
+When it comes to API documentation, some developers prefer to use the API
+implementation as the user contract or source of truth (taking an
+implementation-first approach), while other developers prefer to use the API
+spec itself as the contract, implementing and testing the API against that spec
+(taking a design-first approach).
+
+At the risk of erring on the side of flexiblity, Falcon does not provide API
+spec support out of the box. However, there are several community projects
+available in this vein. Our
+`Add on Catalog <https://github.com/falconry/falcon/wiki/Add-on-Catalog>`_ lists
+a couple of these projects, but you may also wish to search
+`PyPI <https://pypi.python.org/pypi>`_ for additional packages.
+
+If you are interested in the design-first approach mentioned above, you may
+also want to check out API design and gateway services such as Tyk, Apiary,
+Amazon API Gateway, or Google Cloud Endpoints.
+
+
+How do you write a custom handler for 404 and 500 pages in falcon?
+------------------------------------------------------------------
+When a route can not be found for an incoming request, Falcon uses a default
+responder that simply raises an instance of :attr:`falcon.HTTPNotFound`. You
+can use :meth:`falcon.API.add_error_handler` to register a custom error handler
+for this exception type. Alternatively, you may be able to configure your web
+server to transform the response (e.g., using Nginx's ``error_page``
+directive).
+
+500 errors are typically the result of an unhandled exception making its way
+up to the web server. To handle these errors more gracefully, you can add a
+custom error handler for Python's base `Exception` type.
+
+
+How can I serve a downloadable file with falcon?
+------------------------------------------------
+In the ``on_get()`` responder method for the resource, you can tell the user
+agent to download the file by setting the Content-Disposition header. For
+example:
+
+.. code:: python
+
+    resp.set_header('Content-Disposition', 'attachment; filename="something.zip"')
