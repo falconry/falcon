@@ -1,3 +1,4 @@
+# RFC 7231, 5789 methods
 HTTP_METHODS = (
     'CONNECT',
     'DELETE',
@@ -9,6 +10,19 @@ HTTP_METHODS = (
     'PUT',
     'TRACE',
 )
+
+# RFC 3253 methods
+WEBDAV_METHODS = (
+    'CHECKIN',
+    'CHECKOUT',
+    'REPORT',
+    'UNCHECKIN',
+    'UPDATE',
+    'VERSION-CONTROL',
+)
+
+COMBINED_METHODS = HTTP_METHODS + WEBDAV_METHODS
+
 
 # NOTE(kgriffs): According to RFC 7159, most JSON parsers assume
 # UTF-8 and so it is the recommended default charset going forward,

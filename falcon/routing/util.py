@@ -18,7 +18,7 @@ import re
 
 import six
 
-from falcon import HTTP_METHODS, responders
+from falcon import COMBINED_METHODS, responders
 
 
 # NOTE(kgriffs): Published method; take care to avoid breaking changes.
@@ -101,7 +101,7 @@ def create_http_method_map(resource):  # pragma: nocover
 
     method_map = {}
 
-    for method in HTTP_METHODS:
+    for method in COMBINED_METHODS:
         try:
             responder = getattr(resource, 'on_' + method.lower())
         except AttributeError:
@@ -123,7 +123,7 @@ def create_http_method_map(resource):  # pragma: nocover
 
     na_responder = responders.create_method_not_allowed(allowed_methods)
 
-    for method in HTTP_METHODS:
+    for method in COMBINED_METHODS:
         if method not in allowed_methods:
             method_map[method] = na_responder
 
@@ -147,7 +147,7 @@ def map_http_methods(resource):
 
     method_map = {}
 
-    for method in HTTP_METHODS:
+    for method in COMBINED_METHODS:
         try:
             responder = getattr(resource, 'on_' + method.lower())
         except AttributeError:
@@ -180,6 +180,6 @@ def set_default_responders(method_map):
 
     na_responder = responders.create_method_not_allowed(allowed_methods)
 
-    for method in HTTP_METHODS:
+    for method in COMBINED_METHODS:
         if method not in allowed_methods:
             method_map[method] = na_responder
