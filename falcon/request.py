@@ -34,19 +34,14 @@ from wsgiref.validate import InputWrapper
 
 import mimeparse
 import six
-from six.moves import http_cookies
 
 from falcon import DEFAULT_MEDIA_TYPE
 from falcon import errors
 from falcon import request_helpers as helpers
 from falcon import util
 from falcon.media import Handlers
+from falcon.util.cookies import parse_cookies
 from falcon.util.uri import parse_host, parse_query_string, unquote_string
-
-# NOTE(tbug): In some cases, http_cookies is not a module
-# but a dict-like structure. This fixes that issue.
-# See issue https://github.com/falconry/falcon/issues/556
-SimpleCookie = http_cookies.SimpleCookie
 
 DEFAULT_ERROR_LOG_FORMAT = (u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
                             u' {1} {2}{3} => ')
@@ -893,19 +888,8 @@ class Request(object):
     @property
     def cookies(self):
         if self._cookies is None:
-            # NOTE(tbug): We might want to look into parsing
-            # cookies ourselves. The SimpleCookie is doing a
-            # lot if stuff only required to SEND cookies.
             cookie_header = self.get_header('Cookie', default='')
-            parser = SimpleCookie()
-            for cookie_part in cookie_header.split('; '):
-                try:
-                    parser.load(cookie_part)
-                except http_cookies.CookieError:
-                    pass
-            cookies = {}
-            for morsel in parser.values():
-                cookies[morsel.key] = morsel.value
+            cookies = parse_cookies(cookie_header)
 
             self._cookies = cookies
 
