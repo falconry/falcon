@@ -551,7 +551,40 @@ class Request(object):
 
             parsed_elements = []
 
-            for element in forwarded.split(','):
+            quote_count = 0
+            split_positions = []
+            in_string = False
+            char_pos = 0
+            for char in forwarded:
+                if char == '"' and not in_string:
+                    in_string = True
+                    quote_count += 1
+
+                elif char == '"' and in_string:
+                    in_string = False
+                    quote_count += 1
+
+                if char == ',' and not in_string:
+                    split_positions.append(char_pos)
+
+                char_pos += 1
+
+            if quote_count % 2 != 0:
+                # NOTE(Just-Sieb): We are going along the assumption that
+                # if there are an odd amount of quotes then it is a malformed
+                # request.
+                return None
+
+            elements = []
+            last_pos = 0
+            for pos in split_positions:
+                elements.append(forwarded[last_pos if last_pos == 0 else last_pos+1:pos])
+                last_pos = pos
+
+            # NOTE(Just-Sieb): Make sure we grab the last section
+            elements.append(forwarded[last_pos if last_pos == 0 else last_pos+1:])
+
+            for element in elements:
                 parsed_element = Forwarded()
 
                 # NOTE(kgriffs): Calling strip() is necessary here since

@@ -120,3 +120,29 @@ def test_forwarded_missing_first_hop_host():
     assert req.forwarded_uri == req.uri
     assert req.forwarded_uri == 'http://suchproxy02.suchtesting.com/doge/languages'
     assert req.forwarded_prefix == 'http://suchproxy02.suchtesting.com/doge'
+
+def test_forwarded_quote_escaping():
+    req = Request(testing.create_environ(
+        host='suchproxy02.suchtesting.com',
+        path='/languages',
+        app='doge',
+        headers={
+            'Forwarded': 'for=1.2.3.4;some="extra,info"'
+        }
+    ))
+
+    assert req.forwarded[0].host is None
+    assert req.forwarded[0].src == '1.2.3.4'
+
+def test_escape_malformed_requests():
+
+    req = Request(testing.create_environ(
+        host='suchproxy02.suchtesting.com',
+        path='/languages',
+        app='doge',
+        headers={
+            'Forwarded': 'for=1.2.3.4;by="'
+        }
+    ))
+
+    assert req.forwarded is None
