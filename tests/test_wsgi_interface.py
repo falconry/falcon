@@ -51,5 +51,5 @@ def _is_iterable(thing):
             break
 
         return True
-    except:
+    except TypeError:
         return False
