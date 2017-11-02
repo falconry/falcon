@@ -299,9 +299,7 @@ def get_argnames(func):
         func_object = _get_func_if_nested(func)
         spec = _get_argspec(func_object)
 
-        # NOTE(kgriffs): inspect.signature does not include 'self',
-        # so remove it under PY2 if it is present.
-        args = [arg for arg in spec.args if arg != 'self']
+        args = spec.args
 
     else:
         sig = inspect.signature(func)
@@ -311,6 +309,13 @@ def get_argnames(func):
             for param in sig.parameters.values()
             if param.kind not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
         ]
+
+    # NOTE(kgriffs): Depending on the version of Python, 'self' may or may not
+    # be present, so we normalize the results by removing 'self' as needed.
+    # Note that this behavior varies between 3.x versions as well as between
+    # 3.x and 2.7.
+    if args[0] == 'self':
+        args = args[1:]
 
     return args
 
