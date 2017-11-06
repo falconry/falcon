@@ -73,7 +73,7 @@ _reserved = {
     'httponly': 'HttpOnly',
     'version': 'Version',
 }
-_flags = {'secure', 'httponly'}
+_flags = ['secure', 'httponly']
 
 
 def parse_cookies(cookie_header):
