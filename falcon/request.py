@@ -30,7 +30,7 @@ except AttributeError:
     import io
     NativeStream = io.BufferedReader
 
-from wsgiref.validate import InputWrapper
+from wsgiref.validate import InputWrapper  # NOQA: I202
 
 import mimeparse
 import six

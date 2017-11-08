@@ -2,10 +2,6 @@
 
 from datetime import datetime
 import functools
-try:
-    import ujson as json
-except ImportError:
-    import json
 import random
 
 import pytest
@@ -14,7 +10,7 @@ import six
 import falcon
 from falcon import testing
 from falcon import util
-from falcon.util import uri
+from falcon.util import json, uri
 
 
 def _arbitrary_uris(count, length):
