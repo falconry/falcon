@@ -18,6 +18,16 @@ HTTP_METHODS = (
 )
 
 
+WEBDAV_METHODS = (
+    'CHECKIN',
+    'CHECKOUT',
+    'REPORT',
+    'UNCHECKIN',
+    'UPDATE',
+    'VERSION-CONTROL',
+)
+
+
 @pytest.fixture
 def stonewall():
     return Stonewall()
@@ -82,6 +92,12 @@ class ThingsResource(object):
 
         self.req, self.resp = req, resp
         resp.status = falcon.HTTP_201
+
+    def on_report(self, req, resp, id, sid):
+        self.called = True
+
+        self.req, self.resp = req, resp
+        resp.status = falcon.HTTP_204
 
 
 class Stonewall(object):
@@ -178,6 +194,13 @@ class TestHttpMethodRouting(object):
         assert response.status == falcon.HTTP_405
         assert not resource_things.called
 
+    def test_report(self, client, resource_things):
+        client.app.add_route('/things', resource_things)
+        client.app.add_route('/things/{id}/stuff/{sid}', resource_things)
+        response = client.simulate_request(path='/things/42/stuff/1337', method='REPORT')
+        assert response.status == falcon.HTTP_204
+        assert resource_things.called
+
     def test_misc(self, client, resource_misc):
         client.app.add_route('/misc', resource_misc)
         for method in ['GET', 'HEAD', 'PUT', 'PATCH']:
@@ -195,8 +218,8 @@ class TestHttpMethodRouting(object):
     def test_methods_not_allowed_complex(self, client, resource_things):
         client.app.add_route('/things', resource_things)
         client.app.add_route('/things/{id}/stuff/{sid}', resource_things)
-        for method in HTTP_METHODS:
-            if method in ('GET', 'PUT', 'HEAD', 'OPTIONS'):
+        for method in HTTP_METHODS + WEBDAV_METHODS:
+            if method in ('GET', 'PUT', 'HEAD', 'OPTIONS', 'REPORT'):
                 continue
 
             resource_things.called = False
@@ -206,11 +229,11 @@ class TestHttpMethodRouting(object):
             assert response.status == falcon.HTTP_405
 
             headers = response.headers
-            assert headers['allow'] == 'GET, HEAD, PUT, OPTIONS'
+            assert headers['allow'] == 'GET, HEAD, PUT, REPORT, OPTIONS'
 
     def test_method_not_allowed_with_param(self, client, resource_get_with_faulty_put):
         client.app.add_route('/get_with_param/{param}', resource_get_with_faulty_put)
-        for method in HTTP_METHODS:
+        for method in HTTP_METHODS + WEBDAV_METHODS:
             if method in ('GET', 'PUT', 'OPTIONS'):
                 continue
 
@@ -233,7 +256,7 @@ class TestHttpMethodRouting(object):
         assert response.status == falcon.HTTP_200
 
         headers = response.headers
-        assert headers['allow'] == 'GET, HEAD, PUT'
+        assert headers['allow'] == 'GET, HEAD, PUT, REPORT'
 
     def test_on_options(self, client):
         response = client.simulate_request(path='/misc', method='OPTIONS')
