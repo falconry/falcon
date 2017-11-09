@@ -76,7 +76,7 @@ _reserved = {
 _flags = ['secure', 'httponly']
 
 
-def parse_cookies(cookie_header):
+def parse_cookies(cookie_header_str):
     """Parses a cookie header string and returns a dict
 
     This function parses each cookie individually and discards
@@ -95,18 +95,16 @@ def parse_cookies(cookie_header):
     {}[]()<>@,/=
 
     Args:
-        cookie_header (str): Cookie headers
+        cookie_header_str (str): Cookie headers
     """
 
     i = 0                           # Our starting point
-    n = len(cookie_header)          # Length of string
+    n = len(cookie_header_str)          # Length of string
     parsed_cookies = {}             # Parsed cookies to return {key: val,}
 
     while 0 <= i < n:
         # Start looking for a cookie
-        match = _CookiePattern.match(cookie_header, i)
-        if not match:
-            break          # No more cookies
+        match = _CookiePattern.match(cookie_header_str, i)
 
         key, value = match.group('key'), match.group('val')
         i = match.end(0)
@@ -173,7 +171,11 @@ def _unquote(str):
         j = k = -1
         if o_match:
             j = o_match.start(0)
-        if q_match:
+        # NOTE(santeyio): coverage complains about the `if` below to the
+        # next `if` below that because there's never a branch from `if q_match`
+        # evaluating as false to the next `if q_match and (...)` Obviously
+        # this can never happen, thus the `pragma: no branch`.
+        if q_match:                                # pragma: no branch
             k = q_match.start(0)
         if q_match and (not o_match or k < j):     # QuotePatt matched
             res.append(str[i:k])

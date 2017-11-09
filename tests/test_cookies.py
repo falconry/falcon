@@ -314,8 +314,8 @@ def test_cookie_flags_and_reserved_keys_set_properly():
     environ = testing.create_environ(headers=headers)
     req = falcon.Request(environ)
 
-    assert req.cookies['secure'] == True
-    assert req.cookies['HttpOnly'] == True
+    assert req.cookies['secure']
+    assert req.cookies['HttpOnly']
     assert req.cookies['domain'] == 'www.test.com'
     assert req.cookies['good_cookie'] == 'foo'
 
