@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import falcon
-
 from falcon.bench.queues import claims
 from falcon.bench.queues import messages
 from falcon.bench.queues import queues

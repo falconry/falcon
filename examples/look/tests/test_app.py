@@ -4,7 +4,6 @@ import falcon
 from falcon import testing
 from mock import call, MagicMock, mock_open
 import msgpack
-
 import pytest
 
 import look.app
