@@ -20,7 +20,7 @@ from six import string_types as STRING_TYPES
 # NOTE(tbug): In some cases, http_cookies is not a module
 # but a dict-like structure. This fixes that issue.
 # See issue https://github.com/falconry/falcon/issues/556
-from six.moves import http_cookies
+from six.moves import http_cookies  # NOQA: I202
 
 from falcon import DEFAULT_MEDIA_TYPE
 from falcon.media import Handlers

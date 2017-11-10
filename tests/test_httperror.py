@@ -1,17 +1,14 @@
 # -*- coding: utf-8
 
 import datetime
-try:
-    import ujson as json
-except ImportError:
-    import json
-import xml.etree.ElementTree as et
+import xml.etree.ElementTree as et  # noqa: I202
 
 import pytest
 import yaml
 
 import falcon
 import falcon.testing as testing
+from falcon.util import json
 
 
 @pytest.fixture

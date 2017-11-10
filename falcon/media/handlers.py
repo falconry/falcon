@@ -1,5 +1,4 @@
 import mimeparse
-
 from six.moves import UserDict
 
 from falcon import errors
