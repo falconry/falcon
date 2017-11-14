@@ -281,6 +281,45 @@ def test_invalid_cookies_are_ignored():
     assert 'bad{cookie' not in req.cookies
 
 
+def test_cookie_keys_related_to_mechanism_ignored():
+    headers = [
+        (
+            'Cookie',
+            """
+            $Version=2.0;
+            good_cookie=foo;
+            """
+        ),
+    ]
+
+    environ = testing.create_environ(headers=headers)
+    req = falcon.Request(environ)
+
+    assert req.cookies['good_cookie'] == 'foo'
+    assert '$Version' not in req.cookies
+
+
+def test_cookie_flags_and_reserved_keys_set_properly():
+    headers = [
+        (
+            'Cookie',
+            """
+            secure;HttpOnly;
+            domain=www.test.com;
+            good_cookie=foo;
+            """
+        ),
+    ]
+
+    environ = testing.create_environ(headers=headers)
+    req = falcon.Request(environ)
+
+    assert req.cookies['secure']
+    assert req.cookies['HttpOnly']
+    assert req.cookies['domain'] == 'www.test.com'
+    assert req.cookies['good_cookie'] == 'foo'
+
+
 def test_cookie_header_is_missing():
     environ = testing.create_environ(headers={})
     req = falcon.Request(environ)

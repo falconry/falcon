@@ -11,6 +11,7 @@ import falcon
 from falcon import testing
 from falcon import util
 from falcon.util import json, uri
+from falcon.util.cookies import _unquote as parse_cookies_unquote, parse_cookies
 
 
 def _arbitrary_uris(count, length):
@@ -489,3 +490,39 @@ class TestSetupApi(testing.TestCase):
 
     def test_something(self):
         self.assertTrue(isinstance(self.api, falcon.API))
+
+
+#################################
+#   Tests for parsing cookies   #
+#################################
+
+
+@pytest.mark.parametrize('cookie_str,expected_dict', [
+    ('nocookies',
+        {}),
+    ('goodkey=goodval;',
+        {'goodkey': 'goodval'}),
+    ('goodkey=goodval;bad{key=trash;another_good-val=bar;',
+        {'goodkey': 'goodval', 'another_good-val': 'bar'}),
+    ('secure;HttpOnly;domain;$version=2.0;goodkey=goodval;',
+        {'secure': True, 'HttpOnly': True, 'goodkey': 'goodval'}),
+    ('expires="\\012somethingelse";',
+        {'expires': '\nsomethingelse'}),
+])
+def test_parse_cookies(cookie_str, expected_dict):
+    assert parse_cookies(cookie_str) == expected_dict
+
+
+# NOTE(santeyio): cover weird cases of quoted values
+# in reserved keyword cookies
+@pytest.mark.parametrize('quoted_str,expected_str', [
+    ('1', '1'),
+    ('"\\012"', '\n'),
+    ('"\\077"', '?'),
+    ('"something"', 'something'),
+    ('"something\\weird"', 'somethingweird'),
+    ('"weir\{d"', 'weir{d'),
+    ('"some\\077else\\char"', 'some?elsechar'),
+])
+def test_parse_cookies_unquote(quoted_str, expected_str):
+    assert parse_cookies_unquote(quoted_str) == expected_str
