@@ -16,15 +16,13 @@ VERSION = VERSION.__version__
 # NOTE(kgriffs): python-mimeparse is better-maintained fork of mimeparse
 REQUIRES = ['six>=1.4.0', 'python-mimeparse>=1.5.2']
 
-JYTHON = 'java' in sys.platform
-
 try:
     sys.pypy_version_info
     PYPY = True
 except AttributeError:
     PYPY = False
 
-if PYPY or JYTHON:
+if PYPY:
     CYTHON = False
 else:
     try:
@@ -109,7 +107,6 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
-        'Programming Language :: Python :: Implementation :: Jython',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',

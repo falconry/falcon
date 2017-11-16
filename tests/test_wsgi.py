@@ -1,12 +1,7 @@
+import multiprocessing
 import os
-import sys
 import time
 from wsgiref.simple_server import make_server
-
-try:
-    import multiprocessing
-except ImportError:
-    pass  # Jython
 
 import pytest
 import requests
@@ -21,17 +16,6 @@ _SERVER_BASE_URL = 'http://{}:{}/'.format(_SERVER_HOST, _SERVER_PORT)
 _SIZE_1_KB = 1024
 
 
-@pytest.mark.skipif(
-    # NOTE(kgriffs): Jython does not support the multiprocessing
-    # module. We could alternatively implement these tests
-    # using threads, but then we have to force a garbage
-    # collection in between each test in order to make
-    # the server relinquish its socket, and the gc module
-    # doesn't appear to do anything under Jython.
-
-    'java' in sys.platform,
-    reason='Incompatible with Jython'
-)
 @pytest.mark.usefixtures('_setup_wsgi_server')
 class TestWSGIServer(object):
 

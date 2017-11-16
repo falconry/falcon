@@ -73,7 +73,7 @@ Falcon tries to do as little as possible while remaining highly effective.
 - 100% code coverage with a comprehensive test suite
 - Only depends on six and mimeparse
 - Supports Python 2.7, 3.3, 3.4, 3.5 and 3.6
-- Compatible with PyPy and Jython
+- Compatible with PyPy
 
 Who's Using Falcon?
 -------------------

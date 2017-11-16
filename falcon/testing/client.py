@@ -18,8 +18,6 @@ This package includes utilities for simulating HTTP requests against a
 WSGI callable, without having to stand up a WSGI server.
 """
 
-import platform
-import re
 import wsgiref.validate
 
 from six.moves import http_cookies
@@ -29,8 +27,6 @@ from falcon.testing import helpers
 from falcon.testing.srmock import StartResponseMock
 from falcon.util import CaseInsensitiveDict, http_date_to_dt, to_query_str
 from falcon.util import json as util_json
-
-_JYTHON = platform.python_implementation() == 'Jython'
 
 
 class Result(object):
@@ -89,31 +85,6 @@ class Result(object):
         for name, value in headers:
             if name.lower() == 'set-cookie':
                 cookies.load(value)
-
-                if _JYTHON:
-                    match = re.match('\s*([^=;,]+)=', value)
-                    assert match
-
-                    cookie_name = match.group(1)
-
-                    # NOTE(kgriffs): Jython has a bug that causes
-                    # SimpleCookie to incorrectly parse the "expires"
-                    # attribute, so we have to do it ourselves. This
-                    # algorithm is obviously very naive, but it should
-                    # work well enough until we stop supporting
-                    # Jython, at which time we can remove this code.
-                    match = re.search('expires=([^;]+)', value)
-                    if match:
-                        cookies[cookie_name]['expires'] = match.group(1)
-
-                    # NOTE(kgriffs): Jython's SimpleCookie won't
-                    # parse the "httponly" and "secure" attributes, so
-                    # we have to do it ourselves.
-                    if 'httponly' in value:
-                        cookies[cookie_name]['httponly'] = True
-
-                    if 'secure' in value:
-                        cookies[cookie_name]['secure'] = True
 
         self._cookies = dict(
             (morsel.key, Cookie(morsel))
