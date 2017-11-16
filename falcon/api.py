@@ -128,12 +128,12 @@ class API(object):
 
     # PERF(kgriffs): Reference via self since that is faster than
     # module global...
-    _BODILESS_STATUS_CODES = set([
+    _BODILESS_STATUS_CODES = {
         status.HTTP_100,
         status.HTTP_101,
         status.HTTP_204,
         status.HTTP_304
-    ])
+    }
 
     _STREAM_BLOCK_SIZE = 8 * 1024  # 8 KiB
 

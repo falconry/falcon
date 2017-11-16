@@ -30,9 +30,6 @@ from falcon.testing.srmock import StartResponseMock
 from falcon.util import CaseInsensitiveDict, http_date_to_dt, to_query_str
 from falcon.util import json as util_json
 
-_PYVER = platform.python_version_tuple()[:2]
-_PY26 = _PYVER == ('2', '6')
-_PY27 = _PYVER == ('2', '7')
 _JYTHON = platform.python_implementation() == 'Jython'
 
 
@@ -69,7 +66,7 @@ class Result(object):
         content (bytes): Raw response body, or ``bytes`` if the
             response body was empty.
         text (str): Decoded response body of type ``unicode``
-            under Python 2.6 and 2.7, and of type ``str`` otherwise.
+            under Python 2.7, and of type ``str`` otherwise.
             If the content type does not specify an encoding, UTF-8 is
             assumed.
         json (JSON serializable): Deserialized JSON body. Will be ``None`` if
@@ -93,23 +90,23 @@ class Result(object):
             if name.lower() == 'set-cookie':
                 cookies.load(value)
 
-                if _PY26 or (_PY27 and _JYTHON):
-                    match = re.match(r'\s*([^=;,]+)=', value)
+                if _JYTHON:
+                    match = re.match('\s*([^=;,]+)=', value)
                     assert match
 
                     cookie_name = match.group(1)
 
-                    # NOTE(kgriffs): py26/Jython has a bug that causes
+                    # NOTE(kgriffs): Jython has a bug that causes
                     # SimpleCookie to incorrectly parse the "expires"
                     # attribute, so we have to do it ourselves. This
                     # algorithm is obviously very naive, but it should
                     # work well enough until we stop supporting
-                    # 2.6, at which time we can remove this code.
+                    # Jython, at which time we can remove this code.
                     match = re.search('expires=([^;]+)', value)
                     if match:
                         cookies[cookie_name]['expires'] = match.group(1)
 
-                    # NOTE(kgriffs): py26/Jython's SimpleCookie won't
+                    # NOTE(kgriffs): Jython's SimpleCookie won't
                     # parse the "httponly" and "secure" attributes, so
                     # we have to do it ourselves.
                     if 'httponly' in value:

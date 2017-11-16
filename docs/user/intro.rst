@@ -66,7 +66,7 @@ Features
 -  Idiomatic HTTP error responses
 -  Straightforward exception handling
 -  Snappy unit testing through WSGI helpers and mocks
--  CPython 2.6-2.7, PyPy 2.7, Jython 2.7, and
+-  CPython 2.7, PyPy 2.7, Jython 2.7, and
 
 About Apache 2.0
 ----------------

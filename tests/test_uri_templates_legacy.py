@@ -42,21 +42,21 @@ class TestUriTemplates(object):
 
     def test_one_field(self):
         fields, pattern = routing.compile_uri_template('/{name}')
-        assert fields == set(['name'])
+        assert fields == {'name'}
 
         result = pattern.match('/Kelsier')
         assert result
         assert result.groupdict() == {'name': 'Kelsier'}
 
         fields, pattern = routing.compile_uri_template('/character/{name}')
-        assert fields == set(['name'])
+        assert fields == {'name'}
 
         result = pattern.match('/character/Kelsier')
         assert result
         assert result.groupdict() == {'name': 'Kelsier'}
 
         fields, pattern = routing.compile_uri_template('/character/{name}/profile')
-        assert fields == set(['name'])
+        assert fields == {'name'}
 
         assert not pattern.match('/character')
         assert not pattern.match('/character/Kelsier')
@@ -68,7 +68,7 @@ class TestUriTemplates(object):
 
     def test_one_field_with_digits(self):
         fields, pattern = routing.compile_uri_template('/{name123}')
-        assert fields == set(['name123'])
+        assert fields == {'name123'}
 
         result = pattern.match('/Kelsier')
         assert result
@@ -85,7 +85,7 @@ class TestUriTemplates(object):
     def test_two_fields(self, postfix):
         path = '/book/{book_id}/characters/{n4m3}' + postfix
         fields, pattern = routing.compile_uri_template(path)
-        assert fields == set(['n4m3', 'book_id'])
+        assert fields == {'n4m3', 'book_id'}
 
         result = pattern.match('/book/0765350386/characters/Vin')
         assert result

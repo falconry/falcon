@@ -610,7 +610,7 @@ class TestRequestAttributes(object):
 
         # Date formats don't conform to RFC 1123
         headers = {header: 'Thu, 04 Apr 2013'}
-        expected_desc = ('The value provided for the {0} '
+        expected_desc = ('The value provided for the {} '
                          'header is invalid. It must be formatted '
                          'according to RFC 7231, Section 7.1.1.1')
 
@@ -767,7 +767,7 @@ class TestRequestAttributes(object):
         req = Request(env)
 
         assert req.port == port
-        assert req.netloc == '{0}:{1}'.format(host, port)
+        assert req.netloc == '{}:{}'.format(host, port)
 
     def test_app_present(self):
         req = Request(testing.create_environ(app='/moving-pictures'))
@@ -807,7 +807,7 @@ class TestRequestAttributes(object):
 
         try:
             getattr(req, attr_name)
-            pytest.fail('{0} not raised'.format(error_type.__name__))
+            pytest.fail('{} not raised'.format(error_type.__name__))
         except error_type as ex:
             assert ex.title == title
             assert ex.description == description

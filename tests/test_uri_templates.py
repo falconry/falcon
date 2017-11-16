@@ -132,7 +132,7 @@ def test_special_chars(client, resource):
     'widget_id',
 ])
 def test_single(client, resource, field_name):
-    template = '/widgets/{{{0}}}'.format(field_name)
+    template = '/widgets/{{{}}}'.format(field_name)
 
     client.app.add_route(template, resource)
 
@@ -224,17 +224,17 @@ def test_datetime_converter(client, resource, uri_template, path, dt_expected):
     ),
     (
         '/versions/diff/{left:uuid()}...{right:uuid()}',
-        '/versions/diff/{0}...{1}'.format(_TEST_UUID_STR, _TEST_UUID_STR_2),
+        '/versions/diff/{}...{}'.format(_TEST_UUID_STR, _TEST_UUID_STR_2),
         {'left': _TEST_UUID, 'right': _TEST_UUID_2, }
     ),
     (
         '/versions/diff/{left:uuid}...{right:uuid()}',
-        '/versions/diff/{0}...{1}'.format(_TEST_UUID_STR, _TEST_UUID_STR_2),
+        '/versions/diff/{}...{}'.format(_TEST_UUID_STR, _TEST_UUID_STR_2),
         {'left': _TEST_UUID, 'right': _TEST_UUID_2, }
     ),
     (
         '/versions/diff/{left:uuid()}...{right:uuid}',
-        '/versions/diff/{0}...{1}'.format(_TEST_UUID_STR, _TEST_UUID_STR_2),
+        '/versions/diff/{}...{}'.format(_TEST_UUID_STR, _TEST_UUID_STR_2),
         {'left': _TEST_UUID, 'right': _TEST_UUID_2, }
     ),
     (
@@ -263,7 +263,7 @@ def test_uuid_converter_complex_segment(client, resource):
     first_uuid = uuid.uuid4()
     last_uuid = uuid.uuid4()
 
-    result = client.simulate_get('/pages/{0}...{1}'.format(
+    result = client.simulate_get('/pages/{}...{}'.format(
         first_uuid,
         last_uuid
     ))
