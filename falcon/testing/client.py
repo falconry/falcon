@@ -95,7 +95,7 @@ class Result(object):
                 cookies.load(value)
 
                 if _PY26 or (_PY27 and _JYTHON):
-                    match = re.match('\s*([^=;,]+)=', value)
+                    match = re.match(r'\s*([^=;,]+)=', value)
                     assert match
 
                     cookie_name = match.group(1)

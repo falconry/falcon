@@ -102,7 +102,7 @@ class CompiledRouter(object):
 
         # NOTE(kgriffs): Fields may have whitespace in them, so sub
         # those before checking the rest of the URI template.
-        if re.search('\s', _FIELD_PATTERN.sub('{FIELD}', uri_template)):
+        if re.search(r'\s', _FIELD_PATTERN.sub('{FIELD}', uri_template)):
             raise ValueError('URI templates may not include whitespace.')
 
         path = uri_template.strip('/').split('/')

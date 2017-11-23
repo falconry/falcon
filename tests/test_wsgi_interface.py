@@ -33,7 +33,7 @@ class TestWSGIInterface(object):
         # Make sure start_response was passed a valid status string
         assert mock.call_count == 1
         assert isinstance(mock.status, str)
-        assert re.match('^\d+[a-zA-Z\s]+$', mock.status)
+        assert re.match(r'^\d+[a-zA-Z\s]+$', mock.status)
 
         # Verify headers is a list of tuples, each containing a pair of strings
         assert isinstance(mock.headers, list)
