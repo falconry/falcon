@@ -17,28 +17,29 @@ def validate(req, resp, params):
                                 'formatted correctly.')
 
 
-def validate_param(req, resp, params):
-    limit = req.get_param_as_int('limit')
-    if limit and int(limit) > 100:
-        raise falcon.HTTPBadRequest('Out of range', 'limit must be <= 100')
+def validate_param(req, resp, params, param_name, maxval=100):
+    limit = req.get_param_as_int(param_name)
+    if limit and int(limit) > maxval:
+        msg = '{0} must be <= {1}'.format(param_name, maxval)
+        raise falcon.HTTPBadRequest('Out of Range', msg)
 
 
-def resource_aware_validate_param(req, resp, resource, params):
+def resource_aware_validate_param(req, resp, resource, params, param_name, maxval=100):
     assert resource
-    validate_param(req, resp, params)
+    validate_param(req, resp, params, param_name, maxval)
 
 
 class ResourceAwareValidateParam(object):
     def __call__(self, req, resp, resource, params):
         assert resource
-        validate_param(req, resp, params)
+        validate_param(req, resp, params, 'limit')
 
 
-def validate_field(req, resp, params):
+def validate_field(req, resp, params, field_name='test'):
     try:
-        params['id'] = int(params['id'])
+        params[field_name] = int(params[field_name])
     except ValueError:
-        raise falcon.HTTPBadRequest('Invalid ID', 'ID was not valid.')
+        raise falcon.HTTPBadRequest()
 
 
 def parse_body(req, resp, params):
@@ -92,7 +93,7 @@ frogs_in_the_head = functools.partial(
 
 class WrappedRespondersResource(object):
 
-    @falcon.before(validate_param)
+    @falcon.before(validate_param, 'limit', 100)
     @falcon.before(parse_body)
     def on_get(self, req, resp, doc):
         self.req = req
@@ -107,6 +108,10 @@ class WrappedRespondersResource(object):
 
 class WrappedRespondersResourceChild(WrappedRespondersResource):
 
+    @falcon.before(validate_param, 'x', maxval=1000)
+    def on_get(self, req, resp):
+        pass
+
     def on_put(self, req, resp):
         # Test passing no extra args
         super(WrappedRespondersResourceChild, self).on_put(req, resp)
@@ -120,11 +125,11 @@ class WrappedClassResource(object):
     # Test non-callable should be skipped by decorator
     on_patch = {}
 
-    @falcon.before(validate_param)
+    @falcon.before(validate_param, 'limit')
     def on_get(self, req, resp, bunnies):
         self._capture(req, resp, bunnies)
 
-    @falcon.before(validate_param)
+    @falcon.before(validate_param, 'limit')
     def on_head(self, req, resp, bunnies):
         self._capture(req, resp, bunnies)
 
@@ -150,11 +155,11 @@ class WrappedClassResource(object):
 class ClassResourceWithAwareHooks(object):
     hook_as_class = ResourceAwareValidateParam()
 
-    @falcon.before(resource_aware_validate_param)
+    @falcon.before(resource_aware_validate_param, 'limit', 10)
     def on_get(self, req, resp, bunnies):
         self._capture(req, resp, bunnies)
 
-    @falcon.before(resource_aware_validate_param)
+    @falcon.before(resource_aware_validate_param, 'limit')
     def on_head(self, req, resp, bunnies):
         self._capture(req, resp, bunnies)
 
@@ -174,7 +179,7 @@ class ClassResourceWithAwareHooks(object):
 
 class TestFieldResource(object):
 
-    @falcon.before(validate_field)
+    @falcon.before(validate_field, field_name='id')
     def on_get(self, req, resp, id):
         self.id = id
 
@@ -266,6 +271,12 @@ def test_input_validator_inherited(client):
     result = client.simulate_put('/')
     assert result.status_code == 400
 
+    result = client.simulate_get('/', query_string='x=1000')
+    assert result.status_code == 200
+
+    result = client.simulate_get('/', query_string='x=1001')
+    assert result.status_code == 400
+
 
 def test_param_validator(client):
     result = client.simulate_get('/', query_string='limit=10', body='{}')
@@ -335,6 +346,6 @@ def test_wrapped_resource_with_hooks_aware_of_resource(client, wrapped_aware_res
         assert result.status_code == 200
         assert wrapped_aware_resource.bunnies == 'fuzzy'
 
-    result = client.simulate_get('/wrapped_aware', query_string='limit=101')
+    result = client.simulate_get('/wrapped_aware', query_string='limit=11')
     assert result.status_code == 400
     assert wrapped_aware_resource.bunnies == 'fuzzy'
