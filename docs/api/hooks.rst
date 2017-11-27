@@ -33,11 +33,42 @@ decorate the resource class:
 
     @falcon.before(extract_project_id)
     class Message(object):
-        def on_post(self, req, resp):
+        def on_post(self, req, resp, project_id):
             pass
 
-        def on_get(self, req, resp):
+        def on_get(self, req, resp, project_id):
             pass
+
+Note also that you can pass additional arguments to your hook function
+as needed:
+
+.. code:: python
+
+    def validate_image_type(req, resp, resource, params, allowed_types):
+        if req.content_type not in allowed_types:
+            msg = 'Image type not allowed.'
+            raise falcon.HTTPBadRequest('Bad request', msg)
+
+    @falcon.before(validate_image_type, ['image/png'])
+    def on_post(self, req, resp):
+        pass
+
+Falcon supports using any callable as a hook. This allows for using a class
+instead of a function:
+
+.. code:: python
+
+    class Authorize(object):
+        def __init__(self, roles):
+            self._roles = roles
+
+        def __call__(self, req, resp, resource, params):
+            pass
+
+    @falcon.before(Authorize(['admin']))
+    def on_post(self, req, resp):
+        pass
+
 
 Falcon :ref:`middleware components <middleware>` can also be used to insert
 logic before and after requests. However, unlike hooks,
