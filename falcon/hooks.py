@@ -18,7 +18,7 @@ from functools import wraps
 
 import six
 
-from falcon import HTTP_METHODS
+from falcon import COMBINED_METHODS
 from falcon.util.misc import get_argnames
 
 
@@ -51,7 +51,7 @@ def before(action):
         if isinstance(responder_or_resource, six.class_types):
             resource = responder_or_resource
 
-            for method in HTTP_METHODS:
+            for method in COMBINED_METHODS:
                 responder_name = 'on_' + method.lower()
 
                 try:
@@ -100,7 +100,7 @@ def after(action):
         if isinstance(responder_or_resource, six.class_types):
             resource = responder_or_resource
 
-            for method in HTTP_METHODS:
+            for method in COMBINED_METHODS:
                 responder_name = 'on_' + method.lower()
 
                 try:
