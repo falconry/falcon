@@ -1,5 +1,5 @@
 coverage>=4.1
-pytest>=3.0.1
+pytest==3.2.5  # Last version to support py26 and py33
 pytest-cov
 pyyaml
 requests
