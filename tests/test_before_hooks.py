@@ -105,6 +105,13 @@ class WrappedRespondersResource(object):
         self.resp = resp
 
 
+class WrappedRespondersResourceChild(WrappedRespondersResource):
+
+    def on_put(self, req, resp):
+        # Test passing no extra args
+        super(WrappedRespondersResourceChild, self).on_put(req, resp)
+
+
 @falcon.before(bunnies)
 class WrappedClassResource(object):
 
@@ -172,6 +179,20 @@ class TestFieldResource(object):
         self.id = id
 
 
+class TestFieldResourceChild(TestFieldResource):
+
+    def on_get(self, req, resp, id):
+        # Test passing a single extra arg
+        super(TestFieldResourceChild, self).on_get(req, resp, id)
+
+
+class TestFieldResourceChildToo(TestFieldResource):
+
+    def on_get(self, req, resp, id):
+        # Test passing a single kwarg, but no extra args
+        super(TestFieldResourceChildToo, self).on_get(req, resp, id=id)
+
+
 @falcon.before(bunnies)
 @falcon.before(frogs)
 @falcon.before(Fish())
@@ -185,6 +206,20 @@ class ZooResource(object):
         self.fish = fish
 
 
+class ZooResourceChild(ZooResource):
+
+    def on_get(self, req, resp):
+        super(ZooResourceChild, self).on_get(
+            req,
+            resp,
+
+            # Test passing a mixture of args and kwargs
+            'fluffy',
+            'not fluffy',
+            fish='slippery'
+        )
+
+
 @pytest.fixture
 def wrapped_aware_resource():
     return ClassResourceWithAwareHooks()
@@ -193,11 +228,6 @@ def wrapped_aware_resource():
 @pytest.fixture
 def wrapped_resource():
     return WrappedClassResource()
-
-
-@pytest.fixture
-def field_resource():
-    return TestFieldResource()
 
 
 @pytest.fixture
@@ -212,21 +242,27 @@ def client(resource):
     return testing.TestClient(app)
 
 
-def test_multiple_resource_hooks(client):
-    zoo_resource = ZooResource()
-    client.app.add_route('/', zoo_resource)
+@pytest.mark.parametrize('resource', [ZooResource(), ZooResourceChild()])
+def test_multiple_resource_hooks(client, resource):
+    client.app.add_route('/', resource)
 
     result = client.simulate_get('/')
 
     assert 'not fluffy' == result.headers['X-Frogs']
     assert 'fluffy' == result.headers['X-Bunnies']
 
-    assert 'fluffy' == zoo_resource.bunnies
-    assert 'not fluffy' == zoo_resource.frogs
-    assert 'slippery' == zoo_resource.fish
+    assert 'fluffy' == resource.bunnies
+    assert 'not fluffy' == resource.frogs
+    assert 'slippery' == resource.fish
 
 
 def test_input_validator(client):
+    result = client.simulate_put('/')
+    assert result.status_code == 400
+
+
+def test_input_validator_inherited(client):
+    client.app.add_route('/', WrappedRespondersResourceChild())
     result = client.simulate_put('/')
     assert result.status_code == 400
 
@@ -239,11 +275,19 @@ def test_param_validator(client):
     assert result.status_code == 400
 
 
-def test_field_validator(client, field_resource):
-    client.app.add_route('/queue/{id}/messages', field_resource)
+@pytest.mark.parametrize(
+    'resource',
+    [
+        TestFieldResource(),
+        TestFieldResourceChild(),
+        TestFieldResourceChildToo(),
+    ]
+)
+def test_field_validator(client, resource):
+    client.app.add_route('/queue/{id}/messages', resource)
     result = client.simulate_get('/queue/10/messages')
     assert result.status_code == 200
-    assert field_resource.id == 10
+    assert resource.id == 10
 
     result = client.simulate_get('/queue/bogus/messages')
     assert result.status_code == 400

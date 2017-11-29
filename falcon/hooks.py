@@ -156,8 +156,14 @@ def _wrap_with_after(action, responder):
         def shim(req, resp, resource):
             action(req, resp)
 
+    responder_argnames = get_argnames(responder)
+    extra_argnames = responder_argnames[2:]  # Skip req, resp
+
     @wraps(responder)
-    def do_after(self, req, resp, **kwargs):
+    def do_after(self, req, resp, *args, **kwargs):
+        if args:
+            _merge_responder_args(args, kwargs, extra_argnames)
+
         responder(self, req, resp, **kwargs)
         shim(req, resp, self)
 
@@ -179,7 +185,7 @@ def _wrap_with_before(action, responder):
         shim = action
     else:
         # TODO(kgriffs): This decorator does not work on callable
-        # classes in Python vesions prior to 3.4.
+        # classes in Python versions prior to 3.4.
         #
         # @wraps(action)
         def shim(req, resp, resource, kwargs):
@@ -187,9 +193,44 @@ def _wrap_with_before(action, responder):
             # since method is assumed to be bound.
             action(req, resp, kwargs)
 
+    responder_argnames = get_argnames(responder)
+    extra_argnames = responder_argnames[2:]  # Skip req, resp
+
     @wraps(responder)
-    def do_before(self, req, resp, **kwargs):
+    def do_before(self, req, resp, *args, **kwargs):
+        if args:
+            _merge_responder_args(args, kwargs, extra_argnames)
+
         shim(req, resp, self, kwargs)
         responder(self, req, resp, **kwargs)
 
     return do_before
+
+
+def _merge_responder_args(args, kwargs, argnames):
+    """Merge responder args into kwargs.
+
+    The framework always passes extra args as keyword arguments.
+    However, when the app calls the responder directly, it might use
+    positional arguments instead, so we need to handle that case. This
+    might happen, for example, when overriding a resource and calling
+    a responder via super().
+
+    Args:
+        args (tuple): Extra args passed into the responder
+        kwargs (dict): Keyword args passed into the responder
+        argnames (list): Extra argnames from the responder's
+            signature, ordered as defined
+    """
+
+    # NOTE(kgriffs): Merge positional args into kwargs by matching
+    # them up to the responder's signature. To do that, we must
+    # find out the names of the positional arguments by matching
+    # them in the order of the arguments named in the responder's
+    # signature.
+    for i, argname in enumerate(argnames):
+        # NOTE(kgriffs): extra_argnames may contain keyword arguments,
+        # which wont be in the args list, and are already in the kwargs
+        # dict anyway, so detect and skip them.
+        if argname not in kwargs:
+            kwargs[argname] = args[i]

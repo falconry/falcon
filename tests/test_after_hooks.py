@@ -22,11 +22,6 @@ def wrapped_resource_aware():
 
 
 @pytest.fixture
-def wrapped_resource():
-    return WrappedClassResource()
-
-
-@pytest.fixture
 def client():
     app = falcon.API()
 
@@ -88,12 +83,13 @@ class Smartness(object):
 
 # NOTE(kgriffs): Use partial methods for these next two in order
 # to make sure we handle that correctly.
-def things_in_the_head(header, value, req, resp, params):
+def things_in_the_head(header, value, req, resp):
     resp.set_header(header, value)
 
 
 bunnies_in_the_head = functools.partial(things_in_the_head,
                                         'X-Bunnies', 'fluffy')
+
 
 cuteness_in_the_head = functools.partial(things_in_the_head,
                                          'X-Cuteness', 'cute')
@@ -101,10 +97,6 @@ cuteness_in_the_head = functools.partial(things_in_the_head,
 
 def fluffiness_in_the_head(req, resp):
     resp.set_header('X-Fluffiness', 'fluffy')
-
-
-def cuteness_in_the_head(req, resp):
-    resp.set_header('X-Cuteness', 'cute')
 
 
 # --------------------------------------------------------------------
@@ -151,6 +143,31 @@ class WrappedClassResource(object):
     def on_head(self, req, resp):
         self.req = req
         self.resp = resp
+
+
+class WrappedClassResourceChild(WrappedClassResource):
+    def on_head(self, req, resp):
+        # Test passing no extra args
+        super(WrappedClassResourceChild, self).on_head(req, resp)
+
+
+class ClassResourceWithURIFields(object):
+
+    @falcon.after(fluffiness_in_the_head)
+    def on_get(self, req, resp, field1, field2):
+        self.fields = (field1, field2)
+
+
+class ClassResourceWithURIFieldsChild(ClassResourceWithURIFields):
+
+    def on_get(self, req, resp, field1, field2):
+        # Test passing mixed args and kwargs
+        super(ClassResourceWithURIFieldsChild, self).on_get(
+            req,
+            resp,
+            field1,
+            field2=field2
+        )
 
 
 # NOTE(swistakm): we use both type of hooks (class and method)
@@ -209,8 +226,33 @@ def test_hook_as_callable_class(client):
     assert 'smart' == result.text
 
 
-def test_wrapped_resource(client, wrapped_resource):
-    client.app.add_route('/wrapped', wrapped_resource)
+@pytest.mark.parametrize(
+    'resource',
+    [
+        ClassResourceWithURIFields(),
+        ClassResourceWithURIFieldsChild()
+    ]
+)
+def test_resource_with_uri_fields(client, resource):
+    client.app.add_route('/{field1}/{field2}', resource)
+
+    result = client.simulate_get('/82074/58927')
+
+    assert result.status_code == 200
+    assert result.headers['X-Fluffiness'] == 'fluffy'
+    assert 'X-Cuteness' not in result.headers
+    assert resource.fields == ('82074', '58927')
+
+
+@pytest.mark.parametrize(
+    'resource',
+    [
+        WrappedClassResource(),
+        WrappedClassResourceChild()
+    ]
+)
+def test_wrapped_resource(client, resource):
+    client.app.add_route('/wrapped', resource)
     result = client.simulate_get('/wrapped')
     assert result.status_code == 200
     assert result.text == 'fluffy and cute'
