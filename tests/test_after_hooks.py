@@ -48,8 +48,10 @@ def serialize_body(req, resp):
         resp.body = 'Nothing to see here. Move along.'
 
 
-def fluffiness(req, resp):
+def fluffiness(req, resp, animal=''):
     resp.body = 'fluffy'
+    if animal:
+        resp.set_header('X-Animal', animal)
 
 
 def resource_aware_fluffiness(req, resp, resource):
@@ -63,14 +65,14 @@ class ResourceAwareFluffiness(object):
         fluffiness(req, resp)
 
 
-def cuteness(req, resp):
-    if resp.body == 'fluffy':
-        resp.body += ' and cute'
+def cuteness(req, resp, check, postfix=' and cute'):
+    if resp.body == check:
+        resp.body += postfix
 
 
 def resource_aware_cuteness(req, resp, resource):
     assert resource
-    cuteness(req, resp)
+    cuteness(req, resp, 'fluffy')
 
 
 class Smartness(object):
@@ -95,8 +97,8 @@ cuteness_in_the_head = functools.partial(things_in_the_head,
                                          'X-Cuteness', 'cute')
 
 
-def fluffiness_in_the_head(req, resp):
-    resp.set_header('X-Fluffiness', 'fluffy')
+def fluffiness_in_the_head(req, resp, value='fluffy'):
+    resp.set_header('X-Fluffiness', value)
 
 
 # --------------------------------------------------------------------
@@ -123,8 +125,8 @@ class WrappedRespondersResource(object):
         pass
 
 
-@falcon.after(cuteness)
-@falcon.after(fluffiness)
+@falcon.after(cuteness, 'fluffy', postfix=' and innocent')
+@falcon.after(fluffiness, 'kitten')
 class WrappedClassResource(object):
 
     # Test that the decorator skips non-callables
@@ -153,7 +155,7 @@ class WrappedClassResourceChild(WrappedClassResource):
 
 class ClassResourceWithURIFields(object):
 
-    @falcon.after(fluffiness_in_the_head)
+    @falcon.after(fluffiness_in_the_head, 'fluffy')
     def on_get(self, req, resp, field1, field2):
         self.fields = (field1, field2)
 
@@ -255,12 +257,14 @@ def test_wrapped_resource(client, resource):
     client.app.add_route('/wrapped', resource)
     result = client.simulate_get('/wrapped')
     assert result.status_code == 200
-    assert result.text == 'fluffy and cute'
+    assert result.text == 'fluffy and innocent'
+    assert result.headers['X-Animal'] == 'kitten'
 
     result = client.simulate_head('/wrapped')
     assert result.status_code == 200
     assert result.headers['X-Fluffiness'] == 'fluffy'
     assert result.headers['X-Cuteness'] == 'cute'
+    assert result.headers['X-Animal'] == 'kitten'
 
     result = client.simulate_post('/wrapped')
     assert result.status_code == 405
@@ -272,6 +276,7 @@ def test_wrapped_resource(client, resource):
     result = client.simulate_options('/wrapped')
     assert result.status_code == 200
     assert not result.text
+    assert 'X-Animal' not in result.headers
 
 
 def test_wrapped_resource_with_hooks_aware_of_resource(client, wrapped_resource_aware):
