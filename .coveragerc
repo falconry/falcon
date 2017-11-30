@@ -3,5 +3,7 @@ branch = True
 source = falcon
 omit = falcon/tests*,falcon/cmd*,falcon/bench*
 
+parallel = True
+
 [report]
 show_missing = True
