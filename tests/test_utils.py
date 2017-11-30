@@ -374,6 +374,28 @@ def test_simulate_request_protocol(protocol, method):
         pass
 
 
+@pytest.mark.parametrize('simulate', [
+    testing.simulate_get,
+    testing.simulate_head,
+    testing.simulate_post,
+    testing.simulate_put,
+    testing.simulate_options,
+    testing.simulate_patch,
+    testing.simulate_delete,
+])
+def test_simulate_free_functions(simulate):
+    sink_called = [False]
+
+    def sink(req, resp):
+        sink_called[0] = True
+
+    app = falcon.API()
+    app.add_sink(sink, '/test')
+
+    simulate(app, '/test')
+    assert sink_called[0]
+
+
 class TestFalconTestCase(object):
     """Verify some branches not covered elsewhere."""
 
