@@ -1,7 +1,7 @@
 coverage>=4.1
 pytest==3.2.5  # Last version to support py26 and py33
 pytest-cov
-pyyaml
+pyyaml==3.11  # Last version to support py26
 requests
 six
 testtools
