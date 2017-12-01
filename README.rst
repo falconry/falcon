@@ -1,4 +1,4 @@
-|Docs| |Build Status| |codecov.io|
+|Docs| |Build Status|
 
 |Logo| The Falcon Web Framework
 ===========================
