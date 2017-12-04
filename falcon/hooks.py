@@ -22,7 +22,7 @@ from falcon import COMBINED_METHODS
 from falcon.util.misc import get_argnames
 
 
-def before(action):
+def before(action, *args, **kwargs):
     """Decorator to execute the given action function *before* the responder.
 
     Args:
@@ -45,6 +45,12 @@ def before(action):
 
                         params['answer'] = 42
 
+        *args: Any additional arguments will be passed to *action* in the
+            order given, immediately following the *req*, *resp*, *resource*,
+            and *params* arguments.
+
+        **kwargs: Any additional keyword arguments will be passed through to
+            *action*.
     """
 
     def _before(responder_or_resource):
@@ -68,7 +74,7 @@ def before(action):
                         # variable that is shared between iterations of the
                         # for loop, above.
                         def let(responder=responder):
-                            do_before_all = _wrap_with_before(action, responder)
+                            do_before_all = _wrap_with_before(responder, action, args, kwargs)
 
                             setattr(resource, responder_name, do_before_all)
 
@@ -78,14 +84,14 @@ def before(action):
 
         else:
             responder = responder_or_resource
-            do_before_one = _wrap_with_before(action, responder)
+            do_before_one = _wrap_with_before(responder, action, args, kwargs)
 
             return do_before_one
 
     return _before
 
 
-def after(action):
+def after(action, *args, **kwargs):
     """Decorator to execute the given action function *after* the responder.
 
     Args:
@@ -94,6 +100,12 @@ def after(action):
             reference to the resource class instance associated with the
             request
 
+        *args: Any additional arguments will be passed to *action* in the
+            order given, immediately following the *req*, *resp*, *resource*,
+            and *params* arguments.
+
+        **kwargs: Any additional keyword arguments will be passed through to
+            *action*.
     """
 
     def _after(responder_or_resource):
@@ -113,7 +125,7 @@ def after(action):
                     if callable(responder):
 
                         def let(responder=responder):
-                            do_after_all = _wrap_with_after(action, responder)
+                            do_after_all = _wrap_with_after(responder, action, args, kwargs)
 
                             setattr(resource, responder_name, do_after_all)
 
@@ -123,7 +135,7 @@ def after(action):
 
         else:
             responder = responder_or_resource
-            do_after_one = _wrap_with_after(action, responder)
+            do_after_one = _wrap_with_after(responder, action, args, kwargs)
 
             return do_after_one
 
@@ -135,13 +147,15 @@ def after(action):
 # -----------------------------------------------------------------------------
 
 
-def _wrap_with_after(action, responder):
+def _wrap_with_after(responder, action, action_args, action_kwargs):
     """Execute the given action function after a responder method.
 
     Args:
+        responder: The responder method to wrap.
         action: A function with a signature similar to a resource responder
             method, taking the form ``func(req, resp, resource)``.
-        responder: The responder method to wrap.
+        action_args: Additiona positional agruments to pass to *action*.
+        action_kwargs: Additional keyword arguments to pass to *action*.
     """
 
     # NOTE(swistakm): create shim before checking what will be actually
@@ -153,8 +167,8 @@ def _wrap_with_after(action, responder):
         # classes in Python vesions prior to 3.4.
         #
         # @wraps(action)
-        def shim(req, resp, resource):
-            action(req, resp)
+        def shim(req, resp, resource, *args, **kwargs):
+            action(req, resp, *args, **kwargs)
 
     responder_argnames = get_argnames(responder)
     extra_argnames = responder_argnames[2:]  # Skip req, resp
@@ -165,18 +179,20 @@ def _wrap_with_after(action, responder):
             _merge_responder_args(args, kwargs, extra_argnames)
 
         responder(self, req, resp, **kwargs)
-        shim(req, resp, self)
+        shim(req, resp, self, *action_args, **action_kwargs)
 
     return do_after
 
 
-def _wrap_with_before(action, responder):
+def _wrap_with_before(responder, action, action_args, action_kwargs):
     """Execute the given action function before a responder method.
 
     Args:
+        responder: The responder method to wrap.
         action: A function with a similar signature to a resource responder
             method, taking the form ``func(req, resp, resource, params)``.
-        responder: The responder method to wrap
+        action_args: Additiona positional agruments to pass to *action*.
+        action_kwargs: Additional keyword arguments to pass to *action*.
     """
 
     # NOTE(swistakm): create shim before checking what will be actually
@@ -188,10 +204,10 @@ def _wrap_with_before(action, responder):
         # classes in Python versions prior to 3.4.
         #
         # @wraps(action)
-        def shim(req, resp, resource, kwargs):
+        def shim(req, resp, resource, params, *args, **kwargs):
             # NOTE(kgriffs): Don't have to pass "self" even if has_self,
             # since method is assumed to be bound.
-            action(req, resp, kwargs)
+            action(req, resp, params, *args, **kwargs)
 
     responder_argnames = get_argnames(responder)
     extra_argnames = responder_argnames[2:]  # Skip req, resp
@@ -201,7 +217,7 @@ def _wrap_with_before(action, responder):
         if args:
             _merge_responder_args(args, kwargs, extra_argnames)
 
-        shim(req, resp, self, kwargs)
+        shim(req, resp, self, kwargs, *action_args, **action_kwargs)
         responder(self, req, resp, **kwargs)
 
     return do_before
