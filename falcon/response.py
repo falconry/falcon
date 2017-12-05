@@ -14,6 +14,8 @@
 
 """Response class."""
 
+import mimetypes
+
 from six import PY2
 from six import string_types as STRING_TYPES
 
@@ -25,6 +27,7 @@ from six.moves import http_cookies  # NOQA: I202
 from falcon import DEFAULT_MEDIA_TYPE
 from falcon.media import Handlers
 from falcon.response_helpers import (
+    format_content_disposition,
     format_header_value_list,
     format_range,
     header_property,
@@ -34,7 +37,6 @@ from falcon.util import dt_to_http, TimezoneGMT
 from falcon.util.uri import encode as uri_encode
 from falcon.util.uri import encode_value as uri_encode_value
 
-import mimetypes
 
 SimpleCookie = http_cookies.SimpleCookie
 CookieError = http_cookies.CookieError
@@ -681,6 +683,16 @@ class Response(object):
         and ``falcon.MEDIA_GIF``.
         """)
 
+    downloadable_as = header_property(
+        'Content-Disposition',
+        """Set the Content-Disposition header using the given filename.
+
+        The value will be used for the "filename" directive. For example,
+        given 'report.pdf', the Content-Disposition header would be set
+        to ``'attachment; filename="report.pdf"'``.
+        """,
+        format_content_disposition)
+
     etag = header_property(
         'ETag',
         'Set the ETag header.')
@@ -813,16 +825,20 @@ class ResponseOptions(object):
             not requiring HTTPS. Note, however, that this setting can
             be overridden via `set_cookie()`'s `secure` kwarg.
 
-        default_media_type (str): The default media-type to use when
-            deserializing a response. This value is normally set to the media
-            type provided when a :class:`falcon.API` is initialized; however,
-            if created independently, this will default to the
+        default_media_type (str): The default Internet media type (RFC 2046) to
+            use when deserializing a response. This value is normally set to the
+            media type provided when a :class:`falcon.API` is initialized;
+            however, if created independently, this will default to the
             ``DEFAULT_MEDIA_TYPE`` specified by Falcon.
 
         media_handlers (Handlers): A dict-like object that allows you to
             configure the media-types that you would like to handle.
             By default, a handler is provided for the ``application/json``
             media type.
+
+        static_media_types (dict): A mapping of dot-prefixed file extensions to
+            Internet media types (RFC 2046). Defaults to ``mimetypes.types_map``
+            after calling ``mimetypes.init()``.
     """
     __slots__ = (
         'secure_cookies_by_default',
