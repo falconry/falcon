@@ -24,6 +24,7 @@ from falcon.http_status import HTTPStatus
 from falcon.request import Request, RequestOptions
 import falcon.responders
 from falcon.response import Response, ResponseOptions
+from falcon.statics import Statics
 import falcon.status_codes as status
 from falcon.util.misc import get_argnames
 
@@ -140,7 +141,8 @@ class API(object):
     __slots__ = ('_request_type', '_response_type',
                  '_error_handlers', '_media_type', '_router', '_sinks',
                  '_serialize_error', 'req_options', 'resp_options',
-                 '_middleware', '_independent_middleware', '_router_search')
+                 '_middleware', '_independent_middleware', '_router_search',
+                 '_static_routes')
 
     def __init__(self, media_type=DEFAULT_MEDIA_TYPE,
                  request_type=Request, response_type=Response,
@@ -148,6 +150,7 @@ class API(object):
                  independent_middleware=False):
         self._sinks = []
         self._media_type = media_type
+        self._static_routes = []
 
         # set middleware
         self._middleware = helpers.prepare_middleware(
@@ -349,6 +352,9 @@ class API(object):
         routing.set_default_responders(method_map)
         self._router.add_route(uri_template, method_map, resource, *args,
                                **kwargs)
+
+    def add_static_route(self, prefix, folder):
+        self._static_routes.add(prefix, Statics(prefix, folder))
 
     def add_sink(self, sink, prefix=r'/'):
         """Register a sink method for the API.

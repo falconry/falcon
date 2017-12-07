@@ -34,6 +34,8 @@ from falcon.util import dt_to_http, TimezoneGMT
 from falcon.util.uri import encode as uri_encode
 from falcon.util.uri import encode_value as uri_encode_value
 
+import mimetypes
+
 SimpleCookie = http_cookies.SimpleCookie
 CookieError = http_cookies.CookieError
 
@@ -826,9 +828,13 @@ class ResponseOptions(object):
         'secure_cookies_by_default',
         'default_media_type',
         'media_handlers',
+        'static_media_types',
     )
 
     def __init__(self):
         self.secure_cookies_by_default = True
         self.default_media_type = DEFAULT_MEDIA_TYPE
         self.media_handlers = Handlers()
+
+        mimetypes.init()
+        self.static_media_types = mimetypes.types_map
