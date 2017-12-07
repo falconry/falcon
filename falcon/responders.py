@@ -38,7 +38,7 @@ def method_not_allowed(allowed_methods, req, resp, **kwargs):
 
 
 def create_method_not_allowed(allowed_methods):
-    """Creates a responder for "405 Method Not Allowed"
+    """Create a responder for "405 Method Not Allowed"
 
     Args:
         allowed_methods: A list of HTTP methods (uppercase) that should be
@@ -51,13 +51,14 @@ def create_method_not_allowed(allowed_methods):
 
 
 def on_options(allowed, req, resp, **kwargs):
+    """Default options responder."""
     resp.status = HTTP_200
     resp.set_header('Allow', allowed)
     resp.set_header('Content-Length', '0')
 
 
 def create_default_options(allowed_methods):
-    """Creates a default responder for the OPTIONS method
+    """Create a default responder for the OPTIONS method
 
     Args:
         allowed_methods: A list of HTTP methods (uppercase) that should be

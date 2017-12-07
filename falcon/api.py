@@ -298,7 +298,7 @@ class API(object):
         return self._router.options
 
     def add_route(self, uri_template, resource, *args, **kwargs):
-        """Associates a templatized URI path with a resource.
+        """Associate a templatized URI path with a resource.
 
         Falcon routes incoming requests to resources based on a set of
         URI templates. If the path requested by the client matches the
@@ -351,7 +351,7 @@ class API(object):
                                **kwargs)
 
     def add_sink(self, sink, prefix=r'/'):
-        """Registers a sink method for the API.
+        """Register a sink method for the API.
 
         If no route matches a request, but the path in the requested URI
         matches a sink prefix, Falcon will pass control to the
@@ -393,7 +393,7 @@ class API(object):
         self._sinks.insert(0, (prefix, sink))
 
     def add_error_handler(self, exception, handler=None):
-        """Registers a handler for a given exception error type.
+        """Register a handler for a given exception error type.
 
         Error handlers may be registered for any type, including
         :class:`~.HTTPError`. This feature provides a central location
@@ -504,7 +504,7 @@ class API(object):
     # ------------------------------------------------------------------------
 
     def _get_responder(self, req):
-        """Searches routes for a matching responder.
+        """Search routes for a matching responder.
 
         Args:
             req: The request object.
@@ -568,7 +568,7 @@ class API(object):
         return (responder, params, resource, uri_template)
 
     def _compose_status_response(self, req, resp, http_status):
-        """Composes a response for the given HTTPStatus instance."""
+        """Compose a response for the given HTTPStatus instance."""
 
         # PERF(kgriffs): The code to set the status and headers is identical
         # to that used in _compose_error_response(), but refactoring in the
@@ -583,7 +583,7 @@ class API(object):
         resp.body = http_status.body
 
     def _compose_error_response(self, req, resp, error):
-        """Composes a response for the given HTTPError instance."""
+        """Compose a response for the given HTTPError instance."""
 
         resp.status = error.status
 
@@ -600,7 +600,7 @@ class API(object):
         self._compose_error_response(req, resp, error)
 
     def _handle_exception(self, ex, req, resp, params):
-        """Handles an exception raised from mw or a responder.
+        """Handle an exception raised from mw or a responder.
 
         Args:
             ex: Exception to handle
@@ -637,7 +637,7 @@ class API(object):
     # to call using self, and this function is called for most
     # requests.
     def _get_body(self, resp, wsgi_file_wrapper=None):
-        """Converts resp content into an iterable as required by PEP 333
+        """Convert resp content into an iterable as required by PEP 333
 
         Args:
             resp: Instance of falcon.Response

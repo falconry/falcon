@@ -18,7 +18,7 @@ import six
 
 
 def header_property(name, doc, transform=None):
-    """Creates a header getter/setter.
+    """Create a header getter/setter.
 
     Args:
         name: Header name, e.g., "Content-Type"
@@ -55,7 +55,7 @@ def header_property(name, doc, transform=None):
 
 
 def format_range(value):
-    """Formats a range header tuple per the HTTP spec.
+    """Format a range header tuple per the HTTP spec.
 
     Args:
         value: ``tuple`` passed to `req.range`
@@ -79,11 +79,11 @@ def format_range(value):
 
 if six.PY2:
     def format_header_value_list(iterable):
-        """Joins an iterable of strings with commas."""
+        """Join an iterable of strings with commas."""
         return str(', '.join(iterable))
 else:
     def format_header_value_list(iterable):
-        """Joins an iterable of strings with commas."""
+        """Join an iterable of strings with commas."""
         return ', '.join(iterable)
 
 
