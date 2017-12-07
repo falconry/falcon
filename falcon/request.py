@@ -1011,7 +1011,7 @@ class Request(object):
     # ------------------------------------------------------------------------
 
     def client_accepts(self, media_type):
-        """Determines whether or not the client accepts a given media type.
+        """Determine whether or not the client accepts a given media type.
 
         Args:
             media_type (str): An Internet media type to check.
@@ -1036,7 +1036,7 @@ class Request(object):
             return False
 
     def client_prefers(self, media_types):
-        """Returns the client's preferred media type, given several choices.
+        """Return the client's preferred media type, given several choices.
 
         Args:
             media_types (iterable of str): One or more Internet media types

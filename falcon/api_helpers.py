@@ -177,7 +177,7 @@ def default_serialize_error(req, resp, exception):
 
 
 def wrap_old_error_serializer(old_fn):
-    """Wraps an old-style error serializer to add body/content_type setting.
+    """Wrap an old-style error serializer to add body/content_type setting.
 
     Args:
         old_fn: Old-style error serializer

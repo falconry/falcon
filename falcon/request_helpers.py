@@ -18,7 +18,7 @@ import io
 
 
 def header_property(wsgi_name):
-    """Creates a read-only header property.
+    """Create a read-only header property.
 
     Args:
         wsgi_name (str): Case-sensitive name of the header as it would

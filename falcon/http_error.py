@@ -137,7 +137,7 @@ class HTTPError(Exception):
         return True
 
     def to_dict(self, obj_type=dict):
-        """Returns a basic dictionary representing the error.
+        """Return a basic dictionary representing the error.
 
         This method can be useful when serializing the error to hash-like
         media types, such as YAML, JSON, and MessagePack.
@@ -168,7 +168,7 @@ class HTTPError(Exception):
         return obj
 
     def to_json(self):
-        """Returns a pretty-printed JSON representation of the error.
+        """Return a pretty-printed JSON representation of the error.
 
         Returns:
             str: A JSON document for the error.
@@ -179,7 +179,7 @@ class HTTPError(Exception):
         return json.dumps(obj, ensure_ascii=False)
 
     def to_xml(self):
-        """Returns an XML-encoded representation of the error.
+        """Return an XML-encoded representation of the error.
 
         Returns:
             str: An XML document for the error.
