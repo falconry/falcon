@@ -81,19 +81,15 @@ a, div.sphinxsidebar a, a.reference, a code.literal {
 }
 
 #dev-warning {
-    background-color: #ffe;
+    background-color: #fdfbe8;
     border: 1px solid #ccc;
     padding: 10px;
     margin-bottom: 1em;
  }
 
 div.warning {
-    background-color: #ffe;
+    background-color: #fdfbe8;
     border: 1px solid #ccc;
-}
-
-div.note, div.admonition {
-    background-color: inherit;
 }
 
 div.body h1,
@@ -126,15 +122,14 @@ div.admonition p.admonition-title {
    font-family: Oxygen, Garamond, Georgia, serif;
 }
 
+div.admonition .last.highlight-default {
+    display: inline-block;
+    font-size: smaller;
+}
+
 pre {
     background-color: #212529;
     padding: 1.25em 30px;
-}
-
-/* Fix notes not aligning with the left side of the property text. */
-dd .highlight pre, dd div.admonition {
-    margin-left: -29px;
-    padding-left: 29px;
 }
 
 .highlight pre {
