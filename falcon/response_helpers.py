@@ -77,6 +77,12 @@ def format_range(value):
     return result
 
 
+def format_content_disposition(value):
+    """Formats a Content-Disposition header given a filename."""
+
+    return 'attachment; filename="' + value + '"'
+
+
 if six.PY2:
     def format_header_value_list(iterable):
         """Join an iterable of strings with commas."""

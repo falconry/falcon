@@ -140,7 +140,8 @@ class API(object):
     __slots__ = ('_request_type', '_response_type',
                  '_error_handlers', '_media_type', '_router', '_sinks',
                  '_serialize_error', 'req_options', 'resp_options',
-                 '_middleware', '_independent_middleware', '_router_search')
+                 '_middleware', '_independent_middleware', '_router_search',
+                 '_static_routes')
 
     def __init__(self, media_type=DEFAULT_MEDIA_TYPE,
                  request_type=Request, response_type=Response,
@@ -148,6 +149,7 @@ class API(object):
                  independent_middleware=False):
         self._sinks = []
         self._media_type = media_type
+        self._static_routes = []
 
         # set middleware
         self._middleware = helpers.prepare_middleware(
@@ -349,6 +351,53 @@ class API(object):
         routing.set_default_responders(method_map)
         self._router.add_route(uri_template, method_map, resource, *args,
                                **kwargs)
+
+    def add_static_route(self, prefix, directory, downloadable=False):
+        """Add a route to a directory of static files.
+
+        Static routes provide a way to serve files directly. This
+        feature provides an alternative to serving files at the web server
+        level when you don't have that option, when authorization is
+        required, or for testing purposes.
+
+        Warning:
+            Serving files directly from the web server,
+            rather than through the Python app, will always be more efficient,
+            and therefore should be preferred in production deployments.
+
+        Static routes are matched in LIFO order. Therefore, if the same
+        prefix is used for two routes, the second one will override the
+        first. This also means that more specific routes should be added
+        *after* less specific ones. For example, the following sequence
+        would result in ``'/foo/bar/thing.js'`` being mapped to the
+        ``'/foo/bar'`` route, and ``'/foo/xyz/thing.js'`` being mapped to the
+        ``'/foo'`` route::
+
+            api.add_static_route('/foo', foo_path)
+            api.add_static_route('/foo/bar', foobar_path)
+
+        Args:
+            prefix (str): The path prefix to match for this route. If the
+                path in the requested URI starts with this string, the remainder
+                of the path will be appended to the source directory to
+                determine the file to serve. This is done in a secure manner
+                to prevent an attacker from requesting a file outside the
+                specified directory.
+
+                Note that static routes are matched in LIFO order, and are only
+                attempted after checking dynamic routes and sinks.
+
+            directory (str): The source directory from which to serve files.
+            downloadable (bool): Set to ``True`` to include a
+                Content-Disposition header in the response. The "filename"
+                directive is simply set to the name of the requested file.
+
+        """
+
+        self._static_routes.insert(
+            0,
+            routing.StaticRoute(prefix, directory, downloadable=downloadable)
+        )
 
     def add_sink(self, sink, prefix=r'/'):
         """Register a sink method for the API.
@@ -563,7 +612,13 @@ class API(object):
 
                     break
             else:
-                responder = falcon.responders.path_not_found
+
+                for sr in self._static_routes:
+                    if sr.match(path):
+                        responder = sr
+                        break
+                else:
+                    responder = falcon.responders.path_not_found
 
         return (responder, params, resource, uri_template)
 

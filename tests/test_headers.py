@@ -52,6 +52,7 @@ class HeaderHelpersResource(object):
         # Relative URI's are OK per http://goo.gl/DbVqR
         resp.location = '/things/87'
         resp.content_location = '/things/78'
+        resp.downloadable_as = 'Some File.zip'
 
         if req.range_unit is None or req.range_unit == 'bytes':
             # bytes 0-499/10240
@@ -310,6 +311,7 @@ class TestHeaders(object):
         content_type = 'x-falcon/peregrine'
         assert resp.content_type == content_type
         assert result.headers['Content-Type'] == content_type
+        assert result.headers['Content-Disposition'] == 'attachment; filename="Some File.zip"'
 
         cache_control = ('public, private, no-cache, no-store, '
                          'must-revalidate, proxy-revalidate, max-age=3600, '
