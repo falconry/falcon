@@ -30,7 +30,7 @@ class StaticRoute(object):
     _DISALLOWED_CHARS_PATTERN = re.compile('[\x00-\x1f\x80-\x9f~?<>:*|\'"]')
 
     # NOTE(kgriffs): If somehow an executable code exploit is triggerable, this
-    # minimized how much can be included in the payload.
+    # minimizes how much can be included in the payload.
     _MAX_NON_PREFIXED_LEN = 512
 
     def __init__(self, prefix, directory, downloadable=False):
@@ -56,8 +56,6 @@ class StaticRoute(object):
 
     def __call__(self, req, resp):
         """Resource responder for this route."""
-
-        # import pdb; pdb.set_trace()
 
         without_prefix = req.path[len(self._prefix):]
 
