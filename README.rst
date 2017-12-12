@@ -25,6 +25,7 @@ Quick Links
 
 * `Read the docs <https://falcon.readthedocs.io/en/stable>`__
 * `Falcon add-ons and complementary packages <https://github.com/falconry/falcon/wiki>`__
+* `Falcon talks, podcasts, and blog posts <https://github.com/falconry/falcon/wiki/Talks-and-Podcasts>`__
 * `falconry/user <https://gitter.im/falconry/user>`__ @ Gitter
 * `falconry/dev <https://gitter.im/falconry/dev>`__ @ Gitter
 
