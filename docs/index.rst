@@ -28,7 +28,6 @@ clean design that embraces HTTP and the REST architectural style.
     app = falcon.API(after=[hooks.serialize])
     app.add_route('/items/{id}', CatalogItem())
 
-
 What People are Saying
 ----------------------
 
@@ -48,6 +47,15 @@ middle. Falcon seems like the requests of backend."
 documentation. It basically can't be wrong."
 
 "What other framework has integrated support for 786 TRY IT NOW ?"
+
+Quick Links
+-----------
+
+* `Read the docs <https://falcon.readthedocs.io/en/stable>`__
+* `Falcon add-ons and complementary packages <https://github.com/falconry/falcon/wiki>`__
+* `Falcon talks, podcasts, and blog posts <https://github.com/falconry/falcon/wiki/Talks-and-Podcasts>`__
+* `falconry/user <https://gitter.im/falconry/user>`__ @ Gitter
+* `falconry/dev <https://gitter.im/falconry/dev>`__ @ Gitter
 
 Features
 --------
@@ -91,19 +99,6 @@ project, please consider adding your information to our wiki under
 You might also like to view our
 `Add-on Catalog <https://github.com/falconry/falcon/wiki/Add-on-Catalog>`_,
 where you can find a list of add-ons maintained by the community.
-
-Useful Links
-------------
-
-- `Falcon Home <http://falconframework.org/>`_
-- `Falcon @ PyPI <https://pypi.python.org/pypi/falcon>`_
-- `Falcon @ GitHub <https://github.com/racker/falcon>`_
-
-Resources
----------
-
-- `An Unladen Web Framework <http://blog.kgriffs.com/2013/07/02/python-fast-web-service-framework.html>`_
-- `The Definitive Introduction to Falcon <https://speakerdeck.com/cabrera/the-definitive-introduction-to-falcon>`_
 
 Documentation
 -------------
