@@ -1,3 +1,5 @@
+import json
+
 import pytest
 import six
 
@@ -33,7 +35,7 @@ def test_json(media_type):
     resp.content_type = media_type
     resp.media = {'something': True}
 
-    assert resp.data == b'{"something": true}'
+    assert json.loads(resp.data.decode('utf-8')) == {u'something': True}
 
 
 @pytest.mark.parametrize('media_type', [
@@ -96,7 +98,7 @@ def test_default_media_type(media_type):
     resp.content_type = media_type
     resp.media = {'something': True}
 
-    assert resp.data == b'{"something": true}'
+    assert json.loads(resp.data.decode('utf-8')) == {u'something': True}
     assert resp.content_type == 'application/json; charset=UTF-8'
 
 

@@ -14,10 +14,6 @@
 
 """HTTPError exception class."""
 
-try:
-    import ujson as json
-except ImportError:
-    import json
 import xml.etree.ElementTree as et
 
 try:
@@ -25,7 +21,7 @@ try:
 except ImportError:
     OrderedDict = dict
 
-from falcon.util import uri
+from falcon.util import json, uri
 
 
 class HTTPError(Exception):

@@ -18,10 +18,7 @@ This package includes utilities for simulating HTTP requests against a
 WSGI callable, without having to stand up a WSGI server.
 """
 
-try:
-    import ujson as json
-except ImportError:
-    import json
+import json  # Don't use util.json so we can sanity-test compatibility with ujson output
 import platform
 import re
 import wsgiref.validate
