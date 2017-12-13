@@ -25,6 +25,7 @@ Quick Links
 
 * `Read the docs <https://falcon.readthedocs.io/en/stable>`__
 * `Falcon add-ons and complementary packages <https://github.com/falconry/falcon/wiki>`__
+* `Falcon talks, podcasts, and blog posts <https://github.com/falconry/falcon/wiki/Talks-and-Podcasts>`__
 * `falconry/user <https://gitter.im/falconry/user>`__ @ Gitter
 * `falconry/dev <https://gitter.im/falconry/dev>`__ @ Gitter
 
@@ -150,10 +151,10 @@ Installing it is as simple as:
     $ pip install falcon
 
 If `ujson <https://pypi.python.org/pypi/ujson>`__ is available, Falcon
-will use it to speed up error response serialization and query string
-parsing. Note that ``ujson`` can actually be slower on PyPy than the
-standard ``json`` module due to ctypes overhead, and so we recommend only
-using ``ujson`` with CPython deployments:
+will use it to speed up media (de)serialization, error serialization,
+and query string parsing. Note that ``ujson`` can actually be slower
+on PyPy than the standard ``json`` module due to ctypes overhead, and
+so we recommend only using ``ujson`` with CPython deployments:
 
 .. code:: bash
 

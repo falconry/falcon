@@ -13,10 +13,6 @@
 """Request class."""
 
 from datetime import datetime
-try:
-    import ujson as json
-except ImportError:
-    import json
 
 try:
     # NOTE(kgrifs): In Python 2.6 and 2.7, socket._fileobject is a
@@ -41,6 +37,7 @@ from falcon import errors
 from falcon import request_helpers as helpers
 from falcon import util
 from falcon.media import Handlers
+from falcon.util import json
 from falcon.util.uri import parse_host, parse_query_string, unquote_string
 
 # NOTE(tbug): In some cases, http_cookies is not a module

@@ -1,9 +1,8 @@
 from __future__ import absolute_import
 
-import json
-
 from falcon import errors
 from falcon.media import BaseHandler
+from falcon.util import json
 
 
 class JSONHandler(BaseHandler):
