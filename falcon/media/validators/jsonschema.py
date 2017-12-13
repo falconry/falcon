@@ -35,7 +35,7 @@ def validate(schema):
     def decorator(func):
         def wrapper(self, req, resp, *args, **kwargs):
             try:
-                jsonschema.validate(req.media, schema)
+                jsonschema.validate(req.media, schema, format_checker=jsonschema.FormatChecker())
             except jsonschema.ValidationError as e:
                 raise falcon.HTTPBadRequest(
                     'Failed data validation',
