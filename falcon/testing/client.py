@@ -614,49 +614,49 @@ class TestClient(object):
 
         (See also: :py:meth:`falcon.testing.simulate_get`)
         """
-        return simulate_request(self.app, 'GET', path, **kwargs)
+        return self.simulate_request('GET', path, **kwargs)
 
     def simulate_head(self, path='/', **kwargs):
         """Simulates a HEAD request to a WSGI application.
 
         (See also: :py:meth:`falcon.testing.simulate_head`)
         """
-        return simulate_request(self.app, 'HEAD', path, **kwargs)
+        return self.simulate_request('HEAD', path, **kwargs)
 
     def simulate_post(self, path='/', **kwargs):
         """Simulates a POST request to a WSGI application.
 
         (See also: :py:meth:`falcon.testing.simulate_post`)
         """
-        return simulate_request(self.app, 'POST', path, **kwargs)
+        return self.simulate_request('POST', path, **kwargs)
 
     def simulate_put(self, path='/', **kwargs):
         """Simulates a PUT request to a WSGI application.
 
         (See also: :py:meth:`falcon.testing.simulate_put`)
         """
-        return simulate_request(self.app, 'PUT', path, **kwargs)
+        return self.simulate_request('PUT', path, **kwargs)
 
     def simulate_options(self, path='/', **kwargs):
         """Simulates an OPTIONS request to a WSGI application.
 
         (See also: :py:meth:`falcon.testing.simulate_options`)
         """
-        return simulate_request(self.app, 'OPTIONS', path, **kwargs)
+        return self.simulate_request('OPTIONS', path, **kwargs)
 
     def simulate_patch(self, path='/', **kwargs):
         """Simulates a PATCH request to a WSGI application.
 
         (See also: :py:meth:`falcon.testing.simulate_patch`)
         """
-        return simulate_request(self.app, 'PATCH', path, **kwargs)
+        return self.simulate_request('PATCH', path, **kwargs)
 
     def simulate_delete(self, path='/', **kwargs):
         """Simulates a DELETE request to a WSGI application.
 
         (See also: :py:meth:`falcon.testing.simulate_delete`)
         """
-        return simulate_request(self.app, 'DELETE', path, **kwargs)
+        return self.simulate_request('DELETE', path, **kwargs)
 
     def simulate_request(self, *args, **kwargs):
         """Simulates a request to a WSGI application.
