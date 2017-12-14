@@ -9,7 +9,16 @@ except ImportError:
 
 
 def validate(schema):
-    """Decorator that validates ``req.media`` using JSON Schema
+    """Decorator for validating ``req.media`` using JSON Schema.
+
+    This decorator provides standard JSON Schema validation via the
+    ``jsonschema`` package available from PyPI. Semantic validation via
+    the *format* keyword is enabled for the default checkers implemented
+    by ``jsonschema.FormatChecker``.
+
+    Note:
+        The `jsonschema`` package must be installed separately in order to use 
+        this decorator, as Falcon does not install it by default.
 
     Args:
         schema (dict): A dictionary that follows the JSON Schema specification.
@@ -28,10 +37,8 @@ def validate(schema):
 
             # -- snip --
 
-    Note:
-        This validator requires the ``jsonschema`` library available via
-        PyPI. The library also requires Python 2.7+.
     """
+    
     def decorator(func):
         def wrapper(self, req, resp, *args, **kwargs):
             try:
