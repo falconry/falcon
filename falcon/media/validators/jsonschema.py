@@ -17,7 +17,7 @@ def validate(schema):
     by ``jsonschema.FormatChecker``.
 
     Note:
-        The `jsonschema`` package must be installed separately in order to use 
+        The `jsonschema`` package must be installed separately in order to use
         this decorator, as Falcon does not install it by default.
 
     Args:
@@ -38,7 +38,7 @@ def validate(schema):
             # -- snip --
 
     """
-    
+
     def decorator(func):
         def wrapper(self, req, resp, *args, **kwargs):
             try:
