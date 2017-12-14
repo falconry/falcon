@@ -445,6 +445,7 @@ class TestFalconTestingUtils(object):
     def test_wsgi_iterable_not_closeable(self):
         result = testing.Result([], falcon.HTTP_200, [])
         assert not result.content
+        assert result.json is None
 
     def test_path_must_start_with_slash(self):
         app = falcon.API()
