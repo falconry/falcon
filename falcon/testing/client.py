@@ -589,25 +589,24 @@ class TestClient(object):
         client.simulate_get('/messages')
         client.simulate_head('/messages')
 
-    The methods all call `simulate_request` for convenient overriding
-    of requests like this::
-
-        class AuthenticatedClient(TestClient):
-
-            def simulate_request(self, *args, **kwargs):
-                original_headers = kwargs.get('headers', {})
-                kwargs['headers'] = original_headers.update(
-                    {'Authorization': 'Bearer API_KEY'}
-                )
-                return super().simulate_request(self, *args, **kwargs)
+    Note:
+        The methods all call ``self.simulate_request()`` for convenient
+        overriding of request preparation by child classes.
 
     Args:
         app (callable): A WSGI application to target when simulating
             requests
+
+
+    Keyword Arguments:
+        headers (dict): Default headers to set on every request (default
+            ``None``). These defaults may be overridden by passing values
+            for the same headers to one of the `simulate_*()` methods.
     """
 
-    def __init__(self, app):
+    def __init__(self, app, headers=None):
         self.app = app
+        self._default_headers = headers
 
     def simulate_get(self, path='/', **kwargs):
         """Simulates a GET request to a WSGI application.
@@ -666,5 +665,15 @@ class TestClient(object):
 
             falcon.testing.simulate_request(self.app, *args, **kwargs)
         """
+
+        if self._default_headers:
+            # NOTE(kgriffs): Handle the case in which headers is explicitly
+            # set to None.
+            additional_headers = kwargs.get('headers', {}) or {}
+
+            merged_headers = self._default_headers.copy()
+            merged_headers.update(additional_headers)
+
+            kwargs['headers'] = merged_headers
 
         return simulate_request(self.app, *args, **kwargs)
