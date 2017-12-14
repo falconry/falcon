@@ -23,6 +23,28 @@ overriding the default serializer via
     "+xml" suffix, the default serializer will convert the error to JSON
     or XML, respectively.
 
+To customize what data is passed to the serializer, subclass
+:class:`~.HTTPError` or any of its child classes, and override the
+:meth:`~.HTTPError.to_dict` method. To also support XML, override the
+:meth:`~.HTTPError.to_xml` method. For example::
+
+    class HTTPNotAcceptable(falcon.HTTPNotAcceptable):
+
+        def __init__(self, acceptable):
+            description = (
+                'Please see "acceptable" for a list of media types '
+                'and profiles that are currently supported.'
+            )
+
+            super().__init__(description=description)
+            self._acceptable = acceptable
+
+        def to_dict(self, obj_type=dict):
+            result = super().to_dict(obj_type)
+            result['acceptable'] = self._acceptable
+
+        return result
+
 All classes are available directly in the ``falcon`` package namespace::
 
     import falcon
