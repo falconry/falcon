@@ -12,6 +12,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+from datetime import datetime
 from collections import OrderedDict
 import sys
 import os
@@ -68,7 +69,9 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Falcon'
-copyright = u"2016 Falcon Contributors | Logo based on a <a href=https://commons.wikimedia.org/wiki/File:Brown-Falcon,-Vic,-3.1.2008.jpg>photograph by John O'Neill</a>"
+copyright = u"{year} Falcon Contributors".format(
+  year=datetime.utcnow().year
+)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

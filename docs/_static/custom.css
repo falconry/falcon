@@ -13,6 +13,24 @@ body {
     width: 110px;  /* Prevent "Return type:" from wrapping. */
 }
 
+a {
+    text-decoration: none;
+}
+
+h1 a:hover, h2 a:hover, h3 a:hover {
+    text-decoration: none;
+    border: none;
+}
+
+div.footer {
+    padding-left: 500px;
+    text-align: left;
+}
+
+div.footer a:hover {
+    border-bottom: none;
+}
+
 dd ul, dd table {
     margin-bottom: 1.4em;
 }
