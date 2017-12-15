@@ -98,7 +98,8 @@ def determine_iterations(func):
 
         iterations *= ITER_DETECTION_MULTIPLIER
 
-    return int(iterations)
+    # Double just to be safe
+    return int(iterations) * 2
 
 
 def profile(name, env, filename=None, verbose=False):
@@ -213,11 +214,11 @@ def run(frameworks, trials, iterations, stat_memory):
 
     print()
 
+    datasets = []
+
     if not frameworks:
         print('Nothing to do.\n')
-        return
-
-    datasets = []
+        return datasets
 
     benchmarks = []
     for name in frameworks:
@@ -302,6 +303,9 @@ def main():
     # Otherwise, benchmark
     datasets = run(frameworks, args.trials, args.iterations,
                    args.stat_memory)
+
+    if not datasets:
+        return
 
     dataset = consolidate_datasets(datasets)
     dataset = sorted(dataset, key=lambda r: r[1])
