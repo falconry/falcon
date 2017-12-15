@@ -313,39 +313,6 @@ class TestFalconUtils(object):
         assert falcon.get_http_status(123, 'Go Away') == '123 Go Away'
 
 
-class TestFalconTesting(object):
-    """Catch some uncommon branches not covered elsewhere."""
-
-    def test_path_escape_chars_in_create_environ(self):
-        env = testing.create_environ('/hello%20world%21')
-        assert env['PATH_INFO'] == '/hello world!'
-
-    def test_no_prefix_allowed_for_query_strings_in_create_environ(self):
-        with pytest.raises(ValueError):
-            testing.create_environ(query_string='?foo=bar')
-
-    @pytest.mark.skipif(six.PY3, reason='Test does not apply to Py3K')
-    def test_unicode_path_in_create_environ(self):
-        env = testing.create_environ(u'/fancy/unícode')
-        assert env['PATH_INFO'] == '/fancy/un\xc3\xadcode'
-
-        env = testing.create_environ(u'/simple')
-        assert env['PATH_INFO'] == '/simple'
-
-    def test_none_header_value_in_create_environ(self):
-        env = testing.create_environ('/', headers={'X-Foo': None})
-        assert env['HTTP_X_FOO'] == ''
-
-    def test_decode_empty_result(self):
-        app = falcon.API()
-        client = testing.TestClient(app)
-        response = client.simulate_request(path='/')
-        assert response.text == ''
-
-    def test_httpnow_alias_for_backwards_compat(self):
-        assert testing.httpnow is util.http_now
-
-
 @pytest.mark.parametrize(
     'protocol,method',
     zip(
@@ -396,8 +363,75 @@ def test_simulate_free_functions(simulate):
     assert sink_called[0]
 
 
-class TestFalconTestCase(object):
+class TestFalconTestingUtils(object):
     """Verify some branches not covered elsewhere."""
+
+    def test_path_escape_chars_in_create_environ(self):
+        env = testing.create_environ('/hello%20world%21')
+        assert env['PATH_INFO'] == '/hello world!'
+
+    def test_no_prefix_allowed_for_query_strings_in_create_environ(self):
+        with pytest.raises(ValueError):
+            testing.create_environ(query_string='?foo=bar')
+
+    @pytest.mark.skipif(six.PY3, reason='Test does not apply to Py3K')
+    def test_unicode_path_in_create_environ(self):
+        env = testing.create_environ(u'/fancy/unícode')
+        assert env['PATH_INFO'] == '/fancy/un\xc3\xadcode'
+
+        env = testing.create_environ(u'/simple')
+        assert env['PATH_INFO'] == '/simple'
+
+    def test_none_header_value_in_create_environ(self):
+        env = testing.create_environ('/', headers={'X-Foo': None})
+        assert env['HTTP_X_FOO'] == ''
+
+    def test_decode_empty_result(self):
+        app = falcon.API()
+        client = testing.TestClient(app)
+        response = client.simulate_request(path='/')
+        assert response.text == ''
+
+    def test_httpnow_alias_for_backwards_compat(self):
+        assert testing.httpnow is util.http_now
+
+    def test_default_headers(self):
+        app = falcon.API()
+        resource = testing.SimpleTestResource()
+        app.add_route('/', resource)
+
+        headers = {
+            'Authorization': 'Bearer 123',
+        }
+
+        client = testing.TestClient(app, headers=headers)
+
+        client.simulate_get()
+        assert resource.captured_req.auth == headers['Authorization']
+
+        client.simulate_get(headers=None)
+        assert resource.captured_req.auth == headers['Authorization']
+
+    def test_default_headers_with_override(self):
+        app = falcon.API()
+        resource = testing.SimpleTestResource()
+        app.add_route('/', resource)
+
+        override_before = 'something-something'
+        override_after = 'something-something'[::-1]
+
+        headers = {
+            'Authorization': 'Bearer XYZ',
+            'Accept': 'application/vnd.siren+json',
+            'X-Override-Me': override_before,
+        }
+
+        client = testing.TestClient(app, headers=headers)
+        client.simulate_get(headers={'X-Override-Me': override_after})
+
+        assert resource.captured_req.auth == headers['Authorization']
+        assert resource.captured_req.accept == headers['Accept']
+        assert resource.captured_req.get_header('X-Override-Me') == override_after
 
     def test_status(self):
         app = falcon.API()
