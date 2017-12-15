@@ -1,7 +1,6 @@
 import json
 
 import pytest
-import six
 
 import falcon
 from falcon import errors, media, testing
@@ -86,28 +85,32 @@ def test_use_cached_media():
     assert resp.media == expected
 
 
-@pytest.mark.parametrize('media_type', [
-    (''),
-    pytest.mark.skipif(six.PY2, reason='PY3 only')(None),
-])
-def test_default_media_type(media_type):
+def test_default_media_type():
     client = create_client()
     client.simulate_get('/')
 
     resp = client.resource.captured_resp
-    resp.content_type = media_type
+    resp.content_type = ''
     resp.media = {'something': True}
 
     assert json.loads(resp.data.decode('utf-8')) == {u'something': True}
     assert resp.content_type == 'application/json; charset=UTF-8'
 
 
-@pytest.mark.skipif(six.PY3, reason='Python 2 edge-case only')
 def test_mimeparse_edgecases():
     client = create_client()
     client.simulate_get('/')
 
     resp = client.resource.captured_resp
+
+    resp.content_type = 'application/vnd.something'
     with pytest.raises(errors.HTTPUnsupportedMediaType):
-        resp.content_type = None
         resp.media = {'something': True}
+
+    resp.content_type = 'invalid'
+    with pytest.raises(errors.HTTPUnsupportedMediaType):
+        resp.media = {'something': True}
+
+    # Clear the content type, shouldn't raise this time
+    resp.content_type = None
+    resp.media = {'something': True}

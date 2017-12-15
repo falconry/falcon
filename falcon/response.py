@@ -296,9 +296,8 @@ class Response(object):
         if not is_ascii_encodable(value):
             raise ValueError('"value" is not ascii encodable')
 
-        if PY2:
-            name = str(name)
-            value = str(value)
+        name = str(name)
+        value = str(value)
 
         if self._cookies is None:
             self._cookies = SimpleCookie()
@@ -400,26 +399,34 @@ class Response(object):
         Args:
             name (str): Header name (case-insensitive). The restrictions
                 noted below for the header's value also apply here.
-            value (str): Value for the header. Must be of type ``str`` or
-                ``StringType`` and contain only US-ASCII characters.
+            value (str): Value for the header. Must be convertable to
+                ``str`` or be of type ``str`` or
+                ``StringType``. Strings must contain only US-ASCII characters.
                 Under Python 2.x, the ``unicode`` type is also accepted,
                 although such strings are also limited to US-ASCII.
         """
-        if PY2:
-            # NOTE(kgriffs): uwsgi fails with a TypeError if any header
-            # is not a str, so do the conversion here. It's actually
-            # faster to not do an isinstance check. str() will encode
-            # to US-ASCII.
-            name = str(name)
-            value = str(value)
+
+        # NOTE(kgriffs): uwsgi fails with a TypeError if any header
+        # is not a str, so do the conversion here. It's actually
+        # faster to not do an isinstance check. str() will encode
+        # to US-ASCII.
+        name = str(name)
+        value = str(value)
 
         # NOTE(kgriffs): normalize name by lowercasing it
         self._headers[name.lower()] = value
 
     def delete_header(self, name):
-        """Delete a header for this response.
+        """Delete a header that was previously set for this response.
 
-        If the header was not previously set, do nothing.
+        If the header was not previously set, nothing is done (no error is
+        raised).
+
+        Note that calling this method is equivalent to setting the corresponding
+        header property (when said property is available) to ``None``. For
+        example::
+
+            resp.etag = None
 
         Args:
             name (str): Header name (case-insensitive).  Must be of type
@@ -427,6 +434,7 @@ class Response(object):
                 Under Python 2.x, the ``unicode`` type is also accepted,
                 although such strings are also limited to US-ASCII.
         """
+
         # NOTE(kgriffs): normalize name by lowercasing it
         self._headers.pop(name.lower(), None)
 
@@ -444,19 +452,19 @@ class Response(object):
         Args:
             name (str): Header name (case-insensitive). The restrictions
                 noted below for the header's value also apply here.
-            value (str): Value for the header. Must be of type ``str`` or
-                ``StringType`` and contain only US-ASCII characters.
+            value (str): Value for the header. Must be convertable to
+                ``str`` or be of type ``str`` or
+                ``StringType``. Strings must contain only US-ASCII characters.
                 Under Python 2.x, the ``unicode`` type is also accepted,
                 although such strings are also limited to US-ASCII.
-
         """
-        if PY2:
-            # NOTE(kgriffs): uwsgi fails with a TypeError if any header
-            # is not a str, so do the conversion here. It's actually
-            # faster to not do an isinstance check. str() will encode
-            # to US-ASCII.
-            name = str(name)
-            value = str(value)
+
+        # NOTE(kgriffs): uwsgi fails with a TypeError if any header
+        # is not a str, so do the conversion here. It's actually
+        # faster to not do an isinstance check. str() will encode
+        # to US-ASCII.
+        name = str(name)
+        value = str(value)
 
         name = name.lower()
         if name in self._headers:
@@ -494,20 +502,15 @@ class Response(object):
         # normalize the header names.
         _headers = self._headers
 
-        if PY2:
-            for name, value in headers:
-                # NOTE(kgriffs): uwsgi fails with a TypeError if any header
-                # is not a str, so do the conversion here. It's actually
-                # faster to not do an isinstance check. str() will encode
-                # to US-ASCII.
-                name = str(name)
-                value = str(value)
+        for name, value in headers:
+            # NOTE(kgriffs): uwsgi fails with a TypeError if any header
+            # is not a str, so do the conversion here. It's actually
+            # faster to not do an isinstance check. str() will encode
+            # to US-ASCII.
+            name = str(name)
+            value = str(value)
 
-                _headers[name.lower()] = value
-
-        else:
-            for name, value in headers:
-                _headers[name.lower()] = value
+            _headers[name.lower()] = value
 
     def add_link(self, target, rel, title=None, title_star=None,
                  anchor=None, hreflang=None, type_hint=None):
@@ -616,12 +619,11 @@ class Response(object):
         if anchor is not None:
             value += '; anchor="' + uri_encode(anchor) + '"'
 
-        if PY2:
-            # NOTE(kgriffs): uwsgi fails with a TypeError if any header
-            # is not a str, so do the conversion here. It's actually
-            # faster to not do an isinstance check. str() will encode
-            # to US-ASCII.
-            value = str(value)
+        # NOTE(kgriffs): uwsgi fails with a TypeError if any header
+        # is not a str, so do the conversion here. It's actually
+        # faster to not do an isinstance check. str() will encode
+        # to US-ASCII.
+        value = str(value)
 
         _headers = self._headers
         if 'link' in _headers:
