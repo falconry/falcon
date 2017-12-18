@@ -1152,16 +1152,12 @@ class Request(object):
             :py:attr:`~.RequestOptions.auto_parse_form_urlencoded` to
             ``True`` via :any:`API.req_options`.
 
-            If a key appears more than once in the form data, one of the
-            values will be returned as a string, but it is undefined which
-            one. Use `req.get_param_as_list()` to retrieve all the values.
-
         Note:
             Similar to the way multiple keys in form data is handled,
             if a query parameter is assigned a comma-separated list of
-            values (e.g., 'foo=a,b,c'), only one of those values will be
+            values (e.g., ``foo=a,b,c``), only one of those values will be
             returned, and it is undefined which one. Use
-            `req.get_param_as_list()` to retrieve all the values.
+            :meth:`~.get_param_as_list` to retrieve all the values.
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'sort').
@@ -1230,12 +1226,13 @@ class Request(object):
 
         Returns:
             int: The value of the param if it is found and can be converted to
-            an integer. If the param is not found, returns ``None``, unless
+            an ``int``. If the param is not found, returns ``None``, unless
             `required` is ``True``.
 
         Raises
             HTTPBadRequest: The param was not found in the request, even though
-                it was required to be there. Also raised if the param's value
+                it was required to be there, or it was found but could not
+                be converted to an ``int``. Also raised if the param's value
                 falls outside the given interval, i.e., the value must be in
                 the interval: min <= value <= max to avoid triggering an error.
 
@@ -1371,7 +1368,8 @@ class Request(object):
             unless required is ``True``.
 
         Raises:
-            HTTPBadRequest: A required param is missing from the request.
+            HTTPBadRequest: A required param is missing from the request, or
+                can not be converted to a ``bool``.
 
         """
 
@@ -1438,9 +1436,8 @@ class Request(object):
                 things=1&things=&things=3
 
         Raises:
-            HTTPBadRequest: A required param is missing from the request.
-            HTTPInvalidParam: A transform function raised an instance of
-                ``ValueError``.
+            HTTPBadRequest: A required param is missing from the request, or
+                a transform function raised an instance of ``ValueError``.
 
         """
 
@@ -1487,7 +1484,7 @@ class Request(object):
 
         Keyword Args:
             format_string (str): String used to parse the param value
-                into a datetime. Any format recognized by strptime() is
+                into a ``datetime``. Any format recognized by strptime() is
                 supported (default ``'%Y-%m-%dT%H:%M:%SZ'``).
             required (bool): Set to ``True`` to raise
                 ``HTTPBadRequest`` instead of returning ``None`` when the
@@ -1502,9 +1499,8 @@ class Request(object):
             required is ``True``.
 
         Raises:
-            HTTPBadRequest: A required param is missing from the request.
-            HTTPInvalidParam: A transform function raised an instance of
-                ``ValueError``.
+            HTTPBadRequest: A required param is missing from the request, or
+                the value could not be converted to a ``datetime``.
         """
 
         param_value = self.get_param(name, required=required)
@@ -1547,9 +1543,8 @@ class Request(object):
             required is ``True``.
 
         Raises:
-            HTTPBadRequest: A required param is missing from the request.
-            HTTPInvalidParam: A transform function raised an instance of
-                ``ValueError``.
+            HTTPBadRequest: A required param is missing from the request, or
+                the value could not be converted to a ``date``.
         """
 
         date_time = self.get_param_as_datetime(name, format_string, required)
@@ -1563,10 +1558,11 @@ class Request(object):
 
         return date
 
-    def get_param_as_dict(self, name, required=False, store=None):
-        """Return the value of a query string parameter as a dict.
+    def get_param_as_json(self, name, required=False, store=None):
+        """Return the decoded JSON value of a query string parameter.
 
-        Given a JSON value, parse and return it as a dict.
+        Given a JSON value, decode it to an appropriate Python type,
+        (e.g., ``dict``, ``list``, ``str``, ``int``, ``bool``, etc.)
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'payload').
@@ -1584,8 +1580,8 @@ class Request(object):
             ``None`` unless required is ``True``.
 
         Raises:
-            HTTPBadRequest: A required param is missing from the request.
-            HTTPInvalidParam: The parameter's value could not be parsed as JSON.
+            HTTPBadRequest: A required param is missing from the request, or
+                the value could not be parsed as JSON.
         """
 
         param_value = self.get_param(name, required=required)
@@ -1603,6 +1599,14 @@ class Request(object):
             store[name] = val
 
         return val
+
+    get_param_as_dict = get_param_as_json
+    """Deprecated alias of :meth:`~get_param_as_json`.
+
+    Warning:
+
+        This method has been deprecated and will be removed in a future release.
+    """
 
     def log_error(self, message):
         """Write an error message to the server's log.
