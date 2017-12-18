@@ -45,6 +45,7 @@ class HeaderHelpersResource(object):
             'proxy-revalidate', 'max-age=3600', 's-maxage=60', 'no-transform'
         ]
 
+        resp.etag = None  # Header not set yet, so should be a noop
         resp.etag = 'fa0d1a60ef6616bb28038515c8ea4cb2'
         resp.last_modified = self.last_modified
         resp.retry_after = 3601
@@ -52,6 +53,8 @@ class HeaderHelpersResource(object):
         # Relative URI's are OK per http://goo.gl/DbVqR
         resp.location = '/things/87'
         resp.content_location = '/things/78'
+
+        resp.downloadable_as = None  # Header not set yet, so should be a noop
         resp.downloadable_as = 'Some File.zip'
 
         if req.range_unit is None or req.range_unit == 'bytes':
@@ -62,9 +65,8 @@ class HeaderHelpersResource(object):
 
         resp.accept_ranges = 'bytes'
 
-        # Test the removal of headers
+        # Test the removal of custom headers
         resp.set_header('X-Client-Should-Never-See-This', 'abc')
-        # Confirm that the header was set
         assert resp.get_header('x-client-should-never-see-this') == 'abc'
         resp.delete_header('x-client-should-never-see-this')
 
@@ -179,6 +181,17 @@ class AppendHeaderResource(object):
         resp.append_header('X-Things', 'thing-1')
 
 
+class RemoveHeaderResource(object):
+    def on_get(self, req, resp):
+        resp.etag = 'fa0d1a60ef6616bb28038515c8ea4cb2'
+        assert resp.etag == 'fa0d1a60ef6616bb28038515c8ea4cb2'
+        resp.etag = None
+
+        resp.downloadable_as = 'foo.zip'
+        assert resp.downloadable_as == 'attachment; filename="foo.zip"'
+        resp.downloadable_as = None
+
+
 class TestHeaders(object):
 
     def test_content_length(self, client):
@@ -200,6 +213,13 @@ class TestHeaders(object):
 
         value = req.get_header('X-Not-Found', default='some-value')
         assert value == 'some-value'
+
+    def test_unset_header(self, client):
+        client.app.add_route('/', RemoveHeaderResource())
+        result = client.simulate_get()
+
+        assert 'Etag' not in result.headers
+        assert 'Content-Disposition' not in result.headers
 
     def test_required_header(self, client):
         resource = testing.SimpleTestResource(body=SAMPLE_BODY)

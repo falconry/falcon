@@ -38,15 +38,23 @@ def header_property(name, doc, transform=None):
             return None
 
     if transform is None:
-        if six.PY2:
-            def fset(self, value):
+        def fset(self, value):
+            if value is None:
+                try:
+                    del self._headers[normalized_name]
+                except KeyError:
+                    pass
+            else:
                 self._headers[normalized_name] = str(value)
-        else:
-            def fset(self, value):
-                self._headers[normalized_name] = value
     else:
         def fset(self, value):
-            self._headers[normalized_name] = transform(value)
+            if value is None:
+                try:
+                    del self._headers[normalized_name]
+                except KeyError:
+                    pass
+            else:
+                self._headers[normalized_name] = transform(value)
 
     def fdel(self):
         del self._headers[normalized_name]

@@ -27,8 +27,7 @@ pip-log.txt
 # Test artifacts
 *.dat
 .cache
-.coverage
-.coverage_*
+.coverage*
 .ecosystem
 .tox
 htmlcov
