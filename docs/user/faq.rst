@@ -122,6 +122,16 @@ handy `websockets <https://pypi.python.org/pypi/websockets/4.0.1>`_ library.
 Routing
 ~~~~~~~
 
+How do I implement redirects within Falcon?
+-------------------------------------------
+
+Falcon provides a number of exception classes that can be raised to redirect the
+client to a different location (see also :ref:`Redirection <redirects>`).
+
+Note, however, that it is more efficient to handle permanent redirects
+directly with your web server, if possible, rather than placing additional load
+on your app for such requests.
+
 How do I implement both POSTing and GETing items for the same resource?
 -----------------------------------------------------------------------
 Suppose you have the following routes::
@@ -316,6 +326,14 @@ Downstream components or hooks could then use this information to
 authorize the request, taking into account the user's role and the requested
 resource.
 
+Why does req.stream.read() hang for certain requests?
+-----------------------------------------------------
+
+This behavior is an unfortunate artifact of the request body mechanics not
+being fully defined by the WSGI spec (PEP-3333). This is discussed in the
+reference documentation for :attr:`~falcon.Request.stream`, and a workaround
+is provided in the form of :attr:`~falcon.Request.bounded_stream`.
+
 Why are trailing slashes trimmed from req.path?
 -----------------------------------------------
 By default, Falcon normalizes incoming URI paths to simplify later processing
@@ -341,6 +359,17 @@ globally for each instance of :class:`falcon.API` via the
 .. code:: python
 
     api.req_options.keep_blank_qs_values = True
+
+Why are '+' characters in my params being converted to spaces?
+--------------------------------------------------------------
+The ``+`` character is often used instead of ``%20`` to represent spaces in
+query string params, due to the historical conflation of form parameter encoding
+(``application/x-www-form-urlencoded``) and URI percent-encoding.  Therefore,
+Falcon, converts ``+`` to a space when decoding strings.
+
+To work around this, RFC 3986 specifies ``+`` as a reserved character,
+and recommends percent-encoding any such characters when their literal value is
+desired (``%2B`` in the case of ``+``).
 
 How can I access POSTed form params?
 ------------------------------------
