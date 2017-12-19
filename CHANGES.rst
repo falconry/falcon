@@ -1,3 +1,78 @@
+1.4.0
+=====
+
+Breaking Changes
+----------------
+
+(None)
+
+Changes to Supported Platforms
+------------------------------
+
+- Support for CPython 3.3 is now deprecated and will be removed in
+  Falcon 2.0.
+- As with the previous release, Python 2.6 and Jython 2.7 remain deprecated and
+  will no longer be supported in Falcon 2.0.
+
+New & Improved
+--------------
+
+- We added a new method, ``API.add_static_route()``, that makes it easy to
+  serve files from a local directory. This feature provides an alternative to
+  serving files from the web server when you don't have that option, when
+  authorization is required, or for testing purposes.
+- Arguments can now be passed to hooks.
+- The default JSON media type handler will now use
+  ujson, if available, to speed up JSON (de)serialization under CPython.
+- Semantic validation via the *format* keyword is now enabled for the
+  ``falcon.media.validators.jsonschema.validate()`` JSON Schema decorator.
+- We added a new helper, ``falcon.Request.get_param_as_uuid()``, to the
+  ``Request`` class.
+- Falcon now supports WebDAV methods (RFC 3253), such as UPDATE and REPORT.
+- ``falcon.routing.create_http_method_map`` has been refactored into two
+  new methods, ``falcon.routing.map_http_methods`` and
+  ``falcon.routing.set_default_responders``, so that
+  custom routers can better pick and choose the functionality they need. The
+  original method is still available for backwards-compatibility, but will
+  be removed in a future release.
+- ``TestClient``'s ``simulate_*()`` methods now call
+  ``TestClient.simulate_request`` to make it is easier for subclasses to
+  override ``TestClient``'s behavior.
+- ``TestClient`` can now be configured with a default set of headers to
+  send with every request.
+- ``testing.Result.json`` now returns None when the response body is
+  empty, rather than raising an error.
+- The FAQ has been reorganized and greatly expanded.
+- We restyled the docs to match https://falconframework.org
+
+Fixed
+-----
+
+- Forwarded headers containing quoted strings with commas were not being parsed
+  correctly. This has been fixed, and the parser generally made more robust.
+- Overriding a resource class and calling its responders via ``super()`` did
+  not work when passing URI template params as positional arguments. This has
+  now been fixed.
+- Python 3.6 was generating warnings for strings containing ``'\s'`` within
+  Falcon. These strings have been converted to raw strings to mitigate the
+  warning.
+- Several syntax errors were found and fixed in the code examples used in the
+  docs.
+
+Contributors to this Release
+----------------------------
+
+Many thanks to all of our talented and stylish contributors to this release!
+
+- GriffGeorge
+- hynek
+- kgriffs
+- rhemz
+- santeyio
+- timc13
+- tyronegroves
+- zhanghanyun
+
 1.3.0
 =====
 
@@ -40,10 +115,10 @@ New & Improved
 Fixed
 -----
 
-- If even a single cookie in the request to the server is malformed, 
-  none of the cookies will be parsed (all-or-nothing). Change the 
+- If even a single cookie in the request to the server is malformed,
+  none of the cookies will be parsed (all-or-nothing). Change the
   parser to simply skip bad cookies (best-effort).
-- ``API`` instances are not pickleable. Modify the default router 
+- ``API`` instances are not pickleable. Modify the default router
   to fix this.
 
 1.2.0
