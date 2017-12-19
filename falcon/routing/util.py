@@ -86,8 +86,8 @@ def create_http_method_map(resource):  # pragma: nocover
 
     Warning:
         This method is deprecated and will be removed in a future release.
-        Please use :py:meth:`~.map_http_methods` and
-        :py:meth:`~.set_default_responders` instead.
+        Please use :py:meth:`~falcon.routing.map_http_methods` and
+        :py:meth:`~falcon.routing.map_http_methods` instead.
 
     Args:
         resource: An object with *responder* methods, following the naming

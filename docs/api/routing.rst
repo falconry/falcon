@@ -283,6 +283,10 @@ Routing Utilities
 The *falcon.routing* module contains the following utilities that may
 be used by custom routing engines.
 
+.. autofunction:: falcon.routing.map_http_methods
+
+.. autofunction:: falcon.routing.set_default_responders
+
 .. autofunction:: falcon.routing.create_http_method_map
 
 .. autofunction:: falcon.routing.compile_uri_template
