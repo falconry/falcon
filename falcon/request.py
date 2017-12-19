@@ -26,7 +26,8 @@ except AttributeError:
     import io
     NativeStream = io.BufferedReader
 
-from wsgiref.validate import InputWrapper  # NOQA: I202
+from uuid import UUID  # NOQA: I202
+from wsgiref.validate import InputWrapper
 
 import mimeparse
 import six
@@ -1261,6 +1262,70 @@ class Request(object):
 
             if max is not None and max < val:
                 msg = 'The value may not exceed ' + str(max)
+                raise errors.HTTPInvalidParam(msg, name)
+
+            if store is not None:
+                store[name] = val
+
+            return val
+
+        if not required:
+            return None
+
+        raise errors.HTTPMissingParam(name)
+
+    def get_param_as_uuid(self, name, required=False, store=None):
+        """Return the value of a query string parameter as an UUID.
+
+        The value to convert must conform to the standard UUID string
+        representation per RFC 4122. For example, the following
+        strings are all valid::
+
+            # Lowercase
+            '64be949b-3433-4d36-a4a8-9f19d352fee8'
+
+            # Uppercase
+            'BE71ECAA-F719-4D42-87FD-32613C2EEB60'
+
+            # Mixed
+            '81c8155C-D6de-443B-9495-39Fa8FB239b5'
+
+        Args:
+            name (str): Parameter name, case-sensitive (e.g., 'id').
+
+        Keyword Args:
+            required (bool): Set to ``True`` to raise
+                ``HTTPBadRequest`` instead of returning ``None`` when the
+                parameter is not found or is not a UUID (default
+                ``False``).
+            store (dict): A ``dict``-like object in which to place
+                the value of the param, but only if the param is found
+                (default ``None``).
+
+        Returns:
+            UUID: The value of the param if it is found and can be converted to
+            a ``UUID``. If the param is not found, returns ``None``, unless
+            `required` is ``True``.
+
+        Raises
+            HTTPBadRequest: The param was not found in the request, even though
+                it was required to be there, or it was found but could not
+                be converted to a ``UUID``.
+        """
+
+        params = self._params
+
+        # PERF: Use if..in since it is a good all-around performer; we don't
+        #       know how likely params are to be specified by clients.
+        if name in params:
+            val = params[name]
+            if isinstance(val, list):
+                val = val[-1]
+
+            try:
+                val = UUID(val)
+            except ValueError:
+                msg = 'The value must be a UUID string.'
                 raise errors.HTTPInvalidParam(msg, name)
 
             if store is not None:

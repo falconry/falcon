@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from uuid import UUID
 
 try:
     import ujson as json
@@ -72,7 +73,7 @@ class TestQueryParams(object):
 
     def test_none(self, simulate_request, client, resource):
         query_string = ''
-        client.app.add_route('/', resource)
+        client.app.add_route('/', resource)  # TODO: DRY up this setup logic
         simulate_request(client=client, path='/', query_string=query_string)
 
         req = resource.captured_req
@@ -213,6 +214,7 @@ class TestQueryParams(object):
     @pytest.mark.parametrize('method_name', [
         'get_param',
         'get_param_as_int',
+        'get_param_as_uuid',
         'get_param_as_bool',
         'get_param_as_list',
     ])
@@ -306,6 +308,33 @@ class TestQueryParams(object):
 
         with pytest.raises(falcon.HTTPBadRequest):
             req.get_param_as_int('pos', min=0, max=10)
+
+    def test_uuid(self, simulate_request, client, resource):
+        client.app.add_route('/', resource)
+        query_string = ('marker1=8d76b7b3-d0dd-46ca-ad6e-3989dcd66959&'
+                        'marker2=64be949b-3433-4d36-a4a8-9f19d352fee8&'
+                        'marker2=8D76B7B3-d0dd-46ca-ad6e-3989DCD66959&'
+                        'short=4be949b-3433-4d36-a4a8-9f19d352fee8')
+        simulate_request(client=client, path='/', query_string=query_string)
+
+        req = resource.captured_req
+
+        expected_uuid = UUID('8d76b7b3-d0dd-46ca-ad6e-3989dcd66959')
+        assert req.get_param_as_uuid('marker1') == expected_uuid
+        assert req.get_param_as_uuid('marker2') == expected_uuid
+        assert req.get_param_as_uuid('marker3') is None
+        assert req.get_param_as_uuid('marker3', required=False) is None
+
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.get_param_as_uuid('short')
+
+        store = {}
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.get_param_as_uuid('marker3', required=True, store=store)
+
+        assert not store
+        assert req.get_param_as_uuid('marker1', store=store)
+        assert store['marker1'] == expected_uuid
 
     def test_boolean(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
