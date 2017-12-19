@@ -1,3 +1,5 @@
+import pytest
+
 from falcon.request import Request
 import falcon.testing as testing
 
@@ -121,28 +123,39 @@ def test_forwarded_missing_first_hop_host():
     assert req.forwarded_uri == 'http://suchproxy02.suchtesting.com/doge/languages'
     assert req.forwarded_prefix == 'http://suchproxy02.suchtesting.com/doge'
 
+
 def test_forwarded_quote_escaping():
     req = Request(testing.create_environ(
         host='suchproxy02.suchtesting.com',
         path='/languages',
         app='doge',
         headers={
-            'Forwarded': 'for=1.2.3.4;some="extra,info"'
+            'Forwarded': 'for="1\\.2\\.3\\.4";some="extra,\\"info\\""'
         }
     ))
 
     assert req.forwarded[0].host is None
     assert req.forwarded[0].src == '1.2.3.4'
 
-def test_escape_malformed_requests():
+
+@pytest.mark.parametrize('forwarded, expected_dest', [
+    ('for=1.2.3.4;by="', None),
+    ('for=1.2.3.4;by=4\\.3.2.1thing=blah', '4'),
+    ('for=1.2.3.4;by="\\4.3.2.1"thing=blah', '4.3.2.1'),
+    ('for=1.2.3.4;by="4.3.2.\\1"thing="blah"', '4.3.2.1'),
+    ('for=1.2.3.4;by="4.3.\\2\\.1" thing="blah"', '4.3.2.1'),
+])
+def test_escape_malformed_requests(forwarded, expected_dest):
 
     req = Request(testing.create_environ(
         host='suchproxy02.suchtesting.com',
         path='/languages',
         app='doge',
         headers={
-            'Forwarded': 'for=1.2.3.4;by="'
+            'Forwarded': forwarded
         }
     ))
 
-    assert req.forwarded is None
+    assert len(req.forwarded) == 1
+    assert req.forwarded[0].src == '1.2.3.4'
+    assert req.forwarded[0].dest == expected_dest

@@ -229,6 +229,13 @@ class TestFalconUtils(object):
             actual = uri.decode(case)
             assert expect == actual
 
+    def test_unquote_string(self):
+        assert uri.unquote_string('v') == 'v'
+        assert uri.unquote_string('not-quoted') == 'not-quoted'
+        assert uri.unquote_string('partial-quoted"') == 'partial-quoted"'
+        assert uri.unquote_string('"partial-quoted') == '"partial-quoted'
+        assert uri.unquote_string('"partial-quoted"') == 'partial-quoted'
+
     def test_parse_query_string(self):
         query_strinq = (
             'a=http%3A%2F%2Ffalconframework.org%3Ftest%3D1'
