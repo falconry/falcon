@@ -23,11 +23,13 @@ New & Improved
   authorization is required, or for testing purposes.
 - Arguments can now be passed to hooks.
 - The default JSON media type handler will now use
-  ujson, if available, to speed up JSON (de)serialization under CPython.
+  ``ujson``, if available, to speed up JSON (de)serialization under CPython.
 - Semantic validation via the *format* keyword is now enabled for the
   ``falcon.media.validators.jsonschema.validate()`` JSON Schema decorator.
 - We added a new helper, ``falcon.Request.get_param_as_uuid()``, to the
   ``Request`` class.
+- We added a new property, ``downloadable_as``, to the
+  ``Response`` class for setting the Content-Disposition header.
 - Falcon now supports WebDAV methods (RFC 3253), such as UPDATE and REPORT.
 - ``falcon.routing.create_http_method_map`` has been refactored into two
   new methods, ``falcon.routing.map_http_methods`` and
