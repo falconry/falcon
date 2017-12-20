@@ -689,9 +689,9 @@ class Response(object):
         'Content-Disposition',
         """Set the Content-Disposition header using the given filename.
 
-        The value will be used for the "filename" directive. For example,
-        given 'report.pdf', the Content-Disposition header would be set
-        to ``'attachment; filename="report.pdf"'``.
+        The value will be used for the *filename* directive. For example,
+        given ``'report.pdf'``, the Content-Disposition header would be set
+        to: ``'attachment; filename="report.pdf"'``.
         """,
         format_content_disposition)
 
