@@ -52,7 +52,7 @@ if CYTHON:
 
         return module_names
 
-    package_names = ['falcon', 'falcon.util', 'falcon.routing']
+    package_names = ['falcon', 'falcon.util', 'falcon.routing', 'falcon.media']
     ext_modules = [
         Extension(
             package + '.' + module,
