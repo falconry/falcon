@@ -19,7 +19,7 @@ large-scale app backends and microservices. It encourages the REST
 architectural style, and tries to do as little as possible while
 remaining highly effective.
 
-Falcon apps work with any WSGI server, and run great under
+Falcon apps work with any WSGI server, and run like a champ under
 CPython 2.7, CPython 3.4+, PyPy2.7, and PyPy3.5.
 
 Support Falcon Development
@@ -162,7 +162,7 @@ CPython
 ^^^^^^^
 
 Falcon also fully supports
-`CPython <https://www.python.org/downloads/>`__ 2.7-3.6.
+`CPython <https://www.python.org/downloads/>`__ 2.7 and 3.4+.
 
 A universal wheel is available on PyPI for the the Falcon framework.
 Installing it is as simple as:

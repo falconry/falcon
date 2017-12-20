@@ -30,6 +30,7 @@ pip-log.txt
 .coverage*
 .ecosystem
 .tox
+.pytest_cache
 htmlcov
 nosetests.xml
 
