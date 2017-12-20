@@ -37,9 +37,11 @@ from falcon import DEFAULT_MEDIA_TYPE
 from falcon import errors
 from falcon import request_helpers as helpers
 from falcon import util
+from falcon.forwarded import _parse_forwarded_header
+from falcon.forwarded import Forwarded  # NOQA
 from falcon.media import Handlers
 from falcon.util import json
-from falcon.util.uri import parse_host, parse_query_string, unquote_string
+from falcon.util.uri import parse_host, parse_query_string
 
 # NOTE(tbug): In some cases, http_cookies is not a module
 # but a dict-like structure. This fixes that issue.
@@ -231,7 +233,8 @@ class Request(object):
 
         forwarded (list): Value of the Forwarded header, as a parsed list
             of :class:`falcon.Forwarded` objects, or ``None`` if the header
-            is missing.
+            is missing. If the header value is malformed, Falcon will
+            make a best effort to parse what it can.
 
             (See also: RFC 7239, Section 4)
         date (datetime): Value of the Date header, converted to a
@@ -549,49 +552,7 @@ class Request(object):
             except KeyError:
                 return None
 
-            parsed_elements = []
-
-            for element in forwarded.split(','):
-                parsed_element = Forwarded()
-
-                # NOTE(kgriffs): Calling strip() is necessary here since
-                # "an HTTP list allows white spaces to occur between the
-                # identifiers".
-
-                # (See also: RFC 7239, Section 7.1)
-                for param in element.strip().split(';'):
-                    # PERF(kgriffs): partition() is faster than split().
-                    name, __, value = param.partition('=')
-                    if not value:
-                        # NOTE(kgriffs): The '=' separator was not found or
-                        # the value was missing. Ignore this malformed
-                        # param.
-                        continue
-
-                    # NOTE(kgriffs): According to RFC 7239, parameter
-                    # names are case-insensitive.
-                    name = name.lower()
-                    value = unquote_string(value)
-                    if name == 'by':
-                        parsed_element.dest = value
-                    elif name == 'for':
-                        parsed_element.src = value
-                    elif name == 'host':
-                        parsed_element.host = value
-                    elif name == 'proto':
-                        # NOTE(kgriffs): RFC 7239 only requires that
-                        # the "proto" value conform to the Host ABNF
-                        # described in RFC 7230. The Host ABNF, in turn,
-                        # does not require that the scheme be in any
-                        # particular case, so we normalize it here to be
-                        # consistent with the WSGI spec that *does*
-                        # require the value of 'wsgi.url_scheme' to be
-                        # either 'http' or 'https' (case-sensitive).
-                        parsed_element.scheme = value.lower()
-
-                parsed_elements.append(parsed_element)
-
-            self._cached_forwarded = parsed_elements
+            self._cached_forwarded = _parse_forwarded_header(forwarded)
 
         return self._cached_forwarded
 
@@ -1769,36 +1730,3 @@ class RequestOptions(object):
         self.strip_url_path_trailing_slash = True
         self.default_media_type = DEFAULT_MEDIA_TYPE
         self.media_handlers = Handlers()
-
-
-class Forwarded(object):
-    """Represents a parsed Forwarded header.
-
-    (See also: RFC 7239, Section 4)
-
-    Attributes:
-        src (str): The value of the "for" parameter, or
-            ``None`` if the parameter is absent. Identifies the
-            node making the request to the proxy.
-        dest (str): The value of the "by" parameter, or
-            ``None`` if the parameter is absent. Identifies the
-            client-facing interface of the proxy.
-        host (str): The value of the "host" parameter, or
-            ``None`` if the parameter is absent. Provides the host
-            request header field as received by the proxy.
-        scheme (str): The value of the "proto" parameter, or
-            ``None`` if the parameter is absent. Indicates the
-            protocol that was used to make the request to
-            the proxy.
-    """
-
-    # NOTE(kgriffs): Use "client" since "for" is a keyword, and
-    # "scheme" instead of "proto" to be consistent with the
-    # falcon.Request interface.
-    __slots__ = ('src', 'dest', 'host', 'scheme')
-
-    def __init__(self):
-        self.src = None
-        self.dest = None
-        self.host = None
-        self.scheme = None
