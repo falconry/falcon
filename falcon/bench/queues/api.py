@@ -38,7 +38,7 @@ class CannedResponseComponent(object):
         limit = req.get_param('limit') or '10'  # NOQA
 
         resp.status = falcon.HTTP_200
-        resp.body = self._body
+        resp.data = self._body
         resp.set_headers(self._headers)
         resp.vary = ('X-Auth-Token', 'Accept-Encoding')
         resp.content_range = (0, len(self._body), len(self._body) + 100)

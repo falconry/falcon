@@ -54,6 +54,7 @@ except ImportError:
 from falcon.bench import create  # NOQA
 import falcon.testing as helpers
 
+
 # NOTE(kgriffs): Based on testing, these values provide a ceiling that's
 # several times higher than fast x86 hardware can achieve today.
 ITER_DETECTION_MAX_ATTEMPTS = 27
@@ -67,6 +68,9 @@ ITER_DETECTION_DURATION_MAX = 5.0
 JIT_WARMING_MULTIPLIER = 30
 
 PYPY = platform.python_implementation() == 'PyPy'
+
+BODY = helpers.rand_string(10240, 10240).encode('utf-8') # NOQA
+HEADERS = {'X-Test': 'Funky Chicken'}  # NOQA
 
 
 class StartResponseMockLite(object):
@@ -217,10 +221,6 @@ def exhaust(iterator_or_generator):
     deque(iterator_or_generator, maxlen=0)
 
 
-BODY = helpers.rand_string(10240, 10240)  # NOQA
-HEADERS = {'X-Test': 'Funky Chicken'}  # NOQA
-
-
 def create_bench(name, env):
     srmock = StartResponseMockLite()
 
@@ -229,13 +229,11 @@ def create_bench(name, env):
 
     def bench():
         app(env, srmock)
-        if srmock.status != '200 OK':
-            raise AssertionError(srmock.status + ' != 200 OK')
+        assert srmock.status == '200 OK'
 
     def bench_generator():
         exhaust(app(env, srmock))
-        if srmock.status != '200 OK':
-            raise AssertionError(srmock.status + ' != 200 OK')
+        assert srmock.status == '200 OK'
 
     if inspect.isgeneratorfunction(app):
         return bench_generator
