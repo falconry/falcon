@@ -56,15 +56,40 @@ import falcon.testing as helpers
 
 # NOTE(kgriffs): Based on testing, these values provide a ceiling that's
 # several times higher than fast x86 hardware can achieve today.
-#
-#   int(1.2**60) = 56347
-#
-ITER_DETECTION_MAX_ATTEMPTS = 60
-ITER_DETECTION_MULTIPLIER = 1.2
+ITER_DETECTION_MAX_ATTEMPTS = 27
+ITER_DETECTION_MULTIPLIER = 1.7
+ITER_DETECTION_STARTING = 3000
 
 # NOTE(kgriffs): Benchmark duration range, in seconds, to target
-ITER_DETECTION_DURATION_MIN = 0.2
-ITER_DETECTION_DURATION_MAX = 2.0
+ITER_DETECTION_DURATION_MIN = 1.0
+ITER_DETECTION_DURATION_MAX = 5.0
+
+JIT_WARMING_MULTIPLIER = 30
+
+PYPY = platform.python_implementation() == 'PyPy'
+
+
+class StartResponseMockLite(object):
+    """Mock object representing a WSGI `start_response` callable."""
+
+    def __init__(self):
+        self._called = 0
+        self.status = None
+        self.headers = None
+        self.exc_info = None
+
+    def __call__(self, status, headers, exc_info=None):
+        """Implements the PEP-3333 `start_response` protocol."""
+
+        self._called += 1
+
+        self.status = status
+        self.headers = headers
+        self.exc_info = exc_info
+
+    @property
+    def call_count(self):
+        return self._called
 
 
 def bench(func, iterations, stat_memory):
@@ -81,16 +106,13 @@ def bench(func, iterations, stat_memory):
 
     sec_per_req = Decimal(str(total_sec)) / Decimal(str(iterations))
 
-    sys.stdout.write('.')
-    sys.stdout.flush()
-
     return (sec_per_req, heap_diff)
 
 
 def determine_iterations(func):
     # NOTE(kgriffs): Algorithm adapted from IPython's magic timeit
     # function to determine iterations so that 0.2 <= total time < 2.0
-    iterations = ITER_DETECTION_MULTIPLIER
+    iterations = ITER_DETECTION_STARTING
     for __ in range(1, ITER_DETECTION_MAX_ATTEMPTS):
         gc.collect()
 
@@ -106,8 +128,7 @@ def determine_iterations(func):
 
         iterations *= ITER_DETECTION_MULTIPLIER
 
-    # Double just to be safe
-    return int(iterations) * 2
+    return int(iterations)
 
 
 def profile(name, env, filename=None, verbose=False):
@@ -125,9 +146,21 @@ def profile(name, env, filename=None, verbose=False):
         print('=' * len(title))
 
     func = create_bench(name, env)
-
     gc.collect()
-    code = 'for x in range(100000): func()'
+
+    num_iterations = 100000
+
+    if PYPY:
+        print('JIT warmup...')
+
+        # TODO(kgriffs): Measure initial time, and keep iterating until
+        # performance increases and then steadies
+        for x in range(num_iterations * JIT_WARMING_MULTIPLIER):
+            func()
+
+        print('Ready.')
+
+    code = 'for x in range({0}): func()'.format(num_iterations)
 
     if verbose:
         if pprofile is None:
@@ -189,7 +222,7 @@ HEADERS = {'X-Test': 'Funky Chicken'}  # NOQA
 
 
 def create_bench(name, env):
-    srmock = helpers.StartResponseMock()
+    srmock = StartResponseMockLite()
 
     function = name.lower().replace('-', '_')
     app = eval('create.{0}(BODY, HEADERS)'.format(function))
@@ -269,7 +302,18 @@ def run(frameworks, trials, iterations, stat_memory):
     benchmarks = []
     for name in frameworks:
         bm = create_bench(name, get_env(name))
+
         bm_iterations = iterations if iterations else determine_iterations(bm)
+
+        if PYPY:
+            print('{}: JIT warmup'.format(name))
+
+            # TODO(kgriffs): Measure initial time, and keep iterating until
+            # performance increases and then steadies
+            bench(bm, bm_iterations * JIT_WARMING_MULTIPLIER, False)
+
+        bm_iterations = iterations if iterations else determine_iterations(bm)
+
         benchmarks.append((name, bm_iterations, bm))
         print('{}: {} iterations'.format(name, bm_iterations))
 
@@ -291,6 +335,9 @@ def run(frameworks, trials, iterations, stat_memory):
             )
 
             dataset.append((name, sec_per_req, heap_diff))
+
+            sys.stdout.write('.')
+            sys.stdout.flush()
 
         datasets.append(dataset)
         print('done.')
