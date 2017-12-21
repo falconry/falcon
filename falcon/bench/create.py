@@ -70,7 +70,10 @@ def bottle(body, headers):
         user_agent = bottle.request.headers['User-Agent']  # NOQA
         limit = bottle.request.query.limit or '10'  # NOQA
 
-        return bottle.Response(body, headers=headers)
+        for header in headers.items():
+            bottle.response.set_header(*header)
+
+        return body
 
     return bottle.default_app()
 
