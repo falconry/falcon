@@ -22,8 +22,10 @@ from collections import defaultdict, deque
 from decimal import Decimal
 import gc
 import inspect
+import platform
 import random
 import sys
+import tempfile
 import timeit
 
 try:
@@ -42,6 +44,12 @@ try:
     import pprofile
 except ImportError:
     pprofile = None
+
+try:
+    import vmprof
+    from vmshare.service import Service
+except ImportError:
+    vmprof = None
 
 from falcon.bench import create  # NOQA
 import falcon.testing as helpers
@@ -131,6 +139,44 @@ def profile(name, env, filename=None, verbose=False):
     else:
         cProfile.runctx(code, locals(), globals(),
                         sort='tottime', filename=filename)
+
+
+def profile_vmprof(name, env):
+    if vmprof is None:
+        print('vmprof not found. Please install vmprof and try again.')
+        return
+
+    func = create_bench(name, env)
+    gc.collect()
+
+    #
+    # Based on: https://github.com/vmprof/vmprof-python/blob/master/vmprof/__main__.py
+    #
+
+    prof_file = tempfile.NamedTemporaryFile(delete=False)
+    filename = prof_file.name
+
+    vmprof.enable(prof_file.fileno())
+
+    try:
+        for __ in range(1000000):
+            func()
+
+    except BaseException as e:
+        if not isinstance(e, (KeyboardInterrupt, SystemExit)):
+            raise
+
+    vmprof.disable()
+
+    service = Service('vmprof.com')
+    service.post({
+        Service.FILE_CPU_PROFILE: filename,
+        Service.FILE_JIT_PROFILE: filename + '.jit',
+        'argv': ' '.join(sys.argv[:]),
+        'VM': platform.python_implementation(),
+    })
+
+    prof_file.close()
 
 
 def exhaust(iterator_or_generator):
@@ -269,7 +315,7 @@ def main():
     parser.add_argument('-i', '--iterations', type=int, default=0)
     parser.add_argument('-t', '--trials', type=int, default=10)
     parser.add_argument('-p', '--profile', type=str,
-                        choices=['standard', 'verbose'])
+                        choices=['standard', 'verbose', 'vmprof'])
     parser.add_argument('-o', '--profile-output', type=str, default=None)
     parser.add_argument('-m', '--stat-memory', action='store_true')
     args = parser.parse_args()
@@ -292,8 +338,12 @@ def main():
 
     # Profile?
     if args.profile:
-        for name in frameworks:
-            profile(name, get_env(name),
+        framework = 'falcon-ext'
+
+        if args.profile == 'vmprof':
+            profile_vmprof(framework, get_env(framework))
+        else:
+            profile(framework, get_env(framework),
                     filename=args.profile_output,
                     verbose=(args.profile == 'verbose'))
 
