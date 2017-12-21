@@ -34,6 +34,9 @@ class CannedResponseComponent(object):
         self._headers = headers
 
     def process_response(self, req, resp, resource):
+        user_agent = req.user_agent  # NOQA
+        limit = req.get_param('limit') or '10'  # NOQA
+
         resp.status = falcon.HTTP_200
         resp.body = self._body
         resp.set_headers(self._headers)

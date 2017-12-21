@@ -174,7 +174,7 @@ if six.PY2:  # NOQA: C901 - Work around a bug in flake8 McCabe scoring
     def decode(encoded_uri):
         """Decodes percent-encoded characters in a URI or query string.
 
-        This function models the behavior of `urllib.parse.unquote_plus`, but
+        This function models the behavior of `urllib.unquote_plus`, but
         is faster. It is also more robust, in that it will decode escaped
         UTF-8 mutibyte sequences.
 
