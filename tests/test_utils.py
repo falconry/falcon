@@ -529,6 +529,29 @@ class TestFalconTestingUtils(object):
         with pytest.raises(ValueError):
             client.simulate_get(path='/thing?x=1')
 
+    def test_simulate_json_body(self):
+        app = falcon.API()
+        resource = testing.SimpleTestResource()
+        app.add_route('/', resource)
+
+        document = {'msg': 'Hello Unicode! \U0001F638', 'items': [1, 3, 3, 7]}
+        client = testing.TestClient(app)
+        client.simulate_post('/', json=document)
+        captured_body = resource.captured_req.stream.read().decode('utf-8')
+        assert json.loads(captured_body) == document
+        assert resource.captured_req.content_type == 'application/json'
+
+        headers = {
+            'Content-Type': 'x-falcon/peregrine',
+            'X-Falcon-Type': 'peregrine',
+        }
+        body = 'If provided, `json` parameter overrides `body`.'
+        client.simulate_post('/', headers=headers, body=body, json=document)
+        captured_body = resource.captured_req.stream.read().decode('utf-8')
+        assert json.loads(captured_body) == document
+        assert resource.captured_req.content_type == 'application/json'
+        assert resource.captured_req.get_header('X-Falcon-Type') == 'peregrine'
+
 
 class FancyAPI(falcon.API):
     pass

@@ -18,7 +18,16 @@ This package includes utilities for simulating HTTP requests against a
 WSGI callable, without having to stand up a WSGI server.
 """
 
-import json  # Don't use util.json so we can sanity-test compatibility with ujson output
+try:
+    from ujson import dumps as json_dumps
+except ImportError:
+    from json import dumps as json_dumps
+
+try:
+    from ujson import loads as json_loads
+except ImportError:
+    from json import loads as json_loads
+
 import platform
 import re
 import wsgiref.validate
@@ -168,7 +177,7 @@ class Result(object):
         if not self.text:
             return None
 
-        return json.loads(self.text)
+        return json_loads(self.text)
 
 
 class Cookie(object):
@@ -247,8 +256,9 @@ class Cookie(object):
 
 
 def simulate_request(app, method='GET', path='/', query_string=None,
-                     headers=None, body=None, file_wrapper=None, wsgierrors=None,
-                     params=None, params_csv=True, protocol='http'):
+                     headers=None, body=None, json=None, file_wrapper=None,
+                     wsgierrors=None, params=None, params_csv=True,
+                     protocol='http'):
         """Simulates a request to a WSGI application.
 
         Performs a request against a WSGI application. Uses
@@ -282,6 +292,10 @@ def simulate_request(app, method='GET', path='/', query_string=None,
                 Accepts both byte strings and Unicode strings
                 (default: ``None``). If a Unicode string is provided,
                 it will be encoded as UTF-8 in the request.
+            json(JSON serializable): A JSON document to send as the body
+                of the request (default: ``None``). If specified,
+                overrides `body` and the Content-Type header in
+                `headers`.
             file_wrapper (callable): Callable that returns an iterable,
                 to be used as the value for *wsgi.file_wrapper* in the
                 environ (default: ``None``). This can be used to test
@@ -317,6 +331,11 @@ def simulate_request(app, method='GET', path='/', query_string=None,
                 comma_delimited_lists=params_csv,
                 prefix=False,
             )
+
+        if json is not None:
+            body = json_dumps(json)
+            headers = headers or {}
+            headers['Content-Type'] = 'application/json'
 
         env = helpers.create_environ(
             method=method,
@@ -440,6 +459,10 @@ def simulate_post(app, path, **kwargs):
             Accepts both byte strings and Unicode strings
             (default: ``None``). If a Unicode string is provided,
             it will be encoded as UTF-8 in the request.
+        json(JSON serializable): A JSON document to send as the body
+            of the request (default: ``None``). If specified,
+            overrides `body` and the Content-Type header in
+            `headers`.
         protocol: The protocol to use for the URL scheme
             (default: 'http')
     """
@@ -475,6 +498,10 @@ def simulate_put(app, path, **kwargs):
             Accepts both byte strings and Unicode strings
             (default: ``None``). If a Unicode string is provided,
             it will be encoded as UTF-8 in the request.
+        json(JSON serializable): A JSON document to send as the body
+            of the request (default: ``None``). If specified,
+            overrides `body` and the Content-Type header in
+            `headers`.
         protocol: The protocol to use for the URL scheme
             (default: 'http')
     """
@@ -541,6 +568,10 @@ def simulate_patch(app, path, **kwargs):
             Accepts both byte strings and Unicode strings
             (default: ``None``). If a Unicode string is provided,
             it will be encoded as UTF-8 in the request.
+        json(JSON serializable): A JSON document to send as the body
+            of the request (default: ``None``). If specified,
+            overrides `body` and the Content-Type header in
+            `headers`.
         protocol: The protocol to use for the URL scheme
             (default: 'http')
     """
