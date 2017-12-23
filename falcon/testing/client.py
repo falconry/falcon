@@ -18,22 +18,13 @@ This package includes utilities for simulating HTTP requests against a
 WSGI callable, without having to stand up a WSGI server.
 """
 
-try:
-    from ujson import dumps as json_dumps
-except ImportError:
-    from json import dumps as json_dumps
-
-try:
-    from ujson import loads as json_loads
-except ImportError:
-    from json import loads as json_loads
-
 import platform
 import re
 import wsgiref.validate
 
 from six.moves import http_cookies
 
+from falcon import util
 from falcon.testing import helpers
 from falcon.testing.srmock import StartResponseMock
 from falcon.util import CaseInsensitiveDict, http_date_to_dt, to_query_str
@@ -177,7 +168,7 @@ class Result(object):
         if not self.text:
             return None
 
-        return json_loads(self.text)
+        return util.json.loads(self.text)
 
 
 class Cookie(object):
@@ -333,7 +324,7 @@ def simulate_request(app, method='GET', path='/', query_string=None,
             )
 
         if json is not None:
-            body = json_dumps(json)
+            body = util.json.dumps(json)
             headers = headers or {}
             headers['Content-Type'] = 'application/json'
 
