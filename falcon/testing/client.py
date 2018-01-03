@@ -24,10 +24,11 @@ import wsgiref.validate
 
 from six.moves import http_cookies
 
-from falcon import util
+from falcon.constants import MEDIA_JSON
 from falcon.testing import helpers
 from falcon.testing.srmock import StartResponseMock
 from falcon.util import CaseInsensitiveDict, http_date_to_dt, to_query_str
+from falcon.util import json as util_json
 
 _PYVER = platform.python_version_tuple()[:2]
 _PY26 = _PYVER == ('2', '6')
@@ -168,7 +169,7 @@ class Result(object):
         if not self.text:
             return None
 
-        return util.json.loads(self.text)
+        return util_json.loads(self.text)
 
 
 class Cookie(object):
@@ -283,8 +284,8 @@ def simulate_request(app, method='GET', path='/', query_string=None,
                 Accepts both byte strings and Unicode strings
                 (default: ``None``). If a Unicode string is provided,
                 it will be encoded as UTF-8 in the request.
-            json(JSON serializable): A JSON document to send as the body
-                of the request (default: ``None``). If specified,
+            json(JSON serializable): A JSON document to serialize as the
+                body of the request (default: ``None``). If specified,
                 overrides `body` and the Content-Type header in
                 `headers`.
             file_wrapper (callable): Callable that returns an iterable,
@@ -324,9 +325,9 @@ def simulate_request(app, method='GET', path='/', query_string=None,
             )
 
         if json is not None:
-            body = util.json.dumps(json)
+            body = util_json.dumps(json, ensure_ascii=False).encode('utf-8')
             headers = headers or {}
-            headers['Content-Type'] = 'application/json'
+            headers['Content-Type'] = MEDIA_JSON
 
         env = helpers.create_environ(
             method=method,
@@ -450,8 +451,8 @@ def simulate_post(app, path, **kwargs):
             Accepts both byte strings and Unicode strings
             (default: ``None``). If a Unicode string is provided,
             it will be encoded as UTF-8 in the request.
-        json(JSON serializable): A JSON document to send as the body
-            of the request (default: ``None``). If specified,
+        json(JSON serializable): A JSON document to serialize as the
+            body of the request (default: ``None``). If specified,
             overrides `body` and the Content-Type header in
             `headers`.
         protocol: The protocol to use for the URL scheme
@@ -489,8 +490,8 @@ def simulate_put(app, path, **kwargs):
             Accepts both byte strings and Unicode strings
             (default: ``None``). If a Unicode string is provided,
             it will be encoded as UTF-8 in the request.
-        json(JSON serializable): A JSON document to send as the body
-            of the request (default: ``None``). If specified,
+        json(JSON serializable): A JSON document to serialize as the
+            body of the request (default: ``None``). If specified,
             overrides `body` and the Content-Type header in
             `headers`.
         protocol: The protocol to use for the URL scheme
@@ -559,8 +560,8 @@ def simulate_patch(app, path, **kwargs):
             Accepts both byte strings and Unicode strings
             (default: ``None``). If a Unicode string is provided,
             it will be encoded as UTF-8 in the request.
-        json(JSON serializable): A JSON document to send as the body
-            of the request (default: ``None``). If specified,
+        json(JSON serializable): A JSON document to serialize as the
+            body of the request (default: ``None``). If specified,
             overrides `body` and the Content-Type header in
             `headers`.
         protocol: The protocol to use for the URL scheme

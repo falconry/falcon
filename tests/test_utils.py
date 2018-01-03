@@ -529,17 +529,38 @@ class TestFalconTestingUtils(object):
         with pytest.raises(ValueError):
             client.simulate_get(path='/thing?x=1')
 
-    def test_simulate_json_body(self):
+    @pytest.mark.parametrize('document', [
+        # NOTE(vytas): using an exact binary fraction here to avoid special
+        # code branch for approximate equality as it is not the focus here
+        16.0625,
+        123456789,
+        True,
+        '',
+        u'I am a \u1d0a\ua731\u1d0f\u0274 string.',
+        [1, 3, 3, 7],
+        {u'message': u'\xa1Hello Unicode! \U0001F638'},
+        {
+            'count': 4,
+            'items': [
+                {'number': 'one'},
+                {'number': 'two'},
+                {'number': 'three'},
+                {'number': 'four'},
+            ],
+            'next': None,
+        },
+    ])
+    def test_simulate_json_body(self, document):
         app = falcon.API()
         resource = testing.SimpleTestResource()
         app.add_route('/', resource)
 
-        document = {'msg': 'Hello Unicode! \U0001F638', 'items': [1, 3, 3, 7]}
+        json_types = ('application/json', 'application/json; charset=UTF-8')
         client = testing.TestClient(app)
         client.simulate_post('/', json=document)
         captured_body = resource.captured_req.stream.read().decode('utf-8')
         assert json.loads(captured_body) == document
-        assert resource.captured_req.content_type == 'application/json'
+        assert resource.captured_req.content_type in json_types
 
         headers = {
             'Content-Type': 'x-falcon/peregrine',
@@ -547,9 +568,8 @@ class TestFalconTestingUtils(object):
         }
         body = 'If provided, `json` parameter overrides `body`.'
         client.simulate_post('/', headers=headers, body=body, json=document)
-        captured_body = resource.captured_req.stream.read().decode('utf-8')
-        assert json.loads(captured_body) == document
-        assert resource.captured_req.content_type == 'application/json'
+        assert resource.captured_req.media == document
+        assert resource.captured_req.content_type in json_types
         assert resource.captured_req.get_header('X-Falcon-Type') == 'peregrine'
 
 
