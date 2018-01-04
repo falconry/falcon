@@ -18,4 +18,4 @@ class JSONHandler(BaseHandler):
             )
 
     def serialize(self, media):
-        return json.dumps(media, ensure_ascii=False).encode('utf-8')
+        return json.dumps(media, ensure_ascii=False)
