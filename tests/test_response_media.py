@@ -63,7 +63,7 @@ def test_json(media_type):
         'list': ['a', 'sequence', 'of', 'items'],
         'none': None,
         'str': 'ASCII string',
-        'unicode': 'Hello Unicode! \U0001F638',
+        'unicode': u'Hello Unicode! \U0001F638',
     },
 ])
 def test_non_ascii_json_serialization(document):
