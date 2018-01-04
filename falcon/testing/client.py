@@ -325,7 +325,7 @@ def simulate_request(app, method='GET', path='/', query_string=None,
             )
 
         if json is not None:
-            body = util_json.dumps(json, ensure_ascii=False).encode('utf-8')
+            body = util_json.dumps(json, ensure_ascii=False)
             headers = headers or {}
             headers['Content-Type'] = MEDIA_JSON
 
