@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+import six
+
 from falcon import errors
 from falcon.media import BaseHandler
 from falcon.util import json
@@ -19,6 +21,6 @@ class JSONHandler(BaseHandler):
 
     def serialize(self, media):
         result = json.dumps(media, ensure_ascii=False)
-        if isinstance(result, bytes):
-            return result
-        return result.encode('utf-8')
+        if six.PY3 or not isinstance(result, bytes):
+            return result.encode('utf-8')
+        return result
