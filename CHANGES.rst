@@ -37,6 +37,10 @@ New & Improved
   custom routers can better pick and choose the functionality they need. The
   original method is still available for backwards-compatibility, but will
   be removed in a future release.
+- We added a new `json` param to ``falcon.testing.simulate_request()`` et al.
+  to automatically serialize the request body from a JSON serializable object
+  or type (for a complete list of serializable types, see
+  `json.JSONEncoder <https://docs.python.org/3.6/library/json.html#json.JSONEncoder>`_).
 - ``TestClient``'s ``simulate_*()`` methods now call
   ``TestClient.simulate_request`` to make it is easier for subclasses to
   override ``TestClient``'s behavior.
@@ -52,6 +56,9 @@ Fixed
 
 - Forwarded headers containing quoted strings with commas were not being parsed
   correctly. This has been fixed, and the parser generally made more robust.
+- ``falcon.media.JSONHandler`` was raising an error under Python 2.x when
+  serializing strings containing Unicode code points. This issue has been
+  fixed.
 - Overriding a resource class and calling its responders via ``super()`` did
   not work when passing URI template params as positional arguments. This has
   now been fixed.
@@ -73,6 +80,7 @@ Many thanks to all of our talented and stylish contributors to this release!
 - santeyio
 - timc13
 - tyronegroves
+- vytas7
 - zhanghanyun
 
 1.3.0
