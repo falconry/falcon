@@ -15,7 +15,7 @@ architectural style, and tries to do as little as possible while
 remaining highly effective.
 
 Falcon apps work with any WSGI server, and run great under
-CPython 2.6-2.7, PyPy 2.7, Jython 2.7, and CPython 3.3+.
+CPython 2.7, CPython 3.4+, PyPy2.7, and PyPy3.5.
 
 (Note: Support for CPython 2.6 and Jython 2.7 is deprecated and will be
 removed in Falcon 2.0.)
@@ -78,7 +78,7 @@ Features
 -  Idiomatic HTTP error responses
 -  Straightforward exception handling
 -  Snappy unit testing through WSGI helpers and mocks
--  CPython 2.6-2.7, PyPy 2.7, Jython 2.7, and CPython 3.3+ support
+-  CPython 2.7, CPython 3.4+, PyPy2.7, and PyPy3.5 support
 -  ~20% speed boost when Cython is available
 
 Who's Using Falcon?
@@ -130,8 +130,7 @@ PyPy
 ^^^^
 
 `PyPy <http://pypy.org/>`__ is the fastest way to run your Falcon app.
-However, note that only the PyPy 2.7 compatible release is currently
-supported.
+Both PyPy2.7 and PyPy3.5 are supported as of PyPy v5.10.
 
 .. code:: bash
 

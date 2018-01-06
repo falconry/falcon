@@ -7,8 +7,7 @@ PyPy
 ----
 
 `PyPy <http://pypy.org/>`__ is the fastest way to run your Falcon app.
-However, note that only the PyPy 2.7 compatible release is currently
-supported.
+Both PyPy2.7 and PyPy3.5 are supported as of PyPy v5.10.
 
 .. code:: bash
 
