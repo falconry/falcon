@@ -72,9 +72,9 @@ class Result(object):
             under Python 2.6 and 2.7, and of type ``str`` otherwise.
             If the content type does not specify an encoding, UTF-8 is
             assumed.
-        json (dict): Deserialized JSON body. Will be ``None`` if the body has
-            no content to deserialize. Otherwise, raises an error if the
-            response is not valid JSON.
+        json (JSON serializable): Deserialized JSON body. Will be ``None`` if
+            the body has no content to deserialize. Otherwise, raises an error
+            if the response is not valid JSON.
     """
 
     def __init__(self, iterable, status, headers):

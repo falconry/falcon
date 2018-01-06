@@ -82,8 +82,8 @@ class SimpleTestResource(object):
     Keyword Arguments:
         status (str): Default status string to use in responses
         body (str): Default body string to use in responses
-        json (dict): Default JSON document to use in responses. Will
-            be serialized to a string and encoded as UTF-8. Either
+        json (JSON serializable): Default JSON document to use in responses.
+            Will be serialized to a string and encoded as UTF-8. Either
             *json* or *body* may be specified, but not both.
         headers (dict): Default set of additional headers to include in
             responses

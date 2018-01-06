@@ -23,4 +23,5 @@ class JSONHandler(BaseHandler):
         result = json.dumps(media, ensure_ascii=False)
         if six.PY3 or not isinstance(result, bytes):
             return result.encode('utf-8')
+
         return result
