@@ -20,14 +20,24 @@ CPython 2.7, CPython 3.4+, PyPy2.7, and PyPy3.5.
 (Note: Support for CPython 2.6 and Jython 2.7 is deprecated and will be
 removed in Falcon 2.0.)
 
+Support Falcon Development
+--------------------------
+
+Is Falcon a valuable part of your toolchain? Please help secure the future of
+the framework today with a one-time donation or by becoming a corporate
+sponsor. Backers get cool gear, an opportunity to promote their brand, and
+prioritized support.
+
+`Learn how to support Falcon development <https://falconframework.org/#sectionSupportFalconDevelopment>`_
+
 Quick Links
 -----------
 
-* `Read the docs <https://falcon.readthedocs.io/en/stable>`__
-* `Falcon add-ons and complementary packages <https://github.com/falconry/falcon/wiki>`__
-* `Falcon talks, podcasts, and blog posts <https://github.com/falconry/falcon/wiki/Talks-and-Podcasts>`__
-* `falconry/user <https://gitter.im/falconry/user>`__ @ Gitter
-* `falconry/dev <https://gitter.im/falconry/dev>`__ @ Gitter
+* `Read the docs <https://falcon.readthedocs.io/en/stable>`_
+* `Falcon add-ons and complementary packages <https://github.com/falconry/falcon/wiki>`_
+* `Falcon talks, podcasts, and blog posts <https://github.com/falconry/falcon/wiki/Talks-and-Podcasts>`_
+* `falconry/user for Falcon users <https://gitter.im/falconry/user>`_ @ Gitter
+* `falconry/dev for Falcon contributors <https://gitter.im/falconry/dev>`_ @ Gitter
 
 How is Falcon different?
 ------------------------
