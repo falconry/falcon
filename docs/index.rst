@@ -51,11 +51,11 @@ documentation. It basically can't be wrong."
 Quick Links
 -----------
 
-* `Read the docs <https://falcon.readthedocs.io/en/stable>`__
-* `Falcon add-ons and complementary packages <https://github.com/falconry/falcon/wiki>`__
-* `Falcon talks, podcasts, and blog posts <https://github.com/falconry/falcon/wiki/Talks-and-Podcasts>`__
-* `falconry/user <https://gitter.im/falconry/user>`__ @ Gitter
-* `falconry/dev <https://gitter.im/falconry/dev>`__ @ Gitter
+* `Read the docs <https://falcon.readthedocs.io/en/stable>`_
+* `Falcon add-ons and complementary packages <https://github.com/falconry/falcon/wiki>`_
+* `Falcon talks, podcasts, and blog posts <https://github.com/falconry/falcon/wiki/Talks-and-Podcasts>`_
+* `falconry/user for Falcon users <https://gitter.im/falconry/user>`_ @ Gitter
+* `falconry/dev for Falcon contributors <https://gitter.im/falconry/dev>`_ @ Gitter
 
 Features
 --------
