@@ -43,7 +43,7 @@ New & Improved
   or type (for a complete list of serializable types, see
   `json.JSONEncoder <https://docs.python.org/3.6/library/json.html#json.JSONEncoder>`_).
 - ``TestClient``'s ``simulate_*()`` methods now call
-  ``TestClient.simulate_request`` to make it is easier for subclasses to
+  ``TestClient.simulate_request`` to make it easier for subclasses to
   override ``TestClient``'s behavior.
 - ``TestClient`` can now be configured with a default set of headers to
   send with every request.

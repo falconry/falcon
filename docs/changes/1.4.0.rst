@@ -45,7 +45,7 @@ New & Improved
   or type (for a complete list of serializable types, see
   `json.JSONEncoder <https://docs.python.org/3.6/library/json.html#json.JSONEncoder>`_).
 - :class:`~.TestClient`'s ``simulate_*()`` methods now call
-  :meth:`~.TestClient.simulate_request` to make it is easier for subclasses to
+  :meth:`~.TestClient.simulate_request` to make it easier for subclasses to
   override :class:`~.TestClient`'s behavior.
 - :class:`~.TestClient` can now be configured with a default set of headers to
   send with every request.
