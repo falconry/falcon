@@ -9,6 +9,7 @@ Breaking Changes
 Changes to Supported Platforms
 ------------------------------
 
+- Python 3 is now supported on PyPy as of PyPy3.5 v5.10.
 - Support for CPython 3.3 is now deprecated and will be removed in
   Falcon 2.0.
 - As with the previous release, Python 2.6 and Jython 2.7 remain deprecated and
