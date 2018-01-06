@@ -6,3 +6,4 @@ Community Guide
 
    help
    contribute
+   ../user/faq

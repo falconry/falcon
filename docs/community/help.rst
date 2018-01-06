@@ -9,6 +9,12 @@ to have you join us and share your ideas.
 
 Please help us spread the word and grow the community!
 
+FAQ
+---
+First, :ref:`take a quick look at our FAQ <faq>` to see if your question has
+already been addressed. If not, or if the answer is unclear, please don't
+hesitate to reach out via one of the channels below.
+
 Chat
 ----
 The Falconry community on Gitter is a great place to ask questions and

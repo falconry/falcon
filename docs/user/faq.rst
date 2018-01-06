@@ -122,6 +122,50 @@ handy `websockets <https://pypi.python.org/pypi/websockets/4.0.1>`_ library.
 Routing
 ~~~~~~~
 
+How do I implement CORS with Falcon?
+------------------------------------
+
+In order for a website or SPA to access an API hosted under a different
+domain name, that API must implement
+`Cross-Origin Resource Sharing (CORS) <https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS>`_.
+For a public API, implementing CORS in Falcon can be as simple as implementing
+a middleware component similar to the following:
+
+.. code:: python
+
+    class CORSComponent(object):
+        def process_response(self, req, resp, resource, req_succeeded):
+            resp.set_header('Access-Control-Allow-Origin', '*')
+
+            if (req_succeeded
+                and req.method == 'OPTIONS'
+                and req.get_header('Access-Control-Request-Method')
+            ):
+                # NOTE: This is a CORS preflight request. Patch the
+                #   response accordingly.
+
+                allow = resp.get_header('Allow')
+                resp.delete_header('Allow')
+
+                resp.set_headers((
+                    ('Access-Control-Allow-Methods', allow),
+                    ('Access-Control-Allow-Headers', '*'),
+                    ('Access-Control-Max-Age', '86400'),  # 24 hours
+                ))
+
+When using the above approach, OPTIONS requests must also be special-cased in
+any other middleware or hooks you use for auth, content-negotiation, etc. For
+example, you will typically skip auth for preflight requests because it is
+simply unnecessary; note that such request do not include the Authorization
+header in any case.
+
+For more sophisticated use cases, have a look at Falcon add-ons from the
+community, such as `falcon-cors <https://github.com/lwcolton/falcon-cors>`_, or
+try one of the generic
+`WSGI CORS libraries available on PyPI <https://pypi.python.org/pypi?%3Aaction=search&term=cors&submit=search>`_.
+If you use an API gateway, you might also look into what CORS functionaly
+it provides at that level.
+
 How do I implement redirects within Falcon?
 -------------------------------------------
 
@@ -468,6 +512,18 @@ middleware component to rewrite the path before it is routed.
 
 Response Handling
 ~~~~~~~~~~~~~~~~~
+
+How can I use resp.media with types like datetime?
+--------------------------------------------------
+
+The default JSON handler for ``resp.media`` only supports the objects and types
+listed in the table documented under
+`json.JSONEncoder <https://docs.python.org/3.6/library/json.html#json.JSONEncoder>`_.
+To handle additional types, you can either serialize them beforehand, or create
+a custom JSON media handler that sets the `default` param for ``json.dumps()``.
+When deserializing an incoming request body, you may also wish to implement
+`object_hook` for ``json.loads()``. Note, however, that setting the `default` or
+`object_hook` params can negatively impact the performance of (de)serialization.
 
 Does Falcon set Content-Length or do I need to do that explicitly?
 ------------------------------------------------------------------
