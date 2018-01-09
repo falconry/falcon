@@ -5,14 +5,22 @@ from falcon.media import BaseHandler
 
 
 class MessagePackHandler(BaseHandler):
-    """Handler built using the :py:mod:`msgpack` module from python-msgpack
+    """Handler built using the :py:mod:`msgpack` module.
 
     Note:
         This handler uses the `bin` type option which expects bytes instead
         of strings.
 
     Note:
-        This handler requires the ``python-msgpack`` package to be installed.
+        This handler requires the extra ``msgpack`` package, which must be
+        installed in addition to ``falcon`` from PyPI:
+
+        .. code::
+
+            $ pip install msgpack
+
+        Python 2.6 users will need to use the deprecated ``msgpack-python``
+        package instead, pinned to version 0.4.8.
     """
 
     def __init__(self):
