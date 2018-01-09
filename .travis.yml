@@ -29,18 +29,10 @@ matrix:
           env: TOXENV=py27_smoke_cython
         - python: 3.3
           env: TOXENV=py33
-        - python: 3.3
-          env: TOXENV=py33_cython
         - python: 3.4
           env: TOXENV=py34
-        - python: 3.4
-          env: TOXENV=py34_cython
         - python: 3.5
           env: TOXENV=py35
-        - python: 3.5
-          env: TOXENV=py35_ujson
-        - python: 3.5
-          env: TOXENV=py35_cython
         - python: 3.6
           env: TOXENV=py36
         - python: 3.6
