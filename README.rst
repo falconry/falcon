@@ -23,9 +23,8 @@ removed in Falcon 2.0.)
 Support Falcon Development
 --------------------------
 
-Is Falcon a valuable part of your toolchain? Please help secure the future of
-the framework today with a one-time donation or by becoming a corporate
-sponsor. Backers get cool gear, an opportunity to promote their brand, and
+Has Falcon helped you make an awesome app? Show your support today with a one-time donation or by becoming a corporate
+sponsor. Backers get cool gear, an opportunity to promote their brand to Python developers, and
 prioritized support.
 
 `Learn how to support Falcon development <https://falconframework.org/#sectionSupportFalconDevelopment>`_
