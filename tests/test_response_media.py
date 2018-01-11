@@ -23,10 +23,10 @@ def create_client(handlers=None):
     return client
 
 
-def my_default(o):
-    if isinstance(o, SimpleTestObject):
+def my_default(obj):
+    if isinstance(obj, SimpleTestObject):
         return {
-            'name': o.name
+            'name': obj.name
         }
 
 
