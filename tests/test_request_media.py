@@ -1,3 +1,5 @@
+import pkgutil
+
 import pytest
 
 import falcon
@@ -140,15 +142,24 @@ def test_use_cached_media():
 
 
 def test_json_object_hook():
-    client = create_client(handlers={
-        'application/json': JSONHandler(object_hook=my_object_hook)
-    })
-    expected_body = b'{"name": "foo"}'
-    headers = {'Content-Type': 'application/json'}
+    try:
+        client = create_client(handlers={
+            'application/json': JSONHandler(object_hook=my_object_hook)
+        })
 
-    client.simulate_post('/', body=expected_body, headers=headers)
+        expected_body = b'{"name": "foo"}'
+        headers = {'Content-Type': 'application/json'}
 
-    req_media = client.resource.captured_req.media
+        client.simulate_post('/', body=expected_body, headers=headers)
 
-    assert isinstance(req_media, SimpleTestObject)
-    assert req_media.name == 'foo'
+        req_media = client.resource.captured_req.media
+
+        assert isinstance(req_media, SimpleTestObject)
+        assert req_media.name == 'foo'
+    except TypeError as err:
+        if pkgutil.find_loader('ujson') is not None:
+            desc = 'Specifying object_hook is not compatible with ujson.'
+            assert str(err) == desc
+            return
+        else:
+            raise

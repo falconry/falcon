@@ -1,4 +1,5 @@
 import json
+import pkgutil
 
 import pytest
 
@@ -169,13 +170,20 @@ def test_mimeparse_edgecases():
 
 
 def test_json_default_type_handler():
-    client = create_client(handlers={
-        'application/json': JSONHandler(default=my_default)
-    })
-    client.simulate_get('/')
+    try:
+        client = create_client(handlers={
+            'application/json': JSONHandler(default=my_default)
+        })
+        client.simulate_get('/')
 
-    resp = client.resource.captured_resp
-    resp.content_type = 'application/json'
+        resp = client.resource.captured_resp
+        resp.content_type = 'application/json'
 
-    # Shouldn't raise an error
-    resp.media = SimpleTestObject(name='foo')
+        # Shouldn't raise an error
+        resp.media = SimpleTestObject(name='foo')
+    except TypeError as err:
+        if pkgutil.find_loader('ujson') is not None:
+            desc = 'Specifying default is not compatible with ujson.'
+            assert str(err) == desc
+        else:
+            raise

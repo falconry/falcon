@@ -126,6 +126,9 @@ objects.
 Note that specifying either or both of these functions will significantly
 increase the time it takes to process JSON documents.
 
+Also note that neither of these are able to be specified if ujson is installed,
+as it does not currently support these parameters.
+
 Supported Handler Types
 -----------------------
 
