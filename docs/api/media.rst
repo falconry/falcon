@@ -112,6 +112,20 @@ MessagePack, this can be easily done in the following manner:
     api.resp_options.media_handlers.update(extra_handlers)
 
 
+JSON Custom Serialization and Deserialization of Objects
+--------------------------------------------------------
+
+When instantiating a JSONHandler, a function may be passed as the ``default``
+parameter which provides custom serialization of objects which are not
+otherwise JSON serializable.
+
+Similarly, when instantiating a JSONHandler, a function may be passed as the
+``object_hook`` parameter, which provides custom deserialization of JSON into
+objects.
+
+Note that specifying either or both of these functions will significantly
+increase the time it takes to process JSON documents.
+
 Supported Handler Types
 -----------------------
 
