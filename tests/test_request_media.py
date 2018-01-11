@@ -2,6 +2,7 @@ import pytest
 
 import falcon
 from falcon import errors, media, testing
+from falcon.media import JSONHandler
 
 
 def create_client(handlers=None):
@@ -17,6 +18,17 @@ def create_client(handlers=None):
     client.resource = res
 
     return client
+
+
+def my_object_hook(data):
+    if 'name' in data:
+        return SimpleTestObject(name=data.get('name'))
+
+
+class SimpleTestObject(object):
+
+    def __init__(self, name):
+        self.name = name
 
 
 @pytest.mark.parametrize('media_type', [
@@ -125,3 +137,18 @@ def test_use_cached_media():
     req._media = {'something': True}
 
     assert req.media == {'something': True}
+
+
+def test_json_object_hook():
+    client = create_client(handlers={
+        'application/json': JSONHandler(object_hook=my_object_hook)
+    })
+    expected_body = b'{"name": "foo"}'
+    headers = {'Content-Type': 'application/json'}
+
+    client.simulate_post('/', body=expected_body, headers=headers)
+
+    req_media = client.resource.captured_req.media
+
+    assert isinstance(req_media, SimpleTestObject)
+    assert req_media.name == 'foo'
