@@ -8,7 +8,22 @@ from falcon.util import json
 
 
 class JSONHandler(BaseHandler):
-    """Handler built using Python's :py:mod:`json` module."""
+    """Handler built using Python's :py:mod:`json` module.
+
+    Keyword Arguments:
+        default (callable): A callable taking the form ``func(object)`` which
+            will be called to handle serializing objects which can't be
+            otherwise serialized.
+
+            Warning: Specifying this method will significantly increase the
+            time it takes to process JSON documents.
+
+    """
+
+    __slots__ = ('_default',)
+
+    def __init__(self, default=None):
+        self._default = default
 
     def deserialize(self, raw):
         try:
@@ -20,7 +35,7 @@ class JSONHandler(BaseHandler):
             )
 
     def serialize(self, media):
-        result = json.dumps(media, ensure_ascii=False)
+        result = json.dumps(media, ensure_ascii=False, default=self._default)
         if six.PY3 or not isinstance(result, bytes):
             return result.encode('utf-8')
 

@@ -4,6 +4,7 @@ import pytest
 
 import falcon
 from falcon import errors, media, testing
+from falcon.media import JSONHandler
 
 
 def create_client(handlers=None):
@@ -19,6 +20,19 @@ def create_client(handlers=None):
     client.resource = res
 
     return client
+
+
+def my_default(o):
+    if isinstance(o, SimpleTestObject):
+        return {
+            'name': o.name
+        }
+
+
+class SimpleTestObject(object):
+
+    def __init__(self, name):
+        self.name = name
 
 
 class SimpleMediaResource(object):
@@ -152,3 +166,16 @@ def test_mimeparse_edgecases():
     # Clear the content type, shouldn't raise this time
     resp.content_type = None
     resp.media = {'something': True}
+
+
+def test_json_default_type_handler():
+    client = create_client(handlers={
+        'application/json': JSONHandler(default=my_default)
+    })
+    client.simulate_get('/')
+
+    resp = client.resource.captured_resp
+    resp.content_type = 'application/json'
+
+    # Shouldn't raise an error
+    resp.media = SimpleTestObject(name='foo')
