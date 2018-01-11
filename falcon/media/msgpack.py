@@ -7,9 +7,10 @@ from falcon.media import BaseHandler
 class MessagePackHandler(BaseHandler):
     """Handler built using the :py:mod:`msgpack` module.
 
-    Note:
-        This handler uses the `bin` type option which expects bytes instead
-        of strings.
+    This handler uses ``msgpack.unpackb()`` and ``msgpack.packb()``. The
+    MessagePack ``bin`` type is used to distinguish between Unicode strings
+    (``str`` on Python 3, ``unicode`` on Python 2) and byte strings
+    (``bytes`` on Python 2/3, or ``str`` on Python 2).
 
     Note:
         This handler requires the extra ``msgpack`` package, which must be
