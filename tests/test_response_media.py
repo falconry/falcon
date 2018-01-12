@@ -1,5 +1,6 @@
 import json
 import pkgutil
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -170,20 +171,31 @@ def test_mimeparse_edgecases():
 
 
 def test_json_default_type_handler():
-    try:
+    # This is not supported with ujson installed
+    if pkgutil.find_loader('ujson') is not None:
+        return
+
+    client = create_client(handlers={
+        'application/json': JSONHandler(default=my_default)
+    })
+    client.simulate_get('/')
+
+    resp = client.resource.captured_resp
+    resp.content_type = 'application/json'
+
+    # Shouldn't raise an error
+    resp.media = SimpleTestObject(name='foo')
+
+
+@patch('falcon.media.json.pkgutil')
+def test_json_default_raises_with_ujson(mock_pkgutil):
+    # Make it appear as though ujson is installed
+    mock_pkgutil.find_loader.return_value = object()
+
+    with pytest.raises(TypeError) as err:
         client = create_client(handlers={
             'application/json': JSONHandler(default=my_default)
         })
-        client.simulate_get('/')
 
-        resp = client.resource.captured_resp
-        resp.content_type = 'application/json'
-
-        # Shouldn't raise an error
-        resp.media = SimpleTestObject(name='foo')
-    except TypeError as err:
-        if pkgutil.find_loader('ujson') is not None:
-            desc = 'Specifying default is not compatible with ujson.'
-            assert str(err) == desc
-        else:
-            raise
+        desc = 'Specifying default is not compatible with ujson.'
+        assert str(err) == desc

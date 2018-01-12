@@ -1,4 +1,5 @@
 import pkgutil
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -142,24 +143,34 @@ def test_use_cached_media():
 
 
 def test_json_object_hook():
-    try:
+    # This is not supported with ujson installed
+    if pkgutil.find_loader('ujson') is not None:
+        return
+
+    client = create_client(handlers={
+        'application/json': JSONHandler(object_hook=my_object_hook)
+    })
+
+    expected_body = b'{"name": "foo"}'
+    headers = {'Content-Type': 'application/json'}
+
+    client.simulate_post('/', body=expected_body, headers=headers)
+
+    req_media = client.resource.captured_req.media
+
+    assert isinstance(req_media, SimpleTestObject)
+    assert req_media.name == 'foo'
+
+
+@patch('falcon.media.json.pkgutil')
+def test_json_object_hook_raises_with_ujson(mock_pkgutil):
+    # Make it appear as though ujson is installed
+    mock_pkgutil.find_loader.return_value = object()
+
+    with pytest.raises(TypeError) as err:
         client = create_client(handlers={
             'application/json': JSONHandler(object_hook=my_object_hook)
         })
 
-        expected_body = b'{"name": "foo"}'
-        headers = {'Content-Type': 'application/json'}
-
-        client.simulate_post('/', body=expected_body, headers=headers)
-
-        req_media = client.resource.captured_req.media
-
-        assert isinstance(req_media, SimpleTestObject)
-        assert req_media.name == 'foo'
-    except TypeError as err:
-        if pkgutil.find_loader('ujson') is not None:
-            desc = 'Specifying object_hook is not compatible with ujson.'
-            assert str(err) == desc
-            return
-        else:
-            raise
+        desc = 'Specifying object_hook is not compatible with ujson.'
+        assert str(err) == desc
