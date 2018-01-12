@@ -167,7 +167,7 @@ def test_json_object_hook_raises_with_ujson():
         return
 
     with pytest.raises(TypeError) as err:
-        client = create_client(handlers={
+        create_client(handlers={
             'application/json': JSONHandler(object_hook=my_object_hook)
         })
 

@@ -192,7 +192,7 @@ def test_json_default_raises_with_ujson():
         return
 
     with pytest.raises(TypeError) as err:
-        client = create_client(handlers={
+        create_client(handlers={
             'application/json': JSONHandler(default=my_default)
         })
 
