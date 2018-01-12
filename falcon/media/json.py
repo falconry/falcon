@@ -42,17 +42,17 @@ class JSONHandler(BaseHandler):
     __slots__ = ('_default', '_object_hook')
 
     def __init__(self, default=None, object_hook=None):
-        ujson = pkgutil.find_loader('ujson') is not None
+        _ujson = pkgutil.find_loader('ujson') is not None
 
-        if default and ujson:
+        if default and _ujson:
             raise(TypeError(
                 'Specifying default is not compatible with ujson.'))
-        if object_hook and ujson:
+        if object_hook and _ujson:
             raise(TypeError(
                 'Specifying object_hook is not compatible with ujson.'))
 
-        self._default_arg = {} if ujson else {'default': default}
-        self._object_hook_arg = {} if ujson else {'object_hook': object_hook}
+        self._default_arg = {} if _ujson else {'default': default}
+        self._object_hook_arg = {} if _ujson else {'object_hook': object_hook}
 
     def deserialize(self, raw):
         try:
