@@ -1,5 +1,4 @@
 import pkgutil
-from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -162,10 +161,10 @@ def test_json_object_hook():
     assert req_media.name == 'foo'
 
 
-@patch('falcon.media.json.pkgutil')
-def test_json_object_hook_raises_with_ujson(mock_pkgutil):
-    # Make it appear as though ujson is installed
-    mock_pkgutil.find_loader.return_value = object()
+def test_json_object_hook_raises_with_ujson():
+    # This test is only relevant if ujson is installed
+    if pkgutil.find_loader('ujson') is None:
+        return
 
     with pytest.raises(TypeError) as err:
         client = create_client(handlers={
