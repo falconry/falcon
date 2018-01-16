@@ -3,6 +3,7 @@ import imp
 import io
 import os
 from os import path
+import re
 import sys
 
 from setuptools import Extension, find_packages, setup
@@ -68,11 +69,31 @@ else:
     cmdclass = {}
     ext_modules = []
 
+
+def load_description():
+    in_raw = False
+
+    description_lines = []
+
+    # NOTE(kgriffs): PyPI does not support the raw directive
+    for readme_line in io.open('README.rst', 'r', encoding='utf-8'):
+        if readme_line.startswith('.. raw::'):
+            in_raw = True
+        elif in_raw:
+            if readme_line and not re.match('\s', readme_line):
+                in_raw = False
+
+        if not in_raw:
+            description_lines.append(readme_line)
+
+    return ''.join(description_lines)
+
+
 setup(
     name='falcon',
     version=VERSION,
     description='An unladen web framework for building APIs and app backends.',
-    long_description=io.open('README.rst', 'r', encoding='utf-8').read(),
+    long_description=load_description(),
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Web Environment',
