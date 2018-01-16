@@ -1,9 +1,21 @@
 <script>
 $(document).ready(function() {
-    $('#sidebarSponsors').load('https://raw.githubusercontent.com/falconry/falcon/master/docs/_content/sidebar-sponsors.html')
+    var onComplete = function(data) {
+        if (data && data.length !== 0) {
+            $('#sidebarSupportFalcon').html(data)
+        }
+    }
+
+    $.get('https://raw.githubusercontent.com/falconry/falcon/master/docs/_content/sidebar-sponsors.html', onComplete)
 });
 </script>
 
-<div id="sidebarSponsors">
-
+<div id="sidebarSupportFalcon">
+<h3>Sponsors</h3>
+    <!-- Default content in case JS load is blocked. -->
+    <div style="margin-top:10px"><a href="http://falconframework.org/#sectionSupportFalconDevelopment" target="_blank"><img src="https://raw.githubusercontent.com/falconry/falcon/master/docs/_content/corinne-kutz-211251.jpg"></a></div>
+    <p>
+        Use Falcon at work? Talk with your team about <a href="http://falconframework.org/#sectionSupportFalconDevelopment" target="_blank">supporting Falcon development</a>. Promote your brand, pick up some cool gear, and get prioritized support.
+    </p>
+    <p style="font-size: larger"><a href="https://www.patreon.com/kgriffs" target="_blank">[Your Logo Here]</a></p>
 </div>
