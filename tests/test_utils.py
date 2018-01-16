@@ -2,10 +2,6 @@
 
 from datetime import datetime
 import functools
-try:
-    from json.decoder import JSONDecodeError
-except ImportError:
-    JSONDecodeError = ValueError
 import random
 
 import pytest
@@ -456,7 +452,7 @@ class TestFalconTestingUtils(object):
     def test_wsgi_iterable_not_closeable(self):
         result = testing.Result([], falcon.HTTP_200, [])
         assert not result.content
-        with pytest.raises(JSONDecodeError):
+        with pytest.raises(Exception):
             result.json
 
     def test_path_must_start_with_slash(self):

@@ -72,7 +72,7 @@ class Result(object):
             under Python 2.6 and 2.7, and of type ``str`` otherwise.
             If the content type does not specify an encoding, UTF-8 is
             assumed.
-        json (dict): Deserialized JSON body. Raises ``JSONDecodeError`` if
+        json (dict): Deserialized JSON body. Raises an error if
             the body is empty or not JSON.
     """
 
