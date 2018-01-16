@@ -130,6 +130,10 @@ div.sphinxsidebar h4 {
     font-family: Oxygen, Garamond, Georgia, serif;
 }
 
+div.sphinxsidebar ul {
+    margin-top: 5px;
+}
+
 div.sphinxsidebarwrapper {
     padding-top: 0;
 }
