@@ -1,10 +1,12 @@
 .. raw:: html
-
+  
+    <a href="https://falconframework.org" target="_blank">
     <img
         src="https://raw.githubusercontent.com/falconry/falcon/master/logo/banner.jpg"
         alt="Falcon web framework logo"
         style="width:100%"
     >
+    </a>
 
 |Docs| |Build Status| |codecov.io|
 
