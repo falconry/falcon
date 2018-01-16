@@ -75,6 +75,19 @@ rm -rf $DIST_DIR
 pyenv shell system
 pyenv uninstall -f $VENV_NAME
 
+
+#----------------------------------------------------------------------
+# README validation
+#----------------------------------------------------------------------
+
+_echo_task "Checking that README will render on PyPI"
+_open_env $PY2_VERSION
+
+pip install readme_renderer
+python setup.py check -r -s
+
+_close_env
+
 #----------------------------------------------------------------------
 # Source distribution
 #----------------------------------------------------------------------

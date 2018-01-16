@@ -1,10 +1,22 @@
+1.4.1
+==========================
+
+Fixed
+-----
+
+- Reverted the breaking change in 1.4.0 to ``falcon.testing.Result.json``.
+  Minor releases should have no breaking changes.
+- The README was not rendering properly on PyPI. This was fixed and a validation
+  step was added to the build process.
+
 1.4.0
 =====
 
 Breaking Changes
 ----------------
 
-(None)
+- ``testing.Result.json`` now returns ``None`` when the response body is
+  empty, rather than raising an error.
 
 Changes to Supported Platforms
 ------------------------------
@@ -47,8 +59,6 @@ New & Improved
   override ``TestClient``'s behavior.
 - ``TestClient`` can now be configured with a default set of headers to
   send with every request.
-- ``testing.Result.json`` now returns None when the response body is
-  empty, rather than raising an error.
 - The FAQ has been reorganized and greatly expanded.
 - We restyled the docs to match https://falconframework.org
 
