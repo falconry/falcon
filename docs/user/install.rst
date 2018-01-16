@@ -13,6 +13,12 @@ Both PyPy2.7 and PyPy3.5 are supported as of PyPy v5.10.
 
     $ pip install falcon
 
+Or, to install the latest beta or release candidate, if any:
+
+.. code:: bash
+
+    $ pip install --pre falcon
+
 CPython
 -------
 
