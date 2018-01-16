@@ -1,0 +1,10 @@
+Changelog for Falcon 1.4.1
+==========================
+
+Fixed
+-----
+
+- Reverted the breaking change in 1.4.0 to :attr:`falcon.testing.Result.json`.
+  Minor releases should have no breaking changes.
+- The README was not rendering properly on PyPI. This was fixed and a validation
+  step was added to the build process.
