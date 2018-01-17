@@ -1,12 +1,17 @@
+.. raw:: html
+  
+    <a href="https://falconframework.org" target="_blank">
+    <img
+        src="https://raw.githubusercontent.com/falconry/falcon/master/logo/banner.jpg"
+        alt="Falcon web framework logo"
+        style="width:100%"
+    >
+    </a>
+
 |Docs| |Build Status| |codecov.io|
 
-|Logo| The Falcon Web Framework
-===========================
-
-    Perfection is finally attained not when there is no longer anything
-    to add, but when there is no longer anything to take away.
-
-    *- Antoine de Saint-Exupéry*
+The Falcon Web Framework
+========================
 
 `Falcon <http://falconframework.org/index.html>`__ is a reliable,
 high-performance Python web framework for building
@@ -40,6 +45,11 @@ Quick Links
 
 How is Falcon different?
 ------------------------
+
+    Perfection is finally attained not when there is no longer anything
+    to add, but when there is no longer anything to take away.
+
+    *- Antoine de Saint-Exupéry*
 
 We designed Falcon to support the demanding needs of large-scale
 microservices and responsive app backends. Falcon complements more
@@ -637,7 +647,7 @@ See also: `CONTRIBUTING.md <https://github.com/falconry/falcon/blob/master/CONTR
 Legal
 -----
 
-Copyright 2013-2017 by Rackspace Hosting, Inc. and other contributors as
+Copyright 2013-2018 by Individual and corporate contributors as
 noted in the individual source files.
 
 Falcon image courtesy of `John
@@ -655,9 +665,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-.. |Logo| image:: logo/logo.svg
-    :width: 30
-    :height: 30
 .. |Docs| image:: https://readthedocs.org/projects/falcon/badge/?version=stable
     :target: https://falcon.readthedocs.io/en/stable/?badge=stable
     :alt: Falcon web framework docs
