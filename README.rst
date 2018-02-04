@@ -12,7 +12,9 @@
 
 The Falcon Web Framework
 ========================
-
+[![Backers on Open Collective](https://opencollective.com/falcon/backers/badge.svg)](#backers)
+ [![Sponsors on Open Collective](https://opencollective.com/falcon/sponsors/badge.svg)](#sponsors) 
+ 
 `Falcon <http://falconframework.org/index.html>`__ is a reliable,
 high-performance Python web framework for building
 large-scale app backends and microservices. It encourages the REST
@@ -643,6 +645,35 @@ little help getting started. You can find us in
 `falconry/dev <https://gitter.im/falconry/dev>`_ on Gitter.
 
 See also: `CONTRIBUTING.md <https://github.com/falconry/falcon/blob/master/CONTRIBUTING.md>`__
+
+### Contributors
+
+This project exists thanks to all the people who contribute. [[Contribute](CONTRIBUTING.md)].
+<a href="graphs/contributors"><img src="https://opencollective.com/falcon/contributors.svg?width=890" /></a>
+
+
+### Backers
+
+Thank you to all our backers! 🙏 [[Become a backer](https://opencollective.com/zircon#backer)]
+
+<a href="https://opencollective.com/zircon#backers" target="_blank"><img src="https://opencollective.com/falcon/backers.svg?width=890"></a>
+
+
+### Sponsors
+
+Support this project by becoming a sponsor. Your logo will show up here with a link to your website. [[Become a sponsor](https://opencollective.com/falcon#sponsor)]
+
+<a href="https://opencollective.com/falcon/sponsor/0/website" target="_blank"><img src="https://opencollective.com/falcon/sponsor/0/avatar.svg"></a>
+<a href="https://opencollective.com/falcon/sponsor/1/website" target="_blank"><img src="https://opencollective.com/falcon/sponsor/1/avatar.svg"></a>
+<a href="https://opencollective.com/falcon/sponsor/2/website" target="_blank"><img src="https://opencollective.com/falcon/sponsor/2/avatar.svg"></a>
+<a href="https://opencollective.com/falcon/sponsor/3/website" target="_blank"><img src="https://opencollective.com/falcon/sponsor/3/avatar.svg"></a>
+<a href="https://opencollective.com/falcon/sponsor/4/website" target="_blank"><img src="https://opencollective.com/falcon/sponsor/4/avatar.svg"></a>
+<a href="https://opencollective.com/falcon/sponsor/5/website" target="_blank"><img src="https://opencollective.com/falcon/sponsor/5/avatar.svg"></a>
+<a href="https://opencollective.com/falcon/sponsor/6/website" target="_blank"><img src="https://opencollective.com/falcon/sponsor/6/avatar.svg"></a>
+<a href="https://opencollective.com/falcon/sponsor/7/website" target="_blank"><img src="https://opencollective.com/falcon/sponsor/7/avatar.svg"></a>
+<a href="https://opencollective.com/falcon/sponsor/8/website" target="_blank"><img src="https://opencollective.com/falcon/sponsor/8/avatar.svg"></a>
+<a href="https://opencollective.com/falcon/sponsor/9/website" target="_blank"><img src="https://opencollective.com/falcon/sponsor/9/avatar.svg"></a>
+
 
 Legal
 -----
