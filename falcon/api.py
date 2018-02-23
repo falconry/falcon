@@ -327,6 +327,11 @@ class API(object):
                 corresponding request handlers, and Falcon will do the right
                 thing.
 
+            alt (str): A keyword argument for alternate route for accessing
+                a resource. If this keyword argument is passed Falcon will
+                look to pass "GET" requests to on_get_{alt}, "POST" requests
+                to on_post_{alt}, etc.
+
         Note:
             Any additional args and kwargs not defined above are passed
             through to the underlying router's ``add_route()`` method. The
@@ -347,7 +352,20 @@ class API(object):
         if '//' in uri_template:
             raise ValueError("uri_template may not contain '//'")
 
-        method_map = routing.map_http_methods(resource)
+        # NOTE(santeyio): This is a not very nice way to catch alt the alt
+        # keyword. In python 3 it can be specified explicitly in the function
+        # definition, e.g.
+        # `add_route(self, uri_template, resource, *args, alt=None, **kwargs)`
+        # but python 2 won't accept args like this.
+        if 'alt' in kwargs:
+            alt = kwargs.get('alt')
+            # remove alt from kwargs so it isn't passed to the
+            # DefaultRouter.add_route method.
+            del kwargs['alt']
+        else:
+            alt = None
+
+        method_map = routing.map_http_methods(resource, alt=alt)
         routing.set_default_responders(method_map)
         self._router.add_route(uri_template, method_map, resource, *args,
                                **kwargs)

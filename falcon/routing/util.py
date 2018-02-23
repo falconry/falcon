@@ -130,7 +130,7 @@ def create_http_method_map(resource):  # pragma: nocover
     return method_map
 
 
-def map_http_methods(resource):
+def map_http_methods(resource, alt=None):
     """Maps HTTP methods (e.g., 'GET', 'POST') to methods of a resource object.
 
     Args:
@@ -139,6 +139,11 @@ def map_http_methods(resource):
             supports. For example, if a resource supports GET and POST, it
             should define ``on_get(self, req, resp)`` and
             ``on_post(self, req, resp)``.
+
+        alt: A string used to look for alternate methods to the base HTTP methods.
+            If alt is specified Falcon will look for resource methods ending in alt,
+            e.g. if alt is 'foo', then a "GET" request will be mapped to
+            on_get_foo, a "POST" request will be mapped to on_post_foo, etc.
 
     Returns:
         dict: A mapping of HTTP methods to explicitly defined resource responders.
@@ -149,7 +154,10 @@ def map_http_methods(resource):
 
     for method in COMBINED_METHODS:
         try:
-            responder = getattr(resource, 'on_' + method.lower())
+            if alt:
+                responder = getattr(resource, 'on_' + method.lower() + '_' + alt)
+            else:
+                responder = getattr(resource, 'on_' + method.lower())
         except AttributeError:
             # resource does not implement this method
             pass
@@ -157,6 +165,10 @@ def map_http_methods(resource):
             # Usually expect a method, but any callable will do
             if callable(responder):
                 method_map[method] = responder
+
+    # if alt is specified and doesn't map to any methods raise an error
+    if alt and not method_map:
+        raise AltMethodNotFoundError('No method found to map to specified alt text')
 
     return method_map
 
@@ -183,3 +195,8 @@ def set_default_responders(method_map):
     for method in COMBINED_METHODS:
         if method not in allowed_methods:
             method_map[method] = na_responder
+
+
+class AltMethodNotFoundError(Exception):
+    def __init__(self, message):
+        self.message = message

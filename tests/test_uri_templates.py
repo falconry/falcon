@@ -13,6 +13,7 @@ import six
 
 import falcon
 from falcon import testing
+from falcon.routing.util import AltMethodNotFoundError
 
 
 _TEST_UUID = uuid.uuid4()
@@ -77,6 +78,29 @@ class FileDetailsResource(object):
     def on_get(self, req, resp, file_id, ext):
         self.file_id = file_id
         self.ext = ext
+        self.called = True
+
+
+class ResourceWithAltRoutes(object):
+    def __init__(self):
+        self.called = False
+
+    def on_get(self, req, resp, collection_id, item_id):
+        self.collection_id = collection_id
+        self.item_id = item_id
+        self.called = True
+
+    def on_put(self, req, resp, collection_id, item_id):
+        self.collection_id = collection_id
+        self.item_id = item_id
+        self.called = True
+
+    def on_get_collection(self, req, resp, collection_id):
+        self.collection_id = collection_id
+        self.called = True
+
+    def on_post_collection(self, req, resp, collection_id):
+        self.collection_id = collection_id
         self.called = True
 
 
@@ -399,3 +423,25 @@ def test_same_level_complex_var(client, reverse):
     assert details_resource.called
     assert details_resource.file_id == file_id_2
     assert details_resource.ext == ext
+
+
+def test_adding_alternate_routes(client):
+    resource_with_alt_routes = ResourceWithAltRoutes()
+    client.app.add_route(
+        '/collections/{collection_id}/items/{item_id}', resource_with_alt_routes)
+    client.app.add_route(
+        '/collections/{collection_id}/items', resource_with_alt_routes, alt='collection')
+    client.simulate_get('/collections/123/items/456')
+    assert resource_with_alt_routes.collection_id == '123'
+    assert resource_with_alt_routes.item_id == '456'
+    client.simulate_get('/collections/foo/items')
+    assert resource_with_alt_routes.collection_id == 'foo'
+
+
+def test_custom_error_on_alternate_route_not_found(client):
+    resource_with_alt_routes = ResourceWithAltRoutes()
+    try:
+        client.app.add_route(
+            '/collections/{collection_id}/items', resource_with_alt_routes, alt='bad-alt')
+    except (AltMethodNotFoundError):
+        assert True
