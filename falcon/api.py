@@ -352,7 +352,7 @@ class API(object):
         self._router.add_route(uri_template, method_map, resource, *args,
                                **kwargs)
 
-    def add_static_route(self, prefix, directory, downloadable=False):
+    def add_static_route(self, prefix, directory, downloadable=False, default_filename=None):
         """Add a route to a directory of static files.
 
         Static routes provide a way to serve files directly. This
@@ -391,12 +391,15 @@ class API(object):
             downloadable (bool): Set to ``True`` to include a
                 Content-Disposition header in the response. The "filename"
                 directive is simply set to the name of the requested file.
+            default_filename (str): Default filename used when the requested file
+                is not found.
 
         """
 
         self._static_routes.insert(
             0,
-            routing.StaticRoute(prefix, directory, downloadable=downloadable)
+            routing.StaticRoute(prefix, directory, downloadable=downloadable,
+                                default_filename=default_filename)
         )
 
     def add_sink(self, sink, prefix=r'/'):

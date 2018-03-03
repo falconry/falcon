@@ -106,6 +106,16 @@ def test_invalid_args(prefix, directory, client):
         client.app.add_static_route(prefix, directory)
 
 
+def test_invalid_args_default_filename(client):
+    prefix, directory = '/static', '/var/www/statics'
+    default_filename = 'not-existing-file'
+    with pytest.raises(ValueError, match='default_filename'):
+        StaticRoute(prefix, directory, default_filename=default_filename)
+
+    with pytest.raises(ValueError, match='default_filename'):
+        client.app.add_static_route(prefix, directory, default_filename=default_filename)
+
+
 @pytest.mark.parametrize('uri_prefix, uri_path, expected_path, mtype', [
     ('/static/', '/css/test.css', '/css/test.css', 'text/css'),
     ('/static', '/css/test.css', '/css/test.css', 'text/css'),
@@ -199,3 +209,26 @@ def test_downloadable_not_found(client):
 
     response = client.simulate_request(path='/downloads/thing.zip')
     assert response.status == falcon.HTTP_404
+
+
+@pytest.mark.parametrize('uri, default, expected', [
+    ('other', 'default', '/default'),
+    ('index2', 'index', '/index2')
+])
+def test_default_filename(uri, default, expected, monkeypatch):
+    monkeypatch.setattr(io, 'open', lambda path, mode: path)
+    monkeypatch.setattr('os.path.isfile', lambda file: default in file)
+
+    sr = StaticRoute('/static', '/var/www/statics', default_filename=default)
+
+    req_path = '/static/' + uri
+
+    req = Request(testing.create_environ(
+        host='test.com',
+        path=req_path,
+        app='statics'
+    ))
+    resp = Response()
+    sr(req, resp)
+
+    assert resp.stream == '/var/www/statics' + expected
