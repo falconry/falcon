@@ -8,7 +8,7 @@ except ImportError:
     pass
 
 
-def validate(schema):
+def validate(schema_request=None, schema_response=None):
     """Decorator for validating ``req.media`` using JSON Schema.
 
     This decorator provides standard JSON Schema validation via the
@@ -20,10 +20,16 @@ def validate(schema):
         The `jsonschema`` package must be installed separately in order to use
         this decorator, as Falcon does not install it by default.
 
+        See `json-schema.org <http://json-schema.org/>`_ for more
+        information on defining a compatible dictionary.
+
     Args:
-        schema (dict): A dictionary that follows the JSON Schema specification.
-            See `json-schema.org <http://json-schema.org/>`_ for more
-            information on defining a compatible dictionary.
+        schema_request (dict, optional): A dictionary that follows the JSON
+            Schema specification. The request will be validated against this
+            schema.
+        schema_response (dict, optional): A dictionary that follows the JSON
+            Schema specification. The response will be validated against this
+            schema.
 
     Example:
         .. code:: python
@@ -41,14 +47,34 @@ def validate(schema):
 
     def decorator(func):
         def wrapper(self, req, resp, *args, **kwargs):
-            try:
-                jsonschema.validate(req.media, schema, format_checker=jsonschema.FormatChecker())
-            except jsonschema.ValidationError as e:
-                raise falcon.HTTPBadRequest(
-                    'Failed data validation',
-                    description=e.message
-                )
+            if schema_request is not None:
+                try:
+                    jsonschema.validate(
+                        req.media, schema_request,
+                        format_checker=jsonschema.FormatChecker()
+                    )
+                except jsonschema.ValidationError as e:
+                    raise falcon.HTTPBadRequest(
+                        'Request data failed validation',
+                        description=e.message
+                    )
 
-            return func(self, req, resp, *args, **kwargs)
+            result = func(self, req, resp, *args, **kwargs)
+
+            if schema_response is not None:
+                try:
+                    jsonschema.validate(
+                        resp.media, schema_response,
+                        format_checker=jsonschema.FormatChecker()
+                    )
+                except jsonschema.ValidationError:
+                    raise falcon.HTTPInternalServerError(
+                        'Response data failed validation'
+                        # Do not return 'e.message' in the response to
+                        # prevent info about possible internal response
+                        # formatting bugs from leaking out to users.
+                    )
+
+            return result
         return wrapper
     return decorator
