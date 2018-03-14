@@ -30,6 +30,7 @@ from uuid import UUID  # NOQA: I202
 from wsgiref.validate import InputWrapper
 
 import cgi
+from html import unescape
 import mimeparse
 import six
 from six.moves import http_cookies
@@ -1634,15 +1635,21 @@ class Request(object):
     def _getFieldValue(self, field):
         if field.file and "filename" in field.disposition_options:
             # NOTE(kgriffs): This is an uploaded file.
-            data = field.disposition_options.copy()
+            # data = field.disposition_options.copy()
             # data["field_storage"] = field
-            data["buffer"] = field.file
-            data["type"] = field.type
+            # data["buffer"] = field.file
+            # data["type"] = field.type
             # data["isit"] = isinstance(field.file, io.BufferedIOBase)
+
+            return FileStream(
+                filename=field.disposition_options["filename"],
+                filetype=field.type,
+                fbuffer=field.file,
+                max_size=self.options.file_max_upload_size
+            )
         else:
             # NOTE(kgriffs): This is an text field.
-            data = unescape(field.value)
-        return data
+            return unescape(field.value)
 
     def _parse_multipart_form(self):
 
