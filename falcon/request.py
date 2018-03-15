@@ -29,8 +29,11 @@ except AttributeError:
 from uuid import UUID  # NOQA: I202
 from wsgiref.validate import InputWrapper
 
-import cgi
+import cgi, tempfile, os
 from html import unescape
+from sys import getsizeof
+
+
 import mimeparse
 import six
 from six.moves import http_cookies
@@ -1658,19 +1661,20 @@ class Request(object):
 
     def _getFieldValue(self, field):
         if field.file and "filename" in field.disposition_options:
-            # NOTE(kgriffs): This is an uploaded file.
-            # data = field.disposition_options.copy()
-            # data["field_storage"] = field
-            # data["buffer"] = field.file
-            # data["type"] = field.type
-            # data["isit"] = isinstance(field.file, io.BufferedIOBase)
 
-            return FileStream(
-                filename=field.disposition_options["filename"],
-                filetype=field.type,
-                fbuffer=field.file,
-                max_size=self.options.file_max_upload_size
-            )
+            # read first byte of file buffer to make sure if file content exists
+            first_byte = field.file.read(1)
+
+            if first_byte:
+                # NOTE(kgriffs): This is an uploaded file.
+                return FileStream(
+                    file_buffer=field,
+                    max_size=self.options.file_max_upload_size,
+                    first_byte=first_byte
+                )
+            else:
+                # NOTE(kgriffs): No contents found which means no file uploaded.
+                return None
         else:
             # NOTE(kgriffs): This is an text field.
             return unescape(field.value)
@@ -1687,7 +1691,7 @@ class Request(object):
                     value = self._getFieldValue(item)
                     if isinstance(value, str):
                         list_data.append(value)
-                    else:
+                    elif value:
                         list_files.append(value)
                 if list_data:
                     self._form_data[fieldname] = list_data
@@ -1698,7 +1702,7 @@ class Request(object):
                 value = self._getFieldValue(filedata)
                 if isinstance(value, str):
                     self._form_data[fieldname] = value
-                else:
+                elif value:
                     self._files[fieldname] = value
 
     def _parse_form_urlencoded(self):
@@ -1737,17 +1741,16 @@ class FileStream(object):
         `FileStream` is not meant to be instantiated directly by responders.
 
     Args:
-        filename : Name of file being uploaded.
-        filetype : Content type of file being uploaded.
         fbuffer : io Buffer of file being uploaded.
         max_size : Maximum allowed number of bytes of file being uploaded.
+        first_byte: First byte of file buffer
 
     Attributes:
         name : Name of file being uploaded.
         type : Content type of file being uploaded.
         _buffer : io Buffer of file being uploaded.
         _max_size : io Buffer of file being uploaded.
-        temp_file : Temporary location of file being uploaded.
+        _temp_file : Temporary location of file being uploaded.
         error : Error occured while uploading file.
             value - 1 is set if _max_size is exceeded
             value - 2 is set if on some exceptional error
@@ -1762,26 +1765,21 @@ class FileStream(object):
             Error is set on failure
     """
 
-    def __init__(self, filename, filetype, fbuffer, max_size):
-        self._filename = filename
-        self._filetype = filetype
-        self._buffer = fbuffer
-        self._temp_file = id(fbuffer)
+    def __init__(self, file_buffer, max_size, first_byte):
+        self._buffer = file_buffer
+        self._temp_file = None
         self._max_size = max_size
         self._error = None
-        self._size = 0
+        self._size = 1
+        self._first_byte = first_byte
 
     @property
     def name(self):
-        return self._filename
+        return self._buffer.disposition_options["filename"]
 
     @property
     def type(self):
-        return self._filetype
-
-    @property
-    def temp_file(self):
-        return self._temp_file
+        return self._buffer.type
 
     @property
     def size(self):
@@ -1798,53 +1796,43 @@ class FileStream(object):
         self._error = error_no
 
     def uploadto(self, path):
+
+        fd, self._temp_file = tempfile.mkstemp()
+
         bytes_read_limit = 1024
-        file_size = 0
+        raw_bytes = self._first_byte
 
-        raw_bytes = True
+        blank_byte_size = getsizeof(b'')
+
         try:
-            while raw_bytes:
-
-                self._size = self._size + bytes_read_limit
-
-                raw_bytes = self._buffer.read(bytes_read_limit)
-
-                if self._size >= self._max_size:
-                    self._set_error(1)
-                    self._do_clean_up()
-                    return False
-
-                if not raw_bytes:
-                    break
-
-                self._append_bytes_to_temp_file(raw_bytes)
-
-            self._move_file_to(path)
+            with os.fdopen(fd, 'w+b') as tmp:
+                while raw_bytes:
+                    self._size = self._size + (getsizeof(raw_bytes)-blank_byte_size)
+                    if self._size >= self._max_size:
+                        self._set_error(1)
+                        self._deleteTempFile()
+                        return False
+                    tmp.write(raw_bytes)
+                    raw_bytes = self._buffer.file.read(bytes_read_limit)
+            self._moveTempFileTo(path)
         except:
+            self._deleteTempFile()
             self._set_error(2)
             return False
 
         return True
 
-    def _append_bytes_to_temp_file(self, raw_bytes):
-        pass
-
-    def _move_file_to(self, path):
-
+    def _moveTempFileTo(self, path):
+        os.rename(self._temp_file, path)
         self._temp_file = None
-        pass
 
-    def _append_bytes_to_file(self, raw_bytes):
-        pass
-
-    def _do_clean_up(self):
+    def _deleteTempFile(self):
         if self._temp_file:
-            # delete _temp_file
+            os.remove(self._temp_file)
             self._temp_file = None
-            pass
 
     def __del__(self):
-        self._do_clean_up()
+        self._deleteTempFile()
 
 
 
