@@ -381,6 +381,18 @@ class Request(object):
             string, the value mapped to that parameter key will be a list of
             all the values in the order seen.
 
+        form_data (dict): The mapping of application/x-www-form-urlencoded
+            or multipart/data request parameter names to their values.
+            When the parameter appears multiple times in the request payload body,
+            the value mapped to that parameter key will be a list of all
+            the values in the order seen.
+
+        files (dict): The mapping of multipart/data request filename
+            to their FileStream object. When the filename appears
+            multiple times in the request payload body, the value mapped
+            to that filename key will be a list of all the FileStream
+            objects in the order seen.
+
         options (dict): Set of global options passed from the API handler.
     """
 
@@ -408,7 +420,7 @@ class Request(object):
         'stream',
         'uri_template',
         '_media',
-        '_payload',
+        '_form_data',
         '_files'
     )
 
@@ -518,8 +530,20 @@ class Request(object):
 
         self.context = self.context_type()
 
-        if self.method in ["POST", "PUT", "DELETE"] and 'multipart/form-data' in self.content_type:
-            self._parse_multipart_form()
+        # NOTE(kgriffs): Store input params in _form_data and files in _files
+        self._files = {}
+        self._form_data = {}
+
+        if (
+            self.method not in ('GET', 'HEAD') and
+            self.content_type is not None and
+            (
+                'multipart/form-data' in self.content_type or
+                'application/x-www-form-urlencoded' in self.content_type
+            )
+        ):
+            # NOTE(kgriffs): parse request payload body using cgi.FieldStorage
+            self._parse_form_urlencoded_or_multipart_form()
 
     def __repr__(self):
         return '<%s: %s %r>' % (self.__class__.__name__, self.method, self.url)
@@ -857,8 +881,8 @@ class Request(object):
         return self._params
 
     @property
-    def payload(self):
-        return self._payload
+    def form_data(self):
+        return self._form_data
 
     @property
     def files(self):
@@ -1651,12 +1675,8 @@ class Request(object):
             # NOTE(kgriffs): This is an text field.
             return unescape(field.value)
 
-    def _parse_multipart_form(self):
-
-        # NOTE(kgriffs): parse request payload using cgi.FieldStorage
+    def _parse_form_urlencoded_or_multipart_form(self):
         field_storage = cgi.FieldStorage(fp=self.stream, environ=self.env)
-        self._files = {}
-        self._payload = {}
         for fieldname in field_storage.keys():
             filedata = field_storage[fieldname]
             if isinstance(filedata, list):
@@ -1670,14 +1690,14 @@ class Request(object):
                     else:
                         list_files.append(value)
                 if list_data:
-                    self._payload[fieldname] = list_data
+                    self._form_data[fieldname] = list_data
                 if list_files:
                     self._files[fieldname] = list_files
             else:
                 # NOTE(kgriffs): fieldname has single values
                 value = self._getFieldValue(filedata)
                 if isinstance(value, str):
-                    self._payload[fieldname] = value
+                    self._form_data[fieldname] = value
                 else:
                     self._files[fieldname] = value
 
@@ -1710,18 +1730,66 @@ class Request(object):
             self._params.update(extra_params)
 
 
-# PERF: To avoid typos and improve storage space and speed over a dict.
 class FileStream(object):
-    """Defines a set of configurable options to handle file upload and file buffering
+    """
+    Defines a set of configurable options to handle file upload and file buffering
+    Note:
+        `FileStream` is not meant to be instantiated directly by responders.
+
+    Args:
+        filename : Name of file being uploaded.
+        filetype : Content type of file being uploaded.
+        fbuffer : io Buffer of file being uploaded.
+        max_size : Maximum allowed number of bytes of file being uploaded.
+
+    Attributes:
+        name : Name of file being uploaded.
+        type : Content type of file being uploaded.
+        _buffer : io Buffer of file being uploaded.
+        _max_size : io Buffer of file being uploaded.
+        temp_file : Temporary location of file being uploaded.
+        error : Error occured while uploading file.
+            value - 1 is set if _max_size is exceeded
+            value - 2 is set if on some exceptional error
+        size : Size of file being uploaded.
+
+    Methods:
+        set_max_upload_size(self, size): Set maximum number of bytes for file being uploaded
+
+        uploadto(self, path):
+            Uploads file to given path
+            Returns true if successful and false on failure
+            Error is set on failure
     """
 
     def __init__(self, filename, filetype, fbuffer, max_size):
-        self.filename = filename
-        self.filetype = filetype
-        self.buffer = fbuffer
+        self._filename = filename
+        self._filetype = filetype
+        self._buffer = fbuffer
         self._temp_file = id(fbuffer)
         self._max_size = max_size
         self._error = None
+        self._size = 0
+
+    @property
+    def name(self):
+        return self._filename
+
+    @property
+    def type(self):
+        return self._filetype
+
+    @property
+    def temp_file(self):
+        return self._temp_file
+
+    @property
+    def size(self):
+        return self._size
+
+    @property
+    def error(self):
+        return self._error
     
     def set_max_upload_size(self, size):
         self._max_size = size
@@ -1729,7 +1797,7 @@ class FileStream(object):
     def _set_error(self, error_no):
         self._error = error_no
 
-    def uploadto(self, file_path):
+    def uploadto(self, path):
         bytes_read_limit = 1024
         file_size = 0
 
@@ -1737,11 +1805,11 @@ class FileStream(object):
         try:
             while raw_bytes:
 
-                file_size = file_size + bytes_read_limit
+                self._size = self._size + bytes_read_limit
 
-                raw_bytes = self.buffer.read(bytes_read_limit)
+                raw_bytes = self._buffer.read(bytes_read_limit)
 
-                if file_size >= self._max_size:
+                if self._size >= self._max_size:
                     self._set_error(1)
                     self._do_clean_up()
                     return False
@@ -1751,7 +1819,7 @@ class FileStream(object):
 
                 self._append_bytes_to_temp_file(raw_bytes)
 
-            self._move_file_to(file_path)
+            self._move_file_to(path)
         except:
             self._set_error(2)
             return False
@@ -1761,7 +1829,7 @@ class FileStream(object):
     def _append_bytes_to_temp_file(self, raw_bytes):
         pass
 
-    def _move_file_to(self, file_path):
+    def _move_file_to(self, path):
 
         self._temp_file = None
         pass
@@ -1777,7 +1845,6 @@ class FileStream(object):
 
     def __del__(self):
         self._do_clean_up()
-
 
 
 
