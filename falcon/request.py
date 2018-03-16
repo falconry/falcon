@@ -1660,6 +1660,14 @@ class Request(object):
         return helpers.BoundedStream(self.env['wsgi.input'], content_length)
 
     def _getFieldValue(self, field):
+        """Returns input value for imput text fields and FileStream object
+        for input file and None if no file is selected for upload
+
+        Args:
+            field (cgi.FieldStorage or cgi.MiniFieldStorage): Description of the problem. On Python 2,
+                instances of ``unicode`` will be converted to UTF-8.
+
+        """
         if field.file and "filename" in field.disposition_options:
 
             # read first byte of file buffer to make sure if file content exists
@@ -1677,9 +1685,14 @@ class Request(object):
                 return None
         else:
             # NOTE(kgriffs): This is an text field.
+            # unescape is used to convert html code to utf-8 charcters
             return unescape(field.value)
 
     def _parse_form_urlencoded_or_multipart_form(self):
+        """Parses urlencoded or multipart form data.
+        It sets text fileds in _form_data dict and file buffers in _files dict.
+        """
+
         field_storage = cgi.FieldStorage(fp=self.stream, environ=self.env)
         for fieldname in field_storage.keys():
             filedata = field_storage[fieldname]
@@ -1754,15 +1767,7 @@ class FileStream(object):
         error : Error occured while uploading file.
             value - 1 is set if _max_size is exceeded
             value - 2 is set if on some exceptional error
-        size : Size of file being uploaded.
-
-    Methods:
-        set_max_upload_size(self, size): Set maximum number of bytes for file being uploaded
-
-        uploadto(self, path):
-            Uploads file to given path
-            Returns true if successful and false on failure
-            Error is set on failure
+        size : Size of uploaded file. Actual size is available once upload is successful
     """
 
     def __init__(self, file_buffer, max_size, first_byte):
@@ -1772,6 +1777,10 @@ class FileStream(object):
         self._error = None
         self._size = 1
         self._first_byte = first_byte
+
+    # ------------------------------------------------------------------------
+    # Properties
+    # ------------------------------------------------------------------------
 
     @property
     def name(self):
@@ -1788,14 +1797,32 @@ class FileStream(object):
     @property
     def error(self):
         return self._error
+
+    # ------------------------------------------------------------------------
+    # Methods
+    # ------------------------------------------------------------------------
     
     def set_max_upload_size(self, size):
+        """Set maximum number of bytes for file being uploaded
+
+        Args:
+            size (int): Number of bytes.
+        """
         self._max_size = size
     
     def _set_error(self, error_no):
         self._error = error_no
 
     def uploadto(self, path):
+        """Uploads file to given file path
+
+        Args:
+            path (str): Absolute path of file to be uploaded
+
+        Returns:
+            This method returns boolean - `True` on successful upload
+            and if upload is unsuccessful then it returns `False` and sets error on failure.
+        """
 
         fd, self._temp_file = tempfile.mkstemp()
 
