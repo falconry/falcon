@@ -31,7 +31,7 @@ from wsgiref.validate import InputWrapper
 
 import cgi, tempfile, os
 from html import unescape
-from sys import getsizeof
+from sys import getsizeof, exc_info
 
 
 import mimeparse
@@ -1764,9 +1764,10 @@ class FileStream(object):
         _buffer : io Buffer of file being uploaded.
         _max_size : io Buffer of file being uploaded.
         _temp_file : Temporary location of file being uploaded.
-        error : Error occured while uploading file.
-            value - 1 is set if _max_size is exceeded
-            value - 2 is set if on some exceptional error
+        error(Dict) : Error cured while uploading file.
+            key "code" - 1 is set if _max_size is exceeded
+            key "code" - 2 is set if on some exceptional error
+            key "error" contains addition error details
         size : Size of uploaded file. Actual size is available once upload is successful
     """
 
@@ -1810,8 +1811,17 @@ class FileStream(object):
         """
         self._max_size = size
     
-    def _set_error(self, error_no):
-        self._error = error_no
+    def _set_error(self, error_data = None):
+        if error_data:
+            self._error = {
+                "code":2,
+                "error":error_data
+            }
+        else:
+            self._error = {
+                "code":1,
+                "error":"File size is more than "+str(self._max_size)+" bytes"
+            }
 
     def uploadto(self, path):
         """Uploads file to given file path
@@ -1836,7 +1846,7 @@ class FileStream(object):
                 while raw_bytes:
                     self._size = self._size + (getsizeof(raw_bytes)-blank_byte_size)
                     if self._size >= self._max_size:
-                        self._set_error(1)
+                        self._set_error()
                         self._deleteTempFile()
                         return False
                     tmp.write(raw_bytes)
@@ -1844,7 +1854,13 @@ class FileStream(object):
             self._moveTempFileTo(path)
         except:
             self._deleteTempFile()
-            self._set_error(2)
+            exc_type, exc_value, exc_traceback = exc_info()
+            error_data = {
+                "type":exc_type,
+                "value":exc_value,
+                "traceback":exc_traceback
+            }
+            self._set_error(error_data)
             return False
 
         return True
