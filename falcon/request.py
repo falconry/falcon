@@ -29,8 +29,16 @@ except AttributeError:
 from uuid import UUID  # NOQA: I202
 from wsgiref.validate import InputWrapper
 
+try:
+    # NOTE(kgriffs): In Python 3+, we need html.unescape to decode html encoded characters
+    from html import unescape as DECODE_HTML_CHARS
+except:
+    # NOTE(kgriffs): In Python 2.7+, we need HTMLParser to decode html encoded characters
+    from HTMLParser import HTMLParser
+    HP = HTMLParser()
+    def DECODE_HTML_CHARS(raw_str):
+        return HP.unescape(raw_str).encode("utf-8")
 import cgi, tempfile, os
-from html import unescape
 from sys import getsizeof, exc_info
 
 
@@ -1685,8 +1693,8 @@ class Request(object):
                 return None
         else:
             # NOTE(kgriffs): This is an text field.
-            # unescape is used to convert html code to utf-8 charcters
-            return unescape(field.value)
+            # DECODE_HTML_CHARS is used to convert html code to utf-8 charcters
+            return DECODE_HTML_CHARS(field.value)
 
     def _parse_form_urlencoded_or_multipart_form(self):
         """Parses urlencoded or multipart form data.
