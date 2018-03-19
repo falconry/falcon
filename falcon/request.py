@@ -35,7 +35,8 @@ from wsgiref.validate import InputWrapper
 
 try:
     # NOTE(kgriffs): In Python 3+, we need html.unescape to decode html encoded characters
-    from html import unescape as DECODE_HTML_CHARS
+    import html.parser
+    DECODE_HTML_CHARS = html.parser.HTMLParser().unescape
 except ImportError:
     # NOTE(kgriffs): In Python 2+, we need HTMLParser to decode html encoded characters
     from HTMLParser import HTMLParser
