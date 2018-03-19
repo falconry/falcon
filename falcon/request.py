@@ -15,9 +15,8 @@
 import cgi
 import os
 from sys import exc_info, getsizeof
-import tempfile
-
 from datetime import datetime
+import tempfile
 
 try:
     # NOTE(kgrifs): In Python 2.6 and 2.7, socket._fileobject is a
