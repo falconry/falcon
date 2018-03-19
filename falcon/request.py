@@ -26,20 +26,23 @@ except AttributeError:
     import io
     NativeStream = io.BufferedReader
 
+import cgi
+import tempfile
+import os
+from sys import exc_info, getsizeof
+
 from uuid import UUID  # NOQA: I202
 from wsgiref.validate import InputWrapper
 
 try:
     # NOTE(kgriffs): In Python 3+, we need html.unescape to decode html encoded characters
     from html import unescape as DECODE_HTML_CHARS
-except:
-    # NOTE(kgriffs): In Python 2.7+, we need HTMLParser to decode html encoded characters
+except ImportError:
+    # NOTE(kgriffs): In Python 2+, we need HTMLParser to decode html encoded characters
     from HTMLParser import HTMLParser
     HP = HTMLParser()
     def DECODE_HTML_CHARS(raw_str):
-        return HP.unescape(raw_str).encode("utf-8")
-import cgi, tempfile, os
-from sys import getsizeof, exc_info
+        return HP.unescape(raw_str).encode('utf-8')
 
 
 import mimeparse
@@ -1672,11 +1675,9 @@ class Request(object):
         for input file and None if no file is selected for upload
 
         Args:
-            field (cgi.FieldStorage or cgi.MiniFieldStorage): Description of the problem. On Python 2,
-                instances of ``unicode`` will be converted to UTF-8.
-
+            field (cgi.FieldStorage or cgi.MiniFieldStorage).
         """
-        if field.file and "filename" in field.disposition_options:
+        if field.file and 'filename' in field.disposition_options:
 
             # read first byte of file buffer to make sure if file content exists
             first_byte = field.file.read(1)
@@ -1793,7 +1794,7 @@ class FileStream(object):
 
     @property
     def name(self):
-        return self._buffer.disposition_options["filename"]
+        return self._buffer.disposition_options['filename']
 
     @property
     def type(self):
@@ -1810,7 +1811,7 @@ class FileStream(object):
     # ------------------------------------------------------------------------
     # Methods
     # ------------------------------------------------------------------------
-    
+
     def set_max_upload_size(self, size):
         """Set maximum number of bytes for file being uploaded
 
@@ -1818,17 +1819,17 @@ class FileStream(object):
             size (int): Number of bytes.
         """
         self._max_size = size
-    
-    def _set_error(self, error_data = None):
+
+    def _set_error(self, error_data=None):
         if error_data:
             self._error = {
-                "code":2,
-                "error":error_data
+                'code': 2,
+                'error': error_data
             }
         else:
             self._error = {
-                "code":1,
-                "error":"File size is more than "+str(self._max_size)+" bytes"
+                'code': 1,
+                'error': 'File size is more than '+str(self._max_size)+' bytes'
             }
 
     def uploadto(self, path):
@@ -1852,7 +1853,7 @@ class FileStream(object):
         try:
             with os.fdopen(fd, 'w+b') as tmp:
                 while raw_bytes:
-                    self._size = self._size + (getsizeof(raw_bytes)-blank_byte_size)
+                    self._size = self._size + (getsizeof(raw_bytes) - blank_byte_size)
                     if self._size >= self._max_size:
                         self._set_error()
                         self._deleteTempFile()
@@ -1860,13 +1861,13 @@ class FileStream(object):
                     tmp.write(raw_bytes)
                     raw_bytes = self._buffer.file.read(bytes_read_limit)
             self._moveTempFileTo(path)
-        except:
+        except Exception:
             self._deleteTempFile()
             exc_type, exc_value, exc_traceback = exc_info()
             error_data = {
-                "type":exc_type,
-                "value":exc_value,
-                "traceback":exc_traceback
+                'type': exc_type,
+                'value': exc_value,
+                'traceback': exc_traceback
             }
             self._set_error(error_data)
             return False
@@ -1884,7 +1885,6 @@ class FileStream(object):
 
     def __del__(self):
         self._deleteTempFile()
-
 
 
 # PERF: To avoid typos and improve storage space and speed over a dict.
@@ -1976,4 +1976,4 @@ class RequestOptions(object):
         self.strip_url_path_trailing_slash = True
         self.default_media_type = DEFAULT_MEDIA_TYPE
         self.media_handlers = Handlers()
-        self.file_max_upload_size = 1024*1024*10
+        self.file_max_upload_size = 1024 * 1024 * 10
