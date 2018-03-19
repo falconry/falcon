@@ -14,8 +14,8 @@
 
 import cgi
 import os
-from sys import exc_info, getsizeof
 from datetime import datetime
+from sys import exc_info, getsizeof
 import tempfile
 
 try:
