@@ -12,6 +12,11 @@
 
 """Request class."""
 
+import cgi
+import os
+from sys import exc_info, getsizeof
+import tempfile
+
 from datetime import datetime
 
 try:
@@ -26,11 +31,6 @@ except AttributeError:
     import io
     NativeStream = io.BufferedReader
 
-import cgi
-import tempfile
-import os
-from sys import exc_info, getsizeof
-
 from uuid import UUID  # NOQA: I202
 from wsgiref.validate import InputWrapper
 
@@ -41,6 +41,7 @@ except ImportError:
     # NOTE(kgriffs): In Python 2+, we need HTMLParser to decode html encoded characters
     from HTMLParser import HTMLParser
     HP = HTMLParser()
+
     def DECODE_HTML_CHARS(raw_str):
         return HP.unescape(raw_str).encode('utf-8')
 
@@ -1829,7 +1830,7 @@ class FileStream(object):
         else:
             self._error = {
                 'code': 1,
-                'error': 'File size is more than '+str(self._max_size)+' bytes'
+                'error': 'File size is more than ' + str(self._max_size) + ' bytes'
             }
 
     def uploadto(self, path):
