@@ -13,8 +13,8 @@
 """Request class."""
 
 import cgi
-import os
 from datetime import datetime
+import os
 from sys import exc_info, getsizeof
 import tempfile
 
