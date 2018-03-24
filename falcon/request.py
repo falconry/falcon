@@ -558,7 +558,8 @@ class Request(object):
             )
         ):
             # NOTE(kgriffs): parse request payload body using cgi.FieldStorage
-            self._parse_form_urlencoded_or_multipart_form()
+            # self._parse_form_urlencoded_or_multipart_form()
+            pass
 
     def __repr__(self):
         return '<%s: %s %r>' % (self.__class__.__name__, self.method, self.url)
