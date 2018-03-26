@@ -546,20 +546,8 @@ class Request(object):
         self.context = self.context_type()
 
         # NOTE(kgriffs): Store input params in _form_data and files in _files
-        self._files = {}
-        self._form_data = {}
-
-        if (
-            self.method not in ('GET', 'HEAD') and
-            self.content_type is not None and
-            (
-                'multipart/form-data' in self.content_type or
-                'application/x-www-form-urlencoded' in self.content_type
-            )
-        ):
-            # NOTE(kgriffs): parse request payload body using cgi.FieldStorage
-            # self._parse_form_urlencoded_or_multipart_form()
-            pass
+        self._files = None
+        self._form_data = None
 
     def __repr__(self):
         return '<%s: %s %r>' % (self.__class__.__name__, self.method, self.url)
@@ -898,10 +886,14 @@ class Request(object):
 
     @property
     def form_data(self):
+        if self._form_data is None:
+            self._parse_form_urlencoded_or_multipart_form()
         return self._form_data
 
     @property
     def files(self):
+        if self._files is None:
+            self._parse_form_urlencoded_or_multipart_form()
         return self._files
 
     @property
@@ -1703,6 +1695,20 @@ class Request(object):
         """Parses urlencoded or multipart form data.
         It sets text fileds in _form_data dict and file buffers in _files dict.
         """
+
+        if (
+            self.method not in ('GET', 'HEAD') and
+            self.content_type is not None and
+            (
+                'multipart/form-data' in self.content_type or
+                'application/x-www-form-urlencoded' in self.content_type
+            )
+        ):
+            # NOTE(kgriffs): Store input params in _form_data and files in _files
+            self._files = {}
+            self._form_data = {}
+        else:
+            return
 
         field_storage = cgi.FieldStorage(fp=self.stream, environ=self.env)
         for fieldname in field_storage.keys():
