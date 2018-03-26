@@ -15,7 +15,7 @@
 import cgi
 from datetime import datetime
 import os
-from sys import exc_info, getsizeof
+from sys import exc_info
 import tempfile
 
 try:
@@ -1791,7 +1791,7 @@ class FileStream(object):
     def __init__(self, file_buffer, max_size, first_byte):
         self._buffer = file_buffer
         self._temp_file = None
-        self._max_size = max_size
+        self._max_size = max_size + 1024
         self._error = None
         self._size = 1
         self._first_byte = first_byte
@@ -1826,7 +1826,7 @@ class FileStream(object):
         Args:
             size (int): Number of bytes.
         """
-        self._max_size = size
+        self._max_size = size + 1024
 
     def _set_error(self, error_data=None):
         if error_data:
@@ -1856,12 +1856,10 @@ class FileStream(object):
         bytes_read_limit = 1024
         raw_bytes = self._first_byte
 
-        blank_byte_size = getsizeof(b'')
-
         try:
             with os.fdopen(fd, 'w+b') as tmp:
                 while raw_bytes:
-                    self._size = self._size + (getsizeof(raw_bytes) - blank_byte_size)
+                    self._size = self._size + bytes_read_limit
                     if self._size >= self._max_size:
                         self._set_error()
                         self._deleteTempFile()
@@ -1885,6 +1883,7 @@ class FileStream(object):
     def _moveTempFileTo(self, path):
         os.rename(self._temp_file, path)
         self._temp_file = None
+        self._size = os.path.getsize(path)
 
     def _deleteTempFile(self):
         if self._temp_file:

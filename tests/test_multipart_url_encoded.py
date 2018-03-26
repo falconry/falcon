@@ -43,4 +43,4 @@ def test_multipart_file_upload():
             with open(file_path, 'rb') as uploaded_file:
                 content = uploaded_file.read()
                 assert content == output
-                os.remove(file_path)
+            os.remove(file_path)
