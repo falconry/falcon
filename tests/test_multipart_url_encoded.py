@@ -26,7 +26,11 @@ def test_multipart_file_upload():
     """Ensure that multipart input format works as intended"""
     PATH_TO_UPLOAD_FILE = os.path.dirname(os.path.abspath(__file__)) + '/../logo/banner.jpg'
     with open(PATH_TO_UPLOAD_FILE, 'rb') as logo:
-        prepared_request = requests.Request('POST', 'http://localhost/', files={'logo': logo}).prepare()
+        prepared_request = requests.Request(
+            'POST',
+            'http://localhost/',
+            files={'logo': logo}
+        ).prepare()
         logo.seek(0)
         output = logo.read()
         req = Request(testing.create_environ(
