@@ -1,9 +1,10 @@
 import os
 import tempfile
 
+import requests
+
 from falcon.request import Request
 import falcon.testing as testing
-import requests
 
 
 def test_urlencoded():
