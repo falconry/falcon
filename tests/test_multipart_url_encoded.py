@@ -22,15 +22,22 @@ def test_urlencoded():
     assert req.form_data == {'name': 'John Doe', 'foo': ['baz', 'bar']}
 
 
-def assertFileUpload(fileStream, output):
+def assertFileUpload(fileStream, output, path, upload_folder=None):
     fileStream.set_max_upload_size(1 * 1024 * 1024)
-    file_path = tempfile.gettempdir() + '/' + fileStream.name
+    if not upload_folder:
+        upload_folder = tempfile.gettempdir()
+    file_path = upload_folder + '/' + fileStream.name
     upload_status = fileStream.uploadto(file_path)
     if upload_status is True:
         with open(file_path, 'rb') as uploaded_file:
             content = uploaded_file.read()
             assert content == output
+        assert fileStream.size == os.path.getsize(path)
+        assert fileStream.type is not None
+        assert fileStream.error is None
         os.remove(file_path)
+    else:
+        assert fileStream.error is not None
 
 
 def test_multipart_file_upload():
@@ -94,16 +101,29 @@ def test_multipart_file_upload():
         method='POST'
     ))
 
-    assert req.form_data == text_fields
+    assertFileUpload(req.files['file1'], file1_content, file1_path)
+    assertFileUpload(req.files['file2'], file2_content, file2_path)
+    assertFileUpload(req.files['multifile'], file3_content, file3_path)
+    assertFileUpload(req.files['file4'], file4_content, file4_path)
 
-    assertFileUpload(req.files['file1'], file1_content)
-    assertFileUpload(req.files['file2'], file2_content)
-    assertFileUpload(req.files['multifile'], file3_content)
-    assertFileUpload(req.files['file4'], file4_content)
-    assertFileUpload(req.files['file5'], file5_content)
+    assertFileUpload(req.files['file5'], file5_content, file5_path, '/var')
+
+    assert req.form_data == text_fields
 
     file1.close()
     file2.close()
     file3.close()
     file4.close()
     file5.close()
+
+
+def test_simple_get():
+    """Ensure that urlencoded input format works as intended"""
+    req = Request(testing.create_environ(
+        host='example.com',
+        path='/languages',
+        app='backoffice',
+        method='GET'
+    ))
+    assert req.form_data is None
+    assert req.files is None
