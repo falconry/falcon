@@ -1735,6 +1735,14 @@ class Request(object):
                 elif value:
                     self._files[fieldname] = value
 
+        for i in list(self._form_data):
+            if isinstance(self._form_data[i], list) and len(self._form_data[i]) == 1:
+                self._form_data[i] = self._form_data[i][0]
+
+        for i in list(self._files):
+            if isinstance(self._files[i], list) and len(self._files[i]) == 1:
+                self._files[i] = self._files[i][0]
+
     def _parse_form_urlencoded(self):
         content_length = self.content_length
         if not content_length:
