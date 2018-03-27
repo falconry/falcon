@@ -95,7 +95,7 @@ def test_multipart_file_upload():
     ))
 
     assert req.form_data == text_fields
-    
+
     assertFileUpload(req.files['file1'], file1_content)
     assertFileUpload(req.files['file2'], file2_content)
     assertFileUpload(req.files['multifile'], file3_content)
