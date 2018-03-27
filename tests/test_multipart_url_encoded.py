@@ -41,10 +41,10 @@ def test_multipart_file_upload():
     file4_path = os.path.dirname(os.path.abspath(__file__)) + '/../logo/mstile-150x150.png'
     file5_path = os.path.dirname(os.path.abspath(__file__)) + '/../logo/mstile-310x310.png'
     with open(file1_path, 'rb') as file1,\
-        open(file2_path, 'rb') as file2,\
-        open(file3_path, 'rb') as file3,\
-        open(file4_path, 'rb') as file4,\
-        open(file5_path, 'rb') as file5:
+    open(file2_path, 'rb') as file2,\
+    open(file3_path, 'rb') as file3,\
+    open(file4_path, 'rb') as file4,\
+    open(file5_path, 'rb') as file5:
 
         text_fields = {
             'name': 'John Doe',
@@ -97,7 +97,7 @@ def test_multipart_file_upload():
 
         assertFileUpload(req.files['file1'], file1_content)
 
-        assertFileUpload(req.files['file2'], file1_content)
+        assertFileUpload(req.files['file2'], file2_content)
 
         assertFileUpload(req.files['multifile'], file3_content)
 
