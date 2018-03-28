@@ -106,12 +106,12 @@ def test_multipart_file_upload():
     k = 0
     multifile_data = [
         {
-            "content": file2_content,
-            "path": file2_path
+            'content': file2_content,
+            'path': file2_path
         },
         {
-            "content": file3_content,
-            "path": file3_path
+            'content': file3_content,
+            'path': file3_path
         }
     ]
     for fileStream in req.files['multifile']:
