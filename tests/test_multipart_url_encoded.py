@@ -56,20 +56,19 @@ def test_multipart_file_upload():
 
     text_fields = {
         'name': 'John Doe',
-        'foo': ['baz', 'bar'],
+        'foo': ['baz', 'bar', 'baz1', 'bar1'],
         'file1': 'John Doe',
-        'file2': ['baz', 'bar'],
-        'multifile': ['baz', 'bar'],
+        'file4': ['baz', 'bar', 'baz1', 'bar1'],
         'blank_field': ''
     }
-    file_fields = {
-        'file1': file1,
-        'file2': file2,
-        'multifile': file3,
-        'file4': file4,
-        'file5': file5,
-        'enptyFileField': b''
-    }
+    file_fields = [
+        ('file1', file1),
+        ('multifile', file2),
+        ('multifile', file3),
+        ('file4', file4),
+        ('file5', file5),
+        ('enptyFileField', b'')
+    ]
     prepared_request = requests.Request(
         method='POST',
         url='http://localhost/',
@@ -102,10 +101,23 @@ def test_multipart_file_upload():
     ))
 
     assertFileUpload(req.files['file1'], file1_content, file1_path)
-    assertFileUpload(req.files['file2'], file2_content, file2_path)
-    assertFileUpload(req.files['multifile'], file3_content, file3_path)
-    assertFileUpload(req.files['file4'], file4_content, file4_path)
 
+    assert isinstance(req.files['multifile'], list) and len(req.files['multifile']) == 2
+    k = 0
+    multifile_data = [
+        {
+            "content": file2_content,
+            "path": file2_path
+        },
+        {
+            "content": file3_content,
+            "path": file3_path
+        }
+    ]
+    for fileStream in req.files['multifile']:
+        assertFileUpload(fileStream, multifile_data[k]['content'], multifile_data[k]['path'])
+        k = k + 1
+    assertFileUpload(req.files['file4'], file4_content, file4_path)
     assertFileUpload(req.files['file5'], file5_content, file5_path, '/var')
 
     assert req.form_data == text_fields
