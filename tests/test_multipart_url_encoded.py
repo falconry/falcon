@@ -65,6 +65,7 @@ def test_multipart_file_upload():
         ('file1', file1),
         ('multifile', file2),
         ('multifile', file3),
+        ('multifile', b''),
         ('file4', file4),
         ('file5', file5),
         ('enptyFileField', b'')
