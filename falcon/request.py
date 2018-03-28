@@ -12,7 +12,11 @@
 
 """Request class."""
 
+import cgi
 from datetime import datetime
+import os
+from sys import exc_info
+import tempfile
 
 try:
     # NOTE(kgrifs): In Python 2.6 and 2.7, socket._fileobject is a
@@ -28,6 +32,19 @@ except AttributeError:
 
 from uuid import UUID  # NOQA: I202
 from wsgiref.validate import InputWrapper
+
+try:
+    # NOTE(kgriffs): In Python 3+, we need html.unescape to decode html encoded characters
+    import html.parser
+    DECODE_HTML_CHARS = html.parser.HTMLParser().unescape
+except ImportError:
+    # NOTE(kgriffs): In Python 2+, we need HTMLParser to decode html encoded characters
+    from HTMLParser import HTMLParser
+    HP = HTMLParser()
+
+    def DECODE_HTML_CHARS(raw_str):
+        return HP.unescape(raw_str).encode('utf-8')
+
 
 import mimeparse
 import six
@@ -379,6 +396,18 @@ class Request(object):
             string, the value mapped to that parameter key will be a list of
             all the values in the order seen.
 
+        form_data (dict): The mapping of application/x-www-form-urlencoded
+            or multipart/data request parameter names to their values.
+            When the parameter appears multiple times in the request payload body,
+            the value mapped to that parameter key will be a list of all
+            the values in the order seen.
+
+        files (dict): The mapping of multipart/data request filename
+            to their FileStream object. When the filename appears
+            multiple times in the request payload body, the value mapped
+            to that filename key will be a list of all the FileStream
+            objects in the order seen.
+
         options (dict): Set of global options passed from the API handler.
     """
 
@@ -406,6 +435,8 @@ class Request(object):
         'stream',
         'uri_template',
         '_media',
+        '_form_data',
+        '_files'
     )
 
     # Child classes may override this
@@ -513,6 +544,10 @@ class Request(object):
             self._parse_form_urlencoded()
 
         self.context = self.context_type()
+
+        # NOTE(kgriffs): Store input params in _form_data and files in _files
+        self._files = None
+        self._form_data = None
 
     def __repr__(self):
         return '<%s: %s %r>' % (self.__class__.__name__, self.method, self.url)
@@ -848,6 +883,18 @@ class Request(object):
     @property
     def params(self):
         return self._params
+
+    @property
+    def form_data(self):
+        if self._form_data is None:
+            self._parse_form_urlencoded_or_multipart_form()
+        return self._form_data
+
+    @property
+    def files(self):
+        if self._files is None:
+            self._parse_form_urlencoded_or_multipart_form()
+        return self._files
 
     @property
     def cookies(self):
@@ -1617,6 +1664,85 @@ class Request(object):
 
         return helpers.BoundedStream(self.env['wsgi.input'], content_length)
 
+    def _getFieldValue(self, field):
+        """Returns input value for imput text fields and FileStream object
+        for input file and None if no file is selected for upload
+
+        Args:
+            field (cgi.FieldStorage or cgi.MiniFieldStorage).
+        """
+        if field.file and 'filename' in field.disposition_options:
+
+            # read first byte of file buffer to make sure if file content exists
+            first_byte = field.file.read(1)
+
+            if first_byte:
+                # NOTE(kgriffs): This is an uploaded file.
+                return FileStream(
+                    file_buffer=field,
+                    max_size=self.options.file_max_upload_size,
+                    first_byte=first_byte
+                )
+            else:
+                # NOTE(kgriffs): No contents found which means no file uploaded.
+                return None
+        else:
+            # NOTE(kgriffs): This is an text field.
+            # DECODE_HTML_CHARS is used to convert html code to utf-8 charcters
+            return DECODE_HTML_CHARS(field.value)
+
+    def _parse_form_urlencoded_or_multipart_form(self):
+        """Parses urlencoded or multipart form data.
+        It sets text fileds in _form_data dict and file buffers in _files dict.
+        """
+
+        if (
+            self.method not in ('GET', 'HEAD') and
+            self.content_type is not None and
+            (
+                'multipart/form-data' in self.content_type or
+                'application/x-www-form-urlencoded' in self.content_type
+            )
+        ):
+            # NOTE(kgriffs): Store input params in _form_data and files in _files
+            self._files = {}
+            self._form_data = {}
+        else:
+            return
+
+        field_storage = cgi.FieldStorage(fp=self.stream, environ=self.env)
+        for fieldname in field_storage.keys():
+            filedata = field_storage[fieldname]
+            if isinstance(filedata, list):
+                # NOTE(kgriffs): fieldname has multiple values
+                list_data = []
+                list_files = []
+                for item in filedata:
+                    value = self._getFieldValue(item)
+                    if isinstance(value, str):
+                        list_data.append(value)
+                    elif value:
+                        list_files.append(value)
+                if list_data:
+                    self._form_data[fieldname] = list_data
+                if list_files:
+                    self._files[fieldname] = list_files
+            else:
+                # NOTE(kgriffs): fieldname has single values
+                value = self._getFieldValue(filedata)
+                if isinstance(value, str):
+                    self._form_data[fieldname] = value
+                elif value:
+                    self._files[fieldname] = value
+
+        for i in list(self._form_data):
+            if isinstance(self._form_data[i], list) and len(self._form_data[i]) == 1:
+                self._form_data[i] = self._form_data[i][0]
+
+        for i in list(self._files):
+            if isinstance(self._files[i], list) and len(self._files[i]) == 1:
+                self._files[i] = self._files[i][0]
+
     def _parse_form_urlencoded(self):
         content_length = self.content_length
         if not content_length:
@@ -1644,6 +1770,136 @@ class Request(object):
             )
 
             self._params.update(extra_params)
+
+
+class FileStream(object):
+    """
+    Defines a set of configurable options to handle file upload and file buffering
+    Note:
+        `FileStream` is not meant to be instantiated directly by responders.
+
+    Args:
+        fbuffer : io Buffer of file being uploaded.
+        max_size : Maximum allowed number of bytes of file being uploaded.
+        first_byte: First byte of file buffer
+
+    Attributes:
+        name : Name of file being uploaded.
+        type : Content type of file being uploaded.
+        _buffer : io Buffer of file being uploaded.
+        _max_size : io Buffer of file being uploaded.
+        _temp_file : Temporary location of file being uploaded.
+        error(Dict) : Error cured while uploading file.
+            key "code" - 1 is set if _max_size is exceeded
+            key "code" - 2 is set if on some exceptional error
+            key "error" contains addition error details
+        size : Size of uploaded file. Actual size is available once upload is successful
+    """
+
+    def __init__(self, file_buffer, max_size, first_byte):
+        self._buffer = file_buffer
+        self._temp_file = None
+        self._max_size = max_size + 1024
+        self._error = None
+        self._size = 1
+        self._first_byte = first_byte
+
+    # ------------------------------------------------------------------------
+    # Properties
+    # ------------------------------------------------------------------------
+
+    @property
+    def name(self):
+        return self._buffer.disposition_options['filename']
+
+    @property
+    def type(self):
+        return self._buffer.type
+
+    @property
+    def size(self):
+        return self._size
+
+    @property
+    def error(self):
+        return self._error
+
+    # ------------------------------------------------------------------------
+    # Methods
+    # ------------------------------------------------------------------------
+
+    def set_max_upload_size(self, size):
+        """Set maximum number of bytes for file being uploaded
+
+        Args:
+            size (int): Number of bytes.
+        """
+        self._max_size = size + 1024
+
+    def _set_error(self, error_data=None):
+        if error_data:
+            self._error = {
+                'code': 2,
+                'error': error_data
+            }
+        else:
+            self._error = {
+                'code': 1,
+                'error': 'File size is more than ' + str(self._max_size) + ' bytes'
+            }
+
+    def uploadto(self, path):
+        """Uploads file to given file path
+
+        Args:
+            path (str): Absolute path of file to be uploaded
+
+        Returns:
+            This method returns boolean - `True` on successful upload
+            and if upload is unsuccessful then it returns `False` and sets error on failure.
+        """
+
+        fd, self._temp_file = tempfile.mkstemp()
+
+        bytes_read_limit = 1024
+        raw_bytes = self._first_byte
+
+        try:
+            with os.fdopen(fd, 'w+b') as tmp:
+                while raw_bytes:
+                    self._size = self._size + bytes_read_limit
+                    if self._size >= self._max_size:
+                        self._set_error()
+                        self._deleteTempFile()
+                        return False
+                    tmp.write(raw_bytes)
+                    raw_bytes = self._buffer.file.read(bytes_read_limit)
+            self._moveTempFileTo(path)
+        except Exception:
+            self._deleteTempFile()
+            exc_type, exc_value, exc_traceback = exc_info()
+            error_data = {
+                'type': exc_type,
+                'value': exc_value,
+                'traceback': exc_traceback
+            }
+            self._set_error(error_data)
+            return False
+
+        return True
+
+    def _moveTempFileTo(self, path):
+        os.rename(self._temp_file, path)
+        self._temp_file = None
+        self._size = os.path.getsize(path)
+
+    def _deleteTempFile(self):
+        if self._temp_file:
+            os.remove(self._temp_file)
+            self._temp_file = None
+
+    def __del__(self):
+        self._deleteTempFile()
 
 
 # PERF: To avoid typos and improve storage space and speed over a dict.
@@ -1713,6 +1969,10 @@ class RequestOptions(object):
             configure the media-types that you would like to handle.
             By default, a handler is provided for the ``application/json``
             media type.
+
+        file_max_upload_size: Maximum Number of bytes a single uploaded file
+            may contain. Default value is 10 Mb. This value can be overriden
+            by passing file_max_upload_size in falcon.API instance.
     """
     __slots__ = (
         'keep_blank_qs_values',
@@ -1721,6 +1981,7 @@ class RequestOptions(object):
         'strip_url_path_trailing_slash',
         'default_media_type',
         'media_handlers',
+        'file_max_upload_size',
     )
 
     def __init__(self):
@@ -1730,3 +1991,4 @@ class RequestOptions(object):
         self.strip_url_path_trailing_slash = True
         self.default_media_type = DEFAULT_MEDIA_TYPE
         self.media_handlers = Handlers()
+        self.file_max_upload_size = 1024 * 1024 * 10
