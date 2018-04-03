@@ -4,4 +4,3 @@ markupsafe
 pygments
 sphinx>=1.4.4
 sphinx_rtd_theme
-pygments-style-railscasts
