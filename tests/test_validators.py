@@ -1,7 +1,12 @@
+try:
+    import jsonschema
+except ImportError:
+    jsonschema = None
+
 import pytest
 
 import falcon
-from falcon.media.validators import jsonschema
+from falcon.media import validators
 
 basic_schema = {
     'type': 'object',
@@ -14,8 +19,14 @@ basic_schema = {
 }
 
 
+skip_missing_dep = pytest.mark.skipif(
+    jsonschema is None,
+    reason='jsonschema dependency not found'
+)
+
+
 class SampleResource(object):
-    @jsonschema.validate(basic_schema)
+    @validators.jsonschema.validate(basic_schema)
     def on_get(self, req, resp):
         assert req.media is not None
 
@@ -24,6 +35,7 @@ class RequestStub(object):
     media = {'message': 'something'}
 
 
+@skip_missing_dep
 def test_jsonschema_validation_success():
     req = RequestStub()
 
@@ -31,6 +43,7 @@ def test_jsonschema_validation_success():
     assert res.on_get(req, None) is None
 
 
+@skip_missing_dep
 def test_jsonschema_validation_failure():
     req = RequestStub()
     req.media = {}
