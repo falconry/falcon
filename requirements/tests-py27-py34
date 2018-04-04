@@ -9,9 +9,6 @@ requests
 six
 testtools
 
-# Validator Specific
-jsonschema
-
 # Handler Specific
 msgpack
 

@@ -56,12 +56,12 @@ class ExecutedFirstMiddleware(object):
     def process_request(self, req, resp):
         global context
         context['executed_methods'].append(
-            '{0}.{1}'.format(self.__class__.__name__, 'process_request'))
+            '{}.{}'.format(self.__class__.__name__, 'process_request'))
 
     def process_resource(self, req, resp, resource, params):
         global context
         context['executed_methods'].append(
-            '{0}.{1}'.format(self.__class__.__name__, 'process_resource'))
+            '{}.{}'.format(self.__class__.__name__, 'process_resource'))
 
     # NOTE(kgriffs): This also tests that the framework can continue to
     # call process_response() methods that do not have a 'req_succeeded'
@@ -69,7 +69,7 @@ class ExecutedFirstMiddleware(object):
     def process_response(self, req, resp, resource):
         global context
         context['executed_methods'].append(
-            '{0}.{1}'.format(self.__class__.__name__, 'process_response'))
+            '{}.{}'.format(self.__class__.__name__, 'process_response'))
 
         context['req'] = req
         context['resp'] = resp

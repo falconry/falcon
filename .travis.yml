@@ -1,6 +1,6 @@
 language: python
 sudo: false
-install: tools/travis/install.sh
+install: pip install tox coveralls
 cache:
     directories:
         - $HOME/.cache/pip
@@ -15,8 +15,6 @@ matrix:
           env: TOXENV=pep8
         - python: 2.7
           env: TOXENV=pep8-examples
-        - python: 2.6
-          env: TOXENV=py26
         - python: 2.7
           env: TOXENV=py27
         - python: 2.7
@@ -48,7 +46,8 @@ matrix:
         - python: 3.6
           env: TOXENV=hug
 
-script: tools/travis/run_tests.sh
+script: tox
+
 notifications:
   webhooks:
     urls:

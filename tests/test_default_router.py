@@ -119,7 +119,7 @@ class ResourceWithId(object):
         self.resource_id = resource_id
 
     def __repr__(self):
-        return 'ResourceWithId({0})'.format(self.resource_id)
+        return 'ResourceWithId({})'.format(self.resource_id)
 
     def on_get(self, req, resp):
         resp.body = self.resource_id

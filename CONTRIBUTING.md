@@ -5,7 +5,7 @@ developers of all skill levels. To get started, simply fork the master branch
 on GitHub to your personal account and then clone the fork into your
 development environment.
 
-If you would like to contribute but don't already have something in mind, 
+If you would like to contribute but don't already have something in mind,
 we invite you to take a look at the issues listed under our [next milestone][ms].
 If you see one you'd like to work on, please leave a quick comment so that we don't
 end up with duplicated effort. Thanks in advance!
@@ -41,29 +41,6 @@ If you are using pyenv and get an error along the lines of "failed to get versio
 $ pyenv shell 2.7.13 3.6.2
 ```
 
-### Running tests against Jython
-
-In addition to the tests run with tox against CPython, Cython, and PyPy, Travis runs tests against Jython 2.7 outside of tox. If you need to run these tests locally, do the following:
-
-First, install JDK 7 or better. Then install Jython at `~/jython`:
-
-```bash
-$ tools/travis/install_jython2.7.sh
-```
-
-Now install all testing dependencies. If you get an error, you may need to `export JYTHON_HOME=~/jython`. Also note that *pytest-xdist* and *pytest-cov* are not compatible with Jython, and therefore must be removed:
- 
-```bash
-$ ~/jython/bin/pip install -r requirements/tests 
-$ ~/jython/bin/pip uninstall -y pytest-xdist pytest-cov
-```
-
-Finally, run the tests:
-
-```bash
-$ ~/jython/bin/pytest tests
-```
-
 ### Test coverage
 
 Pull requests must maintain 100% test coverage of all code branches. This helps ensure the quality of the Falcon framework. To check coverage before submitting a pull request:
@@ -84,7 +61,7 @@ debugger, run one of the following tox environments:
 
 ```bash
 $ tox -e py2_debug
-$ tox -e py3_debug 
+$ tox -e py3_debug
 ```
 
 If you wish, you can customize Falcon's `tox.ini` to install alternative debuggers, such as ipdb or pudb.
