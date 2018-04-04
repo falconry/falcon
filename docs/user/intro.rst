@@ -14,8 +14,8 @@ large-scale app backends and microservices. It encourages the REST
 architectural style, and tries to do as little as possible while
 remaining highly effective.
 
-Falcon apps work with any WSGI server, and run great under
-CPython 2.7, PyPy, and CPython 3.3+.
+Falcon apps work with any WSGI server, and run like a champ under
+CPython 2.7/3.4+ and PyPy.
 
 How is Falcon different?
 ------------------------
@@ -57,16 +57,17 @@ and to debug edge cases in large-scale deployments.
 Features
 --------
 
--  Highly-optimized, extensible code base
--  Intuitive routing via URI templates and REST-inspired resource
-   classes
--  Easy access to headers and bodies through request and response
-   classes
--  DRY request processing via middleware components and hooks
--  Idiomatic HTTP error responses
--  Straightforward exception handling
--  Snappy unit testing through WSGI helpers and mocks
--  CPython 2.6-2.7, PyPy 2.7, Jython 2.7, and
+- Highly-optimized, extensible code base
+- Intuitive routing via URI templates and REST-inspired resource
+  classes
+- Easy access to headers and bodies through request and response
+  classes
+- DRY request processing via middleware components and hooks
+- Idiomatic HTTP error responses
+- Straightforward exception handling
+- Snappy unit testing through WSGI helpers and mocks
+- Supports Python 2.7, 3.4+
+- Compatible with PyPy
 
 About Apache 2.0
 ----------------

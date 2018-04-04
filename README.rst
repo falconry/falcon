@@ -1,12 +1,17 @@
+.. raw:: html
+
+<a href="https://falconframework.org" target="_blank">
+<img
+    src="https://raw.githubusercontent.com/falconry/falcon/master/logo/banner.jpg"
+    alt="Falcon web framework logo"
+    style="width:100%"
+>
+</a>
+
 |Docs| |Build Status| |codecov.io|
 
-|Logo| The Falcon Web Framework
-===============================
-
-    Perfection is finally attained not when there is no longer anything
-    to add, but when there is no longer anything to take away.
-
-    *- Antoine de Saint-Exupéry*
+The Falcon Web Framework
+========================
 
 `Falcon <http://falconframework.org/index.html>`__ is a reliable,
 high-performance Python web framework for building
@@ -14,11 +19,8 @@ large-scale app backends and microservices. It encourages the REST
 architectural style, and tries to do as little as possible while
 remaining highly effective.
 
-Falcon apps work with any WSGI server, and run great under
+Falcon apps work with any WSGI server, and run like a champ under
 CPython 2.7, CPython 3.4+, PyPy2.7, and PyPy3.5.
-
-(Note: Support for CPython 2.6 and Jython 2.7 is deprecated and will be
-removed in Falcon 2.0.)
 
 Support Falcon Development
 --------------------------
@@ -40,6 +42,11 @@ Quick Links
 
 How is Falcon different?
 ------------------------
+
+    Perfection is finally attained not when there is no longer anything
+    to add, but when there is no longer anything to take away.
+
+    *- Antoine de Saint-Exupéry*
 
 We designed Falcon to support the demanding needs of large-scale
 microservices and responsive app backends. Falcon complements more
@@ -88,7 +95,7 @@ Features
 -  Straightforward exception handling
 -  Snappy unit testing through WSGI helpers and mocks
 -  CPython 2.7, CPython 3.4+, PyPy2.7, and PyPy3.5 support
--  ~20% speed boost when Cython is available
+-  ~20% speed boost under CPython when Cython is available
 
 Who's Using Falcon?
 -------------------
@@ -155,7 +162,7 @@ CPython
 ^^^^^^^
 
 Falcon also fully supports
-`CPython <https://www.python.org/downloads/>`__ 2.6-3.6.
+`CPython <https://www.python.org/downloads/>`__ 2.7 and 3.4+.
 
 A universal wheel is available on PyPI for the the Falcon framework.
 Installing it is as simple as:
@@ -206,7 +213,7 @@ with this command:
     $ xcode-select --install
 
 The Clang compiler treats unrecognized command-line options as
-errors; this can cause problems under Python 2.6, for example:
+errors, for example:
 
 .. code:: bash
 
@@ -637,7 +644,7 @@ See also: `CONTRIBUTING.md <https://github.com/falconry/falcon/blob/master/CONTR
 Legal
 -----
 
-Copyright 2013-2017 by Rackspace Hosting, Inc. and other contributors as
+Copyright 2013-2018 by Individual and corporate contributors as
 noted in the individual source files.
 
 Falcon image courtesy of `John
@@ -655,9 +662,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-.. |Logo| image:: logo/logo.svg
-    :width: 30
-    :height: 30
 .. |Docs| image:: https://readthedocs.org/projects/falcon/badge/?version=stable
     :target: https://falcon.readthedocs.io/en/stable/?badge=stable
     :alt: Falcon web framework docs
