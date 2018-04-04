@@ -19,9 +19,6 @@ class MessagePackHandler(BaseHandler):
         .. code::
 
             $ pip install msgpack
-
-        Python 2.6 users will need to use the deprecated ``msgpack-python``
-        package instead, pinned to version 0.4.8.
     """
 
     def __init__(self):

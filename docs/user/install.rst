@@ -74,7 +74,7 @@ with this command:
     $ xcode-select --install
 
 The Clang compiler treats unrecognized command-line options as
-errors; this can cause problems under Python 2.6, for example:
+errors, for example:
 
 .. code:: bash
 
