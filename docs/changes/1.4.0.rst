@@ -4,7 +4,8 @@ Changelog for Falcon 1.4.0
 Breaking Changes
 ----------------
 
-(None)
+- :attr:`falcon.testing.Result.json` now returns None when the response body is
+  empty, rather than raising an error.
 
 Changes to Supported Platforms
 ------------------------------
@@ -49,8 +50,6 @@ New & Improved
   override :class:`~.TestClient`'s behavior.
 - :class:`~.TestClient` can now be configured with a default set of headers to
   send with every request.
-- :attr:`~.testing.Result.json` now returns None when the response body is
-  empty, rather than raising an error.
 - The :ref:`FAQ <faq>` has been reorganized and greatly expanded.
 - We restyled the docs to match https://falconframework.org
 
