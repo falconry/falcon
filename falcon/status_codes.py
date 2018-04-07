@@ -95,8 +95,8 @@ HTTP_416 = '416 Range Not Satisfiable'
 HTTP_REQUESTED_RANGE_NOT_SATISFIABLE = HTTP_416
 HTTP_417 = '417 Expectation Failed'
 HTTP_EXPECTATION_FAILED = HTTP_417
-HTTP_418 = "418 I'm a teapot"
-HTTP_419 = "419 Authentication Timeout"
+HTTP_418 = '418 I\'m a teapot'
+HTTP_419 = '419 Authentication Timeout'
 HTTP_AUTHENTICATION_TIMEOUT = HTTP_419
 HTTP_IM_A_TEAPOT = HTTP_418
 HTTP_422 = '422 Unprocessable Entity'
@@ -162,8 +162,7 @@ HTTP_741 = '741 Compiling'
 HTTP_742 = '742 A kitten dies'
 HTTP_743 = '743 I thought I knew regular expressions'
 HTTP_744 = '744 Y U NO write integration tests?'
-HTTP_745 = ("745 I don't always test my code, but when I do"
-            'I do it in production')
+HTTP_745 = '745 I don\'t always test my code, but when I do, I do it in production'
 HTTP_748 = '748 Confounded by Ponies'
 HTTP_749 = '749 Reserved for Chuck Norris'
 
