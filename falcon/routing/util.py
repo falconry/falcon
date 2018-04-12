@@ -130,7 +130,7 @@ def create_http_method_map(resource):  # pragma: nocover
     return method_map
 
 
-def map_http_methods(resource, alt=None):
+def map_http_methods(resource, suffix=None):
     """Maps HTTP methods (e.g., 'GET', 'POST') to methods of a resource object.
 
     Args:
@@ -140,9 +140,9 @@ def map_http_methods(resource, alt=None):
             should define ``on_get(self, req, resp)`` and
             ``on_post(self, req, resp)``.
 
-        alt: A string used to look for alternate methods to the base HTTP methods.
-            If alt is specified Falcon will look for resource methods ending in alt,
-            e.g. if alt is 'foo', then a "GET" request will be mapped to
+        suffix: A string used to look for alternate methods to the base HTTP methods.
+            If suffix is specified Falcon will look for resource methods ending in suffix,
+            e.g. if suffix is 'foo', then a "GET" request will be mapped to
             on_get_foo, a "POST" request will be mapped to on_post_foo, etc.
 
     Returns:
@@ -154,10 +154,10 @@ def map_http_methods(resource, alt=None):
 
     for method in COMBINED_METHODS:
         try:
-            if alt:
-                responder = getattr(resource, 'on_' + method.lower() + '_' + alt)
-            else:
-                responder = getattr(resource, 'on_' + method.lower())
+            responder_name = 'on_' + method.lower()
+            if suffix:
+                responder_name += '_' + suffix
+            responder = getattr(resource, responder_name)
         except AttributeError:
             # resource does not implement this method
             pass
@@ -166,9 +166,9 @@ def map_http_methods(resource, alt=None):
             if callable(responder):
                 method_map[method] = responder
 
-    # if alt is specified and doesn't map to any methods raise an error
-    if alt and not method_map:
-        raise AltMethodNotFoundError('No method found to map to specified alt text')
+    # if suffix is specified and doesn't map to any methods raise an error
+    if suffix and not method_map:
+        raise AltMethodNotFoundError('No method found to map to specified suffix text')
 
     return method_map
 

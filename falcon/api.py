@@ -327,10 +327,10 @@ class API(object):
                 corresponding request handlers, and Falcon will do the right
                 thing.
 
-            alt (str): A keyword argument for alternate route for accessing
+            suffix (str): A keyword argument for alternate route for accessing
                 a resource. If this keyword argument is passed Falcon will
-                look to pass "GET" requests to on_get_{alt}, "POST" requests
-                to on_post_{alt}, etc.
+                look to pass "GET" requests to on_get_{suffix}, "POST" requests
+                to on_post_{suffix}, etc.
 
         Note:
             Any additional args and kwargs not defined above are passed
@@ -352,20 +352,14 @@ class API(object):
         if '//' in uri_template:
             raise ValueError("uri_template may not contain '//'")
 
-        # NOTE(santeyio): This is a not very nice way to catch alt the alt
+        # NOTE(santeyio): This is a not very nice way to catch the suffix
         # keyword. In python 3 it can be specified explicitly in the function
         # definition, e.g.
-        # `add_route(self, uri_template, resource, *args, alt=None, **kwargs)`
+        # `add_route(self, uri_template, resource, *args, suffix=None, **kwargs)`
         # but python 2 won't accept args like this.
-        if 'alt' in kwargs:
-            alt = kwargs.get('alt')
-            # remove alt from kwargs so it isn't passed to the
-            # DefaultRouter.add_route method.
-            del kwargs['alt']
-        else:
-            alt = None
+        suffix = kwargs.pop('suffix', None)
 
-        method_map = routing.map_http_methods(resource, alt=alt)
+        method_map = routing.map_http_methods(resource, suffix=suffix)
         routing.set_default_responders(method_map)
         self._router.add_route(uri_template, method_map, resource, *args,
                                **kwargs)

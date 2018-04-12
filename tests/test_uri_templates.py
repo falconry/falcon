@@ -83,25 +83,36 @@ class FileDetailsResource(object):
 
 class ResourceWithAltRoutes(object):
     def __init__(self):
-        self.called = False
+        self.get_called = False
+        self.post_called = False
+        self.put_called = False
 
     def on_get(self, req, resp, collection_id, item_id):
         self.collection_id = collection_id
         self.item_id = item_id
-        self.called = True
+        self.get_called = True
+
+    def on_post(self, req, resp, collection_id, item_id):
+        self.collection_id = collection_id
+        self.item_id = item_id
+        self.post_called = True
 
     def on_put(self, req, resp, collection_id, item_id):
         self.collection_id = collection_id
         self.item_id = item_id
-        self.called = True
+        self.put_called = True
 
     def on_get_collection(self, req, resp, collection_id):
         self.collection_id = collection_id
-        self.called = True
+        self.get_called = True
 
     def on_post_collection(self, req, resp, collection_id):
         self.collection_id = collection_id
-        self.called = True
+        self.post_called = True
+
+    def on_put_collection(self, req, resp, collection_id):
+        self.collection_id = collection_id
+        self.put_called = True
 
 
 @pytest.fixture
@@ -430,18 +441,34 @@ def test_adding_alternate_routes(client):
     client.app.add_route(
         '/collections/{collection_id}/items/{item_id}', resource_with_alt_routes)
     client.app.add_route(
-        '/collections/{collection_id}/items', resource_with_alt_routes, alt='collection')
+        '/collections/{collection_id}/items', resource_with_alt_routes, suffix='collection')
+    # GET
     client.simulate_get('/collections/123/items/456')
     assert resource_with_alt_routes.collection_id == '123'
     assert resource_with_alt_routes.item_id == '456'
+    assert resource_with_alt_routes.get_called
     client.simulate_get('/collections/foo/items')
     assert resource_with_alt_routes.collection_id == 'foo'
+    # POST
+    client.simulate_post('/collections/foo234/items/foo456')
+    assert resource_with_alt_routes.collection_id == 'foo234'
+    assert resource_with_alt_routes.item_id == 'foo456'
+    assert resource_with_alt_routes.post_called
+    client.simulate_post('/collections/foo123/items')
+    assert resource_with_alt_routes.collection_id == 'foo123'
+    # PUT
+    client.simulate_put('/collections/foo345/items/foo567')
+    assert resource_with_alt_routes.collection_id == 'foo345'
+    assert resource_with_alt_routes.item_id == 'foo567'
+    assert resource_with_alt_routes.put_called
+    client.simulate_put('/collections/foo321/items')
+    assert resource_with_alt_routes.collection_id == 'foo321'
 
 
 def test_custom_error_on_alternate_route_not_found(client):
     resource_with_alt_routes = ResourceWithAltRoutes()
     try:
         client.app.add_route(
-            '/collections/{collection_id}/items', resource_with_alt_routes, alt='bad-alt')
+            '/collections/{collection_id}/items', resource_with_alt_routes, suffix='bad-alt')
     except (AltMethodNotFoundError):
         assert True
