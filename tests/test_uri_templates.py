@@ -13,7 +13,7 @@ import six
 
 import falcon
 from falcon import testing
-from falcon.routing.util import AltMethodNotFoundError
+from falcon.routing.util import SuffixMethodNotFoundError
 
 
 _TEST_UUID = uuid.uuid4()
@@ -81,7 +81,7 @@ class FileDetailsResource(object):
         self.called = True
 
 
-class ResourceWithAltRoutes(object):
+class ResourceWithSuffixRoutes(object):
     def __init__(self):
         self.get_called = False
         self.post_called = False
@@ -436,39 +436,39 @@ def test_same_level_complex_var(client, reverse):
     assert details_resource.ext == ext
 
 
-def test_adding_alternate_routes(client):
-    resource_with_alt_routes = ResourceWithAltRoutes()
+def test_adding_suffix_routes(client):
+    resource_with_suffix_routes = ResourceWithSuffixRoutes()
     client.app.add_route(
-        '/collections/{collection_id}/items/{item_id}', resource_with_alt_routes)
+        '/collections/{collection_id}/items/{item_id}', resource_with_suffix_routes)
     client.app.add_route(
-        '/collections/{collection_id}/items', resource_with_alt_routes, suffix='collection')
+        '/collections/{collection_id}/items', resource_with_suffix_routes, suffix='collection')
     # GET
     client.simulate_get('/collections/123/items/456')
-    assert resource_with_alt_routes.collection_id == '123'
-    assert resource_with_alt_routes.item_id == '456'
-    assert resource_with_alt_routes.get_called
+    assert resource_with_suffix_routes.collection_id == '123'
+    assert resource_with_suffix_routes.item_id == '456'
+    assert resource_with_suffix_routes.get_called
     client.simulate_get('/collections/foo/items')
-    assert resource_with_alt_routes.collection_id == 'foo'
+    assert resource_with_suffix_routes.collection_id == 'foo'
     # POST
     client.simulate_post('/collections/foo234/items/foo456')
-    assert resource_with_alt_routes.collection_id == 'foo234'
-    assert resource_with_alt_routes.item_id == 'foo456'
-    assert resource_with_alt_routes.post_called
+    assert resource_with_suffix_routes.collection_id == 'foo234'
+    assert resource_with_suffix_routes.item_id == 'foo456'
+    assert resource_with_suffix_routes.post_called
     client.simulate_post('/collections/foo123/items')
-    assert resource_with_alt_routes.collection_id == 'foo123'
+    assert resource_with_suffix_routes.collection_id == 'foo123'
     # PUT
     client.simulate_put('/collections/foo345/items/foo567')
-    assert resource_with_alt_routes.collection_id == 'foo345'
-    assert resource_with_alt_routes.item_id == 'foo567'
-    assert resource_with_alt_routes.put_called
+    assert resource_with_suffix_routes.collection_id == 'foo345'
+    assert resource_with_suffix_routes.item_id == 'foo567'
+    assert resource_with_suffix_routes.put_called
     client.simulate_put('/collections/foo321/items')
-    assert resource_with_alt_routes.collection_id == 'foo321'
+    assert resource_with_suffix_routes.collection_id == 'foo321'
 
 
-def test_custom_error_on_alternate_route_not_found(client):
-    resource_with_alt_routes = ResourceWithAltRoutes()
+def test_custom_error_on_suffix_route_not_found(client):
+    resource_with_suffix_routes = ResourceWithSuffixRoutes()
     try:
         client.app.add_route(
-            '/collections/{collection_id}/items', resource_with_alt_routes, suffix='bad-alt')
-    except (AltMethodNotFoundError):
+            '/collections/{collection_id}/items', resource_with_suffix_routes, suffix='bad-alt')
+    except SuffixMethodNotFoundError:
         assert True

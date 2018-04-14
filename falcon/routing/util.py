@@ -136,14 +136,14 @@ def map_http_methods(resource, suffix=None):
     Args:
         resource: An object with *responder* methods, following the naming
             convention *on_\**, that correspond to each method the resource
-            supports. For example, if a resource supports GET and POST, it
+            supports. For example, if a resource supports 'GET' and 'POST', it
             should define ``on_get(self, req, resp)`` and
             ``on_post(self, req, resp)``.
 
         suffix: A string used to look for alternate methods to the base HTTP methods.
             If suffix is specified Falcon will look for resource methods ending in suffix,
-            e.g. if suffix is 'foo', then a "GET" request will be mapped to
-            on_get_foo, a "POST" request will be mapped to on_post_foo, etc.
+            e.g. if suffix is 'foo', then a 'GET' request will be mapped to
+            on_get_foo, a 'POST' request will be mapped to on_post_foo, etc.
 
     Returns:
         dict: A mapping of HTTP methods to explicitly defined resource responders.
@@ -168,7 +168,7 @@ def map_http_methods(resource, suffix=None):
 
     # if suffix is specified and doesn't map to any methods raise an error
     if suffix and not method_map:
-        raise AltMethodNotFoundError('No method found to map to specified suffix text')
+        raise SuffixMethodNotFoundError('No method found to map to specified suffix text')
 
     return method_map
 
@@ -197,6 +197,6 @@ def set_default_responders(method_map):
             method_map[method] = na_responder
 
 
-class AltMethodNotFoundError(Exception):
+class SuffixMethodNotFoundError(Exception):
     def __init__(self, message):
         self.message = message
