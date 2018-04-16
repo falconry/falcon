@@ -467,8 +467,6 @@ def test_adding_suffix_routes(client):
 
 def test_custom_error_on_suffix_route_not_found(client):
     resource_with_suffix_routes = ResourceWithSuffixRoutes()
-    try:
+    with pytest.raises(SuffixedMethodNotFoundError):
         client.app.add_route(
             '/collections/{collection_id}/items', resource_with_suffix_routes, suffix='bad-alt')
-    except SuffixedMethodNotFoundError:
-        assert True
