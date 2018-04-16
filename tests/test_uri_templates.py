@@ -13,7 +13,7 @@ import six
 
 import falcon
 from falcon import testing
-from falcon.routing.util import SuffixMethodNotFoundError
+from falcon.routing.util import SuffixedMethodNotFoundError
 
 
 _TEST_UUID = uuid.uuid4()
@@ -470,5 +470,5 @@ def test_custom_error_on_suffix_route_not_found(client):
     try:
         client.app.add_route(
             '/collections/{collection_id}/items', resource_with_suffix_routes, suffix='bad-alt')
-    except SuffixMethodNotFoundError:
+    except SuffixedMethodNotFoundError:
         assert True
