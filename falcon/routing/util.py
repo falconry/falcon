@@ -82,7 +82,7 @@ def compile_uri_template(template):
 
 
 def create_http_method_map(resource):  # pragma: nocover
-    """Maps HTTP methods (e.g., 'GET', 'POST') to methods of a resource object.
+    """Maps HTTP methods (e.g., GET, POST) to methods of a resource object.
 
     Warning:
         This method is deprecated and will be removed in a future release.
@@ -131,19 +131,20 @@ def create_http_method_map(resource):  # pragma: nocover
 
 
 def map_http_methods(resource, suffix=None):
-    """Maps HTTP methods (e.g., 'GET', 'POST') to methods of a resource object.
+    """Maps HTTP methods (e.g., GET, POST) to methods of a resource object.
 
     Args:
         resource: An object with *responder* methods, following the naming
             convention *on_\**, that correspond to each method the resource
-            supports. For example, if a resource supports 'GET' and 'POST', it
+            supports. For example, if a resource supports GET and POST, it
             should define ``on_get(self, req, resp)`` and
             ``on_post(self, req, resp)``.
 
-        suffix: A string used to look for alternate methods to the base HTTP methods.
-            If suffix is specified Falcon will look for resource methods ending in suffix,
-            e.g. if suffix is 'foo', then a 'GET' request will be mapped to
-            on_get_foo, a 'POST' request will be mapped to on_post_foo, etc.
+    Keyword Args:
+        suffix (str): Optional responder name suffix for this route. If 
+            a suffix is provided, Falcon will map GET requests to 
+            `on_get_{suffix}()`, POST requests to `on_post_{suffix}()`, 
+            etc. 
 
     Returns:
         dict: A mapping of HTTP methods to explicitly defined resource responders.
@@ -157,6 +158,7 @@ def map_http_methods(resource, suffix=None):
             responder_name = 'on_' + method.lower()
             if suffix:
                 responder_name += '_' + suffix
+
             responder = getattr(resource, responder_name)
         except AttributeError:
             # resource does not implement this method
@@ -166,7 +168,7 @@ def map_http_methods(resource, suffix=None):
             if callable(responder):
                 method_map[method] = responder
 
-    # if suffix is specified and doesn't map to any methods raise an error
+    # If suffix is specified and doesn't map to any methods, raise an error
     if suffix and not method_map:
         raise SuffixMethodNotFoundError('No method found to map to specified suffix text')
 
