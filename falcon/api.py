@@ -327,10 +327,17 @@ class API(object):
                 corresponding request handlers, and Falcon will do the right
                 thing.
 
-            suffix (str): A keyword argument for alternate route for accessing
-                a resource. If this keyword argument is passed Falcon will
-                look to pass "GET" requests to on_get_{suffix}, "POST" requests
-                to on_post_{suffix}, etc.
+        Keyword Args:
+            suffix (str): Optional responder name suffix for this route. If 
+                a suffix is provided, Falcon will map GET requests to 
+                `on_get_{suffix}()`, POST requests to `on_post_{suffix}()`, 
+                etc. In this way, multiple closely-related routes can be 
+                mapped to the same resource. For example, a single resource
+                class can use suffixed responders to distinguish requests
+                for a single item vs. a collection of those same items. 
+                Another class might use a suffixed responder to handle
+                a shortlink route in addition to the regular route for the
+                resource.
 
         Note:
             Any additional args and kwargs not defined above are passed
