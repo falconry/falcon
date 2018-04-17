@@ -321,8 +321,8 @@ class API(object):
                 (See also: :meth:`~.add_sink`)
 
             resource (instance): Object which represents a REST
-                resource. Falcon will pass "GET" requests to on_get,
-                "PUT" requests to on_put, etc. If any HTTP methods are not
+                resource. Falcon will pass GET requests to ``on_get()``,
+                PUT requests to ``on_put()``, etc. If any HTTP methods are not
                 supported by your resource, simply don't define the
                 corresponding request handlers, and Falcon will do the right
                 thing.
@@ -330,7 +330,7 @@ class API(object):
         Keyword Args:
             suffix (str): Optional responder name suffix for this route. If
                 a suffix is provided, Falcon will map GET requests to
-                `on_get_{suffix}()`, POST requests to `on_post_{suffix}()`,
+                ``on_get_{suffix}()``, POST requests to ``on_post_{suffix}()``,
                 etc. In this way, multiple closely-related routes can be
                 mapped to the same resource. For example, a single resource
                 class can use suffixed responders to distinguish requests

@@ -1185,10 +1185,14 @@ Go ahead and edit your ``images.py`` file to look something like this:
             return stream, stream_len
 
 As you can see, we renamed ``Resource`` to ``Collection`` and added a new ``Item``
-class to represent a single image resource. Also, note the ``name`` parameter
-for the ``on_get()`` responder. Any URI parameters that you specify in your routes
-will be turned into corresponding kwargs and passed into the target responder as
-such. We'll see how to specify URI parameters in a moment.
+class to represent a single image resource. Alternatively, these two classes could
+be consolidated into one by using suffixed responders. (See also:
+:meth:`~falcon.API.add_route`)
+
+Also, note the ``name`` parameter for the ``on_get()`` responder. Any URI
+parameters that you specify in your routes will be turned into corresponding
+kwargs and passed into the target responder as such. We'll see how to specify
+URI parameters in a moment.
 
 Inside the ``on_get()`` responder,
 we set the Content-Type header based on the filename extension, and then
