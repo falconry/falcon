@@ -24,10 +24,11 @@ Why doesn't Falcon create a new Resource instance for every request?
 --------------------------------------------------------------------
 Falcon generally tries to minimize the number of objects that it
 instantiates. It does this for two reasons: first, to avoid the expense of
-creating the object, and second to reduce memory usage. Therefore, when
-adding a route, Falcon requires an *instance* of your resource class, rather
-than the class type. That same instance will be used to serve all requests
-coming in on that route.
+creating the object, and second to reduce memory usage by reducing the
+total number of objects required under highly concurrent workloads. Therefore,
+when adding a route, Falcon requires an *instance* of your resource class,
+rather than the class type. That same instance will be used to serve all
+requests coming in on that route.
 
 Why does raising an error inside a resource crash my app?
 ---------------------------------------------------------
@@ -180,6 +181,42 @@ client to a different location (see also :ref:`Redirection <redirects>`).
 Note, however, that it is more efficient to handle permanent redirects
 directly with your web server, if possible, rather than placing additional load
 on your app for such requests.
+
+How do I split requests between my original app and the part I migrated to Falcon?
+----------------------------------------------------------------------------------
+
+It is common to carve out a portion of an app and reimplement it in
+Falcon to boost performance where it is most needed.
+
+If you have access to your load balancer or reverse proxy configuration,
+we recommend setting up path or subdomain-based rules to split requests
+between your original implementation and the parts that have been
+migrated to Falcon (e.g., by adding an additional ``location`` directive
+to your NGINX config).
+
+If the above approach isn't an option for your deployment, you can
+implement a simple WSGI wrapper that does the same thing:
+
+.. code:: python
+
+    def application(environ, start_response):
+        try:
+            # NOTE(kgriffs): Prefer the host header; the web server
+            # isn't supposed to mess with it, so it should be what
+            # the client actually sent.
+            host = environ['HTTP_HOST']
+        except KeyError:
+            # NOTE(kgriffs): According to PEP-3333, this header
+            # will always be present.
+            host = environ['SERVER_NAME']
+
+        if host.startswith('api.'):
+            return falcon_app(environ, startswith)
+        elif:
+            return webapp2_app(environ, startswith)
+
+See also `PEP 3333 <https://www.python.org/dev/peps/pep-3333/#environ-variables>`_
+for a complete list of the variables that are provided via ``environ``.
 
 How do I implement both POSTing and GETing items for the same resource?
 -----------------------------------------------------------------------
