@@ -220,11 +220,12 @@ for a complete list of the variables that are provided via ``environ``.
 
 How do I implement both POSTing and GETing items for the same resource?
 -----------------------------------------------------------------------
+
 Suppose you have the following routes::
 
     # Resource Collection
-    POST /resources
     GET /resources{?marker, limit}
+    POST /resources
 
     # Resource Item
     GET /resources/{id}
@@ -233,13 +234,37 @@ Suppose you have the following routes::
 
 You can implement this sort of API by simply using two Python classes, one
 to represent a single resource, and another to represent the collection of
-said resources. It is common to place both classes in the same module.
+said resources. It is common to place both classes in the same module
+(see also :ref:`this section of the tutorial <tutorial-serving-images>`.)
 
-A proposal has been made to add a new routing feature that will afford
-mapping related routes to a single resource class, if so desired. To learn
-more, see `#584 on GitHub <https://github.com/falconry/falcon/issues/584>`_.
+Alternatively, you can use suffixed responders to map both routes to the
+same resource class:
 
-(See also :ref:`this section of the tutorial <tutorial-serving-images>`.)
+.. code:: python
+
+    class MyResource(object):
+        def on_get(self, req, resp, id):
+            pass
+
+        def on_patch(self, req, resp, id):
+            pass
+
+        def on_delete(self, req, resp, id):
+            pass
+
+        def on_get_collection(self, req, resp):
+            pass
+
+        def on_post_collection(self, req, resp):
+            pass
+
+
+    # ...
+
+
+    resource = MyResource()
+    api.add_route('/resources/{id}', resource)
+    api.add_route('/resources', resource, suffix='collection')
 
 What is the recommended way to map related routes to resource classes?
 ----------------------------------------------------------------------
@@ -285,8 +310,8 @@ classes:
 
     class Game(object):
 
-        def __init__(self, dal):
-            self._dal = dal
+        def __init__(self, dao):
+            self._dao = dao
 
         def on_get(self, req, resp, game_id):
             pass
@@ -297,8 +322,8 @@ classes:
 
     class GameState(object):
 
-        def __init__(self, dal):
-            self._dal = dal
+        def __init__(self, dao):
+            self._dao = dao
 
         def on_get(self, req, resp, game_id):
             pass
@@ -319,25 +344,21 @@ classes:
     # app more flexible since the data layer can
     # evolve somewhat independently from the presentation
     # layer.
-    game_dal = myapp.DAL.Game(myconfig)
+    game_dao = myapp.DAL.Game(myconfig)
 
     api.add_route('/game/ping', Ping())
-    api.add_route('/game/{game_id}', Game(game_dal))
-    api.add_route('/game/{game_id}/state', GameState(game_dal))
+    api.add_route('/game/{game_id}', Game(game_dao))
+    api.add_route('/game/{game_id}/state', GameState(game_dao))
 
-In the future, we hope to support an alternative approach, using the proposal
-from `#584 on GitHub <https://github.com/falconry/falcon/issues/584>`_,
-that will afford combining all of these resources into a single class like so:
+Alternatively, a single resource class could implement suffixed responders in
+order to handle all three routes:
 
 .. code:: python
 
-    class Ping(object):
-
-
     class Game(object):
 
-        def __init__(self, dal):
-            self._dal = dal
+        def __init__(self, dao):
+            self._dao = dao
 
         def on_get(self, req, resp, game_id):
             pass
@@ -345,23 +366,26 @@ that will afford combining all of these resources into a single class like so:
         def on_post(self, req, resp, game_id):
             pass
 
-        def on_get_ping(self, req, resp):
-            resp.body = '{"message": "pong"}'
-
         def on_get_state(self, req, resp, game_id):
             pass
 
         def on_post_state(self, req, resp, game_id):
             pass
 
+        def on_get_ping(self, req, resp):
+            resp.data = b'{"message": "pong"}'
+
+
+    # ...
+
 
     api = falcon.API()
 
     game = Game(myapp.DAL.Game(myconfig))
 
-    api.add_route('/game/ping', game, 'ping')
     api.add_route('/game/{game_id}', game)
-    api.add_route('/game/{game_id}/state', game, 'state')
+    api.add_route('/game/{game_id}/state', game, suffix='state')
+    api.add_route('/game/ping', game, suffix='ping')
 
 Extensibility
 ~~~~~~~~~~~~~

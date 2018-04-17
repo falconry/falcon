@@ -149,7 +149,7 @@ def map_http_methods(resource, suffix=None):
     Keyword Args:
         suffix (str): Optional responder name suffix for this route. If
             a suffix is provided, Falcon will map GET requests to
-            `on_get_{suffix}()`, POST requests to `on_post_{suffix}()`,
+            ``on_get_{suffix}()``, POST requests to ``on_post_{suffix}()``,
             etc.
 
     Returns:
