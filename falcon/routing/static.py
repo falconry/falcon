@@ -62,7 +62,8 @@ class StaticRoute(object):
 
     def match(self, path):
         """Check whether the given path matches this route."""
-        return path.startswith(self._prefix)
+        prefix = self._prefix if self._default_filename is None else self._prefix[:-1]
+        return path.startswith(prefix)
 
     def __call__(self, req, resp):
         """Resource responder for this route."""
@@ -71,7 +72,8 @@ class StaticRoute(object):
 
         # NOTE(kgriffs): Check surrounding whitespace and strip trailing
         # periods, which are illegal on windows
-        if (not without_prefix or
+        # NOTE(CaselIT): An empty filename is allowed when default_filename is provided
+        if (not (without_prefix or self._default_filename is not None) or
                 without_prefix.strip().rstrip('.') != without_prefix or
                 self._DISALLOWED_CHARS_PATTERN.search(without_prefix) or
                 '\\' in without_prefix or

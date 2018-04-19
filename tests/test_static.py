@@ -212,6 +212,7 @@ def test_downloadable_not_found(client):
 
 
 @pytest.mark.parametrize('uri, default, expected', [
+    ('', 'default', '/default'),
     ('other', 'default', '/default'),
     ('index2', 'index', '/index2')
 ])
@@ -231,4 +232,47 @@ def test_default_filename(uri, default, expected, monkeypatch):
     resp = Response()
     sr(req, resp)
 
+    assert sr.match(req.path)
     assert resp.stream == '/var/www/statics' + expected
+
+
+@pytest.mark.parametrize('strip_slash', [[True], [False]])
+@pytest.mark.parametrize('path, static_exp, assert_axp', [
+    ('/index', 'index', 'index'),
+    ('', 'index.html', None),
+    ('/', 'index.html', None),
+    ('/other', 'index.html', 'other'),
+])
+def test_e2e_default_filename(client, monkeypatch, strip_slash, path,
+                              static_exp, assert_axp):
+    monkeypatch.setattr(io, 'open', lambda path, mode: [path.encode('utf-8')])
+    monkeypatch.setattr('os.path.isfile', lambda file: 'index' in file)
+
+    client.app.req_options.strip_url_path_trailing_slash = strip_slash
+    client.app.add_static_route('/static', '/opt/somesite/static',
+                                default_filename='index.html')
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+
+    def test(prefix, directory, expected):
+        response = client.simulate_request(path=prefix + path)
+        if expected is None:
+            assert response.status == falcon.HTTP_404
+        else:
+            assert response.status == falcon.HTTP_200
+            assert response.text == directory + expected
+
+    test('/static', '/opt/somesite/static/', static_exp)
+    test('/assets', '/opt/somesite/assets/', assert_axp)
+
+
+@pytest.mark.parametrize('default, path, expected', [
+    (None, '/static', False),
+    (None, '/static/', True),
+    ('index2', '/static', True),
+    ('index2', '/static/', True)
+])
+def test_match(default, path, expected, monkeypatch):
+    monkeypatch.setattr('os.path.isfile', lambda file: True)
+    sr = StaticRoute('/static', '/var/www/statics', default_filename=default)
+
+    assert sr.match(path) == expected
