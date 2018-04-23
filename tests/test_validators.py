@@ -26,12 +26,12 @@ skip_missing_dep = pytest.mark.skipif(
 
 
 class Resource(object):
-    @validators.jsonschema.validate(schema_request=basic_schema)
+    @validators.jsonschema.validate(req_schema=basic_schema)
     def request_validated(self, req, resp):
         assert req.media is not None
         return resp
 
-    @validators.jsonschema.validate(schema_response=basic_schema)
+    @validators.jsonschema.validate(resp_schema=basic_schema)
     def response_validated(self, req, resp):
         assert req.media is not None
         return resp
@@ -46,26 +46,26 @@ class BadData(object):
 
 
 @skip_missing_dep
-def test_jsonschema_request_validation_success():
+def test_req_schema_validation_success():
     data = GoodData()
     assert Resource().request_validated(GoodData(), data) is data
 
 
 @skip_missing_dep
-def test_jsonschema_request_validation_failure():
+def test_req_schema_validation_failure():
     with pytest.raises(falcon.HTTPBadRequest) as err:
         Resource().request_validated(BadData(), None)
         assert err.value.description == '\'message\' is a required property'
 
 
 @skip_missing_dep
-def test_jsonschema_response_validation_success():
+def test_resp_schema_validation_success():
     data = GoodData()
     assert Resource().response_validated(GoodData(), data) is data
 
 
 @skip_missing_dep
-def test_jsonschema_response_validation_failure():
+def test_resp_schema_validation_failure():
     with pytest.raises(falcon.HTTPInternalServerError) as err:
         Resource().response_validated(GoodData(), BadData())
         assert err.title == 'Response data failed validation'

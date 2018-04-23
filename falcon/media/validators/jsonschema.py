@@ -8,7 +8,7 @@ except ImportError:
     pass
 
 
-def validate(schema_request=None, schema_response=None):
+def validate(req_schema=None, resp_schema=None):
     """Decorator for validating ``req.media`` using JSON Schema.
 
     This decorator provides standard JSON Schema validation via the
@@ -24,10 +24,10 @@ def validate(schema_request=None, schema_response=None):
         information on defining a compatible dictionary.
 
     Args:
-        schema_request (dict, optional): A dictionary that follows the JSON
+        req_schema (dict, optional): A dictionary that follows the JSON
             Schema specification. The request will be validated against this
             schema.
-        schema_response (dict, optional): A dictionary that follows the JSON
+        resp_schema (dict, optional): A dictionary that follows the JSON
             Schema specification. The response will be validated against this
             schema.
 
@@ -47,10 +47,10 @@ def validate(schema_request=None, schema_response=None):
 
     def decorator(func):
         def wrapper(self, req, resp, *args, **kwargs):
-            if schema_request is not None:
+            if req_schema is not None:
                 try:
                     jsonschema.validate(
-                        req.media, schema_request,
+                        req.media, req_schema,
                         format_checker=jsonschema.FormatChecker()
                     )
                 except jsonschema.ValidationError as e:
@@ -61,10 +61,10 @@ def validate(schema_request=None, schema_response=None):
 
             result = func(self, req, resp, *args, **kwargs)
 
-            if schema_response is not None:
+            if resp_schema is not None:
                 try:
                     jsonschema.validate(
-                        resp.media, schema_response,
+                        resp.media, resp_schema,
                         format_checker=jsonschema.FormatChecker()
                     )
                 except jsonschema.ValidationError:
