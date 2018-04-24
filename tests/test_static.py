@@ -250,17 +250,18 @@ def test_fallback_filename(uri, default, expected, monkeypatch):
 
 
 @pytest.mark.parametrize('strip_slash', [True, False])
-@pytest.mark.parametrize('path, static_exp, assert_axp', [
-    ('/index', 'index', 'index'),
-    ('', 'index.html', None),
-    ('/', 'index.html', None),
-    ('/other', 'index.html', None),
+@pytest.mark.parametrize('path, fallback, static_exp, assert_axp', [
+    ('/index', 'index.html', 'index', 'index'),
+    ('', 'index.html', 'index.html', None),
+    ('/', 'index.html', 'index.html', None),
+    ('/other', 'index.html', 'index.html', None),
+    ('/other', 'index.raise', None, None)
 ])
-def test_e2e_fallback_filename(client, monkeypatch, strip_slash, path,
+def test_e2e_fallback_filename(client, monkeypatch, strip_slash, path, fallback,
                                static_exp, assert_axp):
 
     def mockOpen(path, mode):
-        if 'index' in path:
+        if 'index' in path and 'raise' not in path:
             return [path.encode('utf-8')]
         raise IOError()
 
@@ -269,7 +270,7 @@ def test_e2e_fallback_filename(client, monkeypatch, strip_slash, path,
 
     client.app.req_options.strip_url_path_trailing_slash = strip_slash
     client.app.add_static_route('/static', '/opt/somesite/static',
-                                fallback_filename='index.html')
+                                fallback_filename=fallback)
     client.app.add_static_route('/assets/', '/opt/somesite/assets')
 
     def test(prefix, directory, expected):
