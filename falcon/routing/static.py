@@ -24,8 +24,9 @@ class StaticRoute(object):
         downloadable (bool): Set to ``True`` to include a
             Content-Disposition header in the response. The "filename"
             directive is simply set to the name of the requested file.
-        default_filename (str): Default filename used when the requested file
-                is not found.
+        fallback_filename (str): Fallback filename used when the requested file
+                is not found. Can be a relative path inside the prefix folder or any valid
+                absolute path.
     """
 
     # NOTE(kgriffs): Don't allow control characters and reserved chars
@@ -35,16 +36,16 @@ class StaticRoute(object):
     # minimizes how much can be included in the payload.
     _MAX_NON_PREFIXED_LEN = 512
 
-    def __init__(self, prefix, directory, downloadable=False, default_filename=None):
+    def __init__(self, prefix, directory, downloadable=False, fallback_filename=None):
         if not prefix.startswith('/'):
             raise ValueError("prefix must start with '/'")
 
         if not os.path.isabs(directory):
             raise ValueError('directory must be an absolute path')
 
-        if (default_filename is not None and
-                not os.path.isfile(os.path.join(directory, default_filename))):
-            raise ValueError('default_filename does not exists')
+        fallback_path = os.path.join(directory, fallback_filename or '')
+        if fallback_filename is not None and not os.path.isfile(fallback_path):
+            raise ValueError('fallback_filename does not exists')
 
         # NOTE(kgriffs): Ensure it ends with a path separator to ensure
         # we only match on the complete segment. Don't raise an error
@@ -55,15 +56,13 @@ class StaticRoute(object):
         self._prefix = prefix
         self._directory = directory
         self._downloadable = downloadable
-        if default_filename is not None:
-            self._default_filename = os.path.join(directory, default_filename)
-        else:
-            self._default_filename = None
+        self._fallback_filename = None if fallback_filename is None else fallback_path
 
     def match(self, path):
         """Check whether the given path matches this route."""
-        prefix = self._prefix if self._default_filename is None else self._prefix[:-1]
-        return path.startswith(prefix)
+        if self._fallback_filename is None:
+            return path.startswith(self._prefix)
+        return path.startswith(self._prefix) or path == self._prefix[:-1]
 
     def __call__(self, req, resp):
         """Resource responder for this route."""
@@ -72,8 +71,8 @@ class StaticRoute(object):
 
         # NOTE(kgriffs): Check surrounding whitespace and strip trailing
         # periods, which are illegal on windows
-        # NOTE(CaselIT): An empty filename is allowed when default_filename is provided
-        if (not (without_prefix or self._default_filename is not None) or
+        # NOTE(CaselIT): An empty filename is allowed when fallback_filename is provided
+        if (not (without_prefix or self._fallback_filename is not None) or
                 without_prefix.strip().rstrip('.') != without_prefix or
                 self._DISALLOWED_CHARS_PATTERN.search(without_prefix) or
                 '\\' in without_prefix or
@@ -95,13 +94,15 @@ class StaticRoute(object):
         if '..' in file_path or not file_path.startswith(self._directory):
             raise falcon.HTTPNotFound()  # pragma: nocover
 
-        if self._default_filename is not None and not os.path.isfile(file_path):
-            file_path = self._default_filename
-
         try:
             resp.stream = io.open(file_path, 'rb')
         except IOError:
-            raise falcon.HTTPNotFound()
+            if self._fallback_filename is None:
+                raise falcon.HTTPNotFound()
+            try:
+                resp.stream = io.open(self._fallback_filename, 'rb')
+            except IOError:
+                raise falcon.HTTPNotFound()
 
         suffix = os.path.splitext(file_path)[1]
         resp.content_type = resp.options.static_media_types.get(

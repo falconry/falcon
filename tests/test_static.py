@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import io
+import os
 
 import pytest
 
@@ -106,14 +107,19 @@ def test_invalid_args(prefix, directory, client):
         client.app.add_static_route(prefix, directory)
 
 
-def test_invalid_args_default_filename(client):
+@pytest.mark.parametrize('default', [
+    'not-existing-file',
+    # directories
+    '.',
+    '/tmp',
+])
+def test_invalid_args_fallback_filename(client, default):
     prefix, directory = '/static', '/var/www/statics'
-    default_filename = 'not-existing-file'
-    with pytest.raises(ValueError, match='default_filename'):
-        StaticRoute(prefix, directory, default_filename=default_filename)
+    with pytest.raises(ValueError, match='fallback_filename'):
+        StaticRoute(prefix, directory, fallback_filename=default)
 
-    with pytest.raises(ValueError, match='default_filename'):
-        client.app.add_static_route(prefix, directory, default_filename=default_filename)
+    with pytest.raises(ValueError, match='fallback_filename'):
+        client.app.add_static_route(prefix, directory, fallback_filename=default)
 
 
 @pytest.mark.parametrize('uri_prefix, uri_path, expected_path, mtype', [
@@ -212,15 +218,22 @@ def test_downloadable_not_found(client):
 
 
 @pytest.mark.parametrize('uri, default, expected', [
-    ('', 'default', '/default'),
-    ('other', 'default', '/default'),
-    ('index2', 'index', '/index2')
+    ('', 'default', 'default'),
+    ('other', 'default', 'default'),
+    ('index2', 'index', 'index2'),
+    ('absolute', '/foo/bar/index', '/foo/bar/index'),
 ])
-def test_default_filename(uri, default, expected, monkeypatch):
-    monkeypatch.setattr(io, 'open', lambda path, mode: path)
+def test_fallback_filename(uri, default, expected, monkeypatch):
+
+    def mockOpen(path, mode):
+        if default in path:
+            return path
+        raise IOError()
+
+    monkeypatch.setattr(io, 'open', mockOpen)
     monkeypatch.setattr('os.path.isfile', lambda file: default in file)
 
-    sr = StaticRoute('/static', '/var/www/statics', default_filename=default)
+    sr = StaticRoute('/static', '/var/www/statics', fallback_filename=default)
 
     req_path = '/static/' + uri
 
@@ -233,24 +246,30 @@ def test_default_filename(uri, default, expected, monkeypatch):
     sr(req, resp)
 
     assert sr.match(req.path)
-    assert resp.stream == '/var/www/statics' + expected
+    assert resp.stream == os.path.join('/var/www/statics', expected)
 
 
-@pytest.mark.parametrize('strip_slash', [[True], [False]])
+@pytest.mark.parametrize('strip_slash', [True, False])
 @pytest.mark.parametrize('path, static_exp, assert_axp', [
     ('/index', 'index', 'index'),
     ('', 'index.html', None),
     ('/', 'index.html', None),
-    ('/other', 'index.html', 'other'),
+    ('/other', 'index.html', None),
 ])
-def test_e2e_default_filename(client, monkeypatch, strip_slash, path,
-                              static_exp, assert_axp):
-    monkeypatch.setattr(io, 'open', lambda path, mode: [path.encode('utf-8')])
+def test_e2e_fallback_filename(client, monkeypatch, strip_slash, path,
+                               static_exp, assert_axp):
+
+    def mockOpen(path, mode):
+        if 'index' in path:
+            return [path.encode('utf-8')]
+        raise IOError()
+
+    monkeypatch.setattr(io, 'open', mockOpen)
     monkeypatch.setattr('os.path.isfile', lambda file: 'index' in file)
 
     client.app.req_options.strip_url_path_trailing_slash = strip_slash
     client.app.add_static_route('/static', '/opt/somesite/static',
-                                default_filename='index.html')
+                                fallback_filename='index.html')
     client.app.add_static_route('/assets/', '/opt/somesite/assets')
 
     def test(prefix, directory, expected):
@@ -268,11 +287,15 @@ def test_e2e_default_filename(client, monkeypatch, strip_slash, path,
 @pytest.mark.parametrize('default, path, expected', [
     (None, '/static', False),
     (None, '/static/', True),
+    (None, '/staticfoo', False),
+    (None, '/static/foo', True),
     ('index2', '/static', True),
-    ('index2', '/static/', True)
+    ('index2', '/static/', True),
+    ('index2', '/staticfoo', False),
+    ('index2', '/static/foo', True),
 ])
 def test_match(default, path, expected, monkeypatch):
     monkeypatch.setattr('os.path.isfile', lambda file: True)
-    sr = StaticRoute('/static', '/var/www/statics', default_filename=default)
+    sr = StaticRoute('/static', '/var/www/statics', fallback_filename=default)
 
     assert sr.match(path) == expected

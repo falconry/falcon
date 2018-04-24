@@ -352,7 +352,7 @@ class API(object):
         self._router.add_route(uri_template, method_map, resource, *args,
                                **kwargs)
 
-    def add_static_route(self, prefix, directory, downloadable=False, default_filename=None):
+    def add_static_route(self, prefix, directory, downloadable=False, fallback_filename=None):
         """Add a route to a directory of static files.
 
         Static routes provide a way to serve files directly. This
@@ -364,6 +364,8 @@ class API(object):
             Serving files directly from the web server,
             rather than through the Python app, will always be more efficient,
             and therefore should be preferred in production deployments.
+            For security reasons, the prefix forder and the fallback_filename (if provided)
+            should be read only for the account running the application.
 
         Static routes are matched in LIFO order. Therefore, if the same
         prefix is used for two routes, the second one will override the
@@ -391,15 +393,16 @@ class API(object):
             downloadable (bool): Set to ``True`` to include a
                 Content-Disposition header in the response. The "filename"
                 directive is simply set to the name of the requested file.
-            default_filename (str): Default filename used when the requested file
-                is not found.
+            fallback_filename (str): Fallback filename used when the requested file
+                is not found. Can be a relative path inside the prefix folder or any valid
+                absolute path.
 
         """
 
         self._static_routes.insert(
             0,
             routing.StaticRoute(prefix, directory, downloadable=downloadable,
-                                default_filename=default_filename)
+                                fallback_filename=fallback_filename)
         )
 
     def add_sink(self, sink, prefix=r'/'):
