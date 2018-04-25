@@ -364,7 +364,7 @@ class API(object):
             Serving files directly from the web server,
             rather than through the Python app, will always be more efficient,
             and therefore should be preferred in production deployments.
-            For security reasons, the prefix forder and the fallback_filename (if provided)
+            For security reasons, the directory and the fallback_filename (if provided)
             should be read only for the account running the application.
 
         Static routes are matched in LIFO order. Therefore, if the same
