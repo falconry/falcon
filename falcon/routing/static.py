@@ -43,9 +43,12 @@ class StaticRoute(object):
         if not os.path.isabs(directory):
             raise ValueError('directory must be an absolute path')
 
-        fallback_path = os.path.join(directory, fallback_filename or '')
-        if fallback_filename is not None and not os.path.isfile(fallback_path):
-            raise ValueError('fallback_filename does not exists')
+        if fallback_filename is None:
+            self._fallback_filename = None
+        else:
+            self._fallback_filename = os.path.join(directory, fallback_filename)
+            if not os.path.isfile(self._fallback_filename):
+                raise ValueError('fallback_filename is not a file')
 
         # NOTE(kgriffs): Ensure it ends with a path separator to ensure
         # we only match on the complete segment. Don't raise an error
@@ -56,7 +59,6 @@ class StaticRoute(object):
         self._prefix = prefix
         self._directory = directory
         self._downloadable = downloadable
-        self._fallback_filename = None if fallback_filename is None else fallback_path
 
     def match(self, path):
         """Check whether the given path matches this route."""
