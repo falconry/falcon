@@ -1,0 +1,10 @@
+coverage>=4.1
+pytest
+pyyaml
+requests
+six
+testtools
+
+# Handler Specific
+msgpack
+

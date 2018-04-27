@@ -567,7 +567,7 @@ class TestQueryParams(object):
     def test_get_date_valid(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         date_value = '2015-04-20'
-        query_string = 'thedate={0}'.format(date_value)
+        query_string = 'thedate={}'.format(date_value)
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
         assert req.get_param_as_date('thedate') == date(2015, 4, 20)
@@ -582,7 +582,7 @@ class TestQueryParams(object):
     def test_get_date_valid_with_format(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         date_value = '20150420'
-        query_string = 'thedate={0}'.format(date_value)
+        query_string = 'thedate={}'.format(date_value)
         format_string = '%Y%m%d'
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
@@ -591,7 +591,7 @@ class TestQueryParams(object):
     def test_get_date_store(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         date_value = '2015-04-20'
-        query_string = 'thedate={0}'.format(date_value)
+        query_string = 'thedate={}'.format(date_value)
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
         store = {}
@@ -601,7 +601,7 @@ class TestQueryParams(object):
     def test_get_date_invalid(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         date_value = 'notarealvalue'
-        query_string = 'thedate={0}'.format(date_value)
+        query_string = 'thedate={}'.format(date_value)
         format_string = '%Y%m%d'
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
@@ -611,7 +611,7 @@ class TestQueryParams(object):
     def test_get_datetime_valid(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         date_value = '2015-04-20T10:10:10Z'
-        query_string = 'thedate={0}'.format(date_value)
+        query_string = 'thedate={}'.format(date_value)
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
         assert req.get_param_as_datetime('thedate') == datetime(2015, 4, 20, 10, 10, 10)
@@ -626,7 +626,7 @@ class TestQueryParams(object):
     def test_get_datetime_valid_with_format(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         date_value = '20150420 10:10:10'
-        query_string = 'thedate={0}'.format(date_value)
+        query_string = 'thedate={}'.format(date_value)
         format_string = '%Y%m%d %H:%M:%S'
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
@@ -636,7 +636,7 @@ class TestQueryParams(object):
     def test_get_datetime_store(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         datetime_value = '2015-04-20T10:10:10Z'
-        query_string = 'thedate={0}'.format(datetime_value)
+        query_string = 'thedate={}'.format(datetime_value)
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
         store = {}
@@ -647,7 +647,7 @@ class TestQueryParams(object):
     def test_get_datetime_invalid(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         date_value = 'notarealvalue'
-        query_string = 'thedate={0}'.format(date_value)
+        query_string = 'thedate={}'.format(date_value)
         format_string = '%Y%m%dT%H:%M:%S'
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
@@ -657,7 +657,7 @@ class TestQueryParams(object):
     def test_get_dict_valid(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         payload_dict = {'foo': 'bar'}
-        query_string = 'payload={0}'.format(json.dumps(payload_dict))
+        query_string = 'payload={}'.format(json.dumps(payload_dict))
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
         assert req.get_param_as_dict('payload') == payload_dict
@@ -665,7 +665,7 @@ class TestQueryParams(object):
     def test_get_dict_missing_param(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         payload_dict = {'foo': 'bar'}
-        query_string = 'notthepayload={0}'.format(json.dumps(payload_dict))
+        query_string = 'notthepayload={}'.format(json.dumps(payload_dict))
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
         assert req.get_param_as_dict('payload') is None
@@ -673,7 +673,7 @@ class TestQueryParams(object):
     def test_get_dict_store(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         payload_dict = {'foo': 'bar'}
-        query_string = 'payload={0}'.format(json.dumps(payload_dict))
+        query_string = 'payload={}'.format(json.dumps(payload_dict))
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
         store = {}
@@ -683,7 +683,7 @@ class TestQueryParams(object):
     def test_get_dict_invalid(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         payload_dict = 'foobar'
-        query_string = 'payload={0}'.format(payload_dict)
+        query_string = 'payload={}'.format(payload_dict)
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
         with pytest.raises(HTTPInvalidParam):

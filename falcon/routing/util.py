@@ -21,6 +21,12 @@ import six
 from falcon import COMBINED_METHODS, responders
 
 
+class SuffixedMethodNotFoundError(Exception):
+    def __init__(self, message):
+        super(SuffixedMethodNotFoundError, self).__init__(message)
+        self.message = message
+
+
 # NOTE(kgriffs): Published method; take care to avoid breaking changes.
 def compile_uri_template(template):
     """Compile the given URI template string into a pattern matcher.
@@ -82,7 +88,7 @@ def compile_uri_template(template):
 
 
 def create_http_method_map(resource):  # pragma: nocover
-    """Maps HTTP methods (e.g., 'GET', 'POST') to methods of a resource object.
+    """Maps HTTP methods (e.g., GET, POST) to methods of a resource object.
 
     Warning:
         This method is deprecated and will be removed in a future release.
@@ -130,8 +136,8 @@ def create_http_method_map(resource):  # pragma: nocover
     return method_map
 
 
-def map_http_methods(resource):
-    """Maps HTTP methods (e.g., 'GET', 'POST') to methods of a resource object.
+def map_http_methods(resource, suffix=None):
+    """Maps HTTP methods (e.g., GET, POST) to methods of a resource object.
 
     Args:
         resource: An object with *responder* methods, following the naming
@@ -139,6 +145,12 @@ def map_http_methods(resource):
             supports. For example, if a resource supports GET and POST, it
             should define ``on_get(self, req, resp)`` and
             ``on_post(self, req, resp)``.
+
+    Keyword Args:
+        suffix (str): Optional responder name suffix for this route. If
+            a suffix is provided, Falcon will map GET requests to
+            ``on_get_{suffix}()``, POST requests to ``on_post_{suffix}()``,
+            etc.
 
     Returns:
         dict: A mapping of HTTP methods to explicitly defined resource responders.
@@ -149,7 +161,11 @@ def map_http_methods(resource):
 
     for method in COMBINED_METHODS:
         try:
-            responder = getattr(resource, 'on_' + method.lower())
+            responder_name = 'on_' + method.lower()
+            if suffix:
+                responder_name += '_' + suffix
+
+            responder = getattr(resource, responder_name)
         except AttributeError:
             # resource does not implement this method
             pass
@@ -157,6 +173,10 @@ def map_http_methods(resource):
             # Usually expect a method, but any callable will do
             if callable(responder):
                 method_map[method] = responder
+
+    # If suffix is specified and doesn't map to any methods, raise an error
+    if suffix and not method_map:
+        raise SuffixedMethodNotFoundError('No responders found for the specified suffix')
 
     return method_map
 

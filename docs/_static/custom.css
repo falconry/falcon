@@ -55,6 +55,10 @@ code.xref.docutils.literal {
     font-size: 0.9em;
 }
 
+div.viewcode-block:target {
+    background: inherit;
+}
+
 a:hover, div.sphinxsidebar a:hover, a.reference:hover, a.reference.internal:hover code {
     color: #f0ad4e;
     border-bottom: 1px solid #f0ad4e;

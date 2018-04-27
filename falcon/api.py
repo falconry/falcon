@@ -128,12 +128,12 @@ class API(object):
 
     # PERF(kgriffs): Reference via self since that is faster than
     # module global...
-    _BODILESS_STATUS_CODES = set([
+    _BODILESS_STATUS_CODES = {
         status.HTTP_100,
         status.HTTP_101,
         status.HTTP_204,
         status.HTTP_304
-    ])
+    }
 
     _STREAM_BLOCK_SIZE = 8 * 1024  # 8 KiB
 
@@ -321,11 +321,23 @@ class API(object):
                 (See also: :meth:`~.add_sink`)
 
             resource (instance): Object which represents a REST
-                resource. Falcon will pass "GET" requests to on_get,
-                "PUT" requests to on_put, etc. If any HTTP methods are not
+                resource. Falcon will pass GET requests to ``on_get()``,
+                PUT requests to ``on_put()``, etc. If any HTTP methods are not
                 supported by your resource, simply don't define the
                 corresponding request handlers, and Falcon will do the right
                 thing.
+
+        Keyword Args:
+            suffix (str): Optional responder name suffix for this route. If
+                a suffix is provided, Falcon will map GET requests to
+                ``on_get_{suffix}()``, POST requests to ``on_post_{suffix}()``,
+                etc. In this way, multiple closely-related routes can be
+                mapped to the same resource. For example, a single resource
+                class can use suffixed responders to distinguish requests
+                for a single item vs. a collection of those same items.
+                Another class might use a suffixed responder to handle
+                a shortlink route in addition to the regular route for the
+                resource.
 
         Note:
             Any additional args and kwargs not defined above are passed
@@ -347,7 +359,14 @@ class API(object):
         if '//' in uri_template:
             raise ValueError("uri_template may not contain '//'")
 
-        method_map = routing.map_http_methods(resource)
+        # NOTE(santeyio): This is a not very nice way to catch the suffix
+        # keyword. In python 3 it can be specified explicitly in the function
+        # definition, e.g.
+        # `add_route(self, uri_template, resource, *args, suffix=None, **kwargs)`
+        # but python 2 won't accept args like this.
+        suffix = kwargs.pop('suffix', None)
+
+        method_map = routing.map_http_methods(resource, suffix=suffix)
         routing.set_default_responders(method_map)
         self._router.add_route(uri_template, method_map, resource, *args,
                                **kwargs)
