@@ -299,6 +299,38 @@ class API(object):
     def router_options(self):
         return self._router.options
 
+    def map_http_methods(self, resource, args, kwargs):
+        """Map HTTP methods (e.g., GET, POST) to methods of a resource object.
+
+        You maybe override it to implement yourself method mapping.
+
+        Args:
+            resource (instance): Object which represents a REST resource.
+                The default maps the HTTP method ``GET`` to ``on_get()``,
+                ``POST`` to ``on_post()``, etc. If any HTTP methods are not
+                supported by your resource, simply don't define the
+                corresponding request handlers, and Falcon will do the right
+                thing.
+
+            args (list): Any additional args coming from ``add_route()``.
+
+            kwargs (dict): Any additional keyword args
+                coming from ``add_route()``.
+
+        Note:
+            Any additional args and kwargs used by this method should be removed
+            from the arguments ``args`` and ``kwargs``.
+        """
+
+        # NOTE(santeyio): This is a not very nice way to catch the suffix
+        # keyword. In python 3 it can be specified explicitly in the function
+        # definition, e.g.
+        # `add_route(self, uri_template, resource, *args, suffix=None, **kwargs)`
+        # but python 2 won't accept args like this.
+        suffix = kwargs.pop('suffix', None)
+
+        return routing.map_http_methods(resource, suffix=suffix)
+
     def add_route(self, uri_template, resource, *args, **kwargs):
         """Associate a templatized URI path with a resource.
 
@@ -359,14 +391,11 @@ class API(object):
         if '//' in uri_template:
             raise ValueError("uri_template may not contain '//'")
 
-        # NOTE(santeyio): This is a not very nice way to catch the suffix
-        # keyword. In python 3 it can be specified explicitly in the function
-        # definition, e.g.
-        # `add_route(self, uri_template, resource, *args, suffix=None, **kwargs)`
-        # but python 2 won't accept args like this.
-        suffix = kwargs.pop('suffix', None)
+        # NOTE(xgfone): we should allow the method map_http_methods to fix them,
+        # in order to prevent some arguments to be passed to the router.
+        args = list(args)
+        method_map = self.map_http_methods(resource, args, kwargs)
 
-        method_map = routing.map_http_methods(resource, suffix=suffix)
         routing.set_default_responders(method_map)
         self._router.add_route(uri_template, method_map, resource, *args,
                                **kwargs)
