@@ -19,7 +19,7 @@ from sys import exc_info
 import tempfile
 
 try:
-    # NOTE(kgrifs): In Python 2.6 and 2.7, socket._fileobject is a
+    # NOTE(kgrifs): In Python 2.7, socket._fileobject is a
     # standard way of exposing a socket as a file-like object, and
     # is used by wsgiref for wsgi.input.
     import socket

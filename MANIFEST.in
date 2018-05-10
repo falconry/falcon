@@ -6,6 +6,5 @@ include README.rst
 include LICENSE
 include docs/conf.py docs/Makefile
 graft docs/_static
-graft docs/_themes
 graft docs/_templates
 graft tools

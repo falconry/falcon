@@ -14,12 +14,8 @@
 
 """HTTPError exception class."""
 
+from collections import OrderedDict
 import xml.etree.ElementTree as et
-
-try:
-    from collections import OrderedDict
-except ImportError:
-    OrderedDict = dict
 
 from falcon.util import json, uri
 

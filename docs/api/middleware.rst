@@ -71,6 +71,12 @@ Falcon's middleware interface is defined as follows:
     a route to a resource. To take action when a route is not found, a
     :py:meth:`sink <falcon.API.add_sink>` may be used instead.
 
+.. Tip::
+    In order to pass data from a middleware function to a resource function
+    use the ``req.context`` and ``resp.context`` dictionaries. These context
+    dictionaries are intended to hold request and response data specific to
+    your app as it passes through the framework.
+
 Each component's *process_request*, *process_resource*, and
 *process_response* methods are executed hierarchically, as a stack, following
 the ordering of the list passed via the `middleware` kwarg of

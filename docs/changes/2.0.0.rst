@@ -1,0 +1,17 @@
+Changelog for Falcon 2.0.0
+==========================
+
+Breaking Changes
+----------------
+
+- :attr:`falcon.testing.Result.json` now returns None when the response body is
+  empty, rather than raising an error.
+
+Changes to Supported Platforms
+------------------------------
+
+New & Improved
+--------------
+
+Fixed
+-----
