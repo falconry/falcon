@@ -111,7 +111,7 @@ class API(object):
         independent_middleware (bool): Set to ``True`` if response
             middleware should be executed independently of whether or
             not request middleware raises an exception (default
-            ``False``).
+            ``True``).
 
     Attributes:
         req_options: A set of behavioral options related to incoming
@@ -146,7 +146,7 @@ class API(object):
     def __init__(self, media_type=DEFAULT_MEDIA_TYPE,
                  request_type=Request, response_type=Response,
                  middleware=None, router=None,
-                 independent_middleware=False):
+                 independent_middleware=True):
         self._sinks = []
         self._media_type = media_type
         self._static_routes = []
