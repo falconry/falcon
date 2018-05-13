@@ -979,7 +979,7 @@ class Request(object):
             try:
                 val = float(val)
             except ValueError:
-                msg = 'The value of the parameter must be a float'
+                msg = 'The value must be a float.'
                 raise errors.HTTPInvalidParam(msg, name)
 
             if store is not None:

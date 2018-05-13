@@ -283,6 +283,25 @@ class _TestQueryParams(testing.TestBase):
             falcon.HTTPBadRequest,
             req.get_param_as_int, 'pos', min=0, max=10)
 
+    def test_float(self):
+        query_string = 'description=deadbeef&length=25.45'
+        self.simulate_request('/', query_string=query_string)
+        req = self.resource.captured_req
+        try:
+            req.get_param_as_float('description')
+        except Exception as ex:
+            self.assertIsInstance(ex, falcon.HTTPBadRequest)
+            self.assertIsInstance(ex, falcon.HTTPInvalidParam)
+            self.assertEqual(ex.title, 'Invalid parameter')
+            expected_desc = ('The "description" parameter is invalid. '
+                             'The value must be a float.')
+            self.assertEqual(ex.description, expected_desc)
+
+        self.assertEqual(req.get_param_as_float('length'), 25.45)
+        store = {}
+        self.assertEqual(req.get_param_as_int('length', store=store), 25.45)
+        self.assertEqual(store['length'], 25.45)
+
     def test_boolean(self):
         query_string = ('echo=true&doit=false&bogus=bar&bogus2=foo&'
                         't1=True&f1=False&t2=yes&f2=no&blank&one=1&zero=0&'
