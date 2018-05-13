@@ -1252,9 +1252,7 @@ class Request(object):
 
         Raises
             HTTPBadRequest: The param was not found in the request, even though
-                it was required to be there. Also raised if the param's value
-                falls outside the given interval, i.e., the value must be in
-                the interval: min <= value <= max to avoid triggering an error.
+                it was required to be there.
 
         """
         params = self._params
