@@ -1232,6 +1232,51 @@ class Request(object):
 
         raise errors.HTTPMissingParam(name)
 
+    def get_param_as_float(self, name, required=False, store=None):
+        """Return the value of a query string parameter as a float.
+
+        Args:
+            name (str): Parameter name, case-sensitive (e.g., 'length').
+            required (bool, optional): Set to ``True`` to raise
+                ``HTTPBadRequest`` instead of returning ``None`` when the
+                parameter is not found or is not an integer (default
+                ``False``).
+            store (dict, optional): A ``dict``-like object in which to place
+                the value of the param, but only if the param is found
+                (default ``None``).
+
+        Returns:
+            float: The value of the param if found and can be converted to
+            a float. If the param is not found, returns ``None``, unless
+            `required` is ``True``.
+
+        Raises
+            HTTPBadRequest: The param was not found in the request, even though
+                it was required to be there. Also raised if the param's value
+                falls outside the given interval, i.e., the value must be in
+                the interval: min <= value <= max to avoid triggering an error.
+
+        """
+        params = self._params
+
+        if name in params:
+            val = params[name]
+            try:
+                val = float(val)
+            except ValueError:
+                msg = 'The value must be a float.'
+                raise errors.HTTPInvalidParam(msg, name)
+
+            if store is not None:
+                store[name] = val
+
+            return val
+
+        if not required:
+            return None
+
+        raise errors.HTTPMissingParam(name)
+
     def get_param_as_uuid(self, name, required=False, store=None):
         """Return the value of a query string parameter as an UUID.
 
