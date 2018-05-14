@@ -4,12 +4,12 @@ import falcon
 from falcon import testing
 
 
-def capture_error(ex, req, resp, params):
+def capture_error(req, resp, ex, params):
     resp.status = falcon.HTTP_723
     resp.body = 'error: %s' % str(ex)
 
 
-def handle_error_first(ex, req, resp, params):
+def handle_error_first(req, resp, ex, params):
     resp.status = falcon.HTTP_200
     resp.body = 'first error handler'
 
@@ -21,7 +21,7 @@ class CustomBaseException(Exception):
 class CustomException(CustomBaseException):
 
     @staticmethod
-    def handle(ex, req, resp, params):
+    def handle(req, resp, ex, params):
         raise falcon.HTTPError(
             falcon.HTTP_792,
             u'Internet crashed!',
