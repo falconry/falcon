@@ -63,15 +63,17 @@ def test_with_default_title_and_desc(err, title):
     falcon.HTTPLoopDetected,
     falcon.HTTPNetworkAuthenticationRequired,
 ])
-def test_with_title_and_desc(err):
+def test_with_title_desc_and_headers(err):
     title = 'trace'
     desc = 'boom'
+    headers = {'foo': 'bar'}
 
     with pytest.raises(err) as e:
-        raise err(title=title, description=desc)
+        raise err(title=title, description=desc, headers=headers)
 
     assert e.value.title == title
     assert e.value.description == desc
+    assert e.value.headers['foo'] == 'bar'
 
 
 @pytest.mark.parametrize('err', [
