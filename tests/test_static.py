@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import io
+import os
 
 import pytest
 
@@ -106,6 +107,21 @@ def test_invalid_args(prefix, directory, client):
         client.app.add_static_route(prefix, directory)
 
 
+@pytest.mark.parametrize('default', [
+    'not-existing-file',
+    # directories
+    '.',
+    '/tmp',
+])
+def test_invalid_args_fallback_filename(client, default):
+    prefix, directory = '/static', '/var/www/statics'
+    with pytest.raises(ValueError, match='fallback_filename'):
+        StaticRoute(prefix, directory, fallback_filename=default)
+
+    with pytest.raises(ValueError, match='fallback_filename'):
+        client.app.add_static_route(prefix, directory, fallback_filename=default)
+
+
 @pytest.mark.parametrize('uri_prefix, uri_path, expected_path, mtype', [
     ('/static/', '/css/test.css', '/css/test.css', 'text/css'),
     ('/static', '/css/test.css', '/css/test.css', 'text/css'),
@@ -199,3 +215,88 @@ def test_downloadable_not_found(client):
 
     response = client.simulate_request(path='/downloads/thing.zip')
     assert response.status == falcon.HTTP_404
+
+
+@pytest.mark.parametrize('uri, default, expected', [
+    ('', 'default', 'default'),
+    ('other', 'default', 'default'),
+    ('index2', 'index', 'index2'),
+    ('absolute', '/foo/bar/index', '/foo/bar/index'),
+])
+def test_fallback_filename(uri, default, expected, monkeypatch):
+
+    def mockOpen(path, mode):
+        if default in path:
+            return path
+        raise IOError()
+
+    monkeypatch.setattr(io, 'open', mockOpen)
+    monkeypatch.setattr('os.path.isfile', lambda file: default in file)
+
+    sr = StaticRoute('/static', '/var/www/statics', fallback_filename=default)
+
+    req_path = '/static/' + uri
+
+    req = Request(testing.create_environ(
+        host='test.com',
+        path=req_path,
+        app='statics'
+    ))
+    resp = Response()
+    sr(req, resp)
+
+    assert sr.match(req.path)
+    assert resp.stream == os.path.join('/var/www/statics', expected)
+
+
+@pytest.mark.parametrize('strip_slash', [True, False])
+@pytest.mark.parametrize('path, fallback, static_exp, assert_axp', [
+    ('/index', 'index.html', 'index', 'index'),
+    ('', 'index.html', 'index.html', None),
+    ('/', 'index.html', 'index.html', None),
+    ('/other', 'index.html', 'index.html', None),
+    ('/other', 'index.raise', None, None)
+])
+def test_e2e_fallback_filename(client, monkeypatch, strip_slash, path, fallback,
+                               static_exp, assert_axp):
+
+    def mockOpen(path, mode):
+        if 'index' in path and 'raise' not in path:
+            return [path.encode('utf-8')]
+        raise IOError()
+
+    monkeypatch.setattr(io, 'open', mockOpen)
+    monkeypatch.setattr('os.path.isfile', lambda file: 'index' in file)
+
+    client.app.req_options.strip_url_path_trailing_slash = strip_slash
+    client.app.add_static_route('/static', '/opt/somesite/static',
+                                fallback_filename=fallback)
+    client.app.add_static_route('/assets/', '/opt/somesite/assets')
+
+    def test(prefix, directory, expected):
+        response = client.simulate_request(path=prefix + path)
+        if expected is None:
+            assert response.status == falcon.HTTP_404
+        else:
+            assert response.status == falcon.HTTP_200
+            assert response.text == directory + expected
+
+    test('/static', '/opt/somesite/static/', static_exp)
+    test('/assets', '/opt/somesite/assets/', assert_axp)
+
+
+@pytest.mark.parametrize('default, path, expected', [
+    (None, '/static', False),
+    (None, '/static/', True),
+    (None, '/staticfoo', False),
+    (None, '/static/foo', True),
+    ('index2', '/static', True),
+    ('index2', '/static/', True),
+    ('index2', '/staticfoo', False),
+    ('index2', '/static/foo', True),
+])
+def test_match(default, path, expected, monkeypatch):
+    monkeypatch.setattr('os.path.isfile', lambda file: True)
+    sr = StaticRoute('/static', '/var/www/statics', fallback_filename=default)
+
+    assert sr.match(path) == expected
