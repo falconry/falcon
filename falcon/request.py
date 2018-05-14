@@ -117,8 +117,6 @@ class Request(object):
 
             (See also: RFC 7239, Section 1)
 
-        protocol (str): Deprecated alias for `scheme`. Will be removed
-            in a future release.
         method (str): HTTP method requested (e.g., 'GET', 'POST', etc.)
         host (str): Host request header field
         forwarded_host (str): Original host request header as received
@@ -714,18 +712,13 @@ class Request(object):
 
         return scheme
 
-    # TODO(kgriffs): Remove this deprecated alias in Falcon 2.0
-    protocol = scheme
-
     @property
     def uri(self):
         if self._cached_uri is None:
-            scheme = self.env['wsgi.url_scheme']
-
             # PERF: For small numbers of items, '+' is faster
             # than ''.join(...). Concatenation is also generally
             # faster than formatting.
-            value = (scheme + '://' +
+            value = (self.scheme + '://' +
                      self.netloc +
                      self.relative_uri)
 
@@ -926,8 +919,6 @@ class Request(object):
     @property
     def netloc(self):
         env = self.env
-        protocol = env['wsgi.url_scheme']
-
         # NOTE(kgriffs): According to PEP-3333 we should first
         # try to use the Host header if present.
         #
@@ -939,7 +930,7 @@ class Request(object):
             netloc_value = env['SERVER_NAME']
 
             port = env['SERVER_PORT']
-            if protocol == 'https':
+            if self.scheme == 'https':
                 if port != '443':
                     netloc_value += ':' + port
             else:
@@ -1560,14 +1551,6 @@ class Request(object):
             store[name] = val
 
         return val
-
-    get_param_as_dict = get_param_as_json
-    """Deprecated alias of :meth:`~get_param_as_json`.
-
-    Warning:
-
-        This method has been deprecated and will be removed in a future release.
-    """
 
     def log_error(self, message):
         """Write an error message to the server's log.
