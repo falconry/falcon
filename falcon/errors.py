@@ -648,7 +648,8 @@ class HTTPRequestEntityTooLarge(HTTPError):
     """
 
     def __init__(self, title=None, description=None, retry_after=None, headers=None, **kwargs):
-        headers = kwargs.setdefault('headers', {})
+        if headers is None:
+            headers = {}
 
         if isinstance(retry_after, datetime):
             headers['Retry-After'] = util.dt_to_http(retry_after)
@@ -658,7 +659,7 @@ class HTTPRequestEntityTooLarge(HTTPError):
         super(HTTPRequestEntityTooLarge, self).__init__(status.HTTP_413,
                                                         title,
                                                         description,
-                                                        headers
+                                                        headers,
                                                         **kwargs)
 
 
@@ -1035,7 +1036,8 @@ class HTTPTooManyRequests(HTTPError):
     """
 
     def __init__(self, title=None, description=None, retry_after=None, headers=None, **kwargs):
-        headers = kwargs.setdefault('headers', {})
+        if headers is None:
+            headers = {}
 
         if isinstance(retry_after, datetime):
             headers['Retry-After'] = util.dt_to_http(retry_after)
@@ -1357,7 +1359,8 @@ class HTTPServiceUnavailable(HTTPError):
     """
 
     def __init__(self, title=None, description=None, retry_after=None, headers=None, **kwargs):
-        headers = kwargs.setdefault('headers', {})
+        if headers is None:
+            headers = {}
 
         if isinstance(retry_after, datetime):
             headers['Retry-After'] = util.dt_to_http(retry_after)
