@@ -191,11 +191,6 @@ class Response(object):
     def set_stream(self, stream, content_length):
         """Convenience method for setting both `stream` and `content_length`.
 
-        Args:
-            stream (str): stream
-            content_length (int): set the stream length, if known
-                in advance.
-
         Although the `stream` and `content_length` properties may be set
         directly, using this method ensures `content_length` is not
         accidentally neglected when the length of the stream is known in
@@ -206,6 +201,11 @@ class Response(object):
             directly, and ignore `content_length`. In this case, the
             WSGI server may choose to use chunked encoding or one
             of the other strategies suggested by PEP-3333.
+
+        Args:
+            stream: A readable file-like object.
+            content_length (int): Length of the stream, used for the
+                Content-Length header in the response.
         """
 
         self.stream = stream

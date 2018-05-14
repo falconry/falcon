@@ -1205,7 +1205,7 @@ we set the Content-Type header based on the filename extension, and then
 stream out the image directly from an open file handle. Note the use of
 ``resp.content_length``. Whenever using ``resp.stream`` instead of ``resp.body`` or
 ``resp.data``, you typically also specify the expected length of the stream using the
-content length header, so that the web client knows how much data to read from the response.
+Content-Length header, so that the web client knows how much data to read from the response.
 
 .. note:: If you do not know the size of the stream in advance, you can work around
    that by using chunked encoding, but that's beyond the scope of this
