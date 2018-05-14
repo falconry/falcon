@@ -1234,9 +1234,8 @@ class Request(object):
 
         raise errors.HTTPMissingParam(name)
 
-
-    def get_param_as_float(self, name,
-                           required=False, min=None, max=None, store=None):
+    def get_param_as_float(self, name, required=False, min=None,
+                           max=None, store=None, default=None):
         """Return the value of a query string parameter as an float.
 
         Args:
@@ -1256,6 +1255,8 @@ class Request(object):
             store (dict): A ``dict``-like object in which to place
                 the value of the param, but only if the param is found
                 (default ``None``).
+            default (any): If the param is not found returns the
+                given value instead of ``None``
 
         Returns:
             float: The value of the param if it is found and can be converted to
@@ -1300,7 +1301,7 @@ class Request(object):
             return val
 
         if not required:
-            return None
+            return default
 
         raise errors.HTTPMissingParam(name)
 
@@ -1371,7 +1372,7 @@ class Request(object):
         raise errors.HTTPMissingParam(name)
 
     def get_param_as_bool(self, name, required=False, store=None,
-                          blank_as_true=False, default=False):
+                          blank_as_true=False, default=None):
         """Return the value of a query string parameter as a boolean
 
         The following boolean strings are supported::
