@@ -257,8 +257,8 @@ HTTP methods, lowercased (e.g., ``on_get()``, ``on_put()``,
 .. note::
     Supported HTTP methods are those specified in 
     `RFC 7231 <https://tools.ietf.org/html/rfc7231>`_ and
-    `RFC 5789 <https://tools.ietf.org/html/rfc5789>`_. GET, HEAD, POST, 
-    PUT, DELETE, CONNECT, OPTIONS, TRACE, and PATCH.
+    `RFC 5789 <https://tools.ietf.org/html/rfc5789>`_. This includes
+    GET, HEAD, POST, PUT, DELETE, CONNECT, OPTIONS, TRACE, and PATCH.
 
 We call these well-known methods "responders". Each responder takes (at
 least) two params, one representing the HTTP request, and one representing
