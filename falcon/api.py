@@ -277,8 +277,10 @@ class API(object):
             body = []
         else:
             body, length = self._get_body(resp, env.get('wsgi.file_wrapper'))
-            if length is not None:
+            if resp.content_length is None and length is not None:
                 resp._headers['content-length'] = str(length)
+            elif resp.content_length is not None:
+                resp._headers['content-length'] = str(resp.content_length)
 
         # NOTE(kgriffs): Based on wsgiref.validate's interpretation of
         # RFC 2616, as commented in that module's source code. The
@@ -740,15 +742,14 @@ class API(object):
 
         """
         body = resp.body
-        content_length = resp.content_length
         if body is not None:
             if not isinstance(body, bytes):
                 body = body.encode('utf-8')
-            return [body], content_length or len(body)
+            return [body], len(body)
 
         data = resp.data
         if data is not None:
-            return [data], content_length or len(data)
+            return [data], len(data)
 
         stream = resp.stream
         if stream is not None:
@@ -768,9 +769,9 @@ class API(object):
             else:
                 iterable = stream
 
-            # NOTE(kgriffs): If resp.stream_len is None, content_length
-            # will be as well; the caller of _get_body must handle this
-            # case by not setting the Content-Length header.
-            return iterable, content_length or resp.stream_len
+            # NOTE(pshello): resp.stream_len is deprecated in favor of
+            # resp.content_length. The caller of _get_body should give
+            # preference to resp.content_length if it has been set.
+            return iterable, resp.stream_len
 
-        return [], content_length or 0
+        return [], 0

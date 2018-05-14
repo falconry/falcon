@@ -1143,7 +1143,7 @@ Go ahead and edit your ``images.py`` file to look something like this:
 
         def on_get(self, req, resp, name):
             resp.content_type = mimetypes.guess_type(name)[0]
-            resp.stream, resp.stream_len = self._image_store.open(name)
+            resp.stream, resp.content_length = self._image_store.open(name)
 
 
     class ImageStore(object):
@@ -1180,9 +1180,9 @@ Go ahead and edit your ``images.py`` file to look something like this:
 
             image_path = os.path.join(self._storage_path, name)
             stream = self._fopen(image_path, 'rb')
-            stream_len = os.path.getsize(image_path)
+            content_length = os.path.getsize(image_path)
 
-            return stream, stream_len
+            return stream, content_length
 
 As you can see, we renamed ``Resource`` to ``Collection`` and added a new ``Item``
 class to represent a single image resource. Alternatively, these two classes could
@@ -1197,9 +1197,9 @@ URI parameters in a moment.
 Inside the ``on_get()`` responder,
 we set the Content-Type header based on the filename extension, and then
 stream out the image directly from an open file handle. Note the use of
-``resp.stream_len``. Whenever using ``resp.stream`` instead of ``resp.body`` or
-``resp.data``, you typically also specify the expected length of the stream so
-that the web client knows how much data to read from the response.
+``resp.content_length``. Whenever using ``resp.stream`` instead of ``resp.body`` or
+``resp.data``, you typically also specify the expected length of the stream using the
+content length header, so that the web client knows how much data to read from the response.
 
 .. note:: If you do not know the size of the stream in advance, you can work around
    that by using chunked encoding, but that's beyond the scope of this
@@ -1435,7 +1435,7 @@ as follows:
             resp.content_type = mimetypes.guess_type(name)[0]
 
             try:
-                resp.stream, resp.stream_len = self._image_store.open(name)
+                resp.stream, resp.content_length = self._image_store.open(name)
             except IOError:
                 # Normally you would also log the error.
                 raise falcon.HTTPNotFound()

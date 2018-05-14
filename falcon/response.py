@@ -106,9 +106,12 @@ class Response(object):
             blocks as byte strings. Falcon will use *wsgi.file_wrapper*, if
             provided by the WSGI server, in order to efficiently serve
             file-like objects.
-        stream_len (int): Expected length of `stream`. If `stream` is set,
+
+        stream_len (int): Deprecated alias for :py:attr:`content_length`
+            Expected length of `stream`. If `stream` is set,
             but `stream_len` is not, Falcon will not supply a
-            Content-Length header to the WSGI server. Consequently, the
+            Content-Length header to the WSGI server, unless `content_length` is
+            explicitly set. Consequently, the
             server may choose to use chunked encoding or one of the
             other strategies suggested by PEP-3333.
 
@@ -185,23 +188,28 @@ class Response(object):
     def __repr__(self):
         return '<%s: %s>' % (self.__class__.__name__, self.status)
 
-    def set_stream(self, stream, stream_len):
-        """Convenience method for setting both `stream` and `stream_len`.
+    def set_stream(self, stream, content_length):
+        """Convenience method for setting both `stream` and `content_length`.
 
-        Although the `stream` and `stream_len` properties may be set
-        directly, using this method ensures `stream_len` is not
+        Args:
+            stream (str): stream
+            content_length (int): set the stream length, if known
+                in advance.
+
+        Although the `stream` and `content_length` properties may be set
+        directly, using this method ensures `content_length` is not
         accidentally neglected when the length of the stream is known in
         advance.
 
         Note:
             If the stream length is unknown, you can set `stream`
-            directly, and ignore `stream_len`. In this case, the
+            directly, and ignore `content_length`. In this case, the
             WSGI server may choose to use chunked encoding or one
             of the other strategies suggested by PEP-3333.
         """
 
         self.stream = stream
-        self.stream_len = stream_len
+        self.stream_len = content_length  # NOTE(pshello): Deprecated in favor of `content_length`
 
     def set_cookie(self, name, value, expires=None, max_age=None,
                    domain=None, path=None, secure=None, http_only=True):
@@ -654,7 +662,11 @@ class Response(object):
 
     content_length = header_property(
         'Content-Length',
-        """Helpful information lives here."""
+        """Set the Content-Length header.
+
+        Useful for responding to HEAD requests when you aren't actually
+        providing the response body.
+        """,
     )
 
     content_range = header_property(
