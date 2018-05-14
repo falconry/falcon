@@ -70,29 +70,12 @@ class TestCase(unittest.TestCase, TestClient):
 
                         result = self.simulate_get('/messages/42')
                         self.assertEqual(result.json, doc)
-
-        api (object): Deprecated alias for ``app``
-        api_class (callable): Deprecated class variable; will be
-            removed in a future release.
     """
-
-    api_class = None
-
-    @property
-    def api(self):
-        return self.app
-
-    @api.setter
-    def api(self, value):
-        self.app = value
 
     def setUp(self):
         super(TestCase, self).setUp()
 
-        if self.api_class is None:
-            app = falcon.API()
-        else:
-            app = self.api_class()
+        app = falcon.API()
 
         # NOTE(kgriffs): Don't use super() to avoid triggering
         # unittest.TestCase.__init__()
