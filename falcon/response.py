@@ -422,8 +422,8 @@ class Response(object):
         If the header was not previously set, nothing is done (no error is
         raised).
 
-        Note that calling this method is equivalent to setting the corresponding
-        header property (when said property is available) to ``None``. For
+        Note that calling this method is equivalent to setting the
+        corresponding header property (when said property is available) to ``None``. For
         example::
 
             resp.etag = None
@@ -651,6 +651,11 @@ class Response(object):
         header should be set manually using the set_header method.
         """,
         uri_encode)
+
+    content_length = header_property(
+        'Content-Length',
+        """Helpful information lives here."""
+    )
 
     content_range = header_property(
         'Content-Range',

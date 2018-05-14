@@ -202,6 +202,20 @@ class TestHeaders(object):
         content_length = str(len(SAMPLE_BODY))
         assert result.headers['Content-Length'] == content_length
 
+    def test_declare_content_length(self, client):
+        resource = testing.SimpleTestResource(headers={'Content-Length': 42})
+        client.app.add_route('/', resource)
+        result = client.simulate_get()
+
+        assert result.headers['content-length'] == '42'
+
+    def test_declared_content_length_not_overriden_by_body_length(self, client):
+        resource = testing.SimpleTestResource(headers={'Content-Length': 42}, body='Hello World')
+        client.app.add_route('/', resource)
+        result = client.simulate_get()
+
+        assert result.headers['content-length'] == '42'
+
     def test_default_value(self, client):
         resource = testing.SimpleTestResource(body=SAMPLE_BODY)
         client.app.add_route('/', resource)

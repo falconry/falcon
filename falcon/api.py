@@ -739,17 +739,16 @@ class API(object):
                 * Otherwise, returns []
 
         """
-
         body = resp.body
+        content_length = resp.content_length
         if body is not None:
             if not isinstance(body, bytes):
                 body = body.encode('utf-8')
-
-            return [body], len(body)
+            return [body], content_length or len(body)
 
         data = resp.data
         if data is not None:
-            return [data], len(data)
+            return [data], content_length or len(data)
 
         stream = resp.stream
         if stream is not None:
@@ -772,6 +771,6 @@ class API(object):
             # NOTE(kgriffs): If resp.stream_len is None, content_length
             # will be as well; the caller of _get_body must handle this
             # case by not setting the Content-Length header.
-            return iterable, resp.stream_len
+            return iterable, content_length or resp.stream_len
 
-        return [], 0
+        return [], content_length or 0
