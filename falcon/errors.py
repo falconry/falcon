@@ -712,7 +712,9 @@ class HTTPUriTooLong(HTTPError):
     """
 
     def __init__(self, title=None, description=None, headers=None, **kwargs):
-        super(HTTPUriTooLong, self).__init__(status.HTTP_414, title, description, headers, **kwargs)
+        super(HTTPUriTooLong, self).__init__(status.HTTP_414, title,
+                                             description, headers,
+                                             **kwargs)
 
 
 class HTTPUnsupportedMediaType(HTTPError):

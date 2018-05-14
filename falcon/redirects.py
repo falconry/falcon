@@ -39,7 +39,7 @@ class HTTPMovedPermanently(HTTPStatus):
 
     def __init__(self, location, headers=None):
         if headers is None:
-            headers={}
+            headers = {}
         headers.setdefault('location', location)
 
         super(HTTPMovedPermanently, self).__init__(
