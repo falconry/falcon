@@ -1223,6 +1223,75 @@ class Request(object):
 
         raise errors.HTTPMissingParam(name)
 
+    def get_param_as_float(self, name,
+                           required=False, min=None, max=None, store=None):
+        """Return the value of a query string parameter as an float.
+
+        Args:
+            name (str): Parameter name, case-sensitive (e.g., 'limit').
+
+        Keyword Args:
+            required (bool): Set to ``True`` to raise
+                ``HTTPBadRequest`` instead of returning ``None`` when the
+                parameter is not found or is not an float (default
+                ``False``).
+            min (float): Set to the minimum value allowed for this
+                param. If the param is found and it is less than min, an
+                ``HTTPError`` is raised.
+            max (float): Set to the maximum value allowed for this
+                param. If the param is found and its value is greater than
+                max, an ``HTTPError`` is raised.
+            store (dict): A ``dict``-like object in which to place
+                the value of the param, but only if the param is found
+                (default ``None``).
+
+        Returns:
+            float: The value of the param if it is found and can be converted to
+            an ``float``. If the param is not found, returns ``None``, unless
+            `required` is ``True``.
+
+        Raises
+            HTTPBadRequest: The param was not found in the request, even though
+                it was required to be there, or it was found but could not
+                be converted to an ``float``. Also raised if the param's value
+                falls outside the given interval, i.e., the value must be in
+                the interval: min <= value <= max to avoid triggering an error.
+
+        """
+
+        params = self._params
+
+        # PERF: Use if..in since it is a good all-around performer; we don't
+        #       know how likely params are to be specified by clients.
+        if name in params:
+            val = params[name]
+            if isinstance(val, list):
+                val = val[-1]
+
+            try:
+                val = float(val)
+            except ValueError:
+                msg = 'The value must be a float.'
+                raise errors.HTTPInvalidParam(msg, name)
+
+            if min is not None and val < min:
+                msg = 'The value must be at least ' + str(min)
+                raise errors.HTTPInvalidParam(msg, name)
+
+            if max is not None and max < val:
+                msg = 'The value may not exceed ' + str(max)
+                raise errors.HTTPInvalidParam(msg, name)
+
+            if store is not None:
+                store[name] = val
+
+            return val
+
+        if not required:
+            return None
+
+        raise errors.HTTPMissingParam(name)
+
     def get_param_as_uuid(self, name, required=False, store=None):
         """Return the value of a query string parameter as an UUID.
 
