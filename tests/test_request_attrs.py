@@ -100,7 +100,7 @@ class TestRequestAttributes(object):
     def test_reconstruct_url(self):
         req = self.req
 
-        scheme = req.protocol
+        scheme = req.scheme
         host = req.get_header('host')
         app = req.app
         path = req.path
