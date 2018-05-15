@@ -133,7 +133,6 @@ class Response(object):
 
     __slots__ = (
         'body',
-        'data',
         '_headers',
         '_cookies',
         'status',
@@ -156,22 +155,22 @@ class Response(object):
         # NOTE(tbug): will be set to a SimpleCookie object
         # when cookie is set via set_cookie
         self._cookies = None
+        self._data = None
         self._media = None
 
         self.body = None
-        self.data = None
         self.stream = None
         self.stream_len = None
 
         self.context = self.context_type()
 
     @property
-    def media(self):
-        return self._media
+    def data(self):
+        if self._data:
+            return self._data
 
-    @media.setter
-    def media(self, obj):
-        self._media = obj
+        if not self.media:
+            return None
 
         if not self.content_type:
             self.content_type = self.options.default_media_type
@@ -180,7 +179,22 @@ class Response(object):
             self.content_type,
             self.options.default_media_type
         )
-        self.data = handler.serialize(self._media)
+        self._data = handler.serialize(self.media)
+
+        return self._data
+
+    @data.setter
+    def data(self, value):
+        self._data = value
+
+    @property
+    def media(self):
+        return self._media
+
+    @media.setter
+    def media(self, obj):
+        self._media = obj
+        self.data = None
 
     def __repr__(self):
         return '<%s: %s>' % (self.__class__.__name__, self.status)
