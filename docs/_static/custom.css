@@ -23,8 +23,7 @@ h1 a:hover, h2 a:hover, h3 a:hover {
 }
 
 div.footer {
-    padding-left: 500px;
-    text-align: left;
+    text-align: center;
 }
 
 div.footer a:hover {
