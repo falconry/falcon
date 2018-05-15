@@ -82,8 +82,25 @@ class TestQueryParams(object):
         assert req.get_param('limit', store) is None
         assert 'limit' not in store
         assert req.get_param_as_int('limit') is None
+        assert req.get_param_as_float('limit') is None
         assert req.get_param_as_bool('limit') is None
         assert req.get_param_as_list('limit') is None
+
+    def test_default(self, simulate_request, client, resource):
+        default = 'foobar'
+        query_string = ''
+        client.app.add_route('/', resource)  # TODO: DRY up this setup logic
+        simulate_request(client=client, path='/', query_string=query_string)
+
+        req = resource.captured_req
+        store = {}
+        assert req.get_param('marker', default=default) == 'foobar'
+        assert req.get_param('limit', store, default=default) == 'foobar'
+        assert 'limit' not in store
+        assert req.get_param_as_int('limit', default=default) == 'foobar'
+        assert req.get_param_as_float('limit', default=default) == 'foobar'
+        assert req.get_param_as_bool('limit', default=default) == 'foobar'
+        assert req.get_param_as_list('limit', default=default) == 'foobar'
 
     def test_blank(self, simulate_request, client, resource):
         query_string = 'marker='
@@ -214,6 +231,7 @@ class TestQueryParams(object):
     @pytest.mark.parametrize('method_name', [
         'get_param',
         'get_param_as_int',
+        'get_param_as_float',
         'get_param_as_uuid',
         'get_param_as_bool',
         'get_param_as_list',
@@ -308,6 +326,81 @@ class TestQueryParams(object):
 
         with pytest.raises(falcon.HTTPBadRequest):
             req.get_param_as_int('pos', min=0, max=10)
+
+    def test_float(self, simulate_request, client, resource):
+        client.app.add_route('/', resource)
+        query_string = 'marker=deadbeef&limit=25.1'
+        simulate_request(client=client, path='/', query_string=query_string)
+
+        req = resource.captured_req
+
+        try:
+            req.get_param_as_float('marker')
+        except Exception as ex:
+            assert isinstance(ex, falcon.HTTPBadRequest)
+            assert isinstance(ex, falcon.HTTPInvalidParam)
+            assert ex.title == 'Invalid parameter'
+            expected_desc = ('The "marker" parameter is invalid. '
+                             'The value must be a float.')
+            assert ex.description == expected_desc
+
+        assert req.get_param_as_float('limit') == 25.1
+
+        store = {}
+        assert req.get_param_as_float('limit', store=store) == 25.1
+        assert store['limit'] == 25.1
+
+        assert req.get_param_as_float('limit', min=1, max=50) == 25.1
+
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.get_param_as_float('limit', min=0, max=10)
+
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.get_param_as_float('limit', min=0, max=24)
+
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.get_param_as_float('limit', min=30, max=24)
+
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.get_param_as_float('limit', min=30, max=50)
+
+        assert req.get_param_as_float('limit', min=1) == 25.1
+
+        assert req.get_param_as_float('limit', max=50) == 25.1
+
+        assert req.get_param_as_float('limit', max=25.1) == 25.1
+
+        assert req.get_param_as_float('limit', max=26) == 25.1
+
+        assert req.get_param_as_float('limit', min=25) == 25.1
+
+        assert req.get_param_as_float('limit', min=24) == 25.1
+
+        assert req.get_param_as_float('limit', min=-24) == 25.1
+
+    def test_float_neg(self, simulate_request, client, resource):
+        client.app.add_route('/', resource)
+        query_string = 'marker=deadbeef&pos=-7.1'
+        simulate_request(client=client, path='/', query_string=query_string)
+
+        req = resource.captured_req
+        assert req.get_param_as_float('pos') == -7.1
+
+        assert req.get_param_as_float('pos', min=-10, max=10) == -7.1
+
+        assert req.get_param_as_float('pos', max=10) == -7.1
+
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.get_param_as_float('pos', min=-6, max=0)
+
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.get_param_as_float('pos', min=-6)
+
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.get_param_as_float('pos', min=0, max=10)
+
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.get_param_as_float('pos', min=0, max=10)
 
     def test_uuid(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
@@ -551,6 +644,13 @@ class TestQueryParams(object):
         req = resource.captured_req
         assert req.get_param_as_int('ant') in (1, 2, 3)
 
+    def test_multiple_keys_as_float(self, simulate_request, client, resource):
+        client.app.add_route('/', resource)
+        query_string = 'ant=1.1&ant=2.2&ant=3.3'
+        simulate_request(client=client, path='/', query_string=query_string)
+        req = resource.captured_req
+        assert req.get_param_as_float('ant') in (1.1, 2.2, 3.3)
+
     def test_multiple_form_keys_as_list(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         query_string = 'ant=1&ant=2&bee=3&cat=6&cat=5&cat=4'
@@ -660,7 +760,7 @@ class TestQueryParams(object):
         query_string = 'payload={}'.format(json.dumps(payload_dict))
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
-        assert req.get_param_as_dict('payload') == payload_dict
+        assert req.get_param_as_json('payload') == payload_dict
 
     def test_get_dict_missing_param(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
@@ -668,7 +768,7 @@ class TestQueryParams(object):
         query_string = 'notthepayload={}'.format(json.dumps(payload_dict))
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
-        assert req.get_param_as_dict('payload') is None
+        assert req.get_param_as_json('payload') is None
 
     def test_get_dict_store(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
@@ -677,7 +777,7 @@ class TestQueryParams(object):
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
         store = {}
-        req.get_param_as_dict('payload', store=store)
+        req.get_param_as_json('payload', store=store)
         assert len(store) != 0
 
     def test_get_dict_invalid(self, simulate_request, client, resource):
@@ -687,7 +787,20 @@ class TestQueryParams(object):
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
         with pytest.raises(HTTPInvalidParam):
-            req.get_param_as_dict('payload')
+            req.get_param_as_json('payload')
+
+    def test_has_param(self, simulate_request, client, resource):
+        client.app.add_route('/', resource)
+        query_string = 'ant=1'
+        simulate_request(client=client, path='/', query_string=query_string)
+
+        req = resource.captured_req
+        # There is a 'ant' key.
+        assert req.has_param('ant')
+        # There is not a 'bee' key..
+        assert not req.has_param('bee')
+        # There is not a None key
+        assert not req.has_param(None)
 
 
 class TestPostQueryParams(object):
