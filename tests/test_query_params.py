@@ -86,6 +86,22 @@ class TestQueryParams(object):
         assert req.get_param_as_bool('limit') is None
         assert req.get_param_as_list('limit') is None
 
+    def test_default(self, simulate_request, client, resource):
+        default = 'foobar'
+        query_string = ''
+        client.app.add_route('/', resource)  # TODO: DRY up this setup logic
+        simulate_request(client=client, path='/', query_string=query_string)
+
+        req = resource.captured_req
+        store = {}
+        assert req.get_param('marker', default=default) == 'foobar'
+        assert req.get_param('limit', store, default=default) == 'foobar'
+        assert 'limit' not in store
+        assert req.get_param_as_int('limit', default=default) == 'foobar'
+        assert req.get_param_as_float('limit', default=default) == 'foobar'
+        assert req.get_param_as_bool('limit', default=default) == 'foobar'
+        assert req.get_param_as_list('limit', default=default) == 'foobar'
+
     def test_blank(self, simulate_request, client, resource):
         query_string = 'marker='
         client.app.add_route('/', resource)
@@ -744,7 +760,7 @@ class TestQueryParams(object):
         query_string = 'payload={}'.format(json.dumps(payload_dict))
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
-        assert req.get_param_as_dict('payload') == payload_dict
+        assert req.get_param_as_json('payload') == payload_dict
 
     def test_get_dict_missing_param(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
@@ -752,7 +768,7 @@ class TestQueryParams(object):
         query_string = 'notthepayload={}'.format(json.dumps(payload_dict))
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
-        assert req.get_param_as_dict('payload') is None
+        assert req.get_param_as_json('payload') is None
 
     def test_get_dict_store(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
@@ -761,7 +777,7 @@ class TestQueryParams(object):
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
         store = {}
-        req.get_param_as_dict('payload', store=store)
+        req.get_param_as_json('payload', store=store)
         assert len(store) != 0
 
     def test_get_dict_invalid(self, simulate_request, client, resource):
@@ -771,7 +787,20 @@ class TestQueryParams(object):
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
         with pytest.raises(HTTPInvalidParam):
-            req.get_param_as_dict('payload')
+            req.get_param_as_json('payload')
+
+    def test_has_param(self, simulate_request, client, resource):
+        client.app.add_route('/', resource)
+        query_string = 'ant=1'
+        simulate_request(client=client, path='/', query_string=query_string)
+
+        req = resource.captured_req
+        # There is a 'ant' key.
+        assert req.has_param('ant')
+        # There is not a 'bee' key..
+        assert not req.has_param('bee')
+        # There is not a None key
+        assert not req.has_param(None)
 
 
 class TestPostQueryParams(object):
