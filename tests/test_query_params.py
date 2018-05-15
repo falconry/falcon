@@ -773,6 +773,19 @@ class TestQueryParams(object):
         with pytest.raises(HTTPInvalidParam):
             req.get_param_as_json('payload')
 
+    def test_has_param(self, simulate_request, client, resource):
+        client.app.add_route('/', resource)
+        query_string = 'ant=1'
+        simulate_request(client=client, path='/', query_string=query_string)
+
+        req = resource.captured_req
+        # There is a 'ant' key.
+        assert req.has_param('ant')
+        # There is not a 'bee' key..
+        assert not req.has_param('bee')
+        # There is not a None key
+        assert not req.has_param(None)
+
 
 class TestPostQueryParams(object):
     @pytest.mark.parametrize('http_method', ('POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'))

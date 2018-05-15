@@ -268,9 +268,10 @@ class TestRequestAttributes(object):
             query_string=self.qs,
             headers=self.headers))
 
+        relative_trailing_uri = self.path + '/?' + self.qs
         # NOTE(kgriffs): Call twice to check caching works
-        assert req_noapp.relative_uri == self.relative_uri
-        assert req_noapp.relative_uri == self.relative_uri
+        assert req_noapp.relative_uri == relative_trailing_uri
+        assert req_noapp.relative_uri == relative_trailing_uri
 
         options = RequestOptions()
         options.strip_url_path_trailing_slash = False
