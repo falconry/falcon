@@ -228,7 +228,7 @@ class API(object):
                 # HTTP exception signalling the problem, e.g. a 404.
                 responder, params, resource, req.uri_template = self._get_responder(req)
             except Exception as ex:
-                if not self._handle_exception(ex, req, resp, params):
+                if not self._handle_exception(req, resp, ex, params):
                     raise
             else:
                 try:
@@ -244,7 +244,7 @@ class API(object):
                     responder(req, resp, **params)
                     req_succeeded = True
                 except Exception as ex:
-                    if not self._handle_exception(ex, req, resp, params):
+                    if not self._handle_exception(req, resp, ex, params):
                         raise
         finally:
             # NOTE(kgriffs): It may not be useful to still execute
@@ -259,7 +259,7 @@ class API(object):
                 try:
                     process_response(req, resp, resource, req_succeeded)
                 except Exception as ex:
-                    if not self._handle_exception(ex, req, resp, params):
+                    if not self._handle_exception(req, resp, ex, params):
                         raise
 
                     req_succeeded = False
@@ -277,8 +277,10 @@ class API(object):
             body = []
         else:
             body, length = self._get_body(resp, env.get('wsgi.file_wrapper'))
-            if length is not None:
+            if resp.content_length is None and length is not None:
                 resp._headers['content-length'] = str(length)
+            elif resp.content_length is not None:
+                resp._headers['content-length'] = str(resp.content_length)
 
         # NOTE(kgriffs): Based on wsgiref.validate's interpretation of
         # RFC 2616, as commented in that module's source code. The
@@ -492,7 +494,7 @@ class API(object):
                 that is an instance of this exception class, the associated
                 handler will be called.
             handler (callable): A function or callable object taking the form
-                ``func(ex, req, resp, params)``.
+                ``func(req, resp, ex, params)``.
 
                 If not specified explicitly, the handler will default to
                 ``exception.handle``, where ``exception`` is the error
@@ -503,7 +505,7 @@ class API(object):
                     class CustomException(CustomBaseException):
 
                         @staticmethod
-                        def handle(ex, req, resp, params):
+                        def handle(req, resp, ex, params):
                             # TODO: Log the error
                             # Convert to an instance of falcon.HTTPError
                             raise falcon.HTTPError(falcon.HTTP_792)
@@ -673,13 +675,13 @@ class API(object):
         if error.has_representation:
             self._serialize_error(req, resp, error)
 
-    def _http_status_handler(self, status, req, resp, params):
+    def _http_status_handler(self, req, resp, status, params):
         self._compose_status_response(req, resp, status)
 
-    def _http_error_handler(self, error, req, resp, params):
+    def _http_error_handler(self, req, resp, error, params):
         self._compose_error_response(req, resp, error)
 
-    def _handle_exception(self, ex, req, resp, params):
+    def _handle_exception(self, req, resp, ex, params):
         """Handle an exception raised from mw or a responder.
 
         Args:
@@ -699,7 +701,7 @@ class API(object):
         for err_type, err_handler in self._error_handlers:
             if isinstance(ex, err_type):
                 try:
-                    err_handler(ex, req, resp, params)
+                    err_handler(req, resp, ex, params)
                 except HTTPStatus as status:
                     self._compose_status_response(req, resp, status)
                 except HTTPError as error:
@@ -739,12 +741,10 @@ class API(object):
                 * Otherwise, returns []
 
         """
-
         body = resp.body
         if body is not None:
             if not isinstance(body, bytes):
                 body = body.encode('utf-8')
-
             return [body], len(body)
 
         data = resp.data
@@ -769,9 +769,9 @@ class API(object):
             else:
                 iterable = stream
 
-            # NOTE(kgriffs): If resp.stream_len is None, content_length
-            # will be as well; the caller of _get_body must handle this
-            # case by not setting the Content-Length header.
+            # NOTE(pshello): resp.stream_len is deprecated in favor of
+            # resp.content_length. The caller of _get_body should give
+            # preference to resp.content_length if it has been set.
             return iterable, resp.stream_len
 
         return [], 0

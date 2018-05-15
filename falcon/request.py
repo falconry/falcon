@@ -1232,6 +1232,75 @@ class Request(object):
 
         raise errors.HTTPMissingParam(name)
 
+    def get_param_as_float(self, name,
+                           required=False, min=None, max=None, store=None):
+        """Return the value of a query string parameter as an float.
+
+        Args:
+            name (str): Parameter name, case-sensitive (e.g., 'limit').
+
+        Keyword Args:
+            required (bool): Set to ``True`` to raise
+                ``HTTPBadRequest`` instead of returning ``None`` when the
+                parameter is not found or is not an float (default
+                ``False``).
+            min (float): Set to the minimum value allowed for this
+                param. If the param is found and it is less than min, an
+                ``HTTPError`` is raised.
+            max (float): Set to the maximum value allowed for this
+                param. If the param is found and its value is greater than
+                max, an ``HTTPError`` is raised.
+            store (dict): A ``dict``-like object in which to place
+                the value of the param, but only if the param is found
+                (default ``None``).
+
+        Returns:
+            float: The value of the param if it is found and can be converted to
+            an ``float``. If the param is not found, returns ``None``, unless
+            `required` is ``True``.
+
+        Raises
+            HTTPBadRequest: The param was not found in the request, even though
+                it was required to be there, or it was found but could not
+                be converted to an ``float``. Also raised if the param's value
+                falls outside the given interval, i.e., the value must be in
+                the interval: min <= value <= max to avoid triggering an error.
+
+        """
+
+        params = self._params
+
+        # PERF: Use if..in since it is a good all-around performer; we don't
+        #       know how likely params are to be specified by clients.
+        if name in params:
+            val = params[name]
+            if isinstance(val, list):
+                val = val[-1]
+
+            try:
+                val = float(val)
+            except ValueError:
+                msg = 'The value must be a float.'
+                raise errors.HTTPInvalidParam(msg, name)
+
+            if min is not None and val < min:
+                msg = 'The value must be at least ' + str(min)
+                raise errors.HTTPInvalidParam(msg, name)
+
+            if max is not None and max < val:
+                msg = 'The value may not exceed ' + str(max)
+                raise errors.HTTPInvalidParam(msg, name)
+
+            if store is not None:
+                store[name] = val
+
+            return val
+
+        if not required:
+            return None
+
+        raise errors.HTTPMissingParam(name)
+
     def get_param_as_uuid(self, name, required=False, store=None):
         """Return the value of a query string parameter as an UUID.
 
@@ -1569,6 +1638,23 @@ class Request(object):
         This method has been deprecated and will be removed in a future release.
     """
 
+    def has_param(self, name):
+        """Determine whether or not the query string parameter already exists.
+
+        Args:
+            name (str): Parameter name, case-sensitive (e.g., 'sort').
+
+        Returns:
+            bool: ``True`` if param is found, or ``False`` if param is
+            not found.
+
+        """
+
+        if name in self._params:
+            return True
+        else:
+            return False
+
     def log_error(self, message):
         """Write an error message to the server's log.
 
@@ -1693,9 +1779,9 @@ class RequestOptions(object):
             encoded in alternative formats in which the comma character
             is significant.
 
-        strip_url_path_trailing_slash: Set to ``False`` in order to
-            retain a trailing slash, if present, at the end of the URL
-            path (default ``True``). When this option is enabled,
+        strip_url_path_trailing_slash: Set to ``True`` in order to
+            strip the trailing slash, if present, at the end of the URL
+            path (default ``False``). When this option is enabled,
             the URL path is normalized by stripping the trailing slash
             character. This lets the application define a single route
             to a resource for a path that may or may not end in a
@@ -1727,6 +1813,6 @@ class RequestOptions(object):
         self.keep_blank_qs_values = False
         self.auto_parse_form_urlencoded = False
         self.auto_parse_qs_csv = True
-        self.strip_url_path_trailing_slash = True
+        self.strip_url_path_trailing_slash = False
         self.default_media_type = DEFAULT_MEDIA_TYPE
         self.media_handlers = Handlers()

@@ -83,9 +83,9 @@ class HTTPBadRequest(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title=None, description=None, **kwargs):
+    def __init__(self, title=None, description=None, headers=None, **kwargs):
         super(HTTPBadRequest, self).__init__(status.HTTP_400, title,
-                                             description, **kwargs)
+                                             description, headers, **kwargs)
 
 
 class HTTPUnauthorized(HTTPError):
@@ -146,14 +146,15 @@ class HTTPUnauthorized(HTTPError):
 
     """
 
-    def __init__(self, title=None, description=None, challenges=None, **kwargs):
-        headers = kwargs.setdefault('headers', {})
+    def __init__(self, title=None, description=None, challenges=None, headers=None, **kwargs):
+        if headers is None:
+            headers = {}
 
         if challenges:
             headers['WWW-Authenticate'] = ', '.join(challenges)
 
         super(HTTPUnauthorized, self).__init__(status.HTTP_401, title,
-                                               description, **kwargs)
+                                               description, headers, **kwargs)
 
 
 class HTTPForbidden(HTTPError):
@@ -207,9 +208,9 @@ class HTTPForbidden(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title=None, description=None, **kwargs):
+    def __init__(self, title=None, description=None, headers=None, **kwargs):
         super(HTTPForbidden, self).__init__(status.HTTP_403, title,
-                                            description, **kwargs)
+                                            description, headers, **kwargs)
 
 
 class HTTPNotFound(OptionalRepresentation, HTTPError):
@@ -261,8 +262,8 @@ class HTTPNotFound(OptionalRepresentation, HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, **kwargs):
-        super(HTTPNotFound, self).__init__(status.HTTP_404, **kwargs)
+    def __init__(self, headers=None, **kwargs):
+        super(HTTPNotFound, self).__init__(status.HTTP_404, headers=headers, **kwargs)
 
 
 class HTTPMethodNotAllowed(OptionalRepresentation, HTTPError):
@@ -316,9 +317,10 @@ class HTTPMethodNotAllowed(OptionalRepresentation, HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, allowed_methods, **kwargs):
+    def __init__(self, allowed_methods, headers=None, **kwargs):
         new_headers = {'Allow': ', '.join(allowed_methods)}
         super(HTTPMethodNotAllowed, self).__init__(status.HTTP_405,
+                                                   headers=headers,
                                                    **kwargs)
         if not self.headers:
             self.headers = {}
@@ -373,10 +375,11 @@ class HTTPNotAcceptable(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, description=None, **kwargs):
+    def __init__(self, description=None, headers=None, **kwargs):
         super(HTTPNotAcceptable, self).__init__(status.HTTP_406,
                                                 'Media type not acceptable',
-                                                description, **kwargs)
+                                                description, headers,
+                                                **kwargs)
 
 
 class HTTPConflict(HTTPError):
@@ -430,9 +433,10 @@ class HTTPConflict(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title=None, description=None, **kwargs):
+    def __init__(self, title=None, description=None, headers=None, **kwargs):
         super(HTTPConflict, self).__init__(status.HTTP_409, title,
-                                           description, **kwargs)
+                                           description, headers,
+                                           **kwargs)
 
 
 class HTTPGone(OptionalRepresentation, HTTPError):
@@ -492,8 +496,8 @@ class HTTPGone(OptionalRepresentation, HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, **kwargs):
-        super(HTTPGone, self).__init__(status.HTTP_410, **kwargs)
+    def __init__(self, headers=None, **kwargs):
+        super(HTTPGone, self).__init__(status.HTTP_410, headers=headers, **kwargs)
 
 
 class HTTPLengthRequired(HTTPError):
@@ -537,9 +541,10 @@ class HTTPLengthRequired(HTTPError):
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
     """
-    def __init__(self, title=None, description=None, **kwargs):
+    def __init__(self, title=None, description=None, headers=None, **kwargs):
         super(HTTPLengthRequired, self).__init__(status.HTTP_411,
-                                                 title, description, **kwargs)
+                                                 title, description,
+                                                 headers, **kwargs)
 
 
 class HTTPPreconditionFailed(HTTPError):
@@ -585,9 +590,10 @@ class HTTPPreconditionFailed(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title=None, description=None, **kwargs):
+    def __init__(self, title=None, description=None, headers=None, **kwargs):
         super(HTTPPreconditionFailed, self).__init__(status.HTTP_412, title,
-                                                     description, **kwargs)
+                                                     description, headers,
+                                                     **kwargs)
 
 
 class HTTPRequestEntityTooLarge(HTTPError):
@@ -641,8 +647,9 @@ class HTTPRequestEntityTooLarge(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title=None, description=None, retry_after=None, **kwargs):
-        headers = kwargs.setdefault('headers', {})
+    def __init__(self, title=None, description=None, retry_after=None, headers=None, **kwargs):
+        if headers is None:
+            headers = {}
 
         if isinstance(retry_after, datetime):
             headers['Retry-After'] = util.dt_to_http(retry_after)
@@ -652,6 +659,7 @@ class HTTPRequestEntityTooLarge(HTTPError):
         super(HTTPRequestEntityTooLarge, self).__init__(status.HTTP_413,
                                                         title,
                                                         description,
+                                                        headers,
                                                         **kwargs)
 
 
@@ -703,8 +711,10 @@ class HTTPUriTooLong(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title=None, description=None, **kwargs):
-        super(HTTPUriTooLong, self).__init__(status.HTTP_414, title, description, **kwargs)
+    def __init__(self, title=None, description=None, headers=None, **kwargs):
+        super(HTTPUriTooLong, self).__init__(status.HTTP_414, title,
+                                             description, headers,
+                                             **kwargs)
 
 
 class HTTPUnsupportedMediaType(HTTPError):
@@ -749,9 +759,10 @@ class HTTPUnsupportedMediaType(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, description=None, **kwargs):
+    def __init__(self, description=None, headers=None, **kwargs):
         super(HTTPUnsupportedMediaType, self).__init__(
-            status.HTTP_415, 'Unsupported media type', description, **kwargs)
+            status.HTTP_415, 'Unsupported media type',
+            description, headers, **kwargs)
 
 
 class HTTPRangeNotSatisfiable(NoRepresentation, HTTPError):
@@ -776,8 +787,11 @@ class HTTPRangeNotSatisfiable(NoRepresentation, HTTPError):
             request. Used to set the Content-Range header.
     """
 
-    def __init__(self, resource_length):
-        headers = {'Content-Range': 'bytes */' + str(resource_length)}
+    def __init__(self, resource_length, headers=None):
+        if headers is None:
+            headers = {}
+        headers.setdefault('Content-Range', 'bytes */' + str(resource_length))
+
         super(HTTPRangeNotSatisfiable, self).__init__(status.HTTP_416,
                                                       headers=headers)
 
@@ -827,9 +841,9 @@ class HTTPUnprocessableEntity(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title=None, description=None, **kwargs):
+    def __init__(self, title=None, description=None, headers=None, **kwargs):
         super(HTTPUnprocessableEntity, self).__init__(status.HTTP_422, title,
-                                                      description, **kwargs)
+                                                      description, headers, **kwargs)
 
 
 class HTTPLocked(OptionalRepresentation, HTTPError):
@@ -872,9 +886,10 @@ class HTTPLocked(OptionalRepresentation, HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title=None, description=None, **kwargs):
+    def __init__(self, title=None, description=None, headers=None, **kwargs):
         super(HTTPLocked, self).__init__(status.HTTP_423, title,
-                                         description, **kwargs)
+                                         description, headers,
+                                         **kwargs)
 
 
 class HTTPFailedDependency(OptionalRepresentation, HTTPError):
@@ -916,9 +931,10 @@ class HTTPFailedDependency(OptionalRepresentation, HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title=None, description=None, **kwargs):
+    def __init__(self, title=None, description=None, headers=None, **kwargs):
         super(HTTPFailedDependency, self).__init__(status.HTTP_424, title,
-                                                   description, **kwargs)
+                                                   description, headers,
+                                                   **kwargs)
 
 
 class HTTPPreconditionRequired(HTTPError):
@@ -967,9 +983,10 @@ class HTTPPreconditionRequired(HTTPError):
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
     """
-    def __init__(self, title=None, description=None, **kwargs):
+    def __init__(self, title=None, description=None, headers=None, **kwargs):
         super(HTTPPreconditionRequired, self).__init__(status.HTTP_428, title,
-                                                       description, **kwargs)
+                                                       description, headers,
+                                                       **kwargs)
 
 
 class HTTPTooManyRequests(HTTPError):
@@ -1020,8 +1037,9 @@ class HTTPTooManyRequests(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title=None, description=None, retry_after=None, **kwargs):
-        headers = kwargs.setdefault('headers', {})
+    def __init__(self, title=None, description=None, retry_after=None, headers=None, **kwargs):
+        if headers is None:
+            headers = {}
 
         if isinstance(retry_after, datetime):
             headers['Retry-After'] = util.dt_to_http(retry_after)
@@ -1031,6 +1049,7 @@ class HTTPTooManyRequests(HTTPError):
         super(HTTPTooManyRequests, self).__init__(status.HTTP_429,
                                                   title,
                                                   description,
+                                                  headers,
                                                   **kwargs)
 
 
@@ -1080,10 +1099,11 @@ class HTTPRequestHeaderFieldsTooLarge(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title=None, description=None, **kwargs):
+    def __init__(self, title=None, description=None, headers=None, **kwargs):
         super(HTTPRequestHeaderFieldsTooLarge, self).__init__(status.HTTP_431,
                                                               title,
                                                               description,
+                                                              headers,
                                                               **kwargs)
 
 
@@ -1140,9 +1160,11 @@ class HTTPUnavailableForLegalReasons(OptionalRepresentation, HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title=None, **kwargs):
+    def __init__(self, title=None, headers=None, **kwargs):
         super(HTTPUnavailableForLegalReasons, self).__init__(status.HTTP_451,
-                                                             title, **kwargs)
+                                                             title,
+                                                             headers=headers,
+                                                             **kwargs)
 
 
 class HTTPInternalServerError(HTTPError):
@@ -1184,9 +1206,10 @@ class HTTPInternalServerError(HTTPError):
 
     """
 
-    def __init__(self, title=None, description=None, **kwargs):
+    def __init__(self, title=None, description=None, headers=None, **kwargs):
         super(HTTPInternalServerError, self).__init__(status.HTTP_500, title,
-                                                      description, **kwargs)
+                                                      description, headers,
+                                                      **kwargs)
 
 
 class HTTPNotImplemented(HTTPError):
@@ -1235,9 +1258,10 @@ class HTTPNotImplemented(HTTPError):
 
     """
 
-    def __init__(self, title=None, description=None, **kwargs):
+    def __init__(self, title=None, description=None, headers=None, **kwargs):
         super(HTTPNotImplemented, self).__init__(status.HTTP_501, title,
-                                                 description, **kwargs)
+                                                 description, headers,
+                                                 **kwargs)
 
 
 class HTTPBadGateway(HTTPError):
@@ -1279,9 +1303,10 @@ class HTTPBadGateway(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title=None, description=None, **kwargs):
+    def __init__(self, title=None, description=None, headers=None, **kwargs):
         super(HTTPBadGateway, self).__init__(status.HTTP_502, title,
-                                             description, **kwargs)
+                                             description, headers,
+                                             **kwargs)
 
 
 class HTTPServiceUnavailable(HTTPError):
@@ -1335,8 +1360,9 @@ class HTTPServiceUnavailable(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title=None, description=None, retry_after=None, **kwargs):
-        headers = kwargs.setdefault('headers', {})
+    def __init__(self, title=None, description=None, retry_after=None, headers=None, **kwargs):
+        if headers is None:
+            headers = {}
 
         if isinstance(retry_after, datetime):
             headers['Retry-After'] = util.dt_to_http(retry_after)
@@ -1346,6 +1372,7 @@ class HTTPServiceUnavailable(HTTPError):
         super(HTTPServiceUnavailable, self).__init__(status.HTTP_503,
                                                      title,
                                                      description,
+                                                     headers,
                                                      **kwargs)
 
 
@@ -1390,9 +1417,10 @@ class HTTPGatewayTimeout(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title=None, description=None, **kwargs):
+    def __init__(self, title=None, description=None, headers=None, **kwargs):
         super(HTTPGatewayTimeout, self).__init__(status.HTTP_504, title,
-                                                 description, **kwargs)
+                                                 description, headers,
+                                                 **kwargs)
 
 
 class HTTPVersionNotSupported(HTTPError):
@@ -1441,9 +1469,10 @@ class HTTPVersionNotSupported(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title=None, description=None, **kwargs):
+    def __init__(self, title=None, description=None, headers=None, **kwargs):
         super(HTTPVersionNotSupported, self).__init__(status.HTTP_505, title,
-                                                      description, **kwargs)
+                                                      description, headers,
+                                                      **kwargs)
 
 
 class HTTPInsufficientStorage(HTTPError):
@@ -1489,9 +1518,10 @@ class HTTPInsufficientStorage(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title=None, description=None, **kwargs):
+    def __init__(self, title=None, description=None, headers=None, **kwargs):
         super(HTTPInsufficientStorage, self).__init__(status.HTTP_507, title,
-                                                      description, **kwargs)
+                                                      description, headers,
+                                                      **kwargs)
 
 
 class HTTPLoopDetected(HTTPError):
@@ -1534,9 +1564,10 @@ class HTTPLoopDetected(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title=None, description=None, **kwargs):
+    def __init__(self, title=None, description=None, headers=None, **kwargs):
         super(HTTPLoopDetected, self).__init__(status.HTTP_508, title,
-                                               description, **kwargs)
+                                               description, headers,
+                                               **kwargs)
 
 
 class HTTPNetworkAuthenticationRequired(HTTPError):
@@ -1591,10 +1622,11 @@ class HTTPNetworkAuthenticationRequired(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title=None, description=None, **kwargs):
+    def __init__(self, title=None, description=None, headers=None, **kwargs):
         super(HTTPNetworkAuthenticationRequired, self).__init__(status.HTTP_511,
                                                                 title,
                                                                 description,
+                                                                headers,
                                                                 **kwargs)
 
 
@@ -1634,13 +1666,14 @@ class HTTPInvalidHeader(HTTPBadRequest):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, msg, header_name, **kwargs):
+    def __init__(self, msg, header_name, headers=None, **kwargs):
         description = ('The value provided for the {0} header is '
                        'invalid. {1}')
         description = description.format(header_name, msg)
 
         super(HTTPInvalidHeader, self).__init__('Invalid header value',
-                                                description, **kwargs)
+                                                description, headers,
+                                                **kwargs)
 
 
 class HTTPMissingHeader(HTTPBadRequest):
@@ -1678,12 +1711,13 @@ class HTTPMissingHeader(HTTPBadRequest):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, header_name, **kwargs):
+    def __init__(self, header_name, headers=None, **kwargs):
         description = 'The {0} header is required.'
         description = description.format(header_name)
 
         super(HTTPMissingHeader, self).__init__('Missing header value',
-                                                description, **kwargs)
+                                                description, headers,
+                                                **kwargs)
 
 
 class HTTPInvalidParam(HTTPBadRequest):
@@ -1724,12 +1758,13 @@ class HTTPInvalidParam(HTTPBadRequest):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, msg, param_name, **kwargs):
+    def __init__(self, msg, param_name, headers=None, **kwargs):
         description = 'The "{0}" parameter is invalid. {1}'
         description = description.format(param_name, msg)
 
         super(HTTPInvalidParam, self).__init__('Invalid parameter',
-                                               description, **kwargs)
+                                               description, headers,
+                                               **kwargs)
 
 
 class HTTPMissingParam(HTTPBadRequest):
@@ -1769,9 +1804,10 @@ class HTTPMissingParam(HTTPBadRequest):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, param_name, **kwargs):
+    def __init__(self, param_name, headers=None, **kwargs):
         description = 'The "{0}" parameter is required.'
         description = description.format(param_name)
 
         super(HTTPMissingParam, self).__init__('Missing parameter',
-                                               description, **kwargs)
+                                               description, headers,
+                                               **kwargs)
