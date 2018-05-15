@@ -314,7 +314,7 @@ def get_argnames(func):
     # be present, so we normalize the results by removing 'self' as needed.
     # Note that this behavior varies between 3.x versions as well as between
     # 3.x and 2.7.
-    if args[0] == 'self':
+    if args and args[0] == 'self':
         args = args[1:]
 
     return args

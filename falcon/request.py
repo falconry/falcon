@@ -1638,6 +1638,23 @@ class Request(object):
         This method has been deprecated and will be removed in a future release.
     """
 
+    def has_param(self, name):
+        """Determine whether or not the query string parameter already exists.
+
+        Args:
+            name (str): Parameter name, case-sensitive (e.g., 'sort').
+
+        Returns:
+            bool: ``True`` if param is found, or ``False`` if param is
+            not found.
+
+        """
+
+        if name in self._params:
+            return True
+        else:
+            return False
+
     def log_error(self, message):
         """Write an error message to the server's log.
 
