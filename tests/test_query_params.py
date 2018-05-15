@@ -760,7 +760,7 @@ class TestQueryParams(object):
         query_string = 'payload={}'.format(json.dumps(payload_dict))
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
-        assert req.get_param_as_dict('payload') == payload_dict
+        assert req.get_param_as_json('payload') == payload_dict
 
     def test_get_dict_missing_param(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
@@ -768,7 +768,7 @@ class TestQueryParams(object):
         query_string = 'notthepayload={}'.format(json.dumps(payload_dict))
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
-        assert req.get_param_as_dict('payload') is None
+        assert req.get_param_as_json('payload') is None
 
     def test_get_dict_store(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
@@ -777,7 +777,7 @@ class TestQueryParams(object):
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
         store = {}
-        req.get_param_as_dict('payload', store=store)
+        req.get_param_as_json('payload', store=store)
         assert len(store) != 0
 
     def test_get_dict_invalid(self, simulate_request, client, resource):
@@ -787,7 +787,7 @@ class TestQueryParams(object):
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
         with pytest.raises(HTTPInvalidParam):
-            req.get_param_as_dict('payload')
+            req.get_param_as_json('payload')
 
     def test_has_param(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
