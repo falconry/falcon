@@ -25,7 +25,7 @@ def sink_too(req, resp):
     resp.status = falcon.HTTP_781
 
 
-class BookCollection(testing.TestResource):
+class BookCollection(testing.SimpleTestResource):
     pass
 
 
