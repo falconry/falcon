@@ -30,7 +30,6 @@ except ImportError:
     from json import dumps as json_dumps
 
 import falcon
-from .helpers import rand_string
 
 
 def capture_responder_args(req, resp, resource, params):
