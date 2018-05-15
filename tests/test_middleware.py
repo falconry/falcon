@@ -104,6 +104,15 @@ class MiddlewareClassResource(object):
         raise falcon.HTTPForbidden(falcon.HTTP_403, 'Setec Astronomy')
 
 
+class EmptySignatureMiddleware(object):
+
+    def process_request(self):
+        pass
+
+    def process_response(self):
+        pass
+
+
 class TestMiddleware(object):
     def setup_method(self, method):
         # Clear context
@@ -631,6 +640,18 @@ class TestResourceMiddleware(TestMiddleware):
         assert context['params']
         assert context['params']['id'] == '22'
         assert response.json == {'added': True, 'id': '22'}
+
+
+class TestEmptySignatureMiddleware(TestMiddleware):
+    def test_dont_need_params_in_signature(self):
+        """
+        Verify that we don't need parameters in the process_* signatures (for
+        side-effect-only middlewares, mostly). Makes no difference on py27
+        but does affect py36.
+
+        https://github.com/falconry/falcon/issues/1254
+        """
+        falcon.API(middleware=EmptySignatureMiddleware())
 
 
 class TestErrorHandling(TestMiddleware):
