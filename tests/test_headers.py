@@ -211,6 +211,15 @@ class ContentLengthHeaderResource(object):
         resp.body = self._body
 
 
+class ExpiresHeaderResource(object):
+
+    def __init__(self, expires):
+        self._expires = expires
+
+    def on_get(self, req, resp):
+        resp.expires = self._expires
+
+
 class TestHeaders(object):
 
     def test_content_length(self, client):
@@ -233,6 +242,13 @@ class TestHeaders(object):
         result = client.simulate_get()
 
         assert result.headers['Content-Length'] == '42'
+
+    def test_expires_header(self, client):
+        expires = datetime(2013, 1, 1, 10, 30, 30)
+        client.app.add_route('/', ExpiresHeaderResource(expires))
+        result = client.simulate_get()
+
+        assert result.headers['Expires'] == 'Tue, 01 Jan 2013 10:30:30 GMT'
 
     def test_default_value(self, client):
         resource = testing.SimpleTestResource(body=SAMPLE_BODY)
