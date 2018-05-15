@@ -724,6 +724,15 @@ class Response(object):
         """,
         format_etag_header)
 
+    expires = header_property(
+        'Expires',
+        """Set the Expires header. Set to a ``datetime`` (UTC) instance.
+
+        Note:
+            Falcon will format the ``datetime`` as an HTTP date string.
+        """,
+        dt_to_http)
+
     last_modified = header_property(
         'Last-Modified',
         """Set the Last-Modified header. Set to a ``datetime`` (UTC) instance.
