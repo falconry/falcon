@@ -13,7 +13,7 @@ SIZE_1_KB = 1024
 
 @pytest.fixture
 def resource():
-    return testing.TestResource()
+    return testing.SimpleTestResource()
 
 
 @pytest.fixture
@@ -36,14 +36,14 @@ class TestRequestBody(object):
     def test_empty_body(self, client, resource):
         client.app.add_route('/', resource)
         client.simulate_request(path='/', body='')
-        stream = self._get_wrapped_stream(resource.req)
+        stream = self._get_wrapped_stream(resource.captured_req)
         assert stream.tell() == 0
 
     def test_tiny_body(self, client, resource):
         client.app.add_route('/', resource)
         expected_body = '.'
         client.simulate_request(path='/', body=expected_body)
-        stream = self._get_wrapped_stream(resource.req)
+        stream = self._get_wrapped_stream(resource.captured_req)
 
         actual_body = stream.read(1)
         assert actual_body == expected_body.encode('utf-8')
@@ -54,7 +54,7 @@ class TestRequestBody(object):
         client.app.add_route('/', resource)
         expected_body = '.'
         client.simulate_request(path='/', body=expected_body)
-        stream = self._get_wrapped_stream(resource.req)
+        stream = self._get_wrapped_stream(resource.captured_req)
 
         # Read too many bytes; shouldn't block
         actual_body = stream.read(len(expected_body) + 1)
@@ -68,10 +68,10 @@ class TestRequestBody(object):
 
         client.simulate_request(path='/', body=expected_body, headers=headers)
 
-        content_len = resource.req.get_header('content-length')
+        content_len = resource.captured_req.get_header('content-length')
         assert content_len == str(expected_len)
 
-        stream = self._get_wrapped_stream(resource.req)
+        stream = self._get_wrapped_stream(resource.captured_req)
 
         actual_body = stream.read()
         assert actual_body == expected_body.encode('utf-8')
