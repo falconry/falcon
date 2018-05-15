@@ -107,13 +107,7 @@ class Response(object):
             provided by the WSGI server, in order to efficiently serve
             file-like objects.
 
-        stream_len (int): Deprecated alias for :py:attr:`content_length`
-            Expected length of `stream`. If `stream` is set,
-            but `stream_len` is not, Falcon will not supply a
-            Content-Length header to the WSGI server, unless `content_length` is
-            explicitly set. Consequently, the
-            server may choose to use chunked encoding or one of the
-            other strategies suggested by PEP-3333.
+        stream_len (int): Deprecated alias for :py:attr:`content_length`.
 
         context (dict): Dictionary to hold any data about the response which is
             specific to your app. Falcon itself will not interact with this
@@ -666,6 +660,14 @@ class Response(object):
 
         Useful for responding to HEAD requests when you aren't actually
         providing the response body.
+
+        Note:
+            In cases where the response content is a stream (readable
+            file-like object), Falcon will not supply a Content-Length header
+            to the WSGI server unless `content_length` is explicitly set.
+            Consequently, the server may choose to use chunked encoding or one of the
+            other strategies suggested by PEP-3333.
+
         """,
     )
 
