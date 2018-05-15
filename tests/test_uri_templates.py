@@ -356,18 +356,26 @@ def test_single_trailing_slash(client):
     resource2 = IDResource()
     client.app.add_route('/2/{id}/', resource2)
     result = client.simulate_get('/2/123/')
-    assert result.status == falcon.HTTP_200
-    assert resource2.called
-    assert resource2.id == '123'
-    assert resource2.req.path == '/2/123'
+    assert result.status == falcon.HTTP_404
+    assert not resource2.called
+    assert resource2.id is None
 
     resource3 = IDResource()
-    client.app.add_route('/3/{id}', resource3)
+    client.app.add_route('/3/{id}/', resource3)
+    client.app.req_options.strip_url_path_trailing_slash = True
     result = client.simulate_get('/3/123/')
     assert result.status == falcon.HTTP_200
     assert resource3.called
     assert resource3.id == '123'
     assert resource3.req.path == '/3/123'
+
+    resource4 = IDResource()
+    client.app.add_route('/4/{id}', resource4)
+    client.app.req_options.strip_url_path_trailing_slash = False
+    result = client.simulate_get('/4/123/')
+    assert result.status == falcon.HTTP_404
+    assert not resource4.called
+    assert resource4.id is None
 
 
 def test_multiple(client):

@@ -360,7 +360,7 @@ class TestSeveralMiddlewares(TestMiddleware):
                                      RequestTimeMiddleware(),
                                      RaiseErrorMiddleware()])
 
-        def handler(ex, req, resp, params):
+        def handler(req, resp, ex, params):
             context['error_handler'] = True
 
         app.add_error_handler(Exception, handler)
@@ -390,7 +390,7 @@ class TestSeveralMiddlewares(TestMiddleware):
                                      RaiseErrorMiddleware(),
                                      RequestTimeMiddleware()])
 
-        def handler(ex, req, resp, params):
+        def handler(req, resp, ex, params):
             context['error_handler'] = True
 
         app.add_error_handler(Exception, handler)
@@ -420,7 +420,7 @@ class TestSeveralMiddlewares(TestMiddleware):
                                      RaiseErrorMiddleware(),
                                      ExecutedLastMiddleware()])
 
-        def handler(ex, req, resp, params):
+        def handler(req, resp, ex, params):
             pass
 
         app.add_error_handler(Exception, handler)
@@ -455,7 +455,7 @@ class TestSeveralMiddlewares(TestMiddleware):
                                      RaiseErrorMiddleware(),
                                      ExecutedLastMiddleware()])
 
-        def handler(ex, req, resp, params):
+        def handler(req, resp, ex, params):
             pass
 
         app.add_error_handler(Exception, handler)
@@ -489,7 +489,7 @@ class TestSeveralMiddlewares(TestMiddleware):
                                      RaiseErrorMiddleware(),
                                      ExecutedLastMiddleware()])
 
-        def handler(ex, req, resp, params):
+        def handler(req, resp, ex, params):
             pass
 
         app.add_error_handler(Exception, handler)
@@ -520,7 +520,7 @@ class TestSeveralMiddlewares(TestMiddleware):
                                      RaiseErrorMiddleware(),
                                      ExecutedLastMiddleware()])
 
-        def handler(ex, req, resp, params):
+        def handler(req, resp, ex, params):
             pass
 
         app.add_error_handler(Exception, handler)
@@ -551,7 +551,7 @@ class TestSeveralMiddlewares(TestMiddleware):
                                      RaiseErrorMiddleware(),
                                      ExecutedLastMiddleware()])
 
-        def handler(ex, req, resp, params):
+        def handler(req, resp, ex, params):
             pass
 
         app.add_error_handler(Exception, handler)
@@ -585,7 +585,7 @@ class TestSeveralMiddlewares(TestMiddleware):
                                      RaiseErrorMiddleware(),
                                      ExecutedLastMiddleware()])
 
-        def handler(ex, req, resp, params):
+        def handler(req, resp, ex, params):
             pass
 
         app.add_error_handler(Exception, handler)
