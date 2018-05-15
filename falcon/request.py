@@ -1654,6 +1654,23 @@ class Request(object):
         This method has been deprecated and will be removed in a future release.
     """
 
+    def has_param(self, name):
+        """Determine whether or not the query string parameter already exists.
+
+        Args:
+            name (str): Parameter name, case-sensitive (e.g., 'sort').
+
+        Returns:
+            bool: ``True`` if param is found, or ``False`` if param is
+            not found.
+
+        """
+
+        if name in self._params:
+            return True
+        else:
+            return False
+
     def log_error(self, message):
         """Write an error message to the server's log.
 
@@ -1778,9 +1795,9 @@ class RequestOptions(object):
             encoded in alternative formats in which the comma character
             is significant.
 
-        strip_url_path_trailing_slash: Set to ``False`` in order to
-            retain a trailing slash, if present, at the end of the URL
-            path (default ``True``). When this option is enabled,
+        strip_url_path_trailing_slash: Set to ``True`` in order to
+            strip the trailing slash, if present, at the end of the URL
+            path (default ``False``). When this option is enabled,
             the URL path is normalized by stripping the trailing slash
             character. This lets the application define a single route
             to a resource for a path that may or may not end in a
@@ -1812,6 +1829,6 @@ class RequestOptions(object):
         self.keep_blank_qs_values = False
         self.auto_parse_form_urlencoded = False
         self.auto_parse_qs_csv = True
-        self.strip_url_path_trailing_slash = True
+        self.strip_url_path_trailing_slash = False
         self.default_media_type = DEFAULT_MEDIA_TYPE
         self.media_handlers = Handlers()
