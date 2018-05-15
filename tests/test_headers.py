@@ -194,17 +194,13 @@ class RemoveHeaderResource(object):
 
 class ContentLengthHeaderResource(object):
 
-    def __init__(self, content_length, body=None, stream=None, data=None):
+    def __init__(self, content_length, body=None):
         self._content_length = content_length
         self._body = body
-        self._data = data
-        self._stream = stream
 
     def on_get(self, req, resp):
         resp.content_length = self._content_length
         resp.body = self._body
-        resp.data = self._data
-        self.stream = self._stream
 
 
 class TestHeaders(object):
