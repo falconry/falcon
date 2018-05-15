@@ -85,18 +85,20 @@ layer.
 Is Falcon thread-safe?
 ----------------------
 
-New :class:`~falcon.Request` and :class:`~falcon.Response` objects are created
+The Falcon framework is, itself, thread-safe. For example, new
+:class:`~falcon.Request` and :class:`~falcon.Response` objects are created
 for each incoming HTTP request. However, a single instance of each resource
-class attached to a route is shared among all requests. Therefore, as long as
-you are careful about the way responders access class member variables to avoid
-conflicts, your WSGI app should be thread-safe.
+class attached to a route is shared among all requests. Middleware objects and
+other types of hooks, such as custom error handlers, are likewise shared.
+Therefore, as long as you implement these classes and callables in a
+thread-safe manner, and ensure that any third-party libraries used by your
+app are also thread-safe, your WSGI app as a whole will be thread-safe.
 
-That being said, IO-bound Falcon APIs are usually scaled via green
-threads (courtesy of the `gevent <http://www.gevent.org/>`_ library or similar)
-which aren't truly running concurrently, so there may be some edge cases where
-Falcon is not thread-safe that haven't been discovered yet.
-
-*Caveat emptor!*
+That being said, IO-bound Falcon APIs are usually scaled via multiple
+processes and green threads (courtesy of the `gevent <http://www.gevent.org/>`_
+library or similar) which aren't truly running concurrently, so there may be
+some edge cases where Falcon is not thread-safe that we aren't aware of. If you
+run into any issues, please let us know.
 
 Does Falcon support asyncio?
 ------------------------------
@@ -106,8 +108,14 @@ time. However, we are exploring alternatives to WSGI (such
 as `ASGI <https://github.com/django/asgiref/blob/master/specs/asgi.rst>`_)
 that will allow us to support asyncio natively in the future.
 
-In the meantime, we recommend using `gevent <http://www.gevent.org/>`_ via
-Gunicorn or uWSGI in order to scale IO-bound services.
+In the meantime, we recommend using the battle-tested
+`gevent <http://www.gevent.org/>`_ library via
+Gunicorn or uWSGI to scale IO-bound services.
+`meinheld <https://pypi.org/project/meinheld/>`_ has also been used
+successfully by the community to power high-throughput, low-latency services.
+Note that if you use Gunicorn, you can combine gevent and PyPy to achieve an
+impressive level of performance. (Unfortunately, uWSGI does not yet support
+using gevent and PyPy together.)
 
 Does Falcon support WebSocket?
 ------------------------------
