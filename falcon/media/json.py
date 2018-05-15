@@ -8,7 +8,7 @@ from falcon.util import json
 
 
 class JSONHandler(BaseHandler):
-    """Handler built using Python's :py:mod:`json` module."""
+    """Handler built using Python's :py:mod: `ujson` if available, :py:mod: `json` otherwise."""
 
     def deserialize(self, raw):
         try:
