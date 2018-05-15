@@ -268,6 +268,6 @@ class TestHttpMethodRouting(object):
     def test_bogus_method(self, client, resource_things):
         client.app.add_route('/things', resource_things)
         client.app.add_route('/things/{id}/stuff/{sid}', resource_things)
-        response = client.simulate_request(path='/things', method=testing.rand_string(3, 4))
+        response = client.simulate_request(path='/things', method='SETECASTRONOMY')
         assert not resource_things.called
         assert response.status == falcon.HTTP_400
