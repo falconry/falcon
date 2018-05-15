@@ -108,6 +108,11 @@ class Response(object):
             provided by the WSGI server, in order to efficiently serve
             file-like objects.
 
+            Note:
+                If the stream is set to an iterable object that requires
+                resource cleanup, it can implement a close() method to do so.
+                The close() method will be called upon completion of the request.
+
         stream_len (int): Deprecated alias for :py:attr:`content_length`.
 
         context (dict): Dictionary to hold any data about the response which is
