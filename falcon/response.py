@@ -28,6 +28,7 @@ from falcon import DEFAULT_MEDIA_TYPE
 from falcon.media import Handlers
 from falcon.response_helpers import (
     format_content_disposition,
+    format_etag_header,
     format_header_value_list,
     format_range,
     header_property,
@@ -475,7 +476,7 @@ class Response(object):
 
         name = name.lower()
         if name in self._headers:
-            value = self._headers[name] + ',' + value
+            value = self._headers[name] + ', ' + value
 
         self._headers[name] = value
 
@@ -721,7 +722,12 @@ class Response(object):
 
     etag = header_property(
         'ETag',
-        'Set the ETag header.')
+        """Set the ETag header.
+
+        The ETag header will be wrapped with double quotes ``"value"`` in case
+        the user didn't pass it.
+        """,
+        format_etag_header)
 
     expires = header_property(
         'Expires',
