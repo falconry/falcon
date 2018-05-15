@@ -28,6 +28,7 @@ from falcon import DEFAULT_MEDIA_TYPE
 from falcon.media import Handlers
 from falcon.response_helpers import (
     format_content_disposition,
+    format_etag_header,
     format_header_value_list,
     format_range,
     header_property,
@@ -106,6 +107,11 @@ class Response(object):
             blocks as byte strings. Falcon will use *wsgi.file_wrapper*, if
             provided by the WSGI server, in order to efficiently serve
             file-like objects.
+
+            Note:
+                If the stream is set to an iterable object that requires
+                resource cleanup, it can implement a close() method to do so.
+                The close() method will be called upon completion of the request.
 
         stream_len (int): Deprecated alias for :py:attr:`content_length`.
 
@@ -470,7 +476,7 @@ class Response(object):
 
         name = name.lower()
         if name in self._headers:
-            value = self._headers[name] + ',' + value
+            value = self._headers[name] + ', ' + value
 
         self._headers[name] = value
 
@@ -716,7 +722,21 @@ class Response(object):
 
     etag = header_property(
         'ETag',
-        'Set the ETag header.')
+        """Set the ETag header.
+
+        The ETag header will be wrapped with double quotes ``"value"`` in case
+        the user didn't pass it.
+        """,
+        format_etag_header)
+
+    expires = header_property(
+        'Expires',
+        """Set the Expires header. Set to a ``datetime`` (UTC) instance.
+
+        Note:
+            Falcon will format the ``datetime`` as an HTTP date string.
+        """,
+        dt_to_http)
 
     last_modified = header_property(
         'Last-Modified',
