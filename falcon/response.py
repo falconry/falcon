@@ -468,7 +468,7 @@ class Response(object):
 
         name = name.lower()
         if name in self._headers:
-            value = self._headers[name] + ',' + value
+            value = self._headers[name] + ', ' + value
 
         self._headers[name] = value
 

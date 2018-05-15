@@ -440,7 +440,7 @@ class TestHeaders(object):
         for method in ('HEAD', 'GET'):
             result = client.simulate_request(method=method)
             value = result.headers['x-things']
-            assert value == 'thing-1,thing-2,thing-3'
+            assert value == 'thing-1, thing-2, thing-3'
 
         result = client.simulate_request(method='POST')
         assert result.headers['x-things'] == 'thing-1'
