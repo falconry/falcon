@@ -192,6 +192,21 @@ class RemoveHeaderResource(object):
         resp.downloadable_as = None
 
 
+class ContentLengthHeaderResource(object):
+
+    def __init__(self, content_length, body=None, stream=None, data=None):
+        self._content_length = content_length
+        self._body = body
+        self._data = data
+        self._stream = stream
+
+    def on_get(self, req, resp):
+        resp.content_length = self._content_length
+        resp.body = self._body
+        resp.data = self._data
+        self.stream = self._stream
+
+
 class TestHeaders(object):
 
     def test_content_length(self, client):
@@ -203,14 +218,13 @@ class TestHeaders(object):
         assert result.headers['Content-Length'] == content_length
 
     def test_declare_content_length(self, client):
-        resource = testing.SimpleTestResource(headers={'Content-Length': 42})
-        client.app.add_route('/', resource)
+        client.app.add_route('/', ContentLengthHeaderResource(42))
         result = client.simulate_get()
 
         assert result.headers['Content-Length'] == '42'
 
     def test_declared_content_length_not_overriden_by_body_length(self, client):
-        resource = testing.SimpleTestResource(headers={'Content-Length': 42}, body='Hello World')
+        resource = ContentLengthHeaderResource(42, body='Hello World')
         client.app.add_route('/', resource)
         result = client.simulate_get()
 
