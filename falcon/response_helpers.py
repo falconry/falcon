@@ -91,6 +91,15 @@ def format_content_disposition(value):
     return 'attachment; filename="' + value + '"'
 
 
+def format_etag_header(value):
+    """Formats an ETag header, wrap it with " " in case of need."""
+
+    if value[-1] != '\"':
+        value = '\"' + value + '\"'
+
+    return value
+
+
 if six.PY2:
     def format_header_value_list(iterable):
         """Join an iterable of strings with commas."""
