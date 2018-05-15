@@ -89,7 +89,7 @@ class CompiledRouter(object):
     def finder_src(self):
         return self._finder_src
 
-    def add_route(self, uri_template, method_map, resource):
+    def add_route(self, uri_template, method_map, resource, **kwargs):
         """Adds a route between a URI path template and a resource.
 
         Args:
