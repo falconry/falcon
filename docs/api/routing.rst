@@ -239,7 +239,7 @@ A custom router is any class that implements the following interface:
 .. code:: python
 
     class MyRouter(object):
-        def add_route(self, uri_template, method_map, resource):
+        def add_route(self, uri_template, method_map, resource, **kwargs):
             """Adds a route between URI path template and resource.
 
             Args:
@@ -248,6 +248,14 @@ A custom router is any class that implements the following interface:
                     falcon.routing.create_http_method_map.
                 resource (object): Instance of the resource class that
                     will handle requests for the given URI.
+
+            Keyword Arguments:
+
+                **kwargs (dict): Accepts any additional keyword arguments that
+                    were originally passed to the falcon.API.add_route() method.
+                    These arguments MUST be accepted via the double-star
+                    variadic pattern (**kwargs), and ignore any unrecognized
+                    or unsupported arguments.
             """
 
         def find(self, uri, req=None):
