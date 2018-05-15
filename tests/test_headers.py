@@ -210,7 +210,7 @@ class ContentLengthHeaderResource(object):
         resp.content_length = self._content_length
         resp.body = self._body
 
-        
+
 class ExpiresHeaderResource(object):
 
     def __init__(self, expires):
