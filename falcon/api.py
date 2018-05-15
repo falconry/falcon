@@ -301,7 +301,7 @@ class API(object):
     def router_options(self):
         return self._router.options
 
-    def add_route(self, uri_template, resource, *args, **kwargs):
+    def add_route(self, uri_template, resource, suffix=None, **kwargs):
         """Associate a templatized URI path with a resource.
 
         Falcon routes incoming requests to resources based on a set of
@@ -342,12 +342,13 @@ class API(object):
                 resource.
 
         Note:
-            Any additional args and kwargs not defined above are passed
+            Any additional keyword arguments not defined above are passed
             through to the underlying router's ``add_route()`` method. The
-            default router does not expect any additional arguments, but
+            default router ignores any additional keyword arguments, but
             custom routers may take advantage of this feature to receive
-            additional options when setting up routes.
-
+            additional options when setting up routes. Custom routers MUST
+            accept such arguments using the variadic pattern (``**kwargs``), and
+            ignore any keyword arguments that they don't support.
         """
 
         # NOTE(richardolsson): Doing the validation here means it doesn't have
@@ -361,17 +362,9 @@ class API(object):
         if '//' in uri_template:
             raise ValueError("uri_template may not contain '//'")
 
-        # NOTE(santeyio): This is a not very nice way to catch the suffix
-        # keyword. In python 3 it can be specified explicitly in the function
-        # definition, e.g.
-        # `add_route(self, uri_template, resource, *args, suffix=None, **kwargs)`
-        # but python 2 won't accept args like this.
-        suffix = kwargs.pop('suffix', None)
-
         method_map = routing.map_http_methods(resource, suffix=suffix)
         routing.set_default_responders(method_map)
-        self._router.add_route(uri_template, method_map, resource, *args,
-                               **kwargs)
+        self._router.add_route(uri_template, method_map, resource, **kwargs)
 
     def add_static_route(self, prefix, directory, downloadable=False, fallback_filename=None):
         """Add a route to a directory of static files.
