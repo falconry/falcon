@@ -219,7 +219,7 @@ class ExpiresHeaderResource(object):
     def on_get(self, req, resp):
         resp.expires = self._expires
 
-        
+
 class TestHeaders(object):
 
     def test_content_length(self, client):
