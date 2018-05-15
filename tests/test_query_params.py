@@ -65,12 +65,18 @@ def simulate_request_post_query_params(client, path, query_string, **kwargs):
     return client.simulate_request(path=path, body=query_string, **kwargs)
 
 
-@pytest.mark.parametrize('simulate_request', [
-    simulate_request_get_query_params,
-    simulate_request_post_query_params,
-])
-class TestQueryParams(object):
+@pytest.fixture(
+    scope='session',
+    params=[
+        simulate_request_get_query_params,
+        simulate_request_post_query_params,
+    ],
+)
+def simulate_request(request):
+    return request.param
 
+
+class TestQueryParams(object):
     def test_none(self, simulate_request, client, resource):
         query_string = ''
         client.app.add_route('/', resource)  # TODO: DRY up this setup logic
