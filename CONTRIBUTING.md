@@ -180,7 +180,7 @@ Just as in the **subject**, use the imperative, present tense: "change" not "cha
 ##### Footer
 The footer should contain any information about **Breaking Changes** and is also the place to reference GitHub issues that this commit **Closes**.
 
-[ajs]: https://github.com/angular/angular.js/blob/master/CONTRIBUTING.md#commit
+[ajs]: https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#-git-commit-guidelines
 [docstrings]: https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html#example-google-style-python-docstrings
 [goog-style]: http://google-styleguide.googlecode.com/svn/trunk/pyguide.html#Comments
 [rtd]: https://falcon.readthedocs.io
