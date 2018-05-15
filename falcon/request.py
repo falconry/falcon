@@ -1121,7 +1121,7 @@ class Request(object):
             store (dict): A ``dict``-like object in which to place
                 the value of the param, but only if the param is present.
             default (any): If the param is not found returns the
-                given value instead of None
+                given value instead of ``None``
 
         Returns:
             str: The value of the param as a string, or ``None`` if param is
@@ -1154,8 +1154,8 @@ class Request(object):
 
         raise errors.HTTPMissingParam(name)
 
-    def get_param_as_int(self, name,
-                         required=False, min=None, max=None, store=None):
+    def get_param_as_int(self, name, required=False, min=None,
+                         max=None, store=None, default=None):
         """Return the value of a query string parameter as an int.
 
         Args:
@@ -1175,6 +1175,8 @@ class Request(object):
             store (dict): A ``dict``-like object in which to place
                 the value of the param, but only if the param is found
                 (default ``None``).
+            default (any): If the param is not found returns the
+                given value instead of ``None``
 
         Returns:
             int: The value of the param if it is found and can be converted to
@@ -1219,12 +1221,12 @@ class Request(object):
             return val
 
         if not required:
-            return None
+            return default
 
         raise errors.HTTPMissingParam(name)
 
-    def get_param_as_float(self, name,
-                           required=False, min=None, max=None, store=None):
+    def get_param_as_float(self, name, required=False, min=None,
+                           max=None, store=None, default=None):
         """Return the value of a query string parameter as an float.
 
         Args:
@@ -1244,6 +1246,8 @@ class Request(object):
             store (dict): A ``dict``-like object in which to place
                 the value of the param, but only if the param is found
                 (default ``None``).
+            default (any): If the param is not found returns the
+                given value instead of ``None``
 
         Returns:
             float: The value of the param if it is found and can be converted to
@@ -1288,11 +1292,11 @@ class Request(object):
             return val
 
         if not required:
-            return None
+            return default
 
         raise errors.HTTPMissingParam(name)
 
-    def get_param_as_uuid(self, name, required=False, store=None):
+    def get_param_as_uuid(self, name, required=False, store=None, default=None):
         """Return the value of a query string parameter as an UUID.
 
         The value to convert must conform to the standard UUID string
@@ -1319,11 +1323,13 @@ class Request(object):
             store (dict): A ``dict``-like object in which to place
                 the value of the param, but only if the param is found
                 (default ``None``).
+            default (any): If the param is not found returns the
+                given value instead of ``None``
 
         Returns:
             UUID: The value of the param if it is found and can be converted to
-            a ``UUID``. If the param is not found, returns ``None``, unless
-            `required` is ``True``.
+            a ``UUID``. If the param is not found, returns
+            ``default`` (default ``None``), unless `required` is ``True``.
 
         Raises
             HTTPBadRequest: The param was not found in the request, even though
@@ -1352,12 +1358,12 @@ class Request(object):
             return val
 
         if not required:
-            return None
+            return default
 
         raise errors.HTTPMissingParam(name)
 
     def get_param_as_bool(self, name, required=False, store=None,
-                          blank_as_true=False):
+                          blank_as_true=False, default=None):
         """Return the value of a query string parameter as a boolean
 
         The following boolean strings are supported::
@@ -1382,6 +1388,8 @@ class Request(object):
                 must set the `keep_blank_qs_values` request option to ``True``.
                 Request options are set globally for each instance of
                 ``falcon.API`` through the `req_options` attribute.
+            default (any): If the param is not found returns the
+                given value instead of ``None``
 
         Returns:
             bool: The value of the param if it is found and can be converted
@@ -1419,12 +1427,12 @@ class Request(object):
             return val
 
         if not required:
-            return None
+            return default
 
         raise errors.HTTPMissingParam(name)
 
-    def get_param_as_list(self, name,
-                          transform=None, required=False, store=None):
+    def get_param_as_list(self, name, transform=None,
+                          required=False, store=None, default=None):
         """Return the value of a query string parameter as a list.
 
         List items must be comma-separated or must be provided
@@ -1446,6 +1454,8 @@ class Request(object):
             store (dict): A ``dict``-like object in which to place
                 the value of the param, but only if the param is found (default
                 ``None``).
+            default (any): If the param is not found returns the
+                given value instead of ``None``
 
         Returns:
             list: The value of the param if it is found. Otherwise, returns
@@ -1492,12 +1502,12 @@ class Request(object):
             return items
 
         if not required:
-            return None
+            return default
 
         raise errors.HTTPMissingParam(name)
 
     def get_param_as_datetime(self, name, format_string='%Y-%m-%dT%H:%M:%SZ',
-                              required=False, store=None):
+                              required=False, store=None, default=None):
         """Return the value of a query string parameter as a datetime.
 
         Args:
@@ -1513,6 +1523,8 @@ class Request(object):
             store (dict): A ``dict``-like object in which to place
                 the value of the param, but only if the param is found (default
                 ``None``).
+            default (any): If the param is not found returns the
+                given value instead of ``None``
         Returns:
             datetime.datetime: The value of the param if it is found and can be
             converted to a ``datetime`` according to the supplied format
@@ -1527,7 +1539,7 @@ class Request(object):
         param_value = self.get_param(name, required=required)
 
         if param_value is None:
-            return None
+            return default
 
         try:
             date_time = strptime(param_value, format_string)
@@ -1541,7 +1553,7 @@ class Request(object):
         return date_time
 
     def get_param_as_date(self, name, format_string='%Y-%m-%d',
-                          required=False, store=None):
+                          required=False, store=None, default=None):
         """Return the value of a query string parameter as a date.
 
         Args:
@@ -1557,6 +1569,8 @@ class Request(object):
             store (dict): A ``dict``-like object in which to place
                 the value of the param, but only if the param is found (default
                 ``None``).
+            default (any): If the param is not found returns the
+                given value instead of ``None``
         Returns:
             datetime.date: The value of the param if it is found and can be
             converted to a ``date`` according to the supplied format
@@ -1572,14 +1586,14 @@ class Request(object):
         if date_time:
             date = date_time.date()
         else:
-            return None
+            return default
 
         if store is not None:
             store[name] = date
 
         return date
 
-    def get_param_as_json(self, name, required=False, store=None):
+    def get_param_as_json(self, name, required=False, store=None, default=None):
         """Return the decoded JSON value of a query string parameter.
 
         Given a JSON value, decode it to an appropriate Python type,
@@ -1595,6 +1609,8 @@ class Request(object):
             store (dict): A ``dict``-like object in which to place the
                 value of the param, but only if the param is found
                 (default ``None``).
+            default (any): If the param is not found returns the
+                given value instead of ``None``
 
         Returns:
             dict: The value of the param if it is found. Otherwise, returns
@@ -1608,7 +1624,7 @@ class Request(object):
         param_value = self.get_param(name, required=required)
 
         if param_value is None:
-            return None
+            return default
 
         try:
             val = json.loads(param_value)

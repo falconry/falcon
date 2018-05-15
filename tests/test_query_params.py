@@ -86,6 +86,22 @@ class TestQueryParams(object):
         assert req.get_param_as_bool('limit') is None
         assert req.get_param_as_list('limit') is None
 
+    def test_default(self, simulate_request, client, resource):
+        default = 'foobar'
+        query_string = ''
+        client.app.add_route('/', resource)  # TODO: DRY up this setup logic
+        simulate_request(client=client, path='/', query_string=query_string)
+
+        req = resource.captured_req
+        store = {}
+        assert req.get_param('marker', default=default) == 'foobar'
+        assert req.get_param('limit', store, default=default) == 'foobar'
+        assert 'limit' not in store
+        assert req.get_param_as_int('limit', default=default) == 'foobar'
+        assert req.get_param_as_float('limit', default=default) == 'foobar'
+        assert req.get_param_as_bool('limit', default=default) == 'foobar'
+        assert req.get_param_as_list('limit', default=default) == 'foobar'
+
     def test_blank(self, simulate_request, client, resource):
         query_string = 'marker='
         client.app.add_route('/', resource)
