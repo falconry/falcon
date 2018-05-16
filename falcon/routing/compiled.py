@@ -21,6 +21,7 @@ import textwrap
 from six.moves import UserDict
 
 from falcon.routing import converters
+from falcon.routing.util import map_http_methods, set_default_responders
 
 
 _TAB_STR = ' ' * 4
@@ -89,7 +90,23 @@ class CompiledRouter(object):
     def finder_src(self):
         return self._finder_src
 
-    def add_route(self, uri_template, method_map, resource, **kwargs):
+    def map_http_methods(self, resource, **kwargs):
+        """Map HTTP methods (e.g., GET, POST) to methods of a resource object.
+
+        You maybe override it to implement yourself method mapping.
+
+        Args:
+            resource (instance): Object which represents a REST resource.
+                The default maps the HTTP method ``GET`` to ``on_get()``,
+                ``POST`` to ``on_post()``, etc. If any HTTP methods are not
+                supported by your resource, simply don't define the
+                corresponding request handlers, and Falcon will do the right
+                thing.
+        """
+
+        return map_http_methods(resource, suffix=kwargs.get("suffix", None))
+
+    def add_route(self, uri_template, resource, suffix=None, **kwargs):
         """Adds a route between a URI path template and a resource.
 
         Args:
@@ -98,7 +115,22 @@ class CompiledRouter(object):
                 'POST') to methods of a resource object.
             resource (object): The resource instance to associate with
                 the URI template.
+
+        Keyword Args:
+            suffix (str): Optional responder name suffix for this route. If
+                a suffix is provided, Falcon will map GET requests to
+                ``on_get_{suffix}()``, POST requests to ``on_post_{suffix}()``,
+                etc. In this way, multiple closely-related routes can be
+                mapped to the same resource. For example, a single resource
+                class can use suffixed responders to distinguish requests
+                for a single item vs. a collection of those same items.
+                Another class might use a suffixed responder to handle
+                a shortlink route in addition to the regular route for the
+                resource.
         """
+
+        method_map = self.map_http_methods(resource, suffix=suffix, **kwargs)
+        set_default_responders(method_map)
 
         # NOTE(kgriffs): Fields may have whitespace in them, so sub
         # those before checking the rest of the URI template.

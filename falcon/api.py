@@ -301,27 +301,7 @@ class API(object):
     def router_options(self):
         return self._router.options
 
-    def map_http_methods(self, resource, **kwargs):
-        """Map HTTP methods (e.g., GET, POST) to methods of a resource object.
-
-        You maybe override it to implement yourself method mapping.
-
-        Args:
-            resource (instance): Object which represents a REST resource.
-                The default maps the HTTP method ``GET`` to ``on_get()``,
-                ``POST`` to ``on_post()``, etc. If any HTTP methods are not
-                supported by your resource, simply don't define the
-                corresponding request handlers, and Falcon will do the right
-                thing.
-
-            kwargs (dict): Any additional keyword args
-                coming from ``add_route()``.
-        """
-
-        suffix = kwargs.get('suffix', None)
-        return routing.map_http_methods(resource, suffix=suffix)
-
-    def add_route(self, uri_template, resource, suffix=None, **kwargs):
+    def add_route(self, uri_template, resource, **kwargs):
         """Associate a templatized URI path with a resource.
 
         Falcon routes incoming requests to resources based on a set of
@@ -349,18 +329,6 @@ class API(object):
                 corresponding request handlers, and Falcon will do the right
                 thing.
 
-        Keyword Args:
-            suffix (str): Optional responder name suffix for this route. If
-                a suffix is provided, Falcon will map GET requests to
-                ``on_get_{suffix}()``, POST requests to ``on_post_{suffix}()``,
-                etc. In this way, multiple closely-related routes can be
-                mapped to the same resource. For example, a single resource
-                class can use suffixed responders to distinguish requests
-                for a single item vs. a collection of those same items.
-                Another class might use a suffixed responder to handle
-                a shortlink route in addition to the regular route for the
-                resource.
-
         Note:
             Any additional keyword arguments not defined above are passed
             through to the underlying router's ``add_route()`` method. The
@@ -382,9 +350,7 @@ class API(object):
         if '//' in uri_template:
             raise ValueError("uri_template may not contain '//'")
 
-        method_map = self.map_http_methods(resource, suffix=suffix, **kwargs)
-        routing.set_default_responders(method_map)
-        self._router.add_route(uri_template, method_map, resource, **kwargs)
+        self._router.add_route(uri_template, resource, **kwargs)
 
     def add_static_route(self, prefix, directory, downloadable=False, fallback_filename=None):
         """Add a route to a directory of static files.
