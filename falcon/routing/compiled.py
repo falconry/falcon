@@ -104,7 +104,7 @@ class CompiledRouter(object):
                 thing.
         """
 
-        return map_http_methods(resource, suffix=kwargs.get("suffix", None))
+        return map_http_methods(resource, suffix=kwargs.get('suffix', None))
 
     def add_route(self, uri_template, resource, suffix=None, **kwargs):
         """Adds a route between a URI path template and a resource.
