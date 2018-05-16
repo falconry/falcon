@@ -25,7 +25,8 @@ def router():
     router.add_route(
         '/repos/{org}/{repo}/commits', ResourceWithId(4))
     router.add_route(
-        u'/repos/{org}/{repo}/compare/{usr0}:{branch0}...{usr1}:{branch1}', ResourceWithId(5))
+        u'/repos/{org}/{repo}/compare/{usr0}:{branch0}...{usr1}:{branch1}',
+        ResourceWithId(5))
 
     router.add_route(
         '/teams/{id}', ResourceWithId(6))
@@ -42,7 +43,8 @@ def router():
     router.add_route(
         '/emojis', ResourceWithId(9))
     router.add_route(
-        '/repos/{org}/{repo}/compare/{usr0}:{branch0}...{usr1}:{branch1}/full', ResourceWithId(10))
+        '/repos/{org}/{repo}/compare/{usr0}:{branch0}...{usr1}:{branch1}/full',
+        ResourceWithId(10))
     router.add_route(
         '/repos/{org}/{repo}/compare/all', ResourceWithId(11))
 
@@ -68,7 +70,8 @@ def router():
     router.add_route('/images/{id}.gif', ResourceWithId(27))
 
     router.add_route(
-        '/repos/{org}/{repo}/compare/{usr0}:{branch0}...{usr1}:{branch1}/part', ResourceWithId(15))
+        '/repos/{org}/{repo}/compare/{usr0}:{branch0}...{usr1}:{branch1}/part',
+        ResourceWithId(15))
     router.add_route(
         '/repos/{org}/{repo}/compare/{usr0}:{branch0}', ResourceWithId(16))
     router.add_route(
@@ -97,7 +100,8 @@ def router():
         '/cvt/teams/default/members/{id:int}-{tenure:int}', ResourceWithId(32))
 
     router.add_route(
-        '/cvt/repos/{org}/{repo}/compare/{usr0}:{branch0:int}...{usr1}:{branch1:int}/part', ResourceWithId(33))
+        '/cvt/repos/{org}/{repo}/compare/{usr0}:{branch0:int}...{usr1}:{branch1:int}/part',
+        ResourceWithId(33))
     router.add_route(
         '/cvt/repos/{org}/{repo}/compare/{usr0}:{branch0:int}', ResourceWithId(34))
     router.add_route(
