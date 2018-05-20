@@ -157,6 +157,25 @@ class BoundedStream(io.IOBase):
 
         raise IOError('Stream is not writeable')
 
+    def exhaust(self, chunk_size=64 * 1024):
+        """Exhaust the stream.
+
+        This consumes all the data left until the limit is reached.
+
+        Args:
+            chunk_size (int): The size for a chunk (default: 64 KB).
+                It will read the chunk until the stream is exhausted.
+        """
+        while True:
+            chunk = self.read(chunk_size)
+            if not chunk:
+                break
+
+    @property
+    def is_exhausted(self):
+        """If the stream is exhausted this attribute is ``True``."""
+        return self._bytes_remaining <= 0
+
 
 # NOTE(kgriffs): Alias for backwards-compat
 Body = BoundedStream
