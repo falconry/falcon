@@ -84,7 +84,6 @@ class StaticRoute(object):
             raise falcon.HTTPNotFound()
 
         normalized = os.path.normpath(without_prefix)
-
         if normalized.startswith('../') or normalized.startswith('/'):
             raise falcon.HTTPNotFound()
 
@@ -96,6 +95,8 @@ class StaticRoute(object):
         if '..' in file_path or not file_path.startswith(self._directory):
             raise falcon.HTTPNotFound()  # pragma: nocover
 
+        serve_fallback_file = False
+
         try:
             resp.stream = io.open(file_path, 'rb')
         except IOError:
@@ -103,9 +104,12 @@ class StaticRoute(object):
                 raise falcon.HTTPNotFound()
             try:
                 resp.stream = io.open(self._fallback_filename, 'rb')
+                serve_fallback_file = True
             except IOError:
                 raise falcon.HTTPNotFound()
 
+        if (serve_fallback_file):
+            file_path = self._fallback_filename
         suffix = os.path.splitext(file_path)[1]
         resp.content_type = resp.options.static_media_types.get(
             suffix,
