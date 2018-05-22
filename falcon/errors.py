@@ -796,6 +796,45 @@ class HTTPRangeNotSatisfiable(NoRepresentation, HTTPError):
                                                       headers=headers)
 
 
+class HTTPAuthenticationTimeout(HTTPError):
+    """419 Authentication Timeout.
+
+    Keyword Args:
+        title (str): Error title (default '419 Authentication Timeout').
+        description (str): Human-friendly description of the error, along with
+            a helpful suggestion or two.
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (default 'API documentation
+            for this error').
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
+    """
+
+    def __init__(self, title=None, description=None, **kwargs):
+        super(HTTPAuthenticationTimeout, self).__init__(status.HTTP_419, title,
+                                                        description, **kwargs)
+
+
 class HTTPUnprocessableEntity(HTTPError):
     """422 Unprocessable Entity.
 
