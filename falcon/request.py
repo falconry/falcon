@@ -1367,7 +1367,7 @@ class Request(object):
         raise errors.HTTPMissingParam(name)
 
     def get_param_as_bool(self, name, required=False, store=None,
-                          blank_as_true=False, default=None):
+                          blank_as_true=True, default=None):
         """Return the value of a query string parameter as a boolean
 
         The following boolean strings are supported::
@@ -1387,7 +1387,7 @@ class Request(object):
                 the value of the param, but only if the param is found (default
                 ``None``).
             blank_as_true (bool): If ``True``, an empty string value will be
-                treated as ``True`` (default ``False``). Normally empty strings
+                treated as ``True`` (default ``True``). Normally empty strings
                 are ignored; if you would like to recognize such parameters, you
                 must set the `keep_blank_qs_values` request option to ``True``.
                 Request options are set globally for each instance of
@@ -1813,7 +1813,7 @@ class RequestOptions(object):
     )
 
     def __init__(self):
-        self.keep_blank_qs_values = False
+        self.keep_blank_qs_values = True
         self.auto_parse_form_urlencoded = False
         self.auto_parse_qs_csv = True
         self.strip_url_path_trailing_slash = False
