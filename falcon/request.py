@@ -1769,9 +1769,10 @@ class RequestOptions(object):
                 encoded according to the standard W3C algorithm (see
                 also http://goo.gl/6rlcux).
 
-        auto_parse_qs_csv: Set to ``False`` to treat commas in a query
-            string value as literal characters, rather than as a comma-
-            separated list (default ``True``). When this option is
+        auto_parse_qs_csv: Set to ``True`` to split on any
+            non-percent-encoded commas.
+            as a comma separated list, rather than a string value as
+            literal characters (default ``False``). When this option is
             enabled, the value will be split on any non-percent-encoded
             commas. Disable this option when encoding lists as multiple
             occurrences of the same parameter, and when values may be
@@ -1811,7 +1812,7 @@ class RequestOptions(object):
     def __init__(self):
         self.keep_blank_qs_values = False
         self.auto_parse_form_urlencoded = False
-        self.auto_parse_qs_csv = True
+        self.auto_parse_qs_csv = False
         self.strip_url_path_trailing_slash = False
         self.default_media_type = DEFAULT_MEDIA_TYPE
         self.media_handlers = Handlers()

@@ -10,7 +10,7 @@ class TestRequestOptions(object):
 
         assert not options.keep_blank_qs_values
         assert not options.auto_parse_form_urlencoded
-        assert options.auto_parse_qs_csv
+        assert not options.auto_parse_qs_csv
         assert not options.strip_url_path_trailing_slash
 
     @pytest.mark.parametrize('option_name', [
