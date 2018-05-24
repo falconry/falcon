@@ -447,8 +447,8 @@ class Request(object):
             if self.query_string:
                 self._params = parse_query_string(
                     self.query_string,
-                    keep_blank_qs_values=self.options.keep_blank_qs_values,
-                    parse_qs_csv=self.options.auto_parse_qs_csv,
+                    keep_blank=self.options.keep_blank_qs_values,
+                    csv=self.options.auto_parse_qs_csv,
                 )
 
             else:
@@ -1724,8 +1724,8 @@ class Request(object):
         if body:
             extra_params = parse_query_string(
                 body,
-                keep_blank_qs_values=self.options.keep_blank_qs_values,
-                parse_qs_csv=self.options.auto_parse_qs_csv,
+                keep_blank=self.options.keep_blank_qs_values,
+                csv=self.options.auto_parse_qs_csv,
             )
 
             self._params.update(extra_params)
