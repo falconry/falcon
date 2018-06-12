@@ -413,7 +413,7 @@ class Response(object):
         # thus removing it from future request objects.
         self._cookies[name]['expires'] = -1
 
-    def get_header(self, name):
+    def get_header(self, name, default=None):
         """Retrieve the raw string value for the given header.
 
         Args:
@@ -422,9 +422,9 @@ class Response(object):
                 may be used on platforms that use wide characters.
 
         Returns:
-            str: The header's value if set, otherwise ``None``.
+            str: The header's value if set, otherwise `default`.
         """
-        return self._headers.get(name.lower(), None)
+        return self._headers.get(name.lower(), default)
 
     def set_header(self, name, value):
         """Set a header for this response to a given value.
