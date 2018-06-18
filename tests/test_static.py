@@ -281,6 +281,9 @@ def test_e2e_fallback_filename(client, monkeypatch, strip_slash, path, fallback,
             assert response.status == falcon.HTTP_200
             assert response.text == directory + expected
 
+            if path.endswith('.html'):
+                assert response.headers['Content-Type'] == 'text/html'
+
     test('/static', '/opt/somesite/static/', static_exp)
     test('/assets', '/opt/somesite/assets/', assert_axp)
 
