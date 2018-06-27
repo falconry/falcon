@@ -313,6 +313,10 @@ class API(object):
         default responder that simply raises an instance of
         :class:`~.HTTPNotFound`.
 
+        This method delegates to the configured router's ``add_route()``
+        method. To override the default behavior, pass a custom router
+        object to the :class:`~.API` initializer.
+
         (See also: :ref:`Routing <routing>`)
 
         Args:
@@ -328,6 +332,18 @@ class API(object):
                 supported by your resource, simply don't define the
                 corresponding request handlers, and Falcon will do the right
                 thing.
+
+        Keyword Args:
+            suffix (str): Optional responder name suffix for this route. If
+                a suffix is provided, Falcon will map GET requests to
+                ``on_get_{suffix}()``, POST requests to ``on_post_{suffix}()``,
+                etc. In this way, multiple closely-related routes can be
+                mapped to the same resource. For example, a single resource
+                class can use suffixed responders to distinguish requests
+                for a single item vs. a collection of those same items.
+                Another class might use a suffixed responder to handle
+                a shortlink route in addition to the regular route for the
+                resource.
 
         Note:
             Any additional keyword arguments not defined above are passed

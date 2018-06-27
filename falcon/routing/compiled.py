@@ -93,7 +93,8 @@ class CompiledRouter(object):
     def map_http_methods(self, resource, **kwargs):
         """Map HTTP methods (e.g., GET, POST) to methods of a resource object.
 
-        You maybe override it to implement yourself method mapping.
+        This method is called from :meth:`~.add_route` and may be overridden to
+        provide a custom mapping strategy.
 
         Args:
             resource (instance): Object which represents a REST resource.
@@ -102,17 +103,29 @@ class CompiledRouter(object):
                 supported by your resource, simply don't define the
                 corresponding request handlers, and Falcon will do the right
                 thing.
+
+        Keyword Args:
+            suffix (str): Optional responder name suffix for this route. If
+                a suffix is provided, Falcon will map GET requests to
+                ``on_get_{suffix}()``, POST requests to ``on_post_{suffix}()``,
+                etc. In this way, multiple closely-related routes can be
+                mapped to the same resource. For example, a single resource
+                class can use suffixed responders to distinguish requests
+                for a single item vs. a collection of those same items.
+                Another class might use a suffixed responder to handle
+                a shortlink route in addition to the regular route for the
+                resource.
         """
 
         return map_http_methods(resource, suffix=kwargs.get('suffix', None))
 
-    def add_route(self, uri_template, resource, suffix=None, **kwargs):
+    def add_route(self, uri_template, resource, **kwargs):
         """Adds a route between a URI path template and a resource.
+
+        This method may be overridden to customize how a route is added.
 
         Args:
             uri_template (str): A URI template to use for the route
-            method_map (dict): A mapping of HTTP methods (e.g., 'GET',
-                'POST') to methods of a resource object.
             resource (object): The resource instance to associate with
                 the URI template.
 
@@ -129,7 +142,7 @@ class CompiledRouter(object):
                 resource.
         """
 
-        method_map = self.map_http_methods(resource, suffix=suffix, **kwargs)
+        method_map = self.map_http_methods(resource, **kwargs)
         set_default_responders(method_map)
 
         # NOTE(kgriffs): Fields may have whitespace in them, so sub
