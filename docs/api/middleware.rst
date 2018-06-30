@@ -89,7 +89,7 @@ passed as ``[mob1, mob2, mob3]``, the order of execution is as follows::
                 mob1.process_resource
                     mob2.process_resource
                         mob3.process_resource
-                <route to responder method>
+                <route to resource responder method>
             mob3.process_response
         mob2.process_response
     mob1.process_response
@@ -126,12 +126,16 @@ error, the framework would execute the stack as follows::
 
     mob1.process_request
         mob2.process_request
-            <skip mob1/mob2 process_resource, mob3, and routing>
+            <skip mob1/mob2 process_resource>
+            <skip mob3.process_request>
+            <skip mob3.process_resource>
+            <skip route to resource responder method>
+            mob3.process_response
         mob2.process_response
     mob1.process_response
 
-By default, all *process_response* methods will be executed, even
-when a *process_request*, *process_resource*, or resource
+As illustrated above, by default, all *process_response* methods will be
+executed, even when a *process_request*, *process_resource*, or resource
 responder raises an error. This behavior is controlled by the
 :ref:`API class's <api>` `independent_middleware` keyword argument.
 
