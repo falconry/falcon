@@ -304,7 +304,7 @@ class API(object):
     def router_options(self):
         return self._router.options
 
-    def add_route(self, uri_template, resource, suffix=None, **kwargs):
+    def add_route(self, uri_template, resource, **kwargs):
         """Associate a templatized URI path with a resource.
 
         Falcon routes incoming requests to resources based on a set of
@@ -315,6 +315,10 @@ class API(object):
         If no route matches the request, control then passes to a
         default responder that simply raises an instance of
         :class:`~.HTTPNotFound`.
+
+        This method delegates to the configured router's ``add_route()``
+        method. To override the default behavior, pass a custom router
+        object to the :class:`~.API` initializer.
 
         (See also: :ref:`Routing <routing>`)
 
@@ -365,9 +369,7 @@ class API(object):
         if '//' in uri_template:
             raise ValueError("uri_template may not contain '//'")
 
-        method_map = routing.map_http_methods(resource, suffix=suffix)
-        routing.set_default_responders(method_map)
-        self._router.add_route(uri_template, method_map, resource, **kwargs)
+        self._router.add_route(uri_template, resource, **kwargs)
 
     def add_static_route(self, prefix, directory, downloadable=False, fallback_filename=None):
         """Add a route to a directory of static files.

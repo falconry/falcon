@@ -17,99 +17,95 @@ def router():
     router = DefaultRouter()
 
     router.add_route(
-        '/repos', {}, ResourceWithId(1))
+        '/repos', ResourceWithId(1))
     router.add_route(
-        '/repos/{org}', {}, ResourceWithId(2))
+        '/repos/{org}', ResourceWithId(2))
     router.add_route(
-        '/repos/{org}/{repo}', {}, ResourceWithId(3))
+        '/repos/{org}/{repo}', ResourceWithId(3))
     router.add_route(
-        '/repos/{org}/{repo}/commits', {}, ResourceWithId(4))
+        '/repos/{org}/{repo}/commits', ResourceWithId(4))
     router.add_route(
         u'/repos/{org}/{repo}/compare/{usr0}:{branch0}...{usr1}:{branch1}',
-        {}, ResourceWithId(5))
+        ResourceWithId(5))
 
     router.add_route(
-        '/teams/{id}', {}, ResourceWithId(6))
+        '/teams/{id}', ResourceWithId(6))
     router.add_route(
-        '/teams/{id}/members', {}, ResourceWithId(7))
+        '/teams/{id}/members', ResourceWithId(7))
 
     router.add_route(
-        '/teams/default', {}, ResourceWithId(19))
+        '/teams/default', ResourceWithId(19))
     router.add_route(
-        '/teams/default/members/thing', {}, ResourceWithId(19))
+        '/teams/default/members/thing', ResourceWithId(19))
 
     router.add_route(
-        '/user/memberships', {}, ResourceWithId(8))
+        '/user/memberships', ResourceWithId(8))
     router.add_route(
-        '/emojis', {}, ResourceWithId(9))
+        '/emojis', ResourceWithId(9))
     router.add_route(
         '/repos/{org}/{repo}/compare/{usr0}:{branch0}...{usr1}:{branch1}/full',
-        {}, ResourceWithId(10))
+        ResourceWithId(10))
     router.add_route(
-        '/repos/{org}/{repo}/compare/all', {}, ResourceWithId(11))
+        '/repos/{org}/{repo}/compare/all', ResourceWithId(11))
 
     # NOTE(kgriffs): The ordering of these calls is significant; we
     # need to test that the {id} field does not match the other routes,
     # regardless of the order they are added.
     router.add_route(
-        '/emojis/signs/0', {}, ResourceWithId(12))
+        '/emojis/signs/0', ResourceWithId(12))
     router.add_route(
-        '/emojis/signs/{id}', {}, ResourceWithId(13))
+        '/emojis/signs/{id}', ResourceWithId(13))
     router.add_route(
-        '/emojis/signs/42', {}, ResourceWithId(14))
+        '/emojis/signs/42', ResourceWithId(14))
     router.add_route(
-        '/emojis/signs/42/small.jpg', {}, ResourceWithId(23))
+        '/emojis/signs/42/small.jpg', ResourceWithId(23))
     router.add_route(
-        '/emojis/signs/78/small.png', {}, ResourceWithId(24))
+        '/emojis/signs/78/small.png', ResourceWithId(24))
 
     # Test some more special chars
     router.add_route(
-        '/emojis/signs/78/small(png)', {}, ResourceWithId(25))
+        '/emojis/signs/78/small(png)', ResourceWithId(25))
     router.add_route(
-        '/emojis/signs/78/small_png', {}, ResourceWithId(26))
-    router.add_route('/images/{id}.gif', {}, ResourceWithId(27))
+        '/emojis/signs/78/small_png', ResourceWithId(26))
+    router.add_route('/images/{id}.gif', ResourceWithId(27))
 
     router.add_route(
         '/repos/{org}/{repo}/compare/{usr0}:{branch0}...{usr1}:{branch1}/part',
-        {}, ResourceWithId(15))
+        ResourceWithId(15))
     router.add_route(
-        '/repos/{org}/{repo}/compare/{usr0}:{branch0}',
-        {}, ResourceWithId(16))
+        '/repos/{org}/{repo}/compare/{usr0}:{branch0}', ResourceWithId(16))
     router.add_route(
-        '/repos/{org}/{repo}/compare/{usr0}:{branch0}/full',
-        {}, ResourceWithId(17))
+        '/repos/{org}/{repo}/compare/{usr0}:{branch0}/full', ResourceWithId(17))
 
     router.add_route(
-        '/gists/{id}/{representation}', {}, ResourceWithId(21))
+        '/gists/{id}/{representation}', ResourceWithId(21))
     router.add_route(
-        '/gists/{id}/raw', {}, ResourceWithId(18))
+        '/gists/{id}/raw', ResourceWithId(18))
     router.add_route(
-        '/gists/first', {}, ResourceWithId(20))
+        '/gists/first', ResourceWithId(20))
 
-    router.add_route('/item/{q}', {}, ResourceWithId(28))
+    router.add_route('/item/{q}', ResourceWithId(28))
 
     # ----------------------------------------------------------------
     # Routes with field converters
     # ----------------------------------------------------------------
 
     router.add_route(
-        '/cvt/teams/{id:int(min=7)}', {}, ResourceWithId(29))
+        '/cvt/teams/{id:int(min=7)}', ResourceWithId(29))
     router.add_route(
-        '/cvt/teams/{id:int(min=7)}/members', {}, ResourceWithId(30))
+        '/cvt/teams/{id:int(min=7)}/members', ResourceWithId(30))
     router.add_route(
-        '/cvt/teams/default', {}, ResourceWithId(31))
+        '/cvt/teams/default', ResourceWithId(31))
     router.add_route(
-        '/cvt/teams/default/members/{id:int}-{tenure:int}', {}, ResourceWithId(32))
+        '/cvt/teams/default/members/{id:int}-{tenure:int}', ResourceWithId(32))
 
     router.add_route(
         '/cvt/repos/{org}/{repo}/compare/{usr0}:{branch0:int}...{usr1}:{branch1:int}/part',
-        {}, ResourceWithId(33))
+        ResourceWithId(33))
     router.add_route(
-        '/cvt/repos/{org}/{repo}/compare/{usr0}:{branch0:int}',
-        {}, ResourceWithId(34))
+        '/cvt/repos/{org}/{repo}/compare/{usr0}:{branch0:int}', ResourceWithId(34))
     router.add_route(
-        '/cvt/repos/{org}/{repo}/compare/{usr0}:{branch0:int}/full',
-        {}, ResourceWithId(35))
+        '/cvt/repos/{org}/{repo}/compare/{usr0}:{branch0:int}/full', ResourceWithId(35))
 
     return router
 
@@ -145,12 +141,12 @@ class SpamConverter(object):
 
 def test_user_regression_versioned_url():
     router = DefaultRouter()
-    router.add_route('/{version}/messages', {}, ResourceWithId(2))
+    router.add_route('/{version}/messages', ResourceWithId(2))
 
     resource, __, __, __ = router.find('/v2/messages')
     assert resource.resource_id == 2
 
-    router.add_route('/v2', {}, ResourceWithId(1))
+    router.add_route('/v2', ResourceWithId(1))
 
     resource, __, __, __ = router.find('/v2')
     assert resource.resource_id == 1
@@ -169,12 +165,10 @@ def test_user_regression_recipes():
     router = DefaultRouter()
     router.add_route(
         '/recipes/{activity}/{type_id}',
-        {},
         ResourceWithId(1)
     )
     router.add_route(
         '/recipes/baking',
-        {},
         ResourceWithId(2)
     )
 
@@ -235,7 +229,7 @@ def test_user_regression_recipes():
 def test_user_regression_special_chars(uri_template, path, expected_params):
     router = DefaultRouter()
 
-    router.add_route(uri_template, {}, ResourceWithId(1))
+    router.add_route(uri_template, ResourceWithId(1))
 
     route = router.find(path)
     assert route is not None
@@ -263,7 +257,7 @@ def test_not_str(uri_template):
 
 def test_root_path():
     router = DefaultRouter()
-    router.add_route('/', {}, ResourceWithId(42))
+    router.add_route('/', ResourceWithId(42))
 
     resource, __, __, __ = router.find('/')
     assert resource.resource_id == 42
@@ -292,7 +286,7 @@ def test_root_path():
 def test_duplicate_field_names(uri_template):
     router = DefaultRouter()
     with pytest.raises(ValueError):
-        router.add_route(uri_template, {}, ResourceWithId(1))
+        router.add_route(uri_template, ResourceWithId(1))
 
 
 @pytest.mark.parametrize('uri_template,path', [
@@ -304,7 +298,7 @@ def test_duplicate_field_names(uri_template):
 def test_match_entire_path(uri_template, path):
     router = DefaultRouter()
 
-    router.add_route(uri_template, {}, ResourceWithId(1))
+    router.add_route(uri_template, ResourceWithId(1))
 
     route = router.find(path)
     assert route is None
@@ -318,7 +312,7 @@ def test_match_entire_path(uri_template, path):
 ])
 def test_conflict(router, uri_template):
     with pytest.raises(ValueError):
-        router.add_route(uri_template, {}, ResourceWithId(-1))
+        router.add_route(uri_template, ResourceWithId(-1))
 
 
 @pytest.mark.parametrize('uri_template', [
@@ -327,7 +321,7 @@ def test_conflict(router, uri_template):
     '/repos/{org}/{repo}/compare/{complex}:{vs}...{complex2}/full',
 ])
 def test_non_conflict(router, uri_template):
-    router.add_route(uri_template, {}, ResourceWithId(-1))
+    router.add_route(uri_template, ResourceWithId(-1))
 
 
 @pytest.mark.parametrize('uri_template', [
@@ -365,7 +359,7 @@ def test_non_conflict(router, uri_template):
 ])
 def test_invalid_field_name(router, uri_template):
     with pytest.raises(ValueError):
-        router.add_route(uri_template, {}, ResourceWithId(-1))
+        router.add_route(uri_template, ResourceWithId(-1))
 
 
 def test_print_src(router):
@@ -379,7 +373,7 @@ def test_print_src(router):
 
 
 def test_override(router):
-    router.add_route('/emojis/signs/0', {}, ResourceWithId(-1))
+    router.add_route('/emojis/signs/0', ResourceWithId(-1))
 
     resource, __, __, __ = router.find('/emojis/signs/0')
     assert resource.resource_id == -1
@@ -467,7 +461,7 @@ def test_converters_with_invalid_options(router, uri_template):
     # when calling add_route(). Additional checks can be found
     # in test_uri_converters.py
     with pytest.raises(ValueError):
-        router.add_route(uri_template, {}, ResourceWithId(1))
+        router.add_route(uri_template, ResourceWithId(1))
 
 
 @pytest.mark.parametrize('uri_template', [
@@ -476,7 +470,7 @@ def test_converters_with_invalid_options(router, uri_template):
 ])
 def test_converters_malformed_specification(router, uri_template):
     with pytest.raises(ValueError):
-        router.add_route(uri_template, {}, ResourceWithId(1))
+        router.add_route(uri_template, ResourceWithId(1))
 
 
 def test_variable(router):
@@ -613,7 +607,7 @@ def test_complex_alt(router, url_postfix, resource_id, expected_template):
 def test_options_converters_set(router):
     router.options.converters['spam'] = SpamConverter
 
-    router.add_route('/{food:spam(3, eggs=True)}', {}, ResourceWithId(1))
+    router.add_route('/{food:spam(3, eggs=True)}', ResourceWithId(1))
     resource, __, params, __ = router.find('/spam')
 
     assert params == {'food': 'spam&eggs, spam&eggs, spam&eggs'}
@@ -630,7 +624,7 @@ def test_options_converters_update(router, converter_name):
     })
 
     template = '/{food:' + converter_name + '(3, eggs=True)}'
-    router.add_route(template, {}, ResourceWithId(1))
+    router.add_route(template, ResourceWithId(1))
     resource, __, params, __ = router.find('/spam')
 
     assert params == {'food': 'spam&eggs, spam&eggs, spam&eggs'}
