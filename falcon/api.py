@@ -113,9 +113,9 @@ class API(object):
             not request middleware raises an exception (default
             ``True``). When this option is set to ``False``, a middleware
             component's ``process_response()`` method will NOT be called
-            when that same component's ``process_request()`` (or that of 
-            a component higher up in the stack) raises an exception. 
-            
+            when that same component's ``process_request()`` (or that of
+            a component higher up in the stack) raises an exception.
+
     Attributes:
         req_options: A set of behavioral options related to incoming
             requests. (See also: :py:class:`~.RequestOptions`)
