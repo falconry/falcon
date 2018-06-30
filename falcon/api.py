@@ -108,10 +108,13 @@ class API(object):
             to use in lieu of the default engine.
             (See also: :ref:`Custom Routers <routing_custom>`)
 
-        independent_middleware (bool): Set to ``True`` if response
-            middleware should be executed independently of whether or
+        independent_middleware (bool): Set to ``False`` if response
+            middleware should not be executed independently of whether or
             not request middleware raises an exception (default
-            ``False``).
+            ``True``). When this option is set to ``False``, a middleware
+            component's ``process_response()`` method will NOT be called
+            when that same component's ``process_request()`` (or that of
+            a component higher up in the stack) raises an exception.
 
     Attributes:
         req_options: A set of behavioral options related to incoming
@@ -146,7 +149,7 @@ class API(object):
     def __init__(self, media_type=DEFAULT_MEDIA_TYPE,
                  request_type=Request, response_type=Response,
                  middleware=None, router=None,
-                 independent_middleware=False):
+                 independent_middleware=True):
         self._sinks = []
         self._media_type = media_type
         self._static_routes = []
