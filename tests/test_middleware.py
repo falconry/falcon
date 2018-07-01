@@ -404,7 +404,7 @@ class TestSeveralMiddlewares(TestMiddleware):
         assert 'transaction_id' in context
         assert 'start_time' not in context
         assert 'mid_time' not in context
-        assert 'end_time' not in context
+        assert 'end_time' in context
         assert 'error_handler' in context
 
     def test_order_mw_executed_when_exception_in_resp(self):
@@ -502,6 +502,7 @@ class TestSeveralMiddlewares(TestMiddleware):
         # Any mw is executed now...
         expectedExecutedMethods = [
             'ExecutedFirstMiddleware.process_request',
+            'ExecutedLastMiddleware.process_response',
             'ExecutedFirstMiddleware.process_response'
         ]
         assert expectedExecutedMethods == context['executed_methods']
