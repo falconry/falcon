@@ -66,6 +66,54 @@ class HTTP7XXStatus(BaseHTTPStatus):
     THIRTY_TWO_BITS_IS_PLENTY = 727, '32 bits is plenty'
     IT_WORKS_IN_MY_TIMEZONE = 728, 'It works in my timezone'
 
+    # 75X - Syntax Errors
+    DIDNT_BOTHER_TO_COMPILE_IT = 750, "Didn't bother to compile it"
+    SYNTAX_ERROR = 753, 'Syntax Error'
+    TOO_MANY_SEMI_COLONS = 754, 'Too many semi-colons'
+    NOT_ENOUGH_SEMI_COLONS = 755, 'Not enough semi-colons'
+    INSUFFICIENTLY_POLITE = 756, 'Insufficiently polite'
+    EXCESSIVELY_POLITE = 757, 'Excessively polite'
+    UNEXPECTED_T_PAAMAYIM_NEKUDOTAYIM = 759, (
+        'Unexpected "T_PAAMAYIM_NEKUDOTAYIM"')
+
+    # 77X - Predictable Problems
+    CACHED_FOR_TOO_LONG = 771, 'Cached for too long'
+    NOT_CACHED_LONG_ENOUGH = 772, 'Not cached long enough'
+    NOT_CACHED_AT_ALL = 773, 'Not cached at all'
+    WHY_WAS_THIS_CACHED = 774, 'Why was this cached?'
+    OUT_OF_CASH = 775, 'Out of cash'
+    ERROR_ON_THE_EXCEPTION = 776, 'Error on the Exception'
+    COINCIDENCE = 777, 'Coincidence'
+    OFF_BY_ONE_ERROR = 778, 'Off By One Error'
+    OFF_BY_TOO_MANY_TO_COUNT_ERROR = 779, 'Off By Too Many To Count Error'
+
+    # 78X - Somebody Else's Problem
+    PROJECT_OWNER_NOT_RESPONDING = 780, 'Project owner not responding'
+    OPERATIONS = 781, 'Operations'
+    QA = 782, 'QA'
+    IT_WAS_A_CUSTOMER_REQUEST_HONESTLY = 783, (
+        'It was a customer request, honestly')
+    MANAGEMENT_OBVIOUSLY = 784, 'Management, obviously'
+    TPS_COVER_SHEET_NOT_ATTACHED = 785, 'TPS Cover Sheet not attached'
+    TRY_IT_NOW = 786, 'Try it now'
+    FURTHER_FUNDING_REQUIRED = 787, 'Further Funding Required'
+    DESIGNERS_FINAL_DESIGNS_WERENT = 788, "Designer's final designs weren't"
+    NOT_MY_DEPARTMENT = 789, 'Not my department'
+
+    # 79X - Internet crashed
+    THE_INTERNET_SHUT_DOWN_DUE_TO_COPYRIGHT_RESTRICTIONS = 791, (
+        'The Internet shut down due to copyright restrictions')
+    CLIMATE_CHANGE_DRIVEN_CATASTROPHIC_WEATHER_EVENT = 792, (
+        'Climate change driven catastrophic weather event')
+    ZOMBIE_APOCALYPSE = 793, 'Zombie Apocalypse'
+    SOMEONE_LET_PG_NEAR_A_REPL = 794, 'Someone let PG near a REPL'
+    HEARTBLEED = 795, '#heartbleed'
+    THIS_IS_THE_LAST_PAGE_OF_THE_INTERNET_GO_BACK = 797, (
+        'This is the last page of the Internet.  Go back')
+    I_CHECKED_THE_DB_BACKUPS_CUPBOARD_AND_THE_CUPBOARD_WAS_BARE = 798, (
+        'I checked the db backups cupboard and the cupboard was bare')
+    END_OF_THE_WORLD = 799, 'End of the world'
+
 
 HTTP_100 = HTTPStatus(100)
 HTTP_CONTINUE = HTTP_100
@@ -213,12 +261,47 @@ HTTP_726 = HTTP7XXStatus(726)
 HTTP_727 = HTTP7XXStatus(727)
 HTTP_728 = HTTP7XXStatus(728)
 
-# Work in progress:
-# 74X - Meme Driven
 # 75X - Syntax Errors
+HTTP_750 = HTTP7XXStatus(750)
+HTTP_753 = HTTP7XXStatus(753)
+HTTP_754 = HTTP7XXStatus(754)
+HTTP_755 = HTTP7XXStatus(755)
+HTTP_756 = HTTP7XXStatus(756)
+HTTP_757 = HTTP7XXStatus(757)
+HTTP_759 = HTTP7XXStatus(759)
+
 # 77X - Predictable Problems
+HTTP_771 = HTTP7XXStatus(771)
+HTTP_772 = HTTP7XXStatus(772)
+HTTP_773 = HTTP7XXStatus(773)
+HTTP_774 = HTTP7XXStatus(774)
+HTTP_775 = HTTP7XXStatus(775)
+HTTP_776 = HTTP7XXStatus(776)
+HTTP_777 = HTTP7XXStatus(777)
+HTTP_778 = HTTP7XXStatus(778)
+HTTP_779 = HTTP7XXStatus(779)
+
 # 78X - Somebody Else's Problem
+HTTP_780 = HTTP7XXStatus(780)
+HTTP_781 = HTTP7XXStatus(781)
+HTTP_782 = HTTP7XXStatus(782)
+HTTP_783 = HTTP7XXStatus(783)
+HTTP_784 = HTTP7XXStatus(784)
+HTTP_785 = HTTP7XXStatus(785)
+HTTP_786 = HTTP7XXStatus(786)
+HTTP_787 = HTTP7XXStatus(787)
+HTTP_788 = HTTP7XXStatus(788)
+HTTP_789 = HTTP7XXStatus(789)
+
 # 79X - Internet crashed
+HTTP_791 = HTTP7XXStatus(791)
+HTTP_792 = HTTP7XXStatus(792)
+HTTP_793 = HTTP7XXStatus(793)
+HTTP_794 = HTTP7XXStatus(794)
+HTTP_795 = HTTP7XXStatus(795)
+HTTP_797 = HTTP7XXStatus(797)
+HTTP_798 = HTTP7XXStatus(798)
+HTTP_799 = HTTP7XXStatus(799)
 
 
 COMBINED_STATUS_CODES = {
