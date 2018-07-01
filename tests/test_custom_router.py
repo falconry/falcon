@@ -62,7 +62,7 @@ def test_custom_router_find_should_be_used():
     for uri in ('/404', '/404/backwards-compat'):
         response = client.simulate_request(path=uri)
         assert not response.content
-        assert response.status == falcon.HTTP_404
+        assert response.status == '404 Not Found'
 
     assert router.reached_backwards_compat
 

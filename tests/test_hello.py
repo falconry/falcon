@@ -146,7 +146,7 @@ class TestHelloWorld(object):
         assert content_length == len(resource.sample_utf8)
 
         assert result.status == resource.sample_status
-        assert resp.status == resource.sample_status
+        assert resp.status == falcon.HTTP_OK
         assert get_body(resp) == resource.sample_utf8
         assert result.content == resource.sample_utf8
 

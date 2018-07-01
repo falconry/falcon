@@ -442,15 +442,15 @@ class TestFalconTestingUtils(object):
 
     def test_status(self):
         app = falcon.API()
-        resource = testing.SimpleTestResource(status=falcon.HTTP_702)
+        resource = testing.SimpleTestResource(status=falcon.HTTP_707)
         app.add_route('/', resource)
         client = testing.TestClient(app)
 
         result = client.simulate_get()
-        assert result.status == falcon.HTTP_702
+        assert result.status == "707 Can't quit vi"
 
     def test_wsgi_iterable_not_closeable(self):
-        result = testing.Result([], falcon.HTTP_200, [])
+        result = testing.Result([], '200 OK', [])
         assert not result.content
         assert result.json is None
 

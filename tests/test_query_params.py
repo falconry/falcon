@@ -208,7 +208,7 @@ class TestQueryParams(object):
         client.app.add_route('/', resource)
         query_string = 'x=%%20%+%&y=peregrine&z=%a%z%zz%1%20e'
         response = simulate_request(client=client, path='/', query_string=query_string)
-        assert response.status == falcon.HTTP_200
+        assert response.status == '200 OK'
 
         req = resource.captured_req
         assert req.get_param('x') == '% % %'

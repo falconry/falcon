@@ -177,28 +177,28 @@ class TestHttpMethodRouting(object):
         client.app.add_route('/things', resource_things)
         client.app.add_route('/things/{id}/stuff/{sid}', resource_things)
         response = client.simulate_request(path='/things/42/stuff/57')
-        assert response.status == falcon.HTTP_204
+        assert response.status == '204 No Content'
         assert resource_things.called
 
     def test_put(self, client, resource_things):
         client.app.add_route('/things', resource_things)
         client.app.add_route('/things/{id}/stuff/{sid}', resource_things)
         response = client.simulate_request(path='/things/42/stuff/1337', method='PUT')
-        assert response.status == falcon.HTTP_201
+        assert response.status == '201 Created'
         assert resource_things.called
 
     def test_post_not_allowed(self, client, resource_things):
         client.app.add_route('/things', resource_things)
         client.app.add_route('/things/{id}/stuff/{sid}', resource_things)
         response = client.simulate_request(path='/things/42/stuff/1337', method='POST')
-        assert response.status == falcon.HTTP_405
+        assert response.status == '405 Method Not Allowed'
         assert not resource_things.called
 
     def test_report(self, client, resource_things):
         client.app.add_route('/things', resource_things)
         client.app.add_route('/things/{id}/stuff/{sid}', resource_things)
         response = client.simulate_request(path='/things/42/stuff/1337', method='REPORT')
-        assert response.status == falcon.HTTP_204
+        assert response.status_code == falcon.HTTP_204
         assert resource_things.called
 
     def test_misc(self, client, resource_misc):
@@ -213,7 +213,7 @@ class TestHttpMethodRouting(object):
         client.app.add_route('/stonewall', stonewall)
         for method in ['GET', 'HEAD', 'PUT', 'PATCH']:
             response = client.simulate_request(path='/stonewall', method=method)
-            assert response.status == falcon.HTTP_405
+            assert response.status_code == falcon.HTTP_405
 
     def test_methods_not_allowed_complex(self, client, resource_things):
         client.app.add_route('/things', resource_things)
@@ -226,7 +226,7 @@ class TestHttpMethodRouting(object):
             response = client.simulate_request(path='/things/84/stuff/65', method=method)
 
             assert not resource_things.called
-            assert response.status == falcon.HTTP_405
+            assert response.status_code == falcon.HTTP_405
 
             headers = response.headers
             assert headers['allow'] == 'GET, HEAD, PUT, REPORT, OPTIONS'
@@ -244,7 +244,7 @@ class TestHttpMethodRouting(object):
             )
 
             assert not resource_get_with_faulty_put.called
-            assert response.status == falcon.HTTP_405
+            assert response.status_code == falcon.HTTP_405
 
             headers = response.headers
             assert headers['allow'] == 'GET, PUT, OPTIONS'
@@ -253,14 +253,14 @@ class TestHttpMethodRouting(object):
         client.app.add_route('/things', resource_things)
         client.app.add_route('/things/{id}/stuff/{sid}', resource_things)
         response = client.simulate_request(path='/things/84/stuff/65', method='OPTIONS')
-        assert response.status == falcon.HTTP_200
+        assert response.status_code == falcon.HTTP_200
 
         headers = response.headers
         assert headers['allow'] == 'GET, HEAD, PUT, REPORT'
 
     def test_on_options(self, client):
         response = client.simulate_request(path='/misc', method='OPTIONS')
-        assert response.status == falcon.HTTP_204
+        assert response.status_code == falcon.HTTP_204
 
         headers = response.headers
         assert headers['allow'] == 'GET'
@@ -270,4 +270,4 @@ class TestHttpMethodRouting(object):
         client.app.add_route('/things/{id}/stuff/{sid}', resource_things)
         response = client.simulate_request(path='/things', method='SETECASTRONOMY')
         assert not resource_things.called
-        assert response.status == falcon.HTTP_400
+        assert response.status_code == falcon.HTTP_400

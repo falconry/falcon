@@ -33,5 +33,5 @@ class TestWsgiRefInputWrapper(object):
 
         result = client.simulate_post(path=type_route, body='hello')
 
-        assert result.status == falcon.HTTP_200
+        assert result.status == '200 OK'
         assert result.json == {'data': 'hello'}
