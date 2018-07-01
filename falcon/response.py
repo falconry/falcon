@@ -34,6 +34,7 @@ from falcon.response_helpers import (
     header_property,
     is_ascii_encodable,
 )
+from falcon.status_codes import HTTP_OK, COMBINED_STATUS_CODES
 from falcon.util import dt_to_http, TimezoneGMT
 from falcon.util.uri import encode as uri_encode
 from falcon.util.uri import encode_value as uri_encode_value
@@ -151,7 +152,7 @@ class Response(object):
     context_type = dict
 
     def __init__(self, options=None):
-        self.status = '200 OK'
+        self.status = HTTP_OK
         self._headers = {}
 
         self.options = options if options else ResponseOptions()
@@ -802,6 +803,10 @@ class Response(object):
             type.
 
         """)
+
+    # @property
+    # def status_line(self):
+    #     return COMBINED_STATUS_CODES[self.status]
 
     def _set_media_type(self, media_type=None):
         """Wrapper around set_header to set a content-type.

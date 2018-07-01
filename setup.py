@@ -14,7 +14,11 @@ VERSION = imp.load_source('version', path.join('.', 'falcon', 'version.py'))
 VERSION = VERSION.__version__
 
 # NOTE(kgriffs): python-mimeparse is better-maintained fork of mimeparse
-REQUIRES = ['six>=1.4.0', 'python-mimeparse>=1.5.2']
+REQUIRES = [
+    'enum34;python_version<"3.4"',
+    'six>=1.4.0',
+    'python-mimeparse>=1.5.2',
+]
 
 try:
     sys.pypy_version_info

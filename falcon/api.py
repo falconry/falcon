@@ -25,7 +25,21 @@ from falcon.request import Request, RequestOptions
 import falcon.responders
 from falcon.response import Response, ResponseOptions
 import falcon.status_codes as status
+from falcon.status_codes import COMBINED_STATUS_CODES
 from falcon.util.misc import get_argnames
+
+
+_BODILESS_STATUS_CODES = frozenset([
+    status.HTTP_100,
+    status.HTTP_101,
+    status.HTTP_204,
+    status.HTTP_304,
+])
+
+_TYPELESS_STATUS_CODES = frozenset([
+    status.HTTP_204,
+    status.HTTP_304,
+])
 
 
 class API(object):
@@ -125,15 +139,6 @@ class API(object):
 
             (See also: :ref:`CompiledRouterOptions <compiled_router_options>`)
     """
-
-    # PERF(kgriffs): Reference via self since that is faster than
-    # module global...
-    _BODILESS_STATUS_CODES = {
-        status.HTTP_100,
-        status.HTTP_101,
-        status.HTTP_204,
-        status.HTTP_304
-    }
 
     _STREAM_BLOCK_SIZE = 8 * 1024  # 8 KiB
 
@@ -268,13 +273,21 @@ class API(object):
         # Set status and headers
         #
 
-        # NOTE(kgriffs): While not specified in the spec that the status
-        # must be of type str (not unicode on Py27), some WSGI servers
-        # can complain when it is not.
-        resp_status = str(resp.status) if six.PY2 else resp.status
+        resp_status = resp.status
+        media_type = self._media_type
 
-        if req.method == 'HEAD' or resp_status in self._BODILESS_STATUS_CODES:
+        if req.method == 'HEAD' or resp_status in _BODILESS_STATUS_CODES:
             body = []
+
+            # PERF(vytas): move check for resp_status being in {204, 304} here;
+            # NB: builds on _TYPELESS_STATUS_CODES < _BODILESS_STATUS_CODES.
+
+            # NOTE(kgriffs): Based on wsgiref.validate's interpretation of
+            # RFC 2616, as commented in that module's source code. The
+            # presence of the Content-Length header is not similarly
+            # enforced.
+            if resp_status in _TYPELESS_STATUS_CODES:
+                media_type = None
         else:
             body, length = self._get_body(resp, env.get('wsgi.file_wrapper'))
             if resp.content_length is None and length is not None:
@@ -282,19 +295,10 @@ class API(object):
             elif resp.content_length is not None:
                 resp._headers['content-length'] = str(resp.content_length)
 
-        # NOTE(kgriffs): Based on wsgiref.validate's interpretation of
-        # RFC 2616, as commented in that module's source code. The
-        # presence of the Content-Length header is not similarly
-        # enforced.
-        if resp_status in (status.HTTP_204, status.HTTP_304):
-            media_type = None
-        else:
-            media_type = self._media_type
-
         headers = resp._wsgi_headers(media_type)
 
         # Return the response per the WSGI spec.
-        start_response(resp_status, headers)
+        start_response(COMBINED_STATUS_CODES[resp_status], headers)
         return body
 
     @property
