@@ -25,11 +25,11 @@ framework itself. These functions are hoisted into the front-door
 """
 
 import datetime
+import enum
 import functools
 import inspect
 import warnings
 
-import enum
 import six
 
 from falcon import status_codes

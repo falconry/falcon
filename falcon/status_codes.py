@@ -305,6 +305,6 @@ HTTP_799 = HTTP7XXStatus(799)
 
 
 COMBINED_STATUS_CODES = {
-    status: "{} {}".format(status.value, status.phrase)
+    status: str(status.value) + ' ' + status.phrase
     for status in itertools.chain(HTTPStatus, HTTPStatusExtensions,
                                   HTCPCPStatus, HTTP7XXStatus)}
