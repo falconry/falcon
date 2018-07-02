@@ -78,7 +78,7 @@ class TestRedirects(object):
         result = client.simulate_request(path='/', method=method)
 
         assert not result.content
-        assert result.status == expected_status
+        assert result.status_code == expected_status
         assert result.headers['location'] == expected_location
 
     @pytest.mark.parametrize('method,expected_status,expected_location', [
@@ -93,6 +93,6 @@ class TestRedirects(object):
         result = client_exercising_headers.simulate_request(path='/', method=method)
 
         assert not result.content
-        assert result.status == expected_status
+        assert result.status_code == expected_status
         assert result.headers['location'] == expected_location
         assert result.headers['foo'] == 'bar'

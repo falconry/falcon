@@ -302,7 +302,6 @@ class TestFalconUtils(object):
         assert falcon.get_http_status('404.3') == falcon.HTTP_404
         assert falcon.get_http_status(404.9) == falcon.HTTP_404
         assert falcon.get_http_status('404') == falcon.HTTP_404
-        assert falcon.get_http_status(123) == '123 Unknown'
         with pytest.raises(ValueError):
             falcon.get_http_status('not_a_number')
         with pytest.raises(ValueError):
@@ -317,7 +316,17 @@ class TestFalconUtils(object):
             falcon.get_http_status('-404')
         with pytest.raises(ValueError):
             falcon.get_http_status('-404.3')
-        assert falcon.get_http_status(123, 'Go Away') == '123 Go Away'
+        with pytest.raises(ValueError):
+            falcon.get_http_status(123)
+
+    def test_get_http_status_line(self):
+        assert falcon.get_http_status_line(falcon.HTTP_404) == '404 Not Found'
+        assert falcon.get_http_status_line(404) == '404 Not Found'
+        assert falcon.get_http_status_line(702.0) == '702 Emacs'
+        with pytest.raises(ValueError):
+            falcon.get_http_status_line(123)
+        with pytest.raises(ValueError):
+            falcon.get_http_status_line('702 Emacs')
 
 
 @pytest.mark.parametrize(

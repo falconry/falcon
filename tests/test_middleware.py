@@ -101,7 +101,7 @@ class MiddlewareClassResource(object):
         resp.body = json.dumps(_EXPECTED_BODY)
 
     def on_post(self, req, resp):
-        raise falcon.HTTPForbidden(falcon.HTTP_403, 'Setec Astronomy')
+        raise falcon.HTTPForbidden(description='Setec Astronomy')
 
 
 class EmptySignatureMiddleware(object):
@@ -130,7 +130,7 @@ class TestRequestTimeMiddleware(TestMiddleware):
         client = testing.TestClient(app)
 
         response = client.simulate_request(path='/404')
-        assert response.status == falcon.HTTP_404
+        assert response.status_code == falcon.HTTP_404
         assert 'start_time' in context
         assert 'mid_time' not in context
         assert 'end_time' in context
@@ -177,7 +177,8 @@ class TestRequestTimeMiddleware(TestMiddleware):
 
         response = client.simulate_request(path=TEST_ROUTE)
         assert _EXPECTED_BODY == response.json
-        assert response.status == falcon.HTTP_200
+        assert response.status == '200 OK'
+        assert response.status_code == falcon.HTTP_200
 
         assert 'start_time' in context
         assert 'mid_time' in context
@@ -201,7 +202,7 @@ class TestTransactionIdMiddleware(TestMiddleware):
 
         response = client.simulate_request(path=TEST_ROUTE)
         assert _EXPECTED_BODY == response.json
-        assert response.status == falcon.HTTP_200
+        assert response.status_code == falcon.HTTP_200
         assert 'transaction_id' in context
         assert 'unique-req-id' == context['transaction_id']
 
@@ -217,7 +218,7 @@ class TestSeveralMiddlewares(TestMiddleware):
 
         response = client.simulate_request(path=TEST_ROUTE)
         assert _EXPECTED_BODY == response.json
-        assert response.status == falcon.HTTP_200
+        assert response.status_code == falcon.HTTP_200
         assert 'transaction_id' in context
         assert 'unique-req-id' == context['transaction_id']
         assert 'start_time' in context
@@ -249,7 +250,7 @@ class TestSeveralMiddlewares(TestMiddleware):
 
         response = client.simulate_request(path=TEST_ROUTE)
         assert _EXPECTED_BODY == response.json
-        assert response.status == falcon.HTTP_200
+        assert response.status_code == falcon.HTTP_200
         # as the method registration is in a list, the order also is
         # tested
         expectedExecutedMethods = [
@@ -273,7 +274,7 @@ class TestSeveralMiddlewares(TestMiddleware):
 
         response = client.simulate_request(path=TEST_ROUTE)
         assert _EXPECTED_BODY == response.json
-        assert response.status == falcon.HTTP_200
+        assert response.status_code == falcon.HTTP_200
         # as the method registration is in a list, the order also is
         # tested
         expectedExecutedMethods = [
@@ -298,7 +299,7 @@ class TestSeveralMiddlewares(TestMiddleware):
 
         class RaiseErrorMiddleware(object):
             def process_response(self, req, resp, resource):
-                raise falcon.HTTPError(falcon.HTTP_748)
+                raise falcon.HTTPError(falcon.HTTP_774)
 
         class ProcessResponseMiddleware(object):
             def process_response(self, req, resp, resource, req_succeeded):
@@ -316,7 +317,7 @@ class TestSeveralMiddlewares(TestMiddleware):
 
         response = client.simulate_request(path=TEST_ROUTE)
 
-        assert response.status == falcon.HTTP_748
+        assert response.status == '774 Why was this cached?'
 
         expected_methods = ['process_response'] * 3
         assert context['executed_methods'] == expected_methods
@@ -618,9 +619,9 @@ class TestRemoveBasePathMiddleware(TestMiddleware):
 
         response = client.simulate_request(path='/base_path/sub_path')
         assert _EXPECTED_BODY == response.json
-        assert response.status == falcon.HTTP_200
+        assert response.status_code == falcon.HTTP_200
         response = client.simulate_request(path='/base_pathIncorrect/sub_path')
-        assert response.status == falcon.HTTP_404
+        assert response.status_code == falcon.HTTP_404
 
 
 class TestResourceMiddleware(TestMiddleware):
@@ -663,8 +664,8 @@ class TestErrorHandling(TestMiddleware):
         client = testing.TestClient(app)
 
         response = client.simulate_request(path='/', method='POST')
-        assert response.status == falcon.HTTP_403
-        assert mw.resp.status == response.status
+        assert response.status_code == falcon.HTTP_403
+        assert mw.resp.status == response.status_code
 
         composed_body = json.loads(mw.resp.body)
         assert composed_body['title'] == response.status
@@ -690,5 +691,5 @@ class TestErrorHandling(TestMiddleware):
         app.add_error_handler(falcon.HTTPError, _http_error_handler)
 
         response = client.simulate_request(path='/', method='POST')
-        assert response.status == falcon.HTTP_201
-        assert mw.resp.status == response.status
+        assert response.status_code == falcon.HTTP_201
+        assert mw.resp.status == response.status_code

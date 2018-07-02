@@ -4,7 +4,7 @@ import falcon
 import falcon.status_codes as status
 
 
-@pytest.mark.parametrize('err, title', [
+@pytest.mark.parametrize('err, status', [
     (falcon.HTTPBadRequest, status.HTTP_400),
     (falcon.HTTPForbidden, status.HTTP_403),
     (falcon.HTTPConflict, status.HTTP_409),
@@ -29,11 +29,12 @@ import falcon.status_codes as status
     (falcon.HTTPLoopDetected, status.HTTP_508),
     (falcon.HTTPNetworkAuthenticationRequired, status.HTTP_511),
 ])
-def test_with_default_title_and_desc(err, title):
+def test_with_default_title_and_desc(err, status):
     with pytest.raises(err) as e:
         raise err()
 
-    assert e.value.title == title
+    assert e.value.title.startswith(str(status.value))
+    assert e.value.title.endswith(status.phrase)
     assert e.value.description is None
 
     if e.value.headers:
@@ -112,7 +113,7 @@ def test_http_unauthorized_no_title_and_desc_and_challenges_and_headers():
     try:
         raise falcon.HTTPUnauthorized()
     except falcon.HTTPUnauthorized as e:
-        assert status.HTTP_401 == e.title
+        assert e.title == '401 Unauthorized'
         assert e.description is None
         assert 'WWW-Authenticate' not in e.headers
 

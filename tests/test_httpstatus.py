@@ -12,7 +12,8 @@ def before_hook(req, resp, params):
 
 
 def after_hook(req, resp, resource):
-    resp.status = falcon.HTTP_200
+    # NOTE(vytas): Test that passing a plain integer code works just fine.
+    resp.status = 200
     resp.set_header('X-Failed', 'False')
     resp.body = 'Pass'
 
@@ -40,9 +41,7 @@ class TestStatusResource:
 
     @falcon.after(after_hook)
     def on_put(self, req, resp):
-        # NOTE(kgriffs): Test that passing a unicode status string
-        # works just fine.
-        resp.status = u'500 Internal Server Error'
+        resp.status = falcon.HTTP_500
         resp.set_header('X-Failed', 'True')
         resp.body = 'Fail'
 
@@ -81,7 +80,8 @@ class TestHTTPStatus(object):
         client = testing.TestClient(app)
 
         response = client.simulate_request(path='/status', method='GET')
-        assert response.status == falcon.HTTP_200
+        assert response.status == '200 OK'
+        assert response.status_code == 200
         assert response.headers['x-failed'] == 'False'
         assert response.text == 'Pass'
 
@@ -92,7 +92,8 @@ class TestHTTPStatus(object):
         client = testing.TestClient(app)
 
         response = client.simulate_request(path='/status', method='POST')
-        assert response.status == falcon.HTTP_200
+        assert response.status == '200 OK'
+        assert response.status_code == 200
         assert response.headers['x-failed'] == 'False'
         assert response.text == 'Pass'
 
@@ -103,7 +104,8 @@ class TestHTTPStatus(object):
         client = testing.TestClient(app)
 
         response = client.simulate_request(path='/status', method='PUT')
-        assert response.status == falcon.HTTP_200
+        assert response.status == '200 OK'
+        assert response.status_code == 200
         assert response.headers['x-failed'] == 'False'
         assert response.text == 'Pass'
 
@@ -114,7 +116,8 @@ class TestHTTPStatus(object):
         client = testing.TestClient(app)
 
         response = client.simulate_request(path='/status', method='DELETE')
-        assert response.status == falcon.HTTP_200
+        assert response.status == '200 OK'
+        assert response.status_code == 200
         assert response.headers['x-failed'] == 'False'
         assert response.text == 'Pass'
 
@@ -142,7 +145,8 @@ class TestHTTPStatusWithMiddleware(object):
         client = testing.TestClient(app)
 
         response = client.simulate_request(path='/status', method='GET')
-        assert response.status == falcon.HTTP_200
+        assert response.status == '200 OK'
+        assert response.status_code == 200
         assert response.headers['x-failed'] == 'False'
         assert response.text == 'Pass'
 
@@ -159,7 +163,8 @@ class TestHTTPStatusWithMiddleware(object):
         client = testing.TestClient(app)
 
         response = client.simulate_request(path='/status', method='GET')
-        assert response.status == falcon.HTTP_200
+        assert response.status == '200 OK'
+        assert response.status_code == 200
         assert response.headers['x-failed'] == 'False'
         assert response.text == 'Pass'
 
@@ -176,6 +181,7 @@ class TestHTTPStatusWithMiddleware(object):
         client = testing.TestClient(app)
 
         response = client.simulate_request(path='/status', method='GET')
-        assert response.status == falcon.HTTP_200
+        assert response.status == '200 OK'
+        assert response.status_code == 200
         assert response.headers['x-failed'] == 'False'
         assert response.text == 'Pass'

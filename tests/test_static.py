@@ -168,11 +168,12 @@ def test_lifo(client, monkeypatch):
     client.app.add_static_route('/downloads/archive', '/opt/somesite/x')
 
     response = client.simulate_request(path='/downloads/thing.zip')
-    assert response.status == falcon.HTTP_200
+    assert response.status == '200 OK'
+    assert response.status_code == falcon.HTTP_200
     assert response.text == '/opt/somesite/downloads/thing.zip'
 
     response = client.simulate_request(path='/downloads/archive/thingtoo.zip')
-    assert response.status == falcon.HTTP_200
+    assert response.status_code == falcon.HTTP_200
     assert response.text == '/opt/somesite/x/thingtoo.zip'
 
 
@@ -183,11 +184,12 @@ def test_lifo_negative(client, monkeypatch):
     client.app.add_static_route('/downloads', '/opt/somesite/downloads')
 
     response = client.simulate_request(path='/downloads/thing.zip')
-    assert response.status == falcon.HTTP_200
+    assert response.status == '200 OK'
+    assert response.status_code == falcon.HTTP_200
     assert response.text == '/opt/somesite/downloads/thing.zip'
 
     response = client.simulate_request(path='/downloads/archive/thingtoo.zip')
-    assert response.status == falcon.HTTP_200
+    assert response.status_code == falcon.HTTP_200
     assert response.text == '/opt/somesite/downloads/archive/thingtoo.zip'
 
 
@@ -198,15 +200,16 @@ def test_downloadable(client, monkeypatch):
     client.app.add_static_route('/assets/', '/opt/somesite/assets')
 
     response = client.simulate_request(path='/downloads/thing.zip')
-    assert response.status == falcon.HTTP_200
+    assert response.status == '200 OK'
+    assert response.status_code == falcon.HTTP_200
     assert response.headers['Content-Disposition'] == 'attachment; filename="thing.zip"'
 
     response = client.simulate_request(path='/downloads/Some Report.zip')
-    assert response.status == falcon.HTTP_200
+    assert response.status_code == falcon.HTTP_200
     assert response.headers['Content-Disposition'] == 'attachment; filename="Some Report.zip"'
 
     response = client.simulate_request(path='/assets/css/main.css')
-    assert response.status == falcon.HTTP_200
+    assert response.status_code == falcon.HTTP_200
     assert 'Content-Disposition' not in response.headers
 
 
@@ -214,7 +217,7 @@ def test_downloadable_not_found(client):
     client.app.add_static_route('/downloads', '/opt/somesite/downloads', downloadable=True)
 
     response = client.simulate_request(path='/downloads/thing.zip')
-    assert response.status == falcon.HTTP_404
+    assert response.status_code == falcon.HTTP_404
 
 
 @pytest.mark.parametrize('uri, default, expected', [
@@ -276,9 +279,9 @@ def test_e2e_fallback_filename(client, monkeypatch, strip_slash, path, fallback,
     def test(prefix, directory, expected):
         response = client.simulate_request(path=prefix + path)
         if expected is None:
-            assert response.status == falcon.HTTP_404
+            assert response.status == '404 Not Found'
         else:
-            assert response.status == falcon.HTTP_200
+            assert response.status == '200 OK'
             assert response.text == directory + expected
 
     test('/static', '/opt/somesite/static/', static_exp)

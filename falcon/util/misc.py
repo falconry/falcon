@@ -29,6 +29,7 @@ import functools
 import inspect
 import warnings
 
+import enum
 import six
 
 from falcon import status_codes
@@ -41,7 +42,8 @@ __all__ = (
     'to_query_str',
     'get_bound_method',
     'get_argnames',
-    'get_http_status'
+    'get_http_status',
+    'get_http_status_line',
 )
 
 
@@ -320,8 +322,8 @@ def get_argnames(func):
     return args
 
 
-def get_http_status(status_code, default_reason='Unknown'):
-    """Gets both the http status code and description from just a code
+def get_http_status(status_code):
+    """Gets http status object from just a code.
 
     Args:
         status_code: integer or string that can be converted to an integer
@@ -329,25 +331,41 @@ def get_http_status(status_code, default_reason='Unknown'):
             if the lookup does not find a result
 
     Returns:
-        str: status code e.g. "404 Not Found"
+        HTTPStatus: status object e.g. ``HTTPStatus.NOT_FOUND``
 
     Raises:
-        ValueError: the value entered could not be converted to an integer
-
+        ValueError: the value entered could not be converted to an integer, or
+        the requested code is not supported by the framework.
     """
     # sanitize inputs
     try:
         code = float(status_code)  # float can validate values like "401.1"
         code = int(code)  # converting to int removes the decimal places
-        if code < 100:
-            raise ValueError
     except ValueError:
         raise ValueError('get_http_status failed: "%s" is not a '
-                         'valid status code', status_code)
+                         'valid status code' % status_code)
 
-    # lookup the status code
+    # lookup the status object
     try:
         return getattr(status_codes, 'HTTP_' + str(code))
     except AttributeError:
-        # not found
-        return str(code) + ' ' + default_reason
+        raise ValueError('get_http_status failed: %s is not a '
+                         'supported status code' % status_code)
+
+
+def get_http_status_line(status):
+    """Gets both the http status code and description from just a code.
+
+    Args:
+        status: integer or string that can be converted to an integer
+
+    Returns:
+        str: status code and status text e.g. "404 Not Found"
+
+    Raises:
+        ValueError: the value entered could not be converted to an integer, or
+        the requested code is not supported by the framework.
+    """
+    if not isinstance(status, enum.IntEnum):
+        status = get_http_status(status)
+    return str(status.value) + ' ' + status.phrase

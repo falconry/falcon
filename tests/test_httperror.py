@@ -8,7 +8,7 @@ import yaml
 
 import falcon
 import falcon.testing as testing
-from falcon.util import json
+from falcon.util import get_http_status, get_http_status_line, json
 
 
 @pytest.fixture
@@ -24,7 +24,9 @@ def client():
 class FaultyResource:
 
     def on_get(self, req, resp):
-        status = req.get_header('X-Error-Status')
+        error_status = req.get_header('X-Error-Status')
+        status_code = error_status.split(' ', 1)[0]
+        status = get_http_status(status_code)
         title = req.get_header('X-Error-Title')
         description = req.get_header('X-Error-Description')
         code = 10042
@@ -249,7 +251,7 @@ class TestHTTPError(object):
         client.app.add_route('/misc', MiscErrorsResource(exception, needs_title))
 
         response = client.simulate_request(path='/misc')
-        assert response.status == status
+        assert response.status_code == status
 
     def test_base_class(self, client):
         headers = {
@@ -257,7 +259,7 @@ class TestHTTPError(object):
             'X-Error-Description': ('The configured storage service is not '
                                     'responding to requests. Please contact '
                                     'your service provider.'),
-            'X-Error-Status': falcon.HTTP_503
+            'X-Error-Status': get_http_status_line(falcon.HTTP_503),
         }
 
         expected_body = {
@@ -285,14 +287,14 @@ class TestHTTPError(object):
 
     def test_no_description_json(self, client):
         response = client.simulate_patch('/fail')
-        assert response.status == falcon.HTTP_400
+        assert response.status_code == falcon.HTTP_400
         assert response.json == {'title': '400 Bad Request'}
 
     def test_no_description_xml(self, client):
         response = client.simulate_patch(
             path='/fail', headers={'Accept': 'application/xml'}
         )
-        assert response.status == falcon.HTTP_400
+        assert response.status_code == falcon.HTTP_400
 
         expected_xml = (b'<?xml version="1.0" encoding="UTF-8"?><error>'
                         b'<title>400 Bad Request</title></error>')
@@ -306,7 +308,7 @@ class TestHTTPError(object):
             'X-Error-Description': ('The configured storage service is not '
                                     'responding to requests. Please contact '
                                     'your service provider'),
-            'X-Error-Status': falcon.HTTP_503
+            'X-Error-Status': get_http_status_line(falcon.HTTP_503),
         }
 
         response = client.simulate_request(path='/fail', headers=headers)
@@ -320,7 +322,7 @@ class TestHTTPError(object):
             'X-Error-Description': ('The configured storage service is not '
                                     'responding to requests. Please contact '
                                     'your service provider'),
-            'X-Error-Status': falcon.HTTP_503
+            'X-Error-Status': get_http_status_line(falcon.HTTP_503),
         }
 
         expected_doc = {
@@ -360,7 +362,7 @@ class TestHTTPError(object):
 
     def test_custom_old_error_serializer_no_body(self, client):
         headers = {
-            'X-Error-Status': falcon.HTTP_503
+            'X-Error-Status': get_http_status_line(falcon.HTTP_503),
         }
 
         def _my_serializer(req, exception):
@@ -375,7 +377,7 @@ class TestHTTPError(object):
             'X-Error-Description': ('The configured storage service is not '
                                     'responding to requests. Please contact '
                                     'your service provider'),
-            'X-Error-Status': falcon.HTTP_503
+            'X-Error-Status': get_http_status_line(falcon.HTTP_503),
         }
 
         expected_doc = {
@@ -421,7 +423,7 @@ class TestHTTPError(object):
             'X-Error-Description': ('The configured storage service is not '
                                     'responding to requests. Please contact '
                                     'your service provider'),
-            'X-Error-Status': falcon.HTTP_503
+            'X-Error-Status': get_http_status_line(falcon.HTTP_503),
         }
 
         response = client.simulate_request(path='/fail', headers=headers)
@@ -449,7 +451,8 @@ class TestHTTPError(object):
 
         response = client.simulate_post(path='/fail', headers=headers)
 
-        assert response.status == falcon.HTTP_403
+        assert response.status == '403 Forbidden'
+        assert response.status_code == falcon.HTTP_403
         assert response.json == expected_body
 
     def test_epic_fail_json(self, client):
@@ -468,7 +471,7 @@ class TestHTTPError(object):
 
         response = client.simulate_put('/fail', headers=headers)
 
-        assert response.status == falcon.HTTP_792
+        assert response.status_code == falcon.HTTP_792
         assert response.json == expected_body
 
     @pytest.mark.parametrize('media_type', [
@@ -496,7 +499,7 @@ class TestHTTPError(object):
 
         response = client.simulate_put(path='/fail', headers=headers)
 
-        assert response.status == falcon.HTTP_792
+        assert response.status_code == falcon.HTTP_792
         try:
             et.fromstring(response.content.decode('utf-8'))
         except ValueError:
@@ -520,7 +523,7 @@ class TestHTTPError(object):
         response = client.simulate_request(path='/unicode')
 
         assert unicode_resource.called
-        assert response.status == falcon.HTTP_792
+        assert response.status_code == falcon.HTTP_792
         assert expected_body == response.json
 
     def test_unicode_xml(self, client):
@@ -546,38 +549,38 @@ class TestHTTPError(object):
         )
 
         assert unicode_resource.called
-        assert response.status == falcon.HTTP_792
+        assert response.status_code == falcon.HTTP_792
         assert expected_body == response.text
 
     def test_401(self, client):
         client.app.add_route('/401', UnauthorizedResource())
         response = client.simulate_request(path='/401')
 
-        assert response.status == falcon.HTTP_401
+        assert response.status_code == falcon.HTTP_401
         assert response.headers['www-authenticate'] == 'Basic realm="simple"'
 
         response = client.simulate_post('/401')
 
-        assert response.status == falcon.HTTP_401
+        assert response.status_code == falcon.HTTP_401
         assert response.headers['www-authenticate'] == 'Newauth realm="apps", Basic realm="simple"'
 
         response = client.simulate_put('/401')
 
-        assert response.status == falcon.HTTP_401
+        assert response.status_code == falcon.HTTP_401
         assert 'www-authenticate' not in response.headers
 
     def test_404_without_body(self, client):
         client.app.add_route('/404', NotFoundResource())
         response = client.simulate_request(path='/404')
 
-        assert response.status == falcon.HTTP_404
+        assert response.status_code == falcon.HTTP_404
         assert not response.content
 
     def test_404_with_body(self, client):
         client.app.add_route('/404', NotFoundResourceWithBody())
 
         response = client.simulate_request(path='/404')
-        assert response.status == falcon.HTTP_404
+        assert response.status_code == falcon.HTTP_404
         assert response.content
         expected_body = {
             u'title': u'404 Not Found',
@@ -589,7 +592,7 @@ class TestHTTPError(object):
         client.app.add_route('/405', MethodNotAllowedResource())
 
         response = client.simulate_request(path='/405')
-        assert response.status == falcon.HTTP_405
+        assert response.status_code == falcon.HTTP_405
         assert not response.content
         assert response.headers['allow'] == 'PUT'
 
@@ -597,7 +600,7 @@ class TestHTTPError(object):
         client.app.add_route('/405', MethodNotAllowedResourceWithHeaders())
 
         response = client.simulate_request(path='/405')
-        assert response.status == falcon.HTTP_405
+        assert response.status_code == falcon.HTTP_405
         assert not response.content
         assert response.headers['allow'] == 'PUT'
         assert response.headers['x-ping'] == 'pong'
@@ -608,7 +611,7 @@ class TestHTTPError(object):
         )
 
         response = client.simulate_request(path='/405')
-        assert response.status == falcon.HTTP_405
+        assert response.status_code == falcon.HTTP_405
         assert not response.content
         assert response.headers['allow'] == 'PUT'
         assert response.headers['allow'] != 'GET,PUT'
@@ -619,7 +622,7 @@ class TestHTTPError(object):
         client.app.add_route('/405', MethodNotAllowedResourceWithBody())
 
         response = client.simulate_request(path='/405')
-        assert response.status == falcon.HTTP_405
+        assert response.status_code == falcon.HTTP_405
         assert response.content
         expected_body = {
             u'title': u'405 Method Not Allowed',
@@ -632,14 +635,14 @@ class TestHTTPError(object):
         client.app.add_route('/410', GoneResource())
         response = client.simulate_request(path='/410')
 
-        assert response.status == falcon.HTTP_410
+        assert response.status_code == falcon.HTTP_410
         assert not response.content
 
     def test_410_with_body(self, client):
         client.app.add_route('/410', GoneResourceWithBody())
 
         response = client.simulate_request(path='/410')
-        assert response.status == falcon.HTTP_410
+        assert response.status_code == falcon.HTTP_410
         assert response.content
         expected_body = {
             u'title': u'410 Gone',
@@ -650,7 +653,7 @@ class TestHTTPError(object):
     def test_411(self, client):
         client.app.add_route('/411', LengthRequiredResource())
         response = client.simulate_request(path='/411')
-        assert response.status == falcon.HTTP_411
+        assert response.status_code == falcon.HTTP_411
 
         parsed_body = response.json
         assert parsed_body['title'] == 'title'
@@ -659,7 +662,7 @@ class TestHTTPError(object):
     def test_413(self, client):
         client.app.add_route('/413', RequestEntityTooLongResource())
         response = client.simulate_request(path='/413')
-        assert response.status == falcon.HTTP_413
+        assert response.status_code == falcon.HTTP_413
 
         parsed_body = response.json
         assert parsed_body['title'] == 'Request Rejected'
@@ -669,7 +672,7 @@ class TestHTTPError(object):
     def test_temporary_413_integer_retry_after(self, client):
         client.app.add_route('/413', TemporaryRequestEntityTooLongResource('6'))
         response = client.simulate_request(path='/413')
-        assert response.status == falcon.HTTP_413
+        assert response.status_code == falcon.HTTP_413
 
         parsed_body = response.json
         assert parsed_body['title'] == 'Request Rejected'
@@ -684,7 +687,7 @@ class TestHTTPError(object):
         )
         response = client.simulate_request(path='/413')
 
-        assert response.status == falcon.HTTP_413
+        assert response.status_code == falcon.HTTP_413
 
         parsed_body = response.json
         assert parsed_body['title'] == 'Request Rejected'
@@ -694,7 +697,7 @@ class TestHTTPError(object):
     def test_414(self, client):
         client.app.add_route('/414', UriTooLongResource())
         response = client.simulate_request(path='/414')
-        assert response.status == falcon.HTTP_414
+        assert response.status_code == falcon.HTTP_414
 
     def test_414_with_title(self, client):
         title = 'Argh! Error!'
@@ -722,7 +725,7 @@ class TestHTTPError(object):
         client.app.add_route('/416', RangeNotSatisfiableResource())
         response = client.simulate_request(path='/416', headers={'accept': 'text/xml'})
 
-        assert response.status == falcon.HTTP_416
+        assert response.status_code == falcon.HTTP_416
         assert not response.content
         assert response.headers['content-range'] == 'bytes */123456'
         assert response.headers['content-length'] == '0'
@@ -732,7 +735,7 @@ class TestHTTPError(object):
         response = client.simulate_request(path='/429')
         parsed_body = response.json
 
-        assert response.status == falcon.HTTP_429
+        assert response.status_code == falcon.HTTP_429
         assert parsed_body['title'] == 'Too many requests'
         assert parsed_body['description'] == '1 per minute'
         assert 'retry-after' not in response.headers
@@ -742,7 +745,7 @@ class TestHTTPError(object):
         response = client.simulate_request(path='/429')
         parsed_body = response.json
 
-        assert response.status == falcon.HTTP_429
+        assert response.status_code == falcon.HTTP_429
         assert parsed_body['title'] == 'Too many requests'
         assert parsed_body['description'] == '1 per minute'
         assert response.headers['retry-after'] == '60'
@@ -753,7 +756,7 @@ class TestHTTPError(object):
         response = client.simulate_request(path='/429')
         parsed_body = response.json
 
-        assert response.status == falcon.HTTP_429
+        assert response.status_code == falcon.HTTP_429
         assert parsed_body['title'] == 'Too many requests'
         assert parsed_body['description'] == '1 per minute'
         assert response.headers['retry-after'] == falcon.util.dt_to_http(date)
@@ -767,7 +770,7 @@ class TestHTTPError(object):
             u'description': u'Stand by...',
         }
 
-        assert response.status == falcon.HTTP_503
+        assert response.status_code == falcon.HTTP_503
         assert response.json == expected_body
         assert response.headers['retry-after'] == '60'
 
@@ -781,7 +784,7 @@ class TestHTTPError(object):
             u'description': u'Stand by...',
         }
 
-        assert response.status == falcon.HTTP_503
+        assert response.status_code == falcon.HTTP_503
         assert response.json == expected_body
         assert response.headers['retry-after'] == falcon.util.dt_to_http(date)
 
@@ -798,7 +801,8 @@ class TestHTTPError(object):
             u'code': u'A1001',
         }
 
-        assert response.status == falcon.HTTP_400
+        assert response.status == '400 Bad Request'
+        assert response.status_code == falcon.HTTP_400
         assert response.json == expected_body
 
     def test_missing_header(self, client):
@@ -810,7 +814,7 @@ class TestHTTPError(object):
             u'description': u'The X-Auth-Token header is required.',
         }
 
-        assert response.status == falcon.HTTP_400
+        assert response.status_code == falcon.HTTP_400
         assert response.json == expected_body
 
     def test_invalid_param(self, client):
@@ -825,7 +829,7 @@ class TestHTTPError(object):
             u'code': u'P1002',
         }
 
-        assert response.status == falcon.HTTP_400
+        assert response.status_code == falcon.HTTP_400
         assert response.json == expected_body
 
     def test_missing_param(self, client):
@@ -838,7 +842,7 @@ class TestHTTPError(object):
             u'code': u'P1003',
         }
 
-        assert response.status == falcon.HTTP_400
+        assert response.status_code == falcon.HTTP_400
         assert response.json == expected_body
 
     def test_misc(self, client):
@@ -857,7 +861,7 @@ class TestHTTPError(object):
 
     def test_title_default_message_if_none(self, client):
         headers = {
-            'X-Error-Status': falcon.HTTP_503
+            'X-Error-Status': get_http_status_line(falcon.HTTP_503),
         }
 
         response = client.simulate_request(path='/fail', headers=headers)

@@ -17,7 +17,7 @@
 from collections import OrderedDict
 import xml.etree.ElementTree as et
 
-from falcon.util import json, uri
+from falcon.util import get_http_status_line, json, uri
 
 
 class HTTPError(Exception):
@@ -107,7 +107,7 @@ class HTTPError(Exception):
         #   we'll probably switch over to making everything code-based to more
         #   easily support HTTP/2. When that happens, should we continue to
         #   include the reason phrase in the title?
-        self.title = title or status
+        self.title = title or get_http_status_line(status)
 
         self.description = description
         self.headers = headers
