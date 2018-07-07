@@ -189,7 +189,7 @@ class Response(object):
             self.content_type,
             self.options.default_media_type
         )
-        
+
         # NOTE(kgriffs): Set _data to avoid re-serializing if the
         # data() property is called multiple times.
         self._data = handler.serialize(self._media)
@@ -211,7 +211,7 @@ class Response(object):
         # rather than serializing immediately. That way, if media() is called
         # multiple times we don't waste time serializing objects that will
         # just be thrown away.
-        self._data = None  
+        self._data = None
 
     def __repr__(self):
         return '<%s: %s>' % (self.__class__.__name__, self.status)
