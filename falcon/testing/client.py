@@ -18,6 +18,7 @@ This package includes utilities for simulating HTTP requests against a
 WSGI callable, without having to stand up a WSGI server.
 """
 
+import warnings
 import wsgiref.validate
 
 from six.moves import http_cookies
@@ -27,6 +28,18 @@ from falcon.testing import helpers
 from falcon.testing.srmock import StartResponseMock
 from falcon.util import CaseInsensitiveDict, http_date_to_dt, to_query_str
 from falcon.util import json as util_json
+
+
+warnings.filterwarnings(
+    'ignore',
+    (
+        'Unknown REQUEST_METHOD: '
+        "'(CONNECT|CHECKIN|CHECKOUT|UNCHECKIN|UPDATE|VERSION-CONTROL|REPORT|SETECASTRONOMY)'"
+    ),
+    wsgiref.validate.WSGIWarning,
+    '',
+    0,
+)
 
 
 class Result(object):
@@ -310,6 +323,7 @@ def simulate_request(app, method='GET', path='/', query_string=None,
 
         srmock = StartResponseMock()
         validator = wsgiref.validate.validator(app)
+
         iterable = validator(env, srmock)
 
         result = Result(iterable, srmock.status, srmock.headers)

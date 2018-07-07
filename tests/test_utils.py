@@ -573,20 +573,9 @@ class TestFalconTestingUtils(object):
         assert resource.captured_req.get_header('X-Falcon-Type') == 'peregrine'
 
 
-class FancyAPI(falcon.API):
-    pass
-
-
-class TestCaseFancyAPI(testing.TestCase):
-    api_class = FancyAPI
-
-    def test_something(self):
-        self.assertTrue(isinstance(self.api, FancyAPI))
-
-
 class TestNoApiClass(testing.TestCase):
     def test_something(self):
-        self.assertTrue(isinstance(self.api, falcon.API))
+        self.assertTrue(isinstance(self.app, falcon.API))
 
 
 class TestSetupApi(testing.TestCase):

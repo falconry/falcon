@@ -28,6 +28,7 @@ from falcon import DEFAULT_MEDIA_TYPE
 from falcon.media import Handlers
 from falcon.response_helpers import (
     format_content_disposition,
+    format_etag_header,
     format_header_value_list,
     format_range,
     header_property,
@@ -106,11 +107,13 @@ class Response(object):
             blocks as byte strings. Falcon will use *wsgi.file_wrapper*, if
             provided by the WSGI server, in order to efficiently serve
             file-like objects.
-        stream_len (int): Expected length of `stream`. If `stream` is set,
-            but `stream_len` is not, Falcon will not supply a
-            Content-Length header to the WSGI server. Consequently, the
-            server may choose to use chunked encoding or one of the
-            other strategies suggested by PEP-3333.
+
+            Note:
+                If the stream is set to an iterable object that requires
+                resource cleanup, it can implement a close() method to do so.
+                The close() method will be called upon completion of the request.
+
+        stream_len (int): Deprecated alias for :py:attr:`content_length`.
 
         context (dict): Dictionary to hold any data about the response which is
             specific to your app. Falcon itself will not interact with this
@@ -133,14 +136,15 @@ class Response(object):
 
     __slots__ = (
         'body',
-        'data',
-        '_headers',
-        '_cookies',
+        'context',
+        'options',
         'status',
         'stream',
         'stream_len',
-        'context',
-        'options',
+        '_cookies',
+        '_data',
+        '_headers',
+        '_media',
         '__dict__',
     )
 
@@ -156,14 +160,44 @@ class Response(object):
         # NOTE(tbug): will be set to a SimpleCookie object
         # when cookie is set via set_cookie
         self._cookies = None
-        self._media = None
 
         self.body = None
-        self.data = None
         self.stream = None
         self.stream_len = None
+        self._data = None
+        self._media = None
 
         self.context = self.context_type()
+
+    @property
+    def data(self):
+        # NOTE(kgriffs): Test explicitly against None since the
+        # app may have set it to an empty binary string.
+        if self._data is not None:
+            return self._data
+
+        # NOTE(kgriffs): Test explicitly against None since the
+        # app may have set it to an empty string that should still
+        # be serialized.
+        if self._media is None:
+            return None
+
+        if not self.content_type:
+            self.content_type = self.options.default_media_type
+
+        handler = self.options.media_handlers.find_by_media_type(
+            self.content_type,
+            self.options.default_media_type
+        )
+
+        # NOTE(kgriffs): Set _data to avoid re-serializing if the
+        # data() property is called multiple times.
+        self._data = handler.serialize(self._media)
+        return self._data
+
+    @data.setter
+    def data(self, value):
+        self._data = value
 
     @property
     def media(self):
@@ -173,35 +207,37 @@ class Response(object):
     def media(self, obj):
         self._media = obj
 
-        if not self.content_type:
-            self.content_type = self.options.default_media_type
-
-        handler = self.options.media_handlers.find_by_media_type(
-            self.content_type,
-            self.options.default_media_type
-        )
-        self.data = handler.serialize(self._media)
+        # NOTE(kgriffs): This will be set just-in-time by the data() property,
+        # rather than serializing immediately. That way, if media() is called
+        # multiple times we don't waste time serializing objects that will
+        # just be thrown away.
+        self._data = None
 
     def __repr__(self):
         return '<%s: %s>' % (self.__class__.__name__, self.status)
 
-    def set_stream(self, stream, stream_len):
-        """Convenience method for setting both `stream` and `stream_len`.
+    def set_stream(self, stream, content_length):
+        """Convenience method for setting both `stream` and `content_length`.
 
-        Although the `stream` and `stream_len` properties may be set
-        directly, using this method ensures `stream_len` is not
+        Although the `stream` and `content_length` properties may be set
+        directly, using this method ensures `content_length` is not
         accidentally neglected when the length of the stream is known in
         advance.
 
         Note:
             If the stream length is unknown, you can set `stream`
-            directly, and ignore `stream_len`. In this case, the
+            directly, and ignore `content_length`. In this case, the
             WSGI server may choose to use chunked encoding or one
             of the other strategies suggested by PEP-3333.
+
+        Args:
+            stream: A readable file-like object.
+            content_length (int): Length of the stream, used for the
+                Content-Length header in the response.
         """
 
         self.stream = stream
-        self.stream_len = stream_len
+        self.stream_len = content_length  # NOTE(pshello): Deprecated in favor of `content_length`
 
     def set_cookie(self, name, value, expires=None, max_age=None,
                    domain=None, path=None, secure=None, http_only=True):
@@ -422,8 +458,8 @@ class Response(object):
         If the header was not previously set, nothing is done (no error is
         raised).
 
-        Note that calling this method is equivalent to setting the corresponding
-        header property (when said property is available) to ``None``. For
+        Note that calling this method is equivalent to setting the
+        corresponding header property (when said property is available) to ``None``. For
         example::
 
             resp.etag = None
@@ -468,7 +504,7 @@ class Response(object):
 
         name = name.lower()
         if name in self._headers:
-            value = self._headers[name] + ',' + value
+            value = self._headers[name] + ', ' + value
 
         self._headers[name] = value
 
@@ -652,6 +688,23 @@ class Response(object):
         """,
         uri_encode)
 
+    content_length = header_property(
+        'Content-Length',
+        """Set the Content-Length header.
+
+        Useful for responding to HEAD requests when you aren't actually
+        providing the response body.
+
+        Note:
+            In cases where the response content is a stream (readable
+            file-like object), Falcon will not supply a Content-Length header
+            to the WSGI server unless `content_length` is explicitly set.
+            Consequently, the server may choose to use chunked encoding or one of the
+            other strategies suggested by PEP-3333.
+
+        """,
+    )
+
     content_range = header_property(
         'Content-Range',
         """A tuple to use in constructing a value for the Content-Range header.
@@ -697,7 +750,21 @@ class Response(object):
 
     etag = header_property(
         'ETag',
-        'Set the ETag header.')
+        """Set the ETag header.
+
+        The ETag header will be wrapped with double quotes ``"value"`` in case
+        the user didn't pass it.
+        """,
+        format_etag_header)
+
+    expires = header_property(
+        'Expires',
+        """Set the Expires header. Set to a ``datetime`` (UTC) instance.
+
+        Note:
+            Falcon will format the ``datetime`` as an HTTP date string.
+        """,
+        dt_to_http)
 
     last_modified = header_property(
         'Last-Modified',
