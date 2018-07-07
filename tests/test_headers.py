@@ -63,6 +63,7 @@ class HeaderHelpersResource(object):
         else:
             resp.content_range = (0, 25, 100, req.range_unit)
 
+        resp.accept_ranges = None  # Header not set yet, so should be a noop
         resp.accept_ranges = 'bytes'
 
         # Test the removal of custom headers
@@ -182,14 +183,41 @@ class AppendHeaderResource(object):
 
 
 class RemoveHeaderResource(object):
+    def __init__(self, with_double_quotes):
+        self.with_double_quotes = with_double_quotes
+
     def on_get(self, req, resp):
-        resp.etag = 'fa0d1a60ef6616bb28038515c8ea4cb2'
-        assert resp.etag == 'fa0d1a60ef6616bb28038515c8ea4cb2'
+        etag = 'fa0d1a60ef6616bb28038515c8ea4cb2'
+        if self.with_double_quotes:
+            etag = '\"' + etag + '\"'
+
+        resp.etag = etag
+        assert resp.etag == '"fa0d1a60ef6616bb28038515c8ea4cb2"'
         resp.etag = None
 
         resp.downloadable_as = 'foo.zip'
         assert resp.downloadable_as == 'attachment; filename="foo.zip"'
         resp.downloadable_as = None
+
+
+class ContentLengthHeaderResource(object):
+
+    def __init__(self, content_length, body=None):
+        self._content_length = content_length
+        self._body = body
+
+    def on_get(self, req, resp):
+        resp.content_length = self._content_length
+        resp.body = self._body
+
+
+class ExpiresHeaderResource(object):
+
+    def __init__(self, expires):
+        self._expires = expires
+
+    def on_get(self, req, resp):
+        resp.expires = self._expires
 
 
 class TestHeaders(object):
@@ -201,6 +229,26 @@ class TestHeaders(object):
 
         content_length = str(len(SAMPLE_BODY))
         assert result.headers['Content-Length'] == content_length
+
+    def test_declare_content_length(self, client):
+        client.app.add_route('/', ContentLengthHeaderResource(42))
+        result = client.simulate_get()
+
+        assert result.headers['Content-Length'] == '42'
+
+    def test_declared_content_length_not_overriden_by_body_length(self, client):
+        resource = ContentLengthHeaderResource(42, body='Hello World')
+        client.app.add_route('/', resource)
+        result = client.simulate_get()
+
+        assert result.headers['Content-Length'] == '42'
+
+    def test_expires_header(self, client):
+        expires = datetime(2013, 1, 1, 10, 30, 30)
+        client.app.add_route('/', ExpiresHeaderResource(expires))
+        result = client.simulate_get()
+
+        assert result.headers['Expires'] == 'Tue, 01 Jan 2013 10:30:30 GMT'
 
     def test_default_value(self, client):
         resource = testing.SimpleTestResource(body=SAMPLE_BODY)
@@ -214,8 +262,9 @@ class TestHeaders(object):
         value = req.get_header('X-Not-Found', default='some-value')
         assert value == 'some-value'
 
-    def test_unset_header(self, client):
-        client.app.add_route('/', RemoveHeaderResource())
+    @pytest.mark.parametrize('with_double_quotes', [True, False])
+    def test_unset_header(self, client, with_double_quotes):
+        client.app.add_route('/', RemoveHeaderResource(with_double_quotes))
         result = client.simulate_get()
 
         assert 'Etag' not in result.headers
@@ -340,7 +389,7 @@ class TestHeaders(object):
         assert resp.cache_control == cache_control
         assert result.headers['Cache-Control'] == cache_control
 
-        etag = 'fa0d1a60ef6616bb28038515c8ea4cb2'
+        etag = '"fa0d1a60ef6616bb28038515c8ea4cb2"'
         assert resp.etag == etag
         assert result.headers['Etag'] == etag
 
@@ -440,7 +489,7 @@ class TestHeaders(object):
         for method in ('HEAD', 'GET'):
             result = client.simulate_request(method=method)
             value = result.headers['x-things']
-            assert value == 'thing-1,thing-2,thing-3'
+            assert value == 'thing-1, thing-2, thing-3'
 
         result = client.simulate_request(method='POST')
         assert result.headers['x-things'] == 'thing-1'

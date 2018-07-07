@@ -30,7 +30,6 @@ except ImportError:
     from json import dumps as json_dumps
 
 import falcon
-from .helpers import rand_string
 
 
 def capture_responder_args(req, resp, resource, params):
@@ -130,68 +129,3 @@ class SimpleTestResource(object):
     @falcon.before(set_resp_defaults)
     def on_post(self, req, resp, **kwargs):
         pass
-
-
-class TestResource(object):
-    """Mock resource for functional testing.
-
-    Warning:
-        This class is deprecated and will be removed in a future
-        release. Please use :py:class:`~.SimpleTestResource`
-        instead.
-
-    This class implements the `on_get` responder, captures
-    request data, and sets response body and headers.
-
-    Child classes may add additional methods and attributes as
-    needed.
-
-    Attributes:
-        sample_status (str): HTTP status to set in the response
-        sample_body (str): Random body string to set in the response
-        resp_headers (dict): Sample headers to use in the response
-
-        req (falcon.Request): Request object passed into the `on_get`
-            responder.
-        resp (falcon.Response): Response object passed into the `on_get`
-            responder.
-        kwargs (dict): Keyword arguments passed into the `on_get`
-            responder, if any.
-        called (bool): ``True`` if `on_get` was ever called; ``False``
-            otherwise.
-    """
-
-    sample_status = '200 OK'
-    sample_body = rand_string(0, 128 * 1024)
-    resp_headers = {
-        'Content-Type': 'text/plain; charset=UTF-8',
-        'ETag': '10d4555ebeb53b30adf724ca198b32a2',
-        'X-Hello': 'OH HAI'
-    }
-
-    def __init__(self):
-        """Initializes called to False"""
-
-        self.called = False
-
-    def on_get(self, req, resp, **kwargs):
-        """GET responder.
-
-        Captures `req`, `resp`, and `kwargs`. Also sets up a sample response.
-
-        Args:
-            req: Falcon ``Request`` instance.
-            resp: Falcon ``Response`` instance.
-            kwargs: URI template *name=value* pairs, if any, along with
-                any extra args injected by middleware.
-
-        """
-
-        # Don't try this at home - classes aren't recreated
-        # for every request
-        self.req, self.resp, self.kwargs = req, resp, kwargs
-
-        self.called = True
-        resp.status = falcon.HTTP_200
-        resp.body = self.sample_body
-        resp.set_headers(self.resp_headers)
