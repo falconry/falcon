@@ -107,6 +107,7 @@ def test_unknown_media_type():
     with pytest.raises(errors.HTTPUnsupportedMediaType) as err:
         resp.content_type = 'nope/json'
         resp.media = {'something': True}
+        __ = resp.data  # NOQA
 
     assert err.value.description == 'nope/json is an unsupported media type.'
 
@@ -144,10 +145,12 @@ def test_mimeparse_edgecases():
     resp.content_type = 'application/vnd.something'
     with pytest.raises(errors.HTTPUnsupportedMediaType):
         resp.media = {'something': True}
+        __ = resp.data  # NOQA
 
     resp.content_type = 'invalid'
     with pytest.raises(errors.HTTPUnsupportedMediaType):
         resp.media = {'something': True}
+        __ = resp.data  # NOQA
 
     # Clear the content type, shouldn't raise this time
     resp.content_type = None
