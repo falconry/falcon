@@ -192,7 +192,10 @@ class Response(object):
 
         # NOTE(kgriffs): Set _data to avoid re-serializing if the
         # data() property is called multiple times.
-        self._data = handler.serialize(self._media)
+        self._data = handler.serialize(
+            self._media,
+            self.content_type
+        )
         return self._data
 
     @data.setter
