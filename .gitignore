@@ -53,6 +53,5 @@ docs/_build
 *~
 
 # VSCode
-.vscode
 
-.envrc
+.vscode
