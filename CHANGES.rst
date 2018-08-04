@@ -23,6 +23,8 @@ Changes to Supported Platforms
 New & Improved
 --------------
 
+- Added new property ``falcon.Reponse.headers`` property to ``Response`` class
+
 Fixed
 -----
 
