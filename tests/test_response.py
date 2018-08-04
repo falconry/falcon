@@ -1,6 +1,7 @@
+import pytest
+
 import falcon
 from falcon import MEDIA_TEXT
-import pytest
 
 
 def test_response_set_content_type_set():
@@ -21,13 +22,13 @@ def test_response_get_headers():
     resp.append_header('x-things3', 'thing-3')
 
     headers = resp.headers
-    assert "x-things1" in headers
-    assert "x-things2" in headers
-    assert "x-things3" in headers
+    assert 'x-things1' in headers
+    assert 'x-things2' in headers
+    assert 'x-things3' in headers
 
 
 def test_response_attempt_to_set_read_only_headers():
     resp = falcon.Response()
 
     with pytest.raises(AttributeError):
-        resp.headers = ["x-things1", "x-things2", "x-things3"]
+        resp.headers = ['x-things1', 'x-things2', 'x-things3']
