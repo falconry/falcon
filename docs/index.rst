@@ -31,7 +31,7 @@ clean design that embraces HTTP and the REST architectural style.
 What People are Saying
 ----------------------
 
-"We have been using Falcon as a replacement for [popular framework] and we simply love the performance (three times faster) and code base size (easily half of our original [popular framework] code)."
+"We have been using Falcon as a replacement for [framework] and we simply love the performance (three times faster) and code base size (easily half of our original [framework] code)."
 
 "Falcon looks great so far. I hacked together a quick test for a
 tiny server of mine and was ~40% faster with only 20 minutes of
