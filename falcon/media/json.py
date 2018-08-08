@@ -9,8 +9,8 @@ from falcon.util import json
 
 class JSONHandler(BaseHandler):
     """JSON media handler.
-    
-    This handler uses Python's :py:mod:`json` by default, but will 
+
+    This handler uses Python's :py:mod:`json` by default, but will
     use :py:mod:`ujson` if available.
     """
 
