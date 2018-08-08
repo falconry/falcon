@@ -27,8 +27,8 @@ Thank You to Our Gold Sponsors
 
 .. raw:: html
 
-    <a href="https://www.likalo.com/"><img src="https://raw.githubusercontent.com/falconry/falcon/master/docs/_content/likalo.svg" height="20" alt="LIKALO" style="margin-right: 15px"></a>
-    <a href="https://www.luhnar.com/"><img src="https://raw.githubusercontent.com/falconry/falcon/master/docs/_content/luhnar.svg" height="18" alt="Luhnar Site Accelerator"></a>
+    <a href="https://www.likalo.com/" style="margin-right: 15px"><img src="https://falconframework.org/img/sponsors/likalo.svg" height="20" alt="LIKALO" ></a>
+    <a href="https://www.luhnar.com/"><img src="https://falconframework.org/img/sponsors/luhnar-dark.svg" height="16" alt="Luhnar Site Accelerator" style="padding-bottom: 2px"></a>
 
 Support Falcon Development
 --------------------------
