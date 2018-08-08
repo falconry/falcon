@@ -1,3 +1,5 @@
+import pytest
+
 import falcon
 from falcon import testing
 
@@ -70,7 +72,8 @@ def test_can_pass_additional_params_to_add_route():
     check = []
 
     class CustomRouter(object):
-        def add_route(self, uri_template, method_map, resource, name):
+        def add_route(self, uri_template, resource, **kwargs):
+            name = kwargs['name']
             self._index = {name: uri_template}
             check.append(name)
 
@@ -83,11 +86,11 @@ def test_can_pass_additional_params_to_add_route():
     assert len(check) == 1
     assert 'my-url-name' in check
 
-    # Also as arg.
-    app.add_route('/test', 'resource', 'my-url-name-arg')
-
-    assert len(check) == 2
-    assert 'my-url-name-arg' in check
+    # NOTE(kgriffs): Extra values must be passed as kwargs, since that makes
+    #   it a lot easier for overriden methods to simply ignore options they
+    #   don't care about.
+    with pytest.raises(TypeError):
+        app.add_route('/test', 'resource', 'xarg1', 'xarg2')
 
 
 def test_custom_router_takes_req_positional_argument():

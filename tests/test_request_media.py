@@ -69,13 +69,26 @@ def test_msgpack(media_type):
 def test_unknown_media_type(media_type):
     client = create_client()
     headers = {'Content-Type': media_type}
-    client.simulate_post('/', body='', headers=headers)
+    client.simulate_post('/', body=b'something', headers=headers)
 
     with pytest.raises(errors.HTTPUnsupportedMediaType) as err:
         client.resource.captured_req.media
 
     msg = '{} is an unsupported media type.'.format(media_type)
     assert err.value.description == msg
+
+
+@pytest.mark.parametrize('media_type', [
+    ('application/json'),
+])
+def test_exhausted_stream(media_type):
+    client = create_client({
+        'application/json': media.JSONHandler(),
+    })
+    headers = {'Content-Type': media_type}
+    client.simulate_post('/', body='', headers=headers)
+
+    assert client.resource.captured_req.media is None
 
 
 def test_invalid_json():
@@ -111,10 +124,7 @@ def test_invalid_stream_fails_gracefully():
     req.headers['Content-Type'] = 'application/json'
     req._bounded_stream = None
 
-    with pytest.raises(errors.HTTPBadRequest) as err:
-        req.media
-
-    assert 'Could not parse JSON body' in err.value.description
+    assert req.media is None
 
 
 def test_use_cached_media():
@@ -125,3 +135,27 @@ def test_use_cached_media():
     req._media = {'something': True}
 
     assert req.media == {'something': True}
+
+
+class NopeHandler(media.BaseHandler):
+
+    def serialize(self, *args, **kwargs):
+        pass
+
+    def deserialize(self, *args, **kwargs):
+        pass
+
+
+def test_complete_consumption():
+    client = create_client({
+        'nope/nope': NopeHandler()
+    })
+    body = b'{"something": "abracadabra"}'
+    headers = {'Content-Type': 'nope/nope'}
+
+    client.simulate_post('/', body=body, headers=headers)
+
+    req_media = client.resource.captured_req.media
+    assert req_media is None
+    req_bounded_stream = client.resource.captured_req.bounded_stream
+    assert not req_bounded_stream.read()

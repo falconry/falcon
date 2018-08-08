@@ -618,7 +618,7 @@ changes), and that your coding style follows PEP 8 and doesn't cause
 pyflakes to complain.
 
 Commit messages should be formatted using `AngularJS
-conventions <http://goo.gl/QpbS7>`__.
+conventions <https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#-git-commit-guidelines>`__.
 
 Comments follow `Google's style guide <https://google.github.io/styleguide/pyguide.html?showone=Comments#Comments>`__,
 with the additional requirement of prefixing inline comments using your

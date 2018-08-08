@@ -108,6 +108,11 @@ class Response(object):
             provided by the WSGI server, in order to efficiently serve
             file-like objects.
 
+            Note:
+                If the stream is set to an iterable object that requires
+                resource cleanup, it can implement a close() method to do so.
+                The close() method will be called upon completion of the request.
+
         stream_len (int): Deprecated alias for :py:attr:`content_length`.
 
         context (dict): Dictionary to hold any data about the response which is
@@ -131,14 +136,15 @@ class Response(object):
 
     __slots__ = (
         'body',
-        'data',
-        '_headers',
-        '_cookies',
+        'context',
+        'options',
         'status',
         'stream',
         'stream_len',
-        'context',
-        'options',
+        '_cookies',
+        '_data',
+        '_headers',
+        '_media',
         '__dict__',
     )
 
@@ -154,14 +160,47 @@ class Response(object):
         # NOTE(tbug): will be set to a SimpleCookie object
         # when cookie is set via set_cookie
         self._cookies = None
-        self._media = None
 
         self.body = None
-        self.data = None
         self.stream = None
         self.stream_len = None
+        self._data = None
+        self._media = None
 
         self.context = self.context_type()
+
+    @property
+    def data(self):
+        # NOTE(kgriffs): Test explicitly against None since the
+        # app may have set it to an empty binary string.
+        if self._data is not None:
+            return self._data
+
+        # NOTE(kgriffs): Test explicitly against None since the
+        # app may have set it to an empty string that should still
+        # be serialized.
+        if self._media is None:
+            return None
+
+        if not self.content_type:
+            self.content_type = self.options.default_media_type
+
+        handler = self.options.media_handlers.find_by_media_type(
+            self.content_type,
+            self.options.default_media_type
+        )
+
+        # NOTE(kgriffs): Set _data to avoid re-serializing if the
+        # data() property is called multiple times.
+        self._data = handler.serialize(
+            self._media,
+            self.content_type
+        )
+        return self._data
+
+    @data.setter
+    def data(self, value):
+        self._data = value
 
     @property
     def media(self):
@@ -171,14 +210,11 @@ class Response(object):
     def media(self, obj):
         self._media = obj
 
-        if not self.content_type:
-            self.content_type = self.options.default_media_type
-
-        handler = self.options.media_handlers.find_by_media_type(
-            self.content_type,
-            self.options.default_media_type
-        )
-        self.data = handler.serialize(self._media)
+        # NOTE(kgriffs): This will be set just-in-time by the data() property,
+        # rather than serializing immediately. That way, if media() is called
+        # multiple times we don't waste time serializing objects that will
+        # just be thrown away.
+        self._data = None
 
     def __repr__(self):
         return '<%s: %s>' % (self.__class__.__name__, self.status)
@@ -723,6 +759,15 @@ class Response(object):
         the user didn't pass it.
         """,
         format_etag_header)
+
+    expires = header_property(
+        'Expires',
+        """Set the Expires header. Set to a ``datetime`` (UTC) instance.
+
+        Note:
+            Falcon will format the ``datetime`` as an HTTP date string.
+        """,
+        dt_to_http)
 
     last_modified = header_property(
         'Last-Modified',
