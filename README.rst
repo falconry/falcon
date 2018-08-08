@@ -49,6 +49,28 @@ Quick Links
 * `falconry/user for Falcon users <https://gitter.im/falconry/user>`_ @ Gitter
 * `falconry/dev for Falcon contributors <https://gitter.im/falconry/dev>`_ @ Gitter
 
+What People are Saying
+----------------------
+
+"We have been using Falcon as a replacement for [framework] and we simply love the performance (three times faster) and code base size (easily half of our original [framework] code)."
+
+"Falcon looks great so far. I hacked together a quick test for a
+tiny server of mine and was ~40% faster with only 20 minutes of
+work."
+
+"Falcon is rock solid and it's fast."
+
+"I'm loving #falconframework! Super clean and simple, I finally
+have the speed and flexibility I need!"
+
+"I feel like I'm just talking HTTP at last, with nothing in the
+middle. Falcon seems like the requests of backend."
+
+"The source code for Falcon is so good, I almost prefer it to
+documentation. It basically can't be wrong."
+
+"What other framework has integrated support for 786 TRY IT NOW ?"
+
 How is Falcon different?
 ------------------------
 
