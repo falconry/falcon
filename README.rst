@@ -22,6 +22,14 @@ remaining highly effective.
 Falcon apps work with any WSGI server, and run like a champ under
 CPython 2.7, CPython 3.4+, PyPy2.7, and PyPy3.5.
 
+Thank You to Our Gold Sponsors
+------------------------------
+
+.. raw:: html
+
+    <a href="https://www.likalo.com/"><img src="https://raw.githubusercontent.com/falconry/falcon/master/docs/_content/likalo.svg" height="20" alt="LIKALO" style="margin-right: 15px"></a>
+    <a href="https://www.luhnar.com/"><img src="https://raw.githubusercontent.com/falconry/falcon/master/docs/_content/luhnar.svg" height="18" alt="Luhnar Site Accelerator"></a>
+
 Support Falcon Development
 --------------------------
 
