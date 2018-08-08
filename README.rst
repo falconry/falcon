@@ -71,7 +71,7 @@ documentation. It basically can't be wrong."
 
 "What other framework has integrated support for 786 TRY IT NOW ?"
 
-How is Falcon different?
+How is Falcon Different?
 ------------------------
 
     Perfection is finally attained not when there is no longer anything
