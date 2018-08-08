@@ -8,7 +8,11 @@ from falcon.util import json
 
 
 class JSONHandler(BaseHandler):
-    """Handler built using Python's :py:mod:`json` by default, but will use :py:mod:`ujson` if available."""
+    """JSON media handler.
+    
+    This handler uses Python's :py:mod:`json` by default, but will 
+    use :py:mod:`ujson` if available.
+    """
 
     def deserialize(self, stream, content_type, content_length):
         try:
