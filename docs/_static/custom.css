@@ -23,8 +23,7 @@ h1 a:hover, h2 a:hover, h3 a:hover {
 }
 
 div.footer {
-    padding-left: 500px;
-    text-align: left;
+    text-align: center;
 }
 
 div.footer a:hover {
@@ -53,6 +52,10 @@ code.xref.docutils.literal {
     background-color: transparent;
     padding: 0;
     font-size: 0.9em;
+}
+
+div.viewcode-block:target {
+    background: inherit;
 }
 
 a:hover, div.sphinxsidebar a:hover, a.reference:hover, a.reference.internal:hover code {
@@ -150,7 +153,7 @@ div.admonition .last.highlight-default {
 }
 
 pre {
-    background-color: #212529;
+    /*background-color: #212529;*/
     padding: 1.25em 30px;
 }
 

@@ -2,6 +2,6 @@ docutils
 jinja2
 markupsafe
 pygments
-sphinx>=1.4.4
+pygments-style-github
+sphinx>=1.4.4,!=1.7.3
 sphinx_rtd_theme
-pygments-style-railscasts
