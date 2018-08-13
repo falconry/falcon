@@ -20,10 +20,7 @@ Conversely, the `uri` module must be imported explicitly::
 
 """
 
-try:
-    import ujson as json  # NOQA
-except ImportError:
-    import json  # NOQA
+import mujson as json
 
 # Hoist misc. utils
 from falcon.util import structures
