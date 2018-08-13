@@ -22,14 +22,13 @@ remaining highly effective.
 Falcon apps work with any WSGI server, and run like a champ under
 CPython 2.7, CPython 3.4+, PyPy2.7, and PyPy3.5.
 
-Thank You to Our Backers
-------------------------
+Thank You to Our Sponsors
+-------------------------
 
 .. raw:: html
 
-    <a href="https://www.likalo.com/" style="margin-right: 15px"><img src="https://falconframework.org/img/sponsors/likalo.svg" height="20" alt="LIKALO" ></a>&nbsp;&nbsp;&nbsp;
+    <a href="https://www.likalo.com/" style="margin-right: 15px"><img src="https://falconframework.org/img/sponsors/likalo.svg" height="24" alt="LIKALO" ></a><br>
     <a href="https://www.luhnar.com/"><img src="https://falconframework.org/img/sponsors/luhnar-dark.svg" height="20" alt="Luhnar Site Accelerator" style="padding-bottom: 2px"></a>
-    <br>
 
 Support Falcon Development
 --------------------------
@@ -660,11 +659,12 @@ GitHub nick and an appropriate prefix:
 - PERF(riker): Travel time to the nearest starbase?
 - APPSEC(riker): In all trust, there is the possibility for betrayal.
 
-Kurt Griffiths (**kgriffs** on GH, Gitter, and Twitter) is the original
-creator of the Falcon framework, and currently co-maintains the project
-along with John Vrbanac (**jmvrbanac** on GH and Gitter, and
-**jvrbanac** on Twitter). Falcon is developed by a growing community of
-stylish users and contributors just like you.
+The core Falcon project maintainers are:
+
+- Kurt Griffiths, Project Lead (**kgriffs** on GH, Gitter, and Twitter)
+- John Vrbanac (**jmvrbanac** on GH and Gitter, and **jvrbanac** on Twitter)
+- Vytautas Liuolia (**vytas7** on GH and Gitter)
+- Nick Zaccardi (**nZac** on GH and Gitter)
 
 Please don't hesitate to reach out if you have any questions, or just need a
 little help getting started. You can find us in
