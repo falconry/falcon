@@ -10,11 +10,12 @@ we invite you to take a look at the issues listed under our [next milestone][ms]
 If you see one you'd like to work on, please leave a quick comment so that we don't
 end up with duplicated effort. Thanks in advance!
 
-Kurt Griffiths (**kgriffs** on GH, Gitter, and Twitter) is the original
-creator of the Falcon framework, and currently co-maintains the project
-along with John Vrbanac (**jmvrbanac** on GH and Gitter, and
-**jvrbanac** on Twitter). Falcon is developed by a growing community of
-users and contributors just like you.
+The core Falcon project maintainers are:
+
+* Kurt Griffiths, Project Lead (**kgriffs** on GH, Gitter, and Twitter)
+* John Vrbanac (**jmvrbanac** on GH and Gitter, and **jvrbanac** on Twitter)
+* Vytautas Liuolia (**vytas7** on GH and Gitter)
+* Nick Zaccardi (**nZac** on GH and Gitter)
 
 Please don't hesitate to reach out if you have any questions, or just need a
 little help getting started. You can find us in
