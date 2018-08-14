@@ -1,4 +1,4 @@
-## Contributer's Guide
+## Contributor's Guide
 
 Thanks for your interest in the project! We welcome pull requests from
 developers of all skill levels. To get started, simply fork the master branch
@@ -44,7 +44,7 @@ $ pyenv shell 2.7.14 3.6.4
 
 #### Reviews
 
-Falcon is used in a number of mission-critical applications and is known for its stability and reliability. Therefore, we invest a lot of time in carefully reviewing PRs and working with contributers to ensure that every patch merged into the master branch is correct, complete, performant, well-documented, and appropriate.
+Falcon is used in a number of mission-critical applications and is known for its stability and reliability. Therefore, we invest a lot of time in carefully reviewing PRs and working with contributors to ensure that every patch merged into the master branch is correct, complete, performant, well-documented, and appropriate.
 
 Project maintainers review each PR for the following:
 
