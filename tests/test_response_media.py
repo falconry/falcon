@@ -155,3 +155,36 @@ def test_mimeparse_edgecases():
     # Clear the content type, shouldn't raise this time
     resp.content_type = None
     resp.media = {'something': True}
+
+
+def test_json_dumps_func():
+    document = {u'message': u'\xa1Hello Unicode! \U0001F638'}
+    json_handler = media.JSONHandler(dumps=json.dumps)
+
+    app = falcon.API()
+    app.resp_options.media_handlers.update({falcon.MEDIA_JSON: json_handler})
+    app.add_route('/', SimpleMediaResource(document))
+
+    client = testing.TestClient(app)
+    resp = client.simulate_get('/')
+
+    assert resp.json == document
+
+
+def test_json_dumps_default():
+
+    def dumps_default(obj):
+        if isinstance(obj, complex):
+            return {u'real': obj.real, u'imag': obj.imag}
+        return None
+
+    json_handler = media.JSONHandler(dumps_default=dumps_default)
+
+    app = falcon.API()
+    app.resp_options.media_handlers.update({falcon.MEDIA_JSON: json_handler})
+    app.add_route('/', SimpleMediaResource(complex(1, 15)))
+
+    client = testing.TestClient(app)
+    resp = client.simulate_get('/')
+
+    assert resp.json == {u'real': 1.0, u'imag': 15.0}

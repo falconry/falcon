@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 import falcon
@@ -34,6 +36,41 @@ def test_json(media_type):
     media = client.resource.captured_req.media
     assert media is not None
     assert media.get('something') is True
+
+
+def test_json_loads_func():
+    json_handler = media.JSONHandler(loads=json.loads)
+    handlers = {'application/json': json_handler}
+    client = create_client(handlers=handlers)
+
+    expected_body = b'{"something": true}'
+    headers = {'Content-Type': 'application/json'}
+    client.simulate_post('/', body=expected_body, headers=headers)
+
+    req_media = client.resource.captured_req.media
+    assert req_media is not None
+    assert req_media.get('something') is True
+
+
+def test_json_loads_object_hook():
+
+    def loads_object_hook(dct):
+        if 'flip_sign' in dct:
+            flipped = (-1 * dct.get('flip_sign'))
+            dct['flipped_sign'] = flipped
+        return dct
+
+    json_handler = media.JSONHandler(loads_object_hook=loads_object_hook)
+    handlers = {'application/json': json_handler}
+    client = create_client(handlers=handlers)
+
+    expected_body = b'{"flip_sign": 15}'
+    headers = {'Content-Type': 'application/json'}
+    client.simulate_post('/', body=expected_body, headers=headers)
+
+    req_media = client.resource.captured_req.media
+    assert req_media is not None
+    assert req_media.get('flipped_sign') == -15
 
 
 @pytest.mark.parametrize('media_type', [
