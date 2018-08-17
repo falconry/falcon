@@ -133,7 +133,7 @@ class Response(object):
 
         options (dict): Set of global options passed from the API handler.
 
-        headers (list): Read-only list of all headers set for Response
+        headers (list): Read-only list of all headers set for Response.
     """
 
     __slots__ = (
