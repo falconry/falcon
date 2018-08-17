@@ -206,7 +206,7 @@ class Response(object):
 
     @property
     def headers(self):
-        return [header for header, value in self._headers.items()]
+        return list(self._headers)
 
     @property
     def media(self):
