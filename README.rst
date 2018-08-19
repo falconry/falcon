@@ -202,11 +202,11 @@ Installing it is as simple as:
 
     $ pip install falcon
 
-If `ujson <https://pypi.python.org/pypi/ujson>`__ is available, Falcon
-will use it to speed up media (de)serialization, error serialization,
-and query string parsing. Note that ``ujson`` can actually be slower
-on PyPy than the standard ``json`` module due to ctypes overhead, and
-so we recommend only using ``ujson`` with CPython deployments:
+Falcon uses `mujson <https://pypi.python.org/pypi/mujson>`__ to select the most
+performant JSON functions available at import time. For instance, if `ujson
+<https://pypi.python.org/pypi/ujson>`__ is available, Falcon will use it to
+speed up media (de)serialization, error serialization, and query string
+parsing.
 
 .. code:: bash
 
