@@ -1,7 +1,3 @@
-try:
-    import ujson as json
-except ImportError:
-    import json
 import logging
 import uuid
 from wsgiref import simple_server
@@ -9,6 +5,7 @@ from wsgiref import simple_server
 import requests
 
 import falcon
+from falcon.util import json
 
 
 class StorageEngine(object):

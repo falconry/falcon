@@ -1,16 +1,12 @@
 from datetime import date, datetime
 from uuid import UUID
 
-try:
-    import ujson as json
-except ImportError:
-    import json
-
 import pytest
 
 import falcon
 from falcon.errors import HTTPInvalidParam
 import falcon.testing as testing
+from falcon.util import json
 
 
 class Resource(testing.SimpleTestResource):

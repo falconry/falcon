@@ -2,13 +2,10 @@ from datetime import datetime
 
 import pytest
 
-try:
-    import ujson as json
-except ImportError:
-    import json
-
 import falcon
 import falcon.testing as testing
+from falcon.util import json
+
 
 _EXPECTED_BODY = {u'status': u'ok'}
 
