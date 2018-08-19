@@ -215,7 +215,10 @@ class ClassResourceWithAwareHooks(object):
 def test_output_validator(client):
     result = client.simulate_get()
     assert result.status_code == 723
-    assert result.text == json.dumps({'title': 'Tricky'})
+    # HACK(mattgiles): not all JSON libraries treat white space consistently.
+    result = result.text.replace(' ', '')
+    expected = json.dumps({'title': 'Tricky'}).replace(' ', '')
+    assert result == expected
 
 
 def test_serializer(client):
