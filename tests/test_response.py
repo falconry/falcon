@@ -22,9 +22,9 @@ def test_response_get_headers():
     resp.append_header('x-things3', 'thing-3')
 
     headers = resp.headers
-    assert headers['x-things1'] == "thing-1"
-    assert headers['x-things2'] == "thing-2"
-    assert headers['x-things3'] == "thing-3"
+    assert headers['x-things1'] == 'thing-1'
+    assert headers['x-things2'] == 'thing-2'
+    assert headers['x-things3'] == 'thing-3'
 
 
 def test_response_attempt_to_set_read_only_headers():
@@ -38,6 +38,6 @@ def test_response_attempt_to_set_read_only_headers():
         resp.headers = {'x-things4': 'thing-4'}
 
     headers = resp.headers
-    assert headers['x-things1'] == "thing-1"
-    assert headers['x-things2'] == "thing-2"
-    assert headers['x-things3'] == "thing-3"
+    assert headers['x-things1'] == 'thing-1'
+    assert headers['x-things2'] == 'thing-2'
+    assert headers['x-things3'] == 'thing-3'
