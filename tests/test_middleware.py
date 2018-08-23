@@ -167,10 +167,12 @@ class TestRequestTimeMiddleware(TestMiddleware):
         with pytest.raises(Exception):
             client.simulate_request(path=TEST_ROUTE)
 
-    def test_log_get_request(self):
+    @pytest.mark.parametrize('independent_middleware', [True, False])
+    def test_log_get_request(self, independent_middleware):
         """Test that Log middleware is executed"""
         global context
-        app = falcon.API(middleware=[RequestTimeMiddleware()])
+        app = falcon.API(middleware=[RequestTimeMiddleware()],
+                         independent_middleware=independent_middleware)
 
         app.add_route(TEST_ROUTE, MiddlewareClassResource())
         client = testing.TestClient(app)
@@ -241,7 +243,8 @@ class TestSeveralMiddlewares(TestMiddleware):
 
     def test_middleware_execution_order(self):
         global context
-        app = falcon.API(middleware=[ExecutedFirstMiddleware(),
+        app = falcon.API(independent_middleware=False,
+                         middleware=[ExecutedFirstMiddleware(),
                                      ExecutedLastMiddleware()])
 
         app.add_route(TEST_ROUTE, MiddlewareClassResource())
@@ -404,7 +407,7 @@ class TestSeveralMiddlewares(TestMiddleware):
         assert 'transaction_id' in context
         assert 'start_time' not in context
         assert 'mid_time' not in context
-        assert 'end_time' not in context
+        assert 'end_time' in context
         assert 'error_handler' in context
 
     def test_order_mw_executed_when_exception_in_resp(self):
@@ -502,6 +505,7 @@ class TestSeveralMiddlewares(TestMiddleware):
         # Any mw is executed now...
         expectedExecutedMethods = [
             'ExecutedFirstMiddleware.process_request',
+            'ExecutedLastMiddleware.process_response',
             'ExecutedFirstMiddleware.process_response'
         ]
         assert expectedExecutedMethods == context['executed_methods']
@@ -623,7 +627,9 @@ class TestRemoveBasePathMiddleware(TestMiddleware):
 
 
 class TestResourceMiddleware(TestMiddleware):
-    def test_can_access_resource_params(self):
+
+    @pytest.mark.parametrize('independent_middleware', [True, False])
+    def test_can_access_resource_params(self, independent_middleware):
         """Test that params can be accessed from within process_resource"""
         global context
 
@@ -631,7 +637,8 @@ class TestResourceMiddleware(TestMiddleware):
             def on_get(self, req, resp, **params):
                 resp.body = json.dumps(params)
 
-        app = falcon.API(middleware=AccessParamsMiddleware())
+        app = falcon.API(middleware=AccessParamsMiddleware(),
+                         independent_middleware=independent_middleware)
         app.add_route('/path/{id}', Resource())
         client = testing.TestClient(app)
         response = client.simulate_request(path='/path/22')

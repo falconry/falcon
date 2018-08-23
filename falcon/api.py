@@ -108,10 +108,13 @@ class API(object):
             to use in lieu of the default engine.
             (See also: :ref:`Custom Routers <routing_custom>`)
 
-        independent_middleware (bool): Set to ``True`` if response
-            middleware should be executed independently of whether or
+        independent_middleware (bool): Set to ``False`` if response
+            middleware should not be executed independently of whether or
             not request middleware raises an exception (default
-            ``False``).
+            ``True``). When this option is set to ``False``, a middleware
+            component's ``process_response()`` method will NOT be called
+            when that same component's ``process_request()`` (or that of
+            a component higher up in the stack) raises an exception.
 
     Attributes:
         req_options: A set of behavioral options related to incoming
@@ -146,7 +149,7 @@ class API(object):
     def __init__(self, media_type=DEFAULT_MEDIA_TYPE,
                  request_type=Request, response_type=Response,
                  middleware=None, router=None,
-                 independent_middleware=False):
+                 independent_middleware=True):
         self._sinks = []
         self._media_type = media_type
         self._static_routes = []
@@ -301,7 +304,7 @@ class API(object):
     def router_options(self):
         return self._router.options
 
-    def add_route(self, uri_template, resource, suffix=None, **kwargs):
+    def add_route(self, uri_template, resource, **kwargs):
         """Associate a templatized URI path with a resource.
 
         Falcon routes incoming requests to resources based on a set of
@@ -312,6 +315,10 @@ class API(object):
         If no route matches the request, control then passes to a
         default responder that simply raises an instance of
         :class:`~.HTTPNotFound`.
+
+        This method delegates to the configured router's ``add_route()``
+        method. To override the default behavior, pass a custom router
+        object to the :class:`~.API` initializer.
 
         (See also: :ref:`Routing <routing>`)
 
@@ -362,9 +369,7 @@ class API(object):
         if '//' in uri_template:
             raise ValueError("uri_template may not contain '//'")
 
-        method_map = routing.map_http_methods(resource, suffix=suffix)
-        routing.set_default_responders(method_map)
-        self._router.add_route(uri_template, method_map, resource, **kwargs)
+        self._router.add_route(uri_template, resource, **kwargs)
 
     def add_static_route(self, prefix, directory, downloadable=False, fallback_filename=None):
         """Add a route to a directory of static files.

@@ -72,7 +72,7 @@ def test_can_pass_additional_params_to_add_route():
     check = []
 
     class CustomRouter(object):
-        def add_route(self, uri_template, method_map, resource, **kwargs):
+        def add_route(self, uri_template, resource, **kwargs):
             name = kwargs['name']
             self._index = {name: uri_template}
             check.append(name)
