@@ -133,7 +133,7 @@ class Response(object):
 
         options (dict): Set of global options passed from the API handler.
 
-        headers (list): Read-only list of all headers set for Response.
+        headers (dict): Read-only list of all headers set for Response.
     """
 
     __slots__ = (
@@ -206,7 +206,7 @@ class Response(object):
 
     @property
     def headers(self):
-        return dict(self._headers)
+        return self._headers.copy()
 
     @property
     def media(self):
