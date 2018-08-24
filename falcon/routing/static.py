@@ -103,6 +103,7 @@ class StaticRoute(object):
                 raise falcon.HTTPNotFound()
             try:
                 resp.stream = io.open(self._fallback_filename, 'rb')
+                file_path = self._fallback_filename
             except IOError:
                 raise falcon.HTTPNotFound()
 

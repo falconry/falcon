@@ -217,13 +217,13 @@ def test_downloadable_not_found(client):
     assert response.status == falcon.HTTP_404
 
 
-@pytest.mark.parametrize('uri, default, expected', [
-    ('', 'default', 'default'),
-    ('other', 'default', 'default'),
-    ('index2', 'index', 'index2'),
-    ('absolute', '/foo/bar/index', '/foo/bar/index'),
+@pytest.mark.parametrize('uri, default, expected, content_type', [
+    ('', 'default', 'default', 'application/octet-stream'),
+    ('other', 'default.html', 'default.html', 'text/html'),
+    ('index2', 'index', 'index2', 'application/octet-stream'),
+    ('absolute', '/foo/bar/index', '/foo/bar/index', 'application/octet-stream'),
 ])
-def test_fallback_filename(uri, default, expected, monkeypatch):
+def test_fallback_filename(uri, default, expected, content_type, monkeypatch):
 
     def mockOpen(path, mode):
         if default in path:
@@ -247,6 +247,7 @@ def test_fallback_filename(uri, default, expected, monkeypatch):
 
     assert sr.match(req.path)
     assert resp.stream == os.path.join('/var/www/statics', expected)
+    assert resp.content_type == content_type
 
 
 @pytest.mark.parametrize('strip_slash', [True, False])
