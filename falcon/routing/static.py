@@ -25,8 +25,15 @@ class StaticRoute(object):
             Content-Disposition header in the response. The "filename"
             directive is simply set to the name of the requested file.
         fallback_filename (str): Fallback filename used when the requested file
-                is not found. Can be a relative path inside the prefix folder or any valid
-                absolute path.
+            is not found. Can be a relative path inside the prefix folder or
+            any valid absolute path.
+
+            Note:
+                If the fallback file is served instead of the requested file,
+                the response Content-Type header, as well as the
+                Content-Disposition header (provided it was requested with the
+                `downloadable` parameter described above), are derived from the
+                fallback filename, as opposed to the requested filename.
     """
 
     # NOTE(kgriffs): Don't allow control characters and reserved chars
@@ -94,7 +101,7 @@ class StaticRoute(object):
         # should never succeed, but this should guard against us having
         # overlooked something.
         if '..' in file_path or not file_path.startswith(self._directory):
-            raise falcon.HTTPNotFound()  # pragma: nocover
+            raise falcon.HTTPNotFound()
 
         try:
             resp.stream = io.open(file_path, 'rb')
@@ -103,6 +110,7 @@ class StaticRoute(object):
                 raise falcon.HTTPNotFound()
             try:
                 resp.stream = io.open(self._fallback_filename, 'rb')
+                file_path = self._fallback_filename
             except IOError:
                 raise falcon.HTTPNotFound()
 
