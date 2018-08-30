@@ -114,7 +114,11 @@ class StaticRoute(object):
             except IOError:
                 raise falcon.HTTPNotFound()
 
-        suffix = os.path.splitext(file_path)[1]
+        path_with_extension = file_path
+        if self._fallback_filename is not None:
+            path_with_extension = self._fallback_filename
+
+        suffix = os.path.splitext(path_with_extension)[1]
         resp.content_type = resp.options.static_media_types.get(
             suffix,
             'application/octet-stream'
