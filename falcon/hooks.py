@@ -13,13 +13,27 @@
 # limitations under the License.
 
 """Hook decorators."""
-import inspect
+
 from functools import wraps
+import inspect
 
 import six
 
 from falcon import COMBINED_METHODS
 from falcon.util.misc import get_argnames
+
+
+def predicate_method_function(member):
+    """Predicate to use for inspection of a resource in order to extract the responders.
+
+    Args:
+        member (member): A member tuple as returned per the inspect.getmembers function
+        where the first element of the tuple is the name and the second element the member itself.
+
+        Note:
+            Should be only used as a predicate of inspect.getmembers(to_inspect, predicate=this function.
+    """
+    return inspect.ismethod(member) or inspect.isfunction(member)
 
 
 def before(action, *args, **kwargs):
@@ -57,13 +71,13 @@ def before(action, *args, **kwargs):
         if isinstance(responder_or_resource, six.class_types):
             resource = responder_or_resource
 
-            members = inspect.getmembers(resource, predicate=inspect.isfunction)
+            members = inspect.getmembers(resource, predicate=predicate_method_function)
 
             responders = []
 
             for member in members:
                 for method in COMBINED_METHODS:
-                    if member[0].startswith("on_" + method.lower()):
+                    if member[0].startswith('on_' + method.lower()):
                         responders.append(member)
 
             for responder_name, responder in responders:
