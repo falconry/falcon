@@ -31,7 +31,8 @@ def predicate_method_function(member):
         where the first element of the tuple is the name and the second element the member itself.
 
         Note:
-            Should be only used as a predicate of inspect.getmembers(to_inspect, predicate=this function.
+            Should only be used as a predicate of
+            inspect.getmembers(to_inspect, predicate=this function).
     """
     return inspect.ismethod(member) or inspect.isfunction(member)
 
