@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """Hook decorators."""
-
+import inspect
 from functools import wraps
 
 import six
@@ -57,28 +57,27 @@ def before(action, *args, **kwargs):
         if isinstance(responder_or_resource, six.class_types):
             resource = responder_or_resource
 
-            for method in COMBINED_METHODS:
-                responder_name = 'on_' + method.lower()
+            members = inspect.getmembers(resource, predicate=inspect.isfunction)
 
-                try:
-                    responder = getattr(resource, responder_name)
-                except AttributeError:
-                    # resource does not implement this method
-                    pass
-                else:
-                    # Usually expect a method, but any callable will do
-                    if callable(responder):
-                        # This pattern is necessary to capture the current
-                        # value of responder in the do_before_all closure;
-                        # otherwise, they will capture the same responder
-                        # variable that is shared between iterations of the
-                        # for loop, above.
-                        def let(responder=responder):
-                            do_before_all = _wrap_with_before(responder, action, args, kwargs)
+            responders = []
 
-                            setattr(resource, responder_name, do_before_all)
+            for member in members:
+                for method in COMBINED_METHODS:
+                    if member[0].startswith("on_" + method.lower()):
+                        responders.append(member)
 
-                        let()
+            for responder_name, responder in responders:
+                # This pattern is necessary to capture the current
+                # value of responder in the do_before_all closure;
+                # otherwise, they will capture the same responder
+                # variable that is shared between iterations of the
+                # for loop, above.
+                def let(responder=responder):
+                    do_before_all = _wrap_with_before(responder, action, args, kwargs)
+
+                    setattr(resource, responder_name, do_before_all)
+
+                let()
 
             return resource
 
