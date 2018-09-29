@@ -596,8 +596,8 @@ class HTTPPreconditionFailed(HTTPError):
                                                      **kwargs)
 
 
-class HTTPRequestEntityTooLarge(HTTPError):
-    """413 Request Entity Too Large.
+class HTTPPayloadTooLarge(HTTPError):
+    """413 Payload Too Large.
 
     The server is refusing to process a request because the request
     payload is larger than the server is willing or able to process.
@@ -612,7 +612,7 @@ class HTTPRequestEntityTooLarge(HTTPError):
     (See also: RFC 7231, Section 6.5.11)
 
     Keyword Args:
-        title (str): Error title (default '413 Request Entity Too Large').
+        title (str): Error title (default '413 Payload Too Large').
 
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
@@ -656,11 +656,11 @@ class HTTPRequestEntityTooLarge(HTTPError):
         elif retry_after is not None:
             headers['Retry-After'] = str(retry_after)
 
-        super(HTTPRequestEntityTooLarge, self).__init__(status.HTTP_413,
-                                                        title,
-                                                        description,
-                                                        headers,
-                                                        **kwargs)
+        super(HTTPPayloadTooLarge, self).__init__(status.HTTP_413,
+                                                  title,
+                                                  description,
+                                                  headers,
+                                                  **kwargs)
 
 
 class HTTPUriTooLong(HTTPError):
