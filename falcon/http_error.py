@@ -194,8 +194,9 @@ class HTTPError(Exception):
             for key in ('text', 'href', 'rel'):
                 et.SubElement(link_element, key).text = self.link[key]
 
-        return (b'<?xml version="1.0" encoding="UTF-8"?>' +
-                et.tostring(error_element, encoding='utf-8'))
+        et_str = et.tostring(error_element, encoding='utf-8')
+
+        return b'<?xml version="1.0" encoding="UTF-8"?>'.join((et_str,))
 
 
 class NoRepresentation(object):
