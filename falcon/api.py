@@ -645,7 +645,7 @@ class API(object):
                 else:
                     responder = falcon.responders.path_not_found
 
-        return (responder, params, resource, uri_template)
+        return responder, params, resource, uri_template
 
     def _compose_status_response(self, req, resp, http_status):
         """Compose a response for the given HTTPStatus instance."""

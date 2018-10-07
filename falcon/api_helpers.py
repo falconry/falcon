@@ -111,7 +111,7 @@ def prepare_middleware(middleware=None, independent_middleware=False):
         if process_resource:
             resource_mw.append(process_resource)
 
-    return (tuple(request_mw), tuple(resource_mw), tuple(response_mw))
+    return tuple(request_mw), tuple(resource_mw), tuple(response_mw)
 
 
 def default_serialize_error(req, resp, exception):
