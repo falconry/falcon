@@ -419,20 +419,20 @@ def parse_host(host, default_port=None):
         # IPv6 address with a port
         pos = host.rfind(']:')
         if pos != -1:
-            return (host[1:pos], int(host[pos + 2:]))
+            return host[1:pos], int(host[pos + 2:])
         else:
-            return (host[1:-1], default_port)
+            return host[1:-1], default_port
 
     pos = host.rfind(':')
     if (pos == -1) or (pos != host.find(':')):
         # Bare domain name or IP address
-        return (host, default_port)
+        return host, default_port
 
     # NOTE(kgriffs): At this point we know that there was
     # only a single colon, so we should have an IPv4 address
     # or a domain name plus a port
     name, _, port = host.partition(':')
-    return (name, int(port))
+    return name, int(port)
 
 
 def unquote_string(quoted):
