@@ -22,22 +22,33 @@ remaining highly effective.
 Falcon apps work with any WSGI server, and run like a champ under
 CPython 2.7, CPython 3.4+, PyPy2.7, and PyPy3.5.
 
-Thank You to Our Sponsors
--------------------------
+A Big Thank You to Our Patrons
+------------------------------
+
+
+Gold
 
 .. raw:: html
 
-    <a href="https://www.likalo.com/" style="margin-right: 15px"><img src="https://falconframework.org/img/sponsors/likalo.svg" height="24" alt="LIKALO" ></a><br>
-    <a href="https://www.luhnar.com/"><img src="https://falconframework.org/img/sponsors/luhnar-dark.svg" height="20" alt="Luhnar Site Accelerator" style="padding-bottom: 2px"></a>
+    <p>
+    <a href="https://www.likalo.com/"><img src="https://falconframework.org/img/sponsors/likalo.svg" height="20" alt="LIKALO" ></a>&nbsp;&nbsp;&nbsp;
+    <a href="https://www.luhnar.com/"><img src="https://falconframework.org/img/sponsors/luhnar-dark.svg" height="16" alt="Luhnar Site Accelerator" style="padding-bottom: 2px"></a>
+     </p>
 
-Support Falcon Development
---------------------------
+Silver
 
-Has Falcon helped you make an awesome app? Show your support today with a one-time donation or by becoming a corporate
-sponsor. Backers get cool gear, an opportunity to promote their brand to Python developers, and
+.. raw:: html
+
+    <p>
+    <a href="http://www.parisnakitakejser.com/python-falcon" target="_blank"><img src="https://falconframework.org/img/sponsors/paris.svg" height="20" alt="Paris Kejser"></a>
+    </p>
+
+Has Falcon helped you make an awesome app? Show your support today with a one-time donation or by becoming a patron. Supporters get cool gear, an opportunity to promote their brand to Python developers, and
 prioritized support.
 
 `Learn how to support Falcon development <https://falconframework.org/#sectionSupportFalconDevelopment>`_
+
+Thanks!
 
 Quick Links
 -----------
