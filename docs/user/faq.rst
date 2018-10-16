@@ -564,7 +564,7 @@ handles commas in a query string by setting the
 
 .. code:: python
 
-    api.auto_parse_qs_csv = False
+    api.req_options.auto_parse_qs_csv = False
 
 When :attr:`~falcon.RequestOptions.auto_parse_qs_csv` is set to ``False``, the
 value of the query string ``?c={'a':1,'b':2}`` will be added to
