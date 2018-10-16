@@ -219,9 +219,9 @@ implement a simple WSGI wrapper that does the same thing:
             host = environ['SERVER_NAME']
 
         if host.startswith('api.'):
-            return falcon_app(environ, startswith)
+            return falcon_app(environ, start_response)
         elif:
-            return webapp2_app(environ, startswith)
+            return webapp2_app(environ, start_response)
 
 See also `PEP 3333 <https://www.python.org/dev/peps/pep-3333/#environ-variables>`_
 for a complete list of the variables that are provided via ``environ``.
