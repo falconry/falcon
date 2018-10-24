@@ -143,6 +143,23 @@ class TestRequestAttributes(object):
 
         assert req.path == falcon.uri.decode(test_path)
 
+    @pytest.mark.skipif(not six.PY2, reason='Test only applies to Python 2')
+    @pytest.mark.parametrize('test_path', [
+        u'/hello_\u043f\u0440\u0438\u0432\u0435\u0442',
+        u'/world_\u043c\u0438\u0440',
+        u'/test_\u0442\u0435\u0441\u0442',
+    ])
+    def test_utf_8_path(self, test_path):
+        # NOTE(kandziu): Test that under python 2.6/7 a path with
+        # UTF-8 characters will be decoded correct.
+
+        req = Request(testing.create_environ(
+            host='com',
+            path=test_path,
+            headers=self.headers))
+
+        assert req.path == falcon.uri.decode(test_path)
+
     def test_uri(self):
         prefix = 'http://' + testing.DEFAULT_HOST + ':8080' + self.app
         uri = prefix + self.relative_uri

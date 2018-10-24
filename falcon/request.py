@@ -426,7 +426,12 @@ class Request(object):
         # empty string, so normalize it in that case.
         path = env['PATH_INFO'] or '/'
 
-        if six.PY3:
+        if six.PY2:
+            # NOTE(kandziu): WSGI servers decode the URL to bytes, leaving
+            # a "UTF-8 bytestring". Under Python 2.6/7 that must be decoded
+            # to a unicode.
+            path = path.decode('utf-8', 'replace')
+        else:
             # PEP 3333 specifies that PATH_INFO variable are always
             # "bytes tunneled as latin-1" and must be encoded back
             path = path.encode('latin1').decode('utf-8', 'replace')
