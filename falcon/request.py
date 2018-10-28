@@ -182,7 +182,12 @@ class Request(object):
 
             Note:
                 `req.path` may be set to a new value by a `process_request()`
-                middleware method in order to influence routing.
+                middleware method in order to influence routing. If the
+                original path requested was url-encoded, it will be decoded
+                before being returned this attribute. If this attribute is to
+                be used by the app for any upstream requests, any non-url-safe
+                characters in the path must be url-encoded back before
+                making the request.
         query_string (str): Query string portion of the request URI, without
             the preceding '?' character.
         uri_template (str): The template for the route that was matched for
