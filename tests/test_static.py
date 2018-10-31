@@ -217,13 +217,17 @@ def test_downloadable_not_found(client):
     assert response.status == falcon.HTTP_404
 
 
-@pytest.mark.parametrize('uri, default, expected', [
-    ('', 'default', 'default'),
-    ('other', 'default', 'default'),
-    ('index2', 'index', 'index2'),
-    ('absolute', '/foo/bar/index', '/foo/bar/index'),
+@pytest.mark.parametrize('uri, default, expected, content_type', [
+    ('', 'default', 'default', 'application/octet-stream'),
+    ('other', 'default.html', 'default.html', 'text/html'),
+    ('index2', 'index', 'index2', 'application/octet-stream'),
+    ('absolute', '/foo/bar/index', '/foo/bar/index', 'application/octet-stream'),
+    ('docs/notes/test.txt', 'index.html', 'index.html', 'text/html'),
+    ('index.html_files/test.txt', 'index.html', 'index.html_files/test.txt', 'text/plain'),
 ])
-def test_fallback_filename(uri, default, expected, monkeypatch):
+@pytest.mark.parametrize('downloadable', [True, False])
+def test_fallback_filename(uri, default, expected, content_type, downloadable,
+                           monkeypatch):
 
     def mockOpen(path, mode):
         if default in path:
@@ -233,7 +237,8 @@ def test_fallback_filename(uri, default, expected, monkeypatch):
     monkeypatch.setattr(io, 'open', mockOpen)
     monkeypatch.setattr('os.path.isfile', lambda file: default in file)
 
-    sr = StaticRoute('/static', '/var/www/statics', fallback_filename=default)
+    sr = StaticRoute('/static', '/var/www/statics', downloadable=downloadable,
+                     fallback_filename=default)
 
     req_path = '/static/' + uri
 
@@ -247,6 +252,12 @@ def test_fallback_filename(uri, default, expected, monkeypatch):
 
     assert sr.match(req.path)
     assert resp.stream == os.path.join('/var/www/statics', expected)
+    assert resp.content_type == content_type
+
+    if downloadable:
+        assert os.path.basename(expected) in resp.downloadable_as
+    else:
+        assert resp.downloadable_as is None
 
 
 @pytest.mark.parametrize('strip_slash', [True, False])
@@ -300,3 +311,14 @@ def test_match(default, path, expected, monkeypatch):
     sr = StaticRoute('/static', '/var/www/statics', fallback_filename=default)
 
     assert sr.match(path) == expected
+
+
+def test_filesystem_traversal_fuse(client, monkeypatch):
+
+    def suspicious_normpath(path):
+        return 'assets/../../../../' + path
+
+    monkeypatch.setattr('os.path.normpath', suspicious_normpath)
+    client.app.add_static_route('/static', '/etc/nginx/includes/static-data')
+    response = client.simulate_request(path='/static/shadow')
+    assert response.status == falcon.HTTP_404

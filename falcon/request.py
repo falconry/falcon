@@ -941,7 +941,7 @@ class Request(object):
 
     @property
     def media(self):
-        if self._media:
+        if self._media is not None or self.bounded_stream.is_exhausted:
             return self._media
 
         handler = self.options.media_handlers.find_by_media_type(
@@ -949,11 +949,15 @@ class Request(object):
             self.options.default_media_type
         )
 
-        # Consume the stream
-        raw = self.bounded_stream.read()
+        try:
+            self._media = handler.deserialize(
+                self.bounded_stream,
+                self.content_type,
+                self.content_length
+            )
+        finally:
+            self.bounded_stream.exhaust()
 
-        # Deserialize and Return
-        self._media = handler.deserialize(raw)
         return self._media
 
     # ------------------------------------------------------------------------

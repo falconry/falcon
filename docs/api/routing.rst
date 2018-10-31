@@ -239,23 +239,32 @@ A custom router is any class that implements the following interface:
 .. code:: python
 
     class MyRouter(object):
-        def add_route(self, uri_template, method_map, resource, **kwargs):
+        def add_route(self, uri_template, resource, **kwargs):
             """Adds a route between URI path template and resource.
 
             Args:
-                uri_template (str): The URI template to add.
-                method_map (dict): A method map obtained by calling
-                    falcon.routing.create_http_method_map.
-                resource (object): Instance of the resource class that
-                    will handle requests for the given URI.
+                uri_template (str): A URI template to use for the route
+                resource (object): The resource instance to associate with
+                    the URI template.
 
-            Keyword Arguments:
+            Keyword Args:
+                suffix (str): Optional responder name suffix for this
+                    route. If a suffix is provided, Falcon will map GET
+                    requests to ``on_get_{suffix}()``, POST requests to
+                    ``on_post_{suffix}()``, etc. In this way, multiple
+                    closely-related routes can be mapped to the same
+                    resource. For example, a single resource class can
+                    use suffixed responders to distinguish requests for
+                    a single item vs. a collection of those same items.
+                    Another class might use a suffixed responder to handle
+                    a shortlink route in addition to the regular route for
+                    the resource.
 
-                **kwargs (dict): Accepts any additional keyword arguments that
-                    were originally passed to the falcon.API.add_route() method.
-                    These arguments MUST be accepted via the double-star
-                    variadic pattern (**kwargs), and ignore any unrecognized
-                    or unsupported arguments.
+                **kwargs (dict): Accepts any additional keyword arguments
+                    that were originally passed to the falcon.API.add_route()
+                    method. These arguments MUST be accepted via the
+                    double-star variadic pattern (**kwargs), and ignore any
+                    unrecognized or unsupported arguments.
             """
 
         def find(self, uri, req=None):
@@ -285,6 +294,13 @@ A custom router is any class that implements the following interface:
 
             """
 
+Default Router
+--------------
+
+.. autoclass:: falcon.routing.CompiledRouter
+    :members:
+
+
 Routing Utilities
 -----------------
 
@@ -294,7 +310,5 @@ be used by custom routing engines.
 .. autofunction:: falcon.routing.map_http_methods
 
 .. autofunction:: falcon.routing.set_default_responders
-
-.. autofunction:: falcon.routing.create_http_method_map
 
 .. autofunction:: falcon.routing.compile_uri_template

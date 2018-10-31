@@ -5,6 +5,10 @@ Breaking Changes
 ----------------
 - Date headers are now returned as :py:class:`datetime.datetime` objects
   instead of strings.
+- The expected signature for the ``add_route()`` method of custom routers no
+  longer includes a `method_map` parameter. Custom routers should, instead,
+  call the :py:meth:`falcon.routing.util.map_http_methods` function directly
+  from their ``add_route()`` method if they require this mapping.
 
 New & Improved
 --------------
