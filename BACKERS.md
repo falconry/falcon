@@ -9,7 +9,7 @@ Thank you to our generous project patrons who help make this project possible!
 
 ## Silver Patrons
 
-* [Paris Kejser](http://www.parisnakitakejser.com/python-falcon)
+* [Paris Kejser](https://www.pnk.sh/python-falcon)
 
 ## Bronze Patrons
 
