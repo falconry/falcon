@@ -92,7 +92,7 @@ def map_http_methods(resource, suffix=None):
 
     Args:
         resource: An object with *responder* methods, following the naming
-            convention *on_\**, that correspond to each method the resource
+            convention *on_\\**, that correspond to each method the resource
             supports. For example, if a resource supports GET and POST, it
             should define ``on_get(self, req, resp)`` and
             ``on_post(self, req, resp)``.

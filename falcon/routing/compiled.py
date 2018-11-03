@@ -33,7 +33,7 @@ _FIELD_PATTERN = re.compile(
     #
     # We may want to create a contextual parser at some point to
     # work around this problem.
-    '{((?P<fname>[^}:]*)((?P<cname_sep>:(?P<cname>[^}\(]*))(\((?P<argstr>[^}]*)\))?)?)}'
+    r'{((?P<fname>[^}:]*)((?P<cname_sep>:(?P<cname>[^}\(]*))(\((?P<argstr>[^}]*)\))?)?)}'
 )
 _IDENTIFIER_PATTERN = re.compile('[A-Za-z_][A-Za-z0-9_]*$')
 
