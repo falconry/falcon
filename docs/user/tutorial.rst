@@ -648,7 +648,7 @@ call ``help()`` on ``falcon.status_codes``:
 The last line in the ``on_post()`` responder sets the Location header
 for the newly created resource. (We will create a route for that path in
 just a minute.) The :class:`~.Request` and :class:`~.Response` classes
-contain convent attributes for reading and setting common headers, but
+contain convenient attributes for reading and setting common headers, but
 you can always access any header by name with the ``req.get_header()``
 and ``resp.set_header()`` methods.
 
