@@ -78,7 +78,7 @@ def load_description():
         if readme_line.startswith('.. raw::'):
             in_raw = True
         elif in_raw:
-            if readme_line and not re.match('\s', readme_line):
+            if readme_line and not re.match(r'\s', readme_line):
                 in_raw = False
 
         if not in_raw:
