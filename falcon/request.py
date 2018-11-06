@@ -1775,7 +1775,7 @@ class RequestOptions(object):
 
         auto_parse_qs_csv: Set to ``True`` to split on any
             non-percent-encoded commas.
-            as a comma separated list, rather than a string value as
+            As a comma separated list, rather than a string value as
             literal characters (default ``False``). When this option is
             enabled, the value will be split on any non-percent-encoded
             commas. Disable this option when encoding lists as multiple
