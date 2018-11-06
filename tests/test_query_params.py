@@ -205,6 +205,17 @@ class TestQueryParams(object):
 
         assert req.get_param('thing') == decoded_json
 
+    def test_default_auto_parse_csv_behaviour(self, simulate_request, client, resource):
+        client.app.add_route('/', resource=resource)
+        query_string = 'id=1,2,,&id=3'
+
+        simulate_request(client=client, path='/', query_string=query_string)
+
+        req = resource.captured_req
+
+        assert req.get_param('id') == '3'
+        assert req.get_param_as_list('id') == ['1,2,,', '3']
+
     def test_bad_percentage(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         query_string = 'x=%%20%+%&y=peregrine&z=%a%z%zz%1%20e'
