@@ -1,7 +1,7 @@
 import mimeparse
-from six.moves import UserDict
 
 from falcon import errors
+from falcon.compat import UserDict
 from falcon.media import JSONHandler
 
 

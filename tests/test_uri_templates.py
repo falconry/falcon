@@ -9,9 +9,9 @@ from datetime import datetime
 import uuid
 
 import pytest
-import six
 
 import falcon
+from falcon import compat
 from falcon import testing
 from falcon.routing.util import SuffixedMethodNotFoundError
 
@@ -137,7 +137,7 @@ def test_no_vars(client, resource):
     assert resource.called
 
 
-@pytest.mark.skipif(six.PY3, reason='Test only applies to Python 2')
+@pytest.mark.skipif(compat.PY3, reason='Test only applies to Python 2')
 def test_unicode_literal_routes(client, resource):
     client.app.add_route(u'/hello/world', resource)
     client.simulate_get('/hello/world')

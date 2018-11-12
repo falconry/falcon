@@ -14,7 +14,7 @@
 
 """Miscellaneous utilities.
 
-This module provides misc. utility functions for apps and the Falcon
+This module provides misc. utility functions for as and the Falcon
 framework itself. These functions are hoisted into the front-door
 `falcon` module for convenience::
 
@@ -29,8 +29,7 @@ import functools
 import inspect
 import warnings
 
-import six
-
+from falcon import compat
 from falcon import status_codes
 
 __all__ = (
@@ -242,7 +241,7 @@ def get_bound_method(obj, method_name):
     method = getattr(obj, method_name, None)
     if method is not None:
         # NOTE(kgriffs): Ensure it is a bound method
-        if six.get_method_self(method) is None:
+        if compat.get_method_self(method) is None:
             # NOTE(kgriffs): In Python 3 this code is unreachable
             # because the above will raise AttributeError on its
             # own.
@@ -295,7 +294,7 @@ def get_argnames(func):
         arguments.
     """
 
-    if six.PY2:
+    if compat.PY2:
         func_object = _get_func_if_nested(func)
         spec = _get_argspec(func_object)
 

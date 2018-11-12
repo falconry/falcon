@@ -21,9 +21,8 @@ WSGI callable, without having to stand up a WSGI server.
 import warnings
 import wsgiref.validate
 
-import six
-from six.moves import http_cookies
-
+from falcon import compat
+from falcon.compat import http_cookies
 from falcon.constants import MEDIA_JSON
 from falcon.testing import helpers
 from falcon.testing.srmock import StartResponseMock
@@ -750,8 +749,8 @@ class TestClient(object):
 
             kwargs['headers'] = merged_headers
 
-        if six.PY2 and 'headers' in kwargs:
-            for key, value in six.iteritems(kwargs['headers']):
+        if compat.PY2 and 'headers' in kwargs:
+            for key, value in kwargs['headers'].items():
                 kwargs['headers'][key] = str(value) if isinstance(value, unicode) else value
 
         return simulate_request(self.app, *args, **kwargs)

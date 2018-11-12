@@ -16,9 +16,8 @@
 
 import re
 
-import six
-
 from falcon import api_helpers as helpers, DEFAULT_MEDIA_TYPE, routing
+from falcon import compat
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 from falcon.request import Request, RequestOptions
@@ -274,7 +273,7 @@ class API(object):
         # NOTE(kgriffs): While not specified in the spec that the status
         # must be of type str (not unicode on Py27), some WSGI servers
         # can complain when it is not.
-        resp_status = str(resp.status) if six.PY2 else resp.status
+        resp_status = str(resp.status) if compat.PY2 else resp.status
 
         if req.method == 'HEAD' or resp_status in self._BODILESS_STATUS_CODES:
             body = []
@@ -360,7 +359,7 @@ class API(object):
 
         # NOTE(richardolsson): Doing the validation here means it doesn't have
         # to be duplicated in every future router implementation.
-        if not isinstance(uri_template, six.string_types):
+        if not isinstance(uri_template, compat.string_types):
             raise TypeError('uri_template is not a string')
 
         if not uri_template.startswith('/'):
