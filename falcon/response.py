@@ -714,12 +714,12 @@ class Response(object):
 
         The tuple has the form (*start*, *end*, *length*, [*unit*]), where *start* and
         *end* designate the range (inclusive), and *length* is the
-        total length, or '\*' if unknown. You may pass ``int``'s for
+        total length, or '\\*' if unknown. You may pass ``int``'s for
         these numbers (no need to convert to ``str`` beforehand). The optional value
         *unit* describes the range unit and defaults to 'bytes'
 
         Note:
-            You only need to use the alternate form, 'bytes \*/1234', for
+            You only need to use the alternate form, 'bytes \\*/1234', for
             responses that use the status '416 Range Not Satisfiable'. In this
             case, raising ``falcon.HTTPRangeNotSatisfiable`` will do the right
             thing.
