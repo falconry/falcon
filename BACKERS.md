@@ -14,3 +14,4 @@ Thank you to our generous project patrons who help make this project possible!
 ## Bronze Patrons
 
 * Gerardo Cardenas
+* Zach Riddle
