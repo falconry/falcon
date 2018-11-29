@@ -486,13 +486,16 @@ class TestQueryParams(object):
         req = resource.captured_req
         assert req.get_param('blank') == ''
         assert req.get_param('blank2') == ''
-        with pytest.raises(falcon.HTTPInvalidParam):
-            req.get_param_as_bool('blank', blank_as_true=False)
 
-        with pytest.raises(falcon.HTTPInvalidParam):
-            req.get_param_as_bool('blank2', blank_as_true=False)
-        assert req.get_param_as_bool('blank')
-        assert req.get_param_as_bool('blank3') is None
+        for param_name in ('blank', 'blank2'):
+            assert req.get_param_as_bool(param_name) is True
+            assert req.get_param_as_bool(param_name, blank_as_true=True) is True
+            assert req.get_param_as_bool(param_name, blank_as_true=False) is False
+
+        assert req.get_param_as_bool('nichts') is None
+        assert req.get_param_as_bool('nichts', default=None) is None
+        assert req.get_param_as_bool('nichts', default=False) is False
+        assert req.get_param_as_bool('nichts', default=True) is True
 
     def test_list_type(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
