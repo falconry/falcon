@@ -1777,11 +1777,11 @@ class RequestOptions(object):
             a query string value on any non-percent-encoded commas,
             this option is disabled by default (``False``).
             When ``False`` query strings containing commas are untouched,
-            his enables encoding lists as multiple of the same parameter
+            this enables encoding lists as multiple of the same parameter
             and cases where the comma character is significant
-            such as alternate encodings (i.e. ``/?t=1,2,3&t=4 becomes ['1,2,3', '4']``).
+            such as alternate encodings (i.e. ``/?t=1,2,3&t=4`` becomes ``['1,2,3', '4']``).
             When ``True``, the query string value is split on the commas
-            and returned as a list (i.e. ``/?t=1,2,3&t=4 becomes ['1', '2', '3', '4']``).
+            and returned as a list (i.e. ``/?t=1,2,3&t=4`` becomes ``['1', '2', '3', '4']``).
 
         strip_url_path_trailing_slash: Set to ``True`` in order to
             strip the trailing slash, if present, at the end of the URL
