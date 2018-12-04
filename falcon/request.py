@@ -1367,8 +1367,14 @@ class Request(object):
         raise errors.HTTPMissingParam(name)
 
     def get_param_as_bool(self, name, required=False, store=None,
-                          blank_as_true=False, default=None):
-        """Return the value of a query string parameter as a boolean
+                          blank_as_true=True, default=None):
+        """Return the value of a query string parameter as a boolean.
+
+        This method treats valueless parameters as flags. By default, if no
+        value is provided for the parameter in the query string, ``True`` is
+        assumed and returned. If the parameter is missing altogether, ``None``
+        is returned as with other ``get_param_*()`` methods, which can be
+        easily treated as falsy by the caller as needed.
 
         The following boolean strings are supported::
 
@@ -1386,19 +1392,19 @@ class Request(object):
             store (dict): A ``dict``-like object in which to place
                 the value of the param, but only if the param is found (default
                 ``None``).
-            blank_as_true (bool): If ``True``, an empty string value will be
-                treated as ``True`` (default ``False``). Normally empty strings
-                are ignored; if you would like to recognize such parameters, you
-                must set the `keep_blank_qs_values` request option to ``True``.
-                Request options are set globally for each instance of
-                ``falcon.API`` through the `req_options` attribute.
-            default (any): If the param is not found returns the
-                given value instead of ``None``
+            blank_as_true (bool): Valueless query string parameters
+                are treated as flags, resulting in ``True`` being
+                returned when such a parameter is present, and ``False``
+                otherwise. To require the client to explicitly opt-in to a
+                truthy value, pass ``blank_as_true=False`` to return ``False``
+                when a value is not specified in the query string.
+            default (any): If the param is not found, return this
+                value instead of ``None``.
 
         Returns:
             bool: The value of the param if it is found and can be converted
             to a ``bool``. If the param is not found, returns ``None``
-            unless required is ``True``.
+            unless `required` is ``True``.
 
         Raises:
             HTTPBadRequest: A required param is missing from the request, or
@@ -1419,8 +1425,8 @@ class Request(object):
                 val = True
             elif val in FALSE_STRINGS:
                 val = False
-            elif blank_as_true and not val:
-                val = True
+            elif not val:
+                val = blank_as_true
             else:
                 msg = 'The value of the parameter must be "true" or "false".'
                 raise errors.HTTPInvalidParam(msg, name)
@@ -1743,8 +1749,8 @@ class RequestOptions(object):
     configuring certain :py:class:`~.Request` behaviors.
 
     Attributes:
-        keep_blank_qs_values (bool): Set to ``True`` to keep query string
-            fields even if they do not have a value (default ``False``).
+        keep_blank_qs_values (bool): Set to ``False`` to ignore query string
+            params that have missing or blank values (default ``True``).
             For comma-separated values, this option also determines
             whether or not empty elements in the parsed list are
             retained.
@@ -1813,7 +1819,7 @@ class RequestOptions(object):
     )
 
     def __init__(self):
-        self.keep_blank_qs_values = False
+        self.keep_blank_qs_values = True
         self.auto_parse_form_urlencoded = False
         self.auto_parse_qs_csv = True
         self.strip_url_path_trailing_slash = False
