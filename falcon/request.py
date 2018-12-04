@@ -51,9 +51,9 @@ SimpleCookie = http_cookies.SimpleCookie
 DEFAULT_ERROR_LOG_FORMAT = (u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
                             u' {1} {2}{3} => ')
 
-TRUE_STRINGS = ('true', 'True', 'yes', '1', 'on')
-FALSE_STRINGS = ('false', 'False', 'no', '0', 'off')
-WSGI_CONTENT_HEADERS = ('CONTENT_TYPE', 'CONTENT_LENGTH')
+TRUE_STRINGS = frozenset(['true', 'True', 'yes', '1', 'on'])
+FALSE_STRINGS = frozenset(['false', 'False', 'no', '0', 'off'])
+WSGI_CONTENT_HEADERS = frozenset(['CONTENT_TYPE', 'CONTENT_LENGTH'])
 
 # PERF(kgriffs): Avoid an extra namespace lookup when using these functions
 strptime = datetime.strptime
