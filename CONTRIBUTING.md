@@ -1,4 +1,4 @@
-## Contributer's Guide
+## Contributor's Guide
 
 Thanks for your interest in the project! We welcome pull requests from
 developers of all skill levels. To get started, simply fork the master branch
@@ -10,11 +10,12 @@ we invite you to take a look at the issues listed under our [next milestone][ms]
 If you see one you'd like to work on, please leave a quick comment so that we don't
 end up with duplicated effort. Thanks in advance!
 
-Kurt Griffiths (**kgriffs** on GH, Gitter, and Twitter) is the original
-creator of the Falcon framework, and currently co-maintains the project
-along with John Vrbanac (**jmvrbanac** on GH and Gitter, and
-**jvrbanac** on Twitter). Falcon is developed by a growing community of
-users and contributors just like you.
+The core Falcon project maintainers are:
+
+* Kurt Griffiths, Project Lead (**kgriffs** on GH, Gitter, and Twitter)
+* John Vrbanac (**jmvrbanac** on GH and Gitter, and **jvrbanac** on Twitter)
+* Vytautas Liuolia (**vytas7** on GH and Gitter)
+* Nick Zaccardi (**nZac** on GH and Gitter)
 
 Please don't hesitate to reach out if you have any questions, or just need a
 little help getting started. You can find us in
@@ -40,6 +41,22 @@ If you are using pyenv and get an error along the lines of "failed to get versio
 ```bash
 $ pyenv shell 2.7.14 3.6.4
 ```
+
+#### Reviews
+
+Falcon is used in a number of mission-critical applications and is known for its stability and reliability. Therefore, we invest a lot of time in carefully reviewing PRs and working with contributors to ensure that every patch merged into the master branch is correct, complete, performant, well-documented, and appropriate.
+
+Project maintainers review each PR for the following:
+
+- [ ] **Design.** Does it do the right thing? Is the end goal well understood and correct?
+- [ ] **Correctness.** Is the logic correct? Does it behave correctly according to the goal of the feature or bug fix?
+- [ ] **Fit.** Is this feature or fix in keeping with the spirit of the project? Would this idea be better implemented as an add-on?
+- [ ] **Standards.** Does this change align with approved or standards-track RFCs, de-facto standards, and currently accepted best practices?
+- [ ] **Tests.** Does the PR implement sufficient test coverage in terms of value inputs, Python versions, and lines tested?
+- [ ] **Compatibility.** Does it work across all of Falcon's supported Python versions and operating systems?
+- [ ] **Performance.** Will this degrade performance for request or response handling? Are there opportunities to optimize the implementation?
+- [ ] **Docs.** Does this impact any existing documentation or require new documentation? If so, does this PR include the aforementioned docs, and is the language friendly, clear, helpful, and grammatically correct with no misspellings? Do all docstrings conform to Google style ala [sphinx.ext.napoleon](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/index.html)?
+- [ ] **Dependencies.** Does this PR bring in any unnecessary dependencies that would prevent us from keeping the framework lean and mean, jeopardize the reliability of the project, or significantly increase Falcon's attack service?
 
 ### Test coverage
 
@@ -180,7 +197,7 @@ Just as in the **subject**, use the imperative, present tense: "change" not "cha
 ##### Footer
 The footer should contain any information about **Breaking Changes** and is also the place to reference GitHub issues that this commit **Closes**.
 
-[ajs]: https://github.com/angular/angular.js/blob/master/CONTRIBUTING.md#commit
+[ajs]: https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#-git-commit-guidelines
 [docstrings]: https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html#example-google-style-python-docstrings
 [goog-style]: http://google-styleguide.googlecode.com/svn/trunk/pyguide.html#Comments
 [rtd]: https://falcon.readthedocs.io

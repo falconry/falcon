@@ -22,14 +22,33 @@ remaining highly effective.
 Falcon apps work with any WSGI server, and run like a champ under
 CPython 2.7, CPython 3.4+, PyPy2.7, and PyPy3.5.
 
-Support Falcon Development
---------------------------
+A Big Thank You to Our Patrons
+------------------------------
 
-Has Falcon helped you make an awesome app? Show your support today with a one-time donation or by becoming a corporate
-sponsor. Backers get cool gear, an opportunity to promote their brand to Python developers, and
+
+Gold
+
+.. raw:: html
+
+    <p>
+    <a href="https://www.likalo.com/"><img src="https://falconframework.org/img/sponsors/likalo.svg" height="20" alt="LIKALO" ></a>&nbsp;&nbsp;&nbsp;
+    <a href="https://www.luhnar.com/"><img src="https://falconframework.org/img/sponsors/luhnar-dark.svg" height="16" alt="Luhnar Site Accelerator" style="padding-bottom: 2px"></a>
+     </p>
+
+Silver
+
+.. raw:: html
+
+    <p>
+    <a href="https://www.pnk.sh/python-falcon" target="_blank"><img src="https://falconframework.org/img/sponsors/paris.svg" height="20" alt="Paris Kejser"></a>
+    </p>
+
+Has Falcon helped you make an awesome app? Show your support today with a one-time donation or by becoming a patron. Supporters get cool gear, an opportunity to promote their brand to Python developers, and
 prioritized support.
 
 `Learn how to support Falcon development <https://falconframework.org/#sectionSupportFalconDevelopment>`_
+
+Thanks!
 
 Quick Links
 -----------
@@ -40,7 +59,29 @@ Quick Links
 * `falconry/user for Falcon users <https://gitter.im/falconry/user>`_ @ Gitter
 * `falconry/dev for Falcon contributors <https://gitter.im/falconry/dev>`_ @ Gitter
 
-How is Falcon different?
+What People are Saying
+----------------------
+
+"We have been using Falcon as a replacement for [framework] and we simply love the performance (three times faster) and code base size (easily half of our original [framework] code)."
+
+"Falcon looks great so far. I hacked together a quick test for a
+tiny server of mine and was ~40% faster with only 20 minutes of
+work."
+
+"Falcon is rock solid and it's fast."
+
+"I'm loving #falconframework! Super clean and simple, I finally
+have the speed and flexibility I need!"
+
+"I feel like I'm just talking HTTP at last, with nothing in the
+middle. Falcon seems like the requests of backend."
+
+"The source code for Falcon is so good, I almost prefer it to
+documentation. It basically can't be wrong."
+
+"What other framework has integrated support for 786 TRY IT NOW ?"
+
+How is Falcon Different?
 ------------------------
 
     Perfection is finally attained not when there is no longer anything
@@ -618,7 +659,7 @@ changes), and that your coding style follows PEP 8 and doesn't cause
 pyflakes to complain.
 
 Commit messages should be formatted using `AngularJS
-conventions <http://goo.gl/QpbS7>`__.
+conventions <https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#-git-commit-guidelines>`__.
 
 Comments follow `Google's style guide <https://google.github.io/styleguide/pyguide.html?showone=Comments#Comments>`__,
 with the additional requirement of prefixing inline comments using your
@@ -629,11 +670,12 @@ GitHub nick and an appropriate prefix:
 - PERF(riker): Travel time to the nearest starbase?
 - APPSEC(riker): In all trust, there is the possibility for betrayal.
 
-Kurt Griffiths (**kgriffs** on GH, Gitter, and Twitter) is the original
-creator of the Falcon framework, and currently co-maintains the project
-along with John Vrbanac (**jmvrbanac** on GH and Gitter, and
-**jvrbanac** on Twitter). Falcon is developed by a growing community of
-stylish users and contributors just like you.
+The core Falcon project maintainers are:
+
+- Kurt Griffiths, Project Lead (**kgriffs** on GH, Gitter, and Twitter)
+- John Vrbanac (**jmvrbanac** on GH and Gitter, and **jvrbanac** on Twitter)
+- Vytautas Liuolia (**vytas7** on GH and Gitter)
+- Nick Zaccardi (**nZac** on GH and Gitter)
 
 Please don't hesitate to reach out if you have any questions, or just need a
 little help getting started. You can find us in

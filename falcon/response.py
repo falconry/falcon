@@ -136,14 +136,15 @@ class Response(object):
 
     __slots__ = (
         'body',
-        'data',
-        '_headers',
-        '_cookies',
+        'context',
+        'options',
         'status',
         'stream',
         'stream_len',
-        'context',
-        'options',
+        '_cookies',
+        '_data',
+        '_headers',
+        '_media',
         '__dict__',
     )
 
@@ -159,14 +160,47 @@ class Response(object):
         # NOTE(tbug): will be set to a SimpleCookie object
         # when cookie is set via set_cookie
         self._cookies = None
-        self._media = None
 
         self.body = None
-        self.data = None
         self.stream = None
         self.stream_len = None
+        self._data = None
+        self._media = None
 
         self.context = self.context_type()
+
+    @property
+    def data(self):
+        # NOTE(kgriffs): Test explicitly against None since the
+        # app may have set it to an empty binary string.
+        if self._data is not None:
+            return self._data
+
+        # NOTE(kgriffs): Test explicitly against None since the
+        # app may have set it to an empty string that should still
+        # be serialized.
+        if self._media is None:
+            return None
+
+        if not self.content_type:
+            self.content_type = self.options.default_media_type
+
+        handler = self.options.media_handlers.find_by_media_type(
+            self.content_type,
+            self.options.default_media_type
+        )
+
+        # NOTE(kgriffs): Set _data to avoid re-serializing if the
+        # data() property is called multiple times.
+        self._data = handler.serialize(
+            self._media,
+            self.content_type
+        )
+        return self._data
+
+    @data.setter
+    def data(self, value):
+        self._data = value
 
     @property
     def media(self):
@@ -176,14 +210,11 @@ class Response(object):
     def media(self, obj):
         self._media = obj
 
-        if not self.content_type:
-            self.content_type = self.options.default_media_type
-
-        handler = self.options.media_handlers.find_by_media_type(
-            self.content_type,
-            self.options.default_media_type
-        )
-        self.data = handler.serialize(self._media)
+        # NOTE(kgriffs): This will be set just-in-time by the data() property,
+        # rather than serializing immediately. That way, if media() is called
+        # multiple times we don't waste time serializing objects that will
+        # just be thrown away.
+        self._data = None
 
     def __repr__(self):
         return '<%s: %s>' % (self.__class__.__name__, self.status)
@@ -683,12 +714,12 @@ class Response(object):
 
         The tuple has the form (*start*, *end*, *length*, [*unit*]), where *start* and
         *end* designate the range (inclusive), and *length* is the
-        total length, or '\*' if unknown. You may pass ``int``'s for
+        total length, or '\\*' if unknown. You may pass ``int``'s for
         these numbers (no need to convert to ``str`` beforehand). The optional value
         *unit* describes the range unit and defaults to 'bytes'
 
         Note:
-            You only need to use the alternate form, 'bytes \*/1234', for
+            You only need to use the alternate form, 'bytes \\*/1234', for
             responses that use the status '416 Range Not Satisfiable'. In this
             case, raising ``falcon.HTTPRangeNotSatisfiable`` will do the right
             thing.
