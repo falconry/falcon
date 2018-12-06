@@ -422,7 +422,8 @@ class Response(object):
                 may be used on platforms that use wide characters.
 
         Returns:
-            str: The header's value if set, otherwise `default`.
+            str: The value of the specified header if set, or
+            the default value if not set.
         """
         return self._headers.get(name.lower(), default)
 
