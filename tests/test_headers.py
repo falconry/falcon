@@ -472,7 +472,9 @@ class TestHeaders(object):
             assert result.headers['X-Auth-Token'] == 'toomanysecrets'
 
             assert resource.resp.location is None
-            assert resource.resp.get_header('not-real') is None
+            assert resource.resp.get_header('X-Header-Not-Set') is None
+            assert resource.resp.get_header('X-Header-Not-Set', 'Yes') == 'Yes'
+            assert resource.resp.get_header('X-Header-Not-Set', default='') == ''
 
             # Check for duplicate headers
             hist = defaultdict(int)
