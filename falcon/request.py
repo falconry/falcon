@@ -1779,15 +1779,15 @@ class RequestOptions(object):
                 encoded according to the standard W3C algorithm (see
                 also http://goo.gl/6rlcux).
 
-        auto_parse_qs_csv: Pass in ``True`` to split
-            a query string value on any non-percent-encoded commas,
-            this option is disabled by default (``False``).
-            When ``False`` query strings containing commas are untouched,
-            this enables encoding lists as multiple of the same parameter
-            and cases where the comma character is significant
-            such as alternate encodings (i.e. ``/?t=1,2,3&t=4`` becomes ``['1,2,3', '4']``).
-            When ``True``, the query string value is split on the commas
-            and returned as a list (i.e. ``/?t=1,2,3&t=4`` becomes ``['1', '2', '3', '4']``).
+        auto_parse_qs_csv: Set to ``True`` to split query string values on
+            any non-percent-encoded commas (default ``False``). When ``False``,
+            values containing commas are left as-is. In this mode, list items
+            are taken only from multiples of the same parameter name within the
+            query string (i.e. ``/?t=1,2,3&t=4`` becomes ``['1,2,3', '4']``).
+            When `auto_parse_qs_csv` is set to ``True``, the query string value
+            is also split on non-percent-encoded commas and these items
+            are added to the final list (i.e. ``/?t=1,2,3&t=4``
+            becomes ``['1', '2', '3', '4']``).
 
         strip_url_path_trailing_slash: Set to ``True`` in order to
             strip the trailing slash, if present, at the end of the URL
