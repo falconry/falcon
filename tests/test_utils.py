@@ -486,6 +486,7 @@ class TestFalconTestingUtils(object):
                 resp.body = json.dumps(doc)
 
         app = falcon.API()
+        app.req_options.auto_parse_qs_csv = True
         app.add_route('/', SomeResource())
         client = testing.TestClient(app)
 
