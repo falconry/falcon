@@ -25,6 +25,12 @@ class CaptureResponseMiddleware(object):
         self.req_succeeded = req_succeeded
 
 
+class CaptureRequestMiddleware(object):
+
+    def process_request(self, req, resp):
+        self.req = req
+
+
 class RequestTimeMiddleware(object):
 
     def process_request(self, req, resp):
@@ -209,10 +215,20 @@ class TestTransactionIdMiddleware(TestMiddleware):
 
 
 class TestSeveralMiddlewares(TestMiddleware):
-    def test_generate_trans_id_and_time_with_request(self):
+    @pytest.mark.parametrize('independent_middleware', [True, False])
+    def test_generate_trans_id_and_time_with_request(self, independent_middleware):
+        # NOTE(kgriffs): We test both so that we can cover the code paths
+        # where only a single middleware method is implemented by a
+        # component.
+        creq = CaptureRequestMiddleware()
+        cresp = CaptureResponseMiddleware()
+
         global context
-        app = falcon.API(middleware=[TransactionIdMiddleware(),
-                                     RequestTimeMiddleware()])
+        app = falcon.API(independent_middleware=independent_middleware,
+                         middleware=[TransactionIdMiddleware(),
+                                     RequestTimeMiddleware(),
+                                     creq,
+                                     cresp])
 
         app.add_route(TEST_ROUTE, MiddlewareClassResource())
         client = testing.TestClient(app)

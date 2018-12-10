@@ -6,6 +6,14 @@ Breaking Changes
 
 - ``testing.Result.json`` now returns ``None`` when the response body is
   empty, rather than raising an error.
+- ``Request.get_param_as_bool()`` now defaults to treating valueless
+  parameters as truthy, rather than falsy. ``None`` is still returned
+  by default when the parameter is altogether missing.
+- ``Request.get_param_as_bool()`` no longer raises an error for a
+  valueless parameter when the ``blank_as_true`` keyword argument is ``False``.
+  Instead, ``False`` is simply returned in that case.
+- ``RequestOptions.keep_blank_qs_values`` now defaults to ``True`` instead of
+  ``False``.
 
 Changes to Supported Platforms
 ------------------------------
