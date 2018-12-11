@@ -87,61 +87,12 @@ def compile_uri_template(template):
     return fields, re.compile(pattern, re.IGNORECASE)
 
 
-def create_http_method_map(resource):  # pragma: nocover
-    """Maps HTTP methods (e.g., GET, POST) to methods of a resource object.
-
-    Warning:
-        This method is deprecated and will be removed in a future release.
-        Please use :py:meth:`~falcon.routing.map_http_methods` and
-        :py:meth:`~falcon.routing.map_http_methods` instead.
-
-    Args:
-        resource: An object with *responder* methods, following the naming
-            convention *on_\**, that correspond to each method the resource
-            supports. For example, if a resource supports GET and POST, it
-            should define ``on_get(self, req, resp)`` and
-            ``on_post(self, req, resp)``.
-    Returns:
-        dict: A mapping of HTTP methods to responders.
-    """
-
-    method_map = {}
-
-    for method in COMBINED_METHODS:
-        try:
-            responder = getattr(resource, 'on_' + method.lower())
-        except AttributeError:
-            # resource does not implement this method
-            pass
-        else:
-            # Usually expect a method, but any callable will do
-            if callable(responder):
-                method_map[method] = responder
-
-    # Attach a resource for unsupported HTTP methods
-    allowed_methods = sorted(list(method_map.keys()))
-
-    if 'OPTIONS' not in method_map:
-        # OPTIONS itself is intentionally excluded from the Allow header
-        opt_responder = responders.create_default_options(allowed_methods)
-        method_map['OPTIONS'] = opt_responder
-        allowed_methods.append('OPTIONS')
-
-    na_responder = responders.create_method_not_allowed(allowed_methods)
-
-    for method in COMBINED_METHODS:
-        if method not in allowed_methods:
-            method_map[method] = na_responder
-
-    return method_map
-
-
 def map_http_methods(resource, suffix=None):
     """Maps HTTP methods (e.g., GET, POST) to methods of a resource object.
 
     Args:
         resource: An object with *responder* methods, following the naming
-            convention *on_\**, that correspond to each method the resource
+            convention *on_\\**, that correspond to each method the resource
             supports. For example, if a resource supports GET and POST, it
             should define ``on_get(self, req, resp)`` and
             ``on_post(self, req, resp)``.

@@ -111,6 +111,7 @@ class TestQueryParams(object):
     def test_blank(self, simulate_request, client, resource):
         query_string = 'marker='
         client.app.add_route('/', resource)
+        client.app.req_options.keep_blank_qs_values = False
         simulate_request(client=client, path='/', query_string=query_string)
 
         req = resource.captured_req
@@ -136,6 +137,7 @@ class TestQueryParams(object):
     def test_percent_encoded(self, simulate_request, client, resource):
         query_string = 'id=23,42&q=%e8%b1%86+%e7%93%a3'
         client.app.add_route('/', resource)
+        client.app.req_options.auto_parse_qs_csv = True
         simulate_request(client=client, path='/', query_string=query_string)
 
         req = resource.captured_req
@@ -163,6 +165,7 @@ class TestQueryParams(object):
     def test_option_auto_parse_qs_csv_simple_true(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         client.app.req_options.auto_parse_qs_csv = True
+        client.app.req_options.keep_blank_qs_values = False
 
         query_string = 'id=23,42,,&id=2'
         simulate_request(client=client, path='/', query_string=query_string)
@@ -176,6 +179,7 @@ class TestQueryParams(object):
     def test_option_auto_parse_qs_csv_complex_false(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         client.app.req_options.auto_parse_qs_csv = False
+        client.app.req_options.keep_blank_qs_values = False
 
         encoded_json = '%7B%22msg%22:%22Testing%201,2,3...%22,%22code%22:857%7D'
         decoded_json = '{"msg":"Testing 1,2,3...","code":857}'
@@ -204,6 +208,17 @@ class TestQueryParams(object):
 
         assert req.get_param('thing') == decoded_json
 
+    def test_default_auto_parse_csv_behaviour(self, simulate_request, client, resource):
+        client.app.add_route('/', resource=resource)
+        query_string = 'id=1,2,,&id=3'
+
+        simulate_request(client=client, path='/', query_string=query_string)
+
+        req = resource.captured_req
+
+        assert req.get_param('id') == '3'
+        assert req.get_param_as_list('id') == ['1,2,,', '3']
+
     def test_bad_percentage(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         query_string = 'x=%%20%+%&y=peregrine&z=%a%z%zz%1%20e'
@@ -217,6 +232,7 @@ class TestQueryParams(object):
 
     def test_allowed_names(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
+        client.app.req_options.keep_blank_qs_values = False
         query_string = ('p=0&p1=23&2p=foo&some-thing=that&blank=&'
                         'some_thing=x&-bogus=foo&more.things=blah&'
                         '_thing=42&_charset_=utf-8')
@@ -437,6 +453,7 @@ class TestQueryParams(object):
 
     def test_boolean(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
+        client.app.req_options.keep_blank_qs_values = False
         query_string = ('echo=true&doit=false&bogus=bar&bogus2=foo&'
                         't1=True&f1=False&t2=yes&f2=no&blank&one=1&zero=0&'
                         'checkbox1=on&checkbox2=off')
@@ -476,22 +493,26 @@ class TestQueryParams(object):
 
     def test_boolean_blank(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
-        client.app.req_options.keep_blank_qs_values = True
         simulate_request(client=client, path='/', query_string='blank&blank2=')
 
         req = resource.captured_req
         assert req.get_param('blank') == ''
         assert req.get_param('blank2') == ''
-        with pytest.raises(falcon.HTTPInvalidParam):
-            req.get_param_as_bool('blank')
 
-        with pytest.raises(falcon.HTTPInvalidParam):
-            req.get_param_as_bool('blank2')
-        assert req.get_param_as_bool('blank', blank_as_true=True)
-        assert req.get_param_as_bool('blank3', blank_as_true=True) is None
+        for param_name in ('blank', 'blank2'):
+            assert req.get_param_as_bool(param_name) is True
+            assert req.get_param_as_bool(param_name, blank_as_true=True) is True
+            assert req.get_param_as_bool(param_name, blank_as_true=False) is False
+
+        assert req.get_param_as_bool('nichts') is None
+        assert req.get_param_as_bool('nichts', default=None) is None
+        assert req.get_param_as_bool('nichts', default=False) is False
+        assert req.get_param_as_bool('nichts', default=True) is True
 
     def test_list_type(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
+        client.app.req_options.auto_parse_qs_csv = True
+        client.app.req_options.keep_blank_qs_values = False
         query_string = ('colors=red,green,blue&limit=1'
                         '&list-ish1=f,,x&list-ish2=,0&list-ish3=a,,,b'
                         '&empty1=&empty2=,&empty3=,,'
@@ -542,6 +563,7 @@ class TestQueryParams(object):
                         '&empty4=&empty4&empty4='
                         '&empty5&empty5&empty5')
         client.app.req_options.keep_blank_qs_values = True
+        client.app.req_options.auto_parse_qs_csv = True
         simulate_request(client=client, path='/', query_string=query_string)
 
         req = resource.captured_req
@@ -581,6 +603,8 @@ class TestQueryParams(object):
 
     def test_list_transformer(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
+        client.app.req_options.auto_parse_qs_csv = True
+        client.app.req_options.keep_blank_qs_values = False
         query_string = 'coord=1.4,13,15.1&limit=100&things=4,,1'
         simulate_request(client=client, path='/', query_string=query_string)
 

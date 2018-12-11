@@ -123,7 +123,7 @@ class TestDefaultRouting(object):
     def test_route_precedence_with_both_id(self, client, sink, resource):
         # NOTE(kgriffs): In case of collision, the route takes precedence.
         client.app.add_route('/books/{id}', resource)
-        client.app.add_sink(sink, '/books/\d+')
+        client.app.add_sink(sink, r'/books/\d+')
 
         response = client.simulate_request(path='/books/123')
         assert resource.called
