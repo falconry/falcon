@@ -213,3 +213,9 @@ div input[type="submit"]:focus {
 input[type=text]:focus {
     outline: 1px solid #999;
 }
+
+#sidebarSupportFalcon a:hover, #sidebarSupportFalcon a:focus {
+    text-decoration: none;
+    border: none;
+    outline: none;
+}
