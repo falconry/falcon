@@ -40,7 +40,7 @@ Silver
 .. raw:: html
 
     <p>
-    <a href="http://www.parisnakitakejser.com/python-falcon" target="_blank"><img src="https://falconframework.org/img/sponsors/paris.svg" height="20" alt="Paris Kejser"></a>
+    <a href="https://www.pnk.sh/python-falcon" target="_blank"><img src="https://falconframework.org/img/sponsors/paris.svg" height="20" alt="Paris Kejser"></a>
     </p>
 
 Has Falcon helped you make an awesome app? Show your support today with a one-time donation or by becoming a patron. Supporters get cool gear, an opportunity to promote their brand to Python developers, and
