@@ -13,8 +13,9 @@ class MessagePackHandler(BaseHandler):
     (``bytes`` on Python 2/3, or ``str`` on Python 2).
 
     Note:
-        This handler requires the extra ``msgpack`` package, which must be
-        installed in addition to ``falcon`` from PyPI:
+        This handler requires the extra ``msgpack`` package (version 0.5.2 
+        or higher), which must be installed in addition to ``falcon`` from 
+        PyPI:
 
         .. code::
 
