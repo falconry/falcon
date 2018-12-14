@@ -421,7 +421,7 @@ class Response(object):
                 or ``StringType``, and only character values 0x00 through 0xFF
                 may be used on platforms that use wide characters.
         Keyword Args:
-            default (any): Value to return if the header
+            default: Value to return if the header
                 is not found (default ``None``).
 
         Returns:
