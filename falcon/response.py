@@ -420,6 +420,9 @@ class Response(object):
             name (str): Header name, case-insensitive. Must be of type ``str``
                 or ``StringType``, and only character values 0x00 through 0xFF
                 may be used on platforms that use wide characters.
+        Keyword Args:
+            default (any): Value to return if the header
+                is not found (default ``None``).
 
         Returns:
             str: The value of the specified header if set, or
