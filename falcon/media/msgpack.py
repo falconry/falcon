@@ -13,8 +13,9 @@ class MessagePackHandler(BaseHandler):
     (``bytes`` on Python 2/3, or ``str`` on Python 2).
 
     Note:
-        This handler requires the extra ``msgpack`` package, which must be
-        installed in addition to ``falcon`` from PyPI:
+        This handler requires the extra ``msgpack`` package (version 0.5.2
+        or higher), which must be installed in addition to ``falcon`` from
+        PyPI:
 
         .. code::
 
@@ -26,7 +27,6 @@ class MessagePackHandler(BaseHandler):
 
         self.msgpack = msgpack
         self.packer = msgpack.Packer(
-            encoding='utf-8',
             autoreset=True,
             use_bin_type=True,
         )
@@ -35,7 +35,7 @@ class MessagePackHandler(BaseHandler):
         try:
             # NOTE(jmvrbanac): Using unpackb since we would need to manage
             # a buffer for Unpacker() which wouldn't gain us much.
-            return self.msgpack.unpackb(stream.read(), encoding='utf-8')
+            return self.msgpack.unpackb(stream.read(), raw=False)
         except ValueError as err:
             raise errors.HTTPBadRequest(
                 'Invalid MessagePack',

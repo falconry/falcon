@@ -137,6 +137,7 @@ class TestQueryParams(object):
     def test_percent_encoded(self, simulate_request, client, resource):
         query_string = 'id=23,42&q=%e8%b1%86+%e7%93%a3'
         client.app.add_route('/', resource)
+        client.app.req_options.auto_parse_qs_csv = True
         simulate_request(client=client, path='/', query_string=query_string)
 
         req = resource.captured_req
@@ -206,6 +207,17 @@ class TestQueryParams(object):
         assert req.get_param_as_list('list-ish3') == [u'a,,,b']
 
         assert req.get_param('thing') == decoded_json
+
+    def test_default_auto_parse_csv_behaviour(self, simulate_request, client, resource):
+        client.app.add_route('/', resource=resource)
+        query_string = 'id=1,2,,&id=3'
+
+        simulate_request(client=client, path='/', query_string=query_string)
+
+        req = resource.captured_req
+
+        assert req.get_param('id') == '3'
+        assert req.get_param_as_list('id') == ['1,2,,', '3']
 
     def test_bad_percentage(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
@@ -499,6 +511,7 @@ class TestQueryParams(object):
 
     def test_list_type(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
+        client.app.req_options.auto_parse_qs_csv = True
         client.app.req_options.keep_blank_qs_values = False
         query_string = ('colors=red,green,blue&limit=1'
                         '&list-ish1=f,,x&list-ish2=,0&list-ish3=a,,,b'
@@ -550,6 +563,7 @@ class TestQueryParams(object):
                         '&empty4=&empty4&empty4='
                         '&empty5&empty5&empty5')
         client.app.req_options.keep_blank_qs_values = True
+        client.app.req_options.auto_parse_qs_csv = True
         simulate_request(client=client, path='/', query_string=query_string)
 
         req = resource.captured_req
@@ -589,6 +603,7 @@ class TestQueryParams(object):
 
     def test_list_transformer(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
+        client.app.req_options.auto_parse_qs_csv = True
         client.app.req_options.keep_blank_qs_values = False
         query_string = 'coord=1.4,13,15.1&limit=100&things=4,,1'
         simulate_request(client=client, path='/', query_string=query_string)
