@@ -2,6 +2,10 @@
 
 Thank you to our generous project patrons who help make this project possible!
 
+## Platinum Patrons
+
+* [GOVCERT.LU](https://www.govcert.lu/)
+
 ## Gold Patrons
 
 * [Likalo](https://www.likalo.com/)
