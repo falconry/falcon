@@ -21,6 +21,7 @@ WSGI callable, without having to stand up a WSGI server.
 import warnings
 import wsgiref.validate
 
+import six
 from six.moves import http_cookies
 
 from falcon.constants import MEDIA_JSON
@@ -684,5 +685,9 @@ class TestClient(object):
             merged_headers.update(additional_headers)
 
             kwargs['headers'] = merged_headers
+
+        if six.PY2 and 'headers' in kwargs:
+            for key, value in six.iteritems(kwargs['headers']):
+                kwargs['headers'][key] = str(value) if isinstance(value, unicode) else value
 
         return simulate_request(self.app, *args, **kwargs)
