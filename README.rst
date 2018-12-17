@@ -25,6 +25,13 @@ CPython 2.7, CPython 3.4+, PyPy2.7, and PyPy3.5.
 A Big Thank You to Our Patrons
 ------------------------------
 
+Platinum
+
+.. raw:: html
+
+    <p>
+    <a href="https://www.govcert.lu/"><img src="https://falconframework.org/img/sponsors/govcert.png" height="60" alt="CERT Gouvernemental Luxembourg" ></a>
+     </p>
 
 Gold
 
