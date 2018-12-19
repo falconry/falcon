@@ -19,12 +19,16 @@ def test_response_get_headers():
     resp = falcon.Response()
     resp.append_header('x-things1', 'thing-1')
     resp.append_header('x-things2', 'thing-2')
-    resp.append_header('x-things3', 'thing-3')
+    resp.append_header('X-Things3', 'Thing-3')
+
+    resp.set_cookie('Chocolate', 'Chip')
 
     headers = resp.headers
     assert headers['x-things1'] == 'thing-1'
     assert headers['x-things2'] == 'thing-2'
-    assert headers['x-things3'] == 'thing-3'
+    assert headers['x-things3'] == 'Thing-3'
+
+    assert 'set-cookie' not in headers
 
 
 def test_response_attempt_to_set_read_only_headers():
@@ -32,7 +36,8 @@ def test_response_attempt_to_set_read_only_headers():
 
     resp.append_header('x-things1', 'thing-1')
     resp.append_header('x-things2', 'thing-2')
-    resp.append_header('x-things3', 'thing-3')
+    resp.append_header('x-things3', 'thing-3a')
+    resp.append_header('X-Things3', 'thing-3b')
 
     with pytest.raises(AttributeError):
         resp.headers = {'x-things4': 'thing-4'}
@@ -40,4 +45,4 @@ def test_response_attempt_to_set_read_only_headers():
     headers = resp.headers
     assert headers['x-things1'] == 'thing-1'
     assert headers['x-things2'] == 'thing-2'
-    assert headers['x-things3'] == 'thing-3'
+    assert headers['x-things3'] == 'thing-3a, thing-3b'
