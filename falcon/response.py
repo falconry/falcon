@@ -133,7 +133,9 @@ class Response(object):
 
         options (dict): Set of global options passed from the API handler.
 
-        headers (dict): Read-only list of all headers set for Response.
+        headers (dict): Copy of all headers set for the response,
+            sans cookies. Note that a new copy is created and returned each
+            time this property is referenced.
     """
 
     __slots__ = (
