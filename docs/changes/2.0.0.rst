@@ -4,7 +4,7 @@ Changelog for Falcon 2.0.0
 Breaking Changes
 ----------------
 
-- :attr:`falcon.testing.Result.json` now returns None when the response body is
+- :attr:`falcon.testing.Result.json` now returns ``None`` when the response body is
   empty, rather than raising an error.
 - :meth:`~.Request.get_param_as_bool` now defaults to treating valueless
   parameters as truthy, rather than falsy. ``None`` is still returned
@@ -22,6 +22,8 @@ Changes to Supported Platforms
 
 New & Improved
 --------------
+
+- Added a new :attr:`~.Response.headers` property to the :class:`~.Response` class.
 
 Fixed
 -----
