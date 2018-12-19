@@ -132,6 +132,10 @@ class Response(object):
                 the Response instance itself (self).
 
         options (dict): Set of global options passed from the API handler.
+
+        headers (dict): Copy of all headers set for the response,
+            sans cookies. Note that a new copy is created and returned each
+            time this property is referenced.
     """
 
     __slots__ = (
@@ -201,6 +205,10 @@ class Response(object):
     @data.setter
     def data(self, value):
         self._data = value
+
+    @property
+    def headers(self):
+        return self._headers.copy()
 
     @property
     def media(self):

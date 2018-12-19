@@ -23,6 +23,8 @@ Changes to Supported Platforms
 New & Improved
 --------------
 
+- Added a new ``headers`` property to the ``Response`` class.
+
 Fixed
 -----
 
