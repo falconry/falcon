@@ -134,6 +134,6 @@ def _setup_wsgi_server():
     try:
         requests.get(_SERVER_BASE_URL)
     except Exception:
-        pass  # Thread already exited
+        pass  # Process already exited
 
     process.join()

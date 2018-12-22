@@ -232,7 +232,8 @@ class Cookie(object):
 def simulate_request(app, method='GET', path='/', query_string=None,
                      headers=None, body=None, json=None, file_wrapper=None,
                      wsgierrors=None, params=None, params_csv=True,
-                     protocol='http'):
+                     protocol='http', host=helpers.DEFAULT_HOST,
+                     remote_addr=None, extras=None):
         """Simulates a request to a WSGI application.
 
         Performs a request against a WSGI application. Uses
@@ -275,8 +276,14 @@ def simulate_request(app, method='GET', path='/', query_string=None,
                 environ (default: ``None``). This can be used to test
                 high-performance file transmission when `resp.stream` is
                 set to a file-like object.
+            host(str): A string to use for the hostname part of the fully
+                qualified request URL (default: 'falconframework.org')
+            remote_addr (str): A string to use as the remote IP address for the
+                request (default: '127.0.0.1')
             wsgierrors (io): The stream to use as *wsgierrors*
                 (default ``sys.stderr``)
+            extras (dict): Additional CGI variables to add to the WSGI
+                ``environ`` dictionary for the request (default: ``None``)
 
         Returns:
             :py:class:`~.Result`: The result of the request
@@ -299,6 +306,17 @@ def simulate_request(app, method='GET', path='/', query_string=None,
                 'query_string parameter instead.'
             )
 
+        extras = extras or {}
+        if 'REQUEST_METHOD' in extras and extras['REQUEST_METHOD'] != method:
+            # NOTE(vytas): Even given the duct tape nature of overriding
+            # arbitrary environ variables, changing the method can potentially
+            # be very confusing, particularly when using specialized
+            # simulate_get/post/patch etc methods.
+            raise ValueError(
+                'environ extras may not override the request method. Please '
+                'use the method parameter.'
+            )
+
         if query_string is None:
             query_string = to_query_str(
                 params,
@@ -319,8 +337,12 @@ def simulate_request(app, method='GET', path='/', query_string=None,
             headers=headers,
             body=body,
             file_wrapper=file_wrapper,
+            host=host,
+            remote_addr=remote_addr,
             wsgierrors=wsgierrors,
         )
+        if extras:
+            env.update(extras)
 
         srmock = StartResponseMock()
         validator = wsgiref.validate.validator(app)
