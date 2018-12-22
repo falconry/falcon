@@ -13,7 +13,6 @@ if PY3:
     from io import StringIO
     from urllib.parse import quote, unquote_plus
 
-
     string_types = (str,)
     class_types = (type,)
     text_type = str
@@ -24,7 +23,6 @@ else:
     from UserDict import UserDict
     from StringIO import StringIO
     from urllib import quote, unquote_plus
-
 
     string_types = (basestring,)
     class_types = (type, types.ClassType)
