@@ -113,7 +113,7 @@ breaking changes, and when we do they are fully documented and only
 introduced (in the spirit of
 `SemVer <http://semver.org/>`__) with a major version
 increment. The code is rigorously tested with numerous inputs and we
-require 100% coverage at all times. Mimeparse are the only
+require 100% coverage at all times. Mimeparse is the only
 third-party dependency.
 
 **Flexible.** Falcon leaves a lot of decisions and implementation
