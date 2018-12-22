@@ -16,7 +16,7 @@ import abc
 from datetime import datetime
 import uuid
 
-from falcon import compat
+from falcon.util import compat
 
 
 __all__ = (

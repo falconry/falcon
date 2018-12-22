@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, tzinfo
 import re
 
 import pytest
-from falcon.compat import http_cookies
+from falcon.util.compat import http_cookies
 
 import falcon
 import falcon.testing as testing

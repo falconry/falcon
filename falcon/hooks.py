@@ -19,7 +19,7 @@ from inspect import getmembers
 import re
 
 from falcon import COMBINED_METHODS
-from falcon import compat
+from falcon.util import compat
 from falcon.util.misc import get_argnames
 
 

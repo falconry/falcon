@@ -1,6 +1,6 @@
 from falcon import API
-from falcon import compat
 from falcon.cmd import print_routes
+from falcon.util import compat
 from falcon.testing import redirected
 
 

@@ -3,8 +3,8 @@ import io
 import pytest
 
 import falcon
-from falcon import compat
 from falcon import testing
+from falcon.util import compat
 
 
 @pytest.fixture

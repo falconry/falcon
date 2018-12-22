@@ -1,8 +1,8 @@
 from __future__ import absolute_import
 
 from falcon import errors
-from falcon import compat
 from falcon.media import BaseHandler
+from falcon.util import compat
 from falcon.util import json
 
 

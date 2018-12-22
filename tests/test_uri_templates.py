@@ -11,8 +11,8 @@ import uuid
 import pytest
 
 import falcon
-from falcon import compat
 from falcon import testing
+from falcon.util import compat
 from falcon.routing.util import SuffixedMethodNotFoundError
 
 

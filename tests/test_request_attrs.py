@@ -4,7 +4,7 @@ import itertools
 import pytest
 
 import falcon
-from falcon import compat
+from falcon.util import compat
 from falcon.request import Request, RequestOptions
 import falcon.testing as testing
 import falcon.uri

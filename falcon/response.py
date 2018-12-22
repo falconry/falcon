@@ -18,7 +18,6 @@ import mimetypes
 
 
 from falcon import DEFAULT_MEDIA_TYPE
-from falcon import compat
 from falcon.media import Handlers
 from falcon.response_helpers import (
     format_content_disposition,
@@ -29,6 +28,7 @@ from falcon.response_helpers import (
     is_ascii_encodable,
 )
 from falcon.util import dt_to_http, TimezoneGMT
+from falcon.util import compat
 from falcon.util.uri import encode as uri_encode
 from falcon.util.uri import encode_value as uri_encode_value
 

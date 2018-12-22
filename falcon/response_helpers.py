@@ -14,7 +14,7 @@
 
 """Utilities for the Response class."""
 
-from falcon import compat
+from falcon.util import compat
 
 
 def header_property(name, doc, transform=None):

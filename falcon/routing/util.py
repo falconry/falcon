@@ -16,8 +16,8 @@
 
 import re
 
-from falcon import compat
 from falcon import COMBINED_METHODS, responders
+from falcon.util import compat
 
 
 class SuffixedMethodNotFoundError(Exception):

@@ -1,6 +1,6 @@
 import abc
 
-from falcon import compat
+from falcon.util import compat
 
 
 @compat.add_metaclass(abc.ABCMeta)

@@ -29,8 +29,7 @@ import io
 import random
 import sys
 
-from falcon import compat
-from falcon.util import http_now, uri
+from falcon.util import http_now, uri, compat
 
 
 # Constants

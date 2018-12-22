@@ -17,13 +17,13 @@
 import re
 
 from falcon import api_helpers as helpers, DEFAULT_MEDIA_TYPE, routing
-from falcon import compat
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 from falcon.request import Request, RequestOptions
 import falcon.responders
 from falcon.response import Response, ResponseOptions
 import falcon.status_codes as status
+from falcon.util import compat
 from falcon.util.misc import get_argnames
 
 

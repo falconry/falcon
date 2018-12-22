@@ -31,7 +31,6 @@ from wsgiref.validate import InputWrapper
 
 import mimeparse
 
-from falcon import compat
 from falcon import DEFAULT_MEDIA_TYPE
 from falcon import errors
 from falcon import request_helpers as helpers
@@ -39,6 +38,7 @@ from falcon import util
 from falcon.forwarded import _parse_forwarded_header
 from falcon.forwarded import Forwarded  # NOQA
 from falcon.media import Handlers
+from falcon.util import compat
 from falcon.util import json
 from falcon.util.uri import parse_host, parse_query_string
 

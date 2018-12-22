@@ -1,8 +1,8 @@
 import mimeparse
 
 from falcon import errors
-from falcon.compat import UserDict
 from falcon.media import JSONHandler
+from falcon.util.compat import UserDict
 
 
 class Handlers(UserDict):

@@ -24,7 +24,7 @@ in the `falcon` module, and so must be explicitly imported::
 
 """
 
-from falcon import compat
+from falcon.util import compat
 
 # NOTE(kgriffs): See also RFC 3986
 _UNRESERVED = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ'

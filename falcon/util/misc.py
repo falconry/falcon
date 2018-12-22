@@ -29,8 +29,8 @@ import functools
 import inspect
 import warnings
 
-from falcon import compat
 from falcon import status_codes
+from falcon.util import compat
 
 __all__ = (
     'deprecated',
