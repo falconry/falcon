@@ -646,9 +646,9 @@ class Request(object):
                 raise ValueError()
 
             if first:
-                return (int(first), int(last or -1))
+                return int(first), int(last or -1)
             elif last:
-                return (-int(last), -1)
+                return -int(last), -1
             else:
                 msg = 'The range offsets are missing.'
                 raise errors.HTTPInvalidHeader(msg, 'Range')
@@ -656,7 +656,7 @@ class Request(object):
         except ValueError:
             href = 'http://goo.gl/zZ6Ey'
             href_text = 'HTTP/1.1 Range Requests'
-            msg = ('It must be a range formatted according to RFC 7233.')
+            msg = 'It must be a range formatted according to RFC 7233.'
             raise errors.HTTPInvalidHeader(msg, 'Range', href=href,
                                            href_text=href_text)
 
@@ -1010,7 +1010,7 @@ class Request(object):
             # Value for the accept header was not formatted correctly
             preferred_type = ''
 
-        return (preferred_type if preferred_type else None)
+        return preferred_type if preferred_type else None
 
     def get_header(self, name, required=False, default=None):
         """Retrieve the raw string value for the given header.
