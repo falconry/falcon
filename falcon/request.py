@@ -1158,8 +1158,8 @@ class Request(object):
 
         raise errors.HTTPMissingParam(name)
 
-    def get_param_as_int(self, name, required=False, min=None,
-                         max=None, store=None, default=None):
+    def get_param_as_int(self, name, required=False, min_value=None,
+                         max_value=None, store=None, default=None):
         """Return the value of a query string parameter as an int.
 
         Args:
@@ -1170,12 +1170,12 @@ class Request(object):
                 ``HTTPBadRequest`` instead of returning ``None`` when the
                 parameter is not found or is not an integer (default
                 ``False``).
-            min (int): Set to the minimum value allowed for this
-                param. If the param is found and it is less than min, an
+            min_value (int): Set to the minimum value allowed for this
+                param. If the param is found and it is less than min_value, an
                 ``HTTPError`` is raised.
-            max (int): Set to the maximum value allowed for this
+            max_value (int): Set to the maximum value allowed for this
                 param. If the param is found and its value is greater than
-                max, an ``HTTPError`` is raised.
+                max_value, an ``HTTPError`` is raised.
             store (dict): A ``dict``-like object in which to place
                 the value of the param, but only if the param is found
                 (default ``None``).
@@ -1192,7 +1192,7 @@ class Request(object):
                 it was required to be there, or it was found but could not
                 be converted to an ``int``. Also raised if the param's value
                 falls outside the given interval, i.e., the value must be in
-                the interval: min <= value <= max to avoid triggering an error.
+                the interval: min_value <= value <= max_value to avoid triggering an error.
 
         """
 
@@ -1211,12 +1211,12 @@ class Request(object):
                 msg = 'The value must be an integer.'
                 raise errors.HTTPInvalidParam(msg, name)
 
-            if min is not None and val < min:
-                msg = 'The value must be at least ' + str(min)
+            if min_value is not None and val < min_value:
+                msg = 'The value must be at least ' + str(min_value)
                 raise errors.HTTPInvalidParam(msg, name)
 
-            if max is not None and max < val:
-                msg = 'The value may not exceed ' + str(max)
+            if max_value is not None and max_value < val:
+                msg = 'The value may not exceed ' + str(max_value)
                 raise errors.HTTPInvalidParam(msg, name)
 
             if store is not None:
@@ -1229,8 +1229,8 @@ class Request(object):
 
         raise errors.HTTPMissingParam(name)
 
-    def get_param_as_float(self, name, required=False, min=None,
-                           max=None, store=None, default=None):
+    def get_param_as_float(self, name, required=False, min_value=None,
+                           max_value=None, store=None, default=None):
         """Return the value of a query string parameter as an float.
 
         Args:
@@ -1241,12 +1241,12 @@ class Request(object):
                 ``HTTPBadRequest`` instead of returning ``None`` when the
                 parameter is not found or is not an float (default
                 ``False``).
-            min (float): Set to the minimum value allowed for this
-                param. If the param is found and it is less than min, an
+            min_value (float): Set to the minimum value allowed for this
+                param. If the param is found and it is less than min_value, an
                 ``HTTPError`` is raised.
-            max (float): Set to the maximum value allowed for this
+            max_value (float): Set to the maximum value allowed for this
                 param. If the param is found and its value is greater than
-                max, an ``HTTPError`` is raised.
+                max_value, an ``HTTPError`` is raised.
             store (dict): A ``dict``-like object in which to place
                 the value of the param, but only if the param is found
                 (default ``None``).
@@ -1263,7 +1263,7 @@ class Request(object):
                 it was required to be there, or it was found but could not
                 be converted to an ``float``. Also raised if the param's value
                 falls outside the given interval, i.e., the value must be in
-                the interval: min <= value <= max to avoid triggering an error.
+                the interval: min_value <= value <= max_value to avoid triggering an error.
 
         """
 
@@ -1282,12 +1282,12 @@ class Request(object):
                 msg = 'The value must be a float.'
                 raise errors.HTTPInvalidParam(msg, name)
 
-            if min is not None and val < min:
-                msg = 'The value must be at least ' + str(min)
+            if min_value is not None and val < min_value:
+                msg = 'The value must be at least ' + str(min_value)
                 raise errors.HTTPInvalidParam(msg, name)
 
-            if max is not None and max < val:
-                msg = 'The value may not exceed ' + str(max)
+            if max_value is not None and max_value < val:
+                msg = 'The value may not exceed ' + str(max_value)
                 raise errors.HTTPInvalidParam(msg, name)
 
             if store is not None:
