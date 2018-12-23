@@ -14,7 +14,7 @@
 
 """Miscellaneous utilities.
 
-This module provides misc. utility functions for as and the Falcon
+This module provides misc. utility functions for apps and the Falcon
 framework itself. These functions are hoisted into the front-door
 `falcon` module for convenience::
 
