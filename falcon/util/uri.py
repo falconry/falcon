@@ -27,9 +27,6 @@ in the `falcon` module, and so must be explicitly imported::
 import six
 
 
-# NOTE(kandziu): Invalid unicode character
-FFFD = u'\ufffd'
-
 # NOTE(kgriffs): See also RFC 3986
 _UNRESERVED = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                'abcdefghijklmnopqrstuvwxyz'

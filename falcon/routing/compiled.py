@@ -14,6 +14,8 @@
 
 """Default routing engine."""
 
+from __future__ import unicode_literals
+
 import keyword
 import re
 import textwrap

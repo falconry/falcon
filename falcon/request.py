@@ -183,6 +183,10 @@ class Request(object):
             Note:
                 `req.path` may be set to a new value by a `process_request()`
                 middleware method in order to influence routing.
+
+            Note:
+                `req.path` always decode to a unicode.
+
         query_string (str): Query string portion of the request URI, without
             the preceding '?' character.
         uri_template (str): The template for the route that was matched for
@@ -426,15 +430,15 @@ class Request(object):
         # empty string, so normalize it in that case.
         path = env['PATH_INFO'] or '/'
 
-        if six.PY2:
-            # NOTE(kandziu): WSGI servers decode the URL to bytes, leaving
-            # a "UTF-8 bytestring". Under Python 2.6/7 that must be decoded
-            # to a unicode.
-            path = path.decode('utf-8', 'replace')
-        else:
+        if six.PY3:
             # PEP 3333 specifies that PATH_INFO variable are always
             # "bytes tunneled as latin-1" and must be encoded back
             path = path.encode('latin1').decode('utf-8', 'replace')
+        else:
+            # NOTE(kandziu): WSGI servers decode the URL to bytes, leaving
+            # a "UTF-8 bytestring". Under Python 2.7 that must be decoded
+            # to a unicode.
+            path = path.decode('utf-8', 'replace')
 
         if (self.options.strip_url_path_trailing_slash and
                 len(path) != 1 and path.endswith('/')):

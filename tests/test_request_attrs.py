@@ -148,9 +148,10 @@ class TestRequestAttributes(object):
         u'/hello_\u043f\u0440\u0438\u0432\u0435\u0442',
         u'/world_\u043c\u0438\u0440',
         u'/test_\u0442\u0435\u0441\u0442',
+        u'/\U0001f354',
     ])
     def test_utf_8_path(self, test_path):
-        # NOTE(kandziu): Test that under python 2.6/7 a path with
+        # NOTE(kandziu): Test that under python 2.7 a path with
         # UTF-8 characters will be decoded correct.
 
         req = Request(testing.create_environ(

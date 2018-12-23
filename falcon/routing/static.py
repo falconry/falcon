@@ -3,7 +3,6 @@ import os
 import re
 
 import falcon
-from falcon.util.uri import FFFD
 
 
 class StaticRoute(object):
@@ -38,7 +37,7 @@ class StaticRoute(object):
     """
 
     # NOTE(kgriffs): Don't allow control characters and reserved chars
-    _DISALLOWED_CHARS_PATTERN = re.compile('[\x00-\x1f\x80-\x9f~?<>:*|\'"]')
+    _DISALLOWED_CHARS_PATTERN = re.compile(u'[\x00-\x1f\x80-\x9f\ufffd~?<>:*|\'"]')
 
     # NOTE(kgriffs): If somehow an executable code exploit is triggerable, this
     # minimizes how much can be included in the payload.
@@ -89,11 +88,6 @@ class StaticRoute(object):
                 '//' in without_prefix or
                 len(without_prefix) > self._MAX_NON_PREFIXED_LEN):
 
-            raise falcon.HTTPNotFound()
-
-        # NOTE(kandziu): Check invalid characters since the req.path
-        # always a unicode.
-        if FFFD in without_prefix:
             raise falcon.HTTPNotFound()
 
         normalized = os.path.normpath(without_prefix)

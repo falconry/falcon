@@ -75,6 +75,9 @@ def client():
     # Too long
     '/static/' + ('t' * StaticRoute._MAX_NON_PREFIXED_LEN) + 'x',
 
+    # Invalid unicode character
+    u'/static/\ufffdsomething',
+
 ])
 def test_bad_path(uri, monkeypatch):
     monkeypatch.setattr(io, 'open', lambda path, mode: path)
