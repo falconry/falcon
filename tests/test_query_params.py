@@ -297,33 +297,33 @@ class TestQueryParams(object):
         assert req.get_param_as_int('limit', store=store) == 25
         assert store['limit'] == 25
 
-        assert req.get_param_as_int('limit', min=1, max=50) == 25
+        assert req.get_param_as_int('limit', min_value=1, max_value=50) == 25
 
         with pytest.raises(falcon.HTTPBadRequest):
-            req.get_param_as_int('limit', min=0, max=10)
+            req.get_param_as_int('limit', min_value=0, max_value=10)
 
         with pytest.raises(falcon.HTTPBadRequest):
-            req.get_param_as_int('limit', min=0, max=24)
+            req.get_param_as_int('limit', min_value=0, max_value=24)
 
         with pytest.raises(falcon.HTTPBadRequest):
-            req.get_param_as_int('limit', min=30, max=24)
+            req.get_param_as_int('limit', min_value=30, max_value=24)
 
         with pytest.raises(falcon.HTTPBadRequest):
-            req.get_param_as_int('limit', min=30, max=50)
+            req.get_param_as_int('limit', min_value=30, max_value=50)
 
-        assert req.get_param_as_int('limit', min=1) == 25
+        assert req.get_param_as_int('limit', min_value=1) == 25
 
-        assert req.get_param_as_int('limit', max=50) == 25
+        assert req.get_param_as_int('limit', max_value=50) == 25
 
-        assert req.get_param_as_int('limit', max=25) == 25
+        assert req.get_param_as_int('limit', max_value=25) == 25
 
-        assert req.get_param_as_int('limit', max=26) == 25
+        assert req.get_param_as_int('limit', max_value=26) == 25
 
-        assert req.get_param_as_int('limit', min=25) == 25
+        assert req.get_param_as_int('limit', min_value=25) == 25
 
-        assert req.get_param_as_int('limit', min=24) == 25
+        assert req.get_param_as_int('limit', min_value=24) == 25
 
-        assert req.get_param_as_int('limit', min=-24) == 25
+        assert req.get_param_as_int('limit', min_value=-24) == 25
 
     def test_int_neg(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
@@ -333,21 +333,21 @@ class TestQueryParams(object):
         req = resource.captured_req
         assert req.get_param_as_int('pos') == -7
 
-        assert req.get_param_as_int('pos', min=-10, max=10) == -7
+        assert req.get_param_as_int('pos', min_value=-10, max_value=10) == -7
 
-        assert req.get_param_as_int('pos', max=10) == -7
-
-        with pytest.raises(falcon.HTTPBadRequest):
-            req.get_param_as_int('pos', min=-6, max=0)
+        assert req.get_param_as_int('pos', max_value=10) == -7
 
         with pytest.raises(falcon.HTTPBadRequest):
-            req.get_param_as_int('pos', min=-6)
+            req.get_param_as_int('pos', min_value=-6, max_value=0)
 
         with pytest.raises(falcon.HTTPBadRequest):
-            req.get_param_as_int('pos', min=0, max=10)
+            req.get_param_as_int('pos', min_value=-6)
 
         with pytest.raises(falcon.HTTPBadRequest):
-            req.get_param_as_int('pos', min=0, max=10)
+            req.get_param_as_int('pos', min_value=0, max_value=10)
+
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.get_param_as_int('pos', min_value=0, max_value=10)
 
     def test_float(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
@@ -372,33 +372,33 @@ class TestQueryParams(object):
         assert req.get_param_as_float('limit', store=store) == 25.1
         assert store['limit'] == 25.1
 
-        assert req.get_param_as_float('limit', min=1, max=50) == 25.1
+        assert req.get_param_as_float('limit', min_value=1, max_value=50) == 25.1
 
         with pytest.raises(falcon.HTTPBadRequest):
-            req.get_param_as_float('limit', min=0, max=10)
+            req.get_param_as_float('limit', min_value=0, max_value=10)
 
         with pytest.raises(falcon.HTTPBadRequest):
-            req.get_param_as_float('limit', min=0, max=24)
+            req.get_param_as_float('limit', min_value=0, max_value=24)
 
         with pytest.raises(falcon.HTTPBadRequest):
-            req.get_param_as_float('limit', min=30, max=24)
+            req.get_param_as_float('limit', min_value=30, max_value=24)
 
         with pytest.raises(falcon.HTTPBadRequest):
-            req.get_param_as_float('limit', min=30, max=50)
+            req.get_param_as_float('limit', min_value=30, max_value=50)
 
-        assert req.get_param_as_float('limit', min=1) == 25.1
+        assert req.get_param_as_float('limit', min_value=1) == 25.1
 
-        assert req.get_param_as_float('limit', max=50) == 25.1
+        assert req.get_param_as_float('limit', max_value=50) == 25.1
 
-        assert req.get_param_as_float('limit', max=25.1) == 25.1
+        assert req.get_param_as_float('limit', max_value=25.1) == 25.1
 
-        assert req.get_param_as_float('limit', max=26) == 25.1
+        assert req.get_param_as_float('limit', max_value=26) == 25.1
 
-        assert req.get_param_as_float('limit', min=25) == 25.1
+        assert req.get_param_as_float('limit', min_value=25) == 25.1
 
-        assert req.get_param_as_float('limit', min=24) == 25.1
+        assert req.get_param_as_float('limit', min_value=24) == 25.1
 
-        assert req.get_param_as_float('limit', min=-24) == 25.1
+        assert req.get_param_as_float('limit', min_value=-24) == 25.1
 
     def test_float_neg(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
@@ -408,21 +408,21 @@ class TestQueryParams(object):
         req = resource.captured_req
         assert req.get_param_as_float('pos') == -7.1
 
-        assert req.get_param_as_float('pos', min=-10, max=10) == -7.1
+        assert req.get_param_as_float('pos', min_value=-10, max_value=10) == -7.1
 
-        assert req.get_param_as_float('pos', max=10) == -7.1
-
-        with pytest.raises(falcon.HTTPBadRequest):
-            req.get_param_as_float('pos', min=-6, max=0)
+        assert req.get_param_as_float('pos', max_value=10) == -7.1
 
         with pytest.raises(falcon.HTTPBadRequest):
-            req.get_param_as_float('pos', min=-6)
+            req.get_param_as_float('pos', min_value=-6, max_value=0)
 
         with pytest.raises(falcon.HTTPBadRequest):
-            req.get_param_as_float('pos', min=0, max=10)
+            req.get_param_as_float('pos', min_value=-6)
 
         with pytest.raises(falcon.HTTPBadRequest):
-            req.get_param_as_float('pos', min=0, max=10)
+            req.get_param_as_float('pos', min_value=0, max_value=10)
+
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.get_param_as_float('pos', min_value=0, max_value=10)
 
     def test_uuid(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
