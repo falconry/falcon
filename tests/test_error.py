@@ -10,7 +10,7 @@ import falcon.status_codes as status
     (falcon.HTTPConflict, status.HTTP_409),
     (falcon.HTTPLengthRequired, status.HTTP_411),
     (falcon.HTTPPreconditionFailed, status.HTTP_412),
-    (falcon.HTTPRequestEntityTooLarge, status.HTTP_413),
+    (falcon.HTTPPayloadTooLarge, status.HTTP_413),
     (falcon.HTTPUriTooLong, status.HTTP_414),
     (falcon.HTTPUnprocessableEntity, status.HTTP_422),
     (falcon.HTTPLocked, status.HTTP_423),
@@ -79,7 +79,7 @@ def test_with_title_desc_and_headers(err):
 @pytest.mark.parametrize('err', [
     falcon.HTTPServiceUnavailable,
     falcon.HTTPTooManyRequests,
-    falcon.HTTPRequestEntityTooLarge,
+    falcon.HTTPPayloadTooLarge,
 ])
 def test_with_retry_after(err):
     with pytest.raises(err) as e:
@@ -91,7 +91,7 @@ def test_with_retry_after(err):
 @pytest.mark.parametrize('err', [
     falcon.HTTPServiceUnavailable,
     falcon.HTTPTooManyRequests,
-    falcon.HTTPRequestEntityTooLarge,
+    falcon.HTTPPayloadTooLarge,
 ])
 def test_with_retry_after_and_headers(err):
     with pytest.raises(err) as e:
