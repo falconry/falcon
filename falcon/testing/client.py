@@ -389,6 +389,12 @@ def simulate_get(app, path, **kwargs):
             set to a file-like object.
         protocol: The protocol to use for the URL scheme
             (default: 'http')
+        host(str): A string to use for the hostname part of the fully qualified
+            request URL (default: 'falconframework.org')
+        remote_addr (str): A string to use as the remote IP address for the
+            request (default: '127.0.0.1')
+        extras (dict): Additional CGI variables to add to the WSGI ``environ``
+            dictionary for the request (default: ``None``)
     """
     return simulate_request(app, 'GET', path, **kwargs)
 
@@ -423,6 +429,12 @@ def simulate_head(app, path, **kwargs):
             (default: ``None``)
         protocol: The protocol to use for the URL scheme
             (default: 'http')
+        host(str): A string to use for the hostname part of the fully qualified
+            request URL (default: 'falconframework.org')
+        remote_addr (str): A string to use as the remote IP address for the
+            request (default: '127.0.0.1')
+        extras (dict): Additional CGI variables to add to the WSGI ``environ``
+            dictionary for the request (default: ``None``)
     """
     return simulate_request(app, 'HEAD', path, **kwargs)
 
@@ -462,6 +474,12 @@ def simulate_post(app, path, **kwargs):
             `headers`.
         protocol: The protocol to use for the URL scheme
             (default: 'http')
+        host(str): A string to use for the hostname part of the fully qualified
+            request URL (default: 'falconframework.org')
+        remote_addr (str): A string to use as the remote IP address for the
+            request (default: '127.0.0.1')
+        extras (dict): Additional CGI variables to add to the WSGI ``environ``
+            dictionary for the request (default: ``None``)
     """
     return simulate_request(app, 'POST', path, **kwargs)
 
@@ -501,6 +519,12 @@ def simulate_put(app, path, **kwargs):
             `headers`.
         protocol: The protocol to use for the URL scheme
             (default: 'http')
+        host(str): A string to use for the hostname part of the fully qualified
+            request URL (default: 'falconframework.org')
+        remote_addr (str): A string to use as the remote IP address for the
+            request (default: '127.0.0.1')
+        extras (dict): Additional CGI variables to add to the WSGI ``environ``
+            dictionary for the request (default: ``None``)
     """
     return simulate_request(app, 'PUT', path, **kwargs)
 
@@ -532,6 +556,12 @@ def simulate_options(app, path, **kwargs):
             (default: ``None``)
         protocol: The protocol to use for the URL scheme
             (default: 'http')
+        host(str): A string to use for the hostname part of the fully qualified
+            request URL (default: 'falconframework.org')
+        remote_addr (str): A string to use as the remote IP address for the
+            request (default: '127.0.0.1')
+        extras (dict): Additional CGI variables to add to the WSGI ``environ``
+            dictionary for the request (default: ``None``)
     """
     return simulate_request(app, 'OPTIONS', path, **kwargs)
 
@@ -571,6 +601,12 @@ def simulate_patch(app, path, **kwargs):
             `headers`.
         protocol: The protocol to use for the URL scheme
             (default: 'http')
+        host(str): A string to use for the hostname part of the fully qualified
+            request URL (default: 'falconframework.org')
+        remote_addr (str): A string to use as the remote IP address for the
+            request (default: '127.0.0.1')
+        extras (dict): Additional CGI variables to add to the WSGI ``environ``
+            dictionary for the request (default: ``None``)
     """
     return simulate_request(app, 'PATCH', path, **kwargs)
 
@@ -602,6 +638,12 @@ def simulate_delete(app, path, **kwargs):
             (default: ``None``)
         protocol: The protocol to use for the URL scheme
             (default: 'http')
+        host(str): A string to use for the hostname part of the fully qualified
+            request URL (default: 'falconframework.org')
+        remote_addr (str): A string to use as the remote IP address for the
+            request (default: '127.0.0.1')
+        extras (dict): Additional CGI variables to add to the WSGI ``environ``
+            dictionary for the request (default: ``None``)
     """
     return simulate_request(app, 'DELETE', path, **kwargs)
 
