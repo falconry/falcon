@@ -34,7 +34,7 @@ $ pip install tox
 $ tox -e py27,py36,pep8
 ```
 
-You may also use Python 3.4 or 3.5 if you don't have 3.6 installed on your system. This is just a quick sanity check to verify that your patch works across both Python 2 and Python 3.
+You may also use Python 3.5 if you don't have 3.6 installed on your system. This is just a quick sanity check to verify that your patch works across both Python 2 and Python 3.
 
 If you are using pyenv and get an error along the lines of "failed to get version_info", you will need to activate all the Python versions required by tox before trying again. For example:
 
