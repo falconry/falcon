@@ -5,24 +5,27 @@ Deploying Falcon (Linux + NGINX + uWSGI)
 ========================================
 
 
-NGINX is a wonderfully powerful webserver and uWSGI is a highly-configurable
-WSGI application server. Together, NIGNX and uWSGI create a one-two punch of
-speed and functionality which will suffice for most applications. In addition,
-it is possible to scale horizontally to create a highly available environment.
-The configuration below does not go that far, but it is possible.
+NGINX is a powerful web server and reverse proxy and uWSGI is a fast and
+highly-configurable WSGI application server. Together, NIGNX and uWSGI create a
+one-two punch of speed and functionality which will suffice for most
+applications. In addition, this stack provides the building blocks for a
+horizontally-scalable and highly-available (HA) production environment. The
+configuration below does not go that far, but it is certainly possible.
 
-Also, we assume you are deploying to Linux. Sorry Windows folks.
+This guide provides instructions for deploying to a Linux environment only.
+However, with a bit of effort you should be able to adapt this configuration to
+other operating systems, such as OpenBSD or Windows.
 
 
 Running your Application as a Different User
 ''''''''''''''''''''''''''''''''''''''''''''
 
 It is best to execute the application as a different OS user than the one who
-owns the source code for your Application. The application user should *NOT*
+owns the source code for your application. The application user should *NOT*
 have write access to your source. This mitigates the chance that someone could
 write a malicious Python file to your source directory through an upload
-endpoint you might define; when your application restarts, that file is run and
-BadThings\ :sup:`(tm)` happen.
+endpoint you might define; when your application restarts, the malicious file is
+loaded and proceeds to cause any number of BadThings\ :sup:(tm) to happen.
 
 .. code:: sh
 
@@ -30,9 +33,7 @@ BadThings\ :sup:`(tm)` happen.
   $ useradd myproject-runner --no-create-home
 
 It is helpful to switch to the project user (myproject) and use the home
-directory as the application environment. This gives you an easy location to
-install your source code, create files, and a bunch of other nice things which
-are outside the scope of this quick start.
+directory as the application environment.
 
 If you are working on a remote server, switch to the myproject user and pull
 down the source code for your application.
@@ -41,12 +42,22 @@ down the source code for your application.
 
   $ git clone git@github.com/myorg/myproject.git /home/myproject/src
 
+
+.. note::
+
+  You could use a tarball, zip file, scp or any other means to get your source
+  onto a server.
+
 Then create a virtual environment which can be used to install your
 dependencies.
 
 .. code:: sh
 
+  # For Python 3
   $ python3 -m venv /home/myproject/venv
+
+  # For Python 2
+  $ virtualenv /home/myproject/venv
 
 Then install your dependencies.
 
@@ -59,10 +70,11 @@ Then install your dependencies.
 
 .. note::
 
-  The exact commands for creating a virtual environment might differet based on
+  The exact commands for creating a virtual environment might differ based on
   the Python version you are using and the system you are on. At the end of the day
   we need a virtualenv in /home/myproject/venv with your project dependencies
-  installed.
+  installed. Use the ``pip`` binary within the virtual environment by ``source
+  venv/bin/activate`` or using the full path.
 
 
 Okay, that is all for getting your application on the server and setting up the
@@ -71,14 +83,15 @@ environment.
 Preparing your Application for Service
 ''''''''''''''''''''''''''''''''''''''
 
-You likely have a way to configure your application, maybe with a ``create_api``
-function or something like that. This "thing" that configures your application
-gives you an instance of :any:`falcon.API`.
+You likely have a way to configure your application, such as with a
+``create_api()`` function or a module level script. This function or script
+needs to supply an instance of a :any:`falcon.API`.
 
-We need to expose that in some way so that uWSGI can find it, we will do that by
-creating a wsgi.py file. The contents for your file should change bases on how
-your application is configured. When all is said and done, have a variable
-called ``application`` which is your :any:`falcon.API` instance.
+We need to expose that instance of the :any:`falcon.API` in some way so that
+uWSGI can find it; we will do that by creating a ``wsgi.py`` file. Modify the
+content of this file based on how your application is configured.  Ensure that
+you expose  a variable called ``application`` which is assigned to your
+:any:`falcon.API` instance.
 
 .. code-block:: python
   :caption: /home/myproject/src/wsgi.py
@@ -89,27 +102,28 @@ called ``application`` which is your :any:`falcon.API` instance.
   config = myproject.get_config(os.environ['MYPROJECT_CONFIG'])
   application = myproject.create_api(config)
 
-This is a bare bones wsgi file. It imports your application and creates the
-:any:`falcon.API` instance that represents our application, exposing it as the
-variable called ``application``. This file is what we will point uWSGI at to
-load your application.
+The above example shows how to implement a bare-bones ``wsgi.py``. It imports your
+application and creates the :any:`falcon.API` instance that represents our
+application, exposing it as the module-scoped ``application`` variable. uWSGI
+will use this file to load your application.
 
-Note that we did not call ``run`` like a developer might do within a Flask
-application during development or use `wsgiref.simple_server.make_server` , we
-simply assigned our `API` instance to ``application``. We *do not* want to start
-a server, uWSGI will do that and starting one here will have unexpected results.
+Note that we did not call ``run`` like a developer might do during development
+or use `wsgiref.simple_server.make_server`.  Instead we simply assigned our
+`API` instance to ``application``. We *do not* want to start a server, since
+uWSGI does that automatically. Starting an independent WSGI server in your
+``wsgi.py`` file will render unexpected results.
 
 
-Getting Falcon behind uWSGI
+Deploying Falcon behind uWSGI
 '''''''''''''''''''''''''''
 
-With our wsgi.py file setting up our application it is time to configure uWSGI.
-To do this, we create a uwsgi.ini file. In general, you shouldn't commit this
-file, it's creation should be of your deployment tool which is targeting the
-environment which are deploying.
+With our ``wsgi.py`` file in place, it is time to configure uWSGI.  To do this,
+we create a ``uwsgi.ini`` file. In general, you shouldn’t commit this file to
+source control; it should be generated from a template by your deployment
+toolchain according to the target environment (number of CPUs, etc.).
 
-This configuration, when executed, will create a new uWSGI server which will be
-pointed at our wsgi.py file and served on 127.0.0.1:8080.
+This configuration, when executed, will create a new uWSGI server pointed at our
+wsgi.py file and listening at ``12.0.0.1:8080``.
 
 .. code-block:: ini
   :caption: /home/myproject/src/uwsgi.ini
@@ -131,24 +145,29 @@ pointed at our wsgi.py file and served on 127.0.0.1:8080.
 
 .. note:: Thread vs Processes vs gevent
 
-  There is a lot of questions to ask when deciding how to manage the processes
-  that actually run your Python code. Are you generally CPU bound or IO bound?
-  Is your application code thread safe? How many CPU's do you have? What system
-  are you on? Do you need an in-process cache?
+  There are many questions to consider when deciding when deciding how to manage
+  the processes that actually run your Python code. Are you generally CPU bound
+  or IO bound?  Is your application thread-safe? How many CPU's do you
+  have? What system are you on? Do you need an in-process cache?
 
-  You will have to do some research to understand this problem and no answers
-  can be given to your specific needs. In general uWSGI is so flexible you will
-  be able to find a solution that meets your applications needs. This
-  configuration enables both threads and processes. Reasearch, experiment, know
-  what you are doing, be smart.
+  The configuration presented here enables both threads and processes. However,
+  you will have to experiment and do some research to understand your
+  application's unique requirements, and then tailor your uWSGI configuration
+  accordingly. Generally speaking, uWSGI is flexible enough to support most
+  types of applications.
 
+.. note:: TCP or Unix Sockets
 
-There are some important items in here, like ``uid`` and ``gid``. Note that
-those values are set to the application runner and not the owner of the
-application which should be the owner and group on the `/home/myproject/src` and
-`/home/myproject/venv` directory. You should have 755 permissions on the `src`
-and `venv` directories and 644 permission on the files within those directories.
-This should give you read-access for the `myproject-runner` user.
+  NGINX and uWSGI can communicate via normal TCP (using an IP address) or Unix
+  sockets (using a socket file). TCP sockets are easier to setup and generally
+  work for simple deployments. If you want to have finer control over what
+  process / users/ groups can access the uWSGI application, consider using Unix
+  sockets.
+
+There are some important items in this configuration like ``uid`` and ``gid``.
+These settings control the OS-level user and group the application will use to
+execute the process. This OS user and group should not have write permissions to
+your source directory.
 
 You can now start uwsgi like this:
 
@@ -161,20 +180,26 @@ If everything goes well you should see something like this:
 ::
 
     *** Operational MODE: preforking+threaded ***
-    WSGI app 0 (mountpoint='') ready in 1 seconds on interpreter 0x7fc5a282ba00 pid: 91828 (default app)
+    ...
     *** uWSGI is running in multiple interpreter mode ***
+    ...
     spawned uWSGI master process (pid: 91828)
     spawned uWSGI worker 1 (pid: 91866, cores: 2)
     spawned uWSGI worker 2 (pid: 91867, cores: 2)
 
 
+.. note:: uWSGI Startup Errors
+
+  Pay close attention to uWSGI startup logs, they can container exceptions and
+  information from your application or uWSGI to help in debugging.
+
 
 Making NGINX & uWSGI Talk
 '''''''''''''''''''''''''
 
-NGINX is used to proxy API requests to uWSGI which starts and manages your
-application. In NGINX parlance, we will create an "upstream" and direct that
-upstream (via local IP) to our now running uWSGI application.
+uWSGI manages the Python processes and NGINX proxies HTTP requests to uWSGI. In
+NGINX parlance, we will create an "upstream" and direct that upstream (via TCP
+socket) to our now-running uWSGI application.
 
 The configuration looks like this:
 
@@ -194,22 +219,28 @@ The configuration looks like this:
     }
   }
 
+Finally, start NGINX:
 
 .. code-block:: sh
 
   $ sudo service start nginx
 
-NGINX should start and you should now have a working application.
+You should now have a working application. Check your uWSGI and NGINX logs if
+the application does not start.
 
 
 Further Considerations
 ''''''''''''''''''''''
 
-We did not explain how to setup TLS (HTTPS) for NGINX, that is an exercise for
-the reader. Consider using Let's Encrypt which offers free, short-term
-certificates which auto-renew the LE docs are the best place to learn how to
-integrate that within NGINX.
+We did not explain how to setup TLS (HTTPS) for NGINX, leaving that as an
+exercise for the reader. Consider using Let’s Encrypt, which offers free,
+short-term certificates with auto-renewal. Visit the `Let’s Encrypt site`_ to learn
+how to integrate their service directly with NGINX.
 
-Also, you might want to setup a database or any number of other services. That
-is not covered here since there are so many different services, possible
-configurations, network challenges, and security concerns.
+In addition to setting up NGINX and uWSGI to run your application, you will of
+course need to deploy a database server or any other services required by your
+application. That being said, this guide does not cover the topic of ancillary
+services, since it involves so many different services, possible configurations,
+network challenges, and security concerns.
+
+.. _`Let’s Encrypt site`: https://certbot.eff.org/
