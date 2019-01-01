@@ -90,7 +90,7 @@ Predefined Errors
         HTTPInvalidParam, HTTPMissingParam,
         HTTPUnauthorized, HTTPForbidden, HTTPNotFound, HTTPMethodNotAllowed,
         HTTPNotAcceptable, HTTPConflict, HTTPGone, HTTPLengthRequired,
-        HTTPPreconditionFailed, HTTPRequestEntityTooLarge, HTTPUriTooLong,
+        HTTPPreconditionFailed, HTTPPayloadTooLarge, HTTPUriTooLong,
         HTTPUnsupportedMediaType, HTTPRangeNotSatisfiable,
         HTTPUnprocessableEntity, HTTPLocked, HTTPFailedDependency,
         HTTPPreconditionRequired, HTTPTooManyRequests,
