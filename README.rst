@@ -13,7 +13,7 @@
 The Falcon Web Framework
 ========================
 
-`Falcon <http://falconframework.org/index.html>`__ is a reliable,
+`Falcon <https://falconframework.org>`__ is a reliable,
 high-performance Python web framework for building
 large-scale app backends and microservices. It encourages the REST
 architectural style, and tries to do as little as possible while
