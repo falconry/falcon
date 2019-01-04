@@ -17,14 +17,18 @@ class JSONHandler(BaseHandler):
 
         loads (func): the function to use when deserializing JSON requests
 
-        dumps_kwargs (dict): keyword arguments passed to ``dumps`` when serializing to JSON.
-            ``ensure_ascii`` is set to ``false`` by default. To override this setting, pass ``True``
-            explicitly.
+        dumps_kwargs (dict): keyword arguments passed to ``dumps`` when
+            serializing to JSON.  ``ensure_ascii`` is set to ``false`` by
+            default.  To override this setting, pass ``{ensure_ascii=True}``
+            explicitly. You can completely disable extra parameters by passing
+            ``False``.
 
-        loads_kwargs (func): keyword arguments to pass to ``loads`` when deserializing from JSON.
+        loads_kwargs (func): keyword arguments to pass to ``loads`` when
+            deserializing from JSON.  You can completely disable extra
+            parameters by passing ``False``.
 
-
-    You can override the JSON library used by changing the ``dumps`` and ``loads`` functions::
+    You can override the JSON library used by changing the ``dumps`` and
+    ``loads`` functions::
 
         import falcon
         from falcon import media
@@ -35,6 +39,7 @@ class JSONHandler(BaseHandler):
             dumps=rapidjson.dumps,
             loads=rapidjson.loads,
             dumps_kwargs=dict(ensure_ascii=False)
+            loads_kwargs=False,
         )
         extra_handlers = {
             'application/json': json_handler,
@@ -46,18 +51,34 @@ class JSONHandler(BaseHandler):
         api.resp_options.media_handlers.update(extra_handlers)
     """
 
+    dumps_kwargs = False
+    loads_kwargs = False
+
     def __init__(self, dumps=None, dumps_kwargs=None, loads=None, loads_kwargs=None):
         self.dumps = dumps or json.dumps
-        self.dumps_kwargs = dict(ensure_ascii=False)
-        self.dumps_kwargs.update(dumps_kwargs or dict())
+
+        # NOTE(nZac): Turn off kwargs support by manually passing `False` to
+        # either `_kwargs` argument.
+        if dumps_kwargs is not False:
+            self.dumps_kwargs = dict(ensure_ascii=False)
+            self.dumps_kwargs.update(dumps_kwargs or dict())
 
         self.loads = loads or json.loads
-        self.loads_kwargs = dict()
-        self.loads_kwargs.update(loads_kwargs or dict())
+        if loads_kwargs is not False:
+            self.loads_kwargs = dict()
+            self.loads_kwargs.update(loads_kwargs or dict())
 
     def deserialize(self, stream, content_type, content_length):
         try:
-            return self.loads(stream.read().decode('utf-8'), **self.loads_kwargs)
+
+            # NOTE(nZac): support `loads` functions which don't take keyword
+            # arguments like orjson
+            if self.loads_kwargs is False:
+                return self.loads(stream.read().decode('utf-8'))
+            else:
+                return self.loads(stream.read().decode('utf-8'),
+                        **self.loads_kwargs)
+
         except ValueError as err:
             raise errors.HTTPBadRequest(
                 'Invalid JSON',
@@ -65,7 +86,12 @@ class JSONHandler(BaseHandler):
             )
 
     def serialize(self, media, content_type):
-        result = self.dumps(media, **self.dumps_kwargs)
+        # NOTE(nZac): support `loads` functions which don't take keyword
+        # arguments like orjson
+        if self.dumps_kwargs is False:
+            result = self.dumps(media)
+        else:
+            result = self.dumps(media, **self.dumps_kwargs)
 
         if compat.PY3 or not isinstance(result, bytes):
             return result.encode('utf-8')
