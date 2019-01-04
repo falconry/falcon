@@ -584,10 +584,10 @@ class API(object):
             req: The request object.
 
         Returns:
-            tuple: A 3-member tuple consisting of a responder callable,
+            tuple: A 4-member tuple consisting of a responder callable,
             a ``dict`` containing parsed path fields (if any were specified in
-            the matching route's URI template), and a reference to the
-            responder's resource instance.
+            the matching route's URI template), a reference to the responder's
+            resource instance, and the matching URI template.
 
         Note:
             If a responder was matched to the given URI, but the HTTP

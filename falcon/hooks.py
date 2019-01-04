@@ -140,7 +140,7 @@ def _wrap_with_after(responder, action, action_args, action_kwargs):
         responder: The responder method to wrap.
         action: A function with a signature similar to a resource responder
             method, taking the form ``func(req, resp, resource)``.
-        action_args: Additiona positional agruments to pass to *action*.
+        action_args: Additional positional agruments to pass to *action*.
         action_kwargs: Additional keyword arguments to pass to *action*.
     """
 
@@ -177,7 +177,7 @@ def _wrap_with_before(responder, action, action_args, action_kwargs):
         responder: The responder method to wrap.
         action: A function with a similar signature to a resource responder
             method, taking the form ``func(req, resp, resource, params)``.
-        action_args: Additiona positional agruments to pass to *action*.
+        action_args: Additional positional agruments to pass to *action*.
         action_kwargs: Additional keyword arguments to pass to *action*.
     """
 
