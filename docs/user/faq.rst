@@ -584,11 +584,11 @@ In the meantime, the workaround is to percent-encode the forward slash. If you
 don’t control the clients and can't enforce this, you can implement a Falcon
 middleware component to rewrite the path before it is routed.
 
-Why doesn't request context dictionary work in Falcon 2.0?
-----------------------------------------------------------
+Why doesn't request/response context dictionary work in Falcon 2.0?
+-------------------------------------------------------------------
 
-The default request context type has been changed from dictionary to a bare
-class in Falcon 2.0. Instead of setting dictionary items, one shall set
+The default request/response context type has been changed from dictionary to a
+bare class in Falcon 2.0. Instead of setting dictionary items, one shall set
 attributes on the object now:
 
 .. code:: python
@@ -599,18 +599,22 @@ attributes on the object now:
    # Falcon 2.0
    req.context.cache_backend = MyUltraFastCache.connect()
 
-However, if an existing project is making extensive use of request context as
-dictionary, the type can be overridden back to dict by employing a custom
-request type:
+However, if an existing project is making extensive use of dictionary contexts,
+the type can be overridden back to dict by employing custom request/response
+types:
 
 .. code:: python
 
     class RequestWithDictContext(falcon.Request):
         context_type = dict
 
+    class ResponseWithDictContext(falcon.Response):
+        context_type = dict
+
     # ...
 
-    api = falcon.API(request_type=RequestWithDictContext)
+    api = falcon.API(request_type=RequestWithDictContext,
+                     response_type=ResponseWithDictContext)
 
 Response Handling
 ~~~~~~~~~~~~~~~~~

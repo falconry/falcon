@@ -7,7 +7,10 @@ class TestRequestContext(object):
 
     def test_default_response_context(self):
         resp = Response()
-        assert isinstance(resp.context, dict)
+        assert type(resp.context).__name__ == 'ResponseContext'
+
+        resp.context.hello = 'World!'
+        assert resp.context.hello == 'World!'
 
     def test_custom_response_context(self):
 
