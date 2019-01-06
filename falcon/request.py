@@ -76,15 +76,17 @@ class Request(object):
     Attributes:
         env (dict): Reference to the WSGI environ ``dict`` passed in from the
             server. (See also PEP-3333.)
-        context (dict): Dictionary to hold any data about the request which is
-            specific to your app (e.g. session object). Falcon itself will
-            not interact with this attribute after it has been initialized.
+        context (object): Empty object to hold any data (in its attributes)
+            about the request which is specific to your app (e.g. session
+            object). Falcon itself will not interact with this attribute after
+            it has been initialized.
         context_type (class): Class variable that determines the factory or
             type to use for initializing the `context` attribute. By default,
-            the framework will instantiate standard ``dict`` objects. However,
-            you may override this behavior by creating a custom child class of
-            ``falcon.Request``, and then passing that new class to
-            `falcon.API()` by way of the latter's `request_type` parameter.
+            the framework will instantiate bare objects (instances of the bare
+            RequestContext class). However, you may override this behavior by
+            creating a custom child class of ``falcon.Request``, and then
+            passing that new class to `falcon.API()` by way of the latter's
+            `request_type` parameter.
 
             Note:
                 When overriding `context_type` with a factory function (as
@@ -407,7 +409,7 @@ class Request(object):
     )
 
     # Child classes may override this
-    context_type = dict
+    context_type = type('RequestContext', (object,), {})
 
     _wsgi_input_type_known = False
     _always_wrap_wsgi_input = False

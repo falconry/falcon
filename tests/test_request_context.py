@@ -9,7 +9,10 @@ class TestRequestContext(object):
     def test_default_request_context(self):
         env = testing.create_environ()
         req = Request(env)
-        assert isinstance(req.context, dict)
+        assert type(req.context).__name__ == 'RequestContext'
+
+        req.context.hello = 'World'
+        assert req.context.hello == 'World'
 
     def test_custom_request_context(self):
 
