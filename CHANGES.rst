@@ -4,6 +4,16 @@
 Breaking Changes
 ----------------
 
+- Previously, several methods in the ``falcon.Response`` class
+  could be used to attempt to set raw cookie headers. However,
+  due to the Set-Cookie header values not being combinable
+  as a comma-delimited list, this resulted in an
+  incorrect response being constructed for the user agent in
+  the case that more than one cookie was being set. Therefore,
+  the following methods of ``falcon.Response`` now raise an
+  instance of ``ValueError`` if an attempt is made to use them
+  for Set-Cookie: ``set_header()``, ``delete_header()``,
+  ``get_header()``, ``set_headers()``.
 - ``testing.Result.json`` now returns ``None`` when the response body is
   empty, rather than raising an error.
 - ``Request.get_param_as_bool()`` now defaults to treating valueless
@@ -70,7 +80,7 @@ New & Improved
   ``dumps()`` and ``loads()`` functions. This enables support not only for
   using any of a number of third-party JSON libraries, but also for
   customizing the keyword arguments used when (de)serializing objects.
--
+- ``append_header()`` now supports appending raw Set-Cookie header values.
 
 Fixed
 -----

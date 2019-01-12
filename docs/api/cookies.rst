@@ -39,15 +39,13 @@ The :py:attr:`~.Request.cookies` attribute is a regular
 Setting Cookies
 ~~~~~~~~~~~~~~~
 
-Setting cookies on a response is done via :py:meth:`~.Response.set_cookie`.
+Setting cookies on a response may be done either via
+:py:meth:`~.Response.set_cookie` or :py:meth:`~.Response.append_header`.
 
-The :py:meth:`~.Response.set_cookie` method should be used instead of
-:py:meth:`~.Response.set_header` or :py:meth:`~.Response.append_header`.
-With :py:meth:`~.Response.set_header` you cannot set multiple headers
-with the same name (which is how multiple cookies are sent to the client).
-Furthermore, :py:meth:`~.Response.append_header` appends multiple values
-to the same header field in a way that is not compatible with the special
-format required by the `Set-Cookie` header.
+One of these methods should be used instead of
+:py:meth:`~.Response.set_header`. With :py:meth:`~.Response.set_header` you
+cannot set multiple headers with the same name (which is how multiple cookies
+are sent to the client).
 
 Simple example:
 
