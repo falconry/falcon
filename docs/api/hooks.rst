@@ -39,6 +39,15 @@ decorate the resource class:
         def on_get(self, req, resp, project_id):
             pass
 
+.. note::
+    When decorating an entire resource class, all method names that resemble
+    responders, including *suffix*\ed (see also :meth:`~falcon.API.add_route`)
+    ones, are decorated. If, for instance, a method is called ``on_get_items``,
+    but it is not meant for handling ``GET`` requests under a route with the
+    *suffix* ``items``, the easiest workaround for preventing the hook function
+    from being applied to the method is renaming it not to clash with the
+    responder pattern.
+
 Note also that you can pass additional arguments to your hook function
 as needed:
 

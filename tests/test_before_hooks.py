@@ -149,7 +149,7 @@ class WrappedClassResource(object):
         self.bunnies = bunnies
 
 
-# NOTE(swistakm): we both both type of hooks (class and method)
+# NOTE(swistakm): we use both type of hooks (class and method)
 # at once for the sake of simplicity
 @falcon.before(resource_aware_bunnies)
 class ClassResourceWithAwareHooks(object):
@@ -349,3 +349,113 @@ def test_wrapped_resource_with_hooks_aware_of_resource(client, wrapped_aware_res
     result = client.simulate_get('/wrapped_aware', query_string='limit=11')
     assert result.status_code == 400
     assert wrapped_aware_resource.bunnies == 'fuzzy'
+
+
+_another_fish = Fish()
+
+
+def header_hook(req, resp, params):
+    value = resp.get_header('X-Hook-Applied') or '0'
+    resp.set_header('X-Hook-Applied', str(int(value) + 1))
+
+
+@falcon.before(header_hook)
+class PiggybackingCollection(object):
+
+    def __init__(self):
+        self._items = {}
+        self._sequence = 0
+
+    @falcon.before(_another_fish.hook)
+    def on_delete(self, req, resp, fish, itemid):
+        del self._items[itemid]
+        resp.set_header('X-Fish-Trait', fish)
+        resp.status = falcon.HTTP_NO_CONTENT
+
+    @falcon.before(header_hook)
+    @falcon.before(_another_fish.hook)
+    @falcon.before(header_hook)
+    def on_delete_collection(self, req, resp, fish):
+        if fish != 'wet':
+            raise falcon.HTTPUnavailableForLegalReasons('fish must be wet')
+        self._items = {}
+        resp.status = falcon.HTTP_NO_CONTENT
+
+    @falcon.before(_another_fish)
+    def on_get(self, req, resp, fish, itemid):
+        resp.set_header('X-Fish-Trait', fish)
+        resp.media = self._items[itemid]
+
+    def on_get_collection(self, req, resp):
+        resp.media = sorted(self._items.values(),
+                            key=lambda item: item['itemid'])
+
+    def on_head_(self):
+        return 'I shall not be decorated.'
+
+    def on_header(self):
+        return 'I shall not be decorated.'
+
+    def on_post_collection(self, req, resp):
+        self._sequence += 1
+        itemid = self._sequence
+        self._items[itemid] = dict(req.media, itemid=itemid)
+        resp.location = '/items/{}'.format(itemid)
+        resp.status = falcon.HTTP_CREATED
+
+
+@pytest.fixture
+def app_client():
+    items = PiggybackingCollection()
+
+    app = falcon.API()
+    app.add_route('/items', items, suffix='collection')
+    app.add_route('/items/{itemid:int}', items)
+
+    return testing.TestClient(app)
+
+
+def test_piggybacking_resource_post_item(app_client):
+    resp1 = app_client.simulate_post('/items', json={'color': 'green'})
+    assert resp1.status_code == 201
+    assert 'X-Fish-Trait' not in resp1.headers
+    assert resp1.headers['Location'] == '/items/1'
+    assert resp1.headers['X-Hook-Applied'] == '1'
+
+    resp2 = app_client.simulate_get(resp1.headers['Location'])
+    assert resp2.status_code == 200
+    assert resp2.headers['X-Fish-Trait'] == 'slippery'
+    assert resp2.headers['X-Hook-Applied'] == '1'
+    assert resp2.json == {'color': 'green', 'itemid': 1}
+
+    resp3 = app_client.simulate_get('/items')
+    assert resp3.status_code == 200
+    assert 'X-Fish-Trait' not in resp3.headers
+    assert resp3.headers['X-Hook-Applied'] == '1'
+    assert resp3.json == [{'color': 'green', 'itemid': 1}]
+
+
+def test_piggybacking_resource_post_and_delete(app_client):
+    for number in range(1, 8):
+        resp = app_client.simulate_post('/items', json={'number': number})
+        assert resp.status_code == 201
+        assert resp.headers['X-Hook-Applied'] == '1'
+
+        assert len(app_client.simulate_get('/items').json) == number
+
+    resp = app_client.simulate_delete('/items/7'.format(number))
+    assert resp.status_code == 204
+    assert resp.headers['X-Fish-Trait'] == 'wet'
+    assert resp.headers['X-Hook-Applied'] == '1'
+    assert len(app_client.simulate_get('/items').json) == 6
+
+    resp = app_client.simulate_delete('/items')
+    assert resp.status_code == 204
+    assert resp.headers['X-Hook-Applied'] == '3'
+    assert app_client.simulate_get('/items').json == []
+
+
+def test_decorable_name_pattern():
+    resource = PiggybackingCollection()
+    assert resource.on_head_() == 'I shall not be decorated.'
+    assert resource.on_header() == 'I shall not be decorated.'
