@@ -16,6 +16,7 @@ Breaking Changes
   ``False``.
 - ``RequestOptions.auto_parse_qs_csv`` now defaults to ``False`` instead of
   ``True``.
+  ``API.independent_middleware`` now defaults to ``True`` instead of ``False``.
 
 Changes to Supported Platforms
 ------------------------------
