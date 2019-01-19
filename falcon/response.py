@@ -873,7 +873,9 @@ class Response(object):
         """
 
         headers = self._headers
-        self._set_media_type(media_type)
+        # PERF(vytas): uglier inline version of Response._set_media_type
+        if media_type is not None and 'content-type' not in self._headers:
+            self.set_header('content-type', media_type)
 
         if py2:
             # PERF(kgriffs): Don't create an extra list object if
