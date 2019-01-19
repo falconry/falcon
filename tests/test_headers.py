@@ -468,11 +468,20 @@ class TestHeaders(object):
             assert result.headers['Content-Type'] == content_type
             assert resource.resp.get_header('content-TyPe') == content_type
 
+            content_type_alt = 'x-falcon/merlin'
+            value = resource.resp.get_header('Content-Type', default=content_type_alt)
+            assert value == content_type
+
             assert result.headers['Cache-Control'] == 'no-store'
             assert result.headers['X-Auth-Token'] == 'toomanysecrets'
 
             assert resource.resp.location is None
-            assert resource.resp.get_header('not-real') is None
+            assert resource.resp.get_header('X-Header-Not-Set') is None
+            assert resource.resp.get_header('X-Header-Not-Set', 'Yes') == 'Yes'
+            assert resource.resp.get_header('X-Header-Not-Set', default='') == ''
+
+            value = resource.resp.get_header('X-Header-Not-Set', default=content_type_alt)
+            assert value == content_type_alt
 
             # Check for duplicate headers
             hist = defaultdict(int)

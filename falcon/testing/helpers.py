@@ -87,7 +87,7 @@ def rand_string(min, max):
 def create_environ(path='/', query_string='', protocol='HTTP/1.1',
                    scheme='http', host=DEFAULT_HOST, port=None,
                    headers=None, app='', body='', method='GET',
-                   wsgierrors=None, file_wrapper=None):
+                   wsgierrors=None, file_wrapper=None, remote_addr=None):
 
     """Creates a mock PEP-3333 environ ``dict`` for simulating WSGI requests.
 
@@ -118,6 +118,7 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1',
             (default ``sys.stderr``)
         file_wrapper: Callable that returns an iterable, to be used as
             the value for *wsgi.file_wrapper* in the environ.
+        remote_addr (str): Remote address for the request (default '127.0.0.1')
 
     """
 
@@ -173,7 +174,7 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1',
         'HTTP_USER_AGENT': 'curl/7.24.0 (x86_64-apple-darwin12.0)',
         'REMOTE_PORT': '65133',
         'RAW_URI': '/',
-        'REMOTE_ADDR': '127.0.0.1',
+        'REMOTE_ADDR': remote_addr or '127.0.0.1',
         'SERVER_NAME': host,
         'SERVER_PORT': port,
 

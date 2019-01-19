@@ -282,8 +282,7 @@ else:
         return decoded_uri.decode('utf-8', 'replace')
 
 
-def parse_query_string(query_string, keep_blank_qs_values=False,
-                       parse_qs_csv=True):
+def parse_query_string(query_string, keep_blank=False, csv=True):
     """Parse a query string into a dict.
 
     Query string parameters are assumed to use standard form-encoding. Only
@@ -306,11 +305,11 @@ def parse_query_string(query_string, keep_blank_qs_values=False,
 
     Args:
         query_string (str): The query string to parse.
-        keep_blank_qs_values (bool): Set to ``True`` to return fields even if
+        keep_blank (bool): Set to ``True`` to return fields even if
             they do not have a value (default ``False``). For comma-separated
             values, this option also determines whether or not empty elements
             in the parsed list are retained.
-        parse_qs_csv: Set to ``False`` in order to disable splitting query
+        csv: Set to ``False`` in order to disable splitting query
             parameters on ``,`` (default ``True``). Depending on the user agent,
             encoding lists as multiple occurrences of the same parameter might
             be preferable. In this case, setting `parse_qs_csv` to ``False``
@@ -336,7 +335,7 @@ def parse_query_string(query_string, keep_blank_qs_values=False,
     # and on PyPy 2.3.
     for field in query_string.split('&'):
         k, _, v = field.partition('=')
-        if not (v or keep_blank_qs_values):
+        if not (v or keep_blank):
             continue
 
         # Note(steffgrez): Falcon first decode name parameter for handle
@@ -361,7 +360,7 @@ def parse_query_string(query_string, keep_blank_qs_values=False,
                 params[k] = [old_value, v]
 
         else:
-            if parse_qs_csv and ',' in v:
+            if csv and ',' in v:
                 # NOTE(kgriffs): Falcon supports a more compact form of
                 # lists, in which the elements are comma-separated and
                 # assigned to a single param instance. If it turns out that
@@ -369,7 +368,7 @@ def parse_query_string(query_string, keep_blank_qs_values=False,
                 # point.
                 v = v.split(',')
 
-                if not keep_blank_qs_values:
+                if not keep_blank:
                     # NOTE(kgriffs): Normalize the result in the case that
                     # some elements are empty strings, such that the result
                     # will be the same for 'foo=1,,3' as 'foo=1&foo=&foo=3'.

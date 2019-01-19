@@ -13,7 +13,7 @@
 The Falcon Web Framework
 ========================
 
-`Falcon <http://falconframework.org/index.html>`__ is a reliable,
+`Falcon <https://falconframework.org>`__ is a reliable,
 high-performance Python web framework for building
 large-scale app backends and microservices. It encourages the REST
 architectural style, and tries to do as little as possible while
@@ -25,6 +25,13 @@ CPython 2.7, CPython 3.4+, PyPy2.7, and PyPy3.5.
 A Big Thank You to Our Patrons
 ------------------------------
 
+Platinum
+
+.. raw:: html
+
+    <p>
+    <a href="https://www.govcert.lu/"><img src="https://falconframework.org/img/sponsors/govcert.png" height="60" alt="CERT Gouvernemental Luxembourg" ></a>
+     </p>
 
 Gold
 
@@ -40,7 +47,7 @@ Silver
 .. raw:: html
 
     <p>
-    <a href="http://www.parisnakitakejser.com/python-falcon" target="_blank"><img src="https://falconframework.org/img/sponsors/paris.svg" height="20" alt="Paris Kejser"></a>
+    <a href="https://www.pnk.sh/python-falcon" target="_blank"><img src="https://falconframework.org/img/sponsors/paris.svg" height="20" alt="Paris Kejser"></a>
     </p>
 
 Has Falcon helped you make an awesome app? Show your support today with a one-time donation or by becoming a patron. Supporters get cool gear, an opportunity to promote their brand to Python developers, and
@@ -549,7 +556,7 @@ bodies.
                 msg = ('The size of the request is too large. The body must not '
                        'exceed ' + str(limit) + ' bytes in length.')
 
-                raise falcon.HTTPRequestEntityTooLarge(
+                raise falcon.HTTPPayloadTooLarge(
                     'Request body is too large', msg)
 
         return hook

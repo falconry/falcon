@@ -217,7 +217,7 @@ parameters, handling errors, and working with request and response bodies.
                 msg = ('The size of the request is too large. The body must not '
                        'exceed ' + str(limit) + ' bytes in length.')
 
-                raise falcon.HTTPRequestEntityTooLarge(
+                raise falcon.HTTPPayloadTooLarge(
                     'Request body is too large', msg)
 
         return hook

@@ -31,7 +31,7 @@ def test_list_images(client):
     }
 
     response = client.simulate_get('/images')
-    result_doc = msgpack.unpackb(response.content, encoding='utf-8')
+    result_doc = msgpack.unpackb(response.content, raw=False)
 
     assert result_doc == doc
     assert response.status == falcon.HTTP_OK

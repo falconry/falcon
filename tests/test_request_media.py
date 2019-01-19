@@ -159,3 +159,23 @@ def test_complete_consumption():
     assert req_media is None
     req_bounded_stream = client.resource.captured_req.bounded_stream
     assert not req_bounded_stream.read()
+
+
+@pytest.mark.parametrize('payload', [False, 0, 0.0, '', [], {}])
+def test_empty_json_media(payload):
+    client = create_client()
+    client.simulate_post('/', json=payload)
+
+    req = client.resource.captured_req
+    for access in range(3):
+        assert req.media == payload
+
+
+def test_null_json_media():
+    client = create_client()
+    client.simulate_post('/', body='null',
+                         headers={'Content-Type': 'application/json'})
+
+    req = client.resource.captured_req
+    for access in range(3):
+        assert req.media is None

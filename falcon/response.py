@@ -132,6 +132,10 @@ class Response(object):
                 the Response instance itself (self).
 
         options (dict): Set of global options passed from the API handler.
+
+        headers (dict): Copy of all headers set for the response,
+            sans cookies. Note that a new copy is created and returned each
+            time this property is referenced.
     """
 
     __slots__ = (
@@ -201,6 +205,10 @@ class Response(object):
     @data.setter
     def data(self, value):
         self._data = value
+
+    @property
+    def headers(self):
+        return self._headers.copy()
 
     @property
     def media(self):
@@ -413,18 +421,22 @@ class Response(object):
         # thus removing it from future request objects.
         self._cookies[name]['expires'] = -1
 
-    def get_header(self, name):
+    def get_header(self, name, default=None):
         """Retrieve the raw string value for the given header.
 
         Args:
             name (str): Header name, case-insensitive. Must be of type ``str``
                 or ``StringType``, and only character values 0x00 through 0xFF
                 may be used on platforms that use wide characters.
+        Keyword Args:
+            default: Value to return if the header
+                is not found (default ``None``).
 
         Returns:
-            str: The header's value if set, otherwise ``None``.
+            str: The value of the specified header if set, or
+            the default value if not set.
         """
-        return self._headers.get(name.lower(), None)
+        return self._headers.get(name.lower(), default)
 
     def set_header(self, name, value):
         """Set a header for this response to a given value.
