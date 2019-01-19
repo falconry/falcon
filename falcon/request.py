@@ -188,7 +188,7 @@ class Request(object):
                 be used by the app for any upstream requests, any non URL-safe
                 characters in the path must be URL encoded back before
                 making the request.
-                
+
         query_string (str): Query string portion of the request URI, without
             the preceding '?' character.
         uri_template (str): The template for the route that was matched for
