@@ -24,7 +24,7 @@ import wsgiref.validate
 from falcon.constants import MEDIA_JSON
 from falcon.testing import helpers
 from falcon.testing.srmock import StartResponseMock
-from falcon.util import compat, CaseInsensitiveDict, http_date_to_dt, to_query_str
+from falcon.util import CaseInsensitiveDict, compat, http_date_to_dt, to_query_str
 from falcon.util import json as util_json
 from falcon.util.compat import http_cookies
 

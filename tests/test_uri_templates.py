@@ -12,8 +12,8 @@ import pytest
 
 import falcon
 from falcon import testing
-from falcon.util import compat
 from falcon.routing.util import SuffixedMethodNotFoundError
+from falcon.util import compat
 
 
 _TEST_UUID = uuid.uuid4()

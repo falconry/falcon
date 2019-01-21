@@ -2,11 +2,11 @@ from datetime import datetime, timedelta, tzinfo
 import re
 
 import pytest
-from falcon.util.compat import http_cookies
 
 import falcon
 import falcon.testing as testing
 from falcon.util import http_date_to_dt, TimezoneGMT
+from falcon.util.compat import http_cookies
 
 
 UNICODE_TEST_STRING = u'Unicode_\xc3\xa6\xc3\xb8'

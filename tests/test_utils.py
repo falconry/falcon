@@ -9,7 +9,7 @@ import pytest
 import falcon
 from falcon import testing
 from falcon import util
-from falcon.util import json, uri, compat
+from falcon.util import compat, json, uri
 
 
 def _arbitrary_uris(count, length):

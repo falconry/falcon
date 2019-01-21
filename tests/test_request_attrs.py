@@ -4,10 +4,10 @@ import itertools
 import pytest
 
 import falcon
-from falcon.util import compat
 from falcon.request import Request, RequestOptions
 import falcon.testing as testing
 import falcon.uri
+from falcon.util import compat
 
 _PROTOCOLS = ['HTTP/1.0', 'HTTP/1.1']
 

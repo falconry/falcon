@@ -8,10 +8,10 @@ PY3 = sys.version_info.major == 3
 
 
 if PY3:
-    from http import cookies as http_cookies
-    from collections import UserDict
-    from io import StringIO
-    from urllib.parse import quote, unquote_plus
+    from http import cookies as http_cookies  # NOQA: F401
+    from collections import UserDict  # NOQA: F401
+    from io import StringIO  # NOQA: F401
+    from urllib.parse import quote, unquote_plus  # NOQA: F401
 
     string_types = (str,)
     class_types = (type,)
@@ -19,10 +19,10 @@ if PY3:
 
     get_method_self = op.attrgetter('__self__')
 else:
-    import Cookie as http_cookies
-    from UserDict import UserDict
-    from StringIO import StringIO
-    from urllib import quote, unquote_plus
+    import Cookie as http_cookies  # NOQA: F401
+    from UserDict import UserDict  # NOQA: F401
+    from StringIO import StringIO  # NOQA: F401
+    from urllib import quote, unquote_plus  # NOQA: F401
 
     string_types = (basestring,)
     class_types = (type, types.ClassType)

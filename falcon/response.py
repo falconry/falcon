@@ -27,8 +27,7 @@ from falcon.response_helpers import (
     header_property,
     is_ascii_encodable,
 )
-from falcon.util import dt_to_http, TimezoneGMT
-from falcon.util import compat
+from falcon.util import compat, dt_to_http, TimezoneGMT
 from falcon.util.uri import encode as uri_encode
 from falcon.util.uri import encode_value as uri_encode_value
 
