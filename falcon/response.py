@@ -148,7 +148,7 @@ class Response(object):
     )
 
     # Child classes may override this
-    context_type = type('ResponseContext', (object,), {})
+    context_type = type('ResponseContext', (dict,), {})
 
     def __init__(self, options=None):
         self.status = '200 OK'

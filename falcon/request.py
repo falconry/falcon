@@ -414,7 +414,7 @@ class Request(object):
     )
 
     # Child classes may override this
-    context_type = type('RequestContext', (object,), {})
+    context_type = type('RequestContext', (dict,), {})
 
     _wsgi_input_type_known = False
     _always_wrap_wsgi_input = False

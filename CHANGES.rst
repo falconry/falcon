@@ -16,6 +16,10 @@ Breaking Changes
   ``False``.
 - ``RequestOptions.auto_parse_qs_csv`` now defaults to ``False`` instead of
   ``True``.
+- ``Request.context_type`` now defaults to a subclass of dict allowing to
+  set attributes on the request context object.
+- ``Response.context_type`` now defaults to a subclass of dict allowing to
+  set attributes on the response context object.
 
 Changes to Supported Platforms
 ------------------------------

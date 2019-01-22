@@ -13,6 +13,11 @@ class TestRequestContext(object):
 
         req.context.hello = 'World'
         assert req.context.hello == 'World'
+        assert 'hello' not in req.context
+
+        req.context['note'] = 'Default Request.context_type used to be dict.'
+        assert 'note' in req.context
+        assert req.context.get('note') == req.context['note']
 
     def test_custom_request_context(self):
 

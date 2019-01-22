@@ -416,8 +416,9 @@ See also the `WSGI middleware example <https://www.python.org/dev/peps/pep-3333/
 How can I pass data from a hook to a responder, and between hooks?
 ------------------------------------------------------------------
 You can inject extra responder kwargs from a hook by adding them
-to the *params* dict passed into the hook. You can also add custom data to
-the ``req.context`` dict, as a way of passing contextual information around.
+to the *params* dict passed into the hook. You can also add custom attributes
+to the ``req.context`` object, as a way of passing contextual information
+around.
 
 How can I write a custom handler for 404 and 500 pages in falcon?
 ------------------------------------------------------------------
@@ -584,12 +585,12 @@ In the meantime, the workaround is to percent-encode the forward slash. If you
 don’t control the clients and can't enforce this, you can implement a Falcon
 middleware component to rewrite the path before it is routed.
 
-Why doesn't request/response context dictionary work in Falcon 2.0?
--------------------------------------------------------------------
+How do I adapt my code to default context type changes in Falcon 2.0?
+---------------------------------------------------------------------
 
 The default request/response context type has been changed from dictionary to a
-bare class in Falcon 2.0. Instead of setting dictionary items, one shall set
-attributes on the object now:
+class subclassing dict in Falcon 2.0. Instead of setting dictionary items, one
+shall set attributes on the object now:
 
 .. code:: python
 
@@ -599,9 +600,14 @@ attributes on the object now:
    # Falcon 2.0
    req.context.cache_backend = MyUltraFastCache.connect()
 
+Since the default context type derives from dict, the existing code will work
+unmodified with Falcon 2.0. Nevertheless, it is recommended to change the usage
+as recommended above since the ability to use context as dictionary may be
+removed in the future major releases.
+
 However, if an existing project is making extensive use of dictionary contexts,
-the type can be overridden back to dict by employing custom request/response
-types:
+the type can be explicitly overridden back to dict by employing custom
+request/response types:
 
 .. code:: python
 
