@@ -18,9 +18,8 @@ from functools import wraps
 from inspect import getmembers
 import re
 
-import six
-
 from falcon import COMBINED_METHODS
+from falcon.util import compat
 from falcon.util.misc import get_argnames
 
 
@@ -60,7 +59,7 @@ def before(action, *args, **kwargs):
     """
 
     def _before(responder_or_resource):
-        if isinstance(responder_or_resource, six.class_types):
+        if isinstance(responder_or_resource, compat.class_types):
             resource = responder_or_resource
 
             for responder_name, responder in getmembers(resource, callable):
@@ -105,7 +104,7 @@ def after(action, *args, **kwargs):
     """
 
     def _after(responder_or_resource):
-        if isinstance(responder_or_resource, six.class_types):
+        if isinstance(responder_or_resource, compat.class_types):
             resource = responder_or_resource
 
             for responder_name, responder in getmembers(resource, callable):

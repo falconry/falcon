@@ -2,10 +2,10 @@ from collections import defaultdict
 from datetime import datetime
 
 import pytest
-import six
 
 import falcon
 from falcon import testing
+from falcon.util import compat
 
 
 SAMPLE_BODY = testing.rand_string(0, 128 * 1024)
@@ -110,7 +110,7 @@ class HeaderHelpersResource(object):
 class LocationHeaderUnicodeResource(object):
 
     URL1 = u'/\u00e7runchy/bacon'
-    URL2 = u'ab\u00e7' if six.PY3 else 'ab\xc3\xa7'
+    URL2 = u'ab\u00e7' if compat.PY3 else 'ab\xc3\xa7'
 
     def on_get(self, req, resp):
         resp.location = self.URL1
@@ -365,7 +365,7 @@ class TestHeaders(object):
         result = client.simulate_get()
 
         assert result.content == body.encode('utf-8')
-        assert isinstance(result.text, six.text_type)
+        assert isinstance(result.text, compat.text_type)
         assert result.text == body
         assert result.json == {u'msg': u'Hello Unicode! \U0001F638'}
 
@@ -448,7 +448,7 @@ class TestHeaders(object):
         assert result.headers['X-Auth-Token'] == 'toomanysecrets'
         assert result.headers['X-Symbol'] == '@'
 
-    @pytest.mark.skipif(six.PY3, reason='Test only applies to Python 2')
+    @pytest.mark.skipif(compat.PY3, reason='Test only applies to Python 2')
     def test_unicode_headers_not_convertable(self, client):
         client.app.add_route('/', UnicodeHeaderResource())
         with pytest.raises(UnicodeEncodeError):
@@ -555,7 +555,7 @@ class TestHeaders(object):
             '<ab%C3%A7>; rel="https://example.com/too-%C3%A7runchy", ' +
             '</alt-thing>; rel="alternate http://example.com/%C3%A7runchy"')
 
-        uri = u'ab\u00e7' if six.PY3 else 'ab\xc3\xa7'
+        uri = u'ab\u00e7' if compat.PY3 else 'ab\xc3\xa7'
 
         resource = LinkHeaderResource()
         resource.add_link('/things/2842', 'next')
