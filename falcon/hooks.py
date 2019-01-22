@@ -15,11 +15,16 @@
 """Hook decorators."""
 
 from functools import wraps
-
-import six
+from inspect import getmembers
+import re
 
 from falcon import COMBINED_METHODS
+from falcon.util import compat
 from falcon.util.misc import get_argnames
+
+
+_DECORABLE_METHOD_NAME = re.compile(r'^on_({})(_\w+)?$'.format(
+    '|'.join(method.lower() for method in COMBINED_METHODS)))
 
 
 def before(action, *args, **kwargs):
@@ -54,31 +59,21 @@ def before(action, *args, **kwargs):
     """
 
     def _before(responder_or_resource):
-        if isinstance(responder_or_resource, six.class_types):
+        if isinstance(responder_or_resource, compat.class_types):
             resource = responder_or_resource
 
-            for method in COMBINED_METHODS:
-                responder_name = 'on_' + method.lower()
+            for responder_name, responder in getmembers(resource, callable):
+                if _DECORABLE_METHOD_NAME.match(responder_name):
+                    # This pattern is necessary to capture the current value of
+                    # responder in the do_before_all closure; otherwise, they
+                    # will capture the same responder variable that is shared
+                    # between iterations of the for loop, above.
+                    def let(responder=responder):
+                        do_before_all = _wrap_with_before(responder, action, args, kwargs)
 
-                try:
-                    responder = getattr(resource, responder_name)
-                except AttributeError:
-                    # resource does not implement this method
-                    pass
-                else:
-                    # Usually expect a method, but any callable will do
-                    if callable(responder):
-                        # This pattern is necessary to capture the current
-                        # value of responder in the do_before_all closure;
-                        # otherwise, they will capture the same responder
-                        # variable that is shared between iterations of the
-                        # for loop, above.
-                        def let(responder=responder):
-                            do_before_all = _wrap_with_before(responder, action, args, kwargs)
+                        setattr(resource, responder_name, do_before_all)
 
-                            setattr(resource, responder_name, do_before_all)
-
-                        let()
+                    let()
 
             return resource
 
@@ -109,27 +104,17 @@ def after(action, *args, **kwargs):
     """
 
     def _after(responder_or_resource):
-        if isinstance(responder_or_resource, six.class_types):
+        if isinstance(responder_or_resource, compat.class_types):
             resource = responder_or_resource
 
-            for method in COMBINED_METHODS:
-                responder_name = 'on_' + method.lower()
+            for responder_name, responder in getmembers(resource, callable):
+                if _DECORABLE_METHOD_NAME.match(responder_name):
+                    def let(responder=responder):
+                        do_after_all = _wrap_with_after(responder, action, args, kwargs)
 
-                try:
-                    responder = getattr(resource, responder_name)
-                except AttributeError:
-                    # resource does not implement this method
-                    pass
-                else:
-                    # Usually expect a method, but any callable will do
-                    if callable(responder):
+                        setattr(resource, responder_name, do_after_all)
 
-                        def let(responder=responder):
-                            do_after_all = _wrap_with_after(responder, action, args, kwargs)
-
-                            setattr(resource, responder_name, do_after_all)
-
-                        let()
+                    let()
 
             return resource
 
@@ -154,7 +139,7 @@ def _wrap_with_after(responder, action, action_args, action_kwargs):
         responder: The responder method to wrap.
         action: A function with a signature similar to a resource responder
             method, taking the form ``func(req, resp, resource)``.
-        action_args: Additiona positional agruments to pass to *action*.
+        action_args: Additional positional agruments to pass to *action*.
         action_kwargs: Additional keyword arguments to pass to *action*.
     """
 
@@ -191,7 +176,7 @@ def _wrap_with_before(responder, action, action_args, action_kwargs):
         responder: The responder method to wrap.
         action: A function with a similar signature to a resource responder
             method, taking the form ``func(req, resp, resource, params)``.
-        action_args: Additiona positional agruments to pass to *action*.
+        action_args: Additional positional agruments to pass to *action*.
         action_kwargs: Additional keyword arguments to pass to *action*.
     """
 

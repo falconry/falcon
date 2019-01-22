@@ -18,10 +18,9 @@ import keyword
 import re
 import textwrap
 
-from six.moves import UserDict
-
 from falcon.routing import converters
 from falcon.routing.util import map_http_methods, set_default_responders
+from falcon.util.compat import UserDict
 
 
 _TAB_STR = ' ' * 4
