@@ -16,6 +16,9 @@ Breaking Changes
   ``False``.
 - ``RequestOptions.auto_parse_qs_csv`` now defaults to ``False`` instead of
   ``True``.
+- The deprecated ``stream_len`` property was removed from the ``Response``
+  class. Please use ``Response.set_stream()`` or ``Response.content_length``
+  instead.
 
 Changes to Supported Platforms
 ------------------------------

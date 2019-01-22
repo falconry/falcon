@@ -41,8 +41,11 @@ matrix:
           env: TOXENV=py36_smoke_cython
         - python: 2.7
           env: TOXENV=docs
-        - python: 3.6
-          env: TOXENV=hug
+
+        # TODO(kgriffs): Re-enable once we have mitigated the stream_len
+        #   breaking change in hug.
+        # - python: 3.6
+        #   env: TOXENV=hug
 
 script: tox
 

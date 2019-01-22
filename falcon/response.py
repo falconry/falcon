@@ -44,6 +44,11 @@ CookieError = http_cookies.CookieError
 
 GMT_TIMEZONE = TimezoneGMT()
 
+_STREAM_LEN_REMOVED_MSG = (
+    'The deprecated stream_len property was removed in Falcon 2.0. '
+    'Please use Response.set_stream() or Response.content_length instead.'
+)
+
 
 class Response(object):
     """Represents an HTTP response to a client request.
@@ -113,8 +118,6 @@ class Response(object):
                 resource cleanup, it can implement a close() method to do so.
                 The close() method will be called upon completion of the request.
 
-        stream_len (int): Deprecated alias for :py:attr:`content_length`.
-
         context (dict): Dictionary to hold any data about the response which is
             specific to your app. Falcon itself will not interact with this
             attribute after it has been initialized.
@@ -144,7 +147,6 @@ class Response(object):
         'options',
         'status',
         'stream',
-        'stream_len',
         '_cookies',
         '_data',
         '_headers',
@@ -167,7 +169,6 @@ class Response(object):
 
         self.body = None
         self.stream = None
-        self.stream_len = None
         self._data = None
         self._media = None
 
@@ -224,6 +225,18 @@ class Response(object):
         # just be thrown away.
         self._data = None
 
+    @property
+    def stream_len(self):
+        # NOTE(kgriffs): Provide some additional information by raising the
+        #   error explicitly.
+        raise AttributeError(_STREAM_LEN_REMOVED_MSG)
+
+    @stream_len.setter
+    def stream_len(self, value):
+        # NOTE(kgriffs): We explicitly disallow setting the deprecated attribute
+        #   so that apps relying on it do not fail silently.
+        raise AttributeError(_STREAM_LEN_REMOVED_MSG)
+
     def __repr__(self):
         return '<%s: %s>' % (self.__class__.__name__, self.status)
 
@@ -233,7 +246,8 @@ class Response(object):
         Although the `stream` and `content_length` properties may be set
         directly, using this method ensures `content_length` is not
         accidentally neglected when the length of the stream is known in
-        advance.
+        advance. Using this method is also slightly more performant
+        as compared to setting the properties individually.
 
         Note:
             If the stream length is unknown, you can set `stream`
@@ -248,7 +262,10 @@ class Response(object):
         """
 
         self.stream = stream
-        self.stream_len = content_length  # NOTE(pshello): Deprecated in favor of `content_length`
+
+        # PERF(kgriffs): Set directly rather than incur the overhead of
+        #   the self.content_length property.
+        self._headers['content-length'] = str(content_length)
 
     def set_cookie(self, name, value, expires=None, max_age=None,
                    domain=None, path=None, secure=None, http_only=True):
