@@ -696,7 +696,7 @@ class API(object):
         """
 
         for err_type, err_handler in self._error_handlers:
-            if isinstance(ex, err_type):
+            if isinstance(ex, tuple(err_type)):
                 try:
                     err_handler(req, resp, ex, params)
                 except HTTPStatus as status:
