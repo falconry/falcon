@@ -632,7 +632,7 @@ class TestRequestAttributes(object):
         assert getattr(req, attr) is None
 
     def test_attribute_headers(self):
-        hash = 'fa0d1a60ef6616bb28038515c8ea4cb2'
+        date = 'Wed, 21 Oct 2015 07:28:00 GMT'
         auth = 'HMAC_SHA1 c590afa9bb59191ffab30f223791e82d3fd3e3af'
         agent = 'testing/1.0.1'
         default_agent = 'curl/7.24.0 (x86_64-apple-darwin12.0)'
@@ -647,9 +647,7 @@ class TestRequestAttributes(object):
                                     'content_type')
         self._test_attribute_header('Expect', '100-continue', 'expect')
 
-        self._test_attribute_header('If-Match', hash, 'if_match')
-        self._test_attribute_header('If-None-Match', hash, 'if_none_match')
-        self._test_attribute_header('If-Range', hash, 'if_range')
+        self._test_attribute_header('If-Range', date, 'if_range')
 
         self._test_attribute_header('User-Agent', agent, 'user_agent',
                                     default=default_agent)
@@ -784,6 +782,23 @@ class TestRequestAttributes(object):
         req = Request(env)
 
         assert req.app == ''
+
+    @pytest.mark.parametrize('etag,expected', [
+        ('W/"67ab43"', ['67ab43']),
+        ('w/"67ab43"', ['67ab43']),
+        ('W/"67ab43", "54ed21"', ['67ab43', '54ed21']),
+        ('  W/"67ab43" , "54ed21"', ['67ab43', '54ed21']),
+        ('W/"67ab43"  ,  "54ed21"', ['67ab43', '54ed21']),
+        ('W/"67ab43" ,"54ed21"', ['67ab43', '54ed21']),
+        ('W/"67ab43", unquoted, "54ed21"', ['67ab43', '54ed21']),
+        ('*', ['*']),
+        (' * ', ['*']),
+        ('empty', []),
+        (None, []),
+    ])
+    def test_etag(self, etag, expected):
+        self._test_header_expected_value('If-Match', etag, 'if_match', expected)
+        self._test_header_expected_value('If-None-Match', etag, 'if_none_match', expected)
 
     # -------------------------------------------------------------------------
     # Helpers

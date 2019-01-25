@@ -15,6 +15,10 @@
 """Utilities for the Request class."""
 
 import io
+import re
+
+
+_ETAG_PATTERN = re.compile(r'([Ww]/)?"([^"]*)"(?:\s*,\s*|$)')
 
 
 def header_property(wsgi_name):
@@ -36,6 +40,29 @@ def header_property(wsgi_name):
             return None
 
     return property(fget)
+
+
+def parse_etags(etag_str):
+    """
+    Parse a string of ETags given in an If-Match or If-None-Match header as
+    defined by RFC 7232.
+
+    Args:
+        etag_str (str): A string of ASCII characters placed between double quotes
+            and may be prefixed by ``W/`` to indicate that the weak comparison
+            algorithm should be used.
+
+    Returns:
+        A list of unquoted ETags or ``['*']`` if all ETags should be matched.
+    """
+    if not etag_str:
+        return []
+
+    if etag_str.strip() == '*':
+        return ['*']
+
+    matches = re.findall(_ETAG_PATTERN, etag_str.strip())
+    return [etag for _, etag in matches if etag]
 
 
 class BoundedStream(io.IOBase):

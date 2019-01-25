@@ -358,10 +358,10 @@ class Request(object):
             accessed.)
         range_unit (str): Unit of the range parsed from the value of the
             Range header, or ``None`` if the header is missing
-        if_match (str): Value of the If-Match header, or ``None`` if the
-            header is missing.
-        if_none_match (str): Value of the If-None-Match header, or ``None``
-            if the header is missing.
+        if_match (list): A list containing all the etags in the If-Match
+            header.
+        if_none_match (list): A list containing all the etags in the
+            If-None-Match header.
         if_modified_since (datetime): Value of the If-Modified-Since header,
             or ``None`` if the header is missing.
         if_unmodified_since (datetime): Value of the If-Unmodified-Since
@@ -529,8 +529,6 @@ class Request(object):
 
     expect = helpers.header_property('HTTP_EXPECT')
 
-    if_match = helpers.header_property('HTTP_IF_MATCH')
-    if_none_match = helpers.header_property('HTTP_IF_NONE_MATCH')
     if_range = helpers.header_property('HTTP_IF_RANGE')
 
     referer = helpers.header_property('HTTP_REFERER')
@@ -619,6 +617,14 @@ class Request(object):
     @property
     def date(self):
         return self.get_header_as_datetime('Date')
+
+    @property
+    def if_match(self):
+        return helpers.parse_etags(self.env.get('HTTP_IF_MATCH'))
+
+    @property
+    def if_none_match(self):
+        return helpers.parse_etags(self.env.get('HTTP_IF_NONE_MATCH'))
 
     @property
     def if_modified_since(self):
