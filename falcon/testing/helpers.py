@@ -29,9 +29,7 @@ import io
 import random
 import sys
 
-import six
-
-from falcon.util import http_now, uri
+from falcon.util import compat, http_now, uri
 
 
 # Constants
@@ -126,13 +124,13 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1',
         raise ValueError("query_string should not start with '?'")
 
     body = io.BytesIO(body.encode('utf-8')
-                      if isinstance(body, six.text_type) else body)
+                      if isinstance(body, compat.text_type) else body)
 
     # NOTE(kgriffs): wsgiref, gunicorn, and uWSGI all unescape
     # the paths before setting PATH_INFO
     path = uri.decode(path)
 
-    if six.PY3:
+    if compat.PY3:
         # NOTE(kgriffs): The decoded path may contain UTF-8 characters.
         # But according to the WSGI spec, no strings can contain chars
         # outside ISO-8859-1. Therefore, to reconcile the URI
@@ -149,7 +147,7 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1',
         #
         path = path.encode('utf-8').decode('iso-8859-1')
 
-    if six.PY2 and isinstance(path, six.text_type):
+    if compat.PY2 and isinstance(path, compat.text_type):
         path = path.encode('utf-8')
 
     scheme = scheme.lower()

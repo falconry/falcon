@@ -1,10 +1,10 @@
 import io
 
 import pytest
-import six
 
 import falcon
-import falcon.testing as testing
+from falcon import testing
+from falcon.util import compat
 
 unicode_message = u'Unicode: \x80'
 
@@ -32,7 +32,7 @@ class TestWSGIError(object):
     def setup_method(self, method):
         self.wsgierrors_buffer = io.BytesIO()
 
-        if six.PY3:
+        if compat.PY3:
             # Simulate Gunicorn's behavior under Python 3
             self.wsgierrors = io.TextIOWrapper(self.wsgierrors_buffer,
                                                line_buffering=True,
@@ -52,7 +52,7 @@ class TestWSGIError(object):
         assert unicode_message.encode('utf-8') in log
         assert b'?amount=10' in log
 
-    @pytest.mark.skipif(six.PY3, reason='Test only applies to Python 2')
+    @pytest.mark.skipif(compat.PY3, reason='Test only applies to Python 2')
     def test_responder_logged_unicode(self, client):
         client.simulate_request(path='/logger',
                                 wsgierrors=self.wsgierrors,

@@ -24,6 +24,7 @@ New & Improved
 --------------
 
 - Added a new ``headers`` property to the ``Response`` class.
+- Removed ``six`` as a dependency.
 
 Fixed
 -----

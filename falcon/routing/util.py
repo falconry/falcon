@@ -16,9 +16,8 @@
 
 import re
 
-import six
-
 from falcon import COMBINED_METHODS, responders
+from falcon.util import compat
 
 
 class SuffixedMethodNotFoundError(Exception):
@@ -60,7 +59,7 @@ def compile_uri_template(template):
         tuple: (template_field_names, template_regex)
     """
 
-    if not isinstance(template, six.string_types):
+    if not isinstance(template, compat.string_types):
         raise TypeError('uri_template is not a string')
 
     if not template.startswith('/'):

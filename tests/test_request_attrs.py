@@ -2,12 +2,12 @@ import datetime
 import itertools
 
 import pytest
-import six
 
 import falcon
 from falcon.request import Request, RequestOptions
 import falcon.testing as testing
 import falcon.uri
+from falcon.util import compat
 
 _PROTOCOLS = ['HTTP/1.0', 'HTTP/1.1']
 
@@ -113,7 +113,7 @@ class TestRequestAttributes(object):
         assert req.prefix == expected_prefix
         assert req.prefix == expected_prefix  # Check cached value
 
-    @pytest.mark.skipif(not six.PY3, reason='Test only applies to Python 3')
+    @pytest.mark.skipif(not compat.PY3, reason='Test only applies to Python 3')
     @pytest.mark.parametrize('test_path', [
         u'/hello_\u043f\u0440\u0438\u0432\u0435\u0442',
         u'/test/%E5%BB%B6%E5%AE%89',

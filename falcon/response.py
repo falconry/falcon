@@ -16,13 +16,6 @@
 
 import mimetypes
 
-from six import PY2
-from six import string_types as STRING_TYPES
-
-# NOTE(tbug): In some cases, http_cookies is not a module
-# but a dict-like structure. This fixes that issue.
-# See issue https://github.com/falconry/falcon/issues/556
-from six.moves import http_cookies  # NOQA: I202
 
 from falcon import DEFAULT_MEDIA_TYPE
 from falcon.media import Handlers
@@ -34,13 +27,13 @@ from falcon.response_helpers import (
     header_property,
     is_ascii_encodable,
 )
-from falcon.util import dt_to_http, TimezoneGMT
+from falcon.util import compat, dt_to_http, TimezoneGMT
 from falcon.util.uri import encode as uri_encode
 from falcon.util.uri import encode_value as uri_encode_value
 
 
-SimpleCookie = http_cookies.SimpleCookie
-CookieError = http_cookies.CookieError
+SimpleCookie = compat.http_cookies.SimpleCookie
+CookieError = compat.http_cookies.CookieError
 
 GMT_TIMEZONE = TimezoneGMT()
 
@@ -661,7 +654,7 @@ class Response(object):
             value += '; type="' + type_hint + '"'
 
         if hreflang is not None:
-            if isinstance(hreflang, STRING_TYPES):
+            if isinstance(hreflang, compat.string_types):
                 value += '; hreflang=' + hreflang
             else:
                 value += '; '
@@ -863,7 +856,7 @@ class Response(object):
         if set_content_type:
             self.set_header('content-type', media_type)
 
-    def _wsgi_headers(self, media_type=None, py2=PY2):
+    def _wsgi_headers(self, media_type=None, py2=compat.PY2):
         """Convert headers into the format expected by WSGI servers.
 
         Args:
