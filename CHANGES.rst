@@ -16,10 +16,36 @@ Breaking Changes
   ``False``.
 - ``RequestOptions.auto_parse_qs_csv`` now defaults to ``False`` instead of
   ``True``.
-- ``Request.context_type`` now defaults to a subclass of dict allowing to
-  set attributes on the request context object.
-- ``Response.context_type`` now defaults to a subclass of dict allowing to
-  set attributes on the response context object.
+- ``Request.context_type`` now defaults to a bare class allowing to set
+  attributes on the request context object::
+
+    # Before
+    req.context['role'] = 'trial'
+    req.context['user'] = 'guest'
+
+    # Falcon 2.0
+    req.context.role = 'trial'
+    req.context.user = 'guest'
+
+  To ease the migration path, the previous behavior is supported by subclassing
+  dict, however, as of Falcon 2.0, the dict context interface is considered
+  deprecated, and may be removed in a future release. It is also noteworthy
+  that object attributes and dict items are not automagically linked in any
+  special way, and setting one does not affect the other.
+- ``Response.context_type`` now defaults to a bare class allowing
+  to set attributes on the response context object::
+
+    # Before
+    resp.context['cache_strategy'] = 'lru'
+
+    # Falcon 2.0
+    resp.context.cache_strategy = 'lru'
+
+  To ease the migration path, the previous behavior is supported by subclassing
+  dict, however, as of Falcon 2.0, the dict context interface is considered
+  deprecated, and may be removed in a future release. It is also noteworthy
+  that object attributes and dict items are not automagically linked in any
+  special way, and setting one does not affect the other.
 
 Changes to Supported Platforms
 ------------------------------
