@@ -2,11 +2,11 @@ from datetime import datetime, timedelta, tzinfo
 import re
 
 import pytest
-from six.moves.http_cookies import Morsel
 
 import falcon
 import falcon.testing as testing
 from falcon.util import http_date_to_dt, TimezoneGMT
+from falcon.util.compat import http_cookies
 
 
 UNICODE_TEST_STRING = u'Unicode_\xc3\xa6\xc3\xb8'
@@ -179,7 +179,7 @@ def test_cookies_setable(client):
     resp.set_cookie('foo', 'bar', max_age=300)
     morsel = resp._cookies['foo']
 
-    assert isinstance(morsel, Morsel)
+    assert isinstance(morsel, http_cookies.Morsel)
     assert morsel.key == 'foo'
     assert morsel.value == 'bar'
     assert morsel['max-age'] == 300

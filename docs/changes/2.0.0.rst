@@ -24,6 +24,7 @@ New & Improved
 --------------
 
 - Added a new :attr:`~.Response.headers` property to the :class:`~.Response` class.
+- Removed :py:mod:`six` from deps.
 
 Fixed
 -----

@@ -5,12 +5,11 @@ import functools
 import random
 
 import pytest
-import six
 
 import falcon
 from falcon import testing
 from falcon import util
-from falcon.util import json, uri
+from falcon.util import compat, json, uri
 
 
 def _arbitrary_uris(count, length):
@@ -204,7 +203,7 @@ class TestFalconUtils(object):
 
     def test_prop_uri_encode_models_stdlib_quote(self):
         equiv_quote = functools.partial(
-            six.moves.urllib.parse.quote, safe=uri._ALL_ALLOWED
+            compat.quote, safe=uri._ALL_ALLOWED
         )
         for case in self.uris:
             expect = equiv_quote(case)
@@ -213,7 +212,7 @@ class TestFalconUtils(object):
 
     def test_prop_uri_encode_value_models_stdlib_quote_safe_tilde(self):
         equiv_quote = functools.partial(
-            six.moves.urllib.parse.quote, safe='~'
+            compat.quote, safe='~'
         )
         for case in self.uris:
             expect = equiv_quote(case)
@@ -221,7 +220,7 @@ class TestFalconUtils(object):
             assert expect == actual
 
     def test_prop_uri_decode_models_stdlib_unquote_plus(self):
-        stdlib_unquote = six.moves.urllib.parse.unquote_plus
+        stdlib_unquote = compat.unquote_plus
         for case in self.uris:
             case = uri.encode_value(case)
 
@@ -381,7 +380,7 @@ class TestFalconTestingUtils(object):
         with pytest.raises(ValueError):
             testing.create_environ(query_string='?foo=bar')
 
-    @pytest.mark.skipif(six.PY3, reason='Test does not apply to Py3K')
+    @pytest.mark.skipif(compat.PY3, reason='Test does not apply to Py3K')
     def test_unicode_path_in_create_environ(self):
         env = testing.create_environ(u'/fancy/unícode')
         assert env['PATH_INFO'] == '/fancy/un\xc3\xadcode'
