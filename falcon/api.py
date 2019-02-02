@@ -27,6 +27,21 @@ from falcon.util import compat
 from falcon.util.misc import get_argnames
 
 
+# PERF(vytas): on Python 2.7+, Python 3.5+ (including cythonized modules),
+# reference via module global is faster than going via self
+_BODILESS_STATUS_CODES = frozenset([
+    status.HTTP_100,
+    status.HTTP_101,
+    status.HTTP_204,
+    status.HTTP_304,
+])
+
+_TYPELESS_STATUS_CODES = frozenset([
+    status.HTTP_204,
+    status.HTTP_304,
+])
+
+
 class API(object):
     """This class is the main entry point into a Falcon-based app.
 
@@ -127,15 +142,6 @@ class API(object):
 
             (See also: :ref:`CompiledRouterOptions <compiled_router_options>`)
     """
-
-    # PERF(kgriffs): Reference via self since that is faster than
-    # module global...
-    _BODILESS_STATUS_CODES = {
-        status.HTTP_100,
-        status.HTTP_101,
-        status.HTTP_204,
-        status.HTTP_304
-    }
 
     _STREAM_BLOCK_SIZE = 8 * 1024  # 8 KiB
 
@@ -274,24 +280,28 @@ class API(object):
         # must be of type str (not unicode on Py27), some WSGI servers
         # can complain when it is not.
         resp_status = str(resp.status) if compat.PY2 else resp.status
+        media_type = self._media_type
 
-        if req.method == 'HEAD' or resp_status in self._BODILESS_STATUS_CODES:
+        if req.method == 'HEAD' or resp_status in _BODILESS_STATUS_CODES:
             body = []
+
+            # PERF(vytas): move check for the less common and much faster path
+            # of resp_status being in {204, 304} here; NB: this builds on the
+            # assumption _TYPELESS_STATUS_CODES <= _BODILESS_STATUS_CODES.
+
+            # NOTE(kgriffs): Based on wsgiref.validate's interpretation of
+            # RFC 2616, as commented in that module's source code. The
+            # presence of the Content-Length header is not similarly
+            # enforced.
+            if resp_status in _TYPELESS_STATUS_CODES:
+                media_type = None
+
         else:
             body, length = self._get_body(resp, env.get('wsgi.file_wrapper'))
             if resp.content_length is None and length is not None:
                 resp._headers['content-length'] = str(length)
             elif resp.content_length is not None:
                 resp._headers['content-length'] = str(resp.content_length)
-
-        # NOTE(kgriffs): Based on wsgiref.validate's interpretation of
-        # RFC 2616, as commented in that module's source code. The
-        # presence of the Content-Length header is not similarly
-        # enforced.
-        if resp_status in (status.HTTP_204, status.HTTP_304):
-            media_type = None
-        else:
-            media_type = self._media_type
 
         headers = resp._wsgi_headers(media_type)
 
