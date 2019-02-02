@@ -232,124 +232,124 @@ def simulate_request(app, method='GET', path='/', query_string=None,
                      wsgierrors=None, params=None, params_csv=True,
                      protocol='http', host=helpers.DEFAULT_HOST,
                      remote_addr=None, extras=None):
-        """Simulates a request to a WSGI application.
+    """Simulates a request to a WSGI application.
 
-        Performs a request against a WSGI application. Uses
-        :any:`wsgiref.validate` to ensure the response is valid
-        WSGI.
+    Performs a request against a WSGI application. Uses
+    :any:`wsgiref.validate` to ensure the response is valid
+    WSGI.
 
-        Keyword Args:
-            app (callable): The WSGI application to call
-            method (str): An HTTP method to use in the request
-                (default: 'GET')
-            path (str): The URL path to request (default: '/')
-            protocol: The protocol to use for the URL scheme
-                (default: 'http')
-            params (dict): A dictionary of query string parameters,
-                where each key is a parameter name, and each value is
-                either a ``str`` or something that can be converted
-                into a ``str``, or a list of such values. If a ``list``,
-                the value will be converted to a comma-delimited string
-                of values (e.g., 'thing=1,2,3').
-            params_csv (bool): Set to ``False`` to encode list values
-                in query string params by specifying multiple instances
-                of the parameter (e.g., 'thing=1&thing=2&thing=3').
-                Otherwise, parameters will be encoded as comma-separated
-                values (e.g., 'thing=1,2,3'). Defaults to ``True``.
-            query_string (str): A raw query string to include in the
-                request (default: ``None``). If specified, overrides
-                `params`.
-            headers (dict): Additional headers to include in the request
-                (default: ``None``)
-            body (str): A string to send as the body of the request.
-                Accepts both byte strings and Unicode strings
-                (default: ``None``). If a Unicode string is provided,
-                it will be encoded as UTF-8 in the request.
-            json(JSON serializable): A JSON document to serialize as the
-                body of the request (default: ``None``). If specified,
-                overrides `body` and the Content-Type header in
-                `headers`.
-            file_wrapper (callable): Callable that returns an iterable,
-                to be used as the value for *wsgi.file_wrapper* in the
-                environ (default: ``None``). This can be used to test
-                high-performance file transmission when `resp.stream` is
-                set to a file-like object.
-            host(str): A string to use for the hostname part of the fully
-                qualified request URL (default: 'falconframework.org')
-            remote_addr (str): A string to use as the remote IP address for the
-                request (default: '127.0.0.1')
-            wsgierrors (io): The stream to use as *wsgierrors*
-                (default ``sys.stderr``)
-            extras (dict): Additional CGI variables to add to the WSGI
-                ``environ`` dictionary for the request (default: ``None``)
+    Keyword Args:
+        app (callable): The WSGI application to call
+        method (str): An HTTP method to use in the request
+            (default: 'GET')
+        path (str): The URL path to request (default: '/')
+        protocol: The protocol to use for the URL scheme
+            (default: 'http')
+        params (dict): A dictionary of query string parameters,
+            where each key is a parameter name, and each value is
+            either a ``str`` or something that can be converted
+            into a ``str``, or a list of such values. If a ``list``,
+            the value will be converted to a comma-delimited string
+            of values (e.g., 'thing=1,2,3').
+        params_csv (bool): Set to ``False`` to encode list values
+            in query string params by specifying multiple instances
+            of the parameter (e.g., 'thing=1&thing=2&thing=3').
+            Otherwise, parameters will be encoded as comma-separated
+            values (e.g., 'thing=1,2,3'). Defaults to ``True``.
+        query_string (str): A raw query string to include in the
+            request (default: ``None``). If specified, overrides
+            `params`.
+        headers (dict): Additional headers to include in the request
+            (default: ``None``)
+        body (str): A string to send as the body of the request.
+            Accepts both byte strings and Unicode strings
+            (default: ``None``). If a Unicode string is provided,
+            it will be encoded as UTF-8 in the request.
+        json(JSON serializable): A JSON document to serialize as the
+            body of the request (default: ``None``). If specified,
+            overrides `body` and the Content-Type header in
+            `headers`.
+        file_wrapper (callable): Callable that returns an iterable,
+            to be used as the value for *wsgi.file_wrapper* in the
+            environ (default: ``None``). This can be used to test
+            high-performance file transmission when `resp.stream` is
+            set to a file-like object.
+        host(str): A string to use for the hostname part of the fully
+            qualified request URL (default: 'falconframework.org')
+        remote_addr (str): A string to use as the remote IP address for the
+            request (default: '127.0.0.1')
+        wsgierrors (io): The stream to use as *wsgierrors*
+            (default ``sys.stderr``)
+        extras (dict): Additional CGI variables to add to the WSGI
+            ``environ`` dictionary for the request (default: ``None``)
 
-        Returns:
-            :py:class:`~.Result`: The result of the request
-        """
+    Returns:
+        :py:class:`~.Result`: The result of the request
+    """
 
-        if not path.startswith('/'):
-            raise ValueError("path must start with '/'")
+    if not path.startswith('/'):
+        raise ValueError("path must start with '/'")
 
-        if query_string and query_string.startswith('?'):
-            raise ValueError("query_string should not start with '?'")
+    if query_string and query_string.startswith('?'):
+        raise ValueError("query_string should not start with '?'")
 
-        if '?' in path:
-            # NOTE(kgriffs): We could allow this, but then we'd need
-            #   to define semantics regarding whether the path takes
-            #   precedence over the query_string. Also, it would make
-            #   tests less consistent, since there would be "more than
-            #   one...way to do it."
-            raise ValueError(
-                'path may not contain a query string. Please use the '
-                'query_string parameter instead.'
-            )
-
-        extras = extras or {}
-        if 'REQUEST_METHOD' in extras and extras['REQUEST_METHOD'] != method:
-            # NOTE(vytas): Even given the duct tape nature of overriding
-            # arbitrary environ variables, changing the method can potentially
-            # be very confusing, particularly when using specialized
-            # simulate_get/post/patch etc methods.
-            raise ValueError(
-                'environ extras may not override the request method. Please '
-                'use the method parameter.'
-            )
-
-        if query_string is None:
-            query_string = to_query_str(
-                params,
-                comma_delimited_lists=params_csv,
-                prefix=False,
-            )
-
-        if json is not None:
-            body = util_json.dumps(json, ensure_ascii=False)
-            headers = headers or {}
-            headers['Content-Type'] = MEDIA_JSON
-
-        env = helpers.create_environ(
-            method=method,
-            scheme=protocol,
-            path=path,
-            query_string=(query_string or ''),
-            headers=headers,
-            body=body,
-            file_wrapper=file_wrapper,
-            host=host,
-            remote_addr=remote_addr,
-            wsgierrors=wsgierrors,
+    if '?' in path:
+        # NOTE(kgriffs): We could allow this, but then we'd need
+        #   to define semantics regarding whether the path takes
+        #   precedence over the query_string. Also, it would make
+        #   tests less consistent, since there would be "more than
+        #   one...way to do it."
+        raise ValueError(
+            'path may not contain a query string. Please use the '
+            'query_string parameter instead.'
         )
-        if extras:
-            env.update(extras)
 
-        srmock = StartResponseMock()
-        validator = wsgiref.validate.validator(app)
+    extras = extras or {}
+    if 'REQUEST_METHOD' in extras and extras['REQUEST_METHOD'] != method:
+        # NOTE(vytas): Even given the duct tape nature of overriding
+        # arbitrary environ variables, changing the method can potentially
+        # be very confusing, particularly when using specialized
+        # simulate_get/post/patch etc methods.
+        raise ValueError(
+            'environ extras may not override the request method. Please '
+            'use the method parameter.'
+        )
 
-        iterable = validator(env, srmock)
+    if query_string is None:
+        query_string = to_query_str(
+            params,
+            comma_delimited_lists=params_csv,
+            prefix=False,
+        )
 
-        result = Result(iterable, srmock.status, srmock.headers)
+    if json is not None:
+        body = util_json.dumps(json, ensure_ascii=False)
+        headers = headers or {}
+        headers['Content-Type'] = MEDIA_JSON
 
-        return result
+    env = helpers.create_environ(
+        method=method,
+        scheme=protocol,
+        path=path,
+        query_string=(query_string or ''),
+        headers=headers,
+        body=body,
+        file_wrapper=file_wrapper,
+        host=host,
+        remote_addr=remote_addr,
+        wsgierrors=wsgierrors,
+    )
+    if extras:
+        env.update(extras)
+
+    srmock = StartResponseMock()
+    validator = wsgiref.validate.validator(app)
+
+    iterable = validator(env, srmock)
+
+    result = Result(iterable, srmock.status, srmock.headers)
+
+    return result
 
 
 def simulate_get(app, path, **kwargs):

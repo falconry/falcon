@@ -1,6 +1,7 @@
 import io
 import os
 import re
+import sys
 
 import falcon
 
@@ -37,7 +38,10 @@ class StaticRoute(object):
     """
 
     # NOTE(kgriffs): Don't allow control characters and reserved chars
-    _DISALLOWED_CHARS_PATTERN = re.compile('[\x00-\x1f\x80-\x9f~?<>:*|\'"]')
+    if sys.version_info.major == 3:
+        _DISALLOWED_CHARS_PATTERN = re.compile('[\x00-\x1f\x80-\x9f\ufffd~?<>:*|\'"]')
+    else:
+        _DISALLOWED_CHARS_PATTERN = re.compile('[\x00-\x1f\x80-\x9f~?<>:*|\'"]|\xef\xbf\xbd')
 
     # NOTE(kgriffs): If somehow an executable code exploit is triggerable, this
     # minimizes how much can be included in the payload.

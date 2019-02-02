@@ -14,6 +14,9 @@ def test_response_set_content_type_not_set():
     resp = falcon.Response()
     assert 'content-type' not in resp._headers
 
+    resp._set_media_type()
+    assert 'content-type' not in resp._headers
+
 
 def test_response_get_headers():
     resp = falcon.Response()
