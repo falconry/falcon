@@ -16,6 +16,19 @@ Breaking Changes
   instead of ``False``.
 - :attr:`~.RequestOptions.auto_parse_qs_csv` now defaults to ``False``
   instead of ``True``.
+- Request :attr:`~.Request.context_type` was changed from dict to a subclass of
+  dict.
+- Response :attr:`~.Response.context_type` was changed from dict to a subclass
+  of dict.
+
+Changes to Supported Platforms
+------------------------------
+
+New & Improved
+--------------
+
+- Added a new :attr:`~.Response.headers` property to the :class:`~.Response` class.
+- Removed :py:mod:`six` from deps.
 - Request :attr:`~.Request.context_type` now defaults to a bare class allowing
   to set attributes on the request context object::
 
@@ -53,15 +66,6 @@ Breaking Changes
 
   Applications can work around this change by explicitly overriding
   :attr:`~.Response.context_type` to dict.
-
-Changes to Supported Platforms
-------------------------------
-
-New & Improved
---------------
-
-- Added a new :attr:`~.Response.headers` property to the :class:`~.Response` class.
-- Removed :py:mod:`six` from deps.
 
 Fixed
 -----

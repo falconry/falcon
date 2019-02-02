@@ -16,6 +16,17 @@ Breaking Changes
   ``False``.
 - ``RequestOptions.auto_parse_qs_csv`` now defaults to ``False`` instead of
   ``True``.
+- ``Request.context_type`` was changed from dict to a subclass of dict.
+- ``Response.context_type`` was changed from dict to a subclass of dict.
+
+Changes to Supported Platforms
+------------------------------
+
+New & Improved
+--------------
+
+- Added a new ``headers`` property to the ``Response`` class.
+- Removed ``six`` as a dependency.
 - ``Request.context_type`` now defaults to a bare class allowing to set
   attributes on the request context object::
 
@@ -46,15 +57,6 @@ Breaking Changes
   deprecated, and may be removed in a future release. It is also noteworthy
   that object attributes and dict items are not automagically linked in any
   special way, and setting one does not affect the other.
-
-Changes to Supported Platforms
-------------------------------
-
-New & Improved
---------------
-
-- Added a new ``headers`` property to the ``Response`` class.
-- Removed ``six`` as a dependency.
 
 Fixed
 -----

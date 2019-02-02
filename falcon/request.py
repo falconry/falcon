@@ -79,6 +79,16 @@ class Request(object):
             about the request which is specific to your app (e.g. session
             object). Falcon itself will not interact with this attribute after
             it has been initialized.
+
+            Note:
+                **New in 2.0:** the default `context_type` (see below) was
+                changed from dict to a bare class, and the preferred way to
+                pass request-specific data is setting attributes on the
+                `context` object, for example::
+
+                    req.context.role = 'trial'
+                    req.context.user = 'guest'
+
         context_type (class): Class variable that determines the factory or
             type to use for initializing the `context` attribute. By default,
             the framework will instantiate bare objects (instances of the bare

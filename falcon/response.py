@@ -112,6 +112,15 @@ class Response(object):
             about the response which is specific to your app (e.g. session
             object). Falcon itself will not interact with this attribute after
             it has been initialized.
+
+            Note:
+                **New in 2.0:** the default `context_type` (see below) was
+                changed from dict to a bare class, and the preferred way to
+                pass response-specific data is setting attributes on the
+                `context` object, for example::
+
+                    resp.context.cache_strategy = 'lru'
+
         context_type (class): Class variable that determines the factory or
             type to use for initializing the `context` attribute. By default,
             the framework will instantiate bare objects (instances of the bare
