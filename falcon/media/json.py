@@ -2,8 +2,9 @@ from __future__ import absolute_import
 
 from falcon import errors
 from falcon.media import BaseHandler
-from falcon.util import compat
 from falcon.util import json
+
+from functools import partial
 
 
 class JSONHandler(BaseHandler):
@@ -13,72 +14,57 @@ class JSONHandler(BaseHandler):
     use :py:mod:`ujson` if available.
 
     Keyword Arguments:
-        dumps (func): the function to use when serializing JSON responses
+        dumps (func): the function to use when serializing JSON responses.
 
-        loads (func): the function to use when deserializing JSON requests
-
-        dumps_kwargs (dict): keyword arguments passed to ``dumps`` when
-            serializing to JSON.  ``ensure_ascii`` is set to ``false`` by
-            default.  To override this setting, pass ``{ensure_ascii=True}``
-            explicitly. You can completely disable extra parameters by passing
-            ``False``.
-
-        loads_kwargs (func): keyword arguments to pass to ``loads`` when
-            deserializing from JSON.  You can completely disable extra
-            parameters by passing ``False``.
+        loads (func): the function to use when deserializing JSON requests.
 
     You can override the JSON library used by changing the ``dumps`` and
-    ``loads`` functions::
+    ``loads`` functions. Some good options are orjson, python-rapidjson,
+    and mujson.::
 
         import falcon
         from falcon import media
-        import rapidjson
 
+        import rapidjson
 
         json_handler = media.JSONHandler(
             dumps=rapidjson.dumps,
             loads=rapidjson.loads,
-            dumps_kwargs=dict(ensure_ascii=False)
-            loads_kwargs=False,
         )
         extra_handlers = {
             'application/json': json_handler,
-            'application/json; charset=UTF-8': json_handler,
         }
 
         api = falcon.API()
         api.req_options.media_handlers.update(extra_handlers)
         api.resp_options.media_handlers.update(extra_handlers)
+
+
+    By default, ``ensure_ascii`` is passed to the ``json.dumps`` function.
+    If you override the dumps function you might want to include that as a
+    default parameter. A simple way is by using ``functools.partial`` to curry
+    the keyword arguments. This gives you the developer complete control.
+
+    ::
+
+        from functools import partial
+        import ujson
+
+        json_handler = media.JSONHandler(
+            dumps=partial(
+                ujson.dumps,
+                ensure_ascii=False, escape_forward_slashes=True
+            ),
+        )
     """
 
-    dumps_kwargs = False
-    loads_kwargs = False
-
-    def __init__(self, dumps=None, dumps_kwargs=None, loads=None, loads_kwargs=None):
-        self.dumps = dumps or json.dumps
-
-        # NOTE(nZac): Turn off kwargs support by manually passing `False` to
-        # either `_kwargs` argument.
-        if dumps_kwargs is not False:
-            self.dumps_kwargs = dict(ensure_ascii=False)
-            self.dumps_kwargs.update(dumps_kwargs or dict())
-
+    def __init__(self, dumps=None, loads=None):
+        self.dumps = dumps or partial(json.dumps, ensure_ascii=False)
         self.loads = loads or json.loads
-        if loads_kwargs is not False:
-            self.loads_kwargs = dict()
-            self.loads_kwargs.update(loads_kwargs or dict())
 
     def deserialize(self, stream, content_type, content_length):
         try:
-
-            # NOTE(nZac): support `loads` functions which don't take keyword
-            # arguments like orjson
-            if self.loads_kwargs is False:
-                return self.loads(stream.read().decode('utf-8'))
-            else:
-                return self.loads(stream.read().decode('utf-8'),
-                        **self.loads_kwargs)
-
+            return self.loads(stream.read().decode('utf-8'))
         except ValueError as err:
             raise errors.HTTPBadRequest(
                 'Invalid JSON',
@@ -86,14 +72,9 @@ class JSONHandler(BaseHandler):
             )
 
     def serialize(self, media, content_type):
-        # NOTE(nZac): support `loads` functions which don't take keyword
-        # arguments like orjson
-        if self.dumps_kwargs is False:
-            result = self.dumps(media)
-        else:
-            result = self.dumps(media, **self.dumps_kwargs)
+        result = self.dumps(media)
 
-        if compat.PY3 or not isinstance(result, bytes):
+        if not isinstance(result, bytes):
             return result.encode('utf-8')
 
         return result

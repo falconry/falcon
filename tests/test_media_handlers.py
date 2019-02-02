@@ -1,79 +1,81 @@
-import unittest.mock as mock
+from functools import partial
 import io
 import json
 import pytest
 
 from falcon import media
+from falcon.util import compat
+
+import mujson
+import ujson
+
+if compat.PY3:
+    import rapidjson
+    import orjson
 
 
-def test_base_handler_contract():
-    class TestHandler(media.BaseHandler):
-        pass
-
-    with pytest.raises(TypeError) as err:
-        TestHandler()
-
-    assert 'abstract methods deserialize, serialize' in str(err.value)
+def special_dumps(media, **kwargs):
+    return
 
 
+COMMON_SERIALIZATION_PARAM_LIST = [
+    # Default json.dumps, with only ascii
+    (None, {'test': 'value'},  b'{"test":"value"}'),
+    (mujson.dumps, {'test': 'value'}, b'{"test":"value"}'),
+    (ujson.dumps, {'test': 'value'}, b'{"test":"value"}'),
+    (partial(lambda media, **kwargs: json.dumps({'m': media, 'k': kwargs}),
+     ensure_ascii=True),
+     {'test': 'value'},
+     b'{"m": {"test": "value"}, "k": {"ensure_ascii": true}}'),
+]
 
-class TestJSONHandler(object):
+COMMON_DESERIALIZATION_PARAM_LIST = [
+    (None, b'[1, 2]', [1, 2]),
+    (partial(json.loads,
+             object_hook=lambda data: {k: v.upper() for k, v in data.items()}),
+     b'{"key": "value"}',
+     {"key": "VALUE"}),
 
-    @staticmethod
-    def mock_dumps(media, **kwargs):
-        return json.dumps(
-            {
-                'media': media,
-                'kwargs': kwargs,
-            }
-        )
+    (mujson.loads, b'{"test": "value"}', {"test": "value"}),
+    (ujson.loads, b'{"test": "value"}', {"test": "value"}),
+]
 
-    @staticmethod
-    def mock_loads(stream, **kwargs):
-        return {
-            'stream': stream,
-            'kwargs': kwargs,
-        }
+YEN = b'\xc2\xa5'
 
-    @pytest.mark.parametrize(
-        'body, kwargs, expected',
-        [
-            ('test', None, b'{"media": "test", "kwargs": {"ensure_ascii": false}}'),
-            ('test', {'ensure_ascii': True}, b'{"media": "test", "kwargs": {"ensure_ascii": true}}'),
-        ]
-    )
-    def test_custom_serialization(self, body, kwargs, expected):
-        JH = media.JSONHandler(dumps=self.mock_dumps, dumps_kwargs=kwargs)
-        assert JH.serialize(body, 'application/javacript') == expected
+if compat.PY3:
+    SERIALIZATION_PARAM_LIST = COMMON_SERIALIZATION_PARAM_LIST + [
+        # Default json.dumps, with non-ascii characters
+        (None, {'yen': YEN.decode()}, b'{"yen":"' + YEN + b'"}'),
 
-    @pytest.mark.parametrize(
-        'body, kwargs',
-        [
-            (b'[1, 2]', {}),
-            (b'[1, 2]', {'special_param': True}),
-        ]
-    )
-    def test_custom_deserialization(self, body, kwargs):
-        JH = media.JSONHandler(loads=self.mock_loads, loads_kwargs=kwargs)
-        assert JH.deserialize(io.BytesIO(body), 'application/javacript', len(body)) == {
-            'stream': body.decode(),
-            'kwargs': kwargs,
-        }
+        # Extra Python 3 json libraries
+        (rapidjson.dumps, {'test': 'value'}, b'{"test":"value"}'),
+        (orjson.dumps, {'test': 'value'}, b'{"test":"value"}'),
+    ]
+
+    DESERIALIZATION_PARAM_LIST = COMMON_DESERIALIZATION_PARAM_LIST + [
+        (rapidjson.loads, b'{"test": "value"}', {"test": "value"}),
+        (orjson.loads, b'{"test": "value"}', {"test": "value"}),
+    ]
+else:
+    SERIALIZATION_PARAM_LIST = COMMON_SERIALIZATION_PARAM_LIST + [
+        # Default json.dumps, with non-ascii characters
+        (None, {'yen': YEN}, b'{"yen":"' + YEN + '"}'),
+    ]
+    DESERIALIZATION_PARAM_LIST = COMMON_DESERIALIZATION_PARAM_LIST
 
 
-    def test_passing_false_turns_off_kwargs(self):
-        dumps = mock.Mock(wraps=self.mock_dumps)
-        loads = mock.Mock(wraps=self.mock_loads)
-        JH = media.JSONHandler(
-            dumps=dumps,
-            dumps_kwargs=False,
-            loads=loads,
-            loads_kwargs=False,
-        )
+@pytest.mark.parametrize('func, body, expected', SERIALIZATION_PARAM_LIST)
+def test_serialization(func, body, expected):
+    JH = media.JSONHandler(dumps=func)
+    assert JH.serialize(body, b'application/javacript') == expected
 
-        JH.serialize([1, 2], 'application/json')
-        JH.deserialize(io.BytesIO(b'[1, 2]'), 'application/json', 6)
 
-        dumps.assert_called_once_with([1, 2])
-        loads.assert_called_once_with('[1, 2]')
+@pytest.mark.parametrize('func, body, expected', DESERIALIZATION_PARAM_LIST)
+def test_deserialization(func, body, expected):
+    JH = media.JSONHandler(loads=func)
 
+    assert JH.deserialize(
+        io.BytesIO(body),
+        'application/javacript',
+        len(body)
+    ) == expected
