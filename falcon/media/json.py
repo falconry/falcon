@@ -1,10 +1,10 @@
 from __future__ import absolute_import
 
+from functools import partial
+
 from falcon import errors
 from falcon.media import BaseHandler
 from falcon.util import json
-
-from functools import partial
 
 
 class JSONHandler(BaseHandler):
