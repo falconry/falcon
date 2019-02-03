@@ -15,7 +15,6 @@ class JSONHandler(BaseHandler):
 
     Keyword Arguments:
         dumps (func): the function to use when serializing JSON responses.
-
         loads (func): the function to use when deserializing JSON requests.
 
     You can override the JSON library used by changing the ``dumps`` and
@@ -39,11 +38,13 @@ class JSONHandler(BaseHandler):
         api.req_options.media_handlers.update(extra_handlers)
         api.resp_options.media_handlers.update(extra_handlers)
 
-
     By default, ``ensure_ascii`` is passed to the ``json.dumps`` function.
-    If you override the dumps function you might want to include that as a
-    default parameter. A simple way is by using ``functools.partial`` to curry
-    the keyword arguments. This gives you the developer complete control.
+    If you override the ``dumps`` function, you will need to explicitly set
+    ``ensure_ascii`` to ``False`` in order to enable the serialization of
+    Unicode characters to UTF-8. This is easily done by using
+    ``functools.partial`` to curry the keyword arguments. This gives you
+    complete control over the behavior of the ``dumps`` and ``loads``
+    functions.
 
     ::
 
