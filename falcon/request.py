@@ -83,8 +83,8 @@ class Request(object):
             Note:
                 **New in 2.0:** the default `context_type` (see below) was
                 changed from dict to a bare class, and the preferred way to
-                pass request-specific data is setting attributes on the
-                `context` object, for example::
+                pass request-specific data is now to set attributes directly on
+                the `context` object, for example::
 
                     req.context.role = 'trial'
                     req.context.user = 'guest'

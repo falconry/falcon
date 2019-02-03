@@ -116,8 +116,8 @@ class Response(object):
             Note:
                 **New in 2.0:** the default `context_type` (see below) was
                 changed from dict to a bare class, and the preferred way to
-                pass response-specific data is setting attributes on the
-                `context` object, for example::
+                pass response-specific data is now to set attributes directly
+                on the `context` object, for example::
 
                     resp.context.cache_strategy = 'lru'
 
