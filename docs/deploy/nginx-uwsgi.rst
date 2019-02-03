@@ -9,12 +9,12 @@ NGINX is a powerful web server and reverse proxy and uWSGI is a fast and
 highly-configurable WSGI application server. Together, NIGNX and uWSGI create a
 one-two punch of speed and functionality which will suffice for most
 applications. In addition, this stack provides the building blocks for a
-horizontally-scalable and highly-available (HA) production environment. The
-configuration below does not go that far, but it is certainly possible.
+horizontally-scalable and highly-available (HA) production environment and the
+configuration below is just a starting point.
 
 This guide provides instructions for deploying to a Linux environment only.
 However, with a bit of effort you should be able to adapt this configuration to
-other operating systems, such as OpenBSD or Windows.
+other operating systems, such as OpenBSD.
 
 
 Running your Application as a Different User
@@ -71,10 +71,10 @@ Then install your dependencies.
 .. note::
 
   The exact commands for creating a virtual environment might differ based on
-  the Python version you are using and the system you are on. At the end of the day
-  we need a virtualenv in /home/myproject/venv with your project dependencies
-  installed. Use the ``pip`` binary within the virtual environment by ``source
-  venv/bin/activate`` or using the full path.
+  the Python version you are using and the system you are on. At the end of the
+  day the application needs a virtualenv in /home/myproject/venv with the
+  project dependencies installed. Use the ``pip`` binary within the virtual
+  environment by ``source venv/bin/activate`` or using the full path.
 
 
 Okay, that is all for getting your application on the server and setting up the
@@ -115,7 +115,7 @@ uWSGI does that automatically. Starting an independent WSGI server in your
 
 
 Deploying Falcon behind uWSGI
-'''''''''''''''''''''''''''
+'''''''''''''''''''''''''''''
 
 With our ``wsgi.py`` file in place, it is time to configure uWSGI.  To do this,
 we create a ``uwsgi.ini`` file. In general, you shouldn’t commit this file to
@@ -143,12 +143,12 @@ wsgi.py file and listening at ``12.0.0.1:8080``.
   gid = myproject-runner
 
 
-.. note:: Thread vs Processes vs gevent
+.. note:: Thread vs Processes
 
-  There are many questions to consider when deciding when deciding how to manage
-  the processes that actually run your Python code. Are you generally CPU bound
-  or IO bound?  Is your application thread-safe? How many CPU's do you
-  have? What system are you on? Do you need an in-process cache?
+  There are many questions to consider when deciding how to manage the processes
+  that actually run your Python code. Are you generally CPU bound or IO bound?
+  Is your application thread-safe? How many CPU's do you have? What system are
+  you on? Do you need an in-process cache?
 
   The configuration presented here enables both threads and processes. However,
   you will have to experiment and do some research to understand your
@@ -162,14 +162,15 @@ wsgi.py file and listening at ``12.0.0.1:8080``.
   sockets (using a socket file). TCP sockets are easier to setup and generally
   work for simple deployments. If you want to have finer control over what
   process / users/ groups can access the uWSGI application, consider using Unix
-  sockets.
+  sockets. uWSGI can automatically drop privileges with ``chmod-socket`` and
+  switch users with ``chown-socket``.
 
 There are some important items in this configuration like ``uid`` and ``gid``.
 These settings control the OS-level user and group the application will use to
 execute the process. This OS user and group should not have write permissions to
 your source directory.
 
-You can now start uwsgi like this:
+You can now start uWSGI like this:
 
 .. code:: sh
 
@@ -190,7 +191,7 @@ If everything goes well you should see something like this:
 
 .. note:: uWSGI Startup Errors
 
-  Pay close attention to uWSGI startup logs, they can container exceptions and
+  Pay close attention to uWSGI startup logs, they can contain exceptions and
   information from your application or uWSGI to help in debugging.
 
 
