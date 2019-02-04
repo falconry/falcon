@@ -16,7 +16,7 @@ Breaking Changes
   ``False``.
 - ``RequestOptions.auto_parse_qs_csv`` now defaults to ``False`` instead of
   ``True``.
-- `independent_middleware` kwarg on ``falcon.API`` now defaults to ``True``
+- ``independent_middleware`` kwarg on ``falcon.API`` now defaults to ``True``
   instead of ``False``.
 
 Changes to Supported Platforms
