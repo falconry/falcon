@@ -10,16 +10,20 @@ from falcon.util import json
 class JSONHandler(BaseHandler):
     """JSON media handler.
 
-    This handler uses Python's :py:mod:`json` by default, but will
-    use :py:mod:`ujson` if available.
+    This handler uses Python's standard :py:mod:`json` library by default, but
+    can be easily configured to use any of a number of third-party JSON
+    libraries, depending on your needs. For example, you can often
+    realize a significant performance boost under CPython by using an
+    alternative library. Good options in this respect include `orjson`,
+    `python-rapidjson`, and `mujson`.
 
-    Keyword Arguments:
-        dumps (func): the function to use when serializing JSON responses.
-        loads (func): the function to use when deserializing JSON requests.
+    Note:
+        If you are deploying to PyPy, we recommend sticking with the standard
+        library's JSON implementation, since it will be faster in most cases
+        as compared to a third-party library.
 
-    You can override the JSON library used by changing the ``dumps`` and
-    ``loads`` functions. Some good options are orjson, python-rapidjson,
-    and mujson.::
+    Overriding the default JSON implementation is simply a matter of specifying
+    the desired ``dumps`` and ``loads`` functions::
 
         import falcon
         from falcon import media
@@ -42,11 +46,9 @@ class JSONHandler(BaseHandler):
     If you override the ``dumps`` function, you will need to explicitly set
     ``ensure_ascii`` to ``False`` in order to enable the serialization of
     Unicode characters to UTF-8. This is easily done by using
-    ``functools.partial`` to curry the keyword arguments. This gives you
-    complete control over the behavior of the ``dumps`` and ``loads``
-    functions.
-
-    ::
+    ``functools.partial`` to apply the desired keyword argument. In fact, you
+    can use this same technique to customize any option supported by the
+    ``dumps`` and ``loads`` functions::
 
         from functools import partial
         import ujson
@@ -57,6 +59,10 @@ class JSONHandler(BaseHandler):
                 ensure_ascii=False, escape_forward_slashes=True
             ),
         )
+
+    Keyword Arguments:
+        dumps (func): Function to use when serializing JSON responses.
+        loads (func): Function to use when deserializing JSON requests.
     """
 
     def __init__(self, dumps=None, loads=None):
