@@ -16,6 +16,8 @@ Breaking Changes
   instead of ``False``.
 - :attr:`~.RequestOptions.auto_parse_qs_csv` now defaults to ``False``
   instead of ``True``.
+- `independent_middleware` kwarg on :class:`falcon.API` now defaults to 
+  ``True`` instead of ``False``.
 
 Changes to Supported Platforms
 ------------------------------
