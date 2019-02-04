@@ -47,6 +47,11 @@ class HTTPError(Exception):
 
             (See also: :class:`falcon.http_error.NoRepresentation`)
 
+            Note:
+                A custom error serializer
+                (see :meth:`~.API.set_error_serializer`) may choose to set a
+                response body regardless of the value of this property.
+
         title (str): Error title to send to the client.
         description (str): Description of the error to send to the client.
         headers (dict): Extra headers to add to the response.
