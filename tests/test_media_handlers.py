@@ -1,6 +1,7 @@
 from functools import partial
 import io
 import json
+import sys
 
 import mujson
 import pytest
@@ -9,9 +10,11 @@ import ujson
 from falcon import media
 from falcon.util import compat
 
+#
+if sys.version_info >= (3, 5):
+    import orjson
 if compat.PY3:
     import rapidjson
-    import orjson
 
 
 COMMON_SERIALIZATION_PARAM_LIST = [
@@ -38,7 +41,8 @@ COMMON_DESERIALIZATION_PARAM_LIST = [
 
 YEN = b'\xc2\xa5'
 
-if compat.PY3:
+# Support orjson
+if sys.version_info >= (3, 5):
     SERIALIZATION_PARAM_LIST = COMMON_SERIALIZATION_PARAM_LIST + [
         # Default json.dumps, with non-ascii characters
         (None, {'yen': YEN.decode()}, b'{"yen":"' + YEN + b'"}'),
@@ -51,6 +55,18 @@ if compat.PY3:
     DESERIALIZATION_PARAM_LIST = COMMON_DESERIALIZATION_PARAM_LIST + [
         (rapidjson.loads, b'{"test": "value"}', {'test': 'value'}),
         (orjson.loads, b'{"test": "value"}', {'test': 'value'}),
+    ]
+elif compat.PY3:
+    SERIALIZATION_PARAM_LIST = COMMON_SERIALIZATION_PARAM_LIST + [
+        # Default json.dumps, with non-ascii characters
+        (None, {'yen': YEN.decode()}, b'{"yen":"' + YEN + b'"}'),
+
+        # Extra Python 3 json libraries
+        (rapidjson.dumps, {'test': 'value'}, b'{"test":"value"}'),
+    ]
+
+    DESERIALIZATION_PARAM_LIST = COMMON_DESERIALIZATION_PARAM_LIST + [
+        (rapidjson.loads, b'{"test": "value"}', {'test': 'value'}),
     ]
 else:
     SERIALIZATION_PARAM_LIST = COMMON_SERIALIZATION_PARAM_LIST + [
