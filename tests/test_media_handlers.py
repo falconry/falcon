@@ -1,6 +1,7 @@
 from functools import partial
 import io
 import json
+import platform
 import sys
 
 import mujson
@@ -10,9 +11,11 @@ import ujson
 from falcon import media
 from falcon.util import compat
 
-#
-if sys.version_info >= (3, 5):
+orjson = None
+if sys.version_info >= (3, 5) and platform.python_implementation() == 'CPython':
     import orjson
+
+rapidjson = None
 if compat.PY3:
     import rapidjson
 
@@ -41,8 +44,7 @@ COMMON_DESERIALIZATION_PARAM_LIST = [
 
 YEN = b'\xc2\xa5'
 
-# Support orjson
-if sys.version_info >= (3, 5):
+if orjson:
     SERIALIZATION_PARAM_LIST = COMMON_SERIALIZATION_PARAM_LIST + [
         # Default json.dumps, with non-ascii characters
         (None, {'yen': YEN.decode()}, b'{"yen":"' + YEN + b'"}'),
@@ -56,7 +58,7 @@ if sys.version_info >= (3, 5):
         (rapidjson.loads, b'{"test": "value"}', {'test': 'value'}),
         (orjson.loads, b'{"test": "value"}', {'test': 'value'}),
     ]
-elif compat.PY3:
+elif rapidjson:
     SERIALIZATION_PARAM_LIST = COMMON_SERIALIZATION_PARAM_LIST + [
         # Default json.dumps, with non-ascii characters
         (None, {'yen': YEN.decode()}, b'{"yen":"' + YEN + b'"}'),
