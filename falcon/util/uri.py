@@ -171,7 +171,7 @@ if compat.PY2:  # NOQA: C901 - Work around a bug in flake8 McCabe scoring
                         for a in _HEX_DIGITS
                         for b in _HEX_DIGITS)
 
-    def decode(encoded_uri):
+    def decode(encoded_uri, unquote_plus=True):
         """Decodes percent-encoded characters in a URI or query string.
 
         This function models the behavior of `urllib.unquote_plus`, but
@@ -192,7 +192,7 @@ if compat.PY2:  # NOQA: C901 - Work around a bug in flake8 McCabe scoring
 
         # PERF(kgriffs): Don't take the time to instantiate a new
         # string unless we have to.
-        if '+' in decoded_uri:
+        if unquote_plus and '+' in decoded_uri:
             decoded_uri = decoded_uri.replace('+', ' ')
 
         # Short-circuit if we can
@@ -235,7 +235,7 @@ else:
                         for a in _HEX_DIGITS
                         for b in _HEX_DIGITS)
 
-    def decode(encoded_uri):
+    def decode(encoded_uri, unquote_plus=True):
         """Decodes percent-encoded characters in a URI or query string.
 
         This function models the behavior of `urllib.parse.unquote_plus`,
@@ -254,7 +254,7 @@ else:
 
         # PERF(kgriffs): Don't take the time to instantiate a new
         # string unless we have to.
-        if '+' in decoded_uri:
+        if unquote_plus and '+' in decoded_uri:
             decoded_uri = decoded_uri.replace('+', ' ')
 
         # Short-circuit if we can

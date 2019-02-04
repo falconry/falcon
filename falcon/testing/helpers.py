@@ -128,7 +128,7 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1',
 
     # NOTE(kgriffs): wsgiref, gunicorn, and uWSGI all unescape
     # the paths before setting PATH_INFO
-    path = uri.decode(path)
+    path = uri.decode(path, unquote_plus=False)
 
     if compat.PY3:
         # NOTE(kgriffs): The decoded path may contain UTF-8 characters.
