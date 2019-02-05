@@ -51,12 +51,14 @@ class JSONHandler(BaseHandler):
     ``dumps`` and ``loads`` functions::
 
         from functools import partial
-        import ujson
+
+        from falcon import media
+        import rapidjson
 
         json_handler = media.JSONHandler(
             dumps=partial(
-                ujson.dumps,
-                ensure_ascii=False, escape_forward_slashes=True
+                rapidjson.dumps,
+                ensure_ascii=False, sort_keys=True
             ),
         )
 
