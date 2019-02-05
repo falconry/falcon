@@ -72,7 +72,7 @@ elif rapidjson:
 else:
     SERIALIZATION_PARAM_LIST = COMMON_SERIALIZATION_PARAM_LIST + [
         # Default json.dumps, with non-ascii characters
-        (None, {'yen': YEN}, b'{"yen":"' + YEN + '"}'),
+        (None, {'yen': YEN.decode('utf-8')}, b'{"yen":"' + YEN + b'"}'),
     ]
     DESERIALIZATION_PARAM_LIST = COMMON_DESERIALIZATION_PARAM_LIST
 
