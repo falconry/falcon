@@ -9,15 +9,14 @@ import pytest
 import ujson
 
 from falcon import media
-from falcon.util import compat
 
 orjson = None
-if sys.version_info >= (3, 5) and platform.python_implementation() == 'CPython':
-    import orjson
-
 rapidjson = None
-if compat.PY3:
+if sys.version_info >= (3, 5):
     import rapidjson
+
+    if platform.python_implementation() == 'CPython':
+        import orjson
 
 
 COMMON_SERIALIZATION_PARAM_LIST = [

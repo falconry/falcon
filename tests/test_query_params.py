@@ -1,10 +1,6 @@
 from datetime import date, datetime
+import json
 from uuid import UUID
-
-try:
-    import ujson as json
-except ImportError:
-    import json
 
 import pytest
 
