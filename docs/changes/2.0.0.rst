@@ -16,6 +16,12 @@ Breaking Changes
   instead of ``False``.
 - :attr:`~.RequestOptions.auto_parse_qs_csv` now defaults to ``False``
   instead of ``True``.
+- :class:`~.media.JSONHandler` and :class:`~.HTTPError` no longer use
+  `ujson` in lieu of the standard `json` library (when `ujson` is available in
+  the environment). Instead, :class:`~.media.JSONHandler` can now be configured
+  to use arbitrary ``dumps()`` and ``loads()`` functions. If you
+  also need to customize :class:`~.HTTPError` serialization, you can do so via
+  :meth:`~.API.set_error_serializer`.
 
 Changes to Supported Platforms
 ------------------------------
@@ -25,6 +31,10 @@ New & Improved
 
 - Added a new :attr:`~.Response.headers` property to the :class:`~.Response` class.
 - Removed :py:mod:`six` from deps.
+- :class:`~.media.JSONHandler` can now be configured to use arbitrary
+  ``dumps()`` and ``loads()`` functions. This enables support not only for
+  using any of a number of third-party JSON libraries, but also for
+  customizing the keyword arguments used when (de)serializing objects.
 
 Fixed
 -----
