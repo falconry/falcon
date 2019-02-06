@@ -18,6 +18,12 @@ Breaking Changes
   ``True``.
 - ``Request.context_type`` was changed from dict to a subclass of dict.
 - ``Response.context_type`` was changed from dict to a subclass of dict.
+- ``JSONHandler`` and ``HTTPError`` no longer use
+  `ujson` in lieu of the standard `json` library (when `ujson` is available in
+  the environment). Instead, ``JSONHandler`` can now be configured
+  to use arbitrary ``dumps()`` and ``loads()`` functions. If you
+  also need to customize ``HTTPError`` serialization, you can do so via
+  ``API.set_error_serializer()``.
 
 Changes to Supported Platforms
 ------------------------------
@@ -57,6 +63,10 @@ New & Improved
   deprecated, and may be removed in a future release. It is also noteworthy
   that object attributes and dict items are not automagically linked in any
   special way, and setting one does not affect the other.
+- ``JSONHandler`` can now be configured to use arbitrary
+  ``dumps()`` and ``loads()`` functions. This enables support not only for
+  using any of a number of third-party JSON libraries, but also for
+  customizing the keyword arguments used when (de)serializing objects.
 
 Fixed
 -----

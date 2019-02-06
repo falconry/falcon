@@ -24,10 +24,7 @@ directly from the `testing` package::
 
 """
 
-try:
-    from ujson import dumps as json_dumps
-except ImportError:
-    from json import dumps as json_dumps
+from json import dumps as json_dumps
 
 import falcon
 
