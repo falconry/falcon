@@ -28,6 +28,7 @@ the framework's classes, functions, and variables::
 from falcon.version import __version__  # NOQA
 from falcon.constants import *  # NOQA
 from falcon.api import API  # NOQA
+from falcon.api_builder import APIBuilder  # NOQA
 from falcon.status_codes import *  # NOQA
 from falcon.errors import *  # NOQA
 from falcon.redirects import *  # NOQA
