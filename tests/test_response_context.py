@@ -3,11 +3,19 @@ import pytest
 from falcon import Response
 
 
-class TestRequestContext(object):
+class TestResponseContext(object):
 
     def test_default_response_context(self):
         resp = Response()
-        assert isinstance(resp.context, dict)
+        assert type(resp.context).__name__ == 'ResponseContext'
+
+        resp.context.hello = 'World!'
+        assert resp.context.hello == 'World!'
+        assert 'hello' not in resp.context
+
+        resp.context['note'] = 'Default Response.context_type used to be dict.'
+        assert 'note' in resp.context
+        assert resp.context.get('note') == resp.context['note']
 
     def test_custom_response_context(self):
 

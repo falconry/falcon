@@ -16,6 +16,16 @@ Breaking Changes
   instead of ``False``.
 - :attr:`~.RequestOptions.auto_parse_qs_csv` now defaults to ``False``
   instead of ``True``.
+- Request :attr:`~.Request.context_type` was changed from dict to a subclass of
+  dict.
+- Response :attr:`~.Response.context_type` was changed from dict to a subclass
+  of dict.
+- :class:`~.media.JSONHandler` and :class:`~.HTTPError` no longer use
+  `ujson` in lieu of the standard `json` library (when `ujson` is available in
+  the environment). Instead, :class:`~.media.JSONHandler` can now be configured
+  to use arbitrary ``dumps()`` and ``loads()`` functions. If you
+  also need to customize :class:`~.HTTPError` serialization, you can do so via
+  :meth:`~.API.set_error_serializer`.
 
 Changes to Supported Platforms
 ------------------------------
@@ -25,6 +35,47 @@ New & Improved
 
 - Added a new :attr:`~.Response.headers` property to the :class:`~.Response` class.
 - Removed :py:mod:`six` from deps.
+- Request :attr:`~.Request.context_type` now defaults to a bare class allowing
+  to set attributes on the request context object::
+
+    # Before
+    req.context['role'] = 'trial'
+    req.context['user'] = 'guest'
+
+    # Falcon 2.0
+    req.context.role = 'trial'
+    req.context.user = 'guest'
+
+  To ease the migration path, the previous behavior is supported by subclassing
+  dict, however, as of Falcon 2.0, the dict context interface is considered
+  deprecated, and may be removed in a future release. It is also noteworthy
+  that object attributes and dict items are not automagically linked in any
+  special way, and setting one does not affect the other.
+
+  Applications can work around this change by explicitly overriding
+  :attr:`~.Request.context_type` to dict.
+
+- Response :attr:`~.Response.context_type` now defaults to a bare class allowing
+  to set attributes on the response context object::
+
+    # Before
+    resp.context['cache_strategy'] = 'lru'
+
+    # Falcon 2.0
+    resp.context.cache_strategy = 'lru'
+
+  To ease the migration path, the previous behavior is supported by subclassing
+  dict, however, as of Falcon 2.0, the dict context interface is considered
+  deprecated, and may be removed in a future release. It is also noteworthy
+  that object attributes and dict items are not automagically linked in any
+  special way, and setting one does not affect the other.
+
+  Applications can work around this change by explicitly overriding
+  :attr:`~.Response.context_type` to dict.
+- :class:`~.media.JSONHandler` can now be configured to use arbitrary
+  ``dumps()`` and ``loads()`` functions. This enables support not only for
+  using any of a number of third-party JSON libraries, but also for
+  customizing the keyword arguments used when (de)serializing objects.
 
 Fixed
 -----
