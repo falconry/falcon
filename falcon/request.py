@@ -30,8 +30,6 @@ from uuid import UUID  # NOQA: I202
 from wsgiref.validate import InputWrapper
 
 import mimeparse
-import six
-from six.moves import http_cookies
 
 from falcon import DEFAULT_MEDIA_TYPE
 from falcon import errors
@@ -40,13 +38,14 @@ from falcon import util
 from falcon.forwarded import _parse_forwarded_header
 from falcon.forwarded import Forwarded  # NOQA
 from falcon.media import Handlers
+from falcon.util import compat
 from falcon.util import json
 from falcon.util.uri import parse_host, parse_query_string
 
-# NOTE(tbug): In some cases, http_cookies is not a module
+# NOTE(tbug): In some cases, compat.http_cookies is not a module
 # but a dict-like structure. This fixes that issue.
 # See issue https://github.com/falconry/falcon/issues/556
-SimpleCookie = http_cookies.SimpleCookie
+SimpleCookie = compat.http_cookies.SimpleCookie
 
 DEFAULT_ERROR_LOG_FORMAT = (u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
                             u' {1} {2}{3} => ')
@@ -76,15 +75,27 @@ class Request(object):
     Attributes:
         env (dict): Reference to the WSGI environ ``dict`` passed in from the
             server. (See also PEP-3333.)
-        context (dict): Dictionary to hold any data about the request which is
-            specific to your app (e.g. session object). Falcon itself will
-            not interact with this attribute after it has been initialized.
+        context (object): Empty object to hold any data (in its attributes)
+            about the request which is specific to your app (e.g. session
+            object). Falcon itself will not interact with this attribute after
+            it has been initialized.
+
+            Note:
+                **New in 2.0:** the default `context_type` (see below) was
+                changed from dict to a bare class, and the preferred way to
+                pass request-specific data is now to set attributes directly on
+                the `context` object, for example::
+
+                    req.context.role = 'trial'
+                    req.context.user = 'guest'
+
         context_type (class): Class variable that determines the factory or
             type to use for initializing the `context` attribute. By default,
-            the framework will instantiate standard ``dict`` objects. However,
-            you may override this behavior by creating a custom child class of
-            ``falcon.Request``, and then passing that new class to
-            `falcon.API()` by way of the latter's `request_type` parameter.
+            the framework will instantiate bare objects (instances of the bare
+            RequestContext class). However, you may override this behavior by
+            creating a custom child class of ``falcon.Request``, and then
+            passing that new class to `falcon.API()` by way of the latter's
+            `request_type` parameter.
 
             Note:
                 When overriding `context_type` with a factory function (as
@@ -182,7 +193,13 @@ class Request(object):
 
             Note:
                 `req.path` may be set to a new value by a `process_request()`
-                middleware method in order to influence routing.
+                middleware method in order to influence routing. If the
+                original request path was URL encoded, it will be decoded
+                before being returned by this attribute. If this attribute is to
+                be used by the app for any upstream requests, any non URL-safe
+                characters in the path must be URL encoded back before
+                making the request.
+
         query_string (str): Query string portion of the request URI, without
             the preceding '?' character.
         uri_template (str): The template for the route that was matched for
@@ -407,7 +424,7 @@ class Request(object):
     )
 
     # Child classes may override this
-    context_type = dict
+    context_type = type('RequestContext', (dict,), {})
 
     _wsgi_input_type_known = False
     _always_wrap_wsgi_input = False
@@ -426,7 +443,7 @@ class Request(object):
         # empty string, so normalize it in that case.
         path = env['PATH_INFO'] or '/'
 
-        if six.PY3:
+        if compat.PY3:
             # PEP 3333 specifies that PATH_INFO variable are always
             # "bytes tunneled as latin-1" and must be encoded back
             path = path.encode('latin1').decode('utf-8', 'replace')
@@ -656,7 +673,7 @@ class Request(object):
         except ValueError:
             href = 'http://goo.gl/zZ6Ey'
             href_text = 'HTTP/1.1 Range Requests'
-            msg = ('It must be a range formatted according to RFC 7233.')
+            msg = 'It must be a range formatted according to RFC 7233.'
             raise errors.HTTPInvalidHeader(msg, 'Range', href=href,
                                            href_text=href_text)
 
@@ -853,7 +870,7 @@ class Request(object):
             for cookie_part in cookie_header.split('; '):
                 try:
                     parser.load(cookie_part)
-                except http_cookies.CookieError:
+                except compat.http_cookies.CookieError:
                     pass
             cookies = {}
             for morsel in parser.values():
@@ -1158,8 +1175,8 @@ class Request(object):
 
         raise errors.HTTPMissingParam(name)
 
-    def get_param_as_int(self, name, required=False, min=None,
-                         max=None, store=None, default=None):
+    def get_param_as_int(self, name, required=False, min_value=None,
+                         max_value=None, store=None, default=None):
         """Return the value of a query string parameter as an int.
 
         Args:
@@ -1170,12 +1187,12 @@ class Request(object):
                 ``HTTPBadRequest`` instead of returning ``None`` when the
                 parameter is not found or is not an integer (default
                 ``False``).
-            min (int): Set to the minimum value allowed for this
-                param. If the param is found and it is less than min, an
+            min_value (int): Set to the minimum value allowed for this
+                param. If the param is found and it is less than min_value, an
                 ``HTTPError`` is raised.
-            max (int): Set to the maximum value allowed for this
+            max_value (int): Set to the maximum value allowed for this
                 param. If the param is found and its value is greater than
-                max, an ``HTTPError`` is raised.
+                max_value, an ``HTTPError`` is raised.
             store (dict): A ``dict``-like object in which to place
                 the value of the param, but only if the param is found
                 (default ``None``).
@@ -1192,7 +1209,7 @@ class Request(object):
                 it was required to be there, or it was found but could not
                 be converted to an ``int``. Also raised if the param's value
                 falls outside the given interval, i.e., the value must be in
-                the interval: min <= value <= max to avoid triggering an error.
+                the interval: min_value <= value <= max_value to avoid triggering an error.
 
         """
 
@@ -1211,12 +1228,12 @@ class Request(object):
                 msg = 'The value must be an integer.'
                 raise errors.HTTPInvalidParam(msg, name)
 
-            if min is not None and val < min:
-                msg = 'The value must be at least ' + str(min)
+            if min_value is not None and val < min_value:
+                msg = 'The value must be at least ' + str(min_value)
                 raise errors.HTTPInvalidParam(msg, name)
 
-            if max is not None and max < val:
-                msg = 'The value may not exceed ' + str(max)
+            if max_value is not None and max_value < val:
+                msg = 'The value may not exceed ' + str(max_value)
                 raise errors.HTTPInvalidParam(msg, name)
 
             if store is not None:
@@ -1229,8 +1246,8 @@ class Request(object):
 
         raise errors.HTTPMissingParam(name)
 
-    def get_param_as_float(self, name, required=False, min=None,
-                           max=None, store=None, default=None):
+    def get_param_as_float(self, name, required=False, min_value=None,
+                           max_value=None, store=None, default=None):
         """Return the value of a query string parameter as an float.
 
         Args:
@@ -1241,12 +1258,12 @@ class Request(object):
                 ``HTTPBadRequest`` instead of returning ``None`` when the
                 parameter is not found or is not an float (default
                 ``False``).
-            min (float): Set to the minimum value allowed for this
-                param. If the param is found and it is less than min, an
+            min_value (float): Set to the minimum value allowed for this
+                param. If the param is found and it is less than min_value, an
                 ``HTTPError`` is raised.
-            max (float): Set to the maximum value allowed for this
+            max_value (float): Set to the maximum value allowed for this
                 param. If the param is found and its value is greater than
-                max, an ``HTTPError`` is raised.
+                max_value, an ``HTTPError`` is raised.
             store (dict): A ``dict``-like object in which to place
                 the value of the param, but only if the param is found
                 (default ``None``).
@@ -1263,7 +1280,7 @@ class Request(object):
                 it was required to be there, or it was found but could not
                 be converted to an ``float``. Also raised if the param's value
                 falls outside the given interval, i.e., the value must be in
-                the interval: min <= value <= max to avoid triggering an error.
+                the interval: min_value <= value <= max_value to avoid triggering an error.
 
         """
 
@@ -1282,12 +1299,12 @@ class Request(object):
                 msg = 'The value must be a float.'
                 raise errors.HTTPInvalidParam(msg, name)
 
-            if min is not None and val < min:
-                msg = 'The value must be at least ' + str(min)
+            if min_value is not None and val < min_value:
+                msg = 'The value must be at least ' + str(min_value)
                 raise errors.HTTPInvalidParam(msg, name)
 
-            if max is not None and max < val:
-                msg = 'The value may not exceed ' + str(max)
+            if max_value is not None and max_value < val:
+                msg = 'The value may not exceed ' + str(max_value)
                 raise errors.HTTPInvalidParam(msg, name)
 
             if store is not None:
@@ -1686,7 +1703,7 @@ class Request(object):
             format(now(), self.method, self.path, query_string_formatted)
         )
 
-        if six.PY3:
+        if compat.PY3:
             self._wsgierrors.write(log_line + message + '\n')
         else:
             if isinstance(message, unicode):

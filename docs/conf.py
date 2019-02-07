@@ -161,6 +161,7 @@ html_theme_options = {
     'extra_nav_links': OrderedDict([
       ('Falcon Home', 'https://falconframework.org/'),
       ('Falcon Wiki', 'https://github.com/falconry/falcon/wiki'),
+      ('GitHub Project', 'https://github.com/falconry/falcon'),
       ('Get Help', '/community/help.html'),
       ('Support Falcon', 'https://falconframework.org/#sectionSupportFalconDevelopment'),
     ]),

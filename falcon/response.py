@@ -16,13 +16,6 @@
 
 import mimetypes
 
-from six import PY2
-from six import string_types as STRING_TYPES
-
-# NOTE(tbug): In some cases, http_cookies is not a module
-# but a dict-like structure. This fixes that issue.
-# See issue https://github.com/falconry/falcon/issues/556
-from six.moves import http_cookies  # NOQA: I202
 
 from falcon import DEFAULT_MEDIA_TYPE
 from falcon.media import Handlers
@@ -34,13 +27,13 @@ from falcon.response_helpers import (
     header_property,
     is_ascii_encodable,
 )
-from falcon.util import dt_to_http, TimezoneGMT
+from falcon.util import compat, dt_to_http, TimezoneGMT
 from falcon.util.uri import encode as uri_encode
 from falcon.util.uri import encode_value as uri_encode_value
 
 
-SimpleCookie = http_cookies.SimpleCookie
-CookieError = http_cookies.CookieError
+SimpleCookie = compat.http_cookies.SimpleCookie
+CookieError = compat.http_cookies.CookieError
 
 GMT_TIMEZONE = TimezoneGMT()
 
@@ -115,15 +108,26 @@ class Response(object):
 
         stream_len (int): Deprecated alias for :py:attr:`content_length`.
 
-        context (dict): Dictionary to hold any data about the response which is
-            specific to your app. Falcon itself will not interact with this
-            attribute after it has been initialized.
+        context (object): Empty object to hold any data (in its attributes)
+            about the response which is specific to your app (e.g. session
+            object). Falcon itself will not interact with this attribute after
+            it has been initialized.
+
+            Note:
+                **New in 2.0:** the default `context_type` (see below) was
+                changed from dict to a bare class, and the preferred way to
+                pass response-specific data is now to set attributes directly
+                on the `context` object, for example::
+
+                    resp.context.cache_strategy = 'lru'
+
         context_type (class): Class variable that determines the factory or
             type to use for initializing the `context` attribute. By default,
-            the framework will instantiate standard ``dict`` objects. However,
-            you may override this behavior by creating a custom child class of
-            ``falcon.Response``, and then passing that new class to
-            `falcon.API()` by way of the latter's `response_type` parameter.
+            the framework will instantiate bare objects (instances of the bare
+            ResponseContext class). However, you may override this behavior by
+            creating a custom child class of ``falcon.Response``, and then
+            passing that new class to `falcon.API()` by way of the latter's
+            `response_type` parameter.
 
             Note:
                 When overriding `context_type` with a factory function (as
@@ -153,7 +157,7 @@ class Response(object):
     )
 
     # Child classes may override this
-    context_type = dict
+    context_type = type('ResponseContext', (dict,), {})
 
     def __init__(self, options=None):
         self.status = '200 OK'
@@ -661,7 +665,7 @@ class Response(object):
             value += '; type="' + type_hint + '"'
 
         if hreflang is not None:
-            if isinstance(hreflang, STRING_TYPES):
+            if isinstance(hreflang, compat.string_types):
                 value += '; hreflang=' + hreflang
             else:
                 value += '; '
@@ -863,7 +867,7 @@ class Response(object):
         if set_content_type:
             self.set_header('content-type', media_type)
 
-    def _wsgi_headers(self, media_type=None, py2=PY2):
+    def _wsgi_headers(self, media_type=None, py2=compat.PY2):
         """Convert headers into the format expected by WSGI servers.
 
         Args:
@@ -873,7 +877,9 @@ class Response(object):
         """
 
         headers = self._headers
-        self._set_media_type(media_type)
+        # PERF(vytas): uglier inline version of Response._set_media_type
+        if media_type is not None and 'content-type' not in headers:
+            headers['content-type'] = media_type
 
         if py2:
             # PERF(kgriffs): Don't create an extra list object if

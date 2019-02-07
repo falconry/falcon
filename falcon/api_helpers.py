@@ -16,8 +16,6 @@
 
 from functools import wraps
 
-import six
-
 from falcon import util
 
 
@@ -195,7 +193,7 @@ def wrap_old_error_serializer(old_fn):
     return new_fn
 
 
-class CloseableStreamIterator(six.Iterator):
+class CloseableStreamIterator(object):
     """Iterator that wraps a file-like stream with support for close().
 
     This iterator can be used to read from an underlying file-like stream
@@ -213,19 +211,25 @@ class CloseableStreamIterator(six.Iterator):
     """
 
     def __init__(self, stream, block_size):
-        self.stream = stream
-        self.block_size = block_size
+        self._stream = stream
+        self._block_size = block_size
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        data = self.stream.read(self.block_size)
+        data = self._stream.read(self._block_size)
+
         if data == b'':
             raise StopIteration
         else:
             return data
 
+    def next(self):
+        return self.__next__()
+
     def close(self):
-        if hasattr(self.stream, 'close') and callable(self.stream.close):
-            self.stream.close()
+        try:
+            self._stream.close()
+        except (AttributeError, TypeError):
+            pass

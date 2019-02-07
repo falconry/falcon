@@ -14,7 +14,7 @@ VERSION = imp.load_source('version', path.join('.', 'falcon', 'version.py'))
 VERSION = VERSION.__version__
 
 # NOTE(kgriffs): python-mimeparse is better-maintained fork of mimeparse
-REQUIRES = ['six>=1.4.0', 'python-mimeparse>=1.5.2']
+REQUIRES = ['python-mimeparse>=1.5.2']
 
 try:
     sys.pypy_version_info
@@ -117,7 +117,7 @@ setup(
     keywords='wsgi web api framework rest http cloud',
     author='Kurt Griffiths',
     author_email='mail@kgriffs.com',
-    url='http://falconframework.org',
+    url='https://falconframework.org',
     license='Apache 2.0',
     packages=find_packages(exclude=['tests']),
     include_package_data=True,

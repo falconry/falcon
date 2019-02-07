@@ -5,12 +5,11 @@ import functools
 import random
 
 import pytest
-import six
 
 import falcon
 from falcon import testing
 from falcon import util
-from falcon.util import json, uri
+from falcon.util import compat, json, uri
 
 
 def _arbitrary_uris(count, length):
@@ -204,7 +203,7 @@ class TestFalconUtils(object):
 
     def test_prop_uri_encode_models_stdlib_quote(self):
         equiv_quote = functools.partial(
-            six.moves.urllib.parse.quote, safe=uri._ALL_ALLOWED
+            compat.quote, safe=uri._ALL_ALLOWED
         )
         for case in self.uris:
             expect = equiv_quote(case)
@@ -213,7 +212,7 @@ class TestFalconUtils(object):
 
     def test_prop_uri_encode_value_models_stdlib_quote_safe_tilde(self):
         equiv_quote = functools.partial(
-            six.moves.urllib.parse.quote, safe='~'
+            compat.quote, safe='~'
         )
         for case in self.uris:
             expect = equiv_quote(case)
@@ -221,7 +220,7 @@ class TestFalconUtils(object):
             assert expect == actual
 
     def test_prop_uri_decode_models_stdlib_unquote_plus(self):
-        stdlib_unquote = six.moves.urllib.parse.unquote_plus
+        stdlib_unquote = compat.unquote_plus
         for case in self.uris:
             case = uri.encode_value(case)
 
@@ -381,7 +380,7 @@ class TestFalconTestingUtils(object):
         with pytest.raises(ValueError):
             testing.create_environ(query_string='?foo=bar')
 
-    @pytest.mark.skipif(six.PY3, reason='Test does not apply to Py3K')
+    @pytest.mark.skipif(compat.PY3, reason='Test does not apply to Py3K')
     def test_unicode_path_in_create_environ(self):
         env = testing.create_environ(u'/fancy/unícode')
         assert env['PATH_INFO'] == '/fancy/un\xc3\xadcode'
@@ -572,6 +571,74 @@ class TestFalconTestingUtils(object):
         assert resource.captured_req.media == document
         assert resource.captured_req.content_type in json_types
         assert resource.captured_req.get_header('X-Falcon-Type') == 'peregrine'
+
+    @pytest.mark.parametrize('remote_addr', [
+        None,
+        '127.0.0.1',
+        '8.8.8.8',
+        '104.24.101.85',
+        '2606:4700:30::6818:6455',
+    ])
+    def test_simulate_remote_addr(self, remote_addr):
+        class ShowMyIPResource(object):
+            def on_get(self, req, resp):
+                resp.body = req.remote_addr
+                resp.content_type = falcon.MEDIA_TEXT
+
+        app = falcon.API()
+        app.add_route('/', ShowMyIPResource())
+
+        client = testing.TestClient(app)
+        resp = client.simulate_get('/', remote_addr=remote_addr)
+        assert resp.status_code == 200
+
+        if remote_addr is None:
+            assert resp.text == '127.0.0.1'
+        else:
+            assert resp.text == remote_addr
+
+    def test_simulate_hostname(self):
+        app = falcon.API()
+        resource = testing.SimpleTestResource()
+        app.add_route('/', resource)
+
+        client = testing.TestClient(app)
+        client.simulate_get('/', protocol='https',
+                            host='falcon.readthedocs.io')
+        assert resource.captured_req.uri == 'https://falcon.readthedocs.io/'
+
+    @pytest.mark.parametrize('extras,expected_headers', [
+        (
+            {},
+            (('user-agent', 'curl/7.24.0 (x86_64-apple-darwin12.0)'),),
+        ),
+        (
+            {'HTTP_USER_AGENT': 'URL/Emacs', 'HTTP_X_FALCON': 'peregrine'},
+            (('user-agent', 'URL/Emacs'), ('x-falcon', 'peregrine')),
+        ),
+    ])
+    def test_simulate_with_environ_extras(self, extras, expected_headers):
+        app = falcon.API()
+        resource = testing.SimpleTestResource()
+        app.add_route('/', resource)
+
+        client = testing.TestClient(app)
+        client.simulate_get('/', extras=extras)
+
+        for header, value in expected_headers:
+            assert resource.captured_req.get_header(header) == value
+
+    def test_override_method_with_extras(self):
+        app = falcon.API()
+        app.add_route('/', testing.SimpleTestResource(body='test'))
+        client = testing.TestClient(app)
+
+        with pytest.raises(ValueError):
+            client.simulate_get('/', extras={'REQUEST_METHOD': 'PATCH'})
+
+        resp = client.simulate_get('/', extras={'REQUEST_METHOD': 'GET'})
+        assert resp.status_code == 200
+        assert resp.text == 'test'
 
 
 class TestNoApiClass(testing.TestCase):

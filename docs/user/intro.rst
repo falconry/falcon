@@ -8,7 +8,7 @@ Introduction
 
     *- Antoine de Saint-Exupéry*
 
-`Falcon <http://falconframework.org/index.html>`__ is a reliable,
+`Falcon <https://falconframework.org>`__ is a reliable,
 high-performance Python web framework for building
 large-scale app backends and microservices. It encourages the REST
 architectural style, and tries to do as little as possible while
@@ -37,8 +37,8 @@ breaking changes, and when we do they are fully documented and only
 introduced (in the spirit of
 `SemVer <http://semver.org/>`__) with a major version
 increment. The code is rigorously tested with numerous inputs and we
-require 100% coverage at all times. Six and mimeparse are the only
-third-party dependencies.
+require 100% coverage at all times. python-mimeparse is the only
+third-party dependency.
 
 **Flexible.** Falcon leaves a lot of decisions and implementation
 details to you, the API developer. This gives you a lot of freedom to

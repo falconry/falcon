@@ -1,8 +1,7 @@
-import six
-
 from falcon import API
 from falcon.cmd import print_routes
 from falcon.testing import redirected
+from falcon.util import compat
 
 
 class DummyResource(object):
@@ -19,7 +18,7 @@ _api.add_route('/test', DummyResource())
 def test_traverse_with_verbose():
     """Ensure traverse() finds the proper routes and outputs verbose info."""
 
-    output = six.moves.StringIO()
+    output = compat.StringIO()
     with redirected(stdout=output):
         print_routes.traverse(_api._router._roots, verbose=True)
 
@@ -40,7 +39,7 @@ def test_traverse_with_verbose():
 
 def test_traverse():
     """Ensure traverse() finds the proper routes."""
-    output = six.moves.StringIO()
+    output = compat.StringIO()
     with redirected(stdout=output):
         print_routes.traverse(_api._router._roots, verbose=False)
 

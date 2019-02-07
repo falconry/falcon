@@ -22,10 +22,10 @@ from falcon.bench.queues import stats
 
 class RequestIDComponent(object):
     def process_request(self, req, resp):
-        req.context['request_id'] = '<generate ID>'
+        req.context.request_id = '<generate ID>'
 
     def process_response(self, req, resp, resource):
-        resp.set_header('X-Request-ID', req.context['request_id'])
+        resp.set_header('X-Request-ID', req.context.request_id)
 
 
 class CannedResponseComponent(object):
