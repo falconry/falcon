@@ -1,9 +1,10 @@
 import six
 
 from falcon import API
+from falcon.api_builder import APIBuilder
 from falcon.cmd import print_routes
 from falcon.testing import redirected
-from falcon.api_builder import APIBuilder
+
 
 class DummyResource(object):
 
@@ -48,7 +49,7 @@ def test_traverse():
     assert '-> /test' == route
 
 
-_api_from_builder = APIBuilder().add_get_route("/test", DummyResource.on_get).build()
+_api_from_builder = APIBuilder().add_get_route('/test', DummyResource.on_get).build()
 
 
 def test_traverse_with_verbose_on_builder_api():
