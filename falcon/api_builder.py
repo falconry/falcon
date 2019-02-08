@@ -81,7 +81,6 @@ class APIStaticRoute:
         return self._fallback_filename
 
 
-# TODO: Write a test using a lambda
 # TODO: Write a test using a free function
 # TODO: Write a test using a resource with named functions
 # TODO: Write a test using a resource with multiple functions for same method but different uri
@@ -98,8 +97,8 @@ class APIBuilder:
             naming convention (of on_get, on_put, etc), which allows for more explicit
             function names like (get_user, create_user, update_password, etc).
         4) Allows for non hard-rest resource style mappings:
-            4.1) can just have a route execute a top level function, or even a lambda,
-                it does not HAVE to be a method on a resource
+            4.1) can just have a route execute a top level function, it does not HAVE to
+                be a method on a resource
             4.2) a resource can have multiple functions, it does not have to care about
                 uris or method types, so a single resource could have multiple uri/resource
                 pairs direct to it (as long as they are unique). For example we could have
@@ -214,14 +213,14 @@ class APIBuilder:
             middleware=self._middlewares,
         )
 
-        merged_kwargs = {}
         for uri, uri_method_routes in self._routes.items():
 
+            merged_resource_kwargs = {}
             resource = self._compose_new_resource(uri_method_routes)
             for http_method, api_route_function in uri_method_routes.items():
-                merged_kwargs.update(api_route_function.kwargs)
+                merged_resource_kwargs.update(api_route_function.kwargs)
 
-            api.add_route(uri, resource, **merged_kwargs)
+            api.add_route(uri, resource, **merged_resource_kwargs)
 
         for error_func in self._error_handling_functions:
             api.add_error_handler(error_func.exception, error_func.func)
@@ -239,10 +238,7 @@ class APIBuilder:
 
         resource = BlankResource()
 
-        for http_method in HTTP_METHODS + WEBDAV_METHODS:
-
-            if http_method not in resource_method_routes:
-                continue
+        for http_method in resource_method_routes:
 
             # TODO: Document this -> the suffix stuff makes a lot less sense with this builder
             # TODO:     because we can now used named functions.  We add it here to maintain
@@ -252,7 +248,6 @@ class APIBuilder:
                 suffix = '_' + resource_method_routes[http_method].kwargs['suffix']
 
             falcon_expected_method_name = 'on_' + http_method.lower() + suffix
-
             setattr(resource,
                     falcon_expected_method_name,
                     APIBuilder._generate_wrapped_partial_for_resource(

@@ -397,7 +397,7 @@ def test_after_hooks_on_suffixed_resource(seed, uri, expected):
         .add_put_route('/seed', resource.on_put) \
         .add_get_route('/once', resource.on_get_once, suffix='once') \
         .add_get_route('/twice', resource.on_get_twice, suffix='twice') \
-        .add_get_route('/thrice', resource.on_get_thrice, suffix='trice') \
+        .add_get_route('/thrice', resource.on_get_thrice, suffix='thrice') \
         .build()
 
     game_client = testing.TestClient(app)
