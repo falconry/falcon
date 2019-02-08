@@ -237,7 +237,15 @@ class APIBuilder:
             if http_method not in resource_method_routes:
                 continue
 
-            falcon_expected_method_name = 'on_' + http_method.lower()
+            # TODO: Document this -> the suffix stuff makes a lot less sense with this builder
+            # TODO:     because we can now used named functions.  We add it here to maintain
+            # TODO:     exact equality between the two usages (API vs APIBuilder)
+            suffix = ''
+            if 'suffix' in resource_method_routes[http_method].kwargs:
+                suffix = '_' + resource_method_routes[http_method].kwargs['suffix']
+
+            falcon_expected_method_name = 'on_' + http_method.lower() + suffix
+
             setattr(resource,
                     falcon_expected_method_name,
                     APIBuilder._generate_wrapped_partial_for_resource(
