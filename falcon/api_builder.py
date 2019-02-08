@@ -81,6 +81,13 @@ class APIStaticRoute:
         return self._fallback_filename
 
 
+# TODO: Write a test using a lambda
+# TODO: Write a test using a free function
+# TODO: Write a test using a resource with named functions
+# TODO: Write a test using a resource with multiple functions for same method but different uri
+# TODO: Write a test for each BuilderException
+# TODO:
+
 class APIBuilder:
     """
     Improved for several reasons:
@@ -173,13 +180,13 @@ class APIBuilder:
 
     def add_method_route(self, http_method, uri, route_func, **kwargs):
 
-        self._validate_http_method_type_or_raise(http_method)
+        self._raise_on_invalid_http_method_types(http_method)
 
         if uri not in self._routes:
             self._routes[uri] = {}
 
-        self._validate_unique_route_for_uri_and_method_or_raise(uri, http_method)
-        self._validate_non_overwriting_kwargs_for_uri_or_raise(uri)
+        self._raise_on_adding_non_unique_uri_method_pair(uri, http_method)
+        self._raise_on_overwrite_attempt_for_kwargs_on_uri(uri)
 
         self._routes[uri][http_method] = APIRouteFunction(route_func, **kwargs)
         return self
@@ -258,13 +265,14 @@ class APIBuilder:
             functools.partial(router_function.function),
             router_function.function)
 
-    def _validate_http_method_type_or_raise(self, http_method):
+    @staticmethod
+    def _raise_on_invalid_http_method_types(http_method):
         if http_method not in HTTP_METHODS + WEBDAV_METHODS:
             raise APIBuildException(
                 'HTTP METHOD must be one of {methods} of which {method}'
                 'is not.'.format(methods=HTTP_METHODS + WEBDAV_METHODS, method=http_method))
 
-    def _validate_non_overwriting_kwargs_for_uri_or_raise(self, uri, **kwargs):
+    def _raise_on_overwrite_attempt_for_kwargs_on_uri(self, uri, **kwargs):
         for resource_method in self._routes[uri]:
             existing_kwargs = self._routes[uri][resource_method].kwargs
             for existing_key, existing_value in existing_kwargs.items():
@@ -274,7 +282,7 @@ class APIBuilder:
                         'mapped to {uri}. You can only set a single key value per '
                         'resource.'.format(key=existing_key, uri=uri))
 
-    def _validate_unique_route_for_uri_and_method_or_raise(self, uri, http_method):
+    def _raise_on_adding_non_unique_uri_method_pair(self, uri, http_method):
         if http_method in self._routes[uri]:
             raise APIBuildException(
                 'A route already exists for {method} on uri: {uri}. Only set 1 route per uri and '
