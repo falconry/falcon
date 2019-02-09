@@ -242,7 +242,12 @@ def simulate_request(app, method='GET', path='/', query_string=None,
         app (callable): The WSGI application to call
         method (str): An HTTP method to use in the request
             (default: 'GET')
-        path (str): The URL path to request (default: '/')
+        path (str): The URL path to request (default: '/').
+
+            Note:
+                The path may contain a query string, however, neither
+                `query_string` nor `params` can be specified in this case.
+
         protocol: The protocol to use for the URL scheme
             (default: 'http')
         params (dict): A dictionary of query string parameters,
@@ -290,19 +295,16 @@ def simulate_request(app, method='GET', path='/', query_string=None,
     if not path.startswith('/'):
         raise ValueError("path must start with '/'")
 
-    if query_string and query_string.startswith('?'):
-        raise ValueError("query_string should not start with '?'")
-
     if '?' in path:
-        # NOTE(kgriffs): We could allow this, but then we'd need
-        #   to define semantics regarding whether the path takes
-        #   precedence over the query_string. Also, it would make
-        #   tests less consistent, since there would be "more than
-        #   one...way to do it."
-        raise ValueError(
-            'path may not contain a query string. Please use the '
-            'query_string parameter instead.'
-        )
+        if query_string or params:
+            raise ValueError(
+                'path may not contain a query string in combination with '
+                'the query_string or params parameters. Please use only one '
+                'way of specifying the query string.'
+            )
+        path, query_string = path.split('?', 1)
+    elif query_string and query_string.startswith('?'):
+        raise ValueError("query_string should not start with '?'")
 
     extras = extras or {}
     if 'REQUEST_METHOD' in extras and extras['REQUEST_METHOD'] != method:
@@ -361,7 +363,11 @@ def simulate_get(app, path, **kwargs):
 
     Args:
         app (callable): The WSGI application to call
-        path (str): The URL path to request
+        path (str): The URL path to request.
+
+            Note:
+                The path may contain a query string, however, neither
+                `query_string` nor `params` can be specified in this case.
 
     Keyword Args:
         params (dict): A dictionary of query string parameters,
@@ -406,7 +412,11 @@ def simulate_head(app, path, **kwargs):
 
     Args:
         app (callable): The WSGI application to call
-        path (str): The URL path to request
+        path (str): The URL path to request.
+
+            Note:
+                The path may contain a query string, however, neither
+                `query_string` nor `params` can be specified in this case.
 
     Keyword Args:
         params (dict): A dictionary of query string parameters,
