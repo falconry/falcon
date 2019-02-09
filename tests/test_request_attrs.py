@@ -5,6 +5,7 @@ import pytest
 
 import falcon
 from falcon.request import Request, RequestOptions
+from falcon.request_helpers import make_etag
 import falcon.testing as testing
 import falcon.uri
 from falcon.util import compat
@@ -784,17 +785,31 @@ class TestRequestAttributes(object):
         assert req.app == ''
 
     @pytest.mark.parametrize('etag,expected', [
-        ('W/"67ab43"', ['67ab43']),
-        ('w/"67ab43"', ['67ab43']),
-        ('W/"67ab43", "54ed21"', ['67ab43', '54ed21']),
-        ('  W/"67ab43" , "54ed21"', ['67ab43', '54ed21']),
-        ('W/"67ab43"  ,  "54ed21"', ['67ab43', '54ed21']),
-        ('W/"67ab43" ,"54ed21"', ['67ab43', '54ed21']),
-        ('W/"67ab43", unquoted, "54ed21"', ['67ab43', '54ed21']),
-        ('*', ['*']),
-        (' * ', ['*']),
-        ('empty', []),
         (None, []),
+        ('', []),
+        ('*', ['*']),
+        (
+            'W/"67ab43"',
+            [make_etag('67ab43', is_weak=True)]
+        ),
+        (
+            'w/"67ab43"',
+            [make_etag('67ab43', is_weak=True)]
+        ),
+        (
+            '"67ab43"',
+            [make_etag('67ab43', is_weak=True)]
+        ),
+        (
+            '67ab43',
+            [make_etag("67ab43", is_weak=False)]
+        ),
+        (
+            'W/"67ab43", "54ed21", 67ab43',
+            [make_etag('67ab43', is_weak=True),
+             make_etag('54ed21', is_weak=False),
+             make_etag('67ab43', is_weak=False)]
+        ),
     ])
     def test_etag(self, etag, expected):
         self._test_header_expected_value('If-Match', etag, 'if_match', expected)

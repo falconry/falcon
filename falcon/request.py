@@ -360,8 +360,16 @@ class Request(object):
             Range header, or ``None`` if the header is missing
         if_match (list): A list containing all the etags in the If-Match
             header.
+
+            This property is determined by the value of ``HTTP_IF_MATCH``
+            in the WSGI environment dict.
+
         if_none_match (list): A list containing all the etags in the
             If-None-Match header.
+
+            This property is determined by the value of ``HTTP_IF_NONE_MATCH``
+            in the WSGI environment dict.
+
         if_modified_since (datetime): Value of the If-Modified-Since header,
             or ``None`` if the header is missing.
         if_unmodified_since (datetime): Value of the If-Unmodified-Since

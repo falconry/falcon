@@ -17,8 +17,10 @@
 import io
 import re
 
+from falcon.util.structures import ETag
 
-_ETAG_PATTERN = re.compile(r'([Ww]/)?"([^"]*)"(?:\s*,\s*|$)')
+
+_ETAG_PATTERN = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
 
 
 def header_property(wsgi_name):
@@ -42,27 +44,61 @@ def header_property(wsgi_name):
     return property(fget)
 
 
+def make_etag(value, is_weak=False):
+    """Creates and returns a ETag object."""
+    etag = ETag(value)
+    etag.is_weak = is_weak
+    return etag
+
+
 def parse_etags(etag_str):
     """
-    Parse a string of ETags given in an If-Match or If-None-Match header as
+    Parse a string of ETags given in the If-Match or If-None-Match header as
     defined by RFC 7232.
 
     Args:
-        etag_str (str): A string of ASCII characters placed between double quotes
-            and may be prefixed by ``W/`` to indicate that the weak comparison
-            algorithm should be used.
+        etag_str (str): An ASCII header value to parse ETags from. ETag values
+            within may be prefixed by ``W/`` to indicate that the weak comparison
+            function should be used.
 
     Returns:
         A list of unquoted ETags or ``['*']`` if all ETags should be matched.
+
     """
+    etags = []
+
+    if etag_str is None:
+        return etags
+
+    etag_str = etag_str.strip()
     if not etag_str:
-        return []
+        return etags
 
-    if etag_str.strip() == '*':
-        return ['*']
+    if etag_str == '*':
+        etags.append(etag_str)
+        return etags
 
-    matches = re.findall(_ETAG_PATTERN, etag_str.strip())
-    return [etag for _, etag in matches if etag]
+    if ',' not in etag_str:
+        value = etag_str
+        is_weak = False
+        if value.startswith(('W/', 'w/')):
+            is_weak = True
+            value = value[2:]
+        if value[:1] == value[-1:] == '"':
+            value = value[1:-1]
+        etags.append(make_etag(value, is_weak))
+    else:
+        pos = 0
+        end = len(etag_str)
+        while pos < end:
+            match = _ETAG_PATTERN.match(etag_str, pos)
+            if match is None:
+                break
+            is_weak, quoted, raw = match.groups()
+            etags.append(make_etag(quoted or raw, bool(is_weak)))
+            pos = match.end()
+
+    return etags
 
 
 class BoundedStream(io.IOBase):
