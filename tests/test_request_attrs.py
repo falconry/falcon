@@ -802,7 +802,7 @@ class TestRequestAttributes(object):
         ),
         (
             '67ab43',
-            [make_etag("67ab43", is_weak=False)]
+            [make_etag('67ab43', is_weak=False)]
         ),
         (
             'W/"67ab43", "54ed21", 67ab43',
