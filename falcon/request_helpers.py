@@ -95,7 +95,9 @@ def parse_etags(etag_str):
             if match is None:
                 break
             is_weak, quoted, raw = match.groups()
-            etags.append(make_etag(quoted or raw, bool(is_weak)))
+            value = quoted or raw
+            if value:
+                etags.append(make_etag(value, bool(is_weak)))
             pos = match.end()
 
     return etags

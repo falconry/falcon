@@ -9,7 +9,7 @@ import pytest
 import falcon
 from falcon import testing
 from falcon import util
-from falcon.util import compat, json, uri
+from falcon.util import compat, json, uri, structures
 
 
 def _arbitrary_uris(count, length):
@@ -317,6 +317,12 @@ class TestFalconUtils(object):
         with pytest.raises(ValueError):
             falcon.get_http_status('-404.3')
         assert falcon.get_http_status(123, 'Go Away') == '123 Go Away'
+
+    def test_etag_to_header(self):
+        etag = structures.ETag('67ab43')
+        assert etag.to_header() == '"67ab43"'
+        etag.is_weak = True
+        assert etag.to_header() == 'W/"67ab43"'
 
 
 @pytest.mark.parametrize(

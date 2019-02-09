@@ -787,6 +787,7 @@ class TestRequestAttributes(object):
     @pytest.mark.parametrize('etag,expected', [
         (None, []),
         ('', []),
+        (',', []),
         ('*', ['*']),
         (
             'W/"67ab43"',
@@ -805,10 +806,10 @@ class TestRequestAttributes(object):
             [make_etag('67ab43', is_weak=False)]
         ),
         (
-            'W/"67ab43", "54ed21", 67ab43',
+            'W/"67ab43", "54ed21", 42we85',
             [make_etag('67ab43', is_weak=True),
              make_etag('54ed21', is_weak=False),
-             make_etag('67ab43', is_weak=False)]
+             make_etag('42we85', is_weak=False)]
         ),
     ])
     def test_etag(self, etag, expected):
