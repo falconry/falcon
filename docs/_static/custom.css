@@ -55,7 +55,9 @@ code.xref.docutils.literal {
 }
 
 div.viewcode-block:target {
-    background: inherit;
+    background:#dadada;
+    border-radius: 5px;
+    padding: 5px;
 }
 
 a:hover, div.sphinxsidebar a:hover, a.reference:hover, a.reference.internal:hover code {
