@@ -4,7 +4,7 @@ import falcon
 
 try:
     import cython
-except Exception:
+except ImportError:
     cython = None
 
 
