@@ -785,7 +785,6 @@ class TestRequestAttributes(object):
         assert req.app == ''
 
     @pytest.mark.parametrize('etag,expected', [
-        (None, []),
         ('', []),
         (',', []),
         ('*', ['*']),
@@ -815,6 +814,10 @@ class TestRequestAttributes(object):
     def test_etag(self, etag, expected):
         self._test_header_expected_value('If-Match', etag, 'if_match', expected)
         self._test_header_expected_value('If-None-Match', etag, 'if_none_match', expected)
+
+    def test_etag_is_missing(self):
+        assert self.req.if_match == []
+        assert self.req.if_none_match == []
 
     # -------------------------------------------------------------------------
     # Helpers

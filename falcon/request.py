@@ -364,6 +364,11 @@ class Request(object):
             This property is determined by the value of ``HTTP_IF_MATCH``
             in the WSGI environment dict.
 
+            Note:
+                This property includes strong and weakness entity-tags and that
+                means that two entity-tags are equivalent if both are not weak
+                and their opaque-tags match character-by-character.
+
         if_none_match (list): A list containing all the etags in the
             If-None-Match header.
 

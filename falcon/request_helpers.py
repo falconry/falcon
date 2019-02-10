@@ -92,8 +92,6 @@ def parse_etags(etag_str):
         end = len(etag_str)
         while pos < end:
             match = _ETAG_PATTERN.match(etag_str, pos)
-            if match is None:
-                break
             is_weak, quoted, raw = match.groups()
             value = quoted or raw
             if value:
