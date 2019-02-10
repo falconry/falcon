@@ -55,7 +55,8 @@ code.xref.docutils.literal {
 }
 
 div.viewcode-block:target {
-    background:#dadada;
+    background: inherit;
+    background-color: #dadada;
     border-radius: 5px;
     padding: 5px;
 }
