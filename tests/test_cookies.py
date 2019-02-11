@@ -58,7 +58,6 @@ class CookieResourceMaxAgeFloatString:
             'foostring', 'bar', max_age='15', secure=False, http_only=False)
 
 
-@pytest.fixture()
 def client():
     app = falcon.API()
     app.add_route('/', CookieResource())
@@ -67,11 +66,32 @@ def client():
     return testing.TestClient(app)
 
 
+def client_from_builder():
+    cookie_resource = CookieResource()
+    cookie_resource_max_age = CookieResourceMaxAgeFloatString()
+
+    app = falcon.APIBuilder() \
+        .add_get_route('/', cookie_resource.on_get) \
+        .add_head_route('/', cookie_resource.on_head) \
+        .add_post_route('/', cookie_resource.on_post) \
+        .add_put_route('/', cookie_resource.on_put) \
+        .add_get_route('/test-convert', cookie_resource_max_age.on_get) \
+        .build()
+
+    return testing.TestClient(app)
+
 # =====================================================================
 # Response
 # =====================================================================
 
 
+@pytest.mark.parametrize(
+    'client',
+    [
+        client(),
+        client_from_builder(),
+    ]
+)
 def test_response_base_case(client):
     result = client.simulate_get('/')
 
@@ -92,6 +112,13 @@ def test_response_base_case(client):
     assert cookie.secure
 
 
+@pytest.mark.parametrize(
+    'client',
+    [
+        client(),
+        client_from_builder(),
+    ]
+)
 def test_response_disable_secure_globally(client):
     client.app.resp_options.secure_cookies_by_default = False
     result = client.simulate_get('/')
@@ -104,6 +131,13 @@ def test_response_disable_secure_globally(client):
     assert cookie.secure
 
 
+@pytest.mark.parametrize(
+    'client',
+    [
+        client(),
+        client_from_builder(),
+    ]
+)
 def test_response_complex_case(client):
     result = client.simulate_head('/')
 
@@ -144,6 +178,13 @@ def test_response_complex_case(client):
     assert cookie.secure
 
 
+@pytest.mark.parametrize(
+    'client',
+    [
+        client(),
+        client_from_builder(),
+    ]
+)
 def test_cookie_expires_naive(client):
     result = client.simulate_post('/')
 
@@ -157,6 +198,13 @@ def test_cookie_expires_naive(client):
     assert not cookie.secure
 
 
+@pytest.mark.parametrize(
+    'client',
+    [
+        client(),
+        client_from_builder(),
+    ]
+)
 def test_cookie_expires_aware(client):
     result = client.simulate_put('/')
 
@@ -170,7 +218,7 @@ def test_cookie_expires_aware(client):
     assert not cookie.secure
 
 
-def test_cookies_setable(client):
+def test_cookies_setable():
     resp = falcon.Response()
 
     assert resp._cookies is None
@@ -186,6 +234,13 @@ def test_cookies_setable(client):
 
 
 @pytest.mark.parametrize('cookie_name', ('foofloat', 'foostring'))
+@pytest.mark.parametrize(
+    'client',
+    [
+        client(),
+        client_from_builder(),
+    ]
+)
 def test_cookie_max_age_float_and_string(client, cookie_name):
     # NOTE(tbug): Falcon implicitly converts max-age values to integers,
     # to ensure RFC 6265-compliance of the attribute value.
@@ -202,7 +257,7 @@ def test_cookie_max_age_float_and_string(client, cookie_name):
     assert not cookie.secure
 
 
-def test_response_unset_cookie(client):
+def test_response_unset_cookie():
     resp = falcon.Response()
     resp.unset_cookie('bad')
     resp.set_cookie('bad', 'cookie', max_age=300)
@@ -224,7 +279,7 @@ def test_response_unset_cookie(client):
     assert expiration < datetime.utcnow()
 
 
-def test_cookie_timezone(client):
+def test_cookie_timezone():
     tz = TimezoneGMT()
     assert tz.tzname(timedelta(0)) == 'GMT'
 
