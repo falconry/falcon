@@ -28,6 +28,8 @@ Breaking Changes
 Changes to Supported Platforms
 ------------------------------
 
+- CPython 3.7 is now fully supported.
+
 New & Improved
 --------------
 
