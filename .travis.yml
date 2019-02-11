@@ -1,5 +1,8 @@
 language: python
+
+dist: xenial
 sudo: false
+
 install: pip install tox coveralls
 cache:
     directories:
