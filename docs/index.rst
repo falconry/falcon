@@ -17,16 +17,23 @@ clean design that embraces HTTP and the REST architectural style.
 
 .. code:: python
 
-    class CatalogItem(object):
+    class QuoteResource:
 
-        # ...
+        def on_get(self, req, resp):
+            """Handles GET requests"""
+            quote = {
+                'quote': (
+                    "I've always been more interested in "
+                    "the future than in the past."
+                ),
+                'author': 'Grace Hopper'
+            }
 
-        @falcon.before(hooks.to_oid)
-        def on_get(self, id):
-            return self._collection.find_one(id)
+            resp.media = quote
 
-    app = falcon.API(after=[hooks.serialize])
-    app.add_route('/items/{id}', CatalogItem())
+
+    api = falcon.API()
+    api.add_route('/quote', QuoteResource())
 
 What People are Saying
 ----------------------
