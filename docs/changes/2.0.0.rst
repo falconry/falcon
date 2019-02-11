@@ -27,7 +27,7 @@ Breaking Changes
   instead of ``False``.
 - :attr:`~.RequestOptions.auto_parse_qs_csv` now defaults to ``False``
   instead of ``True``.
-- ``independent_middleware`` kwarg on :class:`falcon.API` now defaults to 
+- ``independent_middleware`` kwarg on :class:`falcon.API` now defaults to
   ``True`` instead of ``False``.
 - The deprecated ``stream_len`` property was removed from the
   :class:`~.Response` class. Please use :meth:`~.Response.set_stream` or
@@ -62,6 +62,10 @@ New & Improved
 
 - Added a new :attr:`~.Response.headers` property to the :class:`~.Response` class.
 - Removed the :py:mod:`six` and :py:mod:`python-mimeparse` dependencies.
+- Added a new :attr:`~.Response.complete` property to the :class:`~.Response`
+  class. This can be used to short-circuit request processing when the response
+  has been pre-constructed.
+- Removed :py:mod:`six` from deps.
 - Request :attr:`~.Request.context_type` now defaults to a bare class allowing
   to set attributes on the request context object::
 
