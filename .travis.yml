@@ -45,7 +45,7 @@ matrix:
           env: TOXENV=py37_smoke_cython
         - python: 2.7
           env: TOXENV=docs
-        - python: 3.7
+        - python: 3.6
           env: TOXENV=hug
 
 script: tox
