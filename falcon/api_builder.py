@@ -185,7 +185,7 @@ class APIBuilder:
             self._routes[uri] = {}
 
         self._raise_on_adding_non_unique_uri_method_pair(uri, http_method)
-        self._raise_on_overwrite_attempt_for_kwargs_on_uri(uri)
+        self._raise_on_overwrite_attempt_for_kwargs_on_uri(uri, **kwargs)
 
         self._routes[uri][http_method] = APIRouteFunction(route_func, **kwargs)
         return self
@@ -267,11 +267,10 @@ class APIBuilder:
                 'HTTP METHOD must be one of {methods} of which {method}'
                 'is not.'.format(methods=HTTP_METHODS + WEBDAV_METHODS, method=http_method))
 
-    def _raise_on_overwrite_attempt_for_kwargs_on_uri(self, uri, **kwargs):
-        for resource_method in self._routes[uri]:
-            existing_kwargs = self._routes[uri][resource_method].kwargs
-            for existing_key, existing_value in existing_kwargs.items():
-                if existing_key in kwargs and existing_value != kwargs[existing_key]:
+    def _raise_on_overwrite_attempt_for_kwargs_on_uri(self, uri, **new_kwargs):
+        for http_method, route_func in self._routes[uri].items():
+            for existing_key, existing_value in route_func.kwargs.items():
+                if existing_key in new_kwargs and existing_value != new_kwargs[existing_key]:
                     raise APIBuildException(
                         'A kwarg by name {key} already has a set value on the resource '
                         'mapped to {uri}. You can only set a single key value per '
