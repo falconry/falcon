@@ -81,12 +81,6 @@ class APIStaticRoute:
         return self._fallback_filename
 
 
-# TODO: Write a test using a free function
-# TODO: Write a test using a resource with named functions
-# TODO: Write a test using a resource with multiple functions for same method but different uri
-# TODO: Write a test for each BuilderException
-# TODO:
-
 class APIBuilder:
     """
     Improved for several reasons:
