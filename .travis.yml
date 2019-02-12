@@ -1,5 +1,8 @@
 language: python
+
+dist: xenial
 sudo: false
+
 install: pip install tox coveralls
 cache:
     directories:
@@ -7,9 +10,9 @@ cache:
 
 matrix:
     include:
-        - python: pypy
+        - python: pypy2.7-6.0
           env: TOXENV=pypy
-        - python: pypy3
+        - python: pypy3.5-6.0
           env: TOXENV=pypy3
         - python: 2.7
           env: TOXENV=pep8
