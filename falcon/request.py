@@ -368,7 +368,7 @@ class Request(object):
                 This property includes strong and weak entity-tags. Per
                 `RFC 7239`_, two entity-tags are equivalent if both are not
                 weak and their opaque-tags match character-by-character.
-            
+
             (See also: RFC 7239, Section 3.1)
 
         if_none_match (list): Value of the If-None-Match header, as a parsed

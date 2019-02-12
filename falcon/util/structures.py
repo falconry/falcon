@@ -118,7 +118,7 @@ class ETag(str):
 
     def to_header(self):
         """Convert the ETag into a HTTP header string.
-        
+
         Returns:
             str: An opaque quoted string, possibly prefixed by a weakness
             indicator ``W/``.
