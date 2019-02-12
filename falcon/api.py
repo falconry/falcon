@@ -18,8 +18,6 @@
 
 import re
 
-import six
-
 from falcon import api_helpers as helpers, DEFAULT_MEDIA_TYPE, routing
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
@@ -27,7 +25,23 @@ from falcon.request import Request, RequestOptions
 import falcon.responders
 from falcon.response import Response, ResponseOptions
 import falcon.status_codes as status
+from falcon.util import compat
 from falcon.util.misc import get_argnames
+
+
+# PERF(vytas): on Python 2.7+, Python 3.5+ (including cythonized modules),
+# reference via module global is faster than going via self
+_BODILESS_STATUS_CODES = frozenset([
+    status.HTTP_100,
+    status.HTTP_101,
+    status.HTTP_204,
+    status.HTTP_304,
+])
+
+_TYPELESS_STATUS_CODES = frozenset([
+    status.HTTP_204,
+    status.HTTP_304,
+])
 
 
 class API(object):
@@ -50,6 +64,12 @@ class API(object):
                 class ExampleComponent(object):
                     def process_request(self, req, resp):
                         \"\"\"Process the request before routing it.
+
+                        Note:
+                            Because Falcon routes each request based on
+                            req.path, a request can be effectively re-routed
+                            by setting that attribute to a new value from
+                            within process_request().
 
                         Args:
                             req: Request object that will eventually be
@@ -130,15 +150,6 @@ class API(object):
 
             (See also: :ref:`CompiledRouterOptions <compiled_router_options>`)
     """
-
-    # PERF(kgriffs): Reference via self since that is faster than
-    # module global...
-    _BODILESS_STATUS_CODES = {
-        status.HTTP_100,
-        status.HTTP_101,
-        status.HTTP_204,
-        status.HTTP_304
-    }
 
     _STREAM_BLOCK_SIZE = 8 * 1024  # 8 KiB
 
@@ -276,10 +287,23 @@ class API(object):
         # NOTE(kgriffs): While not specified in the spec that the status
         # must be of type str (not unicode on Py27), some WSGI servers
         # can complain when it is not.
-        resp_status = str(resp.status) if six.PY2 else resp.status
+        resp_status = str(resp.status) if compat.PY2 else resp.status
+        media_type = self._media_type
 
-        if req.method == 'HEAD' or resp_status in self._BODILESS_STATUS_CODES:
+        if req.method == 'HEAD' or resp_status in _BODILESS_STATUS_CODES:
             body = []
+
+            # PERF(vytas): move check for the less common and much faster path
+            # of resp_status being in {204, 304} here; NB: this builds on the
+            # assumption _TYPELESS_STATUS_CODES <= _BODILESS_STATUS_CODES.
+
+            # NOTE(kgriffs): Based on wsgiref.validate's interpretation of
+            # RFC 2616, as commented in that module's source code. The
+            # presence of the Content-Length header is not similarly
+            # enforced.
+            if resp_status in _TYPELESS_STATUS_CODES:
+                media_type = None
+
         else:
             body, length = self._get_body(resp, env.get('wsgi.file_wrapper'))
 
@@ -287,15 +311,6 @@ class API(object):
             #   to reduce overhead since this is a hot/critical code path.
             if 'content-length' not in resp._headers and length is not None:
                 resp._headers['content-length'] = str(length)
-
-        # NOTE(kgriffs): Based on wsgiref.validate's interpretation of
-        # RFC 2616, as commented in that module's source code. The
-        # presence of the Content-Length header is not similarly
-        # enforced.
-        if resp_status in (status.HTTP_204, status.HTTP_304):
-            media_type = None
-        else:
-            media_type = self._media_type
 
         headers = resp._wsgi_headers(media_type)
 
@@ -363,7 +378,7 @@ class API(object):
 
         # NOTE(richardolsson): Doing the validation here means it doesn't have
         # to be duplicated in every future router implementation.
-        if not isinstance(uri_template, six.string_types):
+        if not isinstance(uri_template, compat.string_types):
             raise TypeError('uri_template is not a string')
 
         if not uri_template.startswith('/'):

@@ -19,6 +19,14 @@ Breaking Changes
 - The deprecated ``stream_len`` property was removed from the ``Response``
   class. Please use ``Response.set_stream()`` or ``Response.content_length``
   instead.
+- ``Request.context_type`` was changed from dict to a subclass of dict.
+- ``Response.context_type`` was changed from dict to a subclass of dict.
+- ``JSONHandler`` and ``HTTPError`` no longer use
+  `ujson` in lieu of the standard `json` library (when `ujson` is available in
+  the environment). Instead, ``JSONHandler`` can now be configured
+  to use arbitrary ``dumps()`` and ``loads()`` functions. If you
+  also need to customize ``HTTPError`` serialization, you can do so via
+  ``API.set_error_serializer()``.
 
 Changes to Supported Platforms
 ------------------------------
@@ -27,6 +35,42 @@ New & Improved
 --------------
 
 - Added a new ``headers`` property to the ``Response`` class.
+- Removed the ``six`` and ``python-mimeparse`` dependencies.
+- ``Request.context_type`` now defaults to a bare class allowing to set
+  attributes on the request context object::
+
+    # Before
+    req.context['role'] = 'trial'
+    req.context['user'] = 'guest'
+
+    # Falcon 2.0
+    req.context.role = 'trial'
+    req.context.user = 'guest'
+
+  To ease the migration path, the previous behavior is supported by subclassing
+  dict, however, as of Falcon 2.0, the dict context interface is considered
+  deprecated, and may be removed in a future release. It is also noteworthy
+  that object attributes and dict items are not automagically linked in any
+  special way, and setting one does not affect the other.
+- ``Response.context_type`` now defaults to a bare class allowing
+  to set attributes on the response context object::
+
+    # Before
+    resp.context['cache_strategy'] = 'lru'
+
+    # Falcon 2.0
+    resp.context.cache_strategy = 'lru'
+
+  To ease the migration path, the previous behavior is supported by subclassing
+  dict, however, as of Falcon 2.0, the dict context interface is considered
+  deprecated, and may be removed in a future release. It is also noteworthy
+  that object attributes and dict items are not automagically linked in any
+  special way, and setting one does not affect the other.
+- ``JSONHandler`` can now be configured to use arbitrary
+  ``dumps()`` and ``loads()`` functions. This enables support not only for
+  using any of a number of third-party JSON libraries, but also for
+  customizing the keyword arguments used when (de)serializing objects.
+-
 
 Fixed
 -----

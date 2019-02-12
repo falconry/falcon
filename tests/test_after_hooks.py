@@ -1,11 +1,7 @@
 import functools
+import json
 
 import pytest
-
-try:
-    import ujson as json
-except ImportError:
-    import json
 
 import falcon
 from falcon import testing

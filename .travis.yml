@@ -1,5 +1,8 @@
 language: python
+
+dist: xenial
 sudo: false
+
 install: pip install tox coveralls
 cache:
     directories:
@@ -7,9 +10,9 @@ cache:
 
 matrix:
     include:
-        - python: pypy
+        - python: pypy2.7-6.0
           env: TOXENV=pypy
-        - python: pypy3
+        - python: pypy3.5-6.0
           env: TOXENV=pypy3
         - python: 2.7
           env: TOXENV=pep8
@@ -32,8 +35,6 @@ matrix:
         - python: 3.6
           env: TOXENV=py36
         - python: 3.6
-          env: TOXENV=py36_ujson
-        - python: 3.6
           env: TOXENV=py36_cython
         - python: 3.6
           env: TOXENV=py36_smoke
@@ -41,11 +42,12 @@ matrix:
           env: TOXENV=py36_smoke_cython
         - python: 2.7
           env: TOXENV=docs
-
         # TODO(kgriffs): Re-enable once we have mitigated the stream_len
         #   breaking change in hug.
         # - python: 3.6
         #   env: TOXENV=hug
+        - python: 3.6
+          env: TOXENV=check_vendored
 
 script: tox
 

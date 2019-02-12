@@ -29,10 +29,6 @@ except AttributeError:
 from uuid import UUID  # NOQA: I202
 from wsgiref.validate import InputWrapper
 
-import mimeparse
-import six
-from six.moves import http_cookies
-
 from falcon import DEFAULT_MEDIA_TYPE
 from falcon import errors
 from falcon import request_helpers as helpers
@@ -40,13 +36,15 @@ from falcon import util
 from falcon.forwarded import _parse_forwarded_header
 from falcon.forwarded import Forwarded  # NOQA
 from falcon.media import Handlers
+from falcon.util import compat
 from falcon.util import json
 from falcon.util.uri import parse_host, parse_query_string
+from falcon.vendor import mimeparse
 
-# NOTE(tbug): In some cases, http_cookies is not a module
+# NOTE(tbug): In some cases, compat.http_cookies is not a module
 # but a dict-like structure. This fixes that issue.
 # See issue https://github.com/falconry/falcon/issues/556
-SimpleCookie = http_cookies.SimpleCookie
+SimpleCookie = compat.http_cookies.SimpleCookie
 
 DEFAULT_ERROR_LOG_FORMAT = (u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
                             u' {1} {2}{3} => ')
@@ -76,15 +74,27 @@ class Request(object):
     Attributes:
         env (dict): Reference to the WSGI environ ``dict`` passed in from the
             server. (See also PEP-3333.)
-        context (dict): Dictionary to hold any data about the request which is
-            specific to your app (e.g. session object). Falcon itself will
-            not interact with this attribute after it has been initialized.
+        context (object): Empty object to hold any data (in its attributes)
+            about the request which is specific to your app (e.g. session
+            object). Falcon itself will not interact with this attribute after
+            it has been initialized.
+
+            Note:
+                **New in 2.0:** the default `context_type` (see below) was
+                changed from dict to a bare class, and the preferred way to
+                pass request-specific data is now to set attributes directly on
+                the `context` object, for example::
+
+                    req.context.role = 'trial'
+                    req.context.user = 'guest'
+
         context_type (class): Class variable that determines the factory or
             type to use for initializing the `context` attribute. By default,
-            the framework will instantiate standard ``dict`` objects. However,
-            you may override this behavior by creating a custom child class of
-            ``falcon.Request``, and then passing that new class to
-            `falcon.API()` by way of the latter's `request_type` parameter.
+            the framework will instantiate bare objects (instances of the bare
+            RequestContext class). However, you may override this behavior by
+            creating a custom child class of ``falcon.Request``, and then
+            passing that new class to `falcon.API()` by way of the latter's
+            `request_type` parameter.
 
             Note:
                 When overriding `context_type` with a factory function (as
@@ -413,7 +423,7 @@ class Request(object):
     )
 
     # Child classes may override this
-    context_type = dict
+    context_type = type('RequestContext', (dict,), {})
 
     _wsgi_input_type_known = False
     _always_wrap_wsgi_input = False
@@ -432,7 +442,7 @@ class Request(object):
         # empty string, so normalize it in that case.
         path = env['PATH_INFO'] or '/'
 
-        if six.PY3:
+        if compat.PY3:
             # PEP 3333 specifies that PATH_INFO variable are always
             # "bytes tunneled as latin-1" and must be encoded back
             path = path.encode('latin1').decode('utf-8', 'replace')
@@ -859,7 +869,7 @@ class Request(object):
             for cookie_part in cookie_header.split('; '):
                 try:
                     parser.load(cookie_part)
-                except http_cookies.CookieError:
+                except compat.http_cookies.CookieError:
                     pass
             cookies = {}
             for morsel in parser.values():
@@ -1692,7 +1702,7 @@ class Request(object):
             format(now(), self.method, self.path, query_string_formatted)
         )
 
-        if six.PY3:
+        if compat.PY3:
             self._wsgierrors.write(log_line + message + '\n')
         else:
             if isinstance(message, unicode):

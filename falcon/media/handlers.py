@@ -1,8 +1,7 @@
-import mimeparse
-from six.moves import UserDict
-
 from falcon import errors
 from falcon.media import JSONHandler
+from falcon.util.compat import UserDict
+from falcon.vendor import mimeparse
 
 
 class Handlers(UserDict):

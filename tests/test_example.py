@@ -1,7 +1,4 @@
-try:
-    import ujson as json
-except ImportError:
-    import json
+import json
 import logging
 import uuid
 from wsgiref import simple_server
@@ -112,7 +109,7 @@ class JSONTranslator(object):
                                         'A valid JSON document is required.')
 
         try:
-            req.context['doc'] = json.loads(body.decode('utf-8'))
+            req.context.doc = json.loads(body.decode('utf-8'))
 
         except (ValueError, UnicodeDecodeError):
             raise falcon.HTTPError(falcon.HTTP_753,
@@ -122,10 +119,10 @@ class JSONTranslator(object):
                                    'UTF-8.')
 
     def process_response(self, req, resp, resource):
-        if 'result' not in req.context:
+        if not hasattr(req.context, 'result'):
             return
 
-        resp.body = json.dumps(req.context['result'])
+        resp.body = json.dumps(req.context.result)
 
 
 def max_body(limit):
@@ -170,7 +167,7 @@ class ThingsResource(object):
         # create a custom class that inherits from falcon.Request. This
         # class could, for example, have an additional 'doc' property
         # that would serialize to JSON under the covers.
-        req.context['result'] = result
+        req.context.result = result
 
         resp.set_header('Powered-By', 'Falcon')
         resp.status = falcon.HTTP_200
@@ -178,8 +175,8 @@ class ThingsResource(object):
     @falcon.before(max_body(64 * 1024))
     def on_post(self, req, resp, user_id):
         try:
-            doc = req.context['doc']
-        except KeyError:
+            doc = req.context.doc
+        except AttributeError:
             raise falcon.HTTPBadRequest(
                 'Missing thing',
                 'A thing must be submitted in the request body.')

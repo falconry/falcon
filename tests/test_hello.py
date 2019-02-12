@@ -1,10 +1,10 @@
 import io
 
 import pytest
-import six
 
 import falcon
-import falcon.testing as testing
+from falcon import testing
+from falcon.util import compat
 
 
 @pytest.fixture
@@ -30,7 +30,7 @@ class FileWrapper(object):
 class HelloResource(object):
     sample_status = '200 OK'
     sample_unicode = (u'Hello World! \x80' +
-                      six.text_type(testing.rand_string(0, 0)))
+                      compat.text_type(testing.rand_string(0, 0)))
 
     sample_utf8 = sample_unicode.encode('utf-8')
 
@@ -92,7 +92,7 @@ class NonClosingBytesIO(io.BytesIO):
 class ClosingFilelikeHelloResource(object):
     sample_status = '200 OK'
     sample_unicode = (u'Hello World! \x80' +
-                      six.text_type(testing.rand_string(0, 0)))
+                      compat.text_type(testing.rand_string(0, 0)))
 
     sample_utf8 = sample_unicode.encode('utf-8')
 

@@ -24,7 +24,7 @@ in the `falcon` module, and so must be explicitly imported::
 
 """
 
-import six
+from falcon.util import compat
 
 # NOTE(kgriffs): See also RFC 3986
 _UNRESERVED = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -51,7 +51,7 @@ def _create_char_encoder(allowed_chars):
 
         # NOTE(kgriffs): PY2 returns str from uri.encode, while
         # PY3 returns a byte array.
-        key = chr(code_point) if six.PY2 else code_point
+        key = chr(code_point) if compat.PY2 else code_point
         lookup[key] = encoded_char
 
     return lookup.__getitem__
@@ -94,7 +94,7 @@ def _create_str_encoder(is_value):
             # before passing it in here.
 
         # Convert to a byte array if it is not one already
-        if isinstance(uri, six.text_type):
+        if isinstance(uri, compat.text_type):
             uri = uri.encode('utf-8')
 
         # Use our map to encode each char and join the result into a new uri
@@ -122,7 +122,7 @@ Note:
 
 Args:
     uri (str): URI or part of a URI to encode. If this is a wide
-        string (i.e., ``six.text_type``), it will be encoded to
+        string (i.e., ``compat.text_type``), it will be encoded to
         a UTF-8 byte array and any multibyte sequences will
         be percent-encoded as-is.
 
@@ -154,7 +154,7 @@ Args:
     uri (str): URI fragment to encode. It is assumed not to cross delimiter
         boundaries, and so any reserved URI delimiter characters
         included in it will be escaped. If `value` is a wide
-        string (i.e., ``six.text_type``), it will be encoded to
+        string (i.e., ``compat.text_type``), it will be encoded to
         a UTF-8 byte array and any multibyte sequences will
         be percent-encoded as-is.
 
@@ -164,7 +164,7 @@ Returns:
 
 """
 
-if six.PY2:  # NOQA: C901 - Work around a bug in flake8 McCabe scoring
+if compat.PY2:  # NOQA: C901 - Work around a bug in flake8 McCabe scoring
 
     # This map construction is based on urllib
     _HEX_TO_BYTE = dict((a + b, (chr(int(a + b, 16)), int(a + b, 16)))

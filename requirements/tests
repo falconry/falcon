@@ -2,9 +2,13 @@ coverage>=4.1
 pytest
 pyyaml
 requests
-six
 testtools
 
 # Handler Specific
 msgpack
+mujson
+ujson
 
+# Python 3 Only Handlers
+python-rapidjson; python_version >= '3'
+orjson; python_version >= '3' and python_version != '3.4' and platform_python_implementation != 'PyPy'
