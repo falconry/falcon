@@ -117,7 +117,13 @@ class ETag(str):
     is_weak = False
 
     def to_header(self):
-        """Convert the etag into a HTTP header string."""
+        """Convert the ETag into a HTTP header string.
+        
+        Returns:
+            str: An opaque quoted string, possibly prefixed by a weakness
+            indicator ``W/``.
+
+        """
         if self.is_weak:
             return 'W/"%s"' % self
         return '"%s"' % self

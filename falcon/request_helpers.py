@@ -17,7 +17,7 @@
 import io
 import re
 
-from falcon.util.structures import ETag
+from falcon.util import ETag
 
 
 _ETAG_PATTERN = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
@@ -45,7 +45,16 @@ def header_property(wsgi_name):
 
 
 def make_etag(value, is_weak=False):
-    """Creates and returns a ETag object."""
+    """Creates and returns a ETag object.
+
+    Args:
+        value (str): Unquated entity tag value
+        is_weak (bool): The weakness indicator
+
+    Returns:
+        A ``str``-like Etag instance with weakness indicator.
+
+    """
     etag = ETag(value)
     etag.is_weak = is_weak
     return etag
@@ -65,11 +74,10 @@ def parse_etags(etag_str):
         A list of unquoted ETags or ``['*']`` if all ETags should be matched.
 
     """
-    etags = []
-
     if etag_str is None:
-        return etags
+        return None
 
+    etags = []
     etag_str = etag_str.strip()
     if not etag_str:
         return etags

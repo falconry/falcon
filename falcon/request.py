@@ -358,22 +358,33 @@ class Request(object):
             accessed.)
         range_unit (str): Unit of the range parsed from the value of the
             Range header, or ``None`` if the header is missing
-        if_match (list): A list containing all the etags in the If-Match
-            header.
+        if_match (list): Value of the If-Match header, as a parsed list of
+            :class:`falcon.ETag` objects or ``None`` if the header is missing.
 
             This property is determined by the value of ``HTTP_IF_MATCH``
             in the WSGI environment dict.
 
             Note:
-                This property includes strong and weakness entity-tags and that
-                means that two entity-tags are equivalent if both are not weak
-                and their opaque-tags match character-by-character.
+                This property includes strong and weak entity-tags. Per
+                `RFC 7239`_, two entity-tags are equivalent if both are not
+                weak and their opaque-tags match character-by-character.
+            
+            (See also: RFC 7239, Section 3.1)
 
-        if_none_match (list): A list containing all the etags in the
-            If-None-Match header.
+        if_none_match (list): Value of the If-None-Match header, as a parsed
+            list of :class:`falcon.ETag` objects or ``None`` if the header is
+            missing.
 
             This property is determined by the value of ``HTTP_IF_NONE_MATCH``
             in the WSGI environment dict.
+
+            Note:
+                This property includes strong and weak entity-tags. Per
+                `RFC 7239`_, two entity-tags are equivalent if their
+                opaque-tags match character-by-character, regardless of
+                either or both being tagged as weak.
+
+            (See also: RFC 7239, Section 3.2)
 
         if_modified_since (datetime): Value of the If-Modified-Since header,
             or ``None`` if the header is missing.

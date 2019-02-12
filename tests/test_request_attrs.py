@@ -816,8 +816,8 @@ class TestRequestAttributes(object):
         self._test_header_expected_value('If-None-Match', etag, 'if_none_match', expected)
 
     def test_etag_is_missing(self):
-        assert self.req.if_match == []
-        assert self.req.if_none_match == []
+        assert self.req.if_match is None
+        assert self.req.if_none_match is None
 
     # -------------------------------------------------------------------------
     # Helpers
