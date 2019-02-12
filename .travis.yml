@@ -32,8 +32,6 @@ matrix:
         - python: 3.6
           env: TOXENV=py36
         - python: 3.6
-          env: TOXENV=py36_ujson
-        - python: 3.6
           env: TOXENV=py36_cython
         - python: 3.6
           env: TOXENV=py36_smoke
@@ -43,6 +41,8 @@ matrix:
           env: TOXENV=docs
         - python: 3.6
           env: TOXENV=hug
+        - python: 3.6
+          env: TOXENV=check_vendored
 
 script: tox
 
