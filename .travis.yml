@@ -32,8 +32,6 @@ matrix:
         - python: 3.6
           env: TOXENV=py36
         - python: 3.6
-          env: TOXENV=py36_ujson
-        - python: 3.6
           env: TOXENV=py36_cython
         - python: 3.6
           env: TOXENV=py36_smoke
