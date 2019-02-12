@@ -63,6 +63,12 @@ class API(object):
                     def process_request(self, req, resp):
                         \"\"\"Process the request before routing it.
 
+                        Note:
+                            Because Falcon routes each request based on
+                            req.path, a request can be effectively re-routed
+                            by setting that attribute to a new value from
+                            within process_request().
+
                         Args:
                             req: Request object that will eventually be
                                 routed to an on_* responder method.
