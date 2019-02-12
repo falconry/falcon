@@ -184,7 +184,7 @@ class APIBuilder:
         self._routes[uri][http_method] = APIRouteFunction(route_func, **kwargs)
         return self
 
-    def add_error_route(self, exception, on_exception_func):
+    def add_error_route(self, exception, on_exception_func=None):
         self._error_handling_functions.append(
             ExceptionHandlingFunction(exception, on_exception_func))
         return self
