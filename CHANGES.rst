@@ -34,7 +34,7 @@ New & Improved
 --------------
 
 - Added a new ``headers`` property to the ``Response`` class.
-- Removed ``six`` as a dependency.
+- Removed the ``six`` and ``python-mimeparse`` dependencies.
 - ``Request.context_type`` now defaults to a bare class allowing to set
   attributes on the request context object::
 
@@ -69,6 +69,7 @@ New & Improved
   ``dumps()`` and ``loads()`` functions. This enables support not only for
   using any of a number of third-party JSON libraries, but also for
   customizing the keyword arguments used when (de)serializing objects.
+-
 
 Fixed
 -----
