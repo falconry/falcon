@@ -201,10 +201,12 @@ class APIBuilder:
     def build(self):
 
         api = API(
+            router=self._router,
             media_type=self._media_type,
             request_type=self._request_type,
             response_type=self._response_type,
             middleware=self._middlewares,
+            independent_middleware=self._call_response_middleware_on_request_middleware_exception
         )
 
         for uri, uri_method_routes in self._routes.items():
