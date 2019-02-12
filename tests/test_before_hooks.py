@@ -8,52 +8,52 @@ import falcon
 import falcon.testing as testing
 
 
-def validate(req, resp, params):
+def validate(req, resp, resource, params):
+    assert resource
     raise falcon.HTTPBadRequest('Invalid thing', 'Your thing was not '
                                 'formatted correctly.')
 
 
-def validate_param(req, resp, params, param_name, maxval=100):
+def validate_param(req, resp, resource, params, param_name, maxval=100):
+    assert resource
+
     limit = req.get_param_as_int(param_name)
     if limit and int(limit) > maxval:
         msg = '{0} must be <= {1}'.format(param_name, maxval)
         raise falcon.HTTPBadRequest('Out of Range', msg)
 
 
-def resource_aware_validate_param(req, resp, resource, params, param_name, maxval=100):
-    assert resource
-    validate_param(req, resp, params, param_name, maxval)
-
-
 class ResourceAwareValidateParam(object):
     def __call__(self, req, resp, resource, params):
         assert resource
-        validate_param(req, resp, params, 'limit')
+        validate_param(req, resp, resource, params, 'limit')
 
 
-def validate_field(req, resp, params, field_name='test'):
+def validate_field(req, resp, resource, params, field_name='test'):
+    assert resource
+
     try:
         params[field_name] = int(params[field_name])
     except ValueError:
         raise falcon.HTTPBadRequest()
 
 
-def parse_body(req, resp, params):
+def parse_body(req, resp, resource, params):
+    assert resource
+
     length = req.content_length or 0
     if length != 0:
         params['doc'] = json.load(io.TextIOWrapper(req.stream, 'utf-8'))
 
 
-def bunnies(req, resp, params):
+def bunnies(req, resp, resource, params):
+    assert resource
     params['bunnies'] = 'fuzzy'
 
 
-def resource_aware_bunnies(req, resp, resource, params):
+def frogs(req, resp, resource, params):
     assert resource
-    bunnies(req, resp, params)
 
-
-def frogs(req, resp, params):
     if 'bunnies' in params:
         params['bunnies'] = 'fluffy'
 
@@ -61,10 +61,12 @@ def frogs(req, resp, params):
 
 
 class Fish(object):
-    def __call__(self, req, resp, params):
+    def __call__(self, req, resp, resource, params):
+        assert resource
         params['fish'] = 'slippery'
 
     def hook(self, req, resp, resource, params):
+        assert resource
         params['fish'] = 'wet'
 
 
@@ -147,15 +149,15 @@ class WrappedClassResource(object):
 
 # NOTE(swistakm): we use both type of hooks (class and method)
 # at once for the sake of simplicity
-@falcon.before(resource_aware_bunnies)
+@falcon.before(bunnies)
 class ClassResourceWithAwareHooks(object):
     hook_as_class = ResourceAwareValidateParam()
 
-    @falcon.before(resource_aware_validate_param, 'limit', 10)
+    @falcon.before(validate_param, 'limit', 10)
     def on_get(self, req, resp, bunnies):
         self._capture(req, resp, bunnies)
 
-    @falcon.before(resource_aware_validate_param, 'limit')
+    @falcon.before(validate_param, 'limit')
     def on_head(self, req, resp, bunnies):
         self._capture(req, resp, bunnies)
 
@@ -350,7 +352,7 @@ def test_wrapped_resource_with_hooks_aware_of_resource(client, wrapped_aware_res
 _another_fish = Fish()
 
 
-def header_hook(req, resp, params):
+def header_hook(req, resp, resource, params):
     value = resp.get_header('X-Hook-Applied') or '0'
     resp.set_header('X-Hook-Applied', str(int(value) + 1))
 

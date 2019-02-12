@@ -49,7 +49,7 @@ class TransactionIdMiddleware(object):
         global context
         context['transaction_id'] = 'unique-req-id'
 
-    def process_response(self, req, resp, resource):
+    def process_response(self, req, resp, resource, req_succeeded):
         pass
 
 
@@ -68,7 +68,7 @@ class ExecutedFirstMiddleware(object):
     # NOTE(kgriffs): This also tests that the framework can continue to
     # call process_response() methods that do not have a 'req_succeeded'
     # arg.
-    def process_response(self, req, resp, resource):
+    def process_response(self, req, resp, resource, req_succeeded):
         global context
         context['executed_methods'].append(
             '{}.{}'.format(self.__class__.__name__, 'process_response'))
@@ -308,11 +308,11 @@ class TestSeveralMiddlewares(TestMiddleware):
         context['req_succeeded'] = []
 
         class RaiseStatusMiddleware(object):
-            def process_response(self, req, resp, resource):
+            def process_response(self, req, resp, resource, req_succeeded):
                 raise falcon.HTTPStatus(falcon.HTTP_201)
 
         class RaiseErrorMiddleware(object):
-            def process_response(self, req, resp, resource):
+            def process_response(self, req, resp, resource, req_succeeded):
                 raise falcon.HTTPError(falcon.HTTP_748)
 
         class ProcessResponseMiddleware(object):
@@ -619,6 +619,7 @@ class TestSeveralMiddlewares(TestMiddleware):
             'ExecutedLastMiddleware.process_response',
             'ExecutedFirstMiddleware.process_response'
         ]
+        print(context['executed_methods'])
         assert expectedExecutedMethods == context['executed_methods']
 
 

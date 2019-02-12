@@ -5,7 +5,7 @@ from falcon.http_status import HTTPStatus
 import falcon.testing as testing
 
 
-def before_hook(req, resp, params):
+def before_hook(req, resp, resource, params):
     raise HTTPStatus(falcon.HTTP_200,
                      headers={'X-Failed': 'False'},
                      body='Pass')
@@ -166,7 +166,7 @@ class TestHTTPStatusWithMiddleware(object):
     def test_raise_status_runs_process_response(self):
         """ Make sure process_response still runs """
         class TestMiddleware:
-            def process_response(self, req, resp, response):
+            def process_response(self, req, resp, resource, req_succeeded):
                 resp.status = falcon.HTTP_200
                 resp.set_header('X-Failed', 'False')
                 resp.body = 'Pass'
