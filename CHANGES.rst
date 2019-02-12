@@ -16,6 +16,9 @@ Breaking Changes
   ``False``.
 - ``RequestOptions.auto_parse_qs_csv`` now defaults to ``False`` instead of
   ``True``.
+- The deprecated ``stream_len`` property was removed from the ``Response``
+  class. Please use ``Response.set_stream()`` or ``Response.content_length``
+  instead.
 - ``Request.context_type`` was changed from dict to a subclass of dict.
 - ``Response.context_type`` was changed from dict to a subclass of dict.
 - ``JSONHandler`` and ``HTTPError`` no longer use
@@ -32,7 +35,7 @@ New & Improved
 --------------
 
 - Added a new ``headers`` property to the ``Response`` class.
-- Removed ``six`` as a dependency.
+- Removed the ``six`` and ``python-mimeparse`` dependencies.
 - ``Request.context_type`` now defaults to a bare class allowing to set
   attributes on the request context object::
 
@@ -67,6 +70,7 @@ New & Improved
   ``dumps()`` and ``loads()`` functions. This enables support not only for
   using any of a number of third-party JSON libraries, but also for
   customizing the keyword arguments used when (de)serializing objects.
+-
 
 Fixed
 -----
