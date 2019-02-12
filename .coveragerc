@@ -1,7 +1,7 @@
 [run]
 branch = True
 source = falcon
-omit = falcon/tests*,falcon/cmd*,falcon/bench*
+omit = falcon/tests*,falcon/cmd*,falcon/bench*,falcon/vendor/*
 
 parallel = True
 
