@@ -80,12 +80,9 @@ these issues by setting additional Clang C compiler flags as follows:
 Dependencies
 ------------
 
-Falcon depends on `python-mimeparse`. `python-mimeparse` is a
-better-maintained fork of the similarly named `mimeparse` project.
-Normally the correct package will be selected by Falcon's ``setup.py``.
-However, if you are using an alternate strategy to manage dependencies,
-please take care to install the correct package in order to avoid
-errors.
+Falcon does not require the installation of any other packages, although if
+Cython has been installed into the environment, it will be used to optimize
+the framework as explained above.
 
 WSGI Server
 -----------
