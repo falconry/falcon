@@ -29,8 +29,6 @@ except AttributeError:
 from uuid import UUID  # NOQA: I202
 from wsgiref.validate import InputWrapper
 
-import mimeparse
-
 from falcon import DEFAULT_MEDIA_TYPE
 from falcon import errors
 from falcon import request_helpers as helpers
@@ -41,6 +39,7 @@ from falcon.media import Handlers
 from falcon.util import compat
 from falcon.util import json
 from falcon.util.uri import parse_host, parse_query_string
+from falcon.vendor import mimeparse
 
 # NOTE(tbug): In some cases, compat.http_cookies is not a module
 # but a dict-like structure. This fixes that issue.
