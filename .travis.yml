@@ -20,8 +20,6 @@ matrix:
         - python: 2.7
           env: TOXENV=py27
         - python: 2.7
-          env: TOXENV=py27_ujson
-        - python: 2.7
           env: TOXENV=py27_smoke
         - python: 2.7
           env: TOXENV=py27_cython
