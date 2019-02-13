@@ -16,6 +16,11 @@ Breaking Changes
   ``False``.
 - ``RequestOptions.auto_parse_qs_csv`` now defaults to ``False`` instead of
   ``True``.
+- ``independent_middleware`` kwarg on ``falcon.API`` now defaults to ``True``
+  instead of ``False``.
+- The deprecated ``stream_len`` property was removed from the ``Response``
+  class. Please use ``Response.set_stream()`` or ``Response.content_length``
+  instead.
 - ``Request.context_type`` was changed from dict to a subclass of dict.
 - ``Response.context_type`` was changed from dict to a subclass of dict.
 - ``JSONHandler`` and ``HTTPError`` no longer use
