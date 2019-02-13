@@ -59,7 +59,7 @@ class HelloResource(object):
                 resp.set_stream(stream, stream_len)
             else:
                 resp.stream = stream
-                resp.stream_len = stream_len
+                resp.content_length = stream_len
 
         if 'body' in self.mode:
             if 'bytes' in self.mode:
@@ -173,7 +173,7 @@ class TestHelloWorld(object):
         result = client.simulate_get('/stream')
         assert resource.called
 
-        expected_len = resource.resp.stream_len
+        expected_len = int(resource.resp.content_length)
         actual_len = int(result.headers['content-length'])
         assert actual_len == expected_len
         assert len(result.content) == expected_len
@@ -187,7 +187,7 @@ class TestHelloWorld(object):
             result = client.simulate_get('/filelike', file_wrapper=file_wrapper)
             assert resource.called
 
-            expected_len = resource.resp.stream_len
+            expected_len = int(resource.resp.content_length)
             actual_len = int(result.headers['content-length'])
             assert actual_len == expected_len
             assert len(result.content) == expected_len
@@ -196,7 +196,7 @@ class TestHelloWorld(object):
             result = client.simulate_get('/filelike', file_wrapper=file_wrapper)
             assert resource.called
 
-            expected_len = resource.resp.stream_len
+            expected_len = int(resource.resp.content_length)
             actual_len = int(result.headers['content-length'])
             assert actual_len == expected_len
             assert len(result.content) == expected_len
@@ -212,7 +212,7 @@ class TestHelloWorld(object):
         result = client.simulate_get('/filelike-closing', file_wrapper=None)
         assert resource.called
 
-        expected_len = resource.resp.stream_len
+        expected_len = int(resource.resp.content_length)
         actual_len = int(result.headers['content-length'])
         assert actual_len == expected_len
         assert len(result.content) == expected_len
@@ -227,7 +227,7 @@ class TestHelloWorld(object):
         result = client.simulate_get('/filelike-helper')
         assert resource.called
 
-        expected_len = resource.resp.stream_len
+        expected_len = int(resource.resp.content_length)
         actual_len = int(result.headers['content-length'])
         assert actual_len == expected_len
         assert len(result.content) == expected_len
