@@ -27,6 +27,11 @@ Breaking Changes
   to use arbitrary ``dumps()`` and ``loads()`` functions. If you
   also need to customize ``HTTPError`` serialization, you can do so via
   ``API.set_error_serializer()``.
+- In order to improve performance, the ``Request.headers`` and
+  ``Request.cookies`` properties now return a direct reference to
+  an internal cached object, rather than making a copy each time. This
+  should normally not cause any problems with existing apps since these objects
+  are generally treated as read-only by the caller.
 
 Changes to Supported Platforms
 ------------------------------
