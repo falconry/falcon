@@ -246,7 +246,7 @@ def simulate_request(app, method='GET', path='/', query_string=None,
 
             Note:
                 The path may contain a query string. However, neither
-                `query_string` nor `params` can be specified in this case.
+                `query_string` nor `params` may be specified in this case.
 
         protocol: The protocol to use for the URL scheme
             (default: 'http')
@@ -367,7 +367,7 @@ def simulate_get(app, path, **kwargs):
 
             Note:
                 The path may contain a query string. However, neither
-                `query_string` nor `params` can be specified in this case.
+                `query_string` nor `params` may be specified in this case.
 
     Keyword Args:
         params (dict): A dictionary of query string parameters,
@@ -416,7 +416,7 @@ def simulate_head(app, path, **kwargs):
 
             Note:
                 The path may contain a query string. However, neither
-                `query_string` nor `params` can be specified in this case.
+                `query_string` nor `params` may be specified in this case.
 
     Keyword Args:
         params (dict): A dictionary of query string parameters,
