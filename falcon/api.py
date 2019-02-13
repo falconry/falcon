@@ -560,7 +560,7 @@ class API(object):
             The default serializer will not render any response body for
             :class:`~.HTTPError` instances where the `has_representation`
             property evaluates to ``False`` (such as in the case of types
-            that subclass :class:`falcon.http_error.NoRepresentation`). 
+            that subclass :class:`falcon.http_error.NoRepresentation`).
             However a custom serializer will be called regardless of the
             property value, and it may choose to override the
             representation logic.
