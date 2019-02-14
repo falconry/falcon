@@ -558,7 +558,7 @@ class TestFalconTestingUtils(object):
         json_types = ('application/json', 'application/json; charset=UTF-8')
         client = testing.TestClient(app)
         client.simulate_post('/', json=document)
-        captured_body = resource.captured_req.stream.read().decode('utf-8')
+        captured_body = resource.captured_req.bounded_stream.read().decode('utf-8')
         assert json.loads(captured_body) == document
         assert resource.captured_req.content_type in json_types
 
