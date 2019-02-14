@@ -369,10 +369,11 @@ class Request(object):
         headers (dict): Raw HTTP headers from the request with
             canonical dash-separated names. Parsing all the headers
             to create this dict is done the first time this attribute
-            is accessed. This parsing can be costly, so unless you
-            need all the headers in this format, you should use the
-            `get_header` method or one of the convenience attributes
-            instead, to get a value for a specific header.
+            is accessed, and the returned object should be treated as
+            read-only. Note that this parsing can be costly, so unless you
+            need all the headers in this format, you should instead use the
+            ``get_header()`` method or one of the convenience attributes
+            to get a value for a specific header.
 
         params (dict): The mapping of request query parameter names to their
             values.  Where the parameter appears multiple times in the query
@@ -816,7 +817,7 @@ class Request(object):
                 elif name in WSGI_CONTENT_HEADERS:
                     headers[name.replace('_', '-')] = value
 
-        return self._cached_headers.copy()
+        return self._cached_headers
 
     @property
     def params(self):
@@ -841,7 +842,7 @@ class Request(object):
 
             self._cookies = cookies
 
-        return self._cookies.copy()
+        return self._cookies
 
     @property
     def access_route(self):
