@@ -414,6 +414,38 @@ class TestHTTPError(object):
         _check('application/x-yaml', yaml.load)
         _check('application/json', json.loads)
 
+    @pytest.mark.parametrize('method,path,status', [
+        ('GET', '/404', 404),
+        ('GET', '/notfound', 404),
+        ('REPORT', '/404', 405),
+        ('BREW', '/notfound', 400),
+    ])
+    def test_custom_error_serializer_optional_representation(self, client, method, path, status):
+        def _simple_serializer(req, resp, exception):
+            representation = exception.to_dict()
+            representation.update(status=int(exception.status[:3]))
+
+            resp.content_type = falcon.MEDIA_JSON
+            resp.media = representation
+
+        client.app.add_route('/404', NotFoundResource())
+        client.app.add_route('/notfound', NotFoundResourceWithBody())
+        client.app.set_error_serializer(_simple_serializer)
+
+        resp = client.simulate_request(path=path, method=method)
+        assert resp.json['title']
+        assert resp.json['status'] == status
+
+    def test_custom_serializer_no_representation(self, client):
+        def _chatty_serializer(req, resp, exception):
+            resp.content_type = falcon.MEDIA_TEXT
+            resp.body = b'You might think this error should not have a body'
+
+        client.app.add_route('/416', RangeNotSatisfiableResource())
+        client.app.set_error_serializer(_chatty_serializer)
+        resp = client.simulate_get(path='/416')
+        assert resp.text == 'You might think this error should not have a body'
+
     def test_client_does_not_accept_anything(self, client):
         headers = {
             'Accept': '45087gigo;;;;',
