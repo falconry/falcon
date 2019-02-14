@@ -181,6 +181,11 @@ class AppendHeaderResource(object):
     def on_post(self, req, resp):
         resp.append_header('X-Things', 'thing-1')
 
+        c1 = 'ut_existing_user=1; expires=Mon, 14-Jan-2019 21:20:08 GMT; Max-Age=600; path=/'
+        resp.append_header('Set-Cookie', c1)
+        c2 = 'partner_source=deleted; expires=Thu, 01-Jan-1970 00:00:01 GMT; Max-Age=0'
+        resp.append_header('seT-cookie', c2)
+
 
 class RemoveHeaderResource(object):
     def __init__(self, with_double_quotes):
@@ -502,6 +507,27 @@ class TestHeaders(object):
 
         result = client.simulate_request(method='POST')
         assert result.headers['x-things'] == 'thing-1'
+        assert result.cookies['ut_existing_user'].max_age == 600
+        assert result.cookies['partner_source'].max_age == 0
+
+    @pytest.mark.parametrize('header_name', ['Set-Cookie', 'set-cookie', 'seT-cookie'])
+    @pytest.mark.parametrize('error_type', [ValueError, falcon.HeaderNotSupported])
+    def test_set_cookie_disallowed(self, client, header_name, error_type):
+        resp = falcon.Response()
+
+        cookie = 'ut_existing_user=1; expires=Mon, 14-Jan-2019 21:20:08 GMT; Max-Age=600; path=/'
+
+        with pytest.raises(error_type):
+            resp.set_header(header_name, cookie)
+
+        with pytest.raises(error_type):
+            resp.set_headers([(header_name, cookie)])
+
+        with pytest.raises(error_type):
+            resp.get_header(header_name)
+
+        with pytest.raises(error_type):
+            resp.delete_header(header_name)
 
     def test_vary_star(self, client):
         client.app.add_route('/', VaryHeaderResource(['*']))
