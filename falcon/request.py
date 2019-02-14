@@ -13,21 +13,7 @@
 """Request class."""
 
 from datetime import datetime
-
-try:
-    # NOTE(kgrifs): In Python 2.7, socket._fileobject is a
-    # standard way of exposing a socket as a file-like object, and
-    # is used by wsgiref for wsgi.input.
-    import socket
-    NativeStream = socket._fileobject
-except AttributeError:
-    # NOTE(kgriffs): In Python 3.3, wsgiref implements wsgi.input
-    # using _io.BufferedReader which is an alias of io.BufferedReader
-    import io
-    NativeStream = io.BufferedReader
-
-from uuid import UUID  # NOQA: I202
-from wsgiref.validate import InputWrapper
+from uuid import UUID
 
 from falcon import DEFAULT_MEDIA_TYPE
 from falcon import errors
@@ -427,7 +413,6 @@ class Request(object):
     context_type = type('RequestContext', (dict,), {})
 
     _wsgi_input_type_known = False
-    _always_wrap_wsgi_input = False
 
     def __init__(self, env, options=None):
         self.env = env
@@ -487,29 +472,8 @@ class Request(object):
         except KeyError:
             self.content_type = None
 
-        # NOTE(kgriffs): Wrap wsgi.input if needed to make read() more robust,
-        # normalizing semantics between, e.g., gunicorn and wsgiref.
-        #
-        # PERF(kgriffs): Accessing via self when reading is faster than
-        # via the class name. But we must set the variables using the
-        # class name so they are picked up by all future instantiations
-        # of the class.
-        if not self._wsgi_input_type_known:
-            Request._always_wrap_wsgi_input = isinstance(
-                env['wsgi.input'],
-                (NativeStream, InputWrapper)
-            )
-
-            Request._wsgi_input_type_known = True
-
-        if self._always_wrap_wsgi_input:
-            # TODO(kgriffs): In Falcon 2.0, stop wrapping stream since it is
-            # less useful now that we have bounded_stream.
-            self.stream = self._get_wrapped_wsgi_input()
-            self._bounded_stream = self.stream
-        else:
-            self.stream = env['wsgi.input']
-            self._bounded_stream = None  # Lazy wrapping
+        self.stream = env['wsgi.input']
+        self._bounded_stream = None  # Lazy wrapping
 
         # PERF(kgriffs): Technically, we should spend a few more
         # cycles and parse the content type for real, but

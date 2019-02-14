@@ -16,6 +16,8 @@ Breaking Changes
   instead of ``False``.
 - :attr:`~.RequestOptions.auto_parse_qs_csv` now defaults to ``False``
   instead of ``True``.
+- ``independent_middleware`` kwarg on :class:`falcon.API` now defaults to 
+  ``True`` instead of ``False``.
 - The deprecated ``stream_len`` property was removed from the
   :class:`~.Response` class. Please use :meth:`~.Response.set_stream` or
   :attr:`~.Response.content_length` instead.
@@ -34,9 +36,15 @@ Breaking Changes
   an internal cached object, rather than making a copy each time. This
   should normally not cause any problems with existing apps since these objects
   are generally treated as read-only by the caller.
+- The :attr:`falcon.Request.stream` attribute is no longer wrapped in a bounded
+  stream when Falcon detects that it is running on the wsgiref server. If you
+  need to normalize stream semantics between wsgiref and a production WSGI
+  server, :attr:`~.Request.bounded_stream` may be used instead.
 
 Changes to Supported Platforms
 ------------------------------
+
+- CPython 3.7 is now fully supported.
 
 New & Improved
 --------------
