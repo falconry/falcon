@@ -25,14 +25,8 @@ request attribute:
             # ....
 
 The :py:attr:`~.Request.cookies` attribute is a regular
-:py:class:`dict` object.
-
-.. tip ::
-
-    The :py:attr:`~.Request.cookies` attribute returns a
-    copy of the response cookie dictionary. Assign it to a variable, as
-    shown in the above example, to improve performance when you need to
-    look up more than one cookie.
+:py:class:`dict` object. The returned object should be treated as
+read-only to avoid unintended side-effects.
 
 .. _setting-cookies:
 

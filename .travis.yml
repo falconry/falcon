@@ -1,7 +1,6 @@
 language: python
 
 dist: xenial
-sudo: false
 
 install: pip install tox coveralls
 cache:
@@ -21,8 +20,6 @@ matrix:
         - python: 2.7
           env: TOXENV=py27
         - python: 2.7
-          env: TOXENV=py27_ujson
-        - python: 2.7
           env: TOXENV=py27_smoke
         - python: 2.7
           env: TOXENV=py27_cython
@@ -34,12 +31,14 @@ matrix:
           env: TOXENV=py35
         - python: 3.6
           env: TOXENV=py36
-        - python: 3.6
-          env: TOXENV=py36_cython
-        - python: 3.6
-          env: TOXENV=py36_smoke
-        - python: 3.6
-          env: TOXENV=py36_smoke_cython
+        - python: 3.7
+          env: TOXENV=py37
+        - python: 3.7
+          env: TOXENV=py37_cython
+        - python: 3.7
+          env: TOXENV=py37_smoke
+        - python: 3.7
+          env: TOXENV=py37_smoke_cython
         - python: 2.7
           env: TOXENV=docs
         # TODO(kgriffs): Re-enable once we have mitigated the stream_len
@@ -59,6 +58,8 @@ notifications:
     on_failure: always
 
 before_install:
+  - sudo apt-get update
+  - sudo apt-get install -y libunwind-dev
   - pip install codecov
 
 after_success:
