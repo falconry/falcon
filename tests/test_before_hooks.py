@@ -41,7 +41,7 @@ def validate_field(req, resp, params, field_name='test'):
 def parse_body(req, resp, params):
     length = req.content_length or 0
     if length != 0:
-        params['doc'] = json.load(io.TextIOWrapper(req.stream, 'utf-8'))
+        params['doc'] = json.load(io.TextIOWrapper(req.bounded_stream, 'utf-8'))
 
 
 def bunnies(req, resp, params):

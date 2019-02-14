@@ -26,6 +26,8 @@ Breaking Changes
   ``False``.
 - ``RequestOptions.auto_parse_qs_csv`` now defaults to ``False`` instead of
   ``True``.
+- ``independent_middleware`` kwarg on ``falcon.API`` now defaults to ``True``
+  instead of ``False``.
 - The deprecated ``stream_len`` property was removed from the ``Response``
   class. Please use ``Response.set_stream()`` or ``Response.content_length``
   instead.
@@ -37,6 +39,10 @@ Breaking Changes
   to use arbitrary ``dumps()`` and ``loads()`` functions. If you
   also need to customize ``HTTPError`` serialization, you can do so via
   ``API.set_error_serializer()``.
+- ``Request.stream`` is no longer wrapped in a bounded stream when
+  Falcon detects that it is running on the wsgiref server. If you
+  need to normalize stream semantics between wsgiref and a production WSGI
+  server, ``Request.bounded_stream`` may be used instead.
 
 Changes to Supported Platforms
 ------------------------------
