@@ -524,10 +524,21 @@ class TestFalconTestingUtils(object):
 
     def test_query_string_in_path(self):
         app = falcon.API()
-        app.add_route('/', testing.SimpleTestResource())
+        resource = testing.SimpleTestResource()
+        app.add_route('/thing', resource)
         client = testing.TestClient(app)
+
         with pytest.raises(ValueError):
-            client.simulate_get(path='/thing?x=1')
+            client.simulate_get(path='/thing?x=1', query_string='things=1,2,3')
+        with pytest.raises(ValueError):
+            client.simulate_get(path='/thing?x=1', params={'oid': 1978})
+        with pytest.raises(ValueError):
+            client.simulate_get(path='/thing?x=1', query_string='things=1,2,3',
+                                params={'oid': 1978})
+
+        client.simulate_get(path='/thing?detailed=no&oid=1337')
+        assert resource.captured_req.path == '/thing'
+        assert resource.captured_req.query_string == 'detailed=no&oid=1337'
 
     @pytest.mark.parametrize('document', [
         # NOTE(vytas): using an exact binary fraction here to avoid special
