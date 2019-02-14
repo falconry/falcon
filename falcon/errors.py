@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""HTTP error classes.
+"""HTTP error classes and other Falcon-specific errors.
 
 This module implements a collection of `falcon.HTTPError`
 specializations that can be raised to generate a 4xx or 5xx HTTP
@@ -41,6 +41,10 @@ from falcon import util
 from falcon.http_error import HTTPError, NoRepresentation, \
     OptionalRepresentation
 import falcon.status_codes as status
+
+
+class HeaderNotSupported(ValueError):
+    """The specified header is not supported by this method."""
 
 
 class HTTPBadRequest(HTTPError):
