@@ -115,18 +115,18 @@ class TestHelloWorld(object):
         assert env['HTTP_USER_AGENT'] == 'Falcon-Test'
 
     def test_root_route(self):
-        app = falcon.API()
-        client = testing.TestClient(app)
-
         doc = {u'message': u'Hello world!'}
         resource = testing.SimpleTestResource(json=doc)
-        client.app.add_route('/', resource)
+        app = falcon.APIBuilder() \
+            .add_get_route('/', resource.on_get) \
+            .build()
+        client = testing.TestClient(app)
 
         result = client.simulate_get()
         assert result.json == doc
 
     def test_no_route(self):
-        app = falcon.API()
+        app = falcon.APIBuilder().build()
         client = testing.TestClient(app)
 
         result = client.simulate_get('/seenoevil')
