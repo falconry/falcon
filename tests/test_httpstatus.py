@@ -179,3 +179,129 @@ class TestHTTPStatusWithMiddleware(object):
         assert response.status == falcon.HTTP_200
         assert response.headers['x-failed'] == 'False'
         assert response.text == 'Pass'
+
+
+class TestHTTPStatusWithBuilder(object):
+    def test_raise_status_in_before_hook(self):
+        """ Make sure we get the 200 raised by before hook """
+        resource = TestStatusResource()
+        app = falcon.APIBuilder() \
+            .add_get_route('/status', resource.on_get) \
+            .build()
+        client = testing.TestClient(app)
+
+        response = client.simulate_request(path='/status', method='GET')
+        assert response.status == falcon.HTTP_200
+        assert response.headers['x-failed'] == 'False'
+        assert response.text == 'Pass'
+
+    def test_raise_status_in_responder(self):
+        """ Make sure we get the 200 raised by responder """
+        resource = TestStatusResource()
+        app = falcon.APIBuilder() \
+            .add_post_route('/status', resource.on_post) \
+            .build()
+        client = testing.TestClient(app)
+
+        response = client.simulate_request(path='/status', method='POST')
+        assert response.status == falcon.HTTP_200
+        assert response.headers['x-failed'] == 'False'
+        assert response.text == 'Pass'
+
+    def test_raise_status_runs_after_hooks(self):
+        """ Make sure after hooks still run """
+        resource = TestStatusResource()
+        app = falcon.APIBuilder() \
+            .add_put_route('/status', resource.on_put) \
+            .build()
+        client = testing.TestClient(app)
+
+        response = client.simulate_request(path='/status', method='PUT')
+        assert response.status == falcon.HTTP_200
+        assert response.headers['x-failed'] == 'False'
+        assert response.text == 'Pass'
+
+    def test_raise_status_survives_after_hooks(self):
+        """ Make sure after hook doesn't overwrite our status """
+        resource = TestStatusResource()
+        app = falcon.APIBuilder() \
+            .add_delete_route('/status', resource.on_delete) \
+            .build()
+        client = testing.TestClient(app)
+
+        response = client.simulate_request(path='/status', method='DELETE')
+        assert response.status == falcon.HTTP_200
+        assert response.headers['x-failed'] == 'False'
+        assert response.text == 'Pass'
+
+    def test_raise_status_empty_body(self):
+        """ Make sure passing None to body results in empty body """
+        resource = TestStatusResource()
+        app = falcon.APIBuilder() \
+            .add_patch_route('/status', resource.on_patch) \
+            .build()
+        client = testing.TestClient(app)
+
+        response = client.simulate_request(path='/status', method='PATCH')
+        assert response.text == ''
+
+
+class TestHTTPStatusWithMiddlewareWithBuilder(object):
+    def test_raise_status_in_process_request(self):
+        """ Make sure we can raise status from middleware process request """
+        class TestMiddleware:
+            def process_request(self, req, resp):
+                raise HTTPStatus(falcon.HTTP_200,
+                                 headers={'X-Failed': 'False'},
+                                 body='Pass')
+        resource = TestHookResource()
+        app = falcon.APIBuilder() \
+            .add_middleware(TestMiddleware()) \
+            .add_get_route('/status', resource.on_get) \
+            .build()
+        client = testing.TestClient(app)
+
+        response = client.simulate_request(path='/status', method='GET')
+        assert response.status == falcon.HTTP_200
+        assert response.headers['x-failed'] == 'False'
+        assert response.text == 'Pass'
+
+    def test_raise_status_in_process_resource(self):
+        """ Make sure we can raise status from middleware process resource """
+        class TestMiddleware:
+            def process_resource(self, req, resp, resource, params):
+                raise HTTPStatus(falcon.HTTP_200,
+                                 headers={'X-Failed': 'False'},
+                                 body='Pass')
+
+        hook_resource = TestHookResource()
+        app = falcon.APIBuilder() \
+            .add_middleware(TestMiddleware()) \
+            .add_get_route('/status', hook_resource.on_get) \
+            .build()
+        client = testing.TestClient(app)
+
+        response = client.simulate_request(path='/status', method='GET')
+        assert response.status == falcon.HTTP_200
+        assert response.headers['x-failed'] == 'False'
+        assert response.text == 'Pass'
+
+    def test_raise_status_runs_process_response(self):
+        """ Make sure process_response still runs """
+        class TestMiddleware:
+            def process_response(self, req, resp, response):
+                resp.status = falcon.HTTP_200
+                resp.set_header('X-Failed', 'False')
+                resp.body = 'Pass'
+
+        resource = TestHookResource()
+        app = falcon.APIBuilder() \
+            .add_middleware(TestMiddleware()) \
+            .add_get_route('/status', resource.on_get) \
+            .build()
+        client = testing.TestClient(app)
+
+        response = client.simulate_request(path='/status', method='GET')
+        assert response.status == falcon.HTTP_200
+        assert response.headers['x-failed'] == 'False'
+        assert response.text == 'Pass'
