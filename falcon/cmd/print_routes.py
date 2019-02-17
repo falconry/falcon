@@ -58,13 +58,19 @@ def traverse(roots, parent='', verbose=False):
                         else:
                             real_func = func
 
-                        source_file = inspect.getsourcefile(real_func)
+                        try:
+                            source_file = inspect.getsourcefile(real_func)
+                            source_lines = inspect.getsourcelines(real_func)
+                            source_info = '{}:{}'.format(source_file,
+                                                         source_lines[1])
+                        except TypeError:
+                            # NOTE(vytas): If Falcon is cythonized, all default
+                            # responders coming from cythonized modules will
+                            # appear as built-in functions, and raise a
+                            # TypeError when trying to locate the source file.
+                            source_info = '[unknown file]'
 
-                        print('-->{0} {1}:{2}'.format(
-                            method,
-                            source_file,
-                            source_file[1]
-                        ))
+                        print('-->' + method, source_info)
 
         if root.children:
             traverse(root.children, parent + '/' + root.raw_segment, verbose)
@@ -92,7 +98,7 @@ def main():
     except ValueError:
         parser.error(
             'The api_module must include a colon between '
-            'the module and instnace')
+            'the module and instance')
     api = getattr(__import__(module, fromlist=[True]), instance)
     if not isinstance(api, falcon.API):
         if callable(api):
