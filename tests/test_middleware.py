@@ -619,7 +619,6 @@ class TestSeveralMiddlewares(TestMiddleware):
             'ExecutedLastMiddleware.process_response',
             'ExecutedFirstMiddleware.process_response'
         ]
-        print(context['executed_methods'])
         assert expectedExecutedMethods == context['executed_methods']
 
 
