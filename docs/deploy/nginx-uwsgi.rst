@@ -6,7 +6,7 @@ Deploying Falcon (Linux + NGINX + uWSGI)
 
 
 NGINX is a powerful web server and reverse proxy and uWSGI is a fast and
-highly-configurable WSGI application server. Together, NIGNX and uWSGI create a
+highly-configurable WSGI application server. Together, NGINX and uWSGI create a
 one-two punch of speed and functionality which will suffice for most
 applications. In addition, this stack provides the building blocks for a
 horizontally-scalable and highly-available (HA) production environment and the
@@ -71,14 +71,11 @@ Then install your dependencies.
 .. note::
 
   The exact commands for creating a virtual environment might differ based on
-  the Python version you are using and the system you are on. At the end of the
+  the Python version you are using and your operating system. At the end of the
   day the application needs a virtualenv in /home/myproject/venv with the
   project dependencies installed. Use the ``pip`` binary within the virtual
   environment by ``source venv/bin/activate`` or using the full path.
 
-
-Okay, that is all for getting your application on the server and setting up the
-environment.
 
 Preparing your Application for Service
 ''''''''''''''''''''''''''''''''''''''
@@ -87,11 +84,11 @@ You likely have a way to configure your application, such as with a
 ``create_api()`` function or a module level script. This function or script
 needs to supply an instance of a :any:`falcon.API`.
 
-We need to expose that instance of the :any:`falcon.API` in some way so that
-uWSGI can find it; we will do that by creating a ``wsgi.py`` file. Modify the
-content of this file based on how your application is configured.  Ensure that
-you expose  a variable called ``application`` which is assigned to your
-:any:`falcon.API` instance.
+Expose an instance of the :any:`falcon.API` in some way so that uWSGI can find
+it; this tutorial does that by creating a ``wsgi.py`` file. Modify the logic of
+this file to properly configure your application.  Ensure that you expose a
+variable called ``application`` which is assigned to your :any:`falcon.API`
+instance.
 
 .. code-block:: python
   :caption: /home/myproject/src/wsgi.py
@@ -107,23 +104,21 @@ application and creates the :any:`falcon.API` instance that represents our
 application, exposing it as the module-scoped ``application`` variable. uWSGI
 will use this file to load your application.
 
-Note that we did not call ``run`` like a developer might do during development
-or use `wsgiref.simple_server.make_server`.  Instead we simply assigned our
-`API` instance to ``application``. We *do not* want to start a server, since
-uWSGI does that automatically. Starting an independent WSGI server in your
-``wsgi.py`` file will render unexpected results.
+Note that you did not call `wsgiref.simple_server.make_server`. Instead you
+simply assigned your `API` instance to ``application``.  Starting an independent
+WSGI server in your ``wsgi.py`` file will render unexpected results.
 
 
 Deploying Falcon behind uWSGI
 '''''''''''''''''''''''''''''
 
-With our ``wsgi.py`` file in place, it is time to configure uWSGI.  To do this,
-we create a ``uwsgi.ini`` file. In general, you shouldn’t commit this file to
-source control; it should be generated from a template by your deployment
-toolchain according to the target environment (number of CPUs, etc.).
+With your ``wsgi.py`` file in place, it is time to configure uWSGI.  Create a
+``uwsgi.ini`` file. In general, you shouldn't commit this file to source
+control; it should be generated from a template by your deployment toolchain
+according to the target environment (number of CPUs, etc.).
 
-This configuration, when executed, will create a new uWSGI server pointed at our
-wsgi.py file and listening at ``12.0.0.1:8080``.
+This configuration, when executed, will create a new uWSGI server pointed at
+your wsgi.py file and listening at ``12.0.0.1:8080``.
 
 .. code-block:: ini
   :caption: /home/myproject/src/uwsgi.ini
@@ -161,14 +156,14 @@ wsgi.py file and listening at ``12.0.0.1:8080``.
   NGINX and uWSGI can communicate via normal TCP (using an IP address) or Unix
   sockets (using a socket file). TCP sockets are easier to setup and generally
   work for simple deployments. If you want to have finer control over what
-  process / users/ groups can access the uWSGI application, consider using Unix
-  sockets. uWSGI can automatically drop privileges with ``chmod-socket`` and
-  switch users with ``chown-socket``.
+  process / users/ groups can access the uWSGI application or you don't want the
+  overhead of TCP, consider using Unix sockets. uWSGI can automatically drop
+  privileges with ``chmod-socket`` and switch users with ``chown-socket``.
 
 There are some important items in this configuration like ``uid`` and ``gid``.
 These settings control the OS-level user and group the application will use to
 execute the process. This OS user and group should not have write permissions to
-your source directory.
+your source directory. Use the `myproject-runner` user you created earlier.
 
 You can now start uWSGI like this:
 
@@ -234,7 +229,7 @@ Further Considerations
 ''''''''''''''''''''''
 
 We did not explain how to setup TLS (HTTPS) for NGINX, leaving that as an
-exercise for the reader. Consider using Let’s Encrypt, which offers free,
+exercise for the reader. Consider using Let's Encrypt, which offers free,
 short-term certificates with auto-renewal. Visit the `Let’s Encrypt site`_ to learn
 how to integrate their service directly with NGINX.
 
