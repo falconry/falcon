@@ -42,8 +42,7 @@ To customize what data is passed to the serializer, subclass
         def to_dict(self, obj_type=dict):
             result = super().to_dict(obj_type)
             result['acceptable'] = self._acceptable
-
-        return result
+            return result
 
 All classes are available directly in the ``falcon`` package namespace::
 

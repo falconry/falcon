@@ -18,6 +18,7 @@ import mimetypes
 
 
 from falcon import DEFAULT_MEDIA_TYPE
+from falcon.errors import HeaderNotSupported
 from falcon.media import Handlers
 from falcon.response_helpers import (
     format_content_disposition,
@@ -36,6 +37,11 @@ SimpleCookie = compat.http_cookies.SimpleCookie
 CookieError = compat.http_cookies.CookieError
 
 GMT_TIMEZONE = TimezoneGMT()
+
+_STREAM_LEN_REMOVED_MSG = (
+    'The deprecated stream_len property was removed in Falcon 2.0. '
+    'Please use Response.set_stream() or Response.content_length instead.'
+)
 
 
 class Response(object):
@@ -106,7 +112,9 @@ class Response(object):
                 resource cleanup, it can implement a close() method to do so.
                 The close() method will be called upon completion of the request.
 
-        stream_len (int): Deprecated alias for :py:attr:`content_length`.
+        context (dict): Dictionary to hold any data about the response which is
+            specific to your app. Falcon itself will not interact with this
+            attribute after it has been initialized.
 
         context (object): Empty object to hold any data (in its attributes)
             about the response which is specific to your app (e.g. session
@@ -148,9 +156,9 @@ class Response(object):
         'options',
         'status',
         'stream',
-        'stream_len',
         '_cookies',
         '_data',
+        '_extra_headers',
         '_headers',
         '_media',
         '__dict__',
@@ -163,6 +171,14 @@ class Response(object):
         self.status = '200 OK'
         self._headers = {}
 
+        # NOTE(kgriffs): Collection of additional headers as a list of raw
+        #   tuples, to use in cases where we need more control over setting
+        #   headers and duplicates are allowable or even necessary.
+        #
+        # PERF(kgriffs): Save some CPU cycles and a few bytes of RAM by
+        #   only instantiating the list object later on IFF it is needed.
+        self._extra_headers = None
+
         self.options = options if options else ResponseOptions()
 
         # NOTE(tbug): will be set to a SimpleCookie object
@@ -171,7 +187,6 @@ class Response(object):
 
         self.body = None
         self.stream = None
-        self.stream_len = None
         self._data = None
         self._media = None
 
@@ -228,6 +243,18 @@ class Response(object):
         # just be thrown away.
         self._data = None
 
+    @property
+    def stream_len(self):
+        # NOTE(kgriffs): Provide some additional information by raising the
+        #   error explicitly.
+        raise AttributeError(_STREAM_LEN_REMOVED_MSG)
+
+    @stream_len.setter
+    def stream_len(self, value):
+        # NOTE(kgriffs): We explicitly disallow setting the deprecated attribute
+        #   so that apps relying on it do not fail silently.
+        raise AttributeError(_STREAM_LEN_REMOVED_MSG)
+
     def __repr__(self):
         return '<%s: %s>' % (self.__class__.__name__, self.status)
 
@@ -237,7 +264,8 @@ class Response(object):
         Although the `stream` and `content_length` properties may be set
         directly, using this method ensures `content_length` is not
         accidentally neglected when the length of the stream is known in
-        advance.
+        advance. Using this method is also slightly more performant
+        as compared to setting the properties individually.
 
         Note:
             If the stream length is unknown, you can set `stream`
@@ -252,7 +280,10 @@ class Response(object):
         """
 
         self.stream = stream
-        self.stream_len = content_length  # NOTE(pshello): Deprecated in favor of `content_length`
+
+        # PERF(kgriffs): Set directly rather than incur the overhead of
+        #   the self.content_length property.
+        self._headers['content-length'] = str(content_length)
 
     def set_cookie(self, name, value, expires=None, max_age=None,
                    domain=None, path=None, secure=None, http_only=True):
@@ -428,6 +459,11 @@ class Response(object):
     def get_header(self, name, default=None):
         """Retrieve the raw string value for the given header.
 
+        Normally, when a header has multiple values, they will be
+        returned as a single, comma-delimited string. However, the
+        Set-Cookie header does not support this format, and so
+        attempting to retrieve it will raise an error.
+
         Args:
             name (str): Header name, case-insensitive. Must be of type ``str``
                 or ``StringType``, and only character values 0x00 through 0xFF
@@ -436,20 +472,33 @@ class Response(object):
             default: Value to return if the header
                 is not found (default ``None``).
 
+        Raises:
+            ValueError: The value of the 'Set-Cookie' header(s) was requested.
+
         Returns:
             str: The value of the specified header if set, or
             the default value if not set.
         """
-        return self._headers.get(name.lower(), default)
+
+        # NOTE(kgriffs): normalize name by lowercasing it
+        name = name.lower()
+
+        if name == 'set-cookie':
+            raise HeaderNotSupported('Getting Set-Cookie is not currently supported.')
+
+        return self._headers.get(name, default)
 
     def set_header(self, name, value):
         """Set a header for this response to a given value.
 
         Warning:
-            Calling this method overwrites the existing value, if any.
+            Calling this method overwrites any values already set for this
+            header. To append an additional value for this header, use
+            :meth:`~.append_header` instead.
 
         Warning:
-            For setting cookies, see instead :meth:`~.set_cookie`
+            This method cannot be used to set cookies; instead, use
+            :meth:`~.append_header` or :meth:`~.set_cookie`.
 
         Args:
             name (str): Header name (case-insensitive). The restrictions
@@ -459,6 +508,9 @@ class Response(object):
                 ``StringType``. Strings must contain only US-ASCII characters.
                 Under Python 2.x, the ``unicode`` type is also accepted,
                 although such strings are also limited to US-ASCII.
+
+        Raises:
+            ValueError: `name` cannot be ``'Set-Cookie'``.
         """
 
         # NOTE(kgriffs): uwsgi fails with a TypeError if any header
@@ -469,40 +521,61 @@ class Response(object):
         value = str(value)
 
         # NOTE(kgriffs): normalize name by lowercasing it
-        self._headers[name.lower()] = value
+        name = name.lower()
+
+        if name == 'set-cookie':
+            raise HeaderNotSupported('This method cannot be used to set cookies')
+
+        self._headers[name] = value
 
     def delete_header(self, name):
         """Delete a header that was previously set for this response.
 
         If the header was not previously set, nothing is done (no error is
-        raised).
+        raised). Otherwise, all values set for the header will be removed
+        from the response.
 
         Note that calling this method is equivalent to setting the
-        corresponding header property (when said property is available) to ``None``. For
-        example::
+        corresponding header property (when said property is available) to
+        ``None``. For example::
 
             resp.etag = None
+
+        Warning:
+            This method cannot be used with the Set-Cookie header. Instead,
+            use :meth:`~.unset_cookie` to remove a cookie and ensure that the
+            user agent expires its own copy of the data as well.
 
         Args:
             name (str): Header name (case-insensitive).  Must be of type
                 ``str`` or ``StringType`` and contain only US-ASCII characters.
                 Under Python 2.x, the ``unicode`` type is also accepted,
                 although such strings are also limited to US-ASCII.
+
+        Raises:
+            ValueError: `name` cannot be ``'Set-Cookie'``.
         """
 
         # NOTE(kgriffs): normalize name by lowercasing it
-        self._headers.pop(name.lower(), None)
+        name = name.lower()
+
+        if name == 'set-cookie':
+            raise HeaderNotSupported('This method cannot be used to remove cookies')
+
+        self._headers.pop(name, None)
 
     def append_header(self, name, value):
         """Set or append a header for this response.
 
-        Warning:
-            If the header already exists, the new value will be appended
-            to it, delimited by a comma. Most header specifications support
-            this format, Set-Cookie being the notable exceptions.
+        If the header already exists, the new value will normally be appended
+        to it, delimited by a comma. The notable exception to this rule is
+        Set-Cookie, in which case a separate header line for each value will be
+        included in the response.
 
-        Warning:
-            For setting cookies, see :py:meth:`~.set_cookie`
+        Note:
+            While this method can be used to efficiently append raw
+            Set-Cookie headers to the response, you may find
+            :py:meth:`~.set_cookie` to be more convenient.
 
         Args:
             name (str): Header name (case-insensitive). The restrictions
@@ -521,17 +594,36 @@ class Response(object):
         name = str(name)
         value = str(value)
 
+        # NOTE(kgriffs): normalize name by lowercasing it
         name = name.lower()
-        if name in self._headers:
-            value = self._headers[name] + ', ' + value
 
-        self._headers[name] = value
+        if name == 'set-cookie':
+            if not self._extra_headers:
+                self._extra_headers = [(name, value)]
+            else:
+                self._extra_headers.append((name, value))
+        else:
+            if name in self._headers:
+                value = self._headers[name] + ', ' + value
+
+            self._headers[name] = value
 
     def set_headers(self, headers):
         """Set several headers at once.
 
+        This method can be used to set a collection of raw header names and
+        values all at once.
+
         Warning:
-            Calling this method overwrites existing values, if any.
+            Calling this method overwrites any existing values for the given
+            header. If a list containing multiple instances of the same header
+            is provided, only the last value will be used. To add multiple
+            values to the response for a given header, see
+            :meth:`~.append_header`.
+
+        Warning:
+            This method cannot be used to set cookies; instead, use
+            :meth:`~.append_header` or :meth:`~.set_cookie`.
 
         Args:
             headers (dict or list): A dictionary of header names and values
@@ -565,7 +657,12 @@ class Response(object):
             name = str(name)
             value = str(value)
 
-            _headers[name.lower()] = value
+            name = name.lower()
+
+            if name == 'set-cookie':
+                raise HeaderNotSupported('This method cannot be used to set cookies')
+
+            _headers[name] = value
 
     def add_link(self, target, rel, title=None, title_star=None,
                  anchor=None, hreflang=None, type_hint=None):
@@ -888,6 +985,12 @@ class Response(object):
         else:
             items = list(headers.items())
 
+        if self._extra_headers:
+            items += self._extra_headers
+
+        # NOTE(kgriffs): It is important to append these after self._extra_headers
+        #   in case the latter contains Set-Cookie headers that should be
+        #   overridden by a call to unset_cookie().
         if self._cookies is not None:
             # PERF(tbug):
             # The below implementation is ~23% faster than

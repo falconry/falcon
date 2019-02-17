@@ -13,8 +13,7 @@ MYDIR = path.abspath(os.path.dirname(__file__))
 VERSION = imp.load_source('version', path.join('.', 'falcon', 'version.py'))
 VERSION = VERSION.__version__
 
-# NOTE(kgriffs): python-mimeparse is better-maintained fork of mimeparse
-REQUIRES = ['python-mimeparse>=1.5.2']
+REQUIRES = []
 
 try:
     sys.pypy_version_info
@@ -51,7 +50,13 @@ if CYTHON:
 
         return module_names
 
-    package_names = ['falcon', 'falcon.util', 'falcon.routing', 'falcon.media']
+    package_names = [
+        'falcon',
+        'falcon.media',
+        'falcon.routing',
+        'falcon.util',
+        'falcon.vendor.mimeparse',
+    ]
     ext_modules = [
         Extension(
             package + '.' + module,
@@ -113,6 +118,7 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
     ],
     keywords='wsgi web api framework rest http cloud',
     author='Kurt Griffiths',

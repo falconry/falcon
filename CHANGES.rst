@@ -4,6 +4,16 @@
 Breaking Changes
 ----------------
 
+- Previously, several methods in the ``falcon.Response`` class
+  could be used to attempt to set raw cookie headers. However,
+  due to the Set-Cookie header values not being combinable
+  as a comma-delimited list, this resulted in an
+  incorrect response being constructed for the user agent in
+  the case that more than one cookie was being set. Therefore,
+  the following methods of ``falcon.Response`` now raise an
+  instance of ``ValueError`` if an attempt is made to use them
+  for Set-Cookie: ``set_header()``, ``delete_header()``,
+  ``get_header()``, ``set_headers()``.
 - ``testing.Result.json`` now returns ``None`` when the response body is
   empty, rather than raising an error.
 - ``Request.get_param_as_bool()`` now defaults to treating valueless
@@ -16,6 +26,11 @@ Breaking Changes
   ``False``.
 - ``RequestOptions.auto_parse_qs_csv`` now defaults to ``False`` instead of
   ``True``.
+- ``independent_middleware`` kwarg on ``falcon.API`` now defaults to ``True``
+  instead of ``False``.
+- The deprecated ``stream_len`` property was removed from the ``Response``
+  class. Please use ``Response.set_stream()`` or ``Response.content_length``
+  instead.
 - ``Request.context_type`` was changed from dict to a subclass of dict.
 - ``Response.context_type`` was changed from dict to a subclass of dict.
 - ``JSONHandler`` and ``HTTPError`` no longer use
@@ -37,15 +52,26 @@ Breaking Changes
   ``api_helpers`` module.
 - An internal function, ``wrap_old_error_serializer()``, was removed from the
   ``api_helpers`` module.
+- In order to improve performance, the ``Request.headers`` and
+  ``Request.cookies`` properties now return a direct reference to
+  an internal cached object, rather than making a copy each time. This
+  should normally not cause any problems with existing apps since these objects
+  are generally treated as read-only by the caller.
+- ``Request.stream`` is no longer wrapped in a bounded stream when
+  Falcon detects that it is running on the wsgiref server. If you
+  need to normalize stream semantics between wsgiref and a production WSGI
+  server, ``Request.bounded_stream`` may be used instead.
 
 Changes to Supported Platforms
 ------------------------------
+
+- CPython 3.7 is now fully supported.
 
 New & Improved
 --------------
 
 - Added a new ``headers`` property to the ``Response`` class.
-- Removed ``six`` as a dependency.
+- Removed the ``six`` and ``python-mimeparse`` dependencies.
 - ``Request.context_type`` now defaults to a bare class allowing to set
   attributes on the request context object::
 
@@ -80,6 +106,7 @@ New & Improved
   ``dumps()`` and ``loads()`` functions. This enables support not only for
   using any of a number of third-party JSON libraries, but also for
   customizing the keyword arguments used when (de)serializing objects.
+- ``append_header()`` now supports appending raw Set-Cookie header values.
 
 Fixed
 -----

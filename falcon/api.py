@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # Copyright 2013 by Rackspace Hosting, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -61,6 +63,12 @@ class API(object):
                 class ExampleComponent(object):
                     def process_request(self, req, resp):
                         \"\"\"Process the request before routing it.
+
+                        Note:
+                            Because Falcon routes each request based on
+                            req.path, a request can be effectively re-routed
+                            by setting that attribute to a new value from
+                            within process_request().
 
                         Args:
                             req: Request object that will eventually be
@@ -297,10 +305,11 @@ class API(object):
 
         else:
             body, length = self._get_body(resp, env.get('wsgi.file_wrapper'))
-            if resp.content_length is None and length is not None:
+
+            # PERF(kgriffs): Böse mußt sein. Operate directly on resp._headers
+            #   to reduce overhead since this is a hot/critical code path.
+            if 'content-length' not in resp._headers and length is not None:
                 resp._headers['content-length'] = str(length)
-            elif resp.content_length is not None:
-                resp._headers['content-length'] = str(resp.content_length)
 
         headers = resp._wsgi_headers(media_type)
 
@@ -546,6 +555,15 @@ class API(object):
             "+json" or "+xml" suffix, the default serializer will
             convert the error to JSON or XML, respectively.
 
+        Note:
+            The default serializer will not render any response body for
+            :class:`~.HTTPError` instances where the `has_representation`
+            property evaluates to ``False`` (such as in the case of types
+            that subclass :class:`falcon.http_error.NoRepresentation`).
+            However a custom serializer will be called regardless of the
+            property value, and it may choose to override the
+            representation logic.
+
         The :class:`~.HTTPError` class contains helper methods,
         such as `to_json()` and `to_dict()`, that can be used from
         within custom serializers. For example::
@@ -556,7 +574,7 @@ class API(object):
                 preferred = req.client_prefers(('application/x-yaml',
                                                 'application/json'))
 
-                if preferred is not None:
+                if exception.has_representation and preferred is not None:
                     if preferred == 'application/json':
                         representation = exception.to_json()
                     else:
@@ -675,8 +693,7 @@ class API(object):
         if error.headers is not None:
             resp.set_headers(error.headers)
 
-        if error.has_representation:
-            self._serialize_error(req, resp, error)
+        self._serialize_error(req, resp, error)
 
     def _http_status_handler(self, req, resp, status, params):
         self._compose_status_response(req, resp, status)
@@ -735,13 +752,15 @@ class API(object):
             The length is returned as ``None`` when unknown. The
             iterable is determined as follows:
 
-                * If resp.body is not ``None``, returns [resp.body],
+                * If resp.body is not ``None``, returns
+                  ([resp.body], len(resp.body)),
                   encoded as UTF-8 if it is a Unicode string.
                   Bytestrings are returned as-is.
-                * If resp.data is not ``None``, returns [resp.data]
+                * If resp.data is not ``None``, returns ([resp.data], len(resp.data))
                 * If resp.stream is not ``None``, returns resp.stream
-                  iterable using wsgi.file_wrapper, if possible.
-                * Otherwise, returns []
+                  iterable using wsgi.file_wrapper, if necessary:
+                  (closeable_iterator, None)
+                * Otherwise, returns ([], 0)
 
         """
         body = resp.body
@@ -772,9 +791,6 @@ class API(object):
             else:
                 iterable = stream
 
-            # NOTE(pshello): resp.stream_len is deprecated in favor of
-            # resp.content_length. The caller of _get_body should give
-            # preference to resp.content_length if it has been set.
-            return iterable, resp.stream_len
+            return iterable, None
 
         return [], 0
