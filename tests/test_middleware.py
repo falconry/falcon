@@ -49,6 +49,10 @@ class TransactionIdMiddleware(object):
         global context
         context['transaction_id'] = 'unique-req-id'
 
+    def process_resource(self, req, resp, resource, params):
+        global context
+        context['resource_transaction_id'] = 'unique-req-id-2'
+
     def process_response(self, req, resp, resource, req_succeeded):
         pass
 
@@ -86,6 +90,24 @@ class RemoveBasePathMiddleware(object):
 
     def process_request(self, req, resp):
         req.path = req.path.replace('/base_path', '', 1)
+
+
+class ResponseCacheMiddlware(object):
+
+    PROCESS_REQUEST_CACHED_BODY = {'cached': True}
+    PROCESS_RESOURCE_CACHED_BODY = {'cached': True, 'resource': True}
+
+    def process_request(self, req, resp):
+        if req.path == '/cached':
+            resp.media = self.PROCESS_REQUEST_CACHED_BODY
+            resp.complete = True
+            return
+
+    def process_resource(self, req, resp, resource, params):
+        if req.path == '/cached/resource':
+            resp.media = self.PROCESS_RESOURCE_CACHED_BODY
+            resp.complete = True
+            return
 
 
 class AccessParamsMiddleware(object):
@@ -710,3 +732,75 @@ class TestErrorHandling(TestMiddleware):
         response = client.simulate_request(path='/', method='POST')
         assert response.status == falcon.HTTP_201
         assert mw.resp.status == response.status
+
+
+class TestShortCircuiting(TestMiddleware):
+    def setup_method(self, method):
+        super(TestShortCircuiting, self).setup_method(method)
+
+    def _make_client(self, independent_middleware=True):
+        mw = [
+            RequestTimeMiddleware(),
+            ResponseCacheMiddlware(),
+            TransactionIdMiddleware(),
+        ]
+        app = falcon.API(middleware=mw, independent_middleware=independent_middleware)
+        app.add_route('/', MiddlewareClassResource())
+        app.add_route('/cached', MiddlewareClassResource())
+        app.add_route('/cached/resource', MiddlewareClassResource())
+
+        return testing.TestClient(app)
+
+    def test_process_request_not_cached(self):
+        response = self._make_client().simulate_get('/')
+        assert response.status == falcon.HTTP_200
+        assert response.json == _EXPECTED_BODY
+        assert 'transaction_id' in context
+        assert 'resource_transaction_id' in context
+        assert 'mid_time' in context
+        assert 'end_time' in context
+
+    @pytest.mark.parametrize('independent_middleware', [True, False])
+    def test_process_request_cached(self, independent_middleware):
+        response = self._make_client(independent_middleware).simulate_get('/cached')
+        assert response.status == falcon.HTTP_200
+        assert response.json == ResponseCacheMiddlware.PROCESS_REQUEST_CACHED_BODY
+
+        # NOTE(kgriffs): Since TransactionIdMiddleware was ordered after
+        # ResponseCacheMiddlware, the response short-circuiting should have
+        # skipped it.
+        assert 'transaction_id' not in context
+        assert 'resource_transaction_id' not in context
+
+        # NOTE(kgriffs): RequestTimeMiddleware only adds this in
+        # process_resource(), which should be skipped when
+        # ResponseCacheMiddlware sets resp.completed = True in
+        # process_request().
+        assert 'mid_time' not in context
+
+        # NOTE(kgriffs): Short-circuiting does not affect process_response()
+        assert 'end_time' in context
+
+    @pytest.mark.parametrize('independent_middleware', [True, False])
+    def test_process_resource_cached(self, independent_middleware):
+        response = self._make_client(independent_middleware).simulate_get('/cached/resource')
+        assert response.status == falcon.HTTP_200
+        assert response.json == ResponseCacheMiddlware.PROCESS_RESOURCE_CACHED_BODY
+
+        # NOTE(kgriffs): This should be present because it is added in
+        # process_request(), but the short-circuit does not occur until
+        # process_resource().
+        assert 'transaction_id' in context
+
+        # NOTE(kgriffs): Since TransactionIdMiddleware was ordered after
+        # ResponseCacheMiddlware, the response short-circuiting should have
+        # skipped it.
+        assert 'resource_transaction_id' not in context
+
+        # NOTE(kgriffs): RequestTimeMiddleware only adds this in
+        # process_resource(), which will not be skipped in this case because
+        # RequestTimeMiddleware is ordered before ResponseCacheMiddlware.
+        assert 'mid_time' in context
+
+        # NOTE(kgriffs): Short-circuiting does not affect process_response()
+        assert 'end_time' in context

@@ -72,6 +72,9 @@ New & Improved
 
 - Added a new ``headers`` property to the ``Response`` class.
 - Removed the ``six`` and ``python-mimeparse`` dependencies.
+- Added a new ``complete`` property to the ``Response`` class. This can be used
+  to short-circuit request processing when the response has been pre-constructed.
+- Removed ``six`` as a dependency.
 - ``Request.context_type`` now defaults to a bare class allowing to set
   attributes on the request context object::
 
