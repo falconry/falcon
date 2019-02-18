@@ -148,6 +148,10 @@ class Response(object):
         headers (dict): Copy of all headers set for the response,
             sans cookies. Note that a new copy is created and returned each
             time this property is referenced.
+
+        complete (bool): Set to ``True`` from within a middleware method to
+            signal to the framework that request processing should be
+            short-circuited (see also :ref:`Middleware <middleware>`).
     """
 
     __slots__ = (
@@ -163,6 +167,8 @@ class Response(object):
         '_media',
         '__dict__',
     )
+
+    complete = False
 
     # Child classes may override this
     context_type = type('ResponseContext', (dict,), {})

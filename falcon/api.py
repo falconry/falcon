@@ -210,6 +210,7 @@ class API(object):
         req = self._request_type(env, options=self.req_options)
         resp = self._response_type(options=self.resp_options)
         resource = None
+        responder = None
         params = {}
 
         dependent_mw_resp_stack = []
@@ -228,21 +229,24 @@ class API(object):
                 if self._independent_middleware:
                     for process_request in mw_req_stack:
                         process_request(req, resp)
+                        if resp.complete:
+                            break
                 else:
                     for process_request, process_response in mw_req_stack:
-                        if process_request:
+                        if process_request and not resp.complete:
                             process_request(req, resp)
                         if process_response:
                             dependent_mw_resp_stack.insert(0, process_response)
 
-                # NOTE(warsaw): Moved this to inside the try except
-                # because it is possible when using object-based
-                # traversal for _get_responder() to fail.  An example is
-                # a case where an object does not have the requested
-                # next-hop child resource. In that case, the object
-                # being asked to dispatch to its child will raise an
-                # HTTP exception signalling the problem, e.g. a 404.
-                responder, params, resource, req.uri_template = self._get_responder(req)
+                if not resp.complete:
+                    # NOTE(warsaw): Moved this to inside the try except
+                    # because it is possible when using object-based
+                    # traversal for _get_responder() to fail.  An example is
+                    # a case where an object does not have the requested
+                    # next-hop child resource. In that case, the object
+                    # being asked to dispatch to its child will raise an
+                    # HTTP exception signalling the problem, e.g. a 404.
+                    responder, params, resource, req.uri_template = self._get_responder(req)
             except Exception as ex:
                 if not self._handle_exception(req, resp, ex, params):
                     raise
@@ -251,13 +255,19 @@ class API(object):
                     # NOTE(kgriffs): If the request did not match any
                     # route, a default responder is returned and the
                     # resource is None. In that case, we skip the
-                    # resource middleware methods.
-                    if resource is not None:
+                    # resource middleware methods. Resource will also be
+                    # None when a middleware method already set
+                    # resp.complete to True.
+                    if resource:
                         # Call process_resource middleware methods.
                         for process_resource in mw_rsrc_stack:
                             process_resource(req, resp, resource, params)
+                            if resp.complete:
+                                break
 
-                    responder(req, resp, **params)
+                    if not resp.complete:
+                        responder(req, resp, **params)
+
                     req_succeeded = True
                 except Exception as ex:
                     if not self._handle_exception(req, resp, ex, params):
@@ -485,12 +495,12 @@ class API(object):
         self._sinks.insert(0, (prefix, sink))
 
     def add_error_handler(self, exception, handler=None):
-        """Register a handler for a given exception error type.
+        """Register a handler for a given exception type.
 
-        Error handlers may be registered for any type, including
-        :class:`~.HTTPError`. This feature provides a central location
-        for logging and otherwise handling exceptions raised by
-        responders, hooks, and middleware components.
+        Error handlers may be registered for any exception type, including
+        :class:`~.HTTPError` or :class:`~.HTTPStatus`. This feature
+        provides a central location for logging and otherwise handling
+        exceptions raised by responders, hooks, and middleware components.
 
         A handler can raise an instance of :class:`~.HTTPError` or
         :class:`~.HTTPStatus` to communicate information about the issue to
@@ -504,6 +514,13 @@ class API(object):
         Therefore, more general error handlers (e.g., for the
         standard ``Exception`` type) should be added first, to avoid
         masking more specific handlers for subclassed types.
+
+        .. Note::
+
+            By default, the framework installs two handlers, one for
+            :class:`~.HTTPError` and one for :class:`~.HTTPStatus`. These can
+            be overridden by adding a custom error handler method for the
+            exception type in question.
 
         Args:
             exception (type): Whenever an error occurs when handling a request
