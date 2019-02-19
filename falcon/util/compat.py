@@ -10,6 +10,7 @@ PY3 = sys.version_info.major == 3
 if PY3:
     from http import cookies as http_cookies  # NOQA: F401
     from collections import UserDict  # NOQA: F401
+    from collections.abc import Mapping, MutableMapping  # NOQA: F401
     from io import StringIO  # NOQA: F401
     from urllib.parse import quote, unquote_plus  # NOQA: F401
 
@@ -19,6 +20,7 @@ if PY3:
 
     get_method_self = op.attrgetter('__self__')
 else:
+    from collections import Mapping, MutableMapping  # NOQA: F401
     import Cookie as http_cookies  # NOQA: F401
     from UserDict import UserDict  # NOQA: F401
     from StringIO import StringIO  # NOQA: F401

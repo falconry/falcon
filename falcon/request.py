@@ -13,23 +13,7 @@
 """Request class."""
 
 from datetime import datetime
-
-try:
-    # NOTE(kgrifs): In Python 2.7, socket._fileobject is a
-    # standard way of exposing a socket as a file-like object, and
-    # is used by wsgiref for wsgi.input.
-    import socket
-    NativeStream = socket._fileobject
-except AttributeError:
-    # NOTE(kgriffs): In Python 3.3, wsgiref implements wsgi.input
-    # using _io.BufferedReader which is an alias of io.BufferedReader
-    import io
-    NativeStream = io.BufferedReader
-
-from uuid import UUID  # NOQA: I202
-from wsgiref.validate import InputWrapper
-
-import mimeparse
+from uuid import UUID
 
 from falcon import DEFAULT_MEDIA_TYPE
 from falcon import errors
@@ -41,6 +25,7 @@ from falcon.media import Handlers
 from falcon.util import compat
 from falcon.util import json
 from falcon.util.uri import parse_host, parse_query_string
+from falcon.vendor import mimeparse
 
 # NOTE(tbug): In some cases, compat.http_cookies is not a module
 # but a dict-like structure. This fixes that issue.
@@ -75,15 +60,27 @@ class Request(object):
     Attributes:
         env (dict): Reference to the WSGI environ ``dict`` passed in from the
             server. (See also PEP-3333.)
-        context (dict): Dictionary to hold any data about the request which is
-            specific to your app (e.g. session object). Falcon itself will
-            not interact with this attribute after it has been initialized.
+        context (object): Empty object to hold any data (in its attributes)
+            about the request which is specific to your app (e.g. session
+            object). Falcon itself will not interact with this attribute after
+            it has been initialized.
+
+            Note:
+                **New in 2.0:** the default `context_type` (see below) was
+                changed from dict to a bare class, and the preferred way to
+                pass request-specific data is now to set attributes directly on
+                the `context` object, for example::
+
+                    req.context.role = 'trial'
+                    req.context.user = 'guest'
+
         context_type (class): Class variable that determines the factory or
             type to use for initializing the `context` attribute. By default,
-            the framework will instantiate standard ``dict`` objects. However,
-            you may override this behavior by creating a custom child class of
-            ``falcon.Request``, and then passing that new class to
-            `falcon.API()` by way of the latter's `request_type` parameter.
+            the framework will instantiate bare objects (instances of the bare
+            RequestContext class). However, you may override this behavior by
+            creating a custom child class of ``falcon.Request``, and then
+            passing that new class to `falcon.API()` by way of the latter's
+            `request_type` parameter.
 
             Note:
                 When overriding `context_type` with a factory function (as
@@ -396,10 +393,11 @@ class Request(object):
         headers (dict): Raw HTTP headers from the request with
             canonical dash-separated names. Parsing all the headers
             to create this dict is done the first time this attribute
-            is accessed. This parsing can be costly, so unless you
-            need all the headers in this format, you should use the
-            `get_header` method or one of the convenience attributes
-            instead, to get a value for a specific header.
+            is accessed, and the returned object should be treated as
+            read-only. Note that this parsing can be costly, so unless you
+            need all the headers in this format, you should instead use the
+            ``get_header()`` method or one of the convenience attributes
+            to get a value for a specific header.
 
         params (dict): The mapping of request query parameter names to their
             values.  Where the parameter appears multiple times in the query
@@ -436,10 +434,9 @@ class Request(object):
     )
 
     # Child classes may override this
-    context_type = dict
+    context_type = type('RequestContext', (dict,), {})
 
     _wsgi_input_type_known = False
-    _always_wrap_wsgi_input = False
 
     def __init__(self, env, options=None):
         self.env = env
@@ -499,29 +496,8 @@ class Request(object):
         except KeyError:
             self.content_type = None
 
-        # NOTE(kgriffs): Wrap wsgi.input if needed to make read() more robust,
-        # normalizing semantics between, e.g., gunicorn and wsgiref.
-        #
-        # PERF(kgriffs): Accessing via self when reading is faster than
-        # via the class name. But we must set the variables using the
-        # class name so they are picked up by all future instantiations
-        # of the class.
-        if not self._wsgi_input_type_known:
-            Request._always_wrap_wsgi_input = isinstance(
-                env['wsgi.input'],
-                (NativeStream, InputWrapper)
-            )
-
-            Request._wsgi_input_type_known = True
-
-        if self._always_wrap_wsgi_input:
-            # TODO(kgriffs): In Falcon 2.0, stop wrapping stream since it is
-            # less useful now that we have bounded_stream.
-            self.stream = self._get_wrapped_wsgi_input()
-            self._bounded_stream = self.stream
-        else:
-            self.stream = env['wsgi.input']
-            self._bounded_stream = None  # Lazy wrapping
+        self.stream = env['wsgi.input']
+        self._bounded_stream = None  # Lazy wrapping
 
         # PERF(kgriffs): Technically, we should spend a few more
         # cycles and parse the content type for real, but
@@ -871,7 +847,7 @@ class Request(object):
                 elif name in WSGI_CONTENT_HEADERS:
                     headers[name.replace('_', '-')] = value
 
-        return self._cached_headers.copy()
+        return self._cached_headers
 
     @property
     def params(self):
@@ -896,7 +872,7 @@ class Request(object):
 
             self._cookies = cookies
 
-        return self._cookies.copy()
+        return self._cookies
 
     @property
     def access_route(self):

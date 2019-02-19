@@ -4,6 +4,16 @@
 Breaking Changes
 ----------------
 
+- Previously, several methods in the ``falcon.Response`` class
+  could be used to attempt to set raw cookie headers. However,
+  due to the Set-Cookie header values not being combinable
+  as a comma-delimited list, this resulted in an
+  incorrect response being constructed for the user agent in
+  the case that more than one cookie was being set. Therefore,
+  the following methods of ``falcon.Response`` now raise an
+  instance of ``ValueError`` if an attempt is made to use them
+  for Set-Cookie: ``set_header()``, ``delete_header()``,
+  ``get_header()``, ``set_headers()``.
 - ``testing.Result.json`` now returns ``None`` when the response body is
   empty, rather than raising an error.
 - ``Request.get_param_as_bool()`` now defaults to treating valueless
@@ -16,15 +26,90 @@ Breaking Changes
   ``False``.
 - ``RequestOptions.auto_parse_qs_csv`` now defaults to ``False`` instead of
   ``True``.
+- ``independent_middleware`` kwarg on ``falcon.API`` now defaults to ``True``
+  instead of ``False``.
+- The deprecated ``stream_len`` property was removed from the ``Response``
+  class. Please use ``Response.set_stream()`` or ``Response.content_length``
+  instead.
+- ``Request.context_type`` was changed from dict to a subclass of dict.
+- ``Response.context_type`` was changed from dict to a subclass of dict.
+- ``JSONHandler`` and ``HTTPError`` no longer use
+  `ujson` in lieu of the standard `json` library (when `ujson` is available in
+  the environment). Instead, ``JSONHandler`` can now be configured
+  to use arbitrary ``dumps()`` and ``loads()`` functions. If you
+  also need to customize ``HTTPError`` serialization, you can do so via
+  ``API.set_error_serializer()``.
+- The ``find()`` method for a custom router is now required to accept the
+  ``req`` keyword argument that was added in a previous release. The
+  backwards-compatible shim was removed.
+- All middleware methods and hooks must now accept the arguments as specified
+  in the relevant interface definitions as of Falcon 1.4. All
+  backwards-compatible shims have been removed.
+- Custom error serializers are now required to accept the arguments as
+  specified by ``API.set_error_serializer()`` for the past few releases.
+  The backwards-compatible shim has been removed.
+- An internal function, ``make_router_search()``, was removed from the
+  ``api_helpers`` module.
+- An internal function, ``wrap_old_error_serializer()``, was removed from the
+  ``api_helpers`` module.
+- In order to improve performance, the ``Request.headers`` and
+  ``Request.cookies`` properties now return a direct reference to
+  an internal cached object, rather than making a copy each time. This
+  should normally not cause any problems with existing apps since these objects
+  are generally treated as read-only by the caller.
+- ``Request.stream`` is no longer wrapped in a bounded stream when
+  Falcon detects that it is running on the wsgiref server. If you
+  need to normalize stream semantics between wsgiref and a production WSGI
+  server, ``Request.bounded_stream`` may be used instead.
 
 Changes to Supported Platforms
 ------------------------------
+
+- CPython 3.7 is now fully supported.
 
 New & Improved
 --------------
 
 - Added a new ``headers`` property to the ``Response`` class.
+- Removed the ``six`` and ``python-mimeparse`` dependencies.
+- Added a new ``complete`` property to the ``Response`` class. This can be used
+  to short-circuit request processing when the response has been pre-constructed.
 - Removed ``six`` as a dependency.
+- ``Request.context_type`` now defaults to a bare class allowing to set
+  attributes on the request context object::
+
+    # Before
+    req.context['role'] = 'trial'
+    req.context['user'] = 'guest'
+
+    # Falcon 2.0
+    req.context.role = 'trial'
+    req.context.user = 'guest'
+
+  To ease the migration path, the previous behavior is supported by subclassing
+  dict, however, as of Falcon 2.0, the dict context interface is considered
+  deprecated, and may be removed in a future release. It is also noteworthy
+  that object attributes and dict items are not automagically linked in any
+  special way, and setting one does not affect the other.
+- ``Response.context_type`` now defaults to a bare class allowing
+  to set attributes on the response context object::
+
+    # Before
+    resp.context['cache_strategy'] = 'lru'
+
+    # Falcon 2.0
+    resp.context.cache_strategy = 'lru'
+
+  To ease the migration path, the previous behavior is supported by subclassing
+  dict, however, as of Falcon 2.0, the dict context interface is considered
+  deprecated, and may be removed in a future release. It is also noteworthy
+  that object attributes and dict items are not automagically linked in any
+  special way, and setting one does not affect the other.
+- ``JSONHandler`` can now be configured to use arbitrary
+  ``dumps()`` and ``loads()`` functions. This enables support not only for
+  using any of a number of third-party JSON libraries, but also for
+  customizing the keyword arguments used when (de)serializing objects.
+- ``append_header()`` now supports appending raw Set-Cookie header values.
 
 Fixed
 -----

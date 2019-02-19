@@ -27,17 +27,17 @@ for convenience::
 
 """
 
-import collections
+from falcon.util.compat import Mapping, MutableMapping
 
 
 # TODO(kgriffs): If we ever diverge from what is upstream in Requests,
 # then we will need write tests and remove the "no cover" pragma.
-class CaseInsensitiveDict(collections.MutableMapping):  # pragma: no cover
+class CaseInsensitiveDict(MutableMapping):  # pragma: no cover
     """
     A case-insensitive ``dict``-like object.
 
     Implements all methods and operations of
-    ``collections.MutableMapping`` as well as dict's `copy`. Also
+    ``collections.abc.MutableMapping`` as well as dict's `copy`. Also
     provides `lower_items`.
 
     All keys are expected to be strings. The structure remembers the
@@ -92,7 +92,7 @@ class CaseInsensitiveDict(collections.MutableMapping):  # pragma: no cover
         )
 
     def __eq__(self, other):
-        if isinstance(other, collections.Mapping):
+        if isinstance(other, Mapping):
             other = CaseInsensitiveDict(other)
         else:
             return NotImplemented

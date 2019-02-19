@@ -86,9 +86,9 @@ requests.
 
 .. Tip::
     In order to pass data from a hook function to a resource function
-    use the ``req.context`` and ``resp.context`` dictionaries. These context
-    dictionaries are intended to hold request and response data specific to
-    your app as it passes through the framework.
+    use the ``req.context`` and ``resp.context`` objects. These context objects
+    are intended to hold request and response data specific to your app as it
+    passes through the framework.
 
 .. automodule:: falcon
     :members: before, after

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # Copyright 2013 by Rackspace Hosting, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +26,21 @@ import falcon.responders
 from falcon.response import Response, ResponseOptions
 import falcon.status_codes as status
 from falcon.util import compat
-from falcon.util.misc import get_argnames
+
+
+# PERF(vytas): on Python 2.7+, Python 3.5+ (including cythonized modules),
+# reference via module global is faster than going via self
+_BODILESS_STATUS_CODES = frozenset([
+    status.HTTP_100,
+    status.HTTP_101,
+    status.HTTP_204,
+    status.HTTP_304,
+])
+
+_TYPELESS_STATUS_CODES = frozenset([
+    status.HTTP_204,
+    status.HTTP_304,
+])
 
 
 class API(object):
@@ -47,6 +63,12 @@ class API(object):
                 class ExampleComponent(object):
                     def process_request(self, req, resp):
                         \"\"\"Process the request before routing it.
+
+                        Note:
+                            Because Falcon routes each request based on
+                            req.path, a request can be effectively re-routed
+                            by setting that attribute to a new value from
+                            within process_request().
 
                         Args:
                             req: Request object that will eventually be
@@ -128,15 +150,6 @@ class API(object):
             (See also: :ref:`CompiledRouterOptions <compiled_router_options>`)
     """
 
-    # PERF(kgriffs): Reference via self since that is faster than
-    # module global...
-    _BODILESS_STATUS_CODES = {
-        status.HTTP_100,
-        status.HTTP_101,
-        status.HTTP_204,
-        status.HTTP_304
-    }
-
     _STREAM_BLOCK_SIZE = 8 * 1024  # 8 KiB
 
     __slots__ = ('_request_type', '_response_type',
@@ -159,7 +172,7 @@ class API(object):
         self._independent_middleware = independent_middleware
 
         self._router = router or routing.DefaultRouter()
-        self._router_search = helpers.make_router_search(self._router)
+        self._router_search = self._router.find
 
         self._request_type = request_type
         self._response_type = response_type
@@ -196,6 +209,7 @@ class API(object):
         req = self._request_type(env, options=self.req_options)
         resp = self._response_type(options=self.resp_options)
         resource = None
+        responder = None
         params = {}
 
         dependent_mw_resp_stack = []
@@ -214,21 +228,24 @@ class API(object):
                 if self._independent_middleware:
                     for process_request in mw_req_stack:
                         process_request(req, resp)
+                        if resp.complete:
+                            break
                 else:
                     for process_request, process_response in mw_req_stack:
-                        if process_request:
+                        if process_request and not resp.complete:
                             process_request(req, resp)
                         if process_response:
                             dependent_mw_resp_stack.insert(0, process_response)
 
-                # NOTE(warsaw): Moved this to inside the try except
-                # because it is possible when using object-based
-                # traversal for _get_responder() to fail.  An example is
-                # a case where an object does not have the requested
-                # next-hop child resource. In that case, the object
-                # being asked to dispatch to its child will raise an
-                # HTTP exception signalling the problem, e.g. a 404.
-                responder, params, resource, req.uri_template = self._get_responder(req)
+                if not resp.complete:
+                    # NOTE(warsaw): Moved this to inside the try except
+                    # because it is possible when using object-based
+                    # traversal for _get_responder() to fail.  An example is
+                    # a case where an object does not have the requested
+                    # next-hop child resource. In that case, the object
+                    # being asked to dispatch to its child will raise an
+                    # HTTP exception signalling the problem, e.g. a 404.
+                    responder, params, resource, req.uri_template = self._get_responder(req)
             except Exception as ex:
                 if not self._handle_exception(req, resp, ex, params):
                     raise
@@ -237,13 +254,19 @@ class API(object):
                     # NOTE(kgriffs): If the request did not match any
                     # route, a default responder is returned and the
                     # resource is None. In that case, we skip the
-                    # resource middleware methods.
-                    if resource is not None:
+                    # resource middleware methods. Resource will also be
+                    # None when a middleware method already set
+                    # resp.complete to True.
+                    if resource:
                         # Call process_resource middleware methods.
                         for process_resource in mw_rsrc_stack:
                             process_resource(req, resp, resource, params)
+                            if resp.complete:
+                                break
 
-                    responder(req, resp, **params)
+                    if not resp.complete:
+                        responder(req, resp, **params)
+
                     req_succeeded = True
                 except Exception as ex:
                     if not self._handle_exception(req, resp, ex, params):
@@ -274,24 +297,29 @@ class API(object):
         # must be of type str (not unicode on Py27), some WSGI servers
         # can complain when it is not.
         resp_status = str(resp.status) if compat.PY2 else resp.status
+        media_type = self._media_type
 
-        if req.method == 'HEAD' or resp_status in self._BODILESS_STATUS_CODES:
+        if req.method == 'HEAD' or resp_status in _BODILESS_STATUS_CODES:
             body = []
+
+            # PERF(vytas): move check for the less common and much faster path
+            # of resp_status being in {204, 304} here; NB: this builds on the
+            # assumption _TYPELESS_STATUS_CODES <= _BODILESS_STATUS_CODES.
+
+            # NOTE(kgriffs): Based on wsgiref.validate's interpretation of
+            # RFC 2616, as commented in that module's source code. The
+            # presence of the Content-Length header is not similarly
+            # enforced.
+            if resp_status in _TYPELESS_STATUS_CODES:
+                media_type = None
+
         else:
             body, length = self._get_body(resp, env.get('wsgi.file_wrapper'))
-            if resp.content_length is None and length is not None:
-                resp._headers['content-length'] = str(length)
-            elif resp.content_length is not None:
-                resp._headers['content-length'] = str(resp.content_length)
 
-        # NOTE(kgriffs): Based on wsgiref.validate's interpretation of
-        # RFC 2616, as commented in that module's source code. The
-        # presence of the Content-Length header is not similarly
-        # enforced.
-        if resp_status in (status.HTTP_204, status.HTTP_304):
-            media_type = None
-        else:
-            media_type = self._media_type
+            # PERF(kgriffs): Böse mußt sein. Operate directly on resp._headers
+            #   to reduce overhead since this is a hot/critical code path.
+            if 'content-length' not in resp._headers and length is not None:
+                resp._headers['content-length'] = str(length)
 
         headers = resp._wsgi_headers(media_type)
 
@@ -466,12 +494,12 @@ class API(object):
         self._sinks.insert(0, (prefix, sink))
 
     def add_error_handler(self, exception, handler=None):
-        """Register a handler for a given exception error type.
+        """Register a handler for a given exception type.
 
-        Error handlers may be registered for any type, including
-        :class:`~.HTTPError`. This feature provides a central location
-        for logging and otherwise handling exceptions raised by
-        responders, hooks, and middleware components.
+        Error handlers may be registered for any exception type, including
+        :class:`~.HTTPError` or :class:`~.HTTPStatus`. This feature
+        provides a central location for logging and otherwise handling
+        exceptions raised by responders, hooks, and middleware components.
 
         A handler can raise an instance of :class:`~.HTTPError` or
         :class:`~.HTTPStatus` to communicate information about the issue to
@@ -485,6 +513,13 @@ class API(object):
         Therefore, more general error handlers (e.g., for the
         standard ``Exception`` type) should be added first, to avoid
         masking more specific handlers for subclassed types.
+
+        .. Note::
+
+            By default, the framework installs two handlers, one for
+            :class:`~.HTTPError` and one for :class:`~.HTTPStatus`. These can
+            be overridden by adding a custom error handler method for the
+            exception type in question.
 
         Args:
             exception (type): Whenever an error occurs when handling a request
@@ -537,6 +572,15 @@ class API(object):
             "+json" or "+xml" suffix, the default serializer will
             convert the error to JSON or XML, respectively.
 
+        Note:
+            The default serializer will not render any response body for
+            :class:`~.HTTPError` instances where the `has_representation`
+            property evaluates to ``False`` (such as in the case of types
+            that subclass :class:`falcon.http_error.NoRepresentation`).
+            However a custom serializer will be called regardless of the
+            property value, and it may choose to override the
+            representation logic.
+
         The :class:`~.HTTPError` class contains helper methods,
         such as `to_json()` and `to_dict()`, that can be used from
         within custom serializers. For example::
@@ -547,7 +591,7 @@ class API(object):
                 preferred = req.client_prefers(('application/x-yaml',
                                                 'application/json'))
 
-                if preferred is not None:
+                if exception.has_representation and preferred is not None:
                     if preferred == 'application/json':
                         representation = exception.to_json()
                     else:
@@ -566,9 +610,6 @@ class API(object):
                 ``falcon.HTTPError``.
 
         """
-
-        if len(get_argnames(serializer)) == 2:
-            serializer = helpers.wrap_old_error_serializer(serializer)
 
         self._serialize_error = serializer
 
@@ -669,8 +710,7 @@ class API(object):
         if error.headers is not None:
             resp.set_headers(error.headers)
 
-        if error.has_representation:
-            self._serialize_error(req, resp, error)
+        self._serialize_error(req, resp, error)
 
     def _http_status_handler(self, req, resp, status, params):
         self._compose_status_response(req, resp, status)
@@ -729,13 +769,15 @@ class API(object):
             The length is returned as ``None`` when unknown. The
             iterable is determined as follows:
 
-                * If resp.body is not ``None``, returns [resp.body],
+                * If resp.body is not ``None``, returns
+                  ([resp.body], len(resp.body)),
                   encoded as UTF-8 if it is a Unicode string.
                   Bytestrings are returned as-is.
-                * If resp.data is not ``None``, returns [resp.data]
+                * If resp.data is not ``None``, returns ([resp.data], len(resp.data))
                 * If resp.stream is not ``None``, returns resp.stream
-                  iterable using wsgi.file_wrapper, if possible.
-                * Otherwise, returns []
+                  iterable using wsgi.file_wrapper, if necessary:
+                  (closeable_iterator, None)
+                * Otherwise, returns ([], 0)
 
         """
         body = resp.body
@@ -766,9 +808,6 @@ class API(object):
             else:
                 iterable = stream
 
-            # NOTE(pshello): resp.stream_len is deprecated in favor of
-            # resp.content_length. The caller of _get_body should give
-            # preference to resp.content_length if it has been set.
-            return iterable, resp.stream_len
+            return iterable, None
 
         return [], 0
