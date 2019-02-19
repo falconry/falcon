@@ -30,3 +30,15 @@ def test_test_client_works_in_py2(auth_header):
     client.simulate_get('/', headers={
         'Authorization': auth_header
     })
+
+
+@pytest.mark.parametrize(
+    'auth_header',
+    [u'token blah', 'token blah']
+)
+def test_test_client_works_in_py2_with_builder(auth_header):
+    app = falcon.APIBuilder().build()
+    client = TestClient(app)
+    client.simulate_get('/', headers={
+        'Authorization': auth_header
+    })
