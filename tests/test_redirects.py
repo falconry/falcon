@@ -24,6 +24,36 @@ def client_exercising_headers():
     return testing.TestClient(app)
 
 
+@pytest.fixture
+def builder_client():
+    resource = RedirectingResource()
+
+    app = falcon.APIBuilder() \
+        .add_get_route('/', resource.on_get) \
+        .add_post_route('/', resource.on_post) \
+        .add_put_route('/', resource.on_put) \
+        .add_delete_route('/', resource.on_delete) \
+        .add_head_route('/', resource.on_head) \
+        .build()
+
+    return testing.TestClient(app)
+
+
+@pytest.fixture
+def builder_client_exercising_headers():
+    resource = RedirectingResourceWithHeaders()
+
+    app = falcon.APIBuilder() \
+        .add_get_route('/', resource.on_get) \
+        .add_post_route('/', resource.on_post) \
+        .add_put_route('/', resource.on_put) \
+        .add_delete_route('/', resource.on_delete) \
+        .add_head_route('/', resource.on_head) \
+        .build()
+
+    return testing.TestClient(app)
+
+
 class RedirectingResource(object):
     # NOTE(kgriffs): You wouldn't necessarily use these types of
     # http methods with these types of redirects; this is only
@@ -91,6 +121,38 @@ class TestRedirects(object):
     def test_redirect_with_headers(self, client_exercising_headers, method,
                                    expected_status, expected_location):
         result = client_exercising_headers.simulate_request(path='/', method=method)
+
+        assert not result.content
+        assert result.status == expected_status
+        assert result.headers['location'] == expected_location
+        assert result.headers['foo'] == 'bar'
+
+
+class TestRedirectsWithBuilder(object):
+    @pytest.mark.parametrize('method,expected_status,expected_location', [
+        ('GET', falcon.HTTP_301, '/moved/perm'),
+        ('POST', falcon.HTTP_302, '/found'),
+        ('PUT', falcon.HTTP_303, '/see/other'),
+        ('DELETE', falcon.HTTP_307, '/tmp/redirect'),
+        ('HEAD', falcon.HTTP_308, '/perm/redirect'),
+    ])
+    def test_redirect(self, builder_client, method, expected_status, expected_location):
+        result = builder_client.simulate_request(path='/', method=method)
+
+        assert not result.content
+        assert result.status == expected_status
+        assert result.headers['location'] == expected_location
+
+    @pytest.mark.parametrize('method,expected_status,expected_location', [
+        ('GET', falcon.HTTP_301, '/moved/perm'),
+        ('POST', falcon.HTTP_302, '/found'),
+        ('PUT', falcon.HTTP_303, '/see/other'),
+        ('DELETE', falcon.HTTP_307, '/tmp/redirect'),
+        ('HEAD', falcon.HTTP_308, '/perm/redirect'),
+    ])
+    def test_redirect_with_headers(self, builder_client_exercising_headers, method,
+                                   expected_status, expected_location):
+        result = builder_client_exercising_headers.simulate_request(path='/', method=method)
 
         assert not result.content
         assert result.status == expected_status
