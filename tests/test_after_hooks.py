@@ -32,11 +32,14 @@ def client():
 # --------------------------------------------------------------------
 
 
-def validate_output(req, resp):
+def validate_output(req, resp, resource):
+    assert resource
     raise falcon.HTTPError(falcon.HTTP_723, 'Tricky')
 
 
-def serialize_body(req, resp):
+def serialize_body(req, resp, resource):
+    assert resource
+
     body = resp.body
     if body is not None:
         resp.body = json.dumps(body)
@@ -44,35 +47,33 @@ def serialize_body(req, resp):
         resp.body = 'Nothing to see here. Move along.'
 
 
-def fluffiness(req, resp, animal=''):
+def fluffiness(req, resp, resource, animal=''):
+    assert resource
+
     resp.body = 'fluffy'
     if animal:
         resp.set_header('X-Animal', animal)
 
 
-def resource_aware_fluffiness(req, resp, resource):
-    assert resource
-    fluffiness(req, resp)
-
-
 class ResourceAwareFluffiness(object):
     def __call__(self, req, resp, resource):
-        assert resource
-        fluffiness(req, resp)
+        fluffiness(req, resp, resource)
 
 
-def cuteness(req, resp, check, postfix=' and cute'):
+def cuteness(req, resp, resource, check, postfix=' and cute'):
+    assert resource
     if resp.body == check:
         resp.body += postfix
 
 
 def resource_aware_cuteness(req, resp, resource):
     assert resource
-    cuteness(req, resp, 'fluffy')
+    cuteness(req, resp, resource, 'fluffy')
 
 
 class Smartness(object):
-    def __call__(self, req, resp):
+    def __call__(self, req, resp, resource):
+        assert resource
         if resp.body:
             resp.body += ' and smart'
         else:
@@ -81,7 +82,8 @@ class Smartness(object):
 
 # NOTE(kgriffs): Use partial methods for these next two in order
 # to make sure we handle that correctly.
-def things_in_the_head(header, value, req, resp):
+def things_in_the_head(header, value, req, resp, resource):
+    assert resource
     resp.set_header(header, value)
 
 
@@ -93,7 +95,7 @@ cuteness_in_the_head = functools.partial(things_in_the_head,
                                          'X-Cuteness', 'cute')
 
 
-def fluffiness_in_the_head(req, resp, value='fluffy'):
+def fluffiness_in_the_head(req, resp, resource, value='fluffy'):
     resp.set_header('X-Fluffiness', value)
 
 
@@ -182,11 +184,11 @@ class ClassResourceWithAwareHooks(object):
         # Test that the decorator skips non-callables
         self.on_patch = []
 
-    @falcon.after(resource_aware_fluffiness)
+    @falcon.after(fluffiness)
     def on_get(self, req, resp):
         self._capture(req, resp)
 
-    @falcon.after(resource_aware_fluffiness)
+    @falcon.after(fluffiness)
     def on_head(self, req, resp):
         self._capture(req, resp)
 

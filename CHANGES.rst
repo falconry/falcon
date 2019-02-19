@@ -39,6 +39,19 @@ Breaking Changes
   to use arbitrary ``dumps()`` and ``loads()`` functions. If you
   also need to customize ``HTTPError`` serialization, you can do so via
   ``API.set_error_serializer()``.
+- The ``find()`` method for a custom router is now required to accept the
+  ``req`` keyword argument that was added in a previous release. The
+  backwards-compatible shim was removed.
+- All middleware methods and hooks must now accept the arguments as specified
+  in the relevant interface definitions as of Falcon 1.4. All
+  backwards-compatible shims have been removed.
+- Custom error serializers are now required to accept the arguments as
+  specified by ``API.set_error_serializer()`` for the past few releases.
+  The backwards-compatible shim has been removed.
+- An internal function, ``make_router_search()``, was removed from the
+  ``api_helpers`` module.
+- An internal function, ``wrap_old_error_serializer()``, was removed from the
+  ``api_helpers`` module.
 - In order to improve performance, the ``Request.headers`` and
   ``Request.cookies`` properties now return a direct reference to
   an internal cached object, rather than making a copy each time. This

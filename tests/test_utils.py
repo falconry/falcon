@@ -9,7 +9,7 @@ import pytest
 import falcon
 from falcon import testing
 from falcon import util
-from falcon.util import compat, json, uri
+from falcon.util import compat, json, misc, uri
 
 
 def _arbitrary_uris(count, length):
@@ -664,3 +664,20 @@ class TestSetupApi(testing.TestCase):
 
     def test_something(self):
         self.assertTrue(isinstance(self.api, falcon.API))
+
+
+def test_get_argnames():
+    def foo(a, b, c):
+        pass
+
+    class Bar(object):
+        def __call__(self, a, b):
+            pass
+
+    assert misc.get_argnames(foo) == ['a', 'b', 'c']
+    assert misc.get_argnames(Bar()) == ['a', 'b']
+
+    # NOTE(kgriffs): This difference will go away once we drop Python 2.7
+    # support, so we just use this regression test to ensure the status quo.
+    expected = ['b', 'c'] if compat.PY3 else ['a', 'b', 'c']
+    assert misc.get_argnames(functools.partial(foo, 42)) == expected

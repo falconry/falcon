@@ -24,7 +24,7 @@ class RequestIDComponent(object):
     def process_request(self, req, resp):
         req.context.request_id = '<generate ID>'
 
-    def process_response(self, req, resp, resource):
+    def process_response(self, req, resp, resource, req_succeeded):
         resp.set_header('X-Request-ID', req.context.request_id)
 
 
@@ -33,7 +33,7 @@ class CannedResponseComponent(object):
         self._body = body
         self._headers = headers
 
-    def process_response(self, req, resp, resource):
+    def process_response(self, req, resp, resource, req_succeeded):
         user_agent = req.user_agent  # NOQA
         limit = req.get_param('limit') or '10'  # NOQA
 

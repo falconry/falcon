@@ -26,7 +26,6 @@ import falcon.responders
 from falcon.response import Response, ResponseOptions
 import falcon.status_codes as status
 from falcon.util import compat
-from falcon.util.misc import get_argnames
 
 
 # PERF(vytas): on Python 2.7+, Python 3.5+ (including cythonized modules),
@@ -173,7 +172,7 @@ class API(object):
         self._independent_middleware = independent_middleware
 
         self._router = router or routing.DefaultRouter()
-        self._router_search = helpers.make_router_search(self._router)
+        self._router_search = self._router.find
 
         self._request_type = request_type
         self._response_type = response_type
@@ -611,9 +610,6 @@ class API(object):
                 ``falcon.HTTPError``.
 
         """
-
-        if len(get_argnames(serializer)) == 2:
-            serializer = helpers.wrap_old_error_serializer(serializer)
 
         self._serialize_error = serializer
 
