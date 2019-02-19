@@ -17,8 +17,18 @@ def resource():
 
 
 @pytest.fixture
-def client():
+def client(resource):
     app = falcon.API()
+    app.add_route('/', resource)
+    return testing.TestClient(app)
+
+
+@pytest.fixture
+def builder_client(resource):
+    app = falcon.APIBuilder() \
+        .add_get_route('/', resource.on_get) \
+        .add_post_route('/', resource.on_post) \
+        .build()
     return testing.TestClient(app)
 
 
@@ -33,14 +43,20 @@ class TestRequestBody(object):
         if isinstance(stream, io.BytesIO):
             return stream
 
+    @pytest.mark.parametrize('client', [
+        'client',
+        'builder_client'
+    ], indirect=True)
     def test_empty_body(self, client, resource):
-        client.app.add_route('/', resource)
         client.simulate_request(path='/', body='')
         stream = self._get_wrapped_stream(resource.captured_req)
         assert stream.tell() == 0
 
+    @pytest.mark.parametrize('client', [
+        'client',
+        'builder_client'
+    ], indirect=True)
     def test_tiny_body(self, client, resource):
-        client.app.add_route('/', resource)
         expected_body = '.'
         client.simulate_request(path='/', body=expected_body)
         stream = self._get_wrapped_stream(resource.captured_req)
@@ -50,8 +66,11 @@ class TestRequestBody(object):
 
         assert stream.tell() == 1
 
+    @pytest.mark.parametrize('client', [
+        'client',
+        'builder_client'
+    ], indirect=True)
     def test_tiny_body_overflow(self, client, resource):
-        client.app.add_route('/', resource)
         expected_body = '.'
         client.simulate_request(path='/', body=expected_body)
         stream = self._get_wrapped_stream(resource.captured_req)
@@ -60,8 +79,11 @@ class TestRequestBody(object):
         actual_body = stream.read(len(expected_body) + 1)
         assert actual_body == expected_body.encode('utf-8')
 
+    @pytest.mark.parametrize('client', [
+        'client',
+        'builder_client'
+    ], indirect=True)
     def test_read_body(self, client, resource):
-        client.app.add_route('/', resource)
         expected_body = testing.rand_string(SIZE_1_KB / 2, SIZE_1_KB)
         expected_len = len(expected_body)
         headers = {'Content-Length': str(expected_len)}
