@@ -4,18 +4,25 @@ import falcon
 from falcon import errors, media, testing
 
 
-def create_client(handlers=None):
-    res = testing.SimpleTestResource()
+@pytest.fixture
+def builder_client():
+    resource = testing.SimpleTestResource()
+    app = falcon.APIBuilder() \
+        .add_get_route('/', resource.on_get) \
+        .add_post_route('/', resource.on_post) \
+        .build()
+    client = testing.TestClient(app)
+    client.resource = resource
+    return client
 
+
+@pytest.fixture
+def client():
+    res = testing.SimpleTestResource()
     app = falcon.API()
     app.add_route('/', res)
-
-    if handlers:
-        app.req_options.media_handlers.update(handlers)
-
     client = testing.TestClient(app)
     client.resource = res
-
     return client
 
 
@@ -25,8 +32,11 @@ def create_client(handlers=None):
     ('application/json'),
     ('application/json; charset=utf-8'),
 ])
-def test_json(media_type):
-    client = create_client()
+@pytest.mark.parametrize('client', [
+    'client',
+    'builder_client'
+], indirect=True)
+def test_json(media_type, client):
     expected_body = b'{"something": true}'
     headers = {'Content-Type': media_type}
     client.simulate_post('/', body=expected_body, headers=headers)
@@ -41,8 +51,12 @@ def test_json(media_type):
     ('application/msgpack; charset=utf-8'),
     ('application/x-msgpack'),
 ])
-def test_msgpack(media_type):
-    client = create_client({
+@pytest.mark.parametrize('client', [
+    'client',
+    'builder_client'
+], indirect=True)
+def test_msgpack(media_type, client):
+    client.app.req_options.media_handlers.update({
         'application/msgpack': media.MessagePackHandler(),
         'application/x-msgpack': media.MessagePackHandler(),
     })
@@ -66,8 +80,11 @@ def test_msgpack(media_type):
 @pytest.mark.parametrize('media_type', [
     ('nope/json'),
 ])
-def test_unknown_media_type(media_type):
-    client = create_client()
+@pytest.mark.parametrize('client', [
+    'client',
+    'builder_client'
+], indirect=True)
+def test_unknown_media_type(media_type, client):
     headers = {'Content-Type': media_type}
     client.simulate_post('/', body=b'something', headers=headers)
 
@@ -81,8 +98,12 @@ def test_unknown_media_type(media_type):
 @pytest.mark.parametrize('media_type', [
     ('application/json'),
 ])
-def test_exhausted_stream(media_type):
-    client = create_client({
+@pytest.mark.parametrize('client', [
+    'client',
+    'builder_client'
+], indirect=True)
+def test_exhausted_stream(media_type, client):
+    client.app.req_options.media_handlers.update({
         'application/json': media.JSONHandler(),
     })
     headers = {'Content-Type': media_type}
@@ -91,8 +112,11 @@ def test_exhausted_stream(media_type):
     assert client.resource.captured_req.media is None
 
 
-def test_invalid_json():
-    client = create_client()
+@pytest.mark.parametrize('client', [
+    'client',
+    'builder_client'
+], indirect=True)
+def test_invalid_json(client):
     expected_body = b'{'
     headers = {'Content-Type': 'application/json'}
     client.simulate_post('/', body=expected_body, headers=headers)
@@ -103,8 +127,14 @@ def test_invalid_json():
     assert 'Could not parse JSON body' in err.value.description
 
 
-def test_invalid_msgpack():
-    client = create_client({'application/msgpack': media.MessagePackHandler()})
+@pytest.mark.parametrize('client', [
+    'client',
+    'builder_client'
+], indirect=True)
+def test_invalid_msgpack(client):
+    client.app.req_options.media_handlers.update({
+        'application/msgpack': media.MessagePackHandler()
+    })
     expected_body = '/////////////////////'
     headers = {'Content-Type': 'application/msgpack'}
     client.simulate_post('/', body=expected_body, headers=headers)
@@ -116,8 +146,11 @@ def test_invalid_msgpack():
     assert err.value.description == desc
 
 
-def test_invalid_stream_fails_gracefully():
-    client = create_client()
+@pytest.mark.parametrize('client', [
+    'client',
+    'builder_client'
+], indirect=True)
+def test_invalid_stream_fails_gracefully(client):
     client.simulate_post('/')
 
     req = client.resource.captured_req
@@ -127,8 +160,11 @@ def test_invalid_stream_fails_gracefully():
     assert req.media is None
 
 
-def test_use_cached_media():
-    client = create_client()
+@pytest.mark.parametrize('client', [
+    'client',
+    'builder_client'
+], indirect=True)
+def test_use_cached_media(client):
     client.simulate_post('/')
 
     req = client.resource.captured_req
@@ -146,8 +182,12 @@ class NopeHandler(media.BaseHandler):
         pass
 
 
-def test_complete_consumption():
-    client = create_client({
+@pytest.mark.parametrize('client', [
+    'client',
+    'builder_client'
+], indirect=True)
+def test_complete_consumption(client):
+    client.app.req_options.media_handlers.update({
         'nope/nope': NopeHandler()
     })
     body = b'{"something": "abracadabra"}'
@@ -162,8 +202,11 @@ def test_complete_consumption():
 
 
 @pytest.mark.parametrize('payload', [False, 0, 0.0, '', [], {}])
-def test_empty_json_media(payload):
-    client = create_client()
+@pytest.mark.parametrize('client', [
+    'client',
+    'builder_client'
+], indirect=True)
+def test_empty_json_media(payload, client):
     client.simulate_post('/', json=payload)
 
     req = client.resource.captured_req
@@ -171,8 +214,11 @@ def test_empty_json_media(payload):
         assert req.media == payload
 
 
-def test_null_json_media():
-    client = create_client()
+@pytest.mark.parametrize('client', [
+    'client',
+    'builder_client'
+], indirect=True)
+def test_null_json_media(client):
     client.simulate_post('/', body='null',
                          headers={'Content-Type': 'application/json'})
 
