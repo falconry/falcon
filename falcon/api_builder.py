@@ -227,12 +227,13 @@ class APIBuilder:
         api.set_error_serializer(self._error_serializer)
         return api
 
+    class BlankResource:
+        pass
+
     @staticmethod
     def _compose_new_resource(resource_method_routes):
-        class BlankResource:
-            pass
 
-        resource = BlankResource()
+        resource = APIBuilder.BlankResource()
 
         for http_method in resource_method_routes:
 
