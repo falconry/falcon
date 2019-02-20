@@ -544,7 +544,7 @@ class API(object):
 
                 If an iterable of exception types is specified instead of
                 a single type, the handler must be explicitly specified.
-                
+
         """
 
         if handler is None:
@@ -558,10 +558,11 @@ class API(object):
 
         # Insert at the head of the list in case we get duplicate
         # adds (will cause the most recently added one to win).
-        if issubclass(exception, BaseException):
-            self._error_handlers.insert(0, (exception, handler))
-        else:
+        try:
             self._error_handlers.insert(0, (tuple(exception), handler))
+        except TypeError:
+            self._error_handlers.insert(0, (exception, handler))
+            
 
     def set_error_serializer(self, serializer):
         """Override the default serializer for instances of :class:`~.HTTPError`.
