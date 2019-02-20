@@ -7,7 +7,6 @@ import pytest
 import requests
 
 import falcon
-from falcon.request_helpers import BoundedStream
 import falcon.testing as testing
 
 _SERVER_HOST = 'localhost'
@@ -44,8 +43,7 @@ class TestWSGIServer(object):
     def test_post_invalid_content_length(self):
         headers = {'Content-Length': 'invalid'}
         resp = requests.post(_SERVER_BASE_URL, headers=headers)
-        assert resp.status_code == 200
-        assert resp.text == ''
+        assert resp.status_code == 400
 
     def test_post_read_bounded_stream(self):
         body = testing.rand_string(_SIZE_1_KB / 2, _SIZE_1_KB)
@@ -64,31 +62,20 @@ def _run_server(stop_event):
             resp.body = req.remote_addr
 
         def on_post(self, req, resp):
-            resp.body = req.stream.read(_SIZE_1_KB)
+            # NOTE(kgriffs): Elsewhere we just use req.bounded_stream, so
+            # here we read the stream directly to test that use case.
+            resp.body = req.stream.read(req.content_length or 0)
 
         def on_put(self, req, resp):
             # NOTE(kgriffs): Test that reading past the end does
             # not hang.
-            req_body = (req.stream.read(1)
+            req_body = (req.bounded_stream.read(1)
                         for i in range(req.content_length + 1))
 
             resp.body = b''.join(req_body)
 
     class Bucket(object):
         def on_post(self, req, resp):
-            # NOTE(kgriffs): The framework automatically detects
-            # wsgiref's input object type and wraps it; we'll probably
-            # do away with this at some point, but for now we
-            # verify the functionality,
-            assert isinstance(req.stream, BoundedStream)
-
-            # NOTE(kgriffs): Ensure we are reusing the same object for
-            # the sake of efficiency and to ensure a shared state of the
-            # stream. (only in the case that we have decided to
-            # automatically wrap the WSGI input object, i.e. when
-            # running under wsgiref or similar).
-            assert req.stream is req.bounded_stream
-
             # NOTE(kgriffs): This would normally block when
             # Content-Length is 0 and the WSGI input object.
             # BoundedStream fixes that. This is just a sanity check to

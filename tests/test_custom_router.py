@@ -30,7 +30,7 @@ def test_custom_router_find_should_be_used():
         def __init__(self):
             self.reached_backwards_compat = False
 
-        def find(self, uri):
+        def find(self, uri, req=None):
             if uri == '/test/42':
                 return resource, {'GET': resource}, {}, '/test/{id}'
 

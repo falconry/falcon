@@ -193,7 +193,7 @@ parameters, handling errors, and working with request and response bodies.
                                             'A valid JSON document is required.')
 
             try:
-                req.context['doc'] = json.loads(body.decode('utf-8'))
+                req.context.doc = json.loads(body.decode('utf-8'))
 
             except (ValueError, UnicodeDecodeError):
                 raise falcon.HTTPError(falcon.HTTP_753,
@@ -203,10 +203,10 @@ parameters, handling errors, and working with request and response bodies.
                                        'UTF-8.')
 
         def process_response(self, req, resp, resource):
-            if 'result' not in resp.context:
+            if not hasattr(resp.context, 'result'):
                 return
 
-            resp.body = json.dumps(resp.context['result'])
+            resp.body = json.dumps(resp.context.result)
 
 
     def max_body(limit):
@@ -254,7 +254,7 @@ parameters, handling errors, and working with request and response bodies.
             #
             # NOTE: Starting with Falcon 1.3, you can simply 
             # use resp.media for this instead.
-            resp.context['result'] = result
+            resp.context.result = result
 
             resp.set_header('Powered-By', 'Falcon')
             resp.status = falcon.HTTP_200
@@ -262,8 +262,8 @@ parameters, handling errors, and working with request and response bodies.
         @falcon.before(max_body(64 * 1024))
         def on_post(self, req, resp, user_id):
             try:
-                doc = req.context['doc']
-            except KeyError:
+                doc = req.context.doc
+            except AttributeError:
                 raise falcon.HTTPBadRequest(
                     'Missing thing',
                     'A thing must be submitted in the request body.')

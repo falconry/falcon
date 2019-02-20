@@ -314,62 +314,7 @@ class TestHTTPError(object):
         assert response.headers['Vary'] == 'Accept'
         assert not response.content
 
-    def test_custom_old_error_serializer(self, client):
-        headers = {
-            'X-Error-Title': 'Storage service down',
-            'X-Error-Description': ('The configured storage service is not '
-                                    'responding to requests. Please contact '
-                                    'your service provider'),
-            'X-Error-Status': falcon.HTTP_503
-        }
-
-        expected_doc = {
-            'code': 10042,
-            'description': ('The configured storage service is not '
-                            'responding to requests. Please contact '
-                            'your service provider'),
-            'title': 'Storage service down'
-        }
-
-        def _my_serializer(req, exception):
-            representation = None
-
-            preferred = req.client_prefers(('application/x-yaml',
-                                            'application/json'))
-
-            if preferred is not None:
-                if preferred == 'application/json':
-                    representation = exception.to_json()
-                else:
-                    representation = yaml.dump(exception.to_dict(),
-                                               encoding=None)
-
-            return (preferred, representation)
-
-        def _check(media_type, deserializer):
-            headers['Accept'] = media_type
-            client.app.set_error_serializer(_my_serializer)
-            response = client.simulate_request(path='/fail', headers=headers)
-            assert response.status == headers['X-Error-Status']
-
-            actual_doc = deserializer(response.content.decode('utf-8'))
-            assert expected_doc == actual_doc
-
-        _check('application/x-yaml', yaml.load)
-        _check('application/json', json.loads)
-
-    def test_custom_old_error_serializer_no_body(self, client):
-        headers = {
-            'X-Error-Status': falcon.HTTP_503
-        }
-
-        def _my_serializer(req, exception):
-            return None, None
-
-        client.app.set_error_serializer(_my_serializer)
-        client.simulate_request(path='/fail', headers=headers)
-
-    def test_custom_new_error_serializer(self, client):
+    def test_custom_error_serializer(self, client):
         headers = {
             'X-Error-Title': 'Storage service down',
             'X-Error-Description': ('The configured storage service is not '
@@ -413,6 +358,38 @@ class TestHTTPError(object):
 
         _check('application/x-yaml', yaml.load)
         _check('application/json', json.loads)
+
+    @pytest.mark.parametrize('method,path,status', [
+        ('GET', '/404', 404),
+        ('GET', '/notfound', 404),
+        ('REPORT', '/404', 405),
+        ('BREW', '/notfound', 400),
+    ])
+    def test_custom_error_serializer_optional_representation(self, client, method, path, status):
+        def _simple_serializer(req, resp, exception):
+            representation = exception.to_dict()
+            representation.update(status=int(exception.status[:3]))
+
+            resp.content_type = falcon.MEDIA_JSON
+            resp.media = representation
+
+        client.app.add_route('/404', NotFoundResource())
+        client.app.add_route('/notfound', NotFoundResourceWithBody())
+        client.app.set_error_serializer(_simple_serializer)
+
+        resp = client.simulate_request(path=path, method=method)
+        assert resp.json['title']
+        assert resp.json['status'] == status
+
+    def test_custom_serializer_no_representation(self, client):
+        def _chatty_serializer(req, resp, exception):
+            resp.content_type = falcon.MEDIA_TEXT
+            resp.body = b'You might think this error should not have a body'
+
+        client.app.add_route('/416', RangeNotSatisfiableResource())
+        client.app.set_error_serializer(_chatty_serializer)
+        resp = client.simulate_get(path='/416')
+        assert resp.text == 'You might think this error should not have a body'
 
     def test_client_does_not_accept_anything(self, client):
         headers = {
