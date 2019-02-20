@@ -6,18 +6,28 @@ import falcon
 from falcon import errors, media, testing
 
 
-def create_client(handlers=None):
+@pytest.fixture
+def client():
     res = testing.SimpleTestResource()
 
     app = falcon.API()
     app.add_route('/', res)
 
-    if handlers:
-        app.resp_options.media_handlers.update(handlers)
-
     client = testing.TestClient(app)
     client.resource = res
 
+    return client
+
+
+@pytest.fixture
+def builder_client():
+    resource = testing.SimpleTestResource()
+    app = falcon.APIBuilder() \
+        .add_get_route('/', resource.on_get) \
+        .add_post_route('/', resource.on_post) \
+        .build()
+    client = testing.TestClient(app)
+    client.resource = resource
     return client
 
 
@@ -38,8 +48,11 @@ class SimpleMediaResource(object):
     (falcon.MEDIA_JSON),
     ('application/json; charset=utf-8'),
 ])
-def test_json(media_type):
-    client = create_client()
+@pytest.mark.parametrize('client', [
+    'client',
+    'builder_client'
+], indirect=True)
+def test_json(media_type, client):
     client.simulate_get('/')
 
     resp = client.resource.captured_resp
@@ -75,13 +88,45 @@ def test_non_ascii_json_serialization(document):
     assert resp.json == document
 
 
+@pytest.mark.parametrize('document', [
+    '',
+    u'I am a \u1d0a\ua731\u1d0f\u0274 string.',
+    [u'\u2665', u'\u2660', u'\u2666', u'\u2663'],
+    {u'message': u'\xa1Hello Unicode! \U0001F638'},
+    {
+        'description': 'A collection of primitive Python 2 type examples.',
+        'bool': False is not True and True is not False,
+        'dict': {'example': 'mapping'},
+        'float': 1.0,
+        'int': 1337,
+        'list': ['a', 'sequence', 'of', 'items'],
+        'none': None,
+        'str': 'ASCII string',
+        'unicode': u'Hello Unicode! \U0001F638',
+    },
+])
+def test_non_ascii_json_serialization_builder(document):
+    resource = SimpleMediaResource(document)
+    app = falcon.APIBuilder() \
+        .add_get_route('/', resource.on_get) \
+        .build()
+    client = testing.TestClient(app)
+
+    resp = client.simulate_get('/')
+    assert resp.json == document
+
+
 @pytest.mark.parametrize('media_type', [
     (falcon.MEDIA_MSGPACK),
     ('application/msgpack; charset=utf-8'),
     ('application/x-msgpack'),
 ])
-def test_msgpack(media_type):
-    client = create_client({
+@pytest.mark.parametrize('client', [
+    'client',
+    'builder_client'
+], indirect=True)
+def test_msgpack(media_type, client):
+    client.app.resp_options.media_handlers.update({
         'application/msgpack': media.MessagePackHandler(),
         'application/x-msgpack': media.MessagePackHandler(),
     })
@@ -99,8 +144,11 @@ def test_msgpack(media_type):
     assert resp.data == b'\x81\xa9something\xc3'
 
 
-def test_unknown_media_type():
-    client = create_client()
+@pytest.mark.parametrize('client', [
+    'client',
+    'builder_client'
+], indirect=True)
+def test_unknown_media_type(client):
     client.simulate_get('/')
 
     resp = client.resource.captured_resp
@@ -112,10 +160,13 @@ def test_unknown_media_type():
     assert err.value.description == 'nope/json is an unsupported media type.'
 
 
-def test_use_cached_media():
+@pytest.mark.parametrize('client', [
+    'client',
+    'builder_client'
+], indirect=True)
+def test_use_cached_media(client):
     expected = {'something': True}
 
-    client = create_client()
     client.simulate_get('/')
 
     resp = client.resource.captured_resp
@@ -124,8 +175,11 @@ def test_use_cached_media():
     assert resp.media == expected
 
 
-def test_default_media_type():
-    client = create_client()
+@pytest.mark.parametrize('client', [
+    'client',
+    'builder_client'
+], indirect=True)
+def test_default_media_type(client):
     client.simulate_get('/')
 
     resp = client.resource.captured_resp
@@ -136,8 +190,11 @@ def test_default_media_type():
     assert resp.content_type == 'application/json; charset=UTF-8'
 
 
-def test_mimeparse_edgecases():
-    client = create_client()
+@pytest.mark.parametrize('client', [
+    'client',
+    'builder_client'
+], indirect=True)
+def test_mimeparse_edgecases(client):
     client.simulate_get('/')
 
     resp = client.resource.captured_resp
