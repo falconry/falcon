@@ -522,7 +522,7 @@ class API(object):
             exception type in question.
 
         Args:
-            exception (type or iterable of types): When handling a request, 
+            exception (type or iterable of types): When handling a request,
                 whenever an error occurs that is an instance of one of these
                 exception types, the associated handler will be called.
             handler (callable): A function or callable object taking the form
@@ -562,7 +562,6 @@ class API(object):
             self._error_handlers.insert(0, (tuple(exception), handler))
         except TypeError:
             self._error_handlers.insert(0, (exception, handler))
-            
 
     def set_error_serializer(self, serializer):
         """Override the default serializer for instances of :class:`~.HTTPError`.
