@@ -102,6 +102,26 @@ def test_both_schemas_validation_success():
 
 
 @skip_missing_dep
+def test_both_schemas_validation_success_builder():
+    req_data = GoodData()
+    resp_data = GoodData()
+
+    result = Resource().both_validated(req_data, resp_data)
+
+    assert result[0] is req_data
+    assert result[1] is resp_data
+
+    resource = Resource()
+    app = falcon.APIBuilder() \
+        .add_put_route('/test', resource.on_put) \
+        .build()
+    client = testing.TestClient(app)
+
+    result = client.simulate_put('/test', json=GoodData.media)
+    assert result.json == resp_data.media
+
+
+@skip_missing_dep
 def test_both_schemas_validation_failure():
     with pytest.raises(falcon.HTTPInternalServerError) as excinfo:
         Resource().both_validated(GoodData(), BadData())
@@ -115,5 +135,27 @@ def test_both_schemas_validation_failure():
 
     client = testing.TestClient(falcon.API())
     client.app.add_route('/test', Resource())
+    result = client.simulate_put('/test', json=BadData.media)
+    assert result.status_code == 400
+
+
+@skip_missing_dep
+def test_both_schemas_validation_failure_builder():
+    with pytest.raises(falcon.HTTPInternalServerError) as excinfo:
+        Resource().both_validated(GoodData(), BadData())
+
+    assert excinfo.value.title == 'Response data failed validation'
+
+    with pytest.raises(falcon.HTTPBadRequest) as excinfo:
+        Resource().both_validated(BadData(), GoodData())
+
+    assert excinfo.value.title == 'Request data failed validation'
+
+    resource = Resource()
+    app = falcon.APIBuilder() \
+        .add_put_route('/test', resource.on_put) \
+        .build()
+    client = testing.TestClient(app)
+
     result = client.simulate_put('/test', json=BadData.media)
     assert result.status_code == 400
