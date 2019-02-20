@@ -522,9 +522,9 @@ class API(object):
             exception type in question.
 
         Args:
-            exception (type): Whenever an error occurs when handling a request
-                that is an instance of this exception class, the associated
-                handler will be called.
+            exception (type or iterable of types): When handling a request, 
+                whenever an error occurs that is an instance of one of these
+                exception types, the associated handler will be called.
             handler (callable): A function or callable object taking the form
                 ``func(req, resp, ex, params)``.
 
@@ -542,7 +542,9 @@ class API(object):
                             # Convert to an instance of falcon.HTTPError
                             raise falcon.HTTPError(falcon.HTTP_792)
 
-
+                If an iterable of exception types is specified instead of
+                a single type, the handler must be explicitly specified.
+                
         """
 
         if handler is None:
@@ -556,7 +558,10 @@ class API(object):
 
         # Insert at the head of the list in case we get duplicate
         # adds (will cause the most recently added one to win).
-        self._error_handlers.insert(0, (exception, handler))
+        if issubclass(exception, BaseException):
+            self._error_handlers.insert(0, (exception, handler))
+        else:
+            self._error_handlers.insert(0, (tuple(exception), handler))
 
     def set_error_serializer(self, serializer):
         """Override the default serializer for instances of :class:`~.HTTPError`.
@@ -736,7 +741,7 @@ class API(object):
         """
 
         for err_type, err_handler in self._error_handlers:
-            if isinstance(ex, tuple(err_type)):
+            if isinstance(ex, err_type):
                 try:
                     err_handler(req, resp, ex, params)
                 except HTTPStatus as status:
