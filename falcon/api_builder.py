@@ -224,6 +224,13 @@ class APIBuilder:
         for sink in self._sinks:
             api.add_sink(sink.sink, sink.prefix)
 
+        for static_route in self._static_routes:
+            api.add_static_route(
+                static_route.prefix,
+                static_route.directory,
+                static_route.downloadable,
+                static_route.fallback_filename)
+
         api.set_error_serializer(self._error_serializer)
         return api
 
