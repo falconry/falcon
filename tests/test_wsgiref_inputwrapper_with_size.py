@@ -3,8 +3,26 @@ try:
 except ImportError:
     import json
 
+import pytest
+
 import falcon
 from falcon import testing
+
+
+@pytest.fixture
+def client():
+    app = falcon.API()
+    app.add_route('/type', TypeResource())
+    return testing.TestClient(app)
+
+
+@pytest.fixture
+def builder_client():
+    resource = TypeResource()
+    app = falcon.APIBuilder() \
+        .add_post_route('/type', resource.on_post) \
+        .build()
+    testing.TestClient(app)
 
 
 class TypeResource(testing.SimpleTestResource):
@@ -20,18 +38,18 @@ class TypeResource(testing.SimpleTestResource):
 
 
 class TestWsgiRefInputWrapper(object):
-    def test_resources_can_read_request_stream_during_tests(self):
+    @pytest.mark.parametrize('client', [
+        'client',
+        'builder_client'
+    ], indirect=True)
+    def test_resources_can_read_request_stream_during_tests(self, client):
         """Make sure we can perform a simple request during testing.
 
         Originally, testing would fail after performing a request because no
         size was specified when calling `wsgiref.validate.InputWrapper.read()`
         via `req.stream.read()`"""
-        app = falcon.API()
-        type_route = '/type'
-        app.add_route(type_route, TypeResource())
-        client = testing.TestClient(app)
 
-        result = client.simulate_post(path=type_route, body='hello')
+        result = client.simulate_post(path='/type', body='hello')
 
         assert result.status == falcon.HTTP_200
         assert result.json == {'data': 'hello'}

@@ -18,6 +18,16 @@ def client():
     return testing.TestClient(app)
 
 
+@pytest.fixture
+def builder_client():
+    tehlogger = LoggerResource()
+    app = falcon.APIBuilder() \
+        .add_get_route('/logger', tehlogger.on_get) \
+        .add_head_route('/logger', tehlogger.on_head) \
+        .build()
+    return testing.TestClient(app)
+
+
 class LoggerResource:
 
     def on_get(self, req, resp):
@@ -42,6 +52,10 @@ class TestWSGIError(object):
             # with undefined encoding, so do the encoding manually.
             self.wsgierrors = self.wsgierrors_buffer
 
+    @pytest.mark.parametrize('client', [
+        'client',
+        'builder_client'
+    ], indirect=True)
     def test_responder_logged_bytestring(self, client):
         client.simulate_request(path='/logger',
                                 wsgierrors=self.wsgierrors,
@@ -53,6 +67,10 @@ class TestWSGIError(object):
         assert b'?amount=10' in log
 
     @pytest.mark.skipif(six.PY3, reason='Test only applies to Python 2')
+    @pytest.mark.parametrize('client', [
+        'client',
+        'builder_client'
+    ], indirect=True)
     def test_responder_logged_unicode(self, client):
         client.simulate_request(path='/logger',
                                 wsgierrors=self.wsgierrors,

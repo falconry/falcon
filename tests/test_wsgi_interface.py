@@ -1,8 +1,20 @@
 import re
 import sys
 
+import pytest
+
 import falcon
 import falcon.testing as testing
+
+
+@pytest.fixture
+def app():
+    return falcon.API()
+
+
+@pytest.fixture
+def builder_app():
+    return falcon.APIBuilder().build()
 
 
 class TestWSGIInterface(object):
@@ -20,12 +32,15 @@ class TestWSGIInterface(object):
 
         assert mock.exc_info == exc_info
 
-    def test_pep3333(self):
-        api = falcon.API()
+    @pytest.mark.parametrize('app', [
+        'app',
+        'builder_app'
+    ], indirect=True)
+    def test_pep3333(self, app):
         mock = testing.StartResponseMock()
 
         # Simulate a web request (normally done though a WSGI server)
-        response = api(testing.create_environ(), mock)
+        response = app(testing.create_environ(), mock)
 
         # Verify that the response is iterable
         assert _is_iterable(response)
