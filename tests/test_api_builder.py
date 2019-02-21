@@ -134,3 +134,61 @@ def test_raise_on_using_same_uri_and_method():
             .add_get_route('/fizz', example_route_func) \
             .add_get_route('/fizz', example_route_func) \
             .build()
+
+
+def test_raise_on_setting_multipe_middleware_with_single_method():
+    class FakeMiddleware():
+        pass
+
+    with pytest.raises(APIBuildException):
+        falcon.APIBuilder() \
+            .add_middleware([FakeMiddleware()])
+
+
+def test_raise_on_setting_single_middleware_with_multi_method():
+    class FakeMiddleware():
+        pass
+
+    with pytest.raises(APIBuildException):
+        falcon.APIBuilder() \
+            .add_middlewares(FakeMiddleware())
+
+
+def test_request_type_passes_through():
+    class FakeRequest(falcon.request.Request):
+        pass
+
+    builder_app = falcon.APIBuilder() \
+        .set_request_type(FakeRequest) \
+        .build()
+
+    original_app = falcon.API(request_type=FakeRequest)
+
+    assert builder_app._request_type == original_app._request_type
+
+
+def test_response_type_passes_through():
+    class FakeResponse(falcon.response.Response):
+        pass
+
+    builder_app = falcon.APIBuilder() \
+        .set_response_type(FakeResponse) \
+        .build()
+
+    original_app = falcon.API(response_type=FakeResponse)
+
+    assert builder_app._response_type == original_app._response_type
+
+
+def test_error_serializer_passes_through():
+    def fake_error_serializer(request, response, error):
+        pass
+
+    builder_app = falcon.APIBuilder() \
+        .set_error_serializer(fake_error_serializer) \
+        .build()
+
+    original_app = falcon.API()
+    original_app.set_error_serializer(fake_error_serializer)
+
+    assert builder_app._serialize_error == original_app._serialize_error

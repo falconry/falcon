@@ -151,9 +151,11 @@ class APIBuilder:
         """Changes the error serializer from falcon's default
 
         Args:
-            serializer (callable): A function which takes a
-                request, response, and exception and serializes
-                the error.
+            serializer (callable): A function taking the form
+                ``func(req, resp, exception)``, where `req` is the request
+                object that was passed to the responder method, `resp` is
+                the response object, and `exception` is an instance of
+                ``falcon.HTTPError``.
 
         Returns:
             The Builder object so that the call can be chained.
@@ -194,6 +196,11 @@ class APIBuilder:
         Returns:
             The Builder object so that the call can be chained.
         """
+        if not isinstance(middlewares, list):
+            raise APIBuildException(
+                'Should only give a list of middlewares to `add_middleware`, '
+                'call `add_middleware` for a single value.')
+
         self._middlewares.extend(middlewares)
         return self
 
