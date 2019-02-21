@@ -7,80 +7,6 @@ from falcon.request import Request
 from falcon.response import Response
 
 
-class APIBuildException(Exception):
-    pass
-
-
-class APIRouteFunction:
-
-    def __init__(self, func, **kwargs):
-        self._function = func
-        self._kwargs = kwargs
-
-    @property
-    def function(self):
-        return self._function
-
-    @property
-    def kwargs(self):
-        return self._kwargs
-
-
-class ExceptionHandlingFunction:
-
-    def __init__(self, exception, func):
-        self._function = func
-        self._exception = exception
-
-    @property
-    def func(self):
-        return self._function
-
-    @property
-    def exception(self):
-        return self._exception
-
-
-class APISink:
-
-    def __init__(self, sink, prefix):
-        self._sink = sink
-        self._prefix = prefix
-
-    @property
-    def sink(self):
-        return self._sink
-
-    @property
-    def prefix(self):
-        return self._prefix
-
-
-class APIStaticRoute:
-
-    def __init__(self, prefix, directory, downloadable, fallback_filename):
-        self._prefix = prefix
-        self._directory = directory
-        self._downloadable = downloadable
-        self._fallback_filename = fallback_filename
-
-    @property
-    def prefix(self):
-        return self._prefix
-
-    @property
-    def directory(self):
-        return self._directory
-
-    @property
-    def downloadable(self):
-        return self._downloadable
-
-    @property
-    def fallback_filename(self):
-        return self._fallback_filename
-
-
 class APIBuilder:
     """
     Improved for several reasons:
@@ -285,3 +211,77 @@ class APIBuilder:
             raise APIBuildException(
                 'A route already exists for {method} on uri: {uri}. Only set 1 route per uri and '
                 'HTTP Method.'.format(method=http_method, uri=uri))
+
+
+class APIBuildException(Exception):
+    pass
+
+
+class APIRouteFunction:
+
+    def __init__(self, func, **kwargs):
+        self._function = func
+        self._kwargs = kwargs
+
+    @property
+    def function(self):
+        return self._function
+
+    @property
+    def kwargs(self):
+        return self._kwargs
+
+
+class ExceptionHandlingFunction:
+
+    def __init__(self, exception, func):
+        self._function = func
+        self._exception = exception
+
+    @property
+    def func(self):
+        return self._function
+
+    @property
+    def exception(self):
+        return self._exception
+
+
+class APISink:
+
+    def __init__(self, sink, prefix):
+        self._sink = sink
+        self._prefix = prefix
+
+    @property
+    def sink(self):
+        return self._sink
+
+    @property
+    def prefix(self):
+        return self._prefix
+
+
+class APIStaticRoute:
+
+    def __init__(self, prefix, directory, downloadable, fallback_filename):
+        self._prefix = prefix
+        self._directory = directory
+        self._downloadable = downloadable
+        self._fallback_filename = fallback_filename
+
+    @property
+    def prefix(self):
+        return self._prefix
+
+    @property
+    def directory(self):
+        return self._directory
+
+    @property
+    def downloadable(self):
+        return self._downloadable
+
+    @property
+    def fallback_filename(self):
+        return self._fallback_filename
