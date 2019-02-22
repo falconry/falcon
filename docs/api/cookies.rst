@@ -3,15 +3,16 @@
 Cookies
 -------
 
-Cookie support is available in Falcon version 0.3 or later.
-
 .. _getting-cookies:
 
 Getting Cookies
 ~~~~~~~~~~~~~~~
 
-Cookies can be read from a request via the :py:attr:`~.Request.cookies`
-request attribute:
+Cookies can be read from a request either via the
+:py:meth:`~.Request.get_cookie_values` method or the :py:attr:`~.Request.cookies`
+attribute on the :py:class:`~.Request` object. Generally speaking, the
+:py:meth:`~.Request.get_cookie_values` method should be used unless you need a
+collection of all the cookies in the request.
 
 .. code:: python
 
@@ -20,13 +21,13 @@ request attribute:
 
             cookies = req.cookies
 
-            if 'my_cookie' in cookies:
-                my_cookie_value = cookies['my_cookie']
-            # ....
+            my_cookie_values = req.get_cookie_values('my_cookie')
+            if my_cookie_values:
+                # NOTE: If there are multiple values set for the cookie, you
+                # will need to choose how to handle the additional values.
+                v = my_cookie_values[0]
 
-The :py:attr:`~.Request.cookies` attribute is a regular
-:py:class:`dict` object. The returned object should be treated as
-read-only to avoid unintended side-effects.
+                # ...
 
 .. _setting-cookies:
 
