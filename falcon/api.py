@@ -559,9 +559,14 @@ class API(object):
         # Insert at the head of the list in case we get duplicate
         # adds (will cause the most recently added one to win).
         try:
-            self._error_handlers.insert(0, (tuple(exception), handler))
+            exception_tuple = tuple(exception)
         except TypeError:
-            self._error_handlers.insert(0, (exception, handler))
+            exception_tuple = tuple([exception, ])
+
+        if all(issubclass(exc, BaseException) for exc in exception_tuple):
+            self._error_handlers.insert(0, (exception_tuple, handler))
+        else:
+            raise TypeError('"exception" must be an exception type.')
 
     def set_error_serializer(self, serializer):
         """Override the default serializer for instances of :class:`~.HTTPError`.
