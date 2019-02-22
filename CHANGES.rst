@@ -61,6 +61,9 @@ Breaking Changes
   Falcon detects that it is running on the wsgiref server. If you
   need to normalize stream semantics between wsgiref and a production WSGI
   server, ``Request.bounded_stream`` may be used instead.
+- ``Request.cookies`` now gives precedence to the first value
+  encountered in the Cookie header for a given cookie name, rather than the
+  last.
 
 Changes to Supported Platforms
 ------------------------------
@@ -109,6 +112,11 @@ New & Improved
   ``dumps()`` and ``loads()`` functions. This enables support not only for
   using any of a number of third-party JSON libraries, but also for
   customizing the keyword arguments used when (de)serializing objects.
+- Added a new method, ``get_cookie_values()``, to the ``Request``
+  class. The new method supports getting all values provided for a given
+  cookie, and is now the preferred mechanism for reading request cookies.
+- Optimized request cookie parsing. It is now roughly an order of magnitude
+  faster.
 - ``append_header()`` now supports appending raw Set-Cookie header values.
 
 Fixed
