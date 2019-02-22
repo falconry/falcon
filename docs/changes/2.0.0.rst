@@ -141,10 +141,12 @@ Contributors to this Release
 
 Many thanks to all of our talented and stylish contributors for this release!
 
+- Bertrand Lemasle
 - `CaselIT <https://github.com/CaselIT>`_
 - `DmitriiTrofimov <https://github.com/DmitriiTrofimov>`_
 - `KingAkeem <https://github.com/KingAkeem>`_
 - `Nateyo <https://github.com/Nateyo>`_
+- Patrick Schneeweis
 - `TheMushrr00m <https://github.com/TheMushrr00m>`_
 - `ZDBioHazard <https://github.com/ZDBioHazard>`_
 - `alysivji <https://github.com/alysivji>`_
