@@ -105,3 +105,25 @@ class CaseInsensitiveDict(MutableMapping):  # pragma: no cover
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, dict(self.items()))
+
+
+class ETag(str):
+    """An entity-tag ``str``-like object with the weakness indicator.
+
+    Attributes:
+        is_weak (bool): The weakness indicator.
+
+    """
+    is_weak = False
+
+    def to_header(self):
+        """Convert the ETag into a HTTP header string.
+
+        Returns:
+            str: An opaque quoted string, possibly prefixed by a weakness
+            indicator ``W/``.
+
+        """
+        if self.is_weak:
+            return 'W/"%s"' % self
+        return '"%s"' % self

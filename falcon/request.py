@@ -354,10 +354,34 @@ class Request(object):
             accessed.)
         range_unit (str): Unit of the range parsed from the value of the
             Range header, or ``None`` if the header is missing
-        if_match (str): Value of the If-Match header, or ``None`` if the
-            header is missing.
-        if_none_match (str): Value of the If-None-Match header, or ``None``
-            if the header is missing.
+        if_match (list): Value of the If-Match header, as a parsed list of
+            :class:`falcon.ETag` objects or ``None`` if the header is missing.
+
+            This property is determined by the value of ``HTTP_IF_MATCH``
+            in the WSGI environment dict.
+
+            Note:
+                This property includes strong and weak entity-tags. Per
+                `RFC 7239`_, two entity-tags are equivalent if both are not
+                weak and their opaque-tags match character-by-character.
+
+            (See also: RFC 7239, Section 3.1)
+
+        if_none_match (list): Value of the If-None-Match header, as a parsed
+            list of :class:`falcon.ETag` objects or ``None`` if the header is
+            missing.
+
+            This property is determined by the value of ``HTTP_IF_NONE_MATCH``
+            in the WSGI environment dict.
+
+            Note:
+                This property includes strong and weak entity-tags. Per
+                `RFC 7239`_, two entity-tags are equivalent if their
+                opaque-tags match character-by-character, regardless of
+                either or both being tagged as weak.
+
+            (See also: RFC 7239, Section 3.2)
+
         if_modified_since (datetime): Value of the If-Modified-Since header,
             or ``None`` if the header is missing.
         if_unmodified_since (datetime): Value of the If-Unmodified-Since
@@ -504,8 +528,6 @@ class Request(object):
 
     expect = helpers.header_property('HTTP_EXPECT')
 
-    if_match = helpers.header_property('HTTP_IF_MATCH')
-    if_none_match = helpers.header_property('HTTP_IF_NONE_MATCH')
     if_range = helpers.header_property('HTTP_IF_RANGE')
 
     referer = helpers.header_property('HTTP_REFERER')
@@ -594,6 +616,14 @@ class Request(object):
     @property
     def date(self):
         return self.get_header_as_datetime('Date')
+
+    @property
+    def if_match(self):
+        return helpers.parse_etags(self.env.get('HTTP_IF_MATCH'))
+
+    @property
+    def if_none_match(self):
+        return helpers.parse_etags(self.env.get('HTTP_IF_NONE_MATCH'))
 
     @property
     def if_modified_since(self):
