@@ -17,6 +17,7 @@
 import io
 import re
 
+from falcon.util import ETag
 from falcon.util.compat import http_cookies
 
 # https://tools.ietf.org/html/rfc6265#section-4.1.1
@@ -26,6 +27,8 @@ from falcon.util.compat import http_cookies
 #   (see also: https://www.python.org/dev/peps/pep-3333/#unicode-issues)
 #
 _COOKIE_NAME_RESERVED_CHARS = re.compile('[\x00-\x1F\x7F-\xFF()<>@,;:\\\\"/[\\]?={} \x09]')
+
+_ETAG_PATTERN = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
 
 
 def parse_cookie_header(header_value):
@@ -108,6 +111,71 @@ def header_property(wsgi_name):
             return None
 
     return property(fget)
+
+
+def make_etag(value, is_weak=False):
+    """Creates and returns a ETag object.
+
+    Args:
+        value (str): Unquated entity tag value
+        is_weak (bool): The weakness indicator
+
+    Returns:
+        A ``str``-like Etag instance with weakness indicator.
+
+    """
+    etag = ETag(value)
+    etag.is_weak = is_weak
+    return etag
+
+
+def parse_etags(etag_str):
+    """
+    Parse a string of ETags given in the If-Match or If-None-Match header as
+    defined by RFC 7232.
+
+    Args:
+        etag_str (str): An ASCII header value to parse ETags from. ETag values
+            within may be prefixed by ``W/`` to indicate that the weak comparison
+            function should be used.
+
+    Returns:
+        A list of unquoted ETags or ``['*']`` if all ETags should be matched.
+
+    """
+    if etag_str is None:
+        return None
+
+    etags = []
+    etag_str = etag_str.strip()
+    if not etag_str:
+        return etags
+
+    if etag_str == '*':
+        etags.append(etag_str)
+        return etags
+
+    if ',' not in etag_str:
+        value = etag_str
+        is_weak = False
+        if value.startswith(('W/', 'w/')):
+            is_weak = True
+            value = value[2:]
+        if value[:1] == value[-1:] == '"':
+            value = value[1:-1]
+        etags.append(make_etag(value, is_weak))
+    else:
+        pos = 0
+        end = len(etag_str)
+        while pos < end:
+            match = _ETAG_PATTERN.match(etag_str, pos)
+            is_weak, quoted, raw = match.groups()
+            value = quoted or raw
+            if value:
+                etags.append(make_etag(value, bool(is_weak)))
+            pos = match.end()
+
+    return etags
 
 
 class BoundedStream(io.IOBase):
