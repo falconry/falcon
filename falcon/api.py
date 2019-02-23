@@ -556,15 +556,21 @@ class API(object):
                                      'method named "handle" that is a '
                                      'member of the given exception class.')
 
-        # Insert at the head of the list in case we get duplicate
-        # adds (will cause the most recently added one to win).
         try:
             exception_tuple = tuple(exception)
         except TypeError:
-            exception_tuple = tuple([exception, ])
+            exception_tuple = tuple((exception, ))
 
         if all(issubclass(exc, BaseException) for exc in exception_tuple):
-            self._error_handlers.insert(0, (exception_tuple, handler))
+            # Insert at the head of the list in case we get duplicate
+            # adds (will cause the most recently added one to win).
+            if len(exception_tuple) == 1:
+                # In this case, insert only the single exception type
+                # (not a tuple), to avoid unnnecessary overhead in the
+                # exception handling path.
+                self._error_handlers.insert(0, (exception_tuple[0], handler))
+            else:
+                self._error_handlers.insert(0, (exception_tuple, handler))
         else:
             raise TypeError('"exception" must be an exception type.')
 
