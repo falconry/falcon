@@ -1,0 +1,14 @@
+# See also: https://github.com/maticzav/opencollective-bot
+
+opencollective: https://opencollective.com/falcon
+message: |
+  Hi :wave:,
+
+  Thanks for using Falcon. The large amount of time and effort needed to
+  maintain the project and develop new features is not sustainable without
+  the generous financial support of community members like you.
+
+  Please consider helping us secure the future of the Falcon framework with a
+  one-time or recurring donation.
+
+  Thank you for your support!

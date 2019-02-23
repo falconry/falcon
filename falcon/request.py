@@ -27,11 +27,6 @@ from falcon.util import json
 from falcon.util.uri import parse_host, parse_query_string
 from falcon.vendor import mimeparse
 
-# NOTE(tbug): In some cases, compat.http_cookies is not a module
-# but a dict-like structure. This fixes that issue.
-# See issue https://github.com/falconry/falcon/issues/556
-SimpleCookie = compat.http_cookies.SimpleCookie
-
 DEFAULT_ERROR_LOG_FORMAT = (u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
                             u' {1} {2}{3} => ')
 
@@ -256,8 +251,12 @@ class Request(object):
         client_accepts_xml (bool): ``True`` if the Accept header indicates that
             the client is willing to receive XML, otherwise ``False``.
         cookies (dict):
-            A dict of name/value cookie pairs. (See also:
-            :ref:`Getting Cookies <getting-cookies>`)
+            A dict of name/value cookie pairs. The returned object should be
+            treated as read-only to avoid unintended side-effects.
+            If a cookie appears more than once in the request, only the first
+            value encountered will be made available here.
+
+            See also: :meth:`~get_cookie_values`
         content_type (str): Value of the Content-Type header, or ``None`` if
             the header is missing.
         content_length (int): Value of the Content-Length header converted
@@ -394,7 +393,6 @@ class Request(object):
         '_cached_prefix',
         '_cached_relative_uri',
         '_cached_uri',
-        '_cookies',
         '_params',
         '_wsgierrors',
         'content_type',
@@ -408,6 +406,9 @@ class Request(object):
         'uri_template',
         '_media',
     )
+
+    _cookies = None
+    _cookies_collapsed = None
 
     # Child classes may override this
     context_type = type('RequestContext', (dict,), {})
@@ -455,8 +456,6 @@ class Request(object):
 
             else:
                 self._params = {}
-
-        self._cookies = None
 
         self._cached_access_route = None
         self._cached_forwarded = None
@@ -825,24 +824,17 @@ class Request(object):
 
     @property
     def cookies(self):
-        if self._cookies is None:
-            # NOTE(tbug): We might want to look into parsing
-            # cookies ourselves. The SimpleCookie is doing a
-            # lot if stuff only required to SEND cookies.
-            cookie_header = self.get_header('Cookie', default='')
-            parser = SimpleCookie()
-            for cookie_part in cookie_header.split('; '):
-                try:
-                    parser.load(cookie_part)
-                except compat.http_cookies.CookieError:
-                    pass
-            cookies = {}
-            for morsel in parser.values():
-                cookies[morsel.key] = morsel.value
+        if self._cookies_collapsed is None:
+            if self._cookies is None:
+                header_value = self.get_header('Cookie')
+                if header_value:
+                    self._cookies = helpers.parse_cookie_header(header_value)
+                else:
+                    self._cookies = {}
 
-            self._cookies = cookies
+            self._cookies_collapsed = {n: v[0] for n, v in self._cookies.items()}
 
-        return self._cookies
+        return self._cookies_collapsed
 
     @property
     def access_route(self):
@@ -1076,6 +1068,37 @@ class Request(object):
             msg = ('It must be formatted according to RFC 7231, '
                    'Section 7.1.1.1')
             raise errors.HTTPInvalidHeader(msg, header)
+
+    def get_cookie_values(self, name):
+        """Return all values provided in the Cookie header for the named cookie.
+
+        (See also: :ref:`Getting Cookies <getting-cookies>`)
+
+        Args:
+            name (str): Cookie name, case-sensitive.
+
+        Returns:
+            list: Ordered list of all values specified in the Cookie header for
+            the named cookie, or ``None`` if the cookie was not included in
+            the request. If the cookie is specified more than once in the
+            header, the returned list of values will preserve the ordering of
+            the individual ``cookie-pair``'s in the header.
+        """
+
+        if self._cookies is None:
+            # PERF(kgriffs): While this code isn't exactly DRY (the same code
+            # is duplicated by the cookies property) it does make things a bit
+            # more performant by removing the extra function call that would
+            # be required to factor this out. If we ever have to do this in a
+            # *third* place, we would probably want to factor it out at that
+            # point.
+            header_value = self.get_header('Cookie')
+            if header_value:
+                self._cookies = helpers.parse_cookie_header(header_value)
+            else:
+                self._cookies = {}
+
+        return self._cookies.get(name)
 
     def get_param(self, name, required=False, store=None, default=None):
         """Return the raw value of a query string parameter as a string.
