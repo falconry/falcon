@@ -201,6 +201,20 @@ class TestFalconUtils(object):
             'http://example.com?x=ab%2Bcd%3D42%2C9'
         ) == 'http://example.com?x=ab+cd=42,9'
 
+    def test_uri_decode_unquote_plus(self):
+        assert uri.decode('/disk/lost+found/fd0') == '/disk/lost found/fd0'
+        assert uri.decode('/disk/lost+found/fd0', unquote_plus=True) == (
+            '/disk/lost found/fd0')
+        assert uri.decode('/disk/lost+found/fd0', unquote_plus=False) == (
+            '/disk/lost+found/fd0')
+
+        assert uri.decode('http://example.com?x=ab%2Bcd%3D42%2C9') == (
+            'http://example.com?x=ab+cd=42,9')
+        assert uri.decode('http://example.com?x=ab%2Bcd%3D42%2C9', unquote_plus=True) == (
+            'http://example.com?x=ab+cd=42,9')
+        assert uri.decode('http://example.com?x=ab%2Bcd%3D42%2C9', unquote_plus=False) == (
+            'http://example.com?x=ab+cd=42,9')
+
     def test_prop_uri_encode_models_stdlib_quote(self):
         equiv_quote = functools.partial(
             compat.quote, safe=uri._ALL_ALLOWED
@@ -387,6 +401,10 @@ class TestFalconTestingUtils(object):
 
         env = testing.create_environ(u'/simple')
         assert env['PATH_INFO'] == '/simple'
+
+    def test_plus_in_path_in_create_environ(self):
+        env = testing.create_environ('/mnt/grub2/lost+found/inode001')
+        assert env['PATH_INFO'] == '/mnt/grub2/lost+found/inode001'
 
     def test_none_header_value_in_create_environ(self):
         env = testing.create_environ('/', headers={'X-Foo': None})

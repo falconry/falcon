@@ -192,7 +192,7 @@ if compat.PY2:  # NOQA: C901 - Work around a bug in flake8 McCabe scoring
 
         # PERF(kgriffs): Don't take the time to instantiate a new
         # string unless we have to.
-        if unquote_plus and '+' in decoded_uri:
+        if '+' in decoded_uri and unquote_plus:
             decoded_uri = decoded_uri.replace('+', ' ')
 
         # Short-circuit if we can
@@ -254,7 +254,7 @@ else:
 
         # PERF(kgriffs): Don't take the time to instantiate a new
         # string unless we have to.
-        if unquote_plus and '+' in decoded_uri:
+        if '+' in decoded_uri and unquote_plus:
             decoded_uri = decoded_uri.replace('+', ' ')
 
         # Short-circuit if we can
