@@ -49,3 +49,13 @@ def test_response_attempt_to_set_read_only_headers():
     assert headers['x-things1'] == 'thing-1'
     assert headers['x-things2'] == 'thing-2'
     assert headers['x-things3'] == 'thing-3a, thing-3b'
+
+
+def test_response_removed_stream_len():
+    resp = falcon.Response()
+
+    with pytest.raises(AttributeError):
+        resp.stream_len = 128
+
+    with pytest.raises(AttributeError):
+        resp.stream_len

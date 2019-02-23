@@ -4,6 +4,16 @@
 Breaking Changes
 ----------------
 
+- Previously, several methods in the ``falcon.Response`` class
+  could be used to attempt to set raw cookie headers. However,
+  due to the Set-Cookie header values not being combinable
+  as a comma-delimited list, this resulted in an
+  incorrect response being constructed for the user agent in
+  the case that more than one cookie was being set. Therefore,
+  the following methods of ``falcon.Response`` now raise an
+  instance of ``ValueError`` if an attempt is made to use them
+  for Set-Cookie: ``set_header()``, ``delete_header()``,
+  ``get_header()``, ``set_headers()``.
 - ``testing.Result.json`` now returns ``None`` when the response body is
   empty, rather than raising an error.
 - ``Request.get_param_as_bool()`` now defaults to treating valueless
@@ -16,18 +26,144 @@ Breaking Changes
   ``False``.
 - ``RequestOptions.auto_parse_qs_csv`` now defaults to ``False`` instead of
   ``True``.
+- ``independent_middleware`` kwarg on ``falcon.API`` now defaults to ``True``
+  instead of ``False``.
+- The deprecated ``stream_len`` property was removed from the ``Response``
+  class. Please use ``Response.set_stream()`` or ``Response.content_length``
+  instead.
+- ``Request.context_type`` was changed from dict to a subclass of dict.
+- ``Response.context_type`` was changed from dict to a subclass of dict.
+- ``JSONHandler`` and ``HTTPError`` no longer use
+  `ujson` in lieu of the standard `json` library (when `ujson` is available in
+  the environment). Instead, ``JSONHandler`` can now be configured
+  to use arbitrary ``dumps()`` and ``loads()`` functions. If you
+  also need to customize ``HTTPError`` serialization, you can do so via
+  ``API.set_error_serializer()``.
+- The ``find()`` method for a custom router is now required to accept the
+  ``req`` keyword argument that was added in a previous release. The
+  backwards-compatible shim was removed.
+- All middleware methods and hooks must now accept the arguments as specified
+  in the relevant interface definitions as of Falcon 1.4. All
+  backwards-compatible shims have been removed.
+- Custom error serializers are now required to accept the arguments as
+  specified by ``API.set_error_serializer()`` for the past few releases.
+  The backwards-compatible shim has been removed.
+- An internal function, ``make_router_search()``, was removed from the
+  ``api_helpers`` module.
+- An internal function, ``wrap_old_error_serializer()``, was removed from the
+  ``api_helpers`` module.
+- In order to improve performance, the ``Request.headers`` and
+  ``Request.cookies`` properties now return a direct reference to
+  an internal cached object, rather than making a copy each time. This
+  should normally not cause any problems with existing apps since these objects
+  are generally treated as read-only by the caller.
+- ``Request.stream`` is no longer wrapped in a bounded stream when
+  Falcon detects that it is running on the wsgiref server. If you
+  need to normalize stream semantics between wsgiref and a production WSGI
+  server, ``Request.bounded_stream`` may be used instead.
+- ``Request.cookies`` now gives precedence to the first value
+  encountered in the Cookie header for a given cookie name, rather than the
+  last.
 
 Changes to Supported Platforms
 ------------------------------
+
+- CPython 3.7 is now fully supported.
 
 New & Improved
 --------------
 
 - Added a new ``headers`` property to the ``Response`` class.
+- Removed the ``six`` and ``python-mimeparse`` dependencies.
+- Added a new ``complete`` property to the ``Response`` class. This can be used
+  to short-circuit request processing when the response has been pre-constructed.
 - Removed ``six`` as a dependency.
+- ``Request.context_type`` now defaults to a bare class allowing to set
+  attributes on the request context object::
+
+    # Before
+    req.context['role'] = 'trial'
+    req.context['user'] = 'guest'
+
+    # Falcon 2.0
+    req.context.role = 'trial'
+    req.context.user = 'guest'
+
+  To ease the migration path, the previous behavior is supported by subclassing
+  dict, however, as of Falcon 2.0, the dict context interface is considered
+  deprecated, and may be removed in a future release. It is also noteworthy
+  that object attributes and dict items are not automagically linked in any
+  special way, and setting one does not affect the other.
+- ``Response.context_type`` now defaults to a bare class allowing
+  to set attributes on the response context object::
+
+    # Before
+    resp.context['cache_strategy'] = 'lru'
+
+    # Falcon 2.0
+    resp.context.cache_strategy = 'lru'
+
+  To ease the migration path, the previous behavior is supported by subclassing
+  dict, however, as of Falcon 2.0, the dict context interface is considered
+  deprecated, and may be removed in a future release. It is also noteworthy
+  that object attributes and dict items are not automagically linked in any
+  special way, and setting one does not affect the other.
+- ``JSONHandler`` can now be configured to use arbitrary
+  ``dumps()`` and ``loads()`` functions. This enables support not only for
+  using any of a number of third-party JSON libraries, but also for
+  customizing the keyword arguments used when (de)serializing objects.
+- Added a new method, ``get_cookie_values()``, to the ``Request``
+  class. The new method supports getting all values provided for a given
+  cookie, and is now the preferred mechanism for reading request cookies.
+- Optimized request cookie parsing. It is now roughly an order of magnitude
+  faster.
+- ``append_header()`` now supports appending raw Set-Cookie header values.
 
 Fixed
 -----
+
+(None)
+
+Contributors to this Release
+----------------------------
+
+Many thanks to all of our talented and stylish contributors to this release!
+
+- Bertrand Lemasle
+- `CaselIT <https://github.com/CaselIT>`_
+- `DmitriiTrofimov <https://github.com/DmitriiTrofimov>`_
+- `KingAkeem <https://github.com/KingAkeem>`_
+- `Nateyo <https://github.com/Nateyo>`_
+- Patrick Schneeweis
+- `TheMushrr00m <https://github.com/TheMushrr00m>`_
+- `ZDBioHazard <https://github.com/ZDBioHazard>`_
+- `alysivji <https://github.com/alysivji>`_
+- `aparkerlue <https://github.com/aparkerlue>`_
+- `astonm <https://github.com/astonm>`_
+- `awbush <https://github.com/awbush>`_
+- `bendemaree <https://github.com/bendemaree>`_
+- `bkcsfi <https://github.com/bkcsfi>`_
+- `brooksryba <https://github.com/brooksryba>`_
+- `carlodri <https://github.com/carlodri>`_
+- `hugovk <https://github.com/hugovk>`_
+- `jmvrbanac <https://github.com/jmvrbanac>`_
+- `kandziu <https://github.com/kandziu>`_
+- `kgriffs <https://github.com/kgriffs>`_
+- `klardotsh <https://github.com/klardotsh>`_
+- `mikeylight <https://github.com/mikeylight>`_
+- `mumrau <https://github.com/mumrau>`_
+- `nZac <https://github.com/nZac>`_
+- `navyad <https://github.com/navyad>`_
+- `ozzzik <https://github.com/ozzzik>`_
+- `paneru-rajan <https://github.com/paneru-rajan>`_
+- `safaozturk93 <https://github.com/safaozturk93>`_
+- `santeyio <https://github.com/santeyio>`_
+- `sbensoussan <https://github.com/sbensoussan>`_
+- `selfvin <https://github.com/selfvin>`_
+- `snobu <https://github.com/snobu>`_
+- `steven-upside <https://github.com/steven-upside>`_
+- `tribals <https://github.com/tribals>`_
+- `vytas7 <https://github.com/vytas7>`_
 
 1.4.1
 =====

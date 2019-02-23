@@ -9,7 +9,7 @@ import pytest
 import falcon
 from falcon import testing
 from falcon import util
-from falcon.util import compat, json, uri
+from falcon.util import compat, json, misc, uri
 
 
 def _arbitrary_uris(count, length):
@@ -542,10 +542,21 @@ class TestFalconTestingUtils(object):
 
     def test_query_string_in_path(self):
         app = falcon.API()
-        app.add_route('/', testing.SimpleTestResource())
+        resource = testing.SimpleTestResource()
+        app.add_route('/thing', resource)
         client = testing.TestClient(app)
+
         with pytest.raises(ValueError):
-            client.simulate_get(path='/thing?x=1')
+            client.simulate_get(path='/thing?x=1', query_string='things=1,2,3')
+        with pytest.raises(ValueError):
+            client.simulate_get(path='/thing?x=1', params={'oid': 1978})
+        with pytest.raises(ValueError):
+            client.simulate_get(path='/thing?x=1', query_string='things=1,2,3',
+                                params={'oid': 1978})
+
+        client.simulate_get(path='/thing?detailed=no&oid=1337')
+        assert resource.captured_req.path == '/thing'
+        assert resource.captured_req.query_string == 'detailed=no&oid=1337'
 
     @pytest.mark.parametrize('document', [
         # NOTE(vytas): using an exact binary fraction here to avoid special
@@ -576,7 +587,7 @@ class TestFalconTestingUtils(object):
         json_types = ('application/json', 'application/json; charset=UTF-8')
         client = testing.TestClient(app)
         client.simulate_post('/', json=document)
-        captured_body = resource.captured_req.stream.read().decode('utf-8')
+        captured_body = resource.captured_req.bounded_stream.read().decode('utf-8')
         assert json.loads(captured_body) == document
         assert resource.captured_req.content_type in json_types
 
@@ -671,3 +682,20 @@ class TestSetupApi(testing.TestCase):
 
     def test_something(self):
         self.assertTrue(isinstance(self.api, falcon.API))
+
+
+def test_get_argnames():
+    def foo(a, b, c):
+        pass
+
+    class Bar(object):
+        def __call__(self, a, b):
+            pass
+
+    assert misc.get_argnames(foo) == ['a', 'b', 'c']
+    assert misc.get_argnames(Bar()) == ['a', 'b']
+
+    # NOTE(kgriffs): This difference will go away once we drop Python 2.7
+    # support, so we just use this regression test to ensure the status quo.
+    expected = ['b', 'c'] if compat.PY3 else ['a', 'b', 'c']
+    assert misc.get_argnames(functools.partial(foo, 42)) == expected

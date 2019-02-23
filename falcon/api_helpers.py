@@ -14,33 +14,7 @@
 
 """Utilities for the API class."""
 
-from functools import wraps
-
 from falcon import util
-
-
-def make_router_search(router):
-    """Create a search function for routing requests.
-
-    Args:
-        router(object): An object that implements the routing engine
-            interface.
-
-    Returns:
-        callable: A function that accepts a request and invokes the
-            router's find method.
-    """
-
-    arg_names = util.get_argnames(router.find)
-    supports_req = 'req' in arg_names and len(arg_names) > 1
-
-    if supports_req:
-        return router.find
-
-    def search_shim(path, req):
-        return router.find(path)
-
-    return search_shim
 
 
 def prepare_middleware(middleware=None, independent_middleware=False):
@@ -78,21 +52,6 @@ def prepare_middleware(middleware=None, independent_middleware=False):
         if not (process_request or process_resource or process_response):
             msg = '{0} does not implement the middleware interface'
             raise TypeError(msg.format(component))
-
-        if process_response:
-            # NOTE(kgriffs): Shim older implementations to ensure
-            # backwards-compatibility.
-            args = util.get_argnames(process_response)
-
-            if len(args) == 3:  # (req, resp, resource)
-                def let(process_response=process_response):
-                    @wraps(process_response)
-                    def shim(req, resp, resource, req_succeeded):
-                        process_response(req, resp, resource)
-
-                    return shim
-
-                process_response = let()
 
         # NOTE: depending on whether we want to execute middleware
         # independently, we group response and request middleware either
@@ -137,6 +96,9 @@ def default_serialize_error(req, resp, exception):
         resp: Instance of ``falcon.Response``
         exception: Instance of ``falcon.HTTPError``
     """
+    if not exception.has_representation:
+        return
+
     representation = None
 
     preferred = req.client_prefers(('application/xml',
@@ -172,25 +134,6 @@ def default_serialize_error(req, resp, exception):
         resp.content_type = preferred + '; charset=UTF-8'
 
     resp.append_header('Vary', 'Accept')
-
-
-def wrap_old_error_serializer(old_fn):
-    """Wrap an old-style error serializer to add body/content_type setting.
-
-    Args:
-        old_fn: Old-style error serializer
-
-    Returns:
-        A function that does the same, but sets body/content_type as needed.
-
-    """
-    def new_fn(req, resp, exception):
-        media_type, body = old_fn(req, exception)
-        if body is not None:
-            resp.body = body
-            resp.content_type = media_type
-
-    return new_fn
 
 
 class CloseableStreamIterator(object):

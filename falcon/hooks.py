@@ -143,18 +143,6 @@ def _wrap_with_after(responder, action, action_args, action_kwargs):
         action_kwargs: Additional keyword arguments to pass to *action*.
     """
 
-    # NOTE(swistakm): create shim before checking what will be actually
-    # decorated. This helps to avoid excessive nesting
-    if 'resource' in get_argnames(action):
-        shim = action
-    else:
-        # TODO(kgriffs): This decorator does not work on callable
-        # classes in Python vesions prior to 3.4.
-        #
-        # @wraps(action)
-        def shim(req, resp, resource, *args, **kwargs):
-            action(req, resp, *args, **kwargs)
-
     responder_argnames = get_argnames(responder)
     extra_argnames = responder_argnames[2:]  # Skip req, resp
 
@@ -164,7 +152,7 @@ def _wrap_with_after(responder, action, action_args, action_kwargs):
             _merge_responder_args(args, kwargs, extra_argnames)
 
         responder(self, req, resp, **kwargs)
-        shim(req, resp, self, *action_args, **action_kwargs)
+        action(req, resp, self, *action_args, **action_kwargs)
 
     return do_after
 
@@ -180,20 +168,6 @@ def _wrap_with_before(responder, action, action_args, action_kwargs):
         action_kwargs: Additional keyword arguments to pass to *action*.
     """
 
-    # NOTE(swistakm): create shim before checking what will be actually
-    # decorated. This allows to avoid excessive nesting
-    if 'resource' in get_argnames(action):
-        shim = action
-    else:
-        # TODO(kgriffs): This decorator does not work on callable
-        # classes in Python versions prior to 3.4.
-        #
-        # @wraps(action)
-        def shim(req, resp, resource, params, *args, **kwargs):
-            # NOTE(kgriffs): Don't have to pass "self" even if has_self,
-            # since method is assumed to be bound.
-            action(req, resp, params, *args, **kwargs)
-
     responder_argnames = get_argnames(responder)
     extra_argnames = responder_argnames[2:]  # Skip req, resp
 
@@ -202,7 +176,7 @@ def _wrap_with_before(responder, action, action_args, action_kwargs):
         if args:
             _merge_responder_args(args, kwargs, extra_argnames)
 
-        shim(req, resp, self, kwargs, *action_args, **action_kwargs)
+        action(req, resp, self, kwargs, *action_args, **action_kwargs)
         responder(self, req, resp, **kwargs)
 
     return do_before

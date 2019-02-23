@@ -3,6 +3,11 @@ from falcon.cmd import print_routes
 from falcon.testing import redirected
 from falcon.util import compat
 
+try:
+    import cython
+except ImportError:
+    cython = None
+
 
 class DummyResource(object):
 
@@ -31,10 +36,16 @@ def test_traverse_with_verbose():
         get_info, options_info = options_info, get_info
 
     assert options_info.startswith('-->OPTIONS')
-    assert 'falcon/responders.py:' in options_info
+    if cython:
+        assert options_info.endswith('[unknown file]')
+    else:
+        assert 'falcon/responders.py:' in options_info
 
     assert get_info.startswith('-->GET')
-    assert 'tests/test_cmd_print_api.py:' in get_info
+    # NOTE(vytas): This builds upon the fact that on_get is defined on line 14
+    # in this file. Adjust the test if the said responder is relocated, or just
+    # check for any number if this becomes too painful to maintain.
+    assert get_info.endswith('tests/test_cmd_print_api.py:14')
 
 
 def test_traverse():
