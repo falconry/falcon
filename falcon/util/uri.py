@@ -171,7 +171,7 @@ if compat.PY2:  # NOQA: C901 - Work around a bug in flake8 McCabe scoring
                         for a in _HEX_DIGITS
                         for b in _HEX_DIGITS)
 
-    def decode(encoded_uri):
+    def decode(encoded_uri, unquote_plus=True):
         """Decodes percent-encoded characters in a URI or query string.
 
         This function models the behavior of `urllib.unquote_plus`, but
@@ -180,6 +180,13 @@ if compat.PY2:  # NOQA: C901 - Work around a bug in flake8 McCabe scoring
 
         Args:
             encoded_uri (str): An encoded URI (full or partial).
+
+        Keyword Arguments:
+            unquote_plus (bool): Set to ``False`` to retain any plus ('+')
+                characters in the given string, rather than converting them to
+                spaces (default ``True``). Typically you should set this
+                to ``False`` when decoding any part of a URI other than the
+                query string.
 
         Returns:
             str: A decoded URL. Will be of type ``unicode`` on Python 2 IFF the
@@ -192,7 +199,7 @@ if compat.PY2:  # NOQA: C901 - Work around a bug in flake8 McCabe scoring
 
         # PERF(kgriffs): Don't take the time to instantiate a new
         # string unless we have to.
-        if '+' in decoded_uri:
+        if '+' in decoded_uri and unquote_plus:
             decoded_uri = decoded_uri.replace('+', ' ')
 
         # Short-circuit if we can
@@ -235,7 +242,7 @@ else:
                         for a in _HEX_DIGITS
                         for b in _HEX_DIGITS)
 
-    def decode(encoded_uri):
+    def decode(encoded_uri, unquote_plus=True):
         """Decodes percent-encoded characters in a URI or query string.
 
         This function models the behavior of `urllib.parse.unquote_plus`,
@@ -243,6 +250,13 @@ else:
 
         Args:
             encoded_uri (str): An encoded URI (full or partial).
+
+        Keyword Arguments:
+            unquote_plus (bool): Set to ``False`` to retain any plus ('+')
+                characters in the given string, rather than converting them to
+                spaces (default ``True``). Typically you should set this
+                to ``False`` when decoding any part of a URI other than the
+                query string.
 
         Returns:
             str: A decoded URL. If the URL contains escaped non-ASCII
@@ -254,7 +268,7 @@ else:
 
         # PERF(kgriffs): Don't take the time to instantiate a new
         # string unless we have to.
-        if '+' in decoded_uri:
+        if '+' in decoded_uri and unquote_plus:
             decoded_uri = decoded_uri.replace('+', ' ')
 
         # Short-circuit if we can

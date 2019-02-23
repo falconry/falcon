@@ -18,9 +18,78 @@ import io
 import re
 
 from falcon.util import ETag
+from falcon.util.compat import http_cookies
 
+# https://tools.ietf.org/html/rfc6265#section-4.1.1
+#
+# NOTE(kgriffs): Fortunately we don't have to worry about code points in
+#   header strings outside the range 0x0000 - 0x00FF per PEP 3333
+#   (see also: https://www.python.org/dev/peps/pep-3333/#unicode-issues)
+#
+_COOKIE_NAME_RESERVED_CHARS = re.compile('[\x00-\x1F\x7F-\xFF()<>@,;:\\\\"/[\\]?={} \x09]')
 
 _ETAG_PATTERN = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
+
+
+def parse_cookie_header(header_value):
+    """Parse a Cookie header value into a dict of named values.
+
+    (See also: RFC 6265, Section 5.4)
+
+    Args:
+        header_value (str): Value of a Cookie header
+
+    Returns:
+        dict: Map of cookie names to a list of all cookie values found in the
+        header for that name. If a cookie is specified more than once in the
+        header, the order of the values will be preserved.
+    """
+
+    # See also:
+    #
+    #   https://tools.ietf.org/html/rfc6265#section-5.4
+    #   https://tools.ietf.org/html/rfc6265#section-4.1.1
+    #
+
+    cookies = {}
+
+    for token in header_value.split(';'):
+        name, __, value = token.partition('=')
+
+        # NOTE(kgriffs): RFC6265 is more strict about whitespace, but we
+        # are more lenient here to better handle old user agents and to
+        # mirror Python's standard library cookie parsing behavior
+        name = name.strip()
+        value = value.strip()
+
+        # NOTE(kgriffs): Skip malformed cookie-pair
+        if not name:
+            continue
+
+        # NOTE(kgriffs): Skip cookies with invalid names
+        if _COOKIE_NAME_RESERVED_CHARS.search(name):
+            continue
+
+        # NOTE(kgriffs): To maximize compatibility, we mimic the support in the
+        # standard library for escaped characters within a double-quoted
+        # cookie value according to the obsolete RFC 2109. However, we do not
+        # expect to see this encoding used much in practice, since Base64 is
+        # the current de-facto standard, as recommended by RFC 6265.
+        #
+        # PERF(kgriffs): These checks have been hoisted from within _unquote()
+        # to avoid the extra function call in the majority of the cases when it
+        # is not needed.
+        if len(value) > 2 and value[0] == '"' and value[-1] == '"':
+            value = http_cookies._unquote(value)
+
+        # PERF(kgriffs): This is slightly more performant as
+        # compared to using dict.setdefault()
+        if name in cookies:
+            cookies[name].append(value)
+        else:
+            cookies[name] = [value]
+
+    return cookies
 
 
 def header_property(wsgi_name):

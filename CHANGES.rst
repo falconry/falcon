@@ -61,6 +61,9 @@ Breaking Changes
   Falcon detects that it is running on the wsgiref server. If you
   need to normalize stream semantics between wsgiref and a production WSGI
   server, ``Request.bounded_stream`` may be used instead.
+- ``Request.cookies`` now gives precedence to the first value
+  encountered in the Cookie header for a given cookie name, rather than the
+  last.
 
 Changes to Supported Platforms
 ------------------------------
@@ -109,10 +112,58 @@ New & Improved
   ``dumps()`` and ``loads()`` functions. This enables support not only for
   using any of a number of third-party JSON libraries, but also for
   customizing the keyword arguments used when (de)serializing objects.
+- Added a new method, ``get_cookie_values()``, to the ``Request``
+  class. The new method supports getting all values provided for a given
+  cookie, and is now the preferred mechanism for reading request cookies.
+- Optimized request cookie parsing. It is now roughly an order of magnitude
+  faster.
 - ``append_header()`` now supports appending raw Set-Cookie header values.
 
 Fixed
 -----
+
+(None)
+
+Contributors to this Release
+----------------------------
+
+Many thanks to all of our talented and stylish contributors to this release!
+
+- Bertrand Lemasle
+- `CaselIT <https://github.com/CaselIT>`_
+- `DmitriiTrofimov <https://github.com/DmitriiTrofimov>`_
+- `KingAkeem <https://github.com/KingAkeem>`_
+- `Nateyo <https://github.com/Nateyo>`_
+- Patrick Schneeweis
+- `TheMushrr00m <https://github.com/TheMushrr00m>`_
+- `ZDBioHazard <https://github.com/ZDBioHazard>`_
+- `alysivji <https://github.com/alysivji>`_
+- `aparkerlue <https://github.com/aparkerlue>`_
+- `astonm <https://github.com/astonm>`_
+- `awbush <https://github.com/awbush>`_
+- `bendemaree <https://github.com/bendemaree>`_
+- `bkcsfi <https://github.com/bkcsfi>`_
+- `brooksryba <https://github.com/brooksryba>`_
+- `carlodri <https://github.com/carlodri>`_
+- `hugovk <https://github.com/hugovk>`_
+- `jmvrbanac <https://github.com/jmvrbanac>`_
+- `kandziu <https://github.com/kandziu>`_
+- `kgriffs <https://github.com/kgriffs>`_
+- `klardotsh <https://github.com/klardotsh>`_
+- `mikeylight <https://github.com/mikeylight>`_
+- `mumrau <https://github.com/mumrau>`_
+- `nZac <https://github.com/nZac>`_
+- `navyad <https://github.com/navyad>`_
+- `ozzzik <https://github.com/ozzzik>`_
+- `paneru-rajan <https://github.com/paneru-rajan>`_
+- `safaozturk93 <https://github.com/safaozturk93>`_
+- `santeyio <https://github.com/santeyio>`_
+- `sbensoussan <https://github.com/sbensoussan>`_
+- `selfvin <https://github.com/selfvin>`_
+- `snobu <https://github.com/snobu>`_
+- `steven-upside <https://github.com/steven-upside>`_
+- `tribals <https://github.com/tribals>`_
+- `vytas7 <https://github.com/vytas7>`_
 
 1.4.1
 =====
