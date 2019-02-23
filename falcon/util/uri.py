@@ -181,6 +181,13 @@ if compat.PY2:  # NOQA: C901 - Work around a bug in flake8 McCabe scoring
         Args:
             encoded_uri (str): An encoded URI (full or partial).
 
+        Keyword Arguments:
+            unquote_plus (bool): Set to ``False`` to retain any plus ('+')
+                characters in the given string, rather than converting them to
+                spaces (default ``True``). Typically you should set this
+                to ``False`` when decoding any part of a URI other than the
+                query string.
+
         Returns:
             str: A decoded URL. Will be of type ``unicode`` on Python 2 IFF the
             URL contained escaped non-ASCII characters, in which case
@@ -243,6 +250,13 @@ else:
 
         Args:
             encoded_uri (str): An encoded URI (full or partial).
+
+        Keyword Arguments:
+            unquote_plus (bool): Set to ``False`` to retain any plus ('+')
+                characters in the given string, rather than converting them to
+                spaces (default ``True``). Typically you should set this
+                to ``False`` when decoding any part of a URI other than the
+                query string.
 
         Returns:
             str: A decoded URL. If the URL contains escaped non-ASCII
