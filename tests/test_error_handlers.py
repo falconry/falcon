@@ -115,19 +115,12 @@ class TestErrorHandler(object):
         assert result.status_code == 723
         assert result.text == 'error: CustomException'
 
-    def test_handler_exception_tuple(self, client):
-        exception_tuple = (Exception, CustomException)
-        client.app.add_error_handler(exception_tuple, capture_error)
-
-        result = client.simulate_get()
-        assert result.status_code == 723
-
-        result = client.simulate_delete()
-        assert result.status_code == 723
-
-    def test_handler_exception_list(self, client):
-        exception_list = [Exception, CustomException]
-        client.app.add_error_handler(exception_list, capture_error)
+    @pytest.mark.parametrize('exceptions', [
+        (Exception, CustomException),
+        [Exception, CustomException],
+    ])
+    def test_handler_multiple_exception_iterable(self, client, exceptions):
+        client.app.add_error_handler(exceptions, capture_error)
 
         result = client.simulate_get()
         assert result.status_code == 723
