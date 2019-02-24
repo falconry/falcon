@@ -19,3 +19,6 @@ Miscellaneous
 
 .. autoclass:: falcon.TimezoneGMT
     :members:
+
+.. autoclass:: falcon.ETag
+    :members:
