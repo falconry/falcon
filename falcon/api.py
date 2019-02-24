@@ -559,7 +559,7 @@ class API(object):
         try:
             exception_tuple = tuple(exception)
         except TypeError:
-            exception_tuple = tuple((exception, ))
+            exception_tuple = (exception, )
 
         if all(issubclass(exc, BaseException) for exc in exception_tuple):
             # Insert at the head of the list in case we get duplicate
