@@ -114,3 +114,35 @@ class TestErrorHandler(object):
         result = client.simulate_delete()
         assert result.status_code == 723
         assert result.text == 'error: CustomException'
+
+    @pytest.mark.parametrize('exceptions', [
+        (Exception, CustomException),
+        [Exception, CustomException],
+    ])
+    def test_handler_multiple_exception_iterable(self, client, exceptions):
+        client.app.add_error_handler(exceptions, capture_error)
+
+        result = client.simulate_get()
+        assert result.status_code == 723
+
+        result = client.simulate_delete()
+        assert result.status_code == 723
+
+    def test_handler_single_exception_iterable(self, client):
+        def exception_list_generator():
+            yield CustomException
+
+        client.app.add_error_handler(exception_list_generator(), capture_error)
+
+        result = client.simulate_delete()
+        assert result.status_code == 723
+
+    @pytest.mark.parametrize('exceptions', [
+        NotImplemented,
+        'Hello, world!',
+        frozenset([ZeroDivisionError, int, NotImplementedError]),
+        iter([float, float]),
+    ])
+    def test_invalid_add_exception_handler_input(self, client, exceptions):
+        with pytest.raises(TypeError):
+            client.app.add_error_handler(exceptions, capture_error)
