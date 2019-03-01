@@ -41,8 +41,7 @@ matrix:
           env: TOXENV=py37_smoke_cython
         - python: 2.7
           env: TOXENV=docs
-        # TODO(kgriffs): Re-enable once we have mitigated the stream_len
-        #   breaking change in hug.
+        # TODO(kgriffs): Re-enable once Hug is compatible with Falcon 2.0
         # - python: 3.6
         #   env: TOXENV=hug
         - python: 3.7

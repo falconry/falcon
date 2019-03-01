@@ -38,10 +38,11 @@ CookieError = compat.http_cookies.CookieError
 
 GMT_TIMEZONE = TimezoneGMT()
 
-_STREAM_LEN_REMOVED_MSG = (
-    'The deprecated stream_len property was removed in Falcon 2.0. '
-    'Please use Response.set_stream() or Response.content_length instead.'
-)
+# TODO(kgriffs): Uncomment when 3.0 development opens
+# _STREAM_LEN_REMOVED_MSG = (
+#     'The deprecated stream_len property was removed in Falcon 3.0. '
+#     'Please use Response.set_stream() or Response.content_length instead.'
+# )
 
 
 class Response(object):
@@ -111,6 +112,8 @@ class Response(object):
                 If the stream is set to an iterable object that requires
                 resource cleanup, it can implement a close() method to do so.
                 The close() method will be called upon completion of the request.
+
+        stream_len (int): Deprecated alias for :attr:`content_length`.
 
         context (dict): Dictionary to hold any data about the response which is
             specific to your app. Falcon itself will not interact with this
@@ -249,17 +252,19 @@ class Response(object):
         # just be thrown away.
         self._data = None
 
-    @property
-    def stream_len(self):
-        # NOTE(kgriffs): Provide some additional information by raising the
-        #   error explicitly.
-        raise AttributeError(_STREAM_LEN_REMOVED_MSG)
+    # TODO(kgriffs): Uncomment when 3.0 development opens
+    # @property
+    # def stream_len(self):
+    #     # NOTE(kgriffs): Provide some additional information by raising the
+    #     #   error explicitly.
+    #     raise AttributeError(_STREAM_LEN_REMOVED_MSG)
 
-    @stream_len.setter
-    def stream_len(self, value):
-        # NOTE(kgriffs): We explicitly disallow setting the deprecated attribute
-        #   so that apps relying on it do not fail silently.
-        raise AttributeError(_STREAM_LEN_REMOVED_MSG)
+    # TODO(kgriffs): Uncomment when 3.0 development opens
+    # @stream_len.setter
+    # def stream_len(self, value):
+    #     # NOTE(kgriffs): We explicitly disallow setting the deprecated attribute
+    #     #   so that apps relying on it do not fail silently.
+    #     raise AttributeError(_STREAM_LEN_REMOVED_MSG)
 
     def __repr__(self):
         return '<%s: %s>' % (self.__class__.__name__, self.status)
@@ -826,6 +831,9 @@ class Response(object):
 
         """,
     )
+
+    # TODO(kgriffs): Remove deprecated alias once development opens for 3.0
+    stream_len = content_length
 
     content_range = header_property(
         'Content-Range',
