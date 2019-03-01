@@ -355,32 +355,24 @@ class Request(object):
         range_unit (str): Unit of the range parsed from the value of the
             Range header, or ``None`` if the header is missing
         if_match (list): Value of the If-Match header, as a parsed list of
-            :class:`falcon.ETag` objects or ``None`` if the header is missing.
+            :class:`falcon.ETag` objects or ``None`` if the header is missing
+            or its value is blank.
 
-            This property is determined by the value of ``HTTP_IF_MATCH``
-            in the WSGI environment dict.
+            This property provides a list of all ``entity-tags`` in the
+            header, both strong and weak, in the same order as listed in
+            the header.
 
-            Note:
-                This property includes strong and weak entity-tags. Per
-                `RFC 7239`_, two entity-tags are equivalent if both are not
-                weak and their opaque-tags match character-by-character.
-
-            (See also: RFC 7239, Section 3.1)
+            (See also: RFC 7232, Section 3.1)
 
         if_none_match (list): Value of the If-None-Match header, as a parsed
             list of :class:`falcon.ETag` objects or ``None`` if the header is
-            missing.
+            missing or its value is blank.
 
-            This property is determined by the value of ``HTTP_IF_NONE_MATCH``
-            in the WSGI environment dict.
+            This property provides a list of all ``entity-tags`` in the
+            header, both strong and weak, in the same order as listed in
+            the header.
 
-            Note:
-                This property includes strong and weak entity-tags. Per
-                `RFC 7239`_, two entity-tags are equivalent if their
-                opaque-tags match character-by-character, regardless of
-                either or both being tagged as weak.
-
-            (See also: RFC 7239, Section 3.2)
+            (See also: RFC 7232, Section 3.2)
 
         if_modified_since (datetime): Value of the If-Modified-Since header,
             or ``None`` if the header is missing.
@@ -433,6 +425,8 @@ class Request(object):
 
     _cookies = None
     _cookies_collapsed = None
+    _cached_if_match = None
+    _cached_if_none_match = None
 
     # Child classes may override this
     context_type = type('RequestContext', (dict,), {})
@@ -619,11 +613,30 @@ class Request(object):
 
     @property
     def if_match(self):
-        return helpers.parse_etags(self.env.get('HTTP_IF_MATCH'))
+        # TODO(kgriffs): It may make sense at some point to create a
+        #   header property generator that DRY's up the memoization
+        #   pattern for us.
+        # PERF(kgriffs): It probably isn't worth it to set
+        #   self._cached_if_match to a special type/object to distinguish
+        #   between the variable being unset and the header not being
+        #   present in the request. The reason is that if the app
+        #   gets a None back on the first reference to property, it
+        #   probably isn't going to access the property again (TBD).
+        if self._cached_if_match is None:
+            header_value = self.env.get('HTTP_IF_MATCH')
+            if header_value:
+                self._cached_if_match = helpers._parse_etags(header_value)
+
+        return self._cached_if_match
 
     @property
     def if_none_match(self):
-        return helpers.parse_etags(self.env.get('HTTP_IF_NONE_MATCH'))
+        if self._cached_if_none_match is None:
+            header_value = self.env.get('HTTP_IF_NONE_MATCH')
+            if header_value:
+                self._cached_if_none_match = helpers._parse_etags(header_value)
+
+        return self._cached_if_none_match
 
     @property
     def if_modified_since(self):

@@ -332,11 +332,47 @@ class TestFalconUtils(object):
             falcon.get_http_status('-404.3')
         assert falcon.get_http_status(123, 'Go Away') == '123 Go Away'
 
-    def test_etag_to_header(self):
+    def test_etag_dumps_to_header_format(self):
         etag = structures.ETag('67ab43')
-        assert etag.to_header() == '"67ab43"'
+
+        assert etag.dumps() == '"67ab43"'
+
         etag.is_weak = True
-        assert etag.to_header() == 'W/"67ab43"'
+        assert etag.dumps() == 'W/"67ab43"'
+
+        assert structures.ETag('67a b43').dumps() == '"67a b43"'
+
+    def test_etag_strong_vs_weak_comparison(self):
+        strong_67ab43_one = structures.ETag.loads('"67ab43"')
+        strong_67ab43_too = structures.ETag.loads('"67ab43"')
+        strong_67aB43 = structures.ETag.loads('"67aB43"')
+        weak_67ab43_one = structures.ETag.loads('W/"67ab43"')
+        weak_67ab43_two = structures.ETag.loads('W/"67ab43"')
+        weak_67aB43 = structures.ETag.loads('W/"67aB43"')
+
+        assert strong_67aB43 == strong_67aB43
+        assert weak_67aB43 == weak_67aB43
+        assert strong_67aB43 == weak_67aB43
+        assert weak_67aB43 == strong_67aB43
+        assert strong_67ab43_one == strong_67ab43_too
+        assert weak_67ab43_one == weak_67ab43_two
+
+        assert strong_67aB43 != strong_67ab43_one
+        assert strong_67ab43_one != strong_67aB43
+
+        assert strong_67aB43.strong_compare(strong_67aB43)
+        assert strong_67ab43_one.strong_compare(strong_67ab43_too)
+        assert not strong_67aB43.strong_compare(strong_67ab43_one)
+        assert not strong_67ab43_one.strong_compare(strong_67aB43)
+
+        assert not strong_67ab43_one.strong_compare(weak_67ab43_one)
+        assert not weak_67ab43_one.strong_compare(strong_67ab43_one)
+
+        assert not weak_67aB43.strong_compare(weak_67aB43)
+        assert not weak_67ab43_one.strong_compare(weak_67ab43_two)
+
+        assert not weak_67ab43_one.strong_compare(weak_67aB43)
+        assert not weak_67aB43.strong_compare(weak_67ab43_one)
 
 
 @pytest.mark.parametrize(

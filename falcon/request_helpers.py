@@ -28,7 +28,12 @@ from falcon.util.compat import http_cookies
 #
 _COOKIE_NAME_RESERVED_CHARS = re.compile('[\x00-\x1F\x7F-\xFF()<>@,;:\\\\"/[\\]?={} \x09]')
 
-_ETAG_PATTERN = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
+# NOTE(kgriffs): strictly speaking, the weakness indicator is
+#   case-sensitive, but this wasn't explicit until RFC 7232
+#   so we allow for both. We also require quotes because that's
+#   been standardized since 1999, and it makes the regex simpler
+#   and more performant.
+_ENTITY_TAG_PATTERN = re.compile(r'([Ww]/)?"([^"]*)"')
 
 
 def parse_cookie_header(header_value):
@@ -113,26 +118,18 @@ def header_property(wsgi_name):
     return property(fget)
 
 
-def make_etag(value, is_weak=False):
-    """Creates and returns a ETag object.
+# NOTE(kgriffs): Going forward we should privatize helpers, as done here. We
+#   can always move this over to falcon.util if we decide it would be
+#   more generally useful to app developers.
+def _parse_etags(etag_str):
+    """Parse a string containing one or more HTTP entity-tags.
 
-    Args:
-        value (str): Unquated entity tag value
-        is_weak (bool): The weakness indicator
+    The string is assumed to be formatted as defined for a precondition
+    header, and may contain either a single ETag, or multiple comma-separated
+    ETags. The string may also contain a '*' character, in order to indicate
+    that any ETag should match the precondition.
 
-    Returns:
-        A ``str``-like Etag instance with weakness indicator.
-
-    """
-    etag = ETag(value)
-    etag.is_weak = is_weak
-    return etag
-
-
-def parse_etags(etag_str):
-    """
-    Parse a string of ETags given in the If-Match or If-None-Match header as
-    defined by RFC 7232.
+    (See also: RFC 7232, Section 3)
 
     Args:
         etag_str (str): An ASCII header value to parse ETags from. ETag values
@@ -140,42 +137,38 @@ def parse_etags(etag_str):
             function should be used.
 
     Returns:
-        A list of unquoted ETags or ``['*']`` if all ETags should be matched.
+        list: A list of unquoted ETags or ``['*']`` if all ETags should be
+        matched. If the string to be parse is empty, or contains only
+        whitespace, ``None`` will be returned instead.
 
     """
-    if etag_str is None:
-        return None
 
-    etags = []
     etag_str = etag_str.strip()
     if not etag_str:
-        return etags
+        return None
 
     if etag_str == '*':
-        etags.append(etag_str)
-        return etags
+        return [etag_str]
 
     if ',' not in etag_str:
-        value = etag_str
-        is_weak = False
-        if value.startswith(('W/', 'w/')):
-            is_weak = True
-            value = value[2:]
-        if value[:1] == value[-1:] == '"':
-            value = value[1:-1]
-        etags.append(make_etag(value, is_weak))
-    else:
-        pos = 0
-        end = len(etag_str)
-        while pos < end:
-            match = _ETAG_PATTERN.match(etag_str, pos)
-            is_weak, quoted, raw = match.groups()
-            value = quoted or raw
-            if value:
-                etags.append(make_etag(value, bool(is_weak)))
-            pos = match.end()
+        return [ETag.loads(etag_str)]
 
-    return etags
+    etags = []
+
+    # PERF(kgriffs): Parsing out the weak string like this turns out to be more
+    #   performant than grabbing the entire entity-tag and passing it to
+    #   ETag.loads(). This is also faster than parsing etag_str manually via
+    #   str.find() and slicing.
+    for weak, value in _ENTITY_TAG_PATTERN.findall(etag_str):
+        t = ETag(value)
+        t.is_weak = bool(weak)
+        etags.append(t)
+
+    # NOTE(kgriffs): Normalize a string with only whitespace and commas
+    #   to None, since it is like a list of individual ETag headers that
+    #   are all set to nothing, and so therefore basically should be
+    #   treated as not having been set in the first place.
+    return etags or None
 
 
 class BoundedStream(io.IOBase):
