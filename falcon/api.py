@@ -494,7 +494,7 @@ class API(object):
         self._sinks.insert(0, (prefix, sink))
 
     def add_error_handler(self, exception, handler=None):
-        """Register a handler for a given exception type.
+        """Register a handler for one or more exception types.
 
         Error handlers may be registered for any exception type, including
         :class:`~.HTTPError` or :class:`~.HTTPStatus`. This feature
@@ -523,8 +523,9 @@ class API(object):
 
         Args:
             exception (type or iterable of types): When handling a request,
-                whenever an error occurs that is an instance of one of these
-                exception types, the associated handler will be called.
+                whenever an error occurs that is an instance of the specified
+                type(s), the associated handler will be called. Either a single
+                type or an iterable of types may be specified.
             handler (callable): A function or callable object taking the form
                 ``func(req, resp, ex, params)``.
 
