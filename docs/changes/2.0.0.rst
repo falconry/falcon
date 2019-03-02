@@ -72,6 +72,10 @@ Changes to Supported Platforms
 ------------------------------
 
 - CPython 3.7 is now fully supported.
+- Falcon 2.x series is the last to support Python language version 2. As a
+  result, support for CPython 2.7 and PyPy2.7 will be removed in Falcon 3.0.
+- Support for CPython 3.4 is now deprecated and will be removed in Falcon 3.0.
+- Support for CPython 2.6, CPython 3.3 and Jython 2.7 has been dropped.
 
 New & Improved
 --------------

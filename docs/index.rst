@@ -80,7 +80,7 @@ Falcon tries to do as little as possible while remaining highly effective.
 - Minimal attack surface for writing secure APIs
 - 100% code coverage with a comprehensive test suite
 - No dependencies on other Python packages
-- Supports Python 2.7, 3.4+
+- Supports Python 2.7, 3.5+
 - Compatible with PyPy
 
 Who's Using Falcon?
