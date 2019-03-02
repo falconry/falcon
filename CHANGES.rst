@@ -8,11 +8,16 @@ Many thanks to all of our awesome contributors (listed down below) who made
 this release possible!
 
 In 2.0 we added a number of new convenience methods and properties. We also
-made it a lot cleaner and less-error-prone to assign multiple routes to the
-same resource class via suffixed responders. Middleware methods can now
-short-circuit request processing. Also, we improved cookie and ETag handling.
-The testing framework also received several improvements to make it easier
-to simulate certain types of requests.
+made it a lot cleaner and less error-prone to assign multiple routes to the
+same resource class via suffixed responders.
+
+Also noteworthy is the significant effort we invested in improving the
+accuracy, clarity, and breadth of the docs. We hope these changes will help
+make the framework easier to learn for newcomers.
+
+Middleware methods can now short-circuit request processing, and we improved
+cookie and ETag handling. Plus, the testing framework received several
+improvements to make it easier to simulate certain types of requests.
 
 As this is the first major release that we have had in quite a while, we have
 taken the opportunity to clean up many parts of the framework. Deprecated
@@ -22,9 +27,6 @@ defaults for a number of request options based on community feedback.
 
 Please carefully review the list of breaking changes below to see what
 you may need to tweak in your app to make it compatible with this release.
-
-Significant effort was also invested in improving the accuracy, clarity, and
-breadth of the docs.
 
 Breaking Changes
 ----------------
@@ -167,12 +169,15 @@ Breaking Changes
   that custom error serializers will be called for all instances of
   ``HTTPError``.
 - Request cookie parsing no longer uses the standard library
-  for most of the parsing logic. This may lead to subtley different results
+  for most of the parsing logic. This may lead to subtly different results
   for archaic cookie header formats, since the new implementation is based on
   RFC 6265.
 - The ``Request.if_match`` and ``Request.if_none_match`` properties
   now return a list of ``falcon.ETag`` objects rather than the raw
   value of the If-Match or If-None-Match headers, respectively.
+- When setting the ``Response.etag`` header property, the value will
+  now be wrapped with double-quotes (if not already present) to ensure
+  compliance with RFC 7232.
 
 Changes to Supported Platforms
 ------------------------------
@@ -266,9 +271,6 @@ New & Improved
   ``stream_len`` is now deprecated.
 - All ``get_param_*()`` methods of the ``Request`` class now accept a
   `default` argument.
-- When setting the ``Response.etag`` header property, the value will
-  now be wrapped with double-quotes (if not already present) to ensure
-  compliance with RFC 7232.
 - A new header property, ``expires``, was added to the
   ``Response`` class.
 - The ``falcon.routing.CompiledRouter`` class now exposes a
@@ -325,6 +327,9 @@ Fixed
   ``NoRepresentation``). This has now been fixed so
   that custom error serializers will be called for all instances of
   ``HTTPError``.
+- When setting the ``Response.etag`` header property, the value will
+  now be wrapped with double-quotes (if not already present) to ensure
+  compliance with RFC 7232.
 
 Contributors to this Release
 ----------------------------
