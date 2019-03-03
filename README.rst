@@ -8,7 +8,7 @@
     >
     </a>
 
-|Docs| |Build Status| |codecov.io|
+|Docs| |Build Status| |Coverage|
 
 The Falcon Web Framework
 ========================
