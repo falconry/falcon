@@ -207,7 +207,6 @@ New & Improved
 - Added a new :attr:`~.Response.complete` property to the :class:`~.Response`
   class. This can be used to short-circuit request processing when the response
   has been pre-constructed.
-- Removed :py:mod:`six` from deps.
 - Request :attr:`~.Request.context_type` now defaults to a bare class allowing
   to set attributes on the request context object::
 
