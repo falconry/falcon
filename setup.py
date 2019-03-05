@@ -74,13 +74,27 @@ else:
 
 
 def load_description():
+    in_patrons = False
     in_raw = False
 
     description_lines = []
 
     # NOTE(kgriffs): PyPI does not support the raw directive
     for readme_line in io.open('README.rst', 'r', encoding='utf-8'):
-        if readme_line.startswith('.. raw::'):
+
+        # NOTE(vytas): The patron list largely builds upon raw sections
+        if 'big thank you to our patrons' in readme_line.strip().lower():
+            in_patrons = True
+            description_lines.append('Support Falcon Development\n')
+            description_lines.append('--------------------------\n')
+            continue
+        elif in_patrons and readme_line.startswith('---'):
+            in_patrons = False
+            continue
+        elif readme_line.rstrip().lower() in (
+                'platinum', 'gold', 'silver', 'bronze', 'nickel', 'iron'):
+            continue
+        elif readme_line.startswith('.. raw::'):
             in_raw = True
         elif in_raw:
             if readme_line and not re.match(r'\s', readme_line):
