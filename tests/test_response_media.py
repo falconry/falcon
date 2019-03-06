@@ -133,7 +133,7 @@ def test_default_media_type():
     resp.media = {'something': True}
 
     assert json.loads(resp.data.decode('utf-8')) == {u'something': True}
-    assert resp.content_type == 'application/json; charset=UTF-8'
+    assert resp.content_type == 'application/json'
 
 
 def test_mimeparse_edgecases():
