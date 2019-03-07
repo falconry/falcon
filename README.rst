@@ -22,6 +22,10 @@ remaining highly effective.
 Falcon apps work with any WSGI server, and run like a champ under
 CPython 2.7, CPython 3.5+, PyPy2.7, and PyPy3.5.
 
+.. Patron list starts here. For Python package, we substitute this section with:
+   Support Falcon Development
+   --------------------------
+
 A Big Thank You to Our Patrons
 ------------------------------
 
@@ -49,6 +53,8 @@ Silver
     <p>
     <a href="https://www.pnk.sh/python-falcon" target="_blank"><img src="https://falconframework.org/img/sponsors/paris.svg" height="20" alt="Paris Kejser"></a>
     </p>
+
+.. Patron list ends here (see the comment above this section).
 
 Has Falcon helped you make an awesome app? Show your support today with a one-time donation or by becoming a patron. Supporters get cool gear, an opportunity to promote their brand to Python developers, and
 prioritized support.
@@ -716,5 +722,5 @@ limitations under the License.
     :height: 20
 .. |Build Status| image:: https://travis-ci.org/falconry/falcon.svg
    :target: https://travis-ci.org/falconry/falcon
-.. |codecov.io| image:: http://codecov.io/github/falconry/falcon/coverage.svg?branch=master
-   :target: http://codecov.io/github/falconry/falcon?branch=master
+.. |codecov.io| image:: https://codecov.io/gh/falconry/falcon/branch/master/graphs/badge.svg
+   :target: http://codecov.io/gh/falconry/falcon

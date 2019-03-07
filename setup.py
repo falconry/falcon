@@ -74,13 +74,29 @@ else:
 
 
 def load_description():
+    in_patron_list = False
+    in_patron_replacement = False
     in_raw = False
 
     description_lines = []
 
     # NOTE(kgriffs): PyPI does not support the raw directive
     for readme_line in io.open('README.rst', 'r', encoding='utf-8'):
-        if readme_line.startswith('.. raw::'):
+
+        # NOTE(vytas): The patron list largely builds upon raw sections
+        if readme_line.startswith('.. Patron list starts'):
+            in_patron_list = True
+            in_patron_replacement = True
+            continue
+        elif in_patron_list:
+            if not readme_line.strip():
+                in_patron_replacement = False
+            elif in_patron_replacement:
+                description_lines.append(readme_line.lstrip())
+            if readme_line.startswith('.. Patron list ends'):
+                in_patron_list = False
+            continue
+        elif readme_line.startswith('.. raw::'):
             in_raw = True
         elif in_raw:
             if readme_line and not re.match(r'\s', readme_line):
