@@ -71,6 +71,11 @@ Falcon's middleware interface is defined as follows:
     component modifies ``req.path`` in its *process_request* method,
     the framework will use the modified value to route the request.
 
+    For example::
+
+        # Route requests based on the host header.
+        req.path = '/' + req.host + req.path
+
 .. Tip::
     The *process_resource* method is only called when the request matches
     a route to a resource. To take action when a route is not found, a
@@ -123,7 +128,7 @@ Short-circuiting
 A *process_request* middleware method may short-circuit further request
 processing by setting :attr:`~.Response.complete` to ``True``, e.g.::
 
-      ``resp.complete = True``
+      resp.complete = True
 
 After the method returns, setting this flag will cause the framework to skip
 any remaining *process_request* and *process_resource* methods, as well as

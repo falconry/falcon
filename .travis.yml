@@ -39,7 +39,7 @@ matrix:
           env: TOXENV=py37_smoke
         - python: 3.7
           env: TOXENV=py37_smoke_cython
-        - python: 2.7
+        - python: 3.7
           env: TOXENV=docs
         # TODO(kgriffs): Re-enable once Hug is compatible with Falcon 2.0
         # - python: 3.6
