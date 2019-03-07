@@ -1,6 +1,33 @@
 2.0.0
 =====
 
+Summary
+-------
+
+Many thanks to all of our awesome contributors (listed down below) who made
+this release possible!
+
+In 2.0 we added a number of new convenience methods and properties. We also
+made it a lot cleaner and less error-prone to assign multiple routes to the
+same resource class via suffixed responders.
+
+Also noteworthy is the significant effort we invested in improving the
+accuracy, clarity, and breadth of the docs. We hope these changes will help
+make the framework easier to learn for newcomers.
+
+Middleware methods can now short-circuit request processing, and we improved
+cookie and ETag handling. Plus, the testing framework received several
+improvements to make it easier to simulate certain types of requests.
+
+As this is the first major release that we have had in quite a while, we have
+taken the opportunity to clean up many parts of the framework. Deprecated
+variables, methods, and classes have been removed, along with all
+backwards-compatibility shims for old method signatures. We also changed the
+defaults for a number of request options based on community feedback.
+
+Please carefully review the list of breaking changes below to see what
+you may need to tweak in your app to make it compatible with this release.
+
 Breaking Changes
 ----------------
 
@@ -64,6 +91,93 @@ Breaking Changes
 - ``Request.cookies`` now gives precedence to the first value
   encountered in the Cookie header for a given cookie name, rather than the
   last.
+- The ordering of the parameters passed to custom error handlers was adjusted
+  to be more intuitive and consistent with the rest of the framework::
+
+    # Before
+    def handle_error(ex, req, resp, params):
+      pass
+
+    # Falcon 2.0
+    def handle_error(req, resp, ex, params):
+      pass
+
+  See also: ``API.add_error_handler()``
+
+- ``RequestOptions.strip_url_path_trailing_slash`` now defaults
+  to ``False`` instead of ``True``.
+- The deprecated ``falcon.testing.TestCase.api`` property was removed.
+- The deprecated ``falcon.testing.TestCase.api_class`` class variable was removed.
+- The deprecated ``falcon.testing.TestBase`` class was removed.
+- The deprecated ``falcon.testing.TestResource`` class was removed.
+- The deprecated ``protocol`` property was removed from the
+  ``Request`` class.
+- The deprecated ``get_param_as_dict()`` method alias was removed from the
+  ``Request`` class. Please use ``Request.get_param_as_json()``
+  instead.
+- Routers were previously allowed to accept additional args and
+  keyword arguments, and were not required to use the variadic form. Now,
+  they are only allowed to accept additional options as variadic keyword
+  arguments, and to ignore any arguments they don't support. This helps
+  overridden router logic be less fragile in terms of their interface
+  contracts, which also makes it easier to keep Falcon backwards-compatible
+  in the face of any future changes in this area.
+- ``API.add_route()`` previously accepted `*args`, but now no longer does.
+- The ``add_route()`` method for custom routers no longer takes a `method_map`
+  argument. Custom routers should, instead, call the
+  ``falcon.routing.map_http_methods()`` function directly
+  from their ``add_route()`` method if they require this mapping.
+- The ``serialize()`` media handler method now receives an extra
+  `content_type` argument, while the ``deserialize()`` method now takes
+  `stream`, `content_type`, and `content_length` arguments, rather than a
+  single `raw` argument. The raw data can still be obtained by executing
+  ``raw = stream.read()``.
+- The deprecated ``falcon.routing.create_http_method_map()`` method was
+  removed.
+- The keyword arguments for ``falcon.uri.parse_query_string()`` were renamed
+  to be more concise::
+
+    # Before
+    parsed_values = parse_query_string(
+        query_string, keep_blank_qs_values=True, parse_qs_csv=False
+    )
+
+    # Falcon 2.0
+    parsed_values = parse_query_string(
+        query_string, keep_blank=True, csv=False
+    )
+
+- ``falcon.RequestOptions.auto_parse_qs_csv`` now defaults
+  to ``False`` instead of ``True``.
+- The ``HTTPRequestEntityTooLarge`` class was renamed to
+  ``HTTPPayloadTooLarge``.
+- Two of the keyword arguments for ``Request.get_param_as_int()`` were
+  renamed to avoid shadowing built-in Python names::
+
+    # Before
+    dpr = req.get_param_as_int('dpr', min=0, max=3)
+
+    # Falcon 2.0
+    dpr = req.get_param_as_int('dpr', min_value=0, max_value=3)
+
+- The ``falcon.media.validators.jsonschema.validate()`` decorator now uses
+  ``functools.wraps()`` to make the decorated method look like the original.
+- Previously, ``HTTPError`` instances for which the `has_representation`
+  property evaluated to ``False`` were not passed to custom error serializers
+  (such as in the case of types that subclass
+  ``NoRepresentation``). This has now been fixed so
+  that custom error serializers will be called for all instances of
+  ``HTTPError``.
+- Request cookie parsing no longer uses the standard library
+  for most of the parsing logic. This may lead to subtly different results
+  for archaic cookie header formats, since the new implementation is based on
+  RFC 6265.
+- The ``Request.if_match`` and ``Request.if_none_match`` properties
+  now return a list of ``falcon.ETag`` objects rather than the raw
+  value of the If-Match or If-None-Match headers, respectively.
+- When setting the ``Response.etag`` header property, the value will
+  now be wrapped with double-quotes (if not already present) to ensure
+  compliance with RFC 7232.
 
 Changes to Supported Platforms
 ------------------------------
@@ -77,11 +191,14 @@ Changes to Supported Platforms
 New & Improved
 --------------
 
+- Several performance optimizations were made to hot code paths in the
+  framework to make Falcon 2.0 even faster than 1.4 in some cases.
+- Numerous changes were made to the docs to improve clarity and to provide
+  better recommendations on how to best use various parts of the framework.
 - Added a new ``headers`` property to the ``Response`` class.
 - Removed the ``six`` and ``python-mimeparse`` dependencies.
 - Added a new ``complete`` property to the ``Response`` class. This can be used
   to short-circuit request processing when the response has been pre-constructed.
-- Removed ``six`` as a dependency.
 - ``Request.context_type`` now defaults to a bare class allowing to set
   attributes on the request context object::
 
@@ -122,11 +239,96 @@ New & Improved
 - Optimized request cookie parsing. It is now roughly an order of magnitude
   faster.
 - ``append_header()`` now supports appending raw Set-Cookie header values.
+- Multiple routes can now be added for the same resource instance using a
+  suffix to distinguish the set of responders that should be used. In this way,
+  multiple closely-related routes can be mapped to the same resource while
+  preserving readability and consistency.
+- The ``falcon.media.validators.jsonschema.validate()`` decorator now
+  supports both request and response validation.
+- A static route can now be configured to return the data from a default file
+  when the requested file path is not found.
+- The ordering of the parameters passed to custom error handlers was adjusted
+  to be more intuitive and consistent with the rest of the framework::
+
+    # Before
+    def handle_error(ex, req, resp, params):
+      pass
+
+    # Falcon 2.0
+    def handle_error(req, resp, ex, params):
+      pass
+
+- All error classes now accept a `headers` keyword argument for customizing
+  response headers.
+- A new method, ``get_param_as_float()``, was added to the
+  ``Request`` class.
+- A new method, ``has_param()``, was added to the
+  ``Request`` class.
+- A new property, ``content_length``, was added to the
+  ``Response`` class. Either ``Response.set_stream()`` or
+  ``Response.content_length`` should be used going forward, as
+  ``stream_len`` is now deprecated.
+- All ``get_param_*()`` methods of the ``Request`` class now accept a
+  `default` argument.
+- A new header property, ``expires``, was added to the
+  ``Response`` class.
+- The ``falcon.routing.CompiledRouter`` class now exposes a
+  ``map_http_methods()`` method that child
+  classes can override in order to customize the mapping of HTTP methods to
+  resource class methods.
+- The ``serialize()`` media handler method now receives an extra
+  `content_type` argument, while the ``deserialize()`` method now takes
+  `stream`, `content_type`, and `content_length` arguments, rather than a
+  single `raw` argument. The raw data can still be obtained by executing
+  ``raw = stream.read()``.
+- The ``Response.get_header()`` method now accepts a `default` keyword
+  argument.
+- The ``TestClient.simulate_request()`` method now supports
+  overriding the host and remote IP address in the WSGI environment, as well
+  as setting arbitrary additional CGI variables in the WSGI environment.
+- The ``TestClient.simulate_request()`` method now supports
+  passing a query string as part of the path, as an alternative to using the
+  `params` or `query_string` keyword arguments.
+- Added a deployment guide to the docs for uWSGI and NGINX on Linux.
+- The ``falcon.uri.decode()`` method now accepts an `unquote_plus` keyword
+  argument. The new argument defaults to ``False`` to avoid a breaking change.
+- The ``Request.if_match`` and ``Request.if_none_match`` properties
+  now return a list of ``falcon.ETag`` objects rather than the raw
+  value of the If-Match or If-None-Match headers, respectively.
+- ``API.add_error_handler()`` now supports specifying an iterable of
+  exception types to match.
 
 Fixed
 -----
 
-(None)
+- Fixed a docs issue where with smaller browser viewports, the API
+  documentation will start horizontal scrolling.
+- The color scheme for the docs was modified to fix issues with contrast and
+  readability when printing the docs or generating PDFs.
+- The ``TestClient.simulate_request()`` method now forces
+  header values to `str` on Python 2 as required by PEP-3333.
+- The ``HTTPRequestEntityTooLarge`` class was renamed to
+  ``HTTPPayloadTooLarge`` and the reason phrase was updated
+  per RFC 7231.
+- The  ``falcon.CaseInsensitiveDict`` class now inherits from
+  ``collections.abc.MutableMapping`` under Python 3, instead of
+  ``collections.MutableMapping``.
+- The ``\ufffd`` character is now disallowed in requested static file paths.
+- The ``falcon.media.validators.jsonschema.validate()`` decorator now uses
+  ``functools.wraps`` to make the decorated method look like the original.
+- The ``falcon-print-routes`` CLI tool no longer raises an unhandled error
+  when Falcon is cythonized.
+- The plus character (``'+'``) is no longer unquoted in the request path, but
+  only in the query string.
+- Previously, ``HTTPError`` instances for which the `has_representation`
+  property evaluated to ``False`` were not passed to custom error serializers
+  (such as in the case of types that subclass
+  ``NoRepresentation``). This has now been fixed so
+  that custom error serializers will be called for all instances of
+  ``HTTPError``.
+- When setting the ``Response.etag`` header property, the value will
+  now be wrapped with double-quotes (if not already present) to ensure
+  compliance with RFC 7232.
 
 Contributors to this Release
 ----------------------------

@@ -165,7 +165,7 @@ pre {
 }
 
 /* Fix drifting to the left in some parameters lists. */
-li .highlight pre {
+.field-body li .highlight pre {
     float: right;
 }
 
