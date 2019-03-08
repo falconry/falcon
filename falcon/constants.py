@@ -28,10 +28,7 @@ COMBINED_METHODS = HTTP_METHODS + WEBDAV_METHODS
 # UTF-8 and so it is the recommended default charset going forward,
 # and indeed, other charsets should not be specified to ensure
 # maximum interoperability.
-#
-# TODO(kgriffs) In Falcon 2.0, omit the charset parameter
-# below.
-MEDIA_JSON = 'application/json; charset=UTF-8'
+MEDIA_JSON = 'application/json'
 
 # NOTE(kgriffs): An internet media type for MessagePack has not
 # yet been registered. 'application/x-msgpack' is commonly used,
