@@ -287,6 +287,7 @@ class TestHTTPError(object):
         response = client.simulate_patch('/fail')
         assert response.status == falcon.HTTP_400
         assert response.json == {'title': '400 Bad Request'}
+        assert response.headers['Content-Type'] == 'application/json'
 
     def test_no_description_xml(self, client):
         response = client.simulate_patch(
@@ -298,6 +299,7 @@ class TestHTTPError(object):
                         b'<title>400 Bad Request</title></error>')
 
         assert response.content == expected_xml
+        assert response.headers['Content-Type'] == 'application/xml'
 
     def test_client_does_not_accept_json_or_xml(self, client):
         headers = {
