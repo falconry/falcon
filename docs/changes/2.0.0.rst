@@ -28,6 +28,15 @@ defaults for a number of request options based on community feedback.
 Please carefully review the list of breaking changes below to see what
 you may need to tweak in your app to make it compatible with this release.
 
+Changes to Supported Platforms
+------------------------------
+
+- CPython 3.7 is now fully supported.
+- Falcon 2.x series is the last to support Python language version 2. As a
+  result, support for CPython 2.7 and PyPy2.7 will be removed in Falcon 3.0.
+- Support for CPython 3.4 is now deprecated and will be removed in Falcon 3.0.
+- Support for CPython 2.6, CPython 3.3 and Jython 2.7 has been dropped.
+
 Breaking Changes
 ----------------
 
@@ -190,15 +199,15 @@ Breaking Changes
   encoding for both JSON and XML media types. This should not break
   well-behaved clients, but could impact test cases in apps that
   assert on the exact value of the Content-Type header.
-
-Changes to Supported Platforms
-------------------------------
-
-- CPython 3.7 is now fully supported.
-- Falcon 2.x series is the last to support Python language version 2. As a
-  result, support for CPython 2.7 and PyPy2.7 will be removed in Falcon 3.0.
-- Support for CPython 3.4 is now deprecated and will be removed in Falcon 3.0.
-- Support for CPython 2.6, CPython 3.3 and Jython 2.7 has been dropped.
+- Similar to the change made to the default error serializer, the default JSON
+  media type generally used for successful responses was also modified
+  to no longer specify the `charset` parameter.
+  This change affects both the :data:`falcon.DEFAULT_MEDIA_TYPE` and
+  :data:`falcon.MEDIA_JSON` :ref:`constants <media_type_constants>`, as well
+  as the default value of the `media_type` keyword argument specified for
+  the :class:`falcon.API` initializer. This change also affects the default
+  value of the :attr:`.RequestOptions.default_media_type` and
+  :attr:`.ResponseOptions.default_media_type` options.
 
 New & Improved
 --------------
@@ -332,6 +341,15 @@ New & Improved
 - The default error serializer no longer sets the `charset` parameter for the
   media type returned in the Content-Type header, since UTF-8 is the default
   encoding for both JSON and XML media types.
+- Similar to the change made to the default error serializer, the default JSON
+  media type generally used for successful responses was also modified
+  to no longer specify the `charset` parameter.
+  This change affects both the :data:`falcon.DEFAULT_MEDIA_TYPE` and
+  :data:`falcon.MEDIA_JSON` :ref:`constants <media_type_constants>`, as well
+  as the default value of the `media_type` keyword argument specified for
+  the :class:`falcon.API` initializer. This change also affects the default
+  value of the :attr:`.RequestOptions.default_media_type` and
+  :attr:`.ResponseOptions.default_media_type` options.
 
 Fixed
 -----
