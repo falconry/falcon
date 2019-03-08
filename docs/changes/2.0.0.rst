@@ -386,6 +386,7 @@ Many thanks to all of our talented and stylish contributors for this release!
 - `bkcsfi <https://github.com/bkcsfi>`_
 - `brooksryba <https://github.com/brooksryba>`_
 - `carlodri <https://github.com/carlodri>`_
+- `grktsh <https://github.com/grktsh>`_
 - `hugovk <https://github.com/hugovk>`_
 - `jmvrbanac <https://github.com/jmvrbanac>`_
 - `kandziu <https://github.com/kandziu>`_
