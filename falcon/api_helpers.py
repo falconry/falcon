@@ -131,7 +131,10 @@ def default_serialize_error(req, resp, exception):
             representation = exception.to_xml()
 
         resp.body = representation
-        resp.content_type = preferred + '; charset=UTF-8'
+
+        # NOTE(kgriffs): No need to append the charset param, since
+        #   utf-8 is the default for both JSON and XML.
+        resp.content_type = preferred
 
     resp.append_header('Vary', 'Accept')
 

@@ -178,6 +178,11 @@ Breaking Changes
 - When setting the ``Response.etag`` header property, the value will
   now be wrapped with double-quotes (if not already present) to ensure
   compliance with RFC 7232.
+- The default error serializer no longer sets the `charset` parameter for the
+  media type returned in the Content-Type header, since UTF-8 is the default
+  encoding for both JSON and XML media types. This should not break
+  well-behaved clients, but could impact test cases in apps that
+  assert on the exact value of the Content-Type header.
 
 Changes to Supported Platforms
 ------------------------------
@@ -297,6 +302,9 @@ New & Improved
   value of the If-Match or If-None-Match headers, respectively.
 - ``API.add_error_handler()`` now supports specifying an iterable of
   exception types to match.
+- The default error serializer no longer sets the `charset` parameter for the
+  media type returned in the Content-Type header, since UTF-8 is the default
+  encoding for both JSON and XML media types.
 
 Fixed
 -----
