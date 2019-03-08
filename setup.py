@@ -113,6 +113,7 @@ setup(
     version=VERSION,
     description='An unladen web framework for building APIs and app backends.',
     long_description=load_description(),
+    long_description_content_type='text/x-rst',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Web Environment',

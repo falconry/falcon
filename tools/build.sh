@@ -33,8 +33,10 @@ _open_env() {
     pyenv virtualenv $PY_VERSION $VENV_NAME
     pyenv shell $VENV_NAME
 
-    pip install --upgrade pip
-    pip install --upgrade wheel twine
+    pip install -q --upgrade pip
+    pip install -q --upgrade wheel twine
+
+    echo
 }
 
 # Args: ()
@@ -76,18 +78,6 @@ pyenv shell system
 pyenv uninstall -f $VENV_NAME
 
 #----------------------------------------------------------------------
-# README validation
-#----------------------------------------------------------------------
-
-_echo_task "Checking that README will render on PyPI"
-_open_env $PY2_VERSION
-
-pip install readme_renderer
-python setup.py check -r -s
-
-_close_env
-
-#----------------------------------------------------------------------
 # Source distribution
 #----------------------------------------------------------------------
 
@@ -106,5 +96,16 @@ _echo_task "Building universal wheel"
 _open_env $PY2_VERSION
 
 python setup.py bdist_wheel -d $DIST_DIR
+
+_close_env
+
+#----------------------------------------------------------------------
+# README validation
+#----------------------------------------------------------------------
+
+_echo_task "Checking that README will render on PyPI"
+_open_env $PY2_VERSION
+
+twine check $DIST_DIR/*
 
 _close_env
