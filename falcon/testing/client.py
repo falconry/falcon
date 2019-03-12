@@ -82,19 +82,19 @@ class Result(object):
             if the response is not valid JSON.
     """
 
-    def __init__(self, iterable, status, headers):
+    def __init__(self, iterable, response_meta):
         self._text = None
 
         self._content = b''.join(iterable)
         if hasattr(iterable, 'close'):
             iterable.close()
 
-        self._status = status
-        self._status_code = int(status[:3])
-        self._headers = CaseInsensitiveDict(headers)
+        self._status = response_meta.status
+        self._status_code = int(self._status[:3])
+        self._headers = CaseInsensitiveDict(response_meta.headers)
 
         cookies = http_cookies.SimpleCookie()
-        for name, value in headers:
+        for name, value in self._headers.items():
             if name.lower() == 'set-cookie':
                 cookies.load(value)
 
@@ -349,7 +349,7 @@ def simulate_request(app, method='GET', path='/', query_string=None,
 
     iterable = validator(env, srmock)
 
-    result = Result(iterable, srmock.status, srmock.headers)
+    result = Result(iterable, srmock)
 
     return result
 

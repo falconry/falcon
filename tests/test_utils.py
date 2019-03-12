@@ -11,6 +11,11 @@ from falcon import testing
 from falcon import util
 from falcon.util import compat, json, misc, structures, uri
 
+if compat.PY3:
+    from unittest import mock
+else:
+    import mock
+
 
 def _arbitrary_uris(count, length):
     return (
@@ -509,7 +514,7 @@ class TestFalconTestingUtils(object):
         assert result.status == falcon.HTTP_702
 
     def test_wsgi_iterable_not_closeable(self):
-        result = testing.Result([], falcon.HTTP_200, [])
+        result = testing.Result([], mock.sentinel.response_meta)
         assert not result.content
         assert result.json is None
 

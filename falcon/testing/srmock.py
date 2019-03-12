@@ -21,7 +21,17 @@ used, along with a mock environ dict, to simulate a WSGI request.
 from falcon import util
 
 
-class StartResponseMock(object):
+class ResponseMeta(object):
+    @property
+    def status(self):
+        raise NotImplementedError
+
+    @property
+    def headers(self):
+        raise NotImplementedError
+
+
+class StartResponseMock(ResponseMeta):
     """Mock object representing a WSGI `start_response` callable.
 
     Attributes:
@@ -37,20 +47,20 @@ class StartResponseMock(object):
 
     def __init__(self):
         self._called = 0
-        self.status = None
-        self.headers = None
+        self._status = None
+        self._headers = None
         self.exc_info = None
 
     def __call__(self, status, headers, exc_info=None):
         """Implements the PEP-3333 `start_response` protocol."""
 
         self._called += 1
-        self.status = status
+        self._status = status
 
         # NOTE(kgriffs): Normalize headers to be lowercase regardless
         # of what Falcon returns, so asserts in tests don't have to
         # worry about the case-insensitive nature of header names.
-        self.headers = [(name.lower(), value) for name, value in headers]
+        self._headers = [(name.lower(), value) for name, value in headers]
 
         self.headers_dict = util.CaseInsensitiveDict(headers)
         self.exc_info = exc_info
@@ -58,3 +68,11 @@ class StartResponseMock(object):
     @property
     def call_count(self):
         return self._called
+
+    @property
+    def status(self):
+        return self._status
+
+    @property
+    def headers(self):
+        return self._headers
