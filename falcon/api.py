@@ -318,7 +318,12 @@ class API(object):
 
             # PERF(kgriffs): Böse mußt sein. Operate directly on resp._headers
             #   to reduce overhead since this is a hot/critical code path.
-            if 'content-length' not in resp._headers and length is not None:
+            # NOTE(kgriffs): We always set content-length to match the
+            #   body bytes length, even if content-length is already set. The
+            #   reason being that web servers and LBs behave unpredictably
+            #   when the header doesn't match the body (sometimes choosing to
+            #   drop the HTTP connection prematurely, for example).
+            if length is not None:
                 resp._headers['content-length'] = str(length)
 
         headers = resp._wsgi_headers(media_type)

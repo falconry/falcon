@@ -819,8 +819,12 @@ class Response(object):
         'Content-Length',
         """Set the Content-Length header.
 
-        Useful for responding to HEAD requests when you aren't actually
-        providing the response body.
+        This property can be used for responding to HEAD requests when you
+        aren't actually providing the response body, or when streaming the
+        response. If either the `body` property or the `data` property is set
+        on the response, the framework will force Content-Length to be the
+        length of the given body bytes. Therefore, it is only necessary to
+        manually set the content length when those properties are not used.
 
         Note:
             In cases where the response content is a stream (readable
