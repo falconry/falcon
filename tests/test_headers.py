@@ -207,14 +207,23 @@ class RemoveHeaderResource(object):
 
 class ContentLengthHeaderResource(object):
 
-    def __init__(self, content_length, body=None):
+    def __init__(self, content_length, body=None, data=None):
         self._content_length = content_length
         self._body = body
+        self._data = data
 
     def on_get(self, req, resp):
         # NOTE(kgriffs): Use stream_len for now to cover the deprecated alias
         resp.stream_len = self._content_length
-        resp.body = self._body
+
+        if self._body:
+            resp.body = self._body
+
+        if self._data:
+            resp.data = self._data
+
+    def on_head(self, req, resp):
+        resp.content_length = self._content_length
 
 
 class ExpiresHeaderResource(object):
@@ -236,18 +245,31 @@ class TestHeaders(object):
         content_length = str(len(SAMPLE_BODY))
         assert result.headers['Content-Length'] == content_length
 
-    def test_declare_content_length(self, client):
+    def test_declared_content_length_on_head(self, client):
         client.app.add_route('/', ContentLengthHeaderResource(42))
-        result = client.simulate_get()
-
+        result = client.simulate_head()
         assert result.headers['Content-Length'] == '42'
 
-    def test_declared_content_length_not_overriden_by_body_length(self, client):
-        resource = ContentLengthHeaderResource(42, body='Hello World')
+    def test_declared_content_length_overridden_by_no_body(self, client):
+        client.app.add_route('/', ContentLengthHeaderResource(42))
+        result = client.simulate_get()
+        assert result.headers['Content-Length'] == '0'
+
+    def test_declared_content_length_overriden_by_body_length(self, client):
+        resource = ContentLengthHeaderResource(42, body=SAMPLE_BODY)
         client.app.add_route('/', resource)
         result = client.simulate_get()
 
-        assert result.headers['Content-Length'] == '42'
+        assert result.headers['Content-Length'] == str(len(SAMPLE_BODY))
+
+    def test_declared_content_length_overriden_by_data_length(self, client):
+        data = SAMPLE_BODY.encode()
+
+        resource = ContentLengthHeaderResource(42, data=data)
+        client.app.add_route('/', resource)
+        result = client.simulate_get()
+
+        assert result.headers['Content-Length'] == str(len(data))
 
     def test_expires_header(self, client):
         expires = datetime(2013, 1, 1, 10, 30, 30)
