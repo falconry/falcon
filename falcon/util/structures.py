@@ -107,6 +107,114 @@ class CaseInsensitiveDict(MutableMapping):  # pragma: no cover
         return '%s(%r)' % (self.__class__.__name__, dict(self.items()))
 
 
+class Context(object):
+    """
+    Convenience class to hold contextual information in its attributes.
+
+    This class is used as the default :class:`~.Request` and :class:`~Response`
+    context type (see :attr:`~.Request.context_type` and
+    :attr:`~.Response.context_type`, respectively).
+
+    In Falcon versions prior to 2.0, the default context type was ``dict``. To
+    ease the migration to attribute-based context object approach, this class
+    also implements mapping interface, that is, object attributes are linked to
+    dictionary items, and vice versa.
+
+    Note:
+        Python 2 specific ``dict`` methods are exposed regardless of the
+        Python language version, however, as they are delegated to the
+        underlying ``__dict__``, a similar error would be raised as if
+        attempting to use these methods for a usual Python 3 dict.
+    """
+
+    def __contains__(self, key):
+        return self.__dict__.__contains__(key)
+
+    def __delitem__(self, key):
+        self.__dict__.__delitem__(key)
+
+    def __eq__(self, other):
+        return self.__dict__.__eq__(other)
+
+    def __format__(self, format_spec):
+        return self.__dict__.__format__(format_spec)
+
+    def __getitem__(self, key):
+        return self.__dict__.__getitem__(key)
+
+    def __hash__(self):
+        return hash(self.__dict__)
+
+    def __iter__(self):
+        return self.__dict__.__iter__()
+
+    def __len__(self):
+        return self.__dict__.__len__()
+
+    def __ne__(self, other):
+        return self.__dict__.__ne__(other)
+
+    def __repr__(self):
+        return self.__dict__.__repr__()
+
+    def __setitem__(self, key, value):
+        return self.__dict__.__setitem__(key, value)
+
+    def __str__(self):
+        return self.__dict__.__str__()
+
+    def clear(self):
+        return self.__dict__.clear()
+
+    def copy(self):
+        return self.__dict__.copy()
+
+    def get(self, key, default=None):
+        return self.__dict__.get(key, default)
+
+    def has_key(self, key):
+        return self.__dict__.has_key(key)  # noqa
+
+    def items(self):
+        return self.__dict__.items()
+
+    def iteritems(self):
+        return self.__dict__.iteritems()
+
+    def iterkeys(self):
+        return self.__dict__.iterkeys()
+
+    def itervalues(self):
+        return self.__dict__.itervalues()
+
+    def keys(self):
+        return self.__dict__.keys()
+
+    def pop(self, key):
+        return self.__dict__.pop(key)
+
+    def popitem(self):
+        return self.__dict__.popitem()
+
+    def setdefault(self, key, default_value=None):
+        return self.__dict__.setdefault(key, default_value)
+
+    def update(self, items):
+        self.__dict__.update(items)
+
+    def values(self):
+        return self.__dict__.values()
+
+    def viewitems(self):
+        return self.__dict__.viewitems()
+
+    def viewkeys(self):
+        return self.__dict__.viewkeys()
+
+    def viewvalues(self):
+        return self.__dict__.viewvalues()
+
+
 class ETag(str):
     """Convenience class to represent a parsed HTTP entity-tag.
 

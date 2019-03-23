@@ -24,6 +24,7 @@ from falcon.forwarded import Forwarded  # NOQA
 from falcon.media import Handlers
 from falcon.util import compat
 from falcon.util import json
+from falcon.util import structures
 from falcon.util.uri import parse_host, parse_query_string
 from falcon.vendor import mimeparse
 
@@ -429,7 +430,7 @@ class Request(object):
     _cached_if_none_match = None
 
     # Child classes may override this
-    context_type = type('RequestContext', (dict,), {})
+    context_type = structures.Context
 
     _wsgi_input_type_known = False
 

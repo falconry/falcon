@@ -741,3 +741,119 @@ def test_get_argnames():
     # support, so we just use this regression test to ensure the status quo.
     expected = ['b', 'c'] if compat.PY3 else ['a', 'b', 'c']
     assert misc.get_argnames(functools.partial(foo, 42)) == expected
+
+
+class TestContextType(object):
+
+    def test_attributes(self):
+        ctx = structures.Context()
+
+        ctx.foo = 'bar'
+        ctx.details = None
+        ctx._cache = {}
+
+        assert ctx.foo == 'bar'
+        assert ctx.details is None
+        assert ctx._cache == {}
+
+        with pytest.raises(AttributeError):
+            ctx.cache_strategy
+
+    def test_items_from_attributes(self):
+        ctx = structures.Context()
+
+        ctx.foo = 'bar'
+        ctx.details = None
+        ctx._cache = {}
+
+        assert ctx['foo'] == 'bar'
+        assert ctx['details'] is None
+        assert ctx['_cache'] == {}
+
+        with pytest.raises(KeyError):
+            ctx['cache_strategy']
+
+        assert 'foo' in ctx
+        assert '_cache' in ctx
+        assert 'cache_strategy' not in ctx
+
+    def test_attributes_from_items(self):
+        ctx = structures.Context()
+
+        ctx['foo'] = 'bar'
+        ctx['details'] = None
+        ctx['_cache'] = {}
+        ctx['cache_strategy'] = 'lru'
+
+        assert ctx['cache_strategy'] == 'lru'
+        del ctx['cache_strategy']
+
+        assert ctx['foo'] == 'bar'
+        assert ctx['details'] is None
+        assert ctx['_cache'] == {}
+
+        with pytest.raises(KeyError):
+            ctx['cache_strategy']
+
+    def test_dict_interface(self):
+        ctx = structures.Context()
+
+        ctx['foo'] = 'bar'
+        ctx['details'] = None
+        ctx[1] = 'one'
+        ctx[2] = 'two'
+
+        assert ctx == {'foo': 'bar', 'details': None, 1: 'one', 2: 'two'}
+        assert ctx != {'bar': 'foo', 'details': None, 1: 'one', 2: 'two'}
+        assert ctx != {}
+        assert ctx == ctx.copy()
+
+        assert set(key for key in ctx) == {'foo', 'details', 1, 2}
+
+        assert ctx.get('foo') == 'bar'
+        assert ctx.get('bar') is None
+        assert not ctx.get('bar', False)
+
+        assert len(ctx) == 4
+        assert ctx.pop('foo') == 'bar'
+        assert ctx.pop(1) == 'one'
+        assert ctx.pop(2) == 'two'
+        assert len(ctx) == 1
+
+        assert repr(ctx) == "{'details': None}"
+        assert str(ctx) == "{'details': None}"
+        assert '{}'.format(ctx) == "{'details': None}"
+
+        with pytest.raises(TypeError):
+            {ctx: ctx}
+
+        ctx.clear()
+        assert ctx == {}
+        assert len(ctx) == 0
+
+        ctx['key'] = 'value'
+        assert ctx.popitem() == ('key', 'value')
+
+        ctx.setdefault('numbers', []).append(1)
+        ctx.setdefault('numbers', []).append(2)
+        ctx.setdefault('numbers', []).append(3)
+        assert ctx['numbers'] == [1, 2, 3]
+
+    def test_keys_and_values(self):
+        ctx = structures.Context()
+        ctx.update((number, number ** 2) for number in range(1, 5))
+
+        assert set(ctx.keys()) == {1, 2, 3, 4}
+        assert set(ctx.values()) == {1, 4, 9, 16}
+        assert set(ctx.items()) == {(1, 1), (2, 4), (3, 9), (4, 16)}
+
+    @pytest.mark.skipif(compat.PY3, reason='python2-specific dict methods')
+    def test_python2_dict_methods(self):
+        ctx = structures.Context()
+        ctx.update((number, number ** 2) for number in range(1, 5))
+
+        assert set(ctx.keys()) == set(ctx.iterkeys()) == set(ctx.viewkeys())
+        assert set(ctx.values()) == set(ctx.itervalues()) == set(ctx.viewvalues())
+        assert set(ctx.items()) == set(ctx.iteritems()) == set(ctx.viewitems())
+
+        assert ctx.has_key(2)  # noqa
