@@ -73,10 +73,10 @@ class Request(object):
         context_type (class): Class variable that determines the factory or
             type to use for initializing the `context` attribute. By default,
             the framework will instantiate bare objects (instances of the bare
-            RequestContext class). However, you may override this behavior by
-            creating a custom child class of ``falcon.Request``, and then
-            passing that new class to `falcon.API()` by way of the latter's
-            `request_type` parameter.
+            :class:`falcon.Context` class). However, you may override this
+            behavior by creating a custom child class of ``falcon.Request``,
+            and then passing that new class to `falcon.API()` by way of the
+            latter's `request_type` parameter.
 
             Note:
                 When overriding `context_type` with a factory function (as

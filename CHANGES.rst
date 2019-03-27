@@ -67,8 +67,10 @@ Breaking Changes
 - The deprecated ``stream_len`` property was removed from the ``Response``
   class. Please use ``Response.set_stream()`` or ``Response.content_length``
   instead.
-- ``Request.context_type`` was changed from dict to a subclass of dict.
-- ``Response.context_type`` was changed from dict to a subclass of dict.
+- ``Request.context_type`` was changed from dict to a bare class implementing
+  dict interface.
+- ``Response.context_type`` was changed from dict to a bare class implementing
+  dict interface.
 - ``JSONHandler`` and ``HTTPError`` no longer use
   `ujson` in lieu of the standard `json` library (when `ujson` is available in
   the environment). Instead, ``JSONHandler`` can now be configured
@@ -224,11 +226,11 @@ New & Improved
     req.context.role = 'trial'
     req.context.user = 'guest'
 
-  To ease the migration path, the previous behavior is supported by subclassing
-  dict, however, as of Falcon 2.0, the dict context interface is considered
-  deprecated, and may be removed in a future release. It is also noteworthy
-  that object attributes and dict items are not automagically linked in any
-  special way, and setting one does not affect the other.
+  To ease the migration path, the previous behavior is supported by
+  implementing dict interface in a way that object attributes and mapping items
+  are linked, and setting one sets the other as well, however, as of Falcon
+  2.0, the dict context interface is considered deprecated, and may be removed
+  in a future release.
 - ``Response.context_type`` now defaults to a bare class allowing
   to set attributes on the response context object::
 
@@ -238,11 +240,11 @@ New & Improved
     # Falcon 2.0
     resp.context.cache_strategy = 'lru'
 
-  To ease the migration path, the previous behavior is supported by subclassing
-  dict, however, as of Falcon 2.0, the dict context interface is considered
-  deprecated, and may be removed in a future release. It is also noteworthy
-  that object attributes and dict items are not automagically linked in any
-  special way, and setting one does not affect the other.
+  To ease the migration path, the previous behavior is supported by
+  implementing dict interface in a way that object attributes and mapping items
+  are linked, and setting one sets the other as well, however, as of Falcon
+  2.0, the dict context interface is considered deprecated, and may be removed
+  in a future release.
 - ``JSONHandler`` can now be configured to use arbitrary
   ``dumps()`` and ``loads()`` functions. This enables support not only for
   using any of a number of third-party JSON libraries, but also for

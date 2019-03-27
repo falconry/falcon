@@ -605,9 +605,9 @@ middleware component to rewrite the path before it is routed.
 How do I adapt my code to default context type changes in Falcon 2.0?
 ---------------------------------------------------------------------
 
-The default request/response context type has been changed from dict to a class
-subclassing dict in Falcon 2.0. Instead of setting dictionary items, you can
-now simply set attributes on the object:
+The default request/response context type has been changed from dict to a bare
+class in Falcon 2.0. Instead of setting dictionary items, you can now simply
+set attributes on the object:
 
 .. code:: python
 
@@ -617,19 +617,17 @@ now simply set attributes on the object:
    # Falcon 2.0
    req.context.cache_backend = MyUltraFastCache.connect()
 
-Since the default context type derives from dict, the existing code will work
-unmodified with Falcon 2.0. Nevertheless, it is recommended to change usage
-as outlined above since the ability to use context as dictionary may be
-removed in a future release.
+The new default context type emulates the dict interface in a way that context
+attributes are linked to dict items, i.e. setting an object attribute also sets
+the corresponding dict item, and vice versa. As a result, the existing code
+will largely work unmodified with Falcon 2.0. Nevertheless, it is recommended
+to change usage as outlined above since the ability to use context as dict may
+be removed in a future release.
 
 .. warning::
-   Context attributes are not linked to dict items in any special way,
-   i.e. setting an object attribute does not set the corresponding dict item,
-   nor vice versa.
-
-   Furthermore, if you need to mix-and-match both approaches under migration,
-   beware that setting attributes such as *items* or *values* would obviously
-   shadow the corresponding dict functions.
+   If you need to mix-and-match both approaches under migration, beware that
+   setting attributes such as *items* or *values* would obviously shadow the
+   corresponding dict functions.
 
 If an existing project is making extensive use of dictionary contexts, the type
 can be explicitly overridden back to dict by employing custom request/response

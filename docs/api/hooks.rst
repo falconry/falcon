@@ -1,7 +1,8 @@
 .. _hooks:
 
-Hooks
-=====
+=======
+ Hooks
+=======
 
 Falcon supports *before* and *after* hooks. You install a hook simply by
 applying one of the decorators below, either to an individual responder or

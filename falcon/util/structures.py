@@ -112,13 +112,22 @@ class Context(object):
     Convenience class to hold contextual information in its attributes.
 
     This class is used as the default :class:`~.Request` and :class:`~Response`
-    context type (see :attr:`~.Request.context_type` and
-    :attr:`~.Response.context_type`, respectively).
+    context type (see
+    :attr:`Request.context_type <falcon.Request.context_type>` and
+    :attr:`Response.context_type <falcon.Response.context_type>`,
+    respectively).
 
     In Falcon versions prior to 2.0, the default context type was ``dict``. To
     ease the migration to attribute-based context object approach, this class
     also implements mapping interface, that is, object attributes are linked to
-    dictionary items, and vice versa.
+    dictionary items, and vice versa, for instance:
+
+    >>> context = falcon.Context()
+    >>> context.cache_strategy = 'lru'
+    >>> context.get('cache_strategy')
+    'lru'
+    >>> 'cache_strategy' in context
+    True
 
     Note:
         Python 2 specific ``dict`` methods are exposed regardless of the
