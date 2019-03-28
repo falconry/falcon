@@ -745,8 +745,16 @@ def test_get_argnames():
 
 class TestContextType(object):
 
-    def test_attributes(self):
-        ctx = structures.Context()
+    class CustomContextType(structures.Context):
+        def __init__(self):
+            pass
+
+    @pytest.mark.parametrize('context_type', [
+        CustomContextType,
+        structures.Context,
+    ])
+    def test_attributes(self, context_type):
+        ctx = context_type()
 
         ctx.foo = 'bar'
         ctx.details = None
@@ -759,8 +767,12 @@ class TestContextType(object):
         with pytest.raises(AttributeError):
             ctx.cache_strategy
 
-    def test_items_from_attributes(self):
-        ctx = structures.Context()
+    @pytest.mark.parametrize('context_type', [
+        CustomContextType,
+        structures.Context,
+    ])
+    def test_items_from_attributes(self, context_type):
+        ctx = context_type()
 
         ctx.foo = 'bar'
         ctx.details = None
@@ -777,8 +789,12 @@ class TestContextType(object):
         assert '_cache' in ctx
         assert 'cache_strategy' not in ctx
 
-    def test_attributes_from_items(self):
-        ctx = structures.Context()
+    @pytest.mark.parametrize('context_type', [
+        CustomContextType,
+        structures.Context,
+    ])
+    def test_attributes_from_items(self, context_type):
+        ctx = context_type()
 
         ctx['foo'] = 'bar'
         ctx['details'] = None
@@ -795,8 +811,12 @@ class TestContextType(object):
         with pytest.raises(KeyError):
             ctx['cache_strategy']
 
-    def test_dict_interface(self):
-        ctx = structures.Context()
+    @pytest.mark.parametrize('context_type,type_name', [
+        (CustomContextType, 'CustomContextType'),
+        (structures.Context, 'Context'),
+    ])
+    def test_dict_interface(self, context_type, type_name):
+        ctx = context_type()
 
         ctx['foo'] = 'bar'
         ctx['details'] = None
@@ -808,7 +828,7 @@ class TestContextType(object):
         assert ctx != {}
 
         copy = ctx.copy()
-        assert isinstance(copy, structures.Context)
+        assert isinstance(copy, context_type)
         assert copy == ctx
         assert copy == {'foo': 'bar', 'details': None, 1: 'one', 2: 'two'}
         copy.pop('foo')
@@ -828,9 +848,9 @@ class TestContextType(object):
         assert ctx.pop(2) == 'two'
         assert len(ctx) == 1
 
-        assert repr(ctx) == "Context({'details': None})"
-        assert str(ctx) == "Context({'details': None})"
-        assert '{}'.format(ctx) == "Context({'details': None})"
+        assert repr(ctx) == type_name + "({'details': None})"
+        assert str(ctx) == type_name + "({'details': None})"
+        assert '{}'.format(ctx) == type_name + "({'details': None})"
 
         with pytest.raises(TypeError):
             {ctx: ctx}
@@ -847,8 +867,12 @@ class TestContextType(object):
         ctx.setdefault('numbers', []).append(3)
         assert ctx['numbers'] == [1, 2, 3]
 
-    def test_keys_and_values(self):
-        ctx = structures.Context()
+    @pytest.mark.parametrize('context_type', [
+        CustomContextType,
+        structures.Context,
+    ])
+    def test_keys_and_values(self, context_type):
+        ctx = context_type()
         ctx.update((number, number ** 2) for number in range(1, 5))
 
         assert set(ctx.keys()) == {1, 2, 3, 4}

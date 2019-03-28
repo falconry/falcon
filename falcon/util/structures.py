@@ -177,7 +177,7 @@ class Context(object):
         return self.__dict__.clear()
 
     def copy(self):
-        ctx = Context()
+        ctx = type(self)()
         ctx.update(self.__dict__)
         return ctx
 
