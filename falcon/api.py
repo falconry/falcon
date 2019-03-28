@@ -16,6 +16,7 @@
 
 """Falcon API class."""
 
+from functools import wraps
 import re
 
 from falcon import api_helpers as helpers, DEFAULT_MEDIA_TYPE, routing
@@ -25,7 +26,7 @@ from falcon.request import Request, RequestOptions
 import falcon.responders
 from falcon.response import Response, ResponseOptions
 import falcon.status_codes as status
-from falcon.util import compat
+from falcon.util import compat, misc
 
 
 # PERF(vytas): on Python 2.7+, Python 3.5+ (including cythonized modules),
@@ -552,6 +553,11 @@ class API(object):
                 a single type, the handler must be explicitly specified.
 
         """
+        def wrap_old_handler(old_handler):
+            @wraps(old_handler)
+            def handler(req, resp, ex, params):
+                old_handler(ex, req, resp, params)
+            return handler
 
         if handler is None:
             try:
@@ -561,6 +567,12 @@ class API(object):
                                      'explicitly or defined as a static'
                                      'method named "handle" that is a '
                                      'member of the given exception class.')
+
+        # TODO(vytas): Remove this shimming in a future Falcon version.
+        arg_names = tuple(misc.get_argnames(handler))
+        if (arg_names[0:1] in (('error',), ('ex',), ('exception',)) or
+                arg_names[1:3] in (('req', 'resp'), ('request', 'response'))):
+            handler = wrap_old_handler(handler)
 
         try:
             exception_tuple = tuple(exception)
