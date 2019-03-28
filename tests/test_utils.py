@@ -806,7 +806,13 @@ class TestContextType(object):
         assert ctx == {'foo': 'bar', 'details': None, 1: 'one', 2: 'two'}
         assert ctx != {'bar': 'foo', 'details': None, 1: 'one', 2: 'two'}
         assert ctx != {}
-        assert ctx == ctx.copy()
+
+        copy = ctx.copy()
+        assert isinstance(copy, structures.Context)
+        assert copy == ctx
+        assert copy == {'foo': 'bar', 'details': None, 1: 'one', 2: 'two'}
+        copy.pop('foo')
+        assert copy != ctx
 
         assert set(key for key in ctx) == {'foo', 'details', 1, 2}
 
@@ -815,14 +821,16 @@ class TestContextType(object):
         assert not ctx.get('bar', False)
 
         assert len(ctx) == 4
+        assert ctx.pop(3) is None
+        assert ctx.pop(3, 'not found') == 'not found'
         assert ctx.pop('foo') == 'bar'
         assert ctx.pop(1) == 'one'
         assert ctx.pop(2) == 'two'
         assert len(ctx) == 1
 
-        assert repr(ctx) == "{'details': None}"
-        assert str(ctx) == "{'details': None}"
-        assert '{}'.format(ctx) == "{'details': None}"
+        assert repr(ctx) == "Context({'details': None})"
+        assert str(ctx) == "Context({'details': None})"
+        assert '{}'.format(ctx) == "Context({'details': None})"
 
         with pytest.raises(TypeError):
             {ctx: ctx}
