@@ -146,3 +146,26 @@ class TestErrorHandler(object):
     def test_invalid_add_exception_handler_input(self, client, exceptions):
         with pytest.raises(TypeError):
             client.app.add_error_handler(exceptions, capture_error)
+
+    def test_handler_signature_shim(self, client):
+        def check_args(ex, req, resp):
+            assert isinstance(ex, BaseException)
+            assert isinstance(req, falcon.Request)
+            assert isinstance(resp, falcon.Response)
+
+        def legacy_handler1(ex, req, resp, params):
+            check_args(ex, req, resp)
+
+        def legacy_handler2(error_obj, request, response, params):
+            check_args(error_obj, request, response)
+
+        def legacy_handler3(err, rq, rs, prms):
+            check_args(err, rq, rs)
+
+        client.app.add_error_handler(Exception, legacy_handler1)
+        client.app.add_error_handler(CustomBaseException, legacy_handler2)
+        client.app.add_error_handler(CustomException, legacy_handler3)
+
+        client.simulate_delete()
+        client.simulate_get()
+        client.simulate_head()
