@@ -602,6 +602,8 @@ In the meantime, the workaround is to percent-encode the forward slash. If you
 don’t control the clients and can't enforce this, you can implement a Falcon
 middleware component to rewrite the path before it is routed.
 
+.. _bare_class_context_type:
+
 How do I adapt my code to default context type changes in Falcon 2.0?
 ---------------------------------------------------------------------
 

@@ -71,8 +71,10 @@ Breaking Changes
   instead, going forward, as ``stream_len`` is now deprecated.
 - Request :attr:`~.Request.context_type` was changed from dict to a bare class
   implementing the mapping interface.
+  (See also: :ref:`bare_class_context_type`)
 - Response :attr:`~.Response.context_type` was changed from dict to a bare class
   implementing the mapping interface.
+  (See also: :ref:`bare_class_context_type`)
 - :class:`~.media.JSONHandler` and :class:`~.HTTPError` no longer use
   `ujson` in lieu of the standard `json` library (when `ujson` is available in
   the environment). Instead, :class:`~.media.JSONHandler` can now be configured
@@ -240,7 +242,7 @@ New & Improved
 
   Applications can work around this change by explicitly overriding
   :attr:`~.Request.context_type` to dict.
-
+  (See also: :ref:`bare_class_context_type`)
 - Response :attr:`~.Response.context_type` now defaults to a bare class allowing
   to set attributes on the response context object::
 
@@ -258,6 +260,7 @@ New & Improved
 
   Applications can work around this change by explicitly overriding
   :attr:`~.Response.context_type` to dict.
+  (See also: :ref:`bare_class_context_type`)
 - :class:`~.media.JSONHandler` can now be configured to use arbitrary
   ``dumps()`` and ``loads()`` functions. This enables support not only for
   using any of a number of third-party JSON libraries, but also for
