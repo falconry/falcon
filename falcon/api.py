@@ -570,7 +570,7 @@ class API(object):
 
         # TODO(vytas): Remove this shimming in a future Falcon version.
         arg_names = tuple(misc.get_argnames(handler))
-        if (arg_names[0:1] in (('error',), ('ex',), ('exception',)) or
+        if (arg_names[0:1] in (('e',), ('err',), ('error',), ('ex',), ('exception',)) or
                 arg_names[1:3] in (('req', 'resp'), ('request', 'response'))):
             handler = wrap_old_handler(handler)
 
