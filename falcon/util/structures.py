@@ -107,6 +107,10 @@ class CaseInsensitiveDict(MutableMapping):  # pragma: no cover
         return '%s(%r)' % (self.__class__.__name__, dict(self.items()))
 
 
+# NOTE(vytas): Although Context is effectively implementing the MutableMapping
+#   interface, we choose not to subclass MutableMapping to stress the fact that
+#   Context is, by design, a bare class, and the mapping interface may be
+#   removed in a future Falcon release.
 class Context(object):
     """
     Convenience class to hold contextual information in its attributes.
@@ -139,19 +143,18 @@ class Context(object):
     def __contains__(self, key):
         return self.__dict__.__contains__(key)
 
-    def __delitem__(self, key):
-        self.__dict__.__delitem__(key)
-
-    def __eq__(self, other):
-        if isinstance(other, type(self)):
-            return self.__dict__.__eq__(other.__dict__)
-        return self.__dict__.__eq__(other)
-
     def __getitem__(self, key):
+        # PERF(vytas): On CPython, using this mapping interface (instead of a
+        #   standard dict) to get, set and delete items incurs overhead
+        #   approximately comparable to that of two function calls
+        #   (per get/set/delete operation, that is).
         return self.__dict__.__getitem__(key)
 
-    def __hash__(self):
-        return hash(self.__dict__)
+    def __setitem__(self, key, value):
+        return self.__dict__.__setitem__(key, value)
+
+    def __delitem__(self, key):
+        self.__dict__.__delitem__(key)
 
     def __iter__(self):
         return self.__dict__.__iter__()
@@ -159,16 +162,21 @@ class Context(object):
     def __len__(self):
         return self.__dict__.__len__()
 
+    def __eq__(self, other):
+        if isinstance(other, type(self)):
+            return self.__dict__.__eq__(other.__dict__)
+        return self.__dict__.__eq__(other)
+
     def __ne__(self, other):
         if isinstance(other, type(self)):
             return self.__dict__.__ne__(other.__dict__)
         return self.__dict__.__ne__(other)
 
+    def __hash__(self):
+        return hash(self.__dict__)
+
     def __repr__(self):
         return '{}({})'.format(type(self).__name__, self.__dict__.__repr__())
-
-    def __setitem__(self, key, value):
-        return self.__dict__.__setitem__(key, value)
 
     def __str__(self):
         return '{}({})'.format(type(self).__name__, self.__dict__.__str__())

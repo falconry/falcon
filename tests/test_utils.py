@@ -838,7 +838,10 @@ class TestContextType(object):
 
         assert ctx.get('foo') == 'bar'
         assert ctx.get('bar') is None
-        assert not ctx.get('bar', False)
+        assert ctx.get('bar', frozenset('hello')) == frozenset('hello')
+        false = ctx.get('bar', False)
+        assert isinstance(false, bool)
+        assert not false
 
         assert len(ctx) == 4
         assert ctx.pop(3) is None
