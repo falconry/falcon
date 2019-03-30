@@ -70,9 +70,9 @@ Breaking Changes
   use :meth:`~.Response.set_stream` or :attr:`~.Response.content_length`
   instead, going forward, as ``stream_len`` is now deprecated.
 - Request :attr:`~.Request.context_type` was changed from dict to a bare class
-  implementing dict interface.
+  implementing the mapping interface.
 - Response :attr:`~.Response.context_type` was changed from dict to a bare class
-  implementing dict interface.
+  implementing the mapping interface.
 - :class:`~.media.JSONHandler` and :class:`~.HTTPError` no longer use
   `ujson` in lieu of the standard `json` library (when `ujson` is available in
   the environment). Instead, :class:`~.media.JSONHandler` can now be configured
@@ -233,10 +233,10 @@ New & Improved
     req.context.user = 'guest'
 
   To ease the migration path, the previous behavior is supported by
-  implementing dict interface in a way that object attributes and mapping items
-  are linked, and setting one sets the other as well, however, as of Falcon
-  2.0, the dict context interface is considered deprecated, and may be removed
-  in a future release.
+  implementing the mapping interface in a way that object attributes and
+  mapping items are linked, and setting one sets the other as well. However, as
+  of Falcon 2.0, the dict context interface is considered deprecated, and may
+  be removed in a future release.
 
   Applications can work around this change by explicitly overriding
   :attr:`~.Request.context_type` to dict.
@@ -251,10 +251,10 @@ New & Improved
     resp.context.cache_strategy = 'lru'
 
   To ease the migration path, the previous behavior is supported by
-  implementing dict interface in a way that object attributes and mapping items
-  are linked, and setting one sets the other as well, however, as of Falcon
-  2.0, the dict context interface is considered deprecated, and may be removed
-  in a future release.
+  implementing the mapping interface in a way that object attributes and
+  mapping items are linked, and setting one sets the other as well. However, as
+  of Falcon 2.0, the dict context interface is considered deprecated, and may
+  be removed in a future release.
 
   Applications can work around this change by explicitly overriding
   :attr:`~.Response.context_type` to dict.

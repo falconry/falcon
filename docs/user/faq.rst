@@ -617,17 +617,18 @@ set attributes on the object:
    # Falcon 2.0
    req.context.cache_backend = MyUltraFastCache.connect()
 
-The new default context type emulates the dict interface in a way that context
-attributes are linked to dict items, i.e. setting an object attribute also sets
-the corresponding dict item, and vice versa. As a result, the existing code
-will largely work unmodified with Falcon 2.0. Nevertheless, it is recommended
-to change usage as outlined above since the ability to use context as dict may
-be removed in a future release.
+The new default context type emulates a dict-like mapping interface in a way
+that context attributes are linked to dict items, i.e. setting an object
+attribute also sets the corresponding dict item, and vice versa. As a result,
+existing code will largely work unmodified with Falcon 2.0. Nevertheless, it is
+recommended to migrate to the new interface as outlined above since the
+dict-like mapping interface may be removed from the context type in a future
+release.
 
 .. warning::
    If you need to mix-and-match both approaches under migration, beware that
    setting attributes such as *items* or *values* would obviously shadow the
-   corresponding dict functions.
+   corresponding mapping interface functions.
 
 If an existing project is making extensive use of dictionary contexts, the type
 can be explicitly overridden back to dict by employing custom request/response

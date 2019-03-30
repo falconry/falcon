@@ -119,8 +119,8 @@ class Context(object):
 
     In Falcon versions prior to 2.0, the default context type was ``dict``. To
     ease the migration to attribute-based context object approach, this class
-    also implements mapping interface, that is, object attributes are linked to
-    dictionary items, and vice versa, for instance:
+    also implements the mapping interface; that is, object attributes are
+    linked to dictionary items, and vice versa. For instance:
 
     >>> context = falcon.Context()
     >>> context.cache_strategy = 'lru'
