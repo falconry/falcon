@@ -357,7 +357,7 @@ Fixed
 - When setting the ``Response.etag`` header property, the value will
   now be wrapped with double-quotes (if not already present) to ensure
   compliance with RFC 7232.
-- Fixed ``TypeError`` being raised when using falcon's testing framework
+- Fixed ``TypeError`` being raised when using Falcon's testing framework
   to simulate a request to a generator-based WSGI app.
 
 Contributors to this Release
