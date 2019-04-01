@@ -28,7 +28,7 @@ from falcon.response_helpers import (
     header_property,
     is_ascii_encodable,
 )
-from falcon.util import compat, dt_to_http, TimezoneGMT
+from falcon.util import compat, dt_to_http, structures, TimezoneGMT
 from falcon.util.uri import encode as uri_encode
 from falcon.util.uri import encode_value as uri_encode_value
 
@@ -135,10 +135,10 @@ class Response(object):
         context_type (class): Class variable that determines the factory or
             type to use for initializing the `context` attribute. By default,
             the framework will instantiate bare objects (instances of the bare
-            ResponseContext class). However, you may override this behavior by
-            creating a custom child class of ``falcon.Response``, and then
-            passing that new class to `falcon.API()` by way of the latter's
-            `response_type` parameter.
+            :class:`falcon.Context` class). However, you may override this
+            behavior by creating a custom child class of ``falcon.Response``,
+            and then passing that new class to `falcon.API()` by way of the
+            latter's `response_type` parameter.
 
             Note:
                 When overriding `context_type` with a factory function (as
@@ -174,7 +174,7 @@ class Response(object):
     complete = False
 
     # Child classes may override this
-    context_type = type('ResponseContext', (dict,), {})
+    context_type = structures.Context
 
     def __init__(self, options=None):
         self.status = '200 OK'
