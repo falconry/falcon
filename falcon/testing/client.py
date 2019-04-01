@@ -86,8 +86,6 @@ class Result(object):
         self._text = None
 
         self._content = b''.join(iterable)
-        if hasattr(iterable, 'close'):
-            iterable.close()
 
         self._status = status
         self._status_code = int(status[:3])
@@ -349,7 +347,8 @@ def simulate_request(app, method='GET', path='/', query_string=None,
 
     iterable = validator(env, srmock)
 
-    result = Result(iterable, srmock.status, srmock.headers)
+    result = Result(helpers.closed_wsgi_iterable(iterable),
+                    srmock.status, srmock.headers)
 
     return result
 

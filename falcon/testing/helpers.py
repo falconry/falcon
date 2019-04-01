@@ -26,6 +26,7 @@ directly from the `testing` package::
 import cgi
 import contextlib
 import io
+import itertools
 import random
 import sys
 
@@ -229,6 +230,45 @@ def redirected(stdout=sys.stdout, stderr=sys.stderr):
         yield
     finally:
         sys.stderr, sys.stdout = old_stderr, old_stdout
+
+
+def closed_wsgi_iterable(iterable):
+    """Wraps an iterable to ensure its ``close()`` method is called.
+
+    Wraps the given `iterable` in an iterator utilizing a ``for`` loop as
+    illustrated in
+    `the PEP-3333 server/gateway side example
+    <https://www.python.org/dev/peps/pep-3333/#the-server-gateway-side>`_.
+    Finally, if the iterable has a ``close()`` method, it is called upon
+    exception or exausting iteration.
+
+    Furthermore, the first bytestring yielded from iteration, if any, is
+    prefetched before returning the wrapped iterator in order to ensure the
+    WSGI ``start_response`` function is called even if the WSGI application is
+    a generator.
+
+    Args:
+        iterable (iterable): An iterable that yields zero or more
+            bytestrings, per PEP-3333
+
+    Returns:
+        iterator: An iterator yielding the same bytestrings as `iterable`
+    """
+    def wrapper():
+        try:
+            for item in iterable:
+                yield item
+        finally:
+            if hasattr(iterable, 'close'):
+                iterable.close()
+
+    wrapped = wrapper()
+    try:
+        head = (next(wrapped),)
+    except StopIteration:
+        head = ()
+    return itertools.chain(head, wrapped)
+
 
 # ---------------------------------------------------------------------
 # Private
