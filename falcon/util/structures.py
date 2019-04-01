@@ -107,6 +107,134 @@ class CaseInsensitiveDict(MutableMapping):  # pragma: no cover
         return '%s(%r)' % (self.__class__.__name__, dict(self.items()))
 
 
+# NOTE(vytas): Although Context is effectively implementing the MutableMapping
+#   interface, we choose not to subclass MutableMapping to stress the fact that
+#   Context is, by design, a bare class, and the mapping interface may be
+#   removed in a future Falcon release.
+class Context(object):
+    """
+    Convenience class to hold contextual information in its attributes.
+
+    This class is used as the default :class:`~.Request` and :class:`~Response`
+    context type (see
+    :attr:`Request.context_type <falcon.Request.context_type>` and
+    :attr:`Response.context_type <falcon.Response.context_type>`,
+    respectively).
+
+    In Falcon versions prior to 2.0, the default context type was ``dict``. To
+    ease the migration to attribute-based context object approach, this class
+    also implements the mapping interface; that is, object attributes are
+    linked to dictionary items, and vice versa. For instance:
+
+    >>> context = falcon.Context()
+    >>> context.cache_strategy = 'lru'
+    >>> context.get('cache_strategy')
+    'lru'
+    >>> 'cache_strategy' in context
+    True
+
+    Note:
+        Python 2 specific ``dict`` methods are exposed regardless of the
+        Python language version, however, as they are delegated to the
+        underlying ``__dict__``, a similar error would be raised as if
+        attempting to use these methods for a usual Python 3 dict.
+    """
+
+    def __contains__(self, key):
+        return self.__dict__.__contains__(key)
+
+    def __getitem__(self, key):
+        # PERF(vytas): On CPython, using this mapping interface (instead of a
+        #   standard dict) to get, set and delete items incurs overhead
+        #   approximately comparable to that of two function calls
+        #   (per get/set/delete operation, that is).
+        return self.__dict__.__getitem__(key)
+
+    def __setitem__(self, key, value):
+        return self.__dict__.__setitem__(key, value)
+
+    def __delitem__(self, key):
+        self.__dict__.__delitem__(key)
+
+    def __iter__(self):
+        return self.__dict__.__iter__()
+
+    def __len__(self):
+        return self.__dict__.__len__()
+
+    def __eq__(self, other):
+        if isinstance(other, type(self)):
+            return self.__dict__.__eq__(other.__dict__)
+        return self.__dict__.__eq__(other)
+
+    def __ne__(self, other):
+        if isinstance(other, type(self)):
+            return self.__dict__.__ne__(other.__dict__)
+        return self.__dict__.__ne__(other)
+
+    def __hash__(self):
+        return hash(self.__dict__)
+
+    def __repr__(self):
+        return '{}({})'.format(type(self).__name__, self.__dict__.__repr__())
+
+    def __str__(self):
+        return '{}({})'.format(type(self).__name__, self.__dict__.__str__())
+
+    def clear(self):
+        return self.__dict__.clear()
+
+    def copy(self):
+        ctx = type(self)()
+        ctx.update(self.__dict__)
+        return ctx
+
+    def get(self, key, default=None):
+        return self.__dict__.get(key, default)
+
+    def has_key(self, key):
+        return self.__dict__.has_key(key)  # noqa
+
+    def items(self):
+        return self.__dict__.items()
+
+    def iteritems(self):
+        return self.__dict__.iteritems()
+
+    def iterkeys(self):
+        return self.__dict__.iterkeys()
+
+    def itervalues(self):
+        return self.__dict__.itervalues()
+
+    def keys(self):
+        return self.__dict__.keys()
+
+    def pop(self, key, default=None):
+        return self.__dict__.pop(key, default)
+
+    def popitem(self):
+        return self.__dict__.popitem()
+
+    def setdefault(self, key, default_value=None):
+        return self.__dict__.setdefault(key, default_value)
+
+    def update(self, items):
+        self.__dict__.update(items)
+
+    def values(self):
+        return self.__dict__.values()
+
+    def viewitems(self):
+        return self.__dict__.viewitems()
+
+    def viewkeys(self):
+        return self.__dict__.viewkeys()
+
+    def viewvalues(self):
+        return self.__dict__.viewvalues()
+
+
 class ETag(str):
     """Convenience class to represent a parsed HTTP entity-tag.
 
