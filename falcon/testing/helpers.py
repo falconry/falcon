@@ -252,7 +252,7 @@ def closed_wsgi_iterable(iterable):
             bytestrings, per PEP-3333
 
     Returns:
-        iterator: An iterator yielding the same bytestrings a `iterable`
+        iterator: An iterator yielding the same bytestrings as `iterable`
     """
     def wrapper():
         try:
