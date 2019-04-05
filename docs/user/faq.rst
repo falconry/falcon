@@ -470,16 +470,24 @@ being fully defined by the WSGI spec (PEP-3333). This is discussed in the
 reference documentation for :attr:`~falcon.Request.stream`, and a workaround
 is provided in the form of :attr:`~falcon.Request.bounded_stream`.
 
-Why are trailing slashes trimmed from req.path?
------------------------------------------------
-By default, Falcon normalizes incoming URI paths to simplify later processing
-and improve the predictability of application logic. This behavior can be
-disabled via the :attr:`~falcon.RequestOptions.strip_url_path_trailing_slash`
-request option.
+How does Falcon handle a trailing slash in the request path?
+------------------------------------------------------------
+If your app sets :attr:`~falcon.RequestOptions.strip_url_path_trailing_slash` to
+``True``, Falcon will normalize incoming URI paths to simplify later processing
+and improve the predictability of application logic. This can be helpful when
+implementing a REST API schema that does not interpret a
+trailing slash character as referring to the name of an implicit sub-resource,
+as traditionally used by websites to reference index pages.
 
-Note also that routing is also normalized, so adding a route for "/foo/bar"
-also implicitly adds a route for "/foo/bar/". Requests coming in for either
-path will be sent to the same resource.
+For example, with this option enabled, adding a route for ``'/foo/bar'``
+implicitly adds a route for ``'/foo/bar/'``. In other words, requests coming
+in for either path will be sent to the same resource.
+
+.. note::
+
+    Starting with version 2.0, the default for the
+    :attr:`~falcon.RequestOptions.strip_url_path_trailing_slash` request option
+    changed from ``True`` to ``False``.
 
 Why is my query parameter missing from the req object?
 ------------------------------------------------------
