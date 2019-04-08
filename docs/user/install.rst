@@ -32,16 +32,6 @@ Installing it is as simple as:
 
     $ pip install falcon
 
-If `ujson <https://pypi.python.org/pypi/ujson>`__ is available, Falcon
-will use it to speed up media (de)serialization, error serialization,
-and query string parsing. Note that ``ujson`` can actually be slower
-on PyPy than the standard ``json`` module due to ctypes overhead, and
-so we recommend only using ``ujson`` with CPython deployments:
-
-.. code:: bash
-
-    $ pip install ujson
-
 Installing the Falcon wheel is a great way to get up and running
 quickly in a development environment, but for an extra speed boost when
 deploying your application in production, Falcon can compile itself with
@@ -90,12 +80,9 @@ these issues by setting additional Clang C compiler flags as follows:
 Dependencies
 ------------
 
-Falcon depends on `six` and `python-mimeparse`. `python-mimeparse` is a
-better-maintained fork of the similarly named `mimeparse` project.
-Normally the correct package will be selected by Falcon's ``setup.py``.
-However, if you are using an alternate strategy to manage dependencies,
-please take care to install the correct package in order to avoid
-errors.
+Falcon does not require the installation of any other packages, although if
+Cython has been installed into the environment, it will be used to optimize
+the framework as explained above.
 
 WSGI Server
 -----------

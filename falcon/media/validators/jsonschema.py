@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+from functools import wraps
+
 import falcon
 
 try:
@@ -46,6 +48,7 @@ def validate(req_schema=None, resp_schema=None):
     """
 
     def decorator(func):
+        @wraps(func)
         def wrapper(self, req, resp, *args, **kwargs):
             if req_schema is not None:
                 try:

@@ -58,7 +58,7 @@ implementation-first approach), while other developers prefer to use the API
 spec itself as the contract, implementing and testing the API against that spec
 (taking a design-first approach).
 
-At the risk of erring on the side of flexiblity, Falcon does not provide API
+At the risk of erring on the side of flexibility, Falcon does not provide API
 spec support out of the box. However, there are several community projects
 available in this vein. Our
 `Add on Catalog <https://github.com/falconry/falcon/wiki/Add-on-Catalog>`_ lists
@@ -177,7 +177,7 @@ For more sophisticated use cases, have a look at Falcon add-ons from the
 community, such as `falcon-cors <https://github.com/lwcolton/falcon-cors>`_, or
 try one of the generic
 `WSGI CORS libraries available on PyPI <https://pypi.python.org/pypi?%3Aaction=search&term=cors&submit=search>`_.
-If you use an API gateway, you might also look into what CORS functionaly
+If you use an API gateway, you might also look into what CORS functionality
 it provides at that level.
 
 How do I implement redirects within Falcon?
@@ -416,8 +416,26 @@ See also the `WSGI middleware example <https://www.python.org/dev/peps/pep-3333/
 How can I pass data from a hook to a responder, and between hooks?
 ------------------------------------------------------------------
 You can inject extra responder kwargs from a hook by adding them
-to the *params* dict passed into the hook. You can also add custom data to
-the ``req.context`` dict, as a way of passing contextual information around.
+to the *params* dict passed into the hook. You can also set custom attributes
+on the ``req.context`` object, as a way of passing contextual information
+around:
+
+.. code:: python
+
+    def authorize(req, resp, resource, params):
+        # Check authentication/authorization
+        # ...
+
+        req.context.role = 'root'
+        req.context.scopes = ('storage', 'things')
+        req.context.uid = 0
+
+    # ...
+
+    @falcon.before(authorize)
+    def on_post(self, req, resp):
+        pass
+
 
 How can I write a custom handler for 404 and 500 pages in falcon?
 ------------------------------------------------------------------
@@ -452,16 +470,24 @@ being fully defined by the WSGI spec (PEP-3333). This is discussed in the
 reference documentation for :attr:`~falcon.Request.stream`, and a workaround
 is provided in the form of :attr:`~falcon.Request.bounded_stream`.
 
-Why are trailing slashes trimmed from req.path?
------------------------------------------------
-By default, Falcon normalizes incoming URI paths to simplify later processing
-and improve the predictability of application logic. This behavior can be
-disabled via the :attr:`~falcon.RequestOptions.strip_url_path_trailing_slash`
-request option.
+How does Falcon handle a trailing slash in the request path?
+------------------------------------------------------------
+If your app sets :attr:`~falcon.RequestOptions.strip_url_path_trailing_slash` to
+``True``, Falcon will normalize incoming URI paths to simplify later processing
+and improve the predictability of application logic. This can be helpful when
+implementing a REST API schema that does not interpret a
+trailing slash character as referring to the name of an implicit sub-resource,
+as traditionally used by websites to reference index pages.
 
-Note also that routing is also normalized, so adding a route for "/foo/bar"
-also implicitly adds a route for "/foo/bar/". Requests coming in for either
-path will be sent to the same resource.
+For example, with this option enabled, adding a route for ``'/foo/bar'``
+implicitly adds a route for ``'/foo/bar/'``. In other words, requests coming
+in for either path will be sent to the same resource.
+
+.. note::
+
+    Starting with version 2.0, the default for the
+    :attr:`~falcon.RequestOptions.strip_url_path_trailing_slash` request option
+    changed from ``True`` to ``False``.
 
 Why is my query parameter missing from the req object?
 ------------------------------------------------------
@@ -583,6 +609,53 @@ segments ala Flask. This work is currently planned for 2.0.
 In the meantime, the workaround is to percent-encode the forward slash. If you
 don’t control the clients and can't enforce this, you can implement a Falcon
 middleware component to rewrite the path before it is routed.
+
+.. _bare_class_context_type:
+
+How do I adapt my code to default context type changes in Falcon 2.0?
+---------------------------------------------------------------------
+
+The default request/response context type has been changed from dict to a bare
+class in Falcon 2.0. Instead of setting dictionary items, you can now simply
+set attributes on the object:
+
+.. code:: python
+
+   # Before Falcon 2.0
+   req.context['cache_backend'] = MyUltraFastCache.connect()
+
+   # Falcon 2.0
+   req.context.cache_backend = MyUltraFastCache.connect()
+
+The new default context type emulates a dict-like mapping interface in a way
+that context attributes are linked to dict items, i.e. setting an object
+attribute also sets the corresponding dict item, and vice versa. As a result,
+existing code will largely work unmodified with Falcon 2.0. Nevertheless, it is
+recommended to migrate to the new interface as outlined above since the
+dict-like mapping interface may be removed from the context type in a future
+release.
+
+.. warning::
+   If you need to mix-and-match both approaches under migration, beware that
+   setting attributes such as *items* or *values* would obviously shadow the
+   corresponding mapping interface functions.
+
+If an existing project is making extensive use of dictionary contexts, the type
+can be explicitly overridden back to dict by employing custom request/response
+types:
+
+.. code:: python
+
+    class RequestWithDictContext(falcon.Request):
+        context_type = dict
+
+    class ResponseWithDictContext(falcon.Response):
+        context_type = dict
+
+    # ...
+
+    api = falcon.API(request_type=RequestWithDictContext,
+                     response_type=ResponseWithDictContext)
 
 Response Handling
 ~~~~~~~~~~~~~~~~~

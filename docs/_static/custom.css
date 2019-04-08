@@ -56,6 +56,9 @@ code.xref.docutils.literal {
 
 div.viewcode-block:target {
     background: inherit;
+    background-color: #dadada;
+    border-radius: 5px;
+    padding: 5px;
 }
 
 a:hover, div.sphinxsidebar a:hover, a.reference:hover, a.reference.internal:hover code {
@@ -162,7 +165,7 @@ pre {
 }
 
 /* Fix drifting to the left in some parameters lists. */
-li .highlight pre {
+.field-body li .highlight pre {
     float: right;
 }
 

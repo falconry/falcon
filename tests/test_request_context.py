@@ -9,7 +9,15 @@ class TestRequestContext(object):
     def test_default_request_context(self):
         env = testing.create_environ()
         req = Request(env)
-        assert isinstance(req.context, dict)
+
+        req.context.hello = 'World'
+        assert req.context.hello == 'World'
+        assert req.context['hello'] == 'World'
+
+        req.context['note'] = 'Default Request.context_type used to be dict.'
+        assert 'note' in req.context
+        assert hasattr(req.context, 'note')
+        assert req.context.get('note') == req.context['note']
 
     def test_custom_request_context(self):
 

@@ -26,12 +26,11 @@ directly from the `testing` package::
 import cgi
 import contextlib
 import io
+import itertools
 import random
 import sys
 
-import six
-
-from falcon.util import http_now, uri
+from falcon.util import compat, http_now, uri
 
 
 # Constants
@@ -87,7 +86,7 @@ def rand_string(min, max):
 def create_environ(path='/', query_string='', protocol='HTTP/1.1',
                    scheme='http', host=DEFAULT_HOST, port=None,
                    headers=None, app='', body='', method='GET',
-                   wsgierrors=None, file_wrapper=None):
+                   wsgierrors=None, file_wrapper=None, remote_addr=None):
 
     """Creates a mock PEP-3333 environ ``dict`` for simulating WSGI requests.
 
@@ -118,6 +117,7 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1',
             (default ``sys.stderr``)
         file_wrapper: Callable that returns an iterable, to be used as
             the value for *wsgi.file_wrapper* in the environ.
+        remote_addr (str): Remote address for the request (default '127.0.0.1')
 
     """
 
@@ -125,13 +125,13 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1',
         raise ValueError("query_string should not start with '?'")
 
     body = io.BytesIO(body.encode('utf-8')
-                      if isinstance(body, six.text_type) else body)
+                      if isinstance(body, compat.text_type) else body)
 
     # NOTE(kgriffs): wsgiref, gunicorn, and uWSGI all unescape
     # the paths before setting PATH_INFO
-    path = uri.decode(path)
+    path = uri.decode(path, unquote_plus=False)
 
-    if six.PY3:
+    if compat.PY3:
         # NOTE(kgriffs): The decoded path may contain UTF-8 characters.
         # But according to the WSGI spec, no strings can contain chars
         # outside ISO-8859-1. Therefore, to reconcile the URI
@@ -148,7 +148,7 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1',
         #
         path = path.encode('utf-8').decode('iso-8859-1')
 
-    if six.PY2 and isinstance(path, six.text_type):
+    if compat.PY2 and isinstance(path, compat.text_type):
         path = path.encode('utf-8')
 
     scheme = scheme.lower()
@@ -173,7 +173,7 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1',
         'HTTP_USER_AGENT': 'curl/7.24.0 (x86_64-apple-darwin12.0)',
         'REMOTE_PORT': '65133',
         'RAW_URI': '/',
-        'REMOTE_ADDR': '127.0.0.1',
+        'REMOTE_ADDR': remote_addr or '127.0.0.1',
         'SERVER_NAME': host,
         'SERVER_PORT': port,
 
@@ -230,6 +230,45 @@ def redirected(stdout=sys.stdout, stderr=sys.stderr):
         yield
     finally:
         sys.stderr, sys.stdout = old_stderr, old_stdout
+
+
+def closed_wsgi_iterable(iterable):
+    """Wraps an iterable to ensure its ``close()`` method is called.
+
+    Wraps the given `iterable` in an iterator utilizing a ``for`` loop as
+    illustrated in
+    `the PEP-3333 server/gateway side example
+    <https://www.python.org/dev/peps/pep-3333/#the-server-gateway-side>`_.
+    Finally, if the iterable has a ``close()`` method, it is called upon
+    exception or exausting iteration.
+
+    Furthermore, the first bytestring yielded from iteration, if any, is
+    prefetched before returning the wrapped iterator in order to ensure the
+    WSGI ``start_response`` function is called even if the WSGI application is
+    a generator.
+
+    Args:
+        iterable (iterable): An iterable that yields zero or more
+            bytestrings, per PEP-3333
+
+    Returns:
+        iterator: An iterator yielding the same bytestrings as `iterable`
+    """
+    def wrapper():
+        try:
+            for item in iterable:
+                yield item
+        finally:
+            if hasattr(iterable, 'close'):
+                iterable.close()
+
+    wrapped = wrapper()
+    try:
+        head = (next(wrapped),)
+    except StopIteration:
+        head = ()
+    return itertools.chain(head, wrapped)
+
 
 # ---------------------------------------------------------------------
 # Private

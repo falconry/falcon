@@ -20,6 +20,11 @@ Falcon's middleware interface is defined as follows:
         def process_request(self, req, resp):
             """Process the request before routing it.
 
+            Note:
+                Because Falcon routes each request based on req.path, a
+                request can be effectively re-routed by setting that
+                attribute to a new value from within process_request().
+
             Args:
                 req: Request object that will eventually be
                     routed to an on_* responder method.
@@ -66,6 +71,11 @@ Falcon's middleware interface is defined as follows:
     component modifies ``req.path`` in its *process_request* method,
     the framework will use the modified value to route the request.
 
+    For example::
+
+        # Route requests based on the host header.
+        req.path = '/' + req.host + req.path
+
 .. Tip::
     The *process_resource* method is only called when the request matches
     a route to a resource. To take action when a route is not found, a
@@ -73,9 +83,9 @@ Falcon's middleware interface is defined as follows:
 
 .. Tip::
     In order to pass data from a middleware function to a resource function
-    use the ``req.context`` and ``resp.context`` dictionaries. These context
-    dictionaries are intended to hold request and response data specific to
-    your app as it passes through the framework.
+    use the ``req.context`` and ``resp.context`` objects. These context objects
+    are intended to hold request and response data specific to your app as it
+    passes through the framework.
 
 Each component's *process_request*, *process_resource*, and
 *process_response* methods are executed hierarchically, as a stack, following
@@ -112,13 +122,43 @@ like this::
         mob2.process_response
     mob1.process_response
 
+Short-circuiting
+----------------
+
+A *process_request* middleware method may short-circuit further request
+processing by setting :attr:`~.Response.complete` to ``True``, e.g.::
+
+      resp.complete = True
+
+After the method returns, setting this flag will cause the framework to skip
+any remaining *process_request* and *process_resource* methods, as well as
+the responder method that the request would have been routed to. However, any
+*process_response* middleware methods will still be called.
+
+In a similar manner, setting :attr:`~.Response.complete` to ``True`` from
+within a *process_resource* method will short-circuit further request processing
+at that point.
+
+This feature affords use cases in which the response may be pre-constructed,
+such as in the case of caching.
+
+Exception Handling
+------------------
+
 If one of the *process_request* middleware methods raises an
-error, it will be processed according to the error type. If
+exception, it will be processed according to the exception type. If
 the type matches a registered error handler, that handler will
 be invoked and then the framework will begin to unwind the
 stack, skipping any lower layers. The error handler may itself
-raise an instance of HTTPError, in which case the framework
-will use the latter exception to update the *resp* object.
+raise an instance of :class:`~.HTTPError` or :class:`~.HTTPStatus`, in
+which case the framework will use the latter exception to update the
+*resp* object.
+
+.. Note::
+
+    By default, the framework installs two handlers, one for
+    :class:`~.HTTPError` and one for :class:`~.HTTPStatus`. These can
+    be overridden via :meth:`~.API.add_error_handler`.
 
 Regardless, the framework will continue unwinding the middleware
 stack. For example, if *mob2.process_request* were to raise an

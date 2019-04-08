@@ -2,10 +2,10 @@ from collections import defaultdict
 from datetime import datetime
 
 import pytest
-import six
 
 import falcon
 from falcon import testing
+from falcon.util import compat
 
 
 SAMPLE_BODY = testing.rand_string(0, 128 * 1024)
@@ -110,7 +110,7 @@ class HeaderHelpersResource(object):
 class LocationHeaderUnicodeResource(object):
 
     URL1 = u'/\u00e7runchy/bacon'
-    URL2 = u'ab\u00e7' if six.PY3 else 'ab\xc3\xa7'
+    URL2 = u'ab\u00e7' if compat.PY3 else 'ab\xc3\xa7'
 
     def on_get(self, req, resp):
         resp.location = self.URL1
@@ -181,6 +181,11 @@ class AppendHeaderResource(object):
     def on_post(self, req, resp):
         resp.append_header('X-Things', 'thing-1')
 
+        c1 = 'ut_existing_user=1; expires=Mon, 14-Jan-2019 21:20:08 GMT; Max-Age=600; path=/'
+        resp.append_header('Set-Cookie', c1)
+        c2 = 'partner_source=deleted; expires=Thu, 01-Jan-1970 00:00:01 GMT; Max-Age=0'
+        resp.append_header('seT-cookie', c2)
+
 
 class RemoveHeaderResource(object):
     def __init__(self, with_double_quotes):
@@ -202,13 +207,23 @@ class RemoveHeaderResource(object):
 
 class ContentLengthHeaderResource(object):
 
-    def __init__(self, content_length, body=None):
+    def __init__(self, content_length, body=None, data=None):
         self._content_length = content_length
         self._body = body
+        self._data = data
 
     def on_get(self, req, resp):
+        # NOTE(kgriffs): Use stream_len for now to cover the deprecated alias
+        resp.stream_len = self._content_length
+
+        if self._body:
+            resp.body = self._body
+
+        if self._data:
+            resp.data = self._data
+
+    def on_head(self, req, resp):
         resp.content_length = self._content_length
-        resp.body = self._body
 
 
 class ExpiresHeaderResource(object):
@@ -230,18 +245,31 @@ class TestHeaders(object):
         content_length = str(len(SAMPLE_BODY))
         assert result.headers['Content-Length'] == content_length
 
-    def test_declare_content_length(self, client):
+    def test_declared_content_length_on_head(self, client):
         client.app.add_route('/', ContentLengthHeaderResource(42))
-        result = client.simulate_get()
-
+        result = client.simulate_head()
         assert result.headers['Content-Length'] == '42'
 
-    def test_declared_content_length_not_overriden_by_body_length(self, client):
-        resource = ContentLengthHeaderResource(42, body='Hello World')
+    def test_declared_content_length_overridden_by_no_body(self, client):
+        client.app.add_route('/', ContentLengthHeaderResource(42))
+        result = client.simulate_get()
+        assert result.headers['Content-Length'] == '0'
+
+    def test_declared_content_length_overriden_by_body_length(self, client):
+        resource = ContentLengthHeaderResource(42, body=SAMPLE_BODY)
         client.app.add_route('/', resource)
         result = client.simulate_get()
 
-        assert result.headers['Content-Length'] == '42'
+        assert result.headers['Content-Length'] == str(len(SAMPLE_BODY))
+
+    def test_declared_content_length_overriden_by_data_length(self, client):
+        data = SAMPLE_BODY.encode()
+
+        resource = ContentLengthHeaderResource(42, data=data)
+        client.app.add_route('/', resource)
+        result = client.simulate_get()
+
+        assert result.headers['Content-Length'] == str(len(data))
 
     def test_expires_header(self, client):
         expires = datetime(2013, 1, 1, 10, 30, 30)
@@ -365,7 +393,7 @@ class TestHeaders(object):
         result = client.simulate_get()
 
         assert result.content == body.encode('utf-8')
-        assert isinstance(result.text, six.text_type)
+        assert isinstance(result.text, compat.text_type)
         assert result.text == body
         assert result.json == {u'msg': u'Hello Unicode! \U0001F638'}
 
@@ -448,7 +476,7 @@ class TestHeaders(object):
         assert result.headers['X-Auth-Token'] == 'toomanysecrets'
         assert result.headers['X-Symbol'] == '@'
 
-    @pytest.mark.skipif(six.PY3, reason='Test only applies to Python 2')
+    @pytest.mark.skipif(compat.PY3, reason='Test only applies to Python 2')
     def test_unicode_headers_not_convertable(self, client):
         client.app.add_route('/', UnicodeHeaderResource())
         with pytest.raises(UnicodeEncodeError):
@@ -502,6 +530,27 @@ class TestHeaders(object):
 
         result = client.simulate_request(method='POST')
         assert result.headers['x-things'] == 'thing-1'
+        assert result.cookies['ut_existing_user'].max_age == 600
+        assert result.cookies['partner_source'].max_age == 0
+
+    @pytest.mark.parametrize('header_name', ['Set-Cookie', 'set-cookie', 'seT-cookie'])
+    @pytest.mark.parametrize('error_type', [ValueError, falcon.HeaderNotSupported])
+    def test_set_cookie_disallowed(self, client, header_name, error_type):
+        resp = falcon.Response()
+
+        cookie = 'ut_existing_user=1; expires=Mon, 14-Jan-2019 21:20:08 GMT; Max-Age=600; path=/'
+
+        with pytest.raises(error_type):
+            resp.set_header(header_name, cookie)
+
+        with pytest.raises(error_type):
+            resp.set_headers([(header_name, cookie)])
+
+        with pytest.raises(error_type):
+            resp.get_header(header_name)
+
+        with pytest.raises(error_type):
+            resp.delete_header(header_name)
 
     def test_vary_star(self, client):
         client.app.add_route('/', VaryHeaderResource(['*']))
@@ -555,7 +604,7 @@ class TestHeaders(object):
             '<ab%C3%A7>; rel="https://example.com/too-%C3%A7runchy", ' +
             '</alt-thing>; rel="alternate http://example.com/%C3%A7runchy"')
 
-        uri = u'ab\u00e7' if six.PY3 else 'ab\xc3\xa7'
+        uri = u'ab\u00e7' if compat.PY3 else 'ab\xc3\xa7'
 
         resource = LinkHeaderResource()
         resource.add_link('/things/2842', 'next')

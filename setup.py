@@ -13,8 +13,7 @@ MYDIR = path.abspath(os.path.dirname(__file__))
 VERSION = imp.load_source('version', path.join('.', 'falcon', 'version.py'))
 VERSION = VERSION.__version__
 
-# NOTE(kgriffs): python-mimeparse is better-maintained fork of mimeparse
-REQUIRES = ['six>=1.4.0', 'python-mimeparse>=1.5.2']
+REQUIRES = []
 
 try:
     sys.pypy_version_info
@@ -51,7 +50,13 @@ if CYTHON:
 
         return module_names
 
-    package_names = ['falcon', 'falcon.util', 'falcon.routing', 'falcon.media']
+    package_names = [
+        'falcon',
+        'falcon.media',
+        'falcon.routing',
+        'falcon.util',
+        'falcon.vendor.mimeparse',
+    ]
     ext_modules = [
         Extension(
             package + '.' + module,
@@ -69,13 +74,29 @@ else:
 
 
 def load_description():
+    in_patron_list = False
+    in_patron_replacement = False
     in_raw = False
 
     description_lines = []
 
     # NOTE(kgriffs): PyPI does not support the raw directive
     for readme_line in io.open('README.rst', 'r', encoding='utf-8'):
-        if readme_line.startswith('.. raw::'):
+
+        # NOTE(vytas): The patron list largely builds upon raw sections
+        if readme_line.startswith('.. Patron list starts'):
+            in_patron_list = True
+            in_patron_replacement = True
+            continue
+        elif in_patron_list:
+            if not readme_line.strip():
+                in_patron_replacement = False
+            elif in_patron_replacement:
+                description_lines.append(readme_line.lstrip())
+            if readme_line.startswith('.. Patron list ends'):
+                in_patron_list = False
+            continue
+        elif readme_line.startswith('.. raw::'):
             in_raw = True
         elif in_raw:
             if readme_line and not re.match(r'\s', readme_line):
@@ -92,6 +113,7 @@ setup(
     version=VERSION,
     description='An unladen web framework for building APIs and app backends.',
     long_description=load_description(),
+    long_description_content_type='text/x-rst',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Web Environment',
@@ -112,11 +134,12 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
     ],
     keywords='wsgi web api framework rest http cloud',
     author='Kurt Griffiths',
     author_email='mail@kgriffs.com',
-    url='http://falconframework.org',
+    url='https://falconframework.org',
     license='Apache 2.0',
     packages=find_packages(exclude=['tests']),
     include_package_data=True,

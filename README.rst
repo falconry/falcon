@@ -13,7 +13,7 @@
 The Falcon Web Framework
 ========================
 
-`Falcon <http://falconframework.org/index.html>`__ is a reliable,
+`Falcon <https://falconframework.org>`__ is a reliable,
 high-performance Python web framework for building
 large-scale app backends and microservices. It encourages the REST
 architectural style, and tries to do as little as possible while
@@ -21,6 +21,10 @@ remaining highly effective.
 
 Falcon apps work with any WSGI server, and run like a champ under
 CPython 2.7, CPython 3.5+, PyPy2.7, and PyPy3.5.
+
+.. Patron list starts here. For Python package, we substitute this section with:
+   Support Falcon Development
+   --------------------------
 
 A Big Thank You to Our Patrons
 ------------------------------
@@ -49,6 +53,8 @@ Silver
     <p>
     <a href="https://www.pnk.sh/python-falcon" target="_blank"><img src="https://falconframework.org/img/sponsors/paris.svg" height="20" alt="Paris Kejser"></a>
     </p>
+
+.. Patron list ends here (see the comment above this section).
 
 Has Falcon helped you make an awesome app? Show your support today with a one-time donation or by becoming a patron. Supporters get cool gear, an opportunity to promote their brand to Python developers, and
 prioritized support.
@@ -113,8 +119,8 @@ breaking changes, and when we do they are fully documented and only
 introduced (in the spirit of
 `SemVer <http://semver.org/>`__) with a major version
 increment. The code is rigorously tested with numerous inputs and we
-require 100% coverage at all times. Six and mimeparse are the only
-third-party dependencies.
+require 100% coverage at all times. Falcon does not depend on any
+external Python packages.
 
 **Flexible.** Falcon leaves a lot of decisions and implementation
 details to you, the API developer. This gives you a lot of freedom to
@@ -219,16 +225,6 @@ Installing it is as simple as:
 
     $ pip install falcon
 
-If `ujson <https://pypi.python.org/pypi/ujson>`__ is available, Falcon
-will use it to speed up media (de)serialization, error serialization,
-and query string parsing. Note that ``ujson`` can actually be slower
-on PyPy than the standard ``json`` module due to ctypes overhead, and
-so we recommend only using ``ujson`` with CPython deployments:
-
-.. code:: bash
-
-    $ pip install ujson
-
 Installing the Falcon wheel is a great way to get up and running
 quickly in a development environment, but for an extra speed boost when
 deploying your application in production, Falcon can compile itself with
@@ -277,12 +273,9 @@ these issues by setting additional Clang C compiler flags as follows:
 Dependencies
 ^^^^^^^^^^^^
 
-Falcon depends on `six` and `python-mimeparse`. `python-mimeparse` is a
-better-maintained fork of the similarly named `mimeparse` project.
-Normally the correct package will be selected by Falcon's ``setup.py``.
-However, if you are using an alternate strategy to manage dependencies,
-please take care to install the correct package in order to avoid
-errors.
+Falcon does not require the installation of any other packages, although if
+Cython has been installed into the environment, it will be used to optimize
+the framework as explained above.
 
 WSGI Server
 -----------
@@ -532,7 +525,7 @@ bodies.
                                             'A valid JSON document is required.')
 
             try:
-                req.context['doc'] = json.loads(body.decode('utf-8'))
+                req.context.doc = json.loads(body.decode('utf-8'))
 
             except (ValueError, UnicodeDecodeError):
                 raise falcon.HTTPError(falcon.HTTP_753,
@@ -542,10 +535,10 @@ bodies.
                                        'UTF-8.')
 
         def process_response(self, req, resp, resource):
-            if 'result' not in resp.context:
+            if not hasattr(resp.context, 'result'):
                 return
 
-            resp.body = json.dumps(resp.context['result'])
+            resp.body = json.dumps(resp.context.result)
 
 
     def max_body(limit):
@@ -593,7 +586,7 @@ bodies.
             #
             # NOTE: Starting with Falcon 1.3, you can simply
             # use resp.media for this instead.
-            resp.context['result'] = result
+            resp.context.result = result
 
             resp.set_header('Powered-By', 'Falcon')
             resp.status = falcon.HTTP_200
@@ -603,8 +596,8 @@ bodies.
             try:
                 # NOTE: Starting with Falcon 1.3, you can simply
                 # use req.media for this instead.
-                doc = req.context['doc']
-            except KeyError:
+                doc = req.context.doc
+            except AttributeError:
                 raise falcon.HTTPBadRequest(
                     'Missing thing',
                     'A thing must be submitted in the request body.')
@@ -693,7 +686,7 @@ See also: `CONTRIBUTING.md <https://github.com/falconry/falcon/blob/master/CONTR
 Legal
 -----
 
-Copyright 2013-2018 by Individual and corporate contributors as
+Copyright 2013-2019 by Individual and corporate contributors as
 noted in the individual source files.
 
 Falcon image courtesy of `John
@@ -719,5 +712,5 @@ limitations under the License.
     :height: 20
 .. |Build Status| image:: https://travis-ci.org/falconry/falcon.svg
    :target: https://travis-ci.org/falconry/falcon
-.. |codecov.io| image:: http://codecov.io/github/falconry/falcon/coverage.svg?branch=master
-   :target: http://codecov.io/github/falconry/falcon?branch=master
+.. |codecov.io| image:: https://codecov.io/gh/falconry/falcon/branch/master/graphs/badge.svg
+   :target: http://codecov.io/gh/falconry/falcon

@@ -1,11 +1,7 @@
 import functools
+import json
 
 import pytest
-
-try:
-    import ujson as json
-except ImportError:
-    import json
 
 import falcon
 from falcon import testing
@@ -36,11 +32,14 @@ def client():
 # --------------------------------------------------------------------
 
 
-def validate_output(req, resp):
+def validate_output(req, resp, resource):
+    assert resource
     raise falcon.HTTPError(falcon.HTTP_723, 'Tricky')
 
 
-def serialize_body(req, resp):
+def serialize_body(req, resp, resource):
+    assert resource
+
     body = resp.body
     if body is not None:
         resp.body = json.dumps(body)
@@ -48,35 +47,33 @@ def serialize_body(req, resp):
         resp.body = 'Nothing to see here. Move along.'
 
 
-def fluffiness(req, resp, animal=''):
+def fluffiness(req, resp, resource, animal=''):
+    assert resource
+
     resp.body = 'fluffy'
     if animal:
         resp.set_header('X-Animal', animal)
 
 
-def resource_aware_fluffiness(req, resp, resource):
-    assert resource
-    fluffiness(req, resp)
-
-
 class ResourceAwareFluffiness(object):
     def __call__(self, req, resp, resource):
-        assert resource
-        fluffiness(req, resp)
+        fluffiness(req, resp, resource)
 
 
-def cuteness(req, resp, check, postfix=' and cute'):
+def cuteness(req, resp, resource, check, postfix=' and cute'):
+    assert resource
     if resp.body == check:
         resp.body += postfix
 
 
 def resource_aware_cuteness(req, resp, resource):
     assert resource
-    cuteness(req, resp, 'fluffy')
+    cuteness(req, resp, resource, 'fluffy')
 
 
 class Smartness(object):
-    def __call__(self, req, resp):
+    def __call__(self, req, resp, resource):
+        assert resource
         if resp.body:
             resp.body += ' and smart'
         else:
@@ -85,7 +82,8 @@ class Smartness(object):
 
 # NOTE(kgriffs): Use partial methods for these next two in order
 # to make sure we handle that correctly.
-def things_in_the_head(header, value, req, resp):
+def things_in_the_head(header, value, req, resp, resource):
+    assert resource
     resp.set_header(header, value)
 
 
@@ -97,7 +95,7 @@ cuteness_in_the_head = functools.partial(things_in_the_head,
                                          'X-Cuteness', 'cute')
 
 
-def fluffiness_in_the_head(req, resp, value='fluffy'):
+def fluffiness_in_the_head(req, resp, resource, value='fluffy'):
     resp.set_header('X-Fluffiness', value)
 
 
@@ -186,11 +184,11 @@ class ClassResourceWithAwareHooks(object):
         # Test that the decorator skips non-callables
         self.on_patch = []
 
-    @falcon.after(resource_aware_fluffiness)
+    @falcon.after(fluffiness)
     def on_get(self, req, resp):
         self._capture(req, resp)
 
-    @falcon.after(resource_aware_fluffiness)
+    @falcon.after(fluffiness)
     def on_head(self, req, resp):
         self._capture(req, resp)
 
@@ -303,3 +301,81 @@ def test_wrapped_resource_with_hooks_aware_of_resource(client, wrapped_resource_
     result = client.simulate_options('/wrapped_aware')
     assert result.status_code == 200
     assert not result.text
+
+
+class ResourceAwareGameHook(object):
+
+    VALUES = ('rock', 'scissors', 'paper')
+
+    @classmethod
+    def __call__(cls, req, resp, resource):
+        assert resource
+        assert resource.seed in cls.VALUES
+        assert resp.text == 'Responder called.'
+
+        header = resp.get_header('X-Hook-Game')
+        values = header.split(', ') if header else []
+        if values:
+            last = cls.VALUES.index(values[-1])
+            values.append(cls.VALUES[(last + 1) % len(cls.VALUES)])
+        else:
+            values.append(resource.seed)
+        resp.set_header('X-Hook-Game', ', '.join(values))
+
+
+_game_hook = ResourceAwareGameHook()
+
+
+@falcon.after(_game_hook)
+@falcon.after(_game_hook)
+class HandGame(object):
+
+    def __init__(self):
+        self.seed = None
+
+    @falcon.after(_game_hook)
+    def on_put(self, req, resp):
+        self.seed = req.media
+        resp.text = 'Responder called.'
+
+    @falcon.after(_game_hook)
+    def on_get_once(self, req, resp):
+        resp.text = 'Responder called.'
+
+    @falcon.after(_game_hook)
+    @falcon.after(_game_hook)
+    def on_get_twice(self, req, resp):
+        resp.text = 'Responder called.'
+
+    @falcon.after(_game_hook)
+    @falcon.after(_game_hook)
+    @falcon.after(_game_hook)
+    def on_get_thrice(self, req, resp):
+        resp.text = 'Responder called.'
+
+
+@pytest.fixture
+def game_client():
+    app = falcon.API()
+    resource = HandGame()
+
+    app.add_route('/seed', resource)
+    app.add_route('/once', resource, suffix='once')
+    app.add_route('/twice', resource, suffix='twice')
+    app.add_route('/thrice', resource, suffix='thrice')
+
+    return testing.TestClient(app)
+
+
+@pytest.mark.parametrize('seed,uri,expected', [
+    ('paper', '/once', 'paper, rock, scissors'),
+    ('scissors', '/twice', 'scissors, paper, rock, scissors'),
+    ('rock', '/thrice', 'rock, scissors, paper, rock, scissors'),
+    ('paper', '/thrice', 'paper, rock, scissors, paper, rock'),
+])
+def test_after_hooks_on_suffixed_resource(game_client, seed, uri, expected):
+    game_client.simulate_put('/seed', json=seed)
+
+    resp = game_client.simulate_get(uri)
+    assert resp.status_code == 200
+    assert resp.headers['X-Hook-Game'] == expected

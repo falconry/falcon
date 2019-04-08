@@ -3,15 +3,16 @@
 Cookies
 -------
 
-Cookie support is available in Falcon version 0.3 or later.
-
 .. _getting-cookies:
 
 Getting Cookies
 ~~~~~~~~~~~~~~~
 
-Cookies can be read from a request via the :py:attr:`~.Request.cookies`
-request attribute:
+Cookies can be read from a request either via the
+:py:meth:`~.Request.get_cookie_values` method or the :py:attr:`~.Request.cookies`
+attribute on the :py:class:`~.Request` object. Generally speaking, the
+:py:meth:`~.Request.get_cookie_values` method should be used unless you need a
+collection of all the cookies in the request.
 
 .. code:: python
 
@@ -20,34 +21,26 @@ request attribute:
 
             cookies = req.cookies
 
-            if 'my_cookie' in cookies:
-                my_cookie_value = cookies['my_cookie']
-            # ....
+            my_cookie_values = req.get_cookie_values('my_cookie')
+            if my_cookie_values:
+                # NOTE: If there are multiple values set for the cookie, you
+                # will need to choose how to handle the additional values.
+                v = my_cookie_values[0]
 
-The :py:attr:`~.Request.cookies` attribute is a regular
-:py:class:`dict` object.
-
-.. tip ::
-
-    The :py:attr:`~.Request.cookies` attribute returns a
-    copy of the response cookie dictionary. Assign it to a variable, as
-    shown in the above example, to improve performance when you need to
-    look up more than one cookie.
+                # ...
 
 .. _setting-cookies:
 
 Setting Cookies
 ~~~~~~~~~~~~~~~
 
-Setting cookies on a response is done via :py:meth:`~.Response.set_cookie`.
+Setting cookies on a response may be done either via
+:py:meth:`~.Response.set_cookie` or :py:meth:`~.Response.append_header`.
 
-The :py:meth:`~.Response.set_cookie` method should be used instead of
-:py:meth:`~.Response.set_header` or :py:meth:`~.Response.append_header`.
-With :py:meth:`~.Response.set_header` you cannot set multiple headers
-with the same name (which is how multiple cookies are sent to the client).
-Furthermore, :py:meth:`~.Response.append_header` appends multiple values
-to the same header field in a way that is not compatible with the special
-format required by the `Set-Cookie` header.
+One of these methods should be used instead of
+:py:meth:`~.Response.set_header`. With :py:meth:`~.Response.set_header` you
+cannot set multiple headers with the same name (which is how multiple cookies
+are sent to the client).
 
 Simple example:
 

@@ -1,9 +1,9 @@
 import abc
 
-import six
+from falcon.util import compat
 
 
-@six.add_metaclass(abc.ABCMeta)
+@compat.add_metaclass(abc.ABCMeta)
 class BaseHandler(object):
     """Abstract Base Class for an internet media type handler"""
 

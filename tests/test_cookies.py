@@ -2,11 +2,11 @@ from datetime import datetime, timedelta, tzinfo
 import re
 
 import pytest
-from six.moves.http_cookies import Morsel
 
 import falcon
 import falcon.testing as testing
 from falcon.util import http_date_to_dt, TimezoneGMT
+from falcon.util.compat import http_cookies
 
 
 UNICODE_TEST_STRING = u'Unicode_\xc3\xa6\xc3\xb8'
@@ -179,7 +179,7 @@ def test_cookies_setable(client):
     resp.set_cookie('foo', 'bar', max_age=300)
     morsel = resp._cookies['foo']
 
-    assert isinstance(morsel, Morsel)
+    assert isinstance(morsel, http_cookies.Morsel)
     assert morsel.key == 'foo'
     assert morsel.value == 'bar'
     assert morsel['max-age'] == 300
@@ -241,7 +241,9 @@ def test_request_cookie_parsing():
             'Cookie',
             """
             logged_in=no;_gh_sess=eyJzZXXzaW9uX2lkIjoiN2;
-            tz=Europe/Berlin; _ga=GA1.2.332347814.1422308165;
+            tz=Europe/Berlin; _ga =GA1.2.332347814.1422308165;
+            tz2=Europe/Paris ; _ga2="line1\\012line2";
+            tz3=Europe/Madrid ;_ga3= GA3.2.332347814.1422308165;
             _gat=1;
             _octo=GH1.1.201722077.1422308165
             """
@@ -251,39 +253,75 @@ def test_request_cookie_parsing():
     environ = testing.create_environ(headers=headers)
     req = falcon.Request(environ)
 
-    assert req.cookies['logged_in'] == 'no'
-    assert req.cookies['tz'] == 'Europe/Berlin'
-    assert req.cookies['_octo'] == 'GH1.1.201722077.1422308165'
+    # NOTE(kgriffs): Test case-sensitivity
+    assert req.get_cookie_values('TZ') is None
+    assert 'TZ' not in req.cookies
+    with pytest.raises(KeyError):
+        req.cookies['TZ']
 
-    assert 'logged_in' in req.cookies
-    assert '_gh_sess' in req.cookies
-    assert 'tz' in req.cookies
-    assert '_ga' in req.cookies
-    assert '_gat' in req.cookies
-    assert '_octo' in req.cookies
+    for name, value in [
+        ('logged_in', 'no'),
+        ('_gh_sess', 'eyJzZXXzaW9uX2lkIjoiN2'),
+        ('tz', 'Europe/Berlin'),
+        ('tz2', 'Europe/Paris'),
+        ('tz3', 'Europe/Madrid'),
+        ('_ga', 'GA1.2.332347814.1422308165'),
+        ('_ga2', 'line1\nline2'),
+        ('_ga3', 'GA3.2.332347814.1422308165'),
+        ('_gat', '1'),
+        ('_octo', 'GH1.1.201722077.1422308165'),
+    ]:
+        assert name in req.cookies
+        assert req.cookies[name] == value
+        assert req.get_cookie_values(name) == [value]
 
 
 def test_invalid_cookies_are_ignored():
+    vals = [chr(i) for i in range(0x1F)]
+    vals += [chr(i) for i in range(0x7F, 0xFF)]
+    vals += '()<>@,;:\\"/[]?={} \x09'.split()
+
+    for c in vals:
+        headers = [
+            (
+                'Cookie',
+                'good_cookie=foo;bad' + c + 'cookie=bar'
+            ),
+        ]
+
+        environ = testing.create_environ(headers=headers)
+        req = falcon.Request(environ)
+
+        assert req.cookies['good_cookie'] == 'foo'
+        assert 'bad' + c + 'cookie' not in req.cookies
+
+
+def test_duplicate_cookie():
     headers = [
         (
             'Cookie',
-            """
-            good_cookie=foo;
-            bad{cookie=bar
-            """
+            'x=1;bad{cookie=bar; x=2;x=3 ; x=4;'
         ),
     ]
 
     environ = testing.create_environ(headers=headers)
     req = falcon.Request(environ)
 
-    assert req.cookies['good_cookie'] == 'foo'
-    assert 'bad{cookie' not in req.cookies
+    assert req.cookies['x'] == '1'
+    assert req.get_cookie_values('x') == ['1', '2', '3', '4']
 
 
 def test_cookie_header_is_missing():
     environ = testing.create_environ(headers={})
+
     req = falcon.Request(environ)
+    assert req.cookies == {}
+    assert req.get_cookie_values('x') is None
+
+    # NOTE(kgriffs): Test again with a new object to cover calling in the
+    #   opposite order.
+    req = falcon.Request(environ)
+    assert req.get_cookie_values('x') is None
     assert req.cookies == {}
 
 

@@ -19,3 +19,10 @@ Miscellaneous
 
 .. autoclass:: falcon.TimezoneGMT
     :members:
+
+.. autoclass:: falcon.Context
+    :members:
+    :no-undoc-members:
+
+.. autoclass:: falcon.ETag
+    :members:

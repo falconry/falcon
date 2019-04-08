@@ -13,25 +13,7 @@
 """Request class."""
 
 from datetime import datetime
-
-try:
-    # NOTE(kgrifs): In Python 2.7, socket._fileobject is a
-    # standard way of exposing a socket as a file-like object, and
-    # is used by wsgiref for wsgi.input.
-    import socket
-    NativeStream = socket._fileobject
-except AttributeError:
-    # NOTE(kgriffs): In Python 3.3, wsgiref implements wsgi.input
-    # using _io.BufferedReader which is an alias of io.BufferedReader
-    import io
-    NativeStream = io.BufferedReader
-
-from uuid import UUID  # NOQA: I202
-from wsgiref.validate import InputWrapper
-
-import mimeparse
-import six
-from six.moves import http_cookies
+from uuid import UUID
 
 from falcon import DEFAULT_MEDIA_TYPE
 from falcon import errors
@@ -40,13 +22,11 @@ from falcon import util
 from falcon.forwarded import _parse_forwarded_header
 from falcon.forwarded import Forwarded  # NOQA
 from falcon.media import Handlers
+from falcon.util import compat
 from falcon.util import json
+from falcon.util import structures
 from falcon.util.uri import parse_host, parse_query_string
-
-# NOTE(tbug): In some cases, http_cookies is not a module
-# but a dict-like structure. This fixes that issue.
-# See issue https://github.com/falconry/falcon/issues/556
-SimpleCookie = http_cookies.SimpleCookie
+from falcon.vendor import mimeparse
 
 DEFAULT_ERROR_LOG_FORMAT = (u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
                             u' {1} {2}{3} => ')
@@ -76,15 +56,27 @@ class Request(object):
     Attributes:
         env (dict): Reference to the WSGI environ ``dict`` passed in from the
             server. (See also PEP-3333.)
-        context (dict): Dictionary to hold any data about the request which is
-            specific to your app (e.g. session object). Falcon itself will
-            not interact with this attribute after it has been initialized.
+        context (object): Empty object to hold any data (in its attributes)
+            about the request which is specific to your app (e.g. session
+            object). Falcon itself will not interact with this attribute after
+            it has been initialized.
+
+            Note:
+                **New in 2.0:** the default `context_type` (see below) was
+                changed from dict to a bare class, and the preferred way to
+                pass request-specific data is now to set attributes directly on
+                the `context` object, for example::
+
+                    req.context.role = 'trial'
+                    req.context.user = 'guest'
+
         context_type (class): Class variable that determines the factory or
             type to use for initializing the `context` attribute. By default,
-            the framework will instantiate standard ``dict`` objects. However,
-            you may override this behavior by creating a custom child class of
-            ``falcon.Request``, and then passing that new class to
-            `falcon.API()` by way of the latter's `request_type` parameter.
+            the framework will instantiate bare objects (instances of the bare
+            :class:`falcon.Context` class). However, you may override this
+            behavior by creating a custom child class of ``falcon.Request``,
+            and then passing that new class to `falcon.API()` by way of the
+            latter's `request_type` parameter.
 
             Note:
                 When overriding `context_type` with a factory function (as
@@ -182,7 +174,13 @@ class Request(object):
 
             Note:
                 `req.path` may be set to a new value by a `process_request()`
-                middleware method in order to influence routing.
+                middleware method in order to influence routing. If the
+                original request path was URL encoded, it will be decoded
+                before being returned by this attribute. If this attribute is to
+                be used by the app for any upstream requests, any non URL-safe
+                characters in the path must be URL encoded back before
+                making the request.
+
         query_string (str): Query string portion of the request URI, without
             the preceding '?' character.
         uri_template (str): The template for the route that was matched for
@@ -254,8 +252,12 @@ class Request(object):
         client_accepts_xml (bool): ``True`` if the Accept header indicates that
             the client is willing to receive XML, otherwise ``False``.
         cookies (dict):
-            A dict of name/value cookie pairs. (See also:
-            :ref:`Getting Cookies <getting-cookies>`)
+            A dict of name/value cookie pairs. The returned object should be
+            treated as read-only to avoid unintended side-effects.
+            If a cookie appears more than once in the request, only the first
+            value encountered will be made available here.
+
+            See also: :meth:`~get_cookie_values`
         content_type (str): Value of the Content-Type header, or ``None`` if
             the header is missing.
         content_length (int): Value of the Content-Length header converted
@@ -353,10 +355,26 @@ class Request(object):
             accessed.)
         range_unit (str): Unit of the range parsed from the value of the
             Range header, or ``None`` if the header is missing
-        if_match (str): Value of the If-Match header, or ``None`` if the
-            header is missing.
-        if_none_match (str): Value of the If-None-Match header, or ``None``
-            if the header is missing.
+        if_match (list): Value of the If-Match header, as a parsed list of
+            :class:`falcon.ETag` objects or ``None`` if the header is missing
+            or its value is blank.
+
+            This property provides a list of all ``entity-tags`` in the
+            header, both strong and weak, in the same order as listed in
+            the header.
+
+            (See also: RFC 7232, Section 3.1)
+
+        if_none_match (list): Value of the If-None-Match header, as a parsed
+            list of :class:`falcon.ETag` objects or ``None`` if the header is
+            missing or its value is blank.
+
+            This property provides a list of all ``entity-tags`` in the
+            header, both strong and weak, in the same order as listed in
+            the header.
+
+            (See also: RFC 7232, Section 3.2)
+
         if_modified_since (datetime): Value of the If-Modified-Since header,
             or ``None`` if the header is missing.
         if_unmodified_since (datetime): Value of the If-Unmodified-Since
@@ -367,10 +385,11 @@ class Request(object):
         headers (dict): Raw HTTP headers from the request with
             canonical dash-separated names. Parsing all the headers
             to create this dict is done the first time this attribute
-            is accessed. This parsing can be costly, so unless you
-            need all the headers in this format, you should use the
-            `get_header` method or one of the convenience attributes
-            instead, to get a value for a specific header.
+            is accessed, and the returned object should be treated as
+            read-only. Note that this parsing can be costly, so unless you
+            need all the headers in this format, you should instead use the
+            ``get_header()`` method or one of the convenience attributes
+            to get a value for a specific header.
 
         params (dict): The mapping of request query parameter names to their
             values.  Where the parameter appears multiple times in the query
@@ -391,7 +410,6 @@ class Request(object):
         '_cached_prefix',
         '_cached_relative_uri',
         '_cached_uri',
-        '_cookies',
         '_params',
         '_wsgierrors',
         'content_type',
@@ -406,11 +424,15 @@ class Request(object):
         '_media',
     )
 
+    _cookies = None
+    _cookies_collapsed = None
+    _cached_if_match = None
+    _cached_if_none_match = None
+
     # Child classes may override this
-    context_type = dict
+    context_type = structures.Context
 
     _wsgi_input_type_known = False
-    _always_wrap_wsgi_input = False
 
     def __init__(self, env, options=None):
         self.env = env
@@ -426,7 +448,7 @@ class Request(object):
         # empty string, so normalize it in that case.
         path = env['PATH_INFO'] or '/'
 
-        if six.PY3:
+        if compat.PY3:
             # PEP 3333 specifies that PATH_INFO variable are always
             # "bytes tunneled as latin-1" and must be encoded back
             path = path.encode('latin1').decode('utf-8', 'replace')
@@ -454,8 +476,6 @@ class Request(object):
             else:
                 self._params = {}
 
-        self._cookies = None
-
         self._cached_access_route = None
         self._cached_forwarded = None
         self._cached_forwarded_prefix = None
@@ -470,29 +490,8 @@ class Request(object):
         except KeyError:
             self.content_type = None
 
-        # NOTE(kgriffs): Wrap wsgi.input if needed to make read() more robust,
-        # normalizing semantics between, e.g., gunicorn and wsgiref.
-        #
-        # PERF(kgriffs): Accessing via self when reading is faster than
-        # via the class name. But we must set the variables using the
-        # class name so they are picked up by all future instantiations
-        # of the class.
-        if not self._wsgi_input_type_known:
-            Request._always_wrap_wsgi_input = isinstance(
-                env['wsgi.input'],
-                (NativeStream, InputWrapper)
-            )
-
-            Request._wsgi_input_type_known = True
-
-        if self._always_wrap_wsgi_input:
-            # TODO(kgriffs): In Falcon 2.0, stop wrapping stream since it is
-            # less useful now that we have bounded_stream.
-            self.stream = self._get_wrapped_wsgi_input()
-            self._bounded_stream = self.stream
-        else:
-            self.stream = env['wsgi.input']
-            self._bounded_stream = None  # Lazy wrapping
+        self.stream = env['wsgi.input']
+        self._bounded_stream = None  # Lazy wrapping
 
         # PERF(kgriffs): Technically, we should spend a few more
         # cycles and parse the content type for real, but
@@ -524,8 +523,6 @@ class Request(object):
 
     expect = helpers.header_property('HTTP_EXPECT')
 
-    if_match = helpers.header_property('HTTP_IF_MATCH')
-    if_none_match = helpers.header_property('HTTP_IF_NONE_MATCH')
     if_range = helpers.header_property('HTTP_IF_RANGE')
 
     referer = helpers.header_property('HTTP_REFERER')
@@ -614,6 +611,33 @@ class Request(object):
     @property
     def date(self):
         return self.get_header_as_datetime('Date')
+
+    @property
+    def if_match(self):
+        # TODO(kgriffs): It may make sense at some point to create a
+        #   header property generator that DRY's up the memoization
+        #   pattern for us.
+        # PERF(kgriffs): It probably isn't worth it to set
+        #   self._cached_if_match to a special type/object to distinguish
+        #   between the variable being unset and the header not being
+        #   present in the request. The reason is that if the app
+        #   gets a None back on the first reference to property, it
+        #   probably isn't going to access the property again (TBD).
+        if self._cached_if_match is None:
+            header_value = self.env.get('HTTP_IF_MATCH')
+            if header_value:
+                self._cached_if_match = helpers._parse_etags(header_value)
+
+        return self._cached_if_match
+
+    @property
+    def if_none_match(self):
+        if self._cached_if_none_match is None:
+            header_value = self.env.get('HTTP_IF_NONE_MATCH')
+            if header_value:
+                self._cached_if_none_match = helpers._parse_etags(header_value)
+
+        return self._cached_if_none_match
 
     @property
     def if_modified_since(self):
@@ -836,7 +860,7 @@ class Request(object):
                 elif name in WSGI_CONTENT_HEADERS:
                     headers[name.replace('_', '-')] = value
 
-        return self._cached_headers.copy()
+        return self._cached_headers
 
     @property
     def params(self):
@@ -844,24 +868,17 @@ class Request(object):
 
     @property
     def cookies(self):
-        if self._cookies is None:
-            # NOTE(tbug): We might want to look into parsing
-            # cookies ourselves. The SimpleCookie is doing a
-            # lot if stuff only required to SEND cookies.
-            cookie_header = self.get_header('Cookie', default='')
-            parser = SimpleCookie()
-            for cookie_part in cookie_header.split('; '):
-                try:
-                    parser.load(cookie_part)
-                except http_cookies.CookieError:
-                    pass
-            cookies = {}
-            for morsel in parser.values():
-                cookies[morsel.key] = morsel.value
+        if self._cookies_collapsed is None:
+            if self._cookies is None:
+                header_value = self.get_header('Cookie')
+                if header_value:
+                    self._cookies = helpers.parse_cookie_header(header_value)
+                else:
+                    self._cookies = {}
 
-            self._cookies = cookies
+            self._cookies_collapsed = {n: v[0] for n, v in self._cookies.items()}
 
-        return self._cookies.copy()
+        return self._cookies_collapsed
 
     @property
     def access_route(self):
@@ -1095,6 +1112,37 @@ class Request(object):
             msg = ('It must be formatted according to RFC 7231, '
                    'Section 7.1.1.1')
             raise errors.HTTPInvalidHeader(msg, header)
+
+    def get_cookie_values(self, name):
+        """Return all values provided in the Cookie header for the named cookie.
+
+        (See also: :ref:`Getting Cookies <getting-cookies>`)
+
+        Args:
+            name (str): Cookie name, case-sensitive.
+
+        Returns:
+            list: Ordered list of all values specified in the Cookie header for
+            the named cookie, or ``None`` if the cookie was not included in
+            the request. If the cookie is specified more than once in the
+            header, the returned list of values will preserve the ordering of
+            the individual ``cookie-pair``'s in the header.
+        """
+
+        if self._cookies is None:
+            # PERF(kgriffs): While this code isn't exactly DRY (the same code
+            # is duplicated by the cookies property) it does make things a bit
+            # more performant by removing the extra function call that would
+            # be required to factor this out. If we ever have to do this in a
+            # *third* place, we would probably want to factor it out at that
+            # point.
+            header_value = self.get_header('Cookie')
+            if header_value:
+                self._cookies = helpers.parse_cookie_header(header_value)
+            else:
+                self._cookies = {}
+
+        return self._cookies.get(name)
 
     def get_param(self, name, required=False, store=None, default=None):
         """Return the raw value of a query string parameter as a string.
@@ -1686,7 +1734,7 @@ class Request(object):
             format(now(), self.method, self.path, query_string_formatted)
         )
 
-        if six.PY3:
+        if compat.PY3:
             self._wsgierrors.write(log_line + message + '\n')
         else:
             if isinstance(message, unicode):

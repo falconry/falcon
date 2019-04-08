@@ -5,12 +5,11 @@ import functools
 import random
 
 import pytest
-import six
 
 import falcon
 from falcon import testing
 from falcon import util
-from falcon.util import json, uri
+from falcon.util import compat, json, misc, structures, uri
 
 
 def _arbitrary_uris(count, length):
@@ -202,9 +201,23 @@ class TestFalconUtils(object):
             'http://example.com?x=ab%2Bcd%3D42%2C9'
         ) == 'http://example.com?x=ab+cd=42,9'
 
+    def test_uri_decode_unquote_plus(self):
+        assert uri.decode('/disk/lost+found/fd0') == '/disk/lost found/fd0'
+        assert uri.decode('/disk/lost+found/fd0', unquote_plus=True) == (
+            '/disk/lost found/fd0')
+        assert uri.decode('/disk/lost+found/fd0', unquote_plus=False) == (
+            '/disk/lost+found/fd0')
+
+        assert uri.decode('http://example.com?x=ab%2Bcd%3D42%2C9') == (
+            'http://example.com?x=ab+cd=42,9')
+        assert uri.decode('http://example.com?x=ab%2Bcd%3D42%2C9', unquote_plus=True) == (
+            'http://example.com?x=ab+cd=42,9')
+        assert uri.decode('http://example.com?x=ab%2Bcd%3D42%2C9', unquote_plus=False) == (
+            'http://example.com?x=ab+cd=42,9')
+
     def test_prop_uri_encode_models_stdlib_quote(self):
         equiv_quote = functools.partial(
-            six.moves.urllib.parse.quote, safe=uri._ALL_ALLOWED
+            compat.quote, safe=uri._ALL_ALLOWED
         )
         for case in self.uris:
             expect = equiv_quote(case)
@@ -213,7 +226,7 @@ class TestFalconUtils(object):
 
     def test_prop_uri_encode_value_models_stdlib_quote_safe_tilde(self):
         equiv_quote = functools.partial(
-            six.moves.urllib.parse.quote, safe='~'
+            compat.quote, safe='~'
         )
         for case in self.uris:
             expect = equiv_quote(case)
@@ -221,7 +234,7 @@ class TestFalconUtils(object):
             assert expect == actual
 
     def test_prop_uri_decode_models_stdlib_unquote_plus(self):
-        stdlib_unquote = six.moves.urllib.parse.unquote_plus
+        stdlib_unquote = compat.unquote_plus
         for case in self.uris:
             case = uri.encode_value(case)
 
@@ -319,6 +332,48 @@ class TestFalconUtils(object):
             falcon.get_http_status('-404.3')
         assert falcon.get_http_status(123, 'Go Away') == '123 Go Away'
 
+    def test_etag_dumps_to_header_format(self):
+        etag = structures.ETag('67ab43')
+
+        assert etag.dumps() == '"67ab43"'
+
+        etag.is_weak = True
+        assert etag.dumps() == 'W/"67ab43"'
+
+        assert structures.ETag('67a b43').dumps() == '"67a b43"'
+
+    def test_etag_strong_vs_weak_comparison(self):
+        strong_67ab43_one = structures.ETag.loads('"67ab43"')
+        strong_67ab43_too = structures.ETag.loads('"67ab43"')
+        strong_67aB43 = structures.ETag.loads('"67aB43"')
+        weak_67ab43_one = structures.ETag.loads('W/"67ab43"')
+        weak_67ab43_two = structures.ETag.loads('W/"67ab43"')
+        weak_67aB43 = structures.ETag.loads('W/"67aB43"')
+
+        assert strong_67aB43 == strong_67aB43
+        assert weak_67aB43 == weak_67aB43
+        assert strong_67aB43 == weak_67aB43
+        assert weak_67aB43 == strong_67aB43
+        assert strong_67ab43_one == strong_67ab43_too
+        assert weak_67ab43_one == weak_67ab43_two
+
+        assert strong_67aB43 != strong_67ab43_one
+        assert strong_67ab43_one != strong_67aB43
+
+        assert strong_67aB43.strong_compare(strong_67aB43)
+        assert strong_67ab43_one.strong_compare(strong_67ab43_too)
+        assert not strong_67aB43.strong_compare(strong_67ab43_one)
+        assert not strong_67ab43_one.strong_compare(strong_67aB43)
+
+        assert not strong_67ab43_one.strong_compare(weak_67ab43_one)
+        assert not weak_67ab43_one.strong_compare(strong_67ab43_one)
+
+        assert not weak_67aB43.strong_compare(weak_67aB43)
+        assert not weak_67ab43_one.strong_compare(weak_67ab43_two)
+
+        assert not weak_67ab43_one.strong_compare(weak_67aB43)
+        assert not weak_67aB43.strong_compare(weak_67ab43_one)
+
 
 @pytest.mark.parametrize(
     'protocol,method',
@@ -381,13 +436,17 @@ class TestFalconTestingUtils(object):
         with pytest.raises(ValueError):
             testing.create_environ(query_string='?foo=bar')
 
-    @pytest.mark.skipif(six.PY3, reason='Test does not apply to Py3K')
+    @pytest.mark.skipif(compat.PY3, reason='Test does not apply to Py3K')
     def test_unicode_path_in_create_environ(self):
         env = testing.create_environ(u'/fancy/unícode')
         assert env['PATH_INFO'] == '/fancy/un\xc3\xadcode'
 
         env = testing.create_environ(u'/simple')
         assert env['PATH_INFO'] == '/simple'
+
+    def test_plus_in_path_in_create_environ(self):
+        env = testing.create_environ('/mnt/grub2/lost+found/inode001')
+        assert env['PATH_INFO'] == '/mnt/grub2/lost+found/inode001'
 
     def test_none_header_value_in_create_environ(self):
         env = testing.create_environ('/', headers={'X-Foo': None})
@@ -525,10 +584,21 @@ class TestFalconTestingUtils(object):
 
     def test_query_string_in_path(self):
         app = falcon.API()
-        app.add_route('/', testing.SimpleTestResource())
+        resource = testing.SimpleTestResource()
+        app.add_route('/thing', resource)
         client = testing.TestClient(app)
+
         with pytest.raises(ValueError):
-            client.simulate_get(path='/thing?x=1')
+            client.simulate_get(path='/thing?x=1', query_string='things=1,2,3')
+        with pytest.raises(ValueError):
+            client.simulate_get(path='/thing?x=1', params={'oid': 1978})
+        with pytest.raises(ValueError):
+            client.simulate_get(path='/thing?x=1', query_string='things=1,2,3',
+                                params={'oid': 1978})
+
+        client.simulate_get(path='/thing?detailed=no&oid=1337')
+        assert resource.captured_req.path == '/thing'
+        assert resource.captured_req.query_string == 'detailed=no&oid=1337'
 
     @pytest.mark.parametrize('document', [
         # NOTE(vytas): using an exact binary fraction here to avoid special
@@ -559,7 +629,7 @@ class TestFalconTestingUtils(object):
         json_types = ('application/json', 'application/json; charset=UTF-8')
         client = testing.TestClient(app)
         client.simulate_post('/', json=document)
-        captured_body = resource.captured_req.stream.read().decode('utf-8')
+        captured_body = resource.captured_req.bounded_stream.read().decode('utf-8')
         assert json.loads(captured_body) == document
         assert resource.captured_req.content_type in json_types
 
@@ -572,6 +642,74 @@ class TestFalconTestingUtils(object):
         assert resource.captured_req.media == document
         assert resource.captured_req.content_type in json_types
         assert resource.captured_req.get_header('X-Falcon-Type') == 'peregrine'
+
+    @pytest.mark.parametrize('remote_addr', [
+        None,
+        '127.0.0.1',
+        '8.8.8.8',
+        '104.24.101.85',
+        '2606:4700:30::6818:6455',
+    ])
+    def test_simulate_remote_addr(self, remote_addr):
+        class ShowMyIPResource(object):
+            def on_get(self, req, resp):
+                resp.body = req.remote_addr
+                resp.content_type = falcon.MEDIA_TEXT
+
+        app = falcon.API()
+        app.add_route('/', ShowMyIPResource())
+
+        client = testing.TestClient(app)
+        resp = client.simulate_get('/', remote_addr=remote_addr)
+        assert resp.status_code == 200
+
+        if remote_addr is None:
+            assert resp.text == '127.0.0.1'
+        else:
+            assert resp.text == remote_addr
+
+    def test_simulate_hostname(self):
+        app = falcon.API()
+        resource = testing.SimpleTestResource()
+        app.add_route('/', resource)
+
+        client = testing.TestClient(app)
+        client.simulate_get('/', protocol='https',
+                            host='falcon.readthedocs.io')
+        assert resource.captured_req.uri == 'https://falcon.readthedocs.io/'
+
+    @pytest.mark.parametrize('extras,expected_headers', [
+        (
+            {},
+            (('user-agent', 'curl/7.24.0 (x86_64-apple-darwin12.0)'),),
+        ),
+        (
+            {'HTTP_USER_AGENT': 'URL/Emacs', 'HTTP_X_FALCON': 'peregrine'},
+            (('user-agent', 'URL/Emacs'), ('x-falcon', 'peregrine')),
+        ),
+    ])
+    def test_simulate_with_environ_extras(self, extras, expected_headers):
+        app = falcon.API()
+        resource = testing.SimpleTestResource()
+        app.add_route('/', resource)
+
+        client = testing.TestClient(app)
+        client.simulate_get('/', extras=extras)
+
+        for header, value in expected_headers:
+            assert resource.captured_req.get_header(header) == value
+
+    def test_override_method_with_extras(self):
+        app = falcon.API()
+        app.add_route('/', testing.SimpleTestResource(body='test'))
+        client = testing.TestClient(app)
+
+        with pytest.raises(ValueError):
+            client.simulate_get('/', extras={'REQUEST_METHOD': 'PATCH'})
+
+        resp = client.simulate_get('/', extras={'REQUEST_METHOD': 'GET'})
+        assert resp.status_code == 200
+        assert resp.text == 'test'
 
 
 class TestNoApiClass(testing.TestCase):
@@ -586,3 +724,171 @@ class TestSetupApi(testing.TestCase):
 
     def test_something(self):
         self.assertTrue(isinstance(self.api, falcon.API))
+
+
+def test_get_argnames():
+    def foo(a, b, c):
+        pass
+
+    class Bar(object):
+        def __call__(self, a, b):
+            pass
+
+    assert misc.get_argnames(foo) == ['a', 'b', 'c']
+    assert misc.get_argnames(Bar()) == ['a', 'b']
+
+    # NOTE(kgriffs): This difference will go away once we drop Python 2.7
+    # support, so we just use this regression test to ensure the status quo.
+    expected = ['b', 'c'] if compat.PY3 else ['a', 'b', 'c']
+    assert misc.get_argnames(functools.partial(foo, 42)) == expected
+
+
+class TestContextType(object):
+
+    class CustomContextType(structures.Context):
+        def __init__(self):
+            pass
+
+    @pytest.mark.parametrize('context_type', [
+        CustomContextType,
+        structures.Context,
+    ])
+    def test_attributes(self, context_type):
+        ctx = context_type()
+
+        ctx.foo = 'bar'
+        ctx.details = None
+        ctx._cache = {}
+
+        assert ctx.foo == 'bar'
+        assert ctx.details is None
+        assert ctx._cache == {}
+
+        with pytest.raises(AttributeError):
+            ctx.cache_strategy
+
+    @pytest.mark.parametrize('context_type', [
+        CustomContextType,
+        structures.Context,
+    ])
+    def test_items_from_attributes(self, context_type):
+        ctx = context_type()
+
+        ctx.foo = 'bar'
+        ctx.details = None
+        ctx._cache = {}
+
+        assert ctx['foo'] == 'bar'
+        assert ctx['details'] is None
+        assert ctx['_cache'] == {}
+
+        with pytest.raises(KeyError):
+            ctx['cache_strategy']
+
+        assert 'foo' in ctx
+        assert '_cache' in ctx
+        assert 'cache_strategy' not in ctx
+
+    @pytest.mark.parametrize('context_type', [
+        CustomContextType,
+        structures.Context,
+    ])
+    def test_attributes_from_items(self, context_type):
+        ctx = context_type()
+
+        ctx['foo'] = 'bar'
+        ctx['details'] = None
+        ctx['_cache'] = {}
+        ctx['cache_strategy'] = 'lru'
+
+        assert ctx['cache_strategy'] == 'lru'
+        del ctx['cache_strategy']
+
+        assert ctx['foo'] == 'bar'
+        assert ctx['details'] is None
+        assert ctx['_cache'] == {}
+
+        with pytest.raises(KeyError):
+            ctx['cache_strategy']
+
+    @pytest.mark.parametrize('context_type,type_name', [
+        (CustomContextType, 'CustomContextType'),
+        (structures.Context, 'Context'),
+    ])
+    def test_dict_interface(self, context_type, type_name):
+        ctx = context_type()
+
+        ctx['foo'] = 'bar'
+        ctx['details'] = None
+        ctx[1] = 'one'
+        ctx[2] = 'two'
+
+        assert ctx == {'foo': 'bar', 'details': None, 1: 'one', 2: 'two'}
+        assert ctx != {'bar': 'foo', 'details': None, 1: 'one', 2: 'two'}
+        assert ctx != {}
+
+        copy = ctx.copy()
+        assert isinstance(copy, context_type)
+        assert copy == ctx
+        assert copy == {'foo': 'bar', 'details': None, 1: 'one', 2: 'two'}
+        copy.pop('foo')
+        assert copy != ctx
+
+        assert set(key for key in ctx) == {'foo', 'details', 1, 2}
+
+        assert ctx.get('foo') == 'bar'
+        assert ctx.get('bar') is None
+        assert ctx.get('bar', frozenset('hello')) == frozenset('hello')
+        false = ctx.get('bar', False)
+        assert isinstance(false, bool)
+        assert not false
+
+        assert len(ctx) == 4
+        assert ctx.pop(3) is None
+        assert ctx.pop(3, 'not found') == 'not found'
+        assert ctx.pop('foo') == 'bar'
+        assert ctx.pop(1) == 'one'
+        assert ctx.pop(2) == 'two'
+        assert len(ctx) == 1
+
+        assert repr(ctx) == type_name + "({'details': None})"
+        assert str(ctx) == type_name + "({'details': None})"
+        assert '{}'.format(ctx) == type_name + "({'details': None})"
+
+        with pytest.raises(TypeError):
+            {ctx: ctx}
+
+        ctx.clear()
+        assert ctx == {}
+        assert len(ctx) == 0
+
+        ctx['key'] = 'value'
+        assert ctx.popitem() == ('key', 'value')
+
+        ctx.setdefault('numbers', []).append(1)
+        ctx.setdefault('numbers', []).append(2)
+        ctx.setdefault('numbers', []).append(3)
+        assert ctx['numbers'] == [1, 2, 3]
+
+    @pytest.mark.parametrize('context_type', [
+        CustomContextType,
+        structures.Context,
+    ])
+    def test_keys_and_values(self, context_type):
+        ctx = context_type()
+        ctx.update((number, number ** 2) for number in range(1, 5))
+
+        assert set(ctx.keys()) == {1, 2, 3, 4}
+        assert set(ctx.values()) == {1, 4, 9, 16}
+        assert set(ctx.items()) == {(1, 1), (2, 4), (3, 9), (4, 16)}
+
+    @pytest.mark.skipif(compat.PY3, reason='python2-specific dict methods')
+    def test_python2_dict_methods(self):
+        ctx = structures.Context()
+        ctx.update((number, number ** 2) for number in range(1, 5))
+
+        assert set(ctx.keys()) == set(ctx.iterkeys()) == set(ctx.viewkeys())
+        assert set(ctx.values()) == set(ctx.itervalues()) == set(ctx.viewvalues())
+        assert set(ctx.items()) == set(ctx.iteritems()) == set(ctx.viewitems())
+
+        assert ctx.has_key(2)  # noqa

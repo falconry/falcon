@@ -1,10 +1,10 @@
 import io
 
 import pytest
-import six
 
 import falcon
-import falcon.testing as testing
+from falcon import testing
+from falcon.util import compat
 
 
 @pytest.fixture
@@ -30,7 +30,7 @@ class FileWrapper(object):
 class HelloResource(object):
     sample_status = '200 OK'
     sample_unicode = (u'Hello World! \x80' +
-                      six.text_type(testing.rand_string(0, 0)))
+                      compat.text_type(testing.rand_string(0, 0)))
 
     sample_utf8 = sample_unicode.encode('utf-8')
 
@@ -59,7 +59,7 @@ class HelloResource(object):
                 resp.set_stream(stream, stream_len)
             else:
                 resp.stream = stream
-                resp.stream_len = stream_len
+                resp.content_length = stream_len
 
         if 'body' in self.mode:
             if 'bytes' in self.mode:
@@ -92,7 +92,7 @@ class NonClosingBytesIO(io.BytesIO):
 class ClosingFilelikeHelloResource(object):
     sample_status = '200 OK'
     sample_unicode = (u'Hello World! \x80' +
-                      six.text_type(testing.rand_string(0, 0)))
+                      compat.text_type(testing.rand_string(0, 0)))
 
     sample_utf8 = sample_unicode.encode('utf-8')
 
@@ -173,7 +173,7 @@ class TestHelloWorld(object):
         result = client.simulate_get('/stream')
         assert resource.called
 
-        expected_len = resource.resp.stream_len
+        expected_len = int(resource.resp.content_length)
         actual_len = int(result.headers['content-length'])
         assert actual_len == expected_len
         assert len(result.content) == expected_len
@@ -187,7 +187,7 @@ class TestHelloWorld(object):
             result = client.simulate_get('/filelike', file_wrapper=file_wrapper)
             assert resource.called
 
-            expected_len = resource.resp.stream_len
+            expected_len = int(resource.resp.content_length)
             actual_len = int(result.headers['content-length'])
             assert actual_len == expected_len
             assert len(result.content) == expected_len
@@ -196,7 +196,7 @@ class TestHelloWorld(object):
             result = client.simulate_get('/filelike', file_wrapper=file_wrapper)
             assert resource.called
 
-            expected_len = resource.resp.stream_len
+            expected_len = int(resource.resp.content_length)
             actual_len = int(result.headers['content-length'])
             assert actual_len == expected_len
             assert len(result.content) == expected_len
@@ -212,7 +212,7 @@ class TestHelloWorld(object):
         result = client.simulate_get('/filelike-closing', file_wrapper=None)
         assert resource.called
 
-        expected_len = resource.resp.stream_len
+        expected_len = int(resource.resp.content_length)
         actual_len = int(result.headers['content-length'])
         assert actual_len == expected_len
         assert len(result.content) == expected_len
@@ -227,7 +227,7 @@ class TestHelloWorld(object):
         result = client.simulate_get('/filelike-helper')
         assert resource.called
 
-        expected_len = resource.resp.stream_len
+        expected_len = int(resource.resp.content_length)
         actual_len = int(result.headers['content-length'])
         assert actual_len == expected_len
         assert len(result.content) == expected_len

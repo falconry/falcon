@@ -2,14 +2,33 @@ import datetime
 import itertools
 
 import pytest
-import six
 
 import falcon
 from falcon.request import Request, RequestOptions
+from falcon.request_helpers import _parse_etags
 import falcon.testing as testing
 import falcon.uri
+from falcon.util import compat
+from falcon.util.structures import ETag
 
 _PROTOCOLS = ['HTTP/1.0', 'HTTP/1.1']
+
+
+def _make_etag(value, is_weak=False):
+    """Creates and returns an ETag object.
+
+    Args:
+        value (str): Unquated entity tag value
+        is_weak (bool): The weakness indicator
+
+    Returns:
+        A ``str``-like Etag instance with weakness indicator.
+
+    """
+    etag = ETag(value)
+
+    etag.is_weak = is_weak
+    return etag
 
 
 class TestRequestAttributes(object):
@@ -113,7 +132,7 @@ class TestRequestAttributes(object):
         assert req.prefix == expected_prefix
         assert req.prefix == expected_prefix  # Check cached value
 
-    @pytest.mark.skipif(not six.PY3, reason='Test only applies to Python 3')
+    @pytest.mark.skipif(not compat.PY3, reason='Test only applies to Python 3')
     @pytest.mark.parametrize('test_path', [
         u'/hello_\u043f\u0440\u0438\u0432\u0435\u0442',
         u'/test/%E5%BB%B6%E5%AE%89',
@@ -632,7 +651,7 @@ class TestRequestAttributes(object):
         assert getattr(req, attr) is None
 
     def test_attribute_headers(self):
-        hash = 'fa0d1a60ef6616bb28038515c8ea4cb2'
+        date = 'Wed, 21 Oct 2015 07:28:00 GMT'
         auth = 'HMAC_SHA1 c590afa9bb59191ffab30f223791e82d3fd3e3af'
         agent = 'testing/1.0.1'
         default_agent = 'curl/7.24.0 (x86_64-apple-darwin12.0)'
@@ -647,9 +666,7 @@ class TestRequestAttributes(object):
                                     'content_type')
         self._test_attribute_header('Expect', '100-continue', 'expect')
 
-        self._test_attribute_header('If-Match', hash, 'if_match')
-        self._test_attribute_header('If-None-Match', hash, 'if_none_match')
-        self._test_attribute_header('If-Range', hash, 'if_range')
+        self._test_attribute_header('If-Range', date, 'if_range')
 
         self._test_attribute_header('User-Agent', agent, 'user_agent',
                                     default=default_agent)
@@ -785,6 +802,123 @@ class TestRequestAttributes(object):
 
         assert req.app == ''
 
+    @pytest.mark.parametrize('etag,expected', [
+        ('', None),
+        (' ', None),
+        ('   ', None),
+        ('\t', None),
+        (' \t', None),
+        (',', None),
+        (',,', None),
+        (',, ', None),
+        (', , ', None),
+        ('*', ['*']),
+        (
+            'W/"67ab43"',
+            [_make_etag('67ab43', is_weak=True)]
+        ),
+        (
+            'w/"67ab43"',
+            [_make_etag('67ab43', is_weak=True)]
+        ),
+        (
+            ' w/"67ab43"',
+            [_make_etag('67ab43', is_weak=True)]
+        ),
+        (
+            'w/"67ab43" ',
+            [_make_etag('67ab43', is_weak=True)]
+        ),
+        (
+            'w/"67ab43 " ',
+            [_make_etag('67ab43 ', is_weak=True)]
+        ),
+        (
+            '"67ab43"',
+            [_make_etag('67ab43')]
+        ),
+        (
+            ' "67ab43"',
+            [_make_etag('67ab43')]
+        ),
+        (
+            ' "67ab43" ',
+            [_make_etag('67ab43')]
+        ),
+        (
+            '"67ab43" ',
+            [_make_etag('67ab43')]
+        ),
+        (
+            '" 67ab43" ',
+            [_make_etag(' 67ab43')]
+        ),
+        (
+            '67ab43"',
+            [_make_etag('67ab43"')]
+        ),
+        (
+            '"67ab43',
+            [_make_etag('"67ab43')]
+        ),
+        (
+            '67ab43',
+            [_make_etag('67ab43')]
+        ),
+        (
+            '67ab43 ',
+            [_make_etag('67ab43')]
+        ),
+        (
+            '  67ab43 ',
+            [_make_etag('67ab43')]
+        ),
+        (
+            '  67ab43',
+            [_make_etag('67ab43')]
+        ),
+        (
+            # NOTE(kgriffs): To simplify parsing and improve performance, we
+            #   do not attempt to handle unquoted entity-tags when there is
+            #   a list; it is non-standard anyway, and has been since 1999.
+            'W/"67ab43", "54ed21", junk"F9,22", junk "41, 7F", unquoted, w/"22, 41, 7F", "", W/""',
+            [
+                _make_etag('67ab43', is_weak=True),
+                _make_etag('54ed21'),
+
+                # NOTE(kgriffs): Test that the ETag initializer defaults to
+                #   is_weak == False
+                ETag('F9,22'),
+
+                _make_etag('41, 7F'),
+                _make_etag('22, 41, 7F', is_weak=True),
+
+                # NOTE(kgriffs): According to the grammar in RFC 7232, zero
+                #  etagc's is acceptable.
+                _make_etag(''),
+                _make_etag('', is_weak=True),
+            ]
+        ),
+    ])
+    def test_etag(self, etag, expected):
+        self._test_header_etag('If-Match', etag, 'if_match', expected)
+        self._test_header_etag('If-None-Match', etag, 'if_none_match', expected)
+
+    def test_etag_is_missing(self):
+        # NOTE(kgriffs): Loop in order to test caching
+        for __ in range(3):
+            assert self.req.if_match is None
+            assert self.req.if_none_match is None
+
+    @pytest.mark.parametrize('header_value', ['', ' ', '  '])
+    def test_etag_parsing_helper(self, header_value):
+        # NOTE(kgriffs): Test a couple of cases that are not directly covered
+        #   elsewhere (but that we want the helper to still support
+        #   for the sake of avoiding suprises if they are ever called without
+        #   preflighting the header value).
+
+        assert _parse_etags(header_value) is None
+
     # -------------------------------------------------------------------------
     # Helpers
     # -------------------------------------------------------------------------
@@ -801,6 +935,25 @@ class TestRequestAttributes(object):
         headers = {name: value}
         req = Request(testing.create_environ(headers=headers))
         assert getattr(req, attr) == expected_value
+
+    def _test_header_etag(self, name, value, attr, expected_value):
+        headers = {name: value}
+        req = Request(testing.create_environ(headers=headers))
+
+        # NOTE(kgriffs): Loop in order to test caching
+        for __ in range(3):
+            value = getattr(req, attr)
+
+            if expected_value is None:
+                assert value is None
+                return
+
+            assert value is not None
+
+            for element, expected_element in zip(value, expected_value):
+                assert element == expected_element
+                if isinstance(expected_element, ETag):
+                    assert element.is_weak == expected_element.is_weak
 
     def _test_error_details(self, headers, attr_name,
                             error_type, title, description):

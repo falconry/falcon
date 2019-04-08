@@ -17,16 +17,23 @@ clean design that embraces HTTP and the REST architectural style.
 
 .. code:: python
 
-    class CatalogItem(object):
+    class QuoteResource:
 
-        # ...
+        def on_get(self, req, resp):
+            """Handles GET requests"""
+            quote = {
+                'quote': (
+                    "I've always been more interested in "
+                    "the future than in the past."
+                ),
+                'author': 'Grace Hopper'
+            }
 
-        @falcon.before(hooks.to_oid)
-        def on_get(self, id):
-            return self._collection.find_one(id)
+            resp.media = quote
 
-    app = falcon.API(after=[hooks.serialize])
-    app.add_route('/items/{id}', CatalogItem())
+
+    api = falcon.API()
+    api.add_route('/quote', QuoteResource())
 
 What People are Saying
 ----------------------
@@ -36,7 +43,6 @@ What People are Saying
 "Falcon looks great so far. I hacked together a quick test for a
 tiny server of mine and was ~40% faster with only 20 minutes of
 work."
-
 "Falcon is rock solid and it's fast."
 
 "I'm loving #falconframework! Super clean and simple, I finally
@@ -73,7 +79,7 @@ Falcon tries to do as little as possible while remaining highly effective.
 - Works great with async libraries like gevent
 - Minimal attack surface for writing secure APIs
 - 100% code coverage with a comprehensive test suite
-- Only depends on six and mimeparse
+- No dependencies on other Python packages
 - Supports Python 2.7, 3.5+
 - Compatible with PyPy
 
@@ -110,5 +116,6 @@ Documentation
 
    user/index
    api/index
+   deploy/index
    community/index
    changes/index
