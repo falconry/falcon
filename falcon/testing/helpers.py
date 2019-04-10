@@ -30,7 +30,7 @@ import itertools
 import random
 import sys
 
-from falcon.util import compat, http_now, uri
+from falcon.util import http_now, uri
 
 
 # Constants
@@ -109,9 +109,8 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1',
             corresponds to the application object, so that the application
             knows its virtual "location". This may be an empty string, if the
             application corresponds to the "root" of the server.' (default '')
-        body (str): The body of the request (default ''). Accepts both byte
-            strings and Unicode strings. Unicode strings are encoded as UTF-8
-            in the request.
+        body (str): The body of the request (default ''). The value will be
+            encoded as UTF-8 in the WSGI environ.
         method (str): The HTTP method to use (default 'GET')
         wsgierrors (io): The stream to use as *wsgierrors*
             (default ``sys.stderr``)
@@ -125,31 +124,27 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1',
         raise ValueError("query_string should not start with '?'")
 
     body = io.BytesIO(body.encode('utf-8')
-                      if isinstance(body, compat.text_type) else body)
+                      if isinstance(body, str) else body)
 
     # NOTE(kgriffs): wsgiref, gunicorn, and uWSGI all unescape
     # the paths before setting PATH_INFO
     path = uri.decode(path, unquote_plus=False)
 
-    if compat.PY3:
-        # NOTE(kgriffs): The decoded path may contain UTF-8 characters.
-        # But according to the WSGI spec, no strings can contain chars
-        # outside ISO-8859-1. Therefore, to reconcile the URI
-        # encoding standard that allows UTF-8 with the WSGI spec
-        # that does not, WSGI servers tunnel the string via
-        # ISO-8859-1. falcon.testing.create_environ() mimics this
-        # behavior, e.g.:
-        #
-        #   tunnelled_path = path.encode('utf-8').decode('iso-8859-1')
-        #
-        # falcon.Request does the following to reverse the process:
-        #
-        #   path = tunnelled_path.encode('iso-8859-1').decode('utf-8', 'replace')
-        #
-        path = path.encode('utf-8').decode('iso-8859-1')
-
-    if compat.PY2 and isinstance(path, compat.text_type):
-        path = path.encode('utf-8')
+    # NOTE(kgriffs): The decoded path may contain UTF-8 characters.
+    # But according to the WSGI spec, no strings can contain chars
+    # outside ISO-8859-1. Therefore, to reconcile the URI
+    # encoding standard that allows UTF-8 with the WSGI spec
+    # that does not, WSGI servers tunnel the string via
+    # ISO-8859-1. falcon.testing.create_environ() mimics this
+    # behavior, e.g.:
+    #
+    #   tunnelled_path = path.encode('utf-8').decode('iso-8859-1')
+    #
+    # falcon.Request does the following to reverse the process:
+    #
+    #   path = tunnelled_path.encode('iso-8859-1').decode('utf-8', 'replace')
+    #
+    path = path.encode('utf-8').decode('iso-8859-1')
 
     scheme = scheme.lower()
     if port is None:

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Copyright 2013 by Rackspace Hosting, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,10 +24,10 @@ from falcon.request import Request, RequestOptions
 import falcon.responders
 from falcon.response import Response, ResponseOptions
 import falcon.status_codes as status
-from falcon.util import compat, misc
+from falcon.util import misc
 
 
-# PERF(vytas): on Python 2.7+, Python 3.5+ (including cythonized modules),
+# PERF(vytas): On Python 3.5+ (including cythonized modules),
 # reference via module global is faster than going via self
 _BODILESS_STATUS_CODES = frozenset([
     status.HTTP_100,
@@ -44,7 +42,7 @@ _TYPELESS_STATUS_CODES = frozenset([
 ])
 
 
-class API(object):
+class API:
     """This class is the main entry point into a Falcon-based app.
 
     Each API instance provides a callable WSGI interface and a routing
@@ -61,7 +59,7 @@ class API(object):
             of objects (instantiated classes) that implement the
             following middleware component interface::
 
-                class ExampleComponent(object):
+                class ExampleComponent:
                     def process_request(self, req, resp):
                         \"\"\"Process the request before routing it.
 
@@ -294,10 +292,7 @@ class API(object):
         # Set status and headers
         #
 
-        # NOTE(kgriffs): While not specified in the spec that the status
-        # must be of type str (not unicode on Py27), some WSGI servers
-        # can complain when it is not.
-        resp_status = str(resp.status) if compat.PY2 else resp.status
+        resp_status = resp.status
         media_type = self._media_type
 
         if req.method == 'HEAD' or resp_status in _BODILESS_STATUS_CODES:
@@ -393,7 +388,7 @@ class API(object):
 
         # NOTE(richardolsson): Doing the validation here means it doesn't have
         # to be duplicated in every future router implementation.
-        if not isinstance(uri_template, compat.string_types):
+        if not isinstance(uri_template, str):
             raise TypeError('uri_template is not a string')
 
         if not uri_template.startswith('/'):

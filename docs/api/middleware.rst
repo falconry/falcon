@@ -16,7 +16,7 @@ Falcon's middleware interface is defined as follows:
 
 .. code:: python
 
-    class ExampleComponent(object):
+    class ExampleComponent:
         def process_request(self, req, resp):
             """Process the request before routing it.
 

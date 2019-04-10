@@ -72,7 +72,7 @@ def simulate_request(request):
     return request.param
 
 
-class TestQueryParams(object):
+class TestQueryParams:
     def test_none(self, simulate_request, client, resource):
         query_string = ''
         client.app.add_route('/', resource)  # TODO: DRY up this setup logic
@@ -140,10 +140,10 @@ class TestQueryParams(object):
 
         # NOTE(kgriffs): For lists, get_param will return one of the
         # elements, but which one it will choose is undefined.
-        assert req.get_param('id') in [u'23', u'42']
+        assert req.get_param('id') in ['23', '42']
 
         assert req.get_param_as_list('id', int) == [23, 42]
-        assert req.get_param('q') == u'\u8c46 \u74e3'
+        assert req.get_param('q') == '\u8c46 \u74e3'
 
     def test_option_auto_parse_qs_csv_simple_false(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
@@ -154,9 +154,9 @@ class TestQueryParams(object):
 
         req = resource.captured_req
 
-        assert req.params['id'] == [u'23,42,,', u'2']
-        assert req.get_param('id') in [u'23,42,,', u'2']
-        assert req.get_param_as_list('id') == [u'23,42,,', u'2']
+        assert req.params['id'] == ['23,42,,', '2']
+        assert req.get_param('id') in ['23,42,,', '2']
+        assert req.get_param_as_list('id') == ['23,42,,', '2']
 
     def test_option_auto_parse_qs_csv_simple_true(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
@@ -168,8 +168,8 @@ class TestQueryParams(object):
 
         req = resource.captured_req
 
-        assert req.params['id'] == [u'23', u'42', u'2']
-        assert req.get_param('id') in [u'23', u'42', u'2']
+        assert req.params['id'] == ['23', '42', '2']
+        assert req.get_param('id') in ['23', '42', '2']
         assert req.get_param_as_list('id', int) == [23, 42, 2]
 
     def test_option_auto_parse_qs_csv_complex_false(self, simulate_request, client, resource):
@@ -190,17 +190,17 @@ class TestQueryParams(object):
         req = resource.captured_req
 
         assert req.get_param('colors') in 'red,green,blue'
-        assert req.get_param_as_list('colors') == [u'red,green,blue']
+        assert req.get_param_as_list('colors') == ['red,green,blue']
 
         assert req.get_param_as_list('limit') == ['1']
 
         assert req.get_param_as_list('empty1') is None
-        assert req.get_param_as_list('empty2') == [u',']
-        assert req.get_param_as_list('empty3') == [u',,']
+        assert req.get_param_as_list('empty2') == [',']
+        assert req.get_param_as_list('empty3') == [',,']
 
-        assert req.get_param_as_list('list-ish1') == [u'f,,x']
-        assert req.get_param_as_list('list-ish2') == [u',0']
-        assert req.get_param_as_list('list-ish3') == [u'a,,,b']
+        assert req.get_param_as_list('list-ish1') == ['f,,x']
+        assert req.get_param_as_list('list-ish2') == [',0']
+        assert req.get_param_as_list('list-ish3') == ['a,,,b']
 
         assert req.get_param('thing') == decoded_json
 
@@ -829,7 +829,7 @@ class TestQueryParams(object):
         assert not req.has_param(None)
 
 
-class TestPostQueryParams(object):
+class TestPostQueryParams:
     @pytest.mark.parametrize('http_method', ('POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'))
     def test_http_methods_body_expected(self, client, resource, http_method):
         client.app.add_route('/', resource)
@@ -854,7 +854,7 @@ class TestPostQueryParams(object):
 
     def test_non_ascii(self, client, resource):
         client.app.add_route('/', resource)
-        value = u'\u8c46\u74e3'
+        value = '\u8c46\u74e3'
         query_string = b'q=' + value.encode('utf-8')
         simulate_request_post_query_params(client=client, path='/', query_string=query_string)
 
@@ -884,7 +884,7 @@ class TestPostQueryParams(object):
         assert req.get_param('q') is None
 
 
-class TestPostQueryParamsDefaultBehavior(object):
+class TestPostQueryParamsDefaultBehavior:
     def test_dont_auto_parse_by_default(self):
         app = falcon.API()
         resource = testing.SimpleTestResource()

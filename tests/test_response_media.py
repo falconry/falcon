@@ -21,7 +21,7 @@ def create_client(handlers=None):
     return client
 
 
-class SimpleMediaResource(object):
+class SimpleMediaResource:
 
     def __init__(self, document, media_type=falcon.MEDIA_JSON):
         self._document = document
@@ -46,16 +46,16 @@ def test_json(media_type):
     resp.content_type = media_type
     resp.media = {'something': True}
 
-    assert json.loads(resp.data.decode('utf-8')) == {u'something': True}
+    assert json.loads(resp.data.decode('utf-8')) == {'something': True}
 
 
 @pytest.mark.parametrize('document', [
     '',
-    u'I am a \u1d0a\ua731\u1d0f\u0274 string.',
-    [u'\u2665', u'\u2660', u'\u2666', u'\u2663'],
-    {u'message': u'\xa1Hello Unicode! \U0001F638'},
+    'I am a \u1d0a\ua731\u1d0f\u0274 string.',
+    ['\u2665', '\u2660', '\u2666', '\u2663'],
+    {'message': '\xa1Hello Unicode! \U0001F638'},
     {
-        'description': 'A collection of primitive Python 2 type examples.',
+        'description': 'A collection of primitive Python type examples.',
         'bool': False is not True and True is not False,
         'dict': {'example': 'mapping'},
         'float': 1.0,
@@ -63,7 +63,7 @@ def test_json(media_type):
         'list': ['a', 'sequence', 'of', 'items'],
         'none': None,
         'str': 'ASCII string',
-        'unicode': u'Hello Unicode! \U0001F638',
+        'unicode': 'Hello Unicode! \U0001F638',
     },
 ])
 def test_non_ascii_json_serialization(document):
@@ -95,7 +95,7 @@ def test_msgpack(media_type):
     assert resp.data == b'\x81\xc4\tsomething\xc3'
 
     # Unicode
-    resp.media = {u'something': True}
+    resp.media = {'something': True}
     assert resp.data == b'\x81\xa9something\xc3'
 
 
@@ -132,7 +132,7 @@ def test_default_media_type():
     resp.content_type = ''
     resp.media = {'something': True}
 
-    assert json.loads(resp.data.decode('utf-8')) == {u'something': True}
+    assert json.loads(resp.data.decode('utf-8')) == {'something': True}
     assert resp.content_type == 'application/json'
 
 

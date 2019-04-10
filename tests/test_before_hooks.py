@@ -23,7 +23,7 @@ def validate_param(req, resp, resource, params, param_name, maxval=100):
         raise falcon.HTTPBadRequest('Out of Range', msg)
 
 
-class ResourceAwareValidateParam(object):
+class ResourceAwareValidateParam:
     def __call__(self, req, resp, resource, params):
         assert resource
         validate_param(req, resp, resource, params, 'limit')
@@ -60,7 +60,7 @@ def frogs(req, resp, resource, params):
     params['frogs'] = 'not fluffy'
 
 
-class Fish(object):
+class Fish:
     def __call__(self, req, resp, resource, params):
         assert resource
         params['fish'] = 'slippery'
@@ -89,7 +89,7 @@ frogs_in_the_head = functools.partial(
 )
 
 
-class WrappedRespondersResource(object):
+class WrappedRespondersResource:
 
     @falcon.before(validate_param, 'limit', 100)
     @falcon.before(parse_body)
@@ -116,7 +116,7 @@ class WrappedRespondersResourceChild(WrappedRespondersResource):
 
 
 @falcon.before(bunnies)
-class WrappedClassResource(object):
+class WrappedClassResource:
 
     _some_fish = Fish()
 
@@ -150,7 +150,7 @@ class WrappedClassResource(object):
 # NOTE(swistakm): we use both type of hooks (class and method)
 # at once for the sake of simplicity
 @falcon.before(bunnies)
-class ClassResourceWithAwareHooks(object):
+class ClassResourceWithAwareHooks:
     hook_as_class = ResourceAwareValidateParam()
 
     @falcon.before(validate_param, 'limit', 10)
@@ -175,7 +175,7 @@ class ClassResourceWithAwareHooks(object):
         self.bunnies = bunnies
 
 
-class TestFieldResource(object):
+class TestFieldResource:
 
     @falcon.before(validate_field, field_name='id')
     def on_get(self, req, resp, id):
@@ -201,7 +201,7 @@ class TestFieldResourceChildToo(TestFieldResource):
 @falcon.before(Fish())
 @falcon.before(bunnies_in_the_head)
 @falcon.before(frogs_in_the_head)
-class ZooResource(object):
+class ZooResource:
 
     def on_get(self, req, resp, bunnies, frogs, fish):
         self.bunnies = bunnies
@@ -358,7 +358,7 @@ def header_hook(req, resp, resource, params):
 
 
 @falcon.before(header_hook)
-class PiggybackingCollection(object):
+class PiggybackingCollection:
 
     def __init__(self):
         self._items = {}

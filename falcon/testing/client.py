@@ -18,15 +18,15 @@ This package includes utilities for simulating HTTP requests against a
 WSGI callable, without having to stand up a WSGI server.
 """
 
+from http import cookies as http_cookies
 import warnings
 import wsgiref.validate
 
 from falcon.constants import MEDIA_JSON
 from falcon.testing import helpers
 from falcon.testing.srmock import StartResponseMock
-from falcon.util import CaseInsensitiveDict, compat, http_date_to_dt, to_query_str
+from falcon.util import CaseInsensitiveDict, http_date_to_dt, to_query_str
 from falcon.util import json as util_json
-from falcon.util.compat import http_cookies
 
 
 warnings.filterwarnings(
@@ -41,7 +41,7 @@ warnings.filterwarnings(
 )
 
 
-class Result(object):
+class Result:
     """Encapsulates the result of a simulated WSGI request.
 
     Args:
@@ -73,8 +73,7 @@ class Result(object):
             if the encoding can not be determined.
         content (bytes): Raw response body, or ``bytes`` if the
             response body was empty.
-        text (str): Decoded response body of type ``unicode``
-            under Python 2.7, and of type ``str`` otherwise.
+        text (str): Decoded response body of type ``str``.
             If the content type does not specify an encoding, UTF-8 is
             assumed.
         json (JSON serializable): Deserialized JSON body. Will be ``None`` if
@@ -131,7 +130,7 @@ class Result(object):
     def text(self):
         if self._text is None:
             if not self.content:
-                self._text = u''
+                self._text = ''
             else:
                 if self.encoding is None:
                     encoding = 'UTF-8'
@@ -150,7 +149,7 @@ class Result(object):
         return util_json.loads(self.text)
 
 
-class Cookie(object):
+class Cookie:
     """Represents a cookie returned by a simulated request.
 
     Args:
@@ -264,10 +263,8 @@ def simulate_request(app, method='GET', path='/', query_string=None,
             `params`.
         headers (dict): Additional headers to include in the request
             (default: ``None``)
-        body (str): A string to send as the body of the request.
-            Accepts both byte strings and Unicode strings
-            (default: ``None``). If a Unicode string is provided,
-            it will be encoded as UTF-8 in the request.
+        body (str): A string to send as the body of the request. The value
+            will be encoded as UTF-8.
         json(JSON serializable): A JSON document to serialize as the
             body of the request (default: ``None``). If specified,
             overrides `body` and the Content-Type header in
@@ -471,10 +468,8 @@ def simulate_post(app, path, **kwargs):
             values (e.g., 'thing=1,2,3'). Defaults to ``True``.
         headers (dict): Additional headers to include in the request
             (default: ``None``)
-        body (str): A string to send as the body of the request.
-            Accepts both byte strings and Unicode strings
-            (default: ``None``). If a Unicode string is provided,
-            it will be encoded as UTF-8 in the request.
+        body (str): A string to send as the body of the request. The value
+            will be encoded as UTF-8.
         json(JSON serializable): A JSON document to serialize as the
             body of the request (default: ``None``). If specified,
             overrides `body` and the Content-Type header in
@@ -516,10 +511,8 @@ def simulate_put(app, path, **kwargs):
             values (e.g., 'thing=1,2,3'). Defaults to ``True``.
         headers (dict): Additional headers to include in the request
             (default: ``None``)
-        body (str): A string to send as the body of the request.
-            Accepts both byte strings and Unicode strings
-            (default: ``None``). If a Unicode string is provided,
-            it will be encoded as UTF-8 in the request.
+        body (str): A string to send as the body of the request. The value
+            will be encoded as UTF-8.
         json(JSON serializable): A JSON document to serialize as the
             body of the request (default: ``None``). If specified,
             overrides `body` and the Content-Type header in
@@ -598,10 +591,8 @@ def simulate_patch(app, path, **kwargs):
             values (e.g., 'thing=1,2,3'). Defaults to ``True``.
         headers (dict): Additional headers to include in the request
             (default: ``None``)
-        body (str): A string to send as the body of the request.
-            Accepts both byte strings and Unicode strings
-            (default: ``None``). If a Unicode string is provided,
-            it will be encoded as UTF-8 in the request.
+        body (str): A string to send as the body of the request. The value
+            will be encoded as UTF-8.
         json(JSON serializable): A JSON document to serialize as the
             body of the request (default: ``None``). If specified,
             overrides `body` and the Content-Type header in
@@ -655,7 +646,7 @@ def simulate_delete(app, path, **kwargs):
     return simulate_request(app, 'DELETE', path, **kwargs)
 
 
-class TestClient(object):
+class TestClient:
     """Simulates requests to a WSGI application.
 
     This class provides a contextual wrapper for Falcon's `simulate_*`
@@ -756,9 +747,5 @@ class TestClient(object):
             merged_headers.update(additional_headers)
 
             kwargs['headers'] = merged_headers
-
-        if compat.PY2 and 'headers' in kwargs:
-            for key, value in kwargs['headers'].items():
-                kwargs['headers'][key] = str(value) if isinstance(value, unicode) else value
 
         return simulate_request(self.app, *args, **kwargs)

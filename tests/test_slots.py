@@ -4,7 +4,7 @@ from falcon import Request, Response
 import falcon.testing as testing
 
 
-class TestSlots(object):
+class TestSlots:
 
     def test_slots_request(self):
         env = testing.create_environ()

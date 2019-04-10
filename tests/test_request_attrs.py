@@ -8,7 +8,6 @@ from falcon.request import Request, RequestOptions
 from falcon.request_helpers import _parse_etags
 import falcon.testing as testing
 import falcon.uri
-from falcon.util import compat
 from falcon.util.structures import ETag
 
 _PROTOCOLS = ['HTTP/1.0', 'HTTP/1.1']
@@ -31,7 +30,7 @@ def _make_etag(value, is_weak=False):
     return etag
 
 
-class TestRequestAttributes(object):
+class TestRequestAttributes:
 
     def setup_method(self, method):
         self.qs = 'marker=deadbeef&limit=10'
@@ -132,11 +131,10 @@ class TestRequestAttributes(object):
         assert req.prefix == expected_prefix
         assert req.prefix == expected_prefix  # Check cached value
 
-    @pytest.mark.skipif(not compat.PY3, reason='Test only applies to Python 3')
     @pytest.mark.parametrize('test_path', [
-        u'/hello_\u043f\u0440\u0438\u0432\u0435\u0442',
-        u'/test/%E5%BB%B6%E5%AE%89',
-        u'/test/%C3%A4%C3%B6%C3%BC%C3%9F%E2%82%AC',
+        '/hello_\u043f\u0440\u0438\u0432\u0435\u0442',
+        '/test/%E5%BB%B6%E5%AE%89',
+        '/test/%C3%A4%C3%B6%C3%BC%C3%9F%E2%82%AC',
     ])
     def test_nonlatin_path(self, test_path):
         # NOTE(kgriffs): When a request comes in, web servers decode

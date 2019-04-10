@@ -5,7 +5,6 @@ import pytest
 
 import falcon
 from falcon import testing
-from falcon.util import compat
 
 
 SAMPLE_BODY = testing.rand_string(0, 128 * 1024)
@@ -17,7 +16,7 @@ def client():
     return testing.TestClient(app)
 
 
-class XmlResource(object):
+class XmlResource:
     def __init__(self, content_type):
         self.content_type = content_type
 
@@ -25,7 +24,7 @@ class XmlResource(object):
         resp.set_header('content-type', self.content_type)
 
 
-class HeaderHelpersResource(object):
+class HeaderHelpersResource:
 
     def __init__(self, last_modified=None):
         if last_modified is not None:
@@ -107,10 +106,10 @@ class HeaderHelpersResource(object):
         self.resp = resp
 
 
-class LocationHeaderUnicodeResource(object):
+class LocationHeaderUnicodeResource:
 
-    URL1 = u'/\u00e7runchy/bacon'
-    URL2 = u'ab\u00e7' if compat.PY3 else 'ab\xc3\xa7'
+    URL1 = '/\u00e7runchy/bacon'
+    URL2 = 'ab\u00e7'
 
     def on_get(self, req, resp):
         resp.location = self.URL1
@@ -121,27 +120,27 @@ class LocationHeaderUnicodeResource(object):
         resp.content_location = self.URL1
 
 
-class UnicodeHeaderResource(object):
+class UnicodeHeaderResource:
 
     def on_get(self, req, resp):
         resp.set_headers([
-            (u'X-auTH-toKEN', 'toomanysecrets'),
-            ('Content-TYpE', u'application/json'),
-            (u'X-symBOl', u'@'),
+            ('X-auTH-toKEN', 'toomanysecrets'),
+            ('Content-TYpE', 'application/json'),
+            ('X-symBOl', '@'),
         ])
 
     def on_post(self, req, resp):
         resp.set_headers([
-            (u'X-symb\u00F6l', 'thing'),
+            ('X-symb\u00F6l', 'thing'),
         ])
 
     def on_put(self, req, resp):
         resp.set_headers([
-            ('X-Thing', u'\u00FF'),
+            ('X-Thing', '\u00FF'),
         ])
 
 
-class VaryHeaderResource(object):
+class VaryHeaderResource:
 
     def __init__(self, vary):
         self.vary = vary
@@ -151,7 +150,7 @@ class VaryHeaderResource(object):
         resp.vary = self.vary
 
 
-class LinkHeaderResource(object):
+class LinkHeaderResource:
 
     def __init__(self):
         self._links = []
@@ -166,7 +165,7 @@ class LinkHeaderResource(object):
             resp.add_link(*args, **kwargs)
 
 
-class AppendHeaderResource(object):
+class AppendHeaderResource:
 
     def on_get(self, req, resp):
         resp.append_header('X-Things', 'thing-1')
@@ -187,7 +186,7 @@ class AppendHeaderResource(object):
         resp.append_header('seT-cookie', c2)
 
 
-class RemoveHeaderResource(object):
+class RemoveHeaderResource:
     def __init__(self, with_double_quotes):
         self.with_double_quotes = with_double_quotes
 
@@ -205,7 +204,7 @@ class RemoveHeaderResource(object):
         resp.downloadable_as = None
 
 
-class ContentLengthHeaderResource(object):
+class ContentLengthHeaderResource:
 
     def __init__(self, content_length, body=None, data=None):
         self._content_length = content_length
@@ -226,7 +225,7 @@ class ContentLengthHeaderResource(object):
         resp.content_length = self._content_length
 
 
-class ExpiresHeaderResource(object):
+class ExpiresHeaderResource:
 
     def __init__(self, expires):
         self._expires = expires
@@ -235,7 +234,7 @@ class ExpiresHeaderResource(object):
         resp.expires = self._expires
 
 
-class TestHeaders(object):
+class TestHeaders:
 
     def test_content_length(self, client):
         resource = testing.SimpleTestResource(body=SAMPLE_BODY)
@@ -372,7 +371,7 @@ class TestHeaders(object):
         self._check_header(client, resource, 'Content-Type', falcon.DEFAULT_MEDIA_TYPE)
 
     @pytest.mark.parametrize('content_type,body', [
-        ('text/plain; charset=UTF-8', u'Hello Unicode! \U0001F638'),
+        ('text/plain; charset=UTF-8', 'Hello Unicode! \U0001F638'),
         # NOTE(kgriffs): This only works because the client defaults to
         # ISO-8859-1 IFF the media type is 'text'.
         ('text/plain', 'Hello ISO-8859-1!'),
@@ -386,16 +385,16 @@ class TestHeaders(object):
         assert result.headers['Content-Type'] == content_type
 
     def test_override_default_media_type_missing_encoding(self, client):
-        body = u'{"msg": "Hello Unicode! \U0001F638"}'
+        body = '{"msg": "Hello Unicode! \U0001F638"}'
 
         client.app = falcon.API(media_type='application/json')
         client.app.add_route('/', testing.SimpleTestResource(body=body))
         result = client.simulate_get()
 
         assert result.content == body.encode('utf-8')
-        assert isinstance(result.text, compat.text_type)
+        assert isinstance(result.text, str)
         assert result.text == body
-        assert result.json == {u'msg': u'Hello Unicode! \U0001F638'}
+        assert result.json == {'msg': 'Hello Unicode! \U0001F638'}
 
     def test_response_header_helpers_on_get(self, client):
         last_modified = datetime(2013, 1, 1, 10, 30, 30)
@@ -438,7 +437,7 @@ class TestHeaders(object):
         assert resp.content_range == content_range
         assert result.headers['Content-Range'] == content_range
 
-        resp.content_range = (1, 499, 10 * 1024, u'bytes')
+        resp.content_range = (1, 499, 10 * 1024, 'bytes')
         assert isinstance(resp.content_range, str)
         assert resp.content_range == 'bytes 1-499/10240'
 
@@ -475,15 +474,6 @@ class TestHeaders(object):
         assert result.headers['Content-Type'] == 'application/json'
         assert result.headers['X-Auth-Token'] == 'toomanysecrets'
         assert result.headers['X-Symbol'] == '@'
-
-    @pytest.mark.skipif(compat.PY3, reason='Test only applies to Python 2')
-    def test_unicode_headers_not_convertable(self, client):
-        client.app.add_route('/', UnicodeHeaderResource())
-        with pytest.raises(UnicodeEncodeError):
-            client.simulate_post('/')
-
-        with pytest.raises(UnicodeEncodeError):
-            client.simulate_put('/')
 
     def test_response_set_and_get_header(self, client):
         resource = HeaderHelpersResource()
@@ -559,8 +549,7 @@ class TestHeaders(object):
 
     @pytest.mark.parametrize('vary,expected_value', [
         (['accept-encoding'], 'accept-encoding'),
-        ([u'accept-encoding', 'x-auth-token'], 'accept-encoding, x-auth-token'),
-        (('accept-encoding', u'x-auth-token'), 'accept-encoding, x-auth-token'),
+        (('accept-encoding', 'x-auth-token'), 'accept-encoding, x-auth-token'),
     ])
     def test_vary_header(self, client, vary, expected_value):
         resource = VaryHeaderResource(vary)
@@ -604,16 +593,16 @@ class TestHeaders(object):
             '<ab%C3%A7>; rel="https://example.com/too-%C3%A7runchy", ' +
             '</alt-thing>; rel="alternate http://example.com/%C3%A7runchy"')
 
-        uri = u'ab\u00e7' if compat.PY3 else 'ab\xc3\xa7'
+        uri = 'ab\u00e7'
 
         resource = LinkHeaderResource()
         resource.add_link('/things/2842', 'next')
-        resource.add_link(u'http://\u00e7runchy/bacon', 'contents')
+        resource.add_link('http://\u00e7runchy/bacon', 'contents')
         resource.add_link(uri, 'http://example.com/ext-type')
-        resource.add_link(uri, u'http://example.com/\u00e7runchy')
-        resource.add_link(uri, u'https://example.com/too-\u00e7runchy')
+        resource.add_link(uri, 'http://example.com/\u00e7runchy')
+        resource.add_link(uri, 'https://example.com/too-\u00e7runchy')
         resource.add_link('/alt-thing',
-                          u'alternate http://example.com/\u00e7runchy')
+                          'alternate http://example.com/\u00e7runchy')
 
         self._check_link_header(client, resource, expected_value)
 
@@ -637,8 +626,8 @@ class TestHeaders(object):
         resource.add_link('/related/thing', 'item',
                           title_star=('', 'A related thing'))
 
-        resource.add_link(u'/\u00e7runchy/thing', 'item',
-                          title_star=('en', u'A \u00e7runchy thing'))
+        resource.add_link('/\u00e7runchy/thing', 'item',
+                          title_star=('en', 'A \u00e7runchy thing'))
 
         self._check_link_header(client, resource, expected_value)
 
@@ -693,7 +682,7 @@ class TestHeaders(object):
                           title='A related thing',
                           hreflang=('en-GB', 'de'),
                           type_hint='application/json',
-                          title_star=('en', u'A \u00e7runchy thing'))
+                          title_star=('en', 'A \u00e7runchy thing'))
 
         self._check_link_header(client, resource, expected_value)
 

@@ -3,7 +3,7 @@ import pytest
 from falcon.request import RequestOptions
 
 
-class TestRequestOptions(object):
+class TestRequestOptions:
 
     def test_option_defaults(self):
         options = RequestOptions()

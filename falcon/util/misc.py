@@ -30,7 +30,6 @@ import inspect
 import warnings
 
 from falcon import status_codes
-from falcon.util import compat
 
 __all__ = (
     'deprecated',
@@ -240,47 +239,11 @@ def get_bound_method(obj, method_name):
 
     method = getattr(obj, method_name, None)
     if method is not None:
-        # NOTE(kgriffs): Ensure it is a bound method
-        if compat.get_method_self(method) is None:
-            # NOTE(kgriffs): In Python 3 this code is unreachable
-            # because the above will raise AttributeError on its
-            # own.
-            msg = '{0} must be a bound method'.format(method)
-            raise AttributeError(msg)
+        # NOTE(kgriffs): Ensure it is a bound method. Raises AttributeError
+        # if the attribute is missing.
+        getattr(method, '__self__')
 
     return method
-
-
-def _get_func_if_nested(callable):
-    """Returns the function object of a given callable."""
-
-    if isinstance(callable, functools.partial):
-        return callable.func
-
-    if inspect.isroutine(callable):
-        return callable
-
-    return callable.__call__
-
-
-def _get_argspec(func):
-    """Returns an inspect.ArgSpec instance given a function object.
-
-    We prefer this implementation rather than the inspect module's getargspec
-    since the latter has a strict check that the passed function is an instance
-    of FunctionType. Cython functions do not pass this check, but they do implement
-    the `func_code` and `func_defaults` attributes that we need to produce an Argspec.
-
-    This implementation re-uses much of inspect.getargspec but removes the strict
-    check allowing interface failures to be raised as AttributeError.
-
-    (See also: https://github.com/python/cpython/blob/2.7/Lib/inspect.py)
-    """
-    if inspect.ismethod(func):
-        func = func.im_func
-
-    args, varargs, varkw = inspect.getargs(func.func_code)
-    return inspect.ArgSpec(args, varargs, varkw, func.func_defaults)
 
 
 def get_argnames(func):
@@ -294,25 +257,17 @@ def get_argnames(func):
         arguments.
     """
 
-    if compat.PY2:
-        func_object = _get_func_if_nested(func)
-        spec = _get_argspec(func_object)
+    sig = inspect.signature(func)
 
-        args = spec.args
-
-    else:
-        sig = inspect.signature(func)
-
-        args = [
-            param.name
-            for param in sig.parameters.values()
-            if param.kind not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
-        ]
+    args = [
+        param.name
+        for param in sig.parameters.values()
+        if param.kind not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
+    ]
 
     # NOTE(kgriffs): Depending on the version of Python, 'self' may or may not
     # be present, so we normalize the results by removing 'self' as needed.
-    # Note that this behavior varies between 3.x versions as well as between
-    # 3.x and 2.7.
+    # Note that this behavior varies between 3.x versions.
     if args and args[0] == 'self':
         args = args[1:]
 

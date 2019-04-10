@@ -16,8 +16,6 @@
 Script that prints out the routes of an API instance.
 """
 
-from __future__ import print_function
-
 from functools import partial
 import inspect
 

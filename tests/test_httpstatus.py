@@ -42,7 +42,7 @@ class TestStatusResource:
     def on_put(self, req, resp):
         # NOTE(kgriffs): Test that passing a unicode status string
         # works just fine.
-        resp.status = u'500 Internal Server Error'
+        resp.status = '500 Internal Server Error'
         resp.set_header('X-Failed', 'True')
         resp.body = 'Fail'
 
@@ -73,7 +73,7 @@ class TestHookResource:
                          body='Pass')
 
 
-class TestHTTPStatus(object):
+class TestHTTPStatus:
     def test_raise_status_in_before_hook(self):
         """ Make sure we get the 200 raised by before hook """
         app = falcon.API()
@@ -128,7 +128,7 @@ class TestHTTPStatus(object):
         assert response.text == ''
 
 
-class TestHTTPStatusWithMiddleware(object):
+class TestHTTPStatusWithMiddleware:
     def test_raise_status_in_process_request(self):
         """ Make sure we can raise status from middleware process request """
         class TestMiddleware:

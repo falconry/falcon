@@ -22,14 +22,13 @@ from falcon import util
 from falcon.forwarded import _parse_forwarded_header
 from falcon.forwarded import Forwarded  # NOQA
 from falcon.media import Handlers
-from falcon.util import compat
 from falcon.util import json
 from falcon.util import structures
 from falcon.util.uri import parse_host, parse_query_string
 from falcon.vendor import mimeparse
 
-DEFAULT_ERROR_LOG_FORMAT = (u'{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
-                            u' {1} {2}{3} => ')
+DEFAULT_ERROR_LOG_FORMAT = ('{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
+                            ' {1} {2}{3} => ')
 
 TRUE_STRINGS = frozenset(['true', 'True', 'yes', '1', 'on'])
 FALSE_STRINGS = frozenset(['false', 'False', 'no', '0', 'off'])
@@ -40,7 +39,7 @@ strptime = datetime.strptime
 now = datetime.now
 
 
-class Request(object):
+class Request:
     """Represents a client's HTTP request.
 
     Note:
@@ -448,10 +447,19 @@ class Request(object):
         # empty string, so normalize it in that case.
         path = env['PATH_INFO'] or '/'
 
-        if compat.PY3:
-            # PEP 3333 specifies that PATH_INFO variable are always
-            # "bytes tunneled as latin-1" and must be encoded back
-            path = path.encode('latin1').decode('utf-8', 'replace')
+        # PEP 3333 specifies that the PATH_INFO variable is always
+        # "bytes tunneled as latin-1" and must be encoded back.
+        #
+        # NOTE(kgriffs): The decoded path may contain UTF-8 characters.
+        # But according to the WSGI spec, no strings can contain chars
+        # outside ISO-8859-1. Therefore, to reconcile the URI
+        # encoding standard that allows UTF-8 with the WSGI spec
+        # that does not, WSGI servers tunnel the string via
+        # ISO-8859-1, e.g.:
+        #
+        #   tunnelled_path = path.encode('utf-8').decode('iso-8859-1')
+        #
+        path = path.encode('iso-8859-1').decode('utf-8', 'replace')
 
         if (self.options.strip_url_path_trailing_slash and
                 len(path) != 1 and path.endswith('/')):
@@ -1719,8 +1727,7 @@ class Request(object):
         result out to the WSGI server's error stream (`wsgi.error`).
 
         Args:
-            message (str or unicode): Description of the problem. On Python 2,
-                instances of ``unicode`` will be converted to UTF-8.
+            message (str): Description of the problem.
 
         """
 
@@ -1734,14 +1741,7 @@ class Request(object):
             format(now(), self.method, self.path, query_string_formatted)
         )
 
-        if compat.PY3:
-            self._wsgierrors.write(log_line + message + '\n')
-        else:
-            if isinstance(message, unicode):
-                message = message.encode('utf-8')
-
-            self._wsgierrors.write(log_line.encode('utf-8'))
-            self._wsgierrors.write(message + '\n')
+        self._wsgierrors.write(log_line + message + '\n')
 
     # ------------------------------------------------------------------------
     # Helpers
@@ -1790,7 +1790,7 @@ class Request(object):
 
 
 # PERF: To avoid typos and improve storage space and speed over a dict.
-class RequestOptions(object):
+class RequestOptions:
     """Defines a set of configurable request options.
 
     An instance of this class is exposed via :any:`API.req_options` for

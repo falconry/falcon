@@ -27,7 +27,7 @@ for convenience::
 
 """
 
-from falcon.util.compat import Mapping, MutableMapping
+from collections.abc import Mapping, MutableMapping
 
 
 # TODO(kgriffs): If we ever diverge from what is upstream in Requests,
@@ -42,7 +42,7 @@ class CaseInsensitiveDict(MutableMapping):  # pragma: no cover
 
     All keys are expected to be strings. The structure remembers the
     case of the last key to be set, and ``iter(instance)``,
-    ``keys()``, ``items()``, ``iterkeys()``, and ``iteritems()``
+    ``keys()``, and ``items()``
     will contain case-sensitive keys. However, querying and contains
     testing is case insensitive:
 
@@ -111,7 +111,7 @@ class CaseInsensitiveDict(MutableMapping):  # pragma: no cover
 #   interface, we choose not to subclass MutableMapping to stress the fact that
 #   Context is, by design, a bare class, and the mapping interface may be
 #   removed in a future Falcon release.
-class Context(object):
+class Context:
     """
     Convenience class to hold contextual information in its attributes.
 
@@ -132,12 +132,6 @@ class Context(object):
     'lru'
     >>> 'cache_strategy' in context
     True
-
-    Note:
-        Python 2 specific ``dict`` methods are exposed regardless of the
-        Python language version, however, as they are delegated to the
-        underlying ``__dict__``, a similar error would be raised as if
-        attempting to use these methods for a usual Python 3 dict.
     """
 
     def __contains__(self, key):
@@ -192,20 +186,8 @@ class Context(object):
     def get(self, key, default=None):
         return self.__dict__.get(key, default)
 
-    def has_key(self, key):
-        return self.__dict__.has_key(key)  # noqa
-
     def items(self):
         return self.__dict__.items()
-
-    def iteritems(self):
-        return self.__dict__.iteritems()
-
-    def iterkeys(self):
-        return self.__dict__.iterkeys()
-
-    def itervalues(self):
-        return self.__dict__.itervalues()
 
     def keys(self):
         return self.__dict__.keys()
@@ -224,15 +206,6 @@ class Context(object):
 
     def values(self):
         return self.__dict__.values()
-
-    def viewitems(self):
-        return self.__dict__.viewitems()
-
-    def viewkeys(self):
-        return self.__dict__.viewkeys()
-
-    def viewvalues(self):
-        return self.__dict__.viewvalues()
 
 
 class ETag(str):

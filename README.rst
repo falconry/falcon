@@ -20,7 +20,7 @@ architectural style, and tries to do as little as possible while
 remaining highly effective.
 
 Falcon apps work with any WSGI server, and run like a champ under
-CPython 2.7, CPython 3.5+, PyPy2.7, and PyPy3.5.
+CPython 3.5+ and PyPy 3.5+.
 
 .. Patron list starts here. For Python package, we substitute this section with:
    Support Falcon Development
@@ -148,7 +148,7 @@ Features
 -  Idiomatic HTTP error responses
 -  Straightforward exception handling
 -  Snappy unit testing through WSGI helpers and mocks
--  CPython 2.7, CPython 3.5+, PyPy2.7, and PyPy3.5 support
+-  CPython 3.5+ and PyPy 3.5+ support
 -  ~20% speed boost under CPython when Cython is available
 
 Who's Using Falcon?
@@ -200,7 +200,7 @@ PyPy
 ^^^^
 
 `PyPy <http://pypy.org/>`__ is the fastest way to run your Falcon app.
-Both PyPy2.7 and PyPy3.5 are supported as of PyPy v5.10.
+PyPy3.5+ is supported as of PyPy v5.10.
 
 .. code:: bash
 
@@ -216,7 +216,7 @@ CPython
 ^^^^^^^
 
 Falcon also fully supports
-`CPython <https://www.python.org/downloads/>`__ 2.7 and 3.5+.
+`CPython <https://www.python.org/downloads/>`__ 3.5+.
 
 A universal wheel is available on PyPI for the the Falcon framework.
 Installing it is as simple as:
@@ -372,7 +372,7 @@ API.
     # Falcon follows the REST architectural style, meaning (among
     # other things) that you think in terms of resources and state
     # transitions, which map to HTTP verbs.
-    class ThingsResource(object):
+    class ThingsResource:
         def on_get(self, req, resp):
             """Handles GET requests"""
             resp.status = falcon.HTTP_200  # This is the default status
@@ -422,7 +422,7 @@ bodies.
     import requests
 
 
-    class StorageEngine(object):
+    class StorageEngine:
 
         def get_things(self, marker, limit):
             return [{'id': str(uuid.uuid4()), 'color': 'green'}]
@@ -444,7 +444,7 @@ bodies.
                                    description)
 
 
-    class SinkAdapter(object):
+    class SinkAdapter:
 
         engines = {
             'ddg': 'https://duckduckgo.com',
@@ -461,7 +461,7 @@ bodies.
             resp.body = result.text
 
 
-    class AuthMiddleware(object):
+    class AuthMiddleware:
 
         def process_request(self, req, resp):
             token = req.get_header('Authorization')
@@ -491,7 +491,7 @@ bodies.
             return True  # Suuuuuure it's valid...
 
 
-    class RequireJSON(object):
+    class RequireJSON:
 
         def process_request(self, req, resp):
             if not req.client_accepts_json:
@@ -506,9 +506,10 @@ bodies.
                         href='http://docs.examples.com/api/json')
 
 
-    class JSONTranslator(object):
-        # NOTE: Starting with Falcon 1.3, you can simply
-        # use req.media and resp.media for this instead.
+    class JSONTranslator:
+        # NOTE: Normally you would simply use req.media and resp.media for
+        # this particular use case; this example serves only to illustrate
+        # what is possible.
 
         def process_request(self, req, resp):
             # req.stream corresponds to the WSGI wsgi.input environ variable,
@@ -555,7 +556,7 @@ bodies.
         return hook
 
 
-    class ThingsResource(object):
+    class ThingsResource:
 
         def __init__(self, db):
             self.db = db
@@ -579,13 +580,10 @@ bodies.
                     description,
                     30)
 
-            # An alternative way of doing DRY serialization would be to
-            # create a custom class that inherits from falcon.Request. This
-            # class could, for example, have an additional 'doc' property
-            # that would serialize to JSON under the covers.
-            #
-            # NOTE: Starting with Falcon 1.3, you can simply
-            # use resp.media for this instead.
+            # NOTE: Normally you would use resp.media for this sort of thing;
+            # this example serves only to demonstrate how the context can be
+            # used to pass arbitrary values between middleware components,
+            # hooks, and resources.
             resp.context.result = result
 
             resp.set_header('Powered-By', 'Falcon')
@@ -594,8 +592,6 @@ bodies.
         @falcon.before(max_body(64 * 1024))
         def on_post(self, req, resp, user_id):
             try:
-                # NOTE: Starting with Falcon 1.3, you can simply
-                # use req.media for this instead.
                 doc = req.context.doc
             except AttributeError:
                 raise falcon.HTTPBadRequest(
@@ -606,7 +602,6 @@ bodies.
 
             resp.status = falcon.HTTP_201
             resp.location = '/%s/things/%s' % (user_id, proper_thing['id'])
-
 
     # Configure your WSGI server to load "things.app" (app is a WSGI callable)
     app = falcon.API(middleware=[

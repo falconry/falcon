@@ -1,12 +1,10 @@
-from __future__ import absolute_import
-
 from functools import wraps
 
 import falcon
 
 try:
     import jsonschema
-except ImportError:
+except ImportError:  # pragma: nocover
     pass
 
 

@@ -6,12 +6,12 @@ import falcon
 import falcon.testing as testing
 
 
-class Proxy(object):
+class Proxy:
     def forward(self, req):
         return falcon.HTTP_503
 
 
-class Sink(object):
+class Sink:
 
     def __init__(self):
         self._proxy = Proxy()
@@ -45,7 +45,7 @@ def client():
     return testing.TestClient(app)
 
 
-class TestDefaultRouting(object):
+class TestDefaultRouting:
 
     def test_single_default_pattern(self, client, sink, resource):
         client.app.add_sink(sink)

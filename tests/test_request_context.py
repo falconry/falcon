@@ -4,7 +4,7 @@ from falcon.request import Request
 import falcon.testing as testing
 
 
-class TestRequestContext(object):
+class TestRequestContext:
 
     def test_default_request_context(self):
         env = testing.create_environ()

@@ -11,7 +11,7 @@ and third arguments, respectively.
     import falcon
 
 
-    class Resource(object):
+    class Resource:
 
         def on_get(self, req, resp):
             resp.body = '{"message": "Hello world!"}'

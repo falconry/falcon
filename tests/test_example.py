@@ -8,7 +8,7 @@ import requests
 import falcon
 
 
-class StorageEngine(object):
+class StorageEngine:
 
     def get_things(self, marker, limit):
         return [{'id': str(uuid.uuid4()), 'color': 'green'}]
@@ -30,7 +30,7 @@ class StorageError(Exception):
                                description)
 
 
-class SinkAdapter(object):
+class SinkAdapter:
 
     engines = {
         'ddg': 'https://duckduckgo.com',
@@ -47,7 +47,7 @@ class SinkAdapter(object):
         resp.body = result.text
 
 
-class AuthMiddleware(object):
+class AuthMiddleware:
 
     def process_request(self, req, resp):
         token = req.get_header('Authorization')
@@ -77,7 +77,7 @@ class AuthMiddleware(object):
         return True  # Suuuuuure it's valid...
 
 
-class RequireJSON(object):
+class RequireJSON:
 
     def process_request(self, req, resp):
         if not req.client_accepts_json:
@@ -92,7 +92,7 @@ class RequireJSON(object):
                     href='http://docs.examples.com/api/json')
 
 
-class JSONTranslator(object):
+class JSONTranslator:
 
     def process_request(self, req, resp):
         # req.stream corresponds to the WSGI wsgi.input environ variable,
@@ -139,7 +139,7 @@ def max_body(limit):
     return hook
 
 
-class ThingsResource(object):
+class ThingsResource:
 
     def __init__(self, db):
         self.db = db
