@@ -68,7 +68,7 @@ def test_req_schema_validation_failure():
     with pytest.raises(falcon.HTTPBadRequest) as excinfo:
         Resource().request_validated(BadData(), None)
 
-    assert excinfo.value.description == '\'message\' is a required property'
+    assert excinfo.value.description == "'message' is a required property"
 
 
 @skip_missing_dep
