@@ -118,7 +118,7 @@ _close_env
 # README validation
 #----------------------------------------------------------------------
 
-_echo_task "Checking that README will render on PyPI"
+_echo_task "Verifying PyPI compatibility"
 _open_env $PY2_VERSION
 
 twine check $DIST_DIR/*

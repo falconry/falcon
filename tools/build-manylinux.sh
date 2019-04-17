@@ -22,7 +22,7 @@ for whl in dist/*.whl; do
 done
 
 # Install packages and test
-for PYBIN in /opt/python/*/bin/; do
+for PYBIN in /opt/python/*/bin; do
     "${PYBIN}/pip" install falcon --no-index -f /io/dist
     (cd "$HOME"; "${PYBIN}/falcon-bench" -b falcon -t 1)
 done
