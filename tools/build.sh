@@ -19,7 +19,7 @@ set -e
 VENV_NAME=tmp-falcon-build
 BUILD_DIR=./build
 DIST_DIR=./dist
-PY2_VERSION=2.7.14
+PY2_VERSION=2.7.16
 
 #----------------------------------------------------------------------
 # Helpers
@@ -89,7 +89,22 @@ python setup.py sdist -d $DIST_DIR
 _close_env
 
 #----------------------------------------------------------------------
-# Universal wheel - do not include Cython, note in README
+# manylinux wheels w/ Cython
+#----------------------------------------------------------------------
+
+_echo_task "Building manylinux wheels"
+
+DOCKER_IMAGE=quay.io/pypa/manylinux1_x86_64
+docker pull $DOCKER_IMAGE
+docker run --rm -v `pwd`:/io $DOCKER_IMAGE /io/tools/build-manylinux.sh
+
+DOCKER_IMAGE=quay.io/pypa/manylinux1_i686
+PRE_CMD=linux32
+docker pull $DOCKER_IMAGE
+docker run --rm -v `pwd`:/io $DOCKER_IMAGE $PRE_CMD /io/tools/build-manylinux.sh
+
+#----------------------------------------------------------------------
+# Universal wheel - Do not include Cython
 #----------------------------------------------------------------------
 
 _echo_task "Building universal wheel"
