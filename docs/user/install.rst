@@ -23,19 +23,19 @@ CPython
 -------
 
 Falcon also fully supports
-`CPython <https://www.python.org/downloads/>`__ 2.7, and 3.5+.
+`CPython <https://www.python.org/downloads/>`__ 2.7 and 3.5+.
 
-A universal wheel is available on PyPI for the the Falcon framework.
-Installing it is as simple as:
+Universal and manylinux wheels are available on PyPI for the Falcon
+framework. Installation is as simple as:
 
 .. code:: bash
 
     $ pip install falcon
 
-Installing the Falcon wheel is a great way to get up and running
-quickly in a development environment, but for an extra speed boost when
-deploying your application in production, Falcon can compile itself with
-Cython.
+Installing one of the pre-built Falcon wheels is a great way to get up and
+running quickly. However, when deploying your application in production, you
+may wish to compile Falcon via Cython yourself, using the target system's
+native toolchain.
 
 The following commands tell pip to install Cython, and then to invoke
 Falcon's ``setup.py``, which will in turn detect the presence of Cython
