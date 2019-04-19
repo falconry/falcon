@@ -60,7 +60,7 @@ def client():
     '/static/.ssh/authorized_key<foo',
     '/static/something:something',
     '/static/thing*.sql',
-    '/static/\'thing\'.sql',
+    "/static/'thing'.sql",
     '/static/"thing".sql',
 
     # Trailing periods and spaces
