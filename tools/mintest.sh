@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
 
+pip install -U tox coverage
+
 rm -f .coverage.*
-tox -e py27,py37,pep8 && tools/testing/combine_coverage.sh
+tox -e pep8 && tox -e py37 && tools/testing/combine_coverage.sh

@@ -2,7 +2,7 @@
 import falcon
 
 
-class TestResponseBody(object):
+class TestResponseBody:
 
     def test_append_body(self):
         text = 'Hello beautiful world! '

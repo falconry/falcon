@@ -16,7 +16,7 @@ collection of all the cookies in the request.
 
 .. code:: python
 
-    class Resource(object):
+    class Resource:
         def on_get(self, req, resp):
 
             cookies = req.cookies
@@ -46,7 +46,7 @@ Simple example:
 
 .. code:: python
 
-    class Resource(object):
+    class Resource:
         def on_get(self, req, resp):
 
             # Set the cookie 'my_cookie' to the value 'my cookie value'
@@ -57,7 +57,7 @@ You can of course also set the domain, path and lifetime of the cookie.
 
 .. code:: python
 
-    class Resource(object):
+    class Resource:
         def on_get(self, req, resp):
             # Set the maximum age of the cookie to 10 minutes (600 seconds)
             # and the cookie's domain to 'example.com'
@@ -70,7 +70,7 @@ You can also instruct the client to remove a cookie with the
 
 .. code:: python
 
-    class Resource(object):
+    class Resource:
         def on_get(self, req, resp):
             resp.set_cookie('bad_cookie', ':(')
 

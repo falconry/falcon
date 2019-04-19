@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-class ItemResource(object):
+class ItemResource:
 
     def on_put(self, req, resp, tenant_id, queue_name):
         pass
@@ -26,7 +26,7 @@ class ItemResource(object):
         pass
 
 
-class CollectionResource(object):
+class CollectionResource:
 
     def on_get(self, req, resp, tenant_id):
         pass

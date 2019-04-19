@@ -14,7 +14,7 @@ class TypeResource(testing.SimpleTestResource):
         resp.body = json.dumps({'data': req.bounded_stream.read().decode('utf-8')})
 
 
-class TestWsgiRefInputWrapper(object):
+class TestWsgiRefInputWrapper:
     def test_resources_can_read_request_stream_during_tests(self):
         """Make sure we can perform a simple request during testing.
 

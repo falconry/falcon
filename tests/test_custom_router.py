@@ -7,7 +7,7 @@ from falcon import testing
 def test_custom_router_add_route_should_be_used():
     check = []
 
-    class CustomRouter(object):
+    class CustomRouter:
         def add_route(self, uri_template, *args, **kwargs):
             check.append(uri_template)
 
@@ -26,7 +26,7 @@ def test_custom_router_find_should_be_used():
     def resource(req, resp, **kwargs):
         resp.body = '{{"uri_template": "{0}"}}'.format(req.uri_template)
 
-    class CustomRouter(object):
+    class CustomRouter:
         def __init__(self):
             self.reached_backwards_compat = False
 
@@ -71,7 +71,7 @@ def test_can_pass_additional_params_to_add_route():
 
     check = []
 
-    class CustomRouter(object):
+    class CustomRouter:
         def add_route(self, uri_template, resource, **kwargs):
             name = kwargs['name']
             self._index = {name: uri_template}
@@ -97,7 +97,7 @@ def test_custom_router_takes_req_positional_argument():
     def responder(req, resp):
         resp.body = 'OK'
 
-    class CustomRouter(object):
+    class CustomRouter:
         def find(self, uri, req):
             if uri == '/test' and isinstance(req, falcon.Request):
                 return responder, {'GET': responder}, {}, None
@@ -113,7 +113,7 @@ def test_custom_router_takes_req_keyword_argument():
     def responder(req, resp):
         resp.body = 'OK'
 
-    class CustomRouter(object):
+    class CustomRouter:
         def find(self, uri, req=None):
             if uri == '/test' and isinstance(req, falcon.Request):
                 return responder, {'GET': responder}, {}, None

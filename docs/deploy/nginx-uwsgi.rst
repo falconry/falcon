@@ -53,11 +53,7 @@ dependencies.
 
 .. code:: sh
 
-  # For Python 3
   $ python3 -m venv /home/myproject/venv
-
-  # For Python 2
-  $ virtualenv /home/myproject/venv
 
 Then install your dependencies.
 

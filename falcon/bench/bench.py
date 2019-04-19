@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 # Copyright 2014 by Rackspace Hosting, Inc.
 #
@@ -14,8 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from __future__ import print_function
 
 import argparse
 from collections import defaultdict, deque
@@ -73,7 +70,7 @@ BODY = helpers.rand_string(10240, 10240).encode('utf-8') # NOQA
 HEADERS = {'X-Test': 'Funky Chicken'}  # NOQA
 
 
-class StartResponseMockLite(object):
+class StartResponseMockLite:
     """Mock object representing a WSGI `start_response` callable."""
 
     def __init__(self):

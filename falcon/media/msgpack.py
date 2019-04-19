@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import  # NOTE(kgriffs): Work around a Cython bug
 
 from falcon import errors
 from falcon.media import BaseHandler
@@ -9,8 +9,7 @@ class MessagePackHandler(BaseHandler):
 
     This handler uses ``msgpack.unpackb()`` and ``msgpack.packb()``. The
     MessagePack ``bin`` type is used to distinguish between Unicode strings
-    (``str`` on Python 3, ``unicode`` on Python 2) and byte strings
-    (``bytes`` on Python 2/3, or ``str`` on Python 2).
+    (of type ``str``) and byte strings (of type ``bytes``).
 
     Note:
         This handler requires the extra ``msgpack`` package (version 0.5.2

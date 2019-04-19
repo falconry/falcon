@@ -76,10 +76,7 @@ def client():
     '/static/' + ('t' * StaticRoute._MAX_NON_PREFIXED_LEN) + 'x',
 
     # Invalid unicode character
-    #
-    # NOTE(kgriffs) create_environ() will take care of encoding this path
-    #   to UTF-8 under Python 2.
-    u'/static/\ufffdsomething',
+    '/static/\ufffdsomething',
 ])
 def test_bad_path(uri, monkeypatch):
     monkeypatch.setattr(io, 'open', lambda path, mode: path)

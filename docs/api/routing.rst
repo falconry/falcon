@@ -21,7 +21,7 @@ Here's a quick example to show how all the pieces fit together:
 
     import falcon
 
-    class ImagesResource(object):
+    class ImagesResource:
 
         def on_get(self, req, resp):
             doc = {
@@ -238,7 +238,7 @@ A custom router is any class that implements the following interface:
 
 .. code:: python
 
-    class MyRouter(object):
+    class MyRouter:
         def add_route(self, uri_template, resource, **kwargs):
             """Adds a route between URI path template and resource.
 

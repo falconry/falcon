@@ -50,7 +50,7 @@ class FaultyResource:
         raise falcon.HTTPError(falcon.HTTP_400)
 
 
-class UnicodeFaultyResource(object):
+class UnicodeFaultyResource:
 
     def __init__(self):
         self.called = False
@@ -59,10 +59,10 @@ class UnicodeFaultyResource(object):
         self.called = True
         raise falcon.HTTPError(
             falcon.HTTP_792,
-            u'Internet \xe7rashed!',
-            u'\xc7atastrophic weather event',
-            href=u'http://example.com/api/\xe7limate',
-            href_text=u'Drill b\xe1by drill!')
+            'Internet \xe7rashed!',
+            '\xc7atastrophic weather event',
+            href='http://example.com/api/\xe7limate',
+            href_text='Drill b\xe1by drill!')
 
 
 class MiscErrorsResource:
@@ -243,7 +243,7 @@ class MissingParamResource:
         raise falcon.HTTPMissingParam('id', code='P1003')
 
 
-class TestHTTPError(object):
+class TestHTTPError:
 
     def _misc_test(self, client, exception, status, needs_title=True):
         client.app.add_route('/misc', MiscErrorsResource(exception, needs_title))
@@ -358,7 +358,7 @@ class TestHTTPError(object):
             actual_doc = deserializer(response.content.decode('utf-8'))
             assert expected_doc == actual_doc
 
-        _check('application/x-yaml', yaml.load)
+        _check('application/x-yaml', yaml.safe_load)
         _check('application/json', json.loads)
 
     @pytest.mark.parametrize('method,path,status', [
@@ -486,10 +486,10 @@ class TestHTTPError(object):
         unicode_resource = UnicodeFaultyResource()
 
         expected_body = {
-            'title': u'Internet \xe7rashed!',
-            'description': u'\xc7atastrophic weather event',
+            'title': 'Internet \xe7rashed!',
+            'description': '\xc7atastrophic weather event',
             'link': {
-                'text': u'Drill b\xe1by drill!',
+                'text': 'Drill b\xe1by drill!',
                 'href': 'http://example.com/api/%C3%A7limate',
                 'rel': 'help',
             },
@@ -505,18 +505,18 @@ class TestHTTPError(object):
     def test_unicode_xml(self, client):
         unicode_resource = UnicodeFaultyResource()
 
-        expected_body = (u'<?xml version="1.0" encoding="UTF-8"?>' +
-                         u'<error>' +
-                         u'<title>Internet çrashed!</title>' +
-                         u'<description>' +
-                         u'Çatastrophic weather event' +
-                         u'</description>' +
-                         u'<link>' +
-                         u'<text>Drill báby drill!</text>' +
-                         u'<href>http://example.com/api/%C3%A7limate</href>' +
-                         u'<rel>help</rel>' +
-                         u'</link>' +
-                         u'</error>')
+        expected_body = ('<?xml version="1.0" encoding="UTF-8"?>' +
+                         '<error>' +
+                         '<title>Internet çrashed!</title>' +
+                         '<description>' +
+                         'Çatastrophic weather event' +
+                         '</description>' +
+                         '<link>' +
+                         '<text>Drill báby drill!</text>' +
+                         '<href>http://example.com/api/%C3%A7limate</href>' +
+                         '<rel>help</rel>' +
+                         '</link>' +
+                         '</error>')
 
         client.app.add_route('/unicode', unicode_resource)
         response = client.simulate_request(
@@ -559,8 +559,8 @@ class TestHTTPError(object):
         assert response.status == falcon.HTTP_404
         assert response.content
         expected_body = {
-            u'title': u'404 Not Found',
-            u'description': u'Not Found'
+            'title': '404 Not Found',
+            'description': 'Not Found'
         }
         assert response.json == expected_body
 
@@ -601,8 +601,8 @@ class TestHTTPError(object):
         assert response.status == falcon.HTTP_405
         assert response.content
         expected_body = {
-            u'title': u'405 Method Not Allowed',
-            u'description': u'Not Allowed'
+            'title': '405 Method Not Allowed',
+            'description': 'Not Allowed'
         }
         assert response.json == expected_body
         assert response.headers['allow'] == 'PUT'
@@ -621,8 +621,8 @@ class TestHTTPError(object):
         assert response.status == falcon.HTTP_410
         assert response.content
         expected_body = {
-            u'title': u'410 Gone',
-            u'description': u'Gone with the wind'
+            'title': '410 Gone',
+            'description': 'Gone with the wind'
         }
         assert response.json == expected_body
 
@@ -742,8 +742,8 @@ class TestHTTPError(object):
         response = client.simulate_request(path='/503')
 
         expected_body = {
-            u'title': u'Oops',
-            u'description': u'Stand by...',
+            'title': 'Oops',
+            'description': 'Stand by...',
         }
 
         assert response.status == falcon.HTTP_503
@@ -756,8 +756,8 @@ class TestHTTPError(object):
         response = client.simulate_request(path='/503')
 
         expected_body = {
-            u'title': u'Oops',
-            u'description': u'Stand by...',
+            'title': 'Oops',
+            'description': 'Stand by...',
         }
 
         assert response.status == falcon.HTTP_503
@@ -768,13 +768,13 @@ class TestHTTPError(object):
         client.app.add_route('/400', InvalidHeaderResource())
         response = client.simulate_request(path='/400')
 
-        expected_desc = (u'The value provided for the X-Auth-Token '
-                         u'header is invalid. Please provide a valid token.')
+        expected_desc = ('The value provided for the X-Auth-Token '
+                         'header is invalid. Please provide a valid token.')
 
         expected_body = {
-            u'title': u'Invalid header value',
-            u'description': expected_desc,
-            u'code': u'A1001',
+            'title': 'Invalid header value',
+            'description': expected_desc,
+            'code': 'A1001',
         }
 
         assert response.status == falcon.HTTP_400
@@ -785,8 +785,8 @@ class TestHTTPError(object):
         response = client.simulate_request(path='/400')
 
         expected_body = {
-            u'title': u'Missing header value',
-            u'description': u'The X-Auth-Token header is required.',
+            'title': 'Missing header value',
+            'description': 'The X-Auth-Token header is required.',
         }
 
         assert response.status == falcon.HTTP_400
@@ -796,12 +796,12 @@ class TestHTTPError(object):
         client.app.add_route('/400', InvalidParamResource())
         response = client.simulate_request(path='/400')
 
-        expected_desc = (u'The "id" parameter is invalid. The '
-                         u'value must be a hex-encoded UUID.')
+        expected_desc = ('The "id" parameter is invalid. The '
+                         'value must be a hex-encoded UUID.')
         expected_body = {
-            u'title': u'Invalid parameter',
-            u'description': expected_desc,
-            u'code': u'P1002',
+            'title': 'Invalid parameter',
+            'description': expected_desc,
+            'code': 'P1002',
         }
 
         assert response.status == falcon.HTTP_400
@@ -812,9 +812,9 @@ class TestHTTPError(object):
         response = client.simulate_request(path='/400')
 
         expected_body = {
-            u'title': u'Missing parameter',
-            u'description': u'The "id" parameter is required.',
-            u'code': u'P1003',
+            'title': 'Missing parameter',
+            'description': 'The "id" parameter is required.',
+            'code': 'P1003',
         }
 
         assert response.status == falcon.HTTP_400

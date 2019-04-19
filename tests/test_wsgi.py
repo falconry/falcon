@@ -16,7 +16,7 @@ _SIZE_1_KB = 1024
 
 
 @pytest.mark.usefixtures('_setup_wsgi_server')
-class TestWSGIServer(object):
+class TestWSGIServer:
 
     def test_get(self):
         resp = requests.get(_SERVER_BASE_URL)
@@ -57,7 +57,7 @@ class TestWSGIServer(object):
 
 
 def _run_server(stop_event):
-    class Things(object):
+    class Things:
         def on_get(self, req, resp):
             resp.body = req.remote_addr
 
@@ -74,7 +74,7 @@ def _run_server(stop_event):
 
             resp.body = b''.join(req_body)
 
-    class Bucket(object):
+    class Bucket:
         def on_post(self, req, resp):
             # NOTE(kgriffs): This would normally block when
             # Content-Length is 0 and the WSGI input object.

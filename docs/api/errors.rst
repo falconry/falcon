@@ -48,7 +48,7 @@ All classes are available directly in the ``falcon`` package namespace::
 
     import falcon
 
-    class MessageResource(object):
+    class MessageResource:
         def on_get(self, req, resp):
 
             # ...

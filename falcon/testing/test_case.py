@@ -66,7 +66,7 @@ class TestCase(unittest.TestCase, TestClient):
 
                 class TestMyApp(MyTestCase):
                     def test_get_message(self):
-                        doc = {u'message': u'Hello world!'}
+                        doc = {'message': 'Hello world!'}
 
                         result = self.simulate_get('/messages/42')
                         self.assertEqual(result.json, doc)
@@ -83,10 +83,3 @@ class TestCase(unittest.TestCase, TestClient):
 
         # Reset to simulate "restarting" the WSGI container
         falcon.request._maybe_wrap_wsgi_stream = True
-
-    # NOTE(warsaw): Pythons earlier than 2.7 do not have a
-    # self.assertIn() method, so use this compatibility function
-    # instead.
-    if not hasattr(unittest.TestCase, 'assertIn'):  # pragma: nocover
-        def assertIn(self, a, b):
-            self.assertTrue(a in b)

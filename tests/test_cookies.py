@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, tzinfo
+from http import cookies as http_cookies
 import re
 
 import pytest
@@ -6,10 +7,9 @@ import pytest
 import falcon
 import falcon.testing as testing
 from falcon.util import http_date_to_dt, TimezoneGMT
-from falcon.util.compat import http_cookies
 
 
-UNICODE_TEST_STRING = u'Unicode_\xc3\xa6\xc3\xb8'
+UNICODE_TEST_STRING = 'Unicode_\xc3\xa6\xc3\xb8'
 
 
 class TimezoneGMTPlus1(tzinfo):
@@ -330,9 +330,9 @@ def test_unicode_inside_ascii_range():
 
     # should be ok
     resp.set_cookie('non_unicode_ascii_name_1', 'ascii_value')
-    resp.set_cookie(u'unicode_ascii_name_1', 'ascii_value')
-    resp.set_cookie('non_unicode_ascii_name_2', u'unicode_ascii_value')
-    resp.set_cookie(u'unicode_ascii_name_2', u'unicode_ascii_value')
+    resp.set_cookie('unicode_ascii_name_1', 'ascii_value')
+    resp.set_cookie('non_unicode_ascii_name_2', 'unicode_ascii_value')
+    resp.set_cookie('unicode_ascii_name_2', 'unicode_ascii_value')
 
 
 @pytest.mark.parametrize(

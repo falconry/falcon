@@ -14,11 +14,11 @@
 
 """Utilities for the Request class."""
 
+from http import cookies as http_cookies
 import io
 import re
 
 from falcon.util import ETag
-from falcon.util.compat import http_cookies
 
 # https://tools.ietf.org/html/rfc6265#section-4.1.1
 #

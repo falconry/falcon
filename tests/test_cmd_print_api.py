@@ -1,7 +1,8 @@
+import io
+
 from falcon import API
 from falcon.cmd import print_routes
 from falcon.testing import redirected
-from falcon.util import compat
 
 try:
     import cython
@@ -9,7 +10,7 @@ except ImportError:
     cython = None
 
 
-class DummyResource(object):
+class DummyResource:
 
     def on_get(self, req, resp):
         resp.body = 'Test\n'
@@ -23,7 +24,7 @@ _api.add_route('/test', DummyResource())
 def test_traverse_with_verbose():
     """Ensure traverse() finds the proper routes and outputs verbose info."""
 
-    output = compat.StringIO()
+    output = io.StringIO()
     with redirected(stdout=output):
         print_routes.traverse(_api._router._roots, verbose=True)
 
@@ -45,12 +46,12 @@ def test_traverse_with_verbose():
     # NOTE(vytas): This builds upon the fact that on_get is defined on line 14
     # in this file. Adjust the test if the said responder is relocated, or just
     # check for any number if this becomes too painful to maintain.
-    assert get_info.endswith('tests/test_cmd_print_api.py:14')
+    assert get_info.endswith('tests/test_cmd_print_api.py:15')
 
 
 def test_traverse():
     """Ensure traverse() finds the proper routes."""
-    output = compat.StringIO()
+    output = io.StringIO()
     with redirected(stdout=output):
         print_routes.traverse(_api._router._roots, verbose=False)
 

@@ -14,8 +14,6 @@
 
 """Utilities for the Response class."""
 
-from falcon.util import compat
-
 
 def header_property(name, doc, transform=None):
     """Create a header getter/setter.
@@ -77,11 +75,6 @@ def format_range(value):
     else:
         result = 'bytes %s-%s/%s' % (value[0], value[1], value[2])
 
-    if compat.PY2:
-        # NOTE(kgriffs): In case one of the values was a unicode
-        # string, convert back to str
-        result = str(result)
-
     return result
 
 
@@ -100,14 +93,9 @@ def format_etag_header(value):
     return value
 
 
-if compat.PY2:
-    def format_header_value_list(iterable):
-        """Join an iterable of strings with commas."""
-        return str(', '.join(iterable))
-else:
-    def format_header_value_list(iterable):
-        """Join an iterable of strings with commas."""
-        return ', '.join(iterable)
+def format_header_value_list(iterable):
+    """Join an iterable of strings with commas."""
+    return ', '.join(iterable)
 
 
 def is_ascii_encodable(s):
@@ -115,12 +103,8 @@ def is_ascii_encodable(s):
     try:
         s.encode('ascii')
     except UnicodeEncodeError:
-        # NOTE(tbug): Py2 and Py3 will raise this if string contained
+        # NOTE(tbug): Py3 will raise this if string contained
         # chars that could not be ascii encoded
-        return False
-    except UnicodeDecodeError:
-        # NOTE(tbug): py2 will raise this if type is str
-        # and contains non-ascii chars
         return False
     except AttributeError:
         # NOTE(tbug): s is probably not a string type

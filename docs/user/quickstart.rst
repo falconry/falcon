@@ -24,7 +24,7 @@ started writing an API:
     # Falcon follows the REST architectural style, meaning (among
     # other things) that you think in terms of resources and state
     # transitions, which map to HTTP verbs.
-    class ThingsResource(object):
+    class ThingsResource:
         def on_get(self, req, resp):
             """Handles GET requests"""
             resp.status = falcon.HTTP_200  # This is the default status
@@ -56,7 +56,7 @@ On Windows where Gunicorn and uWSGI don't work yet you can use Waitress server
 
     $ pip install waitress
     $ waitress-serve --port=8000 things:app
-    
+
 Then, in another terminal:
 
 .. code:: bash
@@ -90,7 +90,7 @@ parameters, handling errors, and working with request and response bodies.
     import requests
 
 
-    class StorageEngine(object):
+    class StorageEngine:
 
         def get_things(self, marker, limit):
             return [{'id': str(uuid.uuid4()), 'color': 'green'}]
@@ -112,7 +112,7 @@ parameters, handling errors, and working with request and response bodies.
                                    description)
 
 
-    class SinkAdapter(object):
+    class SinkAdapter:
 
         engines = {
             'ddg': 'https://duckduckgo.com',
@@ -129,7 +129,7 @@ parameters, handling errors, and working with request and response bodies.
             resp.body = result.text
 
 
-    class AuthMiddleware(object):
+    class AuthMiddleware:
 
         def process_request(self, req, resp):
             token = req.get_header('Authorization')
@@ -159,7 +159,7 @@ parameters, handling errors, and working with request and response bodies.
             return True  # Suuuuuure it's valid...
 
 
-    class RequireJSON(object):
+    class RequireJSON:
 
         def process_request(self, req, resp):
             if not req.client_accepts_json:
@@ -174,9 +174,10 @@ parameters, handling errors, and working with request and response bodies.
                         href='http://docs.examples.com/api/json')
 
 
-    class JSONTranslator(object):
-        # NOTE: Starting with Falcon 1.3, you can simply 
-        # use req.media and resp.media for this instead.
+    class JSONTranslator:
+        # NOTE: Normally you would simply use req.media and resp.media for
+        # this particular use case; this example serves only to illustrate
+        # what is possible.
 
         def process_request(self, req, resp):
             # req.stream corresponds to the WSGI wsgi.input environ variable,
@@ -223,7 +224,7 @@ parameters, handling errors, and working with request and response bodies.
         return hook
 
 
-    class ThingsResource(object):
+    class ThingsResource:
 
         def __init__(self, db):
             self.db = db
@@ -247,13 +248,10 @@ parameters, handling errors, and working with request and response bodies.
                     description,
                     30)
 
-            # An alternative way of doing DRY serialization would be to
-            # create a custom class that inherits from falcon.Request. This
-            # class could, for example, have an additional 'doc' property
-            # that would serialize to JSON under the covers.
-            #
-            # NOTE: Starting with Falcon 1.3, you can simply 
-            # use resp.media for this instead.
+            # NOTE: Normally you would use resp.media for this sort of thing;
+            # this example serves only to demonstrate how the context can be
+            # used to pass arbitrary values between middleware components,
+            # hooks, and resources.
             resp.context.result = result
 
             resp.set_header('Powered-By', 'Falcon')

@@ -16,8 +16,6 @@ import abc
 from datetime import datetime
 import uuid
 
-from falcon.util import compat
-
 
 __all__ = (
     'BaseConverter',
@@ -31,8 +29,7 @@ __all__ = (
 strptime = datetime.strptime
 
 
-@compat.add_metaclass(abc.ABCMeta)
-class BaseConverter(object):
+class BaseConverter(metaclass=abc.ABCMeta):
     """Abstract base class for URI template field converters."""
 
     @abc.abstractmethod  # pragma: no cover

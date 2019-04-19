@@ -15,7 +15,7 @@ architectural style, and tries to do as little as possible while
 remaining highly effective.
 
 Falcon apps work with any WSGI server, and run like a champ under
-CPython 2.7/3.5+ and PyPy.
+CPython 3.5+ and PyPy 3.5+.
 
 How is Falcon different?
 ------------------------
@@ -66,7 +66,7 @@ Features
 - Idiomatic HTTP error responses
 - Straightforward exception handling
 - Snappy unit testing through WSGI helpers and mocks
-- Supports Python 2.7, 3.5+
+- Supports Python 3.5+
 - Compatible with PyPy
 
 About Apache 2.0

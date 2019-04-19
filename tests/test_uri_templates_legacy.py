@@ -4,7 +4,7 @@ import falcon
 from falcon import routing
 
 
-class TestUriTemplates(object):
+class TestUriTemplates:
 
     @pytest.mark.parametrize('value', (42, falcon.API))
     def test_string_type_required(self, value):

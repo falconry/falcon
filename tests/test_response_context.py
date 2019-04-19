@@ -3,7 +3,7 @@ import pytest
 from falcon import Response
 
 
-class TestResponseContext(object):
+class TestResponseContext:
 
     def test_default_response_context(self):
         resp = Response()
@@ -19,7 +19,7 @@ class TestResponseContext(object):
 
     def test_custom_response_context(self):
 
-        class MyCustomContextType(object):
+        class MyCustomContextType:
             pass
 
         class MyCustomResponse(Response):

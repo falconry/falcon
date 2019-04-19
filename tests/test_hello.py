@@ -4,7 +4,6 @@ import pytest
 
 import falcon
 from falcon import testing
-from falcon.util import compat
 
 
 @pytest.fixture
@@ -13,7 +12,7 @@ def client():
 
 
 # NOTE(kgriffs): Concept from Gunicorn's source (wsgi.py)
-class FileWrapper(object):
+class FileWrapper:
 
     def __init__(self, file_like, block_size=8192):
         self.file_like = file_like
@@ -27,11 +26,9 @@ class FileWrapper(object):
         raise IndexError
 
 
-class HelloResource(object):
+class HelloResource:
     sample_status = '200 OK'
-    sample_unicode = (u'Hello World! \x80' +
-                      compat.text_type(testing.rand_string(0, 0)))
-
+    sample_unicode = ('Hello World! \x80' + testing.rand_string(0, 0))
     sample_utf8 = sample_unicode.encode('utf-8')
 
     def __init__(self, mode):
@@ -89,10 +86,9 @@ class NonClosingBytesIO(io.BytesIO):
     close = False
 
 
-class ClosingFilelikeHelloResource(object):
+class ClosingFilelikeHelloResource:
     sample_status = '200 OK'
-    sample_unicode = (u'Hello World! \x80' +
-                      compat.text_type(testing.rand_string(0, 0)))
+    sample_unicode = ('Hello World! \x80' + testing.rand_string(0, 0))
 
     sample_utf8 = sample_unicode.encode('utf-8')
 
@@ -108,19 +104,19 @@ class ClosingFilelikeHelloResource(object):
         resp.set_stream(self.stream, self.stream_len)
 
 
-class NoStatusResource(object):
+class NoStatusResource:
     def on_get(self, req, resp):
         pass
 
 
-class TestHelloWorld(object):
+class TestHelloWorld:
 
     def test_env_headers_list_of_tuples(self):
         env = testing.create_environ(headers=[('User-Agent', 'Falcon-Test')])
         assert env['HTTP_USER_AGENT'] == 'Falcon-Test'
 
     def test_root_route(self, client):
-        doc = {u'message': u'Hello world!'}
+        doc = {'message': 'Hello world!'}
         resource = testing.SimpleTestResource(json=doc)
         client.app.add_route('/', resource)
 

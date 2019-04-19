@@ -32,7 +32,7 @@ decorate the resource class:
 .. code:: python
 
     @falcon.before(extract_project_id)
-    class Message(object):
+    class Message:
         def on_post(self, req, resp, project_id):
             pass
 
@@ -67,7 +67,7 @@ instead of a function:
 
 .. code:: python
 
-    class Authorize(object):
+    class Authorize:
         def __init__(self, roles):
             self._roles = roles
 

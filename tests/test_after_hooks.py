@@ -55,7 +55,7 @@ def fluffiness(req, resp, resource, animal=''):
         resp.set_header('X-Animal', animal)
 
 
-class ResourceAwareFluffiness(object):
+class ResourceAwareFluffiness:
     def __call__(self, req, resp, resource):
         fluffiness(req, resp, resource)
 
@@ -71,7 +71,7 @@ def resource_aware_cuteness(req, resp, resource):
     cuteness(req, resp, resource, 'fluffy')
 
 
-class Smartness(object):
+class Smartness:
     def __call__(self, req, resp, resource):
         assert resource
         if resp.body:
@@ -104,7 +104,7 @@ def fluffiness_in_the_head(req, resp, resource, value='fluffy'):
 # --------------------------------------------------------------------
 
 
-class WrappedRespondersResource(object):
+class WrappedRespondersResource:
 
     @falcon.after(serialize_body)
     @falcon.after(validate_output)
@@ -125,7 +125,7 @@ class WrappedRespondersResource(object):
 
 @falcon.after(cuteness, 'fluffy', postfix=' and innocent')
 @falcon.after(fluffiness, 'kitten')
-class WrappedClassResource(object):
+class WrappedClassResource:
 
     # Test that the decorator skips non-callables
     on_post = False
@@ -151,7 +151,7 @@ class WrappedClassResourceChild(WrappedClassResource):
         super(WrappedClassResourceChild, self).on_head(req, resp)
 
 
-class ClassResourceWithURIFields(object):
+class ClassResourceWithURIFields:
 
     @falcon.after(fluffiness_in_the_head, 'fluffy')
     def on_get(self, req, resp, field1, field2):
@@ -173,7 +173,7 @@ class ClassResourceWithURIFieldsChild(ClassResourceWithURIFields):
 # NOTE(swistakm): we use both type of hooks (class and method)
 # at once for the sake of simplicity
 @falcon.after(resource_aware_cuteness)
-class ClassResourceWithAwareHooks(object):
+class ClassResourceWithAwareHooks:
 
     # Test that the decorator skips non-callables
     on_post = False
@@ -303,7 +303,7 @@ def test_wrapped_resource_with_hooks_aware_of_resource(client, wrapped_resource_
     assert not result.text
 
 
-class ResourceAwareGameHook(object):
+class ResourceAwareGameHook:
 
     VALUES = ('rock', 'scissors', 'paper')
 
@@ -328,7 +328,7 @@ _game_hook = ResourceAwareGameHook()
 
 @falcon.after(_game_hook)
 @falcon.after(_game_hook)
-class HandGame(object):
+class HandGame:
 
     def __init__(self):
         self.seed = None

@@ -21,7 +21,7 @@ used, along with a mock environ dict, to simulate a WSGI request.
 from falcon import util
 
 
-class StartResponseMock(object):
+class StartResponseMock:
     """Mock object representing a WSGI `start_response` callable.
 
     Attributes:

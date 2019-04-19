@@ -225,7 +225,7 @@ and add the following code to it:
     import falcon
 
 
-    class Resource(object):
+    class Resource:
 
         def on_get(self, req, resp):
             doc = {
@@ -255,7 +255,7 @@ HTTP methods, lowercased (e.g., ``on_get()``, ``on_put()``,
 ``on_head()``, etc.).
 
 .. note::
-    Supported HTTP methods are those specified in 
+    Supported HTTP methods are those specified in
     `RFC 7231 <https://tools.ietf.org/html/rfc7231>`_ and
     `RFC 5789 <https://tools.ietf.org/html/rfc5789>`_. This includes
     GET, HEAD, POST, PUT, DELETE, CONNECT, OPTIONS, TRACE, and PATCH.
@@ -363,7 +363,7 @@ Then, update the responder to use the new media type:
     import msgpack
 
 
-    class Resource(object):
+    class Resource:
 
         def on_get(self, req, resp):
             doc = {
@@ -522,22 +522,11 @@ and then code until the tests tell us that we're done.
     principles that are widely applicable.
 
 Let's start by adding an additional import statement to ``test_app.py``.
-We need to import two modules from ``unittest.mock``
-if you are using Python 3, or from ``mock`` if you are using Python 2.
+We need to import two modules from ``unittest.mock``:
 
 .. code:: python
 
-    # Python 3
     from unittest.mock import mock_open, call
-
-    # Python 2
-    from mock import mock_open, call
-
-For Python 2, you will also need to install the ``mock`` package:
-
-.. code:: bash
-
-    $ pip install mock
 
 Now add the following test:
 
@@ -591,7 +580,7 @@ POSTs. Open ``images.py`` and add a POST responder to the
     import msgpack
 
 
-    class Resource(object):
+    class Resource:
 
         _CHUNK_SIZE_BYTES = 4096
 
@@ -713,7 +702,7 @@ operation:
     import msgpack
 
 
-    class Resource(object):
+    class Resource:
 
         def __init__(self, image_store):
             self._image_store = image_store
@@ -737,7 +726,7 @@ operation:
             resp.location = '/images/' + name
 
 
-    class ImageStore(object):
+    class ImageStore:
 
         _CHUNK_SIZE_BYTES = 4096
 
@@ -832,11 +821,7 @@ look similar to this:
 
     import io
 
-    # Python 3
     from unittest.mock import call, MagicMock, mock_open
-
-    # Python 2
-    # from mock import call, MagicMock, mock_open
 
     import falcon
     from falcon import testing
@@ -1116,7 +1101,7 @@ Go ahead and edit your ``images.py`` file to look something like this:
     import msgpack
 
 
-    class Collection(object):
+    class Collection:
 
         def __init__(self, image_store):
             self._image_store = image_store
@@ -1142,7 +1127,7 @@ Go ahead and edit your ``images.py`` file to look something like this:
             resp.location = '/images/' + name
 
 
-    class Item(object):
+    class Item:
 
         def __init__(self, image_store):
             self._image_store = image_store
@@ -1152,7 +1137,7 @@ Go ahead and edit your ``images.py`` file to look something like this:
             resp.stream, resp.content_length = self._image_store.open(name)
 
 
-    class ImageStore(object):
+    class ImageStore:
 
         _CHUNK_SIZE_BYTES = 4096
         _IMAGE_NAME_PATTERN = re.compile(
@@ -1348,7 +1333,7 @@ by simply decorating the class:
 .. code:: python
 
     @falcon.before(extract_project_id)
-    class Message(object):
+    class Message:
 
         # ...
 
@@ -1432,7 +1417,7 @@ as follows:
 
 .. code:: python
 
-    class Item(object):
+    class Item:
 
         def __init__(self, image_store):
             self._image_store = image_store

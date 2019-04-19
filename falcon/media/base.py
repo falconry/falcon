@@ -1,10 +1,7 @@
 import abc
 
-from falcon.util import compat
 
-
-@compat.add_metaclass(abc.ABCMeta)
-class BaseHandler(object):
+class BaseHandler(metaclass=abc.ABCMeta):
     """Abstract Base Class for an internet media type handler"""
 
     @abc.abstractmethod  # pragma: no cover

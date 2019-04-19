@@ -1,6 +1,7 @@
+from collections import UserDict
+
 from falcon import errors
 from falcon.media import JSONHandler
-from falcon.util.compat import UserDict
 from falcon.vendor import mimeparse
 
 

@@ -7,7 +7,7 @@ import falcon
 import msgpack
 
 
-class Resource(object):
+class Resource:
 
     def __init__(self, image_store):
         self._image_store = image_store
@@ -31,7 +31,7 @@ class Resource(object):
         resp.location = '/images/' + name
 
 
-class ImageStore(object):
+class ImageStore:
 
     _CHUNK_SIZE_BYTES = 4096
 

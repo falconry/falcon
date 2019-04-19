@@ -25,15 +25,15 @@ class HTTPStatus(Exception):
     Attributes:
         status (str): HTTP status line, e.g. '748 Confounded by Ponies'.
         headers (dict): Extra headers to add to the response.
-        body (str or unicode): String representing response content. If
-            Unicode, Falcon will encode as UTF-8 in the response.
+        body (str): String representing response content. Falcon will encode
+            this value as UTF-8 in the response.
 
     Args:
         status (str): HTTP status code and text, such as
             '748 Confounded by Ponies'.
         headers (dict): Extra headers to add to the response.
-        body (str or unicode): String representing response content. If
-            Unicode, Falcon will encode as UTF-8 in the response.
+        body (str): String representing response content. Falcon will encode
+            this value as UTF-8 in the response.
     """
 
     __slots__ = (
