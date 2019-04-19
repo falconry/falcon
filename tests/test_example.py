@@ -22,7 +22,7 @@ class StorageError(Exception):
 
     @staticmethod
     def handle(req, resp, ex, params):
-        description = ('Sorry, couldn\'t write your thing to the '
+        description = ("Sorry, couldn't write your thing to the "
                        'database. It worked on my box.')
 
         raise falcon.HTTPError(falcon.HTTP_725,
