@@ -64,6 +64,7 @@ if CYTHON:
         )
         for package in package_names
         for module in list_modules(path.join(MYDIR, *package.split('.')))
+        if (package + '.' + module) != 'falcon.hooks'
     ]
 
     cmdclass = {'build_ext': build_ext}
