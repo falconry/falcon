@@ -379,9 +379,9 @@ class HTTPNotAcceptable(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, description=None, headers=None, **kwargs):
+    def __init__(self, title="406 Not Acceptable", description=None, headers=None, **kwargs):
         super(HTTPNotAcceptable, self).__init__(status.HTTP_406,
-                                                'Media type not acceptable',
+                                                title,
                                                 description, headers,
                                                 **kwargs)
 
@@ -763,9 +763,9 @@ class HTTPUnsupportedMediaType(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, description=None, headers=None, **kwargs):
+    def __init__(self, title="415 Unsupported Media Type", description=None, headers=None, **kwargs):
         super(HTTPUnsupportedMediaType, self).__init__(
-            status.HTTP_415, 'Unsupported media type',
+            status.HTTP_415, title,
             description, headers, **kwargs)
 
 
