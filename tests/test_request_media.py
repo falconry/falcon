@@ -24,6 +24,7 @@ def create_client(handlers=None):
     ('*/*'),
     ('application/json'),
     ('application/json; charset=utf-8'),
+    ("('application/json; charset=utf-8'),")
 ])
 def test_json(media_type):
     client = create_client()
