@@ -19,7 +19,6 @@ class Handlers(UserDict):
 
     def _resolve_media_type(self, media_type, all_media_types):
         resolved = None
-
         prim_sanitised_media = media_type.strip(")'(")
 
         try:
