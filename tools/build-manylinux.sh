@@ -12,6 +12,7 @@ set -e -x
 
 # Compile wheels
 for PYBIN in /opt/python/*/bin; do
+    "${PYBIN}/pip" install -q --upgrade pip
     "${PYBIN}/pip" install cython
     "${PYBIN}/pip" wheel /io/ -w dist/
 done
