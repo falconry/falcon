@@ -19,14 +19,13 @@ class Handlers(UserDict):
 
     def _resolve_media_type(self, media_type, all_media_types):
         resolved = None
-        prim_sanitised_media = media_type.strip(")'(")
 
         try:
             # NOTE(jmvrbanac): Mimeparse will return an empty string if it can
             # parse the media type, but cannot find a suitable type.
             resolved = mimeparse.best_match(
                 all_media_types,
-                prim_sanitised_media
+                media_type
             )
         except ValueError:
             pass
@@ -42,13 +41,13 @@ class Handlers(UserDict):
             return self.data[media_type]
         except KeyError:
             pass
-
+        sanitised_media = media_type.strip(")',(")
         # PERF(jmvrbanac): Fallback to the slower method
-        resolved = self._resolve_media_type(media_type, self.data.keys())
+        resolved = self._resolve_media_type(sanitised_media, self.data.keys())
 
         if not resolved:
             raise errors.HTTPUnsupportedMediaType(
-                '{0} is an unsupported media type.'.format(media_type)
+                '{0} is an unsupported media type.'.format(sanitised_media)
             )
 
         return self.data[resolved]
