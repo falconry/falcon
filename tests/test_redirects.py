@@ -24,7 +24,7 @@ def client_exercising_headers():
     return testing.TestClient(app)
 
 
-class RedirectingResource(object):
+class RedirectingResource:
     # NOTE(kgriffs): You wouldn't necessarily use these types of
     # http methods with these types of redirects; this is only
     # done to simplify testing.
@@ -45,7 +45,7 @@ class RedirectingResource(object):
         raise falcon.HTTPPermanentRedirect('/perm/redirect')
 
 
-class RedirectingResourceWithHeaders(object):
+class RedirectingResourceWithHeaders:
     # NOTE(kgriffs): You wouldn't necessarily use these types of
     # http methods with these types of redirects; this is only
     # done to simplify testing.
@@ -66,7 +66,7 @@ class RedirectingResourceWithHeaders(object):
         raise falcon.HTTPPermanentRedirect('/perm/redirect', headers={'foo': 'bar'})
 
 
-class TestRedirects(object):
+class TestRedirects:
     @pytest.mark.parametrize('method,expected_status,expected_location', [
         ('GET', falcon.HTTP_301, '/moved/perm'),
         ('POST', falcon.HTTP_302, '/found'),

@@ -40,7 +40,7 @@ The testing framework supports both unittest and pytest::
 
     class TestMyApp(MyTestCase):
         def test_get_message(self):
-            doc = {u'message': u'Hello world!'}
+            doc = {'message': 'Hello world!'}
 
             result = self.simulate_get('/messages/42')
             self.assertEqual(result.json, doc)
@@ -68,7 +68,7 @@ The testing framework supports both unittest and pytest::
 
 
     def test_get_message(client):
-        doc = {u'message': u'Hello world!'}
+        doc = {'message': 'Hello world!'}
 
         result = client.simulate_get('/messages/42')
         assert result.json == doc

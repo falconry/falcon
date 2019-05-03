@@ -14,13 +14,13 @@
 
 """Default routing engine."""
 
+from collections import UserDict
 import keyword
 import re
 import textwrap
 
 from falcon.routing import converters
 from falcon.routing.util import map_http_methods, set_default_responders
-from falcon.util.compat import UserDict
 
 
 _TAB_STR = ' ' * 4
@@ -37,7 +37,7 @@ _FIELD_PATTERN = re.compile(
 _IDENTIFIER_PATTERN = re.compile('[A-Za-z_][A-Za-z0-9_]*$')
 
 
-class CompiledRouter(object):
+class CompiledRouter:
     """Fast URI router which compiles its routing logic to Python code.
 
     Generally you do not need to use this router class directly, as an
@@ -480,7 +480,7 @@ class CompiledRouter(object):
         return eval(src, {klass.__name__: klass})
 
 
-class CompiledRouterNode(object):
+class CompiledRouterNode:
     """Represents a single URI segment in a URI."""
 
     def __init__(self, raw_segment,
@@ -665,7 +665,7 @@ class ConverterDict(UserDict):
             )
 
 
-class CompiledRouterOptions(object):
+class CompiledRouterOptions:
     """Defines a set of configurable router options.
 
     An instance of this class is exposed via :any:`API.router_options`
@@ -719,7 +719,7 @@ class CompiledRouterOptions(object):
 # --------------------------------------------------------------------
 
 
-class _CxParent(object):
+class _CxParent:
     def __init__(self):
         self._children = []
 
@@ -815,7 +815,7 @@ class _CxIfConverterField(_CxParent):
         return '\n'.join(lines)
 
 
-class _CxSetFragmentFromField(object):
+class _CxSetFragmentFromField:
     def __init__(self, field_name):
         self._field_name = field_name
 
@@ -826,7 +826,7 @@ class _CxSetFragmentFromField(object):
         )
 
 
-class _CxSetFragmentFromPath(object):
+class _CxSetFragmentFromPath:
     def __init__(self, segment_idx):
         self._segment_idx = segment_idx
 
@@ -837,33 +837,33 @@ class _CxSetFragmentFromPath(object):
         )
 
 
-class _CxSetParamsFromPatternMatch(object):
+class _CxSetParamsFromPatternMatch:
     def src(self, indentation):
         return '{0}params.update(match.groupdict())'.format(
             _TAB_STR * indentation
         )
 
 
-class _CxSetParamsFromPatternMatchPrefetched(object):
+class _CxSetParamsFromPatternMatchPrefetched:
     def src(self, indentation):
         return '{0}params.update(groups)'.format(
             _TAB_STR * indentation
         )
 
 
-class _CxPrefetchGroupsFromPatternMatch(object):
+class _CxPrefetchGroupsFromPatternMatch:
     def src(self, indentation):
         return '{0}groups = match.groupdict()'.format(
             _TAB_STR * indentation
         )
 
 
-class _CxReturnNone(object):
+class _CxReturnNone:
     def src(self, indentation):
         return '{0}return None'.format(_TAB_STR * indentation)
 
 
-class _CxReturnValue(object):
+class _CxReturnValue:
     def __init__(self, value_idx):
         self._value_idx = value_idx
 
@@ -874,7 +874,7 @@ class _CxReturnValue(object):
         )
 
 
-class _CxSetParam(object):
+class _CxSetParam:
     def __init__(self, param_name, segment_idx):
         self._param_name = param_name
         self._segment_idx = segment_idx

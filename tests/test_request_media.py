@@ -60,7 +60,7 @@ def test_msgpack(media_type):
     client.simulate_post('/', body=expected_body, headers=headers)
 
     req_media = client.resource.captured_req.media
-    assert req_media.get(u'something') is True
+    assert req_media.get('something') is True
 
 
 @pytest.mark.parametrize('media_type', [

@@ -13,7 +13,6 @@ import pytest
 import falcon
 from falcon import testing
 from falcon.routing.util import SuffixedMethodNotFoundError
-from falcon.util import compat
 
 
 _TEST_UUID = uuid.uuid4()
@@ -23,7 +22,7 @@ _TEST_UUID_STR_2 = str(_TEST_UUID_2)
 _TEST_UUID_STR_SANS_HYPHENS = _TEST_UUID_STR.replace('-', '')
 
 
-class IDResource(object):
+class IDResource:
     def __init__(self):
         self.id = None
         self.name = None
@@ -35,7 +34,7 @@ class IDResource(object):
         self.req = req
 
 
-class NameResource(object):
+class NameResource:
     def __init__(self):
         self.id = None
         self.name = None
@@ -47,7 +46,7 @@ class NameResource(object):
         self.called = True
 
 
-class NameAndDigitResource(object):
+class NameAndDigitResource:
     def __init__(self):
         self.id = None
         self.name51 = None
@@ -59,7 +58,7 @@ class NameAndDigitResource(object):
         self.called = True
 
 
-class FileResource(object):
+class FileResource:
     def __init__(self):
         self.file_id = None
         self.called = False
@@ -69,7 +68,7 @@ class FileResource(object):
         self.called = True
 
 
-class FileDetailsResource(object):
+class FileDetailsResource:
     def __init__(self):
         self.file_id = None
         self.ext = None
@@ -81,7 +80,7 @@ class FileDetailsResource(object):
         self.called = True
 
 
-class ResourceWithSuffixRoutes(object):
+class ResourceWithSuffixRoutes:
     def __init__(self):
         self.get_called = False
         self.post_called = False
@@ -133,13 +132,6 @@ def test_root_path(client, resource):
 
 def test_no_vars(client, resource):
     client.app.add_route('/hello/world', resource)
-    client.simulate_get('/hello/world')
-    assert resource.called
-
-
-@pytest.mark.skipif(compat.PY3, reason='Test only applies to Python 2')
-def test_unicode_literal_routes(client, resource):
-    client.app.add_route(u'/hello/world', resource)
     client.simulate_get('/hello/world')
     assert resource.called
 
@@ -327,7 +319,7 @@ def test_uuid_converter_complex_segment(client, resource):
     ),
 ])
 def test_converter_custom(client, resource, uri_template, path, expected):
-    class SpamConverter(object):
+    class SpamConverter:
         def __init__(self, useless_text=None):
             pass
 

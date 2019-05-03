@@ -66,7 +66,7 @@ def client():
     return testing.TestClient(app)
 
 
-class ThingsResource(object):
+class ThingsResource:
     def __init__(self):
         self.called = False
 
@@ -100,7 +100,7 @@ class ThingsResource(object):
         resp.status = falcon.HTTP_204
 
 
-class Stonewall(object):
+class Stonewall:
     pass
 
 
@@ -122,7 +122,7 @@ def selfless_decorator(func):
     return faulty
 
 
-class MiscResource(object):
+class MiscResource:
     def __init__(self):
         self.called = False
 
@@ -152,7 +152,7 @@ class MiscResource(object):
         resp.set_header('allow', 'GET')
 
 
-class GetWithFaultyPutResource(object):
+class GetWithFaultyPutResource:
     def __init__(self):
         self.called = False
 
@@ -164,14 +164,14 @@ class GetWithFaultyPutResource(object):
         raise TypeError()
 
 
-class FaultyDecoratedResource(object):
+class FaultyDecoratedResource:
 
     @selfless_decorator
     def on_get(self, req, resp):
         pass
 
 
-class TestHttpMethodRouting(object):
+class TestHttpMethodRouting:
 
     def test_get(self, client, resource_things):
         client.app.add_route('/things', resource_things)

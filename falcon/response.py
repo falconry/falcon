@@ -14,8 +14,8 @@
 
 """Response class."""
 
+from http import cookies as http_cookies
 import mimetypes
-
 
 from falcon import DEFAULT_MEDIA_TYPE
 from falcon.errors import HeaderNotSupported
@@ -28,13 +28,10 @@ from falcon.response_helpers import (
     header_property,
     is_ascii_encodable,
 )
-from falcon.util import compat, dt_to_http, structures, TimezoneGMT
+from falcon.util import dt_to_http, structures, TimezoneGMT
 from falcon.util.uri import encode as uri_encode
 from falcon.util.uri import encode_value as uri_encode_value
 
-
-SimpleCookie = compat.http_cookies.SimpleCookie
-CookieError = compat.http_cookies.CookieError
 
 GMT_TIMEZONE = TimezoneGMT()
 
@@ -45,7 +42,7 @@ GMT_TIMEZONE = TimezoneGMT()
 # )
 
 
-class Response(object):
+class Response:
     """Represents an HTTP response to a client request.
 
     Note:
@@ -73,31 +70,21 @@ class Response(object):
 
             See :ref:`media` for more information regarding media handling.
 
-        body (str or unicode): String representing response content.
+        body (str): String representing response content.
 
-            If set to a Unicode type (``unicode`` in Python 2, or
-            ``str`` in Python 3), Falcon will encode the text as UTF-8
-            in the response. If the content is already a byte string,
-            use the :attr:`data` attribute instead (it's faster).
+            Note:
+                Falcon will encode the given text as UTF-8
+                in the response. If the content is already a byte string,
+                use the :attr:`data` attribute instead (it's faster).
 
         data (bytes): Byte string representing response content.
 
             Use this attribute in lieu of `body` when your content is
-            already a byte string (``str`` or ``bytes`` in Python 2, or
-            simply ``bytes`` in Python 3). See also the note below.
+            already a byte string (of type ``bytes``). See also the note below.
 
-            Note:
-                Under Python 2.x, if your content is of type ``str``, using
-                the `data` attribute instead of `body` is the most
-                efficient approach. However, if
-                your text is of type ``unicode``, you will need to use the
-                `body` attribute instead.
-
-                Under Python 3.x, on the other hand, the 2.x ``str`` type can
-                be thought of as
-                having been replaced by what was once the ``unicode`` type,
-                and so you will need to always use the `body` attribute for
-                strings to
+            Warning:
+                Always use the `body` attribute for text, or encode it
+                first to ``bytes`` when using the `data` attribute, to
                 ensure Unicode characters are properly encoded in the
                 HTTP response.
 
@@ -389,15 +376,14 @@ class Response(object):
         if not is_ascii_encodable(value):
             raise ValueError('"value" is not ascii encodable')
 
-        name = str(name)
         value = str(value)
 
         if self._cookies is None:
-            self._cookies = SimpleCookie()
+            self._cookies = http_cookies.SimpleCookie()
 
         try:
             self._cookies[name] = value
-        except CookieError as e:  # pragma: no cover
+        except http_cookies.CookieError as e:  # pragma: no cover
             # NOTE(tbug): we raise a KeyError here, to avoid leaking
             # the CookieError to the user. SimpleCookie (well, BaseCookie)
             # only throws CookieError on issues with the cookie key
@@ -456,7 +442,7 @@ class Response(object):
             used when the cookie was created.
         """
         if self._cookies is None:
-            self._cookies = SimpleCookie()
+            self._cookies = http_cookies.SimpleCookie()
 
         self._cookies[name] = ''
 
@@ -512,13 +498,10 @@ class Response(object):
             :meth:`~.append_header` or :meth:`~.set_cookie`.
 
         Args:
-            name (str): Header name (case-insensitive). The restrictions
-                noted below for the header's value also apply here.
-            value (str): Value for the header. Must be convertable to
-                ``str`` or be of type ``str`` or
-                ``StringType``. Strings must contain only US-ASCII characters.
-                Under Python 2.x, the ``unicode`` type is also accepted,
-                although such strings are also limited to US-ASCII.
+            name (str): Header name (case-insensitive). The name may contain
+                only US-ASCII characters.
+            value (str): Value for the header. As with the header's name, the
+                value may contain only US-ASCII characters.
 
         Raises:
             ValueError: `name` cannot be ``'Set-Cookie'``.
@@ -528,7 +511,6 @@ class Response(object):
         # is not a str, so do the conversion here. It's actually
         # faster to not do an isinstance check. str() will encode
         # to US-ASCII.
-        name = str(name)
         value = str(value)
 
         # NOTE(kgriffs): normalize name by lowercasing it
@@ -558,10 +540,8 @@ class Response(object):
             user agent expires its own copy of the data as well.
 
         Args:
-            name (str): Header name (case-insensitive).  Must be of type
-                ``str`` or ``StringType`` and contain only US-ASCII characters.
-                Under Python 2.x, the ``unicode`` type is also accepted,
-                although such strings are also limited to US-ASCII.
+            name (str): Header name (case-insensitive). The name may
+                contain only US-ASCII characters.
 
         Raises:
             ValueError: `name` cannot be ``'Set-Cookie'``.
@@ -589,20 +569,16 @@ class Response(object):
             :py:meth:`~.set_cookie` to be more convenient.
 
         Args:
-            name (str): Header name (case-insensitive). The restrictions
-                noted below for the header's value also apply here.
-            value (str): Value for the header. Must be convertable to
-                ``str`` or be of type ``str`` or
-                ``StringType``. Strings must contain only US-ASCII characters.
-                Under Python 2.x, the ``unicode`` type is also accepted,
-                although such strings are also limited to US-ASCII.
+            name (str): Header name (case-insensitive). The name may contain
+                only US-ASCII characters.
+            value (str): Value for the header. As with the header's name, the
+                value may contain only US-ASCII characters.
         """
 
         # NOTE(kgriffs): uwsgi fails with a TypeError if any header
         # is not a str, so do the conversion here. It's actually
         # faster to not do an isinstance check. str() will encode
         # to US-ASCII.
-        name = str(name)
         value = str(value)
 
         # NOTE(kgriffs): normalize name by lowercasing it
@@ -638,11 +614,9 @@ class Response(object):
 
         Args:
             headers (dict or list): A dictionary of header names and values
-                to set, or a ``list`` of (*name*, *value*) tuples. Both *name*
-                and *value* must be of type ``str`` or ``StringType`` and
-                contain only US-ASCII characters. Under Python 2.x, the
-                ``unicode`` type is also accepted, although such strings are
-                also limited to US-ASCII.
+                to set, or a ``list`` of (*name*, *value*) tuples. Both
+                *name* and *value* must be of type ``str`` and
+                contain only US-ASCII characters.
 
                 Note:
                     Falcon can process a list of tuples slightly faster
@@ -665,11 +639,9 @@ class Response(object):
             # is not a str, so do the conversion here. It's actually
             # faster to not do an isinstance check. str() will encode
             # to US-ASCII.
-            name = str(name)
             value = str(value)
 
             name = name.lower()
-
             if name == 'set-cookie':
                 raise HeaderNotSupported('This method cannot be used to set cookies')
 
@@ -717,10 +689,7 @@ class Response(object):
                     of the current request.
 
                 Note:
-                    *text* will always be encoded as UTF-8. If the string
-                    contains non-ASCII characters, it should be passed as
-                    a ``unicode`` type string (requires the 'u' prefix in
-                    Python 2).
+                    *text* will always be encoded as UTF-8.
 
             anchor (str): Override the context IRI with a different URI
                 (default None). By default, the context IRI for the link is
@@ -773,7 +742,7 @@ class Response(object):
             value += '; type="' + type_hint + '"'
 
         if hreflang is not None:
-            if isinstance(hreflang, compat.string_types):
+            if isinstance(hreflang, str):
                 value += '; hreflang=' + hreflang
             else:
                 value += '; '
@@ -781,12 +750,6 @@ class Response(object):
 
         if anchor is not None:
             value += '; anchor="' + uri_encode(anchor) + '"'
-
-        # NOTE(kgriffs): uwsgi fails with a TypeError if any header
-        # is not a str, so do the conversion here. It's actually
-        # faster to not do an isinstance check. str() will encode
-        # to US-ASCII.
-        value = str(value)
 
         _headers = self._headers
         if 'link' in _headers:
@@ -982,7 +945,7 @@ class Response(object):
         if set_content_type:
             self.set_header('content-type', media_type)
 
-    def _wsgi_headers(self, media_type=None, py2=compat.PY2):
+    def _wsgi_headers(self, media_type=None):
         """Convert headers into the format expected by WSGI servers.
 
         Args:
@@ -996,12 +959,7 @@ class Response(object):
         if media_type is not None and 'content-type' not in headers:
             headers['content-type'] = media_type
 
-        if py2:
-            # PERF(kgriffs): Don't create an extra list object if
-            # it isn't needed.
-            items = headers.items()
-        else:
-            items = list(headers.items())
+        items = list(headers.items())
 
         if self._extra_headers:
             items += self._extra_headers
@@ -1023,7 +981,7 @@ class Response(object):
         return items
 
 
-class ResponseOptions(object):
+class ResponseOptions:
     """Defines a set of configurable response options.
 
     An instance of this class is exposed via :any:`API.resp_options` for

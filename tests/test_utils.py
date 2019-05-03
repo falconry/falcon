@@ -3,25 +3,26 @@
 from datetime import datetime
 import functools
 import random
+from urllib.parse import quote, unquote_plus
 
 import pytest
 
 import falcon
 from falcon import testing
 from falcon import util
-from falcon.util import compat, json, misc, structures, uri
+from falcon.util import json, misc, structures, uri
 
 
 def _arbitrary_uris(count, length):
     return (
-        u''.join(
+        ''.join(
             [random.choice(uri._ALL_ALLOWED)
              for _ in range(length)]
         ) for __ in range(count)
     )
 
 
-class TestFalconUtils(object):
+class TestFalconUtils:
 
     def setup_method(self, method):
         # NOTE(cabrera): for DRYness - used in uri.[de|en]code tests
@@ -143,7 +144,7 @@ class TestFalconUtils(object):
         expected = 'http://example.com/v1/fiz%20bit/messages'
         assert uri.encode(url) == expected
 
-        url = u'http://example.com/v1/fizbit/messages?limit=3&e\u00e7ho=true'
+        url = 'http://example.com/v1/fizbit/messages?limit=3&e\u00e7ho=true'
         expected = ('http://example.com/v1/fizbit/messages'
                     '?limit=3&e%C3%A7ho=true')
         assert uri.encode(url) == expected
@@ -153,7 +154,7 @@ class TestFalconUtils(object):
         expected = 'http://example.com/v1/fiz%20bit/messages'
         assert uri.encode(uri.encode(url)) == expected
 
-        url = u'http://example.com/v1/fizbit/messages?limit=3&e\u00e7ho=true'
+        url = 'http://example.com/v1/fizbit/messages?limit=3&e\u00e7ho=true'
         expected = ('http://example.com/v1/fizbit/messages'
                     '?limit=3&e%C3%A7ho=true')
         assert uri.encode(uri.encode(url)) == expected
@@ -179,21 +180,20 @@ class TestFalconUtils(object):
 
     def test_uri_encode_value(self):
         assert uri.encode_value('abcd') == 'abcd'
-        assert uri.encode_value(u'abcd') == u'abcd'
-        assert uri.encode_value(u'ab cd') == u'ab%20cd'
-        assert uri.encode_value(u'\u00e7') == '%C3%A7'
-        assert uri.encode_value(u'\u00e7\u20ac') == '%C3%A7%E2%82%AC'
+        assert uri.encode_value('abcd') == 'abcd'
+        assert uri.encode_value('ab cd') == 'ab%20cd'
+        assert uri.encode_value('\u00e7') == '%C3%A7'
+        assert uri.encode_value('\u00e7\u20ac') == '%C3%A7%E2%82%AC'
         assert uri.encode_value('ab/cd') == 'ab%2Fcd'
         assert uri.encode_value('ab+cd=42,9') == 'ab%2Bcd%3D42%2C9'
 
     def test_uri_decode(self):
         assert uri.decode('abcd') == 'abcd'
-        assert uri.decode(u'abcd') == u'abcd'
-        assert uri.decode(u'ab%20cd') == u'ab cd'
+        assert uri.decode('ab%20cd') == 'ab cd'
 
-        assert uri.decode('This thing is %C3%A7') == u'This thing is \u00e7'
+        assert uri.decode('This thing is %C3%A7') == 'This thing is \u00e7'
 
-        assert uri.decode('This thing is %C3%A7%E2%82%AC') == u'This thing is \u00e7\u20ac'
+        assert uri.decode('This thing is %C3%A7%E2%82%AC') == 'This thing is \u00e7\u20ac'
 
         assert uri.decode('ab%2Fcd') == 'ab/cd'
 
@@ -217,7 +217,7 @@ class TestFalconUtils(object):
 
     def test_prop_uri_encode_models_stdlib_quote(self):
         equiv_quote = functools.partial(
-            compat.quote, safe=uri._ALL_ALLOWED
+            quote, safe=uri._ALL_ALLOWED
         )
         for case in self.uris:
             expect = equiv_quote(case)
@@ -226,7 +226,7 @@ class TestFalconUtils(object):
 
     def test_prop_uri_encode_value_models_stdlib_quote_safe_tilde(self):
         equiv_quote = functools.partial(
-            compat.quote, safe='~'
+            quote, safe='~'
         )
         for case in self.uris:
             expect = equiv_quote(case)
@@ -234,7 +234,7 @@ class TestFalconUtils(object):
             assert expect == actual
 
     def test_prop_uri_decode_models_stdlib_unquote_plus(self):
-        stdlib_unquote = compat.unquote_plus
+        stdlib_unquote = unquote_plus
         for case in self.uris:
             case = uri.encode_value(case)
 
@@ -270,7 +270,7 @@ class TestFalconUtils(object):
         assert result['d'] == 'test'
         assert result['e'] == ['a', '&=,']
         assert result['f'] == ['a', 'a=b']
-        assert result[u'é'] == 'a=b'
+        assert result['é'] == 'a=b'
 
         result = uri.parse_query_string(query_strinq, True)
         assert result['a'] == decoded_url
@@ -279,7 +279,7 @@ class TestFalconUtils(object):
         assert result['d'] == 'test'
         assert result['e'] == ['a', '', '&=,']
         assert result['f'] == ['a', 'a=b']
-        assert result[u'é'] == 'a=b'
+        assert result['é'] == 'a=b'
 
     def test_parse_host(self):
         assert uri.parse_host('::1') == ('::1', None)
@@ -425,7 +425,7 @@ def test_simulate_free_functions(simulate):
     assert sink_called[0]
 
 
-class TestFalconTestingUtils(object):
+class TestFalconTestingUtils:
     """Verify some branches not covered elsewhere."""
 
     def test_path_escape_chars_in_create_environ(self):
@@ -435,14 +435,6 @@ class TestFalconTestingUtils(object):
     def test_no_prefix_allowed_for_query_strings_in_create_environ(self):
         with pytest.raises(ValueError):
             testing.create_environ(query_string='?foo=bar')
-
-    @pytest.mark.skipif(compat.PY3, reason='Test does not apply to Py3K')
-    def test_unicode_path_in_create_environ(self):
-        env = testing.create_environ(u'/fancy/unícode')
-        assert env['PATH_INFO'] == '/fancy/un\xc3\xadcode'
-
-        env = testing.create_environ(u'/simple')
-        assert env['PATH_INFO'] == '/simple'
 
     def test_plus_in_path_in_create_environ(self):
         env = testing.create_environ('/mnt/grub2/lost+found/inode001')
@@ -533,7 +525,7 @@ class TestFalconTestingUtils(object):
             testing.SimpleTestResource(body='', json={})
 
     def test_query_string(self):
-        class SomeResource(object):
+        class SomeResource:
             def on_get(self, req, resp):
                 doc = {}
 
@@ -607,9 +599,9 @@ class TestFalconTestingUtils(object):
         123456789,
         True,
         '',
-        u'I am a \u1d0a\ua731\u1d0f\u0274 string.',
+        'I am a \u1d0a\ua731\u1d0f\u0274 string.',
         [1, 3, 3, 7],
-        {u'message': u'\xa1Hello Unicode! \U0001F638'},
+        {'message': '\xa1Hello Unicode! \U0001F638'},
         {
             'count': 4,
             'items': [
@@ -651,7 +643,7 @@ class TestFalconTestingUtils(object):
         '2606:4700:30::6818:6455',
     ])
     def test_simulate_remote_addr(self, remote_addr):
-        class ShowMyIPResource(object):
+        class ShowMyIPResource:
             def on_get(self, req, resp):
                 resp.body = req.remote_addr
                 resp.content_type = falcon.MEDIA_TEXT
@@ -730,20 +722,16 @@ def test_get_argnames():
     def foo(a, b, c):
         pass
 
-    class Bar(object):
+    class Bar:
         def __call__(self, a, b):
             pass
 
     assert misc.get_argnames(foo) == ['a', 'b', 'c']
     assert misc.get_argnames(Bar()) == ['a', 'b']
-
-    # NOTE(kgriffs): This difference will go away once we drop Python 2.7
-    # support, so we just use this regression test to ensure the status quo.
-    expected = ['b', 'c'] if compat.PY3 else ['a', 'b', 'c']
-    assert misc.get_argnames(functools.partial(foo, 42)) == expected
+    assert misc.get_argnames(functools.partial(foo, 42)) == ['b', 'c']
 
 
-class TestContextType(object):
+class TestContextType:
 
     class CustomContextType(structures.Context):
         def __init__(self):
@@ -881,14 +869,3 @@ class TestContextType(object):
         assert set(ctx.keys()) == {1, 2, 3, 4}
         assert set(ctx.values()) == {1, 4, 9, 16}
         assert set(ctx.items()) == {(1, 1), (2, 4), (3, 9), (4, 16)}
-
-    @pytest.mark.skipif(compat.PY3, reason='python2-specific dict methods')
-    def test_python2_dict_methods(self):
-        ctx = structures.Context()
-        ctx.update((number, number ** 2) for number in range(1, 5))
-
-        assert set(ctx.keys()) == set(ctx.iterkeys()) == set(ctx.viewkeys())
-        assert set(ctx.values()) == set(ctx.itervalues()) == set(ctx.viewvalues())
-        assert set(ctx.items()) == set(ctx.iteritems()) == set(ctx.viewitems())
-
-        assert ctx.has_key(2)  # noqa

@@ -26,7 +26,7 @@ skip_missing_dep = pytest.mark.skipif(
 )
 
 
-class Resource(object):
+class Resource:
     @validators.jsonschema.validate(req_schema=basic_schema)
     def request_validated(self, req, resp):
         assert req.media is not None
@@ -49,11 +49,11 @@ class Resource(object):
         resp.media = GoodData.media
 
 
-class GoodData(object):
+class GoodData:
     media = {'message': 'something'}
 
 
-class BadData(object):
+class BadData:
     media = {}
 
 
@@ -68,7 +68,7 @@ def test_req_schema_validation_failure():
     with pytest.raises(falcon.HTTPBadRequest) as excinfo:
         Resource().request_validated(BadData(), None)
 
-    assert excinfo.value.description == '\'message\' is a required property'
+    assert excinfo.value.description == "'message' is a required property"
 
 
 @skip_missing_dep

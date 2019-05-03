@@ -6,13 +6,13 @@ import pytest
 import falcon
 import falcon.testing as testing
 
-_EXPECTED_BODY = {u'status': u'ok'}
+_EXPECTED_BODY = {'status': 'ok'}
 
 context = {'executed_methods': []}
 TEST_ROUTE = '/test_path'
 
 
-class CaptureResponseMiddleware(object):
+class CaptureResponseMiddleware:
 
     def process_response(self, req, resp, resource, req_succeeded):
         self.req = req
@@ -21,13 +21,13 @@ class CaptureResponseMiddleware(object):
         self.req_succeeded = req_succeeded
 
 
-class CaptureRequestMiddleware(object):
+class CaptureRequestMiddleware:
 
     def process_request(self, req, resp):
         self.req = req
 
 
-class RequestTimeMiddleware(object):
+class RequestTimeMiddleware:
 
     def process_request(self, req, resp):
         global context
@@ -43,7 +43,7 @@ class RequestTimeMiddleware(object):
         context['req_succeeded'] = req_succeeded
 
 
-class TransactionIdMiddleware(object):
+class TransactionIdMiddleware:
 
     def process_request(self, req, resp):
         global context
@@ -57,7 +57,7 @@ class TransactionIdMiddleware(object):
         pass
 
 
-class ExecutedFirstMiddleware(object):
+class ExecutedFirstMiddleware:
 
     def process_request(self, req, resp):
         global context
@@ -86,13 +86,13 @@ class ExecutedLastMiddleware(ExecutedFirstMiddleware):
     pass
 
 
-class RemoveBasePathMiddleware(object):
+class RemoveBasePathMiddleware:
 
     def process_request(self, req, resp):
         req.path = req.path.replace('/base_path', '', 1)
 
 
-class ResponseCacheMiddlware(object):
+class ResponseCacheMiddlware:
 
     PROCESS_REQUEST_CACHED_BODY = {'cached': True}
     PROCESS_RESOURCE_CACHED_BODY = {'cached': True, 'resource': True}
@@ -110,7 +110,7 @@ class ResponseCacheMiddlware(object):
             return
 
 
-class AccessParamsMiddleware(object):
+class AccessParamsMiddleware:
 
     def process_resource(self, req, resp, resource, params):
         global context
@@ -118,7 +118,7 @@ class AccessParamsMiddleware(object):
         context['params'] = params
 
 
-class MiddlewareClassResource(object):
+class MiddlewareClassResource:
 
     def on_get(self, req, resp, **kwargs):
         resp.status = falcon.HTTP_200
@@ -128,7 +128,7 @@ class MiddlewareClassResource(object):
         raise falcon.HTTPForbidden(falcon.HTTP_403, 'Setec Astronomy')
 
 
-class EmptySignatureMiddleware(object):
+class EmptySignatureMiddleware:
 
     def process_request(self):
         pass
@@ -137,7 +137,7 @@ class EmptySignatureMiddleware(object):
         pass
 
 
-class TestMiddleware(object):
+class TestMiddleware:
     def setup_method(self, method):
         # Clear context
         global context
@@ -178,7 +178,7 @@ class TestRequestTimeMiddleware(TestMiddleware):
 
     def test_response_middleware_raises_exception(self):
         """Test that error in response middleware is propagated up"""
-        class RaiseErrorMiddleware(object):
+        class RaiseErrorMiddleware:
 
             def process_response(self, req, resp, resource):
                 raise Exception('Always fail')
@@ -329,15 +329,15 @@ class TestSeveralMiddlewares(TestMiddleware):
 
         context['req_succeeded'] = []
 
-        class RaiseStatusMiddleware(object):
+        class RaiseStatusMiddleware:
             def process_response(self, req, resp, resource, req_succeeded):
                 raise falcon.HTTPStatus(falcon.HTTP_201)
 
-        class RaiseErrorMiddleware(object):
+        class RaiseErrorMiddleware:
             def process_response(self, req, resp, resource, req_succeeded):
                 raise falcon.HTTPError(falcon.HTTP_748)
 
-        class ProcessResponseMiddleware(object):
+        class ProcessResponseMiddleware:
             def process_response(self, req, resp, resource, req_succeeded):
                 context['executed_methods'].append('process_response')
                 context['req_succeeded'].append(req_succeeded)
@@ -363,7 +363,7 @@ class TestSeveralMiddlewares(TestMiddleware):
         """Test that error in inner middleware leaves"""
         global context
 
-        class RaiseErrorMiddleware(object):
+        class RaiseErrorMiddleware:
 
             def process_request(self, req, resp):
                 raise Exception('Always fail')
@@ -388,7 +388,7 @@ class TestSeveralMiddlewares(TestMiddleware):
         """Test that error in inner middleware leaves"""
         global context
 
-        class RaiseErrorMiddleware(object):
+        class RaiseErrorMiddleware:
 
             def process_request(self, req, resp, resource):
                 raise Exception('Always fail')
@@ -418,7 +418,7 @@ class TestSeveralMiddlewares(TestMiddleware):
         """Test that error in inner middleware leaves"""
         global context
 
-        class RaiseErrorMiddleware(object):
+        class RaiseErrorMiddleware:
 
             def process_request(self, req, resp):
                 raise Exception('Always fail')
@@ -448,7 +448,7 @@ class TestSeveralMiddlewares(TestMiddleware):
         """Test that error in inner middleware leaves"""
         global context
 
-        class RaiseErrorMiddleware(object):
+        class RaiseErrorMiddleware:
 
             def process_response(self, req, resp, resource):
                 raise Exception('Always fail')
@@ -482,7 +482,7 @@ class TestSeveralMiddlewares(TestMiddleware):
         """Test that error in inner middleware leaves"""
         global context
 
-        class RaiseErrorMiddleware(object):
+        class RaiseErrorMiddleware:
 
             def process_response(self, req, resp, resource):
                 raise Exception('Always fail')
@@ -517,7 +517,7 @@ class TestSeveralMiddlewares(TestMiddleware):
         """Test that error in inner middleware leaves"""
         global context
 
-        class RaiseErrorMiddleware(object):
+        class RaiseErrorMiddleware:
 
             def process_request(self, req, resp):
                 raise Exception('Always fail')
@@ -548,7 +548,7 @@ class TestSeveralMiddlewares(TestMiddleware):
         """Test that error in inner middleware leaves"""
         global context
 
-        class RaiseErrorMiddleware(object):
+        class RaiseErrorMiddleware:
 
             def process_request(self, req, resp):
                 raise Exception('Always fail')
@@ -580,7 +580,7 @@ class TestSeveralMiddlewares(TestMiddleware):
         """Test that error in inner middleware leaves"""
         global context
 
-        class RaiseErrorMiddleware(object):
+        class RaiseErrorMiddleware:
 
             def process_resource(self, req, resp, resource):
                 raise Exception('Always fail')
@@ -613,7 +613,7 @@ class TestSeveralMiddlewares(TestMiddleware):
         """Test that error in inner middleware leaves"""
         global context
 
-        class RaiseErrorMiddleware(object):
+        class RaiseErrorMiddleware:
 
             def process_resource(self, req, resp, resource):
                 raise Exception('Always fail')

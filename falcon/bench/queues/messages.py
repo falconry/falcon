@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-class CollectionResource(object):
+class CollectionResource:
 
     def on_post(self, req, resp, tenant_id, queue_name):
         pass
@@ -23,7 +23,7 @@ class CollectionResource(object):
         pass
 
 
-class ItemResource(object):
+class ItemResource:
 
     def on_get(self, req, resp, tenant_id, queue_name, message_id):
         pass

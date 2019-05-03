@@ -25,22 +25,22 @@ Please note that all contributors and maintainers of this project are subject to
 
 ### Pull Requests
 
-Before submitting a pull request, please ensure you have added or updated tests as appropriate, and that all existing tests still pass with your changes on both Python 2 and Python 3. Please also ensure that your coding style follows PEP 8.
+Before submitting a pull request, please ensure you have added or updated tests as appropriate, and that all existing tests still pass with your changes. Please also ensure that your coding style follows PEP 8.
 
-You can check all this by running the following from within the Falcon project directory (requires Python 2.7 and Python 3.7 to be installed on your system):
-
-```bash
-$ pip install tox
-$ tox -e py27,py37,pep8
-```
-
-You may also use Python 3.5 or 3.6 if you don't have 3.7 installed on your system. This is just a quick sanity check to verify that your patch works across both Python 2 and Python 3.
-
-If you are using pyenv and get an error along the lines of "failed to get version_info", you will need to activate all the Python versions required by tox before trying again. For example:
+You can check all this by running the following from within the Falcon project directory (requires Python 3.7 to be installed on your system):
 
 ```bash
-$ pyenv shell 2.7.14 3.7.2
+$ tools/mintest.sh
+
 ```
+
+You may also use Python 3.5 or 3.6 if you don't have 3.7 installed on your system. Substitute "py35" or "py36" as appropriate:
+
+
+```bash
+$ pip install -U tox coverage
+$ rm -f .coverage.*
+$ tox -e pep8 && tox -e py35 && tools/testing/combine_coverage.sh
 
 #### Reviews
 
@@ -74,10 +74,10 @@ The script generates an HTML coverage report that can be viewed by simply openin
 
 We use pytest to run all of our tests. Pytest supports pdb and will break as expected on any
 `pdb.set_trace()` calls. If you would like to use pdb++ instead of the standard Python
-debugger, run one of the following tox environments:
+debugger, simply run the following tox environment. This environment also disables
+coverage checking to speed up the test run, making it ideal for quick sanity checks.
 
 ```bash
-$ tox -e py2_debug
 $ tox -e py3_debug
 ```
 
@@ -88,20 +88,20 @@ If you wish, you can customize Falcon's `tox.ini` to install alternative debugge
 A few simple benchmarks are included with the source under ``falcon/bench``. These can be taken as a rough measure of the performance impact (if any) that your changes have on the framework. You can run these tests by invoking one of the tox environments included for this purpose (see also the ``tox.ini`` file). For example:
 
 ```bash
-$ tox -e py27_bench
+$ tox -e py37_bench
 ```
 
 Note that you may pass additional arguments via tox to the falcon-bench command:
 
 ```bash
-$ tox -e py27_bench -- -h
-$ tox -e py27_bench -- -b falcon -i 20000
+$ tox -e py37_bench -- -h
+$ tox -e py37_bench -- -b falcon -i 20000
 ```
 
 Alternatively, you may run falcon-bench directly by creating a new virtual environment and installing falcon directly in development mode. In this example we use pyenv with pyenv-virtualenv from within a falcon source directory:
 
 ```bash
-$ pyenv virtualenv 3.7.2 falcon-sandbox-37
+$ pyenv virtualenv 3.7.3 falcon-sandbox-37
 $ pyenv shell falcon-sandbox-37
 $ pip install -r requirements/bench
 $ pip install -e .

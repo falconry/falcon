@@ -7,7 +7,7 @@ PyPy
 ----
 
 `PyPy <http://pypy.org/>`__ is the fastest way to run your Falcon app.
-Both PyPy2.7 and PyPy3.5 are supported as of PyPy v5.10.
+PyPy3.5+ is supported as of PyPy v5.10.
 
 .. code:: bash
 
@@ -22,8 +22,8 @@ Or, to install the latest beta or release candidate, if any:
 CPython
 -------
 
-Falcon also fully supports
-`CPython <https://www.python.org/downloads/>`__ 2.7, and 3.5+.
+Falcon fully supports
+`CPython <https://www.python.org/downloads/>`__ 3.5+.
 
 A universal wheel is available on PyPI for the the Falcon framework.
 Installing it is as simple as:

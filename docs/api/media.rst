@@ -26,7 +26,7 @@ lifting for you.
     import falcon
 
 
-    class EchoResource(object):
+    class EchoResource:
         def on_post(self, req, resp):
             message = req.media.get('message')
 
@@ -63,7 +63,7 @@ middleware. Here is an example of how this can be done:
 
 .. code-block:: python
 
-    class NegotiationMiddleware(object):
+    class NegotiationMiddleware:
         def process_request(self, req, resp):
             resp.content_type = req.accept
 

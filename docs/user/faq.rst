@@ -142,7 +142,7 @@ a middleware component similar to the following:
 
 .. code:: python
 
-    class CORSComponent(object):
+    class CORSComponent:
         def process_response(self, req, resp, resource, req_succeeded):
             resp.set_header('Access-Control-Allow-Origin', '*')
 
@@ -250,7 +250,7 @@ same resource class:
 
 .. code:: python
 
-    class MyResource(object):
+    class MyResource:
         def on_get(self, req, resp, id):
             pass
 
@@ -310,13 +310,13 @@ classes:
 
 .. code:: python
 
-    class Ping(object):
+    class Ping:
 
         def on_get(self, req, resp):
             resp.body = '{"message": "pong"}'
 
 
-    class Game(object):
+    class Game:
 
         def __init__(self, dao):
             self._dao = dao
@@ -328,7 +328,7 @@ classes:
             pass
 
 
-    class GameState(object):
+    class GameState:
 
         def __init__(self, dao):
             self._dao = dao
@@ -363,7 +363,7 @@ order to handle all three routes:
 
 .. code:: python
 
-    class Game(object):
+    class Game:
 
         def __init__(self, dao):
             self._dao = dao

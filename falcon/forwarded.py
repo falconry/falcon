@@ -49,7 +49,7 @@ _QUOTED_PAIR_REPLACE_RE = re.compile(r'\\([\t !-~])')
 _FORWARDED_PAIR_RE = re.compile(_FORWARDED_PAIR)
 
 
-class Forwarded(object):
+class Forwarded:
     """Represents a parsed Forwarded header.
 
     (See also: RFC 7239, Section 4)

@@ -9,22 +9,12 @@ cache:
 
 matrix:
     include:
-        - python: pypy2.7-6.0
-          env: TOXENV=pypy
         - python: pypy3.5-6.0
           env: TOXENV=pypy3
-        - python: 2.7
+        - python: 3.7
           env: TOXENV=pep8
-        - python: 2.7
+        - python: 3.7
           env: TOXENV=pep8-examples
-        - python: 2.7
-          env: TOXENV=py27
-        - python: 2.7
-          env: TOXENV=py27_smoke
-        - python: 2.7
-          env: TOXENV=py27_cython
-        - python: 2.7
-          env: TOXENV=py27_smoke_cython
         - python: 3.5
           env: TOXENV=py35
         - python: 3.6

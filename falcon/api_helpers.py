@@ -139,7 +139,7 @@ def default_serialize_error(req, resp, exception):
     resp.append_header('Vary', 'Accept')
 
 
-class CloseableStreamIterator(object):
+class CloseableStreamIterator:
     """Iterator that wraps a file-like stream with support for close().
 
     This iterator can be used to read from an underlying file-like stream
@@ -170,9 +170,6 @@ class CloseableStreamIterator(object):
             raise StopIteration
         else:
             return data
-
-    def next(self):
-        return self.__next__()
 
     def close(self):
         try:

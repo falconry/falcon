@@ -25,7 +25,7 @@ def router():
     router.add_route(
         '/repos/{org}/{repo}/commits', ResourceWithId(4))
     router.add_route(
-        u'/repos/{org}/{repo}/compare/{usr0}:{branch0}...{usr1}:{branch1}',
+        '/repos/{org}/{repo}/compare/{usr0}:{branch0}...{usr1}:{branch1}',
         ResourceWithId(5))
 
     router.add_route(
@@ -110,7 +110,7 @@ def router():
     return router
 
 
-class ResourceWithId(object):
+class ResourceWithId:
     def __init__(self, resource_id):
         self.resource_id = resource_id
 
@@ -121,7 +121,7 @@ class ResourceWithId(object):
         resp.body = self.resource_id
 
 
-class SpamConverter(object):
+class SpamConverter:
     def __init__(self, times, eggs=False):
         self._times = times
         self._eggs = eggs
@@ -367,7 +367,7 @@ def test_print_src(router):
 
     Example:
 
-        $ tox -e py27_debug -- -k test_print_src -s
+        $ tox -e py3_debug -- -k test_print_src -s
     """
     print('\n\n' + router.finder_src + '\n')
 

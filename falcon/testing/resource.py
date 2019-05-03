@@ -58,7 +58,7 @@ def set_resp_defaults(req, resp, resource, params):
         resp.set_headers(resource._default_headers)
 
 
-class SimpleTestResource(object):
+class SimpleTestResource:
     """Mock resource for functional testing of framework components.
 
     This class implements a simple test resource that can be extended

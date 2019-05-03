@@ -24,13 +24,13 @@ class CustomException(CustomBaseException):
     def handle(req, resp, ex, params):
         raise falcon.HTTPError(
             falcon.HTTP_792,
-            u'Internet crashed!',
-            u'Catastrophic weather event',
-            href=u'http://example.com/api/inconvenient-truth',
-            href_text=u'Drill, baby drill!')
+            'Internet crashed!',
+            'Catastrophic weather event',
+            href='http://example.com/api/inconvenient-truth',
+            href_text='Drill, baby drill!')
 
 
-class ErroredClassResource(object):
+class ErroredClassResource:
 
     def on_get(self, req, resp):
         raise Exception('Plain Exception')
@@ -49,7 +49,7 @@ def client():
     return testing.TestClient(app)
 
 
-class TestErrorHandler(object):
+class TestErrorHandler:
 
     def test_caught_error(self, client):
         client.app.add_error_handler(Exception, capture_error)
@@ -75,7 +75,7 @@ class TestErrorHandler(object):
 
         result = client.simulate_delete()
         assert result.status_code == 792
-        assert result.json[u'title'] == u'Internet crashed!'
+        assert result.json['title'] == 'Internet crashed!'
 
     def test_handle_not_defined(self, client):
         with pytest.raises(AttributeError):

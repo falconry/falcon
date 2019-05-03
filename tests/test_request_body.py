@@ -22,7 +22,7 @@ def client():
     return testing.TestClient(app)
 
 
-class TestRequestBody(object):
+class TestRequestBody:
     def _get_wrapped_stream(self, req):
         # Getting wrapped wsgi.input:
         stream = req.stream

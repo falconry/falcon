@@ -1,7 +1,7 @@
 import falcon
 
 
-class Things(object):
+class Things:
     def on_get(self, req, resp):
         pass
 

@@ -203,7 +203,7 @@ class HTTPError(Exception):
                 et.tostring(error_element, encoding='utf-8'))
 
 
-class NoRepresentation(object):
+class NoRepresentation:
     """Mixin for ``HTTPError`` child classes that have no representation.
 
     This class can be mixed in when inheriting from ``HTTPError``, in order
@@ -227,7 +227,7 @@ class NoRepresentation(object):
         return False
 
 
-class OptionalRepresentation(object):
+class OptionalRepresentation:
     """Mixin for ``HTTPError`` child classes that may have a representation.
 
     This class can be mixed in when inheriting from ``HTTPError`` in order
