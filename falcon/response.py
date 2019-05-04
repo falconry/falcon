@@ -937,13 +937,11 @@ class Response:
 
         """
 
-        # PERF(kgriffs): Using "in" like this is faster than using
-        # dict.setdefault (tested on py27).
-        set_content_type = (media_type is not None and
-                            'content-type' not in self._headers)
-
-        if set_content_type:
-            self.set_header('content-type', media_type)
+        # PERF(kgriffs): Using "in" like this is faster than dict.setdefault()
+        #   in most cases, except on PyPy where it is only a fraction of a
+        #   nanosecond slower. Last tested on Python versions 3.5-3.7.
+        if media_type is not None and 'content-type' not in self._headers:
+            self._headers['content-type'] = media_type
 
     def _wsgi_headers(self, media_type=None):
         """Convert headers into the format expected by WSGI servers.
