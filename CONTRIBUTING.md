@@ -34,7 +34,7 @@ $ tools/mintest.sh
 
 ```
 
-You may also use Python 3.5 or 3.6 if you don't have 3.7 installed on your system. Substitute "py35" or "py36" as appropriate:
+You may also use Python 3.5 or 3.6 if you don't have 3.7 installed on your system. Substitute "py35" or "py36" as appropriate. For example:
 
 
 ```bash
