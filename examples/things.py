@@ -18,6 +18,7 @@ class ThingsResource:
                      '\n'
                      '    ~ Immanuel Kant\n\n')
 
+
 # falcon.API instances are callable WSGI apps
 # in larger applications the app is created in a separate file
 app = falcon.API()
@@ -30,7 +31,7 @@ app.add_route('/things', things)
 
 if __name__ == '__main__':
     with make_server('', 8000, app) as httpd:
-        print("Serving on port 8000...")
+        print('Serving on port 8000...')
 
         # Serve until process is killed
         httpd.serve_forever()
