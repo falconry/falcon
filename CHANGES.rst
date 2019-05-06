@@ -433,6 +433,7 @@ Many thanks to all of our talented and stylish contributors to this release!
 - `steven-upside <https://github.com/steven-upside>`_
 - `tribals <https://github.com/tribals>`_
 - `vytas7 <https://github.com/vytas7>`_
+- `screamingskulls <https://github.com/screamingskulls>`_
 
 1.4.1
 =====
