@@ -724,7 +724,7 @@ class TestHeaders:
     def test_enabled_cors_should_control_expiration_through_headers(self, cors_client):
         cors_client.app.add_route('/', CORSHeaderResource())
         result = cors_client.simulate_options(headers=(('Access-Control-Request-Method', '*'), ))
-        assert result.headers['Access-Control-Max-Age'] == '86400'  # 24 hours in minutes
+        assert result.headers['Access-Control-Max-Age'] == '86400'  # 24 hours in seconds
 
     # ----------------------------------------------------------------------
     # Helpers
