@@ -20,6 +20,9 @@ Breaking Changes
 
 - Header-related methods of the ``falcon.Response`` class no longer coerce
   the passed header name to a string via ``str()``.
+- The deprecated ``stream_len`` property was removed from the ``Response``
+  class. Please use ``Response.set_stream()`` or ``Response.content_length``
+  instead.
 
 New & Improved
 --------------
@@ -96,9 +99,6 @@ Breaking Changes
   ``True``.
 - ``independent_middleware`` kwarg on ``falcon.API`` now defaults to ``True``
   instead of ``False``.
-- The deprecated ``stream_len`` property was removed from the ``Response``
-  class. Please use ``Response.set_stream()`` or ``Response.content_length``
-  instead.
 - ``Request.context_type`` was changed from dict to a bare class implementing
   the mapping interface.
 - ``Response.context_type`` was changed from dict to a bare class implementing
