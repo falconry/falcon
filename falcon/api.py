@@ -155,12 +155,12 @@ class API:
                  '_error_handlers', '_media_type', '_router', '_sinks',
                  '_serialize_error', 'req_options', 'resp_options',
                  '_middleware', '_independent_middleware', '_router_search',
-                 '_static_routes')
+                 '_static_routes', '_cors_enable')
 
     def __init__(self, media_type=DEFAULT_MEDIA_TYPE,
                  request_type=Request, response_type=Response,
                  middleware=None, router=None,
-                 independent_middleware=True):
+                 independent_middleware=True, cors_enable=False):
         self._sinks = []
         self._media_type = media_type
         self._static_routes = []
@@ -184,6 +184,8 @@ class API:
 
         self.req_options.default_media_type = media_type
         self.resp_options.default_media_type = media_type
+
+        self._cors_enable = cors_enable
 
         # NOTE(kgriffs): Add default error handlers
         self.add_error_handler(falcon.HTTPError, self._http_error_handler)
@@ -287,6 +289,10 @@ class API:
                         raise
 
                     req_succeeded = False
+
+            # If CORS are enabled then, we need to add the headers to the response
+            if self._cors_enable:
+                self._add_cors_headers(req, resp, req_succeeded)
 
         #
         # Set status and headers
@@ -780,6 +786,37 @@ class API:
         # would have matched one of the corresponding default
         # handlers.
         return False
+
+    @staticmethod
+    def _add_cors_headers(req, resp, req_succeeded):
+        """Add response headers to allow CORS
+        Args:
+            req: Current request object to check method was used.
+            resp: Current response object to add headers for CORS if
+                they does not exists
+            req_succeeded:  Flag to check if the response was handled
+                successfully or there have been an error
+        """
+        if resp.get_header('Access-Control-Allow-Origin') is None:
+            resp.set_header('Access-Control-Allow-Origin', '*')
+
+        if (req_succeeded and
+                req.method == 'OPTIONS' and
+                req.get_header('Access-Control-Request-Method')):
+            # NOTE(kgriffs): This is a CORS preflight request. Patch the
+            #   response accordingly.
+
+            allow = resp.get_header('Allow')
+            resp.delete_header('Allow')
+
+            allow_headers = req.get_header(
+                'Access-Control-Request-Headers',
+                default='*'
+            )
+
+            resp.set_header('Access-Control-Allow-Methods', allow)
+            resp.set_header('Access-Control-Allow-Headers', allow_headers)
+            resp.set_header('Access-Control-Max-Age', '86400')  # 24 hours
 
     # PERF(kgriffs): Moved from api_helpers since it is slightly faster
     # to call using self, and this function is called for most
