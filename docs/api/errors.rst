@@ -64,7 +64,7 @@ Note also that any exception (not just instances of
 :class:`~.HTTPError`) can be caught, logged, and otherwise handled
 at the global level by registering one or more custom error handlers.
 See also :meth:`~.API.add_error_handler` to learn more about this
-feature.
+feature. (By default, any uncaught exceptions will return a plain 500 response and log details of the exception to ``wsgi.errors``.)
 
 Base Class
 ----------

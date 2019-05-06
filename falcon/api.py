@@ -16,6 +16,7 @@
 
 from functools import wraps
 import re
+import traceback
 
 from falcon import api_helpers as helpers, DEFAULT_MEDIA_TYPE, routing
 from falcon.http_error import HTTPError
@@ -186,6 +187,7 @@ class API:
         self.resp_options.default_media_type = media_type
 
         # NOTE(kgriffs): Add default error handlers
+        self.add_error_handler(Exception, self._python_error_handler)
         self.add_error_handler(falcon.HTTPError, self._http_error_handler)
         self.add_error_handler(falcon.HTTPStatus, self._http_status_handler)
 
@@ -517,10 +519,11 @@ class API:
 
         .. Note::
 
-            By default, the framework installs two handlers, one for
-            :class:`~.HTTPError` and one for :class:`~.HTTPStatus`. These can
-            be overridden by adding a custom error handler method for the
-            exception type in question.
+            By default, the framework installs three handlers, one for
+            :class:`~.HTTPError`, one for :class:`~.HTTPStatus`, and one for
+            the standard ``Exception`` type, which prevents passing uncaught
+            exceptions to the WSGI server. These can be overridden by adding a
+            custom error handler method for the exception type in question.
 
         Args:
             exception (type or iterable of types): When handling a request,
@@ -746,6 +749,11 @@ class API:
 
     def _http_error_handler(self, req, resp, error, params):
         self._compose_error_response(req, resp, error)
+
+    def _python_error_handler(self, req, resp, error, params):
+        req.log_error(traceback.format_exc())
+        self._compose_error_response(
+            req, resp, falcon.HTTPInternalServerError())
 
     def _handle_exception(self, req, resp, ex, params):
         """Handle an exception raised from mw or a responder.
