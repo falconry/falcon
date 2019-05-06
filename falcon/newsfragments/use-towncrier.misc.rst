@@ -1,1 +1,1 @@
-Setup towncrier to make CHANGES reporting much easier
+Setup towncrier to make CHANGES reporting much easier.

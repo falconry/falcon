@@ -1,4 +1,4 @@
 [tool.towncrier]
     package = "falcon"
     package_dir = ""
-    filename = "CHANGES.rst"
+    filename = "docs/changes/3.0.0.rst"
