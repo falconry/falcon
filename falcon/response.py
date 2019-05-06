@@ -376,7 +376,6 @@ class Response:
         if not is_ascii_encodable(value):
             raise ValueError('"value" is not ascii encodable')
 
-        name = str(name)
         value = str(value)
 
         if self._cookies is None:
@@ -512,7 +511,6 @@ class Response:
         # is not a str, so do the conversion here. It's actually
         # faster to not do an isinstance check. str() will encode
         # to US-ASCII.
-        name = str(name)
         value = str(value)
 
         # NOTE(kgriffs): normalize name by lowercasing it
@@ -581,7 +579,6 @@ class Response:
         # is not a str, so do the conversion here. It's actually
         # faster to not do an isinstance check. str() will encode
         # to US-ASCII.
-        name = str(name)
         value = str(value)
 
         # NOTE(kgriffs): normalize name by lowercasing it
@@ -642,11 +639,9 @@ class Response:
             # is not a str, so do the conversion here. It's actually
             # faster to not do an isinstance check. str() will encode
             # to US-ASCII.
-            name = str(name)
             value = str(value)
 
             name = name.lower()
-
             if name == 'set-cookie':
                 raise HeaderNotSupported('This method cannot be used to set cookies')
 
@@ -755,12 +750,6 @@ class Response:
 
         if anchor is not None:
             value += '; anchor="' + uri_encode(anchor) + '"'
-
-        # NOTE(kgriffs): uwsgi fails with a TypeError if any header
-        # is not a str, so do the conversion here. It's actually
-        # faster to not do an isinstance check. str() will encode
-        # to US-ASCII.
-        value = str(value)
 
         _headers = self._headers
         if 'link' in _headers:
@@ -948,13 +937,11 @@ class Response:
 
         """
 
-        # PERF(kgriffs): Using "in" like this is faster than using
-        # dict.setdefault (tested on py27).
-        set_content_type = (media_type is not None and
-                            'content-type' not in self._headers)
-
-        if set_content_type:
-            self.set_header('content-type', media_type)
+        # PERF(kgriffs): Using "in" like this is faster than dict.setdefault()
+        #   in most cases, except on PyPy where it is only a fraction of a
+        #   nanosecond slower. Last tested on Python versions 3.5-3.7.
+        if media_type is not None and 'content-type' not in self._headers:
+            self._headers['content-type'] = media_type
 
     def _wsgi_headers(self, media_type=None):
         """Convert headers into the format expected by WSGI servers.

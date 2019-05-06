@@ -12,9 +12,14 @@ Changes to Supported Platforms
   continue to maintain the Falcon 2.x series for those who still need
   to run under Python 2, at least until that platform's scheduled
   EOL (January 1, 2020 at the time of this writing; see also PEP 373).
+- Python 3.4 has now reached its end-of-life per PEP 429, and as a result
+  is no longer supported as of Falcon 3.0.
 
 Breaking Changes
 ----------------
+
+- Header-related methods of the ``falcon.Response`` class no longer coerce
+  the passed header name to a string via ``str()``.
 
 New & Improved
 --------------
