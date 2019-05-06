@@ -389,6 +389,8 @@ Fixed
   compliance with RFC 7232.
 - Fixed ``TypeError`` being raised when using Falcon's testing framework
   to simulate a request to a generator-based WSGI app.
+- Falcon now supports all WebDAV methods (RFC 2518 and RFC 4918), such as
+  COPY, LOCK, MKCOL, MOVE, PROPFIND, PROPPATCH and UNLOCK.
 
 Contributors to this Release
 ----------------------------
