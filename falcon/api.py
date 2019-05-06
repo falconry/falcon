@@ -136,7 +136,7 @@ class API:
             when that same component's ``process_request()`` (or that of
             a component higher up in the stack) raises an exception.
 
-        cors_enable (bool): Set this flags to ``True`` if you want to accept
+        cors_enable (bool): Set this flag to ``True`` if you want to accept
             all requests with CORS policies.
 
     Attributes:
