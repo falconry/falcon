@@ -8,4 +8,5 @@ User Guide
    install
    quickstart
    tutorial
+   recipes/index
    faq
