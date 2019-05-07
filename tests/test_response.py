@@ -51,12 +51,11 @@ def test_response_attempt_to_set_read_only_headers():
     assert headers['x-things3'] == 'thing-3a, thing-3b'
 
 
-# TODO(kgriffs): Uncomment when 3.0 development opens
-# def test_response_removed_stream_len():
-#     resp = falcon.Response()
+def test_response_removed_stream_len():
+    resp = falcon.Response()
 
-#     with pytest.raises(AttributeError):
-#         resp.stream_len = 128
+    with pytest.raises(AttributeError):
+        resp.stream_len = 128
 
-#     with pytest.raises(AttributeError):
-#         resp.stream_len
+    with pytest.raises(AttributeError):
+        resp.stream_len
