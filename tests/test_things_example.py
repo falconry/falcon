@@ -6,7 +6,7 @@ import falcon
 
 def test_app():
     assert app
-    (resource, method_map, params, uri_template) = app._router.find('/things')
+    resource, *_ = app._router.find('/things')
     assert resource is things
 
 
@@ -19,4 +19,9 @@ def test_ThingsResource_on_get():
     mock_response = Mock()
     test_thing.on_get(None, mock_response)
     assert mock_response.status == falcon.HTTP_200
-    assert len(mock_response.body) > 10
+    assert mock_response.body == '''
+Two things awe me most, the starry sky above me and the moral law within me.
+
+    ~ Immanuel Kant
+
+'''
