@@ -530,6 +530,11 @@ class API:
             exceptions to the WSGI server. These can be overridden by adding a
             custom error handler method for the exception type in question.
 
+            Be aware that both :class:`~.HTTPError` and :class:`~.HTTPStatus`
+            inherit from the standard ``Exception`` type, so overriding the
+            default ``Exception`` handler will override all three default
+            handlers, due to the LIFO ordering of handler-matching.
+
         Args:
             exception (type or iterable of types): When handling a request,
                 whenever an error occurs that is an instance of the specified
