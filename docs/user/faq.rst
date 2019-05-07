@@ -687,7 +687,7 @@ takes bytes.
             resp.body = json.dumps({ 'hello': 'World' })
 
         def on_post(self, req, resp):
-            resp.body = b'{ "hello": "World" }'
+            resp.data = b'{ "hello": "World" }'
 
 
 `resp.stream` allows you to set a file-like object which returns bytes. We will
