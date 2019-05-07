@@ -437,8 +437,8 @@ bodies.
 
         @staticmethod
         def handle(ex, req, resp, params):
-            description = ('Sorry, couldn\'t write your thing to the '
-                           'database. It worked on my box.')
+            description = ("Sorry, couldn't write your thing to the "
+                           "database. It worked on my box.")
 
             raise falcon.HTTPError(falcon.HTTP_725,
                                    'Database Error',
