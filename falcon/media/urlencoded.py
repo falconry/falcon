@@ -13,9 +13,9 @@ class URLEncodedFormHandler(BaseHandler):
 
     Keyword Arguments:
         keep_blank (bool): Whether to keep empty-string values from the form
-            upon deserialization.
+            when deserializing.
         csv (bool): Whether to split comma-separated form values into list
-            when deserializing, and accept lists when serializing.
+            when deserializing.
     """
 
     def __init__(self, keep_blank=True, csv=False):
@@ -23,7 +23,9 @@ class URLEncodedFormHandler(BaseHandler):
         self.csv = csv
 
     def serialize(self, media, content_type):
-        return urlencode(media, doseq=self.csv)
+        # NOTE(vytas): Setting doseq to True to mirror the parse_query_string
+        # behaviour.
+        return urlencode(media, doseq=True)
 
     def deserialize(self, stream, content_type, content_length):
         body = stream.read()

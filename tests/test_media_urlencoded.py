@@ -20,12 +20,13 @@ def test_deserialize_invalid_unicode():
         print(handler.deserialize(stream, falcon.MEDIA_URLENCODED, 9))
 
 
-@pytest.mark.parametrize('csv,data,expected', [
-    (False, {'items': [1, 2]}, ''),
+@pytest.mark.parametrize('data,expected', [
+    ({'hello': 'world'}, 'hello=world'),
+    ({'number': [1, 2]}, 'number=1&number=2'),
 ])
-def test_urlencoded_form_handler_serialize(csv, data, expected):
-    handler = media.URLEncodedFormHandler(csv=csv)
-    handler.serialize(data, falcon.MEDIA_URLENCODED) == expected
+def test_urlencoded_form_handler_serialize(data, expected):
+    handler = media.URLEncodedFormHandler()
+    assert handler.serialize(data, falcon.MEDIA_URLENCODED) == expected
 
 
 class MediaMirror:
