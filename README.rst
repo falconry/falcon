@@ -413,6 +413,7 @@ bodies.
 
 .. code:: python
 
+    # examples/things_advanced.py
     import json
     import logging
     import uuid

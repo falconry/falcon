@@ -81,6 +81,7 @@ parameters, handling errors, and working with request and response bodies.
 
 .. code:: python
 
+    # examples/things_advanced.py
     import json
     import logging
     import uuid
