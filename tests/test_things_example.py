@@ -1,7 +1,8 @@
 from unittest.mock import Mock
 
-import falcon
 from examples.things import app, things, ThingsResource
+import falcon
+
 
 def test_app():
     assert app
