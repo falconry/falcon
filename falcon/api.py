@@ -613,6 +613,11 @@ class API:
             property value, and it may choose to override the
             representation logic.
 
+        Note:
+            A custom serializer set with this method may not be called if the
+            default error handler for :class:`~.HTTPError` has been overriden.
+            See :meth:`~.add_error_handler` for more details.
+
         The :class:`~.HTTPError` class contains helper methods,
         such as `to_json()` and `to_dict()`, that can be used from
         within custom serializers. For example::
