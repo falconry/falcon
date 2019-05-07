@@ -121,6 +121,9 @@ Supported Handler Types
 .. autoclass:: falcon.media.MessagePackHandler
     :members:
 
+.. autoclass:: falcon.media.URLEncodedFormHandler
+    :members:
+
 Custom Handler Type
 -------------------
 
