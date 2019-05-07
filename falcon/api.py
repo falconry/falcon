@@ -546,7 +546,7 @@ class API:
                 If not specified explicitly, the handler will default to
                 ``exception.handle``, where ``exception`` is the error
                 type specified above, and ``handle`` is a static method
-                (i.e., decorated with @staticmethod) that accepts
+                (i.e., decorated with ``@staticmethod``) that accepts
                 the same params just described. For example::
 
                     class CustomException(CustomBaseException):
