@@ -7,9 +7,9 @@ To assist debugging when things go wrong it is helpful to find the relevant
 logs for a particular request. One way to do this is generate a unique request
 ID for each request and to add that to every log message.
 
-If you wish to include the trace the request throughout the application such
-as within data manipulations that are outside of the request context. You can
-use a `thread-local`_ context object to store the request ID:
+If you wish to trace the request throughout the application such as within
+data manipulations that are outside of the request context. You can use a
+`thread-local`_ context object to store the request ID:
 
 .. code:: python
 
