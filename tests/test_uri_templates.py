@@ -168,6 +168,14 @@ def test_single(client, resource, field_name):
     assert resource.captured_kwargs[field_name] == '123'
 
 
+def test_single_path_segment(client):
+    id_resource = IDResource()
+
+    client.app.add_route('/thing-{id}', id_resource)
+    client.simulate_get('/thing-foo')
+    assert id_resource.id == 'foo'
+
+
 @pytest.mark.parametrize('uri_template,', [
     '/{id:int}',
     '/{id:int(3)}',

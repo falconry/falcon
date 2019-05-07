@@ -34,7 +34,7 @@ $ tools/mintest.sh
 
 ```
 
-You may also use Python 3.5 or 3.6 if you don't have 3.7 installed on your system. Substitute "py35" or "py36" as appropriate:
+You may also use Python 3.5 or 3.6 if you don't have 3.7 installed on your system. Substitute "py35" or "py36" as appropriate. For example:
 
 
 ```bash
@@ -57,6 +57,8 @@ Project maintainers review each PR for the following:
 - [ ] **Performance.** Will this degrade performance for request or response handling? Are there opportunities to optimize the implementation?
 - [ ] **Docs.** Does this impact any existing documentation or require new documentation? If so, does this PR include the aforementioned docs, and is the language friendly, clear, helpful, and grammatically correct with no misspellings? Do all docstrings conform to Google style ala [sphinx.ext.napoleon](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/index.html)?
 - [ ] **Dependencies.** Does this PR bring in any unnecessary dependencies that would prevent us from keeping the framework lean and mean, jeopardize the reliability of the project, or significantly increase Falcon's attack service?
+- [ ] **Changelog.** Does the PR have a changelog entry in newsfragments? Is the
+type correct? Try running `towncrier --draft` to ensure it renders correctly.
 
 ### Test coverage
 
