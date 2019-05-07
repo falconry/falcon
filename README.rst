@@ -363,9 +363,11 @@ API.
 
 .. code:: python
 
-    # things.py
+    # examples/things.py
 
     # Let's get this party started!
+    from wsgiref.simple_server import make_server
+
     import falcon
 
 
@@ -381,7 +383,9 @@ API.
                          '\n'
                          '    ~ Immanuel Kant\n\n')
 
+
     # falcon.API instances are callable WSGI apps
+    # in larger applications the app is created in a separate file
     app = falcon.API()
 
     # Resources are represented by long-lived class instances
@@ -390,13 +394,19 @@ API.
     # things will handle all requests to the '/things' URL path
     app.add_route('/things', things)
 
-You can run the above example using any WSGI server, such as uWSGI or
-Gunicorn. For example:
+    if __name__ == '__main__':
+        with make_server('', 8000, app) as httpd:
+            print('Serving on port 8000...')
+
+            # Serve until process is killed
+            httpd.serve_forever()
+
+You can run the above example directly using this wsgiref server included:
 
 .. code:: bash
 
-    $ pip install gunicorn
-    $ gunicorn things:app
+    $ pip install falcon
+    $ python things.py
 
 Then, in another terminal:
 
@@ -631,6 +641,14 @@ bodies.
     if __name__ == '__main__':
         httpd = simple_server.make_server('127.0.0.1', 8000, app)
         httpd.serve_forever()
+
+Again this code uses wsgiref, but you you can also run the above example using
+any WSGI server, such as uWSGI or Gunicorn. For example:
+
+.. code:: bash
+
+    $ pip install gunicorn
+    $ gunicorn things:app
 
 Contributing
 ------------
