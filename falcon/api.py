@@ -515,7 +515,12 @@ class API:
         will choose the one that was most recently registered.
         Therefore, more general error handlers (e.g., for the
         standard ``Exception`` type) should be added first, to avoid
-        masking more specific handlers for subclassed types.
+        masking more specific handlers for subclassed types. For example::
+
+            app = falcon.API()
+            app.add_error_handler(Exception, custom_handle_uncaught_exception)
+            app.add_error_handler(falcon.HTTPError, custom_handle_http_error)
+            app.add_error_handler(CustomException)
 
         .. Note::
 
