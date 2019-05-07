@@ -55,6 +55,9 @@ Alternatively if all of your application logic has access to the
 
     from uuid import uuid4
 
+    # Optional logging package (pip install structlog)
+    import structlog
+
     class RequestIDMiddleware:
         def process_request(self, req, resp):
             request_id = str(uuid4())
@@ -64,7 +67,7 @@ Alternatively if all of your application logic has access to the
             # Or if your logger has built-in support for contexts
             req.context.log = structlog.get_logger(request_id=request_id)
 
-Logging with the `thread-local`_ context can be done like so:
+Logging with the `thread-local`_ context can be done like:
 
 .. code:: python
 
@@ -75,12 +78,12 @@ Logging with the `thread-local`_ context can be done like so:
     from context import ctx
 
     def create_widget_object(name: str) -> Any:
-        request_id = f'request_id={ctx.request_id}'
-        logging.debug(f'{request_id} going to create widget: {name}')
+        request_id = 'request_id={0}'.format(ctx.request_id)
+        logging.debug('%s going to create widget: %s', request_id, name)
         try:
             # create the widget
         except:
-            logging.exception(f'{request_id} something went wrong')
-        logging.debug(f'{request_id} created widget: {name}')
+            logging.exception('%s something went wrong', request_id)
+        logging.debug('%s created widget: %s', request_id, name)
 
 .. _thread-local: https://docs.python.org/3.7/library/threading.html#thread-local-data
