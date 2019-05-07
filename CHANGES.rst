@@ -113,7 +113,7 @@ Breaking Changes
   ``req`` keyword argument that was added in a previous release. The
   backwards-compatible shim was removed.
 - All middleware methods and hooks must now accept the arguments as specified
-  in the relevant interface definitions as of Falcon 1.4. All
+  in the relevant interface definitions as of Falcon 2.0. All
   backwards-compatible shims have been removed.
 - Custom error serializers are now required to accept the arguments as
   specified by ``API.set_error_serializer()`` for the past few releases.
