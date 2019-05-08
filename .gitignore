@@ -36,6 +36,7 @@ nosetests.xml
 
 # Docs
 docs/_build
+dash
 
 # Translations
 *.mo

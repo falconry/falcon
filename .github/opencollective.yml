@@ -1,7 +1,5 @@
-# See also: https://github.com/maticzav/opencollective-bot
-
-opencollective: https://opencollective.com/falcon
-message: |
+collective: falcon
+invitation: |
   Hi :wave:,
 
   Thanks for using Falcon. The large amount of time and effort needed to
