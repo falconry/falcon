@@ -16,7 +16,7 @@
 
 import re
 
-from falcon import COMBINED_METHODS, responders
+from falcon import constants, responders
 
 
 class SuffixedMethodNotFoundError(Exception):
@@ -108,7 +108,7 @@ def map_http_methods(resource, suffix=None):
 
     method_map = {}
 
-    for method in COMBINED_METHODS:
+    for method in constants.COMBINED_METHODS:
         try:
             responder_name = 'on_' + method.lower()
             if suffix:
@@ -149,6 +149,6 @@ def set_default_responders(method_map):
 
     na_responder = responders.create_method_not_allowed(allowed_methods)
 
-    for method in COMBINED_METHODS:
+    for method in constants.COMBINED_METHODS:
         if method not in allowed_methods:
             method_map[method] = na_responder
