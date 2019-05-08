@@ -1,5 +1,7 @@
+import os
+
 # RFC 7231, 5789 methods
-HTTP_METHODS = (
+HTTP_METHODS = [
     'CONNECT',
     'DELETE',
     'GET',
@@ -9,20 +11,27 @@ HTTP_METHODS = (
     'POST',
     'PUT',
     'TRACE',
-)
+]
 
 # RFC 3253 methods
-WEBDAV_METHODS = (
+WEBDAV_METHODS = [
     'CHECKIN',
     'CHECKOUT',
     'REPORT',
     'UNCHECKIN',
     'UPDATE',
     'VERSION-CONTROL',
-)
+]
 
-COMBINED_METHODS = HTTP_METHODS + WEBDAV_METHODS
+# if FALCON_CUSTOM_HTTP_METHODS is defined, treat it as a comma-
+# delimited string of additional supported methods in this env.
+FALCON_CUSTOM_HTTP_METHODS = [
+    method for method in
+    (os.environ.get('FALCON_CUSTOM_HTTP_METHODS') or '').split(',')
+    if method != ''
+]
 
+COMBINED_METHODS = HTTP_METHODS + WEBDAV_METHODS + FALCON_CUSTOM_HTTP_METHODS
 
 # NOTE(kgriffs): According to RFC 7159, most JSON parsers assume
 # UTF-8 and so it is the recommended default charset going forward,
