@@ -23,15 +23,19 @@ directly from the `testing` package::
 
 """
 
+import asyncio
 import cgi
 import contextlib
+import functools
 import io
 import itertools
 import random
 import sys
+import time
 
+from falcon.constants import SINGLETON_HEADERS
+import falcon.request
 from falcon.util import http_now, uri
-
 
 # Constants
 DEFAULT_HOST = 'falconframework.org'
@@ -39,6 +43,197 @@ DEFAULT_HOST = 'falconframework.org'
 
 # NOTE(kgriffs): Alias for backwards-compatibility with Falcon 0.2
 httpnow = http_now
+
+
+class ASGILifespanEventEmitter:
+    def __init__(self, shutting_down):
+        self._state = 0
+        self._shutting_down = shutting_down
+
+    async def emit(self):
+        if self._state == 0:
+            self._state += 1
+            return {'type': 'lifespan.startup'}
+
+        if self._state == 1:
+            self._state += 1
+            # NOTE(kgriffs): This ensures the app ignores events it does
+            #   not recognize.
+            return {'type': 'lifespan._nonstandard_event'}
+
+        async with self._shutting_down:
+            await self._shutting_down.wait()
+
+        return {'type': 'lifespan.shutdown'}
+
+    __call__ = emit
+
+
+class ASGIRequestEventEmitter:
+    """Emits events on-demand to an ASGI app.
+
+    Keyword Args:
+        body (str): The body content to use when emitting http.request
+            events. May be an empty string. If a byte string, it will
+            be used as-is; otherwise it will be encoded as UTF-8
+            (default b'').
+        disconnect_at (int): The Unix timestamp after which to begin
+            returning http.disconnect events (default now + 30s).
+        chunk_size (int): The maximum number of bytes to include in
+            a single http.request event (default 4096).
+    """
+
+    def __init__(self, body=b'', disconnect_at=None, chunk_size=4096):
+        # NOTE(kgriffs): We can't start out with it being None or that will
+        #   stall on the first call to emit().
+        if body is None:
+            raise ValueError('The body argument may not be None')
+
+        if not isinstance(body, bytes):
+            body = body.encode()
+
+        if disconnect_at is None:
+            disconnect_at = time.time() + 30
+
+        self._body = body
+        self._chunk_size = chunk_size
+        self._disconnect_at = disconnect_at
+
+    async def emit(self):
+        if self._body is None:
+            # NOTE(kgriffs): When there are no more events, an ASGI
+            #   server will hang until the client connection
+            #   disconnects.
+            while time.time() < self._disconnect_at:
+                await asyncio.sleep(1)
+
+        if self._disconnect_at <= time.time():
+            return {'type': 'http.disconnect'}
+
+        event = {'type': 'http.request'}
+
+        # NOTE(kgriffs): Part of the time just return an
+        #   empty chunk to make sure the app handles that
+        #   correctly.
+        if flip_coin():
+            event['more_body'] = True
+
+            # NOTE(kgriffs): Since ASGI specifies that
+            #   'body' is optional, we randomaly choose whether
+            #   or not to explicitly set it to b'' to ensure
+            #   the app handles both correctly.
+            if flip_coin():
+                event['body'] = b''
+
+            return event
+
+        chunk = self._body[:self._chunk_size]
+        self._body = self._body[self._chunk_size:] or None
+
+        if chunk:
+            event['body'] = chunk
+        elif flip_coin():
+            # NOTE(kgriffs): Since ASGI specifies that
+            #   'body' is optional, we randomaly choose whether
+            #   or not to explicitly set it to b'' to ensure
+            #   the app handles both correctly.
+            event['body'] = b''
+
+        if self._body:
+            event['more_body'] = True
+        elif flip_coin():
+            # NOTE(kgriffs): The ASGI spec allows leaving off
+            #   the 'more_body' key when it would be set to
+            #   False, so randomly choose one of the approaches
+            #   to make sure the app handles both cases.
+            event['more_body'] = False
+
+        return event
+
+    __call__ = emit
+
+
+class ASGIResponseEventCollector:
+    """Collects and validates ASGI events returned by an app."""
+
+    _LIFESPAN_EVENT_TYPES = frozenset([
+        'lifespan.startup.complete',
+        'lifespan.startup.failed',
+        'lifespan.shutdown.complete',
+        'lifespan.shutdown.failed',
+    ])
+
+    def __init__(self):
+        self.events = []
+        self.headers = []
+        self.status = None
+        self.body_chunks = []
+        self.more_body = None
+
+    async def collect(self, event):
+        if self.more_body is False:
+            # NOTE(kgriffs): According to the ASGI spec, once we get a
+            #   message setting more_body to False, any further messages
+            #   on the channel are ignored.
+            return
+
+        self.events.append(event)
+
+        event_type = event['type']
+        if not isinstance(event_type, str):
+            raise TypeError('ASGI event type must be a Unicode string')
+
+        if event_type == 'http.response.start':
+            for name, value in event.get('headers', []):
+                if not isinstance(name, bytes):
+                    raise TypeError('ASGI header names must be byte strings')
+                if not isinstance(value, bytes):
+                    raise TypeError('ASGI header names must be byte strings')
+
+                name_decoded = name.decode()
+                if not name_decoded.islower():
+                    raise ValueError('ASGI header names must be lowercase')
+
+                self.headers.append((name_decoded, value.decode()))
+
+            self.status = event['status']
+
+            if not isinstance(self.status, int):
+                raise TypeError('ASGI status must be an int')
+
+        elif event_type == 'http.response.body':
+            chunk = event.get('body', b'')
+            if not isinstance(chunk, bytes):
+                raise TypeError('ASGI body content must be a byte string')
+
+            self.body_chunks.append(chunk)
+
+            self.more_body = event.get('more_body', False)
+            if not isinstance(self.more_body, bool):
+                raise TypeError('ASGI more_body flag must be a bool')
+
+        elif event_type not in self._LIFESPAN_EVENT_TYPES:
+            raise ValueError('Invalid ASGI event type: ' + event_type)
+
+    __call__ = collect
+
+
+def invoke_coroutine_sync(coroutine, *args, **kwargs):
+    """Invokes a coroutine function from a synchronous caller.
+
+    Additional arguments not mentioned below are bound to the given
+    coroutine function via ``functools.partial()``.
+
+    Args:
+        coroutine: A coroutine function to invoke.
+    """
+
+    loop = asyncio.get_event_loop()
+    return loop.run_until_complete(
+        functools.partial(
+            coroutine, *args, **kwargs
+        )()
+    )
 
 
 # get_encoding_from_headers() is Copyright 2016 Kenneth Reitz, and is
@@ -62,10 +257,18 @@ def get_encoding_from_headers(headers):
     if 'charset' in params:
         return params['charset'].strip("'\"")
 
+    # NOTE(kgriffs): Added checks for text/event-stream and application/json
+    if content_type in ('text/event-stream', 'application/json'):
+        return 'UTF-8'
+
     if 'text' in content_type:
         return 'ISO-8859-1'
 
     return None
+
+
+def flip_coin():
+    return random.randint(0, 1) == 0
 
 
 def rand_string(min, max):
@@ -83,42 +286,168 @@ def rand_string(min, max):
                     for __ in range(string_length)])
 
 
-def create_environ(path='/', query_string='', protocol='HTTP/1.1',
+def create_scope(path='/', query_string='', method='GET', headers=None,
+                 host=DEFAULT_HOST, scheme=None, port=None, http_version='1.1',
+                 remote_addr=None, root_path=None, content_length=None,
+                 include_server=True):
+
+    """Create a mock ASGI scope ``dict`` for simulating ASGI requests.
+
+    Keyword Args:
+        path (str): The path for the request (default '/')
+        query_string (str): The query string to simulate, without a
+            leading '?' (default ''). The query string is passed as-is
+            (it will not be percent-encoded).
+        method (str): The HTTP method to use (default 'GET')
+        headers (dict): Headers as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of strings provides the name and value
+            for an HTTP header. If desired, multiple header values may be
+            combined into a single (*name*, *value*) pair by joining the values
+            with a comma when the header in question supports the list
+            format (see also RFC 7230 and RFC 7231). When the
+            request will include a body, the Content-Length header should be
+            included in this list. Header names are not case-sensitive.
+        host(str): Hostname for the request (default 'falconframework.org').
+            This also determines the the value of the Host header in the
+            request.
+        scheme (str): URL scheme, either 'http' or 'https' (default 'http')
+        port (int): The TCP port to simulate. Defaults to
+            the standard port used by the given scheme (i.e., 80 for 'http'
+            and 443 for 'https'). A string may also be passed, as long as
+            it can be parsed as an int.
+        http_version (str): The HTTP version to simulate. Must be either
+            '2', '1.1', or '1.0' (default '1.1'). If set to '1.0', the Host
+            header will not be added to the scope.
+        remote_addr (str): Remote address for the request to use for
+            the 'client' field in the connection scope (default None)
+        root_path (str): The root path this application is mounted at; same as
+            SCRIPT_NAME in WSGI (default '').
+        content_length (int): The expected content length of the request
+            body (default ``None``). If specified, this value will be
+            used to set the Content-Length header in the request.
+        include_server (bool): Set to ``False`` to not set the 'server' key
+            in the scope ``dict`` (default ``True``).
+    """
+
+    if http_version not in ('2', '1.1', '1.0'):
+        raise ValueError('Invalid HTTP version specified: ' + http_version)
+
+    path = uri.decode(path, unquote_plus=False)
+
+    # NOTE(kgriffs): Handles both None and ''
+    query_string = query_string.encode() if query_string else b''
+
+    if query_string and query_string.startswith(b'?'):
+        raise ValueError("query_string should not start with '?'")
+
+    scope = {
+        'type': 'http',
+        'asgi': {
+            'version': '3.0',
+            'spec_version': '2.1',
+        },
+        'http_version': http_version,
+        'method': method.upper(),
+        'path': path,
+        'query_string': query_string,
+    }
+
+    # NOTE(kgriffs): Explicitly test against None so that the caller
+    #   is able to simulate setting app to an empty string if they
+    #   need to cover that branch in their code.
+    if root_path is not None:
+        # NOTE(kgriffs): Judging by the algorithm given in PEP-3333 for
+        #   reconstructing the URL, SCRIPT_NAME is expected to contain a
+        #   preceding slash character. Since ASGI states that this value is
+        #   the same as WSGI's SCRIPT_NAME, we will follow suit here.
+        if root_path and not root_path.startswith('/'):
+            scope['root_path'] = '/' + root_path
+        else:
+            scope['root_path'] = root_path
+
+    if scheme:
+        if scheme not in ('http', 'https'):
+            raise ValueError("scheme must be either 'http' or 'https'")
+
+        scope['scheme'] = scheme
+
+    if port is None:
+        if (scheme or 'http') == 'http':
+            port = 80
+        else:
+            port = 443
+    else:
+        port = int(port)
+
+    if remote_addr:
+        # NOTE(kgriffs): Choose from the standard IANA dynamic range
+        remote_port = random.randint(49152, 65535)
+
+        # NOTE(kgriffs): Expose as an iterable to ensure the framework/app
+        #   isn't hard-coded to only work with a list or tuple.
+        scope['client'] = iter([remote_addr, remote_port])
+
+    if include_server:
+        scope['server'] = iter([host, port])
+
+    _add_headers_to_scope(scope, headers, content_length, host, port, scheme, http_version)
+
+    return scope
+
+
+def create_environ(path='/', query_string='', http_version='1.1',
                    scheme='http', host=DEFAULT_HOST, port=None,
-                   headers=None, app='', body='', method='GET',
-                   wsgierrors=None, file_wrapper=None, remote_addr=None):
+                   headers=None, app=None, body='', method='GET',
+                   wsgierrors=None, file_wrapper=None, remote_addr=None,
+                   root_path=None):
 
     """Creates a mock PEP-3333 environ ``dict`` for simulating WSGI requests.
 
     Keyword Args:
         path (str): The path for the request (default '/')
         query_string (str): The query string to simulate, without a
-            leading '?' (default '')
-        protocol (str): The HTTP protocol to simulate
-            (default 'HTTP/1.1'). If set to 'HTTP/1.0', the Host header
-            will not be added to the environment.
+            leading '?' (default ''). The query string is passed as-is
+            (it will not be percent-encoded).
+        http_version (str): The HTTP version to simulate. Must be either
+            '2', '1.1', or '1.0' (default '1.1'). If set to '1.0', the Host
+            header will not be added to the scope.
         scheme (str): URL scheme, either 'http' or 'https' (default 'http')
         host(str): Hostname for the request (default 'falconframework.org')
-        port (str): The TCP port to simulate. Defaults to
+        port (int): The TCP port to simulate. Defaults to
             the standard port used by the given scheme (i.e., 80 for 'http'
-            and 443 for 'https').
-        headers (dict): Headers as a ``dict`` or an iterable yielding
-            (*key*, *value*) ``tuple``'s
-        app (str): Value for the ``SCRIPT_NAME`` environ variable, described in
+            and 443 for 'https'). A string may also be passed, as long as
+            it can be parsed as an int.
+        headers (dict): Headers as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of strings provides the name and value
+            for an HTTP header. If desired, multiple header values may be
+            combined into a single (*name*, *value*) pair by joining the values
+            with a comma when the header in question supports the list
+            format (see also RFC 7230 and RFC 7231). Header names are not
+            case-sensitive.
+        root_path (str): Value for the ``SCRIPT_NAME`` environ variable, described in
             PEP-333: 'The initial portion of the request URL's "path" that
             corresponds to the application object, so that the application
             knows its virtual "location". This may be an empty string, if the
             application corresponds to the "root" of the server.' (default '')
+        app (str): Deprecated alias for `root_path`. If both kwargs are passed,
+            `root_path` takes precedence.
         body (str): The body of the request (default ''). The value will be
-            encoded as UTF-8 in the WSGI environ.
+            encoded as UTF-8 in the WSGI environ. Alternatively, a byte string
+            may be passed, in which case it will be used as-is.
         method (str): The HTTP method to use (default 'GET')
         wsgierrors (io): The stream to use as *wsgierrors*
             (default ``sys.stderr``)
         file_wrapper: Callable that returns an iterable, to be used as
             the value for *wsgi.file_wrapper* in the environ.
-        remote_addr (str): Remote address for the request (default '127.0.0.1')
+        remote_addr (str): Remote address for the request to use as the
+            'REMOTE_ADDR' environ variable (default None)
 
     """
+
+    if http_version not in ('2', '1.1', '1.0'):
+        raise ValueError('Invalid HTTP version specified: ' + http_version)
 
     if query_string and query_string.startswith('?'):
         raise ValueError("query_string should not start with '?'")
@@ -150,25 +479,27 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1',
     if port is None:
         port = '80' if scheme == 'http' else '443'
     else:
-        port = str(port)
+        # NOTE(kgriffs): Running it through int() first ensures that if
+        #   a string was passed, it is a valid integer.
+        port = str(int(port))
+
+    root_path = root_path or app or ''
 
     # NOTE(kgriffs): Judging by the algorithm given in PEP-3333 for
     # reconstructing the URL, SCRIPT_NAME is expected to contain a
     # preceding slash character.
-    if app and not app.startswith('/'):
-        app = '/' + app
+    if root_path and not root_path.startswith('/'):
+        root_path = '/' + root_path
 
     env = {
-        'SERVER_PROTOCOL': protocol,
+        'SERVER_PROTOCOL': 'HTTP/' + http_version,
         'SERVER_SOFTWARE': 'gunicorn/0.17.0',
-        'SCRIPT_NAME': app,
+        'SCRIPT_NAME': (root_path or ''),
         'REQUEST_METHOD': method,
         'PATH_INFO': path,
         'QUERY_STRING': query_string,
-        'HTTP_USER_AGENT': 'curl/7.24.0 (x86_64-apple-darwin12.0)',
         'REMOTE_PORT': '65133',
         'RAW_URI': '/',
-        'REMOTE_ADDR': remote_addr or '127.0.0.1',
         'SERVER_NAME': host,
         'SERVER_PORT': port,
 
@@ -181,10 +512,16 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1',
         'wsgi.run_once': False
     }
 
+    # NOTE(kgriffs): It has been observed that WSGI servers do not always
+    #   set the REMOTE_ADDR variable, so we don't always set it either, to
+    #   ensure the framework/app handles that case correctly.
+    if remote_addr:
+        env['REMOTE_ADDR'] = remote_addr
+
     if file_wrapper is not None:
         env['wsgi.file_wrapper'] = file_wrapper
 
-    if protocol != 'HTTP/1.0':
+    if http_version != '1.0':
         host_header = host
 
         if scheme == 'https':
@@ -206,6 +543,63 @@ def create_environ(path='/', query_string='', protocol='HTTP/1.1',
         _add_headers_to_environ(env, headers)
 
     return env
+
+
+def create_req(options=None, **kwargs):
+    """Create and return a new Request instance.
+
+    This function can be used to conveniently create a WSGI environ
+    and use it to instantiate a :py:class:`~.Request` object in one go.
+
+    The arguments for this function are identical to those
+    of :py:meth:`falcon.testing.create_environ`, except an additional
+    `options` keyword argument may be set to an instance of
+    :py:class:`falcon.RequestOptions` to configure certain
+    aspects of request parsing in lieu of the defaults.
+    """
+
+    env = create_environ(**kwargs)
+    return falcon.request.Request(env, options=options)
+
+
+def create_asgi_req(body=None, req_type=None, options=None, **kwargs):
+    """Create and return a new ASGI Request instance.
+
+    This function can be used to conveniently create an ASGI scope
+    and use it to instantiate a :py:class:`falcon.asgi.Request` object
+    in one go.
+
+    The arguments for this function are identical to those
+    of :py:meth:`falcon.testing.create_environ`, with the addition of
+    `body`, `req_type`, and `options` arguments as documented below.
+
+    Keyword Arguments:
+        body (bytes): The body data to use for the request (default b''). If
+            the value is a :py:class:`str`, it will be UTF-8 encoded to
+            a byte string.
+        req_type (object): A subclass of :py:class:`falcon.asgi.Request`
+            to instantiate. If not specified, the standard
+            :py:class:`falcon.asgi.Request` class will simply be used.
+        options (falcon.RequestOptions): An instance of
+            :py:class:`falcon.RequestOptions` that should be used to
+                determine certain aspects of request parsing in lieu of
+                the defaults.
+    """
+
+    scope = create_scope(**kwargs)
+
+    body = body or b''
+    disconnect_at = time.time() + 300
+
+    req_event_emitter = ASGIRequestEventEmitter(body, disconnect_at)
+
+    # NOTE(kgriffs): Import here in case the app is running under
+    #   Python 3.5 (in which case as long as it does not call the
+    #   present function, it won't trigger an import error).
+    import falcon.asgi
+
+    req_type = req_type or falcon.asgi.Request
+    return req_type(scope, req_event_emitter, options=options)
 
 
 @contextlib.contextmanager
@@ -271,21 +665,64 @@ def closed_wsgi_iterable(iterable):
 
 
 def _add_headers_to_environ(env, headers):
-    if not isinstance(headers, dict):
-        # Try to convert
-        headers = dict(headers)
+    try:
+        items = headers.items()
+    except AttributeError:
+        items = headers
 
-    for name, value in headers.items():
-        name = name.upper().replace('-', '_')
+    for name, value in items:
+        name_wsgi = name.upper().replace('-', '_')
+        if name_wsgi not in ('CONTENT_TYPE', 'CONTENT_LENGTH'):
+            name_wsgi = 'HTTP_' + name_wsgi
 
         if value is None:
             value = ''
         else:
             value = value.strip()
 
-        if name == 'CONTENT_TYPE':
-            env[name] = value
-        elif name == 'CONTENT_LENGTH':
-            env[name] = value
+        if name_wsgi not in env or name.lower() in SINGLETON_HEADERS:
+            env[name_wsgi] = value
         else:
-            env['HTTP_' + name] = value
+            env[name_wsgi] += ',' + value
+
+
+def _add_headers_to_scope(scope, headers, content_length, host, port, scheme, http_version):
+    if headers:
+        try:
+            items = headers.items()
+        except AttributeError:
+            items = headers
+
+        prepared_headers = [
+            # NOTE(kgriffs): Expose as an iterable to ensure the framework/app
+            #   isn't hard-coded to only work with a list or tuple.
+            # NOTE(kgriffs): Value is stripped if not empty, otherwise defaults
+            #   to b'' to be consistent with _add_headers_to_environ().
+            iter([name.lower().encode(), value.strip().encode() if value else b''])
+
+            # NOTE(kgriffs): Use tuple unpacking to support iterables
+            #   that yield arbitary two-item iterable objects.
+            for name, value in items
+        ]
+    else:
+        prepared_headers = []
+
+    if content_length is not None:
+        value = str(content_length).encode()
+        prepared_headers.append((b'content-length', value))
+
+    if http_version != '1.0':
+        host_header = host
+
+        if scheme == 'https':
+            if port != 443:
+                host_header += ':' + str(port)
+        else:
+            if port != 80:
+                host_header += ':' + str(port)
+
+        prepared_headers.append([b'host', host_header.encode()])
+
+    # NOTE(kgriffs): Make it an iterator to ensure the app is not expecting
+    #   a specific type (ASGI only specified that it is an iterable).
+    scope['headers'] = iter(prepared_headers)

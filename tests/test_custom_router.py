@@ -2,9 +2,11 @@ import pytest
 
 import falcon
 from falcon import testing
+from ._util import create_app
 
 
-def test_custom_router_add_route_should_be_used():
+@pytest.mark.parametrize('asgi', [True, False])
+def test_custom_router_add_route_should_be_used(asgi):
     check = []
 
     class CustomRouter:
@@ -14,17 +16,21 @@ def test_custom_router_add_route_should_be_used():
         def find(self, uri):
             pass
 
-    app = falcon.API(router=CustomRouter())
+    app = create_app(asgi=asgi, router=CustomRouter())
     app.add_route('/test', 'resource')
 
     assert len(check) == 1
     assert '/test' in check
 
 
-def test_custom_router_find_should_be_used():
-
-    def resource(req, resp, **kwargs):
-        resp.body = '{{"uri_template": "{0}"}}'.format(req.uri_template)
+@pytest.mark.parametrize('asgi', [True, False])
+def test_custom_router_find_should_be_used(asgi):
+    if asgi:
+        async def resource(req, resp, **kwargs):
+            resp.body = '{{"uri_template": "{0}"}}'.format(req.uri_template)
+    else:
+        def resource(req, resp, **kwargs):
+            resp.body = '{{"uri_template": "{0}"}}'.format(req.uri_template)
 
     class CustomRouter:
         def __init__(self):
@@ -47,7 +53,7 @@ def test_custom_router_find_should_be_used():
             return None
 
     router = CustomRouter()
-    app = falcon.API(router=router)
+    app = create_app(asgi=asgi, router=router)
     client = testing.TestClient(app)
 
     response = client.simulate_request(path='/test/42')
@@ -67,7 +73,8 @@ def test_custom_router_find_should_be_used():
     assert router.reached_backwards_compat
 
 
-def test_can_pass_additional_params_to_add_route():
+@pytest.mark.parametrize('asgi', [True, False])
+def test_can_pass_additional_params_to_add_route(asgi):
 
     check = []
 
@@ -80,7 +87,7 @@ def test_can_pass_additional_params_to_add_route():
         def find(self, uri):
             pass
 
-    app = falcon.API(router=CustomRouter())
+    app = create_app(asgi=asgi, router=CustomRouter())
     app.add_route('/test', 'resource', name='my-url-name')
 
     assert len(check) == 1
@@ -93,9 +100,14 @@ def test_can_pass_additional_params_to_add_route():
         app.add_route('/test', 'resource', 'xarg1', 'xarg2')
 
 
-def test_custom_router_takes_req_positional_argument():
-    def responder(req, resp):
-        resp.body = 'OK'
+@pytest.mark.parametrize('asgi', [True, False])
+def test_custom_router_takes_req_positional_argument(asgi):
+    if asgi:
+        async def responder(req, resp):
+            resp.body = 'OK'
+    else:
+        def responder(req, resp):
+            resp.body = 'OK'
 
     class CustomRouter:
         def find(self, uri, req):
@@ -103,15 +115,20 @@ def test_custom_router_takes_req_positional_argument():
                 return responder, {'GET': responder}, {}, None
 
     router = CustomRouter()
-    app = falcon.API(router=router)
+    app = create_app(asgi=asgi, router=router)
     client = testing.TestClient(app)
     response = client.simulate_request(path='/test')
     assert response.content == b'OK'
 
 
-def test_custom_router_takes_req_keyword_argument():
-    def responder(req, resp):
-        resp.body = 'OK'
+@pytest.mark.parametrize('asgi', [True, False])
+def test_custom_router_takes_req_keyword_argument(asgi):
+    if asgi:
+        async def responder(req, resp):
+            resp.body = 'OK'
+    else:
+        def responder(req, resp):
+            resp.body = 'OK'
 
     class CustomRouter:
         def find(self, uri, req=None):
@@ -119,7 +136,7 @@ def test_custom_router_takes_req_keyword_argument():
                 return responder, {'GET': responder}, {}, None
 
     router = CustomRouter()
-    app = falcon.API(router=router)
+    app = create_app(asgi=asgi, router=router)
     client = testing.TestClient(app)
     response = client.simulate_request(path='/test')
     assert response.content == b'OK'

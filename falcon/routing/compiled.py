@@ -14,8 +14,12 @@
 
 """Default routing engine."""
 
+import asyncio
 from collections import UserDict
+import functools
+from inspect import iscoroutinefunction
 import keyword
+import os
 import re
 import textwrap
 
@@ -141,8 +145,15 @@ class CompiledRouter:
                 resource.
         """
 
+        # NOTE(kgriffs): falcon.asgi.App injects this private kwarg; it is
+        #   only intended to be used internally.
+        asgi = kwargs.get('_asgi', False)
+
         method_map = self.map_http_methods(resource, **kwargs)
-        set_default_responders(method_map)
+        set_default_responders(method_map, asgi=asgi)
+
+        if asgi:
+            self._check_coroutine_responders(method_map)
 
         # NOTE(kgriffs): Fields may have whitespace in them, so sub
         # those before checking the rest of the URI template.
@@ -226,6 +237,51 @@ class CompiledRouter:
     # -----------------------------------------------------------------
     # Private
     # -----------------------------------------------------------------
+
+    def _check_coroutine_responders(self, method_map):
+        # NOTE(kgriffs): We use an environ variable because it would be
+        #   really convulted to try to pass this down the call stack
+        #   as a kwarg or something.
+        #
+        # NOTE(kgriffs): This flag should really be only used for
+        #   testing purposes when we want to reuse the same tests
+        #   for WSGI and ASGI. It must be used with care to avoid
+        #   false-positive mismatch issues (for example, do not use
+        #   an async hook with a synchronous responder.)
+        should_wrap = 'FALCON_ASGI_WRAP_RESPONDERS' in os.environ
+
+        for method, responder in method_map.items():
+            # NOTE(kgriffs): We don't simply wrap non-async functions
+            #   since they likely peform relatively long blocking
+            #   operations that need to be explicitly made non-blocking
+            #   by the developer; raising an error helps highlight this
+            #   issue.
+            if isinstance(responder, functools.partial):
+                responder_func = responder.func
+            else:
+                responder_func = responder
+
+            if not iscoroutinefunction(responder_func):
+                if should_wrap:
+                    def let(responder=responder):
+                        @functools.wraps(responder)
+                        async def wrapper(*args, **kwargs):
+                            callback = functools.partial(responder, *args, **kwargs)
+                            loop = asyncio.get_event_loop()
+                            await loop.run_in_executor(None, callback)
+
+                        method_map[method] = wrapper
+
+                    let()
+
+                else:
+                    msg = (
+                        'The {} responder must be a non-blocking '
+                        'async coroutine (i.e., defined using async def) to '
+                        'avoid blocking the main request thread.'
+                    )
+                    msg = msg.format(responder)
+                    raise TypeError(msg)
 
     def _validate_template_segment(self, segment, used_names):
         """Validates a single path segment of a URI template.

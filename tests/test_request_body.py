@@ -30,8 +30,8 @@ class TestRequestBody:
             stream = stream.stream
         if isinstance(stream, InputWrapper):
             stream = stream.input
-        if isinstance(stream, io.BytesIO):
-            return stream
+
+        return stream
 
     def test_empty_body(self, client, resource):
         client.app.add_route('/', resource)

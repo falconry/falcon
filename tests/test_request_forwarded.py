@@ -1,15 +1,15 @@
 import pytest
 
-from falcon.request import Request
-import falcon.testing as testing
+from ._util import create_req
 
 
-def test_no_forwarded_headers():
-    req = Request(testing.create_environ(
+def test_no_forwarded_headers(asgi):
+    req = create_req(
+        asgi,
         host='example.com',
         path='/languages',
-        app='backoffice'
-    ))
+        root_path='backoffice'
+    )
 
     assert req.forwarded is None
     assert req.forwarded_uri == req.uri
@@ -17,12 +17,13 @@ def test_no_forwarded_headers():
     assert req.forwarded_prefix == 'http://example.com/backoffice'
 
 
-def test_x_forwarded_host():
-    req = Request(testing.create_environ(
+def test_x_forwarded_host(asgi):
+    req = create_req(
+        asgi,
         host='suchproxy.suchtesting.com',
         path='/languages',
         headers={'X-Forwarded-Host': 'something.org'}
-    ))
+    )
 
     assert req.forwarded is None
     assert req.forwarded_host == 'something.org'
@@ -32,12 +33,13 @@ def test_x_forwarded_host():
     assert req.forwarded_prefix == 'http://something.org'  # Check cached value
 
 
-def test_x_forwarded_proto():
-    req = Request(testing.create_environ(
+def test_x_forwarded_proto(asgi):
+    req = create_req(
+        asgi,
         host='example.org',
         path='/languages',
         headers={'X-Forwarded-Proto': 'HTTPS'}
-    ))
+    )
 
     assert req.forwarded is None
     assert req.forwarded_scheme == 'https'
@@ -46,14 +48,15 @@ def test_x_forwarded_proto():
     assert req.forwarded_prefix == 'https://example.org'
 
 
-def test_forwarded_host():
-    req = Request(testing.create_environ(
+def test_forwarded_host(asgi):
+    req = create_req(
+        asgi,
         host='suchproxy02.suchtesting.com',
         path='/languages',
         headers={
             'Forwarded': 'host=something.org , host=suchproxy01.suchtesting.com'
         }
-    ))
+    )
 
     assert req.forwarded is not None
     for f in req.forwarded:
@@ -70,8 +73,9 @@ def test_forwarded_host():
     assert req.forwarded_prefix == 'http://something.org'
 
 
-def test_forwarded_multiple_params():
-    req = Request(testing.create_environ(
+def test_forwarded_multiple_params(asgi):
+    req = create_req(
+        asgi,
         host='suchproxy02.suchtesting.com',
         path='/languages',
         headers={
@@ -80,7 +84,7 @@ def test_forwarded_multiple_params():
                 'by=203.0.113.43;host=suchproxy01.suchtesting.com;proto=httP'
             )
         }
-    ))
+    )
 
     assert req.forwarded is not None
 
@@ -101,15 +105,16 @@ def test_forwarded_multiple_params():
     assert req.forwarded_prefix == 'https://something.org'
 
 
-def test_forwarded_missing_first_hop_host():
-    req = Request(testing.create_environ(
+def test_forwarded_missing_first_hop_host(asgi):
+    req = create_req(
+        asgi,
         host='suchproxy02.suchtesting.com',
         path='/languages',
-        app='doge',
+        root_path='doge',
         headers={
             'Forwarded': 'for=108.166.30.185,host=suchproxy01.suchtesting.com'
         }
-    ))
+    )
 
     assert req.forwarded[0].host is None
     assert req.forwarded[0].src == '108.166.30.185'
@@ -124,15 +129,16 @@ def test_forwarded_missing_first_hop_host():
     assert req.forwarded_prefix == 'http://suchproxy02.suchtesting.com/doge'
 
 
-def test_forwarded_quote_escaping():
-    req = Request(testing.create_environ(
+def test_forwarded_quote_escaping(asgi):
+    req = create_req(
+        asgi,
         host='suchproxy02.suchtesting.com',
         path='/languages',
-        app='doge',
+        root_path='doge',
         headers={
             'Forwarded': 'for="1\\.2\\.3\\.4";some="extra,\\"info\\""'
         }
-    ))
+    )
 
     assert req.forwarded[0].host is None
     assert req.forwarded[0].src == '1.2.3.4'
@@ -145,16 +151,17 @@ def test_forwarded_quote_escaping():
     ('for=1.2.3.4;by="4.3.2.\\1"thing="blah"', '4.3.2.1'),
     ('for=1.2.3.4;by="4.3.\\2\\.1" thing="blah"', '4.3.2.1'),
 ])
-def test_escape_malformed_requests(forwarded, expected_dest):
+def test_escape_malformed_requests(forwarded, expected_dest, asgi):
 
-    req = Request(testing.create_environ(
+    req = create_req(
+        asgi,
         host='suchproxy02.suchtesting.com',
         path='/languages',
-        app='doge',
+        root_path='doge',
         headers={
             'Forwarded': forwarded
         }
-    ))
+    )
 
     assert len(req.forwarded) == 1
     assert req.forwarded[0].src == '1.2.3.4'

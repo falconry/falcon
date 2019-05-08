@@ -78,6 +78,6 @@ The testing framework supports both unittest and pytest::
 from falcon.testing.client import *  # NOQA
 from falcon.testing.helpers import *  # NOQA
 from falcon.testing.resource import capture_responder_args, set_resp_defaults  # NOQA
-from falcon.testing.resource import SimpleTestResource  # NOQA
+from falcon.testing.resource import SimpleTestResource, SimpleTestResourceAsync  # NOQA
 from falcon.testing.srmock import StartResponseMock  # NOQA
 from falcon.testing.test_case import TestCase  # NOQA

@@ -2,6 +2,8 @@
 
 from datetime import datetime
 import functools
+import http
+import os
 import random
 from urllib.parse import quote, unquote_plus
 
@@ -11,6 +13,12 @@ import falcon
 from falcon import testing
 from falcon import util
 from falcon.util import json, misc, structures, uri
+from ._util import create_app, to_coroutine
+
+
+@pytest.fixture(params=[True, False])
+def app(request):
+    return create_app(asgi=request.param)
 
 
 def _arbitrary_uris(count, length):
@@ -36,8 +44,10 @@ class TestFalconUtils:
         def old_thing():
             pass
 
+        del os.environ['FALCON_TESTING_SESSION']
         with pytest.warns(UserWarning) as rec:
             old_thing()
+        os.environ['FALCON_TESTING_SESSION'] = '1'
 
         warn = rec.pop()
         assert msg in str(warn.message)
@@ -332,6 +342,48 @@ class TestFalconUtils:
             falcon.get_http_status('-404.3')
         assert falcon.get_http_status(123, 'Go Away') == '123 Go Away'
 
+    @pytest.mark.parametrize(
+        'v_in,v_out',
+        [
+            (703, falcon.HTTP_703),
+            (404, falcon.HTTP_404),
+            (404.9, falcon.HTTP_404),
+            ('404', falcon.HTTP_404),
+            (123, '123'),
+        ]
+    )
+    def test_code_to_http_status(self, v_in, v_out):
+        assert falcon.code_to_http_status(v_in) == v_out
+
+    @pytest.mark.parametrize(
+        'v',
+        ['not_a_number', 0, '0', 99, '99', '404.3', -404.3, '-404', '-404.3']
+    )
+    def test_code_to_http_status_neg(self, v):
+        with pytest.raises(ValueError):
+            falcon.code_to_http_status(v)
+
+    @pytest.mark.parametrize(
+        'v_in,v_out',
+        [
+            (http.HTTPStatus(404), 404),
+            ('404', 404),
+            (b'404 Not Found', 404),
+            ('404 Not Found', 404),
+            ('123 Wow Such Status', 123),
+        ]
+    )
+    def test_http_status_to_code(self, v_in, v_out):
+        assert falcon.http_status_to_code(v_in) == v_out
+
+    @pytest.mark.parametrize(
+        'v',
+        ['', ' ', '1', '12', '99', 'catsup', b'']
+    )
+    def test_http_status_to_code_neg(self, v):
+        with pytest.raises(ValueError):
+            falcon.http_status_to_code(v)
+
     def test_etag_dumps_to_header_format(self):
         etag = structures.ETag('67ab43')
 
@@ -382,14 +434,17 @@ class TestFalconUtils:
         falcon.HTTP_METHODS * 2
     )
 )
-def test_simulate_request_protocol(protocol, method):
+def test_simulate_request_protocol(asgi, protocol, method):
     sink_called = [False]
 
     def sink(req, resp):
         sink_called[0] = True
         assert req.protocol == protocol
 
-    app = falcon.API()
+    if asgi:
+        sink = to_coroutine(sink)
+
+    app = create_app(asgi)
     app.add_sink(sink, '/test')
 
     client = testing.TestClient(app)
@@ -412,13 +467,16 @@ def test_simulate_request_protocol(protocol, method):
     testing.simulate_patch,
     testing.simulate_delete,
 ])
-def test_simulate_free_functions(simulate):
+def test_simulate_free_functions(asgi, simulate):
     sink_called = [False]
 
     def sink(req, resp):
         sink_called[0] = True
 
-    app = falcon.API()
+    if asgi:
+        sink = to_coroutine(sink)
+
+    app = create_app(asgi)
     app.add_sink(sink, '/test')
 
     simulate(app, '/test')
@@ -444,8 +502,7 @@ class TestFalconTestingUtils:
         env = testing.create_environ('/', headers={'X-Foo': None})
         assert env['HTTP_X_FOO'] == ''
 
-    def test_decode_empty_result(self):
-        app = falcon.API()
+    def test_decode_empty_result(self, app):
         client = testing.TestClient(app)
         response = client.simulate_request(path='/')
         assert response.text == ''
@@ -453,8 +510,7 @@ class TestFalconTestingUtils:
     def test_httpnow_alias_for_backwards_compat(self):
         assert testing.httpnow is util.http_now
 
-    def test_default_headers(self):
-        app = falcon.API()
+    def test_default_headers(self, app):
         resource = testing.SimpleTestResource()
         app.add_route('/', resource)
 
@@ -470,8 +526,7 @@ class TestFalconTestingUtils:
         client.simulate_get(headers=None)
         assert resource.captured_req.auth == headers['Authorization']
 
-    def test_default_headers_with_override(self):
-        app = falcon.API()
+    def test_default_headers_with_override(self, app):
         resource = testing.SimpleTestResource()
         app.add_route('/', resource)
 
@@ -491,8 +546,7 @@ class TestFalconTestingUtils:
         assert resource.captured_req.accept == headers['Accept']
         assert resource.captured_req.get_header('X-Override-Me') == override_after
 
-    def test_status(self):
-        app = falcon.API()
+    def test_status(self, app):
         resource = testing.SimpleTestResource(status=falcon.HTTP_702)
         app.add_route('/', resource)
         client = testing.TestClient(app)
@@ -505,15 +559,13 @@ class TestFalconTestingUtils:
         assert not result.content
         assert result.json is None
 
-    def test_path_must_start_with_slash(self):
-        app = falcon.API()
+    def test_path_must_start_with_slash(self, app):
         app.add_route('/', testing.SimpleTestResource())
         client = testing.TestClient(app)
         with pytest.raises(ValueError):
             client.simulate_get('foo')
 
-    def test_cached_text_in_result(self):
-        app = falcon.API()
+    def test_cached_text_in_result(self, app):
         app.add_route('/', testing.SimpleTestResource(body='test'))
         client = testing.TestClient(app)
 
@@ -524,7 +576,7 @@ class TestFalconTestingUtils:
         with pytest.raises(ValueError):
             testing.SimpleTestResource(body='', json={})
 
-    def test_query_string(self):
+    def test_query_string(self, app):
         class SomeResource:
             def on_get(self, req, resp):
                 doc = {}
@@ -536,7 +588,6 @@ class TestFalconTestingUtils:
 
                 resp.body = json.dumps(doc)
 
-        app = falcon.API()
         app.req_options.auto_parse_qs_csv = True
         app.add_route('/', SomeResource())
         client = testing.TestClient(app)
@@ -567,15 +618,13 @@ class TestFalconTestingUtils:
                                      params_csv=False)
         assert result.json['query_string'] == expected_qs
 
-    def test_query_string_no_question(self):
-        app = falcon.API()
+    def test_query_string_no_question(self, app):
         app.add_route('/', testing.SimpleTestResource())
         client = testing.TestClient(app)
         with pytest.raises(ValueError):
             client.simulate_get(query_string='?x=1')
 
-    def test_query_string_in_path(self):
-        app = falcon.API()
+    def test_query_string_in_path(self, app):
         resource = testing.SimpleTestResource()
         app.add_route('/thing', resource)
         client = testing.TestClient(app)
@@ -613,25 +662,25 @@ class TestFalconTestingUtils:
             'next': None,
         },
     ])
-    def test_simulate_json_body(self, document):
-        app = falcon.API()
-        resource = testing.SimpleTestResource()
+    def test_simulate_json_body(self, asgi, document):
+        resource = testing.SimpleTestResourceAsync() if asgi else testing.SimpleTestResource()
+        app = create_app(asgi)
         app.add_route('/', resource)
 
         json_types = ('application/json', 'application/json; charset=UTF-8')
         client = testing.TestClient(app)
-        client.simulate_post('/', json=document)
-        captured_body = resource.captured_req.bounded_stream.read().decode('utf-8')
-        assert json.loads(captured_body) == document
+        client.simulate_post('/', json=document, headers={'capture-req-body-bytes': '-1'})
+        assert json.loads(resource.captured_req_body.decode()) == document
         assert resource.captured_req.content_type in json_types
 
         headers = {
             'Content-Type': 'x-falcon/peregrine',
             'X-Falcon-Type': 'peregrine',
+            'capture-req-media': 'y'
         }
         body = 'If provided, `json` parameter overrides `body`.'
         client.simulate_post('/', headers=headers, body=body, json=document)
-        assert resource.captured_req.media == document
+        assert resource.captured_req_media == document
         assert resource.captured_req.content_type in json_types
         assert resource.captured_req.get_header('X-Falcon-Type') == 'peregrine'
 
@@ -642,13 +691,12 @@ class TestFalconTestingUtils:
         '104.24.101.85',
         '2606:4700:30::6818:6455',
     ])
-    def test_simulate_remote_addr(self, remote_addr):
+    def test_simulate_remote_addr(self, app, remote_addr):
         class ShowMyIPResource:
             def on_get(self, req, resp):
                 resp.body = req.remote_addr
                 resp.content_type = falcon.MEDIA_TEXT
 
-        app = falcon.API()
         app.add_route('/', ShowMyIPResource())
 
         client = testing.TestClient(app)
@@ -660,8 +708,7 @@ class TestFalconTestingUtils:
         else:
             assert resp.text == remote_addr
 
-    def test_simulate_hostname(self):
-        app = falcon.API()
+    def test_simulate_hostname(self, app):
         resource = testing.SimpleTestResource()
         app.add_route('/', resource)
 
@@ -673,7 +720,7 @@ class TestFalconTestingUtils:
     @pytest.mark.parametrize('extras,expected_headers', [
         (
             {},
-            (('user-agent', 'curl/7.24.0 (x86_64-apple-darwin12.0)'),),
+            (('user-agent', None),),
         ),
         (
             {'HTTP_USER_AGENT': 'URL/Emacs', 'HTTP_X_FALCON': 'peregrine'},
@@ -699,23 +746,43 @@ class TestFalconTestingUtils:
         with pytest.raises(ValueError):
             client.simulate_get('/', extras={'REQUEST_METHOD': 'PATCH'})
 
-        resp = client.simulate_get('/', extras={'REQUEST_METHOD': 'GET'})
-        assert resp.status_code == 200
-        assert resp.text == 'test'
+        result = client.simulate_get('/', extras={'REQUEST_METHOD': 'GET'})
+        assert result.status_code == 200
+        assert result.text == 'test'
 
 
-class TestNoApiClass(testing.TestCase):
+class TestNoAppClass(testing.TestCase):
     def test_something(self):
         self.assertTrue(isinstance(self.app, falcon.API))
 
 
-class TestSetupApi(testing.TestCase):
+if not falcon.PY35:
+    class TestSetupUnitTestASGI(testing.TestCase):
+        def setUp(self):
+            super().setUp()
+            self.app = create_app(True)
+            self.app.add_route('/', testing.SimpleTestResource(body='test'))
+
+        def test_something(self):
+            import falcon.asgi
+            self.assertTrue(isinstance(self.app, falcon.asgi.App))
+
+            result = self.simulate_get()
+            assert result.status_code == 200
+            assert result.text == 'test'
+
+
+class TestSetupUnitTest(testing.TestCase):
     def setUp(self):
-        super(TestSetupApi, self).setUp()
-        self.api = falcon.API()
+        super().setUp()
+        self.app.add_route('/', testing.SimpleTestResource(body='test'))
 
     def test_something(self):
-        self.assertTrue(isinstance(self.api, falcon.API))
+        self.assertTrue(isinstance(self.app, falcon.API))
+
+        result = self.simulate_get()
+        assert result.status_code == 200
+        assert result.text == 'test'
 
 
 def test_get_argnames():

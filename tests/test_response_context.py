@@ -1,12 +1,24 @@
 import pytest
 
-from falcon import Response
+from falcon import PY35, Response
+
+
+@pytest.fixture(params=[True, False])
+def resp_type(request):
+    if request.param:
+        if PY35:
+            pytest.skip('ASGI requires Python 3.6+')
+        else:
+            import falcon.asgi
+            return falcon.asgi.Response
+
+    return Response
 
 
 class TestResponseContext:
 
-    def test_default_response_context(self):
-        resp = Response()
+    def test_default_response_context(self, resp_type):
+        resp = resp_type()
 
         resp.context.hello = 'World!'
         assert resp.context.hello == 'World!'
@@ -17,31 +29,31 @@ class TestResponseContext:
         assert hasattr(resp.context, 'note')
         assert resp.context.get('note') == resp.context['note']
 
-    def test_custom_response_context(self):
+    def test_custom_response_context(self, resp_type):
 
         class MyCustomContextType:
             pass
 
-        class MyCustomResponse(Response):
+        class MyCustomResponse(resp_type):
             context_type = MyCustomContextType
 
         resp = MyCustomResponse()
         assert isinstance(resp.context, MyCustomContextType)
 
-    def test_custom_response_context_failure(self):
+    def test_custom_response_context_failure(self, resp_type):
 
-        class MyCustomResponse(Response):
+        class MyCustomResponse(resp_type):
             context_type = False
 
         with pytest.raises(TypeError):
             MyCustomResponse()
 
-    def test_custom_response_context_factory(self):
+    def test_custom_response_context_factory(self, resp_type):
 
         def create_context(resp):
             return {'resp': resp}
 
-        class MyCustomResponse(Response):
+        class MyCustomResponse(resp_type):
             context_type = create_context
 
         resp = MyCustomResponse()

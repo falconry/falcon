@@ -1,25 +1,27 @@
 import pytest
 
-import falcon
 from falcon import MEDIA_TEXT
+from ._util import create_resp
 
 
-def test_response_set_content_type_set():
-    resp = falcon.Response()
+@pytest.fixture(params=[True, False])
+def resp(request):
+    return create_resp(asgi=request.param)
+
+
+def test_response_set_content_type_set(resp):
     resp._set_media_type(MEDIA_TEXT)
     assert resp._headers['content-type'] == MEDIA_TEXT
 
 
-def test_response_set_content_type_not_set():
-    resp = falcon.Response()
+def test_response_set_content_type_not_set(resp):
     assert 'content-type' not in resp._headers
 
     resp._set_media_type()
     assert 'content-type' not in resp._headers
 
 
-def test_response_get_headers():
-    resp = falcon.Response()
+def test_response_get_headers(resp):
     resp.append_header('x-things1', 'thing-1')
     resp.append_header('x-things2', 'thing-2')
     resp.append_header('X-Things3', 'Thing-3')
@@ -34,9 +36,7 @@ def test_response_get_headers():
     assert 'set-cookie' not in headers
 
 
-def test_response_attempt_to_set_read_only_headers():
-    resp = falcon.Response()
-
+def test_response_attempt_to_set_read_only_headers(resp):
     resp.append_header('x-things1', 'thing-1')
     resp.append_header('x-things2', 'thing-2')
     resp.append_header('x-things3', 'thing-3a')
@@ -51,9 +51,7 @@ def test_response_attempt_to_set_read_only_headers():
     assert headers['x-things3'] == 'thing-3a, thing-3b'
 
 
-def test_response_removed_stream_len():
-    resp = falcon.Response()
-
+def test_response_removed_stream_len(resp):
     with pytest.raises(AttributeError):
         resp.stream_len = 128
 

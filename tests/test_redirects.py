@@ -2,11 +2,12 @@ import pytest
 
 import falcon
 import falcon.testing as testing
+from ._util import create_app
 
 
-@pytest.fixture
-def client():
-    app = falcon.API()
+@pytest.fixture(params=[True, False])
+def client(request):
+    app = create_app(asgi=request.param)
 
     resource = RedirectingResource()
     app.add_route('/', resource)
@@ -14,9 +15,9 @@ def client():
     return testing.TestClient(app)
 
 
-@pytest.fixture
-def client_exercising_headers():
-    app = falcon.API()
+@pytest.fixture(params=[True, False])
+def client_exercising_headers(request):
+    app = create_app(asgi=request.param)
 
     resource = RedirectingResourceWithHeaders()
     app.add_route('/', resource)

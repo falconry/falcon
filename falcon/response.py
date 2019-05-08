@@ -187,6 +187,11 @@ class Response:
 
     @property
     def data(self):
+        # TODO(kgriffs): Remove the side-effect that accessing this
+        #   property causes (do something similar to what we did on the
+        #   ASGI side). This will be a breaking change, so caution is
+        #   advised.
+
         # NOTE(kgriffs): Test explicitly against None since the
         # app may have set it to an empty binary string.
         if self._data is not None:
@@ -234,6 +239,11 @@ class Response:
         # rather than serializing immediately. That way, if media() is called
         # multiple times we don't waste time serializing objects that will
         # just be thrown away.
+        #
+        # TODO(kgriffs): This makes precedence harder to reason about, since
+        #   it is no longer about what attributes have and have not been set,
+        #   but also what order they were set in. On the ASGI side this has
+        #   already been addressed.
         self._data = None
 
     @property

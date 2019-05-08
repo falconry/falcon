@@ -1,17 +1,17 @@
 import importlib
 import os
 
+try:
+    import cython
+except ImportError:
+    cython = None
 import pytest
 
 import falcon
 from falcon import testing
 import falcon.constants
 from falcon.routing import util
-
-try:
-    import cython
-except ImportError:
-    cython = None
+from ._util import create_app
 
 FALCON_CUSTOM_HTTP_METHODS = ['FOO', 'BAR']
 
@@ -35,11 +35,11 @@ def cleanup_constants():
         del os.environ['FALCON_CUSTOM_HTTP_METHODS']
 
 
-@pytest.fixture
-def custom_http_client(cleanup_constants, resource_things):
+@pytest.fixture(params=[True, False])
+def custom_http_client(request, cleanup_constants, resource_things):
     falcon.constants.COMBINED_METHODS += FALCON_CUSTOM_HTTP_METHODS
 
-    app = falcon.API()
+    app = create_app(asgi=request.param)
     app.add_route('/things', resource_things)
     return testing.TestClient(app)
 

@@ -7,6 +7,7 @@ import pytest
 import falcon
 import falcon.testing as testing
 from falcon.util import http_date_to_dt, TimezoneGMT
+from ._util import create_app
 
 
 UNICODE_TEST_STRING = 'Unicode_\xc3\xa6\xc3\xb8'
@@ -58,9 +59,9 @@ class CookieResourceMaxAgeFloatString:
             'foostring', 'bar', max_age='15', secure=False, http_only=False)
 
 
-@pytest.fixture()
-def client():
-    app = falcon.API()
+@pytest.fixture(params=[True, False])
+def client(request):
+    app = create_app(asgi=request.param)
     app.add_route('/', CookieResource())
     app.add_route('/test-convert', CookieResourceMaxAgeFloatString())
 

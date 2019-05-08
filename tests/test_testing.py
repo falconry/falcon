@@ -1,7 +1,7 @@
 import pytest
 
 from falcon import status_codes
-from falcon.testing import closed_wsgi_iterable, TestClient
+from falcon import testing
 
 
 def another_dummy_wsgi_app(environ, start_response):
@@ -11,7 +11,7 @@ def another_dummy_wsgi_app(environ, start_response):
 
 
 def test_testing_client_handles_wsgi_generator_app():
-    client = TestClient(another_dummy_wsgi_app)
+    client = testing.TestClient(another_dummy_wsgi_app)
 
     response = client.simulate_get('/nevermind')
 
@@ -26,4 +26,4 @@ def test_testing_client_handles_wsgi_generator_app():
     (b'Hello, ', b'World', b'!\n'),
 ])
 def test_closed_wsgi_iterable(items):
-    assert tuple(closed_wsgi_iterable(items)) == items
+    assert tuple(testing.closed_wsgi_iterable(items)) == items

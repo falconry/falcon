@@ -6,16 +6,22 @@ import os
 import pytest
 
 import falcon
-from falcon.request import Request
-from falcon.response import Response
-from falcon.routing import StaticRoute
+from falcon.routing import StaticRoute, StaticRouteAsync
 import falcon.testing as testing
+from . import _util
 
 
-@pytest.fixture
-def client():
-    app = falcon.API()
-    return testing.TestClient(app)
+@pytest.fixture(params=[True, False])
+def client(request):
+    app = _util.create_app(asgi=request.param)
+    client = testing.TestClient(app)
+    client.asgi = request.param
+    return client
+
+
+def create_sr(asgi, *args, **kwargs):
+    sr_type = StaticRouteAsync if asgi else StaticRoute
+    return sr_type(*args, **kwargs)
 
 
 @pytest.mark.parametrize('uri', [
@@ -78,21 +84,26 @@ def client():
     # Invalid unicode character
     '/static/\ufffdsomething',
 ])
-def test_bad_path(uri, monkeypatch):
-    monkeypatch.setattr(io, 'open', lambda path, mode: path)
+def test_bad_path(asgi, uri, monkeypatch):
+    monkeypatch.setattr(io, 'open', lambda path, mode: io.BytesIO())
 
-    sr = StaticRoute('/static', '/var/www/statics')
+    sr_type = StaticRouteAsync if asgi else StaticRoute
+    sr = sr_type('/static', '/var/www/statics')
 
-    req = Request(testing.create_environ(
+    req = _util.create_req(
+        asgi,
         host='test.com',
         path=uri,
-        app='statics'
-    ))
+        root_path='statics'
+    )
 
-    resp = Response()
+    resp = _util.create_resp(asgi)
 
     with pytest.raises(falcon.HTTPNotFound):
-        sr(req, resp)
+        if asgi:
+            testing.invoke_coroutine_sync(sr, req, resp)
+        else:
+            sr(req, resp)
 
 
 @pytest.mark.parametrize('prefix, directory', [
@@ -101,9 +112,9 @@ def test_bad_path(uri, monkeypatch):
     ('/static', 'statics'),
     ('/static', '../statics'),
 ])
-def test_invalid_args(prefix, directory, client):
+def test_invalid_args(client, prefix, directory):
     with pytest.raises(ValueError):
-        StaticRoute(prefix, directory)
+        create_sr(client.asgi, prefix, directory)
 
     with pytest.raises(ValueError):
         client.app.add_static_route(prefix, directory)
@@ -118,7 +129,7 @@ def test_invalid_args(prefix, directory, client):
 def test_invalid_args_fallback_filename(client, default):
     prefix, directory = '/static', '/var/www/statics'
     with pytest.raises(ValueError, match='fallback_filename'):
-        StaticRoute(prefix, directory, fallback_filename=default)
+        create_sr(client.asgi, prefix, directory, fallback_filename=default)
 
     with pytest.raises(ValueError, match='fallback_filename'):
         client.app.add_static_route(prefix, directory, fallback_filename=default)
@@ -141,30 +152,39 @@ def test_invalid_args_fallback_filename(client, default):
     ('/some/download', '/foo/../bar/../report.zip', '/report.zip', 'application/zip'),
     ('/some/download', '/foo/bar/../../report.zip', '/report.zip', 'application/zip'),
 ])
-def test_good_path(uri_prefix, uri_path, expected_path, mtype, monkeypatch):
-    monkeypatch.setattr(io, 'open', lambda path, mode: path)
+def test_good_path(asgi, uri_prefix, uri_path, expected_path, mtype, monkeypatch):
+    monkeypatch.setattr(io, 'open', lambda path, mode: io.BytesIO(path.encode()))
 
-    sr = StaticRoute(uri_prefix, '/var/www/statics')
+    sr = create_sr(asgi, uri_prefix, '/var/www/statics')
 
     req_path = uri_prefix[:-1] if uri_prefix.endswith('/') else uri_prefix
     req_path += uri_path
 
-    req = Request(testing.create_environ(
+    req = _util.create_req(
+        asgi,
         host='test.com',
         path=req_path,
-        app='statics'
-    ))
+        root_path='statics'
+    )
 
-    resp = Response()
+    resp = _util.create_resp(asgi)
 
-    sr(req, resp)
+    if asgi:
+        async def run():
+            await sr(req, resp)
+            return await resp.stream.read()
+
+        body = testing.invoke_coroutine_sync(run)
+    else:
+        sr(req, resp)
+        body = resp.stream.read()
 
     assert resp.content_type == mtype
-    assert resp.stream == '/var/www/statics' + expected_path
+    assert body.decode() == '/var/www/statics' + expected_path
 
 
 def test_lifo(client, monkeypatch):
-    monkeypatch.setattr(io, 'open', lambda path, mode: [path.encode('utf-8')])
+    monkeypatch.setattr(io, 'open', lambda path, mode: io.BytesIO(path.encode()))
 
     client.app.add_static_route('/downloads', '/opt/somesite/downloads')
     client.app.add_static_route('/downloads/archive', '/opt/somesite/x')
@@ -179,7 +199,7 @@ def test_lifo(client, monkeypatch):
 
 
 def test_lifo_negative(client, monkeypatch):
-    monkeypatch.setattr(io, 'open', lambda path, mode: [path.encode('utf-8')])
+    monkeypatch.setattr(io, 'open', lambda path, mode: io.BytesIO(path.encode()))
 
     client.app.add_static_route('/downloads/archive', '/opt/somesite/x')
     client.app.add_static_route('/downloads', '/opt/somesite/downloads')
@@ -194,7 +214,7 @@ def test_lifo_negative(client, monkeypatch):
 
 
 def test_downloadable(client, monkeypatch):
-    monkeypatch.setattr(io, 'open', lambda path, mode: [path.encode('utf-8')])
+    monkeypatch.setattr(io, 'open', lambda path, mode: io.BytesIO(path.encode()))
 
     client.app.add_static_route('/downloads', '/opt/somesite/downloads', downloadable=True)
     client.app.add_static_route('/assets/', '/opt/somesite/assets')
@@ -228,32 +248,48 @@ def test_downloadable_not_found(client):
     ('index.html_files/test.txt', 'index.html', 'index.html_files/test.txt', 'text/plain'),
 ])
 @pytest.mark.parametrize('downloadable', [True, False])
-def test_fallback_filename(uri, default, expected, content_type, downloadable,
+def test_fallback_filename(asgi, uri, default, expected, content_type, downloadable,
                            monkeypatch):
 
-    def mockOpen(path, mode):
+    def mock_open(path, mode):
         if default in path:
-            return path
+            return io.BytesIO(path.encode())
+
         raise IOError()
 
-    monkeypatch.setattr(io, 'open', mockOpen)
+    monkeypatch.setattr(io, 'open', mock_open)
     monkeypatch.setattr('os.path.isfile', lambda file: default in file)
 
-    sr = StaticRoute('/static', '/var/www/statics', downloadable=downloadable,
-                     fallback_filename=default)
+    sr = create_sr(
+        asgi,
+        '/static',
+        '/var/www/statics',
+        downloadable=downloadable,
+        fallback_filename=default
+    )
 
     req_path = '/static/' + uri
 
-    req = Request(testing.create_environ(
+    req = _util.create_req(
+        asgi,
         host='test.com',
         path=req_path,
-        app='statics'
-    ))
-    resp = Response()
-    sr(req, resp)
+        root_path='statics'
+    )
+    resp = _util.create_resp(asgi)
+
+    if asgi:
+        async def run():
+            await sr(req, resp)
+            return await resp.stream.read()
+
+        body = testing.invoke_coroutine_sync(run)
+    else:
+        sr(req, resp)
+        body = resp.stream.read()
 
     assert sr.match(req.path)
-    assert resp.stream == os.path.join('/var/www/statics', expected)
+    assert body.decode() == os.path.join('/var/www/statics', expected)
     assert resp.content_type == content_type
 
     if downloadable:
@@ -275,7 +311,7 @@ def test_e2e_fallback_filename(client, monkeypatch, strip_slash, path, fallback,
 
     def mockOpen(path, mode):
         if 'index' in path and 'raise' not in path:
-            return [path.encode('utf-8')]
+            return io.BytesIO(path.encode())
         raise IOError()
 
     monkeypatch.setattr(io, 'open', mockOpen)
@@ -308,9 +344,9 @@ def test_e2e_fallback_filename(client, monkeypatch, strip_slash, path, fallback,
     ('index2', '/staticfoo', False),
     ('index2', '/static/foo', True),
 ])
-def test_match(default, path, expected, monkeypatch):
+def test_match(asgi, default, path, expected, monkeypatch):
     monkeypatch.setattr('os.path.isfile', lambda file: True)
-    sr = StaticRoute('/static', '/var/www/statics', fallback_filename=default)
+    sr = create_sr(asgi, '/static', '/var/www/statics', fallback_filename=default)
 
     assert sr.match(path) == expected
 

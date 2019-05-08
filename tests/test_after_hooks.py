@@ -5,6 +5,7 @@ import pytest
 
 import falcon
 from falcon import testing
+from ._util import create_app
 
 
 # --------------------------------------------------------------------
@@ -17,9 +18,9 @@ def wrapped_resource_aware():
     return ClassResourceWithAwareHooks()
 
 
-@pytest.fixture
-def client():
-    app = falcon.API()
+@pytest.fixture(params=[True, False])
+def client(request):
+    app = create_app(asgi=request.param)
 
     resource = WrappedRespondersResource()
     app.add_route('/', resource)

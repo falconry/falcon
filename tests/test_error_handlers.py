@@ -1,12 +1,17 @@
 import pytest
 
 import falcon
-from falcon import testing
+from falcon import PY35, testing
+from ._util import create_app
 
 
 def capture_error(req, resp, ex, params):
     resp.status = falcon.HTTP_723
     resp.body = 'error: %s' % str(ex)
+
+
+async def capture_error_async(*args):
+    capture_error(*args)
 
 
 def handle_error_first(req, resp, ex, params):
@@ -43,8 +48,8 @@ class ErroredClassResource:
 
 
 @pytest.fixture
-def client():
-    app = falcon.API()
+def client(asgi):
+    app = create_app(asgi)
     app.add_route('/', ErroredClassResource())
     return testing.TestClient(app)
 
@@ -53,6 +58,27 @@ class TestErrorHandler:
 
     def test_caught_error(self, client):
         client.app.add_error_handler(Exception, capture_error)
+
+        result = client.simulate_get()
+        assert result.text == 'error: Plain Exception'
+
+        result = client.simulate_head()
+        assert result.status_code == 723
+        assert not result.content
+
+    def test_caught_error_async(self, asgi):
+        if not asgi:
+            pytest.skip('Test only applies to ASGI')
+
+        if PY35:
+            pytest.skip('ASGI requires Python 3.6+')
+
+        import falcon.asgi
+        app = falcon.asgi.App()
+        app.add_route('/', ErroredClassResource())
+        app.add_error_handler(Exception, capture_error_async)
+
+        client = testing.TestClient(app)
 
         result = client.simulate_get()
         assert result.text == 'error: Plain Exception'
@@ -141,7 +167,7 @@ class TestErrorHandler:
         NotImplemented,
         'Hello, world!',
         frozenset([ZeroDivisionError, int, NotImplementedError]),
-        iter([float, float]),
+        [float, float],
     ])
     def test_invalid_add_exception_handler_input(self, client, exceptions):
         with pytest.raises(TypeError):

@@ -20,6 +20,7 @@ lib64
 parts
 sdist
 var
+pip-wheel-metadata
 
 # Installer logs
 pip-log.txt

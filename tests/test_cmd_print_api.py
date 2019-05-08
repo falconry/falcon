@@ -1,8 +1,11 @@
 import io
 
-from falcon import API
+import pytest
+
 from falcon.cmd import print_routes
 from falcon.testing import redirected
+from ._util import create_app
+
 
 try:
     import cython
@@ -17,16 +20,28 @@ class DummyResource:
         resp.status = '200 OK'
 
 
-_api = API()
-_api.add_route('/test', DummyResource())
+class DummyResourceAsync:
+
+    async def on_get(self, req, resp):
+        resp.body = 'Test\n'
+        resp.status = '200 OK'
 
 
-def test_traverse_with_verbose():
+@pytest.fixture(params=[True, False])
+def app(request):
+    asgi = request.param
+    app = create_app(asgi)
+    app.add_route('/test', DummyResourceAsync() if asgi else DummyResource())
+
+    return app
+
+
+def test_traverse_with_verbose(app):
     """Ensure traverse() finds the proper routes and outputs verbose info."""
 
     output = io.StringIO()
     with redirected(stdout=output):
-        print_routes.traverse(_api._router._roots, verbose=True)
+        print_routes.traverse(app._router._roots, verbose=True)
 
     route, get_info, options_info = output.getvalue().strip().split('\n')
     assert '-> /test' == route
@@ -43,17 +58,23 @@ def test_traverse_with_verbose():
         assert 'falcon/responders.py:' in options_info
 
     assert get_info.startswith('-->GET')
-    # NOTE(vytas): This builds upon the fact that on_get is defined on line 14
-    # in this file. Adjust the test if the said responder is relocated, or just
-    # check for any number if this becomes too painful to maintain.
-    assert get_info.endswith('tests/test_cmd_print_api.py:15')
+
+    # NOTE(vytas): This builds upon the fact that on_get is defined on line
+    # 18 or 25 (in the case of DummyResourceAsync) in the present file.
+    # Adjust the test if the said responder is relocated, or just check for
+    # any number if this becomes too painful to maintain.
+
+    assert (
+        get_info.endswith('tests/test_cmd_print_api.py:25') or
+        get_info.endswith('tests/test_cmd_print_api.py:18')
+    )
 
 
-def test_traverse():
+def test_traverse(app):
     """Ensure traverse() finds the proper routes."""
     output = io.StringIO()
     with redirected(stdout=output):
-        print_routes.traverse(_api._router._roots, verbose=False)
+        print_routes.traverse(app._router._roots, verbose=False)
 
     route = output.getvalue().strip()
     assert '-> /test' == route

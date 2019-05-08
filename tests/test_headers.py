@@ -5,14 +5,15 @@ import pytest
 
 import falcon
 from falcon import testing
+from ._util import create_app
 
 
 SAMPLE_BODY = testing.rand_string(0, 128 * 1024)
 
 
-@pytest.fixture
-def client():
-    app = falcon.API()
+@pytest.fixture(params=[False, True])
+def client(request):
+    app = create_app(asgi=request.param)
     return testing.TestClient(app)
 
 
@@ -70,6 +71,7 @@ class HeaderHelpersResource:
         assert resp.get_header('x-client-should-never-see-this') == 'abc'
         resp.delete_header('x-client-should-never-see-this')
 
+        self.req = req
         self.resp = resp
 
     def on_head(self, req, resp):
@@ -369,24 +371,26 @@ class TestHeaders:
         resource = testing.SimpleTestResource(body='Hello world!')
         self._check_header(client, resource, 'Content-Type', falcon.DEFAULT_MEDIA_TYPE)
 
+    @pytest.mark.parametrize('asgi', [True, False])
     @pytest.mark.parametrize('content_type,body', [
         ('text/plain; charset=UTF-8', 'Hello Unicode! \U0001F638'),
         # NOTE(kgriffs): This only works because the client defaults to
         # ISO-8859-1 IFF the media type is 'text'.
         ('text/plain', 'Hello ISO-8859-1!'),
     ])
-    def test_override_default_media_type(self, client, content_type, body):
-        client.app = falcon.API(media_type=content_type)
+    def test_override_default_media_type(self, asgi, client, content_type, body):
+        client.app = create_app(asgi=asgi, media_type=content_type)
         client.app.add_route('/', testing.SimpleTestResource(body=body))
         result = client.simulate_get()
 
         assert result.text == body
         assert result.headers['Content-Type'] == content_type
 
-    def test_override_default_media_type_missing_encoding(self, client):
+    @pytest.mark.parametrize('asgi', [True, False])
+    def test_override_default_media_type_missing_encoding(self, asgi, client):
         body = '{"msg": "Hello Unicode! \U0001F638"}'
 
-        client.app = falcon.API(media_type='application/json')
+        client.app = create_app(asgi=asgi, media_type='application/json')
         client.app.add_route('/', testing.SimpleTestResource(body=body))
         result = client.simulate_get()
 
@@ -690,6 +694,23 @@ class TestHeaders:
 
         content_length = '0'
         assert result.headers['Content-Length'] == content_length
+
+    def test_request_multiple_header(self, client):
+        resource = HeaderHelpersResource()
+        client.app.add_route('/', resource)
+
+        client.simulate_request(headers=[
+            # Singletone header; last one wins
+            ('Content-Type', 'text/plain'),
+            ('Content-Type', 'image/jpeg'),
+
+            # Should be concatenated
+            ('X-Thing', '1'),
+            ('X-Thing', '2'),
+        ])
+
+        assert resource.req.content_type == 'image/jpeg'
+        assert resource.req.get_header('X-Thing') == '1,2'
 
     # ----------------------------------------------------------------------
     # Helpers
