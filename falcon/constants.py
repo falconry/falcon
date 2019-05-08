@@ -28,7 +28,7 @@ WEBDAV_METHODS = [
 FALCON_CUSTOM_HTTP_METHODS = [
     method.strip().upper()
     for method in os.environ.get('FALCON_CUSTOM_HTTP_METHODS', '').split(',')
-    if method != ''
+    if method.strip() != ''
 ]
 
 COMBINED_METHODS = HTTP_METHODS + WEBDAV_METHODS + FALCON_CUSTOM_HTTP_METHODS
