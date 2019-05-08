@@ -26,8 +26,8 @@ WEBDAV_METHODS = [
 # if FALCON_CUSTOM_HTTP_METHODS is defined, treat it as a comma-
 # delimited string of additional supported methods in this env.
 FALCON_CUSTOM_HTTP_METHODS = [
-    method for method in
-    (os.environ.get('FALCON_CUSTOM_HTTP_METHODS') or '').split(',')
+    method.strip().upper()
+    for method in os.environ.get('FALCON_CUSTOM_HTTP_METHODS', '').split(',')
     if method != ''
 ]
 
