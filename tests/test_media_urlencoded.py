@@ -31,16 +31,15 @@ def test_urlencoded_form_handler_serialize(data, expected):
 
 class MediaMirror:
 
-    @classmethod
-    def on_post(cls, req, resp):
+    def on_post(self, req, resp):
         resp.media = req.media
 
 
 @pytest.fixture
 def client():
     handlers = media.Handlers({
-        'application/json': media.JSONHandler(),
-        'application/x-www-form-urlencoded': media.URLEncodedFormHandler(),
+        falcon.MEDIA_JSON: media.JSONHandler(),
+        falcon.MEDIA_URLENCODED: media.URLEncodedFormHandler(),
     })
     api = falcon.API()
     api.req_options.media_handlers = handlers
