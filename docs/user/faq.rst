@@ -687,6 +687,46 @@ types:
 Response Handling
 ~~~~~~~~~~~~~~~~~
 
+When would I use media, data, and stream?
+-----------------------------------------
+
+These three parameters are mutually exclusive, you should only set one when
+defining your response.
+
+:ref:`resp.media <media>` is used when you want to use the Falcon serialization
+mechanism. Just assign data to the attribute and falcon will take care of the
+rest.
+
+.. code:: python
+
+    class MyResource:
+        def on_get(self, req, resp):
+            resp.media = { 'hello': 'World' }
+
+`resp.body` and `resp.data` are very similar, they both allow you to set the
+body of the response. The difference being, `body` takes a string and `data`
+takes bytes.
+
+.. code:: python
+
+    class MyResource:
+        def on_get(self, req, resp):
+            resp.body = json.dumps({ 'hello': 'World' })
+
+        def on_post(self, req, resp):
+            resp.data = b'{ "hello": "World" }'
+
+
+`resp.stream` allows you to set a file-like object which returns bytes. We will
+call `read()` until the object is consumed.
+
+.. code:: python
+
+    class MyResource:
+        def on_get(self, req, resp):
+            resp.stream = open('myfile.json', mode='rb')
+
+
 How can I use resp.media with types like datetime?
 --------------------------------------------------
 

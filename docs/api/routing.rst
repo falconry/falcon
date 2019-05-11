@@ -312,3 +312,32 @@ be used by custom routing engines.
 .. autofunction:: falcon.routing.set_default_responders
 
 .. autofunction:: falcon.routing.compile_uri_template
+
+
+Custom HTTP Methods
+-------------------
+
+While not advised, some applications need to support non-standard HTTP methods,
+such as FOO or BAR, in addition to the standard HTTP methods like GET and PUT.
+To support custom HTTP methods, use one of the following methods:
+
+- Ideally, if you don't use hooks in your application, you can easily add the
+  custom methods in your application setup by overriding the value of
+  ``falcon.constants.COMBINED_METHODS``. For example::
+
+    import falcon.constants
+    falcon.constants.COMBINED_METHODS += ['FOO', 'BAR']
+
+- Due to the nature of hooks, if you do use them, you'll need to define the
+  FALCON_CUSTOM_HTTP_METHODS environment variable as a comma-delimited list
+  of custom methods. For example::
+
+    $ export FALCON_CUSTOM_HTTP_METHODS=FOO,BAR
+
+
+Once you have used the appropriate method, your custom methods should be active.
+You then can define request methods like any other HTTP method, such as::
+
+    def on_foo(self, req, resp):
+        ...
+
