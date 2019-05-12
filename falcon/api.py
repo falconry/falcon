@@ -136,8 +136,9 @@ class API:
             when that same component's ``process_request()`` (or that of
             a component higher up in the stack) raises an exception.
 
-        cors_enable (bool): Set this flag to ``True`` if you want to accept
-            all requests with CORS policies.
+        cors_enable (bool): Set this flag to ``True`` if you want to send
+            CORS headers on `preflight` requests from modern browsers to allow
+            browser accept cross domain requests.
 
     Attributes:
         req_options: A set of behavioral options related to incoming
