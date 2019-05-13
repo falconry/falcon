@@ -35,11 +35,10 @@ from falcon.util.uri import encode_value as uri_encode_value
 
 GMT_TIMEZONE = TimezoneGMT()
 
-# TODO(kgriffs): Uncomment when 3.0 development opens
-# _STREAM_LEN_REMOVED_MSG = (
-#     'The deprecated stream_len property was removed in Falcon 3.0. '
-#     'Please use Response.set_stream() or Response.content_length instead.'
-# )
+_STREAM_LEN_REMOVED_MSG = (
+    'The deprecated stream_len property was removed in Falcon 3.0. '
+    'Please use Response.set_stream() or Response.content_length instead.'
+)
 
 
 class Response:
@@ -99,8 +98,6 @@ class Response:
                 If the stream is set to an iterable object that requires
                 resource cleanup, it can implement a close() method to do so.
                 The close() method will be called upon completion of the request.
-
-        stream_len (int): Deprecated alias for :attr:`content_length`.
 
         context (dict): Dictionary to hold any data about the response which is
             specific to your app. Falcon itself will not interact with this
@@ -239,19 +236,17 @@ class Response:
         # just be thrown away.
         self._data = None
 
-    # TODO(kgriffs): Uncomment when 3.0 development opens
-    # @property
-    # def stream_len(self):
-    #     # NOTE(kgriffs): Provide some additional information by raising the
-    #     #   error explicitly.
-    #     raise AttributeError(_STREAM_LEN_REMOVED_MSG)
+    @property
+    def stream_len(self):
+        # NOTE(kgriffs): Provide some additional information by raising the
+        #   error explicitly.
+        raise AttributeError(_STREAM_LEN_REMOVED_MSG)
 
-    # TODO(kgriffs): Uncomment when 3.0 development opens
-    # @stream_len.setter
-    # def stream_len(self, value):
-    #     # NOTE(kgriffs): We explicitly disallow setting the deprecated attribute
-    #     #   so that apps relying on it do not fail silently.
-    #     raise AttributeError(_STREAM_LEN_REMOVED_MSG)
+    @stream_len.setter
+    def stream_len(self, value):
+        # NOTE(kgriffs): We explicitly disallow setting the deprecated attribute
+        #   so that apps relying on it do not fail silently.
+        raise AttributeError(_STREAM_LEN_REMOVED_MSG)
 
     def __repr__(self):
         return '<%s: %s>' % (self.__class__.__name__, self.status)
@@ -376,7 +371,6 @@ class Response:
         if not is_ascii_encodable(value):
             raise ValueError('"value" is not ascii encodable')
 
-        name = str(name)
         value = str(value)
 
         if self._cookies is None:
@@ -512,7 +506,6 @@ class Response:
         # is not a str, so do the conversion here. It's actually
         # faster to not do an isinstance check. str() will encode
         # to US-ASCII.
-        name = str(name)
         value = str(value)
 
         # NOTE(kgriffs): normalize name by lowercasing it
@@ -581,7 +574,6 @@ class Response:
         # is not a str, so do the conversion here. It's actually
         # faster to not do an isinstance check. str() will encode
         # to US-ASCII.
-        name = str(name)
         value = str(value)
 
         # NOTE(kgriffs): normalize name by lowercasing it
@@ -642,11 +634,9 @@ class Response:
             # is not a str, so do the conversion here. It's actually
             # faster to not do an isinstance check. str() will encode
             # to US-ASCII.
-            name = str(name)
             value = str(value)
 
             name = name.lower()
-
             if name == 'set-cookie':
                 raise HeaderNotSupported('This method cannot be used to set cookies')
 
@@ -756,12 +746,6 @@ class Response:
         if anchor is not None:
             value += '; anchor="' + uri_encode(anchor) + '"'
 
-        # NOTE(kgriffs): uwsgi fails with a TypeError if any header
-        # is not a str, so do the conversion here. It's actually
-        # faster to not do an isinstance check. str() will encode
-        # to US-ASCII.
-        value = str(value)
-
         _headers = self._headers
         if 'link' in _headers:
             _headers['link'] += ', ' + value
@@ -809,9 +793,6 @@ class Response:
 
         """,
     )
-
-    # TODO(kgriffs): Remove deprecated alias once development opens for 3.0
-    stream_len = content_length
 
     content_range = header_property(
         'Content-Range',
@@ -948,13 +929,11 @@ class Response:
 
         """
 
-        # PERF(kgriffs): Using "in" like this is faster than using
-        # dict.setdefault (tested on py27).
-        set_content_type = (media_type is not None and
-                            'content-type' not in self._headers)
-
-        if set_content_type:
-            self.set_header('content-type', media_type)
+        # PERF(kgriffs): Using "in" like this is faster than dict.setdefault()
+        #   in most cases, except on PyPy where it is only a fraction of a
+        #   nanosecond slower. Last tested on Python versions 3.5-3.7.
+        if media_type is not None and 'content-type' not in self._headers:
+            self._headers['content-type'] = media_type
 
     def _wsgi_headers(self, media_type=None):
         """Convert headers into the format expected by WSGI servers.
