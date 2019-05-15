@@ -53,7 +53,7 @@ started writing an API:
             # Serve until process is killed
             httpd.serve_forever()
 
-You can run the above example directly using this wsgiref server included:
+You can run the above example directly using the included wsgiref server:
 
 .. code:: bash
 

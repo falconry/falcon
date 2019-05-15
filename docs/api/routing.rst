@@ -317,24 +317,26 @@ be used by custom routing engines.
 Custom HTTP Methods
 -------------------
 
-Some applications need to support non-standard HTTP methods, such as FOO or BAR, 
-in addition to the standard HTTP methods like GET and PUT. To support custom
-HTTP methods, use one of the following methods:
+While not advised, some applications need to support non-standard HTTP methods,
+such as FOO or BAR, in addition to the standard HTTP methods like GET and PUT.
+To support custom HTTP methods, use one of the following methods:
 
-- define the FALCON_CUSTOM_HTTP_METHODS environment variable as a comma-delimited
-  list of custom methods, and make sure that environment variable is active in 
-  your API app's environment. For example::
+- Ideally, if you don't use hooks in your application, you can easily add the
+  custom methods in your application setup by overriding the value of
+  ``falcon.constants.COMBINED_METHODS``. For example::
+
+    import falcon.constants
+    falcon.constants.COMBINED_METHODS += ['FOO', 'BAR']
+
+- Due to the nature of hooks, if you do use them, you'll need to define the
+  FALCON_CUSTOM_HTTP_METHODS environment variable as a comma-delimited list
+  of custom methods. For example::
 
     $ export FALCON_CUSTOM_HTTP_METHODS=FOO,BAR
 
-- in your app setup, override the value of ``falcon.constants.COMBINED_METHODS``
-  to include your custom methods. For example::
 
-    import falcon.constants
-    falcon.constants += ['FOO', 'BAR']
-
-Once you have notified the framework that it should support these custom methods,
-you can define request methods like any other HTTP method, such as::
+Once you have used the appropriate method, your custom methods should be active.
+You then can define request methods like any other HTTP method, such as::
 
     def on_foo(self, req, resp):
         ...
