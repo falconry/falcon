@@ -1,11 +1,11 @@
+# examples/things_advanced.py
 import json
 import logging
 import uuid
 from wsgiref import simple_server
 
-import requests
-
 import falcon
+import requests
 
 
 class StorageEngine:
@@ -21,7 +21,7 @@ class StorageEngine:
 class StorageError(Exception):
 
     @staticmethod
-    def handle(req, resp, ex, params):
+    def handle(ex, req, resp, params):
         description = ("Sorry, couldn't write your thing to the "
                        'database. It worked on my box.')
 
@@ -93,6 +93,9 @@ class RequireJSON:
 
 
 class JSONTranslator:
+    # NOTE: Normally you would simply use req.media and resp.media for
+    # this particular use case; this example serves only to illustrate
+    # what is possible.
 
     def process_request(self, req, resp):
         # req.stream corresponds to the WSGI wsgi.input environ variable,
@@ -103,7 +106,7 @@ class JSONTranslator:
             # Nothing to do
             return
 
-        body = req.bounded_stream.read()
+        body = req.stream.read()
         if not body:
             raise falcon.HTTPBadRequest('Empty request body',
                                         'A valid JSON document is required.')
@@ -119,10 +122,10 @@ class JSONTranslator:
                                    'UTF-8.')
 
     def process_response(self, req, resp, resource, req_succeeded):
-        if not hasattr(req.context, 'result'):
+        if not hasattr(resp.context, 'result'):
             return
 
-        resp.body = json.dumps(req.context.result)
+        resp.body = json.dumps(resp.context.result)
 
 
 def max_body(limit):
@@ -163,11 +166,11 @@ class ThingsResource:
                 description,
                 30)
 
-        # An alternative way of doing DRY serialization would be to
-        # create a custom class that inherits from falcon.Request. This
-        # class could, for example, have an additional 'doc' property
-        # that would serialize to JSON under the covers.
-        req.context.result = result
+        # NOTE: Normally you would use resp.media for this sort of thing;
+        # this example serves only to demonstrate how the context can be
+        # used to pass arbitrary values between middleware components,
+        # hooks, and resources.
+        resp.context.result = result
 
         resp.set_header('Powered-By', 'Falcon')
         resp.status = falcon.HTTP_200

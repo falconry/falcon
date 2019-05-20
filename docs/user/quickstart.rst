@@ -84,6 +84,7 @@ parameters, handling errors, and working with request and response bodies.
 
 .. code:: python
 
+    # examples/things_advanced.py
     import json
     import logging
     import uuid
@@ -107,7 +108,7 @@ parameters, handling errors, and working with request and response bodies.
 
         @staticmethod
         def handle(ex, req, resp, params):
-            description = ('Sorry, couldn\'t write your thing to the '
+            description = ("Sorry, couldn't write your thing to the "
                            'database. It worked on my box.')
 
             raise falcon.HTTPError(falcon.HTTP_725,
@@ -206,7 +207,7 @@ parameters, handling errors, and working with request and response bodies.
                                        'JSON was incorrect or not encoded as '
                                        'UTF-8.')
 
-        def process_response(self, req, resp, resource):
+        def process_response(self, req, resp, resource, req_succeeded):
             if not hasattr(resp.context, 'result'):
                 return
 
