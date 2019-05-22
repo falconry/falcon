@@ -139,6 +139,13 @@ def test_http_not_acceptable_no_title_and_desc_and_challenges():
         assert e.description is None
 
 
+def test_http_not_acceptable_with_title():
+    try:
+        raise falcon.HTTPNotAcceptable(title='test title')
+    except falcon.HTTPNotAcceptable as e:
+        assert e.title == 'test title'
+
+
 def test_http_not_acceptable_with_title_and_desc_and_challenges():
     try:
         raise falcon.HTTPNotAcceptable(description='Testdescription')
@@ -151,6 +158,13 @@ def test_http_unsupported_media_type_no_title_and_desc_and_challenges():
         raise falcon.HTTPUnsupportedMediaType()
     except falcon.HTTPUnsupportedMediaType as e:
         assert e.description is None
+
+
+def test_http_unsupported_media_type_with_title():
+    try:
+        raise falcon.HTTPUnsupportedMediaType(title='test title')
+    except falcon.HTTPUnsupportedMediaType as e:
+        assert e.title == 'test title'
 
 
 def test_http_unsupported_media_type_with_title_and_desc_and_challenges():

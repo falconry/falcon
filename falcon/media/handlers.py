@@ -47,7 +47,7 @@ class Handlers(UserDict):
 
         if not resolved:
             raise errors.HTTPUnsupportedMediaType(
-                '{0} is an unsupported media type.'.format(media_type)
+                description='{0} is an unsupported media type.'.format(media_type)
             )
 
         return self.data[resolved]
