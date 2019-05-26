@@ -819,3 +819,4 @@ class TestCORSMiddlewareWithAnotherMiddleware(TestMiddleware):
         client = testing.TestClient(app)
         result = client.simulate_get()
         assert result.headers['Access-Control-Allow-Origin'] == '*'
+
