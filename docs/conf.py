@@ -27,6 +27,9 @@ import falcon
 # on_rtd is whether we are on readthedocs.org
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
+# Used to alter sphinx configuration for the Dash documentation build
+dash_build = os.environ.get('DASHBUILD', False) == 'True'
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -103,7 +106,7 @@ release = falcon.__version__ + tag
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build']
+exclude_patterns = ['_build', '_newsfragments']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -155,7 +158,7 @@ html_theme_options = {
     'github_user': 'falconry',
     'github_repo': 'falcon',
     'github_button': False,
-    'github_banner': True,
+    'github_banner': not dash_build,
     'fixed_sidebar': False,
     'show_powered_by': False,
     'extra_nav_links': OrderedDict([
@@ -166,6 +169,11 @@ html_theme_options = {
       ('Support Falcon', 'https://falconframework.org/#sectionSupportFalconDevelopment'),
     ]),
 }
+
+if dash_build:
+    html_theme_options.update({
+        'font_size': 13,
+    })
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
@@ -216,7 +224,7 @@ html_sidebars = {
         'navigation.html',
         'relations.html',
         'searchbox.html',
-    ]
+    ] if not dash_build else []
 }
 
 # Additional templates that should be rendered to pages, maps page names to

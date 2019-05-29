@@ -218,8 +218,7 @@ class ContentLengthHeaderResource:
         self._data = data
 
     def on_get(self, req, resp):
-        # NOTE(kgriffs): Use stream_len for now to cover the deprecated alias
-        resp.stream_len = self._content_length
+        resp.content_length = self._content_length
 
         if self._body:
             resp.body = self._body
