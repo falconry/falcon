@@ -39,31 +39,39 @@ else:
         CYTHON = False
 
 if CYTHON:
-    def list_modules(dirname):
-        filenames = glob.glob(path.join(dirname, '*.py'))
+    def list_modules(dirname, pattern):
+        filenames = glob.glob(path.join(dirname, pattern))
 
         module_names = []
         for name in filenames:
             module, ext = path.splitext(path.basename(name))
             if module != '__init__':
-                module_names.append(module)
+                module_names.append((module, ext))
 
         return module_names
 
     package_names = [
         'falcon',
+        'falcon.cyutil',
         'falcon.media',
         'falcon.routing',
         'falcon.util',
         'falcon.vendor.mimeparse',
     ]
+
+    cython_package_names = frozenset([
+        'falcon.cyutil',
+    ])
+
     ext_modules = [
         Extension(
             package + '.' + module,
-            [path.join(*(package.split('.') + [module + '.py']))]
+            [path.join(*(package.split('.') + [module + ext]))]
         )
         for package in package_names
-        for module in list_modules(path.join(MYDIR, *package.split('.')))
+        for module, ext in list_modules(
+            path.join(MYDIR, *package.split('.')),
+            ('*.pyx' if package in cython_package_names else '*.py'))
     ]
 
     cmdclass = {'build_ext': build_ext}

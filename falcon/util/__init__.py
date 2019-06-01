@@ -26,3 +26,8 @@ import json  # NOQA
 from falcon.util.structures import *  # NOQA
 from falcon.util.misc import *  # NOQA
 from falcon.util.time import *  # NOQA
+
+try:
+    from falcon.cyutil.streams import BufferedStream
+except ImportError:
+    from falcon.util.streams import BufferedStream  # NOQA

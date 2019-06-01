@@ -536,39 +536,23 @@ Alternatively, POSTed form parameters may be read directly from
 
 How can I access POSTed files?
 ------------------------------
-Falcon does not currently support parsing files submitted by
-an HTTP form (``multipart/form-data``), although we do plan
-to add this feature in a future version. In the meantime,
-you can use the standard ``cgi.FieldStorage`` class to
-parse the request:
+
+If files are `POST`\ed as part of a multipart form,
+:class:`falcon.media.MultipartFormHandler` may be
+:ref:`installed <custom_media_handlers>` to handle the `multipart/form-data`
+media type. :ref:`req.media <media>` can then be used as an iterable through
+multipart body parts:
 
 .. code:: python
 
-    # TODO: Either validate that content type is multipart/form-data
-    # here, or in another hook before allowing execution to proceed.
+    for part in req.media:
+        # TODO: Do something with the body part
+        pass
 
-    # This must be done to avoid a bug in cgi.FieldStorage
-    env = req.env
-    env.setdefault('QUERY_STRING', '')
-
-    # TODO: Add error handling, when the request is not formatted
-    # correctly or does not contain the desired field...
-
-    # TODO: Consider overriding make_file, so that you can
-    # stream directly to the destination rather than
-    # buffering using TemporaryFile (see http://goo.gl/Yo8h3P)
-    form = cgi.FieldStorage(fp=req.stream, environ=env)
-
-    file_item = form[name]
-    if file_item.file:
-        # TODO: It's an uploaded file... read it in
-    else:
-        # TODO: Raise an error
-
-You might also try this
-`streaming_form_data <https://streaming-form-data.readthedocs.io/en/latest/>`_
-package by Siddhant Goel, or searching PyPI for additional options from the
-community.
+.. note::
+   In further development versions of Falcon 3.0 series,
+   :class:`falcon.media.MultpartFormHandler` may be promoted to the default
+   media handlers.
 
 How do I consume a query string that has a JSON value?
 ------------------------------------------------------

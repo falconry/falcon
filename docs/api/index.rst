@@ -10,6 +10,7 @@ Classes and Functions
    status
    errors
    media
+   multipart
    redirects
    middleware
    hooks

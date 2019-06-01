@@ -121,6 +121,11 @@ Supported Handler Types
 .. autoclass:: falcon.media.MessagePackHandler
     :members:
 
+.. autoclass:: falcon.media.MultipartFormHandler
+    :members:
+
+.. _custom_media_handlers:
+
 Custom Handler Type
 -------------------
 
