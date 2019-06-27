@@ -226,7 +226,7 @@ class Cookie:
 
     @property
     def same_site(self):
-        return self._samesite
+        return self._samesite if self._samesite else None
 
 
 def simulate_request(app, method='GET', path='/', query_string=None,

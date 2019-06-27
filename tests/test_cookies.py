@@ -30,7 +30,7 @@ GMT_PLUS_ONE = TimezoneGMTPlus1()
 class CookieResource:
 
     def on_get(self, req, resp):
-        resp.set_cookie('foo', 'bar', domain='example.com', path='/', same_site=('Lex',))
+        resp.set_cookie('foo', 'bar', domain='example.com', path='/', same_site=('Lax',))
 
     def on_head(self, req, resp):
         resp.set_cookie('foo', 'bar', max_age=300)
@@ -85,7 +85,7 @@ def test_response_base_case(client):
     assert cookie.value == 'bar'
     assert cookie.domain == 'example.com'
     assert cookie.http_only
-    assert cookie.same_site == 'Lex'
+    assert cookie.same_site == 'Lax'
 
     # NOTE(kgriffs): Explicitly test for None to ensure
     # falcon.testing.Cookie is returning exactly what we
