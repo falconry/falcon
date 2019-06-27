@@ -279,7 +279,7 @@ class Response:
         self._headers['content-length'] = str(content_length)
 
     def set_cookie(self, name, value, expires=None, max_age=None,
-                   domain=None, path=None, secure=None, http_only=True):
+                   domain=None, path=None, secure=None, http_only=True, same_site=None):
         """Set a response cookie.
 
         Note:
@@ -424,6 +424,9 @@ class Response:
 
         if http_only:
             self._cookies[name]['httponly'] = http_only
+
+        if same_site:
+            self._cookies[name]['samesite'] = same_site[0]
 
     def unset_cookie(self, name):
         """Unset a cookie in the response

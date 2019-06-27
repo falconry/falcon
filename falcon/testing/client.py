@@ -184,6 +184,7 @@ class Cookie:
             'max_age',
             'secure',
             'httponly',
+            'samesite'
         ):
             value = morsel[name.replace('_', '-')] or None
             setattr(self, '_' + name, value)
@@ -222,6 +223,10 @@ class Cookie:
     @property
     def http_only(self):
         return bool(self._httponly)
+
+    @property
+    def same_site(self):
+        return self._samesite
 
 
 def simulate_request(app, method='GET', path='/', query_string=None,

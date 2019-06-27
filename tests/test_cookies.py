@@ -30,7 +30,7 @@ GMT_PLUS_ONE = TimezoneGMTPlus1()
 class CookieResource:
 
     def on_get(self, req, resp):
-        resp.set_cookie('foo', 'bar', domain='example.com', path='/')
+        resp.set_cookie('foo', 'bar', domain='example.com', path='/', same_site=('Lex',))
 
     def on_head(self, req, resp):
         resp.set_cookie('foo', 'bar', max_age=300)
@@ -40,7 +40,11 @@ class CookieResource:
 
     def on_post(self, req, resp):
         e = datetime(year=2050, month=1, day=1)  # naive
-        resp.set_cookie('foo', 'bar', http_only=False, secure=False, expires=e)
+        resp.set_cookie('foo', 'bar',
+                        http_only=False,
+                        secure=False,
+                        expires=e,
+                        same_site=('Strict',))
         resp.unset_cookie('bad')
 
     def on_put(self, req, resp):
@@ -76,10 +80,12 @@ def test_response_base_case(client):
     result = client.simulate_get('/')
 
     cookie = result.cookies['foo']
+
     assert cookie.name == 'foo'
     assert cookie.value == 'bar'
     assert cookie.domain == 'example.com'
     assert cookie.http_only
+    assert cookie.same_site == 'Lex'
 
     # NOTE(kgriffs): Explicitly test for None to ensure
     # falcon.testing.Cookie is returning exactly what we
@@ -151,6 +157,7 @@ def test_cookie_expires_naive(client):
     assert cookie.value == 'bar'
     assert cookie.domain is None
     assert cookie.expires == datetime(year=2050, month=1, day=1)
+    assert cookie.same_site == 'Strict'
     assert not cookie.http_only
     assert cookie.max_age is None
     assert cookie.path is None
