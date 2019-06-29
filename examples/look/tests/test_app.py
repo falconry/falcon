@@ -1,9 +1,9 @@
 import io
+from wsgiref.validate import InputWrapper
 
 import falcon
 from falcon import testing
 from mock import call, MagicMock, mock_open
-from wsgiref.validate import InputWrapper
 import msgpack
 import pytest
 
