@@ -820,12 +820,12 @@ look similar to this:
 .. code:: python
 
     import io
+    from wsgiref.validate import InputWrapper
 
     from unittest.mock import call, MagicMock, mock_open
 
     import falcon
     from falcon import testing
-    from wsgiref.validate import InputWrapper
     import msgpack
     import pytest
 
