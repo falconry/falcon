@@ -32,10 +32,8 @@ import sys
 
 from falcon.util import http_now, uri
 
-
 # Constants
 DEFAULT_HOST = 'falconframework.org'
-
 
 # NOTE(kgriffs): Alias for backwards-compatibility with Falcon 0.2
 httpnow = http_now
@@ -68,7 +66,7 @@ def get_encoding_from_headers(headers):
     return None
 
 
-def rand_string(min, max):
+def rand_string(min, max) -> str:
     """Returns a randomly-generated string, of a random length.
 
     Args:
@@ -86,8 +84,7 @@ def rand_string(min, max):
 def create_environ(path='/', query_string='', protocol='HTTP/1.1',
                    scheme='http', host=DEFAULT_HOST, port=None,
                    headers=None, app='', body='', method='GET',
-                   wsgierrors=None, file_wrapper=None, remote_addr=None):
-
+                   wsgierrors=None, file_wrapper=None, remote_addr=None) -> dict:
     """Creates a mock PEP-3333 environ ``dict`` for simulating WSGI requests.
 
     Keyword Args:
@@ -249,10 +246,11 @@ def closed_wsgi_iterable(iterable):
     Returns:
         iterator: An iterator yielding the same bytestrings as `iterable`
     """
+
     def wrapper():
         try:
             for item in iterable:
-                yield item
+                    yield item
         finally:
             if hasattr(iterable, 'close'):
                 iterable.close()

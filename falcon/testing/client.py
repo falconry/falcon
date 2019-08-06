@@ -17,7 +17,6 @@
 This package includes utilities for simulating HTTP requests against a
 WSGI callable, without having to stand up a WSGI server.
 """
-
 from http import cookies as http_cookies
 import warnings
 import wsgiref.validate
@@ -27,7 +26,6 @@ from falcon.testing import helpers
 from falcon.testing.srmock import StartResponseMock
 from falcon.util import CaseInsensitiveDict, http_date_to_dt, to_query_str
 from falcon.util import json as util_json
-
 
 warnings.filterwarnings(
     'ignore',
@@ -103,31 +101,31 @@ class Result:
         self._encoding = helpers.get_encoding_from_headers(self._headers)
 
     @property
-    def status(self):
+    def status(self) -> str:
         return self._status
 
     @property
-    def status_code(self):
+    def status_code(self) -> int:
         return self._status_code
 
     @property
-    def headers(self):
+    def headers(self) -> CaseInsensitiveDict:
         return self._headers
 
     @property
-    def cookies(self):
+    def cookies(self) -> dict:
         return self._cookies
 
     @property
-    def encoding(self):
+    def encoding(self) -> str:
         return self._encoding
 
     @property
-    def content(self):
+    def content(self) -> bytes:
         return self._content
 
     @property
-    def text(self):
+    def text(self) -> str:
         if self._text is None:
             if not self.content:
                 self._text = ''
@@ -178,22 +176,22 @@ class Cookie:
         self._value = morsel.value
 
         for name in (
-            'expires',
-            'path',
-            'domain',
-            'max_age',
-            'secure',
-            'httponly',
+                'expires',
+                'path',
+                'domain',
+                'max_age',
+                'secure',
+                'httponly',
         ):
             value = morsel[name.replace('_', '-')] or None
             setattr(self, '_' + name, value)
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @property
-    def value(self):
+    def value(self) -> str:
         return self._value
 
     @property
@@ -204,23 +202,23 @@ class Cookie:
         return None
 
     @property
-    def path(self):
+    def path(self) -> str:
         return self._path
 
     @property
-    def domain(self):
+    def domain(self) -> str:
         return self._domain
 
     @property
-    def max_age(self):
+    def max_age(self) -> int:
         return int(self._max_age) if self._max_age else None
 
     @property
-    def secure(self):
+    def secure(self) -> bool:
         return bool(self._secure)
 
     @property
-    def http_only(self):
+    def http_only(self) -> bool:
         return bool(self._httponly)
 
 
@@ -228,7 +226,7 @@ def simulate_request(app, method='GET', path='/', query_string=None,
                      headers=None, body=None, json=None, file_wrapper=None,
                      wsgierrors=None, params=None, params_csv=True,
                      protocol='http', host=helpers.DEFAULT_HOST,
-                     remote_addr=None, extras=None):
+                     remote_addr=None, extras=None) -> Result:
     """Simulates a request to a WSGI application.
 
     Performs a request against a WSGI application. Uses
@@ -350,7 +348,7 @@ def simulate_request(app, method='GET', path='/', query_string=None,
     return result
 
 
-def simulate_get(app, path, **kwargs):
+def simulate_get(app, path, **kwargs) -> Result:
     """Simulates a GET request to a WSGI application.
 
     Equivalent to::
@@ -395,11 +393,14 @@ def simulate_get(app, path, **kwargs):
             request (default: '127.0.0.1')
         extras (dict): Additional CGI variables to add to the WSGI ``environ``
             dictionary for the request (default: ``None``)
+
+        Returns:
+        :py:class:`~.Result`: The result of the request
     """
     return simulate_request(app, 'GET', path, **kwargs)
 
 
-def simulate_head(app, path, **kwargs):
+def simulate_head(app, path, **kwargs) -> Result:
     """Simulates a HEAD request to a WSGI application.
 
     Equivalent to::
@@ -439,11 +440,14 @@ def simulate_head(app, path, **kwargs):
             request (default: '127.0.0.1')
         extras (dict): Additional CGI variables to add to the WSGI ``environ``
             dictionary for the request (default: ``None``)
+
+        Returns:
+        :py:class:`~.Result`: The result of the request
     """
     return simulate_request(app, 'HEAD', path, **kwargs)
 
 
-def simulate_post(app, path, **kwargs):
+def simulate_post(app, path, **kwargs) -> Result:
     """Simulates a POST request to a WSGI application.
 
     Equivalent to::
@@ -482,11 +486,14 @@ def simulate_post(app, path, **kwargs):
             request (default: '127.0.0.1')
         extras (dict): Additional CGI variables to add to the WSGI ``environ``
             dictionary for the request (default: ``None``)
+
+        Returns:
+        :py:class:`~.Result`: The result of the request
     """
     return simulate_request(app, 'POST', path, **kwargs)
 
 
-def simulate_put(app, path, **kwargs):
+def simulate_put(app, path, **kwargs) -> Result:
     """Simulates a PUT request to a WSGI application.
 
     Equivalent to::
@@ -525,11 +532,14 @@ def simulate_put(app, path, **kwargs):
             request (default: '127.0.0.1')
         extras (dict): Additional CGI variables to add to the WSGI ``environ``
             dictionary for the request (default: ``None``)
+
+        Returns:
+        :py:class:`~.Result`: The result of the request
     """
     return simulate_request(app, 'PUT', path, **kwargs)
 
 
-def simulate_options(app, path, **kwargs):
+def simulate_options(app, path, **kwargs) -> Result:
     """Simulates an OPTIONS request to a WSGI application.
 
     Equivalent to::
@@ -562,11 +572,14 @@ def simulate_options(app, path, **kwargs):
             request (default: '127.0.0.1')
         extras (dict): Additional CGI variables to add to the WSGI ``environ``
             dictionary for the request (default: ``None``)
+
+        Returns:
+        :py:class:`~.Result`: The result of the request
     """
     return simulate_request(app, 'OPTIONS', path, **kwargs)
 
 
-def simulate_patch(app, path, **kwargs):
+def simulate_patch(app, path, **kwargs) -> Result:
     """Simulates a PATCH request to a WSGI application.
 
     Equivalent to::
@@ -605,11 +618,14 @@ def simulate_patch(app, path, **kwargs):
             request (default: '127.0.0.1')
         extras (dict): Additional CGI variables to add to the WSGI ``environ``
             dictionary for the request (default: ``None``)
+
+        Returns:
+        :py:class:`~.Result`: The result of the request
     """
     return simulate_request(app, 'PATCH', path, **kwargs)
 
 
-def simulate_delete(app, path, **kwargs):
+def simulate_delete(app, path, **kwargs) -> Result:
     """Simulates a DELETE request to a WSGI application.
 
     Equivalent to::
@@ -642,6 +658,9 @@ def simulate_delete(app, path, **kwargs):
             request (default: '127.0.0.1')
         extras (dict): Additional CGI variables to add to the WSGI ``environ``
             dictionary for the request (default: ``None``)
+
+        Returns:
+        :py:class:`~.Result`: The result of the request
     """
     return simulate_request(app, 'DELETE', path, **kwargs)
 
@@ -680,56 +699,56 @@ class TestClient:
         self.app = app
         self._default_headers = headers
 
-    def simulate_get(self, path='/', **kwargs):
+    def simulate_get(self, path='/', **kwargs) -> Result:
         """Simulates a GET request to a WSGI application.
 
         (See also: :py:meth:`falcon.testing.simulate_get`)
         """
         return self.simulate_request('GET', path, **kwargs)
 
-    def simulate_head(self, path='/', **kwargs):
+    def simulate_head(self, path='/', **kwargs) -> Result:
         """Simulates a HEAD request to a WSGI application.
 
         (See also: :py:meth:`falcon.testing.simulate_head`)
         """
         return self.simulate_request('HEAD', path, **kwargs)
 
-    def simulate_post(self, path='/', **kwargs):
+    def simulate_post(self, path='/', **kwargs) -> Result:
         """Simulates a POST request to a WSGI application.
 
         (See also: :py:meth:`falcon.testing.simulate_post`)
         """
         return self.simulate_request('POST', path, **kwargs)
 
-    def simulate_put(self, path='/', **kwargs):
+    def simulate_put(self, path='/', **kwargs) -> Result:
         """Simulates a PUT request to a WSGI application.
 
         (See also: :py:meth:`falcon.testing.simulate_put`)
         """
         return self.simulate_request('PUT', path, **kwargs)
 
-    def simulate_options(self, path='/', **kwargs):
+    def simulate_options(self, path='/', **kwargs) -> Result:
         """Simulates an OPTIONS request to a WSGI application.
 
         (See also: :py:meth:`falcon.testing.simulate_options`)
         """
         return self.simulate_request('OPTIONS', path, **kwargs)
 
-    def simulate_patch(self, path='/', **kwargs):
+    def simulate_patch(self, path='/', **kwargs) -> Result:
         """Simulates a PATCH request to a WSGI application.
 
         (See also: :py:meth:`falcon.testing.simulate_patch`)
         """
         return self.simulate_request('PATCH', path, **kwargs)
 
-    def simulate_delete(self, path='/', **kwargs):
+    def simulate_delete(self, path='/', **kwargs) -> Result:
         """Simulates a DELETE request to a WSGI application.
 
         (See also: :py:meth:`falcon.testing.simulate_delete`)
         """
         return self.simulate_request('DELETE', path, **kwargs)
 
-    def simulate_request(self, *args, **kwargs):
+    def simulate_request(self, *args, **kwargs) -> Result:
         """Simulates a request to a WSGI application.
 
         Wraps :py:meth:`falcon.testing.simulate_request` to perform a
