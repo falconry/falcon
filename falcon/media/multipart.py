@@ -159,7 +159,8 @@ class BodyPart:
 class MultipartForm:
 
     def __init__(self, stream, boundary, content_length, parse_options):
-        if not isinstance(stream, BufferedStream):
+        # if not isinstance(stream, BufferedStream):
+        if not hasattr(stream, 'read_until'):
             if isinstance(stream, request_helpers.BoundedStream):
                 stream = BufferedStream(stream.stream.read, content_length)
             else:

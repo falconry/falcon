@@ -113,6 +113,11 @@ cdef class BufferedStream:
         while True:
             if delimiter in self._buffer:
                 break
+            elif amount < self._buffer_len - delimiter_len_1:
+                ret_value = self._buffer[:amount]
+                self._buffer_len -= amount
+                self._buffer = self._buffer[amount:]
+                return ret_value
 
             read_amount = self._chunk_size
             if read_amount > self._max_bytes_remaining:
