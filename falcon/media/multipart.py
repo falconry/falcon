@@ -5,7 +5,14 @@ from falcon import request_helpers
 from falcon.media.base import BaseHandler
 from falcon.media.handlers import Handlers
 from falcon.util import BufferedStream
+from falcon.util import misc
 
+# TODO(vytas):
+#   * Better support for form-wide charset setting
+#   * Clean up, simplify, and optimize BufferedStream
+#   * filename* support (requests-toolbelt seems to use that)
+#   * Better documentation
+#   * Document MultipartParseError
 
 _ALLOWED_CONTENT_HEADERS = frozenset([
     b'content-type',
@@ -41,6 +48,7 @@ DEFAULT_SUPPORTED_CHARSETS = (
     'windows-1257',
     'windows-1258',
 )
+"""Default list of supported character encodings."""
 
 
 class MultipartParseError(errors.HTTPBadRequest):
@@ -63,16 +71,44 @@ class BodyPart:
     Attributes:
         content_type (str): Value of the Content-Type header, or the multipart
             form default ``text/plain`` if the header is missing.
+
+        data (bytes): Body part content bytes. The maximum amount of bytes that
+            could be read is configurable via :class:`MultipartParseOptions`,
+            and a :class:`.MultipartParseError` is raised if the body part is
+            larger that this amount.
+
+            For large bodies, such as attached files, use the input `stream`
+            directly.
+
+            .. note::
+               Accessing this property the first time would consume the part
+               input stream.
+               The value is cached for subsequent access.
+
+        filename (str): File name if the body part is an attached file, and
+            ``None`` otherwise.
+
+        secure_filename (str): The sanitized version of `filename` using only
+            the most common ASCII characters for maximum portability and safety
+            wrt using this name as a filename on a regular file system.
+
         stream: File-like input object for reading the body part of the
             multipart form request, if any. This object provides direct access
             to the server's data stream and is non-seekable. The stream is
             automatically delimited according to the multipart stream boundary.
+
         media (object): Returns a deserialized form of the multipart body part.
             When called, it will attempt to deserialize the body part stream
             using the Content-Type header as well as the media-type handlers
-            configured via
-            :class:`falcon.media.multipart.MultipartParseOptions`.
+            configured via :class:`MultipartParseOptions`.
 
+
+        text (str): The part decoded as a text string provided the part is
+            encoded as ``text/plain``, ``None`` otherwise.
+
+            .. note::
+               As this property builds upon `data`, it would consume the part
+               input stream in the same way.
     """
 
     _content_disposition = None
@@ -103,7 +139,8 @@ class BodyPart:
             return None
 
         charset = options.get('charset') or self._parse_options.default_charset
-        assert charset in self._parse_options.supported_charsets
+        if charset not in self._parse_options.supported_charsets:
+            raise MultipartParseError('unsupported charset: {}'.format(charset))
         return self.data.decode(charset)
 
     @property
@@ -131,6 +168,10 @@ class BodyPart:
             self._filename = value
 
         return self._filename
+
+    @property
+    def secure_filename(self):
+        return misc.secure_filename(self.filename)
 
     @property
     def name(self):
@@ -282,17 +323,34 @@ class MultipartFormHandler(BaseHandler):
         raise NotImplementedError('multipart form serialization unsupported')
 
 
-# PERF: To avoid typos and improve storage space and speed over a dict.
+# PERF(vytas): To avoid typos and improve storage space and speed over a dict.
+#   Inspired by RequestOptions.
 class MultipartParseOptions:
     """
-    Defines a set of configurable multipart form parse options.
+    Defines a set of configurable multipart form parser options.
 
     Attributes:
-        max_body_part_count (int): The maximum amount of body part counts.
+        default_charset (str): The default character encoding for text fields.
+
+        max_body_part_count (int): The maximum amount of body parts in the
+            form.
+
+        max_body_part_buffer_size (int): The maximum amount of bytes to buffer
+            as `data` property.
+
+        max_body_part_headers_size (int): The maximum size (in bytes) of the
+            body part headers structure.
+
         media_handlers (Handlers): A dict-like object that allows you to
             configure the media-types that you would like to handle.
             By default, a handler is provided for the ``application/json``
             media type.
+
+        supported_charsets (frozenset): The list of supported character
+            encodings that are understood by the parser. The provided charsets
+            must by provided in lowercase, and must also be understood by
+            Python's :func:`bytes.decode` function.
+            By default, :data:`DEFAULT_SUPPORTED_CHARSETS` is used.
     """
 
     __slots__ = (

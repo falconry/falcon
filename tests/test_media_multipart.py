@@ -132,6 +132,28 @@ def test_content_transfer_encoding_header():
             pass
 
 
+def test_unsupported_charset():
+    data = (
+        b'--BOUNDARY\r\n'
+        b'Content-Disposition: form-data; name="text"\r\n'
+        b'Content-Type: text/plain; charset=pecyn\r\n\r\n'
+        b'AAHEHlRoZSBGYWxjb24gV2ViIEZyYW1ld29yaywgMjAxOQ=='
+        b'\r\n'
+        b'--BOUNDARY\r\n'
+        b'Content-Disposition: form-data; name="empty"\r\n'
+        b'Content-Type: text/plain\r\n\r\n'
+        b'\r\n'
+        b'--BOUNDARY--\r\n'
+    )
+
+    handler = media.MultipartFormHandler()
+    form = handler.deserialize(
+        io.BytesIO(data), 'multipart/form-data; boundary=BOUNDARY', len(data))
+    with pytest.raises(falcon.HTTPBadRequest):
+        for part in form:
+            part.text
+
+
 def test_unknown_header():
     data = (
         b'--BOUNDARY\r\n'
@@ -197,6 +219,7 @@ def test_body_part_properties():
             assert part.name == part.name == 'document'
         elif part.name == 'file1':
             assert part.filename == part.filename == 'test.txt'
+            assert part.secure_filename == part.filename
 
 
 class MultipartAnalyzer:

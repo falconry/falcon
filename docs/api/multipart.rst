@@ -6,7 +6,7 @@ Multipart Forms
 Falcon features easy and efficient access to submitted multipart forms by using
 :class:`falcon.media.MultipartFormHandler` to handle the `multipart/form-data`
 :ref:`media <media>` type. ``req.media`` can then be used as an iterable
-through multipart form     
+through multipart form
 :class:`body parts <falcon.media.multipart.BodyPart>`:
 
 .. code:: python
@@ -38,6 +38,8 @@ Body Part Type
 
 Parsing Options
 ---------------
+
+.. autodata:: falcon.media.multipart.DEFAULT_SUPPORTED_CHARSETS
 
 .. autoclass:: falcon.media.multipart.MultipartParseOptions
     :members:

@@ -27,6 +27,8 @@ framework itself. These functions are hoisted into the front-door
 import datetime
 import functools
 import inspect
+import re
+import unicodedata
 import warnings
 
 from falcon import status_codes
@@ -42,6 +44,7 @@ __all__ = (
     'get_http_status'
 )
 
+_UNSAFE_CHARS = re.compile(r'[^a-zA-Z0-9.-]')
 
 # PERF(kgriffs): Avoid superfluous namespace lookups
 strptime = datetime.datetime.strptime
@@ -305,3 +308,25 @@ def get_http_status(status_code, default_reason='Unknown'):
     except AttributeError:
         # not found
         return str(code) + ' ' + default_reason
+
+
+def secure_filename(filename):
+    """
+    Sanitize the provided `filename` using only the most common ASCII
+    characters for maximum portability and safety wrt using this name as a
+    filename on a regular file system.
+
+    Args:
+        filename (str): Arbitrary filename input from the request, such as
+            multipart form filename field.
+
+    Returns:
+        str: sanitized filename
+    """
+    # TODO(vytas): max_length (int): Maximum length of the returned
+    #     filename. Should the returned filename exceed this restriction, it is
+    #     truncated while attempting to preserve the extension.
+    filename = unicodedata.normalize('NFKD', filename)
+    if filename.startswith('.'):
+        filename = filename.replace('.', '_', 1)
+    return _UNSAFE_CHARS.sub('_', filename) or 'file'

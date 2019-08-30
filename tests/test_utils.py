@@ -374,6 +374,18 @@ class TestFalconUtils:
         assert not weak_67ab43_one.strong_compare(weak_67aB43)
         assert not weak_67aB43.strong_compare(weak_67ab43_one)
 
+    @pytest.mark.parametrize('filename,expected', [
+        ('', 'file'),
+        ('.', '_'),
+        ('..', '_.'),
+        ('hello.txt', 'hello.txt'),
+        ('Ąžuolai žaliuos.jpeg', 'A_z_uolai_z_aliuos.jpeg'),
+        ('/etc/shadow', '_etc_shadow'),
+        ('C:\\Windows\\kernel32.dll', 'C__Windows_kernel32.dll'),
+    ])
+    def test_secure_filename(self, filename, expected):
+        assert misc.secure_filename(filename) == expected
+
 
 @pytest.mark.parametrize(
     'protocol,method',
