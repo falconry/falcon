@@ -1,4 +1,6 @@
 import cgi
+import re
+from urllib.parse import unquote_to_bytes
 
 from falcon import errors
 from falcon import request_helpers
@@ -10,7 +12,6 @@ from falcon.util import misc
 # TODO(vytas):
 #   * Better support for form-wide charset setting
 #   * Clean up, simplify, and optimize BufferedStream
-#   * filename* support (requests-toolbelt seems to use that)
 #   * Better documentation
 #   * Document MultipartParseError
 
@@ -49,6 +50,8 @@ DEFAULT_SUPPORTED_CHARSETS = (
     'windows-1258',
 )
 """Default list of supported character encodings."""
+
+_FILENAME_STAR_RFC5987 = re.compile(r"([\w-]+)'[\w]*'(.+)")
 
 
 class MultipartParseError(errors.HTTPBadRequest):
@@ -139,8 +142,10 @@ class BodyPart:
             return None
 
         charset = options.get('charset') or self._parse_options.default_charset
+        charset = charset.lower()
         if charset not in self._parse_options.supported_charsets:
-            raise MultipartParseError('unsupported charset: {}'.format(charset))
+            raise MultipartParseError(
+                'unsupported charset: {}'.format(charset))
         return self.data.decode(charset)
 
     @property
@@ -160,12 +165,22 @@ class BodyPart:
                 self._content_disposition = cgi.parse_header(value.decode())
 
             _, params = self._content_disposition
-            value = params.get('filename')
-            # TODO(vytas): Consider supporting filename* as that has been
-            #   spotted in the wild, even though RFC 7578 forbids it.
-            if value is None:
-                return None
-            self._filename = value
+
+            # NOTE(vytas): Supporting filename* as per RFC5987, as that has
+            #   been spotted in the wild, even though RFC 7578 forbids it.
+            match = _FILENAME_STAR_RFC5987.match(params.get('filename*', ''))
+            if match:
+                charset, value = match.groups()
+                charset = charset.lower()
+                if charset not in self._parse_options.supported_charsets:
+                    raise MultipartParseError(
+                        'unsupported charset: {}'.format(charset))
+                self._filename = unquote_to_bytes(value).decode(charset)
+            else:
+                value = params.get('filename')
+                if value is None:
+                    return None
+                self._filename = value
 
         return self._filename
 
@@ -330,16 +345,17 @@ class MultipartParseOptions:
     Defines a set of configurable multipart form parser options.
 
     Attributes:
-        default_charset (str): The default character encoding for text fields.
+        default_charset (str): The default character encoding for text fields
+            (default: ``utf-8``).
 
         max_body_part_count (int): The maximum amount of body parts in the
-            form.
+            form (default: 64).
 
         max_body_part_buffer_size (int): The maximum amount of bytes to buffer
-            as `data` property.
+            as `data` property (default: 1 MiB).
 
         max_body_part_headers_size (int): The maximum size (in bytes) of the
-            body part headers structure.
+            body part headers structure (default: 8192).
 
         media_handlers (Handlers): A dict-like object that allows you to
             configure the media-types that you would like to handle.
