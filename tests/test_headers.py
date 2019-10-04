@@ -6,19 +6,21 @@ import pytest
 import falcon
 from falcon import testing
 
+from _util import create_app  # NOQA
+
 
 SAMPLE_BODY = testing.rand_string(0, 128 * 1024)
 
 
 @pytest.fixture
-def client():
-    app = falcon.App()
+def client(asgi):
+    app = create_app(asgi)
     return testing.TestClient(app)
 
 
 @pytest.fixture(scope='function')
-def cors_client():
-    app = falcon.App(cors_enable=True)
+def cors_client(asgi):
+    app = create_app(asgi, cors_enable=True)
     return testing.TestClient(app)
 
 
@@ -76,6 +78,7 @@ class HeaderHelpersResource:
         assert resp.get_header('x-client-should-never-see-this') == 'abc'
         resp.delete_header('x-client-should-never-see-this')
 
+        self.req = req
         self.resp = resp
 
     def on_head(self, req, resp):
@@ -385,24 +388,26 @@ class TestHeaders:
         resource = testing.SimpleTestResource(body='Hello world!')
         self._check_header(client, resource, 'Content-Type', falcon.DEFAULT_MEDIA_TYPE)
 
+    @pytest.mark.parametrize('asgi', [True, False])
     @pytest.mark.parametrize('content_type,body', [
         ('text/plain; charset=UTF-8', 'Hello Unicode! \U0001F638'),
         # NOTE(kgriffs): This only works because the client defaults to
         # ISO-8859-1 IFF the media type is 'text'.
         ('text/plain', 'Hello ISO-8859-1!'),
     ])
-    def test_override_default_media_type(self, client, content_type, body):
-        client.app = falcon.App(media_type=content_type)
+    def test_override_default_media_type(self, asgi, client, content_type, body):
+        client.app = create_app(asgi=asgi, media_type=content_type)
         client.app.add_route('/', testing.SimpleTestResource(body=body))
         result = client.simulate_get()
 
         assert result.text == body
         assert result.headers['Content-Type'] == content_type
 
-    def test_override_default_media_type_missing_encoding(self, client):
+    @pytest.mark.parametrize('asgi', [True, False])
+    def test_override_default_media_type_missing_encoding(self, asgi, client):
         body = '{"msg": "Hello Unicode! \U0001F638"}'
 
-        client.app = falcon.App(media_type='application/json')
+        client.app = create_app(asgi=asgi, media_type='application/json')
         client.app.add_route('/', testing.SimpleTestResource(body=body))
         result = client.simulate_get()
 
@@ -781,6 +786,23 @@ class TestHeaders:
         assert result.headers['Access-Control-Allow-Methods'] == 'DELETE, GET'
         assert result.headers['Access-Control-Allow-Headers'] == '*'
         assert result.headers['Access-Control-Max-Age'] == '86400'  # 24 hours in seconds
+
+    def test_request_multiple_header(self, client):
+        resource = HeaderHelpersResource()
+        client.app.add_route('/', resource)
+
+        client.simulate_request(headers=[
+            # Singletone header; last one wins
+            ('Content-Type', 'text/plain'),
+            ('Content-Type', 'image/jpeg'),
+
+            # Should be concatenated
+            ('X-Thing', '1'),
+            ('X-Thing', '2'),
+        ])
+
+        assert resource.req.content_type == 'image/jpeg'
+        assert resource.req.get_header('X-Thing') == '1,2'
 
     # ----------------------------------------------------------------------
     # Helpers

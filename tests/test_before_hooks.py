@@ -7,6 +7,8 @@ import pytest
 import falcon
 import falcon.testing as testing
 
+from _util import create_app, create_resp, disable_asgi_non_coroutine_wrapping  # NOQA
+
 
 def validate(req, resp, resource, params):
     assert resource
@@ -21,6 +23,10 @@ def validate_param(req, resp, resource, params, param_name, maxval=100):
     if limit and int(limit) > maxval:
         msg = '{0} must be <= {1}'.format(param_name, maxval)
         raise falcon.HTTPBadRequest('Out of Range', msg)
+
+
+async def validate_param_async(*args, **kwargs):
+    validate_param(*args, **kwargs)
 
 
 class ResourceAwareValidateParam:
@@ -41,9 +47,18 @@ def validate_field(req, resp, resource, params, field_name='test'):
 def parse_body(req, resp, resource, params):
     assert resource
 
-    length = req.content_length or 0
-    if length != 0:
+    length = req.content_length
+    if length:
         params['doc'] = json.load(io.TextIOWrapper(req.bounded_stream, 'utf-8'))
+
+
+async def parse_body_async(req, resp, resource, params):
+    assert resource
+
+    length = req.content_length
+    if length:
+        data = await req.bounded_stream.read()
+        params['doc'] = json.loads(data.decode('utf-8'))
 
 
 def bunnies(req, resp, resource, params):
@@ -92,11 +107,9 @@ frogs_in_the_head = functools.partial(
 class WrappedRespondersResource:
 
     @falcon.before(validate_param, 'limit', 100)
-    @falcon.before(parse_body)
-    def on_get(self, req, resp, doc):
+    def on_get(self, req, resp):
         self.req = req
         self.resp = resp
-        self.doc = doc
 
     @falcon.before(validate)
     def on_put(self, req, resp):
@@ -113,6 +126,16 @@ class WrappedRespondersResourceChild(WrappedRespondersResource):
     def on_put(self, req, resp):
         # Test passing no extra args
         super(WrappedRespondersResourceChild, self).on_put(req, resp)
+
+
+class WrappedRespondersBodyParserResource:
+
+    @falcon.before(validate_param, 'limit', 100)
+    @falcon.before(parse_body)
+    def on_get(self, req, resp, doc=None):
+        self.req = req
+        self.resp = resp
+        self.doc = doc
 
 
 @falcon.before(bunnies)
@@ -239,8 +262,8 @@ def resource():
 
 
 @pytest.fixture
-def client(resource):
-    app = falcon.App()
+def client(asgi, request, resource):
+    app = create_app(asgi)
     app.add_route('/', resource)
     return testing.TestClient(app)
 
@@ -302,9 +325,62 @@ def test_field_validator(client, resource):
     assert result.status_code == 400
 
 
-def test_parser(client, resource):
-    client.simulate_get('/', body=json.dumps({'animal': 'falcon'}))
-    assert resource.doc == {'animal': 'falcon'}
+@pytest.mark.parametrize(
+    'body,doc',
+    [
+        (json.dumps({'animal': 'falcon'}), {'animal': 'falcon'}),
+        ('{}', {}),
+        ('', None),
+        (None, None),
+    ]
+)
+def test_parser_sync(body, doc):
+    app = falcon.API()
+
+    resource = WrappedRespondersBodyParserResource()
+    app.add_route('/', resource)
+
+    testing.simulate_get(app, '/', body=body)
+    assert resource.doc == doc
+
+
+@pytest.mark.parametrize(
+    'body,doc',
+    [
+        (json.dumps({'animal': 'falcon'}), {'animal': 'falcon'}),
+        ('{}', {}),
+        ('', None),
+        (None, None),
+    ]
+)
+def test_parser_async(body, doc):
+    with disable_asgi_non_coroutine_wrapping():
+        class WrappedRespondersBodyParserAsyncResource:
+            @falcon.before(validate_param_async, 'limit', 100)
+            @falcon.before(parse_body_async)
+            async def on_get(self, req, resp, doc=None):
+                self.req = req
+                self.resp = resp
+                self.doc = doc
+
+    app = create_app(asgi=True)
+
+    resource = WrappedRespondersBodyParserAsyncResource()
+    app.add_route('/', resource)
+
+    testing.simulate_get(app, '/', body=body)
+    assert resource.doc == doc
+
+    async def test_direct():
+        resource = WrappedRespondersBodyParserAsyncResource()
+
+        req = testing.create_asgi_req()
+        resp = create_resp(True)
+
+        await resource.on_get(req, resp, doc)
+        assert resource.doc == doc
+
+    testing.invoke_coroutine_sync(test_direct)
 
 
 def test_wrapped_resource(client, wrapped_resource):
@@ -402,11 +478,25 @@ class PiggybackingCollection:
         resp.status = falcon.HTTP_CREATED
 
 
-@pytest.fixture
-def app_client():
-    items = PiggybackingCollection()
+class PiggybackingCollectionAsync(PiggybackingCollection):
 
-    app = falcon.App()
+    @falcon.before(header_hook)
+    async def on_post_collection(self, req, resp):
+        self._sequence += 1
+        itemid = self._sequence
+
+        doc = await req.media
+
+        self._items[itemid] = dict(doc, itemid=itemid)
+        resp.location = '/items/{}'.format(itemid)
+        resp.status = falcon.HTTP_CREATED
+
+
+@pytest.fixture(params=[True, False])
+def app_client(request):
+    items = PiggybackingCollectionAsync() if request.param else PiggybackingCollection()
+
+    app = create_app(asgi=request.param)
     app.add_route('/items', items, suffix='collection')
     app.add_route('/items/{itemid:int}', items)
 

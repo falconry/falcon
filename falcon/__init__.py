@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Primary package for Falcon, the minimalist WSGI library.
+"""Primary package for Falcon, the minimalist web API framework.
 
-Falcon is a minimalist WSGI library for building speedy web APIs and app
+Falcon is a minimalist web API framework for building speedy web APIs and app
 backends. The `falcon` package can be used to directly access most of
 the framework's classes, functions, and variables::
 
@@ -23,6 +23,9 @@ the framework's classes, functions, and variables::
     app = falcon.App()
 
 """
+
+import logging as _logging
+import sys as _sys
 
 # Hoist classes and functions into the falcon namespace
 from falcon.version import __version__  # NOQA
@@ -44,3 +47,12 @@ from falcon.util import *  # NOQA
 from falcon.hooks import before, after  # NOQA
 from falcon.request import Request, RequestOptions, Forwarded  # NOQA
 from falcon.response import Response, ResponseOptions  # NOQA
+
+
+ASGI_SUPPORTED = _sys.version_info.minor > 5
+
+
+# NOTE(kgriffs): Only to be used internally on the rare occasion that we
+#   need to log something that we can't communicate any other way.
+_logger = _logging.getLogger('falcon')
+_logger.addHandler(_logging.NullHandler())

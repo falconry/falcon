@@ -1,12 +1,18 @@
 import pytest
 
 import falcon
-from falcon import constants, testing
+from falcon import ASGI_SUPPORTED, constants, testing
+
+from _util import create_app, disable_asgi_non_coroutine_wrapping  # NOQA
 
 
 def capture_error(req, resp, ex, params):
     resp.status = falcon.HTTP_723
     resp.body = 'error: %s' % str(ex)
+
+
+async def capture_error_async(*args):
+    capture_error(*args)
 
 
 def handle_error_first(req, resp, ex, params):
@@ -43,8 +49,8 @@ class ErroredClassResource:
 
 
 @pytest.fixture
-def client():
-    app = falcon.App()
+def client(asgi):
+    app = create_app(asgi)
     app.add_route('/', ErroredClassResource())
     return testing.TestClient(app)
 
@@ -72,6 +78,36 @@ class TestErrorHandler:
         assert result.status_code == 500
         assert result.headers['content-type'] == resp_content_type
         assert result.text.startswith(resp_start)
+
+    def test_caught_error_async(self, asgi):
+        if not asgi:
+            pytest.skip('Test only applies to ASGI')
+
+        if not ASGI_SUPPORTED:
+            pytest.skip('ASGI requires Python 3.6+')
+
+        import falcon.asgi
+        app = falcon.asgi.App()
+        app.add_route('/', ErroredClassResource())
+        app.add_error_handler(Exception, capture_error_async)
+
+        client = testing.TestClient(app)
+
+        result = client.simulate_get()
+        assert result.text == 'error: Plain Exception'
+
+        result = client.simulate_head()
+        assert result.status_code == 723
+        assert not result.content
+
+    # def test_uncaught_error(self, client):
+    #     client.app.add_error_handler(CustomException, capture_error)
+    #     with pytest.raises(Exception):
+    #         client.simulate_get()
+
+    # def test_uncaught_error_else(self, client):
+    #     with pytest.raises(Exception):
+    #         client.simulate_get()
 
     def test_converted_error(self, client):
         client.app.add_error_handler(CustomException)
@@ -144,7 +180,7 @@ class TestErrorHandler:
         NotImplemented,
         'Hello, world!',
         frozenset([ZeroDivisionError, int, NotImplementedError]),
-        iter([float, float]),
+        [float, float],
     ])
     def test_invalid_add_exception_handler_input(self, client, exceptions):
         with pytest.raises(TypeError):
@@ -172,3 +208,29 @@ class TestErrorHandler:
         client.simulate_delete()
         client.simulate_get()
         client.simulate_head()
+
+    def test_handler_signature_shim_asgi(self):
+        def check_args(ex, req, resp):
+            assert isinstance(ex, BaseException)
+            assert isinstance(req, falcon.Request)
+            assert isinstance(resp, falcon.Response)
+
+        async def legacy_handler(err, rq, rs, prms):
+            check_args(err, rq, rs)
+
+        app = create_app(True)
+        app.add_route('/', ErroredClassResource())
+        app.add_error_handler(Exception, legacy_handler)
+        client = testing.TestClient(app)
+
+        client.simulate_get()
+
+    def test_handler_must_be_coroutine_for_asgi(self):
+        async def legacy_handler(err, rq, rs, prms):
+            pass
+
+        app = create_app(True)
+
+        with disable_asgi_non_coroutine_wrapping():
+            with pytest.raises(ValueError):
+                app.add_error_handler(Exception, capture_error)

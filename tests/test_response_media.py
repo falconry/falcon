@@ -6,6 +6,11 @@ import falcon
 from falcon import errors, media, testing
 
 
+@pytest.fixture(params=[True, False])
+def client(request):
+    return create_client()
+
+
 def create_client(handlers=None):
     res = testing.SimpleTestResource()
 
@@ -38,8 +43,7 @@ class SimpleMediaResource:
     (falcon.MEDIA_JSON),
     ('application/json; charset=utf-8'),
 ])
-def test_json(media_type):
-    client = create_client()
+def test_json(client, media_type):
     client.simulate_get('/')
 
     resp = client.resource.captured_resp
@@ -99,8 +103,7 @@ def test_msgpack(media_type):
     assert resp.data == b'\x81\xa9something\xc3'
 
 
-def test_unknown_media_type():
-    client = create_client()
+def test_unknown_media_type(client):
     client.simulate_get('/')
 
     resp = client.resource.captured_resp
@@ -112,20 +115,17 @@ def test_unknown_media_type():
     assert err.value.description == 'nope/json is an unsupported media type.'
 
 
-def test_use_cached_media():
-    expected = {'something': True}
-
-    client = create_client()
+def test_use_cached_media(client):
     client.simulate_get('/')
 
     resp = client.resource.captured_resp
-    resp._media = expected
 
+    expected = {'something': True}
+    resp._media = expected
     assert resp.media == expected
 
 
-def test_default_media_type():
-    client = create_client()
+def test_default_media_type(client):
     client.simulate_get('/')
 
     resp = client.resource.captured_resp
@@ -136,8 +136,7 @@ def test_default_media_type():
     assert resp.content_type == 'application/json'
 
 
-def test_mimeparse_edgecases():
-    client = create_client()
+def test_mimeparse_edgecases(client):
     client.simulate_get('/')
 
     resp = client.resource.captured_resp

@@ -1,12 +1,17 @@
+import pytest
 
-import falcon
+from _util import create_resp  # NOQA
+
+
+@pytest.fixture(params=[True, False])
+def resp(request):
+    return create_resp(asgi=request.param)
 
 
 class TestResponseBody:
 
-    def test_append_body(self):
+    def test_append_body(self, resp):
         text = 'Hello beautiful world! '
-        resp = falcon.Response()
         resp.body = ''
 
         for token in text.split():
@@ -15,7 +20,6 @@ class TestResponseBody:
 
         assert resp.body == text
 
-    def test_response_repr(self):
-        resp = falcon.Response()
+    def test_response_repr(self, resp):
         _repr = '<%s: %s>' % (resp.__class__.__name__, resp.status)
         assert resp.__repr__() == _repr

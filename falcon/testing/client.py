@@ -18,7 +18,10 @@ This package includes utilities for simulating HTTP requests against a
 WSGI callable, without having to stand up a WSGI server.
 """
 
+import asyncio
 import datetime as dt
+import inspect
+import time
 from typing import Dict, Optional, Union
 import warnings
 import wsgiref.validate
@@ -26,8 +29,15 @@ import wsgiref.validate
 from falcon.constants import COMBINED_METHODS, MEDIA_JSON
 from falcon.testing import helpers
 from falcon.testing.srmock import StartResponseMock
-from falcon.util import CaseInsensitiveDict, http_cookies, http_date_to_dt, to_query_str
-from falcon.util import json as util_json
+from falcon.util import (
+    CaseInsensitiveDict,
+    code_to_http_status,
+    get_loop,
+    http_cookies,
+    http_date_to_dt,
+    json as util_json,
+    to_query_str,
+)
 
 warnings.filterwarnings(
     'error',
@@ -124,7 +134,7 @@ class Cookie:
 
 
 class Result:
-    """Encapsulates the result of a simulated WSGI request.
+    """Encapsulates the result of a simulated request.
 
     Args:
         iterable (iterable): An iterable that yields zero or more
@@ -163,7 +173,7 @@ class Result:
             if the response is not valid JSON.
     """
 
-    def __init__(self, iterable, status, headers):
+    def __init__(self, iterable, status, headers, events=None):
         self._text = None
 
         self._content = b''.join(iterable)
@@ -171,6 +181,7 @@ class Result:
         self._status = status
         self._status_code = int(status[:3])
         self._headers = CaseInsensitiveDict(headers)
+        self._events = events or []
 
         cookies = http_cookies.SimpleCookie()
         for name, value in headers:
@@ -238,19 +249,25 @@ class Result:
         return util_json.loads(self.text)
 
 
+# NOTE(kgriffs): The default of asgi_disconnect_ttl was chosen to be
+#   relatively long (5 minutes) to help testers notice when something
+#   appears to be "hanging", which might indicates that the app is
+#   not handling the reception of events correctly.
 def simulate_request(app, method='GET', path='/', query_string=None,
                      headers=None, body=None, json=None, file_wrapper=None,
                      wsgierrors=None, params=None, params_csv=True,
                      protocol='http', host=helpers.DEFAULT_HOST,
-                     remote_addr=None, extras=None) -> Result:
-    """Simulates a request to a WSGI application.
+                     remote_addr=None, extras=None, http_version='1.1',
+                     port=None, root_path=None, asgi_chunk_size=4096,
+                     asgi_disconnect_ttl=300) -> Result:
 
-    Performs a request against a WSGI application. Uses
-    :any:`wsgiref.validate` to ensure the response is valid
-    WSGI.
+    """Simulates a request to a WSGI or ASGI application.
+
+    Performs a request against a WSGI or ASGI application. In the case of
+    WSGI, uses :any:`wsgiref.validate` to ensure the response is valid.
 
     Keyword Args:
-        app (callable): The WSGI application to call
+        app (callable): The WSGI or ASGI application to call
         method (str): An HTTP method to use in the request
             (default: 'GET')
         path (str): The URL path to request (default: '/').
@@ -259,8 +276,17 @@ def simulate_request(app, method='GET', path='/', query_string=None,
                 The path may contain a query string. However, neither
                 `query_string` nor `params` may be specified in this case.
 
+        root_path (str): The initial portion of the request URL's "path" that
+            corresponds to the application object, so that the application
+            knows its virtual "location". This defaults to the empty string,
+            indicating that the application corresponds to the "root" of the
+            server.
         protocol: The protocol to use for the URL scheme
             (default: 'http')
+        port (int): The TCP port to simulate. Defaults to
+            the standard port used by the given scheme (i.e., 80 for 'http'
+            and 443 for 'https'). A string may also be passed, as long as
+            it can be parsed as an int.
         params (dict): A dictionary of query string parameters,
             where each key is a parameter name, and each value is
             either a ``str`` or something that can be converted
@@ -275,27 +301,48 @@ def simulate_request(app, method='GET', path='/', query_string=None,
         query_string (str): A raw query string to include in the
             request (default: ``None``). If specified, overrides
             `params`.
-        headers (dict): Additional headers to include in the request
-            (default: ``None``)
-        body (str): A string to send as the body of the request. The value
-            will be encoded as UTF-8.
+        headers (dict): Extra headers as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of strings provides the name and value
+            for an HTTP header. If desired, multiple header values may be
+            combined into a single (*name*, *value*) pair by joining the values
+            with a comma when the header in question supports the list
+            format (see also RFC 7230 and RFC 7231). Header names are not
+            case-sensitive.
+        body (str): The body of the request (default ''). The value will be
+            encoded as UTF-8 in the WSGI environ. Alternatively, a byte string
+            may be passed, in which case it will be used as-is.
         json(JSON serializable): A JSON document to serialize as the
             body of the request (default: ``None``). If specified,
             overrides `body` and the Content-Type header in
             `headers`.
         file_wrapper (callable): Callable that returns an iterable,
             to be used as the value for *wsgi.file_wrapper* in the
-            environ (default: ``None``). This can be used to test
+            WSGI environ (default: ``None``). This can be used to test
             high-performance file transmission when `resp.stream` is
             set to a file-like object.
         host(str): A string to use for the hostname part of the fully
             qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
-            request (default: '127.0.0.1')
-        wsgierrors (io): The stream to use as *wsgierrors*
-            (default ``sys.stderr``)
-        extras (dict): Additional CGI variables to add to the WSGI
-            ``environ`` dictionary for the request (default: ``None``)
+            request (default: '127.0.0.1'). For WSGI, this corresponds to
+            the 'REMOTE_ADDR' environ variable. For ASGI, this corresponds
+            to the IP address used for the 'client' field in the connection
+            scope.
+        http_version (str): The HTTP version to simulate. Must be either
+            '2', '2.0', 1.1', '1.0', or '1' (default '1.1'). If set to '1.0',
+            the Host header will not be added to the scope.
+        wsgierrors (io): The stream to use as *wsgierrors* in the WSGI
+            environ (default ``sys.stderr``)
+        asgi_chunk_size (int): The maximum number of bytes that will be
+            sent to the ASGI app in a single 'http.request' event (default
+            4096).
+        asgi_disconnect_ttl (int): The maxmimum number of seconds to wait
+            since the request was initiated, before emitting an
+            'http.disconnect' event when the app calls the
+            receive() function (default 300).
+        extras (dict): Additional values to add to the WSGI
+            ``environ`` dictionary or the ASGI scope for the request
+            (default: ``None``)
 
     Returns:
         :py:class:`~.Result`: The result of the request
@@ -316,15 +363,6 @@ def simulate_request(app, method='GET', path='/', query_string=None,
         raise ValueError("query_string should not start with '?'")
 
     extras = extras or {}
-    if 'REQUEST_METHOD' in extras and extras['REQUEST_METHOD'] != method:
-        # NOTE(vytas): Even given the duct tape nature of overriding
-        # arbitrary environ variables, changing the method can potentially
-        # be very confusing, particularly when using specialized
-        # simulate_get/post/patch etc methods.
-        raise ValueError(
-            'environ extras may not override the request method. Please '
-            'use the method parameter.'
-        )
 
     if query_string is None:
         query_string = to_query_str(
@@ -338,48 +376,157 @@ def simulate_request(app, method='GET', path='/', query_string=None,
         headers = headers or {}
         headers['Content-Type'] = MEDIA_JSON
 
-    env = helpers.create_environ(
-        method=method,
-        scheme=protocol,
-        path=path,
-        query_string=(query_string or ''),
-        headers=headers,
-        body=body,
-        file_wrapper=file_wrapper,
-        host=host,
-        remote_addr=remote_addr,
-        wsgierrors=wsgierrors,
-    )
-    if extras:
+    if not _is_asgi_app(app):
+        env = helpers.create_environ(
+            method=method,
+            scheme=protocol,
+            path=path,
+            query_string=(query_string or ''),
+            headers=headers,
+            body=body,
+            file_wrapper=file_wrapper,
+            host=host,
+            remote_addr=remote_addr,
+            wsgierrors=wsgierrors,
+            http_version=http_version,
+            port=port,
+            root_path=root_path,
+        )
+
+        if 'REQUEST_METHOD' in extras and extras['REQUEST_METHOD'] != method:
+            # NOTE(vytas): Even given the duct tape nature of overriding
+            # arbitrary environ variables, changing the method can potentially
+            # be very confusing, particularly when using specialized
+            # simulate_get/post/patch etc methods.
+            raise ValueError(
+                'WSGI environ extras may not override the request method. '
+                'Please use the method parameter.'
+            )
+
         env.update(extras)
 
-    srmock = StartResponseMock()
-    validator = wsgiref.validate.validator(app)
+        srmock = StartResponseMock()
+        validator = wsgiref.validate.validator(app)
 
-    iterable = validator(env, srmock)
+        iterable = validator(env, srmock)
 
-    result = Result(helpers.closed_wsgi_iterable(iterable),
-                    srmock.status, srmock.headers)
+        return Result(helpers.closed_wsgi_iterable(iterable),
+                      srmock.status, srmock.headers)
 
-    return result
+    # ---------------------------------------------------------------------
+    # NOTE(kgriffs): 'lifespan' scope
+    # ---------------------------------------------------------------------
+
+    lifespan_scope = {
+        'type': 'lifespan',
+        'asgi': {
+            'version': '3.0',
+            'spec_version': '2.0',
+        },
+    }
+
+    shutting_down = asyncio.Condition()
+    lifespan_event_emitter = helpers.ASGILifespanEventEmitter(shutting_down)
+    lifespan_event_collector = helpers.ASGIResponseEventCollector()
+
+    # ---------------------------------------------------------------------
+    # NOTE(kgriffs): 'http' scope
+    # ---------------------------------------------------------------------
+
+    content_length = None
+
+    if body is not None:
+        if isinstance(body, str):
+            body = body.encode()
+
+        content_length = len(body)
+
+    http_scope = helpers.create_scope(
+        path=path,
+        query_string=query_string,
+        method=method,
+        headers=headers,
+        host=host,
+        scheme=protocol,
+        port=port,
+        http_version=http_version,
+        remote_addr=remote_addr,
+        root_path=root_path,
+        content_length=content_length,
+    )
+
+    if 'method' in extras and extras['method'] != method.upper():
+        raise ValueError(
+            'ASGI scope extras may not override the request method. '
+            'Please use the method parameter.'
+        )
+
+    http_scope.update(extras)
+
+    disconnect_at = time.time() + max(0, asgi_disconnect_ttl)
+    req_event_emitter = helpers.ASGIRequestEventEmitter(
+        (body or b''),
+        disconnect_at,
+        chunk_size=asgi_chunk_size
+    )
+
+    resp_event_collector = helpers.ASGIResponseEventCollector()
+
+    async def conductor():
+        # NOTE(kgriffs): We assume this is a Falcon WSGI app, which supports
+        #   the lifespan protocol and thus we do not need to catch
+        #   exceptions that would signify no lifespan protocol support.
+        t = get_loop().create_task(
+            app(lifespan_scope, lifespan_event_emitter, lifespan_event_collector)
+        )
+
+        await _wait_for_startup(lifespan_event_collector.events)
+
+        await app(http_scope, req_event_emitter, resp_event_collector)
+
+        # NOTE(kgriffs): Notify lifespan_event_emitter that it is OK
+        #   to proceed.
+        async with shutting_down:
+            shutting_down.notify()
+
+        await _wait_for_shutdown(lifespan_event_collector.events)
+        await t
+
+    helpers.invoke_coroutine_sync(conductor)
+
+    return Result(resp_event_collector.body_chunks,
+                  code_to_http_status(resp_event_collector.status),
+                  resp_event_collector.headers,
+                  events=resp_event_collector.events)
 
 
 def simulate_get(app, path, **kwargs) -> Result:
-    """Simulates a GET request to a WSGI application.
+    """Simulates a GET request to a WSGI or ASGI application.
 
     Equivalent to::
 
          simulate_request(app, 'GET', path, **kwargs)
 
     Args:
-        app (callable): The WSGI application to call
-        path (str): The URL path to request.
+        app (callable): The application to call
+        path (str): The URL path to request
 
             Note:
                 The path may contain a query string. However, neither
                 `query_string` nor `params` may be specified in this case.
 
     Keyword Args:
+        root_path (str): The initial portion of the request URL's "path" that
+            corresponds to the application object, so that the application
+            knows its virtual "location". This defaults to the empty string,
+            indicating that the application corresponds to the "root" of the
+            server.
+        protocol: The protocol to use for the URL scheme
+            (default: 'http')
+        port (int): The TCP port to simulate. Defaults to
+            the standard port used by the given scheme (i.e., 80 for 'http'
+            and 443 for 'https'). A string may also be passed, as long as
+            it can be parsed as an int.
         params (dict): A dictionary of query string parameters,
             where each key is a parameter name, and each value is
             either a ``str`` or something that can be converted
@@ -394,44 +541,76 @@ def simulate_get(app, path, **kwargs) -> Result:
         query_string (str): A raw query string to include in the
             request (default: ``None``). If specified, overrides
             `params`.
-        headers (dict): Additional headers to include in the request
-            (default: ``None``)
+        headers (dict): Extra headers as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of strings provides the name and value
+            for an HTTP header. If desired, multiple header values may be
+            combined into a single (*name*, *value*) pair by joining the values
+            with a comma when the header in question supports the list
+            format (see also RFC 7230 and RFC 7231). Header names are not
+            case-sensitive.
         file_wrapper (callable): Callable that returns an iterable,
             to be used as the value for *wsgi.file_wrapper* in the
-            environ (default: ``None``). This can be used to test
+            WSGI environ (default: ``None``). This can be used to test
             high-performance file transmission when `resp.stream` is
             set to a file-like object.
-        protocol: The protocol to use for the URL scheme
-            (default: 'http')
-        host(str): A string to use for the hostname part of the fully qualified
-            request URL (default: 'falconframework.org')
+        host(str): A string to use for the hostname part of the fully
+            qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
-            request (default: '127.0.0.1')
-        extras (dict): Additional CGI variables to add to the WSGI ``environ``
-            dictionary for the request (default: ``None``)
+            request (default: '127.0.0.1'). For WSGI, this corresponds to
+            the 'REMOTE_ADDR' environ variable. For ASGI, this corresponds
+            to the IP address used for the 'client' field in the connection
+            scope.
+        http_version (str): The HTTP version to simulate. Must be either
+            '2', '2.0', 1.1', '1.0', or '1' (default '1.1'). If set to '1.0',
+            the Host header will not be added to the scope.
+        wsgierrors (io): The stream to use as *wsgierrors* in the WSGI
+            environ (default ``sys.stderr``)
+        asgi_chunk_size (int): The maximum number of bytes that will be
+            sent to the ASGI app in a single 'http.request' event (default
+            4096).
+        asgi_disconnect_ttl (int): The maxmimum number of seconds to wait
+            since the request was initiated, before emitting an
+            'http.disconnect' event when the app calls the
+            receive() function (default 300).
+        extras (dict): Additional values to add to the WSGI
+            ``environ`` dictionary or the ASGI scope for the request
+            (default: ``None``)
 
     Returns:
         :py:class:`~.Result`: The result of the request
     """
+
     return simulate_request(app, 'GET', path, **kwargs)
 
 
 def simulate_head(app, path, **kwargs) -> Result:
-    """Simulates a HEAD request to a WSGI application.
+    """Simulates a HEAD request to a WSGI or ASGI application.
 
     Equivalent to::
 
          simulate_request(app, 'HEAD', path, **kwargs)
 
     Args:
-        app (callable): The WSGI application to call
-        path (str): The URL path to request.
+        app (callable): The application to call
+        path (str): The URL path to request
 
             Note:
                 The path may contain a query string. However, neither
                 `query_string` nor `params` may be specified in this case.
 
     Keyword Args:
+        root_path (str): The initial portion of the request URL's "path" that
+            corresponds to the application object, so that the application
+            knows its virtual "location". This defaults to the empty string,
+            indicating that the application corresponds to the "root" of the
+            server.
+        protocol: The protocol to use for the URL scheme
+            (default: 'http')
+        port (int): The TCP port to simulate. Defaults to
+            the standard port used by the given scheme (i.e., 80 for 'http'
+            and 443 for 'https'). A string may also be passed, as long as
+            it can be parsed as an int.
         params (dict): A dictionary of query string parameters,
             where each key is a parameter name, and each value is
             either a ``str`` or something that can be converted
@@ -446,16 +625,36 @@ def simulate_head(app, path, **kwargs) -> Result:
         query_string (str): A raw query string to include in the
             request (default: ``None``). If specified, overrides
             `params`.
-        headers (dict): Additional headers to include in the request
-            (default: ``None``)
-        protocol: The protocol to use for the URL scheme
-            (default: 'http')
-        host(str): A string to use for the hostname part of the fully qualified
-            request URL (default: 'falconframework.org')
+        headers (dict): Extra headers as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of strings provides the name and value
+            for an HTTP header. If desired, multiple header values may be
+            combined into a single (*name*, *value*) pair by joining the values
+            with a comma when the header in question supports the list
+            format (see also RFC 7230 and RFC 7231). Header names are not
+            case-sensitive.
+        host(str): A string to use for the hostname part of the fully
+            qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
-            request (default: '127.0.0.1')
-        extras (dict): Additional CGI variables to add to the WSGI ``environ``
-            dictionary for the request (default: ``None``)
+            request (default: '127.0.0.1'). For WSGI, this corresponds to
+            the 'REMOTE_ADDR' environ variable. For ASGI, this corresponds
+            to the IP address used for the 'client' field in the connection
+            scope.
+        http_version (str): The HTTP version to simulate. Must be either
+            '2', '2.0', 1.1', '1.0', or '1' (default '1.1'). If set to '1.0',
+            the Host header will not be added to the scope.
+        wsgierrors (io): The stream to use as *wsgierrors* in the WSGI
+            environ (default ``sys.stderr``)
+        asgi_chunk_size (int): The maximum number of bytes that will be
+            sent to the ASGI app in a single 'http.request' event (default
+            4096).
+        asgi_disconnect_ttl (int): The maxmimum number of seconds to wait
+            since the request was initiated, before emitting an
+            'http.disconnect' event when the app calls the
+            receive() function (default 300).
+        extras (dict): Additional values to add to the WSGI
+            ``environ`` dictionary or the ASGI scope for the request
+            (default: ``None``)
 
     Returns:
         :py:class:`~.Result`: The result of the request
@@ -464,17 +663,28 @@ def simulate_head(app, path, **kwargs) -> Result:
 
 
 def simulate_post(app, path, **kwargs) -> Result:
-    """Simulates a POST request to a WSGI application.
+    """Simulates a POST request to a WSGI or ASGI application.
 
     Equivalent to::
 
          simulate_request(app, 'POST', path, **kwargs)
 
     Args:
-        app (callable): The WSGI application to call
+        app (callable): The application to call
         path (str): The URL path to request
 
     Keyword Args:
+        root_path (str): The initial portion of the request URL's "path" that
+            corresponds to the application object, so that the application
+            knows its virtual "location". This defaults to the empty string,
+            indicating that the application corresponds to the "root" of the
+            server.
+        protocol: The protocol to use for the URL scheme
+            (default: 'http')
+        port (int): The TCP port to simulate. Defaults to
+            the standard port used by the given scheme (i.e., 80 for 'http'
+            and 443 for 'https'). A string may also be passed, as long as
+            it can be parsed as an int.
         params (dict): A dictionary of query string parameters,
             where each key is a parameter name, and each value is
             either a ``str`` or something that can be converted
@@ -486,22 +696,51 @@ def simulate_post(app, path, **kwargs) -> Result:
             of the parameter (e.g., 'thing=1&thing=2&thing=3').
             Otherwise, parameters will be encoded as comma-separated
             values (e.g., 'thing=1,2,3'). Defaults to ``True``.
-        headers (dict): Additional headers to include in the request
-            (default: ``None``)
-        body (str): A string to send as the body of the request. The value
-            will be encoded as UTF-8.
+        query_string (str): A raw query string to include in the
+            request (default: ``None``). If specified, overrides
+            `params`.
+        headers (dict): Extra headers as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of strings provides the name and value
+            for an HTTP header. If desired, multiple header values may be
+            combined into a single (*name*, *value*) pair by joining the values
+            with a comma when the header in question supports the list
+            format (see also RFC 7230 and RFC 7231). Header names are not
+            case-sensitive.
+        body (str): The body of the request (default ''). The value will be
+            encoded as UTF-8 in the WSGI environ. Alternatively, a byte string
+            may be passed, in which case it will be used as-is.
         json(JSON serializable): A JSON document to serialize as the
             body of the request (default: ``None``). If specified,
             overrides `body` and the Content-Type header in
             `headers`.
-        protocol: The protocol to use for the URL scheme
-            (default: 'http')
-        host(str): A string to use for the hostname part of the fully qualified
-            request URL (default: 'falconframework.org')
+        file_wrapper (callable): Callable that returns an iterable,
+            to be used as the value for *wsgi.file_wrapper* in the
+            WSGI environ (default: ``None``). This can be used to test
+            high-performance file transmission when `resp.stream` is
+            set to a file-like object.
+        host(str): A string to use for the hostname part of the fully
+            qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
-            request (default: '127.0.0.1')
-        extras (dict): Additional CGI variables to add to the WSGI ``environ``
-            dictionary for the request (default: ``None``)
+            request (default: '127.0.0.1'). For WSGI, this corresponds to
+            the 'REMOTE_ADDR' environ variable. For ASGI, this corresponds
+            to the IP address used for the 'client' field in the connection
+            scope.
+        http_version (str): The HTTP version to simulate. Must be either
+            '2', '2.0', 1.1', '1.0', or '1' (default '1.1'). If set to '1.0',
+            the Host header will not be added to the scope.
+        wsgierrors (io): The stream to use as *wsgierrors* in the WSGI
+            environ (default ``sys.stderr``)
+        asgi_chunk_size (int): The maximum number of bytes that will be
+            sent to the ASGI app in a single 'http.request' event (default
+            4096).
+        asgi_disconnect_ttl (int): The maxmimum number of seconds to wait
+            since the request was initiated, before emitting an
+            'http.disconnect' event when the app calls the
+            receive() function (default 300).
+        extras (dict): Additional values to add to the WSGI
+            ``environ`` dictionary or the ASGI scope for the request
+            (default: ``None``)
 
     Returns:
         :py:class:`~.Result`: The result of the request
@@ -510,17 +749,28 @@ def simulate_post(app, path, **kwargs) -> Result:
 
 
 def simulate_put(app, path, **kwargs) -> Result:
-    """Simulates a PUT request to a WSGI application.
+    """Simulates a PUT request to a WSGI or ASGI application.
 
     Equivalent to::
 
          simulate_request(app, 'PUT', path, **kwargs)
 
     Args:
-        app (callable): The WSGI application to call
+        app (callable): The application to call
         path (str): The URL path to request
 
     Keyword Args:
+        root_path (str): The initial portion of the request URL's "path" that
+            corresponds to the application object, so that the application
+            knows its virtual "location". This defaults to the empty string,
+            indicating that the application corresponds to the "root" of the
+            server.
+        protocol: The protocol to use for the URL scheme
+            (default: 'http')
+        port (int): The TCP port to simulate. Defaults to
+            the standard port used by the given scheme (i.e., 80 for 'http'
+            and 443 for 'https'). A string may also be passed, as long as
+            it can be parsed as an int.
         params (dict): A dictionary of query string parameters,
             where each key is a parameter name, and each value is
             either a ``str`` or something that can be converted
@@ -532,22 +782,51 @@ def simulate_put(app, path, **kwargs) -> Result:
             of the parameter (e.g., 'thing=1&thing=2&thing=3').
             Otherwise, parameters will be encoded as comma-separated
             values (e.g., 'thing=1,2,3'). Defaults to ``True``.
-        headers (dict): Additional headers to include in the request
-            (default: ``None``)
-        body (str): A string to send as the body of the request. The value
-            will be encoded as UTF-8.
+        query_string (str): A raw query string to include in the
+            request (default: ``None``). If specified, overrides
+            `params`.
+        headers (dict): Extra headers as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of strings provides the name and value
+            for an HTTP header. If desired, multiple header values may be
+            combined into a single (*name*, *value*) pair by joining the values
+            with a comma when the header in question supports the list
+            format (see also RFC 7230 and RFC 7231). Header names are not
+            case-sensitive.
+        body (str): The body of the request (default ''). The value will be
+            encoded as UTF-8 in the WSGI environ. Alternatively, a byte string
+            may be passed, in which case it will be used as-is.
         json(JSON serializable): A JSON document to serialize as the
             body of the request (default: ``None``). If specified,
             overrides `body` and the Content-Type header in
             `headers`.
-        protocol: The protocol to use for the URL scheme
-            (default: 'http')
-        host(str): A string to use for the hostname part of the fully qualified
-            request URL (default: 'falconframework.org')
+        file_wrapper (callable): Callable that returns an iterable,
+            to be used as the value for *wsgi.file_wrapper* in the
+            WSGI environ (default: ``None``). This can be used to test
+            high-performance file transmission when `resp.stream` is
+            set to a file-like object.
+        host(str): A string to use for the hostname part of the fully
+            qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
-            request (default: '127.0.0.1')
-        extras (dict): Additional CGI variables to add to the WSGI ``environ``
-            dictionary for the request (default: ``None``)
+            request (default: '127.0.0.1'). For WSGI, this corresponds to
+            the 'REMOTE_ADDR' environ variable. For ASGI, this corresponds
+            to the IP address used for the 'client' field in the connection
+            scope.
+        http_version (str): The HTTP version to simulate. Must be either
+            '2', '2.0', 1.1', '1.0', or '1' (default '1.1'). If set to '1.0',
+            the Host header will not be added to the scope.
+        wsgierrors (io): The stream to use as *wsgierrors* in the WSGI
+            environ (default ``sys.stderr``)
+        asgi_chunk_size (int): The maximum number of bytes that will be
+            sent to the ASGI app in a single 'http.request' event (default
+            4096).
+        asgi_disconnect_ttl (int): The maxmimum number of seconds to wait
+            since the request was initiated, before emitting an
+            'http.disconnect' event when the app calls the
+            receive() function (default 300).
+        extras (dict): Additional values to add to the WSGI
+            ``environ`` dictionary or the ASGI scope for the request
+            (default: ``None``)
 
     Returns:
         :py:class:`~.Result`: The result of the request
@@ -556,17 +835,28 @@ def simulate_put(app, path, **kwargs) -> Result:
 
 
 def simulate_options(app, path, **kwargs) -> Result:
-    """Simulates an OPTIONS request to a WSGI application.
+    """Simulates an OPTIONS request to a WSGI or ASGI application.
 
     Equivalent to::
 
          simulate_request(app, 'OPTIONS', path, **kwargs)
 
     Args:
-        app (callable): The WSGI application to call
+        app (callable): The application to call
         path (str): The URL path to request
 
     Keyword Args:
+        root_path (str): The initial portion of the request URL's "path" that
+            corresponds to the application object, so that the application
+            knows its virtual "location". This defaults to the empty string,
+            indicating that the application corresponds to the "root" of the
+            server.
+        protocol: The protocol to use for the URL scheme
+            (default: 'http')
+        port (int): The TCP port to simulate. Defaults to
+            the standard port used by the given scheme (i.e., 80 for 'http'
+            and 443 for 'https'). A string may also be passed, as long as
+            it can be parsed as an int.
         params (dict): A dictionary of query string parameters,
             where each key is a parameter name, and each value is
             either a ``str`` or something that can be converted
@@ -578,16 +868,39 @@ def simulate_options(app, path, **kwargs) -> Result:
             of the parameter (e.g., 'thing=1&thing=2&thing=3').
             Otherwise, parameters will be encoded as comma-separated
             values (e.g., 'thing=1,2,3'). Defaults to ``True``.
-        headers (dict): Additional headers to include in the request
-            (default: ``None``)
-        protocol: The protocol to use for the URL scheme
-            (default: 'http')
-        host(str): A string to use for the hostname part of the fully qualified
-            request URL (default: 'falconframework.org')
+        query_string (str): A raw query string to include in the
+            request (default: ``None``). If specified, overrides
+            `params`.
+        headers (dict): Extra headers as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of strings provides the name and value
+            for an HTTP header. If desired, multiple header values may be
+            combined into a single (*name*, *value*) pair by joining the values
+            with a comma when the header in question supports the list
+            format (see also RFC 7230 and RFC 7231). Header names are not
+            case-sensitive.
+        host(str): A string to use for the hostname part of the fully
+            qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
-            request (default: '127.0.0.1')
-        extras (dict): Additional CGI variables to add to the WSGI ``environ``
-            dictionary for the request (default: ``None``)
+            request (default: '127.0.0.1'). For WSGI, this corresponds to
+            the 'REMOTE_ADDR' environ variable. For ASGI, this corresponds
+            to the IP address used for the 'client' field in the connection
+            scope.
+        http_version (str): The HTTP version to simulate. Must be either
+            '2', '2.0', 1.1', '1.0', or '1' (default '1.1'). If set to '1.0',
+            the Host header will not be added to the scope.
+        wsgierrors (io): The stream to use as *wsgierrors* in the WSGI
+            environ (default ``sys.stderr``)
+        asgi_chunk_size (int): The maximum number of bytes that will be
+            sent to the ASGI app in a single 'http.request' event (default
+            4096).
+        asgi_disconnect_ttl (int): The maxmimum number of seconds to wait
+            since the request was initiated, before emitting an
+            'http.disconnect' event when the app calls the
+            receive() function (default 300).
+        extras (dict): Additional values to add to the WSGI
+            ``environ`` dictionary or the ASGI scope for the request
+            (default: ``None``)
 
     Returns:
         :py:class:`~.Result`: The result of the request
@@ -596,17 +909,28 @@ def simulate_options(app, path, **kwargs) -> Result:
 
 
 def simulate_patch(app, path, **kwargs) -> Result:
-    """Simulates a PATCH request to a WSGI application.
+    """Simulates a PATCH request to a WSGI or ASGI application.
 
     Equivalent to::
 
          simulate_request(app, 'PATCH', path, **kwargs)
 
     Args:
-        app (callable): The WSGI application to call
+        app (callable): The application to call
         path (str): The URL path to request
 
     Keyword Args:
+        root_path (str): The initial portion of the request URL's "path" that
+            corresponds to the application object, so that the application
+            knows its virtual "location". This defaults to the empty string,
+            indicating that the application corresponds to the "root" of the
+            server.
+        protocol: The protocol to use for the URL scheme
+            (default: 'http')
+        port (int): The TCP port to simulate. Defaults to
+            the standard port used by the given scheme (i.e., 80 for 'http'
+            and 443 for 'https'). A string may also be passed, as long as
+            it can be parsed as an int.
         params (dict): A dictionary of query string parameters,
             where each key is a parameter name, and each value is
             either a ``str`` or something that can be converted
@@ -618,22 +942,46 @@ def simulate_patch(app, path, **kwargs) -> Result:
             of the parameter (e.g., 'thing=1&thing=2&thing=3').
             Otherwise, parameters will be encoded as comma-separated
             values (e.g., 'thing=1,2,3'). Defaults to ``True``.
-        headers (dict): Additional headers to include in the request
-            (default: ``None``)
-        body (str): A string to send as the body of the request. The value
-            will be encoded as UTF-8.
+        query_string (str): A raw query string to include in the
+            request (default: ``None``). If specified, overrides
+            `params`.
+        headers (dict): Extra headers as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of strings provides the name and value
+            for an HTTP header. If desired, multiple header values may be
+            combined into a single (*name*, *value*) pair by joining the values
+            with a comma when the header in question supports the list
+            format (see also RFC 7230 and RFC 7231). Header names are not
+            case-sensitive.
+        body (str): The body of the request (default ''). The value will be
+            encoded as UTF-8 in the WSGI environ. Alternatively, a byte string
+            may be passed, in which case it will be used as-is.
         json(JSON serializable): A JSON document to serialize as the
             body of the request (default: ``None``). If specified,
             overrides `body` and the Content-Type header in
             `headers`.
-        protocol: The protocol to use for the URL scheme
-            (default: 'http')
-        host(str): A string to use for the hostname part of the fully qualified
-            request URL (default: 'falconframework.org')
+        host(str): A string to use for the hostname part of the fully
+            qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
-            request (default: '127.0.0.1')
-        extras (dict): Additional CGI variables to add to the WSGI ``environ``
-            dictionary for the request (default: ``None``)
+            request (default: '127.0.0.1'). For WSGI, this corresponds to
+            the 'REMOTE_ADDR' environ variable. For ASGI, this corresponds
+            to the IP address used for the 'client' field in the connection
+            scope.
+        http_version (str): The HTTP version to simulate. Must be either
+            '2', '2.0', 1.1', '1.0', or '1' (default '1.1'). If set to '1.0',
+            the Host header will not be added to the scope.
+        wsgierrors (io): The stream to use as *wsgierrors* in the WSGI
+            environ (default ``sys.stderr``)
+        asgi_chunk_size (int): The maximum number of bytes that will be
+            sent to the ASGI app in a single 'http.request' event (default
+            4096).
+        asgi_disconnect_ttl (int): The maxmimum number of seconds to wait
+            since the request was initiated, before emitting an
+            'http.disconnect' event when the app calls the
+            receive() function (default 300).
+        extras (dict): Additional values to add to the WSGI
+            ``environ`` dictionary or the ASGI scope for the request
+            (default: ``None``)
 
     Returns:
         :py:class:`~.Result`: The result of the request
@@ -642,17 +990,28 @@ def simulate_patch(app, path, **kwargs) -> Result:
 
 
 def simulate_delete(app, path, **kwargs) -> Result:
-    """Simulates a DELETE request to a WSGI application.
+    """Simulates a DELETE request to a WSGI or ASGI application.
 
     Equivalent to::
 
          simulate_request(app, 'DELETE', path, **kwargs)
 
     Args:
-        app (callable): The WSGI application to call
+        app (callable): The application to call
         path (str): The URL path to request
 
     Keyword Args:
+        root_path (str): The initial portion of the request URL's "path" that
+            corresponds to the application object, so that the application
+            knows its virtual "location". This defaults to the empty string,
+            indicating that the application corresponds to the "root" of the
+            server.
+        protocol: The protocol to use for the URL scheme
+            (default: 'http')
+        port (int): The TCP port to simulate. Defaults to
+            the standard port used by the given scheme (i.e., 80 for 'http'
+            and 443 for 'https'). A string may also be passed, as long as
+            it can be parsed as an int.
         params (dict): A dictionary of query string parameters,
             where each key is a parameter name, and each value is
             either a ``str`` or something that can be converted
@@ -664,16 +1023,46 @@ def simulate_delete(app, path, **kwargs) -> Result:
             of the parameter (e.g., 'thing=1&thing=2&thing=3').
             Otherwise, parameters will be encoded as comma-separated
             values (e.g., 'thing=1,2,3'). Defaults to ``True``.
-        headers (dict): Additional headers to include in the request
-            (default: ``None``)
-        protocol: The protocol to use for the URL scheme
-            (default: 'http')
-        host(str): A string to use for the hostname part of the fully qualified
-            request URL (default: 'falconframework.org')
+        query_string (str): A raw query string to include in the
+            request (default: ``None``). If specified, overrides
+            `params`.
+        headers (dict): Extra headers as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of strings provides the name and value
+            for an HTTP header. If desired, multiple header values may be
+            combined into a single (*name*, *value*) pair by joining the values
+            with a comma when the header in question supports the list
+            format (see also RFC 7230 and RFC 7231). Header names are not
+            case-sensitive.
+        body (str): The body of the request (default ''). The value will be
+            encoded as UTF-8 in the WSGI environ. Alternatively, a byte string
+            may be passed, in which case it will be used as-is.
+        json(JSON serializable): A JSON document to serialize as the
+            body of the request (default: ``None``). If specified,
+            overrides `body` and the Content-Type header in
+            `headers`.
+        host(str): A string to use for the hostname part of the fully
+            qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
-            request (default: '127.0.0.1')
-        extras (dict): Additional CGI variables to add to the WSGI ``environ``
-            dictionary for the request (default: ``None``)
+            request (default: '127.0.0.1'). For WSGI, this corresponds to
+            the 'REMOTE_ADDR' environ variable. For ASGI, this corresponds
+            to the IP address used for the 'client' field in the connection
+            scope.
+        http_version (str): The HTTP version to simulate. Must be either
+            '2', '2.0', 1.1', '1.0', or '1' (default '1.1'). If set to '1.0',
+            the Host header will not be added to the scope.
+        wsgierrors (io): The stream to use as *wsgierrors* in the WSGI
+            environ (default ``sys.stderr``)
+        asgi_chunk_size (int): The maximum number of bytes that will be
+            sent to the ASGI app in a single 'http.request' event (default
+            4096).
+        asgi_disconnect_ttl (int): The maxmimum number of seconds to wait
+            since the request was initiated, before emitting an
+            'http.disconnect' event when the app calls the
+            receive() function (default 300).
+        extras (dict): Additional values to add to the WSGI
+            ``environ`` dictionary or the ASGI scope for the request
+            (default: ``None``)
 
     Returns:
         :py:class:`~.Result`: The result of the request
@@ -682,7 +1071,7 @@ def simulate_delete(app, path, **kwargs) -> Result:
 
 
 class TestClient:
-    """Simulates requests to a WSGI application.
+    """Simulates requests to a WSGI or ASGI application.
 
     This class provides a contextual wrapper for Falcon's `simulate_*`
     test functions. It lets you replace this::
@@ -701,14 +1090,17 @@ class TestClient:
         overriding of request preparation by child classes.
 
     Args:
-        app (callable): A WSGI application to target when simulating
+        app (callable): A WSGI or ASGI application to target when simulating
             requests
-
 
     Keyword Arguments:
         headers (dict): Default headers to set on every request (default
             ``None``). These defaults may be overridden by passing values
             for the same headers to one of the `simulate_*()` methods.
+
+    Attributes:
+        app: The app that this client instance was configured to use.
+
     """
 
     def __init__(self, app, headers=None):
@@ -784,3 +1176,49 @@ class TestClient:
             kwargs['headers'] = merged_headers
 
         return simulate_request(self.app, *args, **kwargs)
+
+
+# -----------------------------------------------------------------------------
+# Private
+# -----------------------------------------------------------------------------
+
+
+def _is_asgi_app(app):
+    app_args = inspect.getfullargspec(app).args
+    num_app_args = len(app_args)
+
+    # NOTE(kgriffs): Technically someone could name the "self" or "cls"
+    #   arg something else, but we will make the simplifying
+    #   assumption that this is rare enough to not worry about.
+    if app_args[0] in {'cls', 'self'}:
+        num_app_args -= 1
+
+    is_asgi = (num_app_args == 3)
+
+    return is_asgi
+
+
+async def _wait_for_startup(events):
+    while True:
+        for e in events:
+            if e['type'] == 'lifespan.startup.failed':
+                raise RuntimeError('ASGI app returned lifespan.startup.failed. ' + e['message'])
+
+        if any(e['type'] == 'lifespan.startup.complete' for e in events):
+            break
+
+        # NOTE(kgriffs): Yield to the concurrent lifespan task
+        await asyncio.sleep(0.001)
+
+
+async def _wait_for_shutdown(events):
+    while True:
+        for e in events:
+            if e['type'] == 'lifespan.shutdown.failed':
+                raise RuntimeError('ASGI app returned lifespan.shutdown.failed. ' + e['message'])
+
+        if any(e['type'] == 'lifespan.shutdown.complete' for e in events):
+            break
+
+        # NOTE(kgriffs): Yield to the concurrent lifespan task
+        await asyncio.sleep(0.001)

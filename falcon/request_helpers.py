@@ -182,12 +182,18 @@ class BoundedStream(io.IOBase):
 
     This class normalizes *wsgi.input* behavior between WSGI servers
     by implementing non-blocking behavior for the cases mentioned
-    above.
+    above. The caller is not allowed to read more than the number of
+    bytes specified by the Content-Length header in the request.
 
     Args:
         stream: Instance of ``socket._fileobject`` from
             ``environ['wsgi.input']``
         stream_len: Expected content length of the stream.
+
+    Attributes:
+        eof (bool): ``True`` if there is no more data to read from
+            the stream, otherwise ``False``.
+        is_exhausted (bool): Deprecated alias for `eof`.
 
     """
 
@@ -239,7 +245,7 @@ class BoundedStream(io.IOBase):
         """Always returns ``False``."""
         return False
 
-    def writeable(self):
+    def writable(self):
         """Always returns ``False``."""
         return False
 
@@ -305,9 +311,10 @@ class BoundedStream(io.IOBase):
                 break
 
     @property
-    def is_exhausted(self):
-        """If the stream is exhausted this attribute is ``True``."""
+    def eof(self):
         return self._bytes_remaining <= 0
+
+    is_exhausted = eof
 
 
 # NOTE(kgriffs): Alias for backwards-compat

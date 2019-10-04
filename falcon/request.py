@@ -146,7 +146,7 @@ class Request:
                 If the hostname in the request is an IP address, the value
                 for `subdomain` is undefined.
 
-        app (str): The initial portion of the request URI's path that
+        root_path (str): The initial portion of the request URI's path that
             corresponds to the application object, so that the
             application knows its virtual "location". This may be an
             empty string, if the application corresponds to the "root"
@@ -154,8 +154,9 @@ class Request:
 
             (Corresponds to the "SCRIPT_NAME" environ variable defined
             by PEP-3333.)
+        app (str): Deprecated alias for :attr:`root_path`.
         uri (str): The fully-qualified URI for the request.
-        url (str): Alias for `uri`.
+        url (str): Alias for :attr:`uri`.
         forwarded_uri (str): Original URI for proxied requests. Uses
             :attr:`forwarded_scheme` and :attr:`forwarded_host` in
             order to reconstruct the original URI requested by the user
@@ -544,15 +545,8 @@ class Request:
         # At some point we might look into this but I don't think
         # it's worth it right now.
         if self._cached_forwarded is None:
-            # PERF(kgriffs): If someone is calling this, they are probably
-            # confident that the header exists, so most of the time we
-            # expect this call to succeed. Therefore, we won't need to
-            # pay the penalty of a raised exception in most cases, and
-            # there is no need to spend extra cycles calling get() or
-            # checking beforehand whether the key is in the dict.
-            try:
-                forwarded = self.env['HTTP_FORWARDED']
-            except KeyError:
+            forwarded = self.get_header('Forwarded')
+            if forwarded is None:
                 return None
 
             self._cached_forwarded = _parse_forwarded_header(forwarded)
@@ -657,15 +651,15 @@ class Request:
 
     @property
     def range(self):
-        try:
-            value = self.env['HTTP_RANGE']
-            if '=' in value:
-                unit, sep, req_range = value.partition('=')
-            else:
-                msg = "The value must be prefixed with a range unit, e.g. 'bytes='"
-                raise errors.HTTPInvalidHeader(msg, 'Range')
-        except KeyError:
+        value = self.get_header('Range')
+        if value is None:
             return None
+
+        if '=' in value:
+            unit, sep, req_range = value.partition('=')
+        else:
+            msg = "The value must be prefixed with a range unit, e.g. 'bytes='"
+            raise errors.HTTPInvalidHeader(msg, 'Range')
 
         if ',' in req_range:
             msg = 'The value must be a continuous range.'
@@ -694,20 +688,19 @@ class Request:
 
     @property
     def range_unit(self):
-        try:
-            value = self.env['HTTP_RANGE']
-
-            if '=' in value:
-                unit, sep, req_range = value.partition('=')
-                return unit
-            else:
-                msg = "The value must be prefixed with a range unit, e.g. 'bytes='"
-                raise errors.HTTPInvalidHeader(msg, 'Range')
-        except KeyError:
+        value = self.get_header('Range')
+        if value is None:
             return None
 
+        if value and '=' in value:
+            unit, sep, req_range = value.partition('=')
+            return unit
+        else:
+            msg = "The value must be prefixed with a range unit, e.g. 'bytes='"
+            raise errors.HTTPInvalidHeader(msg, 'Range')
+
     @property
-    def app(self):
+    def root_path(self):
         # PERF(kgriffs): try..except is faster than get() assuming that
         # we normally expect the key to exist. Even though PEP-3333
         # allows WSGI servers to omit the key when the value is an
@@ -717,6 +710,8 @@ class Request:
             return self.env['SCRIPT_NAME']
         except KeyError:
             return ''
+
+    app = root_path
 
     @property
     def scheme(self):
@@ -913,16 +908,23 @@ class Request:
                 self._cached_access_route = [ip.strip() for ip in addresses]
             elif 'HTTP_X_REAL_IP' in self.env:
                 self._cached_access_route = [self.env['HTTP_X_REAL_IP']]
-            elif 'REMOTE_ADDR' in self.env:
-                self._cached_access_route = [self.env['REMOTE_ADDR']]
+
+            if self._cached_access_route:
+                if self._cached_access_route[-1] != self.remote_addr:
+                    self._cached_access_route.append(self.remote_addr)
             else:
-                self._cached_access_route = []
+                self._cached_access_route = [self.remote_addr]
 
         return self._cached_access_route
 
     @property
     def remote_addr(self):
-        return self.env.get('REMOTE_ADDR')
+        try:
+            value = self.env['REMOTE_ADDR']
+        except KeyError:
+            value = '127.0.0.1'
+
+        return value
 
     @property
     def port(self):

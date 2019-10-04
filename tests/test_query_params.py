@@ -8,6 +8,8 @@ import falcon
 from falcon.errors import HTTPInvalidParam
 import falcon.testing as testing
 
+from _util import create_app  # NOQA
+
 
 class Resource(testing.SimpleTestResource):
 
@@ -42,9 +44,9 @@ def resource():
     return Resource()
 
 
-@pytest.fixture
-def client():
-    app = falcon.App()
+@pytest.fixture(params=[True, False])
+def client(request):
+    app = create_app(asgi=request.param)
     app.req_options.auto_parse_form_urlencoded = True
     return testing.TestClient(app)
 
@@ -900,9 +902,10 @@ class TestPostQueryParams:
         assert req.get_param('q') is None
 
 
+@pytest.mark.parametrize('asgi', [True, False])
 class TestPostQueryParamsDefaultBehavior:
-    def test_dont_auto_parse_by_default(self):
-        app = falcon.App()
+    def test_dont_auto_parse_by_default(self, asgi):
+        app = create_app(asgi)
         resource = testing.SimpleTestResource()
         app.add_route('/', resource)
 
