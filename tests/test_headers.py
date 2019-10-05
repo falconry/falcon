@@ -685,6 +685,44 @@ class TestHeaders:
 
         self._check_link_header(client, resource, expected_value)
 
+    def test_add_link_crossorigin_none(self, client):
+        expected_value = '</related/thing>; rel=alternate'
+
+        resource = LinkHeaderResource()
+        resource.add_link('/related/thing', 'alternate',
+                          crossorigin=None)
+
+        self._check_link_header(client, resource, expected_value)
+
+    def test_add_link_crossorigin_anonymous(self, client):
+        expected_value = ('</related/thing>; rel=alternate; '
+                          'crossorigin="anonymous"')
+
+        resource = LinkHeaderResource()
+        resource.add_link('/related/thing', 'alternate',
+                          crossorigin='anonymous')
+
+        self._check_link_header(client, resource, expected_value)
+
+    def test_add_link_crossorigin_use_credentials(self, client):
+        expected_value = ('</related/thing>; rel=alternate; '
+                          'crossorigin="use-credentials"')
+
+        resource = LinkHeaderResource()
+        resource.add_link('/related/thing', 'alternate',
+                          crossorigin='use-credentials')
+
+        self._check_link_header(client, resource, expected_value)
+
+    def test_add_link_crossorigin_invalid(self, client):
+        expected_value = '</related/thing>; rel=alternate'
+
+        resource = LinkHeaderResource()
+        resource.add_link('/related/thing', 'alternate',
+                          crossorigin='invalid')
+
+        self._check_link_header(client, resource, expected_value)
+
     def test_content_length_options(self, client):
         result = client.simulate_options()
 
