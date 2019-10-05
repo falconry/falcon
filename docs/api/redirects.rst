@@ -13,5 +13,6 @@ Redirects
 ---------
 
 .. automodule:: falcon
+    :noindex:
     :members: HTTPMovedPermanently, HTTPFound, HTTPSeeOther,
         HTTPTemporaryRedirect, HTTPPermanentRedirect

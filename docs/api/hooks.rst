@@ -91,5 +91,6 @@ requests.
     passes through the framework.
 
 .. automodule:: falcon
+    :noindex:
     :members: before, after
     :undoc-members:

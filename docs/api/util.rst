@@ -14,6 +14,7 @@ Miscellaneous
 -------------
 
 .. automodule:: falcon
+    :noindex:
     :members: deprecated, http_now, dt_to_http, http_date_to_dt,
         to_query_str, get_http_status, get_bound_method
 
