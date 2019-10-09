@@ -19,3 +19,14 @@ Thank you to our generous project patrons who help make this project possible!
 
 * Gerardo Cardenas
 * Zach Riddle
+
+## Copper Patrons
+
+* [Misaka Network](https://www.misaka.io/)
+
+## Community Supporters
+
+* [Protoku](https://protoku.io/)
+* Andrei Drang
+* Vlad Shulkevich
+* Vincent Albanese

@@ -12,6 +12,12 @@ raising an instance or subclass of :py:class:`~.HTTPError`
 Redirects
 ---------
 
-.. automodule:: falcon
-    :members: HTTPMovedPermanently, HTTPFound, HTTPSeeOther,
-        HTTPTemporaryRedirect, HTTPPermanentRedirect
+.. autoexception:: falcon.HTTPMovedPermanently
+
+.. autoexception:: falcon.HTTPFound
+
+.. autoexception:: falcon.HTTPSeeOther
+
+.. autoexception:: falcon.HTTPTemporaryRedirect
+
+.. autoexception:: falcon.HTTPPermanentRedirect
