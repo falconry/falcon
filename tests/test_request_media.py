@@ -74,8 +74,10 @@ def test_unknown_media_type(media_type):
     with pytest.raises(errors.HTTPUnsupportedMediaType) as err:
         client.resource.captured_req.media
 
-    msg = '{} is an unsupported media type.'.format(media_type)
-    assert err.value.description == msg
+    title_msg = '415 Unsupported Media Type'
+    description_msg = '{} is an unsupported media type.'.format(media_type)
+    assert err.value.title == title_msg
+    assert err.value.description == description_msg
 
 
 @pytest.mark.parametrize('media_type', [
