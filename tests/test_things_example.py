@@ -21,5 +21,5 @@ def test_ThingsResource_on_get():
     assert mock_response.status == falcon.HTTP_200
     assert mock_response.body == (
         '\nTwo things awe me most, the starry sky above me and the moral law within me.'
-        '\n    ~ Immanuel Kant\n'
+        '\n    ~ Immanuel Kant\n\n'
     )
