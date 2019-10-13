@@ -8,37 +8,47 @@ DEFAULT_CHUNK_SIZE = io.DEFAULT_BUFFER_SIZE * 4
 
 cdef class BufferedStream:
 
-    cdef _read
+    cdef _read_func
     cdef Py_ssize_t _chunk_size
 
     cdef bytes _buffer
     cdef Py_ssize_t _buffer_len
+    cdef Py_ssize_t _buffer_pos
     cdef Py_ssize_t _max_bytes_remaining
 
     def __cinit__(self, read, max_stream_len, chunk_size=None):
-        self._read = read
+        self._read_func = read
         self._chunk_size = chunk_size or DEFAULT_CHUNK_SIZE
 
         self._buffer = b''
         self._buffer_len = 0
+        self._buffer_pos = 0
         self._max_bytes_remaining = max_stream_len
 
     def peek(self, Py_ssize_t amount=-1):
         cdef Py_ssize_t read_amount
 
+        amount = int(amount)
         if amount < 0 or amount > self._chunk_size:
             amount = self._chunk_size
 
-        if self._buffer_len < amount:
-            read_amount = self._chunk_size - self._buffer_len
+        if self._buffer_len - self._buffer_pos < amount:
+            read_amount = (self._chunk_size - self._buffer_len +
+                           self._buffer_pos)
             if read_amount >= self._max_bytes_remaining:
                 read_amount = self._max_bytes_remaining
 
+            if self._buffer_pos == 0:
+                self._buffer += self._read_func(read_amount)
+                self._buffer_len = len(self._buffer)
+            else:
+                self._buffer = (self._buffer[self._buffer_pos:] +
+                                self._read_func(read_amount))
+                self._buffer_len = len(self._buffer)
+                self._buffer_pos = 0
             self._max_bytes_remaining -= read_amount
-            self._buffer += self._read(read_amount)
-            self._buffer_len = len(self._buffer)
 
-        return self._buffer[:amount]
+        return self._buffer[self._buffer_pos:self._buffer_pos + amount]
 
     cdef Py_ssize_t _normalize_size(self, amount):
         cdef Py_ssize_t result
@@ -54,47 +64,80 @@ cdef class BufferedStream:
         return result
 
     def read(self, amount=-1):
-        return self._cy_read(self._normalize_size(amount))
+        return self._read(self._normalize_size(amount))
 
-    cdef _cy_read(self, Py_ssize_t amount):
+    cdef _read(self, Py_ssize_t amount):
         cdef Py_ssize_t read_amount
 
         if self._buffer_len == 0:
             self._max_bytes_remaining -= amount
-            return self._read(amount)
+            return self._read_func(amount)
 
-        if amount == self._buffer_len:
+        if amount == self._buffer_len and self._buffer_pos == 0:
             result = self._buffer
             self._buffer_len = 0
             self._buffer = b''
             return result
 
-        if amount < self._buffer_len:
-            result = self._buffer[:amount]
-            self._buffer_len -= amount
-            self._buffer = self._buffer[amount:]
-            return result
+        if amount < self._buffer_len - self._buffer_pos:
+            self._buffer_pos += amount
+            return self._buffer[self._buffer_pos - amount:self._buffer_pos]
 
-        # NOTE(vytas): if amount > self._buffer_len
-        read_amount = amount - self._buffer_len
-        result = self._buffer
+        # NOTE(vytas): if amount > self._buffer_len - self._buffer_pos
+        read_amount = amount - self._buffer_len + self._buffer_pos
+        result = self._buffer[self._buffer_pos:]
         self._buffer_len = 0
+        self._buffer_pos = 0
         self._buffer = b''
         self._max_bytes_remaining -= read_amount
-        return result + self._read(read_amount)
+        return result + self._read_func(read_amount)
 
     def read_until(self, bytes delimiter not None, amount=-1,
                    missing_delimiter_error=None):
         return self._read_until(delimiter, self._normalize_size(amount),
                                 missing_delimiter_error)
 
+    cdef _finalize_read_until(
+        self, Py_ssize_t amount, backlog, Py_ssize_t have_bytes,
+        bytes delimiter=None, Py_ssize_t delimiter_pos=-1, bytes
+        next_chunk=None, Py_ssize_t next_chunk_len=0,
+        missing_delimiter_error=None):
+
+        if delimiter_pos < 0 and delimiter is not None:
+            delimiter_pos = self._buffer.find(delimiter, self._buffer_pos)
+            if delimiter_pos < 0 and missing_delimiter_error:
+                raise missing_delimiter_error(
+                    'unexpected EOF without delimiter')
+
+        if delimiter_pos >= 0:
+            amount = min(amount, have_bytes + delimiter_pos - self._buffer_pos)
+
+        if have_bytes == 0:
+            # PERF(vytas) Do not join bytes unless needed.
+            ret_value = self._read(amount)
+        else:
+            backlog.append(self._read(amount - have_bytes))
+            ret_value = b''.join(backlog)
+
+        if next_chunk_len > 0:
+            if self._buffer_len == 0:
+                self._buffer = next_chunk
+                self._buffer_len = next_chunk_len
+            else:
+                self._buffer = self._buffer[self._buffer_pos:] + next_chunk
+                self._buffer_len = (self._buffer_len - self._buffer_pos +
+                                    next_chunk_len)
+                self._buffer_pos = 0
+
+        return ret_value
+
     cdef _read_until(self, bytes delimiter, Py_ssize_t amount,
                      missing_delimiter_error=None):
         cdef result = []
-        cdef bint result_is_empty = True
         cdef Py_ssize_t have_bytes = 0
-        cdef Py_ssize_t buffer_cutoff
         cdef Py_ssize_t delimiter_len_1 = len(delimiter) - 1
+        cdef Py_ssize_t delimiter_pos = -1
+        cdef Py_ssize_t offset
 
         if not 0 <= delimiter_len_1 < self._chunk_size:
             raise ValueError('delimiter length must be within [1, chunk_size]')
@@ -111,39 +154,55 @@ cdef class BufferedStream:
                 (ptr[0] << 24) | (ptr[1] << 16) | (ptr[2] << 8) | ptr[3])
 
         while True:
-            if delimiter in self._buffer:
-                break
-            elif amount < self._buffer_len - delimiter_len_1:
-                ret_value = self._buffer[:amount]
-                self._buffer_len -= amount
-                self._buffer = self._buffer[amount:]
-                return ret_value
+            if self._buffer_len > self._buffer_pos:
+                delimiter_pos = self._buffer.find(delimiter, self._buffer_pos)
+                if delimiter_pos >= 0:
+                    return self._finalize_read_until(
+                        amount, result, have_bytes, None, delimiter_pos)
+
+            if amount < (have_bytes + self._buffer_len - self._buffer_pos -
+                         delimiter_len_1):
+                # NOTE(vytas) We now have enough data in the buffer to
+                # return to the caller.
+                return self._finalize_read_until(amount, result, have_bytes)
 
             read_amount = self._chunk_size
             if read_amount > self._max_bytes_remaining:
                 read_amount = self._max_bytes_remaining
             if read_amount == 0:
-                break
-            self._max_bytes_remaining -= read_amount
-            next_chunk = self._read(read_amount)
+                return self._finalize_read_until(
+                    amount, result, have_bytes, delimiter, delimiter_pos, None,
+                    -1, missing_delimiter_error)
+
+            next_chunk = self._read_func(read_amount)
             next_chunk_len = len(next_chunk)
-            if self._buffer_len == 0:
-                self._buffer_len = next_chunk_len
-                self._buffer = next_chunk
-                continue
+            self._max_bytes_remaining -= read_amount
             if next_chunk_len < self._chunk_size:
                 self._buffer_len += next_chunk_len
                 self._buffer += next_chunk
-                break
+                return self._finalize_read_until(
+                    amount, result, have_bytes, delimiter, -1, None, -1,
+                    missing_delimiter_error)
+
+            # NOTE(vytas) The buffer was empty before, skip straight to the
+            #   next chunk.
+            if self._buffer_len <= self._buffer_pos:
+                self._buffer_len = next_chunk_len
+                self._buffer_pos = 0
+                self._buffer = next_chunk
+                continue
 
             if delimiter_len_1 > 0:
-                # PERF(vytas) Quickly check for the first 4 delimiter bytes
+                offset = max(self._buffer_len - delimiter_len_1,
+                             self._buffer_pos)
+
+                # PERF(vytas) Quickly check for the first 4 delimiter bytes.
+                #   Here be dragons: Cython-only code!
                 if 3 <= delimiter_len_1 < 128:
                     quick_found = False
                     ptr = self._buffer
                     current = 0
-                    for index in range(self._buffer_len - delimiter_len_1,
-                                       self._buffer_len):
+                    for index in range(offset, self._buffer_len):
                         current <<= 8
                         current |= ptr[index]
                         if current == delimiter_head:
@@ -159,50 +218,39 @@ cdef class BufferedStream:
                                 quick_found = True
                                 break
 
-                if quick_found:
-                    if delimiter in (self._buffer[-delimiter_len_1:] +
-                                     next_chunk[:delimiter_len_1]):
+                if quick_found or True:
+                    offset = max(self._buffer_len - delimiter_len_1,
+                                 self._buffer_pos)
+                    fragment = (self._buffer[offset:] +
+                                next_chunk[:delimiter_len_1])
+                    delimiter_pos = fragment.find(delimiter)
+                    if delimiter_pos >= 0:
                         self._buffer_len += next_chunk_len
                         self._buffer += next_chunk
-                        break
+                        return self._finalize_read_until(
+                            amount, result, have_bytes, delimiter,
+                            delimiter_pos + offset)
 
-            have_bytes += self._buffer_len
+            if have_bytes + self._buffer_len - self._buffer_pos >= amount:
+                # NOTE(vytas): we have now verified that all bytes currently in
+                #   the buffer are delimiter-free, including the border of the
+                #   upcoming chunk
+                return self._finalize_read_until(
+                    amount, result, have_bytes, None, -1, next_chunk,
+                    next_chunk_len)
 
-            if have_bytes >= amount:
-                if result_is_empty:
-                    if have_bytes == amount:
-                        self._buffer_len = next_chunk_len
-                        self._buffer = next_chunk
-                        return self._buffer
-
-                    ret_value = self._buffer[:amount]
-                    self._buffer_len = have_bytes - amount + next_chunk_len
-                    self._buffer = self._buffer[amount:] + next_chunk
-                    return ret_value
-
-                buffer_cutoff = self._buffer_len - have_bytes + amount
-                result.append(self._buffer[:buffer_cutoff])
-                self._buffer_len = have_bytes - amount + next_chunk_len
-                self._buffer = self._buffer[buffer_cutoff:] + next_chunk
-                return b''.join(result)
-
-            result.append(self._buffer)
-            result_is_empty = False
+            have_bytes += self._buffer_len - self._buffer_pos
+            if self._buffer_pos > 0:
+                result.append(self._buffer[self._buffer_pos:])
+            else:
+                result.append(self._buffer)
             self._buffer_len = next_chunk_len
+            self._buffer_pos = 0
             self._buffer = next_chunk
 
-        data, found_delimiter, remainder = self._buffer.partition(delimiter)
-        if not found_delimiter:
-            if missing_delimiter_error:
-                raise missing_delimiter_error(
-                    'unexpected EOF without delimiter')
-
-        result.append(data[:amount - have_bytes])
-        self._buffer = data[amount - have_bytes:] + found_delimiter + remainder
-        self._buffer_len = len(self._buffer)
-        return b''.join(result)
-
     def pipe(self, destination=None):
+        # TODO,PERF(vytas): This junk might actually be a de-optimization,
+        #   recheck!
         cdef bint destination_is_not_none = (destination is not None)
 
         while True:

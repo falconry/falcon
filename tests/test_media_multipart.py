@@ -1,4 +1,5 @@
 import io
+import itertools
 
 import pytest
 
@@ -56,11 +57,45 @@ EXAMPLE3 = (
     b'--BOUNDARY--\r\n'
 )
 
+LOREM_IPSUM = (
+    'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod '
+    'tempor incididunt ut labore et dolore magna aliqua. Dolor sed viverra '
+    'ipsum nunc aliquet bibendum enim. In massa tempor nec feugiat. Nunc '
+    'aliquet bibendum enim facilisis gravida. Nisl nunc mi ipsum faucibus '
+    'vitae aliquet nec ullamcorper. Amet luctus venenatis lectus magna '
+    'fringilla. Volutpat maecenas volutpat blandit aliquam etiam erat velit '
+    'scelerisque in. Egestas egestas fringilla phasellus faucibus scelerisque '
+    'eleifend. Sagittis orci a scelerisque purus semper eget duis. Nulla '
+    'pharetra diam sit amet nisl suscipit. Sed adipiscing diam donec '
+    'adipiscing tristique risus nec feugiat in. Fusce ut placerat orci nulla. '
+    'Pharetra vel turpis nunc eget lorem dolor. Tristique senectus et netus '
+    'et malesuada.\n'
+).encode()
+
+EXAMPLE4 = (
+    b'--boundary\r\n'
+    b'Content-Disposition: form-data; name="lorem1"; filename="bytes1"\r\n'
+    b'Content-Type: text/plain\r\n\r\n' +
+    LOREM_IPSUM +
+    b'\r\n'
+    b'--boundary\r\n'
+    b'Content-Disposition: form-data; name="empty"\r\n'
+    b'Content-Type: text/plain\r\n\r\n'
+    b'\r\n'
+    b'--boundary\r\n'
+    b'Content-Disposition: form-data; name="lorem2"; filename="bytes1"\r\n'
+    b'Content-Type: text/plain\r\n\r\n' +
+    LOREM_IPSUM +
+    b'\r\n'
+    b'--boundary--\r\n'
+)
+
 
 EXAMPLES = {
     '5b11af82ab65407ba8cdccf37d2a9c4f': EXAMPLE1,
     '---------------------------1574247108204320607285918568': EXAMPLE2,
     'BOUNDARY': EXAMPLE3,
+    'boundary': EXAMPLE4,
 }
 
 
@@ -77,6 +112,45 @@ def test_parse(boundary):
         output = io.BytesIO()
         part.stream.pipe(output)
         assert isinstance(output.getvalue(), bytes)
+
+
+@pytest.mark.parametrize('buffer_size,chunk_size', list(itertools.product(
+    (
+        32,
+        64,
+        128,
+        256,
+    ),
+    (
+        7,
+        8,
+        9,
+        10,
+        32,
+        64,
+        128,
+        256,
+    ),
+)))
+def test_parsing_correctness(buffer_size, chunk_size):
+    example = EXAMPLES['boundary']
+    handler = media.MultipartFormHandler()
+    stream = BufferedStream(io.BytesIO(example).read, len(example),
+                            buffer_size)
+    form = handler.deserialize(
+        stream, 'multipart/form-data; boundary=boundary', len(example))
+
+    for part in form:
+        if part.name in ('lorem1', 'lorem2'):
+            part_stream = part.stream
+            result = []
+            while True:
+                chunk = part_stream.read(chunk_size)
+                if not chunk:
+                    break
+                result.append(chunk)
+
+            assert b''.join(result) == LOREM_IPSUM
 
 
 def test_missing_boundary():
