@@ -90,6 +90,6 @@ requests.
     are intended to hold request and response data specific to your app as it
     passes through the framework.
 
-.. automodule:: falcon
-    :members: before, after
-    :undoc-members:
+.. autofunction:: falcon.before
+
+.. autofunction:: falcon.after
