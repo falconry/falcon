@@ -534,6 +534,8 @@ Alternatively, POSTed form parameters may be read directly from
 :meth:`falcon.uri.parse_query_string` or
 `urllib.parse.parse_qs() <https://docs.python.org/3.6/library/urllib.parse.html#urllib.parse.parse_qs>`_.
 
+.. _access_multipart_files:
+
 How can I access POSTed files?
 ------------------------------
 
@@ -553,6 +555,35 @@ multipart body parts:
    In further development versions of Falcon 3.0 series,
    :class:`falcon.media.MultpartFormHandler` may be promoted to the default
    media handlers.
+
+How can I save POSTed files (from a multipart form) directly to AWS S3?
+-----------------------------------------------------------------------
+
+As highlighted in the previous answer dealing with
+:ref:`files posted as multipart form <access_multipart_files>`,
+:class:`falcon.media.MultipartFormHandler` may be used to iterated through
+uploaded multipart body parts.
+
+The `stream` of a body part is a file-like object implementing the ``read()``
+method that may be used with ``boto3``\'s
+`upload_fileobj <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.upload_fileobj>`_:
+
+.. code:: python
+
+    import boto3
+    s3 = boto3.client('s3')
+
+    # ...
+
+    for part in req.media:
+        if part.name == 'myfile':
+            s3.upload_fileobj(part.stream, 'mybucket', 'mykey')
+
+.. note::
+   Falcon is not endorsing any particular cloud service provider, and AWS S3
+   and ``boto3`` are referenced here just as a popular example. The same
+   principles hopefully apply to other cloud storage APIs implementing upload
+   of arbitrary file-like objects.
 
 How do I consume a query string that has a JSON value?
 ------------------------------------------------------
