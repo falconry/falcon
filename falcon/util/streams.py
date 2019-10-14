@@ -211,30 +211,21 @@ class BufferedStream:
             self._buffer = next_chunk
 
     def pipe(self, destination=None):
-        # PERF(vytas) In Cython, bind types:
-        #   cdef bint destination_is_not_none
-
-        destination_is_not_none = (destination is not None)
-
         while True:
             chunk = self.read(self._chunk_size)
             if not chunk:
                 break
 
-            if destination_is_not_none:
+            if destination is not None:
                 destination.write(chunk)
 
     def pipe_until(self, delimiter, destination=None):
-        # PERF(vytas) In Cython, bind types:
-        #   cdef bint destination_is_not_none
-        destination_is_not_none = (destination is not None)
-
         while True:
             chunk = self.read_until(delimiter, self._chunk_size)
             if not chunk:
                 break
 
-            if destination_is_not_none:
+            if destination is not None:
                 destination.write(chunk)
 
     def exhaust(self):
