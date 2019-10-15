@@ -9,6 +9,7 @@ Thank you to our generous project patrons who help make this project possible!
 ## Gold Patrons
 
 * [Likalo](https://www.likalo.com/)
+* [Examination RU](https://www.kontrolnaya-rabota.ru/s/)
 * [Luhnar](https://www.luhnar.com/)
 
 ## Silver Patrons
