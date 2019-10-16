@@ -43,7 +43,9 @@ Gold
 
     <p>
     <a href="https://www.likalo.com/" target="_blank"><img src="https://falconframework.org/img/sponsors/likalo.svg" height="20" alt="LIKALO" ></a>&nbsp;&nbsp;&nbsp;
-    <a href="https://www.kontrolnaya-rabota.ru/s/" target="_blank"><img src="https://falconframework.org/img/sponsors/rabota.jpg" height="20" alt="Examination RU" ></a>&nbsp;&nbsp;&nbsp;
+    <a href="https://www.kontrolnaya-rabota.ru/s/" target="_blank"><img src="https://falconframework.org/img/sponsors/rabota.jpg" height="20" alt="Examination RU" ></a>
+    </p>
+    <p>
     <a href="https://www.luhnar.com/" target="_blank"><img src="https://falconframework.org/img/sponsors/luhnar-dark.svg" height="16" alt="Luhnar Site Accelerator" style="padding-bottom: 2px"></a>
      </p>
 
