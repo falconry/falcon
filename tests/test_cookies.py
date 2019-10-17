@@ -30,7 +30,7 @@ GMT_PLUS_ONE = TimezoneGMTPlus1()
 class CookieResource:
 
     def on_get(self, req, resp):
-        resp.set_cookie('foo', 'bar', domain='example.com', path='/', same_site=('Lax',))
+        resp.set_cookie('foo', 'bar', domain='example.com', path='/', same_site='Lax')
 
     def on_head(self, req, resp):
         resp.set_cookie('foo', 'bar', max_age=300)
@@ -44,7 +44,7 @@ class CookieResource:
                         http_only=False,
                         secure=False,
                         expires=e,
-                        same_site=('Strict',))
+                        same_site='Strict')
         resp.unset_cookie('bad')
 
     def on_put(self, req, resp):

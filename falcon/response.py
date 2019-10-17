@@ -357,6 +357,13 @@ class Response:
 
                 (See also: RFC 6265, Section 4.1.2.6)
 
+            same_site (str): Helps protect against CSRF attacks,
+                When ``Lax`` is set, the cookie will be sent
+                along with the GET request initiated
+                by third party website.
+                if ``Strict`` will be set, the cookie will not be sent along
+                with requests initiated by third party websites.
+
         Raises:
             KeyError: `name` is not a valid cookie name.
             ValueError: `value` is not a valid cookie value.
@@ -426,7 +433,7 @@ class Response:
             self._cookies[name]['httponly'] = http_only
 
         if same_site:
-            self._cookies[name]['samesite'] = same_site[0]
+            self._cookies[name]['samesite'] = same_site
 
     def unset_cookie(self, name):
         """Unset a cookie in the response
