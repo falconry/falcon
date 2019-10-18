@@ -21,13 +21,22 @@ Conversely, the `uri` module must be imported explicitly::
 """
 
 import json  # NOQA
+import sys
 
 # Hoist misc. utils
-from falcon.util.structures import *  # NOQA
 from falcon.util.misc import *  # NOQA
+from falcon.util.streams import BufferedStream as _PyBufferedStream
+from falcon.util.structures import *  # NOQA
 from falcon.util.time import *  # NOQA
 
+
+IS_64_BITS = sys.maxsize > 2**32
+
 try:
-    from falcon.cyutil.streams import BufferedStream
+    from falcon.cyutil.streams import BufferedStream as _CyBufferedStream
 except ImportError:
-    from falcon.util.streams import BufferedStream  # NOQA
+    _CyBufferedStream = None
+
+# NOTE(vytas): Cythonized BufferedStream makes heavy use of Py_ssize_t which
+#   would overflow on 32-bit systems with form parts larger than 2 GiB.
+BufferedStream = (_CyBufferedStream or _PyBufferedStream) if IS_64_BITS else _PyBufferedStream

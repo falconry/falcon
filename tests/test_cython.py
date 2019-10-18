@@ -20,7 +20,7 @@ class TestCythonized:
     def test_stream_has_private_read(self):
         stream = falcon.util.BufferedStream(io.BytesIO().read, 8)
 
-        if cython:
+        if cython and falcon.util.IS_64_BITS:
             assert not hasattr(stream, '_read')
         else:
             assert hasattr(stream, '_read')
