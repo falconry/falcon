@@ -17,12 +17,18 @@ HTTP_METHODS = (
     'PATCH'
 )
 
-
 WEBDAV_METHODS = (
     'CHECKIN',
     'CHECKOUT',
+    'COPY',
+    'LOCK',
+    'MKCOL',
+    'MOVE',
+    'PROPFIND',
+    'PROPPATCH',
     'REPORT',
     'UNCHECKIN',
+    'UNLOCK'
     'UPDATE',
     'VERSION-CONTROL',
 )
