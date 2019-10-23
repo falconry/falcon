@@ -14,7 +14,6 @@ HTTP_METHODS = [
 ]
 
 # RFC 2518 and 4918 methods
-
 WEBDAV_METHODS = [
     'CHECKIN',
     'CHECKOUT',

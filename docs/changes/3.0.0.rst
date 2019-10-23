@@ -1,0 +1,9 @@
+Changelog for Falcon 3.0.0
+==========================
+
+Contributors to this Release
+----------------------------
+
+Many thanks to all of our talented and stylish contributors for this release!
+
+- `screamingskulls <https://github.com/screamingskulls>`_
