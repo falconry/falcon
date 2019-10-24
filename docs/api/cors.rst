@@ -12,7 +12,8 @@ to :any:`falcon.API`. By default, Falcon's built-in CORS support is disabled,
 so that any cross-origin requests will be blocked
 by the browser. Passing ``cors_enabled=True`` will cause the framework to include
 the necessary response headers to allow access from
-any origin to any route in the app. 
+any origin to any route in the app. Individual responders may override this behavior
+by setting the Access-Control-Allow-Origin header explicitly.
 
 When it comes to APIs, we recommend using this 
 feature only when a robust AuthN/Z layer is also in place to authorize individual 
