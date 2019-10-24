@@ -138,8 +138,8 @@ class API:
             a component higher up in the stack) raises an exception.
 
         cors_enable (bool): Set this flag to ``True`` to enable a simple
-            CORS policy for all routes, including support for`preflight` 
-            requests (default ``False``). 
+            CORS policy for all routes, including support for preflighted
+            requests (default ``False``).
             (See also: :ref:`CORS <cors>`)
 
     Attributes:
@@ -171,14 +171,23 @@ class API:
         self._media_type = media_type
         self._static_routes = []
 
-        # If CORS are enabled then, we need to add the CORSMiddleware in the middleware param
         if cors_enable:
+            cm = CORSMiddleware()
+
             if middleware is None:
-                middleware = [CORSMiddleware()]
-            if not isinstance(middleware, list):
-                middleware = [middleware, CORSMiddleware()]
+                middleware = [cm]
             else:
-                middleware.append(CORSMiddleware())
+                try:
+                    # NOTE(kgriffs): Check to see if middleware is an
+                    #   iterable, and if so, append the CORSMiddleware
+                    #   instance.
+                    iter(middleware)
+                    middleware = list(middleware)
+                    middleware.append(cm)
+                except TypeError:
+                    # NOTE(kgriffs): Assume the middleware kwarg references
+                    #   a single middleware component.
+                    middleware = [middleware, cm]
 
         # set middleware
         self._middleware = helpers.prepare_middleware(
@@ -219,7 +228,6 @@ class API:
                 status and headers on a response.
 
         """
-
         req = self._request_type(env, options=self.req_options)
         resp = self._response_type(options=self.resp_options)
         resource = None
