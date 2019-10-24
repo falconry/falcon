@@ -1,18 +1,22 @@
 .. _cors:
 
-Cors
+CORS
 =====
 
-Cross Origin Resource Sharing is an additional security check done by moderns
-browsers to avoid request between different domains. To allow it falcon
-has easy way to enable or disable your CORS policies at the initialization
-of a :any:`falcon.API`. By default CORS policies are enable in your :any:`falcon.API`
-object, so if any request is coming from a different domain will be blocked
-by the browser as default because falcon will not send the headers required
-by the browser to allow ross site resource sharing. You can change this easy
-just by instantiating a :any:`falcon.API` passing the parameter `cors_enable`
-as True
+`Cross Origin Resource Sharing <https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS>`_ 
+(CORS) is an additional security check performed by modern
+browsers to prevent unauthorized requests between different domains. When implementing
+a web API, it is common to have to also implement a CORS policy. Therefore, Falcon
+provides an easy way to enable a simple CORS policy via a flag passed 
+to :any:`falcon.API`. By default, Falcon's built-in CORS support is disabled,
+so that any cross-origin requests will be blocked
+by the browser. Passing ``cors_enabled=True`` will cause the framework to include
+the necessary response headers to allow access from
+any origin to any route in the app. 
 
+When it comes to APIs, we recommend using this 
+feature only when a robust AuthN/Z layer is also in place to authorize individual 
+clients, as needed, to protect sensitive resources.
 
 Usage
 -----
