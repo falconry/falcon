@@ -244,6 +244,10 @@ class CORSHeaderResource:
     def on_get(self, req, resp):
         resp.body = "I'm a CORS test response"
 
+    def on_delete(self, req, resp):
+        resp.set_header('Access-Control-Allow-Origin', 'example.com')
+        resp.body = "I'm a CORS test response"
+
 
 class TestHeaders:
 
@@ -717,12 +721,30 @@ class TestHeaders:
 
     def test_enabled_cors_should_accept_all_origins_requests(self, cors_client):
         cors_client.app.add_route('/', CORSHeaderResource())
+
         result = cors_client.simulate_get()
         assert result.headers['Access-Control-Allow-Origin'] == '*'
 
-    def test_enabled_cors_should_control_expiration_through_headers(self, cors_client):
+        result = cors_client.simulate_delete()
+        assert result.headers['Access-Control-Allow-Origin'] == 'example.com'
+
+    def test_enabled_cors_handles_preflighting(self, cors_client):
         cors_client.app.add_route('/', CORSHeaderResource())
-        result = cors_client.simulate_options(headers=(('Access-Control-Request-Method', '*'), ))
+        result = cors_client.simulate_options(headers=(
+            ('Access-Control-Request-Method', 'GET'),
+            ('Access-Control-Request-Headers', 'X-PINGOTHER, Content-Type'),
+        ))
+        assert result.headers['Access-Control-Allow-Methods'] == 'DELETE, GET'
+        assert result.headers['Access-Control-Allow-Headers'] == 'X-PINGOTHER, Content-Type'
+        assert result.headers['Access-Control-Max-Age'] == '86400'  # 24 hours in seconds
+
+    def test_enabled_cors_handles_preflighting_no_headers_in_req(self, cors_client):
+        cors_client.app.add_route('/', CORSHeaderResource())
+        result = cors_client.simulate_options(headers=(
+            ('Access-Control-Request-Method', 'POST'),
+        ))
+        assert result.headers['Access-Control-Allow-Methods'] == 'DELETE, GET'
+        assert result.headers['Access-Control-Allow-Headers'] == '*'
         assert result.headers['Access-Control-Max-Age'] == '86400'  # 24 hours in seconds
 
     # ----------------------------------------------------------------------
