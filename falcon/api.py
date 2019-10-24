@@ -140,7 +140,7 @@ class API:
         cors_enable (bool): Set this flag to ``True`` to enable a simple
             CORS policy for all routes, including support for`preflight` 
             requests (default ``False``). 
-            (See also: :ref:`CORSs <cors>`)
+            (See also: :ref:`CORS <cors>`)
 
     Attributes:
         req_options: A set of behavioral options related to incoming
