@@ -1,7 +1,7 @@
 
 class CORSMiddleware(object):
     def process_response(self, req, resp, resource, req_succeeded):
-        """Implement a simple blanked CORS policy for all routes.
+        """Implement a simple blanket CORS policy for all routes.
 
         This middleware provides a simple out-of-the box CORS policy,
         including handling of preflighted requests from the browser.
