@@ -1,6 +1,3 @@
-setuptools
-wheel
-
 coverage>=4.1
 pytest
 pyyaml
@@ -13,4 +10,6 @@ mujson
 ujson
 
 python-rapidjson
-orjson; platform_python_implementation != 'PyPy'
+
+# TODO(kgriffs): orjson is failing to build on Travis
+# orjson; platform_python_implementation != 'PyPy'
