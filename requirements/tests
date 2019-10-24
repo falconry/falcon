@@ -1,3 +1,6 @@
+setuptools
+wheel
+
 coverage>=4.1
 pytest
 pyyaml
