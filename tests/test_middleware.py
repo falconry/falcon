@@ -813,8 +813,15 @@ class TestShortCircuiting(TestMiddleware):
 
 
 class TestCORSMiddlewareWithAnotherMiddleware(TestMiddleware):
-    def test_api_initialization_with_cors_enabled_and_middleware_param(self):
-        app = falcon.API(middleware=CaptureResponseMiddleware(), cors_enable=True)
+
+    @pytest.mark.parametrize('mw', [
+        CaptureResponseMiddleware(),
+        [CaptureResponseMiddleware()],
+        (CaptureResponseMiddleware(),),
+        iter([CaptureResponseMiddleware()]),
+    ])
+    def test_api_initialization_with_cors_enabled_and_middleware_param(self, mw):
+        app = falcon.API(middleware=mw, cors_enable=True)
         app.add_route('/', TestCorsResource())
         client = testing.TestClient(app)
         result = client.simulate_get()
