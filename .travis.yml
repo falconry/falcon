@@ -46,6 +46,7 @@ notifications:
 before_install:
   - sudo apt-get update
   - sudo apt-get install -y libunwind-dev
+  - pip install -U pip
   - pip install codecov
 
 after_success:
