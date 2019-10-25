@@ -13,6 +13,7 @@ Classes and Functions
    multipart
    redirects
    middleware
+   cors
    hooks
    routing
    util
