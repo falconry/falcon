@@ -36,9 +36,9 @@ started writing an API:
                          '    ~ Immanuel Kant\n\n')
 
 
-    # falcon.API instances are callable WSGI apps
+    # falcon.App instances are callable WSGI apps
     # in larger applications the app is created in a separate file
-    app = falcon.API()
+    app = falcon.App()
 
     # Resources are represented by long-lived class instances
     things = ThingsResource()
@@ -277,7 +277,7 @@ parameters, handling errors, and working with request and response bodies.
 
 
     # Configure your WSGI server to load "things.app" (app is a WSGI callable)
-    app = falcon.API(middleware=[
+    app = falcon.App(middleware=[
         AuthMiddleware(),
         RequireJSON(),
         JSONTranslator(),

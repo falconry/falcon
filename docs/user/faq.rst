@@ -48,7 +48,7 @@ that in mind, writing a high-quality API based on Falcon requires that:
 
 .. tip:: Falcon will re-raise errors that do not inherit from
     :class:`~falcon.HTTPError` unless you have registered a custom error
-    handler for that type (see also: :ref:`falcon.API <api>`).
+    handler for that type (see also: :ref:`falcon.App <api>`).
 
 How do I generate API documentation for my Falcon API?
 ------------------------------------------------------
@@ -340,7 +340,7 @@ classes:
             pass
 
 
-    api = falcon.API()
+    api = falcon.App()
 
     # Game and GameState are closely related, and so it
     # probably makes sense for them to share an object
@@ -387,7 +387,7 @@ order to handle all three routes:
     # ...
 
 
-    api = falcon.API()
+    api = falcon.App()
 
     game = Game(myapp.DAL.Game(myconfig))
 
@@ -400,7 +400,7 @@ Extensibility
 
 How do I use WSGI middleware with Falcon?
 -----------------------------------------
-Instances of :class:`falcon.API` are first-class WSGI apps, so you can use the
+Instances of :class:`falcon.App` are first-class WSGI apps, so you can use the
 standard pattern outlined in PEP-3333. In your main "app" file, you would
 simply wrap your api instance with a middleware app. For example:
 
@@ -441,7 +441,7 @@ How can I write a custom handler for 404 and 500 pages in falcon?
 ------------------------------------------------------------------
 When a route can not be found for an incoming request, Falcon uses a default
 responder that simply raises an instance of :attr:`falcon.HTTPNotFound`. You
-can use :meth:`falcon.API.add_error_handler` to register a custom error handler
+can use :meth:`falcon.App.add_error_handler` to register a custom error handler
 for this exception type. Alternatively, you may be able to configure your web
 server to transform the response for you (e.g., using Nginx's ``error_page``
 directive).
@@ -498,7 +498,7 @@ parameter being ignored.
 If you would like to recognize such parameters, you must set the
 `keep_blank_qs_values` request option to ``True``. Request options are set
 globally for each instance of :class:`falcon.API` via the
-:attr:`~falcon.API.req_options` property. For example:
+:attr:`~falcon.App.req_options` property. For example:
 
 .. code:: python
 
@@ -519,7 +519,7 @@ How can I access POSTed form params?
 ------------------------------------
 By default, Falcon does not consume request bodies. However, setting
 the :attr:`~RequestOptions.auto_parse_form_urlencoded` to ``True``
-on an instance of ``falcon.API``
+on an instance of ``falcon.App``
 will cause the framework to consume the request body when the
 content type is ``application/x-www-form-urlencoded``, making
 the form parameters accessible via :attr:`~.Request.params`,
@@ -586,7 +586,7 @@ so one possible solution is to percent encode any commas that appear in your
 JSON query string. The other option is to switch the way Falcon
 handles commas in a query string by setting the
 :attr:`~falcon.RequestOptions.auto_parse_qs_csv` to ``False`` on an instance of
-:class:`falcon.API`:
+:class:`falcon.App`:
 
 .. code:: python
 
@@ -654,7 +654,7 @@ types:
 
     # ...
 
-    api = falcon.API(request_type=RequestWithDictContext,
+    api = falcon.App(request_type=RequestWithDictContext,
                      response_type=ResponseWithDictContext)
 
 Response Handling
@@ -733,7 +733,7 @@ Falcon attempts to serialize the :class:`~falcon.HTTPError` instance using its
 :meth:`~falcon.HTTPError.to_json` or :meth:`~falcon.HTTPError.to_xml` methods,
 according to the Accept header in the request. If neither JSON nor XML is
 acceptable, no response body will be generated. You can override this behavior
-if needed via :meth:`~falcon.API.set_error_serializer`.
+if needed via :meth:`~falcon.App.set_error_serializer`.
 
 I'm setting a response body, but it isn't getting returned. What's going on?
 ----------------------------------------------------------------------------
@@ -776,7 +776,7 @@ Can Falcon serve static files?
 Falcon makes it easy to efficiently serve static files by simply assigning an
 open file to ``resp.stream`` :ref:`as demonstrated in the tutorial
 <tutorial-serving-images>`. You can also serve an entire directory of files via
-:meth:`falcon.API.add_static_route`. However, if possible, it is best to serve
+:meth:`falcon.App.add_static_route`. However, if possible, it is best to serve
 static files directly from a web server like Nginx, or from a CDN.
 
 Misc.

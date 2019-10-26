@@ -15,7 +15,7 @@ HTTP response. The default error serializer supports both JSON and XML.
 If the client indicates acceptance of both JSON and XML with equal
 weight, JSON will be chosen. Other media types may be supported by
 overriding the default serializer via
-:meth:`~.API.set_error_serializer`.
+:meth:`~.App.set_error_serializer`.
 
 .. note::
 
@@ -63,7 +63,7 @@ All classes are available directly in the ``falcon`` package namespace::
 Note also that any exception (not just instances of
 :class:`~.HTTPError`) can be caught, logged, and otherwise handled
 at the global level by registering one or more custom error handlers.
-See also :meth:`~.API.add_error_handler` to learn more about this
+See also :meth:`~.App.add_error_handler` to learn more about this
 feature.
 
 Base Class

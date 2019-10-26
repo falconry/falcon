@@ -17,7 +17,7 @@ New & Improved
 - If `ujson` is installed it will be used in lieu of `json` to speed up
   error serialization and query string parsing under CPython. PyPy users
   should continue to use `json`.
-- The `independent_middleware` kwarg was added to :class:`falcon.API` to
+- The `independent_middleware` kwarg was added to :class:`falcon.App` to
   enable the execution of `process_response()` middleware methods, even
   when `process_request()` raises an error.
 - Single-character field names are now allowed in URL templates when

@@ -40,7 +40,7 @@ Here's a quick example to show how all the pieces fit together:
             # illustrate how this may be overridden as needed.
             resp.status = falcon.HTTP_200
 
-    api = application = falcon.API()
+    api = application = falcon.App()
 
     images = ImagesResource()
     api.add_route('/images', images)
@@ -52,7 +52,7 @@ Default Router
 Falcon's default routing engine is based on a decision tree that is
 first compiled into Python code, and then evaluated by the runtime.
 
-The :meth:`~.API.add_route` method is used to associate a URI template
+The :meth:`~.App.add_route` method is used to associate a URI template
 with a resource. Falcon then maps incoming requests to resources
 based on these templates.
 
@@ -110,7 +110,7 @@ data to hooks and middleware methods.
     :class:`~.HTTPError` or :class:`~.HTTPStatus`. Falcon will
     convert these exceptions to appropriate HTTP responses.
     Alternatively, you can handle them youself via
-    :meth:`~.API.add_error_handler`.
+    :meth:`~.App.add_error_handler`.
 
 In addition to the standard `req` and `resp` parameters, if the
 route's template contains field expressions, any responder that
@@ -223,12 +223,12 @@ Custom Routers
 --------------
 
 A custom routing engine may be specified when instantiating
-:py:meth:`falcon.API`. For example:
+:py:meth:`falcon.App`. For example:
 
 .. code:: python
 
     router = MyRouter()
-    api = API(router=router)
+    api = App(router=router)
 
 Custom routers may derive from the default :py:class:`~.CompiledRouter`
 engine, or implement a completely different routing strategy (such as
@@ -261,7 +261,7 @@ A custom router is any class that implements the following interface:
                     the resource.
 
                 **kwargs (dict): Accepts any additional keyword arguments
-                    that were originally passed to the falcon.API.add_route()
+                    that were originally passed to the falcon.App.add_route()
                     method. These arguments MUST be accepted via the
                     double-star variadic pattern (**kwargs), and ignore any
                     unrecognized or unsupported arguments.

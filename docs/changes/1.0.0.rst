@@ -4,7 +4,7 @@ Changelog for Falcon 1.0.0
 Breaking Changes
 ----------------
 - The deprecated global hooks feature has been removed.
-  :class:`~falcon.API` no longer accepts `before` and `after`
+  :class:`~falcon.App` no longer accepts `before` and `after`
   kwargs. Applications can work around this by migrating any logic
   contained in global hooks to reside in middleware components instead.
 - The middleware method :meth:`process_resource` must now accept
@@ -94,7 +94,7 @@ New & Improved
     api.add_route('/files/{file_id}', resource_1)
     api.add_route('/files/{file_id}.{ext}', resource_2)
 
-- Support was added to :any:`API.add_route()` for passing through
+- Support was added to :any:`App.add_route()` for passing through
   additional args and kwargs to custom routers.
 - Digits and the underscore character are now allowed in the
   :meth:`falcon.routing.compile_uri_template` helper, for use in custom
