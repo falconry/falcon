@@ -9,7 +9,7 @@ from falcon.routing import DefaultRouter
 
 @pytest.fixture
 def client():
-    return testing.TestClient(falcon.API())
+    return testing.TestClient(falcon.App())
 
 
 @pytest.fixture
@@ -250,7 +250,7 @@ def test_user_regression_special_chars(uri_template, path, expected_params):
     object()
 ])
 def test_not_str(uri_template):
-    app = falcon.API()
+    app = falcon.App()
     with pytest.raises(TypeError):
         app.add_route(uri_template, ResourceWithId(-1))
 

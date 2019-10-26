@@ -44,7 +44,7 @@ class ErroredClassResource:
 
 @pytest.fixture
 def client():
-    app = falcon.API()
+    app = falcon.App()
     app.add_route('/', ErroredClassResource())
     return testing.TestClient(app)
 

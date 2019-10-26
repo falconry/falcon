@@ -56,7 +56,7 @@ def resource_get_with_faulty_put():
 
 @pytest.fixture
 def client():
-    app = falcon.API()
+    app = falcon.App()
 
     app.add_route('/stonewall', Stonewall())
 

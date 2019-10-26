@@ -88,7 +88,7 @@ def _run_server(stop_event):
             # req.stream, since we already asserted they are the same
             # objects.
 
-    api = application = falcon.API()
+    api = application = falcon.App()
     api.add_route('/', Things())
     api.add_route('/bucket', Bucket())
 

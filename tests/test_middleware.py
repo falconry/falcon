@@ -154,7 +154,7 @@ class TestRequestTimeMiddleware(TestMiddleware):
 
     def test_skip_process_resource(self):
         global context
-        app = falcon.API(middleware=[RequestTimeMiddleware()])
+        app = falcon.App(middleware=[RequestTimeMiddleware()])
 
         app.add_route('/', MiddlewareClassResource())
         client = testing.TestClient(app)
@@ -174,13 +174,13 @@ class TestRequestTimeMiddleware(TestMiddleware):
 
         mw_list = [RequestTimeMiddleware(), InvalidMiddleware]
         with pytest.raises(AttributeError):
-            falcon.API(middleware=mw_list)
+            falcon.App(middleware=mw_list)
         mw_list = [RequestTimeMiddleware(), 'InvalidMiddleware']
         with pytest.raises(TypeError):
-            falcon.API(middleware=mw_list)
+            falcon.App(middleware=mw_list)
         mw_list = [{'process_request': 90}]
         with pytest.raises(TypeError):
-            falcon.API(middleware=mw_list)
+            falcon.App(middleware=mw_list)
 
     def test_response_middleware_raises_exception(self):
         """Test that error in response middleware is propagated up"""
@@ -189,7 +189,7 @@ class TestRequestTimeMiddleware(TestMiddleware):
             def process_response(self, req, resp, resource):
                 raise Exception('Always fail')
 
-        app = falcon.API(middleware=[RaiseErrorMiddleware()])
+        app = falcon.App(middleware=[RaiseErrorMiddleware()])
 
         app.add_route(TEST_ROUTE, MiddlewareClassResource())
         client = testing.TestClient(app)
@@ -201,7 +201,7 @@ class TestRequestTimeMiddleware(TestMiddleware):
     def test_log_get_request(self, independent_middleware):
         """Test that Log middleware is executed"""
         global context
-        app = falcon.API(middleware=[RequestTimeMiddleware()],
+        app = falcon.App(middleware=[RequestTimeMiddleware()],
                          independent_middleware=independent_middleware)
 
         app.add_route(TEST_ROUTE, MiddlewareClassResource())
@@ -226,7 +226,7 @@ class TestTransactionIdMiddleware(TestMiddleware):
     def test_generate_trans_id_with_request(self):
         """Test that TransactionIdmiddleware is executed"""
         global context
-        app = falcon.API(middleware=TransactionIdMiddleware())
+        app = falcon.App(middleware=TransactionIdMiddleware())
 
         app.add_route(TEST_ROUTE, MiddlewareClassResource())
         client = testing.TestClient(app)
@@ -248,7 +248,7 @@ class TestSeveralMiddlewares(TestMiddleware):
         cresp = CaptureResponseMiddleware()
 
         global context
-        app = falcon.API(independent_middleware=independent_middleware,
+        app = falcon.App(independent_middleware=independent_middleware,
                          middleware=[TransactionIdMiddleware(),
                                      RequestTimeMiddleware(),
                                      creq,
@@ -272,7 +272,7 @@ class TestSeveralMiddlewares(TestMiddleware):
 
     def test_legacy_middleware_called_with_correct_args(self):
         global context
-        app = falcon.API(middleware=[ExecutedFirstMiddleware()])
+        app = falcon.App(middleware=[ExecutedFirstMiddleware()])
         app.add_route(TEST_ROUTE, MiddlewareClassResource())
         client = testing.TestClient(app)
 
@@ -283,7 +283,7 @@ class TestSeveralMiddlewares(TestMiddleware):
 
     def test_middleware_execution_order(self):
         global context
-        app = falcon.API(independent_middleware=False,
+        app = falcon.App(independent_middleware=False,
                          middleware=[ExecutedFirstMiddleware(),
                                      ExecutedLastMiddleware()])
 
@@ -307,7 +307,7 @@ class TestSeveralMiddlewares(TestMiddleware):
 
     def test_independent_middleware_execution_order(self):
         global context
-        app = falcon.API(independent_middleware=True,
+        app = falcon.App(independent_middleware=True,
                          middleware=[ExecutedFirstMiddleware(),
                                      ExecutedLastMiddleware()])
 
@@ -348,7 +348,7 @@ class TestSeveralMiddlewares(TestMiddleware):
                 context['executed_methods'].append('process_response')
                 context['req_succeeded'].append(req_succeeded)
 
-        app = falcon.API(middleware=[ProcessResponseMiddleware(),
+        app = falcon.App(middleware=[ProcessResponseMiddleware(),
                                      RaiseErrorMiddleware(),
                                      ProcessResponseMiddleware(),
                                      RaiseStatusMiddleware(),
@@ -374,7 +374,7 @@ class TestSeveralMiddlewares(TestMiddleware):
             def process_request(self, req, resp):
                 raise Exception('Always fail')
 
-        app = falcon.API(middleware=[TransactionIdMiddleware(),
+        app = falcon.App(middleware=[TransactionIdMiddleware(),
                                      RequestTimeMiddleware(),
                                      RaiseErrorMiddleware()])
 
@@ -399,7 +399,7 @@ class TestSeveralMiddlewares(TestMiddleware):
             def process_request(self, req, resp, resource):
                 raise Exception('Always fail')
 
-        app = falcon.API(middleware=[TransactionIdMiddleware(),
+        app = falcon.App(middleware=[TransactionIdMiddleware(),
                                      RequestTimeMiddleware(),
                                      RaiseErrorMiddleware()])
 
@@ -429,7 +429,7 @@ class TestSeveralMiddlewares(TestMiddleware):
             def process_request(self, req, resp):
                 raise Exception('Always fail')
 
-        app = falcon.API(middleware=[TransactionIdMiddleware(),
+        app = falcon.App(middleware=[TransactionIdMiddleware(),
                                      RaiseErrorMiddleware(),
                                      RequestTimeMiddleware()])
 
@@ -459,7 +459,7 @@ class TestSeveralMiddlewares(TestMiddleware):
             def process_response(self, req, resp, resource):
                 raise Exception('Always fail')
 
-        app = falcon.API(middleware=[ExecutedFirstMiddleware(),
+        app = falcon.App(middleware=[ExecutedFirstMiddleware(),
                                      RaiseErrorMiddleware(),
                                      ExecutedLastMiddleware()])
 
@@ -493,7 +493,7 @@ class TestSeveralMiddlewares(TestMiddleware):
             def process_response(self, req, resp, resource):
                 raise Exception('Always fail')
 
-        app = falcon.API(independent_middleware=True,
+        app = falcon.App(independent_middleware=True,
                          middleware=[ExecutedFirstMiddleware(),
                                      RaiseErrorMiddleware(),
                                      ExecutedLastMiddleware()])
@@ -528,7 +528,7 @@ class TestSeveralMiddlewares(TestMiddleware):
             def process_request(self, req, resp):
                 raise Exception('Always fail')
 
-        app = falcon.API(middleware=[ExecutedFirstMiddleware(),
+        app = falcon.App(middleware=[ExecutedFirstMiddleware(),
                                      RaiseErrorMiddleware(),
                                      ExecutedLastMiddleware()])
 
@@ -559,7 +559,7 @@ class TestSeveralMiddlewares(TestMiddleware):
             def process_request(self, req, resp):
                 raise Exception('Always fail')
 
-        app = falcon.API(independent_middleware=True,
+        app = falcon.App(independent_middleware=True,
                          middleware=[ExecutedFirstMiddleware(),
                                      RaiseErrorMiddleware(),
                                      ExecutedLastMiddleware()])
@@ -591,7 +591,7 @@ class TestSeveralMiddlewares(TestMiddleware):
             def process_resource(self, req, resp, resource):
                 raise Exception('Always fail')
 
-        app = falcon.API(middleware=[ExecutedFirstMiddleware(),
+        app = falcon.App(middleware=[ExecutedFirstMiddleware(),
                                      RaiseErrorMiddleware(),
                                      ExecutedLastMiddleware()])
 
@@ -624,7 +624,7 @@ class TestSeveralMiddlewares(TestMiddleware):
             def process_resource(self, req, resp, resource):
                 raise Exception('Always fail')
 
-        app = falcon.API(independent_middleware=True,
+        app = falcon.App(independent_middleware=True,
                          middleware=[ExecutedFirstMiddleware(),
                                      RaiseErrorMiddleware(),
                                      ExecutedLastMiddleware()])
@@ -653,7 +653,7 @@ class TestSeveralMiddlewares(TestMiddleware):
 class TestRemoveBasePathMiddleware(TestMiddleware):
     def test_base_path_is_removed_before_routing(self):
         """Test that RemoveBasePathMiddleware is executed before routing"""
-        app = falcon.API(middleware=RemoveBasePathMiddleware())
+        app = falcon.App(middleware=RemoveBasePathMiddleware())
 
         # We dont include /base_path as it will be removed in middleware
         app.add_route('/sub_path', MiddlewareClassResource())
@@ -677,7 +677,7 @@ class TestResourceMiddleware(TestMiddleware):
             def on_get(self, req, resp, **params):
                 resp.body = json.dumps(params)
 
-        app = falcon.API(middleware=AccessParamsMiddleware(),
+        app = falcon.App(middleware=AccessParamsMiddleware(),
                          independent_middleware=independent_middleware)
         app.add_route('/path/{id}', Resource())
         client = testing.TestClient(app)
@@ -698,13 +698,13 @@ class TestEmptySignatureMiddleware(TestMiddleware):
 
         https://github.com/falconry/falcon/issues/1254
         """
-        falcon.API(middleware=EmptySignatureMiddleware())
+        falcon.App(middleware=EmptySignatureMiddleware())
 
 
 class TestErrorHandling(TestMiddleware):
     def test_error_composed_before_resp_middleware_called(self):
         mw = CaptureResponseMiddleware()
-        app = falcon.API(middleware=mw)
+        app = falcon.App(middleware=mw)
         app.add_route('/', MiddlewareClassResource())
         client = testing.TestClient(app)
 
@@ -724,7 +724,7 @@ class TestErrorHandling(TestMiddleware):
 
     def test_http_status_raised_from_error_handler(self):
         mw = CaptureResponseMiddleware()
-        app = falcon.API(middleware=mw)
+        app = falcon.App(middleware=mw)
         app.add_route('/', MiddlewareClassResource())
         client = testing.TestClient(app)
 
@@ -750,7 +750,7 @@ class TestShortCircuiting(TestMiddleware):
             ResponseCacheMiddlware(),
             TransactionIdMiddleware(),
         ]
-        app = falcon.API(middleware=mw, independent_middleware=independent_middleware)
+        app = falcon.App(middleware=mw, independent_middleware=independent_middleware)
         app.add_route('/', MiddlewareClassResource())
         app.add_route('/cached', MiddlewareClassResource())
         app.add_route('/cached/resource', MiddlewareClassResource())
@@ -821,7 +821,7 @@ class TestCORSMiddlewareWithAnotherMiddleware(TestMiddleware):
         iter([CaptureResponseMiddleware()]),
     ])
     def test_api_initialization_with_cors_enabled_and_middleware_param(self, mw):
-        app = falcon.API(middleware=mw, cors_enable=True)
+        app = falcon.App(middleware=mw, cors_enable=True)
         app.add_route('/', TestCorsResource())
         client = testing.TestClient(app)
         result = client.simulate_get()

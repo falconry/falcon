@@ -1,6 +1,6 @@
 import io
 
-from falcon import API
+from falcon import App
 from falcon.cmd import print_routes
 from falcon.testing import redirected
 
@@ -17,7 +17,7 @@ class DummyResource:
         resp.status = '200 OK'
 
 
-_api = API()
+_api = App()
 _api.add_route('/test', DummyResource())
 
 

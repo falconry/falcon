@@ -60,7 +60,7 @@ class CookieResourceMaxAgeFloatString:
 
 @pytest.fixture()
 def client():
-    app = falcon.API()
+    app = falcon.App()
     app.add_route('/', CookieResource())
     app.add_route('/test-convert', CookieResourceMaxAgeFloatString())
 

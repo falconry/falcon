@@ -240,7 +240,7 @@ def resource():
 
 @pytest.fixture
 def client(resource):
-    app = falcon.API()
+    app = falcon.App()
     app.add_route('/', resource)
     return testing.TestClient(app)
 
@@ -406,7 +406,7 @@ class PiggybackingCollection:
 def app_client():
     items = PiggybackingCollection()
 
-    app = falcon.API()
+    app = falcon.App()
     app.add_route('/items', items, suffix='collection')
     app.add_route('/items/{itemid:int}', items)
 
