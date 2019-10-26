@@ -706,16 +706,16 @@ class TestFalconTestingUtils:
 
 class TestNoApiClass(testing.TestCase):
     def test_something(self):
-        self.assertTrue(isinstance(self.app, falcon.API))
+        self.assertTrue(isinstance(self.app, falcon.App))
 
 
 class TestSetupApi(testing.TestCase):
     def setUp(self):
         super(TestSetupApi, self).setUp()
-        self.api = falcon.API()
+        self.api = falcon.App()
 
     def test_something(self):
-        self.assertTrue(isinstance(self.api, falcon.API))
+        self.assertTrue(isinstance(self.api, falcon.App))
 
 
 def test_get_argnames():

@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Falcon API class."""
+"""Falcon App class."""
 
 from functools import wraps
 import re
+import warnings
 
 from falcon import api_helpers as helpers, DEFAULT_MEDIA_TYPE, routing
 from falcon.http_error import HTTPError
@@ -43,10 +44,10 @@ _TYPELESS_STATUS_CODES = frozenset([
 ])
 
 
-class API:
+class App:
     """This class is the main entry point into a Falcon-based app.
 
-    Each API instance provides a callable WSGI interface and a routing
+    Each App instance provides a callable WSGI interface and a routing
     engine.
 
     Keyword Arguments:
@@ -216,9 +217,9 @@ class API:
     def __call__(self, env, start_response):  # noqa: C901
         """WSGI `app` method.
 
-        Makes instances of API callable from a WSGI server. May be used to
-        host an API or called directly in order to simulate requests when
-        testing the API.
+        Makes instances of App callable from a WSGI server. May be used to
+        host an App or called directly in order to simulate requests when
+        testing the App.
 
         (See also: PEP 3333)
 
@@ -369,7 +370,7 @@ class API:
 
         This method delegates to the configured router's ``add_route()``
         method. To override the default behavior, pass a custom router
-        object to the :class:`~.API` initializer.
+        object to the :class:`~.App` initializer.
 
         (See also: :ref:`Routing <routing>`)
 
@@ -476,7 +477,7 @@ class API:
         )
 
     def add_sink(self, sink, prefix=r'/'):
-        """Register a sink method for the API.
+        """Register a sink method for the App.
 
         If no route matches a request, but the path in the requested URI
         matches a sink prefix, Falcon will pass control to the
@@ -863,3 +864,17 @@ class API:
             return iterable, None
 
         return [], 0
+
+
+# NOTE(mikeyusko): This function is temporary
+# and will be deleted once
+# the API alias will be removed
+def api(*args, **kwargs):
+    warnings.warn(
+        'API class will be deprecated in the future, use App instead.'
+    )
+    return App(*args, **kwargs)
+
+
+# Deprecated alias
+API = api

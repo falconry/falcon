@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-Script that prints out the routes of an API instance.
+Script that prints out the routes of an App instance.
 """
 
 from functools import partial
@@ -26,8 +26,8 @@ def print_routes(api, verbose=False):  # pragma: no cover
     """
     Initial call.
 
-    :param api: The falcon.API or callable that returns an instance to look at.
-    :type api: falcon.API or callable
+    :param api: The falcon.App or callable that returns an instance to look at.
+    :type api: falcon.App or callable
     :param verbose: If the output should be verbose.
     :type verbose: bool
     """
@@ -38,8 +38,8 @@ def traverse(roots, parent='', verbose=False):
     """
     Recursive call which also handles printing output.
 
-    :param api: The falcon.API or callable that returns an instance to look at.
-    :type api: falcon.API or callable
+    :param api: The falcon.App or callable that returns an instance to look at.
+    :type api: falcon.App or callable
     :param parent: The parent uri path to the current iteration.
     :type parent: str
     :param verbose: If the output should be verbose.
@@ -98,17 +98,17 @@ def main():
             'The api_module must include a colon between '
             'the module and instance')
     api = getattr(__import__(module, fromlist=[True]), instance)
-    if not isinstance(api, falcon.API):
+    if not isinstance(api, falcon.App):
         if callable(api):
             api = api()
-            if not isinstance(api, falcon.API):
+            if not isinstance(api, falcon.App):
                 parser.error(
-                    '{0} did not return a falcon.API instance'.format(
+                    '{0} did not return a falcon.App instance'.format(
                         args.api_module))
         else:
             parser.error(
-                'The instance must be of falcon.API or be '
-                'a callable without args that returns falcon.API')
+                'The instance must be of falcon.App or be '
+                'a callable without args that returns falcon.App')
     print_routes(api, verbose=args.verbose)
 
 

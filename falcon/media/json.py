@@ -36,7 +36,7 @@ class JSONHandler(BaseHandler):
             'application/json': json_handler,
         }
 
-        api = falcon.API()
+        api = falcon.App()
         api.req_options.media_handlers.update(extra_handlers)
         api.resp_options.media_handlers.update(extra_handlers)
 
