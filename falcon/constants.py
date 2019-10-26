@@ -13,12 +13,19 @@ HTTP_METHODS = [
     'TRACE',
 ]
 
-# RFC 3253 methods
+# RFC 2518 and 4918 methods
 WEBDAV_METHODS = [
     'CHECKIN',
     'CHECKOUT',
+    'COPY',
+    'LOCK',
+    'MKCOL',
+    'MOVE',
+    'PROPFIND',
+    'PROPPATCH',
     'REPORT',
     'UNCHECKIN',
+    'UNLOCK'
     'UPDATE',
     'VERSION-CONTROL',
 ]
@@ -62,7 +69,6 @@ MEDIA_YAML = 'application/yaml'
 # ignore it anyway and just use what is specified in the document,
 # contrary to the RFCs.
 MEDIA_XML = 'application/xml'
-
 
 # NOTE(kgriffs): RFC 4329 recommends application/* over text/.
 # futhermore, parsers are required to respect the Unicode
