@@ -81,7 +81,13 @@ class JSONHandler(BaseHandler):
     def serialize(self, media, content_type):
         result = self.dumps(media)
 
-        if not isinstance(result, bytes):
-            return result.encode('utf-8')
+        try:
+            result = result.encode('utf-8')
+        except AttributeError:  # pragma: nocover
+            # NOTE(kgriffs): Assume that dumps() is non-standard in that it
+            #   returned a byte string.
+            # TODO(kgriffs): This branch is not currently covered since
+            #   orjson testing has been temporarily disabled.
+            pass
 
         return result
