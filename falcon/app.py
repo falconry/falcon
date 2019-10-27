@@ -139,7 +139,7 @@ class App:
             a component higher up in the stack) raises an exception.
 
         cors_enable (bool): Set this flag to ``True`` to enable a simple
-            CORS policy for all routes, including support for preflighted
+            CORS policy for all responses, including support for preflighted
             requests (default ``False``).
             (See also: :ref:`CORS <cors>`)
 
