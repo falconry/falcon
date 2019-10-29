@@ -137,6 +137,12 @@ class EmptySignatureMiddleware:
         pass
 
 
+class TestCorsResource:
+    def on_get(self, req, resp, **kwargs):
+        resp.status = falcon.HTTP_200
+        resp.body = 'Test'
+
+
 class TestMiddleware:
     def setup_method(self, method):
         # Clear context
@@ -804,3 +810,19 @@ class TestShortCircuiting(TestMiddleware):
 
         # NOTE(kgriffs): Short-circuiting does not affect process_response()
         assert 'end_time' in context
+
+
+class TestCORSMiddlewareWithAnotherMiddleware(TestMiddleware):
+
+    @pytest.mark.parametrize('mw', [
+        CaptureResponseMiddleware(),
+        [CaptureResponseMiddleware()],
+        (CaptureResponseMiddleware(),),
+        iter([CaptureResponseMiddleware()]),
+    ])
+    def test_api_initialization_with_cors_enabled_and_middleware_param(self, mw):
+        app = falcon.API(middleware=mw, cors_enable=True)
+        app.add_route('/', TestCorsResource())
+        client = testing.TestClient(app)
+        result = client.simulate_get()
+        assert result.headers['Access-Control-Allow-Origin'] == '*'

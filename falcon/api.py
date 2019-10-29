@@ -20,6 +20,7 @@ import re
 from falcon import api_helpers as helpers, DEFAULT_MEDIA_TYPE, routing
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
+from falcon.middlewares import CORSMiddleware
 from falcon.request import Request, RequestOptions
 import falcon.responders
 from falcon.response import Response, ResponseOptions
@@ -136,6 +137,11 @@ class API:
             when that same component's ``process_request()`` (or that of
             a component higher up in the stack) raises an exception.
 
+        cors_enable (bool): Set this flag to ``True`` to enable a simple
+            CORS policy for all responses, including support for preflighted
+            requests (default ``False``).
+            (See also: :ref:`CORS <cors>`)
+
     Attributes:
         req_options: A set of behavioral options related to incoming
             requests. (See also: :py:class:`~.RequestOptions`)
@@ -155,15 +161,33 @@ class API:
                  '_error_handlers', '_media_type', '_router', '_sinks',
                  '_serialize_error', 'req_options', 'resp_options',
                  '_middleware', '_independent_middleware', '_router_search',
-                 '_static_routes')
+                 '_static_routes', '_cors_enable')
 
     def __init__(self, media_type=DEFAULT_MEDIA_TYPE,
                  request_type=Request, response_type=Response,
                  middleware=None, router=None,
-                 independent_middleware=True):
+                 independent_middleware=True, cors_enable=False):
         self._sinks = []
         self._media_type = media_type
         self._static_routes = []
+
+        if cors_enable:
+            cm = CORSMiddleware()
+
+            if middleware is None:
+                middleware = [cm]
+            else:
+                try:
+                    # NOTE(kgriffs): Check to see if middleware is an
+                    #   iterable, and if so, append the CORSMiddleware
+                    #   instance.
+                    iter(middleware)
+                    middleware = list(middleware)
+                    middleware.append(cm)
+                except TypeError:
+                    # NOTE(kgriffs): Assume the middleware kwarg references
+                    #   a single middleware component.
+                    middleware = [middleware, cm]
 
         # set middleware
         self._middleware = helpers.prepare_middleware(
@@ -204,7 +228,6 @@ class API:
                 status and headers on a response.
 
         """
-
         req = self._request_type(env, options=self.req_options)
         resp = self._response_type(options=self.resp_options)
         resource = None
