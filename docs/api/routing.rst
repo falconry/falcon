@@ -40,10 +40,10 @@ Here's a quick example to show how all the pieces fit together:
             # illustrate how this may be overridden as needed.
             resp.status = falcon.HTTP_200
 
-    api = application = falcon.App()
+    app = application = falcon.App()
 
     images = ImagesResource()
-    api.add_route('/images', images)
+    app.add_route('/images', images)
 
 
 Default Router
@@ -168,19 +168,19 @@ specifications in the URI template:
 .. code:: python
 
     # IntConverter()
-    api.add_route(
+    app.add_route(
         '/a/{some_field:int}',
         some_resource
     )
 
     # IntConverter(8)
-    api.add_route(
+    app.add_route(
         '/b/{some_field:int(8)}',
         some_resource
     )
 
     # IntConverter(8, min=10000000)
-    api.add_route(
+    app.add_route(
         '/c/{some_field:int(8, min=10000000)}',
         some_resource
     )
@@ -228,7 +228,7 @@ A custom routing engine may be specified when instantiating
 .. code:: python
 
     router = MyRouter()
-    api = App(router=router)
+    app = App(router=router)
 
 Custom routers may derive from the default :py:class:`~.CompiledRouter`
 engine, or implement a completely different routing strategy (such as

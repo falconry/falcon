@@ -88,10 +88,10 @@ a handler that can process that data.
         'application/msgpack': media.MessagePackHandler(),
     })
 
-    api = falcon.API(media_type='application/msgpack')
+    app = falcon.App(media_type='application/msgpack')
 
-    api.req_options.media_handlers = handlers
-    api.resp_options.media_handlers = handlers
+    app.req_options.media_handlers = handlers
+    app.resp_options.media_handlers = handlers
 
 Alternatively, if you would like to add an additional handler such as
 MessagePack, this can be easily done in the following manner:
@@ -106,10 +106,10 @@ MessagePack, this can be easily done in the following manner:
         'application/msgpack': media.MessagePackHandler(),
     }
 
-    api = falcon.App()
+    app = falcon.App()
 
-    api.req_options.media_handlers.update(extra_handlers)
-    api.resp_options.media_handlers.update(extra_handlers)
+    app.req_options.media_handlers.update(extra_handlers)
+    app.resp_options.media_handlers.update(extra_handlers)
 
 
 Supported Handler Types

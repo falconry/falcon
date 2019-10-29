@@ -4,7 +4,7 @@ Changelog for Falcon 1.0.0
 Breaking Changes
 ----------------
 - The deprecated global hooks feature has been removed.
-  :class:`~falcon.App` no longer accepts `before` and `after`
+  :class:`~falcon.API` no longer accepts `before` and `after`
   kwargs. Applications can work around this by migrating any logic
   contained in global hooks to reside in middleware components instead.
 - The middleware method :meth:`process_resource` must now accept

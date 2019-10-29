@@ -48,7 +48,7 @@ that in mind, writing a high-quality API based on Falcon requires that:
 
 .. tip:: Falcon will re-raise errors that do not inherit from
     :class:`~falcon.HTTPError` unless you have registered a custom error
-    handler for that type (see also: :ref:`falcon.App <api>`).
+    handler for that type (see also: :ref:`falcon.App <app>`).
 
 How do I generate API documentation for my Falcon API?
 ------------------------------------------------------
@@ -271,8 +271,8 @@ same resource class:
 
 
     resource = MyResource()
-    api.add_route('/resources/{id}', resource)
-    api.add_route('/resources', resource, suffix='collection')
+    app.add_route('/resources/{id}', resource)
+    app.add_route('/resources', resource, suffix='collection')
 
 What is the recommended way to map related routes to resource classes?
 ----------------------------------------------------------------------
@@ -340,7 +340,7 @@ classes:
             pass
 
 
-    api = falcon.App()
+    app = falcon.App()
 
     # Game and GameState are closely related, and so it
     # probably makes sense for them to share an object
@@ -354,9 +354,9 @@ classes:
     # layer.
     game_dao = myapp.DAL.Game(myconfig)
 
-    api.add_route('/game/ping', Ping())
-    api.add_route('/game/{game_id}', Game(game_dao))
-    api.add_route('/game/{game_id}/state', GameState(game_dao))
+    app.add_route('/game/ping', Ping())
+    app.add_route('/game/{game_id}', Game(game_dao))
+    app.add_route('/game/{game_id}/state', GameState(game_dao))
 
 Alternatively, a single resource class could implement suffixed responders in
 order to handle all three routes:
@@ -387,13 +387,13 @@ order to handle all three routes:
     # ...
 
 
-    api = falcon.App()
+    app = falcon.App()
 
     game = Game(myapp.DAL.Game(myconfig))
 
-    api.add_route('/game/{game_id}', game)
-    api.add_route('/game/{game_id}/state', game, suffix='state')
-    api.add_route('/game/ping', game, suffix='ping')
+    app.add_route('/game/{game_id}', game)
+    app.add_route('/game/{game_id}/state', game, suffix='state')
+    app.add_route('/game/ping', game, suffix='ping')
 
 Extensibility
 ~~~~~~~~~~~~~
@@ -409,7 +409,7 @@ simply wrap your api instance with a middleware app. For example:
     import my_restful_service
     import some_middleware
 
-    app = some_middleware.DoSomethingFancy(my_restful_service.api)
+    app = some_middleware.DoSomethingFancy(my_restful_service.app)
 
 See also the `WSGI middleware example <https://www.python.org/dev/peps/pep-3333/#middleware-components-that-play-both-sides>`_ given in PEP-3333.
 
@@ -502,7 +502,7 @@ globally for each instance of :class:`falcon.API` via the
 
 .. code:: python
 
-    api.req_options.keep_blank_qs_values = True
+    app.req_options.keep_blank_qs_values = True
 
 Why are '+' characters in my params being converted to spaces?
 --------------------------------------------------------------
@@ -527,7 +527,7 @@ the form parameters accessible via :attr:`~.Request.params`,
 
 .. code:: python
 
-    api.req_options.auto_parse_form_urlencoded = True
+    app.req_options.auto_parse_form_urlencoded = True
 
 Alternatively, POSTed form parameters may be read directly from
 :attr:`~.Request.stream` and parsed via
@@ -590,7 +590,7 @@ handles commas in a query string by setting the
 
 .. code:: python
 
-    api.req_options.auto_parse_qs_csv = False
+    app.req_options.auto_parse_qs_csv = False
 
 When :attr:`~falcon.RequestOptions.auto_parse_qs_csv` is set to ``False``, the
 value of the query string ``?c={'a':1,'b':2}`` will be added to
@@ -654,7 +654,7 @@ types:
 
     # ...
 
-    api = falcon.App(request_type=RequestWithDictContext,
+    app = falcon.App(request_type=RequestWithDictContext,
                      response_type=ResponseWithDictContext)
 
 Response Handling

@@ -55,7 +55,7 @@ Now, open ``app.py`` in your favorite text editor and add the following lines:
 
     import falcon
 
-    api = application = falcon.App()
+    app = application = falcon.App()
 
 This code creates your WSGI application and aliases it as ``api``. You can use any
 variable names you like, but we'll use ``application`` since that is what
@@ -129,7 +129,7 @@ since the latter doesn't work under Windows:
 .. code:: bash
 
     $ pip install waitress
-    $ waitress-serve --port=8000 look.app:api
+    $ waitress-serve --port=8000 look.app:app
 
 Now, in a different terminal, try querying the running app with curl:
 
@@ -282,10 +282,10 @@ Next let's wire up this resource and see it in action. Go back to
     from .images import Resource
 
 
-    api = application = falcon.App()
+    app = application = falcon.App()
 
     images = Resource()
-    api.add_route('/images', images)
+    app.add_route('/images', images)
 
 Now, when a request comes in for ``/images``, Falcon will call the
 responder on the images resource that corresponds to the requested
@@ -447,12 +447,12 @@ Next, edit ``test_app.py`` to look like this:
     import msgpack
     import pytest
 
-    from look.app import api
+    from look.app import app
 
 
     @pytest.fixture
     def client():
-        return testing.TestClient(api)
+        return testing.TestClient(app)
 
 
     # pytest will inject the object returned by the "client" function
@@ -767,11 +767,11 @@ Hmm, it looks like we forgot to update ``app.py``. Let's do that now:
     from .images import ImageStore, Resource
 
 
-    api = application = falcon.App()
+    app = application = falcon.App()
 
     image_store = ImageStore('.')
     images = Resource(image_store)
-    api.add_route('/images', images)
+    app.add_route('/images', images)
 
 Let's try again:
 
@@ -793,9 +793,9 @@ similar to the following:
 
     def create_app(image_store):
         image_resource = Resource(image_store)
-        api = falcon.App()
-        api.add_route('/images', image_resource)
-        return api
+        app = falcon.App()
+        app.add_route('/images', image_resource)
+        return app
 
 
     def get_app():
@@ -839,8 +839,8 @@ look similar to this:
 
     @pytest.fixture
     def client(mock_store):
-        api = look.app.create_app(mock_store)
-        return testing.TestClient(api)
+        app = look.app.create_app(mock_store)
+        return testing.TestClient(app)
 
 
     def test_list_images(client):
@@ -1020,9 +1020,9 @@ the image storage directory with an environment variable:
 
     def create_app(image_store):
         image_resource = Resource(image_store)
-        api = falcon.App()
-        api.add_route('/images', image_resource)
-        return api
+        app = falcon.App()
+        app.add_route('/images', image_resource)
+        return app
 
 
     def get_app():
@@ -1212,10 +1212,10 @@ similar to the following:
 
 
     def create_app(image_store):
-        api = falcon.App()
-        api.add_route('/images', images.Collection(image_store))
-        api.add_route('/images/{name}', images.Item(image_store))
-        return api
+        app = falcon.App()
+        app.add_route('/images', images.Collection(image_store))
+        app.add_route('/images/{name}', images.Item(image_store))
+        return app
 
 
     def get_app():

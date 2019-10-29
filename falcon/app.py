@@ -446,8 +446,8 @@ class App:
         ``'/foo/bar'`` route, and ``'/foo/xyz/thing.js'`` being mapped to the
         ``'/foo'`` route::
 
-            api.add_static_route('/foo', foo_path)
-            api.add_static_route('/foo/bar', foobar_path)
+            app.add_static_route('/foo', foo_path)
+            app.add_static_route('/foo/bar', foobar_path)
 
         Args:
             prefix (str): The path prefix to match for this route. If the
@@ -866,8 +866,7 @@ class App:
         return [], 0
 
 
-# NOTE(mikeyusko): This function is temporary
-# and will be deleted once
+# NOTE(mikeyusko): This function is temporary and will be deleted once
 # the API alias will be removed
 def api(*args, **kwargs):
     warnings.warn(

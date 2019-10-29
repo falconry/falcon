@@ -7,7 +7,7 @@ Middleware components provide a way to execute logic before the
 framework routes each request, after each request is routed but before
 the target responder is called, or just before the response is returned
 for each request. Components are registered with the `middleware` kwarg
-when instantiating Falcon's :ref:`App class <api>`.
+when instantiating Falcon's :ref:`App class <app>`.
 
 .. Note::
     Unlike hooks, middleware methods apply globally to the entire App.
@@ -90,7 +90,7 @@ Falcon's middleware interface is defined as follows:
 Each component's *process_request*, *process_resource*, and
 *process_response* methods are executed hierarchically, as a stack, following
 the ordering of the list passed via the `middleware` kwarg of
-:ref:`falcon.App<api>`. For example, if a list of middleware objects are
+:ref:`falcon.App<app>`. For example, if a list of middleware objects are
 passed as ``[mob1, mob2, mob3]``, the order of execution is as follows::
 
     mob1.process_request
@@ -177,7 +177,7 @@ error, the framework would execute the stack as follows::
 As illustrated above, by default, all *process_response* methods will be
 executed, even when a *process_request*, *process_resource*, or resource
 responder raises an error. This behavior is controlled by the
-:ref:`App class's <api>` `independent_middleware` keyword argument.
+:ref:`App class's <app>` `independent_middleware` keyword argument.
 
 Finally, if one of the *process_response* methods raises an error,
 or the routed ``on_*`` responder method itself raises an error, the

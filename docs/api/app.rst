@@ -1,4 +1,4 @@
-.. _api:
+.. _app:
 
 The App Class
 =============
