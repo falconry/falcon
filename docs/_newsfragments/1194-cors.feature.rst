@@ -1,0 +1,3 @@
+A new kwarg, ``cors_enable``, was added to the :class:`falcon.API` initializer.
+``cors_enable`` can be used to enable a simple blanket CORS policy for all
+responses. (See also: :ref:`cors`.)
