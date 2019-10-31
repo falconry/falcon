@@ -35,10 +35,11 @@ class URLEncodedFormHandler(BaseHandler):
         # catch malicious input.
         body = body.decode('ascii')
 
-        # NOTE(vytas): Due to the Request.media property mechanics, this path
-        # is normally never hit.
+        # TODO(vytas): We are not short-circuiting here for performance (as
+        #   empty URL-encoded payload should not be a common case), but to work
+        #   around #1600
         if not body:
-            return None
+            return {}
 
         return parse_query_string(body,
                                   keep_blank=self.keep_blank,

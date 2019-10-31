@@ -10,7 +10,7 @@ from falcon import testing
 def test_deserialize_empty_form():
     handler = media.URLEncodedFormHandler()
     stream = io.BytesIO(b'')
-    assert handler.deserialize(stream, falcon.MEDIA_URLENCODED, 0) is None
+    assert handler.deserialize(stream, falcon.MEDIA_URLENCODED, 0) == {}
 
 
 def test_deserialize_invalid_unicode():
