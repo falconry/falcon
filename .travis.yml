@@ -29,8 +29,10 @@ matrix:
           env: TOXENV=py37_smoke_cython
         - python: 3.7
           env: TOXENV=docs
-        - python: 3.7
-          env: TOXENV=hug
+        # TODO(kgriffs): Re-enable once hug has a chance to address
+        #   breaking changes in Falcon 3.0
+        # - python: 3.7
+        #   env: TOXENV=hug
         - python: 3.7
           env: TOXENV=check_vendored
         - python: 3.8
