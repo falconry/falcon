@@ -67,6 +67,7 @@ middleware. Here is an example of how this can be done:
         def process_request(self, req, resp):
             resp.content_type = req.accept
 
+.. _custom_media_handlers:
 
 Replacing the Default Handlers
 ------------------------------
@@ -124,7 +125,8 @@ Supported Handler Types
 .. autoclass:: falcon.media.MultipartFormHandler
     :members:
 
-.. _custom_media_handlers:
+.. autoclass:: falcon.media.URLEncodedFormHandler
+    :members:
 
 Custom Handler Type
 -------------------
@@ -157,6 +159,7 @@ common media types, including the following:
 
     falcon.MEDIA_JSON
     falcon.MEDIA_MSGPACK
+    falcon.MEDIA_URLENCODED
     falcon.MEDIA_YAML
     falcon.MEDIA_XML
     falcon.MEDIA_HTML
