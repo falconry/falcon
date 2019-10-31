@@ -33,6 +33,10 @@ matrix:
           env: TOXENV=hug
         - python: 3.7
           env: TOXENV=check_vendored
+        - python: 3.8
+          env: TOXENV=py38
+        - python: 3.8
+          env: TOXENV=py38_cython
 
 script: tox
 
