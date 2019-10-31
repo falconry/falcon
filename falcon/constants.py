@@ -51,6 +51,8 @@ MEDIA_JSON = 'application/json'
 # but the use of the 'x-' prefix is discouraged by RFC 6838.
 MEDIA_MSGPACK = 'application/msgpack'
 
+MEDIA_URLENCODED = 'application/x-www-form-urlencoded'
+
 # NOTE(kgriffs): An internet media type for YAML has not been
 # registered. RoR uses 'application/x-yaml', but since use of
 # 'x-' is discouraged by RFC 6838, we don't use it in Falcon.
