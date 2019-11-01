@@ -537,8 +537,8 @@ installed by default, thus making the POSTed form available as
             # ...
 
             # NOTE: Falcon chooses the right media handler automatically, but
-            #   if we wanted differentiate from, for instance, JSON, we could
-            #   check whether req.content_type == falcon.MEDIA_URLENCODED
+            #   if we wanted to differentiate from, for instance, JSON, we
+            #   could check whether req.content_type == falcon.MEDIA_URLENCODED
             #   or use mimeparse to implement more sophisticated logic.
 
 .. note::
