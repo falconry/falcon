@@ -1,11 +1,86 @@
+from cpython.mem cimport PyMem_Malloc, PyMem_Free
+from libc.string cimport memcpy
+
+
+cdef list build_hex_table():
+    cdef list result = [-1] * 0x10000
+    for ch1 in '0123456789abcdefABCDEF':
+        for ch2 in '0123456789abcdefABCDEF':
+            try:
+                result[(ord(ch1) << 8) | ord(ch2)] = int(ch1 + ch2, 16)
+            except ValueError:
+                pass
+
+    return result
+
+
+# PERF(vytas): Cache hex characters lookup table
+cdef int[0x10000] HEX_CHARS
+HEX_CHARS[:] = build_hex_table()
+
 # PERF(vytas): Cache an empty string object.
 cdef EMPTY_STRING = u''
 
 
+cdef inline int cy_decode_hex(unsigned char nibble1, unsigned char nibble2):
+    return HEX_CHARS[(nibble1 << 8) | nibble2]
+
+
 cdef unicode cy_decode(unsigned char* data, Py_ssize_t start,  Py_ssize_t end,
                        Py_ssize_t encoded_start):
-    # TODO(vytas): Implement actual decoding
-    return data[start:end].decode()
+    if encoded_start < 0:
+        return data[start:end].decode()
+
+    cdef unsigned char* result
+    cdef Py_ssize_t src_start = start
+    cdef Py_ssize_t dst_start = 0
+    cdef Py_ssize_t pos
+    cdef int decoded
+
+    result = <unsigned char*> PyMem_Malloc(end - start)
+    if not result:
+        raise MemoryError()
+
+    try:
+        for pos in range(encoded_start, end):
+            if data[pos] not in b'+%':
+                continue
+
+            if src_start < pos:
+                memcpy(result + dst_start, data + src_start,
+                       pos - src_start)
+
+            dst_start += pos - src_start
+            src_start = pos
+
+            if data[pos] == b'+':
+                result[dst_start] = b' '
+                dst_start += 1
+                src_start += 1
+                continue
+
+            # NOTE(vytas): Else %
+            if pos < end - 2:
+                decoded = cy_decode_hex(data[pos+1], data[pos+2])
+                if decoded < 0:
+                    continue
+
+                # NOTE(vytas): Succeeded decoding a byte
+                result[dst_start] = decoded
+                dst_start += 1
+                src_start += 3
+                # NOTE(vytas): It is somewhat ugly to wind the loop variable
+                #   like that, but hopefully it is a lesser sin in C.
+                pos += 2
+
+        if src_start < end:
+            memcpy(result + dst_start, data + src_start,
+                   end - src_start)
+
+        return result[:dst_start + end - src_start].decode()
+
+    finally:
+        PyMem_Free(result)
 
 
 cdef cy_parse_query_string(unsigned char* data, Py_ssize_t length, bint keep_blank):
@@ -65,9 +140,11 @@ cdef cy_parse_query_string(unsigned char* data, Py_ssize_t length, bint keep_bla
         # PERF(vytas): Record positions of the first encoded character, if any.
         #  This will be used to determine where to start decoding, if at all.
         if partition < 0:
-            encoded_start_key = pos
+            if encoded_start_key < 0:
+                encoded_start_key = pos
         else:
-            encoded_start_val = pos
+            if encoded_start_val < 0:
+                encoded_start_val = pos
 
     if length > start:
         if partition >= 0:
