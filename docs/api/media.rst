@@ -3,10 +3,11 @@
 Media
 =====
 
-Falcon allows for easy and customizable internet media type handling. By default
-Falcon only enables a single JSON handler. However, additional handlers
-can be configured through the :any:`falcon.RequestOptions` and
-:any:`falcon.ResponseOptions` objects specified on your :any:`falcon.API`.
+Falcon allows for easy and customizable internet media type handling. By
+default Falcon only enables handlers for JSON and URL-encoded HTML
+forms. However, additional handlers can be configured through the
+:any:`falcon.RequestOptions` and :any:`falcon.ResponseOptions` objects
+specified on your :any:`falcon.API`.
 
 .. note::
 

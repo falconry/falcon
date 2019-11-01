@@ -1,7 +1,9 @@
 from collections import UserDict
 
 from falcon import errors
+from falcon.constants import MEDIA_URLENCODED
 from falcon.media import JSONHandler
+from falcon.media import URLEncodedFormHandler
 from falcon.vendor import mimeparse
 
 
@@ -11,6 +13,7 @@ class Handlers(UserDict):
         handlers = initial or {
             'application/json': JSONHandler(),
             'application/json; charset=UTF-8': JSONHandler(),
+            MEDIA_URLENCODED: URLEncodedFormHandler(),
         }
 
         # NOTE(jmvrbanac): Directly calling UserDict as it's not inheritable.

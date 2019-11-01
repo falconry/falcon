@@ -515,46 +515,39 @@ To work around this, RFC 3986 specifies ``+`` as a reserved character,
 and recommends percent-encoding any such characters when their literal value is
 desired (``%2B`` in the case of ``+``).
 
+.. _access_urlencoded_form:
+
 How can I access POSTed form params?
 ------------------------------------
-By default, Falcon does not consume request bodies. However, setting
-the :attr:`~RequestOptions.auto_parse_form_urlencoded` to ``True``
-on an instance of ``falcon.API``
-will cause the framework to consume the request body when the
-content type is ``application/x-www-form-urlencoded``, making
-the form parameters accessible via :attr:`~.Request.params`,
-:meth:`~.Request.get_param`, etc.
-
-.. code:: python
-
-    api.req_options.auto_parse_form_urlencoded = True
-
-Alternatively, :class:`falcon.media.URLEncodedFormHandler` may be
-:ref:`installed <custom_media_handlers>` to handle the
-``application/x-www-form-urlencoded`` content type. The form parameters can
-then be simply accessed as :attr:`Request.media <falcon.Request.media>`:
+By default, Falcon does not consume request bodies. However, a :ref:`media
+handler <media>` for the ``application/x-www-form-urlencoded`` content type is
+installed by default, thus making the POSTed form available as
+:attr:`Request.media <falcon.Request.media>` with zero configuration:
 
 .. code:: python
 
     import falcon
-    from falcon import media
 
+    # ...
 
-    handlers = media.Handlers({
-        falcon.MEDIA_JSON: media.JSONHandler(),
-        falcon.MEDIA_URLENCODED: media.URLEncodedFormHandler(),
-        # ... and any other request media handlers you may need
-    })
+    class MyResource:
+        def on_post(self, req, resp):
+            form = req.media
+            # TODO: Handle the submitted URL-encoded form
+            # ...
 
-    api = falcon.API()
-    api.req_options.media_handlers = handlers
+            # NOTE: Falcon chooses the right media handler automatically, but
+            #   if we wanted differentiate from, for instance, JSON, we could
+            #   check whether req.content_type == falcon.MEDIA_URLENCODED
+            #   or use mimeparse to implement more sophisticated logic.
 
 .. note::
-   Going forward, the :attr:`~RequestOptions.auto_parse_form_urlencoded` way to
-   access the submitted form may be deprecated in favor of the media handler in
-   further development versions of Falcon 3.0 series;
-   :class:`falcon.media.URLEncodedFormHandler` would then be installed by
-   default.
+   In Falcon 2.0 and before, a POSTed URL-encoded form could be automatically
+   consumed and merged onto :attr:`~.Request.params` by setting the
+   :attr:`~RequestOptions.auto_parse_form_urlencoded` option to ``True``. This
+   behavior is still supported in Falcon 3.0 series, but it should be
+   considered deprecated in favor of the media handler, and may be removed in a
+   future Falcon release.
 
 POSTed form parameters may also be read directly from
 :attr:`~.Request.stream` and parsed via

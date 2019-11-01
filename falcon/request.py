@@ -1164,6 +1164,14 @@ class Request:
             :py:attr:`~.RequestOptions.auto_parse_form_urlencoded` to
             ``True`` via :any:`API.req_options`.
 
+            Note, however, that the
+            :attr:`~.RequestOptions.auto_parse_form_urlencoded` option is
+            considered deprecated as of Falcon 3.0 in favor of accessing the
+            URL-encoded form via :attr:`~Request.media`, and it may be removed
+            in a future release.
+
+            See also: :ref:`access_urlencoded_form`
+
         Note:
             Similar to the way multiple keys in form data is handled,
             if a query parameter is assigned a comma-separated list of
@@ -1811,6 +1819,14 @@ class RequestOptions:
 
             Enabling this option makes the form parameters accessible
             via :attr:`~.params`, :meth:`~.get_param`, etc.
+
+            Warning:
+                The `auto_parse_form_urlencoded` option is considered
+                deprecated as of Falcon 3.0 in favor of accessing the
+                URL-encoded form via :attr:`~Request.media`, and it may be
+                removed in a future release.
+
+                See also: :ref:`access_urlencoded_form`
 
             Warning:
                 When this option is enabled, the request's body
