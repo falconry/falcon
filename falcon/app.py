@@ -827,10 +827,9 @@ class App:
 
                 return True
 
-        # NOTE(kgriffs): No error handlers are defined for ex
-        # and it is not one of (HTTPStatus, HTTPError), since it
-        # would have matched one of the corresponding default
-        # handlers.
+        # NOTE(kgriffs): No error handlers are defined for ex and it
+        # is not one of (HTTPStatus, HTTPError, Exception), since it
+        # would have matched one of the corresponding default handlers.
         return False
 
     # PERF(kgriffs): Moved from api_helpers since it is slightly faster
