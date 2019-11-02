@@ -207,7 +207,7 @@ class App:
         self._request_type = request_type
         self._response_type = response_type
 
-        self._error_handlers = []
+        self._error_handlers = {}
         self._serialize_error = helpers.default_serialize_error
 
         self.req_options = RequestOptions()
@@ -616,18 +616,11 @@ class App:
         except TypeError:
             exception_tuple = (exception, )
 
-        if all(issubclass(exc, BaseException) for exc in exception_tuple):
-            # Insert at the head of the list in case we get duplicate
-            # adds (will cause the most recently added one to win).
-            if len(exception_tuple) == 1:
-                # In this case, insert only the single exception type
-                # (not a tuple), to avoid unnnecessary overhead in the
-                # exception handling path.
-                self._error_handlers.insert(0, (exception_tuple[0], handler))
-            else:
-                self._error_handlers.insert(0, (exception_tuple, handler))
-        else:
-            raise TypeError('"exception" must be an exception type.')
+        for exc in exception_tuple:
+            if not issubclass(exc, BaseException):
+                raise TypeError('"exception" must be an exception type.')
+
+            self._error_handlers[exc] = handler
 
     def set_error_serializer(self, serializer):
         """Override the default serializer for instances of :class:`~.HTTPError`.
@@ -799,6 +792,22 @@ class App:
         self._compose_error_response(
             req, resp, falcon.HTTPInternalServerError())
 
+    def _find_error_handler(self, ex):
+        # NOTE(csojinb): The `__mro__` class attribute returns the method
+        # resolution order tuple, i.e. the complete linear inheritance chain
+        # ``(type(ex), ..., object)``. For a valid exception class, the last
+        # two entries in the tuple will always be ``BaseException``and
+        # ``object``, so here we iterate over the lineage of exception types,
+        # from most to least specific.
+
+        # PERF(csojinb): The expression ``type(ex).__mro__[:-1]`` here is not
+        # super readable, but we inline it to avoid function call overhead.
+        for exc in type(ex).__mro__[:-1]:
+            handler = self._error_handlers.get(exc)
+
+            if handler is not None:
+                return handler
+
     def _handle_exception(self, req, resp, ex, params):
         """Handle an exception raised from mw or a responder.
 
@@ -815,21 +824,22 @@ class App:
             bool: ``True`` if a handler was found and called for the
             exception, ``False`` otherwise.
         """
+        err_handler = self._find_error_handler(ex)
 
-        for err_type, err_handler in self._error_handlers:
-            if isinstance(ex, err_type):
-                try:
-                    err_handler(req, resp, ex, params)
-                except HTTPStatus as status:
-                    self._compose_status_response(req, resp, status)
-                except HTTPError as error:
-                    self._compose_error_response(req, resp, error)
+        if err_handler is not None:
+            try:
+                err_handler(req, resp, ex, params)
+            except HTTPStatus as status:
+                self._compose_status_response(req, resp, status)
+            except HTTPError as error:
+                self._compose_error_response(req, resp, error)
 
-                return True
+            return True
 
-        # NOTE(kgriffs): No error handlers are defined for ex and it
-        # is not one of (HTTPStatus, HTTPError, Exception), since it
-        # would have matched one of the corresponding default handlers.
+        # NOTE(kgriffs): No error handlers are defined for ex
+        # and it is not one of (HTTPStatus, HTTPError), since it
+        # would have matched one of the corresponding default
+        # handlers.
         return False
 
     # PERF(kgriffs): Moved from api_helpers since it is slightly faster
