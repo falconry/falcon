@@ -91,14 +91,14 @@ class TestErrorHandler:
         assert result.status_code == 723
         assert result.text == 'error: CustomException'
 
-    def test_error_order_duplicate(self, client):
+    def test_error_precedence_duplicate(self, client):
         client.app.add_error_handler(Exception, capture_error)
         client.app.add_error_handler(Exception, handle_error_first)
 
         result = client.simulate_get()
         assert result.text == 'first error handler'
 
-    def test_error_order_subclass(self, client):
+    def test_error_precedence_subclass(self, client):
         client.app.add_error_handler(Exception, capture_error)
         client.app.add_error_handler(CustomException, handle_error_first)
 
@@ -110,13 +110,13 @@ class TestErrorHandler:
         assert result.status_code == 723
         assert result.text == 'error: Plain Exception'
 
-    def test_error_order_subclass_masked(self, client):
+    def test_error_precedence_subclass_order_indifference(self, client):
         client.app.add_error_handler(CustomException, handle_error_first)
         client.app.add_error_handler(Exception, capture_error)
 
         result = client.simulate_delete()
-        assert result.status_code == 723
-        assert result.text == 'error: CustomException'
+        assert result.status_code == 200
+        assert result.text == 'first error handler'
 
     @pytest.mark.parametrize('exceptions', [
         (Exception, CustomException),
