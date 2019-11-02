@@ -538,18 +538,30 @@ class App:
         the client.  Alternatively, a handler may modify `resp`
         directly.
 
-        Error handlers are matched in LIFO order. In other words, when
-        searching for an error handler to match a raised exception, and
-        more than one handler matches the exception type, the framework
-        will choose the one that was most recently registered.
-        Therefore, more general error handlers (e.g., for the
-        standard ``Exception`` type) should be added first, to avoid
-        masking more specific handlers for subclassed types. For example::
+        An error handler "matches" a raised exception if the exception is an
+        instance of the corresponding exception type. If more than one error
+        handler matches the raised exception, the framework will choose the
+        most specific one, as determined by the method resolution order of the
+        raised exception type. If multiple error handlers are registered for the
+        *same* exception class, then the most recently-registered handler is
+        used.
 
-            app = falcon.App()
-            app.add_error_handler(Exception, custom_handle_uncaught_exception)
+        For example, suppose we register error handlers as follows::
+
+            app = falcon.API()
+            app.add_error_handler(falcon.HTTPNotFound, custom_handle_not_found)
             app.add_error_handler(falcon.HTTPError, custom_handle_http_error)
-            app.add_error_handler(CustomException)
+            app.add_error_handler(Exception, custom_handle_uncaught_exception)
+            app.add_error_handler(falcon.HTTPNotFound, custom_handle_404)
+
+        If an instance of ``falcon.HTTPForbidden`` is raised, it will be
+        handled by ``custom_handle_http_error()``. ``falcon.HTTPError`` is a
+        superclass of ``falcon.HTTPForbidden`` and a subclass of ``Exception``,
+        so it is the most specific exception type with a registered handler.
+
+        If an instance of ``falcon.HTTPNotFound`` is raised, it will be handled
+        by ``custom_handle_404()``, not by ``custom_handle_not_found()``, because
+        ``custom_handle_404()`` was registered more recently.
 
         .. Note::
 
@@ -558,11 +570,6 @@ class App:
             the standard ``Exception`` type, which prevents passing uncaught
             exceptions to the WSGI server. These can be overridden by adding a
             custom error handler method for the exception type in question.
-
-            Be aware that both :class:`~.HTTPError` and :class:`~.HTTPStatus`
-            inherit from the standard ``Exception`` type, so overriding the
-            default ``Exception`` handler will override all three default
-            handlers, due to the LIFO ordering of handler-matching.
 
         Args:
             exception (type or iterable of types): When handling a request,
