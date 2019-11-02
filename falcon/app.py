@@ -596,6 +596,11 @@ class App:
                 If an iterable of exception types is specified instead of
                 a single type, the handler must be explicitly specified.
 
+        .. versionchanged:: 3.0
+            Breaking change: error handler now selected by most specific
+            matching error class, rather than most recently registered matching
+            error class.
+
         """
         def wrap_old_handler(old_handler):
             @wraps(old_handler)
