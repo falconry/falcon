@@ -19,7 +19,7 @@ Changes to Supported Platforms
 New & Improved
 --------------
 
-- We added a new method, :meth:`~.App.add_static_route`, that makes it easy to
+- We added a new method, :meth:`~.API.add_static_route`, that makes it easy to
   serve files from a local directory. This feature provides an alternative to
   serving files from the web server when you don't have that option, when
   authorization is required, or for testing purposes.

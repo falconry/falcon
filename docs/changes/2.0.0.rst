@@ -63,7 +63,7 @@ Breaking Changes
   instead of ``False``.
 - :attr:`~.RequestOptions.auto_parse_qs_csv` now defaults to ``False``
   instead of ``True``.
-- ``independent_middleware`` kwarg on :class:`falcon.App` now defaults to
+- ``independent_middleware`` kwarg on :class:`falcon.API` now defaults to
   ``True`` instead of ``False``.
 - The ``stream_len`` property of the :class:`~.Response` class was changed to
   be an alias of the new :attr:`~.Response.content_length` property. Please
