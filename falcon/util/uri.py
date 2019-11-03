@@ -414,7 +414,9 @@ parse_query_string = _cy_parse_query_string or parse_query_string  # NOQA
 
 __all__ = [
     'decode',
+    'encode',
+    'encode_value',
     'parse_host',
     'parse_query_string',
-    'unquote_string'
+    'unquote_string',
 ]
