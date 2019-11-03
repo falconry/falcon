@@ -446,9 +446,15 @@ for this exception type. Alternatively, you may be able to configure your web
 server to transform the response for you (e.g., using Nginx's ``error_page``
 directive).
 
-500 errors are typically the result of an unhandled exception making its way
-up to the web server. To handle these errors more gracefully, you can add a
-custom error handler for Python's base :class:`Exception` type.
+By default, non-system-exiting exceptions that do not inherit from
+:class:`~.HTTPError` or :class:`~.HTTPStatus` are handled by Falcon with a
+plain HTTP 500 error. To provide your own 500 logic, you can add a custom error
+handler for Python's base :class:`Exception` type, though be aware that doing
+so will also override the default handlers for :class:`~.HTTPError` and
+:class:`~.HTTPStatus`.
+
+See :ref:`errors` and the :meth:`falcon.API.add_error_handler` docs for more
+details.
 
 Request Handling
 ~~~~~~~~~~~~~~~~
@@ -529,7 +535,34 @@ the form parameters accessible via :attr:`~.Request.params`,
 
     app.req_options.auto_parse_form_urlencoded = True
 
-Alternatively, POSTed form parameters may be read directly from
+Alternatively, :class:`falcon.media.URLEncodedFormHandler` may be
+:ref:`installed <custom_media_handlers>` to handle the
+``application/x-www-form-urlencoded`` content type. The form parameters can
+then be simply accessed as :attr:`Request.media <falcon.Request.media>`:
+
+.. code:: python
+
+    import falcon
+    from falcon import media
+
+
+    handlers = media.Handlers({
+        falcon.MEDIA_JSON: media.JSONHandler(),
+        falcon.MEDIA_URLENCODED: media.URLEncodedFormHandler(),
+        # ... and any other request media handlers you may need
+    })
+
+    api = falcon.API()
+    api.req_options.media_handlers = handlers
+
+.. note::
+   Going forward, the :attr:`~RequestOptions.auto_parse_form_urlencoded` way to
+   access the submitted form may be deprecated in favor of the media handler in
+   further development versions of Falcon 3.0 series;
+   :class:`falcon.media.URLEncodedFormHandler` would then be installed by
+   default.
+
+POSTed form parameters may also be read directly from
 :attr:`~.Request.stream` and parsed via
 :meth:`falcon.uri.parse_query_string` or
 `urllib.parse.parse_qs() <https://docs.python.org/3.6/library/urllib.parse.html#urllib.parse.parse_qs>`_.

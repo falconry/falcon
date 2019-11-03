@@ -16,6 +16,7 @@
 
 from functools import wraps
 import re
+import traceback
 import warnings
 
 from falcon import api_helpers as helpers, DEFAULT_MEDIA_TYPE, routing
@@ -211,6 +212,7 @@ class App:
         self.resp_options.default_media_type = media_type
 
         # NOTE(kgriffs): Add default error handlers
+        self.add_error_handler(Exception, self._python_error_handler)
         self.add_error_handler(falcon.HTTPError, self._http_error_handler)
         self.add_error_handler(falcon.HTTPStatus, self._http_status_handler)
 
@@ -537,14 +539,25 @@ class App:
         will choose the one that was most recently registered.
         Therefore, more general error handlers (e.g., for the
         standard ``Exception`` type) should be added first, to avoid
-        masking more specific handlers for subclassed types.
+        masking more specific handlers for subclassed types. For example::
+
+            app = falcon.API()
+            app.add_error_handler(Exception, custom_handle_uncaught_exception)
+            app.add_error_handler(falcon.HTTPError, custom_handle_http_error)
+            app.add_error_handler(CustomException)
 
         .. Note::
 
-            By default, the framework installs two handlers, one for
-            :class:`~.HTTPError` and one for :class:`~.HTTPStatus`. These can
-            be overridden by adding a custom error handler method for the
-            exception type in question.
+            By default, the framework installs three handlers, one for
+            :class:`~.HTTPError`, one for :class:`~.HTTPStatus`, and one for
+            the standard ``Exception`` type, which prevents passing uncaught
+            exceptions to the WSGI server. These can be overridden by adding a
+            custom error handler method for the exception type in question.
+
+            Be aware that both :class:`~.HTTPError` and :class:`~.HTTPStatus`
+            inherit from the standard ``Exception`` type, so overriding the
+            default ``Exception`` handler will override all three default
+            handlers, due to the LIFO ordering of handler-matching.
 
         Args:
             exception (type or iterable of types): When handling a request,
@@ -557,7 +570,7 @@ class App:
                 If not specified explicitly, the handler will default to
                 ``exception.handle``, where ``exception`` is the error
                 type specified above, and ``handle`` is a static method
-                (i.e., decorated with @staticmethod) that accepts
+                (i.e., decorated with ``@staticmethod``) that accepts
                 the same params just described. For example::
 
                     class CustomException(CustomBaseException):
@@ -633,6 +646,11 @@ class App:
             However a custom serializer will be called regardless of the
             property value, and it may choose to override the
             representation logic.
+
+        Note:
+            A custom serializer set with this method may not be called if the
+            default error handler for :class:`~.HTTPError` has been overriden.
+            See :meth:`~.add_error_handler` for more details.
 
         The :class:`~.HTTPError` class contains helper methods,
         such as `to_json()` and `to_dict()`, that can be used from
@@ -770,6 +788,11 @@ class App:
 
     def _http_error_handler(self, req, resp, error, params):
         self._compose_error_response(req, resp, error)
+
+    def _python_error_handler(self, req, resp, error, params):
+        req.log_error(traceback.format_exc())
+        self._compose_error_response(
+            req, resp, falcon.HTTPInternalServerError())
 
     def _handle_exception(self, req, resp, ex, params):
         """Handle an exception raised from mw or a responder.

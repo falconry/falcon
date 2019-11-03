@@ -1,7 +1,7 @@
 import pytest
 
 import falcon
-from falcon import testing
+from falcon import constants, testing
 
 
 def capture_error(req, resp, ex, params):
@@ -61,14 +61,17 @@ class TestErrorHandler:
         assert result.status_code == 723
         assert not result.content
 
-    def test_uncaught_error(self, client):
-        client.app.add_error_handler(CustomException, capture_error)
-        with pytest.raises(Exception):
-            client.simulate_get()
-
-    def test_uncaught_error_else(self, client):
-        with pytest.raises(Exception):
-            client.simulate_get()
+    @pytest.mark.parametrize('get_headers, resp_content_type, resp_start', [
+        (None, constants.MEDIA_JSON, '{"'),
+        ({'accept': constants.MEDIA_JSON}, constants.MEDIA_JSON, '{"'),
+        ({'accept': constants.MEDIA_XML}, constants.MEDIA_XML, '<?xml'),
+    ])
+    def test_uncaught_python_error(self, client,
+                                   get_headers, resp_content_type, resp_start):
+        result = client.simulate_get(headers=get_headers)
+        assert result.status_code == 500
+        assert result.headers['content-type'] == resp_content_type
+        assert result.text.startswith(resp_start)
 
     def test_converted_error(self, client):
         client.app.add_error_handler(CustomException)
