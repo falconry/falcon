@@ -250,7 +250,7 @@ class TestFalconUtils:
         assert uri.unquote_string('"partial-quoted"') == 'partial-quoted'
 
     def test_parse_query_string(self):
-        query_strinq = (
+        query_string = (
             'a=http%3A%2F%2Ffalconframework.org%3Ftest%3D1'
             '&b=%7B%22test1%22%3A%20%22data1%22%'
             '2C%20%22test2%22%3A%20%22data2%22%7D'
@@ -263,7 +263,7 @@ class TestFalconUtils:
         decoded_url = 'http://falconframework.org?test=1'
         decoded_json = '{"test1": "data1", "test2": "data2"}'
 
-        result = uri.parse_query_string(query_strinq)
+        result = uri.parse_query_string(query_string)
         assert result['a'] == decoded_url
         assert result['b'] == decoded_json
         assert result['c'] == ['1', '2', '3']
@@ -272,7 +272,7 @@ class TestFalconUtils:
         assert result['f'] == ['a', 'a=b']
         assert result['é'] == 'a=b'
 
-        result = uri.parse_query_string(query_strinq, True)
+        result = uri.parse_query_string(query_string, True)
         assert result['a'] == decoded_url
         assert result['b'] == decoded_json
         assert result['c'] == ['1', '2', '3']
@@ -280,6 +280,18 @@ class TestFalconUtils:
         assert result['e'] == ['a', '', '&=,']
         assert result['f'] == ['a', 'a=b']
         assert result['é'] == 'a=b'
+
+    @pytest.mark.parametrize('query_string,keep_blank,expected', [
+        ('', True, {}),
+        ('', False, {}),
+        ('flag1&&&&&flag2&&&', True, {'flag1': '', 'flag2': ''}),
+        ('flag1&&&&&flag2&&&', False, {}),
+        ('malformed=%FG%1%Hi%%%a', False, {'malformed': '%FG%1%Hi%%%a'}),
+    ])
+    def test_parse_query_string_edge_cases(
+            self, query_string, keep_blank, expected):
+        assert uri.parse_query_string(query_string, keep_blank=keep_blank) == (
+            expected)
 
     def test_parse_host(self):
         assert uri.parse_host('::1') == ('::1', None)
