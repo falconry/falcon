@@ -29,25 +29,28 @@ _DECORABLE_METHOD_NAME = re.compile(r'^on_({})(_\w+)?$'.format(
 def before(action, *args, **kwargs):
     """Decorator to execute the given action function *before* the responder.
 
+    The `params` argument that is passed to the hook
+    contains only the fields from the URI template path; it does not
+    include query string values.
+
+    Hooks may inject extra params as needed. For example::
+
+        def do_something(req, resp, resource, params):
+            try:
+                params['id'] = int(params['id'])
+            except ValueError:
+                raise falcon.HTTPBadRequest('Invalid ID',
+                                            'ID was not valid.')
+
+            params['answer'] = 42
+
     Args:
         action (callable): A function of the form
             ``func(req, resp, resource, params)``, where `resource` is a
             reference to the resource class instance associated with the
-            request, and `params` is a dict of URI Template field names,
+            request and `params` is a dict of URI template field names,
             if any, that will be passed into the resource responder as
             kwargs.
-
-            Note:
-                Hooks may inject extra params as needed. For example::
-
-                    def do_something(req, resp, resource, params):
-                        try:
-                            params['id'] = int(params['id'])
-                        except ValueError:
-                            raise falcon.HTTPBadRequest('Invalid ID',
-                                                        'ID was not valid.')
-
-                        params['answer'] = 42
 
         *args: Any additional arguments will be passed to *action* in the
             order given, immediately following the *req*, *resp*, *resource*,

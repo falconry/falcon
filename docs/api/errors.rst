@@ -66,6 +66,10 @@ at the global level by registering one or more custom error handlers.
 See also :meth:`~.API.add_error_handler` to learn more about this
 feature.
 
+.. note::
+    By default, any uncaught exceptions will return an HTTP 500 response and
+    log details of the exception to ``wsgi.errors``.
+
 Base Class
 ----------
 

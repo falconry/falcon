@@ -7,7 +7,7 @@ RUN pip install cython
 # RUN pip install orjson
 
 RUN pip install -v --no-cache-dir --no-binary :all: falcon
-RUN pip install --no-cache-dir bottle "django<2" flask
+RUN pip install --no-cache-dir bottle "django" flask
 COPY ./benchmark.sh /benchmark.sh
 
 CMD /benchmark.sh
