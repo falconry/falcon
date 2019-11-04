@@ -86,7 +86,7 @@ cdef unicode cy_decode_no_plus(unsigned char* data, Py_ssize_t start,
             memcpy(result + dst_start, data + src_start,
                    end - src_start)
 
-        return result[:dst_start + end - src_start].decode('utf8', 'replace')
+        return result[:dst_start + end - src_start].decode('utf-8', 'replace')
 
     finally:
         PyMem_Free(result)
@@ -143,7 +143,7 @@ cdef unicode cy_decode(unsigned char* data, Py_ssize_t start, Py_ssize_t end,
             memcpy(result + dst_start, data + src_start,
                    end - src_start)
 
-        return result[:dst_start + end - src_start].decode('utf8', 'replace')
+        return result[:dst_start + end - src_start].decode('utf-8', 'replace')
 
     finally:
         PyMem_Free(result)
