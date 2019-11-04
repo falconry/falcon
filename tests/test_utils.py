@@ -201,6 +201,15 @@ class TestFalconUtils:
             'http://example.com?x=ab%2Bcd%3D42%2C9'
         ) == 'http://example.com?x=ab+cd=42,9'
 
+    @pytest.mark.parametrize('encoded,expected', [
+        ('+%80', ' �'),
+        ('+++%FF+++', '   �   '),  # impossible byte
+        ('%fc%83%bf%bf%bf%bf', '������'),  # overlong sequence
+        ('%ed%ae%80%ed%b0%80', '������'),  # paired UTF-16 surrogates
+    ])
+    def test_uri_decode_replace_bad_unicode(self, encoded, expected):
+        assert uri.decode(encoded) == expected
+
     def test_uri_decode_unquote_plus(self):
         assert uri.decode('/disk/lost+found/fd0') == '/disk/lost found/fd0'
         assert uri.decode('/disk/lost+found/fd0', unquote_plus=True) == (
@@ -287,6 +296,7 @@ class TestFalconUtils:
         ('flag1&&&&&flag2&&&', True, {'flag1': '', 'flag2': ''}),
         ('flag1&&&&&flag2&&&', False, {}),
         ('malformed=%FG%1%Hi%%%a', False, {'malformed': '%FG%1%Hi%%%a'}),
+        ('spade=♠&spade=♠', False, {'spade': ['♠', '♠']}),  # Unicode query
     ])
     def test_parse_query_string_edge_cases(
             self, query_string, keep_blank, expected):

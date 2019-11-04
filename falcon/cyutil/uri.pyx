@@ -86,7 +86,7 @@ cdef unicode cy_decode_no_plus(unsigned char* data, Py_ssize_t start,
             memcpy(result + dst_start, data + src_start,
                    end - src_start)
 
-        return result[:dst_start + end - src_start].decode()
+        return result[:dst_start + end - src_start].decode('utf8', 'replace')
 
     finally:
         PyMem_Free(result)
@@ -143,7 +143,7 @@ cdef unicode cy_decode(unsigned char* data, Py_ssize_t start, Py_ssize_t end,
             memcpy(result + dst_start, data + src_start,
                    end - src_start)
 
-        return result[:dst_start + end - src_start].decode()
+        return result[:dst_start + end - src_start].decode('utf8', 'replace')
 
     finally:
         PyMem_Free(result)
@@ -284,13 +284,13 @@ cdef cy_parse_query_string(unsigned char* data, Py_ssize_t length,
 
 def parse_query_string(unicode query_string not None, bint keep_blank=False,
                        bint csv=True):
-    cdef bytes byte_string = query_string.encode('ascii')
+    cdef bytes byte_string = query_string.encode('utf-8')
     cdef unsigned char* data = byte_string
     return cy_parse_query_string(data, len(byte_string), keep_blank, csv)
 
 
 def decode(unicode encoded_uri not None, bint unquote_plus=True):
-    cdef bytes byte_string = encoded_uri.encode('utf8')
+    cdef bytes byte_string = encoded_uri.encode('utf-8')
     cdef unsigned char* data = byte_string
 
     if unquote_plus:
