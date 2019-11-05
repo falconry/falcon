@@ -36,9 +36,9 @@ class JSONHandler(BaseHandler):
             'application/json': json_handler,
         }
 
-        api = falcon.App()
-        api.req_options.media_handlers.update(extra_handlers)
-        api.resp_options.media_handlers.update(extra_handlers)
+        app = falcon.App()
+        app.req_options.media_handlers.update(extra_handlers)
+        app.resp_options.media_handlers.update(extra_handlers)
 
     By default, ``ensure_ascii`` is passed to the ``json.dumps`` function.
     If you override the ``dumps`` function, you will need to explicitly set

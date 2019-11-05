@@ -677,12 +677,12 @@ class CompiledRouterOptions:
             expressions. Adding additional converters is simply a
             matter of mapping an identifier to a converter class::
 
-                api.router_options.converters['mc'] = MyConverter
+                app.router_options.converters['mc'] = MyConverter
 
             The identifier can then be used to employ the converter
             within a URI template::
 
-                api.add_route('/{some_field:mc}', some_resource)
+                app.add_route('/{some_field:mc}', some_resource)
 
             Converter names may only contain ASCII letters, digits,
             and underscores, and must start with either a letter or
