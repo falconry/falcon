@@ -194,8 +194,8 @@ class TestRequestTimeMiddleware(TestMiddleware):
         app.add_route(TEST_ROUTE, MiddlewareClassResource())
         client = testing.TestClient(app)
 
-        with pytest.raises(Exception):
-            client.simulate_request(path=TEST_ROUTE)
+        result = client.simulate_request(path=TEST_ROUTE)
+        assert result.status_code == 500
 
     @pytest.mark.parametrize('independent_middleware', [True, False])
     def test_log_get_request(self, independent_middleware):
@@ -381,8 +381,8 @@ class TestSeveralMiddlewares(TestMiddleware):
         app.add_route(TEST_ROUTE, MiddlewareClassResource())
         client = testing.TestClient(app)
 
-        with pytest.raises(Exception):
-            client.simulate_request(path=TEST_ROUTE)
+        result = client.simulate_request(path=TEST_ROUTE)
+        assert result.status_code == 500
 
         # RequestTimeMiddleware process_response should be executed
         assert 'transaction_id' in context

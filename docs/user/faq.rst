@@ -446,9 +446,15 @@ for this exception type. Alternatively, you may be able to configure your web
 server to transform the response for you (e.g., using Nginx's ``error_page``
 directive).
 
-500 errors are typically the result of an unhandled exception making its way
-up to the web server. To handle these errors more gracefully, you can add a
-custom error handler for Python's base :class:`Exception` type.
+By default, non-system-exiting exceptions that do not inherit from
+:class:`~.HTTPError` or :class:`~.HTTPStatus` are handled by Falcon with a
+plain HTTP 500 error. To provide your own 500 logic, you can add a custom error
+handler for Python's base :class:`Exception` type, though be aware that doing
+so will also override the default handlers for :class:`~.HTTPError` and
+:class:`~.HTTPStatus`.
+
+See :ref:`errors` and the :meth:`falcon.API.add_error_handler` docs for more
+details.
 
 Request Handling
 ~~~~~~~~~~~~~~~~
