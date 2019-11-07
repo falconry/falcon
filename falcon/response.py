@@ -358,11 +358,15 @@ class Response:
                 (See also: RFC 6265, Section 4.1.2.6)
 
             same_site (str): Helps protect against CSRF attacks,
-                When ``Lax`` is set, the cookie will be sent
+                When ``'Lax'`` is set, the cookie will be sent
                 along with the GET request initiated
                 by third party website.
-                if ``Strict`` will be set, the cookie will not be sent along
+                if ``'Strict'`` will be set, the cookie will not be sent along
                 with requests initiated by third party websites.
+                If the value is ``'None'``, the cookie will be sent
+                with same-site and cross-site requests.
+
+                (See also: `Same-Site RFC draft`_)
 
         Raises:
             KeyError: `name` is not a valid cookie name.
@@ -370,6 +374,9 @@ class Response:
 
         .. _RFC 6265:
             http://tools.ietf.org/html/rfc6265
+
+        .. _Same-Site RFC draft:
+            https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-03#section-5.2
 
         """
 
@@ -432,8 +439,8 @@ class Response:
         if http_only:
             self._cookies[name]['httponly'] = http_only
 
-        if same_site:
-            self._cookies[name]['samesite'] = same_site
+        if same_site and same_site.lower() in {'lax', 'strict', 'none'}:
+            self._cookies[name]['samesite'] = same_site.capitalize()
 
     def unset_cookie(self, name):
         """Unset a cookie in the response

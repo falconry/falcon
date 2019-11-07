@@ -30,7 +30,7 @@ GMT_PLUS_ONE = TimezoneGMTPlus1()
 class CookieResource:
 
     def on_get(self, req, resp):
-        resp.set_cookie('foo', 'bar', domain='example.com', path='/', same_site='Lax')
+        resp.set_cookie('foo', 'bar', domain='example.com', path='/')
 
     def on_head(self, req, resp):
         resp.set_cookie('foo', 'bar', max_age=300)
@@ -43,8 +43,7 @@ class CookieResource:
         resp.set_cookie('foo', 'bar',
                         http_only=False,
                         secure=False,
-                        expires=e,
-                        same_site='Strict')
+                        expires=e)
         resp.unset_cookie('bad')
 
     def on_put(self, req, resp):
@@ -62,11 +61,23 @@ class CookieResourceMaxAgeFloatString:
             'foostring', 'bar', max_age='15', secure=False, http_only=False)
 
 
+class CookieResourceSameSite:
+    def on_get(self, req, resp):
+        resp.set_cookie('foo', 'bar', same_site='Lax')
+
+    def on_post(self, req, resp):
+        resp.set_cookie('bar', 'foo', same_site='strict')
+
+    def on_put(self, req, resp):
+        resp.set_cookie('baz', 'foo', same_site='none')
+
+
 @pytest.fixture()
 def client():
     app = falcon.API()
     app.add_route('/', CookieResource())
     app.add_route('/test-convert', CookieResourceMaxAgeFloatString())
+    app.add_route('/same-site', CookieResourceSameSite())
 
     return testing.TestClient(app)
 
@@ -85,7 +96,6 @@ def test_response_base_case(client):
     assert cookie.value == 'bar'
     assert cookie.domain == 'example.com'
     assert cookie.http_only
-    assert cookie.same_site == 'Lax'
 
     # NOTE(kgriffs): Explicitly test for None to ensure
     # falcon.testing.Cookie is returning exactly what we
@@ -157,7 +167,6 @@ def test_cookie_expires_naive(client):
     assert cookie.value == 'bar'
     assert cookie.domain is None
     assert cookie.expires == datetime(year=2050, month=1, day=1)
-    assert cookie.same_site == 'Strict'
     assert not cookie.http_only
     assert cookie.max_age is None
     assert cookie.path is None
@@ -377,3 +386,24 @@ def test_non_ascii_value(value):
         assert not isinstance(e, UnicodeEncodeError)
     else:
         pytest.fail('set_bad_cookie_value did not fail as expected')
+
+
+def test_lax_same_site_value(client):
+    result = client.simulate_get('/same-site')
+    cookie = result.cookies['foo']
+
+    assert cookie.same_site == 'Lax'
+
+
+def test_strict_same_site_value(client):
+    result = client.simulate_post('/same-site')
+    cookie = result.cookies['bar']
+
+    assert cookie.same_site == 'Strict'
+
+
+def test_none_same_site_value(client):
+    result = client.simulate_put('/same-site')
+    cookie = result.cookies['baz']
+
+    assert cookie.same_site == 'None'
