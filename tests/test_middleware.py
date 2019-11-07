@@ -137,6 +137,12 @@ class EmptySignatureMiddleware:
         pass
 
 
+class TestCorsResource:
+    def on_get(self, req, resp, **kwargs):
+        resp.status = falcon.HTTP_200
+        resp.body = 'Test'
+
+
 class TestMiddleware:
     def setup_method(self, method):
         # Clear context
@@ -188,8 +194,8 @@ class TestRequestTimeMiddleware(TestMiddleware):
         app.add_route(TEST_ROUTE, MiddlewareClassResource())
         client = testing.TestClient(app)
 
-        with pytest.raises(Exception):
-            client.simulate_request(path=TEST_ROUTE)
+        result = client.simulate_request(path=TEST_ROUTE)
+        assert result.status_code == 500
 
     @pytest.mark.parametrize('independent_middleware', [True, False])
     def test_log_get_request(self, independent_middleware):
@@ -375,8 +381,8 @@ class TestSeveralMiddlewares(TestMiddleware):
         app.add_route(TEST_ROUTE, MiddlewareClassResource())
         client = testing.TestClient(app)
 
-        with pytest.raises(Exception):
-            client.simulate_request(path=TEST_ROUTE)
+        result = client.simulate_request(path=TEST_ROUTE)
+        assert result.status_code == 500
 
         # RequestTimeMiddleware process_response should be executed
         assert 'transaction_id' in context
@@ -804,3 +810,19 @@ class TestShortCircuiting(TestMiddleware):
 
         # NOTE(kgriffs): Short-circuiting does not affect process_response()
         assert 'end_time' in context
+
+
+class TestCORSMiddlewareWithAnotherMiddleware(TestMiddleware):
+
+    @pytest.mark.parametrize('mw', [
+        CaptureResponseMiddleware(),
+        [CaptureResponseMiddleware()],
+        (CaptureResponseMiddleware(),),
+        iter([CaptureResponseMiddleware()]),
+    ])
+    def test_api_initialization_with_cors_enabled_and_middleware_param(self, mw):
+        app = falcon.API(middleware=mw, cors_enable=True)
+        app.add_route('/', TestCorsResource())
+        client = testing.TestClient(app)
+        result = client.simulate_get()
+        assert result.headers['Access-Control-Allow-Origin'] == '*'
