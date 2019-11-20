@@ -1,7 +1,9 @@
 import os
-import requests
 import subprocess
 import time
+
+import requests
+
 
 LOOK_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
