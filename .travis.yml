@@ -39,6 +39,8 @@ matrix:
           env: TOXENV=py38
         - python: 3.8
           env: TOXENV=py38_cython
+        - python: 3.8
+          env: TOXENV=look
 
 script: tox
 
