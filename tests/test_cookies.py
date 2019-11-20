@@ -66,10 +66,13 @@ class CookieResourceSameSite:
         resp.set_cookie('foo', 'bar', same_site='Lax')
 
     def on_post(self, req, resp):
-        resp.set_cookie('bar', 'foo', same_site='strict')
+        resp.set_cookie('bar', 'foo', same_site='STRICT')
 
     def on_put(self, req, resp):
         resp.set_cookie('baz', 'foo', same_site='none')
+
+    def on_delete(self, req, resp):
+        resp.set_cookie('baz', 'foo', same_site='')
 
 
 @pytest.fixture()
@@ -407,3 +410,33 @@ def test_none_same_site_value(client):
     cookie = result.cookies['baz']
 
     assert cookie.same_site == 'None'
+
+
+def test_same_site_empty_string(client):
+    result = client.simulate_delete('/same-site')
+    cookie = result.cookies['baz']
+
+    assert cookie.same_site is None
+
+
+@pytest.mark.parametrize(
+    'same_site', ['laX', 'lax', 'STRICT', 'strict', 'None', 'none']
+)
+def test_same_site_value_case_insensitive(same_site):
+    resp = falcon.Response()
+    resp.set_cookie('foo', 'bar', same_site=same_site)
+
+    # NOTE(kgriffs): Verify directly, unit-test style, since we
+    #   already tested end-to-end above.
+    morsel = resp._cookies['foo']
+    assert morsel['samesite'].lower() == same_site.lower()
+
+
+@pytest.mark.parametrize(
+    'same_site', ['bogus', 'laxx', 'stric']
+)
+def test_invalid_same_site_value(same_site):
+    resp = falcon.Response()
+
+    with pytest.raises(ValueError):
+        resp.set_cookie('foo', 'bar', same_site=same_site)

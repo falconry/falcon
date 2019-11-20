@@ -40,6 +40,9 @@ _STREAM_LEN_REMOVED_MSG = (
 )
 
 
+_RESERVED_SAMESITE_VALUES = frozenset({'lax', 'strict', 'none'})
+
+
 class Response:
     """Represents an HTTP response to a client request.
 
@@ -380,9 +383,9 @@ class Response:
         """
 
         if not is_ascii_encodable(name):
-            raise KeyError('"name" is not ascii encodable')
+            raise KeyError('name is not ascii encodable')
         if not is_ascii_encodable(value):
-            raise ValueError('"value" is not ascii encodable')
+            raise ValueError('value is not ascii encodable')
 
         value = str(value)
 
@@ -427,10 +430,7 @@ class Response:
         if path:
             self._cookies[name]['path'] = path
 
-        if secure is None:
-            is_secure = self.options.secure_cookies_by_default
-        else:
-            is_secure = secure
+        is_secure = self.options.secure_cookies_by_default if secure is None else secure
 
         if is_secure:
             self._cookies[name]['secure'] = True
@@ -438,7 +438,15 @@ class Response:
         if http_only:
             self._cookies[name]['httponly'] = http_only
 
-        if same_site and same_site.lower() in {'lax', 'strict', 'none'}:
+        # PERF(kgriffs): Morsel.__setitem__() will lowercase this anyway,
+        #   so we can just pass this in and when __setitem__() calls
+        #   lower() it will be very slightly faster.
+        if same_site:
+            same_site = same_site.lower()
+
+            if same_site not in _RESERVED_SAMESITE_VALUES:
+                raise ValueError("same_site must be set to either 'lax', 'strict', or 'none'")
+
             self._cookies[name]['samesite'] = same_site.capitalize()
 
     def unset_cookie(self, name):
