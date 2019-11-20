@@ -14,7 +14,6 @@
 
 """Response class."""
 
-from http import cookies as http_cookies
 import mimetypes
 
 from falcon import DEFAULT_MEDIA_TYPE
@@ -28,7 +27,7 @@ from falcon.response_helpers import (
     header_property,
     is_ascii_encodable,
 )
-from falcon.util import dt_to_http, structures, TimezoneGMT
+from falcon.util import dt_to_http, http_cookies, structures, TimezoneGMT
 from falcon.util.uri import encode as uri_encode
 from falcon.util.uri import encode_value as uri_encode_value
 

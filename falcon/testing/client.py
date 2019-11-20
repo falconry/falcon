@@ -18,14 +18,13 @@ This package includes utilities for simulating HTTP requests against a
 WSGI callable, without having to stand up a WSGI server.
 """
 
-from http import cookies as http_cookies
 import warnings
 import wsgiref.validate
 
 from falcon.constants import MEDIA_JSON
 from falcon.testing import helpers
 from falcon.testing.srmock import StartResponseMock
-from falcon.util import CaseInsensitiveDict, http_date_to_dt, to_query_str
+from falcon.util import CaseInsensitiveDict, http_cookies, http_date_to_dt, to_query_str
 from falcon.util import json as util_json
 
 
