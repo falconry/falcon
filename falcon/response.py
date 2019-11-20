@@ -359,16 +359,17 @@ class Response:
 
                 (See also: RFC 6265, Section 4.1.2.6)
 
-            same_site (str): Helps protect against CSRF attacks,
-                When ``'Lax'`` is set, the cookie will be sent
-                along with the GET request initiated
-                by third party website.
-                if ``'Strict'`` will be set, the cookie will not be sent along
-                with requests initiated by third party websites.
-                If the value is ``'None'``, the cookie will be sent
-                with same-site and cross-site requests.
+            same_site (str): Helps protect against CSRF attacks by restricting
+                when a cookie will be attached to the request by the user agent.
+                When set to ``'Strict'``, the cookie will only be sent along
+                with "same-site" requests.  If the value is ``'Lax'``, the
+                cookie will be sent with same-site requests, and with
+                "cross-site" top-level navigations.  If the value is ``'None'``,
+                the cookie will be sent with same-site and cross-site requests.
+                Finally, when this attribute is not set on the cookie, the
+                attribute will be treated as if it had been set to ``'None'``.
 
-                (See also: `Same-Site RFC draft`_)
+                (See also: `Same-Site RFC Draft`_)
 
         Raises:
             KeyError: `name` is not a valid cookie name.
@@ -377,8 +378,8 @@ class Response:
         .. _RFC 6265:
             http://tools.ietf.org/html/rfc6265
 
-        .. _Same-Site RFC draft:
-            https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-03#section-5.2
+        .. _Same-Site RFC Draft:
+            https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-03#section-4.1.2.7
 
         """
 

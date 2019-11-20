@@ -30,6 +30,8 @@ from falcon.util.time import *  # NOQA
 
 
 # NOTE(kgriffs): Backport support for the new 'SameSite' attribute
-#   for Python versions prior to 3.8
+#   for Python versions prior to 3.8. We do it this way because
+#   SimpleCookie does not give us a simple way to specify our own
+#   subclass of Morsel.
 if 'samesite' not in http_cookies.Morsel._reserved:
     http_cookies.Morsel._reserved['samesite'] = 'SameSite'
