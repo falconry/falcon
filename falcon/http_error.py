@@ -37,29 +37,6 @@ class HTTPError(Exception):
     is implemented via ``to_dict()``). To also support XML, override
     the ``to_xml()`` method.
 
-    Attributes:
-        status (str): HTTP status line, e.g. '748 Confounded by Ponies'.
-        has_representation (bool): Read-only property that determines
-            whether error details will be serialized when composing
-            the HTTP response. In ``HTTPError`` this property always
-            returns ``True``, but child classes may override it
-            in order to return ``False`` when an empty HTTP body is desired.
-
-            (See also: :class:`falcon.http_error.NoRepresentation`)
-
-            Note:
-                A custom error serializer
-                (see :meth:`~.API.set_error_serializer`) may choose to set a
-                response body regardless of the value of this property.
-
-        title (str): Error title to send to the client.
-        description (str): Description of the error to send to the client.
-        headers (dict): Extra headers to add to the response.
-        link (str): An href that the client can provide to the user for
-            getting help.
-        code (int): An internal application code that a user can reference when
-            requesting support for the error.
-
     Args:
         status (str): HTTP status code and text, such as "400 Bad Request"
 
@@ -93,6 +70,29 @@ class HTTPError(Exception):
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
             base articles related to this error (default ``None``).
+
+    Attributes:
+        status (str): HTTP status line, e.g. '748 Confounded by Ponies'.
+        has_representation (bool): Read-only property that determines
+            whether error details will be serialized when composing
+            the HTTP response. In ``HTTPError`` this property always
+            returns ``True``, but child classes may override it
+            in order to return ``False`` when an empty HTTP body is desired.
+
+            (See also: :class:`falcon.http_error.NoRepresentation`)
+
+            Note:
+                A custom error serializer
+                (see :meth:`~.API.set_error_serializer`) may choose to set a
+                response body regardless of the value of this property.
+
+        title (str): Error title to send to the client.
+        description (str): Description of the error to send to the client.
+        headers (dict): Extra headers to add to the response.
+        link (str): An href that the client can provide to the user for
+            getting help.
+        code (int): An internal application code that a user can reference when
+            requesting support for the error.
     """
 
     __slots__ = (

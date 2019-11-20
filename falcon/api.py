@@ -16,10 +16,12 @@
 
 from functools import wraps
 import re
+import traceback
 
 from falcon import api_helpers as helpers, DEFAULT_MEDIA_TYPE, routing
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
+from falcon.middlewares import CORSMiddleware
 from falcon.request import Request, RequestOptions
 import falcon.responders
 from falcon.response import Response, ResponseOptions
@@ -136,6 +138,11 @@ class API:
             when that same component's ``process_request()`` (or that of
             a component higher up in the stack) raises an exception.
 
+        cors_enable (bool): Set this flag to ``True`` to enable a simple
+            CORS policy for all responses, including support for preflighted
+            requests (default ``False``).
+            (See also: :ref:`CORS <cors>`)
+
     Attributes:
         req_options: A set of behavioral options related to incoming
             requests. (See also: :py:class:`~.RequestOptions`)
@@ -155,15 +162,33 @@ class API:
                  '_error_handlers', '_media_type', '_router', '_sinks',
                  '_serialize_error', 'req_options', 'resp_options',
                  '_middleware', '_independent_middleware', '_router_search',
-                 '_static_routes')
+                 '_static_routes', '_cors_enable')
 
     def __init__(self, media_type=DEFAULT_MEDIA_TYPE,
                  request_type=Request, response_type=Response,
                  middleware=None, router=None,
-                 independent_middleware=True):
+                 independent_middleware=True, cors_enable=False):
         self._sinks = []
         self._media_type = media_type
         self._static_routes = []
+
+        if cors_enable:
+            cm = CORSMiddleware()
+
+            if middleware is None:
+                middleware = [cm]
+            else:
+                try:
+                    # NOTE(kgriffs): Check to see if middleware is an
+                    #   iterable, and if so, append the CORSMiddleware
+                    #   instance.
+                    iter(middleware)
+                    middleware = list(middleware)
+                    middleware.append(cm)
+                except TypeError:
+                    # NOTE(kgriffs): Assume the middleware kwarg references
+                    #   a single middleware component.
+                    middleware = [middleware, cm]
 
         # set middleware
         self._middleware = helpers.prepare_middleware(
@@ -186,6 +211,7 @@ class API:
         self.resp_options.default_media_type = media_type
 
         # NOTE(kgriffs): Add default error handlers
+        self.add_error_handler(Exception, self._python_error_handler)
         self.add_error_handler(falcon.HTTPError, self._http_error_handler)
         self.add_error_handler(falcon.HTTPStatus, self._http_status_handler)
 
@@ -204,7 +230,6 @@ class API:
                 status and headers on a response.
 
         """
-
         req = self._request_type(env, options=self.req_options)
         resp = self._response_type(options=self.resp_options)
         resource = None
@@ -513,14 +538,25 @@ class API:
         will choose the one that was most recently registered.
         Therefore, more general error handlers (e.g., for the
         standard ``Exception`` type) should be added first, to avoid
-        masking more specific handlers for subclassed types.
+        masking more specific handlers for subclassed types. For example::
+
+            app = falcon.API()
+            app.add_error_handler(Exception, custom_handle_uncaught_exception)
+            app.add_error_handler(falcon.HTTPError, custom_handle_http_error)
+            app.add_error_handler(CustomException)
 
         .. Note::
 
-            By default, the framework installs two handlers, one for
-            :class:`~.HTTPError` and one for :class:`~.HTTPStatus`. These can
-            be overridden by adding a custom error handler method for the
-            exception type in question.
+            By default, the framework installs three handlers, one for
+            :class:`~.HTTPError`, one for :class:`~.HTTPStatus`, and one for
+            the standard ``Exception`` type, which prevents passing uncaught
+            exceptions to the WSGI server. These can be overridden by adding a
+            custom error handler method for the exception type in question.
+
+            Be aware that both :class:`~.HTTPError` and :class:`~.HTTPStatus`
+            inherit from the standard ``Exception`` type, so overriding the
+            default ``Exception`` handler will override all three default
+            handlers, due to the LIFO ordering of handler-matching.
 
         Args:
             exception (type or iterable of types): When handling a request,
@@ -533,7 +569,7 @@ class API:
                 If not specified explicitly, the handler will default to
                 ``exception.handle``, where ``exception`` is the error
                 type specified above, and ``handle`` is a static method
-                (i.e., decorated with @staticmethod) that accepts
+                (i.e., decorated with ``@staticmethod``) that accepts
                 the same params just described. For example::
 
                     class CustomException(CustomBaseException):
@@ -609,6 +645,11 @@ class API:
             However a custom serializer will be called regardless of the
             property value, and it may choose to override the
             representation logic.
+
+        Note:
+            A custom serializer set with this method may not be called if the
+            default error handler for :class:`~.HTTPError` has been overriden.
+            See :meth:`~.add_error_handler` for more details.
 
         The :class:`~.HTTPError` class contains helper methods,
         such as `to_json()` and `to_dict()`, that can be used from
@@ -746,6 +787,11 @@ class API:
 
     def _http_error_handler(self, req, resp, error, params):
         self._compose_error_response(req, resp, error)
+
+    def _python_error_handler(self, req, resp, error, params):
+        req.log_error(traceback.format_exc())
+        self._compose_error_response(
+            req, resp, falcon.HTTPInternalServerError())
 
     def _handle_exception(self, req, resp, ex, params):
         """Handle an exception raised from mw or a responder.

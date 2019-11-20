@@ -12,6 +12,7 @@ Classes and Functions
    media
    redirects
    middleware
+   cors
    hooks
    routing
    util

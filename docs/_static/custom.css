@@ -222,3 +222,22 @@ input[type=text]:focus {
     border: none;
     outline: none;
 }
+
+dl.field-list > dt {
+    word-break: normal;
+    padding-left: 0;
+    hyphens: none;
+}
+
+dl.field-list ul {
+    list-style: none;
+}
+
+dl.field-list ul li {
+    list-style: none;
+    padding-bottom: 0.5em;
+}
+
+dl.field-list.simple dd ul {
+    padding-left: 0;
+}

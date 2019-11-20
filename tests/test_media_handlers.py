@@ -16,7 +16,10 @@ if sys.version_info >= (3, 5):
     import rapidjson
 
     if platform.python_implementation() == 'CPython':
-        import orjson
+        try:
+            import orjson
+        except ImportError:
+            pass
 
 
 COMMON_SERIALIZATION_PARAM_LIST = [

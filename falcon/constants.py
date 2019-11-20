@@ -13,12 +13,19 @@ HTTP_METHODS = [
     'TRACE',
 ]
 
-# RFC 3253 methods
+# RFC 2518 and 4918 methods
 WEBDAV_METHODS = [
     'CHECKIN',
     'CHECKOUT',
+    'COPY',
+    'LOCK',
+    'MKCOL',
+    'MOVE',
+    'PROPFIND',
+    'PROPPATCH',
     'REPORT',
     'UNCHECKIN',
+    'UNLOCK'
     'UPDATE',
     'VERSION-CONTROL',
 ]
@@ -44,6 +51,8 @@ MEDIA_JSON = 'application/json'
 # but the use of the 'x-' prefix is discouraged by RFC 6838.
 MEDIA_MSGPACK = 'application/msgpack'
 
+MEDIA_URLENCODED = 'application/x-www-form-urlencoded'
+
 # NOTE(kgriffs): An internet media type for YAML has not been
 # registered. RoR uses 'application/x-yaml', but since use of
 # 'x-' is discouraged by RFC 6838, we don't use it in Falcon.
@@ -62,7 +71,6 @@ MEDIA_YAML = 'application/yaml'
 # ignore it anyway and just use what is specified in the document,
 # contrary to the RFCs.
 MEDIA_XML = 'application/xml'
-
 
 # NOTE(kgriffs): RFC 4329 recommends application/* over text/.
 # futhermore, parsers are required to respect the Unicode
