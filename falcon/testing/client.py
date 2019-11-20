@@ -18,14 +18,13 @@ This package includes utilities for simulating HTTP requests against a
 WSGI callable, without having to stand up a WSGI server.
 """
 
-from http import cookies as http_cookies
 import warnings
 import wsgiref.validate
 
 from falcon.constants import MEDIA_JSON
 from falcon.testing import helpers
 from falcon.testing.srmock import StartResponseMock
-from falcon.util import CaseInsensitiveDict, http_date_to_dt, to_query_str
+from falcon.util import CaseInsensitiveDict, http_cookies, http_date_to_dt, to_query_str
 from falcon.util import json as util_json
 
 
@@ -184,6 +183,7 @@ class Cookie:
             'max_age',
             'secure',
             'httponly',
+            'samesite'
         ):
             value = morsel[name.replace('_', '-')] or None
             setattr(self, '_' + name, value)
@@ -222,6 +222,10 @@ class Cookie:
     @property
     def http_only(self):
         return bool(self._httponly)
+
+    @property
+    def same_site(self):
+        return self._samesite if self._samesite else None
 
 
 def simulate_request(app, method='GET', path='/', query_string=None,

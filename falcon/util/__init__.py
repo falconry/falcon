@@ -20,9 +20,18 @@ Conversely, the `uri` module must be imported explicitly::
 
 """
 
+from http import cookies as http_cookies
 import json  # NOQA
 
 # Hoist misc. utils
 from falcon.util.structures import *  # NOQA
 from falcon.util.misc import *  # NOQA
 from falcon.util.time import *  # NOQA
+
+
+# NOTE(kgriffs): Backport support for the new 'SameSite' attribute
+#   for Python versions prior to 3.8. We do it this way because
+#   SimpleCookie does not give us a simple way to specify our own
+#   subclass of Morsel.
+if 'samesite' not in http_cookies.Morsel._reserved:  # pragma: no cover
+    http_cookies.Morsel._reserved['samesite'] = 'SameSite'
