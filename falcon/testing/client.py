@@ -18,6 +18,8 @@ This package includes utilities for simulating HTTP requests against a
 WSGI callable, without having to stand up a WSGI server.
 """
 
+import datetime as dt
+from typing import Dict, Optional, Union
 import warnings
 import wsgiref.validate
 
@@ -37,6 +39,86 @@ warnings.filterwarnings(
     '',
     0,
 )
+
+
+class Cookie:
+    """Represents a cookie returned by a simulated request.
+
+    Args:
+        morsel: A ``Morsel`` object from which to derive the cookie
+            data.
+
+    Attributes:
+        name (str): The cookie's name.
+        value (str): The value of the cookie.
+        expires(datetime.datetime): Expiration timestamp for the cookie,
+            or ``None`` if not specified.
+        path (str): The path prefix to which this cookie is restricted,
+            or ``None`` if not specified.
+        domain (str): The domain to which this cookie is restricted,
+            or ``None`` if not specified.
+        max_age (int): The lifetime of the cookie in seconds, or
+            ``None`` if not specified.
+        secure (bool): Whether or not the cookie may only only be
+            transmitted from the client via HTTPS.
+        http_only (bool): Whether or not the cookie may only be
+            included in unscripted requests from the client.
+    """
+
+    def __init__(self, morsel):
+        self._name = morsel.key
+        self._value = morsel.value
+
+        for name in (
+            'expires',
+            'path',
+            'domain',
+            'max_age',
+            'secure',
+            'httponly',
+            'samesite'
+        ):
+            value = morsel[name.replace('_', '-')] or None
+            setattr(self, '_' + name, value)
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def value(self) -> str:
+        return self._value
+
+    @property
+    def expires(self) -> Optional[dt.datetime]:
+        if self._expires:
+            return http_date_to_dt(self._expires, obs_date=True)
+
+        return None
+
+    @property
+    def path(self) -> str:
+        return self._path
+
+    @property
+    def domain(self) -> str:
+        return self._domain
+
+    @property
+    def max_age(self) -> Optional[int]:
+        return int(self._max_age) if self._max_age else None
+
+    @property
+    def secure(self) -> bool:
+        return bool(self._secure)
+
+    @property
+    def http_only(self) -> bool:
+        return bool(self._httponly)
+
+    @property
+    def same_site(self) -> Optional[int]:
+        return self._samesite if self._samesite else None
 
 
 class Result:
@@ -109,11 +191,11 @@ class Result:
         return self._status_code
 
     @property
-    def headers(self) -> CaseInsensitiveDict:
+    def headers(self) -> CaseInsensitiveDict[str]:
         return self._headers
 
     @property
-    def cookies(self) -> dict:
+    def cookies(self) -> Dict[str, Cookie]:
         return self._cookies
 
     @property
@@ -140,91 +222,11 @@ class Result:
         return self._text
 
     @property
-    def json(self):
+    def json(self) -> Optional[Union[dict, list, str, int, float, bool]]:
         if not self.text:
             return None
 
         return util_json.loads(self.text)
-
-
-class Cookie:
-    """Represents a cookie returned by a simulated request.
-
-    Args:
-        morsel: A ``Morsel`` object from which to derive the cookie
-            data.
-
-    Attributes:
-        name (str): The cookie's name.
-        value (str): The value of the cookie.
-        expires(datetime.datetime): Expiration timestamp for the cookie,
-            or ``None`` if not specified.
-        path (str): The path prefix to which this cookie is restricted,
-            or ``None`` if not specified.
-        domain (str): The domain to which this cookie is restricted,
-            or ``None`` if not specified.
-        max_age (int): The lifetime of the cookie in seconds, or
-            ``None`` if not specified.
-        secure (bool): Whether or not the cookie may only only be
-            transmitted from the client via HTTPS.
-        http_only (bool): Whether or not the cookie may only be
-            included in unscripted requests from the client.
-    """
-
-    def __init__(self, morsel):
-        self._name = morsel.key
-        self._value = morsel.value
-
-        for name in (
-            'expires',
-            'path',
-            'domain',
-            'max_age',
-            'secure',
-            'httponly',
-            'samesite'
-        ):
-            value = morsel[name.replace('_', '-')] or None
-            setattr(self, '_' + name, value)
-
-    @property
-    def name(self) -> str:
-        return self._name
-
-    @property
-    def value(self) -> str:
-        return self._value
-
-    @property
-    def expires(self):
-        if self._expires:
-            return http_date_to_dt(self._expires, obs_date=True)
-
-        return None
-
-    @property
-    def path(self) -> str:
-        return self._path
-
-    @property
-    def domain(self) -> str:
-        return self._domain
-
-    @property
-    def max_age(self) -> int:
-        return int(self._max_age) if self._max_age else None
-
-    @property
-    def secure(self) -> bool:
-        return bool(self._secure)
-
-    @property
-    def http_only(self) -> bool:
-        return bool(self._httponly)
-
-    @property
-    def same_site(self):
-        return self._samesite if self._samesite else None
 
 
 def simulate_request(app, method='GET', path='/', query_string=None,

@@ -29,6 +29,7 @@ import io
 import itertools
 import random
 import sys
+from typing import Any, Dict
 
 from falcon.util import http_now, uri
 
@@ -84,7 +85,7 @@ def rand_string(min, max) -> str:
 def create_environ(path='/', query_string='', protocol='HTTP/1.1',
                    scheme='http', host=DEFAULT_HOST, port=None,
                    headers=None, app='', body='', method='GET',
-                   wsgierrors=None, file_wrapper=None, remote_addr=None) -> dict:
+                   wsgierrors=None, file_wrapper=None, remote_addr=None) -> Dict[str, Any]:
     """Creates a mock PEP-3333 environ ``dict`` for simulating WSGI requests.
 
     Keyword Args:
@@ -250,7 +251,7 @@ def closed_wsgi_iterable(iterable):
     def wrapper():
         try:
             for item in iterable:
-                    yield item
+                yield item
         finally:
             if hasattr(iterable, 'close'):
                 iterable.close()
