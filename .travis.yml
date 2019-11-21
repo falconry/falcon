@@ -11,9 +11,9 @@ matrix:
     include:
         - python: pypy3.5-6.0
           env: TOXENV=pypy3
-        - python: 3.7
+        - python: 3.8
           env: TOXENV=pep8
-        - python: 3.7
+        - python: 3.8
           env: TOXENV=pep8-examples
         - python: 3.5
           env: TOXENV=py35
@@ -21,26 +21,26 @@ matrix:
           env: TOXENV=py36
         - python: 3.7
           env: TOXENV=py37
-        - python: 3.7
-          env: TOXENV=py37_cython
-        - python: 3.7
-          env: TOXENV=py37_smoke
-        - python: 3.7
-          env: TOXENV=py37_smoke_cython
-        - python: 3.7
-          env: TOXENV=docs
-        # TODO(kgriffs): Re-enable once hug has a chance to address
-        #   breaking changes in Falcon 3.0
-        # - python: 3.7
-        #   env: TOXENV=hug
-        - python: 3.7
-          env: TOXENV=check_vendored
         - python: 3.8
           env: TOXENV=py38
         - python: 3.8
           env: TOXENV=py38_cython
         - python: 3.8
+          env: TOXENV=py38_smoke
+        - python: 3.8
+          env: TOXENV=py38_smoke_cython
+        - python: 3.8
+          env: TOXENV=docs
+        # TODO(kgriffs): Re-enable once hug has a chance to address
+        #   breaking changes in Falcon 3.0
+        # - python: 3.7
+        #   env: TOXENV=hug
+        - python: 3.8
+          env: TOXENV=py38_cython
+        - python: 3.8
           env: TOXENV=look
+        - python: 3.8
+          env: TOXENV=check_vendored
 
 script: tox
 
