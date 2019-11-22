@@ -51,11 +51,11 @@ class Resource:
 
 
 class GoodData:
-    media: Dict[str, str] = {'message': 'something'}
+    media = {'message': 'something'}  # type: ignore
 
 
 class BadData:
-    media: Dict[str, str] = {}
+    media = {}  # type: ignore
 
 
 @skip_missing_dep

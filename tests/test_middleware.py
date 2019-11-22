@@ -9,7 +9,7 @@ import falcon.testing as testing
 
 _EXPECTED_BODY = {'status': 'ok'}
 
-context: Dict[str, list] = {'executed_methods': []}
+context = {'executed_methods': []}  # type: ignore
 TEST_ROUTE = '/test_path'
 
 
