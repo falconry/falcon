@@ -91,34 +91,34 @@ class Cookie:
 
     @property
     def expires(self) -> Optional[dt.datetime]:
-        if self._expires:
-            return http_date_to_dt(self._expires, obs_date=True)
+        if self._expires:  # type: ignore[attr-defined]
+            return http_date_to_dt(self._expires, obs_date=True)  # type: ignore[attr-defined]
 
         return None
 
     @property
     def path(self) -> str:
-        return self._path
+        return self._path  # type: ignore[attr-defined]
 
     @property
     def domain(self) -> str:
-        return self._domain
+        return self._domain  # type: ignore[attr-defined]
 
     @property
     def max_age(self) -> Optional[int]:
-        return int(self._max_age) if self._max_age else None
+        return int(self._max_age) if self._max_age else None  # type: ignore[attr-defined]
 
     @property
     def secure(self) -> bool:
-        return bool(self._secure)
+        return bool(self._secure)  # type: ignore[attr-defined]
 
     @property
     def http_only(self) -> bool:
-        return bool(self._httponly)
+        return bool(self._httponly)  # type: ignore[attr-defined]
 
     @property
     def same_site(self) -> Optional[int]:
-        return self._samesite if self._samesite else None
+        return self._samesite if self._samesite else None  # type: ignore[attr-defined]
 
 
 class Result:

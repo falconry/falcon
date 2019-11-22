@@ -1,5 +1,6 @@
 from datetime import datetime
 import json
+from typing import Dict
 
 import pytest
 
@@ -8,7 +9,7 @@ import falcon.testing as testing
 
 _EXPECTED_BODY = {'status': 'ok'}
 
-context = {'executed_methods': []}
+context: Dict[str, list] = {'executed_methods': []}
 TEST_ROUTE = '/test_path'
 
 

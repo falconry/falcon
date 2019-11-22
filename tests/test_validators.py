@@ -2,6 +2,7 @@ try:
     import jsonschema
 except ImportError:
     jsonschema = None
+from typing import Dict
 
 import pytest
 
@@ -50,11 +51,11 @@ class Resource:
 
 
 class GoodData:
-    media = {'message': 'something'}
+    media: Dict[str, str] = {'message': 'something'}
 
 
 class BadData:
-    media = {}
+    media: Dict[str, str] = {}
 
 
 @skip_missing_dep
