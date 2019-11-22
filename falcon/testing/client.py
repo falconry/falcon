@@ -401,7 +401,7 @@ def simulate_get(app, path, **kwargs) -> Result:
         extras (dict): Additional CGI variables to add to the WSGI ``environ``
             dictionary for the request (default: ``None``)
 
-        Returns:
+    Returns:
         :py:class:`~.Result`: The result of the request
     """
     return simulate_request(app, 'GET', path, **kwargs)
@@ -448,7 +448,7 @@ def simulate_head(app, path, **kwargs) -> Result:
         extras (dict): Additional CGI variables to add to the WSGI ``environ``
             dictionary for the request (default: ``None``)
 
-        Returns:
+    Returns:
         :py:class:`~.Result`: The result of the request
     """
     return simulate_request(app, 'HEAD', path, **kwargs)
@@ -494,7 +494,7 @@ def simulate_post(app, path, **kwargs) -> Result:
         extras (dict): Additional CGI variables to add to the WSGI ``environ``
             dictionary for the request (default: ``None``)
 
-        Returns:
+    Returns:
         :py:class:`~.Result`: The result of the request
     """
     return simulate_request(app, 'POST', path, **kwargs)
@@ -540,7 +540,7 @@ def simulate_put(app, path, **kwargs) -> Result:
         extras (dict): Additional CGI variables to add to the WSGI ``environ``
             dictionary for the request (default: ``None``)
 
-        Returns:
+    Returns:
         :py:class:`~.Result`: The result of the request
     """
     return simulate_request(app, 'PUT', path, **kwargs)
@@ -580,7 +580,7 @@ def simulate_options(app, path, **kwargs) -> Result:
         extras (dict): Additional CGI variables to add to the WSGI ``environ``
             dictionary for the request (default: ``None``)
 
-        Returns:
+    Returns:
         :py:class:`~.Result`: The result of the request
     """
     return simulate_request(app, 'OPTIONS', path, **kwargs)
@@ -626,7 +626,7 @@ def simulate_patch(app, path, **kwargs) -> Result:
         extras (dict): Additional CGI variables to add to the WSGI ``environ``
             dictionary for the request (default: ``None``)
 
-        Returns:
+    Returns:
         :py:class:`~.Result`: The result of the request
     """
     return simulate_request(app, 'PATCH', path, **kwargs)
@@ -666,7 +666,7 @@ def simulate_delete(app, path, **kwargs) -> Result:
         extras (dict): Additional CGI variables to add to the WSGI ``environ``
             dictionary for the request (default: ``None``)
 
-        Returns:
+    Returns:
         :py:class:`~.Result`: The result of the request
     """
     return simulate_request(app, 'DELETE', path, **kwargs)
