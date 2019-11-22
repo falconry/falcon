@@ -14,7 +14,6 @@
 
 """Response class."""
 
-from http import cookies as http_cookies
 import mimetypes
 
 from falcon import DEFAULT_MEDIA_TYPE
@@ -28,7 +27,7 @@ from falcon.response_helpers import (
     header_property,
     is_ascii_encodable,
 )
-from falcon.util import dt_to_http, structures, TimezoneGMT
+from falcon.util import dt_to_http, http_cookies, structures, TimezoneGMT
 from falcon.util.uri import encode as uri_encode
 from falcon.util.uri import encode_value as uri_encode_value
 
@@ -39,6 +38,9 @@ _STREAM_LEN_REMOVED_MSG = (
     'The deprecated stream_len property was removed in Falcon 3.0. '
     'Please use Response.set_stream() or Response.content_length instead.'
 )
+
+
+_RESERVED_SAMESITE_VALUES = frozenset({'lax', 'strict', 'none'})
 
 
 class Response:
@@ -279,7 +281,7 @@ class Response:
         self._headers['content-length'] = str(content_length)
 
     def set_cookie(self, name, value, expires=None, max_age=None,
-                   domain=None, path=None, secure=None, http_only=True):
+                   domain=None, path=None, secure=None, http_only=True, same_site=None):
         """Set a response cookie.
 
         Note:
@@ -357,6 +359,18 @@ class Response:
 
                 (See also: RFC 6265, Section 4.1.2.6)
 
+            same_site (str): Helps protect against CSRF attacks by restricting
+                when a cookie will be attached to the request by the user agent.
+                When set to ``'Strict'``, the cookie will only be sent along
+                with "same-site" requests.  If the value is ``'Lax'``, the
+                cookie will be sent with same-site requests, and with
+                "cross-site" top-level navigations.  If the value is ``'None'``,
+                the cookie will be sent with same-site and cross-site requests.
+                Finally, when this attribute is not set on the cookie, the
+                attribute will be treated as if it had been set to ``'None'``.
+
+                (See also: `Same-Site RFC Draft`_)
+
         Raises:
             KeyError: `name` is not a valid cookie name.
             ValueError: `value` is not a valid cookie value.
@@ -364,12 +378,15 @@ class Response:
         .. _RFC 6265:
             http://tools.ietf.org/html/rfc6265
 
+        .. _Same-Site RFC Draft:
+            https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-03#section-4.1.2.7
+
         """
 
         if not is_ascii_encodable(name):
-            raise KeyError('"name" is not ascii encodable')
+            raise KeyError('name is not ascii encodable')
         if not is_ascii_encodable(value):
-            raise ValueError('"value" is not ascii encodable')
+            raise ValueError('value is not ascii encodable')
 
         value = str(value)
 
@@ -414,16 +431,24 @@ class Response:
         if path:
             self._cookies[name]['path'] = path
 
-        if secure is None:
-            is_secure = self.options.secure_cookies_by_default
-        else:
-            is_secure = secure
+        is_secure = self.options.secure_cookies_by_default if secure is None else secure
 
         if is_secure:
             self._cookies[name]['secure'] = True
 
         if http_only:
             self._cookies[name]['httponly'] = http_only
+
+        # PERF(kgriffs): Morsel.__setitem__() will lowercase this anyway,
+        #   so we can just pass this in and when __setitem__() calls
+        #   lower() it will be very slightly faster.
+        if same_site:
+            same_site = same_site.lower()
+
+            if same_site not in _RESERVED_SAMESITE_VALUES:
+                raise ValueError("same_site must be set to either 'lax', 'strict', or 'none'")
+
+            self._cookies[name]['samesite'] = same_site.capitalize()
 
     def unset_cookie(self, name):
         """Unset a cookie in the response
