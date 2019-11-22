@@ -27,20 +27,20 @@ Please note that all contributors and maintainers of this project are subject to
 
 Before submitting a pull request, please ensure you have added or updated tests as appropriate, and that all existing tests still pass with your changes. Please also ensure that your coding style follows PEP 8.
 
-You can check all this by running the following from within the Falcon project directory (requires Python 3.7 to be installed on your system):
+You can check all this by running the following from within the Falcon project directory (requires Python 3.8 to be installed on your system):
 
 ```bash
 $ tools/mintest.sh
 
 ```
 
-You may also use Python 3.5 or 3.6 if you don't have 3.7 installed on your system. Substitute "py35" or "py36" as appropriate. For example:
+You may also use Python 3.5, 3.6 or 3.7 if you don't have 3.8 installed on your system. Substitute "py35", "py36" or "py37" as appropriate. For example:
 
 
 ```bash
 $ pip install -U tox coverage
 $ rm -f .coverage.*
-$ tox -e pep8 && tox -e py35 && tools/testing/combine_coverage.sh
+$ tox -e pep8 && tox -e py37 && tools/testing/combine_coverage.sh
 
 #### Reviews
 
@@ -90,21 +90,21 @@ If you wish, you can customize Falcon's `tox.ini` to install alternative debugge
 A few simple benchmarks are included with the source under ``falcon/bench``. These can be taken as a rough measure of the performance impact (if any) that your changes have on the framework. You can run these tests by invoking one of the tox environments included for this purpose (see also the ``tox.ini`` file). For example:
 
 ```bash
-$ tox -e py37_bench
+$ tox -e py38_bench
 ```
 
 Note that you may pass additional arguments via tox to the falcon-bench command:
 
 ```bash
-$ tox -e py37_bench -- -h
-$ tox -e py37_bench -- -b falcon -i 20000
+$ tox -e py38_bench -- -h
+$ tox -e py38_bench -- -b falcon -i 20000
 ```
 
 Alternatively, you may run falcon-bench directly by creating a new virtual environment and installing falcon directly in development mode. In this example we use pyenv with pyenv-virtualenv from within a falcon source directory:
 
 ```bash
-$ pyenv virtualenv 3.7.3 falcon-sandbox-37
-$ pyenv shell falcon-sandbox-37
+$ pyenv virtualenv 3.8.0 falcon-sandbox-38
+$ pyenv shell falcon-sandbox-38
 $ pip install -r requirements/bench
 $ pip install -e .
 $ falcon-bench
