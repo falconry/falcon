@@ -14,6 +14,7 @@
 
 from datetime import datetime
 from collections import OrderedDict
+import multiprocessing
 import sys
 import os
 
@@ -23,6 +24,14 @@ except ImportError:
   import ConfigParser as configparser
 
 import falcon
+
+# NOTE(kgriffs): Work around the change in Python 3.8 that breaks sphinx
+#   on macOS. See also:
+#
+#   * https://github.com/sphinx-doc/sphinx/issues/6803
+#   * https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods
+#
+multiprocessing.set_start_method('fork')
 
 # on_rtd is whether we are on readthedocs.org
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
