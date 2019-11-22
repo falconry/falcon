@@ -2,7 +2,6 @@ try:
     import jsonschema
 except ImportError:
     jsonschema = None
-from typing import Dict
 
 import pytest
 

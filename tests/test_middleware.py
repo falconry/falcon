@@ -1,6 +1,5 @@
 from datetime import datetime
 import json
-from typing import Dict
 
 import pytest
 

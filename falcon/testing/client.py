@@ -191,7 +191,14 @@ class Result:
         return self._status_code
 
     @property
-    def headers(self) -> CaseInsensitiveDict[str]:
+    def headers(self) -> CaseInsensitiveDict:
+        # NOTE(kgriffs): It would probably be better to annotate this with
+        #   a generic Mapping[str, str] type, but currently there is an
+        #   incompatibility with Cython that prevents us from modifying
+        #   CaseInsensitiveDict to inherit from a generic MutableMapping
+        #   type. This might be resolved in the future by moving
+        #   the CaseInsensitiveDict implementation to the falcon.testing
+        #   module so that it is no longer Cythonized.
         return self._headers
 
     @property

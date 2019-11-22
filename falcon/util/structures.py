@@ -28,15 +28,11 @@ for convenience::
 """
 
 from collections.abc import Mapping, MutableMapping
-import typing
-
-
-T = typing.TypeVar('T')
 
 
 # TODO(kgriffs): If we ever diverge from what is upstream in Requests,
 # then we will need write tests and remove the "no cover" pragma.
-class CaseInsensitiveDict(MutableMapping, typing.Mapping[str, T]):  # pragma: no cover
+class CaseInsensitiveDict(MutableMapping):  # pragma: no cover
     """
     A case-insensitive ``dict``-like object.
 
