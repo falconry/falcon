@@ -1,4 +1,5 @@
 import io
+from wsgiref.validate import InputWrapper
 
 import falcon
 from falcon import testing
@@ -58,7 +59,7 @@ def test_post_image(client, mock_store):
 
     # saver_call is a unittest.mock.call tuple. It's first element is a
     # tuple of positional arguments supplied when calling the mock.
-    assert isinstance(saver_call[0][0], falcon.request_helpers.BoundedStream)
+    assert isinstance(saver_call[0][0], InputWrapper)
     assert saver_call[0][1] == image_content_type
 
 
