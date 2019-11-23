@@ -171,7 +171,7 @@ pre {
 
 
 div.admonition {
-    padding-bottom: 15px;
+    padding-bottom: 0;
 }
 
 div input[type="text"] {
@@ -227,6 +227,11 @@ dl.field-list > dt {
     word-break: normal;
     padding-left: 0;
     hyphens: none;
+    margin-top: 0.2em;
+}
+
+dl.field-list > dd {
+    margin-top: 0.2em;
 }
 
 dl.field-list ul {
@@ -240,4 +245,12 @@ dl.field-list ul li {
 
 dl.field-list.simple dd ul {
     padding-left: 0;
+}
+
+dl.field-list.simple dd ul li p:not(:first-child) {
+    margin-top: 0.4em;
+}
+
+dl.attribute > dd > p {
+    margin: 0;
 }
