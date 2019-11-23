@@ -701,43 +701,40 @@ class TestHeaders:
 
         self._check_link_header(client, resource, expected_value)
 
-    def test_add_link_crossorigin_none(self, client):
-        expected_value = '</related/thing>; rel=alternate'
-
+    @pytest.mark.parametrize('crossorigin,expected_value', [
+        (None, '</related/thing>; rel=alternate'),
+        ('anonymous', '</related/thing>; rel=alternate; crossorigin'),
+        ('Anonymous', '</related/thing>; rel=alternate; crossorigin'),
+        ('AnOnYmOUs', '</related/thing>; rel=alternate; crossorigin'),
+        (
+            'Use-Credentials',
+            '</related/thing>; rel=alternate; crossorigin="use-credentials"',
+        ),
+        (
+            'use-credentials',
+            '</related/thing>; rel=alternate; crossorigin="use-credentials"',
+        ),
+    ])
+    def test_add_link_crossorigin(self, client, crossorigin, expected_value):
         resource = LinkHeaderResource()
         resource.add_link('/related/thing', 'alternate',
-                          crossorigin=None)
+                          crossorigin=crossorigin)
 
         self._check_link_header(client, resource, expected_value)
 
-    def test_add_link_crossorigin_anonymous(self, client):
-        expected_value = ('</related/thing>; rel=alternate; '
-                          'crossorigin="anonymous"')
+    @pytest.mark.parametrize('crossorigin', [
+        '*',
+        'Allow-all',
+        'Lax',
+        'MUST-REVALIDATE',
+        'Strict',
+        'deny',
+    ])
+    def test_add_link_invalid_crossorigin_value(self, crossorigin):
+        resp = falcon.Response()
 
-        resource = LinkHeaderResource()
-        resource.add_link('/related/thing', 'alternate',
-                          crossorigin='anonymous')
-
-        self._check_link_header(client, resource, expected_value)
-
-    def test_add_link_crossorigin_use_credentials(self, client):
-        expected_value = ('</related/thing>; rel=alternate; '
-                          'crossorigin="use-credentials"')
-
-        resource = LinkHeaderResource()
-        resource.add_link('/related/thing', 'alternate',
-                          crossorigin='use-credentials')
-
-        self._check_link_header(client, resource, expected_value)
-
-    def test_add_link_crossorigin_invalid(self, client):
-        expected_value = '</related/thing>; rel=alternate'
-
-        resource = LinkHeaderResource()
-        resource.add_link('/related/thing', 'alternate',
-                          crossorigin='invalid')
-
-        self._check_link_header(client, resource, expected_value)
+        with pytest.raises(ValueError):
+            resp.add_link('/related/resource', 'next', crossorigin=crossorigin)
 
     def test_content_length_options(self, client):
         result = client.simulate_options()

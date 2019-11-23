@@ -40,6 +40,8 @@ _STREAM_LEN_REMOVED_MSG = (
 )
 
 
+_RESERVED_CROSSORIGIN_VALUES = frozenset({'anonymous', 'use-credentials'})
+
 _RESERVED_SAMESITE_VALUES = frozenset({'lax', 'strict', 'none'})
 
 
@@ -775,8 +777,17 @@ class Response:
             value += '; anchor="' + uri_encode(anchor) + '"'
 
         if crossorigin is not None:
-            if crossorigin in ['anonymous', 'use-credentials']:
-                value += '; crossorigin="' + crossorigin + '"'
+            crossorigin = crossorigin.lower()
+            if crossorigin not in _RESERVED_CROSSORIGIN_VALUES:
+                raise ValueError(
+                    'crossorigin must be set to either '
+                    "'anonymous' or 'use-credentials'")
+            if crossorigin == 'anonymous':
+                value += '; crossorigin'
+            else:  # crossorigin == 'use-credentials'
+                # PERF(vytas): the only remaining value is inlined.
+                # Un-inline in case more values are supported in the future.
+                value += '; crossorigin="use-credentials"'
 
         _headers = self._headers
         if 'link' in _headers:
