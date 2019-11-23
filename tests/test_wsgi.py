@@ -1,5 +1,6 @@
 import multiprocessing
 import os
+import sys
 import time
 from wsgiref.simple_server import make_server
 
@@ -56,7 +57,7 @@ class TestWSGIServer:
         assert not resp.text
 
 
-def _run_server(stop_event):
+def _run_server(stop_event, host, port):
     class Things:
         def on_get(self, req, resp):
             resp.body = req.remote_addr
@@ -92,24 +93,29 @@ def _run_server(stop_event):
     api.add_route('/', Things())
     api.add_route('/bucket', Bucket())
 
-    server = make_server(_SERVER_HOST, _SERVER_PORT, application)
+    server = make_server(host, port, application)
 
     while not stop_event.is_set():
         server.handle_request()
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def _setup_wsgi_server():
     stop_event = multiprocessing.Event()
     process = multiprocessing.Process(
         target=_run_server,
-        args=(stop_event,)
+
+        # NOTE(kgriffs): Pass these explicitly since if multiprocessing is
+        #   using the 'spawn' start method, we can't depend on closures.
+        args=(stop_event, _SERVER_HOST, _SERVER_PORT)
     )
 
     process.start()
 
-    # NOTE(kgriffs): Let the server start up
-    time.sleep(0.2)
+    # NOTE(kgriffs): Let the server start up. Since Python 3.8 switched
+    #   to the 'spawn' start method by default on macOS, which is rather slow
+    #   compared to 'fork', we have to wait longer in that case.
+    time.sleep(1 if sys.platform == 'darwin' else 0.2)
 
     yield
 

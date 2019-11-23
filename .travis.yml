@@ -38,6 +38,8 @@ matrix:
         # - python: 3.7
         #   env: TOXENV=hug
         - python: 3.8
+          env: TOXENV=look
+        - python: 3.8
           env: TOXENV=check_vendored
 
 script: tox
