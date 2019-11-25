@@ -40,6 +40,8 @@ _STREAM_LEN_REMOVED_MSG = (
 )
 
 
+_RESERVED_CROSSORIGIN_VALUES = frozenset({'anonymous', 'use-credentials'})
+
 _RESERVED_SAMESITE_VALUES = frozenset({'lax', 'strict', 'none'})
 
 
@@ -668,7 +670,7 @@ class Response:
             _headers[name] = value
 
     def add_link(self, target, rel, title=None, title_star=None,
-                 anchor=None, hreflang=None, type_hint=None):
+                 anchor=None, hreflang=None, type_hint=None, crossorigin=None):
         """Add a link header to the response.
 
         (See also: RFC 5988, Section 1)
@@ -725,6 +727,9 @@ class Response:
                 result of dereferencing the link (default ``None``). As noted
                 in RFC 5988, this is only a hint and does not override the
                 Content-Type header returned when the link is followed.
+            crossorigin(str):  Determines how cross origin requests are handled.
+                Can take values 'anonymous' or 'use-credentials' or None.
+                (See: https://www.w3.org/TR/html50/infrastructure.html#cors-settings-attribute)
 
         """
 
@@ -770,6 +775,19 @@ class Response:
 
         if anchor is not None:
             value += '; anchor="' + uri_encode(anchor) + '"'
+
+        if crossorigin is not None:
+            crossorigin = crossorigin.lower()
+            if crossorigin not in _RESERVED_CROSSORIGIN_VALUES:
+                raise ValueError(
+                    'crossorigin must be set to either '
+                    "'anonymous' or 'use-credentials'")
+            if crossorigin == 'anonymous':
+                value += '; crossorigin'
+            else:  # crossorigin == 'use-credentials'
+                # PERF(vytas): the only remaining value is inlined.
+                # Un-inline in case more values are supported in the future.
+                value += '; crossorigin="use-credentials"'
 
         _headers = self._headers
         if 'link' in _headers:

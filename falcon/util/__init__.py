@@ -33,5 +33,6 @@ from falcon.util.time import *  # NOQA
 #   for Python versions prior to 3.8. We do it this way because
 #   SimpleCookie does not give us a simple way to specify our own
 #   subclass of Morsel.
-if 'samesite' not in http_cookies.Morsel._reserved:  # pragma: no cover
-    http_cookies.Morsel._reserved['samesite'] = 'SameSite'
+_reserved_cookie_attrs = http_cookies.Morsel._reserved  # type: ignore
+if 'samesite' not in _reserved_cookie_attrs:  # pragma: no cover
+    _reserved_cookie_attrs['samesite'] = 'SameSite'  # type: ignore

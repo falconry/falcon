@@ -13,6 +13,9 @@ for convenience::
 import datetime
 
 
+__all__ = ['TimezoneGMT']
+
+
 class TimezoneGMT(datetime.tzinfo):
     """GMT timezone class implementing the :py:class:`datetime.tzinfo` interface."""
 
