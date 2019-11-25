@@ -121,7 +121,7 @@ class WrappedClassResource:
     _some_fish = Fish()
 
     # Test non-callable should be skipped by decorator
-    on_patch = {}
+    on_patch = {}  # type: ignore
 
     @falcon.before(validate_param, 'limit')
     def on_get(self, req, resp, bunnies):
@@ -441,7 +441,7 @@ def test_piggybacking_resource_post_and_delete(app_client):
 
         assert len(app_client.simulate_get('/items').json) == number
 
-    resp = app_client.simulate_delete('/items/7'.format(number))
+    resp = app_client.simulate_delete('/items/{}'.format(number))
     assert resp.status_code == 204
     assert resp.headers['X-Fish-Trait'] == 'wet'
     assert resp.headers['X-Hook-Applied'] == '1'

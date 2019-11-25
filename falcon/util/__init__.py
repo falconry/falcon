@@ -20,6 +20,7 @@ Conversely, the `uri` module must be imported explicitly::
 
 """
 
+from http import cookies as http_cookies
 import json  # NOQA
 import sys
 
@@ -28,6 +29,15 @@ from falcon.util.misc import *  # NOQA
 from falcon.util.streams import BufferedStream as _PyBufferedStream
 from falcon.util.structures import *  # NOQA
 from falcon.util.time import *  # NOQA
+
+
+# NOTE(kgriffs): Backport support for the new 'SameSite' attribute
+#   for Python versions prior to 3.8. We do it this way because
+#   SimpleCookie does not give us a simple way to specify our own
+#   subclass of Morsel.
+_reserved_cookie_attrs = http_cookies.Morsel._reserved  # type: ignore
+if 'samesite' not in _reserved_cookie_attrs:  # pragma: no cover
+    _reserved_cookie_attrs['samesite'] = 'SameSite'  # type: ignore
 
 
 IS_64_BITS = sys.maxsize > 2**32

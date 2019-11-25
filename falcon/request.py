@@ -30,8 +30,8 @@ from falcon.vendor import mimeparse
 DEFAULT_ERROR_LOG_FORMAT = ('{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
                             ' {1} {2}{3} => ')
 
-TRUE_STRINGS = frozenset(['true', 'True', 'yes', '1', 'on'])
-FALSE_STRINGS = frozenset(['false', 'False', 'no', '0', 'off'])
+TRUE_STRINGS = frozenset(['true', 'True', 't', 'yes', 'y', '1', 'on'])
+FALSE_STRINGS = frozenset(['false', 'False', 'f', 'no', 'n', '0', 'off'])
 WSGI_CONTENT_HEADERS = frozenset(['CONTENT_TYPE', 'CONTENT_LENGTH'])
 
 # PERF(kgriffs): Avoid an extra namespace lookup when using these functions
@@ -1435,8 +1435,8 @@ class Request:
 
         The following boolean strings are supported::
 
-            TRUE_STRINGS = ('true', 'True', 'yes', '1', 'on')
-            FALSE_STRINGS = ('false', 'False', 'no', '0', 'off')
+            TRUE_STRINGS = ('true', 'True', 't', 'yes', 'y', '1', 'on')
+            FALSE_STRINGS = ('false', 'False', 'f', 'no', 'n', '0', 'off')
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'detailed').
