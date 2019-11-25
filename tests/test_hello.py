@@ -83,7 +83,7 @@ class ClosingBytesIO(io.BytesIO):
 class NonClosingBytesIO(io.BytesIO):
 
     # Not callable; test that CloseableStreamIterator ignores it
-    close = False
+    close = False  # type: ignore
 
 
 class ClosingFilelikeHelloResource:
