@@ -13,11 +13,11 @@ from falcon import media
 orjson = None
 rapidjson = None
 if sys.version_info >= (3, 5):
-    import rapidjson
+    import rapidjson  # type: ignore
 
     if platform.python_implementation() == 'CPython':
         try:
-            import orjson
+            import orjson  # type: ignore
         except ImportError:
             pass
 

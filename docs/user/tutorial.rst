@@ -820,6 +820,7 @@ look similar to this:
 .. code:: python
 
     import io
+    from wsgiref.validate import InputWrapper
 
     from unittest.mock import call, MagicMock, mock_open
 
@@ -880,7 +881,7 @@ look similar to this:
 
         # saver_call is a unittest.mock.call tuple. It's first element is a
         # tuple of positional arguments supplied when calling the mock.
-        assert isinstance(saver_call[0][0], falcon.request_helpers.BoundedStream)
+        assert isinstance(saver_call[0][0], InputWrapper)
         assert saver_call[0][1] == image_content_type
 
 As you can see, we've redone the POST. While there are fewer mocks, the assertions
@@ -1044,7 +1045,7 @@ You should now be able to re-run the test and see it succeed:
 
 .. note::
     The above process of starting, testing, stopping, and cleaning
-    up after each test run can (and really should be) automated.
+    up after each test run can (and really should) be automated.
     Depending on your needs, you can develop your own automation
     fixtures, or use a library such as
     `mountepy <https://github.com/butla/mountepy>`_.

@@ -701,6 +701,41 @@ class TestHeaders:
 
         self._check_link_header(client, resource, expected_value)
 
+    @pytest.mark.parametrize('crossorigin,expected_value', [
+        (None, '</related/thing>; rel=alternate'),
+        ('anonymous', '</related/thing>; rel=alternate; crossorigin'),
+        ('Anonymous', '</related/thing>; rel=alternate; crossorigin'),
+        ('AnOnYmOUs', '</related/thing>; rel=alternate; crossorigin'),
+        (
+            'Use-Credentials',
+            '</related/thing>; rel=alternate; crossorigin="use-credentials"',
+        ),
+        (
+            'use-credentials',
+            '</related/thing>; rel=alternate; crossorigin="use-credentials"',
+        ),
+    ])
+    def test_add_link_crossorigin(self, client, crossorigin, expected_value):
+        resource = LinkHeaderResource()
+        resource.add_link('/related/thing', 'alternate',
+                          crossorigin=crossorigin)
+
+        self._check_link_header(client, resource, expected_value)
+
+    @pytest.mark.parametrize('crossorigin', [
+        '*',
+        'Allow-all',
+        'Lax',
+        'MUST-REVALIDATE',
+        'Strict',
+        'deny',
+    ])
+    def test_add_link_invalid_crossorigin_value(self, crossorigin):
+        resp = falcon.Response()
+
+        with pytest.raises(ValueError):
+            resp.add_link('/related/resource', 'next', crossorigin=crossorigin)
+
     def test_content_length_options(self, client):
         result = client.simulate_options()
 

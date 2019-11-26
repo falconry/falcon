@@ -50,11 +50,11 @@ class Resource:
 
 
 class GoodData:
-    media = {'message': 'something'}
+    media = {'message': 'something'}  # type: ignore
 
 
 class BadData:
-    media = {}
+    media = {}  # type: ignore
 
 
 @skip_missing_dep

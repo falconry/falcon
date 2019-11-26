@@ -450,9 +450,25 @@ class TestQueryParams:
     def test_boolean(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         client.app.req_options.keep_blank_qs_values = False
-        query_string = ('echo=true&doit=false&bogus=bar&bogus2=foo&'
-                        't1=True&f1=False&t2=yes&f2=no&blank&one=1&zero=0&'
-                        'checkbox1=on&checkbox2=off')
+        query_string = '&'.join([
+            'echo=true',
+            'doit=false',
+            'bogus=bar',
+            'bogus2=foo',
+            't1=True',
+            'f1=False',
+            't2=yes',
+            'f2=no',
+            't3=y',
+            'f3=n',
+            't4=t',
+            'f4=f',
+            'blank',
+            'one=1',
+            'zero=0',
+            'checkbox1=on',
+            'checkbox2=off',
+        ])
         simulate_request(client=client, path='/', query_string=query_string)
 
         req = resource.captured_req
@@ -472,10 +488,10 @@ class TestQueryParams:
         assert req.get_param_as_bool('echo') is True
         assert req.get_param_as_bool('doit') is False
 
-        assert req.get_param_as_bool('t1') is True
-        assert req.get_param_as_bool('t2') is True
-        assert req.get_param_as_bool('f1') is False
-        assert req.get_param_as_bool('f2') is False
+        for i in range(1, 5):
+            assert req.get_param_as_bool('t' + str(i)) is True
+            assert req.get_param_as_bool('f' + str(i)) is False
+
         assert req.get_param_as_bool('one') is True
         assert req.get_param_as_bool('zero') is False
         assert req.get_param('blank') is None

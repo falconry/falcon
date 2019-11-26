@@ -176,7 +176,7 @@ class ClassResourceWithURIFieldsChild(ClassResourceWithURIFields):
 class ClassResourceWithAwareHooks:
 
     # Test that the decorator skips non-callables
-    on_post = False
+    on_delete = False
 
     hook_as_class = ResourceAwareFluffiness()
 

@@ -105,5 +105,23 @@ easily switch between development and production environments.
 
 See also: `RFC 6265, Section 4.1.2.5`_
 
+The SameSite Attribute
+~~~~~~~~~~~~~~~~~~~~~~
+
+The `SameSite` attribute may be set on a cookie using the
+:py:meth:`~.Response.set_cookie` method. It is generally a good idea to
+at least set this attribute to ``'Lax'`` in order to mitigate
+`CSRF attacks <https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF)>`_.
+
+Currently, :py:meth:`~.Response.set_cookie` does not set `SameSite` by
+default, although this may change in a future release.
+
+.. note::
+
+    The standard ``http.cookies`` module does not support the `SameSite`
+    attribute in versions prior to Python 3.8. Therefore, Falcon performs a
+    simple monkey-patch on the standard library module to backport this
+    feature for apps running on older Python versions.
+
 .. _RFC 6265, Section 4.1.2.5:
     https://tools.ietf.org/html/rfc6265#section-4.1.2.5
