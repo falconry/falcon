@@ -23,17 +23,19 @@ from typing import Dict, Optional, Union
 import warnings
 import wsgiref.validate
 
-from falcon.constants import MEDIA_JSON
+from falcon.constants import COMBINED_METHODS, MEDIA_JSON
 from falcon.testing import helpers
 from falcon.testing.srmock import StartResponseMock
 from falcon.util import CaseInsensitiveDict, http_cookies, http_date_to_dt, to_query_str
 from falcon.util import json as util_json
 
 warnings.filterwarnings(
-    'ignore',
+    'error',
     (
-        'Unknown REQUEST_METHOD: '
-        "'(CONNECT|CHECKIN|CHECKOUT|UNCHECKIN|UPDATE|VERSION-CONTROL|REPORT|SETECASTRONOMY)'"
+        'Unknown REQUEST_METHOD: ' +
+        "'({})'".format(
+            '|'.join(COMBINED_METHODS)
+        )
     ),
     wsgiref.validate.WSGIWarning,
     '',
