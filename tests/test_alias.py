@@ -41,4 +41,4 @@ def test_cookies(alias_client, app_client):
 
 def test_alias_equals_to_app(alias_client):
     api = falcon.API()
-    assert isinstance(api, falcon.App)
+    assert isinstance(api, falcon.API)

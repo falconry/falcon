@@ -17,7 +17,6 @@
 from functools import wraps
 import re
 import traceback
-import warnings
 
 from falcon import api_helpers as helpers, DEFAULT_MEDIA_TYPE, routing
 from falcon.http_error import HTTPError
@@ -889,14 +888,16 @@ class App:
         return [], 0
 
 
-# NOTE(mikeyusko): This function is temporary and will be deleted once
-# the API alias will be removed
-def api(*args, **kwargs):
-    warnings.warn(
-        'API class will be deprecated in the future, use App instead.'
-    )
-    return App(*args, **kwargs)
+class API(App):
+    """
+    # NOTE(mikeyusko): This class is temporary and will be deleted in the future.
 
+    The class is an alias for compatibility purposes the core team
+    decided to rename it to App instead of API, to avoid confuse
+    that it represents a falcon API, but originally it represents
+    a WSGI app.
+    """
 
-# Deprecated alias
-API = api
+    @misc.deprecated('API class will be deprecated in the future, use App instead.')
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
