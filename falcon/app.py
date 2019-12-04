@@ -888,16 +888,20 @@ class App:
         return [], 0
 
 
+# NOTE(mikeyusko): This class is a compatibility alias, and it may be removed
+# in a future release.
 class API(App):
     """
-    # NOTE(mikeyusko): This class is temporary and will be deleted in the future.
+    This class is a compatibility alias of :class:`falcon.App`.
 
-    The class is an alias for compatibility purposes the core team
-    decided to rename it to App instead of API, to avoid confuse
-    that it represents a falcon API, but originally it represents
-    a WSGI app.
+    ``API`` was renamed to :class:`App <falcon.App>` in Falcon 3.0 in order to
+    reflect the breadth of applications that :class:`App <falcon.App>`, and its
+    ASGI counterpart in particular, can now be used for.
+
+    This compatibility alias should be considered deprecated, and it may be
+    removed in a future Falcon release.
     """
 
-    @misc.deprecated('API class will be deprecated in the future, use App instead.')
+    @misc.deprecated('API class may be removed in a future release, use falcon.App instead.')
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
