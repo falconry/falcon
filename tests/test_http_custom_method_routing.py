@@ -1,5 +1,6 @@
 import importlib
 import os
+import wsgiref.validate
 
 import pytest
 
@@ -92,7 +93,9 @@ def test_environment_override(cleanup_constants, resource_things, env_str, expec
 def test_foo(custom_http_client, resource_things):
     """FOO is a supported method, so returns HTTP_204"""
     custom_http_client.app.add_route('/things', resource_things)
-    response = custom_http_client.simulate_request(path='/things', method='FOO')
+
+    with pytest.warns(wsgiref.validate.WSGIWarning):
+        response = custom_http_client.simulate_request(path='/things', method='FOO')
 
     assert 'FOO' in falcon.constants.COMBINED_METHODS
     assert response.status == falcon.HTTP_204
@@ -102,7 +105,9 @@ def test_foo(custom_http_client, resource_things):
 def test_bar(custom_http_client, resource_things):
     """BAR is not supported by ResourceThing"""
     custom_http_client.app.add_route('/things', resource_things)
-    response = custom_http_client.simulate_request(path='/things', method='BAR')
+
+    with pytest.warns(wsgiref.validate.WSGIWarning):
+        response = custom_http_client.simulate_request(path='/things', method='BAR')
 
     assert 'BAR' in falcon.constants.COMBINED_METHODS
     assert response.status == falcon.HTTP_405
