@@ -50,6 +50,12 @@ class App:
     Each App instance provides a callable WSGI interface and a routing
     engine.
 
+    Note:
+        The ``API`` class was renamed to ``App`` in Falcon 3.0. The
+        old class name remains available as an alias for
+        backwards-compatibility, but will be removed in a future
+        release.
+
     Keyword Arguments:
         media_type (str): Default media type to use as the
             value for the Content-Type header on responses (default
@@ -888,8 +894,8 @@ class App:
         return [], 0
 
 
-# NOTE(mikeyusko): This class is a compatibility alias, and it may be removed
-# in a future release.
+# TODO(mikeyusko): This class is a compatibility alias, and should be removed
+# in the next major release (4.0).
 class API(App):
     """
     This class is a compatibility alias of :class:`falcon.App`.
@@ -898,8 +904,8 @@ class API(App):
     reflect the breadth of applications that :class:`App <falcon.App>`, and its
     ASGI counterpart in particular, can now be used for.
 
-    This compatibility alias should be considered deprecated, and it may be
-    removed in a future Falcon release.
+    This compatibility alias should be considered deprecated; it will be
+    removed in a future release.
     """
 
     @misc.deprecated('API class may be removed in a future release, use falcon.App instead.')

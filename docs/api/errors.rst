@@ -88,6 +88,7 @@ Predefined Errors
 -----------------
 
 .. automodule:: falcon
+    :noindex:
     :members: HTTPBadRequest,
         HTTPInvalidHeader, HTTPMissingHeader,
         HTTPInvalidParam, HTTPMissingParam,
