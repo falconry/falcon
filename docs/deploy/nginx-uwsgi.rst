@@ -79,14 +79,14 @@ Preparing your Application for Service
 For the purposes of this tutorial, we'll assume that you have implemented
 a way to configure your application, such as with a
 ``create_api()`` function or a module-level script. This role of this
-function or script is to supply an instance of :any:`falcon.API`, which
+function or script is to supply an instance of :any:`falcon.App`, which
 implements the standard WSGI callable interface.
 
-You will need to expose the :any:`falcon.API` instance in some way so that
+You will need to expose the :any:`falcon.App` instance in some way so that
 uWSGI can find it. For this tutorial we recommend creating a ``wsgi.py`` file.
 Modify the logic of the following example file to properly configure your
 application.  Ensure that you expose a variable called ``application`` which
-is assigned to your :any:`falcon.API` instance.
+is assigned to your :any:`falcon.App` instance.
 
 .. code-block:: python
   :caption: /home/myproject/src/wsgi.py

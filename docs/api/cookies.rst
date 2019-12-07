@@ -99,7 +99,7 @@ the request.
 When running your application in a development environment, you can
 disable this default behavior by setting
 :py:attr:`~.ResponseOptions.secure_cookies_by_default` to ``False``
-via :any:`API.resp_options`. This lets you test your app locally
+via :any:`App.resp_options`. This lets you test your app locally
 without having to set up TLS. You can make this option configurable to
 easily switch between development and production environments.
 

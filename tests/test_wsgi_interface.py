@@ -21,7 +21,7 @@ class TestWSGIInterface:
         assert mock.exc_info == exc_info
 
     def test_pep3333(self):
-        api = falcon.API()
+        api = falcon.App()
         mock = testing.StartResponseMock()
 
         # Simulate a web request (normally done though a WSGI server)

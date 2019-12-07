@@ -55,7 +55,7 @@ Now, open ``app.py`` in your favorite text editor and add the following lines:
 
     import falcon
 
-    api = application = falcon.API()
+    app = application = falcon.App()
 
 This code creates your WSGI application and aliases it as ``api``. You can use any
 variable names you like, but we'll use ``application`` since that is what
@@ -67,7 +67,7 @@ in the next section of the tutorial).
     you can host the application with any web server that understands the `WSGI
     protocol <http://legacy.python.org/dev/peps/pep-3333/>`_.
 
-Next let's take a look at the :class:`falcon.API` class. Install
+Next let's take a look at the :class:`falcon.App` class. Install
 `IPython <http://ipython.org/>`_ and fire it up:
 
 .. code:: bash
@@ -75,19 +75,19 @@ Next let's take a look at the :class:`falcon.API` class. Install
     $ pip install ipython
     $ ipython
 
-Now, type the following to introspect the :class:`falcon.API` callable:
+Now, type the following to introspect the :class:`falcon.App` callable:
 
 .. code:: bash
 
     In [1]: import falcon
 
-    In [2]: falcon.API.__call__?
+    In [2]: falcon.App.__call__?
 
 Alternatively, you can use the standard Python ``help()`` function:
 
 .. code:: bash
 
-    In [3]: help(falcon.API.__call__)
+    In [3]: help(falcon.App.__call__)
 
 Note the method signature. ``env`` and ``start_response`` are standard
 WSGI params. Falcon adds a thin abstraction on top of these params
@@ -129,7 +129,7 @@ since the latter doesn't work under Windows:
 .. code:: bash
 
     $ pip install waitress
-    $ waitress-serve --port=8000 look.app:api
+    $ waitress-serve --port=8000 look.app:app
 
 Now, in a different terminal, try querying the running app with curl:
 
@@ -282,10 +282,10 @@ Next let's wire up this resource and see it in action. Go back to
     from .images import Resource
 
 
-    api = application = falcon.API()
+    app = application = falcon.App()
 
     images = Resource()
-    api.add_route('/images', images)
+    app.add_route('/images', images)
 
 Now, when a request comes in for ``/images``, Falcon will call the
 responder on the images resource that corresponds to the requested
@@ -421,7 +421,7 @@ now look like this:
         ├── __init__.py
         └── test_app.py
 
-Falcon supports :ref:`testing <testing>` its :class:`~.API` object by
+Falcon supports :ref:`testing <testing>` its :class:`~.App` object by
 simulating HTTP requests.
 
 Tests can either be written using Python's standard :mod:`unittest`
@@ -447,12 +447,12 @@ Next, edit ``test_app.py`` to look like this:
     import msgpack
     import pytest
 
-    from look.app import api
+    from look.app import app
 
 
     @pytest.fixture
     def client():
-        return testing.TestClient(api)
+        return testing.TestClient(app)
 
 
     # pytest will inject the object returned by the "client" function
@@ -767,11 +767,11 @@ Hmm, it looks like we forgot to update ``app.py``. Let's do that now:
     from .images import ImageStore, Resource
 
 
-    api = application = falcon.API()
+    app = application = falcon.App()
 
     image_store = ImageStore('.')
     images = Resource(image_store)
-    api.add_route('/images', images)
+    app.add_route('/images', images)
 
 Let's try again:
 
@@ -793,9 +793,9 @@ similar to the following:
 
     def create_app(image_store):
         image_resource = Resource(image_store)
-        api = falcon.API()
-        api.add_route('/images', image_resource)
-        return api
+        app = falcon.App()
+        app.add_route('/images', image_resource)
+        return app
 
 
     def get_app():
@@ -803,7 +803,7 @@ similar to the following:
         return create_app(image_store)
 
 As you can see, the bulk of the setup logic has been moved to
-``create_app()``, which can be used to obtain an API object either
+``create_app()``, which can be used to obtain an App object either
 for testing or for hosting in production.
 ``get_app()`` takes care of instantiating additional resources and
 configuring the application for hosting.
@@ -840,8 +840,8 @@ look similar to this:
 
     @pytest.fixture
     def client(mock_store):
-        api = look.app.create_app(mock_store)
-        return testing.TestClient(api)
+        app = look.app.create_app(mock_store)
+        return testing.TestClient(app)
 
 
     def test_list_images(client):
@@ -1021,9 +1021,9 @@ the image storage directory with an environment variable:
 
     def create_app(image_store):
         image_resource = Resource(image_store)
-        api = falcon.API()
-        api.add_route('/images', image_resource)
-        return api
+        app = falcon.App()
+        app.add_route('/images', image_resource)
+        return app
 
 
     def get_app():
@@ -1179,7 +1179,7 @@ Go ahead and edit your ``images.py`` file to look something like this:
 As you can see, we renamed ``Resource`` to ``Collection`` and added a new ``Item``
 class to represent a single image resource. Alternatively, these two classes could
 be consolidated into one by using suffixed responders. (See also:
-:meth:`~falcon.API.add_route`)
+:meth:`~falcon.App.add_route`)
 
 Also, note the ``name`` parameter for the ``on_get()`` responder. Any URI
 parameters that you specify in your routes will be turned into corresponding
@@ -1213,10 +1213,10 @@ similar to the following:
 
 
     def create_app(image_store):
-        api = falcon.API()
-        api.add_route('/images', images.Collection(image_store))
-        api.add_route('/images/{name}', images.Item(image_store))
-        return api
+        app = falcon.App()
+        app.add_route('/images', images.Collection(image_store))
+        app.add_route('/images/{name}', images.Item(image_store))
+        return app
 
 
     def get_app():
@@ -1403,7 +1403,7 @@ for each error type.
     for logging and otherwise handling exceptions raised by
     responders, hooks, and middleware components.
 
-    See also: :meth:`~.API.add_error_handler`.
+    See also: :meth:`~.App.add_error_handler`.
 
 Let's see a quick example of how this works. Try requesting an invalid
 image name from your application:

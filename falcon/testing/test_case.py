@@ -46,9 +46,9 @@ class TestCase(unittest.TestCase, TestClient):
 
     Attributes:
         app (object): A WSGI application to target when simulating
-            requests (default: ``falcon.API()``). When testing your
+            requests (default: ``falcon.App()``). When testing your
             application, you will need to set this to your own instance
-            of ``falcon.API``. For example::
+            of ``falcon.App``. For example::
 
                 from falcon import testing
                 import myapp
@@ -60,7 +60,7 @@ class TestCase(unittest.TestCase, TestClient):
 
                         # Assume the hypothetical `myapp` package has a
                         # function called `create()` to initialize and
-                        # return a `falcon.API` instance.
+                        # return a `falcon.App` instance.
                         self.app = myapp.create()
 
 
@@ -75,7 +75,7 @@ class TestCase(unittest.TestCase, TestClient):
     def setUp(self):
         super(TestCase, self).setUp()
 
-        app = falcon.API()
+        app = falcon.App()
 
         # NOTE(kgriffs): Don't use super() to avoid triggering
         # unittest.TestCase.__init__()

@@ -14,7 +14,7 @@ def test_custom_router_add_route_should_be_used():
         def find(self, uri):
             pass
 
-    app = falcon.API(router=CustomRouter())
+    app = falcon.App(router=CustomRouter())
     app.add_route('/test', 'resource')
 
     assert len(check) == 1
@@ -47,7 +47,7 @@ def test_custom_router_find_should_be_used():
             return None
 
     router = CustomRouter()
-    app = falcon.API(router=router)
+    app = falcon.App(router=router)
     client = testing.TestClient(app)
 
     response = client.simulate_request(path='/test/42')
@@ -80,7 +80,7 @@ def test_can_pass_additional_params_to_add_route():
         def find(self, uri):
             pass
 
-    app = falcon.API(router=CustomRouter())
+    app = falcon.App(router=CustomRouter())
     app.add_route('/test', 'resource', name='my-url-name')
 
     assert len(check) == 1
@@ -103,7 +103,7 @@ def test_custom_router_takes_req_positional_argument():
                 return responder, {'GET': responder}, {}, None
 
     router = CustomRouter()
-    app = falcon.API(router=router)
+    app = falcon.App(router=router)
     client = testing.TestClient(app)
     response = client.simulate_request(path='/test')
     assert response.content == b'OK'
@@ -119,7 +119,7 @@ def test_custom_router_takes_req_keyword_argument():
                 return responder, {'GET': responder}, {}, None
 
     router = CustomRouter()
-    app = falcon.API(router=router)
+    app = falcon.App(router=router)
     client = testing.TestClient(app)
     response = client.simulate_request(path='/test')
     assert response.content == b'OK'

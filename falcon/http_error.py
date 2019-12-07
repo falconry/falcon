@@ -29,8 +29,8 @@ class HTTPError(Exception):
     are supported by default.
 
     To customize the error presentation, implement a custom error
-    serializer and set it on the :class:`~.API` instance via
-    :meth:`~.API.set_error_serializer`.
+    serializer and set it on the :class:`~.App` instance via
+    :meth:`~.App.set_error_serializer`.
 
     To customize what data is passed to the serializer, subclass
     ``HTTPError`` and override the ``to_dict()`` method (``to_json()``
@@ -65,7 +65,7 @@ class HTTPError(Exception):
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
-            title/description for the link (default 'API documentation
+            title/description for the link (default 'App documentation
             for this error').
         code (int): An internal code that customers can reference in their
             support request or to help them when searching for knowledge
@@ -83,7 +83,7 @@ class HTTPError(Exception):
 
             Note:
                 A custom error serializer
-                (see :meth:`~.API.set_error_serializer`) may choose to set a
+                (see :meth:`~.App.set_error_serializer`) may choose to set a
                 response body regardless of the value of this property.
 
         title (str): Error title to send to the client.

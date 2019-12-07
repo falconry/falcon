@@ -8,7 +8,7 @@ from falcon import testing
 
 @pytest.fixture
 def client():
-    return testing.TestClient(falcon.API())
+    return testing.TestClient(falcon.App())
 
 
 # NOTE(kgriffs): Concept from Gunicorn's source (wsgi.py)

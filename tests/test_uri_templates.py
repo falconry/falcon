@@ -121,7 +121,7 @@ def resource():
 
 @pytest.fixture
 def client():
-    return testing.TestClient(falcon.API())
+    return testing.TestClient(falcon.App())
 
 
 def test_root_path(client, resource):

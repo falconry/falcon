@@ -9,7 +9,7 @@ from falcon import errors, media, testing
 def create_client(handlers=None):
     res = testing.SimpleTestResource()
 
-    app = falcon.API()
+    app = falcon.App()
     app.add_route('/', res)
 
     if handlers:
@@ -67,7 +67,7 @@ def test_json(media_type):
     },
 ])
 def test_non_ascii_json_serialization(document):
-    app = falcon.API()
+    app = falcon.App()
     app.add_route('/', SimpleMediaResource(document))
     client = testing.TestClient(app)
 

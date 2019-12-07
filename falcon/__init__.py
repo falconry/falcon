@@ -20,14 +20,14 @@ the framework's classes, functions, and variables::
 
     import falcon
 
-    app = falcon.API()
+    app = falcon.App()
 
 """
 
 # Hoist classes and functions into the falcon namespace
 from falcon.version import __version__  # NOQA
 from falcon.constants import *  # NOQA
-from falcon.api import API  # NOQA
+from falcon.app import App, API  # NOQA
 from falcon.status_codes import *  # NOQA
 from falcon.errors import *  # NOQA
 from falcon.redirects import *  # NOQA
