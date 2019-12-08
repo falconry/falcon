@@ -21,7 +21,7 @@ class TestWsgiRefInputWrapper:
         Originally, testing would fail after performing a request because no
         size was specified when calling `wsgiref.validate.InputWrapper.read()`
         via `req.stream.read()`"""
-        app = falcon.API()
+        app = falcon.App()
         type_route = '/type'
         app.add_route(type_route, TypeResource())
         client = testing.TestClient(app)

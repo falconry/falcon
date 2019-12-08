@@ -40,7 +40,7 @@ def cleanup_constants():
 def custom_http_client(cleanup_constants, resource_things):
     falcon.constants.COMBINED_METHODS += FALCON_CUSTOM_HTTP_METHODS
 
-    app = falcon.API()
+    app = falcon.App()
     app.add_route('/things', resource_things)
     return testing.TestClient(app)
 

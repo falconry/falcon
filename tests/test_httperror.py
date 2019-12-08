@@ -14,7 +14,7 @@ from falcon.util import json
 
 @pytest.fixture
 def client():
-    app = falcon.API()
+    app = falcon.App()
 
     resource = FaultyResource()
     app.add_route('/fail', resource)
@@ -703,7 +703,7 @@ class TestHTTPError:
         assert parsed_body['code'] == code
 
     def test_416(self, client):
-        client.app = falcon.API()
+        client.app = falcon.App()
         client.app.add_route('/416', RangeNotSatisfiableResource())
         response = client.simulate_request(path='/416', headers={'accept': 'text/xml'})
 

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Falcon API class."""
+"""Falcon App class."""
 
 from functools import wraps
 import re
@@ -44,11 +44,17 @@ _TYPELESS_STATUS_CODES = frozenset([
 ])
 
 
-class API:
+class App:
     """This class is the main entry point into a Falcon-based app.
 
-    Each API instance provides a callable WSGI interface and a routing
+    Each App instance provides a callable WSGI interface and a routing
     engine.
+
+    Note:
+        The ``API`` class was renamed to ``App`` in Falcon 3.0. The
+        old class name remains available as an alias for
+        backwards-compatibility, but will be removed in a future
+        release.
 
     Keyword Arguments:
         media_type (str): Default media type to use as the
@@ -218,9 +224,9 @@ class API:
     def __call__(self, env, start_response):  # noqa: C901
         """WSGI `app` method.
 
-        Makes instances of API callable from a WSGI server. May be used to
-        host an API or called directly in order to simulate requests when
-        testing the API.
+        Makes instances of App callable from a WSGI server. May be used to
+        host an App or called directly in order to simulate requests when
+        testing the App.
 
         (See also: PEP 3333)
 
@@ -371,7 +377,7 @@ class API:
 
         This method delegates to the configured router's ``add_route()``
         method. To override the default behavior, pass a custom router
-        object to the :class:`~.API` initializer.
+        object to the :class:`~.App` initializer.
 
         (See also: :ref:`Routing <routing>`)
 
@@ -447,8 +453,8 @@ class API:
         ``'/foo/bar'`` route, and ``'/foo/xyz/thing.js'`` being mapped to the
         ``'/foo'`` route::
 
-            api.add_static_route('/foo', foo_path)
-            api.add_static_route('/foo/bar', foobar_path)
+            app.add_static_route('/foo', foo_path)
+            app.add_static_route('/foo/bar', foobar_path)
 
         Args:
             prefix (str): The path prefix to match for this route. If the
@@ -478,7 +484,7 @@ class API:
         )
 
     def add_sink(self, sink, prefix=r'/'):
-        """Register a sink method for the API.
+        """Register a sink method for the App.
 
         If no route matches a request, but the path in the requested URI
         matches a sink prefix, Falcon will pass control to the
@@ -540,7 +546,7 @@ class API:
         standard ``Exception`` type) should be added first, to avoid
         masking more specific handlers for subclassed types. For example::
 
-            app = falcon.API()
+            app = falcon.App()
             app.add_error_handler(Exception, custom_handle_uncaught_exception)
             app.add_error_handler(falcon.HTTPError, custom_handle_http_error)
             app.add_error_handler(CustomException)
@@ -886,3 +892,22 @@ class API:
             return iterable, None
 
         return [], 0
+
+
+# TODO(mikeyusko): This class is a compatibility alias, and should be removed
+# in the next major release (4.0).
+class API(App):
+    """
+    This class is a compatibility alias of :class:`falcon.App`.
+
+    ``API`` was renamed to :class:`App <falcon.App>` in Falcon 3.0 in order to
+    reflect the breadth of applications that :class:`App <falcon.App>`, and its
+    ASGI counterpart in particular, can now be used for.
+
+    This compatibility alias should be considered deprecated; it will be
+    removed in a future release.
+    """
+
+    @misc.deprecated('API class may be removed in a future release, use falcon.App instead.')
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)

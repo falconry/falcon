@@ -32,8 +32,8 @@ clean design that embraces HTTP and the REST architectural style.
             resp.media = quote
 
 
-    api = falcon.API()
-    api.add_route('/quote', QuoteResource())
+    app = falcon.App()
+    app.add_route('/quote', QuoteResource())
 
 What People are Saying
 ----------------------

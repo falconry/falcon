@@ -12,13 +12,13 @@ SAMPLE_BODY = testing.rand_string(0, 128 * 1024)
 
 @pytest.fixture
 def client():
-    app = falcon.API()
+    app = falcon.App()
     return testing.TestClient(app)
 
 
 @pytest.fixture(scope='function')
 def cors_client():
-    app = falcon.API(cors_enable=True)
+    app = falcon.App(cors_enable=True)
     return testing.TestClient(app)
 
 
@@ -392,7 +392,7 @@ class TestHeaders:
         ('text/plain', 'Hello ISO-8859-1!'),
     ])
     def test_override_default_media_type(self, client, content_type, body):
-        client.app = falcon.API(media_type=content_type)
+        client.app = falcon.App(media_type=content_type)
         client.app.add_route('/', testing.SimpleTestResource(body=body))
         result = client.simulate_get()
 
@@ -402,7 +402,7 @@ class TestHeaders:
     def test_override_default_media_type_missing_encoding(self, client):
         body = '{"msg": "Hello Unicode! \U0001F638"}'
 
-        client.app = falcon.API(media_type='application/json')
+        client.app = falcon.App(media_type='application/json')
         client.app.add_route('/', testing.SimpleTestResource(body=body))
         result = client.simulate_get()
 

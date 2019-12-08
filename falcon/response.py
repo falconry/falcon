@@ -52,7 +52,7 @@ class Response:
         `Response` is not meant to be instantiated directly by responders.
 
     Keyword Arguments:
-        options (dict): Set of global options passed from the API handler.
+        options (dict): Set of global options passed from the App handler.
 
     Attributes:
         status (str): HTTP status line (e.g., '200 OK'). Falcon requires the
@@ -125,7 +125,7 @@ class Response:
             the framework will instantiate bare objects (instances of the bare
             :class:`falcon.Context` class). However, you may override this
             behavior by creating a custom child class of ``falcon.Response``,
-            and then passing that new class to `falcon.API()` by way of the
+            and then passing that new class to `falcon.App()` by way of the
             latter's `response_type` parameter.
 
             Note:
@@ -134,7 +134,7 @@ class Response:
                 the current Response instance. Therefore the first argument is
                 the Response instance itself (self).
 
-        options (dict): Set of global options passed from the API handler.
+        options (dict): Set of global options passed from the App handler.
 
         headers (dict): Copy of all headers set for the response,
             sans cookies. Note that a new copy is created and returned each
@@ -346,7 +346,7 @@ class Response:
                     The default value for this argument is normally
                     ``True``, but can be modified by setting
                     :py:attr:`~.ResponseOptions.secure_cookies_by_default`
-                    via :any:`API.resp_options`.
+                    via :any:`App.resp_options`.
 
                 Warning:
                     For the `secure` cookie attribute to be effective,
@@ -1017,7 +1017,7 @@ class Response:
 class ResponseOptions:
     """Defines a set of configurable response options.
 
-    An instance of this class is exposed via :any:`API.resp_options` for
+    An instance of this class is exposed via :any:`App.resp_options` for
     configuring certain :py:class:`~.Response` behaviors.
 
     Attributes:
@@ -1029,7 +1029,7 @@ class ResponseOptions:
 
         default_media_type (str): The default Internet media type (RFC 2046) to
             use when deserializing a response. This value is normally set to the
-            media type provided when a :class:`falcon.API` is initialized;
+            media type provided when a :class:`falcon.App` is initialized;
             however, if created independently, this will default to the
             ``DEFAULT_MEDIA_TYPE`` specified by Falcon.
 

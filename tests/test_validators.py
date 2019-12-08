@@ -95,7 +95,7 @@ def test_both_schemas_validation_success():
     assert result[0] is req_data
     assert result[1] is resp_data
 
-    client = testing.TestClient(falcon.API())
+    client = testing.TestClient(falcon.App())
     client.app.add_route('/test', Resource())
     result = client.simulate_put('/test', json=GoodData.media)
     assert result.json == resp_data.media
@@ -113,7 +113,7 @@ def test_both_schemas_validation_failure():
 
     assert excinfo.value.title == 'Request data failed validation'
 
-    client = testing.TestClient(falcon.API())
+    client = testing.TestClient(falcon.App())
     client.app.add_route('/test', Resource())
     result = client.simulate_put('/test', json=BadData.media)
     assert result.status_code == 400

@@ -50,7 +50,7 @@ class Request:
             also PEP-3333.
 
     Keyword Arguments:
-        options (dict): Set of global options passed from the API handler.
+        options (dict): Set of global options passed from the App handler.
 
     Attributes:
         env (dict): Reference to the WSGI environ ``dict`` passed in from the
@@ -74,7 +74,7 @@ class Request:
             the framework will instantiate bare objects (instances of the bare
             :class:`falcon.Context` class). However, you may override this
             behavior by creating a custom child class of ``falcon.Request``,
-            and then passing that new class to `falcon.API()` by way of the
+            and then passing that new class to `falcon.App()` by way of the
             latter's `request_type` parameter.
 
             Note:
@@ -395,7 +395,7 @@ class Request:
             string, the value mapped to that parameter key will be a list of
             all the values in the order seen.
 
-        options (dict): Set of global options passed from the API handler.
+        options (dict): Set of global options passed from the App handler.
     """
 
     __slots__ = (
@@ -1162,7 +1162,7 @@ class Request:
             and merge them into the query string parameters. To enable
             this functionality, set
             :py:attr:`~.RequestOptions.auto_parse_form_urlencoded` to
-            ``True`` via :any:`API.req_options`.
+            ``True`` via :any:`App.req_options`.
 
             Note, however, that the
             :attr:`~.RequestOptions.auto_parse_form_urlencoded` option is
@@ -1801,7 +1801,7 @@ class Request:
 class RequestOptions:
     """Defines a set of configurable request options.
 
-    An instance of this class is exposed via :any:`API.req_options` for
+    An instance of this class is exposed via :any:`App.req_options` for
     configuring certain :py:class:`~.Request` behaviors.
 
     Attributes:
@@ -1865,7 +1865,7 @@ class RequestOptions:
 
         default_media_type (str): The default media-type to use when
             deserializing a response. This value is normally set to the media
-            type provided when a :class:`falcon.API` is initialized; however,
+            type provided when a :class:`falcon.App` is initialized; however,
             if created independently, this will default to the
             ``DEFAULT_MEDIA_TYPE`` specified by Falcon.
 
