@@ -37,7 +37,7 @@ class MediaMirror:
 
 @pytest.fixture
 def client():
-    app = falcon.API()
+    app = falcon.App()
     app.add_route('/media', MediaMirror())
     return testing.TestClient(app)
 
