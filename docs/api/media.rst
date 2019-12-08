@@ -6,7 +6,7 @@ Media
 Falcon allows for easy and customizable internet media type handling. By default
 Falcon only enables a single JSON handler. However, additional handlers
 can be configured through the :any:`falcon.RequestOptions` and
-:any:`falcon.ResponseOptions` objects specified on your :any:`falcon.API`.
+:any:`falcon.ResponseOptions` objects specified on your :any:`falcon.App`.
 
 .. note::
 
@@ -72,7 +72,7 @@ middleware. Here is an example of how this can be done:
 Replacing the Default Handlers
 ------------------------------
 
-When creating your API object you can either add or completely
+When creating your App object you can either add or completely
 replace all of the handlers. For example, lets say you want to write an API
 that sends and receives MessagePack. We can easily do this by telling our
 Falcon API that we want a default media-type of ``application/msgpack`` and
@@ -89,10 +89,10 @@ a handler that can process that data.
         'application/msgpack': media.MessagePackHandler(),
     })
 
-    api = falcon.API(media_type='application/msgpack')
+    app = falcon.App(media_type='application/msgpack')
 
-    api.req_options.media_handlers = handlers
-    api.resp_options.media_handlers = handlers
+    app.req_options.media_handlers = handlers
+    app.resp_options.media_handlers = handlers
 
 Alternatively, if you would like to add an additional handler such as
 MessagePack, this can be easily done in the following manner:
@@ -107,10 +107,10 @@ MessagePack, this can be easily done in the following manner:
         'application/msgpack': media.MessagePackHandler(),
     }
 
-    api = falcon.API()
+    app = falcon.App()
 
-    api.req_options.media_handlers.update(extra_handlers)
-    api.resp_options.media_handlers.update(extra_handlers)
+    app.req_options.media_handlers.update(extra_handlers)
+    app.resp_options.media_handlers.update(extra_handlers)
 
 
 Supported Handler Types

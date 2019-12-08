@@ -1,23 +1,26 @@
 from functools import wraps
+import wsgiref.validate
 
 import pytest
 
 import falcon
 import falcon.testing as testing
 
-HTTP_METHODS = (
+# RFC 7231, 5789 methods
+HTTP_METHODS = [
     'CONNECT',
     'DELETE',
     'GET',
     'HEAD',
     'OPTIONS',
+    'PATCH',
     'POST',
     'PUT',
     'TRACE',
-    'PATCH'
-)
+]
 
-WEBDAV_METHODS = (
+# RFC 2518 and 4918 methods
+WEBDAV_METHODS = [
     'CHECKIN',
     'CHECKOUT',
     'COPY',
@@ -28,10 +31,10 @@ WEBDAV_METHODS = (
     'PROPPATCH',
     'REPORT',
     'UNCHECKIN',
-    'UNLOCK'
+    'UNLOCK',
     'UPDATE',
     'VERSION-CONTROL',
-)
+]
 
 
 @pytest.fixture
@@ -56,7 +59,7 @@ def resource_get_with_faulty_put():
 
 @pytest.fixture
 def client():
-    app = falcon.API()
+    app = falcon.App()
 
     app.add_route('/stonewall', Stonewall())
 
@@ -274,6 +277,9 @@ class TestHttpMethodRouting:
     def test_bogus_method(self, client, resource_things):
         client.app.add_route('/things', resource_things)
         client.app.add_route('/things/{id}/stuff/{sid}', resource_things)
-        response = client.simulate_request(path='/things', method='SETECASTRONOMY')
+
+        with pytest.warns(wsgiref.validate.WSGIWarning):
+            response = client.simulate_request(path='/things', method='SETECASTRONOMY')
+
         assert not resource_things.called
         assert response.status == falcon.HTTP_400

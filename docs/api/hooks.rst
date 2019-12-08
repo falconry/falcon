@@ -41,7 +41,7 @@ decorate the resource class:
 
 .. note::
     When decorating an entire resource class, all method names that resemble
-    responders, including *suffix*\ed (see also :meth:`~falcon.API.add_route`)
+    responders, including *suffix*\ed (see also :meth:`~falcon.App.add_route`)
     ones, are decorated. If, for instance, a method is called ``on_get_items``,
     but it is not meant for handling ``GET`` requests under a route with the
     *suffix* ``items``, the easiest workaround for preventing the hook function

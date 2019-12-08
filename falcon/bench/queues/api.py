@@ -61,7 +61,7 @@ def create(body, headers):
         CannedResponseComponent(body, headers),
     ]
 
-    api = falcon.API(middleware=middleware)
+    api = falcon.App(middleware=middleware)
     api.add_route('/v1/{tenant_id}/queues', queue_collection)
     api.add_route('/v1/{tenant_id}/queues/{queue_name}', queue_item)
     api.add_route('/v1/{tenant_id}/queues/{queue_name}'

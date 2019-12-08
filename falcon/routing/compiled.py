@@ -41,7 +41,7 @@ class CompiledRouter:
     """Fast URI router which compiles its routing logic to Python code.
 
     Generally you do not need to use this router class directly, as an
-    instance is created by default when the falcon.API class is initialized.
+    instance is created by default when the falcon.App class is initialized.
 
     The router treats URI paths as a tree of URI segments and searches by
     checking the URI one segment at a time. Instead of interpreting the route
@@ -668,7 +668,7 @@ class ConverterDict(UserDict):
 class CompiledRouterOptions:
     """Defines a set of configurable router options.
 
-    An instance of this class is exposed via :any:`API.router_options`
+    An instance of this class is exposed via :any:`App.router_options`
     for configuring certain :py:class:`~.CompiledRouter` behaviors.
 
     Attributes:
@@ -677,12 +677,12 @@ class CompiledRouterOptions:
             expressions. Adding additional converters is simply a
             matter of mapping an identifier to a converter class::
 
-                api.router_options.converters['mc'] = MyConverter
+                app.router_options.converters['mc'] = MyConverter
 
             The identifier can then be used to employ the converter
             within a URI template::
 
-                api.add_route('/{some_field:mc}', some_resource)
+                app.add_route('/{some_field:mc}', some_resource)
 
             Converter names may only contain ASCII letters, digits,
             and underscores, and must start with either a letter or

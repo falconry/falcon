@@ -20,7 +20,7 @@ def falcon(body, headers):
     import falcon
 
     path = '/hello/{account_id}/test'
-    falcon_app = falcon.API('text/plain')
+    falcon_app = falcon.App('text/plain')
 
     # def ask(req, resp, params):
     #     params['answer'] = 42

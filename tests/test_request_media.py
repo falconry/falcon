@@ -7,7 +7,7 @@ from falcon import errors, media, testing
 def create_client(handlers=None):
     res = testing.SimpleTestResource()
 
-    app = falcon.API()
+    app = falcon.App()
     app.add_route('/', res)
 
     if handlers:

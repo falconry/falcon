@@ -34,7 +34,7 @@ The testing framework supports both unittest and pytest::
 
             # Assume the hypothetical `myapp` package has a
             # function called `create()` to initialize and
-            # return a `falcon.API` instance.
+            # return a `falcon.App` instance.
             self.app = myapp.create()
 
 
@@ -63,7 +63,7 @@ The testing framework supports both unittest and pytest::
     @pytest.fixture()
     def client():
         # Assume the hypothetical `myapp` package has a function called
-        # `create()` to initialize and return a `falcon.API` instance.
+        # `create()` to initialize and return a `falcon.App` instance.
         return testing.TestClient(myapp.create())
 
 

@@ -25,7 +25,7 @@ WEBDAV_METHODS = [
     'PROPPATCH',
     'REPORT',
     'UNCHECKIN',
-    'UNLOCK'
+    'UNLOCK',
     'UPDATE',
     'VERSION-CONTROL',
 ]

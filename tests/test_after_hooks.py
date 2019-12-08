@@ -19,7 +19,7 @@ def wrapped_resource_aware():
 
 @pytest.fixture
 def client():
-    app = falcon.API()
+    app = falcon.App()
 
     resource = WrappedRespondersResource()
     app.add_route('/', resource)
@@ -356,7 +356,7 @@ class HandGame:
 
 @pytest.fixture
 def game_client():
-    app = falcon.API()
+    app = falcon.App()
     resource = HandGame()
 
     app.add_route('/seed', resource)

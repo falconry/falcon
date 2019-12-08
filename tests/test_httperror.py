@@ -1,6 +1,7 @@
 # -*- coding: utf-8
 
 import datetime
+import wsgiref.validate
 import xml.etree.ElementTree as et  # noqa: I202
 
 import pytest
@@ -13,7 +14,7 @@ from falcon.util import json
 
 @pytest.fixture
 def client():
-    app = falcon.API()
+    app = falcon.App()
 
     resource = FaultyResource()
     app.add_route('/fail', resource)
@@ -379,7 +380,12 @@ class TestHTTPError:
         client.app.add_route('/notfound', NotFoundResourceWithBody())
         client.app.set_error_serializer(_simple_serializer)
 
-        resp = client.simulate_request(path=path, method=method)
+        if method not in falcon.COMBINED_METHODS:
+            with pytest.warns(wsgiref.validate.WSGIWarning):
+                resp = client.simulate_request(path=path, method=method)
+        else:
+            resp = client.simulate_request(path=path, method=method)
+
         assert resp.json['title']
         assert resp.json['status'] == status
 
@@ -697,7 +703,7 @@ class TestHTTPError:
         assert parsed_body['code'] == code
 
     def test_416(self, client):
-        client.app = falcon.API()
+        client.app = falcon.App()
         client.app.add_route('/416', RangeNotSatisfiableResource())
         response = client.simulate_request(path='/416', headers={'accept': 'text/xml'})
 

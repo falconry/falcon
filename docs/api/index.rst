@@ -4,7 +4,7 @@ Classes and Functions
 .. toctree::
    :maxdepth: 2
 
-   api
+   app
    request_and_response
    cookies
    status

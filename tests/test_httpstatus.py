@@ -76,7 +76,7 @@ class TestHookResource:
 class TestHTTPStatus:
     def test_raise_status_in_before_hook(self):
         """ Make sure we get the 200 raised by before hook """
-        app = falcon.API()
+        app = falcon.App()
         app.add_route('/status', TestStatusResource())
         client = testing.TestClient(app)
 
@@ -87,7 +87,7 @@ class TestHTTPStatus:
 
     def test_raise_status_in_responder(self):
         """ Make sure we get the 200 raised by responder """
-        app = falcon.API()
+        app = falcon.App()
         app.add_route('/status', TestStatusResource())
         client = testing.TestClient(app)
 
@@ -98,7 +98,7 @@ class TestHTTPStatus:
 
     def test_raise_status_runs_after_hooks(self):
         """ Make sure after hooks still run """
-        app = falcon.API()
+        app = falcon.App()
         app.add_route('/status', TestStatusResource())
         client = testing.TestClient(app)
 
@@ -109,7 +109,7 @@ class TestHTTPStatus:
 
     def test_raise_status_survives_after_hooks(self):
         """ Make sure after hook doesn't overwrite our status """
-        app = falcon.API()
+        app = falcon.App()
         app.add_route('/status', TestStatusResource())
         client = testing.TestClient(app)
 
@@ -120,7 +120,7 @@ class TestHTTPStatus:
 
     def test_raise_status_empty_body(self):
         """ Make sure passing None to body results in empty body """
-        app = falcon.API()
+        app = falcon.App()
         app.add_route('/status', TestStatusResource())
         client = testing.TestClient(app)
 
@@ -137,7 +137,7 @@ class TestHTTPStatusWithMiddleware:
                                  headers={'X-Failed': 'False'},
                                  body='Pass')
 
-        app = falcon.API(middleware=TestMiddleware())
+        app = falcon.App(middleware=TestMiddleware())
         app.add_route('/status', TestHookResource())
         client = testing.TestClient(app)
 
@@ -154,7 +154,7 @@ class TestHTTPStatusWithMiddleware:
                                  headers={'X-Failed': 'False'},
                                  body='Pass')
 
-        app = falcon.API(middleware=TestMiddleware())
+        app = falcon.App(middleware=TestMiddleware())
         app.add_route('/status', TestHookResource())
         client = testing.TestClient(app)
 
@@ -171,7 +171,7 @@ class TestHTTPStatusWithMiddleware:
                 resp.set_header('X-Failed', 'False')
                 resp.body = 'Pass'
 
-        app = falcon.API(middleware=TestMiddleware())
+        app = falcon.App(middleware=TestMiddleware())
         app.add_route('/status', TestHookResource())
         client = testing.TestClient(app)
 

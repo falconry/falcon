@@ -10,7 +10,7 @@ browsers to prevent unauthorized requests between different domains.
 When implementing
 a web API, it is common to have to also implement a CORS policy. Therefore,
 Falcon provides an easy way to enable a simple CORS policy via a flag passed
-to :any:`falcon.API`.
+to :any:`falcon.App`.
 
 By default, Falcon's built-in CORS support is disabled, so that any cross-origin
 requests will be blocked by the browser. Passing ``cors_enabled=True`` will
