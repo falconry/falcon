@@ -18,7 +18,7 @@ def resource():
 
 @pytest.fixture
 def client():
-    app = falcon.API()
+    app = falcon.App()
     return testing.TestClient(app)
 
 

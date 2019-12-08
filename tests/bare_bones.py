@@ -6,7 +6,7 @@ class Things:
         pass
 
 
-api = application = falcon.API()
+api = application = falcon.App()
 api.add_route('/', Things())
 
 

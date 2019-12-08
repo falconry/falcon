@@ -6,7 +6,7 @@ from falcon import routing
 
 class TestUriTemplates:
 
-    @pytest.mark.parametrize('value', (42, falcon.API))
+    @pytest.mark.parametrize('value', (42, falcon.App))
     def test_string_type_required(self, value):
         with pytest.raises(TypeError):
             routing.compile_uri_template(value)

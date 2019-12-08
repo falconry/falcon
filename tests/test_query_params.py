@@ -44,7 +44,7 @@ def resource():
 
 @pytest.fixture
 def client():
-    app = falcon.API()
+    app = falcon.App()
     app.req_options.auto_parse_form_urlencoded = True
     return testing.TestClient(app)
 
@@ -902,7 +902,7 @@ class TestPostQueryParams:
 
 class TestPostQueryParamsDefaultBehavior:
     def test_dont_auto_parse_by_default(self):
-        app = falcon.API()
+        app = falcon.App()
         resource = testing.SimpleTestResource()
         app.add_route('/', resource)
 

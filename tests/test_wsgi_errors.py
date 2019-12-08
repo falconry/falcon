@@ -10,7 +10,7 @@ unicode_message = 'Unicode: \x80'
 
 @pytest.fixture
 def client():
-    app = falcon.API()
+    app = falcon.App()
 
     tehlogger = LoggerResource()
     app.add_route('/logger', tehlogger)

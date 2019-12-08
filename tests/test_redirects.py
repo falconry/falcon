@@ -6,7 +6,7 @@ import falcon.testing as testing
 
 @pytest.fixture
 def client():
-    app = falcon.API()
+    app = falcon.App()
 
     resource = RedirectingResource()
     app.add_route('/', resource)
@@ -16,7 +16,7 @@ def client():
 
 @pytest.fixture
 def client_exercising_headers():
-    app = falcon.API()
+    app = falcon.App()
 
     resource = RedirectingResourceWithHeaders()
     app.add_route('/', resource)
