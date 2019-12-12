@@ -548,12 +548,13 @@ installed by default, thus making the POSTed form available as
             #   or use mimeparse to implement more sophisticated logic.
 
 .. note::
-   In Falcon 2.0 and before, a POSTed URL-encoded form could be automatically
-   consumed and merged onto :attr:`~.Request.params` by setting the
-   :attr:`~RequestOptions.auto_parse_form_urlencoded` option to ``True``. This
-   behavior is still supported in Falcon 3.0 series, but it should be
-   considered deprecated in favor of the media handler, and may be removed in a
-   future Falcon release.
+   In prior versions of Falcon, a POSTed URL-encoded form could be automatically
+   consumed and merged into :attr:`~.Request.params` by setting the
+   :attr:`~.RequestOptions.auto_parse_form_urlencoded` option to ``True``. This
+   behavior is still supported in the Falcon 3.x series. However, it has been
+   deprecated in favor of :class:`~.media.URLEncodedFormHandler`, and the
+   option to merge URL-encoded form data into
+   :attr:`~.Request.params` may be removed in a future release.
 
 POSTed form parameters may also be read directly from
 :attr:`~.Request.stream` and parsed via
