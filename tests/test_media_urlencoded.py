@@ -37,17 +37,9 @@ class MediaMirror:
 
 @pytest.fixture
 def client():
-    handlers = media.Handlers({
-        falcon.MEDIA_JSON: media.JSONHandler(),
-        falcon.MEDIA_URLENCODED: media.URLEncodedFormHandler(),
-    })
-    api = falcon.API()
-    api.req_options.media_handlers = handlers
-    api.resp_options.media_handlers = handlers
-
-    api.add_route('/media', MediaMirror())
-
-    return testing.TestClient(api)
+    app = falcon.App()
+    app.add_route('/media', MediaMirror())
+    return testing.TestClient(app)
 
 
 def test_empty_form(client):
@@ -61,6 +53,11 @@ def test_empty_form(client):
     ('a=1&b=&c=3', {'a': '1', 'b': '', 'c': '3'}),
     ('param=undefined', {'param': 'undefined'}),
     ('color=green&color=black', {'color': ['green', 'black']}),
+    (
+        'food=hamburger+%28%F0%9F%8D%94%29&sauce=BBQ',
+        {'food': 'hamburger (🍔)', 'sauce': 'BBQ'},
+    ),
+    ('flag%1&flag%2&flag%1&flag%2', {'flag%1': ['', ''], 'flag%2': ['', '']}),
 ])
 def test_urlencoded_form(client, body, expected):
     resp = client.simulate_post(
