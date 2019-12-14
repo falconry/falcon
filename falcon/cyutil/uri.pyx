@@ -41,59 +41,11 @@ cdef inline int cy_decode_hex(unsigned char nibble1, unsigned char nibble2):
     return HEX_CHARS[(nibble1 << 8) | nibble2]
 
 
-cdef unicode cy_decode_no_plus(unsigned char* data, Py_ssize_t start,
-                               Py_ssize_t end, Py_ssize_t encoded_start):
-    if encoded_start < 0:
-        return data[start:end].decode()
-
-    cdef unsigned char* result
-    cdef Py_ssize_t src_start = start
-    cdef Py_ssize_t dst_start = 0
-    cdef Py_ssize_t pos
-    cdef int decoded
-
-    result = <unsigned char*> PyMem_Malloc(end - start)
-    if not result:
-        raise MemoryError()
-
-    try:
-        for pos in range(encoded_start, end):
-            if data[pos] != b'%':
-                continue
-
-            if src_start < pos:
-                memcpy(result + dst_start, data + src_start,
-                       pos - src_start)
-
-            dst_start += pos - src_start
-            src_start = pos
-
-            # NOTE(vytas): Else %
-            if pos < end - 2:
-                decoded = cy_decode_hex(data[pos+1], data[pos+2])
-                if decoded < 0:
-                    continue
-
-                # NOTE(vytas): Succeeded decoding a byte
-                result[dst_start] = decoded
-                dst_start += 1
-                src_start += 3
-                # NOTE(vytas): It is somewhat ugly to wind the loop variable
-                #   like that, but hopefully it is a lesser sin in C.
-                pos += 2
-
-        if src_start < end:
-            memcpy(result + dst_start, data + src_start,
-                   end - src_start)
-
-        return result[:dst_start + end - src_start].decode('utf-8', 'replace')
-
-    finally:
-        PyMem_Free(result)
-
-
 cdef unicode cy_decode(unsigned char* data, Py_ssize_t start, Py_ssize_t end,
-                       Py_ssize_t encoded_start):
+                       Py_ssize_t encoded_start, bint unquote_plus):
+    # PERF(vytas): encoded_start being -1 signifies that the caller
+    #   (cy_parse_query_string) has already verified that no encoding
+    #   characters exist in the provided substring data[start:end].
     if encoded_start < 0:
         return data[start:end].decode()
 
@@ -119,7 +71,7 @@ cdef unicode cy_decode(unsigned char* data, Py_ssize_t start, Py_ssize_t end,
             dst_start += pos - src_start
             src_start = pos
 
-            if data[pos] == b'+':
+            if data[pos] == b'+' and unquote_plus:
                 result[dst_start] = b' '
                 dst_start += 1
                 src_start += 1
@@ -207,9 +159,11 @@ cdef cy_parse_query_string(unsigned char* data, Py_ssize_t length,
         current = data[pos]
 
         if current == b'&':
+            # TODO(vytas): DRY this with the "if length > start" block below.
+            #   Keep them in sync until they are improved to share code.
             if pos > start:
                 if partition >= 0:
-                    key = cy_decode(data, start, partition, encoded_start_key)
+                    key = cy_decode(data, start, partition, encoded_start_key, True)
                     if csv and encoded_start_val >= 0:
                         cy_handle_csv(result, keep_blank, key,
                                       data[partition+1:pos].decode())
@@ -219,9 +173,9 @@ cdef cy_parse_query_string(unsigned char* data, Py_ssize_t length,
                         partition = -1
                         continue
 
-                    value = cy_decode(data, partition+1, pos, encoded_start_val)
+                    value = cy_decode(data, partition+1, pos, encoded_start_val, True)
                 else:
-                    key = cy_decode(data, start, pos, encoded_start_key)
+                    key = cy_decode(data, start, pos, encoded_start_key, True)
                     value = EMPTY_STRING
 
                 if value is not EMPTY_STRING or keep_blank:
@@ -256,17 +210,21 @@ cdef cy_parse_query_string(unsigned char* data, Py_ssize_t length,
             if encoded_start_val < 0:
                 encoded_start_val = pos
 
+    # NOTE(vytas): This block is largely the same (although not identical as it
+    #   does not need to compute the endoded_start_* values) as the above
+    #   "if pos > start" (see also the DRY TODO note earlier in this function).
+    #   Keep them in sync until they are improved to share code.
     if length > start:
         if partition >= 0:
-            key = cy_decode(data, start, partition, encoded_start_key)
+            key = cy_decode(data, start, partition, encoded_start_key, True)
             if csv and encoded_start_val >= 0:
                 cy_handle_csv(result, keep_blank, key,
                               data[partition+1:length].decode())
                 return result
 
-            value = cy_decode(data, partition+1, length, encoded_start_val)
+            value = cy_decode(data, partition+1, length, encoded_start_val, True)
         else:
-            key = cy_decode(data, start, length, encoded_start_key)
+            key = cy_decode(data, start, length, encoded_start_key, True)
             value = EMPTY_STRING
 
         if value is not EMPTY_STRING or keep_blank:
@@ -292,8 +250,4 @@ def parse_query_string(unicode query_string not None, bint keep_blank=False,
 def decode(unicode encoded_uri not None, bint unquote_plus=True):
     cdef bytes byte_string = encoded_uri.encode('utf-8')
     cdef unsigned char* data = byte_string
-
-    if unquote_plus:
-        return cy_decode(data, 0, len(byte_string), 0)
-
-    return cy_decode_no_plus(data, 0, len(byte_string), 0)
+    return cy_decode(data, 0, len(byte_string), 0, unquote_plus)
