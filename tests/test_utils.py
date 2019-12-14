@@ -2,6 +2,7 @@
 
 from datetime import datetime
 import functools
+import itertools
 import random
 from urllib.parse import quote, unquote_plus
 
@@ -296,6 +297,30 @@ class TestFalconUtils:
         ('flag1&&&&&flag2&&&', True, {'flag1': '', 'flag2': ''}),
         ('flag1&&&&&flag2&&&', False, {}),
         ('malformed=%FG%1%Hi%%%a', False, {'malformed': '%FG%1%Hi%%%a'}),
+        ('=', False, {}),
+        ('==', False, {'': '='}),
+        (
+            '%==+==&&&&&&&&&%%==+=&&&&&&%0g%=%=',
+            False,
+            {'%': '= ==', '%%': '= =', '%0g%': '%='},
+        ),
+        ('%=&%%=&&%%%=', False, {}),
+        ('%=&%%=&&%%%=', True, {'%': '', '%%': '', '%%%': ''}),
+        ('+=&%+=&&%++=', True, {' ': '', '% ': '', '%  ': ''}),
+        ('=x=&=x=+1=x=&%=x', False, {'': ['x=', 'x= 1=x='], '%': 'x'}),
+        (
+            ''.join(itertools.chain.from_iterable(
+                itertools.permutations('%=+&', 4))),
+            False,
+            {
+                '': ['%', ' %', '%', ' ', ' =%', '%', '% ', ' %'],
+                ' ': ['=% ', ' %', '%'],
+                '%': [' ', ' ', ' '],
+            },
+        ),
+        # NOTE(vytas): Sanity check that we do not accidentally use C-strings
+        #   anywhere in the cythonized variant.
+        ('%%%\x00%\x00==\x00\x00==', True, {'%%%\x00%\x00': '=\x00\x00=='}),
         ('spade=♠&spade=♠', False, {'spade': ['♠', '♠']}),  # Unicode query
     ])
     def test_parse_query_string_edge_cases(
