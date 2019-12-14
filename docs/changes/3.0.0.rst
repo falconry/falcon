@@ -1,6 +1,19 @@
 Changelog for Falcon 3.0.0
 ==========================
 
+Changes to Supported Platforms
+------------------------------
+
+- Python 3.8 is now fully supported.
+- Python 3.6+ is only required when using the new ASGI interface. WSGI is still
+  supported on Python 3.5+.
+- Python 3.5 support is deprecated and may be removed in the next major release.
+- Python 3.4 is no longer supported.
+- The Falcon 2.x series was the last to support Python language version 2. As a
+  result, support for CPython 2.7 and PyPy2.7 was removed in Falcon 3.0.
+
+.. towncrier release notes start
+
 Contributors to this Release
 ----------------------------
 
