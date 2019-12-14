@@ -346,11 +346,11 @@ def client():
         falcon.MEDIA_JSON: media.JSONHandler(),
         falcon.MEDIA_MULTIPART: media.MultipartFormHandler(),
     })
-    api = falcon.API()
-    api.req_options.media_handlers = handlers
-    api.add_route('/media', MultipartAnalyzer())
+    app = falcon.App()
+    app.req_options.media_handlers = handlers
+    app.add_route('/media', MultipartAnalyzer())
 
-    return testing.TestClient(api)
+    return testing.TestClient(app)
 
 
 @pytest.fixture
@@ -364,11 +364,11 @@ def custom_client():
             falcon.MEDIA_MULTIPART: multipart_handler,
         })
 
-        api = falcon.API()
-        api.req_options.media_handlers = handlers
-        api.add_route('/media', MultipartAnalyzer())
+        app = falcon.App()
+        app.req_options.media_handlers = handlers
+        app.add_route('/media', MultipartAnalyzer())
 
-        return testing.TestClient(api)
+        return testing.TestClient(app)
 
     return _factory
 

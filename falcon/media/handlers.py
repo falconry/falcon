@@ -2,8 +2,8 @@ from collections import UserDict
 
 from falcon import errors
 from falcon.constants import MEDIA_URLENCODED
-from falcon.media import JSONHandler
-from falcon.media import URLEncodedFormHandler
+from falcon.media.json import JSONHandler
+from falcon.media.urlencoded import URLEncodedFormHandler
 from falcon.vendor import mimeparse
 
 
