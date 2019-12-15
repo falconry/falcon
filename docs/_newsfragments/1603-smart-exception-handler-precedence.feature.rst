@@ -1,0 +1,1 @@
+Exceptions are now handled by the registered handler for the most specific matching exception class, rather than in reverse order of registration. "Specificity" is determined by the method resolution order of the raised exception type. (See :meth:`~.App.add_error_handler` for more details.)
