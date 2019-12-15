@@ -1,0 +1,1 @@
+The ``falcon.API`` class is deprecated, and will be removed in the next major release 4.0, use ``falcon.App`` instead.
