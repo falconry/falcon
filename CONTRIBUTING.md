@@ -161,6 +161,12 @@ or in mathematical expressions implementing well-known formulas.
 * Heavily document code that is especially complex and/or clever.
 * When in doubt, optimize for readability.
 
+### Changelog
+
+We use [towncrier](https://towncrier.readthedocs.io/en/actual-freaking-docs/index.html) to manage the changelog. Each PR that modifies the functionality of Falcon should include a short description in a news fragment file in the `docs/_newsfragments` directory.
+
+The newsfragment file name should have the format `{issue_number}.{fragment_type}.rst`, where the fragment type is one of `breakingchange`, `newandimproved`, `bugfix`, or `misc`. If your PR closes another issue, then the original issue number should be used for the newsfragment; otherwise, use the PR number itself.
+
 ### Commit Message Format
 
 Falcon's commit message format uses [AngularJS's style guide][ajs], reproduced here for convenience, with some minor edits for clarity.
