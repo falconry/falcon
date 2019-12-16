@@ -30,5 +30,5 @@ Usage
     import falcon
 
     # Enable a simple CORS policy for all responses
-    app = falcon.API(cors_enable=True)
+    app = falcon.App(cors_enable=True)
 
