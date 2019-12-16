@@ -28,6 +28,11 @@ matrix:
         - python: 3.8
           env: TOXENV=py38_cython
         - python: 3.8
+          # NOTE(vytas): Big-endian architecture
+          arch: s390x
+          os: linux
+          env: TOXENV=py38_cython
+        - python: 3.8
           env: TOXENV=py38_smoke
         - python: 3.8
           env: TOXENV=py38_smoke_cython
@@ -52,8 +57,8 @@ notifications:
     on_failure: always
 
 before_install:
-  - sudo apt-get update
-  - sudo apt-get install -y libunwind-dev
+  # NOTE(vytas): libunwind-dev does not exist for s390x in Ubuntu 16.04
+  - if [[ `uname -m` == *86* ]]; then sudo apt-get update && sudo apt-get install -y libunwind-dev; fi
   - pip install codecov
 
 after_success:
