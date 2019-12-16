@@ -2,6 +2,7 @@
 
 from datetime import datetime
 import functools
+import itertools
 import random
 from urllib.parse import quote, unquote_plus
 
@@ -201,6 +202,15 @@ class TestFalconUtils:
             'http://example.com?x=ab%2Bcd%3D42%2C9'
         ) == 'http://example.com?x=ab+cd=42,9'
 
+    @pytest.mark.parametrize('encoded,expected', [
+        ('+%80', ' �'),
+        ('+++%FF+++', '   �   '),  # impossible byte
+        ('%fc%83%bf%bf%bf%bf', '������'),  # overlong sequence
+        ('%ed%ae%80%ed%b0%80', '������'),  # paired UTF-16 surrogates
+    ])
+    def test_uri_decode_replace_bad_unicode(self, encoded, expected):
+        assert uri.decode(encoded) == expected
+
     def test_uri_decode_unquote_plus(self):
         assert uri.decode('/disk/lost+found/fd0') == '/disk/lost found/fd0'
         assert uri.decode('/disk/lost+found/fd0', unquote_plus=True) == (
@@ -250,7 +260,7 @@ class TestFalconUtils:
         assert uri.unquote_string('"partial-quoted"') == 'partial-quoted'
 
     def test_parse_query_string(self):
-        query_strinq = (
+        query_string = (
             'a=http%3A%2F%2Ffalconframework.org%3Ftest%3D1'
             '&b=%7B%22test1%22%3A%20%22data1%22%'
             '2C%20%22test2%22%3A%20%22data2%22%7D'
@@ -263,7 +273,7 @@ class TestFalconUtils:
         decoded_url = 'http://falconframework.org?test=1'
         decoded_json = '{"test1": "data1", "test2": "data2"}'
 
-        result = uri.parse_query_string(query_strinq)
+        result = uri.parse_query_string(query_string)
         assert result['a'] == decoded_url
         assert result['b'] == decoded_json
         assert result['c'] == ['1', '2', '3']
@@ -272,7 +282,7 @@ class TestFalconUtils:
         assert result['f'] == ['a', 'a=b']
         assert result['é'] == 'a=b'
 
-        result = uri.parse_query_string(query_strinq, True)
+        result = uri.parse_query_string(query_string, True)
         assert result['a'] == decoded_url
         assert result['b'] == decoded_json
         assert result['c'] == ['1', '2', '3']
@@ -280,6 +290,43 @@ class TestFalconUtils:
         assert result['e'] == ['a', '', '&=,']
         assert result['f'] == ['a', 'a=b']
         assert result['é'] == 'a=b'
+
+    @pytest.mark.parametrize('query_string,keep_blank,expected', [
+        ('', True, {}),
+        ('', False, {}),
+        ('flag1&&&&&flag2&&&', True, {'flag1': '', 'flag2': ''}),
+        ('flag1&&&&&flag2&&&', False, {}),
+        ('malformed=%FG%1%Hi%%%a', False, {'malformed': '%FG%1%Hi%%%a'}),
+        ('=', False, {}),
+        ('==', False, {'': '='}),
+        (
+            '%==+==&&&&&&&&&%%==+=&&&&&&%0g%=%=',
+            False,
+            {'%': '= ==', '%%': '= =', '%0g%': '%='},
+        ),
+        ('%=&%%=&&%%%=', False, {}),
+        ('%=&%%=&&%%%=', True, {'%': '', '%%': '', '%%%': ''}),
+        ('+=&%+=&&%++=', True, {' ': '', '% ': '', '%  ': ''}),
+        ('=x=&=x=+1=x=&%=x', False, {'': ['x=', 'x= 1=x='], '%': 'x'}),
+        (
+            ''.join(itertools.chain.from_iterable(
+                itertools.permutations('%=+&', 4))),
+            False,
+            {
+                '': ['%', ' %', '%', ' ', ' =%', '%', '% ', ' %'],
+                ' ': ['=% ', ' %', '%'],
+                '%': [' ', ' ', ' '],
+            },
+        ),
+        # NOTE(vytas): Sanity check that we do not accidentally use C-strings
+        #   anywhere in the cythonized variant.
+        ('%%%\x00%\x00==\x00\x00==', True, {'%%%\x00%\x00': '=\x00\x00=='}),
+        ('spade=♠&spade=♠', False, {'spade': ['♠', '♠']}),  # Unicode query
+    ])
+    def test_parse_query_string_edge_cases(
+            self, query_string, keep_blank, expected):
+        assert uri.parse_query_string(query_string, keep_blank=keep_blank) == (
+            expected)
 
     def test_parse_host(self):
         assert uri.parse_host('::1') == ('::1', None)
