@@ -2,7 +2,7 @@ language: python
 
 dist: xenial
 
-install: pip install tox coveralls
+install: pip install tox
 cache:
     directories:
         - $HOME/.cache/pip
