@@ -191,7 +191,7 @@ class ThingsResource:
 
 
 # Configure your WSGI server to load "things.app" (app is a WSGI callable)
-app = falcon.API(middleware=[
+app = falcon.App(middleware=[
     AuthMiddleware(),
     RequireJSON(),
     JSONTranslator(),

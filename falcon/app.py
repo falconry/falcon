@@ -18,7 +18,7 @@ from functools import wraps
 import re
 import traceback
 
-from falcon import api_helpers as helpers, DEFAULT_MEDIA_TYPE, routing
+from falcon import app_helpers as helpers, DEFAULT_MEDIA_TYPE, routing
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 from falcon.middlewares import CORSMiddleware
