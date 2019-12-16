@@ -1,4 +1,6 @@
-coverage>=4.1
+# TODO(vytas): unpin coverage to allow 5.x+ when coveralls supports it
+# https://github.com/coveralls-clients/coveralls-python/issues/203
+coverage>=4.1,<5.0
 pytest
 pyyaml
 requests
