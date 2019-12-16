@@ -24,6 +24,16 @@ in the `falcon` module, and so must be explicitly imported::
 
 """
 
+try:
+    from falcon.cyutil.uri import (
+        decode as _cy_decode,
+        parse_query_string as _cy_parse_query_string,
+    )
+except ImportError:
+    _cy_decode = None
+    _cy_parse_query_string = None
+
+
 # NOTE(kgriffs): See also RFC 3986
 _UNRESERVED = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                'abcdefghijklmnopqrstuvwxyz'
@@ -264,7 +274,7 @@ def parse_query_string(query_string, keep_blank=False, csv=True):
     # both short and long query strings. Tested on CPython 3.4.
     for field in query_string.split('&'):
         k, _, v = field.partition('=')
-        if not (v or keep_blank):
+        if not v and (not keep_blank or not k):
             continue
 
         # Note(steffgrez): Falcon first decode name parameter for handle
@@ -394,3 +404,19 @@ def unquote_string(quoted):
     else:
         return '\\'.join([q.replace('\\', '')
                           for q in tmp_quoted.split(r'\\')])
+
+
+# TODO(vytas): Restructure this in favour of a cleaner way to hoist the pure
+# Cython functions into this module.
+decode = _cy_decode or decode  # NOQA
+parse_query_string = _cy_parse_query_string or parse_query_string  # NOQA
+
+
+__all__ = [
+    'decode',
+    'encode',
+    'encode_value',
+    'parse_host',
+    'parse_query_string',
+    'unquote_string',
+]
