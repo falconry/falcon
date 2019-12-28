@@ -95,7 +95,7 @@ def _validate_async(func, req_schema=None, resp_schema=None):
     @wraps(func)
     async def wrapper(self, req, resp, *args, **kwargs):
         if req_schema is not None:
-            m = await req.media
+            m = await req.get_media()
 
             try:
                 jsonschema.validate(

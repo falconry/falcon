@@ -36,10 +36,10 @@ class ResourceCachedMedia:
 
 class ResourceCachedMediaAsync:
     async def on_post(self, req, resp, **kwargs):
-        self.captured_req_media = await req.media
+        self.captured_req_media = await req.get_media()
 
         # NOTE(kgriffs): Ensure that the media object is cached
-        assert self.captured_req_media is await req.media
+        assert self.captured_req_media is await req.get_media()
 
 
 class ResourceInvalidMedia:
@@ -59,7 +59,7 @@ class ResourceInvalidMediaAsync:
 
     async def on_post(self, req, resp, **kwargs):
         with pytest.raises(self._expected_error) as error:
-            await req.media
+            await req.get_media()
 
         self.captured_error = error
 

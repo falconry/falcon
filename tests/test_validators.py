@@ -66,9 +66,9 @@ class Resource:
 class ResourceAsync:
     @validators.jsonschema.validate(req_schema=_TEST_SCHEMA)
     async def request_validated(self, req, resp):
-        # NOTE(kgriffs): Verify that we can await req.media multiple times
+        # NOTE(kgriffs): Verify that we can await req.get_media() multiple times
         for i in range(3):
-            m = await req.media
+            m = await req.get_media()
             assert m == _VALID_MEDIA
 
         assert m is not None
@@ -81,7 +81,7 @@ class ResourceAsync:
 
     @validators.jsonschema.validate(req_schema=_TEST_SCHEMA, resp_schema=_TEST_SCHEMA)
     async def both_validated(self, req, resp):
-        m = await req.media
+        m = await req.get_media()
         assert m is not None
 
         assert resp.media is not None
@@ -90,7 +90,7 @@ class ResourceAsync:
 
     @validators.jsonschema.validate(req_schema=_TEST_SCHEMA, resp_schema=_TEST_SCHEMA)
     async def on_put(self, req, resp):
-        m = await req.media
+        m = await req.get_media()
         assert m is not None
         resp.media = _VALID_MEDIA
 
@@ -104,8 +104,7 @@ class _MockReqAsync:
     def __init__(self, valid=True):
         self._media = _VALID_MEDIA if valid else {}
 
-    @property
-    async def media(self):
+    async def get_media(self):
         return self._media
 
 

@@ -154,7 +154,7 @@ def test_deserialization_raises(asgi):
             resp.media = {}
 
         async def on_post(self, req, resp):
-            await req.media
+            await req.get_media()
 
     app.add_route('/', ResourceAsync() if asgi else Resource())
 

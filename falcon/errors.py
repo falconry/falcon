@@ -55,6 +55,10 @@ class UnsupportedScopeError(RuntimeError):
     """The ASGI scope type is not supported by Falcon."""
 
 
+class UnsupportedError(RuntimeError):
+    """The method or operation is not supported."""
+
+
 class HTTPBadRequest(HTTPError):
     """400 Bad Request.
 

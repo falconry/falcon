@@ -1,6 +1,6 @@
 import pytest
 
-from falcon import testing
+from falcon import testing, UnsupportedError
 
 
 def test_missing_server_in_scope():
@@ -13,3 +13,9 @@ def test_log_error_not_supported():
     req = testing.create_asgi_req()
     with pytest.raises(NotImplementedError):
         req.log_error('Boink')
+
+
+def test_media_prop_not_supported():
+    req = testing.create_asgi_req()
+    with pytest.raises(UnsupportedError):
+        req.media

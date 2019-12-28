@@ -423,25 +423,51 @@ class Request(falcon.request.Request):
         return netloc_value
 
     @property
-    async def media(self):
-        stream = self.stream
+    def media(self):
+        raise errors.UnsupportedError(
+            'The media property is not supported for ASGI requests. '
+            'Please use the get_media() method instead.'
+        )
 
-        if self._media is not None or stream.eof:
+    async def get_media(self):
+        """Returns a deserialized form of the request stream.
+
+        When called the first time, the request stream will be deserialized
+        using the Content-Type header as well as the media-type handlers
+        configured via :class:`falcon.RequestOptions`. The result will
+        be cached and returned in subsequent calls.
+
+        If the matched media handler raises an error while attempting to
+        deserialize the request body, the exception will propagate up
+        to the caller.
+
+        See :ref:`media` for more information regarding media handling.
+
+        Warning:
+            This operation will consume the request stream the first time
+            it's called and cache the results. Follow-up calls will just
+            retrieve a cached version of the object.
+
+        Returns:
+            media (object): The deserialized media representation.
+        """
+
+        if self._media is not None or self.stream.eof:
             return self._media
 
-        content_type = self.content_type
-
         handler = self.options.media_handlers.find_by_media_type(
-            content_type, self.options.default_media_type
+            self.content_type,
+            self.options.default_media_type
         )
 
         try:
             self._media = await handler.deserialize_async(
-                stream, content_type, self.content_length
+                self.stream,
+                self.content_type,
+                self.content_length
             )
         finally:
-            if not stream.eof:
-                await stream.exhaust()
+            await self.stream.exhaust()
 
         return self._media
 

@@ -78,7 +78,7 @@ async def capture_responder_args_async(req, resp, resource, params):
     if num_bytes:
         resource.captured_req_body = await req.stream.read(int(num_bytes))
     elif req.get_header('capture-req-media'):
-        resource.captured_req_media = await req.media
+        resource.captured_req_media = await req.get_media()
 
 
 def set_resp_defaults(req, resp, resource, params):

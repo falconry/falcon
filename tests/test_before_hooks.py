@@ -485,7 +485,7 @@ class PiggybackingCollectionAsync(PiggybackingCollection):
         self._sequence += 1
         itemid = self._sequence
 
-        doc = await req.media
+        doc = await req.get_media()
 
         self._items[itemid] = dict(doc, itemid=itemid)
         resp.location = '/items/{}'.format(itemid)
