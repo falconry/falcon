@@ -1,5 +1,5 @@
 import falcon
-import falcon.testing as testing
+from falcon import testing
 
 
 class MediaTypeResource:
