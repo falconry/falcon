@@ -53,6 +53,10 @@ DEFAULT_SUPPORTED_CHARSETS = (
 
 _FILENAME_STAR_RFC5987 = re.compile(r"([\w-]+)'[\w]*'(.+)")
 
+CRLF = b'\r\n'
+
+_CRLF_CRLF = CRLF + CRLF
+
 
 class MultipartParseError(errors.HTTPBadRequest):
 
@@ -166,7 +170,7 @@ class BodyPart:
 
             _, params = self._content_disposition
 
-            # NOTE(vytas): Supporting filename* as per RFC5987, as that has
+            # NOTE(vytas): Supporting filename* as per RFC 5987, as that has
             #   been spotted in the wild, even though RFC 7578 forbids it.
             match = _FILENAME_STAR_RFC5987.match(params.get('filename*', ''))
             if match:
@@ -215,7 +219,10 @@ class BodyPart:
 class MultipartForm:
 
     def __init__(self, stream, boundary, content_length, parse_options):
-        # if not isinstance(stream, BufferedStream):
+        # NOTE(vytas): More lenient check whether the provided stream is not
+        #   already an instance of BufferedStream.
+        # This approach makes testing both the Cythonized and pure-Python
+        #   streams easier within the same test/benchmark suite.
         if not hasattr(stream, 'read_until'):
             if isinstance(stream, request_helpers.BoundedStream):
                 stream = BufferedStream(stream.stream.read, content_length)
@@ -224,6 +231,10 @@ class MultipartForm:
 
         self._stream = stream
         self._boundary = boundary
+        # NOTE(vytas): Here self._dash_boundary is not prepended with CRLF
+        #   (yet) for parsing the prologue. The CRLF will be prepended later to
+        #   construct the inter-part delimiter as per the RFC 7578, section 4.1
+        #   (see the note below).
         self._dash_boundary = b'--' + boundary
         self._parse_options = parse_options
 
@@ -239,23 +250,27 @@ class MultipartForm:
             stream.pipe_until(delimiter)
             stream.read(len(delimiter))
 
-            if not delimiter.startswith(b'\r\n'):
-                delimiter = b'\r\n' + delimiter
+            if not delimiter.startswith(CRLF):
+                # NOTE(vytas): RFC 7578, section 4.1.
+                #   As with other multipart types, the parts are delimited with
+                #   a boundary delimiter, constructed using CRLF, "--", and the
+                #   value of the "boundary" parameter.
+                delimiter = CRLF + delimiter
 
-            separator = stream.read_until(b'\r\n', 2, MultipartParseError)
+            separator = stream.read_until(CRLF, 2, MultipartParseError)
             if separator == b'--':
-                if stream.peek(2) != b'\r\n':
+                if stream.peek(2) != CRLF:
                     raise MultipartParseError('unexpected form epilogue')
                 break
             elif separator:
                 raise MultipartParseError('unexpected form structure')
 
             headers = {}
-            headers_block = stream.read_until(b'\r\n\r\n', max_headers_size,
+            headers_block = stream.read_until(_CRLF_CRLF, max_headers_size,
                                               MultipartParseError)
             stream.read(4)
 
-            for line in headers_block.split(b'\r\n'):
+            for line in headers_block.split(CRLF):
                 name, sep, value = line.partition(b': ')
                 if sep:
                     name = name.lower()
