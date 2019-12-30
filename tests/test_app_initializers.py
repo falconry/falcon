@@ -6,7 +6,7 @@ from falcon import media, testing
 
 class MediaResource:
     def on_get(self, req, resp):
-        resp.media = {"foo": "bar"}
+        resp.media = {'foo': 'bar'}
 
 
 class MediaHTMLHandler(media.BaseHandler):
