@@ -33,7 +33,7 @@ def client(request):
 
 
 @pytest.mark.parametrize('client', (falcon.App,), indirect=True)
-def test_api_media_type_overriding(client):
+def test_app_media_type_overriding(client):
     response = client.simulate_get('/')
     actual_header = response.headers['content-type']
     actual_text = response.text
@@ -43,7 +43,7 @@ def test_api_media_type_overriding(client):
 
 
 @pytest.mark.parametrize('client', (falcon.API,), indirect=True)
-def test_app_media_type_overriding(client):
+def test_api_media_type_overriding(client):
     response = client.simulate_get('/')
     actual_header = response.headers['content-type']
     actual_text = response.text
