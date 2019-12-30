@@ -1,33 +1,52 @@
+import pytest
+
 import falcon
-from falcon import testing
+from falcon import media, testing
 
 
-class MediaTypeResource:
+class MediaResource:
     def on_get(self, req, resp):
-        resp.body = 'foo bar'
+        resp.media = {"foo": "bar"}
 
 
-def test_api_media_type_overriding():
-    expected_header = 'text/html'
+class MediaHTMLHandler(media.BaseHandler):
+    def serialize(self, media, content_type):
+        return str(media).encode()
 
-    api = falcon.API(media_type=expected_header)
-    api.add_route('/', MediaTypeResource())
-    client = testing.TestClient(api)
+    def deserialize(self, stream, content_type, content_length):
+        return stream.read().decode()
 
+
+@pytest.fixture
+def client(request):
+    app = request.param(media_type=falcon.MEDIA_XML)
+    app.add_route('/', MediaResource())
+
+    app.resp_options.default_media_type = falcon.MEDIA_HTML
+
+    handlers = falcon.media.Handlers({
+        'text/html': MediaHTMLHandler()
+    })
+    app.resp_options.media_handlers = handlers
+
+    return testing.TestClient(app)
+
+
+@pytest.mark.parametrize('client', (falcon.App,), indirect=True)
+def test_api_media_type_overriding(client):
     response = client.simulate_get('/')
     actual_header = response.headers['content-type']
+    actual_text = response.text
 
-    assert expected_header == actual_header
+    assert actual_header == falcon.MEDIA_HTML
+    assert actual_text == "{'foo': 'bar'}"
 
 
-def test_app_media_type_overriding():
-    expected_header = 'text/html'
-
-    api = falcon.App(media_type=expected_header)
-    api.add_route('/', MediaTypeResource())
-    client = testing.TestClient(api)
-
+@pytest.mark.parametrize('client', (falcon.API,), indirect=True)
+def test_app_media_type_overriding(client):
     response = client.simulate_get('/')
     actual_header = response.headers['content-type']
+    actual_text = response.text
 
-    assert expected_header == actual_header
+    assert actual_header == falcon.MEDIA_HTML
+    assert actual_text == "{'foo': 'bar'}"
