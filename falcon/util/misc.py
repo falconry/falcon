@@ -340,7 +340,7 @@ def get_http_status(status_code, default_reason='Unknown'):
 
 @_lru_cache_safe(maxsize=64)
 def http_status_to_code(status):
-    """Normalized an HTTP status to an integer code.
+    """Normalize an HTTP status to an integer code.
 
     This function takes a member of http.HTTPStatus, an HTTP status
     line string or byte string (e.g., '200 OK'), or an ``int`` and
