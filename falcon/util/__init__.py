@@ -27,6 +27,7 @@ import json  # NOQA
 from falcon.util.structures import *  # NOQA
 from falcon.util.misc import *  # NOQA
 from falcon.util.time import *  # NOQA
+from falcon.util.mappings import *  # NOQA
 
 
 # NOTE(kgriffs): Backport support for the new 'SameSite' attribute

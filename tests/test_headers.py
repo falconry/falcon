@@ -4,7 +4,7 @@ from datetime import datetime
 import pytest
 
 import falcon
-from falcon import testing
+from falcon import HTTPHeadersMapping, testing
 
 
 SAMPLE_BODY = testing.rand_string(0, 128 * 1024)
@@ -249,8 +249,17 @@ class CORSHeaderResource:
         resp.body = "I'm a CORS test response"
 
 
-class TestHeaders:
+class CustomHeaders(HTTPHeadersMapping):
+    def items(self):
+        return [('header-one', 'foo'), ('header-two', 'bar')]
 
+
+class MappingHeadersResource:
+    def on_get(self, req, resp):
+        resp.set_headers(CustomHeaders())
+
+
+class TestHeaders:
     def test_content_length(self, client):
         resource = testing.SimpleTestResource(body=SAMPLE_BODY)
         client.app.add_route('/', resource)
@@ -781,6 +790,17 @@ class TestHeaders:
         assert result.headers['Access-Control-Allow-Methods'] == 'DELETE, GET'
         assert result.headers['Access-Control-Allow-Headers'] == '*'
         assert result.headers['Access-Control-Max-Age'] == '86400'  # 24 hours in seconds
+
+    def test_headers_mapping(self, client):
+        client.app.add_route('/', MappingHeadersResource())
+
+        result = client.simulate_get('/')
+
+        assert 'header-one' in result.headers
+        assert 'header-two' in result.headers
+
+        assert result.headers['header-one'] == 'foo'
+        assert result.headers['header-two'] == 'bar'
 
     # ----------------------------------------------------------------------
     # Helpers
