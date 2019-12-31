@@ -173,3 +173,62 @@ def test_deserialization_raises(asgi):
 
     with pytest.raises(SuchException):
         testing.simulate_post(app, '/', json={})
+
+
+def test_sync_methods_not_overridden(asgi):
+    app = create_app(asgi)
+
+    class FaultyHandler(media.BaseHandler):
+        pass
+
+    handlers = media.Handlers({'application/json': FaultyHandler()})
+    app.req_options.media_handlers = handlers
+    app.resp_options.media_handlers = handlers
+
+    class Resource:
+        def on_get(self, req, resp):
+            resp.media = {}
+
+        def on_post(self, req, resp):
+            req.media
+
+    class ResourceAsync:
+        async def on_get(self, req, resp):
+            resp.media = {}
+
+        async def on_post(self, req, resp):
+            await req.get_media()
+
+    app.add_route('/', ResourceAsync() if asgi else Resource())
+
+    result = testing.simulate_get(app, '/')
+    assert result.status_code == 500
+
+    result = testing.simulate_post(app, '/', json={})
+    assert result.status_code == 500
+
+
+def test_async_methods_not_overridden():
+    app = create_app(asgi=True)
+
+    class SimpleHandler(media.BaseHandler):
+        def serialize(self, media, content_type):
+            return json.dumps(media).encode()
+
+        def deserialize(self, stream, content_type, content_length):
+            return json.load(stream)
+
+    handlers = media.Handlers({'application/json': SimpleHandler()})
+    app.req_options.media_handlers = handlers
+    app.resp_options.media_handlers = handlers
+
+    class ResourceAsync:
+        async def on_post(self, req, resp):
+            resp.media = await req.get_media()
+
+    app.add_route('/', ResourceAsync())
+
+    doc = {'event': 'serialized'}
+    result = testing.simulate_post(app, '/', json=doc)
+    assert result.status_code == 200
+    assert result.json == doc

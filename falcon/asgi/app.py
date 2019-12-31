@@ -215,14 +215,18 @@ class App(falcon.app.App):
 
                 req_succeeded = False
 
-        #
-        # Set status and headers
-        #
+        data = b''
+
+        try:
+            data = await resp.render_body()
+        except Exception as ex:
+            if not await self._handle_exception(req, resp, ex, params):
+                raise
+
+            req_succeeded = False
 
         resp_status = http_status_to_code(resp.status)
         default_media_type = self.resp_options.default_media_type
-
-        data = await resp.render_body()
 
         if req.method == 'HEAD' or resp_status in _BODILESS_STATUS_CODES:
             #

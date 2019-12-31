@@ -354,14 +354,19 @@ class App:
 
                 req_succeeded = False
 
-        #
-        # Set status and headers
-        #
+        body = []
+        length = 0
+
+        try:
+            body, length = self._get_body(resp, env.get('wsgi.file_wrapper'))
+        except Exception as ex:
+            if not self._handle_exception(req, resp, ex, params):
+                raise
+
+            req_succeeded = False
 
         resp_status = resp.status
         default_media_type = self.resp_options.default_media_type
-
-        body, length = self._get_body(resp, env.get('wsgi.file_wrapper'))
 
         if req.method == 'HEAD' or resp_status in _BODILESS_STATUS_CODES:
             body = []
