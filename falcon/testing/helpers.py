@@ -311,7 +311,7 @@ def rand_string(min, max) -> str:
 def create_scope(path='/', query_string='', method='GET', headers=None,
                  host=DEFAULT_HOST, scheme=None, port=None, http_version='1.1',
                  remote_addr=None, root_path=None, content_length=None,
-                 include_server=True):
+                 include_server=True) -> Dict[str, Any]:
 
     """Create a mock ASGI scope ``dict`` for simulating ASGI requests.
 
@@ -565,7 +565,7 @@ def create_environ(path='/', query_string='', http_version='1.1',
     return env
 
 
-def create_req(options=None, **kwargs):
+def create_req(options=None, **kwargs) -> falcon.Request:
     """Create and return a new Request instance.
 
     This function can be used to conveniently create a WSGI environ
@@ -582,7 +582,7 @@ def create_req(options=None, **kwargs):
     return falcon.request.Request(env, options=options)
 
 
-def create_asgi_req(body=None, req_type=None, options=None, **kwargs):
+def create_asgi_req(body=None, req_type=None, options=None, **kwargs) -> falcon.Request:
     """Create and return a new ASGI Request instance.
 
     This function can be used to conveniently create an ASGI scope
@@ -748,7 +748,7 @@ def _add_headers_to_scope(scope, headers, content_length, host, port, scheme, ht
     scope['headers'] = iter(prepared_headers)
 
 
-def _fixup_http_version(http_version):
+def _fixup_http_version(http_version) -> str:
     if http_version not in ('2', '2.0', '1.1', '1.0', '1'):
         raise ValueError('Invalid http_version specified: ' + http_version)
 
