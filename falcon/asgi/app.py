@@ -396,12 +396,12 @@ class App(falcon.app.App):
             with each process.
 
         A lifespan handler is any class that implements the interface below.
-        Note that it is only necessary to implement the methods for the
-        events that you wish to handle; Falcon will simply skip over any
-        missing methods in the lifespan handler::
+        Note that it is only necessary to implement the coroutine functions for
+        the events that you wish to handle; Falcon will simply skip over any
+        missing coroutines in the lifespan handler::
 
             class ExampleHandler:
-                def process_startup(self, scope, event):
+                async def process_startup(self, scope, event):
                     \"\"\"Process the lifespan startup event.
 
                     Invoked when the server is ready to startup and
@@ -421,7 +421,7 @@ class App(falcon.app.App):
                             startup event.
                     \"\"\"
 
-                def process_shutdown(self, scope, event):
+                async def process_shutdown(self, scope, event):
                     \"\"\"Process the lifespan shutdown event.
 
                     Invoked when the server has stopped accepting
