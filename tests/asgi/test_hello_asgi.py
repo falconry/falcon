@@ -105,8 +105,11 @@ class NoStatusResource:
         pass
 
 
-class NonCoroutineResource:
+class PartialCoroutineResource:
     def on_get(self, req, resp):
+        pass
+
+    async def on_post(self, req, resp):
         pass
 
 
@@ -255,6 +258,14 @@ class TestHelloWorld:
     def test_coroutine_required(self, client):
         with disable_asgi_non_coroutine_wrapping():
             with pytest.raises(TypeError) as exinfo:
-                client.app.add_route('/', NonCoroutineResource())
+                client.app.add_route('/', PartialCoroutineResource())
 
             assert 'responder must be a non-blocking async coroutine' in str(exinfo.value)
+
+    def test_noncoroutine_required(self):
+        wsgi_app = falcon.App()
+
+        with pytest.raises(TypeError) as exinfo:
+            wsgi_app.add_route('/', PartialCoroutineResource())
+
+        assert 'responder must be a regular synchronous method' in str(exinfo.value)

@@ -152,7 +152,9 @@ class CompiledRouter:
         set_default_responders(method_map, asgi=asgi)
 
         if asgi:
-            self._check_coroutine_responders(method_map)
+            self._require_coroutine_responders(method_map)
+        else:
+            self._require_non_coroutine_responders(method_map)
 
         # NOTE(kgriffs): Fields may have whitespace in them, so sub
         # those before checking the rest of the URI template.
@@ -237,7 +239,7 @@ class CompiledRouter:
     # Private
     # -----------------------------------------------------------------
 
-    def _check_coroutine_responders(self, method_map):
+    def _require_coroutine_responders(self, method_map):
         for method, responder in method_map.items():
             # NOTE(kgriffs): We don't simply wrap non-async functions
             #   since they likely peform relatively long blocking
@@ -260,6 +262,22 @@ class CompiledRouter:
                     )
                     msg = msg.format(responder)
                     raise TypeError(msg)
+
+    def _require_non_coroutine_responders(self, method_map):
+        for method, responder in method_map.items():
+            # NOTE(kgriffs): We don't simply wrap non-async functions
+            #   since they likely peform relatively long blocking
+            #   operations that need to be explicitly made non-blocking
+            #   by the developer; raising an error helps highlight this
+            #   issue.
+
+            if iscoroutinefunction(responder):
+                msg = (
+                    'The {} responder must be a regular synchronous '
+                    'method to be used with a WSGI app.'
+                )
+                msg = msg.format(responder)
+                raise TypeError(msg)
 
     def _validate_template_segment(self, segment, used_names):
         """Validates a single path segment of a URI template.
