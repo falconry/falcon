@@ -100,14 +100,16 @@ class TestErrorHandler:
         assert result.status_code == 723
         assert not result.content
 
-    # def test_uncaught_error(self, client):
-    #     client.app.add_error_handler(CustomException, capture_error)
-    #     with pytest.raises(Exception):
-    #         client.simulate_get()
+    def test_uncaught_error(self, client):
+        client.app._error_handlers.clear()
+        client.app.add_error_handler(CustomException, capture_error)
+        with pytest.raises(Exception):
+            client.simulate_get()
 
-    # def test_uncaught_error_else(self, client):
-    #     with pytest.raises(Exception):
-    #         client.simulate_get()
+    def test_uncaught_error_else(self, client):
+        client.app._error_handlers.clear()
+        with pytest.raises(Exception):
+            client.simulate_get()
 
     def test_converted_error(self, client):
         client.app.add_error_handler(CustomException)
