@@ -20,7 +20,11 @@ _one_thread_to_rule_them_all = ThreadPoolExecutor(max_workers=1)
 try:
     get_loop = asyncio.get_running_loop
     """Gets the running asyncio event loop."""
-except AttributeError:
+except AttributeError:  # pragma: nocover
+    # NOTE(kgriffs): This branch is definitely covered under py35 and py36
+    #   but for some reason the codecov gate doesn't pick this up, hence
+    #   the pragma above.
+
     get_loop = asyncio.get_event_loop
     """Gets the running asyncio event loop."""
 
