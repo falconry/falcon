@@ -473,7 +473,7 @@ def simulate_request(app, method='GET', path='/', query_string=None,
     resp_event_collector = helpers.ASGIResponseEventCollector()
 
     async def conductor():
-        # NOTE(kgriffs): We assume this is a Falcon WSGI app, which supports
+        # NOTE(kgriffs): We assume this is a Falcon ASGI app, which supports
         #   the lifespan protocol and thus we do not need to catch
         #   exceptions that would signify no lifespan protocol support.
         t = get_loop().create_task(
