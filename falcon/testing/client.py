@@ -1199,7 +1199,9 @@ def _is_asgi_app(app):
 
 
 async def _wait_for_startup(events):
-    while True:
+    # NOTE(kgriffs): This is covered, but our gate for some reason doesn't
+    #   understand `while True`.
+    while True:  # pragma: nocover
         for e in events:
             if e['type'] == 'lifespan.startup.failed':
                 raise RuntimeError('ASGI app returned lifespan.startup.failed. ' + e['message'])
@@ -1212,7 +1214,9 @@ async def _wait_for_startup(events):
 
 
 async def _wait_for_shutdown(events):
-    while True:
+    # NOTE(kgriffs): This is covered, but our gate for some reason doesn't
+    #   understand `while True`.
+    while True:  # pragma: nocover
         for e in events:
             if e['type'] == 'lifespan.shutdown.failed':
                 raise RuntimeError('ASGI app returned lifespan.shutdown.failed. ' + e['message'])
