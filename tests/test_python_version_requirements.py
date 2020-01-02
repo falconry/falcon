@@ -2,8 +2,6 @@ import pytest
 
 from falcon import ASGI_SUPPORTED
 
-# from _util import CYTHON  # NOQA
-
 
 def test_asgi():
     if ASGI_SUPPORTED:
