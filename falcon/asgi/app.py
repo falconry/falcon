@@ -121,7 +121,7 @@ class App(falcon.app.App):
 
         # PERF(kgriffs): This is slighter faster than using dict.get()
         # TODO(kgriffs): Use this to determine what features are supported by
-        #   the servver (e.g., the headers key in the WebSocket Accept
+        #   the server (e.g., the headers key in the WebSocket Accept
         #   response).
         spec_version = asgi_info['spec_version'] if 'spec_version' in asgi_info else '2.0'
 
