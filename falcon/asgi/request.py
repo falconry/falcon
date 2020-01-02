@@ -426,7 +426,7 @@ class Request(falcon.request.Request):
     def media(self):
         raise errors.UnsupportedError(
             'The media property is not supported for ASGI requests. '
-            'Please use the get_media() method instead.'
+            'Please use the Request.get_media() coroutine function instead.'
         )
 
     async def get_media(self):

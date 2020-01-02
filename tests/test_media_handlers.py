@@ -232,3 +232,29 @@ def test_async_methods_not_overridden():
     result = testing.simulate_post(app, '/', json=doc)
     assert result.status_code == 200
     assert result.json == doc
+
+
+def test_async_handler_returning_none():
+    app = create_app(asgi=True)
+
+    class SimpleHandler(media.BaseHandler):
+        def serialize(self, media, content_type):
+            return json.dumps(media).encode()
+
+        def deserialize(self, stream, content_type, content_length):
+            return None
+
+    handlers = media.Handlers({'application/json': SimpleHandler()})
+    app.req_options.media_handlers = handlers
+    app.resp_options.media_handlers = handlers
+
+    class ResourceAsync:
+        async def on_post(self, req, resp):
+            resp.media = [await req.get_media()]
+
+    app.add_route('/', ResourceAsync())
+
+    doc = {'event': 'serialized'}
+    result = testing.simulate_post(app, '/', json=doc)
+    assert result.status_code == 200
+    assert result.json == [None]

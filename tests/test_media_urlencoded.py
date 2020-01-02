@@ -6,6 +6,8 @@ import falcon
 from falcon import media
 from falcon import testing
 
+from _util import create_app  # NOQA
+
 
 def test_deserialize_empty_form():
     handler = media.URLEncodedFormHandler()
@@ -28,6 +30,9 @@ def test_urlencoded_form_handler_serialize(data, expected):
     handler = media.URLEncodedFormHandler()
     assert handler.serialize(data, falcon.MEDIA_URLENCODED) == expected
 
+    value = testing.invoke_coroutine_sync(handler.serialize_async, data, falcon.MEDIA_URLENCODED)
+    assert value == expected
+
 
 class MediaMirror:
 
@@ -35,10 +40,16 @@ class MediaMirror:
         resp.media = req.media
 
 
+class MediaMirrorAsync:
+
+    async def on_post(self, req, resp):
+        resp.media = await req.get_media()
+
+
 @pytest.fixture
-def client():
-    app = falcon.App()
-    app.add_route('/media', MediaMirror())
+def client(asgi):
+    app = create_app(asgi)
+    app.add_route('/media', MediaMirrorAsync() if asgi else MediaMirror())
     return testing.TestClient(app)
 
 
@@ -46,7 +57,11 @@ def test_empty_form(client):
     resp = client.simulate_post(
         '/media',
         headers={'Content-Type': 'application/x-www-form-urlencoded'})
-    assert resp.content == b''
+
+    # TODO(kgriffs): The ASGI side implements the recommended fixes from
+    #   https://github.com/falconry/falcon/issues/1589 so we will need to
+    #   update this assert once the WSGI side has been updated to suit.
+    assert resp.content == (b'{}' if client.app._ASGI else b'')
 
 
 @pytest.mark.parametrize('body,expected', [

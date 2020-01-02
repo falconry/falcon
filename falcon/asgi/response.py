@@ -17,6 +17,7 @@
 from asyncio.coroutines import CoroWrapper
 from inspect import iscoroutine
 
+from falcon import _UNSET
 import falcon.response
 
 __all__ = ['Response']
@@ -56,7 +57,7 @@ class Response(falcon.response.Response):
     #   an additional function call.
     _sse = None
     _registered_callbacks = None
-    _media_rendered = None
+    _media_rendered = _UNSET
 
     @property
     def sse(self):
@@ -73,7 +74,7 @@ class Response(falcon.response.Response):
     @media.setter
     def media(self, value):
         self._media = value
-        self._media_rendered = None
+        self._media_rendered = _UNSET
 
     @property
     def data(self):
@@ -101,7 +102,9 @@ class Response(falcon.response.Response):
             data = self._data
 
             if data is None and self._media is not None:
-                if self._media_rendered is None:
+                # NOTE(kgriffs): We use a special _UNSET singleton since
+                #   None is ambiguous (the media handler might return None).
+                if self._media_rendered is _UNSET:
                     if not self.content_type:
                         self.content_type = self.options.default_media_type
 

@@ -52,6 +52,11 @@ from falcon.response import Response, ResponseOptions  # NOQA
 ASGI_SUPPORTED = _sys.version_info.minor > 5
 
 
+# NOTE(kgriffs): Special singleton to be used internally whenever using
+#   None would be ambiguous.
+_UNSET = object()
+
+
 # NOTE(kgriffs): Only to be used internally on the rare occasion that we
 #   need to log something that we can't communicate any other way.
 _logger = _logging.getLogger('falcon')
