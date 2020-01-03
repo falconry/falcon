@@ -571,37 +571,3 @@ class Request(falcon.request.Request):
                 self._asgi_server_cached = ('localhost', default_port)
 
         return self._asgi_server_cached
-
-    async def _parse_form_urlencoded(self):
-        if (
-            self.content_type is not None and
-
-            # PERF(kgriffs): Technically, we should spend a few more
-            # cycles and parse the content type for real, but
-            # this heuristic will work virtually all the time.
-            'application/x-www-form-urlencoded' in self.content_type and
-
-            # NOTE(kgriffs): Within HTTP, a payload for a GET or HEAD
-            # request has no defined semantics, so we don't expect a
-            # body in those cases. We would normally not expect a body
-            # for OPTIONS either, but RFC 7231 does allow for it.
-            self.method not in ('GET', 'HEAD')
-        ):
-            body = await self.stream.read()
-
-            # NOTE(kgriffs): According to http://goo.gl/6rlcux the
-            # body should be US-ASCII. Enforcing this also helps
-            # catch malicious input.
-            try:
-                body = body.decode('ascii')
-            except UnicodeDecodeError:
-                body = None
-
-            if body:
-                extra_params = parse_query_string(
-                    body,
-                    keep_blank=self.options.keep_blank_qs_values,
-                    csv=self.options.auto_parse_qs_csv,
-                )
-
-                self._params.update(extra_params)

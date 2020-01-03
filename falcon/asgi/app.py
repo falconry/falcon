@@ -19,7 +19,7 @@ import traceback
 
 import falcon.app
 from falcon.app_helpers import prepare_middleware
-from falcon.errors import CompatibilityError, UnsupportedScopeError
+from falcon.errors import CompatibilityError, UnsupportedError, UnsupportedScopeError
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 import falcon.routing
@@ -133,7 +133,10 @@ class App(falcon.app.App):
         resp = self._response_type(options=self.resp_options)
         req = self._request_type(scope, receive, options=self.req_options)
         if self.req_options.auto_parse_form_urlencoded:
-            await req._parse_form_urlencoded()
+            raise UnsupportedError(
+                'The deprecated WSGI RequestOptions.auto_parse_form_urlencoded option '
+                'is not supported for ASGI apps. Please use Request.get_media() instead. '
+            )
 
         resource = None
         responder = None
