@@ -6,8 +6,8 @@ import falcon
 from falcon import errors, media, testing
 
 
-@pytest.fixture(params=[True, False])
-def client(request):
+@pytest.fixture
+def client():
     return create_client()
 
 
