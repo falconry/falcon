@@ -1,5 +1,8 @@
 import io
+import os
+import tempfile
 
+import aiofiles
 import pytest
 
 import falcon
@@ -7,6 +10,9 @@ from falcon import testing
 import falcon.asgi
 
 from _util import disable_asgi_non_coroutine_wrapping  # NOQA
+
+
+SIZE_1_KB = 1024
 
 
 @pytest.fixture
@@ -98,6 +104,28 @@ class ClosingFilelikeHelloResource:
         self.req, self.resp = req, resp
         resp.status = falcon.HTTP_200
         resp.set_stream(self.stream, self.stream_len)
+
+
+class AIOFilesHelloResource:
+    def __init__(self):
+        self.sample_utf8 = testing.rand_string(8 * SIZE_1_KB, 16 * SIZE_1_KB).encode()
+
+        fh, self.tempfile_name = tempfile.mkstemp()
+        with open(fh, 'wb') as f:
+            f.write(self.sample_utf8)
+
+        self._aiofiles = None
+
+    @property
+    def aiofiles_closed(self):
+        return not self._aiofiles or self._aiofiles.closed
+
+    def cleanup(self):
+        os.remove(self.tempfile_name)
+
+    async def on_get(self, req, resp):
+        self._aiofiles = await aiofiles.open(self.tempfile_name, 'rb')
+        resp.stream = self._aiofiles
 
 
 class NoStatusResource:
@@ -234,6 +262,22 @@ class TestHelloWorld:
 
         if assert_closed:
             assert resource.stream.close_called
+
+    def test_filelike_closing_aiofiles(self, client):
+        resource = AIOFilesHelloResource()
+        try:
+            client.app.add_route('/filelike-closing', resource)
+
+            result = client.simulate_get('/filelike-closing')
+
+            assert result.status_code == 200
+            assert 'content-length' not in result.headers
+            assert result.content == resource.sample_utf8
+
+            assert resource.aiofiles_closed
+
+        finally:
+            resource.cleanup()
 
     def test_filelike_using_helper(self, client):
         resource = HelloResource('stream, stream_len, filelike, use_helper')

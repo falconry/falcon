@@ -277,11 +277,12 @@ class Response:
         Note:
             If the stream length is unknown, you can set `stream`
             directly, and ignore `content_length`. In this case, the
-            WSGI server may choose to use chunked encoding or one
+            server may choose to use chunked encoding or one
             of the other strategies suggested by PEP-3333.
 
         Args:
-            stream: A readable file-like object.
+            stream: A readable file-like object in the case of WSGI, or an
+                async iterable in the case of ASGI.
             content_length (int): Length of the stream, used for the
                 Content-Length header in the response.
         """

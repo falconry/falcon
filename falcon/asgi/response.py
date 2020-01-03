@@ -50,6 +50,27 @@ class Response(falcon.response.Response):
                 attribute is read. Instead,
                 :py:meth:`falcon.asgi.Response.render_body` should
                 be used to get the correct content for the response.
+
+        stream: An async iterator or generator that yields a series of
+            byte strings that will be streamed to the ASGI server as a
+            series of "http.response.body" events. Falcon will assume the
+            body is complete when the iterable is exhausted or as soon as it
+            yields ``None`` rather than an instance of ``bytes``.
+
+            If the object assigned to :py:attr:`~.stream` holds any resources
+            (such as a file handle) that must be explicitly released, the
+            object must implement a close() method. The close() method will
+            be called after exhausting the iterable.
+
+            Note:
+                In order to be compatible with Python 3.7+ and PEP 479,
+                async iterators must return ``None`` instead of raising
+                :py:class:`StopIteration`.
+
+            Note:
+                If the stream length is known in advance, you may wish to
+                also set the Content-Length header on the response.
+
     """
 
     # PERF(kgriffs): These will be shadowed when set on an instance; let's
