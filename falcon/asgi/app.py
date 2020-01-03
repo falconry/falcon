@@ -244,7 +244,12 @@ class App(falcon.app.App):
             if resp_status in _TYPELESS_STATUS_CODES:
                 default_media_type = None
             elif (
-                req.method == 'HEAD'and
+                # NOTE(kgriffs): If they are going to stream using an
+                #   async generator, we can't know in advance what the
+                #   content length will be.
+                (data is not None or not resp.stream) and
+
+                req.method == 'HEAD' and
                 resp_status not in _BODILESS_STATUS_CODES and
                 'content-length' not in resp._headers
             ):
@@ -356,12 +361,20 @@ class App(falcon.app.App):
                 # NOTE(kgriffs): Works for both async generators and iterators
                 try:
                     async for data in stream:
+                        # NOTE(kgriffs): We can not rely on StopIteration
+                        #   because of Pep 479 that is implemented starting
+                        #   with Python 3.7. AFAICT this is only an issue
+                        #   when using an async iterator instead of an async
+                        #   generator.
+                        if data is None:
+                            break
+
                         await send({
                             'type': 'http.response.body',
                             'body': data,
                             'more_body': True
                         })
-                except TypeError:
+                except TypeError as ex:
                     if isasyncgenfunction(stream):
                         raise TypeError(
                             'The object assigned to Response.stream appears to '
@@ -373,7 +386,8 @@ class App(falcon.app.App):
 
                     raise TypeError(
                         'Response.stream must be a generator or implement an '
-                        '__aiter__ method.'
+                        '__aiter__ method. Error raised while iterating over '
+                        'Response.stream: ' + str(ex)
                     )
 
             if hasattr(stream, 'close'):
