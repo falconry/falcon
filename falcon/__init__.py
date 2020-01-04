@@ -50,6 +50,7 @@ from falcon.response import Response, ResponseOptions  # NOQA
 
 
 ASGI_SUPPORTED = _sys.version_info.minor > 5
+"""Set to ``True`` when ASGI is supported for the current Python version."""
 
 
 # NOTE(kgriffs): Special singleton to be used internally whenever using

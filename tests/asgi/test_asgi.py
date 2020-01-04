@@ -16,15 +16,16 @@ from falcon import testing
 import falcon.asgi
 import falcon.util
 
-PYPY = platform.python_implementation() == 'PyPy'
+
+_PYPY = platform.python_implementation() == 'PyPy'
 
 _SERVER_HOST = '127.0.0.1'
 _SIZE_1_KB = 1024
 
 _random = random.Random()
 
-
 _MODULE_DIR = os.path.abspath(os.path.dirname(__file__))
+_MODULE_NAME, __ = os.path.splitext(os.path.basename(__file__))
 
 
 class TestASGIServer:
@@ -60,13 +61,19 @@ class TestASGIServer:
     def test_post_invalid_content_length(self, server_base_url):
         headers = {'Content-Length': 'invalid'}
 
-        # NOTE(kgriffs): Uvicorn will kill the request so it does not
-        #   even get to our app; the app logic is tested on the WSGI
-        #   side. We leave this here in case something changes in
-        #   the way uvicorn handles it or something and we want to
-        #   get a heads-up if the request is no longer blocked.
-        with pytest.raises(Exception):
-            requests.post(server_base_url, headers=headers)
+        try:
+            resp = requests.post(server_base_url, headers=headers)
+
+            # Daphne responds with a 400
+            assert resp.status_code == 400
+
+        except requests.ConnectionError:
+            # NOTE(kgriffs): Uvicorn will kill the request so it does not
+            #   even get to our app; the app logic is tested on the WSGI
+            #   side. We leave this here in case something changes in
+            #   the way uvicorn handles it or something and we want to
+            #   get a heads-up if the request is no longer blocked.
+            pass
 
     def test_post_read_bounded_stream(self, server_base_url):
         body = testing.rand_string(_SIZE_1_KB / 2, _SIZE_1_KB)
@@ -211,9 +218,10 @@ def _run_server_isolated(process_factory, host, port):
     server = process_factory(host, port)
 
     time.sleep(0.2)
-
     server.poll()
-    if server.returncode is None:
+    startup_succeeded = (server.returncode is None)
+
+    if startup_succeeded:
         yield server
 
     server.terminate()
@@ -227,19 +235,18 @@ def _run_server_isolated(process_factory, host, port):
     print(stdout_data.decode())
 
     assert server.returncode == 0
+    assert startup_succeeded
 
 
 def _uvicorn_factory(host, port):
     # NOTE(vytas): uvicorn+uvloop is not (well) supported on PyPy at the time
     #   of writing.
-    loop_options = ('--http', 'h11', '--loop', 'asyncio') if PYPY else ()
+    loop_options = ('--http', 'h11', '--loop', 'asyncio') if _PYPY else ()
     options = (
         '--host', host,
         '--port', str(port),
 
-        '--log-level', 'debug',
-
-        'test_asgi:application'
+        _MODULE_NAME + ':application'
     )
 
     return subprocess.Popen(
@@ -261,7 +268,7 @@ def _daphne_factory(host, port):
             '--verbosity', '2',
             '--access-log', '-',
 
-            'test_asgi:application'
+            _MODULE_NAME + ':application'
         ),
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -269,7 +276,7 @@ def _daphne_factory(host, port):
     )
 
 
-@pytest.fixture(params=[_uvicorn_factory])
+@pytest.fixture(params=[_uvicorn_factory, _daphne_factory])
 def server_base_url(request):
     process_factory = request.param
 
