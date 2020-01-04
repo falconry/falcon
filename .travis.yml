@@ -52,7 +52,7 @@ matrix:
         - python: 3.8
           env: TOXENV=check_vendored
 
-script: tox
+script: tox -- -v
 
 notifications:
   webhooks:
