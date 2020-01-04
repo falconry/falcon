@@ -99,4 +99,9 @@ class BaseHandler(metaclass=abc.ABCMeta):
         """
 
         data = await stream.read()
+
+        # NOTE(kgriffs): Override content length to make sure it is correct,
+        #   since we know what it is in this case.
+        content_length = len(data)
+
         return self.deserialize(io.BytesIO(data), content_type, content_length)
