@@ -336,7 +336,7 @@ def simulate_request(app, method='GET', path='/', query_string=None,
         asgi_chunk_size (int): The maximum number of bytes that will be
             sent to the ASGI app in a single 'http.request' event (default
             4096).
-        asgi_disconnect_ttl (int): The maxmimum number of seconds to wait
+        asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
             'http.disconnect' event when the app calls the
             receive() function (default 300).
@@ -569,7 +569,7 @@ def simulate_get(app, path, **kwargs) -> Result:
         asgi_chunk_size (int): The maximum number of bytes that will be
             sent to the ASGI app in a single 'http.request' event (default
             4096).
-        asgi_disconnect_ttl (int): The maxmimum number of seconds to wait
+        asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
             'http.disconnect' event when the app calls the
             receive() function (default 300).
@@ -648,7 +648,7 @@ def simulate_head(app, path, **kwargs) -> Result:
         asgi_chunk_size (int): The maximum number of bytes that will be
             sent to the ASGI app in a single 'http.request' event (default
             4096).
-        asgi_disconnect_ttl (int): The maxmimum number of seconds to wait
+        asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
             'http.disconnect' event when the app calls the
             receive() function (default 300).
@@ -734,7 +734,7 @@ def simulate_post(app, path, **kwargs) -> Result:
         asgi_chunk_size (int): The maximum number of bytes that will be
             sent to the ASGI app in a single 'http.request' event (default
             4096).
-        asgi_disconnect_ttl (int): The maxmimum number of seconds to wait
+        asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
             'http.disconnect' event when the app calls the
             receive() function (default 300).
@@ -820,7 +820,7 @@ def simulate_put(app, path, **kwargs) -> Result:
         asgi_chunk_size (int): The maximum number of bytes that will be
             sent to the ASGI app in a single 'http.request' event (default
             4096).
-        asgi_disconnect_ttl (int): The maxmimum number of seconds to wait
+        asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
             'http.disconnect' event when the app calls the
             receive() function (default 300).
@@ -894,7 +894,7 @@ def simulate_options(app, path, **kwargs) -> Result:
         asgi_chunk_size (int): The maximum number of bytes that will be
             sent to the ASGI app in a single 'http.request' event (default
             4096).
-        asgi_disconnect_ttl (int): The maxmimum number of seconds to wait
+        asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
             'http.disconnect' event when the app calls the
             receive() function (default 300).
@@ -975,7 +975,7 @@ def simulate_patch(app, path, **kwargs) -> Result:
         asgi_chunk_size (int): The maximum number of bytes that will be
             sent to the ASGI app in a single 'http.request' event (default
             4096).
-        asgi_disconnect_ttl (int): The maxmimum number of seconds to wait
+        asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
             'http.disconnect' event when the app calls the
             receive() function (default 300).
@@ -1056,7 +1056,7 @@ def simulate_delete(app, path, **kwargs) -> Result:
         asgi_chunk_size (int): The maximum number of bytes that will be
             sent to the ASGI app in a single 'http.request' event (default
             4096).
-        asgi_disconnect_ttl (int): The maxmimum number of seconds to wait
+        asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
             'http.disconnect' event when the app calls the
             receive() function (default 300).

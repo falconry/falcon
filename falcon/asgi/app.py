@@ -515,7 +515,7 @@ class App(falcon.app.App):
         #   set that flag in the test cases.
 
         # NOTE(kgriffs): Inject an extra kwarg so that the compiled router
-        #   will know to validate the reponder methods to make sure they
+        #   will know to validate the responder methods to make sure they
         #   are async coroutines.
         kwargs['_asgi'] = True
         super().add_route(uri_template, resource, **kwargs)
