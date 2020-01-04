@@ -2,6 +2,7 @@ import asyncio
 from collections import Counter
 from contextlib import contextmanager
 import os
+import platform
 import random
 import subprocess
 import time
@@ -14,6 +15,8 @@ import falcon
 from falcon import testing
 import falcon.asgi
 import falcon.util
+
+PYPY = platform.python_implementation() == 'PyPy'
 
 _SERVER_HOST = '127.0.0.1'
 _SIZE_1_KB = 1024
@@ -227,17 +230,20 @@ def _run_server_isolated(process_factory, host, port):
 
 
 def _uvicorn_factory(host, port):
+    # NOTE(vytas): uvicorn+uvloop is not (well) supported on PyPy at the time
+    #   of writing.
+    loop_options = ('--http', 'h11', '--loop', 'asyncio') if PYPY else ()
+    options = (
+        '--host', host,
+        '--port', str(port),
+
+        '--log-level', 'debug',
+
+        'test_asgi:application'
+    )
+
     return subprocess.Popen(
-        (
-            'uvicorn',
-
-            '--host', host,
-            '--port', str(port),
-
-            '--log-level', 'debug',
-
-            'test_asgi:application'
-        ),
+        ('uvicorn',) + options + loop_options,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         cwd=_MODULE_DIR,
