@@ -243,7 +243,7 @@ def _uvicorn_factory(host, port):
     )
 
     return subprocess.Popen(
-        ('uvicorn',) + options + loop_options,
+        ('uvicorn',) + loop_options + options,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         cwd=_MODULE_DIR,
