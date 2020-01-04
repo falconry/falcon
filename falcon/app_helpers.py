@@ -108,6 +108,13 @@ def prepare_middleware(middleware, independent_middleware=False, asgi=False):
                     raise CompatibilityError(msg.format(component))
 
         if not (process_request or process_resource or process_response):
+            if asgi and (
+                hasattr(component, 'process_startup') or hasattr(component, 'process_shutdown')
+            ):
+                # NOTE(kgriffs): This middleware only has ASGI lifespan
+                #   event handlers
+                continue
+
             msg = '{0} must implement at least one middleware method'
             raise TypeError(msg.format(component))
 

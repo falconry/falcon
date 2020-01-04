@@ -51,6 +51,125 @@ _TYPELESS_STATUS_CODES = frozenset([
 # TODO(kgriffs): Rename the WSGI class to App with an API alias kept for
 #   backwards-compatibility.
 class App(falcon.app.App):
+    """
+
+    Keyword Arguments:
+        middleware: Either a single middleware component object or an iterable
+            of objects (instantiated classes) that implement the following
+            middleware component interface.
+
+            The interface provides support for handling both ASGI worker
+            lifespan events and per-request events.
+
+            A lifespan handler can be used to perform startup and/or shutdown
+            activities for the main event loop. An example of this would be
+            creating a connection pool and subsequently closing the connection
+            pool to release the connections.
+
+            Note:
+                In a multi-process environment, lifespan events will be
+                triggered independently for the individual event loop associated
+                with each process.
+
+            It is only necessary to implement the methods for the events you
+            would like to handle; Falcon simply skips over any missing
+            middleware methods::
+
+                class ExampleComponent:
+                    async def process_startup(self, scope, event):
+                        \"\"\"Process the ASGI lifespan startup event.
+
+                        Invoked when the server is ready to startup and
+                        receive connections, but before it has started to
+                        do so.
+
+                        To halt startup processing and signal to the server that it
+                        should terminate, simply raise an exception and the
+                        framework will convert it to a "lifespan.startup.failed"
+                        event for the server.
+
+                        Arguments:
+                            scope (dict): The ASGI scope dictionary for the
+                                lifespan protocol. The lifespan scope exists
+                                for the duration of the event loop.
+                            event (dict): The ASGI event dictionary for the
+                                startup event.
+                        \"\"\"
+
+                    async def process_shutdown(self, scope, event):
+                        \"\"\"Process the ASGI lifespan shutdown event.
+
+                        Invoked when the server has stopped accepting
+                        connections and closed all active connections.
+
+                        To halt shutdown processing and signal to the server
+                        that it should immediately terminate, simply raise an
+                        exception and the framework will convert it to a
+                        "lifespan.shutdown.failed" event for the server.
+
+                        Arguments:
+                            scope (dict): The ASGI scope dictionary for the
+                                lifespan protocol. The lifespan scope exists
+                                for the duration of the event loop.
+                            event (dict): The ASGI event dictionary for the
+                                shutdown event.
+                        \"\"\"
+
+                    async def process_request(self, req, resp):
+                        \"\"\"Process the request before routing it.
+
+                        Note:
+                            Because Falcon routes each request based on
+                            req.path, a request can be effectively re-routed
+                            by setting that attribute to a new value from
+                            within process_request().
+
+                        Args:
+                            req: Request object that will eventually be
+                                routed to an on_* responder method.
+                            resp: Response object that will be routed to
+                                the on_* responder.
+                        \"\"\"
+
+                    async def process_resource(self, req, resp, resource, params):
+                        \"\"\"Process the request and resource *after* routing.
+
+                        Note:
+                            This method is only called when the request matches
+                            a route to a resource.
+
+                        Args:
+                            req: Request object that will be passed to the
+                                routed responder.
+                            resp: Response object that will be passed to the
+                                responder.
+                            resource: Resource object to which the request was
+                                routed. May be None if no route was found for
+                                the request.
+                            params: A dict-like object representing any
+                                additional params derived from the route's URI
+                                template fields, that will be passed to the
+                                resource's responder method as keyword
+                                arguments.
+                        \"\"\"
+
+                    async def process_response(self, req, resp, resource, req_succeeded)
+                        \"\"\"Post-processing of the response (after routing).
+
+                        Args:
+                            req: Request object.
+                            resp: Response object.
+                            resource: Resource object to which the request was
+                                routed. May be None if no route was found
+                                for the request.
+                            req_succeeded: True if no exceptions were raised
+                                while the framework processed and routed the
+                                request; otherwise False.
+                        \"\"\"
+
+            (See also: :ref:`Middleware <middleware>`)
+
+    """
 
     _STATIC_ROUTE_TYPE = falcon.routing.StaticRouteAsync
 
@@ -62,11 +181,8 @@ class App(falcon.app.App):
     _default_responder_bad_request = falcon.responders.bad_request_async
     _default_responder_path_not_found = falcon.responders.path_not_found_async
 
-    __slots__ = ['_lifespan_handlers']
-
     def __init__(self, *args, request_type=Request, response_type=Response, **kwargs):
         super().__init__(*args, request_type=request_type, response_type=response_type, **kwargs)
-        self._lifespan_handlers = []
 
     async def __call__(self, scope, receive, send):  # noqa: C901
         try:
@@ -175,7 +291,7 @@ class App(falcon.app.App):
                 # a case where an object does not have the requested
                 # next-hop child resource. In that case, the object
                 # being asked to dispatch to its child will raise an
-                # HTTP exception signalling the problem, e.g. a 404.
+                # HTTP exception signaling the problem, e.g. a 404.
                 responder, params, resource, req.uri_template = self._get_responder(req)
 
         except Exception as ex:
@@ -399,98 +515,6 @@ class App(falcon.app.App):
         await send(_EVT_RESP_EOF)
         self._schedule_callbacks(resp)
 
-    def add_lifespan_handler(self, handler):
-        """Add a lifespan handler object.
-
-        A lifespan handler performs startup and/or shutdown activities for the
-        main event loop. An example of this would be creating a connection
-        pool and subsequently closing the connection pool to release the
-        connections.
-
-        Note:
-            In a multi-process environment, lifespan events will be
-            triggered independently for the individual event loop associated
-            with each process.
-
-        A lifespan handler is any class that implements the interface below.
-        Note that it is only necessary to implement the coroutine functions for
-        the events that you wish to handle; Falcon will simply skip over any
-        missing coroutines in the lifespan handler::
-
-            class ExampleHandler:
-                async def process_startup(self, scope, event):
-                    \"\"\"Process the lifespan startup event.
-
-                    Invoked when the server is ready to startup and
-                    receive connections, but before it has started to
-                    do so.
-
-                    To halt startup processing and signal to the server that it
-                    should terminate, simply raise an exception and the
-                    framework will convert it to a "lifespan.startup.failed"
-                    event for the server.
-
-                    Arguments:
-                        scope (dict): The ASGI scope dictionary for the
-                            lifespan protocol. The lifespan scope exists
-                            for the duration of the event loop.
-                        event (dict): The ASGI event dictionary for the
-                            startup event.
-                    \"\"\"
-
-                async def process_shutdown(self, scope, event):
-                    \"\"\"Process the lifespan shutdown event.
-
-                    Invoked when the server has stopped accepting
-                    connections and closed all active connections.
-
-                    To halt shutdown processing and signal to the server
-                    that it should immediately terminate, simply raise an
-                    exception and the framework will convert it to a
-                    "lifespan.shutdown.failed" event for the server.
-
-                    Arguments:
-                        scope (dict): The ASGI scope dictionary for the
-                            lifespan protocol. The lifespan scope exists
-                            for the duration of the event loop.
-                        event (dict): The ASGI event dictionary for the
-                            shutdown event.
-                    \"\"\"
-
-        Lifespan handlers are executed hierarchically in a stack, based on
-        the order in which they were added. For example, suppose three
-        handlers were added as follows::
-
-            some_app.add_lifespan_handler(h1)
-            some_app.add_lifespan_handler(h2)
-            some_app.add_lifespan_handler(h3)
-
-        In this case, the handlers' methods would be invoked by the
-        framework in this order::
-
-            h1.process_startup()
-
-            h2.process_startup()
-
-            h3.process_startup()
-            h3.process_shutdown()
-
-            h2.process_shutdown()
-
-            h1.process_shutdown()
-
-        Arguments:
-            handler (object): An instantiated lifespan handler object.
-        """
-
-        for m in ('process_startup', 'process_shutdown'):
-            if hasattr(handler, m):
-                break
-        else:
-            raise TypeError(f'{handler} must implement at least one lifespan event method')
-
-        self._lifespan_handlers.append(handler)
-
     def add_error_handler(self, exception, handler=None):
         if not handler:
             try:
@@ -541,7 +565,7 @@ class App(falcon.app.App):
         while True:
             event = await receive()
             if event['type'] == 'lifespan.startup':
-                for handler in self._lifespan_handlers:
+                for handler in self._unprepared_middleware:
                     if hasattr(handler, 'process_startup'):
                         try:
                             await handler.process_startup(scope, event)
@@ -555,7 +579,7 @@ class App(falcon.app.App):
                 await send({'type': 'lifespan.startup.complete'})
 
             elif event['type'] == 'lifespan.shutdown':
-                for handler in reversed(self._lifespan_handlers):
+                for handler in reversed(self._unprepared_middleware):
                     if hasattr(handler, 'process_shutdown'):
                         try:
                             await handler.process_shutdown(scope, event)

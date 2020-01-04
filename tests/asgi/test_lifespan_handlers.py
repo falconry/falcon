@@ -11,7 +11,7 @@ def test_at_least_one_event_method_required():
     app = App()
 
     with pytest.raises(TypeError):
-        app.add_lifespan_handler(Foo())
+        app.add_middleware(Foo())
 
 
 def test_startup_only():
@@ -22,7 +22,7 @@ def test_startup_only():
     foo = Foo()
 
     app = App()
-    app.add_lifespan_handler(foo)
+    app.add_middleware(foo)
     client = testing.TestClient(app)
 
     client.simulate_get()
@@ -56,8 +56,7 @@ def test_startup_raises():
     bar = Bar()
 
     app = App()
-    app.add_lifespan_handler(foo)
-    app.add_lifespan_handler(bar)
+    app.add_middleware([foo, bar])
     client = testing.TestClient(app)
 
     with pytest.raises(RuntimeError) as excinfo:
@@ -100,9 +99,8 @@ def test_shutdown_raises():
     b2 = HandlerB()
 
     app = App()
-    app.add_lifespan_handler(b1)
-    app.add_lifespan_handler(a)
-    app.add_lifespan_handler(b2)
+    app.add_middleware(b1)
+    app.add_middleware([a, b2])
     client = testing.TestClient(app)
 
     with pytest.raises(RuntimeError) as excinfo:
@@ -128,7 +126,7 @@ def test_shutdown_only():
     foo = Foo()
 
     app = App()
-    app.add_lifespan_handler(foo)
+    app.add_middleware(foo)
     client = testing.TestClient(app)
 
     client.simulate_get()
@@ -179,6 +177,9 @@ def test_multiple_handlers():
             self._called_shutdown = counter
             counter += 1
 
+        async def process_request(self, req, resp):
+            self._called_request = True
+
     app = App()
 
     a = HandlerA()
@@ -187,8 +188,7 @@ def test_multiple_handlers():
     d = HandlerD()
     e = HandlerE()
 
-    for handler in (a, b, c, d, e):
-        app.add_lifespan_handler(handler)
+    app.add_middleware([a, b, c, d, e])
 
     client = testing.TestClient(app)
     client.simulate_get()
@@ -201,3 +201,5 @@ def test_multiple_handlers():
     assert e._called_shutdown == 4
     assert c._called_shutdown == 5
     assert b._called_shutdown == 6
+
+    assert e._called_request

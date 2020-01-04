@@ -312,7 +312,7 @@ def create_app():
     app.add_route('/events', Events())
 
     lifespan_handler = LifespanHandler()
-    app.add_lifespan_handler(lifespan_handler)
+    app.add_middleware(lifespan_handler)
 
     return app
 
