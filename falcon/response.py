@@ -635,21 +635,25 @@ class Response:
             :meth:`~.append_header` or :meth:`~.set_cookie`.
 
         Args:
-            headers (dict or list): A dictionary of header names and values
+            headers (dict or list or object): A dictionary of header names and values
                 to set, or a ``list`` of (*name*, *value*) tuples. Both
                 *name* and *value* must be of type ``str`` and
-                contain only US-ASCII characters.
+                contain only US-ASCII characters, also an instance of an object
+                which implements ``items()`` method can be passed, the method should
+                return a ``dict`` or ``list`` of ``tuple``.
 
                 Note:
                     Falcon can process a list of tuples slightly faster
                     than a dict.
 
         Raises:
-            ValueError: `headers` was not a ``dict`` or ``list`` of ``tuple``.
-
+            ValueError: `headers` was not a ``dict`` or ``list`` of ``tuple`
+                         or an instance of an object which implements ``items()`` method.
         """
 
-        if isinstance(headers, dict):
+        header_items = getattr(headers, 'items', None)
+
+        if header_items and callable(header_items):
             headers = headers.items()
 
         # NOTE(kgriffs): We can't use dict.update because we have to
