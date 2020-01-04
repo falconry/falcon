@@ -6,7 +6,8 @@ testtools
 
 # ASGI Specific
 uvicorn; python_version >= '3.6'
-aiofiles
+aiofiles; python_version >= '3.6'
+daphne; python_version >= '3.6'
 
 # Handler Specific
 msgpack

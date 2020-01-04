@@ -1,25 +1,27 @@
 import asyncio
 from collections import Counter
-from io import StringIO
-import logging
-import multiprocessing
+from contextlib import contextmanager
+import os
 import random
+import subprocess
 import time
 
 import pytest
 import requests
 import requests.exceptions
-import uvicorn
 
 import falcon
+from falcon import testing
 import falcon.asgi
-import falcon.testing as testing
 import falcon.util
 
 _SERVER_HOST = '127.0.0.1'
 _SIZE_1_KB = 1024
 
 _random = random.Random()
+
+
+_MODULE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class TestASGIServer:
@@ -98,11 +100,11 @@ class Things:
         resp.set_header('X-Counter', str(self._counter['backround:things:on_post']))
 
         async def background_job_async():
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.01)
             self._counter['backround:things:on_post'] += 1
 
         def background_job_sync():
-            time.sleep(0.1)
+            time.sleep(0.01)
             self._counter['backround:things:on_post'] += 1000
 
         resp.schedule(background_job_async)
@@ -139,7 +141,7 @@ class Things:
         def callmesafely(a, b, c=None):
             # NOTE(kgriffs): Sleep to prove that there isn't another instance
             #   running in parallel that is able to race ahead.
-            time.sleep(0.001)
+            time.sleep(0.0001)
             safely_values.append((a, b, c))
 
         cms = falcon.util.wrap_sync_to_async(callmesafely, threadsafe=False)
@@ -198,38 +200,73 @@ class LifespanHandler:
         self.shutdown_succeeded = True
 
 
-def _run_server(succeeded, host, port):
-    output = StringIO()
-    logger = logging.getLogger('uvicorn')
-    logger.addHandler(logging.StreamHandler(output))
+@contextmanager
+def _run_server_isolated(process_factory, host, port):
+    # NOTE(kgriffs): We have to use subprocess because uvicorn has a tendency
+    #   to corrupt our asyncio state and cause intermittent hangs in the test
+    #   suite.
+    server = process_factory(host, port)
 
-    app = falcon.asgi.App()
-    app.add_route('/', Things())
-    app.add_route('/bucket', Bucket())
-    app.add_route('/events', Events())
+    time.sleep(0.2)
 
-    lifespan_handler = LifespanHandler()
-    app.add_lifespan_handler(lifespan_handler)
+    server.poll()
+    if server.returncode is None:
+        yield server
+
+    server.terminate()
 
     try:
-        uvicorn.run(app, host=host, port=port, loop='asyncio')
-    except Exception as ex:
-        print(ex, type(ex))
-    except SystemExit:
-        pass
-        # e = sys.exc_info()[0]
-        # print(e, type(e))
+        stdout_data, __ = server.communicate(timeout=10)
+    except subprocess.TimeoutExpired:
+        server.kill()
+        stdout_data, __ = server.communicate()
 
-    assert lifespan_handler.startup_succeeded
-    assert lifespan_handler.shutdown_succeeded
+    print(stdout_data.decode())
 
-    print(output.getvalue())
-
-    succeeded.value = 1
+    assert server.returncode == 0
 
 
-@pytest.fixture
-def server_base_url():
+def _uvicorn_factory(host, port):
+    return subprocess.Popen(
+        (
+            'uvicorn',
+
+            '--host', host,
+            '--port', str(port),
+
+            '--log-level', 'debug',
+
+            'test_asgi:application'
+        ),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        cwd=_MODULE_DIR,
+    )
+
+
+def _daphne_factory(host, port):
+    return subprocess.Popen(
+        (
+            'daphne',
+
+            '--bind', host,
+            '--port', str(port),
+
+            '--verbosity', '2',
+            '--access-log', '-',
+
+            'test_asgi:application'
+        ),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        cwd=_MODULE_DIR,
+    )
+
+
+@pytest.fixture(params=[_uvicorn_factory])
+def server_base_url(request):
+    process_factory = request.param
+
     # NOTE(kgriffs): This facilitates parallel test execution as well as
     #   mitigating the problem of trying to reuse a port that the system
     #   hasn't cleaned up yet.
@@ -238,45 +275,33 @@ def server_base_url():
     server_port = _random.randint(50000, 60000)
     base_url = 'http://{}:{}/'.format(_SERVER_HOST, server_port)
 
-    # NOTE(kgriffs): We have to use spawn instead of the default fork method,
-    #   since forking has a bad interaction (root cause TBD) with Cython and
-    #   concurrent.futures.ThreadPoolExecutor that results in scheduled
-    #   tasks never completing in asgi/test_sync.py
-    ctx = multiprocessing.get_context('spawn')
+    with _run_server_isolated(process_factory, _SERVER_HOST, server_port):
+        # NOTE(kgriffs): Let the server start up. Give up after 5 seconds.
+        start_ts = time.time()
+        while True:
+            wait_time = time.time() - start_ts
+            assert wait_time < 5
 
-    succeeded = ctx.Value('B', 0)
-    process = ctx.Process(
-        target=_run_server,
-        daemon=True,
+            try:
+                requests.get(base_url, timeout=0.2)
+            except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+                time.sleep(0.2)
+            else:
+                break
 
-        # NOTE(kgriffs): Pass these explicitly since if multiprocessing is
-        #   using the 'spawn' start method, we can't depend on closures.
-        args=(succeeded, _SERVER_HOST, server_port),
-    )
-    process.start()
+        yield base_url
 
-    # NOTE(kgriffs): Let the server start up.
-    while True:
-        try:
-            requests.get(base_url, timeout=0.2)
-        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            time.sleep(0.2)
-        else:
-            break
 
-    assert process.is_alive()
+def create_app():
+    app = falcon.asgi.App()
+    app.add_route('/', Things())
+    app.add_route('/bucket', Bucket())
+    app.add_route('/events', Events())
 
-    yield base_url
+    lifespan_handler = LifespanHandler()
+    app.add_lifespan_handler(lifespan_handler)
 
-    # NOTE(kgriffs): Pump the request handler loop in case execution
-    # made it to the next server.handle_request() before we sent the
-    # event.
-    try:
-        requests.get(base_url)
-    except Exception:
-        pass  # Process already exited
+    return app
 
-    process.terminate()
-    process.join()
 
-    assert succeeded.value == 1
+application = create_app()
