@@ -29,7 +29,7 @@ class Response(falcon.response.Response):
     Attributes:
         sse (coroutine): A Server-Sent Event (SSE) emitter, implemented as
             an async coroutine function that returns an iterable
-            of :py:class:`falcon.asgi.SSEent` instances. Each event will be
+            of :py:class:`falcon.asgi.SSEvent` instances. Each event will be
             serialized and sent to the client as HTML5 Server-Sent Events.
 
         data (bytes): Byte string representing response content.
