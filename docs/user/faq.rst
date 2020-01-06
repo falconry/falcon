@@ -910,7 +910,7 @@ This can be done by setting ``headers={'Cookies': 'xxx=yyy'}`` in ``simulate_req
  
     @pytest.fixture
     def client():
-        app = falcon.API()
+        app = falcon.App()
         app.add_route('/cookies', TastyCookies())
  
         return falcon.testing.TestClient(app)
