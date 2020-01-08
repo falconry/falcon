@@ -6,7 +6,7 @@ import pytest
 import falcon
 from falcon import testing
 
-from _util import create_app  # NOQA
+from _util import create_app, disable_asgi_non_coroutine_wrapping  # NOQA
 
 
 SAMPLE_BODY = testing.rand_string(0, 128 * 1024)
@@ -20,7 +20,10 @@ def client(asgi):
 
 @pytest.fixture(scope='function')
 def cors_client(asgi):
-    app = create_app(asgi, cors_enable=True)
+    # NOTE(kgriffs): Disable wrapping to test that built-in middleware does
+    #   not require it (since this will be the case for non-test apps).
+    with disable_asgi_non_coroutine_wrapping():
+        app = create_app(asgi, cors_enable=True)
     return testing.TestClient(app)
 
 
