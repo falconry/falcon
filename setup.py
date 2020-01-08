@@ -63,6 +63,11 @@ if CYTHON:
         # NOTE(kgriffs): Cython does not handle dynamically-created async
         #   methods correctly, so we do not cythonize the following modules.
         'falcon.hooks',
+        # NOTE(vytas): Middleware classes cannot be cythonized until
+        #   asyncio.iscoroutinefunction recognizes cythonized coroutines:
+        #   * https://github.com/cython/cython/issues/2273
+        #   * https://bugs.python.org/issue38225
+        'falcon.middlewares',
         'falcon.responders',
         'falcon.util.sync',
     ]
