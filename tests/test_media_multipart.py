@@ -43,6 +43,7 @@ EXAMPLE2 = (
     b'\r\n'
     b'-----------------------------1574247108204320607285918568--\r\n'
 )
+EXAMPLE2_PART_COUNT = 5
 
 EXAMPLE3 = (
     b'--BOUNDARY\r\n'
@@ -471,8 +472,9 @@ def test_data_too_large(client):
     }
 
 
-def test_too_many_body_parts(custom_client):
-    client = custom_client({'max_body_part_count': 4})
+@pytest.mark.parametrize('max_body_part_count', list(range(7)) + [100, 1000])
+def test_too_many_body_parts(custom_client, max_body_part_count):
+    client = custom_client({'max_body_part_count': max_body_part_count})
     boundary = '---------------------------1574247108204320607285918568'
     resp = client.simulate_post(
         '/media',
@@ -482,8 +484,12 @@ def test_too_many_body_parts(custom_client):
         },
         body=EXAMPLE2)
 
-    assert resp.status_code == 400
-    assert resp.json == {
-        'description': 'maximum number of form body parts exceeded',
-        'title': 'Malformed multipart/form-data request media',
-    }
+    if 0 < max_body_part_count < EXAMPLE2_PART_COUNT:
+        assert resp.status_code == 400
+        assert resp.json == {
+            'description': 'maximum number of form body parts exceeded',
+            'title': 'Malformed multipart/form-data request media',
+        }
+    else:
+        assert resp.status_code == 200
+        assert len(resp.json) == EXAMPLE2_PART_COUNT

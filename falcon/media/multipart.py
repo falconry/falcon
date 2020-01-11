@@ -13,7 +13,6 @@ from falcon.util import misc
 #   * Better support for form-wide charset setting
 #   * Clean up, simplify, and optimize BufferedStream
 #   * Better documentation
-#   * Document MultipartParseError
 
 _ALLOWED_CONTENT_HEADERS = frozenset([
     b'content-type',
@@ -53,12 +52,20 @@ DEFAULT_SUPPORTED_CHARSETS = (
 
 _FILENAME_STAR_RFC5987 = re.compile(r"([\w-]+)'[\w]*'(.+)")
 
-CRLF = b'\r\n'
-
-_CRLF_CRLF = CRLF + CRLF
+_CRLF = b'\r\n'
+_CRLF_CRLF = _CRLF + _CRLF
 
 
 class MultipartParseError(errors.HTTPBadRequest):
+    """Represents a multipart form parsing error.
+
+    This error may refer to a malformed or truncated form, usage of deprecated
+    or unsupported features, or form parameters exceeding limits configured in
+    :class:`MultipartParseOptions`.
+
+    :class:`MultipartParseError` instances raised in this module always include
+    a short human-readable description of the error.
+    """
 
     def __init__(self, description=None, headers=None, **kwargs):
         super().__init__('Malformed multipart/form-data request media',
@@ -68,8 +75,7 @@ class MultipartParseError(errors.HTTPBadRequest):
 # TODO(vytas): Consider supporting -charset- stuff.
 #   Does anyone use that (?)
 class BodyPart:
-    """
-    Represents a body part in a multipart form.
+    """Represents a body part in a multipart form.
 
     Note:
         `BodyPart` is meant to be instantiated directly only by the
@@ -79,10 +85,10 @@ class BodyPart:
         content_type (str): Value of the Content-Type header, or the multipart
             form default ``text/plain`` if the header is missing.
 
-        data (bytes): Body part content bytes. The maximum amount of bytes that
+        data (bytes): Body part content bytes. The maximum number of bytes that
             could be read is configurable via :class:`MultipartParseOptions`,
             and a :class:`.MultipartParseError` is raised if the body part is
-            larger that this amount.
+            larger that this size.
 
             For large bodies, such as attached files, use the input `stream`
             directly.
@@ -233,7 +239,7 @@ class MultipartForm:
         self._boundary = boundary
         # NOTE(vytas): Here self._dash_boundary is not prepended with CRLF
         #   (yet) for parsing the prologue. The CRLF will be prepended later to
-        #   construct the inter-part delimiter as per the RFC 7578, section 4.1
+        #   construct the inter-part delimiter as per RFC 7578, section 4.1
         #   (see the note below).
         self._dash_boundary = b'--' + boundary
         self._parse_options = parse_options
@@ -242,7 +248,7 @@ class MultipartForm:
         delimiter = self._dash_boundary
         stream = self._stream
         max_headers_size = self._parse_options.max_body_part_headers_size
-        remaining_part_count = self._parse_options.max_body_part_count
+        remaining_parts = self._parse_options.max_body_part_count
 
         while True:
             # NOTE(vytas): Either exhaust the unused stream part, or skip
@@ -250,16 +256,16 @@ class MultipartForm:
             stream.pipe_until(delimiter)
             stream.read(len(delimiter))
 
-            if not delimiter.startswith(CRLF):
+            if not delimiter.startswith(_CRLF):
                 # NOTE(vytas): RFC 7578, section 4.1.
                 #   As with other multipart types, the parts are delimited with
                 #   a boundary delimiter, constructed using CRLF, "--", and the
                 #   value of the "boundary" parameter.
-                delimiter = CRLF + delimiter
+                delimiter = _CRLF + delimiter
 
-            separator = stream.read_until(CRLF, 2, MultipartParseError)
+            separator = stream.read_until(_CRLF, 2, MultipartParseError)
             if separator == b'--':
-                if stream.peek(2) != CRLF:
+                if stream.peek(2) != _CRLF:
                     raise MultipartParseError('unexpected form epilogue')
                 break
             elif separator:
@@ -270,7 +276,7 @@ class MultipartForm:
                                               MultipartParseError)
             stream.read(4)
 
-            for line in headers_block.split(CRLF):
+            for line in headers_block.split(_CRLF):
                 name, sep, value = line.partition(b': ')
                 if sep:
                     name = name.lower()
@@ -293,8 +299,8 @@ class MultipartForm:
                     elif name in _ALLOWED_CONTENT_HEADERS:
                         headers[name] = value
 
-            remaining_part_count -= 1
-            if remaining_part_count == 0:
+            remaining_parts -= 1
+            if remaining_parts < 0 < self._parse_options.max_body_part_count:
                 raise MultipartParseError(
                     'maximum number of form body parts exceeded')
 
@@ -305,19 +311,19 @@ class MultipartForm:
 
 
 class MultipartFormHandler(BaseHandler):
-    """
-    Multipart form (content type ``multipart/form-data``) media handler.
+    """Multipart form (content type ``multipart/form-data``) media handler.
 
-    The ``multipart/form-data`` media type for HTML5 forms is defined in the
+    The ``multipart/form-data`` media type for HTML5 forms is defined in
     `RFC 7578 <https://tools.ietf.org/html/rfc7578>`_.
 
-    The multipart media type itself is defined in the
+    The multipart media type itself is defined in
     `RFC 2046 section 5.1 <https://tools.ietf.org/html/rfc2046#section-5.1>`_.
 
     .. note::
-       Note that unlike many others, this handler does not consume the stream
-       immediately. Rather, the serialized media object shall be iterated to
-       parse the body parts.
+       Unlike many form parsing implementations in other frameworks, this
+       handler does not consume the stream immediately. Rather, the stream is
+       consumed on-demand and parsed into individual body parts while iterating
+       over the media object.
     """
 
     def __init__(self, parse_options=None):
@@ -325,8 +331,9 @@ class MultipartFormHandler(BaseHandler):
 
     def deserialize(self, stream, content_type, content_length):
         _, options = cgi.parse_header(content_type)
-        boundary = options.get('boundary')
-        if boundary is None:
+        try:
+            boundary = options['boundary']
+        except KeyError:
             raise errors.HTTPInvalidHeader(
                 'No boundary specifier found in {!r}'.format(content_type),
                 'Content-Type')
@@ -356,18 +363,21 @@ class MultipartFormHandler(BaseHandler):
 # PERF(vytas): To avoid typos and improve storage space and speed over a dict.
 #   Inspired by RequestOptions.
 class MultipartParseOptions:
-    """
-    Defines a set of configurable multipart form parser options.
+    """Defines a set of configurable multipart form parser options.
 
     Attributes:
         default_charset (str): The default character encoding for text fields
             (default: ``utf-8``).
 
-        max_body_part_count (int): The maximum amount of body parts in the
-            form (default: 64).
+        max_body_part_count (int): The maximum number of body parts in the form
+            (default: 64). If the form contains more parts than this number,
+            an instance of :class:`MultipartParseError` will be raised. If this
+            option is set to 0, no limit will be imposed by the parser.
 
-        max_body_part_buffer_size (int): The maximum amount of bytes to buffer
-            as `data` property (default: 1 MiB).
+        max_body_part_buffer_size (int): The maximum number of bytes to buffer
+            and return when the :data:`BodyPart.data` property is
+            referenced (default: 1 MiB). If the body part size exceeds this
+            value, an instance of :class:`MultipartParseError` will be raised.
 
         max_body_part_headers_size (int): The maximum size (in bytes) of the
             body part headers structure (default: 8192).

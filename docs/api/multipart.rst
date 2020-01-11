@@ -15,7 +15,7 @@ through multipart form
         if part.content_type == 'application/json':
             # TODO: Body part is a JSON document, do something useful with it
             resp.media = part.media
-        elif part.name = 'datafile':
+        elif part.name == 'datafile':
             while True:
                 # Do something with the uploaded data (file)
                 chunk = part.stream.read(8192)
