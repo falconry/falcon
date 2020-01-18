@@ -893,31 +893,35 @@ the tutorial in the docs provides an excellent introduction to
 How to set cookies in simulate request for testing?
 ---------------------------------------------------
 
-This can be done by setting ``headers={'Cookies': 'xxx=yyy'}`` in ``simulate_request``. Here is an example:
+This can be done by setting ``headers={'Cookie': 'xxx=yyy'}`` in
+``simulate_request``. Here is an example:
 
 .. code:: python
 
     import falcon
     import falcon.testing
     import pytest
- 
- 
+
+
     class TastyCookies:
- 
+
         def on_get(self, req, resp):
             resp.media = {'cookies': req.cookies}
- 
- 
+
+
     @pytest.fixture
     def client():
         app = falcon.App()
         app.add_route('/cookies', TastyCookies())
- 
+
         return falcon.testing.TestClient(app)
- 
- 
+
+
     def test_cookies(client):
         resp = client.simulate_get('/cookies', headers={'Cookie': 'xxx=yyy'})
- 
+
         assert resp.json == {'cookies': {'xxx': 'yyy'}}
 
+To include multiple values, you can use ``"; "`` to separate these values in
+cookie-string. For example, by passing ``{'Cookie': 'xxx=yyy; hello=world'}``,
+you will get ``{'cookies': {'xxx': 'yyy', 'hello': 'world'}}``.
