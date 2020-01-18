@@ -635,20 +635,18 @@ class Response:
             :meth:`~.append_header` or :meth:`~.set_cookie`.
 
         Args:
-            headers (dict or list or object): A dictionary of header names and values
-                to set, or a ``list`` of (*name*, *value*) tuples. Both
-                *name* and *value* must be of type ``str`` and
-                contain only US-ASCII characters, also an instance of an object
-                which implements ``items()`` method can be passed, the method should
-                return a ``dict`` or ``list`` of ``tuple``.
+            headers (Iterable[[str, str]]): An iterable of ``[name, value]`` two-member
+                iterables, or a dict-like object that implements an ``items()`` method.
+                Both *name* and *value* must be of type ``str`` and
+                contain only US-ASCII characters.
 
                 Note:
-                    Falcon can process a list of tuples slightly faster
+                    Falcon can process an iterable of tuples slightly faster
                     than a dict.
 
         Raises:
-            ValueError: `headers` was not a ``dict`` or ``list`` of ``tuple`
-                         or an instance of an object which implements ``items()`` method.
+            ValueError: `headers` was not a ``dict`` or ``list`` of ``tuple``
+                         or ``Iterable[[str, str]]``.
         """
 
         header_items = getattr(headers, 'items', None)

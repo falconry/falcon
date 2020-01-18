@@ -254,10 +254,18 @@ class CustomHeaders:
         return [('test-header', 'test-value')]
 
 
+class CustomHeadersNotCallableResource:
+    def __init__(self):
+        self.items = {'test-header': 'test-value'}
+
+
 class CustomHeadersResource:
     def on_get(self, req, resp):
         headers = CustomHeaders()
         resp.set_headers(headers)
+
+    def on_post(self, req, resp):
+        resp.set_headers(CustomHeadersNotCallableResource())
 
 
 class TestHeaders:
@@ -800,6 +808,13 @@ class TestHeaders:
 
         assert 'test-header' in result.headers
         assert result.headers['test-header'] == 'test-value'
+
+    def test_headers_with_custom_class_not_callable(self, client):
+        client.app.add_route('/', CustomHeadersResource())
+
+        result = client.simulate_post('/')
+
+        assert 'test-header' not in result.headers
 
     # ----------------------------------------------------------------------
     # Helpers

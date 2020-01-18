@@ -1,2 +1,2 @@
-The :meth:`~.Response.set_headers` method now can retrieve an instance of an object
-which implements ``items()`` method.
+The :meth:`~.Response.set_headers` method now accepts an instance of any dict-like
+object that implements an ``items()`` method.
