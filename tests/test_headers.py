@@ -254,7 +254,7 @@ class CustomHeaders:
         return [('test-header', 'test-value')]
 
 
-class CustomHeadersNotCallableResource:
+class CustomHeadersNotCallable:
     def __init__(self):
         self.items = {'test-header': 'test-value'}
 
@@ -265,7 +265,7 @@ class CustomHeadersResource:
         resp.set_headers(headers)
 
     def on_post(self, req, resp):
-        resp.set_headers(CustomHeadersNotCallableResource())
+        resp.set_headers(CustomHeadersNotCallable())
 
 
 class TestHeaders:
