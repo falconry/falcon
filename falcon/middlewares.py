@@ -27,3 +27,6 @@ class CORSMiddleware(object):
             resp.set_header('Access-Control-Allow-Methods', allow)
             resp.set_header('Access-Control-Allow-Headers', allow_headers)
             resp.set_header('Access-Control-Max-Age', '86400')  # 24 hours
+
+    async def process_response_async(self, *args):
+        self.process_response(*args)

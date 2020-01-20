@@ -5,8 +5,10 @@ from uuid import UUID
 import pytest
 
 import falcon
-from falcon.errors import HTTPInvalidParam
+from falcon.errors import HTTPInvalidParam, UnsupportedError
 import falcon.testing as testing
+
+from _util import create_app  # NOQA
 
 
 class Resource(testing.SimpleTestResource):
@@ -43,9 +45,11 @@ def resource():
 
 
 @pytest.fixture
-def client():
-    app = falcon.App()
-    app.req_options.auto_parse_form_urlencoded = True
+def client(asgi):
+    app = create_app(asgi)
+    if not asgi:
+        app.req_options.auto_parse_form_urlencoded = True
+
     return testing.TestClient(app)
 
 
@@ -54,6 +58,12 @@ def simulate_request_get_query_params(client, path, query_string, **kwargs):
 
 
 def simulate_request_post_query_params(client, path, query_string, **kwargs):
+    if client.app._ASGI:
+        pytest.skip(
+            'The ASGI implementation does not support '
+            'RequestOptions.auto_parse_form_urlencoded'
+        )
+
     headers = kwargs.setdefault('headers', {})
     headers['Content-Type'] = 'application/x-www-form-urlencoded'
     if 'method' not in kwargs:
@@ -899,10 +909,19 @@ class TestPostQueryParams:
         req = resource.captured_req
         assert req.get_param('q') is None
 
+    def test_asgi_raises_error(self, resource):
+        app = create_app(asgi=True)
+        app.add_route('/', resource)
+        app.req_options.auto_parse_form_urlencoded = True
 
+        with pytest.raises(UnsupportedError):
+            testing.simulate_get(app, '/')
+
+
+@pytest.mark.parametrize('asgi', [True, False])
 class TestPostQueryParamsDefaultBehavior:
-    def test_dont_auto_parse_by_default(self):
-        app = falcon.App()
+    def test_dont_auto_parse_by_default(self, asgi):
+        app = create_app(asgi)
         resource = testing.SimpleTestResource()
         app.add_route('/', resource)
 

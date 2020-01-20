@@ -14,19 +14,28 @@
 
 """Utilities for the App class."""
 
+from inspect import iscoroutinefunction
+
 from falcon import util
+from falcon.errors import CompatibilityError
+from falcon.util.sync import _wrap_non_coroutine_unsafe
 
 
-def prepare_middleware(middleware=None, independent_middleware=False):
-    """Check middleware interface and prepare it to iterate.
+def prepare_middleware(middleware, independent_middleware=False, asgi=False):
+    """Check middleware interfaces and prepare the methods for request handling.
 
-    Args:
-        middleware: list (or object) of input middleware
-        independent_middleware: bool whether should prepare request and
-            response middleware independently
+    Arguments:
+        middleware (iterable): An iterable of middleware objects.
+
+    Keyword Args:
+        independent_middleware (bool): ``True`` if the request and
+            response middleware methods should be treated independently
+            (default ``False``)
+        asgi (bool): ``True`` if an ASGI app, ``False`` otherwise
+            (default ``False``)
 
     Returns:
-        list: A tuple of prepared middleware tuples
+        tuple: A tuple of prepared middleware method tuples
     """
 
     # PERF(kgriffs): do getattr calls once, in advance, so we don't
@@ -35,22 +44,78 @@ def prepare_middleware(middleware=None, independent_middleware=False):
     resource_mw = []
     response_mw = []
 
-    if middleware is None:
-        middleware = []
-    else:
-        if not isinstance(middleware, list):
-            middleware = [middleware]
-
     for component in middleware:
-        process_request = util.get_bound_method(component,
-                                                'process_request')
-        process_resource = util.get_bound_method(component,
-                                                 'process_resource')
-        process_response = util.get_bound_method(component,
-                                                 'process_response')
+        # NOTE(kgriffs): Middleware that uses parts of the Request and Response
+        #   interfaces that are the same between ASGI and WSGI (most of it is,
+        #   and we should probably define this via ABC) can just implement
+        #   the method names without the *_async postfix. If a middleware
+        #   component wants to provide an alternative implementation that
+        #   does some work that requires async def, or something specific about
+        #   the ASGI Request/Response classes, the component can implement the
+        #   *_async method in that case.
+        #
+        #   Middleware that is WSGI-only or ASGI-only can simply implement all
+        #   methods without the *_async postfix. Regardless, components should
+        #   clearly document their compatibility with WSGI vs. ASGI.
+
+        if asgi:
+            process_request = (
+                util.get_bound_method(component, 'process_request_async') or
+                _wrap_non_coroutine_unsafe(
+                    util.get_bound_method(component, 'process_request')
+                )
+            )
+
+            process_resource = (
+                util.get_bound_method(component, 'process_resource_async') or
+                _wrap_non_coroutine_unsafe(
+                    util.get_bound_method(component, 'process_resource')
+                )
+            )
+
+            process_response = (
+                util.get_bound_method(component, 'process_response_async') or
+                _wrap_non_coroutine_unsafe(
+                    util.get_bound_method(component, 'process_response')
+                )
+            )
+
+            for m in (process_request, process_resource, process_response):
+                if m and not iscoroutinefunction(m):
+                    msg = (
+                        '{} must be implemented as an awaitable coroutine. If '
+                        'you would like to retain compatibility '
+                        'with WSGI apps, the coroutine versions of the '
+                        'middleware methods may be implemented side-by-side '
+                        'by applying an *_async postfix to the method names. '
+                    )
+                    raise CompatibilityError(msg.format(m))
+
+        else:
+            process_request = util.get_bound_method(component, 'process_request')
+            process_resource = util.get_bound_method(component, 'process_resource')
+            process_response = util.get_bound_method(component, 'process_response')
+
+            for m in (process_request, process_resource, process_response):
+                if m and iscoroutinefunction(m):
+                    msg = (
+                        '{} may not implement coroutine methods and '
+                        'remain compatible with WSGI apps without '
+                        'using the *_async postfix to explicitly identify '
+                        'the coroutine version of a given middleware '
+                        'method.'
+                    )
+                    raise CompatibilityError(msg.format(component))
 
         if not (process_request or process_resource or process_response):
-            msg = '{0} does not implement the middleware interface'
+            if asgi and (
+                hasattr(component, 'process_startup') or hasattr(component, 'process_shutdown')
+            ):
+                # NOTE(kgriffs): This middleware only has ASGI lifespan
+                #   event handlers
+                continue
+
+            msg = '{0} must implement at least one middleware method'
             raise TypeError(msg.format(component))
 
         # NOTE: depending on whether we want to execute middleware

@@ -6,9 +6,8 @@ import falcon.testing as testing
 
 class TestRequestContext:
 
-    def test_default_request_context(self):
-        env = testing.create_environ()
-        req = Request(env)
+    def test_default_request_context(self,):
+        req = testing.create_req()
 
         req.context.hello = 'World'
         assert req.context.hello == 'World'

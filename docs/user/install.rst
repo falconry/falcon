@@ -35,7 +35,8 @@ Installing it is as simple as:
 Installing the Falcon wheel is a great way to get up and running
 quickly in a development environment, but for an extra speed boost when
 deploying your application in production, Falcon can compile itself with
-Cython.
+Cython. Note, however, that Cython is currently incompatible with
+the falcon.asgi module.
 
 The following commands tell pip to install Cython, and then to invoke
 Falcon's ``setup.py``, which will in turn detect the presence of Cython
