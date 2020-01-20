@@ -30,6 +30,7 @@ import functools
 import io
 import itertools
 import random
+import socket
 import sys
 import time
 from typing import Any, Dict
@@ -291,6 +292,24 @@ def get_encoding_from_headers(headers):
 
 def flip_coin() -> int:
     return random.randint(0, 1) == 0
+
+
+def get_unused_port() -> int:
+    """Gets an unused localhost port for use by a test server.
+
+    Warning:
+        It is possible for a third party to bind to the returned port
+        before the caller is able to do so. The caller will need to
+        retry with a different port in that case.
+
+    Warning:
+        This method has only be tested on POSIX systems and may not
+        work elsewhere.
+    """
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(('localhost', 0))
+        return s.getsockname()[1]
 
 
 def rand_string(min, max) -> str:
