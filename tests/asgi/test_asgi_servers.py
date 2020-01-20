@@ -1,7 +1,6 @@
 from contextlib import contextmanager
 import os
 import platform
-import random
 import subprocess
 import time
 
@@ -18,8 +17,6 @@ _PYPY = platform.python_implementation() == 'PyPy'
 
 _SERVER_HOST = '127.0.0.1'
 _SIZE_1_KB = 1024
-
-_random = random.Random()
 
 
 _REQUEST_TIMEOUT = 10
@@ -102,12 +99,7 @@ def _run_server_isolated(process_factory, host, port):
     print('\n[Starting server process...]')
     server = process_factory(host, port)
 
-    time.sleep(0.2)
-    startup_succeeded = (server.poll() is None)
-    print('\n[Server process start {}]'.format('succeeded' if startup_succeeded else 'failed'))
-
-    if startup_succeeded:
-        yield server
+    yield server
 
     print('\n[Sending SIGTERM to server process...]')
     server.terminate()
@@ -117,9 +109,6 @@ def _run_server_isolated(process_factory, host, port):
     except subprocess.TimeoutExpired:
         server.kill()
         server.communicate()
-
-    assert server.returncode == 0
-    assert startup_succeeded
 
 
 def _uvicorn_factory(host, port):
@@ -160,26 +149,34 @@ def _daphne_factory(host, port):
 def server_base_url(request):
     process_factory = request.param
 
-    # NOTE(kgriffs): This facilitates parallel test execution as well as
-    #   mitigating the problem of trying to reuse a port that the system
-    #   hasn't cleaned up yet.
-    # NOTE(kgriffs): Use our own Random instance because we don't want
-    #   pytest messing with the seed.
-    server_port = _random.randint(50000, 60000)
-    base_url = 'http://{}:{}/'.format(_SERVER_HOST, server_port)
+    for i in range(3):
+        server_port = testing.get_unused_port()
+        base_url = 'http://{}:{}/'.format(_SERVER_HOST, server_port)
 
-    with _run_server_isolated(process_factory, _SERVER_HOST, server_port):
-        # NOTE(kgriffs): Let the server start up. Give up after 5 seconds.
-        start_ts = time.time()
-        while True:
-            wait_time = time.time() - start_ts
-            assert wait_time < 5
-
-            try:
-                requests.get(base_url, timeout=0.2)
-            except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-                time.sleep(0.2)
+        with _run_server_isolated(process_factory, _SERVER_HOST, server_port) as server:
+            # NOTE(kgriffs): Let the server start up. Give up after 5 seconds.
+            start_ts = time.time()
+            while (time.time() - start_ts) < 5:
+                try:
+                    requests.get(base_url, timeout=0.2)
+                except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+                    time.sleep(0.2)
+                else:
+                    break
             else:
-                break
+                if server.poll() is None:
+                    pytest.fail('Server is not responding to requests')
+                else:
+                    # NOTE(kgriffs): The server did not start up; probably due to
+                    #   the port being in use. We could check the output but
+                    #   capsys fixture may not have buffered the error output
+                    #   yet, so we just retry.
+                    continue
 
-        yield base_url
+            yield base_url
+
+        assert server.returncode == 0
+        break
+
+    else:
+        pytest.fail('Could not start server')

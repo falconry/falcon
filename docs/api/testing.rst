@@ -12,4 +12,4 @@ Reference
         simulate_put, simulate_options, simulate_patch, simulate_delete,
         TestClient, TestCase, SimpleTestResource, StartResponseMock,
         capture_responder_args, rand_string, create_environ, create_req,
-        create_asgi_req, redirected, closed_wsgi_iterable
+        create_asgi_req, get_unused_port, redirected, closed_wsgi_iterable
