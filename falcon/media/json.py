@@ -78,6 +78,17 @@ class JSONHandler(BaseHandler):
                 'Could not parse JSON body - {0}'.format(err)
             )
 
+    async def deserialize_async(self, stream, content_type, content_length):
+        data = await stream.read()
+
+        try:
+            return self.loads(data.decode('utf-8'))
+        except ValueError as err:
+            raise errors.HTTPBadRequest(
+                'Invalid JSON',
+                'Could not parse JSON body - {0}'.format(err)
+            )
+
     def serialize(self, media, content_type):
         result = self.dumps(media)
 
@@ -89,5 +100,13 @@ class JSONHandler(BaseHandler):
             # TODO(kgriffs): This branch is not currently covered since
             #   orjson testing has been temporarily disabled.
             pass
+
+        return result
+
+    async def serialize_async(self, media, content_type):
+        result = self.dumps(media)
+
+        if not isinstance(result, bytes):
+            return result.encode('utf-8')
 
         return result

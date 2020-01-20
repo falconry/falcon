@@ -26,6 +26,7 @@ import json  # NOQA
 # Hoist misc. utils
 from falcon.util.structures import *  # NOQA
 from falcon.util.misc import *  # NOQA
+from falcon.util.sync import *  # NOQA
 from falcon.util.time import *  # NOQA
 
 

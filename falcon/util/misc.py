@@ -26,7 +26,10 @@ framework itself. These functions are hoisted into the front-door
 
 import datetime
 import functools
+import http
 import inspect
+import os
+import sys
 import warnings
 
 from falcon import status_codes
@@ -39,13 +42,39 @@ __all__ = (
     'to_query_str',
     'get_bound_method',
     'get_argnames',
-    'get_http_status'
+    'get_http_status',
+    'http_status_to_code',
+    'code_to_http_status',
 )
 
 
 # PERF(kgriffs): Avoid superfluous namespace lookups
 strptime = datetime.datetime.strptime
 utcnow = datetime.datetime.utcnow
+
+
+# NOTE(kgriffs): This is tested in the gate but we do not want devs to
+#   have to install a specific version of 3.5 to check coverage on their
+#   workstations, so we use the nocover pragma here.
+def _lru_cache_nop(*args, **kwargs):  # pragma: nocover
+    def decorator(func):
+        return func
+
+    return decorator
+
+
+if (
+    # NOTE(kgriffs): https://bugs.python.org/issue28969
+    (sys.version_info.minor == 5 and sys.version_info.micro < 4) or
+    (sys.version_info.minor == 6 and sys.version_info.micro < 1) or
+
+    # PERF(kgriffs): Using lru_cache is slower on pypy when the wrapped
+    #   function is just doing a few non-IO operations.
+    (sys.implementation.name == 'pypy')
+):
+    _lru_cache_safe = _lru_cache_nop  # pragma: nocover
+else:
+    _lru_cache_safe = functools.lru_cache
 
 
 # NOTE(kgriffs): We don't want our deprecations to be ignored by default,
@@ -71,16 +100,17 @@ def deprecated(instructions):
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            message = 'Call to deprecated function {0}(...). {1}'.format(
-                func.__name__,
-                instructions)
+            if 'FALCON_TESTING_SESSION' not in os.environ:
+                message = 'Call to deprecated function {0}(...). {1}'.format(
+                    func.__name__,
+                    instructions)
 
-            frame = inspect.currentframe().f_back
+                frame = inspect.currentframe().f_back
 
-            warnings.warn_explicit(message,
-                                   category=DeprecatedWarning,
-                                   filename=inspect.getfile(frame.f_code),
-                                   lineno=frame.f_lineno)
+                warnings.warn_explicit(message,
+                                       category=DeprecatedWarning,
+                                       filename=inspect.getfile(frame.f_code),
+                                       lineno=frame.f_lineno)
 
             return func(*args, **kwargs)
 
@@ -274,6 +304,7 @@ def get_argnames(func):
     return args
 
 
+@deprecated('Please use falcon.util.code_to_http_status() instead.')
 def get_http_status(status_code, default_reason='Unknown'):
     """Gets both the http status code and description from just a code
 
@@ -305,3 +336,70 @@ def get_http_status(status_code, default_reason='Unknown'):
     except AttributeError:
         # not found
         return str(code) + ' ' + default_reason
+
+
+@_lru_cache_safe(maxsize=64)
+def http_status_to_code(status):
+    """Normalize an HTTP status to an integer code.
+
+    This function takes a member of http.HTTPStatus, an HTTP status
+    line string or byte string (e.g., '200 OK'), or an ``int`` and
+    returns the corresponding integer code.
+
+    An LRU is used to minimize lookup time.
+
+    Args:
+        status: The status code or enum to normalize
+
+    Returns:
+        int: Integer code for the HTTP status (e.g., 200)
+    """
+
+    if isinstance(status, http.HTTPStatus):
+        return status.value
+
+    if isinstance(status, int):
+        return status
+
+    if isinstance(status, bytes):
+        status = status.decode()
+
+    if not isinstance(status, str):
+        raise ValueError('status must be an int, str, or a member of http.HTTPStatus')
+
+    if len(status) < 3:
+        raise ValueError('status strings must be at least three characters long')
+
+    try:
+        return int(status[:3])
+    except ValueError:
+        raise ValueError('status strings must start with a three-digit integer')
+
+
+@_lru_cache_safe(maxsize=64)
+def code_to_http_status(code):
+    """Convert an HTTP status code integer to a status line string.
+
+    An LRU is used to minimize lookup time.
+
+    Args:
+        code (int): The integer status code to convert to a status line.
+
+    Returns:
+        str: HTTP status line corresponding to the given code. A newline
+            is not included at the end of the string.
+    """
+
+    try:
+        code = int(code)
+        if code < 100:
+            raise ValueError()
+    except (ValueError, TypeError):
+        raise ValueError('"{}" is not a valid status code'.format(code))
+
+    try:
+        # NOTE(kgriffs): We do this instead of using http.HTTPStatus since
+        #   the Falcon module defines a larger number of codes.
+        return getattr(status_codes, 'HTTP_' + str(code))
+    except AttributeError:
+        return str(code)

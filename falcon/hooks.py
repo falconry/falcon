@@ -15,11 +15,12 @@
 """Hook decorators."""
 
 from functools import wraps
-from inspect import getmembers
+from inspect import getmembers, iscoroutinefunction
 import re
 
 from falcon import COMBINED_METHODS
 from falcon.util.misc import get_argnames
+from falcon.util.sync import _wrap_non_coroutine_unsafe
 
 
 _DECORABLE_METHOD_NAME = re.compile(r'^on_({})(_\w+)?$'.format(
@@ -148,13 +149,24 @@ def _wrap_with_after(responder, action, action_args, action_kwargs):
     responder_argnames = get_argnames(responder)
     extra_argnames = responder_argnames[2:]  # Skip req, resp
 
-    @wraps(responder)
-    def do_after(self, req, resp, *args, **kwargs):
-        if args:
-            _merge_responder_args(args, kwargs, extra_argnames)
+    if iscoroutinefunction(responder):
+        action = _wrap_non_coroutine_unsafe(action)
 
-        responder(self, req, resp, **kwargs)
-        action(req, resp, self, *action_args, **action_kwargs)
+        @wraps(responder)
+        async def do_after(self, req, resp, *args, **kwargs):
+            if args:
+                _merge_responder_args(args, kwargs, extra_argnames)
+
+            await responder(self, req, resp, **kwargs)
+            await action(req, resp, self, *action_args, **action_kwargs)
+    else:
+        @wraps(responder)
+        def do_after(self, req, resp, *args, **kwargs):
+            if args:
+                _merge_responder_args(args, kwargs, extra_argnames)
+
+            responder(self, req, resp, **kwargs)
+            action(req, resp, self, *action_args, **action_kwargs)
 
     return do_after
 
@@ -173,13 +185,24 @@ def _wrap_with_before(responder, action, action_args, action_kwargs):
     responder_argnames = get_argnames(responder)
     extra_argnames = responder_argnames[2:]  # Skip req, resp
 
-    @wraps(responder)
-    def do_before(self, req, resp, *args, **kwargs):
-        if args:
-            _merge_responder_args(args, kwargs, extra_argnames)
+    if iscoroutinefunction(responder):
+        action = _wrap_non_coroutine_unsafe(action)
 
-        action(req, resp, self, kwargs, *action_args, **action_kwargs)
-        responder(self, req, resp, **kwargs)
+        @wraps(responder)
+        async def do_before(self, req, resp, *args, **kwargs):
+            if args:
+                _merge_responder_args(args, kwargs, extra_argnames)
+
+            await action(req, resp, self, kwargs, *action_args, **action_kwargs)
+            await responder(self, req, resp, **kwargs)
+    else:
+        @wraps(responder)
+        def do_before(self, req, resp, *args, **kwargs):
+            if args:
+                _merge_responder_args(args, kwargs, extra_argnames)
+
+            action(req, resp, self, kwargs, *action_args, **action_kwargs)
+            responder(self, req, resp, **kwargs)
 
     return do_before
 

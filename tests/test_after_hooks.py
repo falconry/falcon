@@ -6,6 +6,8 @@ import pytest
 import falcon
 from falcon import testing
 
+from _util import create_app, create_resp  # NOQA
+
 
 # --------------------------------------------------------------------
 # Fixtures
@@ -18,10 +20,10 @@ def wrapped_resource_aware():
 
 
 @pytest.fixture
-def client():
-    app = falcon.App()
+def client(asgi):
+    app = create_app(asgi)
 
-    resource = WrappedRespondersResource()
+    resource = WrappedRespondersResourceAsync() if asgi else WrappedRespondersResource()
     app.add_route('/', resource)
 
     return testing.TestClient(app)
@@ -45,6 +47,10 @@ def serialize_body(req, resp, resource):
         resp.body = json.dumps(body)
     else:
         resp.body = 'Nothing to see here. Move along.'
+
+
+async def serialize_body_async(*args):
+    return serialize_body(*args)
 
 
 def fluffiness(req, resp, resource, animal=''):
@@ -123,6 +129,25 @@ class WrappedRespondersResource:
         pass
 
 
+class WrappedRespondersResourceAsync:
+
+    @falcon.after(serialize_body_async)
+    @falcon.after(validate_output)
+    async def on_get(self, req, resp):
+        self.req = req
+        self.resp = resp
+
+    @falcon.after(serialize_body_async)
+    async def on_put(self, req, resp):
+        self.req = req
+        self.resp = resp
+        resp.body = {'animal': 'falcon'}
+
+    @falcon.after(Smartness())
+    async def on_post(self, req, resp):
+        pass
+
+
 @falcon.after(cuteness, 'fluffy', postfix=' and innocent')
 @falcon.after(fluffiness, 'kitten')
 class WrappedClassResource:
@@ -155,6 +180,13 @@ class ClassResourceWithURIFields:
 
     @falcon.after(fluffiness_in_the_head, 'fluffy')
     def on_get(self, req, resp, field1, field2):
+        self.fields = (field1, field2)
+
+
+class ClassResourceWithURIFieldsAsync:
+
+    @falcon.after(fluffiness_in_the_head, 'fluffy')
+    async def on_get(self, req, resp, field1, field2):
         self.fields = (field1, field2)
 
 
@@ -242,6 +274,30 @@ def test_resource_with_uri_fields(client, resource):
     assert result.headers['X-Fluffiness'] == 'fluffy'
     assert 'X-Cuteness' not in result.headers
     assert resource.fields == ('82074', '58927')
+
+
+def test_resource_with_uri_fields_async():
+    app = create_app(asgi=True)
+
+    resource = ClassResourceWithURIFieldsAsync()
+    app.add_route('/{field1}/{field2}', resource)
+
+    result = testing.simulate_get(app, '/a/b')
+
+    assert result.status_code == 200
+    assert result.headers['X-Fluffiness'] == 'fluffy'
+    assert resource.fields == ('a', 'b')
+
+    async def test_direct():
+        resource = ClassResourceWithURIFieldsAsync()
+
+        req = testing.create_asgi_req()
+        resp = create_resp(True)
+
+        await resource.on_get(req, resp, '1', '2')
+        assert resource.fields == ('1', '2')
+
+    testing.invoke_coroutine_sync(test_direct)
 
 
 @pytest.mark.parametrize(

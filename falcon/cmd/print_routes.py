@@ -50,7 +50,9 @@ def traverse(roots, parent='', verbose=False):
             print('->', parent + '/' + root.raw_segment)
             if verbose:
                 for method, func in root.method_map.items():
-                    if func.__name__ != 'method_not_allowed':
+                    # NOTE(kgriffs): Skip the default responder that the
+                    #   framework creates.
+                    if not func.__name__.startswith('method_not_allowed'):
                         if isinstance(func, partial):
                             real_func = func.func
                         else:
