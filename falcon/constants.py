@@ -91,3 +91,16 @@ MEDIA_PNG = 'image/png'
 MEDIA_GIF = 'image/gif'
 
 DEFAULT_MEDIA_TYPE = MEDIA_JSON
+
+# NOTE(kgriffs): We do not expect more than one of these in the request
+SINGLETON_HEADERS = frozenset([
+    'content-length',
+    'content-type',
+    'cookie',
+    'expect',
+    'from',
+    'host',
+    'max-forwards',
+    'referer',
+    'user-agent',
+])

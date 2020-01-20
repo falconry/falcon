@@ -116,7 +116,7 @@ file to source control; it should be generated from a template by your
 deployment toolchain according to the target environment (number of CPUs, etc.).
 
 This configuration, when executed, will create a new uWSGI server backed by
-your ``wsgi.py`` file and listening at ``12.0.0.1:8080``.
+your ``wsgi.py`` file and listening at ``127.0.0.1:8080``.
 
 .. code-block:: ini
   :caption: /home/myproject/src/uwsgi.ini

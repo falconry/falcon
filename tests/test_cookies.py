@@ -8,6 +8,8 @@ import falcon
 import falcon.testing as testing
 from falcon.util import http_date_to_dt, TimezoneGMT
 
+from _util import create_app  # NOQA
+
 
 UNICODE_TEST_STRING = 'Unicode_\xc3\xa6\xc3\xb8'
 
@@ -75,9 +77,9 @@ class CookieResourceSameSite:
         resp.set_cookie('baz', 'foo', same_site='')
 
 
-@pytest.fixture()
-def client():
-    app = falcon.App()
+@pytest.fixture
+def client(asgi):
+    app = create_app(asgi)
     app.add_route('/', CookieResource())
     app.add_route('/test-convert', CookieResourceMaxAgeFloatString())
     app.add_route('/same-site', CookieResourceSameSite())

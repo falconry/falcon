@@ -1,4 +1,5 @@
 from functools import wraps
+from inspect import iscoroutinefunction
 
 import falcon
 
@@ -46,36 +47,83 @@ def validate(req_schema=None, resp_schema=None):
     """
 
     def decorator(func):
-        @wraps(func)
-        def wrapper(self, req, resp, *args, **kwargs):
-            if req_schema is not None:
-                try:
-                    jsonschema.validate(
-                        req.media, req_schema,
-                        format_checker=jsonschema.FormatChecker()
-                    )
-                except jsonschema.ValidationError as e:
-                    raise falcon.HTTPBadRequest(
-                        'Request data failed validation',
-                        description=e.message
-                    )
+        if iscoroutinefunction(func):
+            return _validate_async(func, req_schema, resp_schema)
 
-            result = func(self, req, resp, *args, **kwargs)
+        return _validate(func, req_schema, resp_schema)
 
-            if resp_schema is not None:
-                try:
-                    jsonschema.validate(
-                        resp.media, resp_schema,
-                        format_checker=jsonschema.FormatChecker()
-                    )
-                except jsonschema.ValidationError:
-                    raise falcon.HTTPInternalServerError(
-                        'Response data failed validation'
-                        # Do not return 'e.message' in the response to
-                        # prevent info about possible internal response
-                        # formatting bugs from leaking out to users.
-                    )
-
-            return result
-        return wrapper
     return decorator
+
+
+def _validate(func, req_schema=None, resp_schema=None):
+    @wraps(func)
+    def wrapper(self, req, resp, *args, **kwargs):
+        if req_schema is not None:
+            try:
+                jsonschema.validate(
+                    req.media, req_schema,
+                    format_checker=jsonschema.FormatChecker()
+                )
+            except jsonschema.ValidationError as e:
+                raise falcon.HTTPBadRequest(
+                    'Request data failed validation',
+                    description=e.message
+                )
+
+        result = func(self, req, resp, *args, **kwargs)
+
+        if resp_schema is not None:
+            try:
+                jsonschema.validate(
+                    resp.media, resp_schema,
+                    format_checker=jsonschema.FormatChecker()
+                )
+            except jsonschema.ValidationError:
+                raise falcon.HTTPInternalServerError(
+                    'Response data failed validation'
+                    # Do not return 'e.message' in the response to
+                    # prevent info about possible internal response
+                    # formatting bugs from leaking out to users.
+                )
+
+        return result
+
+    return wrapper
+
+
+def _validate_async(func, req_schema=None, resp_schema=None):
+    @wraps(func)
+    async def wrapper(self, req, resp, *args, **kwargs):
+        if req_schema is not None:
+            m = await req.get_media()
+
+            try:
+                jsonschema.validate(
+                    m, req_schema,
+                    format_checker=jsonschema.FormatChecker()
+                )
+            except jsonschema.ValidationError as e:
+                raise falcon.HTTPBadRequest(
+                    'Request data failed validation',
+                    description=e.message
+                )
+
+        result = await func(self, req, resp, *args, **kwargs)
+
+        if resp_schema is not None:
+            try:
+                jsonschema.validate(
+                    resp.media, resp_schema,
+                    format_checker=jsonschema.FormatChecker()
+                )
+            except jsonschema.ValidationError:
+                raise falcon.HTTPInternalServerError(
+                    'Response data failed validation'
+                    # Do not return 'e.message' in the response to
+                    # prevent info about possible internal response
+                    # formatting bugs from leaking out to users.
+                )
+
+        return result
+
+    return wrapper
