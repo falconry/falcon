@@ -2,6 +2,10 @@ import importlib
 import os
 import wsgiref.validate
 
+try:
+    import cython
+except ImportError:
+    cython = None
 import pytest
 
 import falcon
@@ -9,10 +13,8 @@ from falcon import testing
 import falcon.constants
 from falcon.routing import util
 
-try:
-    import cython
-except ImportError:
-    cython = None
+from _util import create_app  # NOQA
+
 
 FALCON_CUSTOM_HTTP_METHODS = ['FOO', 'BAR']
 
@@ -37,10 +39,10 @@ def cleanup_constants():
 
 
 @pytest.fixture
-def custom_http_client(cleanup_constants, resource_things):
+def custom_http_client(asgi, request, cleanup_constants, resource_things):
     falcon.constants.COMBINED_METHODS += FALCON_CUSTOM_HTTP_METHODS
 
-    app = falcon.App()
+    app = create_app(asgi)
     app.add_route('/things', resource_things)
     return testing.TestClient(app)
 
@@ -94,8 +96,14 @@ def test_foo(custom_http_client, resource_things):
     """FOO is a supported method, so returns HTTP_204"""
     custom_http_client.app.add_route('/things', resource_things)
 
-    with pytest.warns(wsgiref.validate.WSGIWarning):
-        response = custom_http_client.simulate_request(path='/things', method='FOO')
+    def s():
+        return custom_http_client.simulate_request(path='/things', method='FOO')
+
+    if not custom_http_client.app._ASGI:
+        with pytest.warns(wsgiref.validate.WSGIWarning):
+            response = s()
+    else:
+        response = s()
 
     assert 'FOO' in falcon.constants.COMBINED_METHODS
     assert response.status == falcon.HTTP_204
@@ -106,8 +114,14 @@ def test_bar(custom_http_client, resource_things):
     """BAR is not supported by ResourceThing"""
     custom_http_client.app.add_route('/things', resource_things)
 
-    with pytest.warns(wsgiref.validate.WSGIWarning):
-        response = custom_http_client.simulate_request(path='/things', method='BAR')
+    def s():
+        return custom_http_client.simulate_request(path='/things', method='BAR')
+
+    if not custom_http_client.app._ASGI:
+        with pytest.warns(wsgiref.validate.WSGIWarning):
+            response = s()
+    else:
+        response = s()
 
     assert 'BAR' in falcon.constants.COMBINED_METHODS
     assert response.status == falcon.HTTP_405

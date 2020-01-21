@@ -20,7 +20,7 @@ routers.
 """
 
 from falcon.routing.compiled import CompiledRouter, CompiledRouterOptions  # NOQA
-from falcon.routing.static import StaticRoute  # NOQA
+from falcon.routing.static import StaticRoute, StaticRouteAsync  # NOQA
 from falcon.routing.util import map_http_methods  # NOQA
 from falcon.routing.util import set_default_responders  # NOQA
 from falcon.routing.util import compile_uri_template  # NOQA

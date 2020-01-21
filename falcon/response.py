@@ -191,6 +191,11 @@ class Response:
 
     @property
     def data(self):
+        # TODO(kgriffs): Remove the side-effect that accessing this
+        #   property causes (do something similar to what we did on the
+        #   ASGI side). This will be a breaking change, so caution is
+        #   advised.
+
         # NOTE(kgriffs): Test explicitly against None since the
         # app may have set it to an empty binary string.
         if self._data is not None:
@@ -238,6 +243,11 @@ class Response:
         # rather than serializing immediately. That way, if media() is called
         # multiple times we don't waste time serializing objects that will
         # just be thrown away.
+        #
+        # TODO(kgriffs): This makes precedence harder to reason about, since
+        #   it is no longer about what attributes have and have not been set,
+        #   but also what order they were set in. On the ASGI side this has
+        #   already been addressed.
         self._data = None
 
     @property
@@ -267,11 +277,12 @@ class Response:
         Note:
             If the stream length is unknown, you can set `stream`
             directly, and ignore `content_length`. In this case, the
-            WSGI server may choose to use chunked encoding or one
+            server may choose to use chunked encoding or one
             of the other strategies suggested by PEP-3333.
 
         Args:
-            stream: A readable file-like object.
+            stream: A readable file-like object in the case of WSGI, or an
+                async iterable in the case of ASGI.
             content_length (int): Length of the stream, used for the
                 Content-Length header in the response.
         """

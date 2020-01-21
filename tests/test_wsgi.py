@@ -104,6 +104,7 @@ def _setup_wsgi_server():
     stop_event = multiprocessing.Event()
     process = multiprocessing.Process(
         target=_run_server,
+        daemon=True,
 
         # NOTE(kgriffs): Pass these explicitly since if multiprocessing is
         #   using the 'spawn' start method, we can't depend on closures.

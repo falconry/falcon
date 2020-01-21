@@ -1,13 +1,11 @@
 import io
 
-from falcon import App
+import pytest
+
 from falcon.cmd import print_routes
 from falcon.testing import redirected
 
-try:
-    import cython
-except ImportError:
-    cython = None
+from _util import create_app  # NOQA
 
 
 class DummyResource:
@@ -17,16 +15,27 @@ class DummyResource:
         resp.status = '200 OK'
 
 
-_api = App()
-_api.add_route('/test', DummyResource())
+class DummyResourceAsync:
+
+    async def on_get(self, req, resp):
+        resp.body = 'Test\n'
+        resp.status = '200 OK'
 
 
-def test_traverse_with_verbose():
+@pytest.fixture
+def app(asgi):
+    app = create_app(asgi)
+    app.add_route('/test', DummyResourceAsync() if asgi else DummyResource())
+
+    return app
+
+
+def test_traverse_with_verbose(app):
     """Ensure traverse() finds the proper routes and outputs verbose info."""
 
     output = io.StringIO()
     with redirected(stdout=output):
-        print_routes.traverse(_api._router._roots, verbose=True)
+        print_routes.traverse(app._router._roots, verbose=True)
 
     route, get_info, options_info = output.getvalue().strip().split('\n')
     assert '-> /test' == route
@@ -37,23 +46,26 @@ def test_traverse_with_verbose():
         get_info, options_info = options_info, get_info
 
     assert options_info.startswith('-->OPTIONS')
-    if cython:
-        assert options_info.endswith('[unknown file]')
-    else:
-        assert 'falcon/responders.py:' in options_info
+    assert 'falcon/responders.py:' in options_info
 
     assert get_info.startswith('-->GET')
-    # NOTE(vytas): This builds upon the fact that on_get is defined on line 14
-    # in this file. Adjust the test if the said responder is relocated, or just
-    # check for any number if this becomes too painful to maintain.
-    assert get_info.endswith('tests/test_cmd_print_api.py:15')
+
+    # NOTE(vytas): This builds upon the fact that on_get is defined on line
+    # 18 or 25 (in the case of DummyResourceAsync) in the present file.
+    # Adjust the test if the said responder is relocated, or just check for
+    # any number if this becomes too painful to maintain.
+
+    assert (
+        get_info.endswith('tests/test_cmd_print_api.py:13') or
+        get_info.endswith('tests/test_cmd_print_api.py:20')
+    )
 
 
-def test_traverse():
+def test_traverse(app):
     """Ensure traverse() finds the proper routes."""
     output = io.StringIO()
     with redirected(stdout=output):
-        print_routes.traverse(_api._router._roots, verbose=False)
+        print_routes.traverse(app._router._roots, verbose=False)
 
     route = output.getvalue().strip()
     assert '-> /test' == route
