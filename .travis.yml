@@ -62,6 +62,9 @@ notifications:
     on_failure: always
 
 before_install:
+  # NOTE(vytas): wheels sometimes fail to build on s390x due to cache being
+  #   owned by another user.
+  - sudo chown -R travis:travis $HOME/.cache/pip
   # NOTE(vytas): libunwind-dev does not exist for s390x in Ubuntu 16.04
   - if [[ `uname -m` == *86* ]]; then sudo apt-get update && sudo apt-get install -y libunwind-dev; fi
   - pip install codecov
