@@ -48,12 +48,20 @@ _TYPELESS_STATUS_CODES = frozenset([
 ])
 
 
-# TODO(kgriffs): Rename the WSGI class to App with an API alias kept for
-#   backwards-compatibility.
 class App(falcon.app.App):
-    """
+    """This class is the main entry point into a Falcon-based ASGI app.
+
+    Each App instance provides a callable
+    `ASGI <https://asgi.readthedocs.io/en/latest/>`_ interface
+    and a routing engine.
 
     Keyword Arguments:
+        media_type (str): Default media type to use when initializing
+            :py:class:`~.RequestOptions` and
+            :py:class:`~.ResponseOptions`. The ``falcon``
+            module provides a number of constants for common media types,
+            such as ``falcon.MEDIA_MSGPACK``, ``falcon.MEDIA_YAML``,
+            ``falcon.MEDIA_XML``, etc.
         middleware: Either a single middleware component object or an iterable
             of objects (instantiated classes) that implement the following
             middleware component interface.
@@ -61,7 +69,7 @@ class App(falcon.app.App):
             The interface provides support for handling both ASGI worker
             lifespan events and per-request events.
 
-            A lifespan handler can be used to perform startup and/or shutdown
+            A lifespan event handler can be used to perform startup or shutdown
             activities for the main event loop. An example of this would be
             creating a connection pool and subsequently closing the connection
             pool to release the connections.
@@ -169,6 +177,44 @@ class App(falcon.app.App):
 
             (See also: :ref:`Middleware <middleware>`)
 
+        request_type: ``Request``-like class to use instead
+            of Falcon's default class. Among other things, this feature
+            affords inheriting from :class:`falcon.asgi.Request` in order
+            to override the ``context_type`` class variable
+            (default: :class:`falcon.asgi.Request`)
+
+        response_type: ``Response``-like class to use
+            instead of Falcon's default class (default:
+            :class:`falcon.asgi.Response`)
+
+        router (object): An instance of a custom router
+            to use in lieu of the default engine.
+            (See also: :ref:`Custom Routers <routing_custom>`)
+
+        independent_middleware (bool): Set to ``False`` if response
+            middleware should not be executed independently of whether or
+            not request middleware raises an exception (default
+            ``True``). When this option is set to ``False``, a middleware
+            component's ``process_response()`` method will NOT be called
+            when that same component's ``process_request()`` (or that of
+            a component higher up in the stack) raises an exception.
+
+        cors_enable (bool): Set this flag to ``True`` to enable a simple
+            CORS policy for all responses, including support for preflighted
+            requests (default ``False``).
+            (See also: :ref:`CORS <cors>`)
+
+    Attributes:
+        req_options: A set of behavioral options related to incoming
+            requests. (See also: :py:class:`~.RequestOptions`)
+        resp_options: A set of behavioral options related to outgoing
+            responses. (See also: :py:class:`~.ResponseOptions`)
+        router_options: Configuration options for the router. If a
+            custom router is in use, and it does not expose any
+            configurable options, referencing this attribute will raise
+            an instance of ``AttributeError``.
+
+            (See also: :ref:`CompiledRouterOptions <compiled_router_options>`)
     """
 
     _STATIC_ROUTE_TYPE = falcon.routing.StaticRouteAsync
@@ -515,34 +561,114 @@ class App(falcon.app.App):
         await send(_EVT_RESP_EOF)
         self._schedule_callbacks(resp)
 
-    def add_error_handler(self, exception, handler=None):
-        if not handler:
-            try:
-                handler = exception.handle
-            except AttributeError:
-                # NOTE(kgriffs): Delegate to the parent method for error handling.
-                pass
-
-        handler = _wrap_non_coroutine_unsafe(handler)
-
-        if handler and not iscoroutinefunction(handler):
-            raise CompatibilityError(
-                'The handler must be an awaitable coroutine function in order '
-                'to be used safely with an ASGI app.'
-            )
-
-        super().add_error_handler(exception, handler=handler)
-
     def add_route(self, uri_template, resource, **kwargs):
-        # TODO: Check for an _auto_async_wrap kwarg or env var and if there and True,
-        #   go through the resource and wrap any non-couroutine objects. Then
-        #   set that flag in the test cases.
-
         # NOTE(kgriffs): Inject an extra kwarg so that the compiled router
         #   will know to validate the responder methods to make sure they
         #   are async coroutines.
         kwargs['_asgi'] = True
         super().add_route(uri_template, resource, **kwargs)
+
+    add_route.__doc__ = falcon.app.App.add_route.__doc__
+
+    def add_error_handler(self, exception, handler=None):
+        """Register a handler for one or more exception types.
+
+        Error handlers may be registered for any exception type, including
+        :class:`~.HTTPError` or :class:`~.HTTPStatus`. This feature
+        provides a central location for logging and otherwise handling
+        exceptions raised by responders, hooks, and middleware components.
+
+        A handler can raise an instance of :class:`~.HTTPError` or
+        :class:`~.HTTPStatus` to communicate information about the issue to
+        the client.  Alternatively, a handler may modify `resp`
+        directly.
+
+        An error handler "matches" a raised exception if the exception is an
+        instance of the corresponding exception type. If more than one error
+        handler matches the raised exception, the framework will choose the
+        most specific one, as determined by the method resolution order of the
+        raised exception type. If multiple error handlers are registered for the
+        *same* exception class, then the most recently-registered handler is
+        used.
+
+        For example, suppose we register error handlers as follows::
+
+            app = App()
+            app.add_error_handler(falcon.HTTPNotFound, custom_handle_not_found)
+            app.add_error_handler(falcon.HTTPError, custom_handle_http_error)
+            app.add_error_handler(Exception, custom_handle_uncaught_exception)
+            app.add_error_handler(falcon.HTTPNotFound, custom_handle_404)
+
+        If an instance of ``falcon.HTTPForbidden`` is raised, it will be
+        handled by ``custom_handle_http_error()``. ``falcon.HTTPError`` is a
+        superclass of ``falcon.HTTPForbidden`` and a subclass of ``Exception``,
+        so it is the most specific exception type with a registered handler.
+
+        If an instance of ``falcon.HTTPNotFound`` is raised, it will be handled
+        by ``custom_handle_404()``, not by ``custom_handle_not_found()``, because
+        ``custom_handle_404()`` was registered more recently.
+
+        .. Note::
+
+            By default, the framework installs three handlers, one for
+            :class:`~.HTTPError`, one for :class:`~.HTTPStatus`, and one for
+            the standard ``Exception`` type, which prevents passing uncaught
+            exceptions to the WSGI server. These can be overridden by adding a
+            custom error handler method for the exception type in question.
+
+        Args:
+            exception (type or iterable of types): When handling a request,
+                whenever an error occurs that is an instance of the specified
+                type(s), the associated handler will be called. Either a single
+                type or an iterable of types may be specified.
+            handler (callable): A coroutine function taking the form
+                ``async func(req, resp, ex, params)``.
+
+                If not specified explicitly, the handler will default to
+                ``exception.handle``, where ``exception`` is the error
+                type specified above, and ``handle`` is a static method
+                (i.e., decorated with ``@staticmethod``) that accepts
+                the same params just described. For example::
+
+                    class CustomException(CustomBaseException):
+
+                        @staticmethod
+                        async def handle(req, resp, ex, params):
+                            # TODO: Log the error
+                            # Convert to an instance of falcon.HTTPError
+                            raise falcon.HTTPError(falcon.HTTP_792)
+
+                If an iterable of exception types is specified instead of
+                a single type, the handler must be explicitly specified.
+        """
+
+        if handler is None:
+            try:
+                handler = exception.handle
+            except AttributeError:
+                raise AttributeError('handler must either be specified '
+                                     'explicitly or defined as a static'
+                                     'method named "handle" that is a '
+                                     'member of the given exception class.')
+
+        handler = _wrap_non_coroutine_unsafe(handler)
+
+        if not iscoroutinefunction(handler):
+            raise CompatibilityError(
+                'The handler must be an awaitable coroutine function in order '
+                'to be used safely with an ASGI app.'
+            )
+
+        try:
+            exception_tuple = tuple(exception)
+        except TypeError:
+            exception_tuple = (exception, )
+
+        for exc in exception_tuple:
+            if not issubclass(exc, BaseException):
+                raise TypeError('"exception" must be an exception type.')
+
+            self._error_handlers[exc] = handler
 
     # ------------------------------------------------------------------------
     # Helper methods

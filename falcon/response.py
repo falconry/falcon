@@ -1028,8 +1028,9 @@ class Response:
 class ResponseOptions:
     """Defines a set of configurable response options.
 
-    An instance of this class is exposed via :any:`App.resp_options` for
-    configuring certain :py:class:`~.Response` behaviors.
+    An instance of this class is exposed via :attr:`falcon.App.resp_options`
+    and :attr:`falcon.asgi.App.resp_options` for configuring certain
+    :py:class:`~.Response` behaviors.
 
     Attributes:
         secure_cookies_by_default (bool): Set to ``False`` in development
@@ -1039,10 +1040,11 @@ class ResponseOptions:
             be overridden via `set_cookie()`'s `secure` kwarg.
 
         default_media_type (str): The default Internet media type (RFC 2046) to
-            use when deserializing a response. This value is normally set to the
+            use when rendering a response, when the Content-Type header
+            is not set explicitly. This value is normally set to the
             media type provided when a :class:`falcon.App` is initialized;
-            however, if created independently, this will default to the
-            ``DEFAULT_MEDIA_TYPE`` specified by Falcon.
+            however, if created independently, this will default to
+            :attr:`falcon.DEFAULT_MEDIA_TYPE`..
 
         media_handlers (Handlers): A dict-like object that allows you to
             configure the media-types that you would like to handle.

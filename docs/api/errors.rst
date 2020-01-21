@@ -63,7 +63,7 @@ All classes are available directly in the ``falcon`` package namespace::
 Note also that any exception (not just instances of
 :class:`~.HTTPError`) can be caught, logged, and otherwise handled
 at the global level by registering one or more custom error handlers.
-See also :meth:`~.App.add_error_handler` to learn more about this
+See also :meth:`~.falcon.App.add_error_handler` to learn more about this
 feature.
 
 .. note::

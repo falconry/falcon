@@ -99,8 +99,9 @@ the request.
 When running your application in a development environment, you can
 disable this default behavior by setting
 :py:attr:`~.ResponseOptions.secure_cookies_by_default` to ``False``
-via :any:`App.resp_options`. This lets you test your app locally
-without having to set up TLS. You can make this option configurable to
+via :py:attr:`falcon.App.resp_options` or
+:py:attr:`falcon.asgi.App.resp_options`. This lets you test your app
+locally without having to set up TLS. You can make this option configurable to
 easily switch between development and production environments.
 
 See also: `RFC 6265, Section 4.1.2.5`_

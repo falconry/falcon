@@ -421,7 +421,7 @@ now look like this:
         ├── __init__.py
         └── test_app.py
 
-Falcon supports :ref:`testing <testing>` its :class:`~.App` object by
+Falcon supports :ref:`testing <testing>` its :class:`~falcon.App` object by
 simulating HTTP requests.
 
 Tests can either be written using Python's standard :mod:`unittest`
@@ -1403,7 +1403,7 @@ for each error type.
     for logging and otherwise handling exceptions raised by
     responders, hooks, and middleware components.
 
-    See also: :meth:`~.App.add_error_handler`.
+    See also: :meth:`~.falcon.App.add_error_handler`.
 
 Let's see a quick example of how this works. Try requesting an invalid
 image name from your application:

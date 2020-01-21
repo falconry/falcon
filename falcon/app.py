@@ -19,7 +19,8 @@ from inspect import iscoroutinefunction
 import re
 import traceback
 
-from falcon import app_helpers as helpers, DEFAULT_MEDIA_TYPE, routing
+from falcon import app_helpers as helpers, routing
+from falcon.constants import DEFAULT_MEDIA_TYPE
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 from falcon.middlewares import CORSMiddleware
@@ -46,10 +47,11 @@ _TYPELESS_STATUS_CODES = frozenset([
 
 
 class App:
-    """This class is the main entry point into a Falcon-based app.
+    """This class is the main entry point into a Falcon-based WSGI app.
 
-    Each App instance provides a callable WSGI interface and a routing
-    engine.
+    Each App instance provides a callable
+    `WSGI <https://www.python.org/dev/peps/pep-3333/>`_ interface
+    and a routing engine.
 
     Note:
         The ``API`` class was renamed to ``App`` in Falcon 3.0. The
@@ -58,11 +60,11 @@ class App:
         release.
 
     Keyword Arguments:
-        media_type (str): Default media type to use as the
-            value for the Content-Type header on responses (default
-            'application/json'). The ``falcon`` module provides a
-            number of constants for common media types, such as
-            ``falcon.MEDIA_MSGPACK``, ``falcon.MEDIA_YAML``,
+        media_type (str): Default media type to use when initializing
+            :py:class:`~.RequestOptions` and
+            :py:class:`~.ResponseOptions`. The ``falcon``
+            module provides a number of constants for common media types,
+            such as ``falcon.MEDIA_MSGPACK``, ``falcon.MEDIA_YAML``,
             ``falcon.MEDIA_XML``, etc.
         middleware: Either a single middleware component object or an iterable
             of objects (instantiated classes) that implement the following
@@ -125,15 +127,15 @@ class App:
 
             (See also: :ref:`Middleware <middleware>`)
 
-        request_type (Request): ``Request``-like class to use instead
+        request_type: ``Request``-like class to use instead
             of Falcon's default class. Among other things, this feature
-            affords inheriting from ``falcon.request.Request`` in order
-            to override the ``context_type`` class variable.
-            (default ``falcon.request.Request``)
+            affords inheriting from :class:`falcon.Request` in order
+            to override the ``context_type`` class variable
+            (default: :class:`falcon.Request`)
 
-        response_type (Response): ``Response``-like class to use
-            instead of Falcon's default class. (default
-            ``falcon.response.Response``)
+        response_type: ``Response``-like class to use
+            instead of Falcon's default class (default:
+            :class:`falcon.Response`)
 
         router (object): An instance of a custom router
             to use in lieu of the default engine.
@@ -237,32 +239,6 @@ class App:
         self.add_error_handler(Exception, self._python_error_handler)
         self.add_error_handler(falcon.HTTPError, self._http_error_handler)
         self.add_error_handler(falcon.HTTPStatus, self._http_status_handler)
-
-    def add_middleware(self, middleware):
-        """Add one or more additional middleware components.
-
-        Arguments:
-            middleware: Either a single middleware component or an iterable
-                of components to add. The component(s) will be invoked, in
-                order, as if they had been appended to the original middleware
-                list passed to the class initializer.
-        """
-
-        # NOTE(kgriffs): Since this is called by the initializer, there is
-        #   the chance that middleware may be None.
-        if middleware:
-            try:
-                self._unprepared_middleware += middleware
-            except TypeError:  # middleware is not iterable; assume it is just one bare component
-                self._unprepared_middleware.append(middleware)
-
-        # NOTE(kgriffs): Even if middleware is None or an empty list, we still
-        #   need to make sure self._middleware is initialized if this is the
-        #   first call to add_middleware().
-        self._middleware = self._prepare_middleware(
-            self._unprepared_middleware,
-            independent_middleware=self._independent_middleware
-        )
 
     def __call__(self, env, start_response):  # noqa: C901
         """WSGI `app` method.
@@ -414,6 +390,32 @@ class App:
     def router_options(self):
         return self._router.options
 
+    def add_middleware(self, middleware):
+        """Add one or more additional middleware components.
+
+        Arguments:
+            middleware: Either a single middleware component or an iterable
+                of components to add. The component(s) will be invoked, in
+                order, as if they had been appended to the original middleware
+                list passed to the class initializer.
+        """
+
+        # NOTE(kgriffs): Since this is called by the initializer, there is
+        #   the chance that middleware may be None.
+        if middleware:
+            try:
+                self._unprepared_middleware += middleware
+            except TypeError:  # middleware is not iterable; assume it is just one bare component
+                self._unprepared_middleware.append(middleware)
+
+        # NOTE(kgriffs): Even if middleware is None or an empty list, we still
+        #   need to make sure self._middleware is initialized if this is the
+        #   first call to add_middleware().
+        self._middleware = self._prepare_middleware(
+            self._unprepared_middleware,
+            independent_middleware=self._independent_middleware
+        )
+
     def add_route(self, uri_template, resource, **kwargs):
         """Associate a templatized URI path with a resource.
 
@@ -437,7 +439,7 @@ class App:
                 taken to ensure the template does not mask any sink
                 patterns, if any are registered.
 
-                (See also: :meth:`~.add_sink`)
+                (See also: :meth:`~.App.add_sink`)
 
             resource (instance): Object which represents a REST
                 resource. Falcon will pass GET requests to ``on_get()``,
@@ -603,7 +605,7 @@ class App:
 
         For example, suppose we register error handlers as follows::
 
-            app = falcon.API()
+            app = App()
             app.add_error_handler(falcon.HTTPNotFound, custom_handle_not_found)
             app.add_error_handler(falcon.HTTPError, custom_handle_http_error)
             app.add_error_handler(Exception, custom_handle_uncaught_exception)
@@ -652,9 +654,10 @@ class App:
                 a single type, the handler must be explicitly specified.
 
         .. versionchanged:: 3.0
-            Breaking change: error handler now selected by most specific
-            matching error class, rather than most recently registered matching
-            error class.
+
+            The error handler is now selected by the most-specific matching
+            error class, rather than the most-recently registered matching error
+            class.
 
         """
         def wrap_old_handler(old_handler):
