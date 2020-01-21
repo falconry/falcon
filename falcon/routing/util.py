@@ -130,12 +130,14 @@ def map_http_methods(resource, suffix=None):
     return method_map
 
 
-def set_default_responders(method_map):
+def set_default_responders(method_map, asgi=False):
     """Maps HTTP methods not explicitly defined on a resource to default responders.
 
     Args:
         method_map: A dict with HTTP methods mapped to responders explicitly
             defined in a resource.
+        asgi (bool): ``True`` if using an ASGI app, ``False`` otherwise
+            (default ``False``).
     """
 
     # Attach a resource for unsupported HTTP methods
@@ -143,11 +145,11 @@ def set_default_responders(method_map):
 
     if 'OPTIONS' not in method_map:
         # OPTIONS itself is intentionally excluded from the Allow header
-        opt_responder = responders.create_default_options(allowed_methods)
+        opt_responder = responders.create_default_options(allowed_methods, asgi=asgi)
         method_map['OPTIONS'] = opt_responder
         allowed_methods.append('OPTIONS')
 
-    na_responder = responders.create_method_not_allowed(allowed_methods)
+    na_responder = responders.create_method_not_allowed(allowed_methods, asgi=asgi)
 
     for method in constants.COMBINED_METHODS:
         if method not in allowed_methods:

@@ -147,11 +147,14 @@ class TestHelloWorld:
         assert result.content == resource.sample_utf8
 
     def test_no_body_on_head(self, client):
-        client.app.add_route('/body', HelloResource('body'))
+        resource = HelloResource('body')
+        client.app.add_route('/body', resource)
         result = client.simulate_head('/body')
 
         assert not result.content
         assert result.status_code == 200
+        assert resource.called
+        assert result.headers['content-length'] == str(len(HelloResource.sample_utf8))
 
     def test_stream_chunked(self, client):
         resource = HelloResource('stream')

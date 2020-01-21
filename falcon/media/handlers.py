@@ -38,7 +38,7 @@ class Handlers(UserDict):
     def find_by_media_type(self, media_type, default):
         # PERF(jmvrbanac): Check via a quick methods first for performance
         if media_type == '*/*' or not media_type:
-            return self.data[default]
+            media_type = default
 
         try:
             return self.data[media_type]

@@ -27,20 +27,26 @@ Please note that all contributors and maintainers of this project are subject to
 
 Before submitting a pull request, please ensure you have added or updated tests as appropriate, and that all existing tests still pass with your changes. Please also ensure that your coding style follows PEP 8.
 
-You can check all this by running the following from within the Falcon project directory (requires Python 3.8 to be installed on your system):
+You can check all this by running the following from within the Falcon project directory (requires Python 3.8 and 3.5 to be installed on your system):
 
 ```bash
 $ tools/mintest.sh
-
 ```
 
-You may also use Python 3.5, 3.6 or 3.7 if you don't have 3.8 installed on your system. Substitute "py35", "py36" or "py37" as appropriate. For example:
+You may also use Python 3.6 or 3.7 if you don't have 3.8 installed on your system. Substitute "py36" or "py37" as appropriate. For example:
 
 
 ```bash
 $ pip install -U tox coverage
 $ rm -f .coverage.*
-$ tox -e pep8 && tox -e py37 && tools/testing/combine_coverage.sh
+$ tox -e pep8 && tox -e py35,py37 && tools/testing/combine_coverage.sh
+```
+
+If you are using pyenv, you will need to make sure both 3.8 and 3.5 are available in the current shell, e.g.:
+
+```bash
+$ pyenv shell 3.8.0 3.5.8
+```
 
 #### Reviews
 

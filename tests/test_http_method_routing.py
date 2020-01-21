@@ -1,10 +1,11 @@
 from functools import wraps
-import wsgiref.validate
 
 import pytest
 
 import falcon
 import falcon.testing as testing
+
+from _util import create_app  # NOQA
 
 # RFC 7231, 5789 methods
 HTTP_METHODS = [
@@ -58,8 +59,8 @@ def resource_get_with_faulty_put():
 
 
 @pytest.fixture
-def client():
-    app = falcon.App()
+def client(asgi):
+    app = create_app(asgi)
 
     app.add_route('/stonewall', Stonewall())
 
@@ -278,8 +279,7 @@ class TestHttpMethodRouting:
         client.app.add_route('/things', resource_things)
         client.app.add_route('/things/{id}/stuff/{sid}', resource_things)
 
-        with pytest.warns(wsgiref.validate.WSGIWarning):
-            response = client.simulate_request(path='/things', method='SETECASTRONOMY')
+        response = client.simulate_request(path='/things', method='SETECASTRONOMY')
 
         assert not resource_things.called
         assert response.status == falcon.HTTP_400

@@ -2,14 +2,14 @@ import textwrap
 
 import pytest
 
-import falcon
 from falcon import testing
 from falcon.routing import DefaultRouter
 
+from _util import create_app  # NOQA
 
-@pytest.fixture
-def client():
-    return testing.TestClient(falcon.App())
+
+def client(asgi):
+    return testing.TestClient(create_app(asgi))
 
 
 @pytest.fixture
@@ -244,13 +244,14 @@ def test_user_regression_special_chars(uri_template, path, expected_params):
 # =====================================================================
 
 
+@pytest.mark.parametrize('asgi', [True, False])
 @pytest.mark.parametrize('uri_template', [
     {},
     set(),
     object()
 ])
-def test_not_str(uri_template):
-    app = falcon.App()
+def test_not_str(asgi, uri_template):
+    app = create_app(asgi)
     with pytest.raises(TypeError):
         app.add_route(uri_template, ResourceWithId(-1))
 

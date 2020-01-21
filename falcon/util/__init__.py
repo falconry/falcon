@@ -28,6 +28,7 @@ import sys
 from falcon.util.misc import *  # NOQA
 from falcon.util.streams import BufferedStream as _PyBufferedStream
 from falcon.util.structures import *  # NOQA
+from falcon.util.sync import *  # NOQA
 from falcon.util.time import *  # NOQA
 
 

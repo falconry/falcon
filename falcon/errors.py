@@ -47,6 +47,18 @@ class HeaderNotSupported(ValueError):
     """The specified header is not supported by this method."""
 
 
+class CompatibilityError(ValueError):
+    """The given method or value is not compatibile."""
+
+
+class UnsupportedScopeError(RuntimeError):
+    """The ASGI scope type is not supported by Falcon."""
+
+
+class UnsupportedError(RuntimeError):
+    """The method or operation is not supported."""
+
+
 class HTTPBadRequest(HTTPError):
     """400 Bad Request.
 

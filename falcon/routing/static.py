@@ -1,8 +1,10 @@
+from functools import partial
 import io
 import os
 import re
 
 import falcon
+from falcon.util.sync import get_loop
 
 
 class StaticRoute:
@@ -122,3 +124,24 @@ class StaticRoute:
 
         if self._downloadable:
             resp.downloadable_as = os.path.basename(file_path)
+
+
+class StaticRouteAsync(StaticRoute):
+    """Subclass of StaticRoute with modifications to support ASGI apps."""
+
+    async def __call__(self, req, resp):
+        super().__call__(req, resp)
+
+        # NOTE(kgriffs): Fixup resp.stream so that it is non-blocking
+        resp.stream = _AsyncFileReader(resp.stream)
+
+
+class _AsyncFileReader:
+    """Adapts a standard file I/O object so that reads are non-blocking."""
+
+    def __init__(self, file):
+        self._file = file
+        self._loop = get_loop()
+
+    async def read(self, size=-1):
+        return await self._loop.run_in_executor(None, partial(self._file.read, size))
