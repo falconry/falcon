@@ -8,8 +8,11 @@ class MediaResource:
     def on_get(self, req, resp):
         resp.media = {'foo': 'bar'}
 
+    def on_post(self, req, resp):
+        resp.media = req.media
 
-class MediaHTMLHandler(media.BaseHandler):
+
+class PlainTextHandler(media.BaseHandler):
     def serialize(self, media, content_type):
         return str(media).encode()
 
@@ -22,11 +25,12 @@ def client(request):
     app = request.param(media_type=falcon.MEDIA_XML)
     app.add_route('/', MediaResource())
 
-    app.resp_options.default_media_type = falcon.MEDIA_HTML
+    app.resp_options.default_media_type = falcon.MEDIA_TEXT
 
     handlers = falcon.media.Handlers({
-        'text/html': MediaHTMLHandler()
+        'text/plain': PlainTextHandler()
     })
+    app.req_options.media_handlers = handlers
     app.resp_options.media_handlers = handlers
 
     return testing.TestClient(app)
@@ -35,8 +39,10 @@ def client(request):
 @pytest.mark.parametrize('client', (falcon.App, falcon.API,), indirect=True)
 def test_api_media_type_overriding(client):
     response = client.simulate_get('/')
-    actual_header = response.headers['content-type']
-    actual_text = response.text
+    assert response.text == "{'foo': 'bar'}"
+    assert response.headers['content-type'] == falcon.MEDIA_TEXT
 
-    assert actual_header == falcon.MEDIA_HTML
-    assert actual_text == "{'foo': 'bar'}"
+    h = {'content-type': falcon.MEDIA_TEXT}
+    response = client.simulate_post('/', body='foobar', headers=h)
+    assert response.text == 'foobar'
+    assert response.headers['content-type'] == falcon.MEDIA_TEXT
