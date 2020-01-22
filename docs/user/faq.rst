@@ -568,9 +568,9 @@ How can I access POSTed files?
 
 If files are `POST`\ed as part of a multipart form,
 :class:`falcon.media.MultipartFormHandler` may be
-:ref:`installed <custom_media_handlers>` to handle the `multipart/form-data`
-media type. :ref:`req.media <media>` can then be used as an iterable through
-multipart body parts:
+:ref:`installed <custom_media_handlers>` to efficiently parse the
+`multipart/form-data` media type. :ref:`req.media <media>` can then be used to
+iterate over the multipart body parts:
 
 .. code:: python
 
@@ -588,11 +588,11 @@ How can I save POSTed files (from a multipart form) directly to AWS S3?
 
 As highlighted in the previous answer dealing with
 :ref:`files posted as multipart form <access_multipart_files>`,
-:class:`falcon.media.MultipartFormHandler` may be used to iterated through
+:class:`falcon.media.MultipartFormHandler` may be used to iterate over the
 uploaded multipart body parts.
 
 The `stream` of a body part is a file-like object implementing the ``read()``
-method that may be used with ``boto3``\'s
+method, making it compatible with ``boto3``\'s
 `upload_fileobj <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.upload_fileobj>`_:
 
 .. code:: python
@@ -609,8 +609,8 @@ method that may be used with ``boto3``\'s
 .. note::
    Falcon is not endorsing any particular cloud service provider, and AWS S3
    and ``boto3`` are referenced here just as a popular example. The same
-   principles hopefully apply to other cloud storage APIs implementing upload
-   of arbitrary file-like objects.
+   pattern can be applied to any storage API that supports streaming directly
+   from a file-like object.
 
 How do I consume a query string that has a JSON value?
 ------------------------------------------------------
