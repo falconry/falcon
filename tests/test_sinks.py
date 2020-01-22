@@ -5,6 +5,8 @@ import pytest
 import falcon
 import falcon.testing as testing
 
+from _util import create_app  # NOQA
+
 
 class Proxy:
     def forward(self, req):
@@ -12,7 +14,6 @@ class Proxy:
 
 
 class Sink:
-
     def __init__(self):
         self._proxy = Proxy()
 
@@ -21,8 +22,9 @@ class Sink:
         self.kwargs = kwargs
 
 
-def sink_too(req, resp):
-    resp.status = falcon.HTTP_781
+class SinkAsync(Sink):
+    async def __call__(self, req, resp, **kwargs):
+        super().__call__(req, resp, **kwargs)
 
 
 class BookCollection(testing.SimpleTestResource):
@@ -35,13 +37,13 @@ def resource():
 
 
 @pytest.fixture
-def sink():
-    return Sink()
+def sink(asgi):
+    return SinkAsync() if asgi else Sink()
 
 
 @pytest.fixture
-def client():
-    app = falcon.App()
+def client(asgi):
+    app = create_app(asgi)
     return testing.TestClient(app)
 
 
@@ -78,7 +80,14 @@ class TestDefaultRouting:
         response = client.simulate_request(path='/user/sally')
         assert response.status == falcon.HTTP_404
 
-    def test_multiple_patterns(self, client, sink, resource):
+    def test_multiple_patterns(self, asgi, client, sink, resource):
+        if asgi:
+            async def sink_too(req, resp):
+                resp.status = falcon.HTTP_781
+        else:
+            def sink_too(req, resp):
+                resp.status = falcon.HTTP_781
+
         client.app.add_sink(sink, r'/foo')
         client.app.add_sink(sink_too, r'/foo')  # Last duplicate wins
 

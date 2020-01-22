@@ -45,10 +45,10 @@ class TestCase(unittest.TestCase, TestClient):
     :py:class:`unittest.TestCase` or :py:class:`testtools.TestCase`.
 
     Attributes:
-        app (object): A WSGI application to target when simulating
+        app (object): A WSGI or ASGI application to target when simulating
             requests (default: ``falcon.App()``). When testing your
             application, you will need to set this to your own instance
-            of ``falcon.App``. For example::
+            of ``falcon.App`` or ``falcon.asgi.App``. For example::
 
                 from falcon import testing
                 import myapp
@@ -80,6 +80,3 @@ class TestCase(unittest.TestCase, TestClient):
         # NOTE(kgriffs): Don't use super() to avoid triggering
         # unittest.TestCase.__init__()
         TestClient.__init__(self, app)
-
-        # Reset to simulate "restarting" the WSGI container
-        falcon.request._maybe_wrap_wsgi_stream = True

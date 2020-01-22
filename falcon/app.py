@@ -15,6 +15,7 @@
 """Falcon App class."""
 
 from functools import wraps
+from inspect import iscoroutinefunction
 import re
 import traceback
 
@@ -63,9 +64,11 @@ class App:
             number of constants for common media types, such as
             ``falcon.MEDIA_MSGPACK``, ``falcon.MEDIA_YAML``,
             ``falcon.MEDIA_XML``, etc.
-        middleware(object or list): Either a single object or a list
-            of objects (instantiated classes) that implement the
-            following middleware component interface::
+        middleware: Either a single middleware component object or an iterable
+            of objects (instantiated classes) that implement the following
+            middleware component interface. Note that it is only necessary
+            to implement the methods for the events you would like to
+            handle; Falcon simply skips over any missing middleware methods::
 
                 class ExampleComponent:
                     def process_request(self, req, resp):
@@ -164,18 +167,32 @@ class App:
 
     _STREAM_BLOCK_SIZE = 8 * 1024  # 8 KiB
 
+    _STATIC_ROUTE_TYPE = routing.StaticRoute
+
+    # NOTE(kgriffs): This makes it easier to tell what we are dealing with
+    #   without having to import falcon.asgi to get at the falcon.asgi.App
+    #   type (which we may not be able to do under Python 3.5).
+    _ASGI = False
+
+    # NOTE(kgriffs): We do it like this rather than just implementing the
+    #   methods directly on the class, so that we keep all the default
+    #   responders colocated in the same module. This will make it more
+    #   likely that the implementations of the async and non-async versions
+    #   of the methods are kept in sync (pun intended).
+    _default_responder_bad_request = falcon.responders.bad_request
+    _default_responder_path_not_found = falcon.responders.path_not_found
+
     __slots__ = ('_request_type', '_response_type',
-                 '_error_handlers', '_media_type', '_router', '_sinks',
+                 '_error_handlers', '_router', '_sinks',
                  '_serialize_error', 'req_options', 'resp_options',
                  '_middleware', '_independent_middleware', '_router_search',
-                 '_static_routes', '_cors_enable')
+                 '_static_routes', '_cors_enable', '_unprepared_middleware')
 
     def __init__(self, media_type=DEFAULT_MEDIA_TYPE,
                  request_type=Request, response_type=Response,
                  middleware=None, router=None,
                  independent_middleware=True, cors_enable=False):
         self._sinks = []
-        self._media_type = media_type
         self._static_routes = []
 
         if cors_enable:
@@ -197,9 +214,9 @@ class App:
                     middleware = [middleware, cm]
 
         # set middleware
-        self._middleware = helpers.prepare_middleware(
-            middleware, independent_middleware=independent_middleware)
+        self._unprepared_middleware = []
         self._independent_middleware = independent_middleware
+        self.add_middleware(middleware)
 
         self._router = router or routing.DefaultRouter()
         self._router_search = self._router.find
@@ -220,6 +237,32 @@ class App:
         self.add_error_handler(Exception, self._python_error_handler)
         self.add_error_handler(falcon.HTTPError, self._http_error_handler)
         self.add_error_handler(falcon.HTTPStatus, self._http_status_handler)
+
+    def add_middleware(self, middleware):
+        """Add one or more additional middleware components.
+
+        Arguments:
+            middleware: Either a single middleware component or an iterable
+                of components to add. The component(s) will be invoked, in
+                order, as if they had been appended to the original middleware
+                list passed to the class initializer.
+        """
+
+        # NOTE(kgriffs): Since this is called by the initializer, there is
+        #   the chance that middleware may be None.
+        if middleware:
+            try:
+                self._unprepared_middleware += middleware
+            except TypeError:  # middleware is not iterable; assume it is just one bare component
+                self._unprepared_middleware.append(middleware)
+
+        # NOTE(kgriffs): Even if middleware is None or an empty list, we still
+        #   need to make sure self._middleware is initialized if this is the
+        #   first call to add_middleware().
+        self._middleware = self._prepare_middleware(
+            self._unprepared_middleware,
+            independent_middleware=self._independent_middleware
+        )
 
     def __call__(self, env, start_response):  # noqa: C901
         """WSGI `app` method.
@@ -248,83 +291,82 @@ class App:
         req_succeeded = False
 
         try:
-            try:
-                # NOTE(ealogar): The execution of request middleware
-                # should be before routing. This will allow request mw
-                # to modify the path.
-                # NOTE: if flag set to use independent middleware, execute
-                # request middleware independently. Otherwise, only queue
-                # response middleware after request middleware succeeds.
-                if self._independent_middleware:
-                    for process_request in mw_req_stack:
+            # NOTE(ealogar): The execution of request middleware
+            # should be before routing. This will allow request mw
+            # to modify the path.
+            # NOTE: if flag set to use independent middleware, execute
+            # request middleware independently. Otherwise, only queue
+            # response middleware after request middleware succeeds.
+            if self._independent_middleware:
+                for process_request in mw_req_stack:
+                    process_request(req, resp)
+                    if resp.complete:
+                        break
+            else:
+                for process_request, process_response in mw_req_stack:
+                    if process_request and not resp.complete:
                         process_request(req, resp)
+                    if process_response:
+                        dependent_mw_resp_stack.insert(0, process_response)
+
+            if not resp.complete:
+                # NOTE(warsaw): Moved this to inside the try except
+                # because it is possible when using object-based
+                # traversal for _get_responder() to fail.  An example is
+                # a case where an object does not have the requested
+                # next-hop child resource. In that case, the object
+                # being asked to dispatch to its child will raise an
+                # HTTP exception signalling the problem, e.g. a 404.
+                responder, params, resource, req.uri_template = self._get_responder(req)
+        except Exception as ex:
+            if not self._handle_exception(req, resp, ex, params):
+                raise
+        else:
+            try:
+                # NOTE(kgriffs): If the request did not match any
+                # route, a default responder is returned and the
+                # resource is None. In that case, we skip the
+                # resource middleware methods. Resource will also be
+                # None when a middleware method already set
+                # resp.complete to True.
+                if resource:
+                    # Call process_resource middleware methods.
+                    for process_resource in mw_rsrc_stack:
+                        process_resource(req, resp, resource, params)
                         if resp.complete:
                             break
-                else:
-                    for process_request, process_response in mw_req_stack:
-                        if process_request and not resp.complete:
-                            process_request(req, resp)
-                        if process_response:
-                            dependent_mw_resp_stack.insert(0, process_response)
 
                 if not resp.complete:
-                    # NOTE(warsaw): Moved this to inside the try except
-                    # because it is possible when using object-based
-                    # traversal for _get_responder() to fail.  An example is
-                    # a case where an object does not have the requested
-                    # next-hop child resource. In that case, the object
-                    # being asked to dispatch to its child will raise an
-                    # HTTP exception signalling the problem, e.g. a 404.
-                    responder, params, resource, req.uri_template = self._get_responder(req)
+                    responder(req, resp, **params)
+
+                req_succeeded = True
             except Exception as ex:
                 if not self._handle_exception(req, resp, ex, params):
                     raise
-            else:
-                try:
-                    # NOTE(kgriffs): If the request did not match any
-                    # route, a default responder is returned and the
-                    # resource is None. In that case, we skip the
-                    # resource middleware methods. Resource will also be
-                    # None when a middleware method already set
-                    # resp.complete to True.
-                    if resource:
-                        # Call process_resource middleware methods.
-                        for process_resource in mw_rsrc_stack:
-                            process_resource(req, resp, resource, params)
-                            if resp.complete:
-                                break
 
-                    if not resp.complete:
-                        responder(req, resp, **params)
+        # Call process_response middleware methods.
+        for process_response in mw_resp_stack or dependent_mw_resp_stack:
+            try:
+                process_response(req, resp, resource, req_succeeded)
+            except Exception as ex:
+                if not self._handle_exception(req, resp, ex, params):
+                    raise
 
-                    req_succeeded = True
-                except Exception as ex:
-                    if not self._handle_exception(req, resp, ex, params):
-                        raise
-        finally:
-            # NOTE(kgriffs): It may not be useful to still execute
-            # response middleware methods in the case of an unhandled
-            # exception, but this is done for the sake of backwards
-            # compatibility, since it was incidentally the behavior in
-            # the 1.0 release before this section of the code was
-            # reworked.
+                req_succeeded = False
 
-            # Call process_response middleware methods.
-            for process_response in mw_resp_stack or dependent_mw_resp_stack:
-                try:
-                    process_response(req, resp, resource, req_succeeded)
-                except Exception as ex:
-                    if not self._handle_exception(req, resp, ex, params):
-                        raise
+        body = []
+        length = 0
 
-                    req_succeeded = False
+        try:
+            body, length = self._get_body(resp, env.get('wsgi.file_wrapper'))
+        except Exception as ex:
+            if not self._handle_exception(req, resp, ex, params):
+                raise
 
-        #
-        # Set status and headers
-        #
+            req_succeeded = False
 
         resp_status = resp.status
-        media_type = self._media_type
+        default_media_type = self.resp_options.default_media_type
 
         if req.method == 'HEAD' or resp_status in _BODILESS_STATUS_CODES:
             body = []
@@ -338,11 +380,20 @@ class App:
             # presence of the Content-Length header is not similarly
             # enforced.
             if resp_status in _TYPELESS_STATUS_CODES:
-                media_type = None
+                default_media_type = None
+            elif (
+                length is not None and
+                req.method == 'HEAD'and
+                resp_status not in _BODILESS_STATUS_CODES and
+                'content-length' not in resp._headers
+            ):
+                # NOTE(kgriffs): We really should be returning a Content-Length
+                #   in this case according to my reading of the RFCs. By
+                #   optionally using len(data) we let a resource simulate HEAD
+                #   by turning around and calling it's own on_get().
+                resp._headers['content-length'] = str(length)
 
         else:
-            body, length = self._get_body(resp, env.get('wsgi.file_wrapper'))
-
             # PERF(kgriffs): Böse mußt sein. Operate directly on resp._headers
             #   to reduce overhead since this is a hot/critical code path.
             # NOTE(kgriffs): We always set content-length to match the
@@ -353,7 +404,7 @@ class App:
             if length is not None:
                 resp._headers['content-length'] = str(length)
 
-        headers = resp._wsgi_headers(media_type)
+        headers = resp._wsgi_headers(default_media_type)
 
         # Return the response per the WSGI spec.
         start_response(resp_status, headers)
@@ -445,6 +496,10 @@ class App:
             For security reasons, the directory and the fallback_filename (if provided)
             should be read only for the account running the application.
 
+        Note:
+            For ASGI apps, file reads are made non-blocking by scheduling
+            them on the default executor.
+
         Static routes are matched in LIFO order. Therefore, if the same
         prefix is used for two routes, the second one will override the
         first. This also means that more specific routes should be added
@@ -479,8 +534,8 @@ class App:
 
         self._static_routes.insert(
             0,
-            routing.StaticRoute(prefix, directory, downloadable=downloadable,
-                                fallback_filename=fallback_filename)
+            self._STATIC_ROUTE_TYPE(prefix, directory, downloadable=downloadable,
+                                    fallback_filename=fallback_filename)
         )
 
     def add_sink(self, sink, prefix=r'/'):
@@ -603,9 +658,21 @@ class App:
 
         """
         def wrap_old_handler(old_handler):
+            # NOTE(kgriffs): This branch *is* actually tested by
+            #   test_error_handlers.test_handler_signature_shim_asgi() (as
+            #   verified manually via pdb), but for some reason coverage
+            #   tracking isn't picking it up.
+            if iscoroutinefunction(old_handler):  # pragma: no cover
+                @wraps(old_handler)
+                async def handler_async(req, resp, ex, params):
+                    await old_handler(ex, req, resp, params)
+
+                return handler_async
+
             @wraps(old_handler)
             def handler(req, resp, ex, params):
                 old_handler(ex, req, resp, params)
+
             return handler
 
         if handler is None:
@@ -698,11 +765,17 @@ class App:
     # Helpers that require self
     # ------------------------------------------------------------------------
 
+    def _prepare_middleware(self, middleware=None, independent_middleware=False):
+        return helpers.prepare_middleware(
+            middleware=middleware,
+            independent_middleware=independent_middleware
+        )
+
     def _get_responder(self, req):
         """Search routes for a matching responder.
 
         Args:
-            req: The request object.
+            req (Request): The request object.
 
         Returns:
             tuple: A 4-member tuple consisting of a responder callable,
@@ -746,7 +819,13 @@ class App:
             try:
                 responder = method_map[method]
             except KeyError:
-                responder = falcon.responders.bad_request
+                # NOTE(kgriffs): Dirty hack! We use __class__ here to avoid
+                #   binding self to the default responder method. We could
+                #   decorate the function itself with @staticmethod, but it
+                #   would perhaps be less obvious to the reader why this is
+                #   needed when just looking at the code in the reponder
+                #   module, so we just grab it directly here.
+                responder = self.__class__._default_responder_bad_request
         else:
             params = {}
 
@@ -764,7 +843,7 @@ class App:
                         responder = sr
                         break
                 else:
-                    responder = falcon.responders.path_not_found
+                    responder = self.__class__._default_responder_path_not_found
 
         return (responder, params, resource, uri_template)
 

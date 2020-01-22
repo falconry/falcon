@@ -41,5 +41,21 @@ class MessagePackHandler(BaseHandler):
                 'Could not parse MessagePack body - {0}'.format(err)
             )
 
+    async def deserialize_async(self, stream, content_type, content_length):
+        data = await stream.read()
+
+        try:
+            # NOTE(jmvrbanac): Using unpackb since we would need to manage
+            # a buffer for Unpacker() which wouldn't gain us much.
+            return self.msgpack.unpackb(data, raw=False)
+        except ValueError as err:
+            raise errors.HTTPBadRequest(
+                'Invalid MessagePack',
+                'Could not parse MessagePack body - {0}'.format(err)
+            )
+
     def serialize(self, media, content_type):
+        return self.packer.pack(media)
+
+    async def serialize_async(self, media, content_type):
         return self.packer.pack(media)

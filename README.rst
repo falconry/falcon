@@ -231,7 +231,8 @@ Installing it is as simple as:
 Installing the Falcon wheel is a great way to get up and running
 quickly in a development environment, but for an extra speed boost when
 deploying your application in production, Falcon can compile itself with
-Cython.
+Cython. Note, however, that Cython is currently incompatible with
+the falcon.asgi module.
 
 The following commands tell pip to install Cython, and then to invoke
 Falcon's ``setup.py``, which will in turn detect the presence of Cython
@@ -690,8 +691,8 @@ GitHub nick and an appropriate prefix:
 The core Falcon project maintainers are:
 
 - Kurt Griffiths, Project Lead (**kgriffs** on GH, Gitter, and Twitter)
-- John Vrbanac (**jmvrbanac** on GH and Gitter, and **jvrbanac** on Twitter)
-- Vytautas Liuolia (**vytas7** on GH and Gitter)
+- John Vrbanac (**jmvrbanac** on GH, Gitter, and Twitter)
+- Vytautas Liuolia (**vytas7** on GH and Gitter, and **vliuolia** on Twitter)
 - Nick Zaccardi (**nZac** on GH and Gitter)
 
 Please don't hesitate to reach out if you have any questions, or just need a

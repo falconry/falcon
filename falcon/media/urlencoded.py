@@ -38,3 +38,15 @@ class URLEncodedFormHandler(BaseHandler):
         return parse_query_string(body,
                                   keep_blank=self.keep_blank,
                                   csv=self.csv)
+
+    async def deserialize_async(self, stream, content_type, content_length):
+        body = await stream.read()
+
+        # NOTE(kgriffs): According to http://goo.gl/6rlcux the
+        # body should be US-ASCII. Enforcing this also helps
+        # catch malicious input.
+        body = body.decode('ascii')
+
+        return parse_query_string(body,
+                                  keep_blank=self.keep_blank,
+                                  csv=self.csv)

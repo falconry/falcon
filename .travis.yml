@@ -9,22 +9,27 @@ cache:
 
 matrix:
     include:
-        - python: pypy3.5-6.0
+        - python: pypy3.6-7.1.1
           env: TOXENV=pypy3
         - python: 3.8
           env: TOXENV=pep8
         - python: 3.8
           env: TOXENV=pep8-examples
-        - python: 3.5
+        - python: 3.8
+          env: TOXENV=mypy
+          # NOTE(kgriffs):  3.5.2 is the default Python 3 version on Ubuntu 16.04
+          #   so we pin to that for testing to make sure we are working around
+          #   and quirks that were fixed in later micro versions.
+        - python: 3.5.2
           env: TOXENV=py35
         - python: 3.6
           env: TOXENV=py36
+        - python: 3.6
+          env: TOXENV=py36_cython
         - python: 3.7
           env: TOXENV=py37
         - python: 3.8
           env: TOXENV=py38
-        - python: 3.8
-          env: TOXENV=mypy
         - python: 3.8
           env: TOXENV=py38_cython
         - python: 3.8
@@ -47,7 +52,7 @@ matrix:
         - python: 3.8
           env: TOXENV=check_vendored
 
-script: tox
+script: tox -- -v
 
 notifications:
   webhooks:
@@ -57,6 +62,9 @@ notifications:
     on_failure: always
 
 before_install:
+  # NOTE(vytas): wheels sometimes fail to build on s390x due to cache being
+  #   owned by another user.
+  - sudo chown -R travis:travis $HOME/.cache/pip
   # NOTE(vytas): libunwind-dev does not exist for s390x in Ubuntu 16.04
   - if [[ `uname -m` == *86* ]]; then sudo apt-get update && sudo apt-get install -y libunwind-dev; fi
   - pip install codecov

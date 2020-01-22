@@ -11,6 +11,7 @@
 *.py[cod]
 .eggs
 .installed.cfg
+.mypy_cache
 build
 develop-eggs
 dist
@@ -20,6 +21,7 @@ lib64
 parts
 sdist
 var
+pip-wheel-metadata
 
 # Installer logs
 pip-log.txt

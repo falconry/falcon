@@ -15,12 +15,14 @@
 """Default routing engine."""
 
 from collections import UserDict
+from inspect import iscoroutinefunction
 import keyword
 import re
 import textwrap
 
 from falcon.routing import converters
 from falcon.routing.util import map_http_methods, set_default_responders
+from falcon.util.sync import _should_wrap_non_coroutines, wrap_sync_to_async
 
 
 _TAB_STR = ' ' * 4
@@ -141,8 +143,18 @@ class CompiledRouter:
                 resource.
         """
 
+        # NOTE(kgriffs): falcon.asgi.App injects this private kwarg; it is
+        #   only intended to be used internally.
+        asgi = kwargs.get('_asgi', False)
+
         method_map = self.map_http_methods(resource, **kwargs)
-        set_default_responders(method_map)
+
+        set_default_responders(method_map, asgi=asgi)
+
+        if asgi:
+            self._require_coroutine_responders(method_map)
+        else:
+            self._require_non_coroutine_responders(method_map)
 
         # NOTE(kgriffs): Fields may have whitespace in them, so sub
         # those before checking the rest of the URI template.
@@ -226,6 +238,46 @@ class CompiledRouter:
     # -----------------------------------------------------------------
     # Private
     # -----------------------------------------------------------------
+
+    def _require_coroutine_responders(self, method_map):
+        for method, responder in method_map.items():
+            # NOTE(kgriffs): We don't simply wrap non-async functions
+            #   since they likely peform relatively long blocking
+            #   operations that need to be explicitly made non-blocking
+            #   by the developer; raising an error helps highlight this
+            #   issue.
+
+            if not iscoroutinefunction(responder):
+                if _should_wrap_non_coroutines():
+                    def let(responder=responder):
+                        method_map[method] = wrap_sync_to_async(responder)
+
+                    let()
+
+                else:
+                    msg = (
+                        'The {} responder must be a non-blocking '
+                        'async coroutine (i.e., defined using async def) to '
+                        'avoid blocking the main request thread.'
+                    )
+                    msg = msg.format(responder)
+                    raise TypeError(msg)
+
+    def _require_non_coroutine_responders(self, method_map):
+        for method, responder in method_map.items():
+            # NOTE(kgriffs): We don't simply wrap non-async functions
+            #   since they likely peform relatively long blocking
+            #   operations that need to be explicitly made non-blocking
+            #   by the developer; raising an error helps highlight this
+            #   issue.
+
+            if iscoroutinefunction(responder):
+                msg = (
+                    'The {} responder must be a regular synchronous '
+                    'method to be used with a WSGI app.'
+                )
+                msg = msg.format(responder)
+                raise TypeError(msg)
 
     def _validate_template_segment(self, segment, used_names):
         """Validates a single path segment of a URI template.
