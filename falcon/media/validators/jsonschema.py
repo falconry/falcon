@@ -9,7 +9,7 @@ except ImportError:  # pragma: nocover
     pass
 
 
-def validate(req_schema=None, resp_schema=None):
+def validate(req_schema=None, resp_schema=None, is_async=False):
     """Decorator for validating ``req.media`` using JSON Schema.
 
     This decorator provides standard JSON Schema validation via the
@@ -24,13 +24,18 @@ def validate(req_schema=None, resp_schema=None):
         See `json-schema.org <http://json-schema.org/>`_ for more
         information on defining a compatible dictionary.
 
-    Args:
-        req_schema (dict, optional): A dictionary that follows the JSON
+    Keyword Args:
+        req_schema (dict): A dictionary that follows the JSON
             Schema specification. The request will be validated against this
             schema.
-        resp_schema (dict, optional): A dictionary that follows the JSON
+        resp_schema (dict): A dictionary that follows the JSON
             Schema specification. The response will be validated against this
             schema.
+        is_async (bool): Set to ``True`` for ASGI apps to provide a hint that
+            the wrapped responder is a coroutine function (i.e., that it
+            is defined with ``async def``). This is only necessary for
+            cythonized responders, since Cython coroutine functions can
+            not be automatically detected.
 
     Example:
         .. code:: python
@@ -47,7 +52,7 @@ def validate(req_schema=None, resp_schema=None):
     """
 
     def decorator(func):
-        if iscoroutinefunction(func):
+        if iscoroutinefunction(func) or is_async:
             return _validate_async(func, req_schema, resp_schema)
 
         return _validate(func, req_schema, resp_schema)

@@ -81,7 +81,13 @@ def prepare_middleware(middleware, independent_middleware=False, asgi=False):
             )
 
             for m in (process_request, process_resource, process_response):
-                if m and not iscoroutinefunction(m):
+                # NOTE(kgriffs): iscoroutinefunction() always returns False
+                #   for cythonized functions.
+                #
+                #   https://github.com/cython/cython/issues/2273
+                #   https://bugs.python.org/issue38225
+                #
+                if m and not iscoroutinefunction(m) and util.is_python_func(m):
                     msg = (
                         '{} must be implemented as an awaitable coroutine. If '
                         'you would like to retain compatibility '
