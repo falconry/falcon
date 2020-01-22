@@ -922,6 +922,6 @@ This can be done by setting ``headers={'Cookie': 'xxx=yyy'}`` in
 
         assert resp.json == {'cookies': {'xxx': 'yyy'}}
 
-To include multiple values, you can use ``"; "`` to separate these values in
-cookie-string. For example, by passing ``{'Cookie': 'xxx=yyy; hello=world'}``,
-you will get ``{'cookies': {'xxx': 'yyy', 'hello': 'world'}}``.
+To include multiple values, simply use ``"; "`` to separate each name-value
+pair. For example, if you were to pass ``{'Cookie': 'xxx=yyy; hello=world'}``,
+you would get ``{'cookies': {'xxx': 'yyy', 'hello': 'world'}}``.
