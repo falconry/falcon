@@ -662,8 +662,8 @@ class Response:
 
         header_items = getattr(headers, 'items', None)
 
-        if header_items and callable(header_items):
-            headers = headers.items()
+        if callable(header_items):
+            headers = header_items()
 
         # NOTE(kgriffs): We can't use dict.update because we have to
         # normalize the header names.
