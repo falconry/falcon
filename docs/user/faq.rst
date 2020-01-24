@@ -444,8 +444,8 @@ When a route can not be found for an incoming request, Falcon uses a default
 responder that simply raises an instance of :class:`~.HTTPRouteNotFound`, which
 the framework will in turn render as a 404 response. You can use
 :meth:`falcon.App.add_error_handler` to override the default handler for this
-exception type (or for its parent type,  :class:`~.HTTPNotFound`).
-Alternatively, you may be able to  configure your web server to transform the
+exception type (or for its parent type, :class:`~.HTTPNotFound`).
+Alternatively, you may be able to configure your web server to transform the
 response for you (e.g., using nginx's ``error_page`` directive).
 
 By default, non-system-exiting exceptions that do not inherit from
