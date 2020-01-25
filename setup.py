@@ -1,5 +1,4 @@
 import glob
-import imp
 import io
 import os
 from os import path
@@ -9,10 +8,6 @@ import sys
 from setuptools import Extension, find_packages, setup
 
 MYDIR = path.abspath(os.path.dirname(__file__))
-
-VERSION = imp.load_source('version', path.join('.', 'falcon', 'version.py'))
-VERSION = VERSION.__version__
-
 REQUIRES = []
 
 try:
@@ -132,7 +127,6 @@ def load_description():
 
 setup(
     name='falcon',
-    version=VERSION,
     description='An unladen web framework for building APIs and app backends.',
     long_description=load_description(),
     long_description_content_type='text/x-rst',
