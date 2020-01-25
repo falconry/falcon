@@ -278,8 +278,9 @@ class HTTPNotFound(OptionalRepresentation, HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, headers=None, **kwargs):
-        super(HTTPNotFound, self).__init__(status.HTTP_404, headers=headers, **kwargs)
+    def __init__(self, title=None, description=None, headers=None, **kwargs):
+        super(HTTPNotFound, self).__init__(status.HTTP_404, title, description,
+                                           headers=headers, **kwargs)
 
 
 class HTTPRouteNotFound(HTTPNotFound):
@@ -377,11 +378,10 @@ class HTTPMethodNotAllowed(OptionalRepresentation, HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, allowed_methods, headers=None, **kwargs):
+    def __init__(self, allowed_methods, title=None, description=None, headers=None, **kwargs):
         new_headers = {'Allow': ', '.join(allowed_methods)}
-        super(HTTPMethodNotAllowed, self).__init__(status.HTTP_405,
-                                                   headers=headers,
-                                                   **kwargs)
+        super(HTTPMethodNotAllowed, self).__init__(status.HTTP_405, title, description,
+                                                   headers=headers, **kwargs)
         if not self.headers:
             self.headers = {}
 
@@ -556,8 +556,9 @@ class HTTPGone(OptionalRepresentation, HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, headers=None, **kwargs):
-        super(HTTPGone, self).__init__(status.HTTP_410, headers=headers, **kwargs)
+    def __init__(self, title=None, description=None, headers=None, **kwargs):
+        super(HTTPGone, self).__init__(status.HTTP_410, title, description,
+                                       headers=headers, **kwargs)
 
 
 class HTTPLengthRequired(HTTPError):
@@ -791,6 +792,7 @@ class HTTPUnsupportedMediaType(HTTPError):
     (See also: RFC 7231, Section 6.5.13)
 
     Keyword Args:
+        title (str): Error title (default '415 Unsupported Media Type').
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
         headers (dict or list): A ``dict`` of header names and values
@@ -845,15 +847,44 @@ class HTTPRangeNotSatisfiable(NoRepresentation, HTTPError):
     Args:
         resource_length: The maximum value for the last-byte-pos of a range
             request. Used to set the Content-Range header.
+
+    Keyword Args:
+        title (str): Error title (default '416 Range Not Satisfiable').
+        description (str): Human-friendly description of the error, along with
+            a helpful suggestion or two.
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (default 'API documentation
+            for this error').
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
     """
 
-    def __init__(self, resource_length, headers=None):
+    def __init__(self, resource_length, title=None, description=None, headers=None, **kwargs):
         if headers is None:
             headers = {}
         headers.setdefault('Content-Range', 'bytes */' + str(resource_length))
 
-        super(HTTPRangeNotSatisfiable, self).__init__(status.HTTP_416,
-                                                      headers=headers)
+        super(HTTPRangeNotSatisfiable, self).__init__(status.HTTP_416, title, description,
+                                                      headers=headers, **kwargs)
 
 
 class HTTPUnprocessableEntity(HTTPError):
@@ -1220,9 +1251,9 @@ class HTTPUnavailableForLegalReasons(OptionalRepresentation, HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, title=None, headers=None, **kwargs):
+    def __init__(self, title=None, description=None, headers=None, **kwargs):
         super(HTTPUnavailableForLegalReasons, self).__init__(status.HTTP_451,
-                                                             title,
+                                                             title, description,
                                                              headers=headers,
                                                              **kwargs)
 
