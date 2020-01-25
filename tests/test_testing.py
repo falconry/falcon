@@ -2,7 +2,8 @@ import time
 
 import pytest
 
-from falcon import API, status_codes, testing
+import falcon
+from falcon import App, status_codes, testing
 
 
 def another_dummy_wsgi_app(environ, start_response):
@@ -46,7 +47,7 @@ def test_closed_wsgi_iterable(items):
     ('22', False),
 ])
 def test_simulate_request_http_version(version, valid):
-    app = API()
+    app = App()
 
     if valid:
         testing.simulate_request(app, http_version=version)
@@ -158,3 +159,36 @@ def test_is_asgi_app_cls():
             pass
 
     assert testing.client._is_asgi_app(Foo.class_meth)
+
+
+def test_simulate_request_content_type():
+    class Foo:
+        def on_post(self, req, resp):
+            resp.body = req.content_type
+
+    app = App()
+    app.add_route('/', Foo())
+
+    headers = {'Content-Type': falcon.MEDIA_TEXT}
+
+    result = testing.simulate_post(app, '/', headers=headers)
+    assert result.text == falcon.MEDIA_TEXT
+
+    result = testing.simulate_post(app, '/', content_type=falcon.MEDIA_HTML)
+    assert result.text == falcon.MEDIA_HTML
+
+    result = testing.simulate_post(app, '/', content_type=falcon.MEDIA_HTML, headers=headers)
+    assert result.text == falcon.MEDIA_HTML
+
+    result = testing.simulate_post(app, '/', json={})
+    assert result.text == falcon.MEDIA_JSON
+
+    result = testing.simulate_post(app, '/', json={}, content_type=falcon.MEDIA_HTML)
+    assert result.text == falcon.MEDIA_JSON
+
+    result = testing.simulate_post(app, '/', json={}, headers=headers)
+    assert result.text == falcon.MEDIA_JSON
+
+    result = testing.simulate_post(
+        app, '/', json={}, headers=headers, content_type=falcon.MEDIA_HTML)
+    assert result.text == falcon.MEDIA_JSON
