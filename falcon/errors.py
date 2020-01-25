@@ -38,8 +38,7 @@ package namespace::
 from datetime import datetime
 
 from falcon import util
-from falcon.http_error import HTTPError, NoRepresentation, \
-    OptionalRepresentation
+from falcon.http_error import HTTPError, OptionalRepresentation
 import falcon.status_codes as status
 
 
@@ -827,7 +826,7 @@ class HTTPUnsupportedMediaType(HTTPError):
             description, headers, **kwargs)
 
 
-class HTTPRangeNotSatisfiable(NoRepresentation, HTTPError):
+class HTTPRangeNotSatisfiable(OptionalRepresentation, HTTPError):
     """416 Range Not Satisfiable.
 
     None of the ranges in the request's Range header field overlap the

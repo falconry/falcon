@@ -79,7 +79,7 @@ Base Class
 Mixins
 ------
 
-.. autoclass:: falcon.http_error.NoRepresentation
+.. autoclass:: falcon.http_error.OptionalRepresentation
     :members:
 
 .. _predefined_errors:
