@@ -1692,8 +1692,7 @@ class HTTPInvalidHeader(HTTPBadRequest):
     """
 
     def __init__(self, msg, header_name, headers=None, **kwargs):
-        description = ('The value provided for the {0} header is '
-                       'invalid. {1}')
+        description = 'The value provided for the "{0}" header is invalid. {1}'
         description = description.format(header_name, msg)
 
         super().__init__('Invalid header value', description, headers, **kwargs)
@@ -1735,7 +1734,7 @@ class HTTPMissingHeader(HTTPBadRequest):
     """
 
     def __init__(self, header_name, headers=None, **kwargs):
-        description = 'The {0} header is required.'
+        description = 'The "{0}" header is required.'
         description = description.format(header_name)
 
         super().__init__('Missing header value', description, headers, **kwargs)

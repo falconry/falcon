@@ -782,7 +782,7 @@ class TestHTTPError:
         client.app.add_route('/400', InvalidHeaderResource())
         response = client.simulate_request(path='/400')
 
-        expected_desc = ('The value provided for the X-Auth-Token '
+        expected_desc = ('The value provided for the "X-Auth-Token" '
                          'header is invalid. Please provide a valid token.')
 
         expected_body = {
@@ -800,7 +800,7 @@ class TestHTTPError:
 
         expected_body = {
             'title': 'Missing header value',
-            'description': 'The X-Auth-Token header is required.',
+            'description': 'The "X-Auth-Token" header is required.',
         }
 
         assert response.status == falcon.HTTP_400
