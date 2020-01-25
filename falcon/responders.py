@@ -16,18 +16,18 @@
 
 from falcon.errors import HTTPBadRequest
 from falcon.errors import HTTPMethodNotAllowed
-from falcon.errors import HTTPNotFound
+from falcon.errors import HTTPRouteNotFound
 from falcon.status_codes import HTTP_200
 
 
 def path_not_found(req, resp, **kwargs):
-    """Raise 404 HTTPNotFound error"""
-    raise HTTPNotFound()
+    """Raise 404 HTTPRouteNotFound error"""
+    raise HTTPRouteNotFound()
 
 
 async def path_not_found_async(req, resp, **kwargs):
-    """Raise 404 HTTPNotFound error"""
-    raise HTTPNotFound()
+    """Raise 404 HTTPRouteNotFound error"""
+    raise HTTPRouteNotFound()
 
 
 def bad_request(req, resp, **kwargs):

@@ -254,9 +254,9 @@ class Result:
 #   appears to be "hanging", which might indicates that the app is
 #   not handling the reception of events correctly.
 def simulate_request(app, method='GET', path='/', query_string=None,
-                     headers=None, body=None, json=None, file_wrapper=None,
-                     wsgierrors=None, params=None, params_csv=True,
-                     protocol='http', host=helpers.DEFAULT_HOST,
+                     headers=None, content_type=None, body=None, json=None,
+                     file_wrapper=None, wsgierrors=None, params=None,
+                     params_csv=True, protocol='http', host=helpers.DEFAULT_HOST,
                      remote_addr=None, extras=None, http_version='1.1',
                      port=None, root_path=None, asgi_chunk_size=4096,
                      asgi_disconnect_ttl=300) -> Result:
@@ -301,6 +301,11 @@ def simulate_request(app, method='GET', path='/', query_string=None,
         query_string (str): A raw query string to include in the
             request (default: ``None``). If specified, overrides
             `params`.
+        content_type (str): The value to use for the Content-Type header in
+            the request. If specified, this value will take precedence over
+            any value set for the Content-Type header in the
+            `headers` keyword argument. The ``falcon`` module provides a number
+            of :ref:`constants for common media types <media_type_constants>`.
         headers (dict): Extra headers as a dict-like (Mapping) object, or an
             iterable yielding a series of two-member (*name*, *value*)
             iterables. Each pair of strings provides the name and value
@@ -314,8 +319,9 @@ def simulate_request(app, method='GET', path='/', query_string=None,
             may be passed, in which case it will be used as-is.
         json(JSON serializable): A JSON document to serialize as the
             body of the request (default: ``None``). If specified,
-            overrides `body` and the Content-Type header in
-            `headers`.
+            overrides `body` and sets the Content-Type header to
+            ``'application/json'``, overriding any value specified by either
+            the `content_type` or `headers` arguments.
         file_wrapper (callable): Callable that returns an iterable,
             to be used as the value for *wsgi.file_wrapper* in the
             WSGI environ (default: ``None``). This can be used to test
@@ -370,6 +376,10 @@ def simulate_request(app, method='GET', path='/', query_string=None,
             comma_delimited_lists=params_csv,
             prefix=False,
         )
+
+    if content_type is not None:
+        headers = headers or {}
+        headers['Content-Type'] = content_type
 
     if json is not None:
         body = util_json.dumps(json, ensure_ascii=False)
@@ -699,6 +709,11 @@ def simulate_post(app, path, **kwargs) -> Result:
         query_string (str): A raw query string to include in the
             request (default: ``None``). If specified, overrides
             `params`.
+        content_type (str): The value to use for the Content-Type header in
+            the request. If specified, this value will take precedence over
+            any value set for the Content-Type header in the
+            `headers` keyword argument. The ``falcon`` module provides a number
+            of :ref:`constants for common media types <media_type_constants>`.
         headers (dict): Extra headers as a dict-like (Mapping) object, or an
             iterable yielding a series of two-member (*name*, *value*)
             iterables. Each pair of strings provides the name and value
@@ -712,8 +727,9 @@ def simulate_post(app, path, **kwargs) -> Result:
             may be passed, in which case it will be used as-is.
         json(JSON serializable): A JSON document to serialize as the
             body of the request (default: ``None``). If specified,
-            overrides `body` and the Content-Type header in
-            `headers`.
+            overrides `body` and sets the Content-Type header to
+            ``'application/json'``, overriding any value specified by either
+            the `content_type` or `headers` arguments.
         file_wrapper (callable): Callable that returns an iterable,
             to be used as the value for *wsgi.file_wrapper* in the
             WSGI environ (default: ``None``). This can be used to test
@@ -785,6 +801,11 @@ def simulate_put(app, path, **kwargs) -> Result:
         query_string (str): A raw query string to include in the
             request (default: ``None``). If specified, overrides
             `params`.
+        content_type (str): The value to use for the Content-Type header in
+            the request. If specified, this value will take precedence over
+            any value set for the Content-Type header in the
+            `headers` keyword argument. The ``falcon`` module provides a number
+            of :ref:`constants for common media types <media_type_constants>`.
         headers (dict): Extra headers as a dict-like (Mapping) object, or an
             iterable yielding a series of two-member (*name*, *value*)
             iterables. Each pair of strings provides the name and value
@@ -798,8 +819,9 @@ def simulate_put(app, path, **kwargs) -> Result:
             may be passed, in which case it will be used as-is.
         json(JSON serializable): A JSON document to serialize as the
             body of the request (default: ``None``). If specified,
-            overrides `body` and the Content-Type header in
-            `headers`.
+            overrides `body` and sets the Content-Type header to
+            ``'application/json'``, overriding any value specified by either
+            the `content_type` or `headers` arguments.
         file_wrapper (callable): Callable that returns an iterable,
             to be used as the value for *wsgi.file_wrapper* in the
             WSGI environ (default: ``None``). This can be used to test
@@ -945,6 +967,11 @@ def simulate_patch(app, path, **kwargs) -> Result:
         query_string (str): A raw query string to include in the
             request (default: ``None``). If specified, overrides
             `params`.
+        content_type (str): The value to use for the Content-Type header in
+            the request. If specified, this value will take precedence over
+            any value set for the Content-Type header in the
+            `headers` keyword argument. The ``falcon`` module provides a number
+            of :ref:`constants for common media types <media_type_constants>`.
         headers (dict): Extra headers as a dict-like (Mapping) object, or an
             iterable yielding a series of two-member (*name*, *value*)
             iterables. Each pair of strings provides the name and value
@@ -958,8 +985,9 @@ def simulate_patch(app, path, **kwargs) -> Result:
             may be passed, in which case it will be used as-is.
         json(JSON serializable): A JSON document to serialize as the
             body of the request (default: ``None``). If specified,
-            overrides `body` and the Content-Type header in
-            `headers`.
+            overrides `body` and sets the Content-Type header to
+            ``'application/json'``, overriding any value specified by either
+            the `content_type` or `headers` arguments.
         host(str): A string to use for the hostname part of the fully
             qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
@@ -1026,6 +1054,11 @@ def simulate_delete(app, path, **kwargs) -> Result:
         query_string (str): A raw query string to include in the
             request (default: ``None``). If specified, overrides
             `params`.
+        content_type (str): The value to use for the Content-Type header in
+            the request. If specified, this value will take precedence over
+            any value set for the Content-Type header in the
+            `headers` keyword argument. The ``falcon`` module provides a number
+            of :ref:`constants for common media types <media_type_constants>`.
         headers (dict): Extra headers as a dict-like (Mapping) object, or an
             iterable yielding a series of two-member (*name*, *value*)
             iterables. Each pair of strings provides the name and value
@@ -1039,8 +1072,9 @@ def simulate_delete(app, path, **kwargs) -> Result:
             may be passed, in which case it will be used as-is.
         json(JSON serializable): A JSON document to serialize as the
             body of the request (default: ``None``). If specified,
-            overrides `body` and the Content-Type header in
-            `headers`.
+            overrides `body` and sets the Content-Type header to
+            ``'application/json'``, overriding any value specified by either
+            the `content_type` or `headers` arguments.
         host(str): A string to use for the hostname part of the fully
             qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
