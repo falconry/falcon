@@ -223,4 +223,4 @@ class OptionalRepresentation:
     """
     @property
     def has_representation(self):
-        return super(OptionalRepresentation, self).description is not None
+        return super().description is not None
