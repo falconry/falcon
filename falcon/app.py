@@ -422,9 +422,19 @@ class App:
         template for a given route, the request is then passed on to the
         associated resource for processing.
 
-        If no route matches the request, control then passes to a
-        default responder that simply raises an instance of
-        :class:`~.HTTPNotFound`.
+        Note:
+
+            If no route matches the request, control then passes to a default
+            responder that simply raises an instance of
+            :class:`~.HTTPRouteNotFound`. By default, this error will be
+            rendered as a 404 response, but this behavior can be modified by
+            adding a custom error handler (see also
+            :ref:`this FAQ topic <faq_override_404_500_handlers>`).
+
+            On the other hand, if a route is matched but the resource does not
+            implement a responder for the requested HTTP method, the framework
+            invokes a default responder that raises an instance of
+            :class:`~.HTTPMethodNotAllowed`.
 
         This method delegates to the configured router's ``add_route()``
         method. To override the default behavior, pass a custom router
