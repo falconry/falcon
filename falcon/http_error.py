@@ -79,7 +79,7 @@ class HTTPError(Exception):
             returns ``True``, but child classes may override it
             in order to return ``False`` when an empty HTTP body is desired.
 
-            (See also: :class:`falcon.http_error.NoRepresentation`)
+            (See also: :class:`falcon.http_error.OptionalRepresentation`)
 
             Note:
                 A custom error serializer
