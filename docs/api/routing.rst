@@ -8,11 +8,6 @@ templates. If the path requested by the client matches the template for
 a given route, the request is then passed on to the associated resource
 for processing.
 
-If no route matches the request, control then passes to a default
-responder that simply raises an instance of :class:`~.HTTPNotFound`.
-Normally this will result in sending a 404 response back to the
-client.
-
 Here's a quick example to show how all the pieces fit together:
 
 .. code:: python
@@ -45,6 +40,17 @@ Here's a quick example to show how all the pieces fit together:
     images = ImagesResource()
     app.add_route('/images', images)
 
+If no route matches the request, control then passes to a default
+responder that simply raises an instance of
+:class:`~.HTTPRouteNotFound`. By default, this error will be
+rendered as a 404 response, but this behavior can be modified by
+adding a custom error handler (see also
+:ref:`this FAQ topic <faq_override_404_500_handlers>`).
+
+On the other hand, if a route is matched but the resource does not
+implement a responder for the requested HTTP method, the framework
+invokes a default responder that raises an instance of
+:class:`~.HTTPMethodNotAllowed`.
 
 Default Router
 --------------

@@ -87,20 +87,107 @@ Mixins
 Predefined Errors
 -----------------
 
-.. automodule:: falcon
-    :noindex:
-    :members: HTTPBadRequest,
-        HTTPInvalidHeader, HTTPMissingHeader,
-        HTTPInvalidParam, HTTPMissingParam,
-        HTTPUnauthorized, HTTPForbidden, HTTPNotFound, HTTPMethodNotAllowed,
-        HTTPNotAcceptable, HTTPConflict, HTTPGone, HTTPLengthRequired,
-        HTTPPreconditionFailed, HTTPPayloadTooLarge, HTTPUriTooLong,
-        HTTPUnsupportedMediaType, HTTPRangeNotSatisfiable,
-        HTTPUnprocessableEntity, HTTPLocked, HTTPFailedDependency,
-        HTTPPreconditionRequired, HTTPTooManyRequests,
-        HTTPRequestHeaderFieldsTooLarge,
-        HTTPUnavailableForLegalReasons,
-        HTTPInternalServerError, HTTPNotImplemented, HTTPBadGateway,
-        HTTPServiceUnavailable, HTTPGatewayTimeout, HTTPVersionNotSupported,
-        HTTPInsufficientStorage, HTTPLoopDetected,
-        HTTPNetworkAuthenticationRequired
+.. autoclass:: falcon.HTTPBadRequest
+    :members:
+
+.. autoclass:: falcon.HTTPInvalidHeader
+    :members:
+
+.. autoclass:: falcon.HTTPMissingHeader
+    :members:
+
+.. autoclass:: falcon.HTTPInvalidParam
+    :members:
+
+.. autoclass:: falcon.HTTPMissingParam
+    :members:
+
+.. autoclass:: falcon.HTTPUnauthorized
+    :members:
+
+.. autoclass:: falcon.HTTPForbidden
+    :members:
+
+.. autoclass:: falcon.HTTPNotFound
+    :members:
+
+.. autoclass:: falcon.HTTPRouteNotFound
+    :members:
+
+.. autoclass:: falcon.HTTPMethodNotAllowed
+    :members:
+
+.. autoclass:: falcon.HTTPNotAcceptable
+    :members:
+
+.. autoclass:: falcon.HTTPConflict
+    :members:
+
+.. autoclass:: falcon.HTTPGone
+    :members:
+
+.. autoclass:: falcon.HTTPLengthRequired
+    :members:
+
+.. autoclass:: falcon.HTTPPreconditionFailed
+    :members:
+
+.. autoclass:: falcon.HTTPPayloadTooLarge
+    :members:
+
+.. autoclass:: falcon.HTTPUriTooLong
+    :members:
+
+.. autoclass:: falcon.HTTPUnsupportedMediaType
+    :members:
+
+.. autoclass:: falcon.HTTPRangeNotSatisfiable
+    :members:
+
+.. autoclass:: falcon.HTTPUnprocessableEntity
+    :members:
+
+.. autoclass:: falcon.HTTPLocked
+    :members:
+
+.. autoclass:: falcon.HTTPFailedDependency
+    :members:
+
+.. autoclass:: falcon.HTTPPreconditionRequired
+    :members:
+
+.. autoclass:: falcon.HTTPTooManyRequests
+    :members:
+
+.. autoclass:: falcon.HTTPRequestHeaderFieldsTooLarge
+    :members:
+
+.. autoclass:: falcon.HTTPUnavailableForLegalReasons
+    :members:
+
+.. autoclass:: falcon.HTTPInternalServerError
+    :members:
+
+.. autoclass:: falcon.HTTPNotImplemented
+    :members:
+
+.. autoclass:: falcon.HTTPBadGateway
+    :members:
+
+.. autoclass:: falcon.HTTPServiceUnavailable
+    :members:
+
+.. autoclass:: falcon.HTTPGatewayTimeout
+    :members:
+
+.. autoclass:: falcon.HTTPVersionNotSupported
+    :members:
+
+.. autoclass:: falcon.HTTPInsufficientStorage
+    :members:
+
+.. autoclass:: falcon.HTTPLoopDetected
+    :members:
+
+.. autoclass:: falcon.HTTPNetworkAuthenticationRequired
+    :members:

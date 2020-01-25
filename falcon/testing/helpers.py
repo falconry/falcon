@@ -25,6 +25,7 @@ directly from the `testing` package::
 
 import asyncio
 import cgi
+from collections import defaultdict
 import contextlib
 import functools
 import io
@@ -84,6 +85,10 @@ class ASGIRequestEventEmitter:
             a single http.request event (default 4096).
     """
 
+    # TODO(kgriffs): If this pattern later becomes useful elsewhere,
+    #   factor out into a standalone helper class.
+    _branch_decider = defaultdict(bool)
+
     def __init__(self, body=None, disconnect_at=None, chunk_size=4096):
         if body is None:
             body = b''
@@ -129,14 +134,14 @@ class ASGIRequestEventEmitter:
         # NOTE(kgriffs): Part of the time just return an
         #   empty chunk to make sure the app handles that
         #   correctly.
-        if flip_coin():
+        if self._toggle_branch('return_empty_chunk'):
             event['more_body'] = True
 
             # NOTE(kgriffs): Since ASGI specifies that
-            #   'body' is optional, we randomaly choose whether
+            #   'body' is optional, we toggle whether
             #   or not to explicitly set it to b'' to ensure
             #   the app handles both correctly.
-            if flip_coin():
+            if self._toggle_branch('explicit_empty_body_1'):
                 event['body'] = b''
 
             return event
@@ -146,25 +151,29 @@ class ASGIRequestEventEmitter:
 
         if chunk:
             event['body'] = chunk
-        elif flip_coin():
+        elif self._toggle_branch('explicit_empty_body_2'):
             # NOTE(kgriffs): Since ASGI specifies that
-            #   'body' is optional, we randomaly choose whether
+            #   'body' is optional, we toggle whether
             #   or not to explicitly set it to b'' to ensure
             #   the app handles both correctly.
             event['body'] = b''
 
         if self._body:
             event['more_body'] = True
-        elif flip_coin():
+        elif self._toggle_branch('set_more_body_false'):
             # NOTE(kgriffs): The ASGI spec allows leaving off
             #   the 'more_body' key when it would be set to
-            #   False, so randomly choose one of the approaches
+            #   False, so toggle one of the approaches
             #   to make sure the app handles both cases.
             event['more_body'] = False
 
         return event
 
     __call__ = emit
+
+    def _toggle_branch(self, name):
+        self._branch_decider[name] = not self._branch_decider[name]
+        return self._branch_decider[name]
 
 
 class ASGIResponseEventCollector:
@@ -288,10 +297,6 @@ def get_encoding_from_headers(headers):
         return 'ISO-8859-1'
 
     return None
-
-
-def flip_coin() -> int:
-    return random.randint(0, 1) == 0
 
 
 def get_unused_port() -> int:
