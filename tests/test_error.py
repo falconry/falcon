@@ -106,6 +106,42 @@ def test_with_title_desc_and_headers(err):
     assert e.value.headers['foo'] == 'bar'
 
 
+@pytest.mark.parametrize('err', [
+    falcon.HTTPBadRequest,
+    falcon.HTTPUnauthorized,
+    falcon.HTTPForbidden,
+    falcon.HTTPNotFound,
+    errors.HTTPRouteNotFound,
+    falcon.HTTPNotAcceptable,
+    falcon.HTTPConflict,
+    falcon.HTTPGone,
+    falcon.HTTPLengthRequired,
+    falcon.HTTPPreconditionFailed,
+    falcon.HTTPPayloadTooLarge,
+    falcon.HTTPUriTooLong,
+    falcon.HTTPUnsupportedMediaType,
+    falcon.HTTPUnprocessableEntity,
+    falcon.HTTPLocked,
+    falcon.HTTPFailedDependency,
+    falcon.HTTPPreconditionRequired,
+    falcon.HTTPTooManyRequests,
+    falcon.HTTPRequestHeaderFieldsTooLarge,
+    falcon.HTTPUnavailableForLegalReasons,
+    falcon.HTTPInternalServerError,
+    falcon.HTTPNotImplemented,
+    falcon.HTTPBadGateway,
+    falcon.HTTPServiceUnavailable,
+    falcon.HTTPGatewayTimeout,
+    falcon.HTTPVersionNotSupported,
+    falcon.HTTPInsufficientStorage,
+    falcon.HTTPLoopDetected,
+    falcon.HTTPNetworkAuthenticationRequired,
+])
+def test_kw_only(err):
+    with pytest.raises(TypeError, match="takes 1 positional argument"):
+        raise err('foo', 'bar')
+
+
 @pytest.mark.parametrize('err, args', (
     (falcon.HTTPMethodNotAllowed, (['GET'], )),
     (falcon.HTTPRangeNotSatisfiable, (11,)),
@@ -121,6 +157,15 @@ def test_with_title_desc_and_headers_args(err, args):
     assert e.value.title == title
     assert e.value.description == desc
     assert e.value.headers['foo'] == 'bar'
+
+
+@pytest.mark.parametrize('err, args', (
+    (falcon.HTTPMethodNotAllowed, (['GET'], )),
+    (falcon.HTTPRangeNotSatisfiable, (11,)),
+))
+def test_args_kw_only(err, args):
+    with pytest.raises(TypeError, match='takes . positional arguments'):
+        raise err(*args, 'foo', 'bar')
 
 
 @pytest.mark.parametrize('err', [
