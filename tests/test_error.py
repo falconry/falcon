@@ -138,7 +138,7 @@ def test_with_title_desc_and_headers(err):
     falcon.HTTPNetworkAuthenticationRequired,
 ])
 def test_kw_only(err):
-    with pytest.raises(TypeError, match="takes 1 positional argument"):
+    with pytest.raises(TypeError, match="positional argument"):
         raise err('foo', 'bar')
 
 
@@ -164,7 +164,7 @@ def test_with_title_desc_and_headers_args(err, args):
     (falcon.HTTPRangeNotSatisfiable, (11,)),
 ))
 def test_args_kw_only(err, args):
-    with pytest.raises(TypeError, match='takes . positional arguments'):
+    with pytest.raises(TypeError, match='positional argument'):
         raise err(*args, 'foo', 'bar')
 
 
