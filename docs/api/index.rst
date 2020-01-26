@@ -1,5 +1,5 @@
-Classes and Functions
-=====================
+Framework Reference
+===================
 
 .. toctree::
    :maxdepth: 2

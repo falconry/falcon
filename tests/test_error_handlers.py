@@ -188,7 +188,7 @@ class TestErrorHandler:
         with pytest.raises(TypeError):
             client.app.add_error_handler(exceptions, capture_error)
 
-    def test_handler_signature_shim(self, client):
+    def test_handler_signature_shim(self):
         def check_args(ex, req, resp):
             assert isinstance(ex, BaseException)
             assert isinstance(req, falcon.Request)
@@ -203,6 +203,10 @@ class TestErrorHandler:
         def legacy_handler3(err, rq, rs, prms):
             check_args(err, rq, rs)
 
+        app = create_app(asgi=False)
+        app.add_route('/', ErroredClassResource())
+        client = testing.TestClient(app)
+
         client.app.add_error_handler(Exception, legacy_handler1)
         client.app.add_error_handler(CustomBaseException, legacy_handler2)
         client.app.add_error_handler(CustomException, legacy_handler3)
@@ -210,22 +214,6 @@ class TestErrorHandler:
         client.simulate_delete()
         client.simulate_get()
         client.simulate_head()
-
-    def test_handler_signature_shim_asgi(self):
-        def check_args(ex, req, resp):
-            assert isinstance(ex, BaseException)
-            assert isinstance(req, falcon.Request)
-            assert isinstance(resp, falcon.Response)
-
-        async def legacy_handler(err, rq, rs, prms):
-            check_args(err, rq, rs)
-
-        app = create_app(True)
-        app.add_route('/', ErroredClassResource())
-        app.add_error_handler(Exception, legacy_handler)
-        client = testing.TestClient(app)
-
-        client.simulate_get()
 
     def test_handler_must_be_coroutine_for_asgi(self):
         async def legacy_handler(err, rq, rs, prms):
@@ -236,3 +224,26 @@ class TestErrorHandler:
         with disable_asgi_non_coroutine_wrapping():
             with pytest.raises(ValueError):
                 app.add_error_handler(Exception, capture_error)
+
+    def test_catch_http_no_route_error(self, asgi):
+        class Resource:
+            def on_get(self, req, resp):
+                raise falcon.HTTPNotFound()
+
+        def capture_error(req, resp, ex, params):
+            resp.body = ex.__class__.__name__
+            raise ex
+
+        app = create_app(asgi)
+        app.add_route('/', Resource())
+        app.add_error_handler(falcon.HTTPError, capture_error)
+
+        client = testing.TestClient(app)
+
+        result = client.simulate_get('/')
+        assert result.status_code == 404
+        assert result.text == 'HTTPNotFound'
+
+        result = client.simulate_get('/404')
+        assert result.status_code == 404
+        assert result.text == 'HTTPRouteNotFound'

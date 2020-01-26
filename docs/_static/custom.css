@@ -164,6 +164,13 @@ pre {
     font-size: smaller;
 }
 
+
+/* NOTE(kgriffs): Make sure that characters in plain text blocks line up correctly. */
+.highlight-none .highlight pre {
+    line-height: 1em;
+    font-family: monospace;
+}
+
 /* Fix drifting to the left in some parameters lists. */
 .field-body li .highlight pre {
     float: right;
@@ -253,4 +260,10 @@ dl.field-list.simple dd ul li p:not(:first-child) {
 
 dl.attribute > dd > p {
     margin: 0;
+}
+
+/* NOTE(kgriffs): Fix spacing issue with embedded Note blocks, and make
+     things generally more readable by spacing the paragraphs. */
+.field-list p {
+    margin-bottom: 1em;
 }

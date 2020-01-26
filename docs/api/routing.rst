@@ -8,11 +8,6 @@ templates. If the path requested by the client matches the template for
 a given route, the request is then passed on to the associated resource
 for processing.
 
-If no route matches the request, control then passes to a default
-responder that simply raises an instance of :class:`~.HTTPNotFound`.
-Normally this will result in sending a 404 response back to the
-client.
-
 Here's a quick example to show how all the pieces fit together:
 
 .. code:: python
@@ -45,6 +40,17 @@ Here's a quick example to show how all the pieces fit together:
     images = ImagesResource()
     app.add_route('/images', images)
 
+If no route matches the request, control then passes to a default
+responder that simply raises an instance of
+:class:`~.HTTPRouteNotFound`. By default, this error will be
+rendered as a 404 response, but this behavior can be modified by
+adding a custom error handler (see also
+:ref:`this FAQ topic <faq_override_404_500_handlers>`).
+
+On the other hand, if a route is matched but the resource does not
+implement a responder for the requested HTTP method, the framework
+invokes a default responder that raises an instance of
+:class:`~.HTTPMethodNotAllowed`.
 
 Default Router
 --------------
@@ -52,9 +58,9 @@ Default Router
 Falcon's default routing engine is based on a decision tree that is
 first compiled into Python code, and then evaluated by the runtime.
 
-The :meth:`~.App.add_route` method is used to associate a URI template
-with a resource. Falcon then maps incoming requests to resources
-based on these templates.
+The :meth:`falcon.App.add_route` and :meth:`falcon.asgi.App.add_route` methods
+are used to associate a URI template with a resource. Falcon then maps incoming
+requests to resources based on these templates.
 
 Falcon's default router uses Python classes to represent resources. In
 practice, these classes act as controllers in your application. They
@@ -63,7 +69,7 @@ compose a response back to the client based on the results of those
 actions. (See also:
 :ref:`Tutorial: Creating Resources <tutorial_resources>`)
 
-.. code::
+.. code:: none
 
                ┌────────────┐
     request  → │            │
@@ -109,8 +115,8 @@ data to hooks and middleware methods.
     object, a responder may raise an instance of either
     :class:`~.HTTPError` or :class:`~.HTTPStatus`. Falcon will
     convert these exceptions to appropriate HTTP responses.
-    Alternatively, you can handle them youself via
-    :meth:`~.App.add_error_handler`.
+    Alternatively, you can handle them yourself via
+    :meth:`~.falcon.App.add_error_handler`.
 
 In addition to the standard `req` and `resp` parameters, if the
 route's template contains field expressions, any responder that

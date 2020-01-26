@@ -436,22 +436,23 @@ around:
     def on_post(self, req, resp):
         pass
 
+.. _faq_override_404_500_handlers:
 
 How can I write a custom handler for 404 and 500 pages in falcon?
 ------------------------------------------------------------------
 When a route can not be found for an incoming request, Falcon uses a default
-responder that simply raises an instance of :attr:`falcon.HTTPNotFound`. You
-can use :meth:`falcon.App.add_error_handler` to register a custom error handler
-for this exception type. Alternatively, you may be able to configure your web
-server to transform the response for you (e.g., using Nginx's ``error_page``
-directive).
+responder that simply raises an instance of :class:`~.HTTPRouteNotFound`, which
+the framework will in turn render as a 404 response. You can use
+:meth:`falcon.App.add_error_handler` to override the default handler for this
+exception type (or for its parent type, :class:`~.HTTPNotFound`).
+Alternatively, you may be able to configure your web server to transform the
+response for you (e.g., using nginx's ``error_page`` directive).
 
 By default, non-system-exiting exceptions that do not inherit from
 :class:`~.HTTPError` or :class:`~.HTTPStatus` are handled by Falcon with a
 plain HTTP 500 error. To provide your own 500 logic, you can add a custom error
-handler for Python's base :class:`Exception` type, though be aware that doing
-so will also override the default handlers for :class:`~.HTTPError` and
-:class:`~.HTTPStatus`.
+handler for Python's base :class:`Exception` type. This will not affect the
+default handlers for :class:`~.HTTPError` and :class:`~.HTTPStatus`.
 
 See :ref:`errors` and the :meth:`falcon.API.add_error_handler` docs for more
 details.
@@ -904,3 +905,39 @@ the tutorial in the docs provides an excellent introduction to
 `testing Falcon apps with pytest <http://falcon.readthedocs.io/en/stable/user/tutorial.html#testing-your-application>`_.
 
 (See also: `Testing <http://falcon.readthedocs.io/en/stable/api/testing.html>`_)
+
+How to set cookies in simulate request for testing?
+---------------------------------------------------
+
+This can be done by setting ``headers={'Cookie': 'xxx=yyy'}`` in
+``simulate_request``. Here is an example:
+
+.. code:: python
+
+    import falcon
+    import falcon.testing
+    import pytest
+
+
+    class TastyCookies:
+
+        def on_get(self, req, resp):
+            resp.media = {'cookies': req.cookies}
+
+
+    @pytest.fixture
+    def client():
+        app = falcon.App()
+        app.add_route('/cookies', TastyCookies())
+
+        return falcon.testing.TestClient(app)
+
+
+    def test_cookies(client):
+        resp = client.simulate_get('/cookies', headers={'Cookie': 'xxx=yyy'})
+
+        assert resp.json == {'cookies': {'xxx': 'yyy'}}
+
+To include multiple values, simply use ``"; "`` to separate each name-value
+pair. For example, if you were to pass ``{'Cookie': 'xxx=yyy; hello=world'}``,
+you would get ``{'cookies': {'xxx': 'yyy', 'hello': 'world'}}``.

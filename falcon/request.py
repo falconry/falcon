@@ -1804,8 +1804,9 @@ class Request:
 class RequestOptions:
     """Defines a set of configurable request options.
 
-    An instance of this class is exposed via :any:`App.req_options` for
-    configuring certain :py:class:`~.Request` behaviors.
+    An instance of this class is exposed via :attr:`falcon.App.req_options` and
+    :attr:`falcon.asgi.App.req_options` for configuring certain
+    :py:class:`~.Request` behaviors.
 
     Attributes:
         keep_blank_qs_values (bool): Set to ``False`` to ignore query string
@@ -1866,11 +1867,13 @@ class RequestOptions:
             certain cases, such as when working with authentication
             schemes that employ URL-based signatures.
 
-        default_media_type (str): The default media-type to use when
-            deserializing a response. This value is normally set to the media
-            type provided when a :class:`falcon.App` is initialized; however,
-            if created independently, this will default to the
-            ``DEFAULT_MEDIA_TYPE`` specified by Falcon.
+        default_media_type (str): The default media-type used to
+            deserialize a request body, when the Content-Type header is
+            missing or ambiguous. This value is normally
+            set to the media type provided to the :class:`falcon.App` or
+            :class:`falcon.asgi.App` initializer; however, if created
+            independently, this will default to
+            :attr:`falcon.DEFAULT_MEDIA_TYPE`.
 
         media_handlers (Handlers): A dict-like object that allows you to
             configure the media-types that you would like to handle.

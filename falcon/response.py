@@ -646,22 +646,24 @@ class Response:
             :meth:`~.append_header` or :meth:`~.set_cookie`.
 
         Args:
-            headers (dict or list): A dictionary of header names and values
-                to set, or a ``list`` of (*name*, *value*) tuples. Both
-                *name* and *value* must be of type ``str`` and
+            headers (Iterable[[str, str]]): An iterable of ``[name, value]`` two-member
+                iterables, or a dict-like object that implements an ``items()`` method.
+                Both *name* and *value* must be of type ``str`` and
                 contain only US-ASCII characters.
 
                 Note:
-                    Falcon can process a list of tuples slightly faster
+                    Falcon can process an iterable of tuples slightly faster
                     than a dict.
 
         Raises:
-            ValueError: `headers` was not a ``dict`` or ``list`` of ``tuple``.
-
+            ValueError: `headers` was not a ``dict`` or ``list`` of ``tuple``
+                         or ``Iterable[[str, str]]``.
         """
 
-        if isinstance(headers, dict):
-            headers = headers.items()
+        header_items = getattr(headers, 'items', None)
+
+        if callable(header_items):
+            headers = header_items()
 
         # NOTE(kgriffs): We can't use dict.update because we have to
         # normalize the header names.
@@ -1028,8 +1030,9 @@ class Response:
 class ResponseOptions:
     """Defines a set of configurable response options.
 
-    An instance of this class is exposed via :any:`App.resp_options` for
-    configuring certain :py:class:`~.Response` behaviors.
+    An instance of this class is exposed via :attr:`falcon.App.resp_options`
+    and :attr:`falcon.asgi.App.resp_options` for configuring certain
+    :py:class:`~.Response` behaviors.
 
     Attributes:
         secure_cookies_by_default (bool): Set to ``False`` in development
@@ -1039,10 +1042,11 @@ class ResponseOptions:
             be overridden via `set_cookie()`'s `secure` kwarg.
 
         default_media_type (str): The default Internet media type (RFC 2046) to
-            use when deserializing a response. This value is normally set to the
+            use when rendering a response, when the Content-Type header
+            is not set explicitly. This value is normally set to the
             media type provided when a :class:`falcon.App` is initialized;
-            however, if created independently, this will default to the
-            ``DEFAULT_MEDIA_TYPE`` specified by Falcon.
+            however, if created independently, this will default to
+            :attr:`falcon.DEFAULT_MEDIA_TYPE`..
 
         media_handlers (Handlers): A dict-like object that allows you to
             configure the media-types that you would like to handle.
