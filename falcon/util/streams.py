@@ -15,82 +15,80 @@ class BufferedStream:
         self._buffer_pos = 0
         self._max_bytes_remaining = max_stream_len
 
-    def peek(self, amount=-1):
+    def peek(self, size=-1):
         # PERF(vytas) In Cython, bind types:
-        #   cdef Py_ssize_t read_amount
+        #   cdef Py_ssize_t read_size
 
-        amount = int(amount)
-        if amount < 0 or amount > self._chunk_size:
-            amount = self._chunk_size
+        if size < 0 or size > self._chunk_size:
+            size = self._chunk_size
 
-        if self._buffer_len - self._buffer_pos < amount:
-            read_amount = (self._chunk_size - self._buffer_len +
-                           self._buffer_pos)
-            if read_amount >= self._max_bytes_remaining:
-                read_amount = self._max_bytes_remaining
+        if self._buffer_len - self._buffer_pos < size:
+            read_size = self._chunk_size - self._buffer_len + self._buffer_pos
+            if read_size >= self._max_bytes_remaining:
+                read_size = self._max_bytes_remaining
 
             if self._buffer_pos == 0:
-                self._buffer += self._read_func(read_amount)
+                self._buffer += self._read_func(read_size)
                 self._buffer_len = len(self._buffer)
             else:
                 self._buffer = (self._buffer[self._buffer_pos:] +
-                                self._read_func(read_amount))
+                                self._read_func(read_size))
                 self._buffer_len = len(self._buffer)
                 self._buffer_pos = 0
-            self._max_bytes_remaining -= read_amount
+            self._max_bytes_remaining -= read_size
 
-        return self._buffer[self._buffer_pos:self._buffer_pos + amount]
+        return self._buffer[self._buffer_pos:self._buffer_pos + size]
 
-    def _normalize_size(self, amount):
+    def _normalize_size(self, size):
         # PERF(vytas) In Cython, bind types:
         #   cdef Py_ssize_t result
-        #   cdef Py_ssize_t max_amount
+        #   cdef Py_ssize_t max_size
 
-        max_amount = (self._max_bytes_remaining + self._buffer_len -
-                      self._buffer_pos)
+        max_size = (self._max_bytes_remaining + self._buffer_len -
+                    self._buffer_pos)
 
-        if amount is None or amount == -1 or amount > max_amount:
-            return max_amount
-        return amount
+        if size is None or size == -1 or size > max_size:
+            return max_size
+        return size
 
-    def read(self, amount=-1):
-        return self._read(self._normalize_size(amount))
+    def read(self, size=-1):
+        return self._read(self._normalize_size(size))
 
-    def _read(self, amount):
+    def _read(self, size):
         # PERF(vytas) In Cython, bind types:
-        #   cdef Py_ssize_t read_amount
+        #   cdef Py_ssize_t read_size
         if self._buffer_len == 0:
-            self._max_bytes_remaining -= amount
-            return self._read_func(amount)
+            self._max_bytes_remaining -= size
+            return self._read_func(size)
 
-        if amount == self._buffer_len and self._buffer_pos == 0:
+        if size == self._buffer_len and self._buffer_pos == 0:
             result = self._buffer
             self._buffer_len = 0
             self._buffer = b''
             return result
 
-        if amount < self._buffer_len - self._buffer_pos:
-            self._buffer_pos += amount
-            return self._buffer[self._buffer_pos - amount:self._buffer_pos]
+        if size < self._buffer_len - self._buffer_pos:
+            self._buffer_pos += size
+            return self._buffer[self._buffer_pos - size:self._buffer_pos]
 
-        # NOTE(vytas): if amount > self._buffer_len - self._buffer_pos
-        read_amount = amount - self._buffer_len + self._buffer_pos
+        # NOTE(vytas): if size > self._buffer_len - self._buffer_pos
+        read_size = size - self._buffer_len + self._buffer_pos
         result = self._buffer[self._buffer_pos:]
         self._buffer_len = 0
         self._buffer_pos = 0
         self._buffer = b''
-        self._max_bytes_remaining -= read_amount
-        return result + self._read_func(read_amount)
+        self._max_bytes_remaining -= read_size
+        return result + self._read_func(read_size)
 
-    def read_until(self, delimiter, amount=-1, missing_delimiter_error=None):
+    def read_until(self, delimiter, size=-1, missing_delimiter_error=None):
         # PERF(vytas) In Cython, bind types:
-        #   cdef Py_ssize_t amount
+        #   cdef Py_ssize_t size
 
-        return self._read_until(delimiter, self._normalize_size(amount),
+        return self._read_until(delimiter, self._normalize_size(size),
                                 missing_delimiter_error)
 
     def _finalize_read_until(
-            self, amount, backlog, have_bytes, delimiter=None,
+            self, size, backlog, have_bytes, delimiter=None,
             delimiter_pos=-1, next_chunk=None, next_chunk_len=0,
             missing_delimiter_error=None):
 
@@ -101,13 +99,13 @@ class BufferedStream:
                     'unexpected EOF without delimiter')
 
         if delimiter_pos >= 0:
-            amount = min(amount, have_bytes + delimiter_pos - self._buffer_pos)
+            size = min(size, have_bytes + delimiter_pos - self._buffer_pos)
 
         if have_bytes == 0:
             # PERF(vytas) Do not join bytes unless needed.
-            ret_value = self._read(amount)
+            ret_value = self._read(size)
         else:
-            backlog.append(self._read(amount - have_bytes))
+            backlog.append(self._read(size - have_bytes))
             ret_value = b''.join(backlog)
 
         if next_chunk_len > 0:
@@ -122,13 +120,11 @@ class BufferedStream:
 
         return ret_value
 
-    def _read_until(self, delimiter, amount, missing_delimiter_error=None):
+    def _read_until(self, delimiter, size, missing_delimiter_error=None):
         # PERF(vytas) In Cython, bind types:
-        #   cdef _read_until(...)
-        #   cdef Py_ssize_t amount
-        #   cdef result
+        #   cdef list result = []
         #   cdef Py_ssize_t have_bytes = 0
-        #   cdef Py_ssize_t delimiter_len_1
+        #   cdef Py_ssize_t delimiter_len_1 = len(delimiter) - 1
         #   cdef Py_ssize_t delimiter_pos = -1
         #   cdef Py_ssize_t offset
 
@@ -145,31 +141,31 @@ class BufferedStream:
                 delimiter_pos = self._buffer.find(delimiter, self._buffer_pos)
                 if delimiter_pos >= 0:
                     return self._finalize_read_until(
-                        amount, result, have_bytes,
+                        size, result, have_bytes,
                         delimiter_pos=delimiter_pos)
 
-            if amount < (have_bytes + self._buffer_len - self._buffer_pos -
-                         delimiter_len_1):
+            if size < (have_bytes + self._buffer_len - self._buffer_pos -
+                       delimiter_len_1):
                 # NOTE(vytas) We now have enough data in the buffer to
                 # return to the caller.
-                return self._finalize_read_until(amount, result, have_bytes)
+                return self._finalize_read_until(size, result, have_bytes)
 
-            read_amount = self._chunk_size
-            if read_amount > self._max_bytes_remaining:
-                read_amount = self._max_bytes_remaining
-            if read_amount == 0:
+            read_size = self._chunk_size
+            if read_size > self._max_bytes_remaining:
+                read_size = self._max_bytes_remaining
+            if read_size == 0:
                 return self._finalize_read_until(
-                    amount, result, have_bytes, delimiter, delimiter_pos,
+                    size, result, have_bytes, delimiter, delimiter_pos,
                     missing_delimiter_error=missing_delimiter_error)
 
-            next_chunk = self._read_func(read_amount)
+            next_chunk = self._read_func(read_size)
             next_chunk_len = len(next_chunk)
-            self._max_bytes_remaining -= read_amount
+            self._max_bytes_remaining -= read_size
             if next_chunk_len < self._chunk_size:
                 self._buffer_len += next_chunk_len
                 self._buffer += next_chunk
                 return self._finalize_read_until(
-                    amount, result, have_bytes, delimiter,
+                    size, result, have_bytes, delimiter,
                     missing_delimiter_error=missing_delimiter_error)
 
             # NOTE(vytas) The buffer was empty before, skip straight to the
@@ -190,15 +186,15 @@ class BufferedStream:
                     self._buffer_len += next_chunk_len
                     self._buffer += next_chunk
                     return self._finalize_read_until(
-                        amount, result, have_bytes, delimiter,
+                        size, result, have_bytes, delimiter,
                         delimiter_pos + offset)
 
-            if have_bytes + self._buffer_len - self._buffer_pos >= amount:
+            if have_bytes + self._buffer_len - self._buffer_pos >= size:
                 # NOTE(vytas): we have now verified that all bytes currently in
                 #   the buffer are delimiter-free, including the border of the
                 #   upcoming chunk
                 return self._finalize_read_until(
-                    amount, result, have_bytes, next_chunk=next_chunk,
+                    size, result, have_bytes, next_chunk=next_chunk,
                     next_chunk_len=next_chunk_len)
 
             have_bytes += self._buffer_len - self._buffer_pos
@@ -245,6 +241,7 @@ class BufferedStream:
     def readlines(self, hint=-1):
         # PERF(vytas) In Cython, bind types:
         #   cdef Py_ssize_t read
+        #   cdef list result = []
         read = 0
         result = []
 
