@@ -193,30 +193,6 @@ def test_with_retry_after_and_headers(err):
     assert e.value.headers['foo'] == 'bar'
 
 
-def test_http_unauthorized_no_title_and_desc_and_challenges_and_headers():
-    try:
-        raise falcon.HTTPUnauthorized()
-    except falcon.HTTPUnauthorized as e:
-        assert status.HTTP_401 == e.title
-        assert e.description is None
-        assert 'WWW-Authenticate' not in e.headers
-
-
-def test_http_unauthorized_with_title_and_desc_and_challenges_and_headers():
-    try:
-        raise falcon.HTTPUnauthorized(
-            title='Test',
-            description='Testdescription',
-            challenges=['Testch'],
-            headers={'foo': 'bar'}
-        )
-    except falcon.HTTPUnauthorized as e:
-        assert 'Test' == e.title
-        assert 'Testdescription' == e.description
-        assert 'Testch' == e.headers['WWW-Authenticate']
-        assert 'bar' == e.headers['foo']
-
-
 def test_http_error_repr():
     error = falcon.HTTPBadRequest()
     _repr = '<%s: %s>' % (error.__class__.__name__, error.status)
@@ -237,3 +213,37 @@ def test_custom_400(err, args, title, desc):
 
     assert e.value.title == title
     assert e.value.description == desc
+
+
+@pytest.mark.parametrize('err, header_name, kw_name, args, res, kw_required', (
+    (falcon.HTTPUnauthorized, 'WWW-Authenticate', 'challenges', ('a', 'b'), 'a, b', False),
+    (falcon.HTTPMethodNotAllowed, 'Allow', 'allowed_methods', ('a', 'b'), 'a, b', True),
+    (falcon.HTTPPayloadTooLarge, 'Retry-After', 'retry_after', 123, '123', False),
+    (falcon.HTTPRangeNotSatisfiable, 'Content-Range', 'resource_length', 123, 'bytes */123', True),
+    (falcon.HTTPTooManyRequests, 'Retry-After', 'retry_after', 123, '123', False),
+    (falcon.HTTPServiceUnavailable, 'Retry-After', 'retry_after', 123, '123', False),
+))
+class TestErrorsWithHeadersKW:
+    def test_no_header(self, err, header_name, kw_name, args, res, kw_required):
+        if not kw_required:
+            value = err()
+
+            assert header_name not in value.headers
+
+    def test_other_header(self, err, header_name, kw_name, args, res, kw_required):
+        headers = {'foo bar': 'baz'}
+        kw = {kw_name: args}
+        value = err(**kw, headers=headers)
+
+        assert value.headers['foo bar'] == 'baz'
+        assert header_name in value.headers
+        assert value.headers[header_name] == res
+
+    def test_override_header(self, err, header_name, kw_name, args, res, kw_required):
+        headers = {'foo bar': 'baz', header_name: 'other'}
+        kw = {kw_name: args}
+        value = err(**kw, headers=headers)
+
+        assert value.headers['foo bar'] == 'baz'
+        assert header_name in value.headers
+        assert value.headers[header_name] == res

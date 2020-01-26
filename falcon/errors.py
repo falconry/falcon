@@ -940,10 +940,9 @@ class HTTPRangeNotSatisfiable(OptionalRepresentation, HTTPError):
     def __init__(
         self, resource_length, *, title=None, description=None, headers=None, **kwargs
     ):
-        # TODO
         if headers is None:
             headers = {}
-        headers.setdefault("Content-Range", "bytes */" + str(resource_length))
+        headers["Content-Range"] = "bytes */" + str(resource_length)
 
         super().__init__(
             status.HTTP_416,
