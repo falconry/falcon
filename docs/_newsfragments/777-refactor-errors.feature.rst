@@ -1,2 +1,2 @@
-Update to the error classes in ``falcon.errors`` to have ``title`` and
+The error classes in ``falcon.errors`` were updated to have the ``title`` and
 ``description`` keyword arguments
