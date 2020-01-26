@@ -104,7 +104,7 @@ class HTTPError(Exception):
         'code',
     )
 
-    def __init__(self, status, title=None, description=None, headers=None,
+    def __init__(self, status, *, title=None, description=None, headers=None,
                  href=None, href_text=None, code=None):
         self.status = status
 

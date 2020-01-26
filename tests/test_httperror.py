@@ -32,7 +32,7 @@ class FaultyResource:
         description = req.get_header('X-Error-Description')
         code = 10042
 
-        raise falcon.HTTPError(status, title, description, code=code)
+        raise falcon.HTTPError(status, title=title, description=description, code=code)
 
     def on_post(self, req, resp):
         raise falcon.HTTPForbidden(
@@ -43,8 +43,8 @@ class FaultyResource:
     def on_put(self, req, resp):
         raise falcon.HTTPError(
             falcon.HTTP_792,
-            'Internet crashed',
-            'Catastrophic weather event due to climate change.',
+            title='Internet crashed',
+            description='Catastrophic weather event due to climate change.',
             href='http://example.com/api/climate',
             href_text='Drill baby drill!',
             code=8733224)
@@ -62,8 +62,8 @@ class UnicodeFaultyResource:
         self.called = True
         raise falcon.HTTPError(
             falcon.HTTP_792,
-            'Internet \xe7rashed!',
-            '\xc7atastrophic weather event',
+            title='Internet \xe7rashed!',
+            description='\xc7atastrophic weather event',
             href='http://example.com/api/\xe7limate',
             href_text='Drill b\xe1by drill!')
 

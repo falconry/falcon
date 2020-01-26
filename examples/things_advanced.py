@@ -26,8 +26,8 @@ class StorageError(Exception):
                        'database. It worked on my box.')
 
         raise falcon.HTTPError(falcon.HTTP_725,
-                               'Database Error',
-                               description)
+                               title='Database Error',
+                               description=description)
 
 
 class SinkAdapter:
@@ -116,8 +116,8 @@ class JSONTranslator:
 
         except (ValueError, UnicodeDecodeError):
             raise falcon.HTTPError(falcon.HTTP_753,
-                                   'Malformed JSON',
-                                   'Could not decode the request body. The '
+                                   title='Malformed JSON',
+                                   description='Could not decode the request body. The '
                                    'JSON was incorrect or not encoded as '
                                    'UTF-8.')
 
