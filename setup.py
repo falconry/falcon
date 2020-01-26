@@ -1,5 +1,5 @@
 import glob
-import imp
+import importlib
 import io
 import os
 from os import path
@@ -10,7 +10,7 @@ from setuptools import Extension, find_packages, setup
 
 MYDIR = path.abspath(os.path.dirname(__file__))
 
-VERSION = imp.load_source('version', path.join('.', 'falcon', 'version.py'))
+VERSION = importlib.import_module('falcon.version')
 VERSION = VERSION.__version__
 
 REQUIRES = []
