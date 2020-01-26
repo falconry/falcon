@@ -66,7 +66,7 @@ def _validate(func, req_schema=None, resp_schema=None):
                 )
             except jsonschema.ValidationError as e:
                 raise falcon.HTTPBadRequest(
-                    'Request data failed validation',
+                    title='Request data failed validation',
                     description=e.message
                 )
 
@@ -80,7 +80,7 @@ def _validate(func, req_schema=None, resp_schema=None):
                 )
             except jsonschema.ValidationError:
                 raise falcon.HTTPInternalServerError(
-                    'Response data failed validation'
+                    title='Response data failed validation'
                     # Do not return 'e.message' in the response to
                     # prevent info about possible internal response
                     # formatting bugs from leaking out to users.
@@ -104,7 +104,7 @@ def _validate_async(func, req_schema=None, resp_schema=None):
                 )
             except jsonschema.ValidationError as e:
                 raise falcon.HTTPBadRequest(
-                    'Request data failed validation',
+                    title='Request data failed validation',
                     description=e.message
                 )
 
@@ -118,7 +118,7 @@ def _validate_async(func, req_schema=None, resp_schema=None):
                 )
             except jsonschema.ValidationError:
                 raise falcon.HTTPInternalServerError(
-                    'Response data failed validation'
+                    title='Response data failed validation'
                     # Do not return 'e.message' in the response to
                     # prevent info about possible internal response
                     # formatting bugs from leaking out to users.

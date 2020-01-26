@@ -27,8 +27,8 @@ package namespace::
             # ...
 
             raise falcon.HTTPBadRequest(
-                'TTL Out of Range',
-                'The message's TTL must be between 60 and 300 seconds, inclusive.'
+                title='TTL Out of Range',
+                description='The message's TTL must be between 60 and 300 seconds, inclusive.'
             )
 
             # ...

@@ -36,8 +36,8 @@ class FaultyResource:
 
     def on_post(self, req, resp):
         raise falcon.HTTPForbidden(
-            'Request denied',
-            'You do not have write permissions for this queue.',
+            title='Request denied',
+            description='You do not have write permissions for this queue.',
             href='http://example.com/api/rbac')
 
     def on_put(self, req, resp):
@@ -76,27 +76,27 @@ class MiscErrorsResource:
 
     def on_get(self, req, resp):
         if self.needs_title:
-            raise self._exception('Excuse Us', 'Something went boink!')
+            raise self._exception(title='Excuse Us', description='Something went boink!')
         else:
-            raise self._exception('Something went boink!')
+            raise self._exception(title='Something went boink!')
 
 
 class UnauthorizedResource:
 
     def on_get(self, req, resp):
-        raise falcon.HTTPUnauthorized('Authentication Required',
-                                      'Missing or invalid authorization.',
-                                      ['Basic realm="simple"'])
+        raise falcon.HTTPUnauthorized(title='Authentication Required',
+                                      description='Missing or invalid authorization.',
+                                      challenges=['Basic realm="simple"'])
 
     def on_post(self, req, resp):
-        raise falcon.HTTPUnauthorized('Authentication Required',
-                                      'Missing or invalid authorization.',
-                                      ['Newauth realm="apps"',
-                                       'Basic realm="simple"'])
+        raise falcon.HTTPUnauthorized(title='Authentication Required',
+                                      description='Missing or invalid authorization.',
+                                      challenges=['Newauth realm="apps"', 'Basic realm="simple"'])
 
     def on_put(self, req, resp):
-        raise falcon.HTTPUnauthorized('Authentication Required',
-                                      'Missing or invalid authorization.', [])
+        raise falcon.HTTPUnauthorized(title='Authentication Required',
+                                      description='Missing or invalid authorization.',
+                                      challenges=[])
 
 
 class NotFoundResource:
@@ -156,14 +156,14 @@ class MethodNotAllowedResourceWithBody:
 class LengthRequiredResource:
 
     def on_get(self, req, resp):
-        raise falcon.HTTPLengthRequired('title', 'description')
+        raise falcon.HTTPLengthRequired(title='title', description='description')
 
 
 class RequestEntityTooLongResource:
 
     def on_get(self, req, resp):
-        raise falcon.HTTPPayloadTooLarge('Request Rejected',
-                                         'Request Body Too Large')
+        raise falcon.HTTPPayloadTooLarge(title='Request Rejected',
+                                         description='Request Body Too Large')
 
 
 class TemporaryRequestEntityTooLongResource:
@@ -172,8 +172,8 @@ class TemporaryRequestEntityTooLongResource:
         self.retry_after = retry_after
 
     def on_get(self, req, resp):
-        raise falcon.HTTPPayloadTooLarge('Request Rejected',
-                                         'Request Body Too Large',
+        raise falcon.HTTPPayloadTooLarge(title='Request Rejected',
+                                         description='Request Body Too Large',
                                          retry_after=self.retry_after)
 
 
@@ -185,8 +185,8 @@ class UriTooLongResource:
         self.code = code
 
     def on_get(self, req, resp):
-        raise falcon.HTTPUriTooLong(self.title,
-                                    self.description,
+        raise falcon.HTTPUriTooLong(title=self.title,
+                                    description=self.description,
                                     code=self.code)
 
 
@@ -202,8 +202,8 @@ class TooManyRequestsResource:
         self.retry_after = retry_after
 
     def on_get(self, req, resp):
-        raise falcon.HTTPTooManyRequests('Too many requests',
-                                         '1 per minute',
+        raise falcon.HTTPTooManyRequests(title='Too many requests',
+                                         description='1 per minute',
                                          retry_after=self.retry_after)
 
 
@@ -213,8 +213,8 @@ class ServiceUnavailableResource:
         self.retry_after = retry_after
 
     def on_get(self, req, resp):
-        raise falcon.HTTPServiceUnavailable('Oops',
-                                            'Stand by...',
+        raise falcon.HTTPServiceUnavailable(title='Oops',
+                                            description='Stand by...',
                                             retry_after=self.retry_after)
 
 

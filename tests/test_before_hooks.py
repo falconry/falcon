@@ -12,7 +12,7 @@ from _util import create_app, create_resp, disable_asgi_non_coroutine_wrapping  
 
 def validate(req, resp, resource, params):
     assert resource
-    raise falcon.HTTPBadRequest('Invalid thing', 'Your thing was not '
+    raise falcon.HTTPBadRequest(title='Invalid thing', description='Your thing was not '
                                 'formatted correctly.')
 
 
@@ -22,7 +22,7 @@ def validate_param(req, resp, resource, params, param_name, maxval=100):
     limit = req.get_param_as_int(param_name)
     if limit and int(limit) > maxval:
         msg = '{0} must be <= {1}'.format(param_name, maxval)
-        raise falcon.HTTPBadRequest('Out of Range', msg)
+        raise falcon.HTTPBadRequest(title='Out of Range', description=msg)
 
 
 async def validate_param_async(*args, **kwargs):
@@ -451,7 +451,7 @@ class PiggybackingCollection:
     @falcon.before(header_hook)
     def on_delete_collection(self, req, resp, fish):
         if fish != 'wet':
-            raise falcon.HTTPUnavailableForLegalReasons('fish must be wet')
+            raise falcon.HTTPUnavailableForLegalReasons(title='fish must be wet')
         self._items = {}
         resp.status = falcon.HTTP_NO_CONTENT
 

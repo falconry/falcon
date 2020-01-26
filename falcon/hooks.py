@@ -40,8 +40,8 @@ def before(action, *args, **kwargs):
             try:
                 params['id'] = int(params['id'])
             except ValueError:
-                raise falcon.HTTPBadRequest('Invalid ID',
-                                            'ID was not valid.')
+                raise falcon.HTTPBadRequest(title='Invalid ID',
+                                            description='ID was not valid.')
 
             params['answer'] = 42
 
