@@ -3,16 +3,28 @@
 The App Class
 =============
 
-Falcon's App class is a WSGI "application" that you can host with any
-standard-compliant WSGI server.
+Falcon supports both the WSGI (:class:`falcon.App`) and
+ASGI (:class:`falcon.asgi.App`) protocols. This is done
+by instantiating the respective ``App`` class to create a
+callable WSGI or ASGI "application".
+
+Because Falcon's ``App`` classes are built on
+`WSGI <https://www.python.org/dev/peps/pep-3333/>`_ and
+`ASGI <https://asgi.readthedocs.io/en/latest/>`_,
+you can host them with any standard-compliant server.
 
 .. code:: python
 
     import falcon
+    import falcon.asgi
 
-    app = falcon.App()
+    wsgi_app = falcon.App()
+    asgi_app = falcon.asgi.App()
 
 .. autoclass:: falcon.App
+    :members:
+
+.. autoclass:: falcon.asgi.App
     :members:
 
 .. autoclass:: falcon.RequestOptions

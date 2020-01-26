@@ -58,9 +58,9 @@ Default Router
 Falcon's default routing engine is based on a decision tree that is
 first compiled into Python code, and then evaluated by the runtime.
 
-The :meth:`~.App.add_route` method is used to associate a URI template
-with a resource. Falcon then maps incoming requests to resources
-based on these templates.
+The :meth:`falcon.App.add_route` and :meth:`falcon.asgi.App.add_route` methods
+are used to associate a URI template with a resource. Falcon then maps incoming
+requests to resources based on these templates.
 
 Falcon's default router uses Python classes to represent resources. In
 practice, these classes act as controllers in your application. They
@@ -69,7 +69,7 @@ compose a response back to the client based on the results of those
 actions. (See also:
 :ref:`Tutorial: Creating Resources <tutorial_resources>`)
 
-.. code::
+.. code:: none
 
                ┌────────────┐
     request  → │            │
@@ -115,8 +115,8 @@ data to hooks and middleware methods.
     object, a responder may raise an instance of either
     :class:`~.HTTPError` or :class:`~.HTTPStatus`. Falcon will
     convert these exceptions to appropriate HTTP responses.
-    Alternatively, you can handle them youself via
-    :meth:`~.App.add_error_handler`.
+    Alternatively, you can handle them yourself via
+    :meth:`~.falcon.App.add_error_handler`.
 
 In addition to the standard `req` and `resp` parameters, if the
 route's template contains field expressions, any responder that

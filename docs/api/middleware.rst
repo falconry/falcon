@@ -158,7 +158,7 @@ which case the framework will use the latter exception to update the
 
     By default, the framework installs two handlers, one for
     :class:`~.HTTPError` and one for :class:`~.HTTPStatus`. These can
-    be overridden via :meth:`~.App.add_error_handler`.
+    be overridden via :meth:`~.falcon.App.add_error_handler`.
 
 Regardless, the framework will continue unwinding the middleware
 stack. For example, if *mob2.process_request* were to raise an
