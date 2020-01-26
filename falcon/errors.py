@@ -172,7 +172,7 @@ class HTTPUnauthorized(HTTPError):
             headers = {}
 
         if challenges:
-            headers["WWW-Authenticate"] = ", ".join(challenges)
+            headers['WWW-Authenticate'] = ', '.join(challenges)
 
         super().__init__(
             status.HTTP_401,
@@ -400,7 +400,7 @@ class HTTPMethodNotAllowed(OptionalRepresentation, HTTPError):
     def __init__(
         self, allowed_methods, *, title=None, description=None, headers=None, **kwargs
     ):
-        new_headers = {"Allow": ", ".join(allowed_methods)}
+        new_headers = {'Allow': ', '.join(allowed_methods)}
         super().__init__(
             status.HTTP_405,
             title=title,
@@ -762,9 +762,9 @@ class HTTPPayloadTooLarge(HTTPError):
             headers = {}
 
         if isinstance(retry_after, datetime):
-            headers["Retry-After"] = util.dt_to_http(retry_after)
+            headers['Retry-After'] = util.dt_to_http(retry_after)
         elif retry_after is not None:
-            headers["Retry-After"] = str(retry_after)
+            headers['Retry-After'] = str(retry_after)
 
         super().__init__(
             status.HTTP_413,
@@ -942,7 +942,7 @@ class HTTPRangeNotSatisfiable(OptionalRepresentation, HTTPError):
     ):
         if headers is None:
             headers = {}
-        headers["Content-Range"] = "bytes */" + str(resource_length)
+        headers['Content-Range'] = 'bytes */' + str(resource_length)
 
         super().__init__(
             status.HTTP_416,
@@ -1219,9 +1219,9 @@ class HTTPTooManyRequests(HTTPError):
             headers = {}
 
         if isinstance(retry_after, datetime):
-            headers["Retry-After"] = util.dt_to_http(retry_after)
+            headers['Retry-After'] = util.dt_to_http(retry_after)
         elif retry_after is not None:
-            headers["Retry-After"] = str(retry_after)
+            headers['Retry-After'] = str(retry_after)
 
         super().__init__(
             status.HTTP_429,
@@ -1563,9 +1563,9 @@ class HTTPServiceUnavailable(HTTPError):
             headers = {}
 
         if isinstance(retry_after, datetime):
-            headers["Retry-After"] = util.dt_to_http(retry_after)
+            headers['Retry-After'] = util.dt_to_http(retry_after)
         elif retry_after is not None:
-            headers["Retry-After"] = str(retry_after)
+            headers['Retry-After'] = str(retry_after)
 
         super().__init__(
             status.HTTP_503,
@@ -1889,7 +1889,7 @@ class HTTPInvalidHeader(HTTPBadRequest):
         description = description.format(header_name, msg)
 
         super().__init__(
-            title="Invalid header value",
+            title='Invalid header value',
             description=description,
             headers=headers,
             **kwargs
@@ -1936,7 +1936,7 @@ class HTTPMissingHeader(HTTPBadRequest):
         description = description.format(header_name)
 
         super().__init__(
-            title="Missing header value",
+            title='Missing header value',
             description=description,
             headers=headers,
             **kwargs
@@ -1986,7 +1986,7 @@ class HTTPInvalidParam(HTTPBadRequest):
         description = description.format(param_name, msg)
 
         super().__init__(
-            title="Invalid parameter",
+            title='Invalid parameter',
             description=description,
             headers=headers,
             **kwargs
@@ -2035,7 +2035,7 @@ class HTTPMissingParam(HTTPBadRequest):
         description = description.format(param_name)
 
         super().__init__(
-            title="Missing parameter",
+            title='Missing parameter',
             description=description,
             headers=headers,
             **kwargs

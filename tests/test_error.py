@@ -138,7 +138,7 @@ def test_with_title_desc_and_headers(err):
     falcon.HTTPNetworkAuthenticationRequired,
 ])
 def test_kw_only(err):
-    with pytest.raises(TypeError, match="positional argument"):
+    with pytest.raises(TypeError, match='positional argument'):
         raise err('foo', 'bar')
 
 
