@@ -103,6 +103,7 @@ class BodyPart:
         secure_filename (str): The sanitized version of `filename` using only
             the most common ASCII characters for maximum portability and safety
             wrt using this name as a filename on a regular file system.
+            See also: :func:`~.secure_filename`
 
         stream: File-like input object for reading the body part of the
             multipart form request, if any. This object provides direct access
@@ -116,7 +117,11 @@ class BodyPart:
 
 
         text (str): The part decoded as a text string provided the part is
-            encoded as ``text/plain``, ``None`` otherwise.
+            encoded as ``text/plain``, ``None`` otherwise. If decoding fails
+            due to invalid `data` bytes (for the specified encoding), or the
+            specified encoding itself is unsupported, a
+            :class:`MultipartParseError` will be raised when referencing this
+            property.
 
             .. note::
                As this property builds upon `data`, it would consume the part
@@ -155,7 +160,11 @@ class BodyPart:
         if charset not in self._parse_options.supported_charsets:
             raise MultipartParseError(
                 'unsupported charset: {}'.format(charset))
-        return self.data.decode(charset)
+        try:
+            return self.data.decode(charset)
+        except (ValueError, LookupError):
+            raise MultipartParseError(
+                'invalid text or charset: {}'.format(charset))
 
     @property
     def content_type(self):

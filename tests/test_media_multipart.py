@@ -1,5 +1,7 @@
 import io
 import itertools
+import os
+import random
 
 import pytest
 
@@ -98,6 +100,11 @@ EXAMPLES = {
     'BOUNDARY': EXAMPLE3,
     'boundary': EXAMPLE4,
 }
+
+
+# APPSEC: This SHA256 hash is safe against preimage attacks.
+HASH_BOUNDARY = (
+    'fbeff51e0f5630958701f4941aec5595addcb3ee1b70468c8bd4be920304c184')
 
 
 @pytest.mark.parametrize('boundary', list(EXAMPLES))
@@ -229,6 +236,37 @@ def test_unsupported_charset():
             part.text
 
 
+@pytest.mark.parametrize('charset,data', [
+    ('utf-8', b'Impossible byte: \xff'),
+    ('utf-8', b'Overlong... \xfc\x83\xbf\xbf\xbf\xbf ... sequence'),
+    ('ascii', b'\x80\x80\x80'),
+    ('pecyn', b'AAHEHlRoZSBGYWxjb24gV2ViIEZyYW1ld29yaywgMjAxOQ=='),
+])
+def test_invalid_text_or_charset(charset, data):
+    data = (
+        b'--BOUNDARY\r\n'
+        b'Content-Disposition: form-data; name="text"\r\n'
+        b'Content-Type: text/plain; ' +
+        'charset={}\r\n\r\n'.format(charset).encode() +
+        data +
+        b'\r\n'
+        b'--BOUNDARY\r\n'
+        b'Content-Disposition: form-data; name="empty"\r\n'
+        b'Content-Type: text/plain\r\n\r\n'
+        b'\r\n'
+        b'--BOUNDARY--\r\n'
+    )
+
+    handler = media.MultipartFormHandler()
+    handler.parse_options.supported_charsets = {'utf-8', charset}
+
+    form = handler.deserialize(
+        io.BytesIO(data), 'multipart/form-data; boundary=BOUNDARY', len(data))
+    with pytest.raises(falcon.HTTPBadRequest):
+        for part in form:
+            part.text
+
+
 def test_unknown_header():
     data = (
         b'--BOUNDARY\r\n'
@@ -343,12 +381,7 @@ class MultipartAnalyzer:
 
 @pytest.fixture
 def client():
-    handlers = media.Handlers({
-        falcon.MEDIA_JSON: media.JSONHandler(),
-        falcon.MEDIA_MULTIPART: media.MultipartFormHandler(),
-    })
     app = falcon.App()
-    app.req_options.media_handlers = handlers
     app.add_route('/media', MultipartAnalyzer())
 
     return testing.TestClient(app)
@@ -493,3 +526,37 @@ def test_too_many_body_parts(custom_client, max_body_part_count):
     else:
         assert resp.status_code == 200
         assert len(resp.json) == EXAMPLE2_PART_COUNT
+
+
+def test_random_form(client):
+    part_data = [os.urandom(random.randint(0, 2**18)) for _ in range(64)]
+    form_data = b''.join(
+        '--{}\r\n'.format(HASH_BOUNDARY).encode() +
+        'Content-Disposition: form-data; name="p{}"\r\n'.format(i).encode() +
+        b'Content-Type: application/x-falcon-urandom\r\n\r\n' +
+        part_data[i] +
+        b'\r\n'
+        for i in range(64)
+    ) + '--{}--\r\n'.format(HASH_BOUNDARY).encode()
+
+    handler = media.MultipartFormHandler()
+    content_type = ('multipart/form-data; boundary=' + HASH_BOUNDARY)
+    form = handler.deserialize(
+        io.BytesIO(form_data), content_type, len(form_data))
+
+    for index, part in enumerate(form):
+        assert part.content_type == 'application/x-falcon-urandom'
+        assert part.data == part_data[index]
+
+
+def test_invalid_random_form(client):
+    length = random.randint(2**20, 2**21)
+    resp = client.simulate_post(
+        '/media',
+        headers={
+            'Content-Type':
+            'multipart/form-data; boundary=' + HASH_BOUNDARY,
+        },
+        body=os.urandom(length))
+
+    assert resp.status_code == 400

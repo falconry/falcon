@@ -47,6 +47,7 @@ __all__ = (
     'get_http_status',
     'http_status_to_code',
     'code_to_http_status',
+    'secure_filename',
 )
 
 _UNSAFE_CHARS = re.compile(r'[^a-zA-Z0-9.-]')
@@ -342,17 +343,29 @@ def get_http_status(status_code, default_reason='Unknown'):
 
 
 def secure_filename(filename):
-    """
-    Sanitize the provided `filename` using only the most common ASCII
-    characters for maximum portability and safety wrt using this name as a
-    filename on a regular file system.
+    """Sanitize the provided `filename` to contain only ASCII characters.
+
+    Only ASCII alphanumerals, ``'.'``, ``'-'`` and ``'_'`` are allowed for
+    maximum portability and safety wrt using this name as a filename on a
+    regular file system. All other characters will be replaced with an
+    underscore (``'_'``).
+
+    .. note::
+        The `filename` is normalized to the Unicode ``NKFD`` form prior to
+        ASCII conversion in order to extract more alphanumerals where a
+        decomposition is available. For instance:
+
+        >>> secure_filename('Bold Digit 𝟏')
+        'Bold_Digit_1'
+        >>> secure_filename('Ångström unit physics.pdf')
+        'A_ngstro_m_unit_physics.pdf'
 
     Args:
-        filename (str): Arbitrary filename input from the request, such as
+        filename (str): Arbitrary filename input from the request, such as a
             multipart form filename field.
 
     Returns:
-        str: sanitized filename
+        str: The sanitized filename.
     """
     # TODO(vytas): max_length (int): Maximum length of the returned
     #     filename. Should the returned filename exceed this restriction, it is

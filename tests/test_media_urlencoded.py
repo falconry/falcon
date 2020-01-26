@@ -19,7 +19,7 @@ def test_deserialize_invalid_unicode():
     handler = media.URLEncodedFormHandler()
     stream = io.BytesIO('spade=♠'.encode())
     with pytest.raises(UnicodeDecodeError):
-        print(handler.deserialize(stream, falcon.MEDIA_URLENCODED, 9))
+        handler.deserialize(stream, falcon.MEDIA_URLENCODED, 9)
 
 
 @pytest.mark.parametrize('data,expected', [
