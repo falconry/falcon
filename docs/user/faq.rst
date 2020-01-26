@@ -567,22 +567,17 @@ POSTed form parameters may also be read directly from
 How can I access POSTed files?
 ------------------------------
 
-If files are `POST`\ed as part of a multipart form,
-:class:`falcon.media.MultipartFormHandler` may be
-:ref:`installed <custom_media_handlers>` to efficiently parse the
-`multipart/form-data` media type. :ref:`req.media <media>` can then be used to
-iterate over the multipart body parts:
+If files are ``POST``\ed as part of a :ref:`multipart form <multipart>`, the
+default :class:`MultipartFormHandler <falcon.media.MultipartFormHandler>` can
+be used to efficiently parse the submitted ``multipart/form-data``
+:ref:`request media <media>` by iterating over the multipart
+:class:`body parts <falcon.media.multipart.BodyPart>`:
 
 .. code:: python
 
     for part in req.media:
         # TODO: Do something with the body part
         pass
-
-.. note::
-   In further development versions of Falcon 3.0 series,
-   :class:`falcon.media.MultpartFormHandler` may be promoted to the default
-   media handlers.
 
 How can I save POSTed files (from a multipart form) directly to AWS S3?
 -----------------------------------------------------------------------

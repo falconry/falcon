@@ -5,7 +5,6 @@ from urllib.parse import unquote_to_bytes
 from falcon import errors
 from falcon import request_helpers
 from falcon.media.base import BaseHandler
-from falcon.media.handlers import Handlers
 from falcon.util import BufferedStream
 from falcon.util import misc
 
@@ -151,7 +150,7 @@ class BodyPart:
         if content_type != 'text/plain':
             return None
 
-        charset = options.get('charset') or self._parse_options.default_charset
+        charset = options.get('charset', self._parse_options.default_charset)
         charset = charset.lower()
         if charset not in self._parse_options.supported_charsets:
             raise MultipartParseError(
@@ -163,7 +162,7 @@ class BodyPart:
         # NOTE(vytas): RFC 7578, section 4.4.
         #   Each part MAY have an (optional) "Content-Type" header field, which
         #   defaults to "text/plain".
-        value = self._headers.get(b'content-type') or b'text/plain'
+        value = self._headers.get(b'content-type', b'text/plain')
         return value.decode('ascii')
 
     @property
@@ -382,17 +381,20 @@ class MultipartParseOptions:
         max_body_part_headers_size (int): The maximum size (in bytes) of the
             body part headers structure (default: 8192).
 
-        media_handlers (Handlers): A dict-like object that allows you to
-            configure the media-types that you would like to handle.
-            By default, a handler is provided for the ``application/json``
-            media type.
+        media_handlers (Handlers): A dict-like object for configuring the
+            media-types to handle. By default, handlers are provided for the
+            ``application/json`` and ``application/x-www-form-urlencoded``
+            media types.
 
         supported_charsets (frozenset): The list of supported character
-            encodings that are understood by the parser. The provided charsets
-            must by provided in lowercase, and must also be understood by
-            Python's :func:`bytes.decode` function.
+            encodings that are understood by the parser. The charsets must be
+            provided in lowercase, and must also be understood by Python's
+            :func:`bytes.decode` function.
+
             By default, :data:`DEFAULT_SUPPORTED_CHARSETS` is used.
     """
+
+    _DEFAULT_HANDLERS = None
 
     __slots__ = (
         'default_charset',
@@ -408,5 +410,5 @@ class MultipartParseOptions:
         self.max_body_part_buffer_size = 1024 * 1024
         self.max_body_part_count = 64
         self.max_body_part_headers_size = 8192
-        self.media_handlers = Handlers()
+        self.media_handlers = self._DEFAULT_HANDLERS
         self.supported_charsets = frozenset(DEFAULT_SUPPORTED_CHARSETS)

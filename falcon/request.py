@@ -1875,10 +1875,10 @@ class RequestOptions:
             independently, this will default to
             :attr:`falcon.DEFAULT_MEDIA_TYPE`.
 
-        media_handlers (Handlers): A dict-like object that allows you to
-            configure the media-types that you would like to handle.
-            By default, a handler is provided for the ``application/json``
-            media type.
+        media_handlers (Handlers): A dict-like object for configuring the
+            media-types to handle. By default, handlers are provided for the
+            ``application/json``, ``application/x-www-form-urlencoded`` and
+            ``multipart/form-data`` media types.
     """
     __slots__ = (
         'keep_blank_qs_values',
