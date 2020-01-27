@@ -3,7 +3,7 @@ import pytest
 import falcon
 
 
-@pytest.fixture(params=[True, False])
+@pytest.fixture(params=[True, False], ids=["asgi", "wsgi"])
 def asgi(request):
     is_asgi = request.param
 
