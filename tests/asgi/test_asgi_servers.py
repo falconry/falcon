@@ -2,8 +2,8 @@ from contextlib import contextmanager
 import os
 import platform
 import subprocess
-import time
 import sys
+import time
 
 import pytest
 import requests
@@ -15,7 +15,7 @@ from falcon import testing
 _MODULE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 _PYPY = platform.python_implementation() == 'PyPy'
-_WIN32 = sys.platform.startswith("win")
+_WIN32 = sys.platform.startswith('win')
 
 _SERVER_HOST = '127.0.0.1'
 _SIZE_1_KB = 1024

@@ -1,12 +1,13 @@
 import asyncio
 from collections import Counter
-import time
 import sys
+import time
 
 import falcon
 import falcon.asgi
 import falcon.util
-_WIN32 = sys.platform.startswith("win")
+
+_WIN32 = sys.platform.startswith('win')
 
 
 class Things:
