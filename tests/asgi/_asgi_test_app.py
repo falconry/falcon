@@ -1,10 +1,12 @@
 import asyncio
 from collections import Counter
 import time
+import sys
 
 import falcon
 import falcon.asgi
 import falcon.util
+_WIN32 = sys.platform.startswith("win")
 
 
 class Things:
@@ -67,7 +69,8 @@ class Things:
         cms = falcon.util.wrap_sync_to_async(callmesafely, threadsafe=False)
         loop = falcon.util.get_loop()
 
-        num_cms_tasks = 1000
+        # NOTE(caselit): on windows it takes more time so create less tasks
+        num_cms_tasks = 100 if _WIN32 else 1000
 
         for i in range(num_cms_tasks):
             # NOTE(kgriffs): create_task() is used here, so that the coroutines

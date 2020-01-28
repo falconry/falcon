@@ -3,6 +3,7 @@ import os
 import platform
 import subprocess
 import time
+import sys
 
 import pytest
 import requests
@@ -14,6 +15,7 @@ from falcon import testing
 _MODULE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 _PYPY = platform.python_implementation() == 'PyPy'
+_WIN32 = sys.platform.startswith("win")
 
 _SERVER_HOST = '127.0.0.1'
 _SIZE_1_KB = 1024
@@ -101,6 +103,15 @@ def _run_server_isolated(process_factory, host, port):
 
     yield server
 
+    if _WIN32:
+        import signal
+        print('\n[Sending CTRL_C_EVENT to server process...]')
+        server.send_signal(signal.CTRL_C_EVENT)
+        try:
+            server.wait(timeout=10)
+        except (KeyboardInterrupt, subprocess.TimeoutExpired):
+            pass
+
     print('\n[Sending SIGTERM to server process...]')
     server.terminate()
 
@@ -148,6 +159,8 @@ def _daphne_factory(host, port):
 @pytest.fixture(params=[_uvicorn_factory, _daphne_factory])
 def server_base_url(request):
     process_factory = request.param
+    if _WIN32 and process_factory == _daphne_factory:
+        pytest.skip('daphne does not support windows')
 
     for i in range(3):
         server_port = testing.get_unused_port()
