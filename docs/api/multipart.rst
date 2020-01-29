@@ -34,8 +34,6 @@ Body Part Type
 Parsing Options
 ---------------
 
-.. autodata:: falcon.media.multipart.DEFAULT_SUPPORTED_CHARSETS
-
 .. autoclass:: falcon.media.multipart.MultipartParseOptions
     :members:
 

@@ -258,7 +258,6 @@ def test_invalid_text_or_charset(charset, data):
     )
 
     handler = media.MultipartFormHandler()
-    handler.parse_options.supported_charsets = {'utf-8', charset}
 
     form = handler.deserialize(
         io.BytesIO(data), 'multipart/form-data; boundary=BOUNDARY', len(data))

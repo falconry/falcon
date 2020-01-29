@@ -19,36 +19,6 @@ _ALLOWED_CONTENT_HEADERS = frozenset([
     b'content-transfer-encoding',
 ])
 
-DEFAULT_SUPPORTED_CHARSETS = (
-    'utf-8',
-    'ibm866',
-    'iso-8859-2',
-    'iso-8859-3',
-    'iso-8859-4',
-    'iso-8859-5',
-    'iso-8859-6',
-    'iso-8859-7',
-    'iso-8859-8',
-    'iso-8859-10',
-    'iso-8859-13',
-    'iso-8859-14',
-    'iso-8859-15',
-    'iso-8859-16',
-    'koi8-r',
-    'koi8-u',
-    'macintosh',
-    'windows-1250',
-    'windows-1251',
-    'windows-1252',
-    'windows-1253',
-    'windows-1254',
-    'windows-1255',
-    'windows-1256',
-    'windows-1257',
-    'windows-1258',
-)
-"""Default list of supported character encodings."""
-
 _FILENAME_STAR_RFC5987 = re.compile(r"([\w-]+)'[\w]*'(.+)")
 
 _CRLF = b'\r\n'
@@ -117,9 +87,13 @@ class BodyPart:
 
 
         text (str): The part decoded as a text string provided the part is
-            encoded as ``text/plain``, ``None`` otherwise. If decoding fails
-            due to invalid `data` bytes (for the specified encoding), or the
-            specified encoding itself is unsupported, a
+            encoded as ``text/plain``, ``None`` otherwise. Text is decoded from
+            `data` using the charset specified in the `Content-Type` header,
+            or, if omitted, the
+            :data:`default charset <MultipartParseOptions.default_charset>`.
+
+            If decoding fails due to invalid `data` bytes (for the specified
+            encoding), or the specified encoding itself is unsupported, a
             :class:`MultipartParseError` will be raised when referencing this
             property.
 
@@ -156,10 +130,6 @@ class BodyPart:
             return None
 
         charset = options.get('charset', self._parse_options.default_charset)
-        charset = charset.lower()
-        if charset not in self._parse_options.supported_charsets:
-            raise MultipartParseError(
-                'unsupported charset: {}'.format(charset))
         try:
             return self.data.decode(charset)
         except (ValueError, LookupError):
@@ -189,11 +159,11 @@ class BodyPart:
             match = _FILENAME_STAR_RFC5987.match(params.get('filename*', ''))
             if match:
                 charset, value = match.groups()
-                charset = charset.lower()
-                if charset not in self._parse_options.supported_charsets:
+                try:
+                    self._filename = unquote_to_bytes(value).decode(charset)
+                except (ValueError, LookupError):
                     raise MultipartParseError(
-                        'unsupported charset: {}'.format(charset))
-                self._filename = unquote_to_bytes(value).decode(charset)
+                        'invalid text or charset: {}'.format(charset))
             else:
                 value = params.get('filename')
                 if value is None:
@@ -374,8 +344,8 @@ class MultipartParseOptions:
     """Defines a set of configurable multipart form parser options.
 
     Attributes:
-        default_charset (str): The default character encoding for text fields
-            (default: ``utf-8``).
+        default_charset (str): The default character encoding for
+            :data:`text fields <BodyPart.text>` (default: ``utf-8``).
 
         max_body_part_count (int): The maximum number of body parts in the form
             (default: 64). If the form contains more parts than this number,
@@ -394,13 +364,6 @@ class MultipartParseOptions:
             media-types to handle. By default, handlers are provided for the
             ``application/json`` and ``application/x-www-form-urlencoded``
             media types.
-
-        supported_charsets (frozenset): The list of supported character
-            encodings that are understood by the parser. The charsets must be
-            provided in lowercase, and must also be understood by Python's
-            :func:`bytes.decode` function.
-
-            By default, :data:`DEFAULT_SUPPORTED_CHARSETS` is used.
     """
 
     _DEFAULT_HANDLERS = None
@@ -411,7 +374,6 @@ class MultipartParseOptions:
         'max_body_part_count',
         'max_body_part_headers_size',
         'media_handlers',
-        'supported_charsets',
     )
 
     def __init__(self):
@@ -420,4 +382,3 @@ class MultipartParseOptions:
         self.max_body_part_count = 64
         self.max_body_part_headers_size = 8192
         self.media_handlers = self._DEFAULT_HANDLERS
-        self.supported_charsets = frozenset(DEFAULT_SUPPORTED_CHARSETS)
