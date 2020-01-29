@@ -228,7 +228,8 @@ class TestErrorsWithHeadersKW:
         if not kw_required:
             value = err()
 
-            assert header_name not in value.headers
+            if value.headers:
+                assert header_name not in value.headers
 
     def test_other_header(self, err, header_name, kw_name, args, res, kw_required):
         headers = {'foo bar': 'baz'}
@@ -246,4 +247,24 @@ class TestErrorsWithHeadersKW:
 
         assert value.headers['foo bar'] == 'baz'
         assert header_name in value.headers
+        assert value.headers[header_name] == res
+
+    def test_other_header_list(self, err, header_name, kw_name, args, res, kw_required):
+        headers = [('foo bar', 'baz')]
+        kw = {kw_name: args}
+        value = err(**kw, headers=headers)
+
+        assert value.headers['foo bar'] == 'baz'
+        assert header_name in value.headers
+        assert isinstance(value.headers, dict)
+        assert value.headers[header_name] == res
+
+    def test_override_header_list(self, err, header_name, kw_name, args, res, kw_required):
+        headers = [('foo bar', 'baz'), (header_name, 'other')]
+        kw = {kw_name: args}
+        value = err(**kw, headers=headers)
+
+        assert value.headers['foo bar'] == 'baz'
+        assert header_name in value.headers
+        assert isinstance(value.headers, dict)
         assert value.headers[header_name] == res

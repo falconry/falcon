@@ -168,10 +168,8 @@ class HTTPUnauthorized(HTTPError):
     def __init__(
         self, *, title=None, description=None, headers=None, challenges=None, **kwargs
     ):
-        if headers is None:
-            headers = {}
-
         if challenges:
+            headers = _load_headers(headers)
             headers['WWW-Authenticate'] = ', '.join(challenges)
 
         super().__init__(
@@ -400,7 +398,8 @@ class HTTPMethodNotAllowed(OptionalRepresentation, HTTPError):
     def __init__(
         self, allowed_methods, *, title=None, description=None, headers=None, **kwargs
     ):
-        new_headers = {'Allow': ', '.join(allowed_methods)}
+        headers = _load_headers(headers)
+        headers['Allow'] = ', '.join(allowed_methods)
         super().__init__(
             status.HTTP_405,
             title=title,
@@ -408,10 +407,6 @@ class HTTPMethodNotAllowed(OptionalRepresentation, HTTPError):
             headers=headers,
             **kwargs
         )
-        if not self.headers:
-            self.headers = {}
-
-        self.headers.update(new_headers)
 
 
 class HTTPNotAcceptable(HTTPError):
@@ -758,19 +753,11 @@ class HTTPPayloadTooLarge(HTTPError):
     def __init__(
         self, *, title=None, description=None, retry_after=None, headers=None, **kwargs
     ):
-        if headers is None:
-            headers = {}
-
-        if isinstance(retry_after, datetime):
-            headers['Retry-After'] = util.dt_to_http(retry_after)
-        elif retry_after is not None:
-            headers['Retry-After'] = str(retry_after)
-
         super().__init__(
             status.HTTP_413,
             title=title,
             description=description,
-            headers=headers,
+            headers=_parse_retry_after(headers, retry_after),
             **kwargs
         )
 
@@ -940,8 +927,7 @@ class HTTPRangeNotSatisfiable(OptionalRepresentation, HTTPError):
     def __init__(
         self, resource_length, *, title=None, description=None, headers=None, **kwargs
     ):
-        if headers is None:
-            headers = {}
+        headers = _load_headers(headers)
         headers['Content-Range'] = 'bytes */' + str(resource_length)
 
         super().__init__(
@@ -1215,19 +1201,11 @@ class HTTPTooManyRequests(HTTPError):
     def __init__(
         self, *, title=None, description=None, headers=None, retry_after=None, **kwargs
     ):
-        if headers is None:
-            headers = {}
-
-        if isinstance(retry_after, datetime):
-            headers['Retry-After'] = util.dt_to_http(retry_after)
-        elif retry_after is not None:
-            headers['Retry-After'] = str(retry_after)
-
         super().__init__(
             status.HTTP_429,
             title=title,
             description=description,
-            headers=headers,
+            headers=_parse_retry_after(headers, retry_after),
             **kwargs
         )
 
@@ -1559,19 +1537,11 @@ class HTTPServiceUnavailable(HTTPError):
     def __init__(
         self, *, title=None, description=None, headers=None, retry_after=None, **kwargs
     ):
-        if headers is None:
-            headers = {}
-
-        if isinstance(retry_after, datetime):
-            headers['Retry-After'] = util.dt_to_http(retry_after)
-        elif retry_after is not None:
-            headers['Retry-After'] = str(retry_after)
-
         super().__init__(
             status.HTTP_503,
             title=title,
             description=description,
-            headers=headers,
+            headers=_parse_retry_after(headers, retry_after),
             **kwargs
         )
 
@@ -2040,3 +2010,28 @@ class HTTPMissingParam(HTTPBadRequest):
             headers=headers,
             **kwargs
         )
+
+# -----------------------------------------------------------------------------
+# Helpers
+# -----------------------------------------------------------------------------
+
+
+def _load_headers(headers):
+    """Transforms the headers to dict"""
+    if headers is None:
+        return {}
+    if isinstance(headers, dict):
+        return headers
+    return dict(headers)
+
+
+def _parse_retry_after(headers, retry_after):
+    """Sets the Retry-After to the headers when required"""
+    if retry_after is None:
+        return headers
+    headers = _load_headers(headers)
+    if isinstance(retry_after, datetime):
+        headers['Retry-After'] = util.dt_to_http(retry_after)
+    else:
+        headers['Retry-After'] = str(retry_after)
+    return headers
