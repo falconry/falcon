@@ -366,14 +366,20 @@ def secure_filename(filename):
 
     Returns:
         str: The sanitized filename.
+
+    Raises:
+        ValueError: the provided filename is an empty string.
     """
     # TODO(vytas): max_length (int): Maximum length of the returned
     #     filename. Should the returned filename exceed this restriction, it is
     #     truncated while attempting to preserve the extension.
+    if not filename:
+        raise ValueError('filename may not be an empty string')
+
     filename = unicodedata.normalize('NFKD', filename)
     if filename.startswith('.'):
         filename = filename.replace('.', '_', 1)
-    return _UNSAFE_CHARS.sub('_', filename) or 'file'
+    return _UNSAFE_CHARS.sub('_', filename)
 
 
 @_lru_cache_safe(maxsize=64)

@@ -73,6 +73,10 @@ class BodyPart:
         secure_filename (str): The sanitized version of `filename` using only
             the most common ASCII characters for maximum portability and safety
             wrt using this name as a filename on a regular file system.
+
+            If `filename` is empty or unset when referencing this property, an
+            instance of :class:`MultipartParseError` will be raised.
+
             See also: :func:`~.secure_filename`
 
         stream: File-like input object for reading the body part of the
@@ -87,10 +91,15 @@ class BodyPart:
 
 
         text (str): The part decoded as a text string provided the part is
-            encoded as ``text/plain``, ``None`` otherwise. Text is decoded from
-            `data` using the charset specified in the `Content-Type` header,
-            or, if omitted, the
+            encoded as ``text/plain``, ``None`` otherwise.
+
+            Text is decoded from `data` using the charset specified in the
+            `Content-Type` header, or, if omitted, the
             :data:`default charset <MultipartParseOptions.default_charset>`.
+            The charset must be supported by Python's ``bytes.decode()``
+            function. The list of standard encodings (charsets) supported by
+            the Python 3 standard library can be found `here
+            <https://docs.python.org/3/library/codecs.html#standard-encodings>`__.
 
             If decoding fails due to invalid `data` bytes (for the specified
             encoding), or the specified encoding itself is unsupported, a
@@ -174,7 +183,10 @@ class BodyPart:
 
     @property
     def secure_filename(self):
-        return misc.secure_filename(self.filename)
+        try:
+            return misc.secure_filename(self.filename)
+        except ValueError as ex:
+            raise MultipartParseError(str(ex))
 
     @property
     def name(self):

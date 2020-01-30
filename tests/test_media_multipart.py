@@ -363,6 +363,26 @@ def test_filename_star():
             part.filename
 
 
+def test_empty_filename():
+    data = (
+        b'--a0d738bcdb30449eb0d13f4b72c2897e\r\n'
+        b'Content-Disposition: form-data; name="file"; filename=\r\n\r\n'
+        b'An empty filename.\r\n'
+        b'--a0d738bcdb30449eb0d13f4b72c2897e--\r\n'
+    )
+
+    handler = media.MultipartFormHandler()
+    content_type = ('multipart/form-data; boundary=' +
+                    'a0d738bcdb30449eb0d13f4b72c2897e')
+    stream = BufferedStream(io.BytesIO(data).read, len(data))
+    form = handler.deserialize(stream, content_type, len(data))
+
+    for part in form:
+        assert part.filename == ''
+        with pytest.raises(falcon.HTTPBadRequest):
+            part.secure_filename
+
+
 class MultipartAnalyzer:
     def on_post(self, req, resp):
         values = []
