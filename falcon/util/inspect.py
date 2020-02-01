@@ -19,7 +19,8 @@ def inspect_app(app: App):
     routes = inspect_routes(app)
     static = inspect_static_routes(app)
     sinks = inspect_sinks(app)
-    return AppInfo(routes, static, sinks)
+    error_handlers = inspect_error_handlers(app)
+    return AppInfo(routes, static, sinks, error_handlers)
 
 
 def inspect_routes(app: App):
@@ -33,7 +34,7 @@ def inspect_routes(app: App):
     """
     router = app._router
 
-    inspect_function = _supported_routes.get(type(router))
+    inspect_function = _supported_routers.get(type(router))
     if inspect_function is None:
         raise TypeError(
             "Unsupported router class {}. Use `register_router` "
@@ -58,19 +59,23 @@ def register_router(router_class):
     """
 
     def wraps(fn):
-        if router_class in _supported_routes:
+        if router_class in _supported_routers:
             raise ValueError(
                 "Another function is already registered"
                 " for the router {}".format(router_class)
             )
-        _supported_routes[router_class] = fn
+        _supported_routers[router_class] = fn
         return fn
 
     return wraps
 
 
+# router inspection registry
+_supported_routers = {}
+
+
 def inspect_static_routes(app: App):
-    """Inspects the routes of an application
+    """Inspects the static routes of an application
 
     Args:
         app (App): The application to inspect
@@ -86,7 +91,7 @@ def inspect_static_routes(app: App):
 
 
 def inspect_sinks(app: App):
-    """Inspects the routes of an application
+    """Inspects the sinks of an application
 
     Args:
         app (App): The application to inspect
@@ -96,23 +101,31 @@ def inspect_sinks(app: App):
     """
     sinks = []
     for prefix, sink in app._sinks:
-        source_info = _get_source_info(sink, None)
-        if source_info is None:
-            # NOTE(caselit): a class instances return None. Type the type
-            source_info = _get_source_info(type(sink))
-        name = getattr(sink, "__name__", None)
-        if name is None:
-            name = getattr(type(sink), "__name__", "[unknown]")
+        source_info, name = _get_source_info_and_name(sink)
         info = SinkInfo(prefix.pattern, name, source_info)
         sinks.append(info)
     return sinks
 
 
-_supported_routes = {}
+def inspect_error_handlers(app: App):
+    """Inspects the error handlers of an application
+
+    Args:
+        app (App): The application to inspect
+
+    Returns:
+        List[ErrorHandlerInfo]: The list of error handlers of the application
+    """
+    errors = []
+    for exc, fn in app._error_handlers.items():
+        source_info, name = _get_source_info_and_name(fn)
+        info = ErrorHandlerInfo(exc.__name__, name, source_info, _is_internal(fn))
+        errors.append(info)
+    return errors
 
 
 def _get_source_info(obj, default="[unknown file]"):
-    "Tries to get the definition file and line of obj. Returns default on error"
+    """Tries to get the definition file and line of obj. Returns default on error"""
     try:
         source_file = inspect.getsourcefile(obj)
         source_lines = inspect.getsourcelines(obj)
@@ -124,6 +137,24 @@ def _get_source_info(obj, default="[unknown file]"):
         # TypeError when trying to locate the source file.
         source_info = default
     return source_info
+
+
+def _get_source_info_and_name(obj):
+    """Tries to get the definition file and line of obj and its name"""
+    source_info = _get_source_info(obj, None)
+    if source_info is None:
+        # NOTE(caselit): a class instances return None. Try the type
+        source_info = _get_source_info(type(obj))
+    name = getattr(obj, "__name__", None)
+    if name is None:
+        name = getattr(type(obj), "__name__", "[unknown]")
+    return source_info, name
+
+
+def _is_internal(obj):
+    """Checks if the module of the object is a falcon module"""
+    module = inspect.getmodule(obj)
+    return module.__name__.startswith("falcon.")
 
 
 @register_router(CompiledRouter)
@@ -148,8 +179,7 @@ def inspect_compiled_router(router):
                         real_func = func
 
                     source_info = _get_source_info(real_func)
-                    module = inspect.getmodule(real_func)
-                    internal = module.__name__.startswith("falcon.")
+                    internal = _is_internal(real_func)
 
                     method_info = MathodInfo(
                         method, source_info, real_func.__name__, internal
@@ -271,12 +301,14 @@ class AppInfo:
         routes (List[RouteInfo]): The routes of the application
         static_routes (List[StaticRouteInfo]): The static routes of this application
         sinks (List[SinkInfo]): The sinks of this application
+        error_handlers (List[ErrorHandlerInfo]): The error handlers of this application
     """
 
-    def __init__(self, routes, static_routes, sinks):
+    def __init__(self, routes, static_routes, sinks, error_handlers):
         self.routes = routes
         self.static_routes = static_routes
         self.sinks = sinks
+        self.error_handlers = error_handlers
 
     def as_string(self, verbose=False, name="Falcon App"):
         """Returns a string representation of this app
@@ -290,17 +322,28 @@ class AppInfo:
         """
         indent = 4
         text = "{}".format(name)
+
         if self.routes:
             routes = "\n".join(r.as_string(verbose, indent) for r in self.routes)
             text += "\n• Routes:\n{}".format(routes)
+
         if self.static_routes:
             static_routes = "\n".join(
                 sr.as_string(verbose, indent) for sr in self.static_routes
             )
             text += "\n• Static routes:\n{}".format(static_routes)
+
         if self.sinks:
             sinks = "\n".join(s.as_string(verbose, indent) for s in self.sinks)
             text += "\n• Sinks:\n{}".format(sinks)
+
+        errors = self.error_handlers
+        if not verbose:
+            errors = [e for e in self.error_handlers if not e.internal]
+        if errors:
+            errs = "\n".join(e.as_string(verbose, indent) for e in errors)
+            text += "\n• Error handlers:\n{}".format(errs)
+
         if text.startswith("\n"):
             # NOTE(caselit): if name is empty text will start with a new line
             return text[1:]
@@ -336,6 +379,41 @@ class SinkInfo:
         """
         text = "{}⇥ {} {} ({})".format(
             " " * indent, self.prefix, self.name, self.source_info
+        )
+        return text
+
+    def __repr__(self):
+        return self.as_string()
+
+
+class ErrorHandlerInfo:
+    """Utility class that contains the information of an error handler
+
+    Args:
+        error (name): The error it manages
+        name (str): The name of the handler
+        source_info (str): The source path where this error handler was defined
+        internal (bool): If this error handler was added by falcon
+    """
+
+    def __init__(self, error, name, source_info, internal):
+        self.error = error
+        self.name = name
+        self.source_info = source_info
+        self.internal = internal
+
+    def as_string(self, verbose=False, indent=0):
+        """Returns a string representation of this sink
+
+        Args:
+            verbose (bool, optional): Currently unused. Defaults to False.
+            indent (int, optional): Number of indentation spaces of the text. Defaults to 0.
+
+        Returns:
+            str: string representation of this sink
+        """
+        text = "{}⇜ {} {} ({})".format(
+            " " * indent, self.error, self.name, self.source_info
         )
         return text
 
