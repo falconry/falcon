@@ -8,7 +8,7 @@ import pytest
 import falcon
 from falcon import media
 from falcon import testing
-from falcon.util import BufferedStream
+from falcon.util import BufferedReader
 
 
 EXAMPLE1 = (
@@ -143,7 +143,7 @@ def test_parse(boundary):
 def test_parsing_correctness(buffer_size, chunk_size):
     example = EXAMPLES['boundary']
     handler = media.MultipartFormHandler()
-    stream = BufferedStream(io.BytesIO(example).read, len(example),
+    stream = BufferedReader(io.BytesIO(example).read, len(example),
                             buffer_size)
     form = handler.deserialize(
         stream, 'multipart/form-data; boundary=boundary', len(example))
@@ -295,7 +295,7 @@ def test_from_buffered_stream():
     )
 
     handler = media.MultipartFormHandler()
-    stream = BufferedStream(io.BytesIO(data).read, len(data))
+    stream = BufferedReader(io.BytesIO(data).read, len(data))
     form = handler.deserialize(
         stream, 'multipart/form-data; boundary=BOUNDARY', len(data))
 
@@ -349,14 +349,14 @@ def test_filename_star():
     handler = media.MultipartFormHandler()
     content_type = ('multipart/form-data; boundary=' +
                     'a0d738bcdb30449eb0d13f4b72c2897e')
-    stream = BufferedStream(io.BytesIO(data).read, len(data))
+    stream = BufferedReader(io.BytesIO(data).read, len(data))
     form = handler.deserialize(stream, content_type, len(data))
     for part in form:
         assert part.filename == '⬅ Arrow.txt'
         assert part.secure_filename == '__Arrow.txt'
 
     data = data.replace(b'*=utf-8', b'*=esoteric')
-    stream = BufferedStream(io.BytesIO(data).read, len(data))
+    stream = BufferedReader(io.BytesIO(data).read, len(data))
     form = handler.deserialize(stream, content_type, len(data))
     for part in form:
         with pytest.raises(falcon.HTTPBadRequest):
@@ -374,7 +374,7 @@ def test_empty_filename():
     handler = media.MultipartFormHandler()
     content_type = ('multipart/form-data; boundary=' +
                     'a0d738bcdb30449eb0d13f4b72c2897e')
-    stream = BufferedStream(io.BytesIO(data).read, len(data))
+    stream = BufferedReader(io.BytesIO(data).read, len(data))
     form = handler.deserialize(stream, content_type, len(data))
 
     for part in form:

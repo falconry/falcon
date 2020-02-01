@@ -18,7 +18,7 @@ class TestCythonized:
         assert 'falcon/app.py' not in str(falcon.app)
 
     def test_stream_has_private_read(self):
-        stream = falcon.util.BufferedStream(io.BytesIO().read, 8)
+        stream = falcon.util.BufferedReader(io.BytesIO().read, 8)
 
         if cython and falcon.util.IS_64_BITS:
             assert not hasattr(stream, '_read')

@@ -2,7 +2,7 @@ import io
 
 import pytest
 
-from falcon.util import BufferedStream
+from falcon.util import BufferedReader
 
 
 TEST_DATA = (
@@ -21,7 +21,7 @@ TEST_BYTES_IO = io.BytesIO(TEST_DATA)
 def buffered_stream():
     def _stream_fixture(chunk_size=None):
         TEST_BYTES_IO.seek(0)
-        return BufferedStream(TEST_BYTES_IO.read, len(TEST_DATA), chunk_size)
+        return BufferedReader(TEST_BYTES_IO.read, len(TEST_DATA), chunk_size)
 
     yield _stream_fixture
 
@@ -29,7 +29,7 @@ def buffered_stream():
 @pytest.fixture()
 def shorter_stream():
     TEST_BYTES_IO.seek(0)
-    return BufferedStream(TEST_BYTES_IO.read, 1024, 128)
+    return BufferedReader(TEST_BYTES_IO.read, 1024, 128)
 
 
 def test_peek(buffered_stream):
@@ -55,7 +55,7 @@ def test_peek(buffered_stream):
 def test_peek_eof():
     source = b'Hello, world!\n'
     source_stream = io.BytesIO(source)
-    stream = BufferedStream(source_stream.read, len(source) - 1)
+    stream = BufferedReader(source_stream.read, len(source) - 1)
 
     assert stream.peek(0) == b''
     assert stream.peek(1) == b'H'
@@ -68,7 +68,7 @@ def test_peek_eof():
 
 def test_bounded_read():
     stream = io.BytesIO(b'Hello, world!')
-    buffered = BufferedStream(stream.read, len('Hello, world'))
+    buffered = BufferedReader(stream.read, len('Hello, world'))
     buffered.read()
 
     assert stream.read() == b'!'
@@ -174,7 +174,7 @@ def test_read_until_missing_delimiter(shorter_stream):
 def test_read_until_shared_boundary(chunk_size):
     source = b'-boundary-like-' * 4 + b'--some junk--\n' + b'\n' * 1024
     source_stream = io.BytesIO(source)
-    stream = BufferedStream(source_stream.read, len(source), chunk_size)
+    stream = BufferedReader(source_stream.read, len(source), chunk_size)
     assert stream.read_until(b'-boundary-like---') == b'-boundary-like-' * 3
     assert stream.peek(17) == b'-boundary-like---'
 
@@ -214,7 +214,7 @@ def test_readline():
         b'\n'
     )
 
-    stream = BufferedStream(io.BytesIO(source).read, len(source))
+    stream = BufferedReader(io.BytesIO(source).read, len(source))
     assert stream.readline() == b'Hello, world!\n'
     assert stream.readline() == b'A line.\n'
     assert stream.readline() == b'\n'

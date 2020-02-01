@@ -5,12 +5,12 @@ from urllib.parse import unquote_to_bytes
 from falcon import errors
 from falcon import request_helpers
 from falcon.media.base import BaseHandler
-from falcon.util import BufferedStream
+from falcon.util import BufferedReader
 from falcon.util import misc
 
 # TODO(vytas):
 #   * Better support for form-wide charset setting
-#   * Clean up, simplify, and optimize BufferedStream
+#   * Clean up, simplify, and optimize BufferedReader
 #   * Better documentation
 
 _ALLOWED_CONTENT_HEADERS = frozenset([
@@ -216,14 +216,14 @@ class MultipartForm:
 
     def __init__(self, stream, boundary, content_length, parse_options):
         # NOTE(vytas): More lenient check whether the provided stream is not
-        #   already an instance of BufferedStream.
+        #   already an instance of BufferedReader.
         # This approach makes testing both the Cythonized and pure-Python
         #   streams easier within the same test/benchmark suite.
         if not hasattr(stream, 'read_until'):
             if isinstance(stream, request_helpers.BoundedStream):
-                stream = BufferedStream(stream.stream.read, content_length)
+                stream = BufferedReader(stream.stream.read, content_length)
             else:
-                stream = BufferedStream(stream.read, content_length)
+                stream = BufferedReader(stream.read, content_length)
 
         self._stream = stream
         self._boundary = boundary
@@ -235,6 +235,7 @@ class MultipartForm:
         self._parse_options = parse_options
 
     def __iter__(self):
+        prologue = True
         delimiter = self._dash_boundary
         stream = self._stream
         max_headers_size = self._parse_options.max_body_part_headers_size
@@ -246,12 +247,13 @@ class MultipartForm:
             stream.pipe_until(delimiter)
             stream.read(len(delimiter))
 
-            if not delimiter.startswith(_CRLF):
+            if prologue:
                 # NOTE(vytas): RFC 7578, section 4.1.
                 #   As with other multipart types, the parts are delimited with
                 #   a boundary delimiter, constructed using CRLF, "--", and the
                 #   value of the "boundary" parameter.
                 delimiter = _CRLF + delimiter
+                prologue = False
 
             separator = stream.read_until(_CRLF, 2, MultipartParseError)
             if separator == b'--':
