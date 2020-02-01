@@ -1,3 +1,19 @@
+# Copyright 2019-2020 by Vytautas Liuolia.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Buffered stream reader."""
+
 import functools
 import io
 
@@ -57,6 +73,11 @@ class BufferedReader:
     def _read(self, size):
         # PERF(vytas) In Cython, bind types:
         #   cdef Py_ssize_t read_size
+        #   cdef bytes result
+
+        if size <= 0:
+            return b''
+
         if self._buffer_len == 0:
             self._max_bytes_remaining -= size
             return self._read_func(size)
@@ -67,7 +88,7 @@ class BufferedReader:
             self._buffer = b''
             return result
 
-        if size < self._buffer_len - self._buffer_pos:
+        if size <= self._buffer_len - self._buffer_pos:
             self._buffer_pos += size
             return self._buffer[self._buffer_pos - size:self._buffer_pos]
 

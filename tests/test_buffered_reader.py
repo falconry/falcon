@@ -5,6 +5,22 @@ import pytest
 from falcon.util import BufferedReader
 
 
+class WouldHang(RuntimeError):
+    pass
+
+
+class GlitchyStream(io.BytesIO):
+
+    def read(self, size=None):
+        if size is None or size == -1:
+            raise WouldHang('unbounded read()')
+
+        result = super().read(size)
+        if not result:
+            raise WouldHang('EOF')
+        return result
+
+
 TEST_DATA = (
     b'123456789ABCDEF\n' * 64 * 1024 * 64 +
     b'--boundary1234567890--' +
@@ -14,16 +30,16 @@ TEST_DATA = (
     b'--boundary1234567890--'
 )
 
-TEST_BYTES_IO = io.BytesIO(TEST_DATA)
+TEST_BYTES_IO = GlitchyStream(TEST_DATA)
 
 
 @pytest.fixture()
-def buffered_stream():
-    def _stream_fixture(chunk_size=None):
+def buffered_reader():
+    def _reader_fixture(chunk_size=None):
         TEST_BYTES_IO.seek(0)
         return BufferedReader(TEST_BYTES_IO.read, len(TEST_DATA), chunk_size)
 
-    yield _stream_fixture
+    yield _reader_fixture
 
 
 @pytest.fixture()
@@ -32,8 +48,8 @@ def shorter_stream():
     return BufferedReader(TEST_BYTES_IO.read, 1024, 128)
 
 
-def test_peek(buffered_stream):
-    stream = buffered_stream(16)
+def test_peek(buffered_reader):
+    stream = buffered_reader(16)
 
     assert stream.peek(0) == b''
     assert stream.peek(1) == b'1'
@@ -74,7 +90,7 @@ def test_bounded_read():
     assert stream.read() == b'!'
 
 
-@pytest.mark.parametrize('amount', [
+@pytest.mark.parametrize('size', [
     0,
     1,
     2,
@@ -90,16 +106,16 @@ def test_bounded_read():
     1000,
     10000,
 ])
-def test_read_from_buffer(buffered_stream, amount):
-    stream = buffered_stream(64)
+def test_read_from_buffer(buffered_reader, size):
+    stream = buffered_reader(64)
     stream.peek(64)
 
-    assert stream.read(amount) == TEST_DATA[:amount]
-    assert stream.read(1) == TEST_DATA[amount:amount + 1]
+    assert stream.read(size) == TEST_DATA[:size]
+    assert stream.read(1) == TEST_DATA[size:size + 1]
 
 
-def test_read_until_delimiter_size_check(buffered_stream):
-    stream = buffered_stream(64)
+def test_read_until_delimiter_size_check(buffered_reader):
+    stream = buffered_reader(64)
 
     with pytest.raises(ValueError):
         stream.read_until(b'')
@@ -107,7 +123,7 @@ def test_read_until_delimiter_size_check(buffered_stream):
         stream.read_until(b'B' * 65)
 
 
-@pytest.mark.parametrize('amount', [
+@pytest.mark.parametrize('size', [
     0,
     1,
     2,
@@ -123,14 +139,14 @@ def test_read_until_delimiter_size_check(buffered_stream):
     1000,
     10000,
 ])
-def test_read_until_with_amount(buffered_stream, amount):
-    stream = buffered_stream(64)
-    assert stream.read_until(b'--boundary1234567890--', amount) == (
-        TEST_DATA[:amount])
+def test_read_until_with_size(buffered_reader, size):
+    stream = buffered_reader(64)
+    assert stream.read_until(b'--boundary1234567890--', size) == (
+        TEST_DATA[:size])
 
 
-def test_read_until(buffered_stream):
-    stream = buffered_stream()
+def test_read_until(buffered_reader):
+    stream = buffered_reader()
 
     assert len(stream.read_until(b'--boundary1234567890--')) == 64 * 1024**2
     stream.read_until(b'123456789ABCDEF\n')
@@ -139,7 +155,7 @@ def test_read_until(buffered_stream):
     assert len(stream.read_until(b'--boundary1234567890--')) == 62 * 1024**2
 
 
-@pytest.mark.parametrize('amount', [
+@pytest.mark.parametrize('size', [
     0,
     1,
     2,
@@ -154,11 +170,11 @@ def test_read_until(buffered_stream):
     129,
     1000,
 ])
-def test_read_until_from_buffer(shorter_stream, amount):
+def test_read_until_from_buffer(shorter_stream, size):
     shorter_stream.peek(128)
 
-    assert shorter_stream.read_until(b'\n1', amount) == (
-        b'123456789ABCDEF'[:amount])
+    assert shorter_stream.read_until(b'\n1', size) == (
+        b'123456789ABCDEF'[:size])
 
 
 def test_read_until_missing_delimiter(shorter_stream):
@@ -185,16 +201,16 @@ def test_pipe(shorter_stream):
     assert len(output.getvalue()) == 1024
 
 
-def test_pipe_until(buffered_stream):
-    stream = buffered_stream(2 ** 16)
+def test_pipe_until(buffered_reader):
+    stream = buffered_reader(2 ** 16)
 
     output = io.BytesIO()
     stream.pipe_until(b'--boundary1234567890--', output)
     assert len(output.getvalue()) == 64 * 1024**2
 
 
-def test_pipe_until_without_destination(buffered_stream):
-    stream = buffered_stream(2 ** 16)
+def test_pipe_until_without_destination(buffered_reader):
+    stream = buffered_reader(2 ** 16)
     stream.pipe_until(b'--boundary1234567890--')
     assert stream.peek(22) == b'--boundary1234567890--'
 
@@ -236,8 +252,8 @@ def test_readlines(shorter_stream):
     1024,
     2 ** 16,
 ])
-def test_readlines_hint(buffered_stream, chunk_size):
-    stream = buffered_stream(chunk_size)
+def test_readlines_hint(buffered_reader, chunk_size):
+    stream = buffered_reader(chunk_size)
     assert stream.readlines(100) == [b'123456789ABCDEF\n'] * 7
     assert stream.readlines(64) == [b'123456789ABCDEF\n'] * 4
     assert stream.readlines(16) == [b'123456789ABCDEF\n']

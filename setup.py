@@ -88,6 +88,11 @@ if CYTHON:
         if (package + '.' + module) not in modules_to_exclude
     ]
 
+    # NOTE(vytas): Now that all our codebase is Python 3.5+, specify the
+    #   Python 3 language level for Cython as well to avoid any surprises.
+    for ext_mod in ext_modules:
+        ext_mod.cython_directives = {'language_level': '3'}
+
     cmdclass = {'build_ext': build_ext}
 
 else:
