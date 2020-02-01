@@ -153,6 +153,10 @@ class HTTPUnauthorized(HTTPError):
             challenges to use as the value of the WWW-Authenticate header in
             the response.
 
+            Note:
+                The existing value of the WWW-Authenticate in headers will be
+                overridden by this value
+
             (See also: RFC 7235, Section 2.1)
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
@@ -362,6 +366,10 @@ class HTTPMethodNotAllowed(OptionalRepresentation, HTTPError):
     Args:
         allowed_methods (list of str): Allowed HTTP methods for this
             resource (e.g., ``['GET', 'POST', 'HEAD']``).
+
+            Note:
+                The existing valuessss of the Allow in headers will be
+                overridden by this value.
 
     Keyword Args:
         title (str): Human-friendly error title. If not provided, and
@@ -719,11 +727,6 @@ class HTTPPayloadTooLarge(HTTPError):
 
         description (str): Human-friendly description of the error, along with
             a helpful suggestion or two.
-
-        retry_after (datetime or int): Value for the Retry-After
-            header. If a ``datetime`` object, will serialize as an HTTP date.
-            Otherwise, a non-negative ``int`` is expected, representing the
-            number of seconds to wait.
         headers (dict or list): A ``dict`` of header names and values
             to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
             *value* must be of type ``str`` or ``StringType``, and only
@@ -740,6 +743,15 @@ class HTTPPayloadTooLarge(HTTPError):
             Note:
                 Falcon can process a list of ``tuple`` slightly faster
                 than a ``dict``.
+        retry_after (datetime or int): Value for the Retry-After
+            header. If a ``datetime`` object, will serialize as an HTTP date.
+            Otherwise, a non-negative ``int`` is expected, representing the
+            number of seconds to wait.
+
+            Note:
+                The existing value of the Retry-After in headers will be
+                overridden by this value
+
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -893,6 +905,10 @@ class HTTPRangeNotSatisfiable(OptionalRepresentation, HTTPError):
     Args:
         resource_length: The maximum value for the last-byte-pos of a range
             request. Used to set the Content-Range header.
+
+            Note:
+                The existing value of the Content-Range in headers will be
+                overridden by this value
 
     Keyword Args:
         title (str): Error title (default '416 Range Not Satisfiable').
@@ -1188,6 +1204,11 @@ class HTTPTooManyRequests(HTTPError):
             header. If a ``datetime`` object, will serialize as an HTTP date.
             Otherwise, a non-negative ``int`` is expected, representing the
             number of seconds to wait.
+
+            Note:
+                The existing value of the Retry-After in headers will be
+                overridden by this value
+
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
@@ -1524,6 +1545,11 @@ class HTTPServiceUnavailable(HTTPError):
             ``datetime`` object, will serialize as an HTTP date. Otherwise,
             a non-negative ``int`` is expected, representing the number of
             seconds to wait.
+
+            Note:
+                The existing value of the Retry-After in headers will be
+                overridden by this value
+
         href (str): A URL someone can visit to find out more information
             (default ``None``). Unicode characters are percent-encoded.
         href_text (str): If href is given, use this as the friendly
