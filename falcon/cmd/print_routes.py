@@ -15,104 +15,72 @@
 """
 Script that prints out the routes of an App instance.
 """
-
-from functools import partial
-import inspect
+import importlib
 
 import falcon
+from falcon.util.inspect import inspect_routes
 
 
-def print_routes(api, verbose=False):  # pragma: no cover
-    """
-    Initial call.
-
-    :param api: The falcon.App or callable that returns an instance to look at.
-    :type api: falcon.App or callable
-    :param verbose: If the output should be verbose.
-    :type verbose: bool
-    """
-    traverse(api._router._roots, verbose=verbose)
+def print_routes(api, verbose=False):
+    routes = inspect_routes(api)
+    for route in routes:
+        print(route.as_string(verbose))
 
 
-def traverse(roots, parent='', verbose=False):
-    """
-    Recursive call which also handles printing output.
+def make_parser():
+    "Creates the parsed or the application"
+    import argparse
 
-    :param api: The falcon.App or callable that returns an instance to look at.
-    :type api: falcon.App or callable
-    :param parent: The parent uri path to the current iteration.
-    :type parent: str
-    :param verbose: If the output should be verbose.
-    :type verbose: bool
-    """
-    for root in roots:
-        if root.method_map:
-            print('->', parent + '/' + root.raw_segment)
-            if verbose:
-                for method, func in root.method_map.items():
-                    # NOTE(kgriffs): Skip the default responder that the
-                    #   framework creates.
-                    if not func.__name__.startswith('method_not_allowed'):
-                        if isinstance(func, partial):
-                            real_func = func.func
-                        else:
-                            real_func = func
+    parser = argparse.ArgumentParser(
+        description="Example: falcon-print-routes myprogram:app"
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Prints out information for each method.",
+    )
+    parser.add_argument(
+        "app_module",
+        help="The module and app to inspect. Example: myapp.somemodule:api",
+    )
+    return parser
 
-                        try:
-                            source_file = inspect.getsourcefile(real_func)
-                            source_lines = inspect.getsourcelines(real_func)
-                            source_info = '{}:{}'.format(source_file,
-                                                         source_lines[1])
-                        except TypeError:
-                            # NOTE(vytas): If Falcon is cythonized, all default
-                            # responders coming from cythonized modules will
-                            # appear as built-in functions, and raise a
-                            # TypeError when trying to locate the source file.
-                            source_info = '[unknown file]'
 
-                        print('-->' + method, source_info)
+def load_app(parser, args):
 
-        if root.children:
-            traverse(root.children, parent + '/' + root.raw_segment, verbose)
+    try:
+        module, instance = args.app_module.split(":", 1)
+    except ValueError:
+        parser.error(
+            "The app_module must include a colon between the module and instance"
+        )
+
+    app = getattr(importlib.import_module(module), instance)
+    if not isinstance(app, falcon.App):
+        if callable(app):
+            app = app()
+            if not isinstance(app, falcon.App):
+                parser.error(
+                    "{0} did not return a falcon.App instance".format(args.app_module)
+                )
+        else:
+            parser.error(
+                "The instance must be of falcon.App or be "
+                "a callable without args that returns falcon.App"
+            )
+    return app
 
 
 def main():
     """
     Main entrypoint.
     """
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description='Example: print-api-routes myprogram:app')
-    parser.add_argument(
-        '-v', '--verbose', action='store_true',
-        help='Prints out information for each method.')
-    parser.add_argument(
-        'api_module',
-        help='The module and api to inspect. Example: myapp.somemodule:api',
-    )
+    parser = make_parser()
     args = parser.parse_args()
-
-    try:
-        module, instance = args.api_module.split(':', 1)
-    except ValueError:
-        parser.error(
-            'The api_module must include a colon between '
-            'the module and instance')
-    api = getattr(__import__(module, fromlist=[True]), instance)
-    if not isinstance(api, falcon.App):
-        if callable(api):
-            api = api()
-            if not isinstance(api, falcon.App):
-                parser.error(
-                    '{0} did not return a falcon.App instance'.format(
-                        args.api_module))
-        else:
-            parser.error(
-                'The instance must be of falcon.App or be '
-                'a callable without args that returns falcon.App')
-    print_routes(api, verbose=args.verbose)
+    app = load_app(parser, args)
+    print_routes(app, verbose=args.verbose)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
