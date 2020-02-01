@@ -6,17 +6,30 @@ from falcon import App
 from falcon.routing import CompiledRouter
 
 
+def inspect_app(app: App):
+    """Inspects an application
+
+    Args:
+        app (App): The application to inspect
+
+    Returns:
+        AppInfo: The information regarding the application.
+            Call the ``as_string`` to obtain a string representation of it
+    """
+    routes = inspect_routes(app)
+    static = inspect_static_routes(app)
+    sinks = inspect_sinks(app)
+    return AppInfo(routes, static, sinks)
+
+
 def inspect_routes(app: App):
     """Inspects the routes of an application
 
     Args:
         app (App): The application to inspect
 
-    Raises:
-        TypeError: [description]
-
     Returns:
-        List[RouteInfo]: The list of routes of the specified application
+        List[RouteInfo]: The list of routes info of the application
     """
     router = app._router
 
@@ -56,7 +69,61 @@ def register_router(router_class):
     return wraps
 
 
+def inspect_static_routes(app: App):
+    """Inspects the routes of an application
+
+    Args:
+        app (App): The application to inspect
+
+    Returns:
+        List[StaticRouteInfo]: The list of static routes of the application
+    """
+    routes = []
+    for sr in app._static_routes:
+        info = StaticRouteInfo(sr._prefix, sr._directory, sr._fallback_filename)
+        routes.append(info)
+    return routes
+
+
+def inspect_sinks(app: App):
+    """Inspects the routes of an application
+
+    Args:
+        app (App): The application to inspect
+
+    Returns:
+        List[SinkInfo]: The list of sinks of the application
+    """
+    sinks = []
+    for prefix, sink in app._sinks:
+        source_info = _get_source_info(sink, None)
+        if source_info is None:
+            # NOTE(caselit): a class instances return None. Type the type
+            source_info = _get_source_info(type(sink))
+        name = getattr(sink, "__name__", None)
+        if name is None:
+            name = getattr(type(sink), "__name__", "[unknown]")
+        info = SinkInfo(prefix.pattern, name, source_info)
+        sinks.append(info)
+    return sinks
+
+
 _supported_routes = {}
+
+
+def _get_source_info(obj, default="[unknown file]"):
+    "Tries to get the definition file and line of obj. Returns default on error"
+    try:
+        source_file = inspect.getsourcefile(obj)
+        source_lines = inspect.getsourcelines(obj)
+        source_info = "{}:{}".format(source_file, source_lines[1])
+    except TypeError:
+        # NOTE(vytas): If Falcon is cythonized, all default
+        # responders coming from cythonized modules will
+        # appear as built-in functions, and raise a
+        # TypeError when trying to locate the source file.
+        source_info = default
+    return source_info
 
 
 @register_router(CompiledRouter)
@@ -80,17 +147,7 @@ def inspect_compiled_router(router):
                     else:
                         real_func = func
 
-                    try:
-                        source_file = inspect.getsourcefile(real_func)
-                        source_lines = inspect.getsourcelines(real_func)
-                        source_info = "{}:{}".format(source_file, source_lines[1])
-                    except TypeError:
-                        # NOTE(vytas): If Falcon is cythonized, all default
-                        # responders coming from cythonized modules will
-                        # appear as built-in functions, and raise a
-                        # TypeError when trying to locate the source file.
-                        source_info = "[unknown file]"
-
+                    source_info = _get_source_info(real_func)
                     module = inspect.getmodule(real_func)
                     internal = module.__name__.startswith("falcon.")
 
@@ -125,7 +182,7 @@ class MathodInfo:
         self.internal = internal
 
     def __str__(self):
-        return "{} {} {}".format(
+        return "{} {} ({})".format(
             self.method.upper(), self.function_name, self.source_info
         )
 
@@ -144,20 +201,143 @@ class RouteInfo:
         self.path = path
         self.methods = []
 
-    def as_string(self, verbose=False):
+    def as_string(self, verbose=False, indent=0):
+        """Returns a string representation of this route
+
+        Args:
+            verbose (bool, optional): Print also internal routes. Defaults to False.
+            indent (int, optional): Number of indentation spaces of the text. Defaults to 0.
+
+        Returns:
+            str: string representation of this route
+        """
         if verbose:
             methods = self.methods
         else:
             methods = [m for m in self.methods if not m.internal]
-
-        text = "⇒ {}".format(self.path)
+        tab = " " * indent
+        text = "{}⇒ {}".format(tab, self.path)
         if not methods:
             return text
 
-        method_text = ["   ├── {}".format(m) for m in methods[:-1]]
-        method_text += ["   └── {}".format(m) for m in methods[-1:]]
+        c_tab = tab + " " * 2
+        method_text = ["{}├── {}".format(c_tab, m) for m in methods[:-1]]
+        method_text += ["{}└── {}".format(c_tab, m) for m in methods[-1:]]
 
         return "{}:\n{}".format(text, "\n".join(method_text))
+
+    def __repr__(self):
+        return self.as_string()
+
+
+class StaticRouteInfo:
+    """Utility class that contains the information of a static route
+
+    Args:
+        path (str): The prefix of the static route
+        directory (str): The directory of this static route
+        fallback_filename (str or None): Fallback filename to serve
+    """
+
+    def __init__(self, prefix, directory, fallback_filename):
+        self.prefix = prefix
+        self.directory = directory
+        self.fallback_filename = fallback_filename
+
+    def as_string(self, verbose=False, indent=0):
+        """Returns a string representation of this static route
+
+        Args:
+            verbose (bool, optional): Currently unused. Defaults to False.
+            indent (int, optional): Number of indentation spaces of the text. Defaults to 0.
+
+        Returns:
+            str: string representation of this route
+        """
+        text = "{}↦ {} {}".format(" " * indent, self.prefix, self.directory)
+        if self.fallback_filename:
+            text += " ({})".format(self.fallback_filename)
+
+        return text
+
+    def __repr__(self):
+        return self.as_string()
+
+
+class AppInfo:
+    """Utility class that contains the information of an application
+
+    Args:
+        routes (List[RouteInfo]): The routes of the application
+        static_routes (List[StaticRouteInfo]): The static routes of this application
+        sinks (List[SinkInfo]): The sinks of this application
+    """
+
+    def __init__(self, routes, static_routes, sinks):
+        self.routes = routes
+        self.static_routes = static_routes
+        self.sinks = sinks
+
+    def as_string(self, verbose=False, name="Falcon App"):
+        """Returns a string representation of this app
+
+        Args:
+            verbose (bool, optional): Prints more informations. Defaults to False.
+            name (str, optional): The name of the application. Will be places at the
+                beginning of the text. Defaults to 'Falcon App'
+        Returns:
+            str: string representation of the application
+        """
+        indent = 4
+        text = "{}".format(name)
+        if self.routes:
+            routes = "\n".join(r.as_string(verbose, indent) for r in self.routes)
+            text += "\n• Routes:\n{}".format(routes)
+        if self.static_routes:
+            static_routes = "\n".join(
+                sr.as_string(verbose, indent) for sr in self.static_routes
+            )
+            text += "\n• Static routes:\n{}".format(static_routes)
+        if self.sinks:
+            sinks = "\n".join(s.as_string(verbose, indent) for s in self.sinks)
+            text += "\n• Sinks:\n{}".format(sinks)
+        if text.startswith("\n"):
+            # NOTE(caselit): if name is empty text will start with a new line
+            return text[1:]
+        return text
+
+    def __repr__(self):
+        return self.as_string()
+
+
+class SinkInfo:
+    """Utility class that contains the information of a sink
+
+    Args:
+        prefix (str): The prefix of the sink
+        name (str): The name of the sink function or class
+        source_info (str): The source path where this sink was defined
+    """
+
+    def __init__(self, prefix, name, source_info):
+        self.prefix = prefix
+        self.name = name
+        self.source_info = source_info
+
+    def as_string(self, verbose=False, indent=0):
+        """Returns a string representation of this sink
+
+        Args:
+            verbose (bool, optional): Currently unused. Defaults to False.
+            indent (int, optional): Number of indentation spaces of the text. Defaults to 0.
+
+        Returns:
+            str: string representation of this sink
+        """
+        text = "{}⇥ {} {} ({})".format(
+            " " * indent, self.prefix, self.name, self.source_info
+        )
+        return text
 
     def __repr__(self):
         return self.as_string()
