@@ -857,3 +857,8 @@ class TestHTTPError:
 
         assert response.status == headers['X-Error-Status']
         assert response.json['title'] == headers['X-Error-Status']
+
+
+def test_kw_only():
+    with pytest.raises(TypeError, match='positional argument'):
+        raise falcon.HTTPError(falcon.HTTP_BAD_REQUEST, 'foo', 'bar')
