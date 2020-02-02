@@ -140,8 +140,8 @@ def inspect_middlewares(app: App):
     for stack in types_:
         current = []
         for method in stack:
-            cls = type(method.__self__)
             _, name = _get_source_info_and_name(method)
+            cls = type(method.__self__)
             _, cls_name = _get_source_info_and_name(cls)
             info = MiddlewareTreeItemInfo(name, cls_name)
             current.append(info)
@@ -221,8 +221,8 @@ def inspect_compiled_router(router):
 
     def _traverse(roots, parent):
         for root in roots:
+            methods = []
             if root.method_map:
-                route_info = RouteInfo(parent + "/" + root.raw_segment)
                 for method, func in root.method_map.items():
                     if isinstance(func, partial):
                         real_func = func.func
@@ -235,11 +235,15 @@ def inspect_compiled_router(router):
                     method_info = RouteMethodInfo(
                         method, source_info, real_func.__name__, internal
                     )
-                    route_info.methods.append(method_info)
-                routes.append(route_info)
+                    methods.append(method_info)
+                source_info, class_name = _get_source_info_and_name(root.resource)
+
+            path = parent + "/" + root.raw_segment
+            route_info = RouteInfo(path, class_name, source_info, methods)
+            routes.append(route_info)
 
             if root.children:
-                _traverse(root.children, parent + "/" + root.raw_segment)
+                _traverse(root.children, path)
 
     routes = []
     _traverse(router._roots, "")
@@ -271,7 +275,7 @@ class RouteMethodInfo:
         Returns:
             str: string representation of this class
         """
-        text = "{} {}".format(self.method, self.function_name)
+        text = "{} - {}".format(self.method, self.function_name)
         if verbose:
             text += " ({})".format(self.source_info)
         return text
@@ -303,14 +307,16 @@ class RouteInfo(_WithMethods):
 
     Args:
         path (str): The path of this route
-
-    Attributes:
+        class_name (str): The class name of the responder of this route
+        source_info (str): The source path where this responder was defined
         methods (List[MethodInfo]): List of method defined in the route
     """
 
-    def __init__(self, path):
-        super().__init__([])
+    def __init__(self, path, class_name, source_info, methods):
+        super().__init__(methods)
         self.path = path
+        self.class_name = class_name
+        self.source_info = source_info
 
     def as_string(self, verbose=False, indent=0):
         """Returns a string representation of this class
@@ -323,7 +329,9 @@ class RouteInfo(_WithMethods):
             str: string representation of this class
         """
         tab = " " * indent
-        text = "{}⇒ {}".format(tab, self.path)
+        text = "{}⇒ {} - {}".format(tab, self.path, self.class_name)
+        if verbose:
+            text += " ({})".format(self.source_info)
 
         method_text = self._methods_as_string(verbose, indent)
         if not method_text:
@@ -600,14 +608,28 @@ class MiddlewareTreeItemInfo:
 
 
 class MiddlewareTreeInfo:
-    # TODO
+    """Utility class that contains the information of the middleware methods used by the app
+
+    Args:
+        request (List[MiddlewareTreeItemInfo]): The process_request methods
+        resource (List[MiddlewareTreeItemInfo]): The process_resource methods
+        response (List[MiddlewareTreeItemInfo]): The process_response methods
+    """
     def __init__(self, request, resource, response):
         self.request = request
         self.resource = resource
         self.response = response
 
     def as_string(self, verbose=False, indent=0):
+        """Returns a string representation of this class
 
+        Args:
+            verbose (bool, optional): Adds more information. Defaults to False.
+            indent (int, optional): Number of indentation spaces of the text. Defaults to 0.
+
+        Returns:
+            str: string representation of this class
+        """
         before = len(self.request) + len(self.resource)
         after = len(self.response)
 
@@ -641,10 +663,19 @@ class MiddlewareTreeInfo:
 
 
 class MiddlewareInfo:
-    # TODO
-    def __init__(self, middlewareTree, middlewares, independent):
+    """Utility class that contains the information of the middleware of the app
+
+    Args:
+        middlewareTree (MiddlewareTreeInfo): The middleware tree of the app
+        middlewareClasses (List[MeddlewareClassInfo]): The middleware classes of the app
+        independent (bool): If the middleware are independent
+
+    Attributes:
+        independent_text (str): Text created from the ``independent`` arg
+    """
+    def __init__(self, middlewareTree, middlewareClasses, independent):
         self.middlewareTree = middlewareTree
-        self.middlewares = middlewares
+        self.middlewareClasses = middlewareClasses
         self.independent = independent
 
         if independent:
@@ -664,7 +695,7 @@ class MiddlewareInfo:
         text = self.middlewareTree.as_string(verbose, indent)
         if verbose:
             m_text = "\n".join(
-                m.as_string(verbose, indent + 4) for m in self.middlewares
+                m.as_string(verbose, indent + 4) for m in self.middlewareClasses
             )
             if m_text:
                 text += "\n{}- Middlewares classes:\n{}".format(" " * indent, m_text)
