@@ -7,7 +7,7 @@ from falcon import App, app_helpers
 from falcon.routing import CompiledRouter
 
 
-def inspect_app(app: App) -> "AppInfo":
+def inspect_app(app: App) -> 'AppInfo':
     """Inspects an application
 
     Args:
@@ -25,7 +25,7 @@ def inspect_app(app: App) -> "AppInfo":
     return AppInfo(routes, middleware, static, sinks, error_handlers, app._ASGI,)
 
 
-def inspect_routes(app: App) -> "List[RouteInfo]":
+def inspect_routes(app: App) -> 'List[RouteInfo]':
     """Inspects the routes of an application
 
     Args:
@@ -39,9 +39,9 @@ def inspect_routes(app: App) -> "List[RouteInfo]":
     inspect_function = _supported_routers.get(type(router))
     if inspect_function is None:
         raise TypeError(
-            "Unsupported router class {}. Use `register_router` "
-            "to register a function that can inspect the router "
-            "used by the provided application".format(type(router))
+            'Unsupported router class {}. Use "register_router" '
+            'to register a function that can inspect the router '
+            'used by the provided application'.format(type(router))
         )
     return inspect_function(router)
 
@@ -63,8 +63,8 @@ def register_router(router_class):
     def wraps(fn):
         if router_class in _supported_routers:
             raise ValueError(
-                "Another function is already registered"
-                " for the router {}".format(router_class)
+                'Another function is already registered'
+                ' for the router {}'.format(router_class)
             )
         _supported_routers[router_class] = fn
         return fn
@@ -76,7 +76,7 @@ def register_router(router_class):
 _supported_routers = {}
 
 
-def inspect_static_routes(app: App) -> "List[StaticRouteInfo]":
+def inspect_static_routes(app: App) -> 'List[StaticRouteInfo]':
     """Inspects the static routes of an application
 
     Args:
@@ -92,7 +92,7 @@ def inspect_static_routes(app: App) -> "List[StaticRouteInfo]":
     return routes
 
 
-def inspect_sinks(app: App) -> "List[SinkInfo]":
+def inspect_sinks(app: App) -> 'List[SinkInfo]':
     """Inspects the sinks of an application
 
     Args:
@@ -109,7 +109,7 @@ def inspect_sinks(app: App) -> "List[SinkInfo]":
     return sinks
 
 
-def inspect_error_handlers(app: App) -> "List[ErrorHandlerInfo]":
+def inspect_error_handlers(app: App) -> 'List[ErrorHandlerInfo]':
     """Inspects the error handlers of an application
 
     Args:
@@ -126,7 +126,7 @@ def inspect_error_handlers(app: App) -> "List[ErrorHandlerInfo]":
     return errors
 
 
-def inspect_middlewares(app: App) -> "MiddlewareInfo":
+def inspect_middlewares(app: App) -> 'MiddlewareInfo':
     """Inspects the meddlewares of an application
 
     Args:
@@ -150,7 +150,7 @@ def inspect_middlewares(app: App) -> "MiddlewareInfo":
     middlewareTree = MiddlewareTreeInfo(*type_infos)
 
     middlewareClasses = []
-    names = "Process request", "Process resource", "Process response"
+    names = 'Process request', 'Process resource', 'Process response'
     for m in app._unprepared_middleware:
         fns = app_helpers.prepare_middleware([m], True, app._ASGI)
         class_source_info, cls_name = _get_source_info_and_name(type(m))
@@ -170,7 +170,7 @@ def inspect_middlewares(app: App) -> "MiddlewareInfo":
 
 
 @register_router(CompiledRouter)
-def inspect_compiled_router(router) -> "List[RouteInfo]":
+def inspect_compiled_router(router) -> 'List[RouteInfo]':
     """Expores the compiled router and returns the list of defined routes
 
     Args:
@@ -199,7 +199,7 @@ def inspect_compiled_router(router) -> "List[RouteInfo]":
                     methods.append(method_info)
                 source_info, class_name = _get_source_info_and_name(root.resource)
 
-            path = parent + "/" + root.raw_segment
+            path = parent + '/' + root.raw_segment
             route_info = RouteInfo(path, class_name, source_info, methods)
             routes.append(route_info)
 
@@ -207,7 +207,7 @@ def inspect_compiled_router(router) -> "List[RouteInfo]":
                 _traverse(root.children, path)
 
     routes = []
-    _traverse(router._roots, "")
+    _traverse(router._roots, '')
     return routes
 
 
@@ -243,9 +243,9 @@ class RouteMethodInfo:
         Returns:
             str: string representation of this class
         """
-        text = "{} - {}".format(self.method, self.function_name)
+        text = '{} - {}'.format(self.method, self.function_name)
         if verbose:
-            text += " ({})".format(self.source_info)
+            text += ' ({})'.format(self.source_info)
         return text
 
     def __repr__(self):
@@ -260,14 +260,14 @@ class _WithMethods:
 
     def _methods_to_string(self, verbose: bool, indent: int):
         """Returns a string from the list of methods"""
-        tab = " " * indent + " " * 3
+        tab = ' ' * indent + ' ' * 3
         methods = _filter_internal(self.methods, verbose)
         if not methods:
-            return ""
+            return ''
         text_list = [m.to_string(verbose) for m in methods]
-        method_text = ["{}├── {}".format(tab, m) for m in text_list[:-1]]
-        method_text += ["{}└── {}".format(tab, m) for m in text_list[-1:]]
-        return "\n".join(method_text)
+        method_text = ['{}├── {}'.format(tab, m) for m in text_list[:-1]]
+        method_text += ['{}└── {}'.format(tab, m) for m in text_list[-1:]]
+        return '\n'.join(method_text)
 
 
 class RouteInfo(_WithMethods):
@@ -302,16 +302,16 @@ class RouteInfo(_WithMethods):
         Returns:
             str: string representation of this class
         """
-        tab = " " * indent
-        text = "{}⇒ {} - {}".format(tab, self.path, self.class_name)
+        tab = ' ' * indent
+        text = '{}⇒ {} - {}'.format(tab, self.path, self.class_name)
         if verbose:
-            text += " ({})".format(self.source_info)
+            text += ' ({})'.format(self.source_info)
 
         method_text = self._methods_to_string(verbose, indent)
         if not method_text:
             return text
 
-        return "{}:\n{}".format(text, method_text)
+        return '{}:\n{}'.format(text, method_text)
 
     def __repr__(self):
         return self.to_string()
@@ -341,9 +341,9 @@ class StaticRouteInfo:
         Returns:
             str: string representation of this class
         """
-        text = "{}↦ {} {}".format(" " * indent, self.prefix, self.directory)
+        text = '{}↦ {} {}'.format(' ' * indent, self.prefix, self.directory)
         if self.fallback_filename:
-            text += " [{}]".format(self.fallback_filename)
+            text += ' [{}]'.format(self.fallback_filename)
 
         return text
 
@@ -375,9 +375,9 @@ class SinkInfo:
         Returns:
             str: string representation of this class
         """
-        text = "{}⇥ {} {}".format(" " * indent, self.prefix, self.name)
+        text = '{}⇥ {} {}'.format(' ' * indent, self.prefix, self.name)
         if verbose:
-            text += " ({})".format(self.source_info)
+            text += ' ({})'.format(self.source_info)
         return text
 
     def __repr__(self):
@@ -410,9 +410,9 @@ class ErrorHandlerInfo:
         Returns:
             str: string representation of this class
         """
-        text = "{}⇜ {} {}".format(" " * indent, self.error, self.name)
+        text = '{}⇜ {} {}'.format(' ' * indent, self.error, self.name)
         if verbose:
-            text += " ({})".format(self.source_info)
+            text += ' ({})'.format(self.source_info)
         return text
 
     def __repr__(self):
@@ -440,9 +440,9 @@ class MiddlewareMethodInfo:
         Returns:
             str: string representation of this class
         """
-        text = "{}".format(self.function_name)
+        text = '{}'.format(self.function_name)
         if verbose:
-            text += " ({})".format(self.source_info)
+            text += ' ({})'.format(self.source_info)
         return text
 
     def __repr__(self):
@@ -475,16 +475,16 @@ class MeddlewareClassInfo(_WithMethods):
         Returns:
             str: string representation of this class
         """
-        tab = " " * indent
-        text = "{}↣ {}".format(tab, self.name)
+        tab = ' ' * indent
+        text = '{}↣ {}'.format(tab, self.name)
         if verbose:
-            text += " ({})".format(self.source_info)
+            text += ' ({})'.format(self.source_info)
 
         method_text = self._methods_to_string(verbose, indent)
         if not method_text:
             return text
 
-        return "{}:\n{}".format(text, method_text)
+        return '{}:\n{}'.format(text, method_text)
 
     def __repr__(self):
         return self.to_string()
@@ -512,7 +512,7 @@ class MiddlewareTreeItemInfo:
         Returns:
             str: string representation of this class
         """
-        text = "{}{} {}.{}".format(" " * indent, symbol, self.class_name, self.name)
+        text = '{}{} {}.{}'.format(' ' * indent, symbol, self.class_name, self.name)
         return text
 
 
@@ -556,25 +556,25 @@ class MiddlewareTreeInfo:
         current = initial
         text = []
         for r in self.request:
-            text.append(r.to_string("→", verbose, current))
+            text.append(r.to_string('→', verbose, current))
             current += each
         if text:
-            text.append("")
+            text.append('')
         for r in self.resource:
-            text.append(r.to_string("↣", verbose, current))
+            text.append(r.to_string('↣', verbose, current))
             current += each
 
-        text.append("")
+        text.append('')
 
-        text.append("{}├── Process responder".format(" " * (current + each)))
+        text.append('{}├── Process responder'.format(' ' * (current + each)))
         if self.response:
-            text.append("")
+            text.append('')
 
         for r in self.response:
             current -= each
-            text.append(r.to_string("↢", verbose, current))
+            text.append(r.to_string('↢', verbose, current))
 
-        return "\n".join(text)
+        return '\n'.join(text)
 
 
 class MiddlewareInfo:
@@ -600,9 +600,9 @@ class MiddlewareInfo:
         self.independent = independent
 
         if independent:
-            self.independent_text = "Middleware are independent"
+            self.independent_text = 'Middleware are independent'
         else:
-            self.independent_text = "Middleware are dependent"
+            self.independent_text = 'Middleware are dependent'
 
     def to_string(self, verbose=False, indent=0) -> str:
         """Returns a string representation of this class
@@ -615,11 +615,11 @@ class MiddlewareInfo:
         """
         text = self.middleware_tree.to_string(verbose, indent)
         if verbose:
-            m_text = "\n".join(
+            m_text = '\n'.join(
                 m.to_string(verbose, indent + 4) for m in self.middleware_classes
             )
             if m_text:
-                text += "\n{}- Middlewares classes:\n{}".format(" " * indent, m_text)
+                text += '\n{}- Middlewares classes:\n{}'.format(' ' * indent, m_text)
 
         return text
 
@@ -652,7 +652,7 @@ class AppInfo:
         self.error_handlers = error_handlers
         self.asgi = asgi
 
-    def to_string(self, verbose=False, name="") -> str:
+    def to_string(self, verbose=False, name='') -> str:
         """Returns a string representation of this class
 
         Args:
@@ -662,34 +662,34 @@ class AppInfo:
         Returns:
             str: string representation of the application
         """
-        type_ = "ASGI" if self.asgi else "WSGI"
+        type_ = 'ASGI' if self.asgi else 'WSGI'
         indent = 4
-        text = "{} ({})".format(name or "Falcon App", type_)
+        text = '{} ({})'.format(name or 'Falcon App', type_)
 
         if self.routes:
-            routes = "\n".join(r.to_string(verbose, indent) for r in self.routes)
-            text += "\n• Routes:\n{}".format(routes)
+            routes = '\n'.join(r.to_string(verbose, indent) for r in self.routes)
+            text += '\n• Routes:\n{}'.format(routes)
 
         middleware_text = self.middleware.to_string(verbose, indent)
         if middleware_text:
-            text += "\n• Middleware ({}):\n{}".format(
+            text += '\n• Middleware ({}):\n{}'.format(
                 self.middleware.independent_text, middleware_text
             )
 
         if self.static_routes:
-            static_routes = "\n".join(
+            static_routes = '\n'.join(
                 sr.to_string(verbose, indent) for sr in self.static_routes
             )
-            text += "\n• Static routes:\n{}".format(static_routes)
+            text += '\n• Static routes:\n{}'.format(static_routes)
 
         if self.sinks:
-            sinks = "\n".join(s.to_string(verbose, indent) for s in self.sinks)
-            text += "\n• Sinks:\n{}".format(sinks)
+            sinks = '\n'.join(s.to_string(verbose, indent) for s in self.sinks)
+            text += '\n• Sinks:\n{}'.format(sinks)
 
         errors = _filter_internal(self.error_handlers, verbose)
         if errors:
-            errs = "\n".join(e.to_string(verbose, indent) for e in errors)
-            text += "\n• Error handlers:\n{}".format(errs)
+            errs = '\n'.join(e.to_string(verbose, indent) for e in errors)
+            text += '\n• Error handlers:\n{}'.format(errs)
 
         return text
 
@@ -702,12 +702,12 @@ class AppInfo:
 # ------------------------------------------------------------------------
 
 
-def _get_source_info(obj, default="[unknown file]"):
+def _get_source_info(obj, default='[unknown file]'):
     """Tries to get the definition file and line of obj. Returns default on error"""
     try:
         source_file = inspect.getsourcefile(obj)
         source_lines = inspect.getsourcelines(obj)
-        source_info = "{}:{}".format(source_file, source_lines[1])
+        source_info = '{}:{}'.format(source_file, source_lines[1])
     except TypeError:
         # NOTE(vytas): If Falcon is cythonized, all default
         # responders coming from cythonized modules will
@@ -723,16 +723,16 @@ def _get_source_info_and_name(obj):
     if source_info is None:
         # NOTE(caselit): a class instances return None. Try the type
         source_info = _get_source_info(type(obj))
-    name = getattr(obj, "__name__", None)
+    name = getattr(obj, '__name__', None)
     if name is None:
-        name = getattr(type(obj), "__name__", "[unknown]")
+        name = getattr(type(obj), '__name__', '[unknown]')
     return source_info, name
 
 
 def _is_internal(obj):
     """Checks if the module of the object is a falcon module"""
     module = inspect.getmodule(obj)
-    return module.__name__.startswith("falcon.")
+    return module.__name__.startswith('falcon.')
 
 
 def _filter_internal(iterable, return_internal):
