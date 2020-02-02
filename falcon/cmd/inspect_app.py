@@ -18,13 +18,7 @@ Script that prints out the routes of an App instance.
 import importlib
 
 import falcon
-from falcon.util.inspect import inspect_app, inspect_routes
-
-
-def print_routes(api, verbose=False):
-    routes = inspect_routes(api)
-    for route in routes:
-        print(route.to_string(verbose))
+from falcon.inspect import inspect_app, inspect_routes
 
 
 def make_parser():
@@ -32,7 +26,7 @@ def make_parser():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='Example: falcon-print-routes myprogram:app'
+        description='Example: falcon-inspect-app myprogram:app'
     )
     parser.add_argument(
         '-r',
@@ -44,7 +38,7 @@ def make_parser():
         '-v',
         '--verbose',
         action='store_true',
-        help='Prints out information for each method.',
+        help='More verbose output',
     )
     parser.add_argument(
         'app_module',
@@ -86,7 +80,9 @@ def main():
     args = parser.parse_args()
     app = load_app(parser, args)
     if args.route_only:
-        print_routes(app, verbose=args.verbose)
+        routes = inspect_routes(app)
+        for route in routes:
+            print(route.to_string(args.verbose))
     else:
         print(inspect_app(app).to_string(args.verbose))
 
