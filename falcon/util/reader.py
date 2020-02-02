@@ -18,6 +18,7 @@ import functools
 import io
 
 DEFAULT_CHUNK_SIZE = io.DEFAULT_BUFFER_SIZE * 4
+"""Default chunk size for :class:`BufferedReader`."""
 
 
 class BufferedReader:
@@ -31,6 +32,45 @@ class BufferedReader:
         self._buffer_pos = 0
         self._max_bytes_remaining = max_stream_len
 
+    def _perform_read(self, size):
+        # PERF(vytas) In Cython, bind types:
+        #   cdef bytes chunk
+        #   cdef Py_ssize_t chunk_len
+        #   cdef result
+
+        size = min(size, self._max_bytes_remaining)
+        if size <= 0:
+            return b''
+
+        chunk = self._read_func(size)
+        chunk_len = len(chunk)
+        self._max_bytes_remaining -= chunk_len
+        if chunk_len == size:
+            return chunk
+
+        if chunk_len == 0:
+            # NOTE(vytas): The EOF.
+            self._max_bytes_remaining = 0
+            return b''
+
+        result = io.BytesIO(chunk)
+        result.seek(chunk_len)
+
+        while True:
+            size -= chunk_len
+            if size <= 0:
+                return result.getvalue()
+
+            chunk = self._read_func(size)
+            chunk_len = len(chunk)
+            if chunk_len == 0:
+                # NOTE(vytas): The EOF.
+                self._max_bytes_remaining = 0
+                return result.getvalue()
+
+            self._max_bytes_remaining -= chunk_len
+            result.write(chunk)
+
     def peek(self, size=-1):
         # PERF(vytas) In Cython, bind types:
         #   cdef Py_ssize_t read_size
@@ -40,18 +80,15 @@ class BufferedReader:
 
         if self._buffer_len - self._buffer_pos < size:
             read_size = self._chunk_size - self._buffer_len + self._buffer_pos
-            if read_size >= self._max_bytes_remaining:
-                read_size = self._max_bytes_remaining
 
             if self._buffer_pos == 0:
-                self._buffer += self._read_func(read_size)
-                self._buffer_len = len(self._buffer)
+                self._buffer += self._perform_read(read_size)
             else:
                 self._buffer = (self._buffer[self._buffer_pos:] +
-                                self._read_func(read_size))
-                self._buffer_len = len(self._buffer)
+                                self._perform_read(read_size))
                 self._buffer_pos = 0
-            self._max_bytes_remaining -= read_size
+
+            self._buffer_len = len(self._buffer)
 
         return self._buffer[self._buffer_pos:self._buffer_pos + size]
 
@@ -75,12 +112,8 @@ class BufferedReader:
         #   cdef Py_ssize_t read_size
         #   cdef bytes result
 
-        if size <= 0:
-            return b''
-
         if self._buffer_len == 0:
-            self._max_bytes_remaining -= size
-            return self._read_func(size)
+            return self._perform_read(size)
 
         if size == self._buffer_len and self._buffer_pos == 0:
             result = self._buffer
@@ -98,8 +131,7 @@ class BufferedReader:
         self._buffer_len = 0
         self._buffer_pos = 0
         self._buffer = b''
-        self._max_bytes_remaining -= read_size
-        return result + self._read_func(read_size)
+        return result + self._perform_read(read_size)
 
     def read_until(self, delimiter, size=-1, missing_delimiter_error=None):
         # PERF(vytas) In Cython, bind types:
@@ -171,17 +203,17 @@ class BufferedReader:
                 # return to the caller.
                 return self._finalize_read_until(size, result, have_bytes)
 
-            read_size = self._chunk_size
-            if read_size > self._max_bytes_remaining:
-                read_size = self._max_bytes_remaining
-            if read_size == 0:
-                return self._finalize_read_until(
-                    size, result, have_bytes, delimiter, delimiter_pos,
-                    missing_delimiter_error=missing_delimiter_error)
+            # read_size = self._chunk_size
+            # if read_size > self._max_bytes_remaining:
+            #    read_size = self._max_bytes_remaining
+            # if read_size == 0:
+            #    return self._finalize_read_until(
+            #        size, result, have_bytes, delimiter, delimiter_pos,
+            #        missing_delimiter_error=missing_delimiter_error)
 
-            next_chunk = self._read_func(read_size)
+            next_chunk = self._perform_read(self._chunk_size)
             next_chunk_len = len(next_chunk)
-            self._max_bytes_remaining -= read_size
+            # self._max_bytes_remaining -= read_size
             if next_chunk_len < self._chunk_size:
                 self._buffer_len += next_chunk_len
                 self._buffer += next_chunk
@@ -253,8 +285,7 @@ class BufferedReader:
             self.read_until,
             delimiter,
             missing_delimiter_error=missing_delimiter_error)
-        return type(self)(read, self._max_bytes_remaining + self._buffer_len,
-                          self._chunk_size)
+        return type(self)(read, self._normalize_size(None), self._chunk_size)
 
     def readline(self, size=-1):
         return self.read_until(b'\n', size) + self.read(1)

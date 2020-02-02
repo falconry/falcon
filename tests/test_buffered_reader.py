@@ -21,6 +21,19 @@ class GlitchyStream(io.BytesIO):
         return result
 
 
+class FragmentedStream(GlitchyStream):
+    def read(self, size=None):
+        if size is None or size <= 1:
+            return super().read(size)
+
+        if size < 8:
+            size = 1
+        else:
+            size = size // 2
+
+        return super().read(size)
+
+
 TEST_DATA = (
     b'123456789ABCDEF\n' * 64 * 1024 * 64 +
     b'--boundary1234567890--' +
@@ -46,6 +59,12 @@ def buffered_reader():
 def shorter_stream():
     TEST_BYTES_IO.seek(0)
     return BufferedReader(TEST_BYTES_IO.read, 1024, 128)
+
+
+@pytest.fixture()
+def fragmented_stream():
+    stream = FragmentedStream(TEST_DATA)
+    return BufferedReader(stream.read, len(TEST_DATA))
 
 
 def test_peek(buffered_reader):
@@ -263,3 +282,19 @@ def test_duck_compatibility_with_io_base(shorter_stream):
     assert shorter_stream.readable()
     assert not shorter_stream.seekable()
     assert not shorter_stream.writeable()
+
+
+def test_fragmented_reads(fragmented_stream):
+    b = io.BytesIO()
+    fragmented_stream.pipe_until(b'--boundary1234567890--', b)
+    assert fragmented_stream.read(2) == b'--'
+
+    fragmented_stream.pipe_until(b'--boundary1234567890--')
+    assert fragmented_stream.read(3) == b'--b'
+
+    fragmented_stream.pipe_until(b'--boundary1234567890--')
+    assert fragmented_stream.read(7) == b'--bound'
+
+    fragmented_stream.exhaust()
+    assert fragmented_stream.read(4) == b''
+    assert fragmented_stream.read() == b''
