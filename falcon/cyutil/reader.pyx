@@ -41,7 +41,7 @@ cdef class BufferedReader:
         self._buffer_pos = 0
         self._max_bytes_remaining = max_stream_len
 
-    def _perform_read(self, size):
+    cdef bytes _perform_read(self, Py_ssize_t size):
         cdef bytes chunk
         cdef Py_ssize_t chunk_len
         cdef result
