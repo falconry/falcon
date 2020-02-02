@@ -24,7 +24,7 @@ from falcon.util.inspect import inspect_app, inspect_routes
 def print_routes(api, verbose=False):
     routes = inspect_routes(api)
     for route in routes:
-        print(route.as_string(verbose))
+        print(route.to_string(verbose))
 
 
 def make_parser():
@@ -88,7 +88,7 @@ def main():
     if args.route_only:
         print_routes(app, verbose=args.verbose)
     else:
-        print(inspect_app(app).as_string(args.verbose))
+        print(inspect_app(app).to_string(args.verbose))
 
 
 if __name__ == "__main__":
