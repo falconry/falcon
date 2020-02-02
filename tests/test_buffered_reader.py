@@ -2,7 +2,7 @@ import io
 
 import pytest
 
-from falcon.util import BufferedReader
+from falcon.util import BufferedReader, DelimiterError
 
 
 class WouldHang(RuntimeError):
@@ -200,9 +200,21 @@ def test_read_until_missing_delimiter(shorter_stream):
     class BoundaryMissing(RuntimeError):
         pass
 
-    with pytest.raises(BoundaryMissing):
+    with pytest.raises(DelimiterError):
         shorter_stream.read_until(b'--boundary1234567890--',
-                                  missing_delimiter_error=BoundaryMissing)
+                                  consume_delimiter=True)
+
+
+def test_consume_delimiter(shorter_stream):
+    shorter_stream.peek()
+    shorter_stream.read(113)
+
+    assert shorter_stream.peek(1) == b'2'
+
+    chunk = shorter_stream.read_until(b'1', 15, consume_delimiter=True)
+    assert chunk == b'23456789ABCDEF\n'
+
+    assert shorter_stream.read_until(b'ABCDE', 4) == b'2345'
 
 
 @pytest.mark.parametrize('chunk_size', list(range(46, 63)))

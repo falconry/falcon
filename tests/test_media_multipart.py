@@ -383,6 +383,33 @@ def test_empty_filename():
             part.secure_filename
 
 
+@pytest.mark.parametrize('max_headers_size', [64, 140, 141, 142, 256, 1024])
+def test_headers_edge_cases(max_headers_size):
+    data = (
+        b'--a0d738bcdb30449eb0d13f4b72c2897e\r\n'
+        b'X-Falcon: Peregrine\r\n'
+        b'Content-Type: application/vnd.oasis.opendocument.text\r\n'
+        b'Junk\r\n'
+        b'Content-Disposition: form-data; name="file"; filename=hd.txt\r\n\r\n'
+        b'No, it is not an ODT document...\r\n'
+        b'--a0d738bcdb30449eb0d13f4b72c2897e--\r\n'
+    )
+
+    handler = media.MultipartFormHandler()
+    handler.parse_options.max_body_part_headers_size = max_headers_size
+
+    content_type = ('multipart/form-data; boundary=' +
+                    'a0d738bcdb30449eb0d13f4b72c2897e')
+    stream = BufferedReader(io.BytesIO(data).read, len(data))
+    form = handler.deserialize(stream, content_type, len(data))
+
+    if max_headers_size < 142:
+        with pytest.raises(falcon.HTTPBadRequest):
+            list(form)
+    else:
+        assert len(list(form)) == 1
+
+
 class MultipartAnalyzer:
     def on_post(self, req, resp):
         values = []
@@ -473,7 +500,7 @@ def test_truncated_form(client, truncated_by):
 
     assert resp.status_code == 400
     assert resp.json == {
-        'description': 'unexpected EOF without delimiter',
+        'description': 'unexpected form structure',
         'title': 'Malformed multipart/form-data request media',
     }
 
@@ -489,7 +516,7 @@ def test_unexected_form_structure(client):
 
     assert resp1.status_code == 400
     assert resp1.json == {
-        'description': 'unexpected form epilogue',
+        'description': 'unexpected form structure',
         'title': 'Malformed multipart/form-data request media',
     }
 

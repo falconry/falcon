@@ -21,7 +21,7 @@ from urllib.parse import unquote_to_bytes
 from falcon import errors
 from falcon import request_helpers
 from falcon.media.base import BaseHandler
-from falcon.util import BufferedReader
+from falcon.util import BufferedReader, DelimiterError
 from falcon.util import misc
 
 # TODO(vytas):
@@ -260,29 +260,34 @@ class MultipartForm:
         while True:
             # NOTE(vytas): Either exhaust the unused stream part, or skip
             #   the prologue.
-            stream.pipe_until(delimiter)
-            stream.read(len(delimiter))
+            try:
+                stream.pipe_until(delimiter, consume_delimiter=True)
 
-            if prologue:
-                # NOTE(vytas): RFC 7578, section 4.1.
-                #   As with other multipart types, the parts are delimited with
-                #   a boundary delimiter, constructed using CRLF, "--", and the
-                #   value of the "boundary" parameter.
-                delimiter = _CRLF + delimiter
-                prologue = False
+                if prologue:
+                    # NOTE(vytas): RFC 7578, section 4.1.
+                    #   As with other multipart types, the parts are delimited
+                    #   with a boundary delimiter, constructed using CRLF,
+                    #   "--", and the value of the "boundary" parameter.
+                    delimiter = _CRLF + delimiter
+                    prologue = False
 
-            separator = stream.read_until(_CRLF, 2, MultipartParseError)
-            if separator == b'--':
-                if stream.peek(2) != _CRLF:
-                    raise MultipartParseError('unexpected form epilogue')
-                break
-            elif separator:
+                separator = stream.read_until(_CRLF, 2, consume_delimiter=True)
+                if separator == b'--':
+                    # NOTE(vytas): boundary delimiter + '--\r\n' signals the
+                    # end of a multipart form.
+                    break
+                elif separator:
+                    raise MultipartParseError('unexpected form structure')
+
+            except DelimiterError:
                 raise MultipartParseError('unexpected form structure')
 
             headers = {}
-            headers_block = stream.read_until(_CRLF_CRLF, max_headers_size,
-                                              MultipartParseError)
-            stream.read(4)
+            try:
+                headers_block = stream.read_until(
+                    _CRLF_CRLF, max_headers_size, consume_delimiter=True)
+            except DelimiterError:
+                raise MultipartParseError('incomplete body part headers')
 
             for line in headers_block.split(_CRLF):
                 name, sep, value = line.partition(b': ')
@@ -312,10 +317,8 @@ class MultipartForm:
                 raise MultipartParseError(
                     'maximum number of form body parts exceeded')
 
-            yield BodyPart(stream.delimit(delimiter, MultipartParseError),
-                           headers, self._parse_options)
-
-        stream.exhaust()
+            yield BodyPart(stream.delimit(delimiter), headers,
+                           self._parse_options)
 
 
 class MultipartFormHandler(BaseHandler):

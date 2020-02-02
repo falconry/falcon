@@ -27,6 +27,7 @@ import sys
 # Hoist misc. utils
 from falcon.util.misc import *  # NOQA
 from falcon.util.reader import BufferedReader as _PyBufferedReader
+from falcon.util.reader import DelimiterError  # NOQA
 from falcon.util.structures import *  # NOQA
 from falcon.util.sync import *  # NOQA
 from falcon.util.time import *  # NOQA
