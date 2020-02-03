@@ -161,7 +161,7 @@ def inspect_middlewares(app: App) -> 'MiddlewareInfo':
                 source_info = _get_source_info(real_func)
                 info = MiddlewareMethodInfo(real_func.__name__, source_info)
                 methods.append(info)
-        m_info = MeddlewareClassInfo(cls_name, class_source_info, methods)
+        m_info = MiddlewareClassInfo(cls_name, class_source_info, methods)
         middlewareClasses.append(m_info)
 
     return MiddlewareInfo(
@@ -212,11 +212,29 @@ def inspect_compiled_router(router) -> 'List[RouteInfo]':
 
 
 # ------------------------------------------------------------------------
-# Inspection classes functions
+# Inspection classes
 # ------------------------------------------------------------------------
 
 
-class RouteMethodInfo:
+class _Traversable:
+    __visit_name__ = 'N/A'
+
+    def to_string(self, verbose=False) -> str:
+        """Returns a string representation of this class
+
+        Args:
+            verbose (bool, optional): Adds more information. Defaults to False.
+
+        Returns:
+            str: string representation of this class
+        """
+        return StringVisitor(verbose).process(self)
+
+    def __repr__(self):
+        return self.to_string()
+
+
+class RouteMethodInfo(_Traversable):
     """Utility class that contains the description of a responder method
 
     Args:
@@ -226,6 +244,8 @@ class RouteMethodInfo:
         internal (bool): If this responder was added by falcon
     """
 
+    __visit_name__ = 'route_method'
+
     def __init__(
         self, method: str, source_info: str, function_name: str, internal: bool
     ):
@@ -234,43 +254,8 @@ class RouteMethodInfo:
         self.function_name = function_name
         self.internal = internal
 
-    def to_string(self, verbose=False) -> str:
-        """Returns a string representation of this class
 
-        Args:
-            verbose (bool, optional): Adds more information. Defaults to False.
-
-        Returns:
-            str: string representation of this class
-        """
-        text = '{} - {}'.format(self.method, self.function_name)
-        if verbose:
-            text += ' ({})'.format(self.source_info)
-        return text
-
-    def __repr__(self):
-        return self.to_string()
-
-
-class _WithMethods:
-    """Common superclass with methods"""
-
-    def __init__(self, methods: list):
-        self.methods = methods
-
-    def _methods_to_string(self, verbose: bool, indent: int):
-        """Returns a string from the list of methods"""
-        tab = ' ' * indent + ' ' * 3
-        methods = _filter_internal(self.methods, verbose)
-        if not methods:
-            return ''
-        text_list = [m.to_string(verbose) for m in methods]
-        method_text = ['{}├── {}'.format(tab, m) for m in text_list[:-1]]
-        method_text += ['{}└── {}'.format(tab, m) for m in text_list[-1:]]
-        return '\n'.join(method_text)
-
-
-class RouteInfo(_WithMethods):
+class RouteInfo(_Traversable):
     """Utility class that contains the information of a route
 
     Args:
@@ -280,6 +265,8 @@ class RouteInfo(_WithMethods):
         methods (List[MethodInfo]): List of method defined in the route
     """
 
+    __visit_name__ = 'route'
+
     def __init__(
         self,
         path: str,
@@ -287,37 +274,13 @@ class RouteInfo(_WithMethods):
         source_info: str,
         methods: List[RouteMethodInfo],
     ):
-        super().__init__(methods)
         self.path = path
         self.class_name = class_name
         self.source_info = source_info
-
-    def to_string(self, verbose=False, indent=0) -> str:
-        """Returns a string representation of this class
-
-        Args:
-            verbose (bool, optional): Adds more information. Defaults to False.
-            indent (int, optional): Number of indentation spaces of the text. Defaults to 0.
-
-        Returns:
-            str: string representation of this class
-        """
-        tab = ' ' * indent
-        text = '{}⇒ {} - {}'.format(tab, self.path, self.class_name)
-        if verbose:
-            text += ' ({})'.format(self.source_info)
-
-        method_text = self._methods_to_string(verbose, indent)
-        if not method_text:
-            return text
-
-        return '{}:\n{}'.format(text, method_text)
-
-    def __repr__(self):
-        return self.to_string()
+        self.methods = methods
 
 
-class StaticRouteInfo:
+class StaticRouteInfo(_Traversable):
     """Utility class that contains the information of a static route
 
     Args:
@@ -326,32 +289,15 @@ class StaticRouteInfo:
         fallback_filename (str or None): Fallback filename to serve
     """
 
+    __visit_name__ = 'static_route'
+
     def __init__(self, prefix: str, directory: str, fallback_filename: Optional[str]):
         self.prefix = prefix
         self.directory = directory
         self.fallback_filename = fallback_filename
 
-    def to_string(self, verbose=False, indent=0) -> str:
-        """Returns a string representation of this class
 
-        Args:
-            verbose (bool, optional): Adds more information. Defaults to False.
-            indent (int, optional): Number of indentation spaces of the text. Defaults to 0.
-
-        Returns:
-            str: string representation of this class
-        """
-        text = '{}↦ {} {}'.format(' ' * indent, self.prefix, self.directory)
-        if self.fallback_filename:
-            text += ' [{}]'.format(self.fallback_filename)
-
-        return text
-
-    def __repr__(self):
-        return self.to_string()
-
-
-class SinkInfo:
+class SinkInfo(_Traversable):
     """Utility class that contains the information of a sink
 
     Args:
@@ -360,31 +306,15 @@ class SinkInfo:
         source_info (str): The source path where this sink was defined
     """
 
+    __visit_name__ = 'sink'
+
     def __init__(self, prefix: str, name: str, source_info: str):
         self.prefix = prefix
         self.name = name
         self.source_info = source_info
 
-    def to_string(self, verbose=False, indent=0) -> str:
-        """Returns a string representation of this class
 
-        Args:
-            verbose (bool, optional): Adds more information. Defaults to False.
-            indent (int, optional): Number of indentation spaces of the text. Defaults to 0.
-
-        Returns:
-            str: string representation of this class
-        """
-        text = '{}⇥ {} {}'.format(' ' * indent, self.prefix, self.name)
-        if verbose:
-            text += ' ({})'.format(self.source_info)
-        return text
-
-    def __repr__(self):
-        return self.to_string()
-
-
-class ErrorHandlerInfo:
+class ErrorHandlerInfo(_Traversable):
     """Utility class that contains the information of an error handler
 
     Args:
@@ -394,32 +324,16 @@ class ErrorHandlerInfo:
         internal (bool): If this error handler was added by falcon
     """
 
+    __visit_name__ = 'error_handler'
+
     def __init__(self, error: str, name: str, source_info: str, internal: str):
         self.error = error
         self.name = name
         self.source_info = source_info
         self.internal = internal
 
-    def to_string(self, verbose=False, indent=0) -> str:
-        """Returns a string representation of this class
 
-        Args:
-            verbose (bool, optional): Adds more information. Defaults to False.
-            indent (int, optional): Number of indentation spaces of the text. Defaults to 0.
-
-        Returns:
-            str: string representation of this class
-        """
-        text = '{}⇜ {} {}'.format(' ' * indent, self.error, self.name)
-        if verbose:
-            text += ' ({})'.format(self.source_info)
-        return text
-
-    def __repr__(self):
-        return self.to_string()
-
-
-class MiddlewareMethodInfo:
+class MiddlewareMethodInfo(_Traversable):
     """Utility class that contains the description of a middleware method
 
     Args:
@@ -427,29 +341,14 @@ class MiddlewareMethodInfo:
         source_info (str): The source path of this function
     """
 
+    __visit_name__ = 'middleware_method'
+
     def __init__(self, function_name: str, source_info: str):
         self.function_name = function_name
         self.source_info = source_info
 
-    def to_string(self, verbose=False) -> str:
-        """Returns a string representation of this class
 
-        Args:
-            verbose (bool, optional): Adds more information. Defaults to False.
-
-        Returns:
-            str: string representation of this class
-        """
-        text = '{}'.format(self.function_name)
-        if verbose:
-            text += ' ({})'.format(self.source_info)
-        return text
-
-    def __repr__(self):
-        return self.to_string()
-
-
-class MeddlewareClassInfo(_WithMethods):
+class MiddlewareClassInfo(_Traversable):
     """Utility class that contains the information of a middleware class
 
     Args:
@@ -458,39 +357,17 @@ class MeddlewareClassInfo(_WithMethods):
         methods (List[MiddlewareMethodInfo]): List of method defined in the middleware
     """
 
+    __visit_name__ = 'middleware_class'
+
     def __init__(
         self, name: str, source_info: str, methods: List[MiddlewareMethodInfo]
     ):
-        super().__init__(methods)
         self.name = name
         self.source_info = source_info
-
-    def to_string(self, verbose=False, indent=0) -> str:
-        """Returns a string representation of this class
-
-        Args:
-            verbose (bool, optional): Adds more information. Defaults to False.
-            indent (int, optional): Number of indentation spaces of the text. Defaults to 0.
-
-        Returns:
-            str: string representation of this class
-        """
-        tab = ' ' * indent
-        text = '{}↣ {}'.format(tab, self.name)
-        if verbose:
-            text += ' ({})'.format(self.source_info)
-
-        method_text = self._methods_to_string(verbose, indent)
-        if not method_text:
-            return text
-
-        return '{}:\n{}'.format(text, method_text)
-
-    def __repr__(self):
-        return self.to_string()
+        self.methods = methods
 
 
-class MiddlewareTreeItemInfo:
+class MiddlewareTreeItemInfo(_Traversable):
     """Utility class that contains the information of a middleware tree entry
 
     Args:
@@ -498,25 +375,20 @@ class MiddlewareTreeItemInfo:
         class_name (str): The class name of this method
     """
 
+    __visit_name__ = 'middleware_tree_item'
+
+    _symbols = {
+        'process_request': '→',
+        'process_resource': '↣',
+        'process_response': '↢',
+    }
+
     def __init__(self, name: str, class_name: str):
         self.name = name
         self.class_name = class_name
 
-    def to_string(self, symbol, verbose=False, indent=0) -> str:
-        """Returns a string representation of this class
 
-        Args:
-            verbose (bool, optional): Adds more information. Defaults to False.
-            indent (int, optional): Number of indentation spaces of the text. Defaults to 0.
-
-        Returns:
-            str: string representation of this class
-        """
-        text = '{}{} {}.{}'.format(' ' * indent, symbol, self.class_name, self.name)
-        return text
-
-
-class MiddlewareTreeInfo:
+class MiddlewareTreeInfo(_Traversable):
     """Utility class that contains the information of the middleware methods used by the app
 
     Args:
@@ -524,6 +396,8 @@ class MiddlewareTreeInfo:
         resource (List[MiddlewareTreeItemInfo]): The process_resource methods
         response (List[MiddlewareTreeItemInfo]): The process_response methods
     """
+
+    __visit_name__ = 'middleware_tree'
 
     def __init__(
         self,
@@ -535,64 +409,25 @@ class MiddlewareTreeInfo:
         self.resource = resource
         self.response = response
 
-    def to_string(self, verbose=False, indent=0) -> str:
-        """Returns a string representation of this class
 
-        Args:
-            verbose (bool, optional): Adds more information. Defaults to False.
-            indent (int, optional): Number of indentation spaces of the text. Defaults to 0.
-
-        Returns:
-            str: string representation of this class
-        """
-        before = len(self.request) + len(self.resource)
-        after = len(self.response)
-
-        each = 2
-        initial = indent
-        if after > before:
-            initial += each * (after - before)
-
-        current = initial
-        text = []
-        for r in self.request:
-            text.append(r.to_string('→', verbose, current))
-            current += each
-        if text:
-            text.append('')
-        for r in self.resource:
-            text.append(r.to_string('↣', verbose, current))
-            current += each
-
-        text.append('')
-
-        text.append('{}├── Process responder'.format(' ' * (current + each)))
-        if self.response:
-            text.append('')
-
-        for r in self.response:
-            current -= each
-            text.append(r.to_string('↢', verbose, current))
-
-        return '\n'.join(text)
-
-
-class MiddlewareInfo:
+class MiddlewareInfo(_Traversable):
     """Utility class that contains the information of the middleware of the app
 
     Args:
         middlewareTree (MiddlewareTreeInfo): The middleware tree of the app
-        middlewareClasses (List[MeddlewareClassInfo]): The middleware classes of the app
+        middlewareClasses (List[MiddlewareClassInfo]): The middleware classes of the app
         independent (bool): If the middleware are independent
 
     Attributes:
         independent_text (str): Text created from the ``independent`` arg
     """
 
+    __visit_name__ = 'middleware'
+
     def __init__(
         self,
         middleware_tree: MiddlewareTreeInfo,
-        middleware_classes: List[MeddlewareClassInfo],
+        middleware_classes: List[MiddlewareClassInfo],
         independent: bool,
     ):
         self.middleware_tree = middleware_tree
@@ -604,27 +439,8 @@ class MiddlewareInfo:
         else:
             self.independent_text = 'Middleware are dependent'
 
-    def to_string(self, verbose=False, indent=0) -> str:
-        """Returns a string representation of this class
 
-        Args:
-            verbose (bool, optional): Prints more informations. Defaults to False.
-            indent (int, optional): The indent to use. Defaults to 0.
-        Returns:
-            str: string representation of the application
-        """
-        text = self.middleware_tree.to_string(verbose, indent)
-        if verbose:
-            m_text = '\n'.join(
-                m.to_string(verbose, indent + 4) for m in self.middleware_classes
-            )
-            if m_text:
-                text += '\n{}- Middlewares classes:\n{}'.format(' ' * indent, m_text)
-
-        return text
-
-
-class AppInfo:
+class AppInfo(_Traversable):
     """Utility class that contains the information of an application
 
     Args:
@@ -635,6 +451,8 @@ class AppInfo:
         error_handlers (List[ErrorHandlerInfo]): The error handlers of this application
         asgi (bool): If the application is ASGI
     """
+
+    __visit_name__ = 'app'
 
     def __init__(
         self,
@@ -662,39 +480,206 @@ class AppInfo:
         Returns:
             str: string representation of the application
         """
-        type_ = 'ASGI' if self.asgi else 'WSGI'
-        indent = 4
-        text = '{} ({})'.format(name or 'Falcon App', type_)
+        return StringVisitor(verbose, name).process(self)
 
-        if self.routes:
-            routes = '\n'.join(r.to_string(verbose, indent) for r in self.routes)
-            text += '\n• Routes:\n{}'.format(routes)
 
-        middleware_text = self.middleware.to_string(verbose, indent)
-        if middleware_text:
-            text += '\n• Middleware ({}):\n{}'.format(
-                self.middleware.independent_text, middleware_text
-            )
+# ------------------------------------------------------------------------
+# Visitor classes
+# ------------------------------------------------------------------------
 
-        if self.static_routes:
-            static_routes = '\n'.join(
-                sr.to_string(verbose, indent) for sr in self.static_routes
-            )
-            text += '\n• Static routes:\n{}'.format(static_routes)
 
-        if self.sinks:
-            sinks = '\n'.join(s.to_string(verbose, indent) for s in self.sinks)
-            text += '\n• Sinks:\n{}'.format(sinks)
+class _Visitor:
+    """Base visitor class that implements the `process` method"""
 
-        errors = _filter_internal(self.error_handlers, verbose)
-        if errors:
-            errs = '\n'.join(e.to_string(verbose, indent) for e in errors)
-            text += '\n• Error handlers:\n{}'.format(errs)
+    def process(self, instance: _Traversable):
+        """Process the instance, by calling the appropriate visit method.
+        Uses the `__visit_name__` attribute of the `instance` to obtain the method to use
+
+        Args:
+            instance (_Traversable): The instance to process
+        """
+        try:
+            return getattr(self, 'visit_{}'.format(instance.__visit_name__))(instance)
+        except AttributeError as e:
+            raise RuntimeError(
+                'This visitor does not support {}'.format(type(instance))
+            ) from e
+
+
+class StringVisitor(_Visitor):
+    """Visitor implementation that returns a string representation of the info class.
+
+    This is used automatically by calling a `to_string` method of an info class.
+    It can also be manually used by calling `StringVisitor.process(info_instance)`
+
+    Args:
+        verbose (bool, optional): Adds more information. Defaults to False.
+        name (str, optional): The name of the application. Will be places at the
+            beginning of the text. Will be 'Falcon App' when not provided
+    """
+
+    def __init__(self, verbose, name=''):
+        self.verbose = verbose
+        self.name = ''
+        self.indent = 0
+
+    @property
+    def tab(self):
+        """Gets the current tabulation"""
+        return ' ' * self.indent
+
+    def visit_route_method(self, route_method: RouteMethodInfo) -> str:
+        """Visit a RouteMethodInfo instance. Usually called by `process`"""
+        text = '{} - {}'.format(route_method.method, route_method.function_name)
+        if self.verbose:
+            text += ' ({})'.format(route_method.source_info)
+        return text
+
+    def _methods_to_string(self, methods: List):
+        """Returns a string from the list of methods"""
+        tab = self.tab + ' ' * 3
+        methods = _filter_internal(methods, self.verbose)
+        if not methods:
+            return ''
+        text_list = [self.process(m) for m in methods]
+        method_text = ['{}├── {}'.format(tab, m) for m in text_list[:-1]]
+        method_text += ['{}└── {}'.format(tab, m) for m in text_list[-1:]]
+        return '\n'.join(method_text)
+
+    def visit_route(self, route: RouteInfo) -> str:
+        """Visit a RouteInfo instance. Usually called by `process`"""
+        text = '{}⇒ {} - {}'.format(self.tab, route.path, route.class_name)
+        if self.verbose:
+            text += ' ({})'.format(route.source_info)
+
+        method_text = self._methods_to_string(route.methods)
+        if not method_text:
+            return text
+
+        return '{}:\n{}'.format(text, method_text)
+
+    def visit_static_route(self, static_route: StaticRouteInfo) -> str:
+        """Visit a StaticRouteInfo instance. Usually called by `process`"""
+        text = '{}↦ {} {}'.format(self.tab, static_route.prefix, static_route.directory)
+        if static_route.fallback_filename:
+            text += ' [{}]'.format(static_route.fallback_filename)
+        return text
+
+    def visit_sink(self, sink: SinkInfo) -> str:
+        """Visit a SinkInfo instance. Usually called by `process`"""
+        text = '{}⇥ {} {}'.format(self.tab, sink.prefix, sink.name)
+        if self.verbose:
+            text += ' ({})'.format(sink.source_info)
+        return text
+
+    def visit_error_handler(self, error_handler: ErrorHandlerInfo) -> str:
+        """Visit a ErrorHandlerInfo instance. Usually called by `process`"""
+        text = '{}⇜ {} {}'.format(self.tab, error_handler.error, error_handler.name)
+        if self.verbose:
+            text += ' ({})'.format(error_handler.source_info)
+        return text
+
+    def visit_middleware_method(self, middleware_method: MiddlewareMethodInfo) -> str:
+        """Visit a MiddlewareMethodInfo instance. Usually called by `process`"""
+        text = '{}'.format(middleware_method.function_name)
+        if self.verbose:
+            text += ' ({})'.format(middleware_method.source_info)
+        return text
+
+    def visit_middleware_class(self, middleware_class: MiddlewareClassInfo) -> str:
+        """Visit a ErrorHandlerInfo instance. Usually called by `process`"""
+        text = '{}↣ {}'.format(self.tab, middleware_class.name)
+        if self.verbose:
+            text += ' ({})'.format(middleware_class.source_info)
+
+        method_text = self._methods_to_string(middleware_class.methods)
+        if not method_text:
+            return text
+
+        return '{}:\n{}'.format(text, method_text)
+
+    def visit_middleware_tree_item(self, mti: MiddlewareTreeItemInfo) -> str:
+        """Visit a MiddlewareTreeItemInfo instance. Usually called by `process`"""
+        symbol = mti._symbols.get(mti.name, '→')
+        return '{}{} {}.{}'.format(self.tab, symbol, mti.class_name, mti.name)
+
+    def visit_middleware_tree(self, m_tree: MiddlewareTreeInfo) -> str:
+        """Visit a MiddlewareTreeInfo instance. Usually called by `process`"""
+        before = len(m_tree.request) + len(m_tree.resource)
+        after = len(m_tree.response)
+
+        each = 2
+        initial = self.indent
+        if after > before:
+            self.indent += each * (after - before)
+
+        text = []
+        for r in m_tree.request:
+            text.append(self.process(r))
+            self.indent += each
+        if text:
+            text.append('')
+        for r in m_tree.resource:
+            text.append(self.process(r))
+            self.indent += each
+
+        text.append('')
+        self.indent += each
+        text.append('{}├── Process route responder'.format(self.tab))
+        self.indent -= each
+        if m_tree.response:
+            text.append('')
+
+        for r in m_tree.response:
+            self.indent -= each
+            text.append(self.process(r))
+
+        self.indent = initial
+        return '\n'.join(text)
+
+    def visit_middleware(self, middleware: MiddlewareInfo) -> str:
+        """Visit a MiddlewareInfo instance. Usually called by `process`"""
+        text = self.process(middleware.middleware_tree)
+        if self.verbose:
+            self.indent += 4
+            m_text = '\n'.join(self.process(m) for m in middleware.middleware_classes)
+            self.indent -= 4
+            if m_text:
+                text += '\n{}- Middlewares classes:\n{}'.format(self.tab, m_text)
 
         return text
 
-    def __repr__(self):
-        return self.to_string()
+    def visit_app(self, app: AppInfo) -> str:
+        """Visit a AppInfo instance. Usually called by `process`"""
+
+        type_ = 'ASGI' if app.asgi else 'WSGI'
+        self.indent = 4
+        text = '{} ({})'.format(self.name or 'Falcon App', type_)
+
+        if app.routes:
+            routes = '\n'.join(self.process(r) for r in app.routes)
+            text += '\n• Routes:\n{}'.format(routes)
+
+        middleware_text = self.process(app.middleware)
+        if middleware_text:
+            text += '\n• Middleware ({}):\n{}'.format(
+                app.middleware.independent_text, middleware_text
+            )
+
+        if app.static_routes:
+            static_routes = '\n'.join(self.process(sr) for sr in app.static_routes)
+            text += '\n• Static routes:\n{}'.format(static_routes)
+
+        if app.sinks:
+            sinks = '\n'.join(self.process(s) for s in app.sinks)
+            text += '\n• Sinks:\n{}'.format(sinks)
+
+        errors = _filter_internal(app.error_handlers, self.verbose)
+        if errors:
+            errs = '\n'.join(self.process(e) for e in errors)
+            text += '\n• Error handlers:\n{}'.format(errs)
+
+        return text
 
 
 # ------------------------------------------------------------------------
