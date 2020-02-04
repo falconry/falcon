@@ -15,10 +15,11 @@
 """ASGI Response class."""
 
 from asyncio.coroutines import CoroWrapper
-from inspect import iscoroutine
+from inspect import iscoroutine, iscoroutinefunction
 
 from falcon import _UNSET
 import falcon.response
+from falcon.util.misc import is_python_func
 
 __all__ = ['Response']
 
@@ -151,20 +152,16 @@ class Response(falcon.response.Response):
         return data
 
     def schedule(self, callback):
-        """Schedules a callback to run soon after sending the HTTP response.
+        """Schedule an async callback to run soon after sending the HTTP response.
 
-        This method can be used to execute a background job after the
-        response has been returned to the client.
+        This method can be used to execute a background job after the response
+        has been returned to the client.
 
-        If the callback is an async coroutine function, it will be scheduled
-        to run on the event loop as soon as possible. Alternatively, if a
-        synchronous callable is passed, it will be run on the event loop's
-        default ``Executor`` (which can be overridden via
-        :py:meth:`asyncio.AbstractEventLoop.set_default_executor`).
+        The callback is assumed to be an async coroutine function. It will be
+        scheduled to run on the event loop as soon as possible.
 
         The callback will be invoked without arguments. Use
-        :py:meth`functools.partial` to pass arguments to the callback
-        as needed.
+        :py:meth:`functools.partial` to pass arguments to the callback as needed.
 
         Note:
             If an unhandled exception is raised while processing the request,
@@ -179,6 +176,58 @@ class Response(falcon.response.Response):
             be taken to ensure they are non-blocking. Long-running operations
             must use async libraries or delegate to an Executor pool to avoid
             blocking the processing of subsequent requests.
+
+        Args:
+            callback(object): An async coroutine function. The callback will be
+            invoked without arguments.
+        """
+
+        # NOTE(kgriffs): We also have to do the CoroWrapper check because
+        #   iscoroutine is less reliable under Python 3.6.
+        if not iscoroutinefunction(callback):
+            if iscoroutine(callback) or isinstance(callback, CoroWrapper):
+                raise TypeError(
+                    'The callback object appears to '
+                    'be a coroutine, rather than a coroutine function. Please '
+                    'pass the function itself, rather than the result obtained '
+                    'by calling the function. '
+                )
+            elif is_python_func(callback):  # pragma: nocover
+                raise TypeError('The callback must be a coroutine function.')
+
+            # NOTE(kgriffs): The implicit "else" branch is actually covered
+            #   by tests running in a Cython environment, but we can't
+            #   detect it with the coverage tool.
+
+        rc = (callback, True)
+
+        if not self._registered_callbacks:
+            self._registered_callbacks = [rc]
+        else:
+            self._registered_callbacks.append(rc)
+
+    def schedule_sync(self, callback):
+        """Schedule a synchronous callback to run soon after sending the HTTP response.
+
+        This method can be used to execute a background job after the
+        response has been returned to the client.
+
+        The callback is assumed to be a synchronous (non-coroutine) function.
+        It will be scheduled on the event loop's default ``Executor`` (which
+        can be overridden via
+        :py:meth:`asyncio.AbstractEventLoop.set_default_executor`).
+
+        The callback will be invoked without arguments. Use
+        :py:meth:`functools.partial` to pass arguments to the callback
+        as needed.
+
+        Note:
+            If an unhandled exception is raised while processing the request,
+            the callback will not be scheduled to run.
+
+        Note:
+            When an SSE emitter has been set on the response, the callback will
+            be scheduled before the first call to the emitter.
 
         Warning:
             Synchronous callables run on the event loop's default ``Executor``,
@@ -195,20 +244,12 @@ class Response(falcon.response.Response):
                 callable. The callback will be called without arguments.
         """
 
-        # NOTE(kgriffs): We also have to do the CoroWrapper check because
-        #   iscoroutine is less reliable under Python 3.6.
-        if iscoroutine(callback) or isinstance(callback, CoroWrapper):
-            raise TypeError(
-                'The callback object appears to '
-                'be a coroutine, rather than a coroutine function. Please '
-                'pass the function itself, rather than the result obtained '
-                'by calling the function. '
-            )
+        rc = (callback, False)
 
         if not self._registered_callbacks:
-            self._registered_callbacks = [callback]
+            self._registered_callbacks = [rc]
         else:
-            self._registered_callbacks.append(callback)
+            self._registered_callbacks.append(rc)
 
     def set_stream(self, stream, content_length):
         """Convenience method for setting both `stream` and `content_length`.
