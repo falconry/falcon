@@ -297,6 +297,19 @@ def test_readline():
     assert stream.readline() == b''
 
 
+def test_readline_with_size():
+    source = (
+        b'Hello, world! This is a short village name in Wales.\n'
+        b'Llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch')
+
+    stream = BufferedReader(io.BytesIO(source).read, len(source))
+    assert stream.readline(37) == b'Hello, world! This is a short village'
+    assert stream.readline(37) == b' name in Wales.\n'
+    assert stream.readline(8) == b'Llanfair'
+    assert stream.readline(16) == b'pwllgwyngyllgoge'
+    assert stream.readline(64) == b'rychwyrndrobwllllantysiliogogogoch'
+
+
 def test_readlines(shorter_stream):
     assert shorter_stream.readlines() == [b'123456789ABCDEF\n'] * 64
 

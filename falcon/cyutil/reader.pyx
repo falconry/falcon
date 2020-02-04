@@ -128,26 +128,35 @@ cdef class BufferedReader:
         cdef Py_ssize_t read_size
         cdef bytes result
 
-        if self._buffer_len == 0:
-            return self._perform_read(size)
-
-        if size == self._buffer_len and self._buffer_pos == 0:
-            result = self._buffer
-            self._buffer_len = 0
-            self._buffer = b''
-            return result
-
+        # NOTE(vytas): Dish directly from the buffer, if possible.
         if size <= self._buffer_len - self._buffer_pos:
+            if size == self._buffer_len and self._buffer_pos == 0:
+                result = self._buffer
+                self._buffer_len = 0
+                self._buffer = b''
+                return result
+
             self._buffer_pos += size
             return self._buffer[self._buffer_pos - size:self._buffer_pos]
 
+        # NOTE(vytas): Pass through large reads.
+        if self._buffer_len == 0 and size >= self._chunk_size:
+            return self._perform_read(size)
+
         # NOTE(vytas): if size > self._buffer_len - self._buffer_pos
-        read_size = size - self._buffer_len + self._buffer_pos
+        read_size = size - (self._buffer_len - self._buffer_pos)
         result = self._buffer[self._buffer_pos:]
-        self._buffer_len = 0
-        self._buffer_pos = 0
-        self._buffer = b''
-        return result + self._perform_read(read_size)
+
+        if read_size >= self._chunk_size:
+            self._buffer_len = 0
+            self._buffer_pos = 0
+            self._buffer = b''
+            return result + self._perform_read(read_size)
+
+        self._buffer = self._perform_read(self._chunk_size)
+        self._buffer_len = len(self._buffer)
+        self._buffer_pos = read_size
+        return result + self._buffer[:read_size]
 
     def read_until(self, bytes delimiter not None, size=-1,
                    consume_delimiter=False):
@@ -368,7 +377,12 @@ cdef class BufferedReader:
         return type(self)(read, self._normalize_size(None), self._chunk_size)
 
     def readline(self, size=-1):
-        return self.read_until(b'\n', size) + self.read(1)
+        size = self._normalize_size(size)
+
+        result = self.read_until(b'\n', size)
+        if len(result) < size:
+            return result + self.read(1)
+        return result
 
     def readlines(self, hint=-1):
         cdef Py_ssize_t read = 0
