@@ -64,8 +64,12 @@ class App(falcon.app.App):
             such as ``falcon.MEDIA_MSGPACK``, ``falcon.MEDIA_YAML``,
             ``falcon.MEDIA_XML``, etc.
         middleware: Either a single middleware component object or an iterable
-            of objects (instantiated classes) that implement the following
-            middleware component interface.
+            of objects (instantiated classes) that implement the
+            middleware component interface shown below. Note that all
+            interface methods are expected to return an awaitable
+            coroutine object when invoked (either by being
+            implemented as coroutine functions directly via `async def`, or
+            by explicitly returning a coroutine object).
 
             The interface provides support for handling both ASGI worker
             lifespan events and per-request events.
