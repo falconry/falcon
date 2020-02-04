@@ -579,6 +579,8 @@ be used to efficiently parse the submitted ``multipart/form-data``
         # TODO: Do something with the body part
         pass
 
+.. _multipart_cloud_upload:
+
 How can I save POSTed files (from a multipart form) directly to AWS S3?
 -----------------------------------------------------------------------
 

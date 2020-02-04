@@ -174,6 +174,31 @@ def test_read_until(buffered_reader):
     assert len(stream.read_until(b'--boundary1234567890--')) == 62 * 1024**2
 
 
+@pytest.mark.parametrize('size1,size2', [
+    (11003077, 22000721),
+    (13372477, 51637898),
+])
+def test_irregular_large_read_until(buffered_reader, size1, size2):
+    stream = buffered_reader()
+    delimiter = b'--boundary1234567890--'
+
+    stream.pipe_until(delimiter, consume_delimiter=True)
+    stream.pipe_until(delimiter, consume_delimiter=True)
+
+    expected = b'123456789ABCDEF\n' * 64 * 1024 * 62
+
+    assert stream.read_until(delimiter, 1337) == expected[:1337]
+
+    chunk1 = stream.read_until(delimiter, size1)
+    assert len(chunk1) == size1
+
+    chunk2 = stream.read_until(delimiter, size2)
+    assert len(chunk2) == size2
+
+    remainder = stream.read_until(delimiter, 62 * 1024 * 1024)
+    assert chunk1 + chunk2 + remainder == expected[1337:]
+
+
 @pytest.mark.parametrize('size', [
     0,
     1,

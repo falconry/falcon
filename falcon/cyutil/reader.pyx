@@ -19,13 +19,14 @@ from libc.stdint cimport uint32_t
 import functools
 import io
 
-from falcon.util.reader import DEFAULT_CHUNK_SIZE, DelimiterError
+from falcon.util.reader import DEFAULT_CHUNK_SIZE, DelimiterError, _MAX_JOIN_CHUNKS
 
 
 cdef class BufferedReader:
 
     cdef _read_func
     cdef Py_ssize_t _chunk_size
+    cdef Py_ssize_t _max_join_size
 
     cdef bytes _buffer
     cdef Py_ssize_t _buffer_len
@@ -35,6 +36,7 @@ cdef class BufferedReader:
     def __cinit__(self, read, max_stream_len, chunk_size=None):
         self._read_func = read
         self._chunk_size = chunk_size or DEFAULT_CHUNK_SIZE
+        self._max_join_size = self._chunk_size * _MAX_JOIN_CHUNKS
 
         self._buffer = b''
         self._buffer_len = 0
@@ -149,8 +151,19 @@ cdef class BufferedReader:
 
     def read_until(self, bytes delimiter not None, size=-1,
                    consume_delimiter=False):
-        return self._read_until(delimiter, self._normalize_size(size),
-                                consume_delimiter)
+        cdef Py_ssize_t read_size = self._normalize_size(size)
+        cdef result
+
+        read_size = self._normalize_size(size)
+        if read_size <= self._max_join_size:
+            return self._read_until(delimiter, read_size, consume_delimiter)
+
+        # NOTE(vytas): A large size was requested, optimize for memory
+        #   consumption by avoiding to momentarily keep both the chunks and the
+        #   joint result in memory at the same time.
+        result = io.BytesIO()
+        self.pipe_until(delimiter, result, consume_delimiter, read_size)
+        return result.getvalue()
 
     cdef _finalize_read_until(
         self, Py_ssize_t size, backlog, Py_ssize_t have_bytes,
@@ -214,7 +227,7 @@ cdef class BufferedReader:
         if size % self._chunk_size == 0:
             self._fill_buffer()
 
-        # PERF(vytas) Quickly check for the first 4 delimiter bytes.
+        # PERF(vytas): Quickly check for the first 4 delimiter bytes.
         cdef bint quick_found = True
         cdef uint32_t delimiter_head = 0
         cdef uint32_t current
@@ -265,7 +278,7 @@ cdef class BufferedReader:
                 offset = max(self._buffer_len - delimiter_len_1,
                              self._buffer_pos)
 
-                # PERF(vytas) Quickly check for the first 4 delimiter bytes.
+                # PERF(vytas): Quickly check for the first 4 delimiter bytes.
                 #   This is pure Cython code with no counterpart in streams.py.
                 if 3 <= delimiter_len_1 < 128:
                     quick_found = False
@@ -326,19 +339,26 @@ cdef class BufferedReader:
             if destination is not None:
                 destination.write(chunk)
 
-    def pipe_until(self, delimiter, destination=None, consume_delimiter=False):
-        while True:
-            chunk = self.read_until(delimiter, self._chunk_size)
+    def pipe_until(self, delimiter, destination=None, consume_delimiter=False,
+                   _size=None):
+        cdef Py_ssize_t remaining = self._normalize_size(_size)
+
+        while remaining > 0:
+            chunk = self._read_until(
+                delimiter, min(self._chunk_size, remaining), False)
             if not chunk:
-                if consume_delimiter:
-                    delimiter_len = len(delimiter)
-                    if self.peek(delimiter_len) != delimiter:
-                        raise DelimiterError('expected delimiter missing')
-                    self._buffer_pos += delimiter_len
                 break
 
             if destination is not None:
                 destination.write(chunk)
+
+            remaining -= self._chunk_size
+
+        if consume_delimiter:
+            delimiter_len = len(delimiter)
+            if self.peek(delimiter_len) != delimiter:
+                raise DelimiterError('expected delimiter missing')
+            self._buffer_pos += delimiter_len
 
     def exhaust(self):
         self.pipe()

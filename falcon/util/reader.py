@@ -20,6 +20,8 @@ import io
 DEFAULT_CHUNK_SIZE = io.DEFAULT_BUFFER_SIZE * 4
 """Default chunk size for :class:`BufferedReader`."""
 
+_MAX_JOIN_CHUNKS = 128
+
 
 class DelimiterError(IOError):
     pass
@@ -30,6 +32,7 @@ class BufferedReader:
     def __init__(self, read, max_stream_len, chunk_size=None):
         self._read_func = read
         self._chunk_size = chunk_size or DEFAULT_CHUNK_SIZE
+        self._max_join_size = self._chunk_size * _MAX_JOIN_CHUNKS
 
         self._buffer = b''
         self._buffer_len = 0
@@ -37,7 +40,7 @@ class BufferedReader:
         self._max_bytes_remaining = max_stream_len
 
     def _perform_read(self, size):
-        # PERF(vytas) In Cython, bind types:
+        # PERF(vytas): In Cython, bind types:
         #   cdef bytes chunk
         #   cdef Py_ssize_t chunk_len
         #   cdef result
@@ -76,7 +79,7 @@ class BufferedReader:
             result.write(chunk)
 
     def _fill_buffer(self):
-        # PERF(vytas) In Cython, bind types:
+        # PERF(vytas): In Cython, bind types:
         #   cdef Py_ssize_t read_size
 
         if self._buffer_len - self._buffer_pos < self._chunk_size:
@@ -101,7 +104,7 @@ class BufferedReader:
         return self._buffer[self._buffer_pos:self._buffer_pos + size]
 
     def _normalize_size(self, size):
-        # PERF(vytas) In Cython, bind types:
+        # PERF(vytas): In Cython, bind types:
         #   cdef Py_ssize_t result
         #   cdef Py_ssize_t max_size
 
@@ -116,7 +119,7 @@ class BufferedReader:
         return self._read(self._normalize_size(size))
 
     def _read(self, size):
-        # PERF(vytas) In Cython, bind types:
+        # PERF(vytas): In Cython, bind types:
         #   cdef Py_ssize_t read_size
         #   cdef bytes result
 
@@ -142,8 +145,20 @@ class BufferedReader:
         return result + self._perform_read(read_size)
 
     def read_until(self, delimiter, size=-1, consume_delimiter=False):
-        return self._read_until(delimiter, self._normalize_size(size),
-                                consume_delimiter)
+        # PERF(vytas): In Cython, bind types:
+        #   cdef Py_ssize_t read_size
+        #   cdef result
+
+        read_size = self._normalize_size(size)
+        if read_size <= self._max_join_size:
+            return self._read_until(delimiter, read_size, consume_delimiter)
+
+        # NOTE(vytas): A large size was requested, optimize for memory
+        #   consumption by avoiding to momentarily keep both the chunks and the
+        #   joint result in memory at the same time.
+        result = io.BytesIO()
+        self.pipe_until(delimiter, result, consume_delimiter, read_size)
+        return result.getvalue()
 
     def _finalize_read_until(
             self, size, backlog, have_bytes, consume_bytes, delimiter=None,
@@ -187,7 +202,7 @@ class BufferedReader:
         return ret_value
 
     def _read_until(self, delimiter, size, consume_delimiter):
-        # PERF(vytas) In Cython, bind types:
+        # PERF(vytas): In Cython, bind types:
         #   cdef list result = []
         #   cdef Py_ssize_t have_bytes = 0
         #   cdef Py_ssize_t delimiter_len_1 = len(delimiter) - 1
@@ -286,19 +301,29 @@ class BufferedReader:
             if destination is not None:
                 destination.write(chunk)
 
-    def pipe_until(self, delimiter, destination=None, consume_delimiter=False):
-        while True:
-            chunk = self.read_until(delimiter, self._chunk_size)
+    def pipe_until(self, delimiter, destination=None, consume_delimiter=False,
+                   _size=None):
+        # PERF(vytas): In Cython, bind types:
+        #   cdef Py_ssize_t remaining
+
+        remaining = self._normalize_size(_size)
+
+        while remaining > 0:
+            chunk = self._read_until(
+                delimiter, min(self._chunk_size, remaining), False)
             if not chunk:
-                if consume_delimiter:
-                    delimiter_len = len(delimiter)
-                    if self.peek(delimiter_len) != delimiter:
-                        raise DelimiterError('expected delimiter missing')
-                    self._buffer_pos += delimiter_len
                 break
 
             if destination is not None:
                 destination.write(chunk)
+
+            remaining -= self._chunk_size
+
+        if consume_delimiter:
+            delimiter_len = len(delimiter)
+            if self.peek(delimiter_len) != delimiter:
+                raise DelimiterError('expected delimiter missing')
+            self._buffer_pos += delimiter_len
 
     def exhaust(self):
         self.pipe()
@@ -311,7 +336,7 @@ class BufferedReader:
         return self.read_until(b'\n', size) + self.read(1)
 
     def readlines(self, hint=-1):
-        # PERF(vytas) In Cython, bind types:
+        # PERF(vytas): In Cython, bind types:
         #   cdef Py_ssize_t read
         #   cdef list result = []
         read = 0
