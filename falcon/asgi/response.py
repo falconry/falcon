@@ -161,7 +161,7 @@ class Response(falcon.response.Response):
         scheduled to run on the event loop as soon as possible.
 
         The callback will be invoked without arguments. Use
-        :py:meth`functools.partial` to pass arguments to the callback as needed.
+        :py:meth:`functools.partial` to pass arguments to the callback as needed.
 
         Note:
             If an unhandled exception is raised while processing the request,
