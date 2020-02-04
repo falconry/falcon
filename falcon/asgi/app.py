@@ -23,7 +23,7 @@ from falcon.errors import CompatibilityError, UnsupportedError, UnsupportedScope
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 import falcon.routing
-from falcon.util.misc import http_status_to_code
+from falcon.util.misc import http_status_to_code, is_python_func
 from falcon.util.sync import _wrap_non_coroutine_unsafe, get_loop
 from .request import Request
 from .response import Response
@@ -653,7 +653,13 @@ class App(falcon.app.App):
 
         handler = _wrap_non_coroutine_unsafe(handler)
 
-        if not iscoroutinefunction(handler):
+        # NOTE(kgriffs): iscoroutinefunction() always returns False
+        #   for cythonized functions.
+        #
+        #   https://github.com/cython/cython/issues/2273
+        #   https://bugs.python.org/issue38225
+        #
+        if not iscoroutinefunction(handler) and is_python_func(handler):
             raise CompatibilityError(
                 'The handler must be an awaitable coroutine function in order '
                 'to be used safely with an ASGI app.'
@@ -681,8 +687,8 @@ class App(falcon.app.App):
 
         loop = get_loop()
 
-        for cb in callbacks:
-            if iscoroutinefunction(cb):
+        for cb, is_async in callbacks:
+            if is_async:
                 loop.create_task(cb())
             else:
                 loop.run_in_executor(None, cb)

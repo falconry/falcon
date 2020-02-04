@@ -15,7 +15,8 @@ Miscellaneous
 
 .. automodule:: falcon
     :members: deprecated, http_now, dt_to_http, http_date_to_dt,
-        to_query_str, get_http_status, get_bound_method, secure_filename
+        to_query_str, get_http_status, get_bound_method, secure_filename,
+        is_python_func
 
 .. autoclass:: falcon.TimezoneGMT
     :members:
