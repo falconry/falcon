@@ -3,6 +3,7 @@ import pytest
 import falcon
 import falcon.errors as errors
 import falcon.status_codes as status
+from falcon.util.misc import DeprecatedWarning
 
 
 @pytest.mark.parametrize('err, title', [
@@ -138,8 +139,11 @@ def test_with_title_desc_and_headers(err):
     falcon.HTTPNetworkAuthenticationRequired,
 ])
 def test_kw_only(err):
-    with pytest.raises(TypeError, match='positional argument'):
-        raise err('foo', 'bar')
+    # only deprecated for now
+    # with pytest.raises(TypeError, match='positional argument'):
+    #     err('foo', 'bar')
+    with pytest.warns(DeprecatedWarning, match='positional args are deprecated'):
+        err('foo', 'bar')
 
 
 @pytest.mark.parametrize('err, args', (
@@ -162,10 +166,17 @@ def test_with_title_desc_and_headers_args(err, args):
 @pytest.mark.parametrize('err, args', (
     (falcon.HTTPMethodNotAllowed, (['GET'], )),
     (falcon.HTTPRangeNotSatisfiable, (11,)),
+    (falcon.HTTPInvalidHeader, ('foo', 'bar')),
+    (falcon.HTTPMissingHeader, ('foo',)),
+    (falcon.HTTPInvalidParam, ('foo', 'bar')),
+    (falcon.HTTPMissingParam, ('foo',)),
 ))
 def test_args_kw_only(err, args):
-    with pytest.raises(TypeError, match='positional argument'):
-        raise err(*args, 'foo', 'bar')
+    # only deprecated for now
+    # with pytest.raises(TypeError, match='positional argument'):
+    #     err(*args, 'bar')
+    with pytest.warns(DeprecatedWarning, match='positional args are deprecated'):
+        err(*args, 'bar')
 
 
 @pytest.mark.parametrize('err', [

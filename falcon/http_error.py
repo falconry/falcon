@@ -17,7 +17,7 @@
 from collections import OrderedDict
 import xml.etree.ElementTree as et
 
-from falcon.util import json, uri
+from falcon.util import json, uri, deprecated_args
 
 
 class HTTPError(Exception):
@@ -36,6 +36,12 @@ class HTTPError(Exception):
     ``HTTPError`` and override the ``to_dict()`` method (``to_json()``
     is implemented via ``to_dict()``). To also support XML, override
     the ``to_xml()`` method.
+
+    Note:
+        ``status`` is the only positional argument allowed, the other
+        arguments should be used as keyword only. Using them as positional
+        arguments will raise a deprecation warning and will result in an
+        error in a future version of falcon.
 
     Args:
         status (str): HTTP status code and text, such as "400 Bad Request"
@@ -104,7 +110,8 @@ class HTTPError(Exception):
         'code',
     )
 
-    def __init__(self, status, *, title=None, description=None, headers=None,
+    @deprecated_args(allowed_positional=1)
+    def __init__(self, status, title=None, description=None, headers=None,
                  href=None, href_text=None, code=None):
         self.status = status
 

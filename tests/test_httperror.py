@@ -9,7 +9,7 @@ import yaml
 
 import falcon
 import falcon.testing as testing
-from falcon.util import json
+from falcon.util import json, misc
 
 from _util import create_app  # NOQA
 
@@ -860,5 +860,8 @@ class TestHTTPError:
 
 
 def test_kw_only():
-    with pytest.raises(TypeError, match='positional argument'):
-        raise falcon.HTTPError(falcon.HTTP_BAD_REQUEST, 'foo', 'bar')
+    # only deprecated for now
+    # with pytest.raises(TypeError, match='positional argument'):
+    #     falcon.HTTPError(falcon.HTTP_BAD_REQUEST, 'foo', 'bar')
+    with pytest.warns(misc.DeprecatedWarning, match='positional args are deprecated'):
+        falcon.HTTPError(falcon.HTTP_BAD_REQUEST, 'foo', 'bar')

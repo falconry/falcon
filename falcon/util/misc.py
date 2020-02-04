@@ -46,6 +46,7 @@ __all__ = (
     'get_http_status',
     'http_status_to_code',
     'code_to_http_status',
+    'deprecated_args',
 )
 
 
@@ -428,3 +429,34 @@ def code_to_http_status(code):
         return getattr(status_codes, 'HTTP_' + str(code))
     except AttributeError:
         return str(code)
+
+
+def deprecated_args(allowed_positional, is_method=True):
+    """Flags a method call with positional args as deprecate
+
+    Args:
+        allowed_positional (int): Number of allowed positional arguments
+        is_method (bool, optional): The decorated function is a method. Will
+          add one to the number of allowed positional args to account for
+          ``self``. Defaults to True.
+    """
+
+    template = (
+        'Calls with{} positional args are deprecated.'
+        ' Specify them as keyword arguments instead'
+    )
+    text = ' more than {}'.format(allowed_positional) if allowed_positional else ''
+    warn_text = template.format(text)
+    if is_method:
+        allowed_positional += 1
+
+    def deprecated_args(fn):
+        @functools.wraps(fn)
+        def wraps(*args, **kwargs):
+            if len(args) > allowed_positional:
+                warnings.warn(warn_text, DeprecatedWarning, stacklevel=2)
+            return fn(*args, **kwargs)
+
+        return wraps
+
+    return deprecated_args
