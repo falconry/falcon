@@ -125,8 +125,8 @@ like this::
 Short-circuiting
 ----------------
 
-A *process_request* middleware method may short-circuit further request
-processing by setting :attr:`~.Response.complete` to ``True``, e.g.::
+A *process_request* or *process_resource* middleware method may  short-circuit 
+further request processing by setting :attr:`~.Response.complete` to ``True``, e.g.::
 
       resp.complete = True
 
@@ -137,7 +137,20 @@ the responder method that the request would have been routed to. However, any
 
 In a similar manner, setting :attr:`~.Response.complete` to ``True`` from
 within a *process_resource* method will short-circuit further request processing
-at that point.
+at that point. 
+
+In the example bellow, you can see how request processing will be short-circuit
+when :attr:`~.Response.complete` will be set 
+to ``True`` at *process_request* in ``mob2`` middleware::
+
+    mob1.process_request
+        mob2.process_request  # resp.complete = True
+            <skip mob3.process_request>
+            <skip mob1/mob2/mob3.process_resource>
+            <skip route to resource responder method>
+            mob3.process_response
+        mob2.process_response
+    mob1.process_response
 
 This feature affords use cases in which the response may be pre-constructed,
 such as in the case of caching.
