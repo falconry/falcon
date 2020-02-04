@@ -211,7 +211,7 @@ class Result:
         #   CaseInsensitiveDict to inherit from a generic MutableMapping
         #   type. This might be resolved in the future by moving
         #   the CaseInsensitiveDict implementation to the falcon.testing
-        #   module so that it is no longer Cythonized.
+        #   module so that it is no longer cythonized.
         return self._headers
 
     @property

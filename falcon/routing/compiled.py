@@ -22,6 +22,7 @@ import textwrap
 
 from falcon.routing import converters
 from falcon.routing.util import map_http_methods, set_default_responders
+from falcon.util.misc import is_python_func
 from falcon.util.sync import _should_wrap_non_coroutines, wrap_sync_to_async
 
 
@@ -246,8 +247,7 @@ class CompiledRouter:
             #   operations that need to be explicitly made non-blocking
             #   by the developer; raising an error helps highlight this
             #   issue.
-
-            if not iscoroutinefunction(responder):
+            if not iscoroutinefunction(responder) and is_python_func(responder):
                 if _should_wrap_non_coroutines():
                     def let(responder=responder):
                         method_map[method] = wrap_sync_to_async(responder)
