@@ -364,7 +364,7 @@ def test_filesystem_traversal_fuse(client, monkeypatch):
     def suspicious_normpath(path):
         return 'assets/../../../../' + path
 
-    monkeypatch.setattr('os.path.normpath', suspicious_normpath)
     client.app.add_static_route('/static', '/etc/nginx/includes/static-data')
+    monkeypatch.setattr('os.path.normpath', suspicious_normpath)
     response = client.simulate_request(path='/static/shadow')
     assert response.status == falcon.HTTP_404

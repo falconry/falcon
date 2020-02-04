@@ -49,13 +49,16 @@ class StaticRoute:
         if not prefix.startswith('/'):
             raise ValueError("prefix must start with '/'")
 
-        if not os.path.isabs(directory):
+        self._directory = os.path.normpath(directory)
+        if not os.path.isabs(self._directory):
             raise ValueError('directory must be an absolute path')
 
         if fallback_filename is None:
             self._fallback_filename = None
         else:
-            self._fallback_filename = os.path.normpath(os.path.join(directory, fallback_filename))
+            self._fallback_filename = os.path.normpath(
+                os.path.join(self._directory, fallback_filename)
+            )
             if not os.path.isfile(self._fallback_filename):
                 raise ValueError('fallback_filename is not a file')
 
@@ -66,7 +69,6 @@ class StaticRoute:
             prefix += '/'
 
         self._prefix = prefix
-        self._directory = os.path.normpath(directory)
         self._downloadable = downloadable
 
     def match(self, path):
