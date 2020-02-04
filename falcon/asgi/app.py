@@ -53,7 +53,8 @@ class App(falcon.app.App):
 
     Each App instance provides a callable
     `ASGI <https://asgi.readthedocs.io/en/latest/>`_ interface
-    and a routing engine.
+    and a routing engine  (for WSGI applications, see
+    :class:`falcon.App`).
 
     Keyword Arguments:
         media_type (str): Default media type to use when initializing
