@@ -1,6 +1,7 @@
 import pytest
+from unittest.mock import MagicMock
 
-from falcon import MEDIA_TEXT
+from falcon import MEDIA_TEXT, ResponseOptions
 
 from _util import create_resp  # NOQA
 
@@ -58,3 +59,18 @@ def test_response_removed_stream_len(resp):
 
     with pytest.raises(AttributeError):
         resp.stream_len
+
+
+def test_response_option_mimetype_init(monkeypatch):
+    mock = MagicMock()
+    mock.inited = False
+    monkeypatch.setattr('falcon.response.mimetypes', mock)
+
+    ro = ResponseOptions()
+
+    assert ro.static_media_types is mock.types_map
+    mock.reset_mock()
+    mock.inited = True
+    ro = ResponseOptions()
+    assert ro.static_media_types is mock.types_map
+    mock.init.assert_not_called()
