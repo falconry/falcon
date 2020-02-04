@@ -79,17 +79,11 @@ cdef class BufferedReader:
             self._max_bytes_remaining -= chunk_len
             result.write(chunk)
 
-    def peek(self, Py_ssize_t size=-1):
+    cdef _fill_buffer(self):
         cdef Py_ssize_t read_size
 
-        if size < 0 or size > self._chunk_size:
-            size = self._chunk_size
-
-        if size < 0 or size > self._chunk_size:
-            size = self._chunk_size
-
-        if self._buffer_len - self._buffer_pos < size:
-            read_size = self._chunk_size - self._buffer_len + self._buffer_pos
+        if self._buffer_len - self._buffer_pos < self._chunk_size:
+            read_size = self._chunk_size - (self._buffer_len - self._buffer_pos)
 
             if self._buffer_pos == 0:
                 self._buffer += self._perform_read(read_size)
@@ -99,6 +93,13 @@ cdef class BufferedReader:
                 self._buffer_pos = 0
 
             self._buffer_len = len(self._buffer)
+
+    def peek(self, Py_ssize_t size=-1):
+        if size < 0 or size > self._chunk_size:
+            size = self._chunk_size
+
+        if self._buffer_len - self._buffer_pos < size:
+            self._fill_buffer()
 
         return self._buffer[self._buffer_pos:self._buffer_pos + size]
 
@@ -205,6 +206,13 @@ cdef class BufferedReader:
 
         if not 0 <= delimiter_len_1 < self._chunk_size:
             raise ValueError('delimiter length must be within [1, chunk_size]')
+
+        # PERF(vytas): If the requested size is equal to the chunk size (or is
+        #   a multiple of it), align the buffer.
+        #   This can often nearly *double* the performance if one is reading in
+        #   chunks.
+        if size % self._chunk_size == 0:
+            self._fill_buffer()
 
         # PERF(vytas) Quickly check for the first 4 delimiter bytes.
         cdef bint quick_found = True
