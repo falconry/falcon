@@ -634,12 +634,12 @@ call ``help()`` on ``falcon.status_codes``:
 
     In [4]: help(falcon.status_codes)
 
-The last line in the ``on_post()`` responder sets the Location header
-for the newly created resource. (We will create a route for that path in
-just a minute.) The :class:`~.Request` and :class:`~.Response` classes
-contain convenient attributes for reading and setting common headers, but
-you can always access any header by name with the ``req.get_header()``
-and ``resp.set_header()`` methods.
+The last line in the ``on_post()`` responder sets the Location header for the
+newly created resource. (We will create a route for that path in just a minute.)
+The :class:`~falcon.Request` and :class:`~falcon.Response` classes contain
+convenient attributes for reading and setting common headers, but you can always
+access any header by name with the ``req.get_header()`` and
+``resp.set_header()`` methods.
 
 Take a moment to run pytest again to check your progress:
 

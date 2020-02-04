@@ -40,7 +40,7 @@ Changes to Supported Platforms
 Breaking Changes
 ----------------
 
-- Previously, several methods in the :class:`~.Response` class
+- Previously, several methods in the :class:`~falcon.Response` class
   could be used to attempt to set raw cookie headers. However,
   due to the Set-Cookie header values not being combinable
   as a comma-delimited list, this resulted in an
@@ -48,31 +48,31 @@ Breaking Changes
   the case that more than one cookie was being set. Therefore,
   the following methods of ``falcon.Response`` now raise an
   instance of ``ValueError`` if an attempt is made to use them
-  for Set-Cookie: :meth:`~.Response.set_header`,
-  :meth:`~.Response.delete_header`, :meth:`~.Response.get_header`,
-  :meth:`~.Response.set_headers`.
+  for Set-Cookie: :meth:`~falcon.Response.set_header`,
+  :meth:`~falcon.Response.delete_header`, :meth:`~falcon.Response.get_header`,
+  :meth:`~falcon.Response.set_headers`.
 - :attr:`falcon.testing.Result.json` now returns ``None`` when the response body is
   empty, rather than raising an error.
-- :meth:`~.Request.get_param_as_bool` now defaults to treating valueless
+- :meth:`~falcon.Request.get_param_as_bool` now defaults to treating valueless
   parameters as truthy, rather than falsy. ``None`` is still returned
   by default when the parameter is altogether missing.
-- :meth:`~.Request.get_param_as_bool` no longer raises an error for a
+- :meth:`~falcon.Request.get_param_as_bool` no longer raises an error for a
   valueless parameter when the ``blank_as_true`` keyword argument is ``False``.
   Instead, ``False`` is simply returned in that case.
-- :attr:`~.RequestOptions.keep_blank_qs_values` now defaults to ``True``
+- :attr:`~falcon.RequestOptions.keep_blank_qs_values` now defaults to ``True``
   instead of ``False``.
-- :attr:`~.RequestOptions.auto_parse_qs_csv` now defaults to ``False``
+- :attr:`~falcon.RequestOptions.auto_parse_qs_csv` now defaults to ``False``
   instead of ``True``.
 - ``independent_middleware`` kwarg on :class:`falcon.API` now defaults to
   ``True`` instead of ``False``.
-- The ``stream_len`` property of the :class:`~.Response` class was changed to
-  be an alias of the new :attr:`~.Response.content_length` property. Please
-  use :meth:`~.Response.set_stream` or :attr:`~.Response.content_length`
+- The ``stream_len`` property of the :class:`~falcon.Response` class was changed to
+  be an alias of the new :attr:`~falcon.Response.content_length` property. Please
+  use :meth:`~falcon.Response.set_stream` or :attr:`~falcon.Response.content_length`
   instead, going forward, as ``stream_len`` is now deprecated.
-- Request :attr:`~.Request.context_type` was changed from dict to a bare class
+- Request :attr:`~falcon.Request.context_type` was changed from dict to a bare class
   implementing the mapping interface.
   (See also: :ref:`bare_class_context_type`)
-- Response :attr:`~.Response.context_type` was changed from dict to a bare class
+- Response :attr:`~falcon.Response.context_type` was changed from dict to a bare class
   implementing the mapping interface.
   (See also: :ref:`bare_class_context_type`)
 - :class:`~.media.JSONHandler` and :class:`~.HTTPError` no longer use
@@ -102,7 +102,7 @@ Breaking Changes
 - The :attr:`falcon.Request.stream` attribute is no longer wrapped in a bounded
   stream when Falcon detects that it is running on the wsgiref server. If you
   need to normalize stream semantics between wsgiref and a production WSGI
-  server, :attr:`~.Request.bounded_stream` may be used instead.
+  server, :attr:`~falcon.Request.bounded_stream` may be used instead.
 - :attr:`falcon.Request.cookies` now gives precedence to the first value
   encountered in the Cookie header for a given cookie name, rather than the
   last.
@@ -126,9 +126,9 @@ Breaking Changes
 - The deprecated ``falcon.testing.TestBase`` class was removed.
 - The deprecated ``falcon.testing.TestResource`` class was removed.
 - The deprecated ``protocol`` property was removed from the
-  :class:`~.Request` class.
+  :class:`~falcon.Request` class.
 - The deprecated ``get_param_as_dict()`` method alias was removed from the
-  :class:`~.Request` class. Please use :meth:`~.Request.get_param_as_json`
+  :class:`~falcon.Request` class. Please use :meth:`~falcon.Request.get_param_as_json`
   instead.
 - Routers were previously allowed to accept additional args and
   keyword arguments, and were not required to use the variadic form. Now,
@@ -169,7 +169,7 @@ Breaking Changes
   to ``False`` instead of ``True``.
 - The ``HTTPRequestEntityTooLarge`` class was renamed to
   :class:`~falcon.HTTPPayloadTooLarge`.
-- Two of the keyword arguments for :meth:`~.Request.get_param_as_int` were
+- Two of the keyword arguments for :meth:`~falcon.Request.get_param_as_int` were
   renamed to avoid shadowing built-in Python names::
 
     # Before
@@ -190,10 +190,10 @@ Breaking Changes
   for most of the parsing logic. This may lead to subtly different results
   for archaic cookie header formats, since the new implementation is based on
   RFC 6265.
-- The :attr:`~.Request.if_match` and :attr:`~.Request.if_none_match` properties
+- The :attr:`~falcon.Request.if_match` and :attr:`~falcon.Request.if_none_match` properties
   now return a list of :class:`falcon.ETag` objects rather than the raw
   value of the If-Match or If-None-Match headers, respectively.
-- When setting the :attr:`~.Response.etag` header property, the value will
+- When setting the :attr:`~falcon.Response.etag` header property, the value will
   now be wrapped with double-quotes (if not already present) to ensure
   compliance with RFC 7232.
 - The default error serializer no longer sets the `charset` parameter for the
@@ -218,12 +218,12 @@ New & Improved
   framework to make Falcon 2.0 even faster than 1.4 in some cases.
 - Numerous changes were made to the docs to improve clarity and to provide
   better recommendations on how to best use various parts of the framework.
-- Added a new :attr:`~.Response.headers` property to the :class:`~.Response` class.
+- Added a new :attr:`~falcon.Response.headers` property to the :class:`~falcon.Response` class.
 - Removed the :py:mod:`six` and :py:mod:`python-mimeparse` dependencies.
-- Added a new :attr:`~.Response.complete` property to the :class:`~.Response`
+- Added a new :attr:`~falcon.Response.complete` property to the :class:`~falcon.Response`
   class. This can be used to short-circuit request processing when the response
   has been pre-constructed.
-- Request :attr:`~.Request.context_type` now defaults to a bare class allowing
+- Request :attr:`~falcon.Request.context_type` now defaults to a bare class allowing
   to set attributes on the request context object::
 
     # Before
@@ -241,9 +241,9 @@ New & Improved
   be removed in a future release.
 
   Applications can work around this change by explicitly overriding
-  :attr:`~.Request.context_type` to dict.
+  :attr:`~falcon.Request.context_type` to dict.
   (See also: :ref:`bare_class_context_type`)
-- Response :attr:`~.Response.context_type` now defaults to a bare class allowing
+- Response :attr:`~falcon.Response.context_type` now defaults to a bare class allowing
   to set attributes on the response context object::
 
     # Before
@@ -259,19 +259,19 @@ New & Improved
   be removed in a future release.
 
   Applications can work around this change by explicitly overriding
-  :attr:`~.Response.context_type` to dict.
+  :attr:`~falcon.Response.context_type` to dict.
   (See also: :ref:`bare_class_context_type`)
 - :class:`~.media.JSONHandler` can now be configured to use arbitrary
   ``dumps()`` and ``loads()`` functions. This enables support not only for
   using any of a number of third-party JSON libraries, but also for
   customizing the keyword arguments used when (de)serializing objects.
-- Added a new method, :meth:`~.Request.get_cookie_values`, to the
-  :class:`~.Request` class. The new method supports getting all values
+- Added a new method, :meth:`~falcon.Request.get_cookie_values`, to the
+  :class:`~falcon.Request` class. The new method supports getting all values
   provided for a given cookie, and is now the preferred mechanism for
   reading request cookies.
 - Optimized request cookie parsing. It is now roughly an order of magnitude
   faster.
-- :meth:`~.Response.append_header` now supports appending raw Set-Cookie header values.
+- :meth:`~falcon.Response.append_header` now supports appending raw Set-Cookie header values.
 - Multiple routes can now be added for the same resource instance using a
   suffix to distinguish the set of responders that should be used. In this way,
   multiple closely-related routes can be mapped to the same resource while
@@ -301,18 +301,18 @@ New & Improved
 
 - All error classes now accept a `headers` keyword argument for customizing
   response headers.
-- A new method, :meth:`~.Request.get_param_as_float`, was added to the
-  :class:`~.Request` class.
-- A new method, :meth:`~.Request.has_param`, was added to the
-  :class:`~.Request` class.
-- A new property, :attr:`~.Response.content_length`, was added to the
-  :class:`~.Response` class. Either :meth:`~.Response.set_stream` or
-  :attr:`~.Response.content_length` should be used going forward, as
+- A new method, :meth:`~falcon.Request.get_param_as_float`, was added to the
+  :class:`~falcon.Request` class.
+- A new method, :meth:`~falcon.Request.has_param`, was added to the
+  :class:`~falcon.Request` class.
+- A new property, :attr:`~falcon.Response.content_length`, was added to the
+  :class:`~falcon.Response` class. Either :meth:`~falcon.Response.set_stream` or
+  :attr:`~falcon.Response.content_length` should be used going forward, as
   ``stream_len`` is now deprecated.
-- All ``get_param_*()`` methods of the :class:`~.Request` class now accept a
+- All ``get_param_*()`` methods of the :class:`~falcon.Request` class now accept a
   `default` argument.
-- A new header property, :attr:`~.Response.expires`, was added to the
-  :class:`~.Response` class.
+- A new header property, :attr:`~falcon.Response.expires`, was added to the
+  :class:`~falcon.Response` class.
 - The :class:`~.routing.CompiledRouter` class now exposes a
   :class:`~falcon.routing.CompiledRouter.map_http_methods` method that child
   classes can override in order to customize the mapping of HTTP methods to
@@ -325,7 +325,7 @@ New & Improved
 
   See also: :class:`~.media.BaseHandler`
 
-- The :meth:`~.Response.get_header` method now accepts a `default` keyword
+- The :meth:`~falcon.Response.get_header` method now accepts a `default` keyword
   argument.
 - The :meth:`~falcon.testing.TestClient.simulate_request` method now supports
   overriding the host and remote IP address in the WSGI environment, as well
@@ -336,7 +336,7 @@ New & Improved
 - Added a deployment guide to the docs for uWSGI and NGINX on Linux.
 - The :meth:`~.uri.decode` method now accepts an `unquote_plus` keyword
   argument. The new argument defaults to ``False`` to avoid a breaking change.
-- The :meth:`~.Request.if_match` and :meth:`~.Request.if_none_match` properties
+- The :meth:`~falcon.Request.if_match` and :meth:`~falcon.Request.if_none_match` properties
   now return a list of :class:`falcon.ETag` objects rather than the raw
   value of the If-Match or If-None-Match headers, respectively.
 - :meth:`~.API.add_error_handler` now supports specifying an iterable of
@@ -382,7 +382,7 @@ Fixed
   :class:`~.NoRepresentation`). This has now been fixed so
   that custom error serializers will be called for all instances of
   :class:`~.HTTPError`.
-- When setting the :attr:`~.Response.etag` header property, the value will
+- When setting the :attr:`~falcon.Response.etag` header property, the value will
   now be wrapped with double-quotes (if not already present) to ensure
   compliance with RFC 7232.
 - Fixed ``TypeError`` being raised when using Falcon's testing framework

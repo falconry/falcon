@@ -5,6 +5,60 @@ __all__ = ['SSEvent']
 
 
 class SSEvent:
+    """Represents a Server-Sent Event (SSE).
+
+    Instances of this class can be yielded by an async generator in order to
+    send a series of `Server-Sent Events`_ to the user agent.
+
+    (See also: :attr:`falcon.asgi.Response.sse`)
+
+    Keyword Args:
+        data (bytes): Raw byte string to use as the ``data`` field for the
+            event message. Takes precedence over both `text` and `json`.
+        text (str): String to use for the ``data`` field in the message. Will
+            be encoded as UTF-8 in the event. Takes precedence over `json`.
+        json (object): JSON-serializable object to be converted to JSON and
+            used as the ``data`` field in the event message.
+        event (str): A string identifying the event type (AKA event name).
+        event_id (str): The event ID that the User Agent should use for
+            the `EventSource` object's last event ID value.
+        retry (int): The reconnection time to use when attempting to send the
+            event. This must be an integer, specifying the reconnection time
+            in milliseconds.
+        comment (str): Comment to include in the event message; this is
+            normally ignored by the user agent, but is useful when composing
+            a periodic "ping" message to keep the connection alive. Since this
+            is a common use case, a default "ping" comment will be included
+            in any event that would otherwise be blank (i.e., one that does
+            not specify any fields when initializing the `SSEvent` instance.)
+
+    Attributes:
+        data (bytes): Raw byte string to use as the ``data`` field for the
+            event message. Takes precedence over both `text` and `json`.
+        text (str): String to use for the ``data`` field in the message. Will
+            be encoded as UTF-8 in the event. Takes precedence over `json`.
+        json (object): JSON-serializable object to be converted to JSON and
+            used as the ``data`` field in the event message.
+        event (str): A string identifying the event type (AKA event name).
+        event_id (str): The event ID that the User Agent should use for
+            the `EventSource` object's last event ID value.
+        retry (int): The reconnection time to use when attempting to send the
+            event. This must be an integer, specifying the reconnection time
+            in milliseconds.
+        comment (str): Comment to include in the event message; this is
+            normally ignored by the user agent, but is useful when composing
+            a periodic "ping" message to keep the connection alive. Since this
+            is a common use case, a default "ping" comment will be included
+            in any event that would otherwise be blank (i.e., one that does
+            not specify any of these fields when initializing the
+            `SSEvent` instance.)
+
+
+    .. _Server-Sent Events:
+        https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events
+
+    """
+
     __slots__ = [
         'data',
         'text',

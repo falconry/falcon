@@ -25,13 +25,37 @@ __all__ = ['Response']
 
 
 class Response(falcon.response.Response):
-    """
+    """Represents an HTTP response to a client request.
+
+    Note:
+        ``Response`` is not meant to be instantiated directly by responders.
+
+    Keyword Arguments:
+        options (dict): Set of global options passed from the App handler.
 
     Attributes:
-        sse (coroutine): A Server-Sent Event (SSE) emitter, implemented as
-            an async coroutine function that returns an iterable
-            of :py:class:`falcon.asgi.SSEvent` instances. Each event will be
-            serialized and sent to the client as HTML5 Server-Sent Events.
+        status: HTTP status code or line (e.g., ``'200 OK'``). This may be set
+            to a member of :class:`http.HTTPStatus`, an HTTP status line string
+            or byte string (e.g., ``'200 OK'``), or an ``int``.
+
+            Note:
+                The Falcon framework itself provides a number of constants for
+                common status codes. They all start with the ``HTTP_`` prefix,
+                as in: ``falcon.HTTP_204``. (See also: :ref:`status`.)
+
+        media (object): A serializable object supported by the media handlers
+            configured via :class:`falcon.RequestOptions`.
+
+            Note:
+                See also :ref:`media` for more information regarding media
+                handling.
+
+        body (str): String representing response content.
+
+            Note:
+                Falcon will encode the given text as UTF-8
+                in the response. If the content is already a byte string,
+                use the :attr:`data` attribute instead (it's faster).
 
         data (bytes): Byte string representing response content.
 
@@ -56,22 +80,118 @@ class Response(falcon.response.Response):
             byte strings that will be streamed to the ASGI server as a
             series of "http.response.body" events. Falcon will assume the
             body is complete when the iterable is exhausted or as soon as it
-            yields ``None`` rather than an instance of ``bytes``.
+            yields ``None`` rather than an instance of ``bytes``::
+
+                async def producer():
+                    while True:
+                        data_chunk = await read_data()
+                        if not data_chunk:
+                            break
+
+                        yield data_chunk
+
+                resp.stream = producer
+
+            Alternatively, a file-like object may be used as long as it
+            implements an awaitable ``read()`` method::
+
+                resp.stream = await aiofiles.open('resp_data.bin', 'rb')
 
             If the object assigned to :py:attr:`~.stream` holds any resources
             (such as a file handle) that must be explicitly released, the
-            object must implement a close() method. The close() method will
-            be called after exhausting the iterable.
+            object must implement a ``close()`` method. The ``close()`` method
+            will be called after exhausting the iterable or file-like object.
 
             Note:
                 In order to be compatible with Python 3.7+ and PEP 479,
                 async iterators must return ``None`` instead of raising
-                :py:class:`StopIteration`.
+                :py:class:`StopIteration`. This requirement does not
+                apply to async generators (PEP 525).
 
             Note:
                 If the stream length is known in advance, you may wish to
                 also set the Content-Length header on the response.
 
+        sse (coroutine): A Server-Sent Event (SSE) emitter, implemented as
+            an async iterator or generator that yields a series of
+            of :py:class:`falcon.asgi.SSEvent` instances. Each event will be
+            serialized and sent to the client as HTML5 Server-Sent Events::
+
+                async def emitter():
+                    while True:
+                        some_event = await get_next_event()
+
+                        if not some_event:
+                            # Send an event consisting of a single "ping"
+                            #   comment to keep the connection alive.
+                            yield SSEvent()
+
+                            # Alternatively, one can simply yield None and
+                            #   a "ping" will also be sent as above.
+
+                            # yield
+
+                            continue
+
+                        yield SSEvent(json=some_event, retry=5000)
+
+                        # ...or
+
+                        yield SSEvent(data=b'somethingsomething', id=some_id)
+
+                        # Alternatively, you may yield anything that implements
+                        #   a serialize() method that returns a byte string
+                        #   conforming to the SSE event stream format.
+
+                        # yield some_event
+
+                resp.sse = emitter()
+
+            Note:
+                When the `sse` property is set, it supersedes both the
+                `body` and `data` properties.
+
+            Note:
+                When hosting an app that emits Server-Sent Events, the web
+                server should be set with a relatively long keep-alive TTL to
+                minimize the overhead of connection renegotiations.
+
+        context (object): Empty object to hold any data (in its attributes)
+            about the response which is specific to your app (e.g. session
+            object). Falcon itself will not interact with this attribute after
+            it has been initialized.
+
+            Note:
+                The preferred way to pass response-specific data, when using the
+                default context type, is to set attributes directly on the
+                `context` object. For example::
+
+                    resp.context.cache_strategy = 'lru'
+
+        context_type (class): Class variable that determines the factory or
+            type to use for initializing the `context` attribute. By default,
+            the framework will instantiate bare objects (instances of the bare
+            :class:`falcon.Context` class). However, you may override this
+            behavior by creating a custom child class of
+            :class:`falcon.asgi.Response`, and then passing that new class
+            to ``falcon.App()`` by way of the latter's `response_type`
+            parameter.
+
+            Note:
+                When overriding `context_type` with a factory function (as
+                opposed to a class), the function is called like a method of
+                the current Response instance. Therefore the first argument is
+                the Response instance itself (self).
+
+        options (dict): Set of global options passed in from the App handler.
+
+        headers (dict): Copy of all headers set for the response,
+            sans cookies. Note that a new copy is created and returned each
+            time this property is referenced.
+
+        complete (bool): Set to ``True`` from within a middleware method to
+            signal to the framework that request processing should be
+            short-circuited (see also :ref:`Middleware <middleware>`).
     """
 
     # PERF(kgriffs): These will be shadowed when set on an instance; let's
@@ -105,6 +225,37 @@ class Response(falcon.response.Response):
     @data.setter
     def data(self, value):
         self._data = value
+
+    def set_stream(self, stream, content_length):
+        """Convenience method for setting both `stream` and `content_length`.
+
+        Although the :attr:`~falcon.asgi.Response.stream` and
+        :attr:`~falcon.asgi.Response.content_length` properties may be set
+        directly, using this method ensures
+        :attr:`~falcon.asgi.Response.content_length` is not accidentally
+        neglected when the length of the stream is known in advance. Using this
+        method is also slightly more performant as compared to setting the
+        properties individually.
+
+        Note:
+            If the stream length is unknown, you can set
+            :attr:`~falcon.asgi.Response.stream` directly, and ignore
+            :attr:`~falcon.asgi.Response.content_length`. In this case, the ASGI
+            server may choose to use chunked encoding for HTTP/1.1
+
+        Args:
+            stream: A readable, awaitable file-like object or async iterable
+                that returns byte strings. If the object implements a close()
+                method, it will be called after reading all of the data.
+            content_length (int): Length of the stream, used for the
+                Content-Length header in the response.
+        """
+
+        self.stream = stream
+
+        # PERF(kgriffs): Set directly rather than incur the overhead of
+        #   the self.content_length property.
+        self._headers['content-length'] = str(content_length)
 
     async def render_body(self):
         """Get the raw content for the response body.
@@ -161,7 +312,7 @@ class Response(falcon.response.Response):
         scheduled to run on the event loop as soon as possible.
 
         The callback will be invoked without arguments. Use
-        :py:meth:`functools.partial` to pass arguments to the callback as needed.
+        :any:`functools.partial` to pass arguments to the callback as needed.
 
         Note:
             If an unhandled exception is raised while processing the request,
@@ -174,7 +325,8 @@ class Response(falcon.response.Response):
         Warning:
             Because coroutines run on the main request thread, care should
             be taken to ensure they are non-blocking. Long-running operations
-            must use async libraries or delegate to an Executor pool to avoid
+            must use async libraries or delegate to an
+            :class:`~concurrent.futures.Executor` pool to avoid
             blocking the processing of subsequent requests.
 
         Args:
@@ -213,12 +365,12 @@ class Response(falcon.response.Response):
         response has been returned to the client.
 
         The callback is assumed to be a synchronous (non-coroutine) function.
-        It will be scheduled on the event loop's default ``Executor`` (which
-        can be overridden via
-        :py:meth:`asyncio.AbstractEventLoop.set_default_executor`).
+        It will be scheduled on the event loop's default
+        :class:`~concurrent.futures.Executor` (which can be overridden via
+        :meth:`asyncio.AbstractEventLoop.set_default_executor`).
 
         The callback will be invoked without arguments. Use
-        :py:meth:`functools.partial` to pass arguments to the callback
+        :any:`functools.partial` to pass arguments to the callback
         as needed.
 
         Note:
@@ -230,14 +382,15 @@ class Response(falcon.response.Response):
             be scheduled before the first call to the emitter.
 
         Warning:
-            Synchronous callables run on the event loop's default ``Executor``,
-            which uses an instance of ``ThreadPoolExecutor`` unless
-            :py:meth:`asyncio.AbstractEventLoop.set_default_executor` is used
-            to change it to something else. Due to the GIL, CPU-bound jobs
-            will block request processing for the current process unless
-            the default ``Executor`` is changed to one that is process-based
-            instead of thread-based (e.g., an instance of
-            :py:class:`concurrent.futures.ProcessPoolExecutor`).
+            Synchronous callables run on the event loop's default
+            :class:`~concurrent.futures.Executor`, which uses an instance of
+            :class:`~concurrent.futures.ThreadPoolExecutor` unless
+            :meth:`asyncio.AbstractEventLoop.set_default_executor` is used to
+            change it to something else. Due to the GIL, CPU-bound jobs will
+            block request processing for the current process unless the default
+            :class:`~concurrent.futures.Executor` is changed to one that is
+            process-based instead of thread-based (e.g., an instance of
+            :class:`concurrent.futures.ProcessPoolExecutor`).
 
         Args:
             callback(object): An async coroutine function or a synchronous
@@ -250,34 +403,6 @@ class Response(falcon.response.Response):
             self._registered_callbacks = [rc]
         else:
             self._registered_callbacks.append(rc)
-
-    def set_stream(self, stream, content_length):
-        """Convenience method for setting both `stream` and `content_length`.
-
-        Although the `stream` and `content_length` properties may be set
-        directly, using this method ensures `content_length` is not
-        accidentally neglected when the length of the stream is known in
-        advance. Using this method is also slightly more performant
-        as compared to setting the properties individually.
-
-        Note:
-            If the stream length is unknown, you can set `stream`
-            directly, and ignore `content_length`. In this case, the
-            ASGI server may choose to use chunked encoding for HTTP/1.1
-
-        Args:
-            stream: A readable, awaitable file-like object or async iterable that
-                retuns byte strings. If the object implements a close() method, it
-                will be called after reading all of the data.
-            content_length (int): Length of the stream, used for the
-                Content-Length header in the response.
-        """
-
-        self.stream = stream
-
-        # PERF(kgriffs): Set directly rather than incur the overhead of
-        #   the self.content_length property.
-        self._headers['content-length'] = str(content_length)
 
     # ------------------------------------------------------------------------
     # Helper methods
