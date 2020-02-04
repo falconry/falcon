@@ -73,7 +73,7 @@ class Request(falcon.request.Request):
 
     __slots__ = [
         '_asgi_headers',
-        '_asgi_server_cached'
+        '_asgi_server_cached',
         '_receive',
         '_stream',
         'scope',

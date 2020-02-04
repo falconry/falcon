@@ -28,9 +28,9 @@ class Things:
             self._counter['backround:things:on_post'] += 1000
 
         resp.schedule(background_job_async)
-        resp.schedule(background_job_sync)
+        resp.schedule_sync(background_job_sync)
         resp.schedule(background_job_async)
-        resp.schedule(background_job_sync)
+        resp.schedule_sync(background_job_sync)
 
     async def on_put(self, req, resp):
         # NOTE(kgriffs): Test that reading past the end does

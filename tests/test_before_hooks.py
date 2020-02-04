@@ -356,11 +356,13 @@ def test_parser_sync(body, doc):
 def test_parser_async(body, doc):
     with disable_asgi_non_coroutine_wrapping():
         class WrappedRespondersBodyParserAsyncResource:
-            @falcon.before(validate_param_async, 'limit', 100)
+            @falcon.before(validate_param_async, 'limit', 100, is_async=True)
             @falcon.before(parse_body_async)
             async def on_get(self, req, resp, doc=None):
-                self.req = req
-                self.resp = resp
+                self.doc = doc
+
+            @falcon.before(parse_body_async, is_async=False)
+            async def on_put(self, req, resp, doc=None):
                 self.doc = doc
 
     app = create_app(asgi=True)
@@ -369,6 +371,9 @@ def test_parser_async(body, doc):
     app.add_route('/', resource)
 
     testing.simulate_get(app, '/', body=body)
+    assert resource.doc == doc
+
+    testing.simulate_put(app, '/', body=body)
     assert resource.doc == doc
 
     async def test_direct():
