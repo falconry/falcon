@@ -152,7 +152,7 @@ class Response(falcon.response.Response):
         return data
 
     def schedule(self, callback):
-        """Schedules an async callback to run soon after sending the HTTP response.
+        """Schedule an async callback to run soon after sending the HTTP response.
 
         This method can be used to execute a background job after the response
         has been returned to the client.
@@ -207,7 +207,7 @@ class Response(falcon.response.Response):
             self._registered_callbacks.append(rc)
 
     def schedule_sync(self, callback):
-        """Schedules a synchronous callback to run soon after sending the HTTP response.
+        """Schedule a synchronous callback to run soon after sending the HTTP response.
 
         This method can be used to execute a background job after the
         response has been returned to the client.
@@ -218,7 +218,7 @@ class Response(falcon.response.Response):
         :py:meth:`asyncio.AbstractEventLoop.set_default_executor`).
 
         The callback will be invoked without arguments. Use
-        :py:meth`functools.partial` to pass arguments to the callback
+        :py:meth:`functools.partial` to pass arguments to the callback
         as needed.
 
         Note:

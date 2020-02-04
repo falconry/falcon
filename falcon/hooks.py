@@ -60,9 +60,18 @@ def before(action, *args, is_async=False, **kwargs):
     Keyword Args:
         is_async (bool): Set to ``True`` for ASGI apps to provide a hint that
             the decorated responder is a coroutine function (i.e., that it
-            is defined with ``async def``). This is only necessary for
-            cythonized responders, since Cython coroutine functions can
-            not be automatically detected.
+            is defined with ``async def``) or that it returns an awaitable
+            coroutine object.
+
+            Normally, when the function source is declared using ``async def``,
+            the resulting function object is flagged to indicate it returns a
+            coroutine when invoked, and this can be automatically detected.
+            However, it is possible to use a regular function to return an
+            awaitable coroutine object, in which case a hint is required to let
+            the framework know what to expect. Also, a hint is always required
+            when using a cythonized coroutine function, since Cython does not
+            flag them in a way that can be detected in advance, even when the
+            function is declared using ``async def``.
 
         **kwargs: Any additional keyword arguments will be passed through to
             *action*.
@@ -118,9 +127,18 @@ def after(action, *args, is_async=False, **kwargs):
     Keyword Args:
         is_async (bool): Set to ``True`` for ASGI apps to provide a hint that
             the decorated responder is a coroutine function (i.e., that it
-            is defined with ``async def``). This is only necessary for
-            cythonized responders, since Cython coroutine functions can
-            not be automatically detected.
+            is defined with ``async def``) or that it returns an awaitable
+            coroutine object.
+
+            Normally, when the function source is declared using ``async def``,
+            the resulting function object is flagged to indicate it returns a
+            coroutine when invoked, and this can be automatically detected.
+            However, it is possible to use a regular function to return an
+            awaitable coroutine object, in which case a hint is required to let
+            the framework know what to expect. Also, a hint is always required
+            when using a cythonized coroutine function, since Cython does not
+            flag them in a way that can be detected in advance, even when the
+            function is declared using ``async def``.
 
         **kwargs: Any additional keyword arguments will be passed through to
             *action*.
@@ -172,7 +190,8 @@ def _wrap_with_after(responder, action, action_args, action_kwargs, is_async):
         action_kwargs: Additional keyword arguments to pass to *action*.
         is_async: Set to ``True`` for cythonized responders that are
             actually coroutine functions, since such responders can not
-            be auto-detected.
+            be auto-detected. A hint is also required for regular functions
+            that happen to return an awaitable coroutine object.
     """
 
     responder_argnames = get_argnames(responder)
@@ -215,7 +234,8 @@ def _wrap_with_before(responder, action, action_args, action_kwargs, is_async):
         action_kwargs: Additional keyword arguments to pass to *action*.
         is_async: Set to ``True`` for cythonized responders that are
             actually coroutine functions, since such responders can not
-            be auto-detected.
+            be auto-detected. A hint is also required for regular functions
+            that happen to return an awaitable coroutine object.
     """
 
     responder_argnames = get_argnames(responder)

@@ -32,10 +32,19 @@ def validate(req_schema=None, resp_schema=None, is_async=False):
             Schema specification. The response will be validated against this
             schema.
         is_async (bool): Set to ``True`` for ASGI apps to provide a hint that
-            the wrapped responder is a coroutine function (i.e., that it
-            is defined with ``async def``). This is only necessary for
-            cythonized responders, since Cython coroutine functions can
-            not be automatically detected.
+            the decorated responder is a coroutine function (i.e., that it
+            is defined with ``async def``) or that it returns an awaitable
+            coroutine object.
+
+            Normally, when the function source is declared using ``async def``,
+            the resulting function object is flagged to indicate it returns a
+            coroutine when invoked, and this can be automatically detected.
+            However, it is possible to use a regular function to return an
+            awaitable coroutine object, in which case a hint is required to let
+            the framework know what to expect. Also, a hint is always required
+            when using a cythonized coroutine function, since Cython does not
+            flag them in a way that can be detected in advance, even when the
+            function is declared using ``async def``.
 
     Example:
         .. code:: python
