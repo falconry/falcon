@@ -80,9 +80,10 @@ class CompiledRouter:
         self._return_values = None
         self._roots = []
 
-        # NOTE(kgriffs): Call _compile() last since it depends on
-        # the variables above.
-        self._find = self._compile()
+        # NOTE(caselit): set find to the compile method function to
+        # ensure that compile is called before the actual find is
+        # called
+        self._find = self._compile_and_find
 
     @property
     def options(self):
@@ -206,7 +207,9 @@ class CompiledRouter:
                 insert(new_node.children, path_index + 1)
 
         insert(self._roots)
-        self._find = self._compile()
+        # NOTE(caselit): reset the find, so that compile will be called before
+        # calling the actual find
+        self._find = self._compile_and_find
 
     def find(self, uri, req=None):
         """Search for a route that matches the given partial URI.
@@ -530,6 +533,15 @@ class CompiledRouter:
         # NOTE(kgriffs): Don't try this at home. ;)
         src = '{0}({1})'.format(klass.__name__, argstr)
         return eval(src, {klass.__name__: klass})
+
+    def _compile_and_find(self, path, _return_values, _patterns, _converters, params):
+        # NOTE(caselit): replace the find with the actual method
+        self._find = self._compile()
+        # NOTE(caselit): return_values, patterns, converters are reset by the _compile
+        # function, so the input ones cannot be used
+        return self._find(
+            path, self._return_values, self._patterns, self._converters, params
+        )
 
 
 class CompiledRouterNode:
