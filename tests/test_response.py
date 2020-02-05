@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 
 from falcon import MEDIA_TEXT, ResponseOptions
 
