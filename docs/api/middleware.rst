@@ -174,14 +174,14 @@ the following example:
             """Process WSGI request using synchronous logic.
 
             Note that req and resp are instances of falcon.Request and
-            falcon.Response, respectively
+            falcon.Response, respectively.
             """
 
-        async def def process_request_async(self, req, resp):
+        async def process_request_async(self, req, resp):
             """Process ASGI request using asynchronous logic.
 
             Note that req and resp are instances of falcon.asgi.Request and
-            falcon.asgi.Response, respectively
+            falcon.asgi.Response, respectively.
             """
 
 .. Tip::
