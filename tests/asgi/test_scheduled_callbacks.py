@@ -19,10 +19,13 @@ def test_multiple():
             def background_job_sync():
                 self.counter['backround:on_get:sync'] += 20
 
+            with pytest.raises(TypeError):
+                resp.schedule(background_job_sync)
+
+            resp.schedule_sync(background_job_sync)
             resp.schedule(background_job_async)
-            resp.schedule(background_job_sync)
+            resp.schedule_sync(background_job_sync)
             resp.schedule(background_job_async)
-            resp.schedule(background_job_sync)
 
         async def on_post(self, req, resp):
             async def background_job_async():
@@ -33,8 +36,8 @@ def test_multiple():
 
             resp.schedule(background_job_async)
             resp.schedule(background_job_async)
-            resp.schedule(background_job_sync)
-            resp.schedule(background_job_sync)
+            resp.schedule_sync(background_job_sync)
+            resp.schedule_sync(background_job_sync)
 
         async def on_put(self, req, resp):
             async def background_job_async():

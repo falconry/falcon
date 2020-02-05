@@ -35,6 +35,7 @@ import warnings
 from falcon import status_codes
 
 __all__ = (
+    'is_python_func',
     'deprecated',
     'http_now',
     'dt_to_http',
@@ -75,6 +76,30 @@ if (
     _lru_cache_safe = _lru_cache_nop  # pragma: nocover
 else:
     _lru_cache_safe = functools.lru_cache
+
+
+def is_python_func(func):
+    """Determines if a function or method uses a standard Python type.
+
+    This helper can be used to check a function or method to determine if it
+    uses a standard Python type, as opposed to an implementation-specific
+    native extension type.
+
+    For example, because Cython functions are not standard Python functions,
+    ``is_python_func(f)`` will return ``False`` when f is a reference to a
+    cythonized function or method.
+
+    Args:
+        func: The function object to check.
+    Returns:
+        bool: ``True`` if the function or method uses a standard Python
+        type; ``False`` otherwise.
+
+    """
+    if inspect.ismethod(func):
+        func = func.__func__
+
+    return inspect.isfunction(func)
 
 
 # NOTE(kgriffs): We don't want our deprecations to be ignored by default,
