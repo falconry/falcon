@@ -431,10 +431,10 @@ def code_to_http_status(code):
         return str(code)
 
 
-def deprecated_args(allowed_positional, is_method=True):
-    """Flags a method call with positional args as deprecate
+def deprecated_args(*, allowed_positional, is_method=True):
+    """Flags a method call with positional args as deprecated
 
-    Args:
+    Keyword Args:
         allowed_positional (int): Number of allowed positional arguments
         is_method (bool, optional): The decorated function is a method. Will
           add one to the number of allowed positional args to account for
@@ -443,7 +443,7 @@ def deprecated_args(allowed_positional, is_method=True):
 
     template = (
         'Calls with{} positional args are deprecated.'
-        ' Specify them as keyword arguments instead'
+        ' Specify them as keyword arguments instead.'
     )
     text = ' more than {}'.format(allowed_positional) if allowed_positional else ''
     warn_text = template.format(text)
