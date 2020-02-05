@@ -443,7 +443,7 @@ def deprecated_args(*, allowed_positional, is_method=True):
 
     template = (
         'Calls with{} positional args are deprecated.'
-        ' Specify them as keyword arguments instead.'
+        ' Please specify them as keyword arguments instead.'
     )
     text = ' more than {}'.format(allowed_positional) if allowed_positional else ''
     warn_text = template.format(text)
