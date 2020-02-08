@@ -65,7 +65,7 @@ def test_compile(patch_add_route):
 
     res = MockResource()
     router.add_route('/foo', res, compile=True)
-    mock.assert_called_once()
+    assert mock.call_count == 1
     assert router._find != router._compile_and_find
 
 
@@ -76,8 +76,21 @@ def test_verify_route_on_add(patch_add_route):
 
     res = MockResource()
     router.add_route('/foo', res)
-    mock.assert_called_once()
+    assert mock.call_count == 1
     assert router._find == router._compile_and_find
+
+
+def test_add_route_after_first_request():
+    router = CompiledRouter()
+
+    router.add_route('/foo', MockResource())
+    assert router.find('/foo') is not None
+    assert router._find != router._compile_and_find
+
+    router.add_route('/bar', MockResource(), suffix='other')
+    assert router._find == router._compile_and_find
+    assert router.find('/bar') is not None
+    assert router._find != router._compile_and_find
 
 
 class MockResource:
