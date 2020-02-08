@@ -1,0 +1,3 @@
+Change :class:`falcon.routing.CompiledRouter` to compiles the routes
+only when the first request is routed. This can be controlled by
+passing `compile=True` to :meth:`falcon.routing.CompiledRouter.add_route`

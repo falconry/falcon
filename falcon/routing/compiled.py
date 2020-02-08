@@ -88,8 +88,8 @@ class CompiledRouter:
         self._return_values = None
         self._roots = []
 
-        # NOTE(caselit): set find to the compile method to ensure that compile
-        # is called when the router is first used
+        # NOTE(caselit): set _find to the delayed compile method to ensure that
+        # compile is called when the router is first used
         self._find = self._compile_and_find
         # NOTE(caselit): this will refer to an internal instance of the router
         # is used to verify that each route can compile by itself
@@ -157,18 +157,16 @@ class CompiledRouter:
                 Another class might use a suffixed responder to handle
                 a shortlink route in addition to the regular route for the
                 resource.
-            compile (bool): Optional flag that indicates that the routes
-                should compile the routes. By default the
-                :class:`.CompiledRouter` delays compilation until the first
-                requests is routed, causing a initial delay. Setting this
-                to `True` when the last routes it added ensures that the
-                router is ready from the first request. (Defaults to `False`)
+            compile (bool): Optional flag to compile the router on this call.
+                By default the :class:`.CompiledRouter` delays compilation
+                until the first requests is routed. Setting this to `True` when
+                the last route is added ensures that the router is ready from
+                the first request. (Defaults to `False`)
 
                 Note:
-                    Always setting this to `True` may noticeably slow down
-                    the addition of new routes, in case where hundreds of
-                    them are added. It is advisable to only set this to `True`
-                    in the last added route.
+                    Always setting this to `True` may slow down the addition of
+                    new routes, in case where hundreds of them are added. It is
+                    advisable to only set this to `True` in the last added route.
         """
 
         # NOTE(kgriffs): falcon.asgi.App injects this private kwarg; it is
@@ -243,8 +241,8 @@ class CompiledRouter:
                 kwargs['compile'] = True
                 self._verify_route_router._roots.clear()
                 self._verify_route_router.add_route(uri_template, resource, **kwargs)
-            # NOTE(caselit): reset the find, so that _compile will be called before
-            # the next use
+            # NOTE(caselit): reset the _find, so that _compile will be called on the
+            # next find use
             self._find = self._compile_and_find
 
     def find(self, uri, req=None):
@@ -572,7 +570,7 @@ class CompiledRouter:
 
     def _compile_and_find(self, path, _return_values, _patterns, _converters, params):
         """Compiles the router, sets the `_find` attribute and returns its result
-        
+
         This method is set to the `_find` attribute to delay the compilation of the
         router until its used for the first time. subsequent calls to `_find` will
         be processed by the actual routing function.
@@ -806,12 +804,13 @@ class CompiledRouterOptions:
 
             (See also: :ref:`Field Converters <routing_field_converters>`)
         verify_route_on_add (bool): The compiled router delays the compilation
-            of its routes until the first request by default to avoid slowing
+            of its routes until the first request is router to avoid slowing
             down the application start-up. To facilitate the debugging of
-            router compilation errors, when this flag is True every route is
-            compiled by itself when it is added. Setting this to `False`
-            reduces the overhead incurred when a route is added, but it is
-            noticeable only thousands of routes are used. (Defaults to True)
+            router compilation errors, when this flag is `True` every route is
+            compiled by itself when it is first added. Setting this to `False`
+            may reduces the overhead incurred when a route is added. (This delay
+            should become noticeable only when thousands of routes are added).
+            (Defaults to `True`)
     """
 
     __slots__ = ('converters', 'verify_route_on_add')
