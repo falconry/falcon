@@ -1,2 +1,0 @@
-The class :class:`~.falcon.http_error.NoRepresentation` was removed since
-all :class:`~.falcon.HTTPError` have optional representation

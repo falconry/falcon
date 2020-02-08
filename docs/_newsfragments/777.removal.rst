@@ -1,0 +1,4 @@
+The class :class:`~.falcon.http_error.NoRepresentation` was removed since
+all :class:`~.falcon.HTTPError` have optional representation.
+Deprecate the use of positional arguments for the optional kw args of
+the HTTPError subclasses
