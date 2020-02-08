@@ -51,6 +51,13 @@ class CompiledRouter:
     tree for each look-up, it generates inlined, bespoke Python code to
     perform the search, then compiles that code. This makes the route
     processing quite fast.
+
+    The compile process is delayed until the first use of the route, ie the
+    first routed request, to speed up application start times. This may cause
+    a noticeable delay in the first response of the application. When adding
+    the last route to the application a `compile` flag may be provided to make
+    the router compile its logic, avoiding the delay on the first response.
+    See :meth:`.CompiledRouter.add_route`
     """
 
     __slots__ = (
@@ -63,14 +70,15 @@ class CompiledRouter:
         '_patterns',
         '_return_values',
         '_roots',
+        '_verify_route_router'
     )
 
-    def __init__(self):
+    def __init__(self, *, _options=None):
         self._ast = None
         self._converters = None
         self._finder_src = None
 
-        self._options = CompiledRouterOptions()
+        self._options = _options if _options else CompiledRouterOptions()
 
         # PERF(kgriffs): This is usually an anti-pattern, but we do it
         # here to reduce lookup time.
@@ -80,10 +88,12 @@ class CompiledRouter:
         self._return_values = None
         self._roots = []
 
-        # NOTE(caselit): set find to the compile method function to
-        # ensure that compile is called before the actual find is
-        # called
+        # NOTE(caselit): set find to the compile method to ensure that compile
+        # is called when the router is first used
         self._find = self._compile_and_find
+        # NOTE(caselit): this will refer to an internal instance of the router
+        # is used to verify that each route can compile by itself
+        self._verify_route_router = None
 
     @property
     def options(self):
@@ -91,6 +101,10 @@ class CompiledRouter:
 
     @property
     def finder_src(self):
+        # NOTE(caselit): ensure that the router is actually compiled before
+        # returning the finder source, since the current value may be out of
+        # date
+        self.find('/')
         return self._finder_src
 
     def map_http_methods(self, resource, **kwargs):
@@ -143,6 +157,18 @@ class CompiledRouter:
                 Another class might use a suffixed responder to handle
                 a shortlink route in addition to the regular route for the
                 resource.
+            compile (bool): Optional flag that indicates that the routes
+                should compile the routes. By default the
+                :class:`.CompiledRouter` delays compilation until the first
+                requests is routed, causing a initial delay. Setting this
+                to `True` when the last routes it added ensures that the
+                router is ready from the first request. (Defaults to `False`)
+
+                Note:
+                    Always setting this to `True` may noticeably slow down
+                    the addition of new routes, in case where hundreds of
+                    them are added. It is advisable to only set this to `True`
+                    in the last added route.
         """
 
         # NOTE(kgriffs): falcon.asgi.App injects this private kwarg; it is
@@ -207,9 +233,19 @@ class CompiledRouter:
                 insert(new_node.children, path_index + 1)
 
         insert(self._roots)
-        # NOTE(caselit): reset the find, so that compile will be called before
-        # calling the actual find
-        self._find = self._compile_and_find
+
+        if kwargs.get('compile', False):
+            self._find = self._compile()
+        else:
+            if self._options.verify_route_on_add:
+                if self._verify_route_router is None:
+                    self._verify_route_router = CompiledRouter(_options=self._options)
+                kwargs['compile'] = True
+                self._verify_route_router._roots.clear()
+                self._verify_route_router.add_route(uri_template, resource, **kwargs)
+            # NOTE(caselit): reset the find, so that _compile will be called before
+            # the next use
+            self._find = self._compile_and_find
 
     def find(self, uri, req=None):
         """Search for a route that matches the given partial URI.
@@ -535,10 +571,18 @@ class CompiledRouter:
         return eval(src, {klass.__name__: klass})
 
     def _compile_and_find(self, path, _return_values, _patterns, _converters, params):
+        """Compiles the router, sets the `_find` attribute and returns its result
+        
+        This method is set to the `_find` attribute to delay the compilation of the
+        router until its used for the first time. subsequent calls to `_find` will
+        be processed by the actual routing function.
+        This method must have the same signature as the function returned by the
+        :meth:`.CompiledRouter._compile`.
+        """
         # NOTE(caselit): replace the find with the actual method
         self._find = self._compile()
         # NOTE(caselit): return_values, patterns, converters are reset by the _compile
-        # function, so the input ones cannot be used
+        # method, so the updated ones must be used
         return self._find(
             path, self._return_values, self._patterns, self._converters, params
         )
@@ -761,14 +805,22 @@ class CompiledRouterOptions:
                 manner.
 
             (See also: :ref:`Field Converters <routing_field_converters>`)
+        verify_route_on_add (bool): The compiled router delays the compilation
+            of its routes until the first request by default to avoid slowing
+            down the application start-up. To facilitate the debugging of
+            router compilation errors, when this flag is True every route is
+            compiled by itself when it is added. Setting this to `False`
+            reduces the overhead incurred when a route is added, but it is
+            noticeable only thousands of routes are used. (Defaults to True)
     """
 
-    __slots__ = ('converters',)
+    __slots__ = ('converters', 'verify_route_on_add')
 
     def __init__(self):
         self.converters = ConverterDict(
             (name, converter) for name, converter in converters.BUILTIN
         )
+        self.verify_route_on_add = True
 
 
 # --------------------------------------------------------------------
