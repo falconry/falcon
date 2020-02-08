@@ -92,7 +92,7 @@ class CompiledRouter:
         # compile is called when the router is first used
         self._find = self._compile_and_find
         # NOTE(caselit): this will refer to an internal instance of the router
-        # is used to verify that each route can compile by itself
+        # used to verify that each route can compile by itself
         self._verify_route_router = None
 
     @property
