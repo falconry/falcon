@@ -17,8 +17,8 @@
 import functools
 import io
 
-DEFAULT_CHUNK_SIZE = io.DEFAULT_BUFFER_SIZE * 4
-"""Default chunk size for :class:`BufferedReader`."""
+DEFAULT_CHUNK_SIZE = 32768
+"""Default chunk size for :class:`BufferedReader` (32 KiB)."""
 
 _MAX_JOIN_CHUNKS = 128
 
