@@ -1,4 +1,5 @@
 import io
+from os.path import normpath
 
 import pytest
 
@@ -46,7 +47,7 @@ def test_traverse_with_verbose(app):
         get_info, options_info = options_info, get_info
 
     assert options_info.startswith('-->OPTIONS')
-    assert 'falcon/responders.py:' in options_info
+    assert '{}:'.format(normpath('falcon/responders.py')) in options_info
 
     assert get_info.startswith('-->GET')
 
@@ -54,10 +55,11 @@ def test_traverse_with_verbose(app):
     # 18 or 25 (in the case of DummyResourceAsync) in the present file.
     # Adjust the test if the said responder is relocated, or just check for
     # any number if this becomes too painful to maintain.
+    path = normpath('tests/test_cmd_print_api.py')
 
     assert (
-        get_info.endswith('tests/test_cmd_print_api.py:13') or
-        get_info.endswith('tests/test_cmd_print_api.py:20')
+        get_info.endswith('{}:14'.format(path)) or
+        get_info.endswith('{}:21'.format(path))
     )
 
 
