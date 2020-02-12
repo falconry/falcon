@@ -146,7 +146,7 @@ segment. For example::
     /serviceRoot/People('{name}')
 
 (See also the :ref:`Falcon tutorial <tutorial>` for additional examples
-and a walkthough of setting up routes within the context of a sample
+and a walkthrough of setting up routes within the context of a sample
 application.)
 
 .. _routing_field_converters:

@@ -1069,5 +1069,6 @@ class ResponseOptions:
         self.default_media_type = DEFAULT_MEDIA_TYPE
         self.media_handlers = Handlers()
 
-        mimetypes.init()
+        if not mimetypes.inited:
+            mimetypes.init()
         self.static_media_types = mimetypes.types_map
