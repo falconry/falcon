@@ -24,19 +24,19 @@ New & Improved
 - URI template field converters are now supported. We expect to expand
   this feature over time. (See also:
   :ref:`Field Converters <routing_field_converters>`)
-- A new method, :meth:`~.Request.get_param_as_datetime`, was added to
-  :class:`~.Request`.
-- A number of attributes were added to :class:`~.Request` to
+- A new method, :meth:`~falcon.Request.get_param_as_datetime`, was added to
+  :class:`~falcon.Request`.
+- A number of attributes were added to :class:`~falcon.Request` to
   make proxy information easier to consume. These include the
-  :attr:`~.Request.forwarded`, :attr:`~.Request.forwarded_uri`,
-  :attr:`~.Request.forwarded_scheme`, :attr:`~.Request.forwarded_host`,
-  and :attr:`~.Request.forwarded_prefix` attributes. The
-  :attr:`~.Request.prefix` attribute was also added as part of this
+  :attr:`~falcon.Request.forwarded`, :attr:`~falcon.Request.forwarded_uri`,
+  :attr:`~falcon.Request.forwarded_scheme`, :attr:`~falcon.Request.forwarded_host`,
+  and :attr:`~falcon.Request.forwarded_prefix` attributes. The
+  :attr:`~falcon.Request.prefix` attribute was also added as part of this
   work.
-- A :attr:`~.Request.referer` attribute was added to
-  :class:`~.Request`.
-- We implemented ``__repr__()`` for :class:`~.Request`,
-  :class:`~.Response`, and :class:`~.HTTPError` to aid in
+- A :attr:`~falcon.Request.referer` attribute was added to
+  :class:`~falcon.Request`.
+- We implemented ``__repr__()`` for :class:`~falcon.Request`,
+  :class:`~falcon.Response`, and :class:`~.HTTPError` to aid in
   debugging.
 - A number of Internet media type constants were defined to make it
   easier to check and set content type headers. (See also:
@@ -48,8 +48,8 @@ New & Improved
 Fixed
 -----
 
-- If even a single cookie in the request to the server is malformed, 
-  none of the cookies will be parsed (all-or-nothing). Change the 
+- If even a single cookie in the request to the server is malformed,
+  none of the cookies will be parsed (all-or-nothing). Change the
   parser to simply skip bad cookies (best-effort).
-- :class:`~.API` instances are not pickleable. Modify the default router 
+- :class:`~.API` instances are not pickleable. Modify the default router
   to fix this.

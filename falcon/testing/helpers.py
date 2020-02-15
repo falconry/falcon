@@ -593,7 +593,7 @@ def create_req(options=None, **kwargs) -> falcon.Request:
     """Create and return a new Request instance.
 
     This function can be used to conveniently create a WSGI environ
-    and use it to instantiate a :py:class:`~.Request` object in one go.
+    and use it to instantiate a :py:class:`falcon.Request` object in one go.
 
     The arguments for this function are identical to those
     of :py:meth:`falcon.testing.create_environ`, except an additional

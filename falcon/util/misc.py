@@ -334,9 +334,13 @@ def get_argnames(func):
     return args
 
 
-@deprecated('Please use falcon.util.code_to_http_status() instead.')
+@deprecated('Please use falcon.code_to_http_status() instead.')
 def get_http_status(status_code, default_reason='Unknown'):
-    """Gets both the http status code and description from just a code
+    """Gets both the http status code and description from just a code.
+
+    Warning:
+        As of Falcon 3.0, this method has been deprecated in favor of
+        :meth:`~falcon.code_to_http_status`.
 
     Args:
         status_code: integer or string that can be converted to an integer
@@ -412,8 +416,8 @@ def secure_filename(filename):
 def http_status_to_code(status):
     """Normalize an HTTP status to an integer code.
 
-    This function takes a member of http.HTTPStatus, an HTTP status
-    line string or byte string (e.g., '200 OK'), or an ``int`` and
+    This function takes a member of :class:`http.HTTPStatus`, an HTTP status
+    line string or byte string (e.g., ``'200 OK'``), or an ``int`` and
     returns the corresponding integer code.
 
     An LRU is used to minimize lookup time.

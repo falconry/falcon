@@ -244,7 +244,7 @@ Short-circuiting
 ----------------
 
 A *process_request* middleware method may short-circuit further request
-processing by setting :attr:`~.Response.complete` to ``True``, e.g.::
+processing by setting :attr:`~falcon.Response.complete` to ``True``, e.g.::
 
       resp.complete = True
 
@@ -253,7 +253,7 @@ any remaining *process_request* and *process_resource* methods, as well as
 the responder method that the request would have been routed to. However, any
 *process_response* middleware methods will still be called.
 
-In a similar manner, setting :attr:`~.Response.complete` to ``True`` from
+In a similar manner, setting :attr:`~falcon.Response.complete` to ``True`` from
 within a *process_resource* method will short-circuit further request processing
 at that point.
 

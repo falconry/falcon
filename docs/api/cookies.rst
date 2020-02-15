@@ -9,10 +9,11 @@ Getting Cookies
 ~~~~~~~~~~~~~~~
 
 Cookies can be read from a request either via the
-:py:meth:`~.Request.get_cookie_values` method or the :py:attr:`~.Request.cookies`
-attribute on the :py:class:`~.Request` object. Generally speaking, the
-:py:meth:`~.Request.get_cookie_values` method should be used unless you need a
-collection of all the cookies in the request.
+:py:meth:`~.falcon.Request.get_cookie_values` method or the
+:py:attr:`~.falcon.Request.cookies` attribute on the
+:py:class:`~.falcon.Request` object. Generally speaking, the
+:py:meth:`~.falcon.Request.get_cookie_values` method should be used unless you
+need a collection of all the cookies in the request.
 
 .. code:: python
 
@@ -35,10 +36,10 @@ Setting Cookies
 ~~~~~~~~~~~~~~~
 
 Setting cookies on a response may be done either via
-:py:meth:`~.Response.set_cookie` or :py:meth:`~.Response.append_header`.
+:py:meth:`~falcon.Response.set_cookie` or :py:meth:`~falcon.Response.append_header`.
 
 One of these methods should be used instead of
-:py:meth:`~.Response.set_header`. With :py:meth:`~.Response.set_header` you
+:py:meth:`~falcon.Response.set_header`. With :py:meth:`~falcon.Response.set_header` you
 cannot set multiple headers with the same name (which is how multiple cookies
 are sent to the client).
 
@@ -66,7 +67,7 @@ You can of course also set the domain, path and lifetime of the cookie.
 
 
 You can also instruct the client to remove a cookie with the
-:py:meth:`~.Response.unset_cookie` method:
+:py:meth:`~falcon.Response.unset_cookie` method:
 
 .. code:: python
 
@@ -98,7 +99,7 @@ the request.
 
 When running your application in a development environment, you can
 disable this default behavior by setting
-:py:attr:`~.ResponseOptions.secure_cookies_by_default` to ``False``
+:py:attr:`~falcon.ResponseOptions.secure_cookies_by_default` to ``False``
 via :py:attr:`falcon.App.resp_options` or
 :py:attr:`falcon.asgi.App.resp_options`. This lets you test your app
 locally without having to set up TLS. You can make this option configurable to
@@ -110,11 +111,11 @@ The SameSite Attribute
 ~~~~~~~~~~~~~~~~~~~~~~
 
 The `SameSite` attribute may be set on a cookie using the
-:py:meth:`~.Response.set_cookie` method. It is generally a good idea to
+:py:meth:`~falcon.Response.set_cookie` method. It is generally a good idea to
 at least set this attribute to ``'Lax'`` in order to mitigate
 `CSRF attacks <https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF)>`_.
 
-Currently, :py:meth:`~.Response.set_cookie` does not set `SameSite` by
+Currently, :py:meth:`~falcon.Response.set_cookie` does not set `SameSite` by
 default, although this may change in a future release.
 
 .. note::
