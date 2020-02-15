@@ -562,41 +562,53 @@ POSTed form parameters may also be read directly from
 :meth:`falcon.uri.parse_query_string` or
 `urllib.parse.parse_qs() <https://docs.python.org/3.6/library/urllib.parse.html#urllib.parse.parse_qs>`_.
 
+.. _access_multipart_files:
+
 How can I access POSTed files?
 ------------------------------
-Falcon does not currently support parsing files submitted by
-an HTTP form (``multipart/form-data``), although we do plan
-to add this feature in a future version. In the meantime,
-you can use the standard ``cgi.FieldStorage`` class to
-parse the request:
+
+If files are ``POST``\ed as part of a :ref:`multipart form <multipart>`, the
+default :class:`MultipartFormHandler <falcon.media.MultipartFormHandler>` can
+be used to efficiently parse the submitted ``multipart/form-data``
+:ref:`request media <media>` by iterating over the multipart
+:class:`body parts <falcon.media.multipart.BodyPart>`:
 
 .. code:: python
 
-    # TODO: Either validate that content type is multipart/form-data
-    # here, or in another hook before allowing execution to proceed.
+    for part in req.media:
+        # TODO: Do something with the body part
+        pass
 
-    # This must be done to avoid a bug in cgi.FieldStorage
-    env = req.env
-    env.setdefault('QUERY_STRING', '')
+.. _multipart_cloud_upload:
 
-    # TODO: Add error handling, when the request is not formatted
-    # correctly or does not contain the desired field...
+How can I save POSTed files (from a multipart form) directly to AWS S3?
+-----------------------------------------------------------------------
 
-    # TODO: Consider overriding make_file, so that you can
-    # stream directly to the destination rather than
-    # buffering using TemporaryFile (see http://goo.gl/Yo8h3P)
-    form = cgi.FieldStorage(fp=req.stream, environ=env)
+As highlighted in the previous answer dealing with
+:ref:`files posted as multipart form <access_multipart_files>`,
+:class:`falcon.media.MultipartFormHandler` may be used to iterate over the
+uploaded multipart body parts.
 
-    file_item = form[name]
-    if file_item.file:
-        # TODO: It's an uploaded file... read it in
-    else:
-        # TODO: Raise an error
+The `stream` of a body part is a file-like object implementing the ``read()``
+method, making it compatible with ``boto3``\'s
+`upload_fileobj <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.upload_fileobj>`_:
 
-You might also try this
-`streaming_form_data <https://streaming-form-data.readthedocs.io/en/latest/>`_
-package by Siddhant Goel, or searching PyPI for additional options from the
-community.
+.. code:: python
+
+    import boto3
+    s3 = boto3.client('s3')
+
+    # ...
+
+    for part in req.media:
+        if part.name == 'myfile':
+            s3.upload_fileobj(part.stream, 'mybucket', 'mykey')
+
+.. note::
+   Falcon is not endorsing any particular cloud service provider, and AWS S3
+   and ``boto3`` are referenced here just as a popular example. The same
+   pattern can be applied to any storage API that supports streaming directly
+   from a file-like object.
 
 How do I consume a query string that has a JSON value?
 ------------------------------------------------------
