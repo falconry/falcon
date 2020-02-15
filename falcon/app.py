@@ -51,7 +51,8 @@ class App:
 
     Each App instance provides a callable
     `WSGI <https://www.python.org/dev/peps/pep-3333/>`_ interface
-    and a routing engine.
+    and a routing engine (for ASGI applications, see
+    :class:`falcon.asgi.App`).
 
     Note:
         The ``API`` class was renamed to ``App`` in Falcon 3.0. The

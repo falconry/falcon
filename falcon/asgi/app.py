@@ -53,7 +53,8 @@ class App(falcon.app.App):
 
     Each App instance provides a callable
     `ASGI <https://asgi.readthedocs.io/en/latest/>`_ interface
-    and a routing engine.
+    and a routing engine  (for WSGI applications, see
+    :class:`falcon.App`).
 
     Keyword Arguments:
         media_type (str): Default media type to use when initializing
@@ -63,11 +64,13 @@ class App(falcon.app.App):
             such as ``falcon.MEDIA_MSGPACK``, ``falcon.MEDIA_YAML``,
             ``falcon.MEDIA_XML``, etc.
         middleware: Either a single middleware component object or an iterable
-            of objects (instantiated classes) that implement the following
-            middleware component interface.
+            of objects (instantiated classes) that implement the
+            middleware component interface shown below.
 
             The interface provides support for handling both ASGI worker
-            lifespan events and per-request events.
+            lifespan events and per-request events. However, because lifespan
+            events are an optional part of the ASGI specification, they may or
+            may not fire depending on your ASGI server.
 
             A lifespan event handler can be used to perform startup or shutdown
             activities for the main event loop. An example of this would be
@@ -79,6 +82,14 @@ class App(falcon.app.App):
                 triggered independently for the individual event loop associated
                 with each process.
 
+            Note:
+                The framework requires that all middleware methods be
+                implemented as coroutine functions via `async def`. However,
+                it is possible to implement middleware classes that support
+                both ASGI and WSGI apps by distinguishing the ASGI methods
+                with an `*_async` postfix (see also:
+                :ref:`Middleware <middleware>`).
+
             It is only necessary to implement the methods for the events you
             would like to handle; Falcon simply skips over any missing
             middleware methods::
@@ -87,7 +98,7 @@ class App(falcon.app.App):
                     async def process_startup(self, scope, event):
                         \"\"\"Process the ASGI lifespan startup event.
 
-                        Invoked when the server is ready to startup and
+                        Invoked when the server is ready to start up and
                         receive connections, but before it has started to
                         do so.
 
@@ -96,7 +107,7 @@ class App(falcon.app.App):
                         framework will convert it to a "lifespan.startup.failed"
                         event for the server.
 
-                        Arguments:
+                        Args:
                             scope (dict): The ASGI scope dictionary for the
                                 lifespan protocol. The lifespan scope exists
                                 for the duration of the event loop.
@@ -115,7 +126,7 @@ class App(falcon.app.App):
                         exception and the framework will convert it to a
                         "lifespan.shutdown.failed" event for the server.
 
-                        Arguments:
+                        Args:
                             scope (dict): The ASGI scope dictionary for the
                                 lifespan protocol. The lifespan scope exists
                                 for the duration of the event loop.
