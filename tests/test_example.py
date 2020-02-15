@@ -26,8 +26,8 @@ class StorageError(Exception):
                        'database. It worked on my box.')
 
         raise falcon.HTTPError(falcon.HTTP_725,
-                               'Database Error',
-                               description)
+                               title='Database Error',
+                               description=description)
 
 
 class SinkAdapter:
@@ -59,18 +59,18 @@ class AuthMiddleware:
             description = ('Please provide an auth token '
                            'as part of the request.')
 
-            raise falcon.HTTPUnauthorized('Auth token required',
-                                          description,
-                                          challenges,
+            raise falcon.HTTPUnauthorized(title='Auth token required',
+                                          description=description,
+                                          challenges=challenges,
                                           href='http://docs.example.com/auth')
 
         if not self._token_is_valid(token, account_id):
             description = ('The provided auth token is not valid. '
                            'Please request a new token and try again.')
 
-            raise falcon.HTTPUnauthorized('Authentication required',
-                                          description,
-                                          challenges,
+            raise falcon.HTTPUnauthorized(title='Authentication required',
+                                          description=description,
+                                          challenges=challenges,
                                           href='http://docs.example.com/auth')
 
     def _token_is_valid(self, token, account_id):
@@ -107,16 +107,16 @@ class JSONTranslator:
 
         body = req.bounded_stream.read()
         if not body:
-            raise falcon.HTTPBadRequest('Empty request body',
-                                        'A valid JSON document is required.')
+            raise falcon.HTTPBadRequest(title='Empty request body',
+                                        description='A valid JSON document is required.')
 
         try:
             req.context.doc = json.loads(body.decode('utf-8'))
 
         except (ValueError, UnicodeDecodeError):
             raise falcon.HTTPError(falcon.HTTP_753,
-                                   'Malformed JSON',
-                                   'Could not decode the request body. The '
+                                   title='Malformed JSON',
+                                   description='Could not decode the request body. The '
                                    'JSON was incorrect or not encoded as '
                                    'UTF-8.')
 
@@ -136,7 +136,7 @@ def max_body(limit):
                    'exceed ' + str(limit) + ' bytes in length.')
 
             raise falcon.HTTPPayloadTooLarge(
-                'Request body is too large', msg)
+                title='Request body is too large', description=msg)
 
     return hook
 
@@ -161,9 +161,9 @@ class ThingsResource:
                            'We appreciate your patience.')
 
             raise falcon.HTTPServiceUnavailable(
-                'Service Outage',
-                description,
-                30)
+                title='Service Outage',
+                description=description,
+                retry_after=30)
 
         # An alternative way of doing DRY serialization would be to
         # create a custom class that inherits from falcon.Request. This
@@ -180,8 +180,8 @@ class ThingsResource:
             doc = req.context.doc
         except AttributeError:
             raise falcon.HTTPBadRequest(
-                'Missing thing',
-                'A thing must be submitted in the request body.')
+                title='Missing thing',
+                description='A thing must be submitted in the request body.')
 
         proper_thing = self.db.add_thing(doc)
 

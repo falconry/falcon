@@ -37,8 +37,8 @@ class MessagePackHandler(BaseHandler):
             return self.msgpack.unpackb(stream.read(), raw=False)
         except ValueError as err:
             raise errors.HTTPBadRequest(
-                'Invalid MessagePack',
-                'Could not parse MessagePack body - {0}'.format(err)
+                title='Invalid MessagePack',
+                description='Could not parse MessagePack body - {0}'.format(err)
             )
 
     async def deserialize_async(self, stream, content_type, content_length):
@@ -50,8 +50,8 @@ class MessagePackHandler(BaseHandler):
             return self.msgpack.unpackb(data, raw=False)
         except ValueError as err:
             raise errors.HTTPBadRequest(
-                'Invalid MessagePack',
-                'Could not parse MessagePack body - {0}'.format(err)
+                title='Invalid MessagePack',
+                description='Could not parse MessagePack body - {0}'.format(err)
             )
 
     def serialize(self, media, content_type):
