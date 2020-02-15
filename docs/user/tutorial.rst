@@ -1293,7 +1293,7 @@ message. Add this method below the definition of ``ALLOWED_IMAGE_TYPES``:
     def validate_image_type(req, resp, resource, params):
         if req.content_type not in ALLOWED_IMAGE_TYPES:
             msg = 'Image type not allowed. Must be PNG, JPEG, or GIF'
-            raise falcon.HTTPBadRequest('Bad request', msg)
+            raise falcon.HTTPBadRequest(title='Bad request', description=msg)
 
 And then attach the hook to the ``on_post()`` responder:
 

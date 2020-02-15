@@ -36,7 +36,7 @@ def client(asgi):
 
 def validate_output(req, resp, resource):
     assert resource
-    raise falcon.HTTPError(falcon.HTTP_723, 'Tricky')
+    raise falcon.HTTPError(falcon.HTTP_723, title='Tricky')
 
 
 def serialize_body(req, resp, resource):
