@@ -4,8 +4,8 @@ Media
 =====
 
 Falcon allows for easy and customizable internet media type handling. By
-default Falcon only enables handlers for JSON and URL-encoded HTML
-forms. However, additional handlers can be configured through the
+default Falcon only enables handlers for JSON and HTML (URL-encoded and
+multipart) forms. However, additional handlers can be configured through the
 :any:`falcon.RequestOptions` and :any:`falcon.ResponseOptions` objects
 specified on your :any:`falcon.App`.
 
@@ -123,6 +123,9 @@ Supported Handler Types
 .. autoclass:: falcon.media.MessagePackHandler
     :members:
 
+.. autoclass:: falcon.media.MultipartFormHandler
+    :members:
+
 .. autoclass:: falcon.media.URLEncodedFormHandler
     :members:
 
@@ -157,6 +160,7 @@ common media types, including the following:
 
     falcon.MEDIA_JSON
     falcon.MEDIA_MSGPACK
+    falcon.MEDIA_MULTIPART
     falcon.MEDIA_URLENCODED
     falcon.MEDIA_YAML
     falcon.MEDIA_XML

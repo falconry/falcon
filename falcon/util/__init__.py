@@ -22,10 +22,13 @@ Conversely, the `uri` module must be imported explicitly::
 
 from http import cookies as http_cookies
 import json  # NOQA
+import sys
 
 # Hoist misc. utils
-from falcon.util.structures import *  # NOQA
 from falcon.util.misc import *  # NOQA
+from falcon.util.reader import BufferedReader as _PyBufferedReader
+from falcon.util.reader import DelimiterError  # NOQA
+from falcon.util.structures import *  # NOQA
 from falcon.util.sync import *  # NOQA
 from falcon.util.time import *  # NOQA
 
@@ -37,3 +40,15 @@ from falcon.util.time import *  # NOQA
 _reserved_cookie_attrs = http_cookies.Morsel._reserved  # type: ignore
 if 'samesite' not in _reserved_cookie_attrs:  # pragma: no cover
     _reserved_cookie_attrs['samesite'] = 'SameSite'  # type: ignore
+
+
+IS_64_BITS = sys.maxsize > 2**32
+
+try:
+    from falcon.cyutil.reader import BufferedReader as _CyBufferedReader
+except ImportError:
+    _CyBufferedReader = None
+
+# NOTE(vytas): Cythonized BufferedReader makes heavy use of Py_ssize_t which
+#   would overflow on 32-bit systems with form parts larger than 2 GiB.
+BufferedReader = (_CyBufferedReader or _PyBufferedReader) if IS_64_BITS else _PyBufferedReader
