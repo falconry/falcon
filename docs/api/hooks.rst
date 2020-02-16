@@ -15,7 +15,7 @@ an image resource:
     def validate_image_type(req, resp, resource, params):
         if req.content_type not in ALLOWED_IMAGE_TYPES:
             msg = 'Image type not allowed. Must be PNG, JPEG, or GIF'
-            raise falcon.HTTPBadRequest('Bad request', msg)
+            raise falcon.HTTPBadRequest(title='Bad request', description=msg)
 
 You would attach this hook to an ``on_post`` responder like so:
 
@@ -56,7 +56,7 @@ as needed:
     def validate_image_type(req, resp, resource, params, allowed_types):
         if req.content_type not in allowed_types:
             msg = 'Image type not allowed.'
-            raise falcon.HTTPBadRequest('Bad request', msg)
+            raise falcon.HTTPBadRequest(title='Bad request', description=msg)
 
     @falcon.before(validate_image_type, ['image/png'])
     def on_post(self, req, resp):

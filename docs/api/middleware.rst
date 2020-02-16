@@ -12,7 +12,7 @@ when instantiating Falcon's :ref:`App class <app>`.
 .. Note::
     Unlike hooks, middleware methods apply globally to the entire App.
 
-Falcon's middleware interface is defined as follows:
+Falcon's WSGI middleware interface is defined as follows:
 
 .. code:: python
 
@@ -66,6 +66,124 @@ Falcon's middleware interface is defined as follows:
                     otherwise False.
             """
 
+The ASGI middleware interface is similar, but also supports the
+standard ASGI lifespan events. However, because lifespan events are an
+optional part of the ASGI specification, they may or may not fire depending
+on your ASGI server:
+
+.. code:: python
+
+    class ExampleComponent:
+        async def process_startup(self, scope, event):
+            """Process the ASGI lifespan startup event.
+
+            Invoked when the server is ready to start up and
+            receive connections, but before it has started to
+            do so.
+
+            To halt startup processing and signal to the server that it
+            should terminate, simply raise an exception and the
+            framework will convert it to a "lifespan.startup.failed"
+            event for the server.
+
+            Args:
+                scope (dict): The ASGI scope dictionary for the
+                    lifespan protocol. The lifespan scope exists
+                    for the duration of the event loop.
+                event (dict): The ASGI event dictionary for the
+                    startup event.
+            """
+
+        async def process_shutdown(self, scope, event):
+            """Process the ASGI lifespan shutdown event.
+
+            Invoked when the server has stopped accepting
+            connections and closed all active connections.
+
+            To halt shutdown processing and signal to the server
+            that it should immediately terminate, simply raise an
+            exception and the framework will convert it to a
+            "lifespan.shutdown.failed" event for the server.
+
+            Args:
+                scope (dict): The ASGI scope dictionary for the
+                    lifespan protocol. The lifespan scope exists
+                    for the duration of the event loop.
+                event (dict): The ASGI event dictionary for the
+                    shutdown event.
+            """
+
+        async def process_request(self, req, resp):
+            """Process the request before routing it.
+
+            Note:
+                Because Falcon routes each request based on req.path, a
+                request can be effectively re-routed by setting that
+                attribute to a new value from within process_request().
+
+            Args:
+                req: Request object that will eventually be
+                    routed to an on_* responder method.
+                resp: Response object that will be routed to
+                    the on_* responder.
+            """
+
+        async def process_resource(self, req, resp, resource, params):
+            """Process the request after routing.
+
+            Note:
+                This method is only called when the request matches
+                a route to a resource.
+
+            Args:
+                req: Request object that will be passed to the
+                    routed responder.
+                resp: Response object that will be passed to the
+                    responder.
+                resource: Resource object to which the request was
+                    routed.
+                params: A dict-like object representing any additional
+                    params derived from the route's URI template fields,
+                    that will be passed to the resource's responder
+                    method as keyword arguments.
+            """
+
+        async def process_response(self, req, resp, resource, req_succeeded):
+            """Post-processing of the response (after routing).
+
+            Args:
+                req: Request object.
+                resp: Response object.
+                resource: Resource object to which the request was
+                    routed. May be None if no route was found
+                    for the request.
+                req_succeeded: True if no exceptions were raised while
+                    the framework processed and routed the request;
+                    otherwise False.
+            """
+
+It is also possible to implement a middleware component that is compatible
+with both ASGI and WSGI apps. This is done by applying an `*_async` postfix
+to distinguish the two different versions of each middleware method, as in
+the following example:
+
+.. code:: python
+
+    class ExampleComponent:
+        def process_request(self, req, resp):
+            """Process WSGI request using synchronous logic.
+
+            Note that req and resp are instances of falcon.Request and
+            falcon.Response, respectively.
+            """
+
+        async def process_request_async(self, req, resp):
+            """Process ASGI request using asynchronous logic.
+
+            Note that req and resp are instances of falcon.asgi.Request and
+            falcon.asgi.Response, respectively.
+            """
+
 .. Tip::
     Because *process_request* executes before routing has occurred, if a
     component modifies ``req.path`` in its *process_request* method,
@@ -90,7 +208,7 @@ Falcon's middleware interface is defined as follows:
 Each component's *process_request*, *process_resource*, and
 *process_response* methods are executed hierarchically, as a stack, following
 the ordering of the list passed via the `middleware` kwarg of
-:ref:`falcon.App<app>`. For example, if a list of middleware objects are
+:class:`falcon.App` or :class:`falcon.asgi.App`. For example, if a list of middleware objects are
 passed as ``[mob1, mob2, mob3]``, the order of execution is as follows::
 
     mob1.process_request
@@ -125,8 +243,9 @@ like this::
 Short-circuiting
 ----------------
 
-A *process_request* or *process_resource* middleware method may  short-circuit 
-further request processing by setting :attr:`~.Response.complete` to ``True``, e.g.::
+*process_request* or *process_resource* middleware methods may short-circuit
+further request processing by setting :attr:`~falcon.Response.complete` to
+``True``, e.g.::
 
       resp.complete = True
 
@@ -135,7 +254,7 @@ any remaining *process_request* and *process_resource* methods, as well as
 the responder method that the request would have been routed to. However, any
 *process_response* middleware methods will still be called.
 
-In a similar manner, setting :attr:`~.Response.complete` to ``True`` from
+In a similar manner, setting :attr:`~falcon.Response.complete` to ``True`` from
 within a *process_resource* method will short-circuit further request processing
 at that point. 
 
@@ -188,7 +307,7 @@ error, the framework would execute the stack as follows::
     mob1.process_response
 
 As illustrated above, by default, all *process_response* methods will be
-executed, even when a *process_request*, *process_resource*, or resource
+executed, even when a *process_request*, *process_resource*, or *on_\** resource
 responder raises an error. This behavior is controlled by the
 :ref:`App class's <app>` `independent_middleware` keyword argument.
 

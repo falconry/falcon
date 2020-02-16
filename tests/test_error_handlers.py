@@ -30,8 +30,8 @@ class CustomException(CustomBaseException):
     def handle(req, resp, ex, params):
         raise falcon.HTTPError(
             falcon.HTTP_792,
-            'Internet crashed!',
-            'Catastrophic weather event',
+            title='Internet crashed!',
+            description='Catastrophic weather event',
             href='http://example.com/api/inconvenient-truth',
             href_text='Drill, baby drill!')
 

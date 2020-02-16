@@ -19,13 +19,68 @@ __all__ = ['BoundedStream']
 
 
 class BoundedStream:
-    """File-like async object for reading ASGI streams.
+    """File-like input object for reading the body of the request, if any.
 
-    Does not support synhcronous reading/iterating but is otherwise similar to io.IOBase.
+    This class implements coroutine functions for asynchronous reading or
+    iteration, but otherwise provides an interface similar to that defined by
+    :class:`io.IOBase`.
 
-    If content length is unknown, will read until the ASGI server indicates
-    there is no more body available.
+    If the request includes a Content-Length header, the number of bytes in the
+    stream will be truncated to the length specified by the header. Otherwise,
+    the stream will yield data until the ASGI server indicates that no more
+    bytes are available.
 
+    The preferred method of using the stream object is as an asynchronous
+    iterator. In this mode, each body chunk is simply yielded in its entirety,
+    as it is received from the ASGI server. Because no data is buffered by the
+    framework, this is the most memory-efficient way of reading the request
+    body::
+
+        async for data_chunk in req.stream
+            pass
+
+    The stream object also supports asynchronous ``read()`` and
+    ``readall()`` methods::
+
+        # Read all of the data at once; use only when you are confident
+        #   that the request body is small enough to not eat up all of
+        #   your memory.
+        data = await req.stream.readall()
+
+        # ...or call read() without arguments
+        data = await req.stream.read()
+
+        # ...or read the data in chunks. You may choose to read more
+        #   or less than 32 KiB as shown in this example.
+        while True:
+            data_chunk = await req.stream.read(32 * 1024)
+            if not data_chunk:
+                break
+
+    Warning:
+        Apps may not use both ``read()`` and the asynchronous iterator
+        interface to consume the same request body; the only time that
+        it is safe to do so is when one or the other method is used to
+        completely read the entire body *before* the other method is
+        even attempted. Therefore, it is important to always call
+        :meth:`~.exhaust` or :meth:`~.close` if a body has only been
+        partially read and the remaining data is to be ignored.
+
+    Note:
+        The stream object provides a convenient abstraction over the series of
+        body chunks contained in any ASGI "http.request" events received by the
+        app. As such, some request body data may be temporarily buffered in
+        memory during and between calls to read from the stream. The framework
+        has been designed to minimize the amount of data that must be buffered
+        in this manner.
+
+    Args:
+        receive (awaitable): ASGI awaitable callable that will yield a new
+            request event dictionary when one is available.
+
+    Keyword Args:
+        content_length (int): Expected content length of the stream, derived
+            from the Content-Length header in the request (if available).
     """
 
     __slots__ = [
@@ -90,7 +145,7 @@ class BoundedStream:
         return False
 
     def tell(self):
-        """Returns the number of bytes read from the stream."""
+        """Returns the number of bytes read from the stream so far."""
         return self._pos
 
     @property
@@ -107,7 +162,7 @@ class BoundedStream:
         """Clear any buffered data and close this stream.
 
         Once the stream is closed, any operation on it will
-        raise a ValueError.
+        raise an instance of :class:`ValueError`.
 
         As a convenience, it is allowed to call this method more than
         once; only the first call, however, will have an effect.
@@ -120,9 +175,11 @@ class BoundedStream:
             self._closed = True
 
     async def exhaust(self):
+        """Consume and immediately discard any remaining data in the stream."""
+
         if self._closed:
             raise ValueError(
-                'This stream is closed; no futher operations on it are permitted.'
+                'This stream is closed; no further operations on it are permitted.'
             )
 
         self._buffer = b''
@@ -145,14 +202,30 @@ class BoundedStream:
                 if not ('more_body' in event and event['more_body']):
                     self._bytes_remaining = 0
 
+            # Immediately dereference the data so it can be discarded ASAP
+            event = None
+
         # NOTE(kgriffs): Ensure that if we read more than expected, this
-        #   this value is normalized to zero.
+        #   value is normalized to zero.
         self._bytes_remaining = 0
 
     async def readall(self):
+        """Read and return all remaining data in the request body.
+
+        Warning:
+            Only use this method when you can be certain that you have
+            enough free memory for the entire request body, and that you
+            have configured your web server to limit request bodies to a
+            reasonable size (to guard against malicious requests).
+
+        Returns:
+            bytes: The request body data, or ``b''`` if the body is empty or
+            has already been consumed.
+        """
+
         if self._closed:
             raise ValueError(
-                'This stream is closed; no futher operations on it are permitted.'
+                'This stream is closed; no further operations on it are permitted.'
             )
 
         if self.eof:
@@ -199,9 +272,34 @@ class BoundedStream:
         return data
 
     async def read(self, size=None):
+        """Read some or all of the remaining bytes in the request body.
+
+        Warning:
+            A size should always be specified, unless you can be certain that
+            you have enough free memory for the entire request body, and that
+            you have configured your web server to limit request bodies to a
+            reasonable size (to guard against malicious requests).
+
+        Warning:
+            Apps may not use both ``read()`` and the asynchronous iterator
+            interface to consume the same request body; the only time that
+            it is safe to do so is when one or the other method is used to
+            completely read the entire body *before* the other method is
+            even attempted. Therefore, it is important to always call
+            :meth:`~.exhaust` or :meth:`~.close` if a body has only been
+            partially read and the remaining data is to be ignored.
+
+        Keyword Args:
+            size (int): The maximum number of bytes to read. The actual
+                amount of data that can be read will depend on how much is
+                available, and may be smaller than the amount requested. If the
+                size is -1 or not specified, all remaining data is read and
+                returned.
+        """
+
         if self._closed:
             raise ValueError(
-                'This stream is closed; no futher operations on it are permitted.'
+                'This stream is closed; no further operations on it are permitted.'
             )
 
         if self.eof:
@@ -269,12 +367,16 @@ class BoundedStream:
     async def _iter_content(self):
         if self._closed:
             raise ValueError(
-                'This stream is closed; no futher operations on it are permitted.'
+                'This stream is closed; no further operations on it are permitted.'
             )
 
         if self.eof:
             yield b''
             return
+
+        # TODO(kgriffs): Should we check for any buffered data and return
+        #   that first? Or simply raise an error if any data has already
+        #   been read?
 
         while self._bytes_remaining > 0:
             event = await self._receive()
