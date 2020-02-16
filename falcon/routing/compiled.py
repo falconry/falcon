@@ -252,15 +252,15 @@ class CompiledRouter:
             uri(str): The requested path to route.
 
         Keyword Args:
-            req(Request): The Request object that will be passed to
-                the routed responder. Currently the value of this
-                argument is ignored by :class:`~.CompiledRouter`.
-                Routing is based solely on the path.
+            req: The :class:`falcon.Request` or :class:`falcon.asgi.Request`
+                object that will be passed to the routed responder. Currently
+                the value of this argument is ignored by
+                :class:`~.CompiledRouter`. Routing is based solely on the path.
 
         Returns:
             tuple: A 4-member tuple composed of (resource, method_map,
-                params, uri_template), or ``None`` if no route matches
-                the requested path.
+            params, uri_template), or ``None`` if no route matches
+            the requested path.
         """
 
         path = uri.lstrip('/').split('/')

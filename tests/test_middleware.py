@@ -157,7 +157,7 @@ class MiddlewareClassResource:
         resp.body = json.dumps(_EXPECTED_BODY)
 
     def on_post(self, req, resp):
-        raise falcon.HTTPForbidden(falcon.HTTP_403, 'Setec Astronomy')
+        raise falcon.HTTPForbidden(title=falcon.HTTP_403, description='Setec Astronomy')
 
 
 class EmptySignatureMiddleware:

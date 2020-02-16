@@ -1,0 +1,2 @@
+Deprecate the use of positional arguments for the optional kw args of
+the HTTPError subclasses

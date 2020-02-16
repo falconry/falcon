@@ -1,9 +1,10 @@
 from collections import UserDict
 
 from falcon import errors
-from falcon.constants import MEDIA_URLENCODED
-from falcon.media import JSONHandler
-from falcon.media import URLEncodedFormHandler
+from falcon.constants import MEDIA_MULTIPART, MEDIA_URLENCODED
+from falcon.media.json import JSONHandler
+from falcon.media.multipart import MultipartFormHandler, MultipartParseOptions
+from falcon.media.urlencoded import URLEncodedFormHandler
 from falcon.vendor import mimeparse
 
 
@@ -13,6 +14,7 @@ class Handlers(UserDict):
         handlers = initial or {
             'application/json': JSONHandler(),
             'application/json; charset=UTF-8': JSONHandler(),
+            MEDIA_MULTIPART: MultipartFormHandler(),
             MEDIA_URLENCODED: URLEncodedFormHandler(),
         }
 
@@ -54,3 +56,11 @@ class Handlers(UserDict):
             )
 
         return self.data[resolved]
+
+
+# NOTE(vytas): An ugly way to work around circular imports.
+MultipartParseOptions._DEFAULT_HANDLERS = Handlers({
+    'application/json': JSONHandler(),
+    'application/json; charset=UTF-8': JSONHandler(),
+    MEDIA_URLENCODED: URLEncodedFormHandler(),
+})

@@ -29,45 +29,301 @@ __all__ = ['Request']
 
 
 class Request(falcon.request.Request):
-    """
+    """Represents a client's HTTP request.
 
-            query_string (str): Query string portion of the request URI, without
-                the preceding '?' character.
+    Note:
+        `Request` is not meant to be instantiated directly by responders.
 
-            remote_addr(str): IP address of the closest known client or proxy to
-                the WSGI server, or '127.0.0.1' if unknown.
+    Args:
+        scope (dict): ASGI HTTP connection scope passed in from the server (see
+            also: `Connection Scope`_).
+        receive (awaitable): ASGI awaitable callable that will yield a new
+            event dictionary when one is available.
 
-                This property's value is equivalent to the last element of the
-                :py:attr:`~.access_route` property.
+    Keyword Args:
+        options (falcon.request.RequestOptions): Set of global request options
+            passed from the App handler.
 
-            access_route(list): IP address of the original client (if known), as
-                well as any known addresses of proxies fronting the WSGI server.
+    Attributes:
+        scope (dict): Reference to the ASGI HTTP connection scope passed in
+            from the server (see also: `Connection Scope`_).
+        context (object): Empty object to hold any data (in its attributes)
+            about the request which is specific to your app (e.g. session
+            object). Falcon itself will not interact with this attribute after
+            it has been initialized.
 
-                The following request headers are checked, in order of
-                preference, to determine the addresses:
+            Note:
+                The preferred way to pass request-specific data, when using the
+                default context type, is to set attributes directly on the
+                `context` object. For example::
 
-                    - ``Forwarded``
-                    - ``X-Forwarded-For``
-                    - ``X-Real-IP``
+                    req.context.role = 'trial'
+                    req.context.user = 'guest'
 
-                In addition, the value of the 'client' field from the ASGI
-                connection scope will be appended to the end of the list if
-                not already included in one of the above headers. If the
-                'client' field is not available, it will default to
-                '127.0.0.1'.
+        context_type (class): Class variable that determines the factory or
+            type to use for initializing the `context` attribute. By default,
+            the framework will instantiate bare objects (instances of the bare
+            :class:`falcon.Context` class). However, you may override this
+            behavior by creating a custom child class of
+            ``falcon.asgi.Request``, and then passing that new class to
+            `falcon.asgi.App()` by way of the latter's `request_type` parameter.
 
-                Note:
-                    Per `RFC 7239`_, the access route may contain "unknown"
-                    and obfuscated identifiers, in addition to IPv4 and
-                    IPv6 addresses
+            Note:
+                When overriding `context_type` with a factory function (as
+                opposed to a class), the function is called like a method of
+                the current ``Request`` instance. Therefore the first argument
+                is the Request instance itself (i.e., `self`).
 
-                    .. _RFC 7239: https://tools.ietf.org/html/rfc7239
+        scheme (str): URL scheme used for the request. Either ``'http'`` or
+            ``'https'``. Defaults to ``'http'`` if the ASGI server does not
+            include the scheme in the connection scope.
 
-                Warning:
-                    Headers can be forged by any client or proxy. Use this
-                    property with caution and validate all values before
-                    using them. Do not rely on the access route to authorize
-                    requests!
+            Note:
+                If the request was proxied, the scheme may not
+                match what was originally requested by the client.
+                :py:attr:`forwarded_scheme` can be used, instead,
+                to handle such cases.
+
+        forwarded_scheme (str): Original URL scheme requested by the
+            user agent, if the request was proxied. Typical values are
+            ``'http'`` or ``'https'``.
+
+            The following request headers are checked, in order of
+            preference, to determine the forwarded scheme:
+
+                - ``Forwarded``
+                - ``X-Forwarded-For``
+
+            If none of these headers are available, or if the
+            Forwarded header is available but does not contain a
+            "proto" parameter in the first hop, the value of
+            :attr:`scheme` is returned instead.
+
+            (See also: RFC 7239, Section 1)
+
+        method (str): HTTP method requested, uppercased (e.g.,
+            ``'GET'``, ``'POST'``, etc.)
+        host (str): Host request header field, if present. If the Host
+            header is missing, this attribute resolves to the ASGI server's
+            listening host name or IP address.
+        forwarded_host (str): Original host request header as received
+            by the first proxy in front of the application server.
+
+            The following request headers are checked, in order of
+            preference, to determine the forwarded scheme:
+
+                - ``Forwarded``
+                - ``X-Forwarded-Host``
+
+            If none of the above headers are available, or if the
+            Forwarded header is available but the "host"
+            parameter is not included in the first hop, the value of
+            :attr:`host` is returned instead.
+
+            Note:
+                Reverse proxies are often configured to set the Host
+                header directly to the one that was originally
+                requested by the user agent; in that case, using
+                :attr:`host` is sufficient.
+
+            (See also: RFC 7239, Section 4)
+
+        port (int): Port used for the request. If the Host header is present
+            in the request, but does not specify a port, the default one for the
+            given schema is returned (80 for HTTP and 443 for HTTPS). If the
+            request does not include a Host header, the listening port for the
+            ASGI server is returned instead.
+        netloc (str): Returns the "host:port" portion of the request
+            URL. The port may be ommitted if it is the default one for
+            the URL's schema (80 for HTTP and 443 for HTTPS).
+        subdomain (str): Leftmost (i.e., most specific) subdomain from the
+            hostname. If only a single domain name is given, `subdomain`
+            will be ``None``.
+
+            Note:
+                If the hostname in the request is an IP address, the value
+                for `subdomain` is undefined.
+
+        root_path (str): The initial portion of the request URI's path that
+            corresponds to the application object, so that the
+            application knows its virtual "location". This may be an
+            empty string, if the application corresponds to the "root"
+            of the server.
+
+            (Corresponds to the "root_path" ASGI HTTP scope field.)
+
+        uri (str): The fully-qualified URI for the request.
+        url (str): Alias for :attr:`uri`.
+        forwarded_uri (str): Original URI for proxied requests. Uses
+            :attr:`forwarded_scheme` and :attr:`forwarded_host` in
+            order to reconstruct the original URI requested by the user
+            agent.
+        relative_uri (str): The path and query string portion of the
+            request URI, omitting the scheme and host.
+        prefix (str): The prefix of the request URI, including scheme,
+            host, and app :attr:`~.root_path` (if any).
+        forwarded_prefix (str): The prefix of the original URI for
+            proxied requests. Uses :attr:`forwarded_scheme` and
+            :attr:`forwarded_host` in order to reconstruct the
+            original URI.
+        path (str): Path portion of the request URI (not including query
+            string).
+
+            Warning:
+                If this attribute is to be used by the app for any upstream
+                requests, any non URL-safe characters in the path must be URL
+                encoded back before making the request.
+
+            Note:
+                ``req.path`` may be set to a new value by a
+                ``process_request()`` middleware method in order to influence
+                routing. If the original request path was URL encoded, it will
+                be decoded before being returned by this attribute.
+
+        query_string (str): Query string portion of the request URI, without
+            the preceding '?' character.
+        uri_template (str): The template for the route that was matched for
+            this request. May be ``None`` if the request has not yet been
+            routed, as would be the case for ``process_request()`` middleware
+            methods. May also be ``None`` if your app uses a custom routing
+            engine and the engine does not provide the URI template when
+            resolving a route.
+        remote_addr(str): IP address of the closest known client or proxy to
+            the ASGI server, or ``'127.0.0.1'`` if unknown.
+
+            This property's value is equivalent to the last element of the
+            :py:attr:`~.access_route` property.
+
+        access_route(list): IP address of the original client (if known), as
+            well as any known addresses of proxies fronting the ASGI server.
+
+            The following request headers are checked, in order of
+            preference, to determine the addresses:
+
+                - ``Forwarded``
+                - ``X-Forwarded-For``
+                - ``X-Real-IP``
+
+            In addition, the value of the "client" field from the ASGI
+            connection scope will be appended to the end of the list if
+            not already included in one of the above headers. If the
+            "client" field is not available, it will default to
+            ``'127.0.0.1'``.
+
+            Note:
+                Per `RFC 7239`_, the access route may contain "unknown"
+                and obfuscated identifiers, in addition to IPv4 and
+                IPv6 addresses
+
+                .. _RFC 7239: https://tools.ietf.org/html/rfc7239
+
+            Warning:
+                Headers can be forged by any client or proxy. Use this
+                property with caution and validate all values before
+                using them. Do not rely on the access route to authorize
+                requests!
+
+        forwarded (list): Value of the Forwarded header, as a parsed list
+            of :class:`falcon.Forwarded` objects, or ``None`` if the header
+            is missing. If the header value is malformed, Falcon will
+            make a best effort to parse what it can.
+
+            (See also: RFC 7239, Section 4)
+        date (datetime): Value of the Date header, converted to a
+            ``datetime`` instance. The header value is assumed to
+            conform to RFC 1123.
+        auth (str): Value of the Authorization header, or ``None`` if the
+            header is missing.
+        user_agent (str): Value of the User-Agent header, or ``None`` if the
+            header is missing.
+        referer (str): Value of the Referer header, or ``None`` if
+            the header is missing.
+        accept (str): Value of the Accept header, or ``'*/*'`` if the header is
+            missing.
+        client_accepts_json (bool): ``True`` if the Accept header indicates
+            that the client is willing to receive JSON, otherwise ``False``.
+        client_accepts_msgpack (bool): ``True`` if the Accept header indicates
+            that the client is willing to receive MessagePack, otherwise
+            ``False``.
+        client_accepts_xml (bool): ``True`` if the Accept header indicates that
+            the client is willing to receive XML, otherwise ``False``.
+        cookies (dict):
+            A dict of name/value cookie pairs. The returned object should be
+            treated as read-only to avoid unintended side-effects.
+            If a cookie appears more than once in the request, only the first
+            value encountered will be made available here.
+
+            See also: :meth:`~falcon.asgi.Request.get_cookie_values`
+        content_type (str): Value of the Content-Type header, or ``None`` if
+            the header is missing.
+        content_length (int): Value of the Content-Length header converted
+            to an ``int``, or ``None`` if the header is missing.
+        stream (falcon.asgi.BoundedStream): File-like input object for reading
+            the body of the request, if any.
+
+            See also: :class:`falcon.asgi.BoundedStream`
+        expect (str): Value of the Expect header, or ``None`` if the
+            header is missing.
+        range (tuple of int): A 2-member ``tuple`` parsed from the value of the
+            Range header.
+
+            The two members correspond to the first and last byte
+            positions of the requested resource, inclusive. Negative
+            indices indicate offset from the end of the resource,
+            where -1 is the last byte, -2 is the second-to-last byte,
+            and so forth.
+
+            Only continous ranges are supported (e.g., "bytes=0-0,-1" would
+            result in an HTTPBadRequest exception when the attribute is
+            accessed.)
+        range_unit (str): Unit of the range parsed from the value of the
+            Range header, or ``None`` if the header is missing
+        if_match (list): Value of the If-Match header, as a parsed list of
+            :class:`falcon.ETag` objects or ``None`` if the header is missing
+            or its value is blank.
+
+            This property provides a list of all ``entity-tags`` in the
+            header, both strong and weak, in the same order as listed in
+            the header.
+
+            (See also: RFC 7232, Section 3.1)
+
+        if_none_match (list): Value of the If-None-Match header, as a parsed
+            list of :class:`falcon.ETag` objects or ``None`` if the header is
+            missing or its value is blank.
+
+            This property provides a list of all ``entity-tags`` in the
+            header, both strong and weak, in the same order as listed in
+            the header.
+
+            (See also: RFC 7232, Section 3.2)
+
+        if_modified_since (datetime): Value of the If-Modified-Since header,
+            or ``None`` if the header is missing.
+        if_unmodified_since (datetime): Value of the If-Unmodified-Since
+            header, or ``None`` if the header is missing.
+        if_range (str): Value of the If-Range header, or ``None`` if the
+            header is missing.
+
+        headers (dict): Raw HTTP headers from the request with
+            canonical dash-separated names. Parsing all the headers
+            to create this dict is done the first time this attribute
+            is accessed, and the returned object should be treated as
+            read-only. Note that this parsing can be costly, so unless you
+            need all the headers in this format, you should instead use the
+            ``get_header()`` method or one of the convenience attributes
+            to get a value for a specific header.
+
+        params (dict): The mapping of request query parameter names to their
+            values.  Where the parameter appears multiple times in the query
+            string, the value mapped to that parameter key will be a list of
+            all the values in the order seen.
+
+        options (falcon.request.RequestOptions): Set of global options passed
+            in from the App handler.
+
+    .. _Connection Scope:
+        https://asgi.readthedocs.io/en/latest/specs/www.html#connection-scope
 
     """
 
@@ -249,6 +505,9 @@ class Request(falcon.request.Request):
 
         return self._stream
 
+    # NOTE(kgriffs): This is provided as an alias in order to ease migration
+    #   from WSGI, but is not documented since we do not want people using
+    #   it in greenfield ASGI apps.
     bounded_stream = stream
 
     @property
@@ -435,7 +694,9 @@ class Request(falcon.request.Request):
         When called the first time, the request stream will be deserialized
         using the Content-Type header as well as the media-type handlers
         configured via :class:`falcon.RequestOptions`. The result will
-        be cached and returned in subsequent calls.
+        be cached and returned in subsequent calls::
+
+            deserialized_media = await req.get_media()
 
         If the matched media handler raises an error while attempting to
         deserialize the request body, the exception will propagate up
@@ -541,8 +802,59 @@ class Request(falcon.request.Request):
 
             raise errors.HTTPMissingHeader(name)
 
+    def get_param(self, name, required=False, store=None, default=None):
+        """Return the raw value of a query string parameter as a string.
+
+        Note:
+            If an HTML form is POSTed to the API using the
+            *application/x-www-form-urlencoded* media type, Falcon can
+            automatically parse the parameters from the request body via
+            :meth:`~falcon.asgi.Request.get_media`.
+
+            See also: :ref:`access_urlencoded_form`
+
+        Note:
+            Similar to the way multiple keys in form data is handled,
+            if a query parameter is assigned a comma-separated list of
+            values (e.g., ``foo=a,b,c``), only one of those values will be
+            returned, and it is undefined which one. Use
+            :meth:`~.get_param_as_list` to retrieve all the values.
+
+        Args:
+            name (str): Parameter name, case-sensitive (e.g., 'sort').
+
+        Keyword Args:
+            required (bool): Set to ``True`` to raise
+                ``HTTPBadRequest`` instead of returning ``None`` when the
+                parameter is not found (default ``False``).
+            store (dict): A ``dict``-like object in which to place
+                the value of the param, but only if the param is present.
+            default (any): If the param is not found returns the
+                given value instead of ``None``
+
+        Returns:
+            str: The value of the param as a string, or ``None`` if param is
+            not found and is not required.
+
+        Raises:
+            HTTPBadRequest: A required param is missing from the request.
+        """
+
+        # TODO(kgriffs): It seems silly to have to do this, simply to provide
+        #   the ASGI-specific docstring above. Is there a better way?
+
+        return super().get_param(name, required=required, store=store, default=default)
+
     def log_error(self, message):
-        # NOTE(kgriffs): Normally the pythonic thing to do would be to simply
+        """Write a message to the server's log.
+
+        Warning:
+            Although this method is inherited from the WSGI Request class, it is
+            not supported for ASGI apps. Please use the standard library logging
+            framework instead.
+        """
+
+        # NOTE(kgriffs): Normally the Pythonic thing to do would be to simply
         #   set this method to None so that it can't even be called, but we
         #   raise an error here to help people who are porting from WSGI.
         raise NotImplementedError(
