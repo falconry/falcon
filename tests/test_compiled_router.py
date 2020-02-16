@@ -1,3 +1,5 @@
+from threading import Barrier, Thread
+from time import sleep
 from unittest.mock import MagicMock
 
 import pytest
@@ -91,6 +93,41 @@ def test_add_route_after_first_request():
     assert router._find == router._compile_and_find
     assert router.find('/bar') is not None
     assert router._find != router._compile_and_find
+
+
+def test_multithread_compile(monkeypatch):
+    def side_effect():
+        sleep(0.05)
+        return lambda *args: None
+
+    mock = MagicMock(side_effect=side_effect)
+    monkeypatch.setattr(CompiledRouter, '_compile', mock)
+
+    router = CompiledRouter()
+    router.options.verify_route_on_add = False
+    mr = MockResource()
+
+    router.add_route('/foo', mr)
+
+    calls = 0
+    num_threads = 3
+    barrier = Barrier(num_threads)
+
+    def find():
+        nonlocal calls
+        barrier.wait()
+        assert router.find('/foo') is None
+        calls += 1
+
+    threads = [Thread(target=find) for i in range(num_threads)]
+    for t in threads:
+        t.start()
+
+    for t in threads:
+        t.join()
+
+    assert calls == 3
+    mock.assert_called_once_with()
 
 
 class MockResource:

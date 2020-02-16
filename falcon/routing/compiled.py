@@ -19,6 +19,7 @@ from inspect import iscoroutinefunction
 import keyword
 import re
 import textwrap
+from threading import Lock
 
 from falcon.routing import converters
 from falcon.routing.util import map_http_methods, set_default_responders
@@ -57,7 +58,14 @@ class CompiledRouter:
     a noticeable delay in the first response of the application. When adding
     the last route to the application a `compile` flag may be provided to make
     the router compile its logic, avoiding the delay on the first response.
-    See :meth:`.CompiledRouter.add_route`
+
+    Note:
+        To avoid compiling multiple times the router in multi-threading
+        servers when multiple requests are routed at the same time as soon as
+        the server goes live, a lock is used to ensure that only a single
+        compilation if performed
+
+    See also :meth:`.CompiledRouter.add_route`
     """
 
     __slots__ = (
@@ -70,7 +78,8 @@ class CompiledRouter:
         '_patterns',
         '_return_values',
         '_roots',
-        '_verify_route_router'
+        '_verify_route_router',
+        '_compile_lock',
     )
 
     def __init__(self, *, _options=None):
@@ -94,6 +103,7 @@ class CompiledRouter:
         # NOTE(caselit): this will refer to an internal instance of the router
         # used to verify that each route can compile by itself
         self._verify_route_router = None
+        self._compile_lock = Lock()
 
     @property
     def options(self):
@@ -577,8 +587,10 @@ class CompiledRouter:
         This method must have the same signature as the function returned by the
         :meth:`.CompiledRouter._compile`.
         """
-        # NOTE(caselit): replace the find with the actual method
-        self._find = self._compile()
+        with self._compile_lock:
+            if self._find == self._compile_and_find:
+                # NOTE(caselit): replace the find with the result of the router compilation
+                self._find = self._compile()
         # NOTE(caselit): return_values, patterns, converters are reset by the _compile
         # method, so the updated ones must be used
         return self._find(
