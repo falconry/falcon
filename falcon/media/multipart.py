@@ -53,8 +53,8 @@ class MultipartParseError(errors.HTTPBadRequest):
     """
 
     def __init__(self, description=None, headers=None, **kwargs):
-        super().__init__('Malformed multipart/form-data request media',
-                         description, headers, **kwargs)
+        super().__init__(title='Malformed multipart/form-data request media',
+                         description=description, headers=headers, **kwargs)
 
 
 # TODO(vytas): Consider supporting -charset- stuff.
@@ -82,6 +82,19 @@ class BodyPart:
                Accessing this property the first time would consume the part
                input stream.
                The value is cached for subsequent access.
+
+        name(str): The name parameter of the Content-Disposition header.
+            The value of the "name" parameter is the original field name from
+            the submitted HTML form.
+
+            .. note::
+               According to `RFC 7578, section 4.2
+               <https://tools.ietf.org/html/rfc7578#section-4.2>`__, each part
+               MUST include a Content-Disposition header field of type
+               "form-data", where the name parameter is mandatory.
+
+               However, Falcon will not raise any error if this parameter is
+               missing; the propery value will be ``None`` in that case.
 
         filename (str): File name if the body part is an attached file, and
             ``None`` otherwise.
@@ -391,7 +404,9 @@ class MultipartParseOptions:
             value, an instance of :class:`MultipartParseError` will be raised.
 
         max_body_part_headers_size (int): The maximum size (in bytes) of the
-            body part headers structure (default: 8192).
+            body part headers structure (default: 8192). If the body part
+            headers size exceeds this value, an instance of
+            :class:`MultipartParseError` will be raised.
 
         media_handlers (Handlers): A dict-like object for configuring the
             media-types to handle. By default, handlers are provided for the
