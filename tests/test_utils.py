@@ -482,6 +482,22 @@ class TestFalconUtils:
         assert not weak_67ab43_one.strong_compare(weak_67aB43)
         assert not weak_67aB43.strong_compare(weak_67ab43_one)
 
+    @pytest.mark.parametrize('filename,expected', [
+        ('.', '_'),
+        ('..', '_.'),
+        ('hello.txt', 'hello.txt'),
+        ('Ąžuolai žaliuos.jpeg', 'A_z_uolai_z_aliuos.jpeg'),
+        ('/etc/shadow', '_etc_shadow'),
+        ('. ⬅ a dot', '____a_dot'),
+        ('C:\\Windows\\kernel32.dll', 'C__Windows_kernel32.dll'),
+    ])
+    def test_secure_filename(self, filename, expected):
+        assert misc.secure_filename(filename) == expected
+
+    def test_secure_filename_empty_value(self):
+        with pytest.raises(ValueError):
+            misc.secure_filename('')
+
 
 @pytest.mark.parametrize(
     'protocol,method',
@@ -985,3 +1001,26 @@ class TestContextType:
         assert set(ctx.keys()) == {1, 2, 3, 4}
         assert set(ctx.values()) == {1, 4, 9, 16}
         assert set(ctx.items()) == {(1, 1), (2, 4), (3, 9), (4, 16)}
+
+
+class TestDeprecatedArgs:
+    def test_method(self, recwarn):
+        class C:
+            @misc.deprecated_args(allowed_positional=0)
+            def a_method(self, a=1, b=2):
+                pass
+
+        C().a_method(a=1, b=2)
+        assert len(recwarn) == 0
+        C().a_method(1, b=2)
+        assert len(recwarn) == 1
+
+    def test_function(self, recwarn):
+        @misc.deprecated_args(allowed_positional=0, is_method=False)
+        def a_function(a=1, b=2):
+            pass
+
+        a_function(a=1, b=2)
+        assert len(recwarn) == 0
+        a_function(1, b=2)
+        assert len(recwarn) == 1

@@ -30,12 +30,12 @@ New & Improved
 - Semantic validation via the *format* keyword is now enabled for the
   :meth:`~falcon.media.validators.jsonschema.validate` JSON Schema decorator.
 - We added a new helper, :meth:`~falcon.Request.get_param_as_uuid`, to the
-  :class:`~.Request` class.
+  :class:`~falcon.Request` class.
 - Falcon now supports WebDAV methods
   (`RFC 3253 <https://www.ietf.org/rfc/rfc3253.txt>`_), such as UPDATE and
   REPORT.
 - We added a new property, :attr:`~falcon.Response.downloadable_as`, to the
-  :class:`~.Response` class for setting the Content-Disposition header.
+  :class:`~falcon.Response` class for setting the Content-Disposition header.
 - :meth:`~falcon.routing.create_http_method_map` has been refactored into two
   new methods, :meth:`~falcon.routing.map_http_methods` and :meth:`~falcon.routing.set_default_responders`, so that
   custom routers can better pick and choose the functionality they need. The

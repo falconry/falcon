@@ -61,10 +61,10 @@ class Request:
             it has been initialized.
 
             Note:
-                **New in 2.0:** the default `context_type` (see below) was
-                changed from dict to a bare class, and the preferred way to
+                **New in 2.0:** The default `context_type` (see below) was
+                changed from :class:`dict` to a bare class; the preferred way to
                 pass request-specific data is now to set attributes directly on
-                the `context` object, for example::
+                the `context` object. For example::
 
                     req.context.role = 'trial'
                     req.context.user = 'guest'
@@ -132,10 +132,12 @@ class Request:
 
             (See also: RFC 7239, Section 4)
 
-        port (int): Port used for the request. If the request URI does
-            not specify a port, the default one for the given schema is
-            returned (80 for HTTP and 443 for HTTPS).
-        netloc (str): Returns the 'host:port' portion of the request
+        port (int): Port used for the request. If the Host header is present
+            in the request, but does not specify a port, the default one for the
+            given schema is returned (80 for HTTP and 443 for HTTPS). If the
+            request does not include a Host header, the listening port for the
+            WSGI server is returned instead.
+        netloc (str): Returns the "host:port" portion of the request
             URL. The port may be ommitted if it is the default one for
             the URL's schema (80 for HTTP and 443 for HTTPS).
         subdomain (str): Leftmost (i.e., most specific) subdomain from the
@@ -172,20 +174,22 @@ class Request:
         path (str): Path portion of the request URI (not including query
             string).
 
+            Warning:
+                If this attribute is to be used by the app for any upstream
+                requests, any non URL-safe characters in the path must be URL
+                encoded back before making the request.
+
             Note:
-                `req.path` may be set to a new value by a `process_request()`
-                middleware method in order to influence routing. If the
-                original request path was URL encoded, it will be decoded
-                before being returned by this attribute. If this attribute is to
-                be used by the app for any upstream requests, any non URL-safe
-                characters in the path must be URL encoded back before
-                making the request.
+                ``req.path`` may be set to a new value by a
+                ``process_request()`` middleware method in order to influence
+                routing. If the original request path was URL encoded, it will
+                be decoded before being returned by this attribute.
 
         query_string (str): Query string portion of the request URI, without
             the preceding '?' character.
         uri_template (str): The template for the route that was matched for
             this request. May be ``None`` if the request has not yet been
-            routed, as would be the case for `process_request()` middleware
+            routed, as would be the case for ``process_request()`` middleware
             methods. May also be ``None`` if your app uses a custom routing
             engine and the engine does not provide the URI template when
             resolving a route.
@@ -242,7 +246,7 @@ class Request:
             header is missing.
         referer (str): Value of the Referer header, or ``None`` if
             the header is missing.
-        accept (str): Value of the Accept header, or '*/*' if the header is
+        accept (str): Value of the Accept header, or ``'*/*'`` if the header is
             missing.
         client_accepts_json (bool): ``True`` if the Accept header indicates
             that the client is willing to receive JSON, otherwise ``False``.
@@ -257,7 +261,7 @@ class Request:
             If a cookie appears more than once in the request, only the first
             value encountered will be made available here.
 
-            See also: :meth:`~get_cookie_values`
+            See also: :meth:`~falcon.Request.get_cookie_values`
         content_type (str): Value of the Content-Type header, or ``None`` if
             the header is missing.
         content_length (int): Value of the Content-Length header converted
@@ -983,7 +987,8 @@ class Request:
                 self.content_length
             )
         finally:
-            self.bounded_stream.exhaust()
+            if handler.exhaust_stream:
+                self.bounded_stream.exhaust()
 
         return self._media
 
@@ -1805,7 +1810,8 @@ class RequestOptions:
 
     An instance of this class is exposed via :attr:`falcon.App.req_options` and
     :attr:`falcon.asgi.App.req_options` for configuring certain
-    :py:class:`~.Request` behaviors.
+    :class:`~.Request` and :class:`falcon.asgi.Request` behaviors,
+    respectively.
 
     Attributes:
         keep_blank_qs_values (bool): Set to ``False`` to ignore query string
@@ -1820,14 +1826,15 @@ class RequestOptions:
             request's content type is
             *application/x-www-form-urlencoded* (default ``False``).
 
-            Enabling this option makes the form parameters accessible
-            via :attr:`~.params`, :meth:`~.get_param`, etc.
+            Enabling this option for WSGI apps makes the form parameters
+            accessible via :attr:`~falcon.Request.params`,
+            :meth:`~falcon.Request.get_param`, etc.
 
             Warning:
-                The `auto_parse_form_urlencoded` option is considered
-                deprecated as of Falcon 3.0 in favor of accessing the
-                URL-encoded form via :attr:`~Request.media`, and it may be
-                removed in a future release.
+                The `auto_parse_form_urlencoded` option is not supported for
+                ASGI apps, and is considered deprecated for WSGI apps as of
+                Falcon 3.0, in favor of accessing URL-encoded forms
+                through :attr:`~Request.media`.
 
                 See also: :ref:`access_urlencoded_form`
 
@@ -1874,10 +1881,10 @@ class RequestOptions:
             independently, this will default to
             :attr:`falcon.DEFAULT_MEDIA_TYPE`.
 
-        media_handlers (Handlers): A dict-like object that allows you to
-            configure the media-types that you would like to handle.
-            By default, a handler is provided for the ``application/json``
-            media type.
+        media_handlers (Handlers): A dict-like object for configuring the
+            media-types to handle. By default, handlers are provided for the
+            ``application/json``, ``application/x-www-form-urlencoded`` and
+            ``multipart/form-data`` media types.
     """
     __slots__ = (
         'keep_blank_qs_values',

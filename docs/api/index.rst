@@ -10,6 +10,7 @@ Framework Reference
    status
    errors
    media
+   multipart
    redirects
    middleware
    cors

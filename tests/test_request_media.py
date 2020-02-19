@@ -177,6 +177,8 @@ class NopeHandler(media.BaseHandler):
     def deserialize(self, *args, **kwargs):
         pass
 
+    exhaust_stream = True
+
 
 def test_complete_consumption(asgi):
     client = create_client(asgi, {

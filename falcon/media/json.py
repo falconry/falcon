@@ -74,8 +74,8 @@ class JSONHandler(BaseHandler):
             return self.loads(stream.read().decode('utf-8'))
         except ValueError as err:
             raise errors.HTTPBadRequest(
-                'Invalid JSON',
-                'Could not parse JSON body - {0}'.format(err)
+                title='Invalid JSON',
+                description='Could not parse JSON body - {0}'.format(err)
             )
 
     async def deserialize_async(self, stream, content_type, content_length):
@@ -85,8 +85,8 @@ class JSONHandler(BaseHandler):
             return self.loads(data.decode('utf-8'))
         except ValueError as err:
             raise errors.HTTPBadRequest(
-                'Invalid JSON',
-                'Could not parse JSON body - {0}'.format(err)
+                title='Invalid JSON',
+                description='Could not parse JSON body - {0}'.format(err)
             )
 
     def serialize(self, media, content_type):

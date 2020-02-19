@@ -259,7 +259,7 @@ dl.field-list.simple dd ul li p:not(:first-child) {
 }
 
 dl.attribute > dd > p {
-    margin: 0;
+    margin: 0 0 1em 0;
 }
 
 /* NOTE(kgriffs): Fix spacing issue with embedded Note blocks, and make

@@ -79,8 +79,9 @@ New & Improved
   method facilitates this and other use cases.
 - :meth:`falcon.Request.client_accepts_msgpack` now recognizes
   "application/msgpack", in addition to "application/x-msgpack".
-- New :any:`access_route` and :any:`remote_addr` properties were added
-  to :class:`~falcon.Request` for getting upstream IP addresses.
+- New :attr:`~falcon.Request.access_route` and :attr:`~falcon.Request.remote_addr`
+  properties were added to :class:`~falcon.Request` for getting upstream IP
+  addresses.
 - :class:`~falcon.Request` and :class:`~falcon.Response` now support
   range units other than bytes.
 - The :class:`~falcon.API` and
@@ -130,12 +131,12 @@ Fixed
 - Tunneled UTF-8 characters in the request path are now properly
   decoded, and a placeholder character is substituted for any invalid
   code points.
-- The instantiation of :any:`Request.context_type` is now
+- The instantiation of :attr:`~falcon.Request.context_type` is now
   delayed until after all other properties of the
   :class:`~falcon.Request` class have been initialized, in case the
   context type's own initialization depends on any of
   :class:`~falcon.Request`'s properties.
-- A case was fixed in which reading from :any:`Request.stream`
+- A case was fixed in which reading from :attr:`~falcon.Request.stream`
   could hang when using :mod:`wsgiref` to host the app.
 - The default error serializer now sets the Vary header in responses.
   Implementing this required passing the :class:`~falcon.Response`

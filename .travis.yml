@@ -52,6 +52,17 @@ matrix:
         - python: 3.8
           env: TOXENV=check_vendored
 
+        - name: Python 3.8 (Windows)
+          env: TOXENV=py38_nocover
+          os: windows
+          language: bash
+          before_install:
+            - choco install python3 --params "/InstallDir:C:\\Python"
+            - export PATH="/c/Python:/c/Python/Scripts:$PATH"
+            - python -m pip install --upgrade pip wheel coverage
+
+          script: tox
+
 script: tox -- -v
 
 notifications:
