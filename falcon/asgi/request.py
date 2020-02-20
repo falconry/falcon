@@ -592,7 +592,7 @@ class Request(falcon.request.Request):
         # raised exception.
         if 'forwarded' in self._asgi_headers:
             first_hop = self.forwarded[0]
-            host = first_hop.host or self.host
+            host = first_hop.host or self.netloc
         else:
             # PERF(kgriffs): This call should normally succeed, assuming
             # that the caller is expecting a forwarded header, so
@@ -601,7 +601,7 @@ class Request(falcon.request.Request):
             try:
                 host = self._asgi_headers['x-forwarded-host']
             except KeyError:
-                host = self.host
+                host = self.netloc
 
         return host
 

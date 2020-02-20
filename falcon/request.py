@@ -830,7 +830,7 @@ class Request:
         # raised exception.
         if 'HTTP_FORWARDED' in self.env:
             first_hop = self.forwarded[0]
-            host = first_hop.host or self.host
+            host = first_hop.host or self.netloc
         else:
             # PERF(kgriffs): This call should normally succeed, assuming
             # that the caller is expecting a forwarded header, so
@@ -839,7 +839,7 @@ class Request:
             try:
                 host = self.env['HTTP_X_FORWARDED_HOST']
             except KeyError:
-                host = self.host
+                host = self.netloc
 
         return host
 
