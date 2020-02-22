@@ -171,8 +171,8 @@ class CompiledRouter:
 
                 Note:
                     Always setting this to `True` may slow down the addition of
-                    new routes, in case where hundreds of them are added. It is
-                    advisable to only set this to `True` in the last added route.
+                    new routes, if hundreds of them are added. It is advisable
+                    to only set this to `True` in the last added route.
         """
 
         # NOTE(kgriffs): falcon.asgi.App injects this private kwarg; it is
@@ -577,7 +577,7 @@ class CompiledRouter:
         """Compiles the router, sets the `_find` attribute and returns its result
 
         This method is set to the `_find` attribute to delay the compilation of the
-        router until its used for the first time. subsequent calls to `_find` will
+        router until it's used for the first time. Subsequent calls to `_find` will
         be processed by the actual routing function.
         This method must have the same signature as the function returned by the
         :meth:`.CompiledRouter._compile`.
