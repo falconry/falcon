@@ -4,16 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from falcon.routing import CompiledRouter, CompiledRouterOptions
-
-
-def test_ctor_options():
-    options = CompiledRouterOptions()
-
-    router = CompiledRouter(_options=options)
-
-    assert router.options is options
-    assert router._converter_map is options.converters.data
+from falcon.routing import CompiledRouter
 
 
 def test_find_src(monkeypatch):
@@ -55,10 +46,9 @@ def test_no_compile_kw(patch_add_route, kwargs):
 
     res = MockResource()
     router.add_route('/foo', res, **kwargs)
-    other = kwargs.copy()
-    other['compile'] = True
-    assert mock.call_count == 2
-    mock.assert_has_calls(((('/foo', res), kwargs), (('/foo', res), other)))
+
+    assert mock.call_count == 1
+    mock.assert_has_calls(((('/foo', res), kwargs), ))
     assert router._find == router._compile_and_find
 
 
@@ -69,17 +59,6 @@ def test_compile(patch_add_route):
     router.add_route('/foo', res, compile=True)
     assert mock.call_count == 1
     assert router._find != router._compile_and_find
-
-
-def test_verify_route_on_add(patch_add_route):
-    mock, router = patch_add_route
-
-    router.options.verify_route_on_add = False
-
-    res = MockResource()
-    router.add_route('/foo', res)
-    assert mock.call_count == 1
-    assert router._find == router._compile_and_find
 
 
 def test_add_route_after_first_request():
@@ -104,7 +83,6 @@ def test_multithread_compile(monkeypatch):
     monkeypatch.setattr(CompiledRouter, '_compile', mock)
 
     router = CompiledRouter()
-    router.options.verify_route_on_add = False
     mr = MockResource()
 
     router.add_route('/foo', mr)

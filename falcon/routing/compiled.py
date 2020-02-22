@@ -78,16 +78,15 @@ class CompiledRouter:
         '_patterns',
         '_return_values',
         '_roots',
-        '_verify_route_router',
         '_compile_lock',
     )
 
-    def __init__(self, *, _options=None):
+    def __init__(self):
         self._ast = None
         self._converters = None
         self._finder_src = None
 
-        self._options = _options if _options else CompiledRouterOptions()
+        self._options = CompiledRouterOptions()
 
         # PERF(kgriffs): This is usually an anti-pattern, but we do it
         # here to reduce lookup time.
@@ -100,9 +99,6 @@ class CompiledRouter:
         # NOTE(caselit): set _find to the delayed compile method to ensure that
         # compile is called when the router is first used
         self._find = self._compile_and_find
-        # NOTE(caselit): this will refer to an internal instance of the router
-        # used to verify that each route can compile by itself
-        self._verify_route_router = None
         self._compile_lock = Lock()
 
     @property
@@ -241,18 +237,11 @@ class CompiledRouter:
                 insert(new_node.children, path_index + 1)
 
         insert(self._roots)
-
+        # NOTE(caselit): when compile is True run the actual compile step, otherwise reset the
+        # _find, so that _compile will be called on the next find use
         if kwargs.get('compile', False):
             self._find = self._compile()
         else:
-            if self._options.verify_route_on_add:
-                if self._verify_route_router is None:
-                    self._verify_route_router = CompiledRouter(_options=self._options)
-                kwargs['compile'] = True
-                self._verify_route_router._roots.clear()
-                self._verify_route_router.add_route(uri_template, resource, **kwargs)
-            # NOTE(caselit): reset the _find, so that _compile will be called on the
-            # next find use
             self._find = self._compile_and_find
 
     def find(self, uri, req=None):
@@ -364,9 +353,15 @@ class CompiledRouter:
                 raise ValueError(msg)
 
             name = field.group('cname')
-            if name and name not in self._converter_map:
-                msg = 'Unknown converter: "{0}"'.format(name)
-                raise ValueError(msg)
+            if name:
+                if name not in self._converter_map:
+                    msg = 'Unknown converter: "{0}"'.format(name)
+                    raise ValueError(msg)
+                try:
+                    self._instantiate_converter(self._converter_map[name], field.group('argstr'))
+                except Exception as e:
+                    msg = 'Cannot instantiate converter "{}"'.format(name)
+                    raise ValueError(msg) from e
 
     def _generate_ast(self, nodes, parent, return_values, patterns, level=0, fast_return=True):
         """Generates a coarse AST for the router."""
@@ -815,23 +810,14 @@ class CompiledRouterOptions:
                 manner.
 
             (See also: :ref:`Field Converters <routing_field_converters>`)
-        verify_route_on_add (bool): The compiled router delays the compilation
-            of its routes until the first request is router to avoid slowing
-            down the application start-up. To facilitate the debugging of
-            router compilation errors, when this flag is `True` every route is
-            compiled by itself when it is first added. Setting this to `False`
-            may reduces the overhead incurred when a route is added. (This delay
-            should become noticeable only when thousands of routes are added).
-            (Defaults to `True`)
     """
 
-    __slots__ = ('converters', 'verify_route_on_add')
+    __slots__ = ('converters',)
 
     def __init__(self):
         self.converters = ConverterDict(
             (name, converter) for name, converter in converters.BUILTIN
         )
-        self.verify_route_on_add = True
 
 
 # --------------------------------------------------------------------
