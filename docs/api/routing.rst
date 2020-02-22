@@ -57,6 +57,8 @@ Default Router
 
 Falcon's default routing engine is based on a decision tree that is
 first compiled into Python code, and then evaluated by the runtime.
+By default the decision tree is compiled only when the router handles
+the first request. See :class:`.CompiledRouter` for more details.
 
 The :meth:`falcon.App.add_route` and :meth:`falcon.asgi.App.add_route` methods
 are used to associate a URI template with a resource. Falcon then maps incoming

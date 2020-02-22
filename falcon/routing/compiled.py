@@ -53,17 +53,17 @@ class CompiledRouter:
     perform the search, then compiles that code. This makes the route
     processing quite fast.
 
-    The compile process is delayed until the first use of the route, ie the
-    first routed request, to speed up application start times. This may cause
-    a noticeable delay in the first response of the application. When adding
-    the last route to the application a `compile` flag may be provided to make
-    the router compile its logic, avoiding the delay on the first response.
+    The compile process is delayed until the first use of the router (on the
+    first routed request) to speed up application start times. This may cause
+    a delay in the first response of the application. When adding the last route
+    to the application a `compile` flag may be provided to make the router
+    compile its logic, avoiding the delay on the first response.
 
     Note:
         To avoid compiling multiple times the router in multi-threading
         servers when multiple requests are routed at the same time as soon as
         the server goes live, a lock is used to ensure that only a single
-        compilation if performed
+        compilation is performed
 
     See also :meth:`.CompiledRouter.add_route`
     """
