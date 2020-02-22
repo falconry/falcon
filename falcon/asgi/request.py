@@ -134,7 +134,7 @@ class Request(falcon.request.Request):
             request does not include a Host header, the listening port for the
             ASGI server is returned instead.
         netloc (str): Returns the "host:port" portion of the request
-            URL. The port may be ommitted if it is the default one for
+            URL. The port may be omitted if it is the default one for
             the URL's schema (80 for HTTP and 443 for HTTPS).
         subdomain (str): Leftmost (i.e., most specific) subdomain from the
             hostname. If only a single domain name is given, `subdomain`
