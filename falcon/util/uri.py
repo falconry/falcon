@@ -27,10 +27,12 @@ in the `falcon` module, and so must be explicitly imported::
 try:
     from falcon.cyutil.uri import (
         decode as _cy_decode,
+        decode_wsgi_string as _cy_decode_wsgi_string,
         parse_query_string as _cy_parse_query_string,
     )
 except ImportError:
     _cy_decode = None
+    _cy_decode_wsgi_string = None
     _cy_parse_query_string = None
 
 
@@ -406,9 +408,31 @@ def unquote_string(quoted):
                           for q in tmp_quoted.split(r'\\')])
 
 
+def decode_wsgi_string(tunneled):
+    """Decode a PEP-3333 WSGI string, such as the request path.
+
+    Args:
+        tunneled (str): The original WSGI string tunneled as Latin-1 bytes as
+            per `PEP-3333 WSGI unicode handling
+            <https://www.python.org/dev/peps/pep-3333/#unicode-issues>`_ notes.
+
+    Returns:
+        str: decoded string
+    """
+    try:
+        # PERF(vytas): Use EAFP here to quickly check if there are any
+        #   non-ASCII bytes in the string, and return the input verbatim if
+        #   possible.
+        tunneled.encode('ascii')
+        return tunneled
+    except ValueError:
+        return tunneled.encode('iso-8859-1').decode('utf-8', 'replace')
+
+
 # TODO(vytas): Restructure this in favour of a cleaner way to hoist the pure
 # Cython functions into this module.
 decode = _cy_decode or decode  # NOQA
+decode_wsgi_string = _cy_decode_wsgi_string or decode_wsgi_string  # NOQA
 parse_query_string = _cy_parse_query_string or parse_query_string  # NOQA
 
 

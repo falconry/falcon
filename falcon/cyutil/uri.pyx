@@ -251,3 +251,14 @@ def decode(unicode encoded_uri not None, bint unquote_plus=True):
     cdef bytes byte_string = encoded_uri.encode('utf-8')
     cdef unsigned char* data = byte_string
     return cy_decode(data, 0, len(byte_string), 0, unquote_plus)
+
+
+def decode_wsgi_string(unicode tunneled not None):
+    cdef Py_UCS4 ch
+
+    for ch in tunneled:
+        if ch > 0x007F:
+            return tunneled.encode('iso-8859-1').decode('utf-8', 'replace')
+
+    # PERF(vytas): Return the input verbatim if all characters are ASCII.
+    return tunneled

@@ -498,6 +498,19 @@ class TestFalconUtils:
         with pytest.raises(ValueError):
             misc.secure_filename('')
 
+    @pytest.mark.parametrize('tunneled,expected', [
+        ('', ''),
+        ('/', '/'),
+        ('/api', '/api'),
+        (
+            '/data/items/something?query=apples%20and%20oranges',
+            '/data/items/something?query=apples%20and%20oranges',
+        ),
+        ('/food?item=ð\x9f\x8d\x94', '/food?item=🍔'),
+    ])
+    def test_decode_wsgi_string(self, tunneled, expected):
+        assert uri.decode_wsgi_string(tunneled) == expected
+
 
 @pytest.mark.parametrize(
     'protocol,method',
