@@ -15,16 +15,15 @@
 """
 Script that prints out the routes of an App instance.
 """
+import argparse
 import importlib
 
 import falcon
-from falcon.inspect import inspect_app, inspect_routes, StringVisitor
+from falcon.inspect import StringVisitor, inspect_app, inspect_routes
 
 
 def make_parser():
-    'Creates the parsed or the application'
-    import argparse
-
+    """Creates the parsed or the application"""
     parser = argparse.ArgumentParser(
         description='Example: falcon-inspect-app myprogram:app'
     )
@@ -49,18 +48,17 @@ def load_app(parser, args):
     try:
         module, instance = args.app_module.split(':', 1)
     except ValueError:
-        parser.error(
-            'The app_module must include a colon between the module and instance'
-        )
+        parser.error('The app_module must include a colon between the module and instance')
+    try:
+        app = getattr(importlib.import_module(module), instance)
+    except AttributeError:
+        parser.error('{!r} not found in module {!r}'.format(instance, module))
 
-    app = getattr(importlib.import_module(module), instance)
     if not isinstance(app, falcon.App):
         if callable(app):
             app = app()
             if not isinstance(app, falcon.App):
-                parser.error(
-                    '{0} did not return a falcon.App instance'.format(args.app_module)
-                )
+                parser.error('{} did not return a falcon.App instance'.format(args.app_module))
         else:
             parser.error(
                 'The instance must be of falcon.App or be '
@@ -85,5 +83,5 @@ def main():
         print(inspect_app(app).to_string(args.verbose))
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     main()

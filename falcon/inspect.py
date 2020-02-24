@@ -197,7 +197,7 @@ def inspect_compiled_router(router) -> 'List[RouteInfo]':
                         method, source_info, real_func.__name__, internal
                     )
                     methods.append(method_info)
-                source_info, class_name = _get_source_info_and_name(root.resource)
+            source_info, class_name = _get_source_info_and_name(root.resource)
 
             path = parent + '/' + root.raw_segment
             route_info = RouteInfo(path, class_name, source_info, methods)
