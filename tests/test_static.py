@@ -12,11 +12,11 @@ import falcon.testing as testing
 import _util  # NOQA
 
 
-@pytest.fixture(params=[True, False])
-def client(request):
-    app = _util.create_app(asgi=request.param)
+@pytest.fixture()
+def client(asgi):
+    app = _util.create_app(asgi=asgi)
     client = testing.TestClient(app)
-    client.asgi = request.param
+    client.asgi = asgi
     return client
 
 
@@ -136,6 +136,12 @@ def test_invalid_args_fallback_filename(client, default):
         client.app.add_static_route(prefix, directory, fallback_filename=default)
 
 
+# NOTE(caselit) depending on the system configuration mime types can have alternative names
+_MIME_ALTERNATIVE = {
+    'application/zip': ('application/zip', 'application/x-zip-compressed')
+}
+
+
 @pytest.mark.parametrize('uri_prefix, uri_path, expected_path, mtype', [
     ('/static/', '/css/test.css', '/css/test.css', 'text/css'),
     ('/static', '/css/test.css', '/css/test.css', 'text/css'),
@@ -180,8 +186,8 @@ def test_good_path(asgi, uri_prefix, uri_path, expected_path, mtype, monkeypatch
         sr(req, resp)
         body = resp.stream.read()
 
-    assert resp.content_type == mtype
-    assert body.decode() == '/var/www/statics' + expected_path
+    assert resp.content_type in _MIME_ALTERNATIVE.get(mtype, (mtype, ))
+    assert body.decode() == os.path.normpath('/var/www/statics' + expected_path)
 
 
 def test_lifo(client, monkeypatch):
@@ -192,11 +198,11 @@ def test_lifo(client, monkeypatch):
 
     response = client.simulate_request(path='/downloads/thing.zip')
     assert response.status == falcon.HTTP_200
-    assert response.text == '/opt/somesite/downloads/thing.zip'
+    assert response.text == os.path.normpath('/opt/somesite/downloads/thing.zip')
 
     response = client.simulate_request(path='/downloads/archive/thingtoo.zip')
     assert response.status == falcon.HTTP_200
-    assert response.text == '/opt/somesite/x/thingtoo.zip'
+    assert response.text == os.path.normpath('/opt/somesite/x/thingtoo.zip')
 
 
 def test_lifo_negative(client, monkeypatch):
@@ -207,11 +213,11 @@ def test_lifo_negative(client, monkeypatch):
 
     response = client.simulate_request(path='/downloads/thing.zip')
     assert response.status == falcon.HTTP_200
-    assert response.text == '/opt/somesite/downloads/thing.zip'
+    assert response.text == os.path.normpath('/opt/somesite/downloads/thing.zip')
 
     response = client.simulate_request(path='/downloads/archive/thingtoo.zip')
     assert response.status == falcon.HTTP_200
-    assert response.text == '/opt/somesite/downloads/archive/thingtoo.zip'
+    assert response.text == os.path.normpath('/opt/somesite/downloads/archive/thingtoo.zip')
 
 
 def test_downloadable(client, monkeypatch):
@@ -243,6 +249,7 @@ def test_downloadable_not_found(client):
 @pytest.mark.parametrize('uri, default, expected, content_type', [
     ('', 'default', 'default', 'application/octet-stream'),
     ('other', 'default.html', 'default.html', 'text/html'),
+    ('zip', 'default.zip', 'default.zip', 'application/zip'),
     ('index2', 'index', 'index2', 'application/octet-stream'),
     ('absolute', '/foo/bar/index', '/foo/bar/index', 'application/octet-stream'),
     ('docs/notes/test.txt', 'index.html', 'index.html', 'text/html'),
@@ -253,13 +260,13 @@ def test_fallback_filename(asgi, uri, default, expected, content_type, downloada
                            monkeypatch):
 
     def mock_open(path, mode):
-        if default in path:
+        if os.path.normpath(default) in path:
             return io.BytesIO(path.encode())
 
         raise IOError()
 
     monkeypatch.setattr(io, 'open', mock_open)
-    monkeypatch.setattr('os.path.isfile', lambda file: default in file)
+    monkeypatch.setattr('os.path.isfile', lambda file: os.path.normpath(default) in file)
 
     sr = create_sr(
         asgi,
@@ -290,8 +297,8 @@ def test_fallback_filename(asgi, uri, default, expected, content_type, downloada
         body = resp.stream.read()
 
     assert sr.match(req.path)
-    assert body.decode() == os.path.join('/var/www/statics', expected)
-    assert resp.content_type == content_type
+    assert body.decode() == os.path.normpath(os.path.join('/var/www/statics', expected))
+    assert resp.content_type in _MIME_ALTERNATIVE.get(content_type, (content_type, ))
 
     if downloadable:
         assert os.path.basename(expected) in resp.downloadable_as
@@ -329,7 +336,7 @@ def test_e2e_fallback_filename(client, monkeypatch, strip_slash, path, fallback,
             assert response.status == falcon.HTTP_404
         else:
             assert response.status == falcon.HTTP_200
-            assert response.text == directory + expected
+            assert response.text == os.path.normpath(directory + expected)
 
     test('/static', '/opt/somesite/static/', static_exp)
     test('/assets', '/opt/somesite/assets/', assert_axp)
@@ -357,7 +364,7 @@ def test_filesystem_traversal_fuse(client, monkeypatch):
     def suspicious_normpath(path):
         return 'assets/../../../../' + path
 
-    monkeypatch.setattr('os.path.normpath', suspicious_normpath)
     client.app.add_static_route('/static', '/etc/nginx/includes/static-data')
+    monkeypatch.setattr('os.path.normpath', suspicious_normpath)
     response = client.simulate_request(path='/static/shadow')
     assert response.status == falcon.HTTP_404

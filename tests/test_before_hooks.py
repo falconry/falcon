@@ -12,7 +12,7 @@ from _util import create_app, create_resp, disable_asgi_non_coroutine_wrapping  
 
 def validate(req, resp, resource, params):
     assert resource
-    raise falcon.HTTPBadRequest('Invalid thing', 'Your thing was not '
+    raise falcon.HTTPBadRequest(title='Invalid thing', description='Your thing was not '
                                 'formatted correctly.')
 
 
@@ -22,7 +22,7 @@ def validate_param(req, resp, resource, params, param_name, maxval=100):
     limit = req.get_param_as_int(param_name)
     if limit and int(limit) > maxval:
         msg = '{0} must be <= {1}'.format(param_name, maxval)
-        raise falcon.HTTPBadRequest('Out of Range', msg)
+        raise falcon.HTTPBadRequest(title='Out of Range', description=msg)
 
 
 async def validate_param_async(*args, **kwargs):
@@ -356,11 +356,13 @@ def test_parser_sync(body, doc):
 def test_parser_async(body, doc):
     with disable_asgi_non_coroutine_wrapping():
         class WrappedRespondersBodyParserAsyncResource:
-            @falcon.before(validate_param_async, 'limit', 100)
+            @falcon.before(validate_param_async, 'limit', 100, is_async=True)
             @falcon.before(parse_body_async)
             async def on_get(self, req, resp, doc=None):
-                self.req = req
-                self.resp = resp
+                self.doc = doc
+
+            @falcon.before(parse_body_async, is_async=False)
+            async def on_put(self, req, resp, doc=None):
                 self.doc = doc
 
     app = create_app(asgi=True)
@@ -369,6 +371,9 @@ def test_parser_async(body, doc):
     app.add_route('/', resource)
 
     testing.simulate_get(app, '/', body=body)
+    assert resource.doc == doc
+
+    testing.simulate_put(app, '/', body=body)
     assert resource.doc == doc
 
     async def test_direct():
@@ -451,7 +456,7 @@ class PiggybackingCollection:
     @falcon.before(header_hook)
     def on_delete_collection(self, req, resp, fish):
         if fish != 'wet':
-            raise falcon.HTTPUnavailableForLegalReasons('fish must be wet')
+            raise falcon.HTTPUnavailableForLegalReasons(title='fish must be wet')
         self._items = {}
         resp.status = falcon.HTTP_NO_CONTENT
 

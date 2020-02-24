@@ -1,36 +1,22 @@
-.. _request:
+Requests & Responses
+====================
 
-Request & Response
-==================
+Similar to other frameworks, Falcon employs the inversion of control (IoC)
+pattern to coordinate with app methods in order to respond to HTTP requests.
+Resource responders, middleware methods, hooks, etc. receive a reference to the
+request and response objects that represent the current in-flight HTTP request.
+The app can use these objects to inspect the incoming HTTP request, and to
+manipulate the outgoing HTTP response.
 
-Instances of the Request and Response classes are passed into responders as the second
-and third arguments, respectively.
+Falcon uses different types to represent HTTP requests and
+responses for WSGI (:class:`falcon.App`) vs. ASGI (:class:`falcon.asgi.App`).
+However, the two interfaces are designed to be as similar as possible to
+minimize confusion and to facilitate porting.
 
-.. code:: python
+(See also: :ref:`routing`)
 
-    import falcon
+.. toctree::
+   :maxdepth: 2
 
-
-    class Resource:
-
-        def on_get(self, req, resp):
-            resp.body = '{"message": "Hello world!"}'
-            resp.status = falcon.HTTP_200
-
-Request
--------
-
-.. autoclass:: falcon.Request
-    :members:
-
-.. autoclass:: falcon.Forwarded
-    :members:
-
-Response
---------
-
-.. autoclass:: falcon.Response
-    :members:
-
-
-
+   request_and_response_wsgi
+   request_and_response_asgi

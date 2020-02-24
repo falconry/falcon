@@ -28,14 +28,6 @@ else:
         from Cython.Distutils import build_ext
         CYTHON = True
     except ImportError:
-        # TODO(kgriffs): pip now ignores all output, so the user
-        # may not see this message. See also:
-        #
-        #   https://github.com/pypa/pip/issues/2732
-        #
-        print('\nNOTE: Cython not installed. '
-              'Falcon will still work fine, but may run '
-              'a bit slower.\n')
         CYTHON = False
 
 if CYTHON:
@@ -61,13 +53,17 @@ if CYTHON:
 
     modules_to_exclude = [
         # NOTE(kgriffs): Cython does not handle dynamically-created async
-        #   methods correctly, so we do not cythonize the following modules.
+        #   methods correctly.
+        # NOTE(vytas,kgriffs): We have to also avoid cythonizing several
+        #   other functions that might make it so that the framework
+        #   can not recognize them as coroutine functions.
+        #
+        #   See also:
+        #
+        #       * https://github.com/cython/cython/issues/2273
+        #       * https://bugs.python.org/issue38225
+        #
         'falcon.hooks',
-        # NOTE(vytas): Middleware classes cannot be cythonized until
-        #   asyncio.iscoroutinefunction recognizes cythonized coroutines:
-        #   * https://github.com/cython/cython/issues/2273
-        #   * https://bugs.python.org/issue38225
-        'falcon.middlewares',
         'falcon.responders',
         'falcon.util.sync',
     ]
@@ -87,6 +83,11 @@ if CYTHON:
             ('*.pyx' if package in cython_package_names else '*.py'))
         if (package + '.' + module) not in modules_to_exclude
     ]
+
+    # NOTE(vytas): Now that all our codebase is Python 3.5+, specify the
+    #   Python 3 language level for Cython as well to avoid any surprises.
+    for ext_mod in ext_modules:
+        ext_mod.cython_directives = {'language_level': '3'}
 
     cmdclass = {'build_ext': build_ext}
 

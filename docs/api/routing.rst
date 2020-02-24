@@ -92,26 +92,26 @@ are named according to which HTTP method they handle, as in ``on_get()``,
     405 response back to the client.
 
 Responders must always define at least two arguments to receive
-:class:`~.Request` and :class:`~.Response` objects, respectively::
+:class:`~.falcon.Request` and :class:`~.falcon.Response` objects, respectively::
 
     def on_post(self, req, resp):
         pass
 
-The :class:`~.Request` object represents the incoming HTTP
+The :class:`~.falcon.Request` object represents the incoming HTTP
 request. It exposes properties and methods for examining headers,
 query string parameters, and other metadata associated with
 the request. A file-like stream object is also provided for reading
 any data that was included in the body of the request.
 
-The :class:`~.Response` object represents the application's
+The :class:`~.falcon.Response` object represents the application's
 HTTP response to the above request. It provides properties
 and methods for setting status, header and body data. The
-:class:`~.Response` object also exposes a dict-like
-:attr:`~.Response.context` property for passing arbitrary
+:class:`~.falcon.Response` object also exposes a dict-like
+:attr:`~.falcon.Response.context` property for passing arbitrary
 data to hooks and middleware methods.
 
 .. note::
-    Rather than directly manipulate the :class:`~.Response`
+    Rather than directly manipulate the :class:`~.falcon.Response`
     object, a responder may raise an instance of either
     :class:`~.HTTPError` or :class:`~.HTTPStatus`. Falcon will
     convert these exceptions to appropriate HTTP responses.
@@ -146,7 +146,7 @@ segment. For example::
     /serviceRoot/People('{name}')
 
 (See also the :ref:`Falcon tutorial <tutorial>` for additional examples
-and a walkthough of setting up routes within the context of a sample
+and a walkthrough of setting up routes within the context of a sample
 application.)
 
 .. _routing_field_converters:

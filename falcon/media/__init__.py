@@ -1,6 +1,16 @@
-from .base import BaseHandler  # NOQA
-from .json import JSONHandler  # NOQA
-from .msgpack import MessagePackHandler  # NOQA
-from .urlencoded import URLEncodedFormHandler  # NOQA
+from .base import BaseHandler
+from .handlers import Handlers
+from .json import JSONHandler
+from .msgpack import MessagePackHandler
+from .multipart import MultipartFormHandler
+from .urlencoded import URLEncodedFormHandler
 
-from .handlers import Handlers  # NOQA
+
+__all__ = [
+    'BaseHandler',
+    'Handlers',
+    'JSONHandler',
+    'MessagePackHandler',
+    'MultipartFormHandler',
+    'URLEncodedFormHandler',
+]

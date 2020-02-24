@@ -2,6 +2,7 @@ from contextlib import contextmanager
 import os
 import platform
 import subprocess
+import sys
 import time
 
 import pytest
@@ -14,6 +15,7 @@ from falcon import testing
 _MODULE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 _PYPY = platform.python_implementation() == 'PyPy'
+_WIN32 = sys.platform.startswith('win')
 
 _SERVER_HOST = '127.0.0.1'
 _SIZE_1_KB = 1024
@@ -101,17 +103,54 @@ def _run_server_isolated(process_factory, host, port):
 
     yield server
 
-    print('\n[Sending SIGTERM to server process...]')
-    server.terminate()
+    if _WIN32:
+        # NOTE(kgriffs): Calling server.terminate() is equivalent to
+        #   server.kill() on Windows. We don't want to do the this;
+        #   forcefully killing a proc causes the Travis job to fail,
+        #   regardless of the tox/pytest exit code. """
+        #
+        #   Instead, we send CTRL+C. This does require that the handler be
+        #   enabled via SetConsoleCtrlHandler() in _uvicorn_factory()
+        #   below. Alternatively, we could send CTRL+BREAK and allow
+        #   the process exit code to be 3221225786.
+        #
+        import signal
+        print('\n[Sending CTRL+C (SIGINT) to server process...]')
+        server.send_signal(signal.CTRL_C_EVENT)
+        try:
+            server.wait(timeout=10)
+        except KeyboardInterrupt:
+            pass
+        except subprocess.TimeoutExpired:
+            print('\n[Killing stubborn server process...]')
+            server.kill()
+            server.communicate()
+    else:
+        print('\n[Sending SIGTERM to server process...]')
+        server.terminate()
 
-    try:
-        server.communicate(timeout=10)
-    except subprocess.TimeoutExpired:
-        server.kill()
-        server.communicate()
+        try:
+            server.communicate(timeout=10)
+        except subprocess.TimeoutExpired:
+            print('\n[Killing stubborn server process...]')
+            server.kill()
+            server.communicate()
 
 
 def _uvicorn_factory(host, port):
+    if _WIN32:
+        script = f"""
+import uvicorn
+import ctypes
+ctypes.windll.kernel32.SetConsoleCtrlHandler(None, 0)
+uvicorn.run('_asgi_test_app:application', host='{host}', port={port})
+"""
+        return subprocess.Popen(
+            ('python', '-c', script),
+            cwd=_MODULE_DIR,
+            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+        )
+
     # NOTE(vytas): uvicorn+uvloop is not (well) supported on PyPy at the time
     #   of writing.
     loop_options = ('--http', 'h11', '--loop', 'asyncio') if _PYPY else ()
@@ -122,9 +161,12 @@ def _uvicorn_factory(host, port):
         '_asgi_test_app:application'
     )
 
+    creationflags = subprocess.CREATE_NEW_PROCESS_GROUP if _WIN32 else 0
+
     return subprocess.Popen(
         ('uvicorn',) + loop_options + options,
         cwd=_MODULE_DIR,
+        creationflags=creationflags,
     )
 
 
@@ -148,6 +190,8 @@ def _daphne_factory(host, port):
 @pytest.fixture(params=[_uvicorn_factory, _daphne_factory])
 def server_base_url(request):
     process_factory = request.param
+    if _WIN32 and process_factory == _daphne_factory:
+        pytest.skip('daphne does not support windows')
 
     for i in range(3):
         server_port = testing.get_unused_port()
@@ -176,6 +220,7 @@ def server_base_url(request):
             yield base_url
 
         assert server.returncode == 0
+
         break
 
     else:

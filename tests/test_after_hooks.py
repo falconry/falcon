@@ -36,7 +36,7 @@ def client(asgi):
 
 def validate_output(req, resp, resource):
     assert resource
-    raise falcon.HTTPError(falcon.HTTP_723, 'Tricky')
+    raise falcon.HTTPError(falcon.HTTP_723, title='Tricky')
 
 
 def serialize_body(req, resp, resource):
@@ -132,12 +132,12 @@ class WrappedRespondersResource:
 class WrappedRespondersResourceAsync:
 
     @falcon.after(serialize_body_async)
-    @falcon.after(validate_output)
+    @falcon.after(validate_output, is_async=False)
     async def on_get(self, req, resp):
         self.req = req
         self.resp = resp
 
-    @falcon.after(serialize_body_async)
+    @falcon.after(serialize_body_async, is_async=True)
     async def on_put(self, req, resp):
         self.req = req
         self.resp = resp

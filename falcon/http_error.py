@@ -17,7 +17,7 @@
 from collections import OrderedDict
 import xml.etree.ElementTree as et
 
-from falcon.util import json, uri
+from falcon.util import deprecated_args, json, uri
 
 
 class HTTPError(Exception):
@@ -36,6 +36,12 @@ class HTTPError(Exception):
     ``HTTPError`` and override the ``to_dict()`` method (``to_json()``
     is implemented via ``to_dict()``). To also support XML, override
     the ``to_xml()`` method.
+
+    Note:
+        ``status`` is the only positional argument allowed, the other
+        arguments should be used as keyword only. Using them as positional
+        arguments will raise a deprecation warning and will result in an
+        error in a future version of falcon.
 
     Args:
         status (str): HTTP status code and text, such as "400 Bad Request"
@@ -79,7 +85,7 @@ class HTTPError(Exception):
             returns ``True``, but child classes may override it
             in order to return ``False`` when an empty HTTP body is desired.
 
-            (See also: :class:`falcon.http_error.NoRepresentation`)
+            (See also: :class:`falcon.http_error.OptionalRepresentation`)
 
             Note:
                 A custom error serializer
@@ -104,6 +110,7 @@ class HTTPError(Exception):
         'code',
     )
 
+    @deprecated_args(allowed_positional=1)
     def __init__(self, status, title=None, description=None, headers=None,
                  href=None, href_text=None, code=None):
         self.status = status
@@ -203,30 +210,6 @@ class HTTPError(Exception):
                 et.tostring(error_element, encoding='utf-8'))
 
 
-class NoRepresentation:
-    """Mixin for ``HTTPError`` child classes that have no representation.
-
-    This class can be mixed in when inheriting from ``HTTPError``, in order
-    to override the `has_representation` property such that it always
-    returns ``False``. This, in turn, will cause Falcon to return an empty
-    response body to the client.
-
-    You can use this mixin when defining errors that either should not have
-    a body (as dictated by HTTP standards or common practice), or in the
-    case that a detailed error response may leak information to an attacker.
-
-    Note:
-        This mixin class must appear before ``HTTPError`` in the base class
-        list when defining the child; otherwise, it will not override the
-        `has_representation` property as expected.
-
-    """
-
-    @property
-    def has_representation(self):
-        return False
-
-
 class OptionalRepresentation:
     """Mixin for ``HTTPError`` child classes that may have a representation.
 
@@ -247,4 +230,4 @@ class OptionalRepresentation:
     """
     @property
     def has_representation(self):
-        return super(OptionalRepresentation, self).description is not None
+        return super().description is not None

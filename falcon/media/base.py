@@ -97,7 +97,6 @@ class BaseHandler(metaclass=abc.ABCMeta):
         Returns:
             object: A deserialized object.
         """
-
         data = await stream.read()
 
         # NOTE(kgriffs): Override content length to make sure it is correct,
@@ -105,3 +104,11 @@ class BaseHandler(metaclass=abc.ABCMeta):
         content_length = len(data)
 
         return self.deserialize(io.BytesIO(data), content_type, content_length)
+
+    exhaust_stream = False
+    """Whether to exhaust the WSGI input stream upon finishing deserialization.
+
+    Exhausting the stream may be useful for handlers that do not necessarily
+    consume the whole stream, but the deserialized media object is complete and
+    does not involve further streaming.
+    """

@@ -9,7 +9,7 @@ except ImportError:  # pragma: nocover
     pass
 
 
-def validate(req_schema=None, resp_schema=None):
+def validate(req_schema=None, resp_schema=None, is_async=False):
     """Decorator for validating ``req.media`` using JSON Schema.
 
     This decorator provides standard JSON Schema validation via the
@@ -24,13 +24,27 @@ def validate(req_schema=None, resp_schema=None):
         See `json-schema.org <http://json-schema.org/>`_ for more
         information on defining a compatible dictionary.
 
-    Args:
-        req_schema (dict, optional): A dictionary that follows the JSON
+    Keyword Args:
+        req_schema (dict): A dictionary that follows the JSON
             Schema specification. The request will be validated against this
             schema.
-        resp_schema (dict, optional): A dictionary that follows the JSON
+        resp_schema (dict): A dictionary that follows the JSON
             Schema specification. The response will be validated against this
             schema.
+        is_async (bool): Set to ``True`` for ASGI apps to provide a hint that
+            the decorated responder is a coroutine function (i.e., that it
+            is defined with ``async def``) or that it returns an awaitable
+            coroutine object.
+
+            Normally, when the function source is declared using ``async def``,
+            the resulting function object is flagged to indicate it returns a
+            coroutine when invoked, and this can be automatically detected.
+            However, it is possible to use a regular function to return an
+            awaitable coroutine object, in which case a hint is required to let
+            the framework know what to expect. Also, a hint is always required
+            when using a cythonized coroutine function, since Cython does not
+            flag them in a way that can be detected in advance, even when the
+            function is declared using ``async def``.
 
     Example:
         .. code:: python
@@ -47,7 +61,7 @@ def validate(req_schema=None, resp_schema=None):
     """
 
     def decorator(func):
-        if iscoroutinefunction(func):
+        if iscoroutinefunction(func) or is_async:
             return _validate_async(func, req_schema, resp_schema)
 
         return _validate(func, req_schema, resp_schema)
@@ -66,7 +80,7 @@ def _validate(func, req_schema=None, resp_schema=None):
                 )
             except jsonschema.ValidationError as e:
                 raise falcon.HTTPBadRequest(
-                    'Request data failed validation',
+                    title='Request data failed validation',
                     description=e.message
                 )
 
@@ -80,7 +94,7 @@ def _validate(func, req_schema=None, resp_schema=None):
                 )
             except jsonschema.ValidationError:
                 raise falcon.HTTPInternalServerError(
-                    'Response data failed validation'
+                    title='Response data failed validation'
                     # Do not return 'e.message' in the response to
                     # prevent info about possible internal response
                     # formatting bugs from leaking out to users.
@@ -104,7 +118,7 @@ def _validate_async(func, req_schema=None, resp_schema=None):
                 )
             except jsonschema.ValidationError as e:
                 raise falcon.HTTPBadRequest(
-                    'Request data failed validation',
+                    title='Request data failed validation',
                     description=e.message
                 )
 
@@ -118,7 +132,7 @@ def _validate_async(func, req_schema=None, resp_schema=None):
                 )
             except jsonschema.ValidationError:
                 raise falcon.HTTPInternalServerError(
-                    'Response data failed validation'
+                    title='Response data failed validation'
                     # Do not return 'e.message' in the response to
                     # prevent info about possible internal response
                     # formatting bugs from leaking out to users.

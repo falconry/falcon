@@ -45,18 +45,9 @@ def prepare_middleware(middleware, independent_middleware=False, asgi=False):
     response_mw = []
 
     for component in middleware:
-        # NOTE(kgriffs): Middleware that uses parts of the Request and Response
-        #   interfaces that are the same between ASGI and WSGI (most of it is,
-        #   and we should probably define this via ABC) can just implement
-        #   the method names without the *_async postfix. If a middleware
-        #   component wants to provide an alternative implementation that
-        #   does some work that requires async def, or something specific about
-        #   the ASGI Request/Response classes, the component can implement the
-        #   *_async method in that case.
-        #
-        #   Middleware that is WSGI-only or ASGI-only can simply implement all
-        #   methods without the *_async postfix. Regardless, components should
-        #   clearly document their compatibility with WSGI vs. ASGI.
+        # NOTE(kgriffs): Middleware that supports both WSGI and ASGI can
+        #   append an *_async postfix to the ASGI version of the method
+        #   to distinguish the two. Otherwise, the prefix is unnecessary.
 
         if asgi:
             process_request = (
@@ -81,7 +72,13 @@ def prepare_middleware(middleware, independent_middleware=False, asgi=False):
             )
 
             for m in (process_request, process_resource, process_response):
-                if m and not iscoroutinefunction(m):
+                # NOTE(kgriffs): iscoroutinefunction() always returns False
+                #   for cythonized functions.
+                #
+                #   https://github.com/cython/cython/issues/2273
+                #   https://bugs.python.org/issue38225
+                #
+                if m and not iscoroutinefunction(m) and util.is_python_func(m):
                     msg = (
                         '{} must be implemented as an awaitable coroutine. If '
                         'you would like to retain compatibility '

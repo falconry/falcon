@@ -1,6 +1,10 @@
 from datetime import datetime
 import json
 
+try:
+    import cython
+except ImportError:
+    cython = None
 import pytest
 
 import falcon
@@ -75,13 +79,13 @@ class TransactionIdMiddlewareAsync:
     def __init__(self):
         self._mw = TransactionIdMiddleware()
 
-    async def process_request_async(self, req, resp):
+    async def process_request(self, req, resp):
         self._mw.process_request(req, resp)
 
-    async def process_resource_async(self, req, resp, resource, params):
+    async def process_resource(self, req, resp, resource, params):
         self._mw.process_resource(req, resp, resource, params)
 
-    async def process_response_async(self, req, resp, resource, req_succeeded):
+    async def process_response(self, req, resp, resource, req_succeeded):
         self._mw.process_response(req, resp, resource, req_succeeded)
 
 
@@ -153,7 +157,7 @@ class MiddlewareClassResource:
         resp.body = json.dumps(_EXPECTED_BODY)
 
     def on_post(self, req, resp):
-        raise falcon.HTTPForbidden(falcon.HTTP_403, 'Setec Astronomy')
+        raise falcon.HTTPForbidden(title=falcon.HTTP_403, description='Setec Astronomy')
 
 
 class EmptySignatureMiddleware:
@@ -957,6 +961,7 @@ class TestCORSMiddlewareWithAnotherMiddleware(TestMiddleware):
         assert result.headers['Access-Control-Allow-Origin'] == '*'
 
 
+@pytest.mark.skipif(cython, reason='Cythonized coroutine functions cannot be detected')
 def test_async_postfix_method_must_be_coroutine():
     class FaultyComponentA:
         def process_request_async(self, req, resp):

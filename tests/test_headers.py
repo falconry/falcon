@@ -349,7 +349,7 @@ class TestHeaders:
         except falcon.HTTPMissingHeader as ex:
             assert isinstance(ex, falcon.HTTPBadRequest)
             assert ex.title == 'Missing header value'
-            expected_desc = 'The X-Not-Found header is required.'
+            expected_desc = 'The "X-Not-Found" header is required.'
             assert ex.description == expected_desc
 
     @pytest.mark.parametrize('status', (falcon.HTTP_204, falcon.HTTP_304))
