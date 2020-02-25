@@ -19,7 +19,7 @@ import argparse
 import importlib
 
 import falcon
-from falcon.inspect import StringVisitor, inspect_app, inspect_routes
+from falcon.inspect import inspect_app, inspect_routes, StringVisitor
 
 
 def make_parser():
