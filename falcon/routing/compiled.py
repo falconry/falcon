@@ -53,17 +53,18 @@ class CompiledRouter:
     perform the search, then compiles that code. This makes the route
     processing quite fast.
 
-    The compile process is delayed until the first use of the router (on the
-    first routed request) to speed up application start times. This may cause
-    a delay in the first response of the application. When adding the last route
-    to the application a `compile` flag may be provided to make the router
-    compile its logic, avoiding the delay on the first response.
+    The compilation process is delayed until the first use of the router (on the
+    first routed request) to reduce the time it takes to start the application.
+    This may noticeably delay the first response of the application when a large
+    number of routes have been added. When adding the last route
+    to the application a `compile` flag may be provided to force the router
+    to compile immediately, thus avoiding any delay for the first response.
 
     Note:
-        To avoid compiling multiple times the router in multi-threading
-        servers when multiple requests are routed at the same time as soon as
-        the server goes live, a lock is used to ensure that only a single
-        compilation is performed
+        When using a multi-threaded web server to host the application, it is
+        possible that multiple requests may be routed at the same time upon
+        startup. Therefore, the framework employs a lock to ensure that only a
+        single compilation of the decision tree is performed.
 
     See also :meth:`.CompiledRouter.add_route`
     """
@@ -163,16 +164,20 @@ class CompiledRouter:
                 Another class might use a suffixed responder to handle
                 a shortlink route in addition to the regular route for the
                 resource.
-            compile (bool): Optional flag to compile the router on this call.
-                By default the :class:`.CompiledRouter` delays compilation
-                until the first requests is routed. Setting this to `True` when
-                the last route is added ensures that the router is ready from
-                the first request. (Defaults to `False`)
+            compile (bool): Optional flag that can be used to compile the
+                routing logic on this call. By default :class:`.CompiledRouter`
+                delays compilation until the first request is routed. This may
+                introduce a noticeable amount of latency when handling the first
+                request, especially when the application implements a large
+                number of routes. Setting `compile` to ``True`` when the last
+                route is added ensures that the the first request will not be
+                delayed in this case (defaults to ``False``).
 
                 Note:
-                    Always setting this to `True` may slow down the addition of
-                    new routes, if hundreds of them are added. It is advisable
-                    to only set this to `True` in the last added route.
+                    Always setting this flag to ``True`` may slow down the
+                    addition of new routes when hundreds of them are added at
+                    once. It is advisable to only set this flag to ``True`` when
+                    adding the final route.
         """
 
         # NOTE(kgriffs): falcon.asgi.App injects this private kwarg; it is
