@@ -470,6 +470,10 @@ class App:
                 Another class might use a suffixed responder to handle
                 a shortlink route in addition to the regular route for the
                 resource.
+            compile (bool): Optional flag that can be provided when using the default
+                :class:`.CompiledRouter` to compile the routing logic on this call,
+                since it will otherwise delays compilation until the first request
+                is routed. See :meth:`.CompiledRouter.add_route` for further details.
 
         Note:
             Any additional keyword arguments not defined above are passed

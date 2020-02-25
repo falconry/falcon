@@ -165,12 +165,12 @@ class CompiledRouter:
                 a shortlink route in addition to the regular route for the
                 resource.
             compile (bool): Optional flag that can be used to compile the
-                routing logic on this call. By default :class:`.CompiledRouter`
+                routing logic on this call. By default, :class:`.CompiledRouter`
                 delays compilation until the first request is routed. This may
                 introduce a noticeable amount of latency when handling the first
                 request, especially when the application implements a large
                 number of routes. Setting `compile` to ``True`` when the last
-                route is added ensures that the the first request will not be
+                route is added ensures that the first request will not be
                 delayed in this case (defaults to ``False``).
 
                 Note:
@@ -579,7 +579,7 @@ class CompiledRouter:
         return eval(src, {klass.__name__: klass})
 
     def _compile_and_find(self, path, _return_values, _patterns, _converters, params):
-        """Compiles the router, sets the `_find` attribute and returns its result
+        """Compile the router, sets the `_find` attribute and returns its result.
 
         This method is set to the `_find` attribute to delay the compilation of the
         router until it's used for the first time. Subsequent calls to `_find` will
