@@ -257,11 +257,11 @@ In a similar manner, setting :attr:`falcon.Response.complete` to ``True`` from
 within a *process_resource* method will short-circuit further request processing
 at that point.
 
-In the example below, you can see how request processing will be short-circuit
+In the example below, you can see how request processing will be short-circuited
 once :attr:`falcon.Response.complete` has been set to
 ``True``, i.e., the framework will prevent ``mob3.process_request``, all *process_resource*
-methods, as well as the routed responder method from processing the request,
-however all *process_response* methods will continue to process request::
+methods, as well as the routed responder method from processing the request.
+However all *process_response* methods will still be called::
 
     mob1.process_request
         mob2.process_request  # resp.complete = True
