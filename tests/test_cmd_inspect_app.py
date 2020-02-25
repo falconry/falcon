@@ -102,7 +102,7 @@ class TestLoadApp:
             inspect_app.load_app(parser, args)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 6), reason="dict order is not stable")
+@pytest.mark.skipif(sys.version_info < (3, 6), reason='dict order is not stable')
 @pytest.mark.parametrize('verbose', (True, False), ids=['verbose', 'not-verbose'])
 class TestMain:
     def check(self, actual, expect):

@@ -36,7 +36,7 @@ def inspect_app(app: App) -> 'AppInfo':
     sinks = inspect_sinks(app)
     error_handlers = inspect_error_handlers(app)
     middleware = inspect_middlewares(app)
-    return AppInfo(routes, middleware, static, sinks, error_handlers, app._ASGI,)
+    return AppInfo(routes, middleware, static, sinks, error_handlers, app._ASGI)
 
 
 def inspect_routes(app: App) -> 'List[RouteInfo]':
@@ -340,7 +340,7 @@ class ErrorHandlerInfo(_Traversable):
 
     __visit_name__ = 'error_handler'
 
-    def __init__(self, error: str, name: str, source_info: str, internal: str):
+    def __init__(self, error: str, name: str, source_info: str, internal: bool):
         self.error = error
         self.name = name
         self.source_info = source_info
