@@ -472,7 +472,7 @@ class App:
                 resource.
             compile (bool): Optional flag that can be provided when using the default
                 :class:`.CompiledRouter` to compile the routing logic on this call,
-                since it will otherwise delays compilation until the first request
+                since it will otherwise delay compilation until the first request
                 is routed. See :meth:`.CompiledRouter.add_route` for further details.
 
         Note:
