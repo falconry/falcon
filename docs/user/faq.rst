@@ -550,15 +550,15 @@ installed by default, thus making the POSTed form available as
 
 .. note::
    In prior versions of Falcon, a POSTed URL-encoded form could be automatically
-   consumed and merged into :attr:`~.Request.params` by setting the
-   :attr:`~.RequestOptions.auto_parse_form_urlencoded` option to ``True``. This
+   consumed and merged into :attr:`~falcon.Request.params` by setting the
+   :attr:`~falcon.RequestOptions.auto_parse_form_urlencoded` option to ``True``. This
    behavior is still supported in the Falcon 3.x series. However, it has been
    deprecated in favor of :class:`~.media.URLEncodedFormHandler`, and the
    option to merge URL-encoded form data into
-   :attr:`~.Request.params` may be removed in a future release.
+   :attr:`~falcon.Request.params` may be removed in a future release.
 
 POSTed form parameters may also be read directly from
-:attr:`~.Request.stream` and parsed via
+:attr:`~falcon.Request.stream` and parsed via
 :meth:`falcon.uri.parse_query_string` or
 `urllib.parse.parse_qs() <https://docs.python.org/3.6/library/urllib.parse.html#urllib.parse.parse_qs>`_.
 

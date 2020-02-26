@@ -520,7 +520,7 @@ class TestRequestAttributes:
             req.range
 
         headers = {'Range': 'bytes=-'}
-        expected_desc = ('The value provided for the Range header is '
+        expected_desc = ('The value provided for the "Range" header is '
                          'invalid. The range offsets are missing.')
         self._test_error_details(headers, 'range',
                                  falcon.HTTPInvalidHeader,
@@ -583,7 +583,7 @@ class TestRequestAttributes:
             req.range
 
         headers = {'Range': 'bytes=x-y'}
-        expected_desc = ('The value provided for the Range header is '
+        expected_desc = ('The value provided for the "Range" header is '
                          'invalid. It must be a range formatted '
                          'according to RFC 7233.')
         self._test_error_details(headers, 'range',
@@ -592,7 +592,7 @@ class TestRequestAttributes:
                                  asgi)
 
         headers = {'Range': 'bytes=0-0,-1'}
-        expected_desc = ('The value provided for the Range '
+        expected_desc = ('The value provided for the "Range" '
                          'header is invalid. The value must be a '
                          'continuous range.')
         self._test_error_details(headers, 'range',
@@ -601,7 +601,7 @@ class TestRequestAttributes:
                                  asgi)
 
         headers = {'Range': '10-'}
-        expected_desc = ('The value provided for the Range '
+        expected_desc = ('The value provided for the "Range" '
                          'header is invalid. The value must be '
                          "prefixed with a range unit, e.g. 'bytes='")
         self._test_error_details(headers, 'range',
@@ -628,7 +628,7 @@ class TestRequestAttributes:
     def test_bogus_content_length_nan(self, asgi):
         headers = {'content-length': 'fuzzy-bunnies'}
         expected_desc = ('The value provided for the '
-                         'Content-Length header is invalid. The value '
+                         '"Content-Length" header is invalid. The value '
                          'of the header must be a number.')
         self._test_error_details(headers, 'content_length',
                                  falcon.HTTPInvalidHeader,
@@ -637,7 +637,7 @@ class TestRequestAttributes:
 
     def test_bogus_content_length_neg(self, asgi):
         headers = {'content-length': '-1'}
-        expected_desc = ('The value provided for the Content-Length '
+        expected_desc = ('The value provided for the "Content-Length" '
                          'header is invalid. The value of the header '
                          'must be a positive number.')
         self._test_error_details(headers, 'content_length',
@@ -667,7 +667,7 @@ class TestRequestAttributes:
 
         # Date formats don't conform to RFC 1123
         headers = {header: 'Thu, 04 Apr 2013'}
-        expected_desc = ('The value provided for the {} '
+        expected_desc = ('The value provided for the "{}" '
                          'header is invalid. It must be formatted '
                          'according to RFC 7231, Section 7.1.1.1')
 

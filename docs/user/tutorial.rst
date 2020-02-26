@@ -634,12 +634,12 @@ call ``help()`` on ``falcon.status_codes``:
 
     In [4]: help(falcon.status_codes)
 
-The last line in the ``on_post()`` responder sets the Location header
-for the newly created resource. (We will create a route for that path in
-just a minute.) The :class:`~.Request` and :class:`~.Response` classes
-contain convenient attributes for reading and setting common headers, but
-you can always access any header by name with the ``req.get_header()``
-and ``resp.set_header()`` methods.
+The last line in the ``on_post()`` responder sets the Location header for the
+newly created resource. (We will create a route for that path in just a minute.)
+The :class:`~falcon.Request` and :class:`~falcon.Response` classes contain
+convenient attributes for reading and setting common headers, but you can always
+access any header by name with the ``req.get_header()`` and
+``resp.set_header()`` methods.
 
 Take a moment to run pytest again to check your progress:
 
@@ -1293,7 +1293,7 @@ message. Add this method below the definition of ``ALLOWED_IMAGE_TYPES``:
     def validate_image_type(req, resp, resource, params):
         if req.content_type not in ALLOWED_IMAGE_TYPES:
             msg = 'Image type not allowed. Must be PNG, JPEG, or GIF'
-            raise falcon.HTTPBadRequest('Bad request', msg)
+            raise falcon.HTTPBadRequest(title='Bad request', description=msg)
 
 And then attach the hook to the ``on_post()`` responder:
 

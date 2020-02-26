@@ -1001,3 +1001,26 @@ class TestContextType:
         assert set(ctx.keys()) == {1, 2, 3, 4}
         assert set(ctx.values()) == {1, 4, 9, 16}
         assert set(ctx.items()) == {(1, 1), (2, 4), (3, 9), (4, 16)}
+
+
+class TestDeprecatedArgs:
+    def test_method(self, recwarn):
+        class C:
+            @misc.deprecated_args(allowed_positional=0)
+            def a_method(self, a=1, b=2):
+                pass
+
+        C().a_method(a=1, b=2)
+        assert len(recwarn) == 0
+        C().a_method(1, b=2)
+        assert len(recwarn) == 1
+
+    def test_function(self, recwarn):
+        @misc.deprecated_args(allowed_positional=0, is_method=False)
+        def a_function(a=1, b=2):
+            pass
+
+        a_function(a=1, b=2)
+        assert len(recwarn) == 0
+        a_function(1, b=2)
+        assert len(recwarn) == 1

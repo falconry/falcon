@@ -49,29 +49,31 @@ class Response:
     """Represents an HTTP response to a client request.
 
     Note:
-        `Response` is not meant to be instantiated directly by responders.
+        ``Response`` is not meant to be instantiated directly by responders.
 
     Keyword Arguments:
         options (dict): Set of global options passed from the App handler.
 
     Attributes:
-        status (str): HTTP status line (e.g., '200 OK'). Falcon requires the
-            full status line, not just the code (e.g., 200). This design
+        status (str): HTTP status line (e.g., ``'200 OK'``). Falcon requires
+            the full status line, not just the code (e.g., 200). This design
             makes the framework more efficient because it does not have to
             do any kind of conversion or lookup when composing the WSGI
             response.
 
-            If not set explicitly, the status defaults to '200 OK'.
+            If not set explicitly, the status defaults to ``'200 OK'``.
 
             Note:
-                Falcon provides a number of constants for common status
-                codes. They all start with the ``HTTP_`` prefix, as in:
-                ``falcon.HTTP_204``.
+                The Falcon framework itself provides a number of constants for
+                common status codes. They all start with the ``HTTP_`` prefix,
+                as in: ``falcon.HTTP_204``. (See also: :ref:`status`.)
 
         media (object): A serializable object supported by the media handlers
             configured via :class:`falcon.RequestOptions`.
 
-            See :ref:`media` for more information regarding media handling.
+            Note:
+                See also :ref:`media` for more information regarding media
+                handling.
 
         body (str): String representing response content.
 
@@ -103,20 +105,16 @@ class Response:
                 resource cleanup, it can implement a close() method to do so.
                 The close() method will be called upon completion of the request.
 
-        context (dict): Dictionary to hold any data about the response which is
-            specific to your app. Falcon itself will not interact with this
-            attribute after it has been initialized.
-
         context (object): Empty object to hold any data (in its attributes)
             about the response which is specific to your app (e.g. session
             object). Falcon itself will not interact with this attribute after
             it has been initialized.
 
             Note:
-                **New in 2.0:** the default `context_type` (see below) was
-                changed from dict to a bare class, and the preferred way to
+                **New in 2.0:** The default `context_type` (see below) was
+                changed from :class:`dict` to a bare class; the preferred way to
                 pass response-specific data is now to set attributes directly
-                on the `context` object, for example::
+                on the `context` object. For example::
 
                     resp.context.cache_strategy = 'lru'
 
@@ -124,9 +122,9 @@ class Response:
             type to use for initializing the `context` attribute. By default,
             the framework will instantiate bare objects (instances of the bare
             :class:`falcon.Context` class). However, you may override this
-            behavior by creating a custom child class of ``falcon.Response``,
-            and then passing that new class to `falcon.App()` by way of the
-            latter's `response_type` parameter.
+            behavior by creating a custom child class of
+            :class:`falcon.Response`, and then passing that new class to
+            ``falcon.App()`` by way of the latter's `response_type` parameter.
 
             Note:
                 When overriding `context_type` with a factory function (as
@@ -268,21 +266,23 @@ class Response:
     def set_stream(self, stream, content_length):
         """Convenience method for setting both `stream` and `content_length`.
 
-        Although the `stream` and `content_length` properties may be set
-        directly, using this method ensures `content_length` is not
-        accidentally neglected when the length of the stream is known in
-        advance. Using this method is also slightly more performant
-        as compared to setting the properties individually.
+        Although the :attr:`~falcon.Response.stream` and
+        :attr:`~falcon.Response.content_length` properties may be set
+        directly, using this method ensures
+        :attr:`~falcon.Response.content_length` is not accidentally
+        neglected when the length of the stream is known in advance. Using this
+        method is also slightly more performant as compared to setting the
+        properties individually.
 
         Note:
-            If the stream length is unknown, you can set `stream`
-            directly, and ignore `content_length`. In this case, the
+            If the stream length is unknown, you can set
+            :attr:`~falcon.Response.stream` directly, and ignore
+            :attr:`~falcon.Response.content_length`. In this case, the ASGI
             server may choose to use chunked encoding or one
             of the other strategies suggested by PEP-3333.
 
         Args:
-            stream: A readable file-like object in the case of WSGI, or an
-                async iterable in the case of ASGI.
+            stream: A readable file-like object.
             content_length (int): Length of the stream, used for the
                 Content-Length header in the response.
         """
@@ -843,9 +843,9 @@ class Response:
         Note:
             In cases where the response content is a stream (readable
             file-like object), Falcon will not supply a Content-Length header
-            to the WSGI server unless `content_length` is explicitly set.
-            Consequently, the server may choose to use chunked encoding or one of the
-            other strategies suggested by PEP-3333.
+            to the server unless `content_length` is explicitly set.
+            Consequently, the server may choose to use chunked encoding in this
+            case.
 
         """,
     )

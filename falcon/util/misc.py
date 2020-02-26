@@ -48,6 +48,7 @@ __all__ = (
     'get_http_status',
     'http_status_to_code',
     'code_to_http_status',
+    'deprecated_args',
     'secure_filename',
 )
 
@@ -333,9 +334,13 @@ def get_argnames(func):
     return args
 
 
-@deprecated('Please use falcon.util.code_to_http_status() instead.')
+@deprecated('Please use falcon.code_to_http_status() instead.')
 def get_http_status(status_code, default_reason='Unknown'):
-    """Gets both the http status code and description from just a code
+    """Gets both the http status code and description from just a code.
+
+    Warning:
+        As of Falcon 3.0, this method has been deprecated in favor of
+        :meth:`~falcon.code_to_http_status`.
 
     Args:
         status_code: integer or string that can be converted to an integer
@@ -411,8 +416,8 @@ def secure_filename(filename):
 def http_status_to_code(status):
     """Normalize an HTTP status to an integer code.
 
-    This function takes a member of http.HTTPStatus, an HTTP status
-    line string or byte string (e.g., '200 OK'), or an ``int`` and
+    This function takes a member of :class:`http.HTTPStatus`, an HTTP status
+    line string or byte string (e.g., ``'200 OK'``), or an ``int`` and
     returns the corresponding integer code.
 
     An LRU is used to minimize lookup time.
@@ -472,3 +477,34 @@ def code_to_http_status(code):
         return getattr(status_codes, 'HTTP_' + str(code))
     except AttributeError:
         return str(code)
+
+
+def deprecated_args(*, allowed_positional, is_method=True):
+    """Flags a method call with positional args as deprecated
+
+    Keyword Args:
+        allowed_positional (int): Number of allowed positional arguments
+        is_method (bool, optional): The decorated function is a method. Will
+          add one to the number of allowed positional args to account for
+          ``self``. Defaults to True.
+    """
+
+    template = (
+        'Calls with{} positional args are deprecated.'
+        ' Please specify them as keyword arguments instead.'
+    )
+    text = ' more than {}'.format(allowed_positional) if allowed_positional else ''
+    warn_text = template.format(text)
+    if is_method:
+        allowed_positional += 1
+
+    def deprecated_args(fn):
+        @functools.wraps(fn)
+        def wraps(*args, **kwargs):
+            if len(args) > allowed_positional:
+                warnings.warn(warn_text, DeprecatedWarning, stacklevel=2)
+            return fn(*args, **kwargs)
+
+        return wraps
+
+    return deprecated_args
