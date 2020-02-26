@@ -707,7 +707,7 @@ def _get_source_info(obj, default='[unknown file]'):
         source_file = inspect.getsourcefile(obj)
         source_lines = inspect.getsourcelines(obj)
         source_info = '{}:{}'.format(source_file, source_lines[1])
-    except TypeError:
+    except Exception:
         # NOTE(vytas): If Falcon is cythonized, all default
         # responders coming from cythonized modules will
         # appear as built-in functions, and raise a

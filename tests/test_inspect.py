@@ -2,12 +2,20 @@ import os
 
 import _inspect_fixture as i_f
 
-from falcon import App, inspect
-from falcon.asgi import App as AsyncApp
+from falcon import inspect
+
+
+def get_app(asgi, cors=True, **kw):
+    if asgi:
+        from falcon.asgi import App as AsyncApp
+        return AsyncApp(cors_enable=cors, **kw)
+    else:
+        from falcon import App
+        return App(cors_enable=cors, **kw)
 
 
 def make_app():
-    app = App(cors_enable=True)
+    app = get_app(False, cors=True)
     app.add_middleware(i_f.MyMiddleware())
     app.add_middleware(i_f.OtherMiddleware())
 
@@ -26,7 +34,7 @@ def make_app():
 
 
 def make_app_async():
-    app = AsyncApp(cors_enable=True)
+    app = get_app(True, cors=True)
     app.add_middleware(i_f.MyMiddlewareAsync())
     app.add_middleware(i_f.OtherMiddlewareAsync())
 
@@ -46,7 +54,7 @@ def make_app_async():
 
 class TestInspectApp:
     def test_empty_app(self, asgi):
-        ai = inspect.inspect_app(AsyncApp() if asgi else App())
+        ai = inspect.inspect_app(get_app(asgi, False))
 
         assert ai.routes == []
         assert ai.middleware.middleware_tree.request == []
@@ -60,7 +68,7 @@ class TestInspectApp:
         assert ai.asgi is asgi
 
     def test_dependent_middlewares(self, asgi):
-        app = AsyncApp(independent_middleware=False) if asgi else App(independent_middleware=False)
+        app = get_app(asgi, cors=False, independent_middleware=False)
         ai = inspect.inspect_app(app)
         assert ai.middleware.independent is False
 
