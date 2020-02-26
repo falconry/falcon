@@ -184,7 +184,7 @@ def inspect_middlewares(app: App) -> 'MiddlewareInfo':
 
 
 @register_router(CompiledRouter)
-def inspect_compiled_router(router) -> 'List[RouteInfo]':
+def inspect_compiled_router(router: CompiledRouter) -> 'List[RouteInfo]':
     """Expores the compiled router and returns the list of defined routes
 
     Args:
@@ -360,6 +360,7 @@ class MiddlewareMethodInfo(_Traversable):
     def __init__(self, function_name: str, source_info: str):
         self.function_name = function_name
         self.source_info = source_info
+        self.internal = False  # added for compatibility with RouteMethodInfo
 
 
 class MiddlewareClassInfo(_Traversable):
@@ -502,8 +503,11 @@ class AppInfo(_Traversable):
 # ------------------------------------------------------------------------
 
 
-class _Visitor:
-    """Base visitor class that implements the `process` method"""
+class InspectVisitor:
+    """Base visitor class that implements the `process` method
+
+    Subclasses must implement ``visit_<name>`` methods for each supported class
+    """
 
     def process(self, instance: _Traversable):
         """Process the instance, by calling the appropriate visit method.
@@ -520,7 +524,7 @@ class _Visitor:
             ) from e
 
 
-class StringVisitor(_Visitor):
+class StringVisitor(InspectVisitor):
     """Visitor implementation that returns a string representation of the info class.
 
     This is used automatically by calling a `to_string` method of an info class.
@@ -532,7 +536,7 @@ class StringVisitor(_Visitor):
             beginning of the text. Will be 'Falcon App' when not provided
     """
 
-    def __init__(self, verbose, name=''):
+    def __init__(self, verbose: bool, name=''):
         self.verbose = verbose
         self.name = ''
         self.indent = 0
@@ -731,7 +735,9 @@ def _get_source_info_and_name(obj):
 def _is_internal(obj):
     """Checks if the module of the object is a falcon module"""
     module = inspect.getmodule(obj)
-    return module.__name__.startswith('falcon.')
+    if module:
+        return module.__name__.startswith('falcon.')
+    return False
 
 
 def _filter_internal(iterable, return_internal):

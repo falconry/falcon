@@ -1,8 +1,11 @@
+from functools import partial
 import os
+import sys
 
 import _inspect_fixture as i_f
+import pytest
 
-from falcon import inspect
+from falcon import inspect, routing
 
 
 def get_app(asgi, cors=True, **kw):
@@ -131,6 +134,7 @@ class TestInspectApp:
         assert sinks[-2].name == 'SinkClass'
         assert '_inspect_fixture.py' in sinks[-2].source_info
 
+    @pytest.mark.skipif(sys.version_info < (3, 6), reason='dict order is not stable')
     def test_error_handler(self, asgi):
         errors = inspect.inspect_error_handlers(make_app_async() if asgi else make_app())
 
@@ -215,3 +219,113 @@ class TestInspectApp:
                 'CORSMiddleware',
             ],
         )
+
+
+class TestRouter:
+    def test_compiled_partial(self):
+        r = routing.CompiledRouter()
+        r.add_route('/foo', i_f.MyResponder())
+        # override a method with a partial
+        r._roots[0].method_map['GET'] = partial(r._roots[0].method_map['GET'])
+        ri = inspect.inspect_compiled_router(r)
+
+        for m in ri[0].methods:
+            if m.method == 'GET':
+                assert '_inspect_fixture' in m.source_info
+
+    def test_compiled_no_method_map(self):
+        r = routing.CompiledRouter()
+        r.add_route('/foo', i_f.MyResponder())
+        # clear the method map
+        r._roots[0].method_map.clear()
+        ri = inspect.inspect_compiled_router(r)
+
+        assert ri[0].path == '/foo'
+        assert ri[0].class_name == 'MyResponder'
+        assert ri[0].methods == []
+
+    def test_register_router_not_found(self, monkeypatch):
+        monkeypatch.setattr(inspect, '_supported_routers', {})
+
+        app = get_app(False)
+        with pytest.raises(TypeError, match='Unsupported router class'):
+            inspect.inspect_routes(app)
+
+    def test_register_other_router(self, monkeypatch):
+        monkeypatch.setattr(inspect, '_supported_routers', {})
+
+        app = get_app(False)
+        app._router = i_f.MyRouter()
+
+        @inspect.register_router(i_f.MyRouter)
+        def print_routes(r):
+            assert r is app._router
+            return [inspect.RouteInfo('foo', 'bar', '', [])]
+
+        ri = inspect.inspect_routes(app)
+
+        assert ri[0].source_info == ''
+        assert ri[0].path == 'foo'
+        assert ri[0].class_name == 'bar'
+        assert ri[0].methods == []
+
+    def test_register_router_multiple_time(self, monkeypatch):
+        monkeypatch.setattr(inspect, '_supported_routers', {})
+
+        @inspect.register_router(i_f.MyRouter)
+        def print_routes(r):
+            return []
+
+        with pytest.raises(ValueError, match='Another function is already registered'):
+            @inspect.register_router(i_f.MyRouter)
+            def print_routes2(r):
+                return []
+
+
+def test_info_class_repr_to_string():
+    ai = inspect.inspect_app(make_app())
+
+    assert str(ai) == ai.to_string()
+    assert str(ai.routes[0]) == ai.routes[0].to_string()
+    assert str(ai.routes[0].methods[0]) == ai.routes[0].methods[0].to_string()
+    assert str(ai.middleware) == ai.middleware.to_string()
+    s = str(ai.middleware.middleware_classes[0])
+    assert s == ai.middleware.middleware_classes[0].to_string()
+    s = str(ai.middleware.middleware_tree.request[0]) 
+    assert s == ai.middleware.middleware_tree.request[0].to_string()
+    assert str(ai.static_routes[0]) == ai.static_routes[0].to_string()
+    assert str(ai.sinks[0]) == ai.sinks[0].to_string()
+    assert str(ai.error_handlers[0]) == ai.error_handlers[0].to_string()
+
+
+class TestInspectVisitor:
+    def test_inspect_visitor(self):
+        iv = inspect.InspectVisitor()
+        with pytest.raises(RuntimeError, match='This visitor does not support'):
+            iv.process(123)
+        with pytest.raises(RuntimeError, match='This visitor does not support'):
+            iv.process(inspect.RouteInfo('f', 'o', 'o', []))
+
+    def test_process(self):
+        class FooVisitor(inspect.InspectVisitor):
+            def visit_route(self, route):
+                return 'foo'
+
+        assert FooVisitor().process(inspect.RouteInfo('f', 'o', 'o', [])) == 'foo'
+
+
+class TestStringVisitor:
+    def test_class(self):
+        assert issubclass(inspect.StringVisitor, inspect.InspectVisitor)
+
+    def test_route_method(self):
+        sv = inspect.StringVisitor(False)
+        rm = inspect.inspect_routes(make_app())[0].methods[0]
+
+        assert sv.process(rm) == rm.method + ' - ' + rm.function_name
+
+    def test_route_method_verbose(self):
+        sv = inspect.StringVisitor(True)
+        rm = inspect.inspect_routes(make_app())[0].methods[0]
+
+        assert sv.process(rm) == rm.method + ' - ' + rm.function_name + ' (%s)' % rm.source_info

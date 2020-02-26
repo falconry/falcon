@@ -107,7 +107,7 @@ class TestLoadApp:
 class TestMain:
     def check(self, actual, expect):
         if _WIN32:
-            # windows randomly returns the path as lowercase
+            # windows randomly returns the driver name as lowercase
             assert actual.casefold() == expect.casefold()
         else:
             assert actual == expect
