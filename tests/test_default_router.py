@@ -461,8 +461,10 @@ def test_converters_with_invalid_options(router, uri_template):
     # NOTE(kgriffs): Sanity-check that errors are properly bubbled up
     # when calling add_route(). Additional checks can be found
     # in test_uri_converters.py
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Cannot instantiate converter') as e:
         router.add_route(uri_template, ResourceWithId(1))
+
+    assert e.value.__cause__ is not None
 
 
 @pytest.mark.parametrize('uri_template', [
