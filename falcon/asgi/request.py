@@ -262,6 +262,13 @@ class Request(falcon.request.Request):
             the body of the request, if any.
 
             See also: :class:`falcon.asgi.BoundedStream`
+        media (object): An awaitable property that acts as an alias for
+            :meth:`~.get_media`. This can be used to ease the porting of a
+            a WSGI app to ASGI, although the ``await`` keyword must still be
+            added when referencing the property::
+
+                deserialized_media = await req.media
+
         expect (str): Value of the Expect header, or ``None`` if the
             header is missing.
         range (tuple of int): A 2-member ``tuple`` parsed from the value of the
@@ -681,13 +688,6 @@ class Request(falcon.request.Request):
 
         return netloc_value
 
-    @property
-    def media(self):
-        raise errors.UnsupportedError(
-            'The media property is not supported for ASGI requests. '
-            'Please use the Request.get_media() coroutine function instead.'
-        )
-
     async def get_media(self):
         """Returns a deserialized form of the request stream.
 
@@ -731,6 +731,8 @@ class Request(falcon.request.Request):
             await self.stream.exhaust()
 
         return self._media
+
+    media = property(get_media)
 
     @property
     def if_match(self):
