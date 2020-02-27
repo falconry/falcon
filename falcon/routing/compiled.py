@@ -19,6 +19,7 @@ from inspect import iscoroutinefunction
 import keyword
 import re
 import textwrap
+from threading import Lock
 
 from falcon.routing import converters
 from falcon.routing.util import map_http_methods, set_default_responders
@@ -51,6 +52,21 @@ class CompiledRouter:
     tree for each look-up, it generates inlined, bespoke Python code to
     perform the search, then compiles that code. This makes the route
     processing quite fast.
+
+    The compilation process is delayed until the first use of the router (on the
+    first routed request) to reduce the time it takes to start the application.
+    This may noticeably delay the first response of the application when a large
+    number of routes have been added. When adding the last route
+    to the application a `compile` flag may be provided to force the router
+    to compile immediately, thus avoiding any delay for the first response.
+
+    Note:
+        When using a multi-threaded web server to host the application, it is
+        possible that multiple requests may be routed at the same time upon
+        startup. Therefore, the framework employs a lock to ensure that only a
+        single compilation of the decision tree is performed.
+
+    See also :meth:`.CompiledRouter.add_route`
     """
 
     __slots__ = (
@@ -63,6 +79,7 @@ class CompiledRouter:
         '_patterns',
         '_return_values',
         '_roots',
+        '_compile_lock',
     )
 
     def __init__(self):
@@ -80,9 +97,10 @@ class CompiledRouter:
         self._return_values = None
         self._roots = []
 
-        # NOTE(kgriffs): Call _compile() last since it depends on
-        # the variables above.
-        self._find = self._compile()
+        # NOTE(caselit): set _find to the delayed compile method to ensure that
+        # compile is called when the router is first used
+        self._find = self._compile_and_find
+        self._compile_lock = Lock()
 
     @property
     def options(self):
@@ -90,6 +108,10 @@ class CompiledRouter:
 
     @property
     def finder_src(self):
+        # NOTE(caselit): ensure that the router is actually compiled before
+        # returning the finder source, since the current value may be out of
+        # date
+        self.find('/')
         return self._finder_src
 
     def map_http_methods(self, resource, **kwargs):
@@ -142,6 +164,20 @@ class CompiledRouter:
                 Another class might use a suffixed responder to handle
                 a shortlink route in addition to the regular route for the
                 resource.
+            compile (bool): Optional flag that can be used to compile the
+                routing logic on this call. By default, :class:`.CompiledRouter`
+                delays compilation until the first request is routed. This may
+                introduce a noticeable amount of latency when handling the first
+                request, especially when the application implements a large
+                number of routes. Setting `compile` to ``True`` when the last
+                route is added ensures that the first request will not be
+                delayed in this case (defaults to ``False``).
+
+                Note:
+                    Always setting this flag to ``True`` may slow down the
+                    addition of new routes when hundreds of them are added at
+                    once. It is advisable to only set this flag to ``True`` when
+                    adding the final route.
         """
 
         # NOTE(kgriffs): falcon.asgi.App injects this private kwarg; it is
@@ -206,7 +242,12 @@ class CompiledRouter:
                 insert(new_node.children, path_index + 1)
 
         insert(self._roots)
-        self._find = self._compile()
+        # NOTE(caselit): when compile is True run the actual compile step, otherwise reset the
+        # _find, so that _compile will be called on the next find use
+        if kwargs.get('compile', False):
+            self._find = self._compile()
+        else:
+            self._find = self._compile_and_find
 
     def find(self, uri, req=None):
         """Search for a route that matches the given partial URI.
@@ -317,9 +358,15 @@ class CompiledRouter:
                 raise ValueError(msg)
 
             name = field.group('cname')
-            if name and name not in self._converter_map:
-                msg = 'Unknown converter: "{0}"'.format(name)
-                raise ValueError(msg)
+            if name:
+                if name not in self._converter_map:
+                    msg = 'Unknown converter: "{0}"'.format(name)
+                    raise ValueError(msg)
+                try:
+                    self._instantiate_converter(self._converter_map[name], field.group('argstr'))
+                except Exception as e:
+                    msg = 'Cannot instantiate converter "{}"'.format(name)
+                    raise ValueError(msg) from e
 
     def _generate_ast(self, nodes, parent, return_values, patterns, level=0, fast_return=True):
         """Generates a coarse AST for the router."""
@@ -530,6 +577,25 @@ class CompiledRouter:
         # NOTE(kgriffs): Don't try this at home. ;)
         src = '{0}({1})'.format(klass.__name__, argstr)
         return eval(src, {klass.__name__: klass})
+
+    def _compile_and_find(self, path, _return_values, _patterns, _converters, params):
+        """Compile the router, sets the `_find` attribute and returns its result.
+
+        This method is set to the `_find` attribute to delay the compilation of the
+        router until it's used for the first time. Subsequent calls to `_find` will
+        be processed by the actual routing function.
+        This method must have the same signature as the function returned by the
+        :meth:`.CompiledRouter._compile`.
+        """
+        with self._compile_lock:
+            if self._find == self._compile_and_find:
+                # NOTE(caselit): replace the find with the result of the router compilation
+                self._find = self._compile()
+        # NOTE(caselit): return_values, patterns, converters are reset by the _compile
+        # method, so the updated ones must be used
+        return self._find(
+            path, self._return_values, self._patterns, self._converters, params
+        )
 
 
 class CompiledRouterNode:

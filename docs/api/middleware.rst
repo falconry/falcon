@@ -243,8 +243,8 @@ like this::
 Short-circuiting
 ----------------
 
-A *process_request* middleware method may short-circuit further request
-processing by setting :attr:`~falcon.Response.complete` to ``True``, e.g.::
+A *process_request* or *process_resource* middleware method may short-circuit
+further request processing by setting :attr:`falcon.Response.complete` to ``True``, e.g.::
 
       resp.complete = True
 
@@ -253,9 +253,24 @@ any remaining *process_request* and *process_resource* methods, as well as
 the responder method that the request would have been routed to. However, any
 *process_response* middleware methods will still be called.
 
-In a similar manner, setting :attr:`~falcon.Response.complete` to ``True`` from
+In a similar manner, setting :attr:`falcon.Response.complete` to ``True`` from
 within a *process_resource* method will short-circuit further request processing
 at that point.
+
+In the example below, you can see how request processing will be short-circuited
+once :attr:`falcon.Response.complete` has been set to
+``True``, i.e., the framework will prevent ``mob3.process_request``, all *process_resource*
+methods, as well as the routed responder method from processing the request.
+However, all *process_response* methods will still be called::
+
+    mob1.process_request
+        mob2.process_request  # resp.complete = True
+            <skip mob3.process_request>
+            <skip mob1/mob2/mob3.process_resource>
+            <skip route to resource responder method>
+            mob3.process_response
+        mob2.process_response
+    mob1.process_response
 
 This feature affords use cases in which the response may be pre-constructed,
 such as in the case of caching.
