@@ -19,4 +19,29 @@ Contributors to this Release
 
 Many thanks to all of our talented and stylish contributors for this release!
 
+- `BigBlueHat <https://github.com/BigBlueHat>`_
+- `CaselIT <https://github.com/CaselIT>`_
+- `Ciemaar <https://github.com/Ciemaar>`_
+- `Coykto <https://github.com/Coykto>`_
+- `cozyDoomer <https://github.com/cozyDoomer>`_
+- `cravindra <https://github.com/cravindra>`_
+- `csojinb <https://github.com/csojinb>`_
+- `edmondb <https://github.com/edmondb>`_
+- `jmvrbanac <https://github.com/jmvrbanac>`_
+- `karlhigley <https://github.com/karlhigley>`_
+- `kemingy <https://github.com/kemingy>`_
+- `kgriffs <https://github.com/kgriffs>`_
+- `mattdonders <https://github.com/mattdonders>`_
+- `mikeyusko <https://github.com/mikeyusko>`_
+- `minrock <https://github.com/minrock>`_
+- `mosi-kha <https://github.com/mosi-kha>`_
+- `nZac <https://github.com/nZac>`_
+- `nagaabhinaya <https://github.com/nagaabhinaya>`_
+- `pbjr23 <https://github.com/pbjr23>`_
+- `rmyers <https://github.com/rmyers>`_
+- `safaozturk93 <https://github.com/safaozturk93>`_
 - `screamingskulls <https://github.com/screamingskulls>`_
+- `seanharrison <https://github.com/seanharrison>`_
+- `timgates42 <https://github.com/timgates42>`_
+- `vytas7 <https://github.com/vytas7>`_
+- `waghanza <https://github.com/waghanza>`_

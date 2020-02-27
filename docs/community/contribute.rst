@@ -8,11 +8,15 @@ developers of all skill levels. To get started, simply fork the master branch
 on GitHub to your personal account and then clone the fork into your
 development environment.
 
-Kurt Griffiths (**kgriffs** on GH, Gitter, and Twitter) is the original
-creator of the Falcon framework, and currently co-maintains the project
-along with John Vrbanac (**jmvrbanac** on GH and Gitter, and
-**jvrbanac** on Twitter). Falcon is developed by a growing community of
-users and contributors just like you.
+The core Falcon project maintainers are:
+
+* Kurt Griffiths, Project Lead (**kgriffs** on GH, Gitter, and Twitter)
+* John Vrbanac (**jmvrbanac** on GH, Gitter, and Twitter)
+* Vytautas Liuolia (**vytas7** on GH and Gitter, and **vliuolia** on Twitter)
+* Nick Zaccardi (**nZac** on GH and Gitter)
+
+Falcon is developed by a growing community of users and contributors just like
+you!
 
 Please don't hesitate to reach out if you have any questions, or just need a
 little help getting started. You can find us in
