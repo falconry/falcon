@@ -548,9 +548,9 @@ class StringVisitor(InspectVisitor):
 
     def visit_route_method(self, route_method: RouteMethodInfo) -> str:
         """Visit a RouteMethodInfo instance. Usually called by `process`"""
-        text = '{} - {}'.format(route_method.method, route_method.function_name)
+        text = '{0.method} - {0.function_name}'.format(route_method)
         if self.verbose:
-            text += ' ({})'.format(route_method.source_info)
+            text += ' ({0.source_info})'.format(route_method)
         return text
 
     def _methods_to_string(self, methods: List):
@@ -566,9 +566,9 @@ class StringVisitor(InspectVisitor):
 
     def visit_route(self, route: RouteInfo) -> str:
         """Visit a RouteInfo instance. Usually called by `process`"""
-        text = '{}⇒ {} - {}'.format(self.tab, route.path, route.class_name)
+        text = '{0}⇒ {1.path} - {1.class_name}'.format(self.tab, route)
         if self.verbose:
-            text += ' ({})'.format(route.source_info)
+            text += ' ({0.source_info})'.format(route)
 
         method_text = self._methods_to_string(route.methods)
         if not method_text:
@@ -578,37 +578,37 @@ class StringVisitor(InspectVisitor):
 
     def visit_static_route(self, static_route: StaticRouteInfo) -> str:
         """Visit a StaticRouteInfo instance. Usually called by `process`"""
-        text = '{}↦ {} {}'.format(self.tab, static_route.prefix, static_route.directory)
+        text = '{0}↦ {1.prefix} {1.directory}'.format(self.tab, static_route)
         if static_route.fallback_filename:
-            text += ' [{}]'.format(static_route.fallback_filename)
+            text += ' [{0.fallback_filename}]'.format(static_route)
         return text
 
     def visit_sink(self, sink: SinkInfo) -> str:
         """Visit a SinkInfo instance. Usually called by `process`"""
-        text = '{}⇥ {} {}'.format(self.tab, sink.prefix, sink.name)
+        text = '{0}⇥ {1.prefix} {1.name}'.format(self.tab, sink)
         if self.verbose:
-            text += ' ({})'.format(sink.source_info)
+            text += ' ({0.source_info})'.format(sink)
         return text
 
     def visit_error_handler(self, error_handler: ErrorHandlerInfo) -> str:
         """Visit a ErrorHandlerInfo instance. Usually called by `process`"""
-        text = '{}⇜ {} {}'.format(self.tab, error_handler.error, error_handler.name)
+        text = '{0}⇜ {1.error} {1.name}'.format(self.tab, error_handler)
         if self.verbose:
-            text += ' ({})'.format(error_handler.source_info)
+            text += ' ({0.source_info})'.format(error_handler)
         return text
 
     def visit_middleware_method(self, middleware_method: MiddlewareMethodInfo) -> str:
         """Visit a MiddlewareMethodInfo instance. Usually called by `process`"""
-        text = '{}'.format(middleware_method.function_name)
+        text = '{0.function_name}'.format(middleware_method)
         if self.verbose:
-            text += ' ({})'.format(middleware_method.source_info)
+            text += ' ({0.source_info})'.format(middleware_method)
         return text
 
     def visit_middleware_class(self, middleware_class: MiddlewareClassInfo) -> str:
         """Visit a ErrorHandlerInfo instance. Usually called by `process`"""
-        text = '{}↣ {}'.format(self.tab, middleware_class.name)
+        text = '{0}↣ {1.name}'.format(self.tab, middleware_class)
         if self.verbose:
-            text += ' ({})'.format(middleware_class.source_info)
+            text += ' ({0.source_info})'.format(middleware_class)
 
         method_text = self._methods_to_string(middleware_class.methods)
         if not method_text:
@@ -619,7 +619,7 @@ class StringVisitor(InspectVisitor):
     def visit_middleware_tree_item(self, mti: MiddlewareTreeItemInfo) -> str:
         """Visit a MiddlewareTreeItemInfo instance. Usually called by `process`"""
         symbol = mti._symbols.get(mti.name, '→')
-        return '{}{} {}.{}'.format(self.tab, symbol, mti.class_name, mti.name)
+        return '{0}{1} {2.class_name}.{2.name}'.format(self.tab, symbol, mti)
 
     def visit_middleware_tree(self, m_tree: MiddlewareTreeInfo) -> str:
         """Visit a MiddlewareTreeInfo instance. Usually called by `process`"""
