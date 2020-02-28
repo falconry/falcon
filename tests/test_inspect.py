@@ -572,6 +572,14 @@ class TestStringVisitor:
         app.error_handlers.clear()
         assert inspect.StringVisitor(verbose).process(app) == self.make(sv, app, verbose, e=False)
 
+    def test_app_name(self):
+        sv = inspect.StringVisitor(False, name='foo')
+        app = inspect.inspect_app(make_app())
+
+        s = sv.process(app).splitlines()[0]
+        assert s == 'foo (WSGI)'
+        assert app.to_string(name='bar').splitlines()[0] == 'bar (WSGI)'
+
 
 def test_is_internal():
     assert inspect._is_internal(1) is False

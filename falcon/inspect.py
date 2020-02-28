@@ -538,7 +538,7 @@ class StringVisitor(InspectVisitor):
 
     def __init__(self, verbose: bool, name=''):
         self.verbose = verbose
-        self.name = ''
+        self.name = name
         self.indent = 0
 
     @property
