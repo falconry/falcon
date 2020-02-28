@@ -30,12 +30,13 @@ default, allowing you to use ``req.media`` to iterate over the
             # TODO: Do something else
 
 .. note::
-   The request stream is only consumed along iteration over the body parts in a
-   form, rather than being read in and buffered all at once.
+   Rather than being read in and buffered all at once, the request stream is
+   only consumed on-demand, while iterating over the body parts in the form.
 
-   You can then choose whether to read the whole part into the memory, store in
-   a file, or :ref:`upload to the cloud <multipart_cloud_upload>`.
-   Falcon offers straightforward support for all these scenarios.
+   For each part, you can choose whether to read the whole part into memory,
+   write it out to a file, or :ref:`upload it to the cloud
+   <multipart_cloud_upload>`. Falcon offers straightforward support for all
+   of these scenarios.
 
 Body Part Type
 --------------
