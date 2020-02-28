@@ -111,10 +111,16 @@ def test_invalid_event_values():
         SSEvent(data=12345)
 
     with pytest.raises(TypeError):
+        SSEvent(data=0)
+
+    with pytest.raises(TypeError):
         SSEvent(text=b'notbytes')
 
     with pytest.raises(TypeError):
         SSEvent(text=23455)
+
+    with pytest.raises(TypeError):
+        SSEvent(text=0)
 
     with pytest.raises(TypeError):
         SSEvent(json=set()).serialize()
@@ -126,13 +132,22 @@ def test_invalid_event_values():
         SSEvent(event=1234)
 
     with pytest.raises(TypeError):
+        SSEvent(event=0)
+
+    with pytest.raises(TypeError):
         SSEvent(event_id=b'idbytes')
 
     with pytest.raises(TypeError):
         SSEvent(event_id=52085)
 
     with pytest.raises(TypeError):
+        SSEvent(event_id=0)
+
+    with pytest.raises(TypeError):
         SSEvent(retry='5808.25')
+
+    with pytest.raises(TypeError):
+        SSEvent(retry='')
 
     with pytest.raises(TypeError):
         SSEvent(retry=5808.25)
@@ -142,6 +157,9 @@ def test_invalid_event_values():
 
     with pytest.raises(TypeError):
         SSEvent(comment=1234)
+
+    with pytest.raises(TypeError):
+        SSEvent(comment=0)
 
 
 def test_non_iterable():
