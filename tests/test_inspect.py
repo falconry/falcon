@@ -350,6 +350,13 @@ class TestStringVisitor:
         exp = '⇒ {0.path} - {0.class_name} ({0.source_info}):\n{1}'.format(r, '\n'.join(ml))
         assert sv.process(r) == exp
 
+    def test_route_no_methods(self):
+        sv = inspect.StringVisitor(False)
+        r = inspect.inspect_routes(make_app())[0]
+        r.methods.clear()
+        exp = '⇒ {0.path} - {0.class_name}'.format(r)
+        assert sv.process(r) == exp
+
     @pytest.mark.parametrize('verbose', (True, False))
     def test_static_route(self, verbose):
         sv = inspect.StringVisitor(verbose)
@@ -416,6 +423,13 @@ class TestStringVisitor:
         exp = '↣ {0.name} ({0.source_info}):\n{1}'.format(mc, '\n'.join(mml))
         assert sv.process(mc) == exp
 
+    def test_middleware_class_no_methods(self):
+        sv = inspect.StringVisitor(False)
+        mc = inspect.inspect_middlewares(make_app()).middleware_classes[0]
+        mc.methods.clear()
+        exp = '↣ {0.name}'.format(mc)
+        assert sv.process(mc) == exp
+
     @pytest.mark.parametrize('verbose', (True, False))
     def test_middleware_tree_item(self, verbose):
         sv = inspect.StringVisitor(verbose)
@@ -423,8 +437,143 @@ class TestStringVisitor:
         for r, s in ((mt.request[0], '→'), (mt.resource[0], '↣'), (mt.response[0], '↢')):
             assert sv.process(r) == '{0} {1.class_name}.{1.name}'.format(s, r)
 
-    # @pytest.mark.parametrize('verbose', (True, False))
-    # def test_middleware_tree(self, verbose):
-    #     sv = inspect.StringVisitor(verbose)
-    #     mt = inspect.inspect_middlewares(make_app()).middleware_tree
-    #     mt.request = mt.re
+    @pytest.mark.parametrize('verbose', (True, False))
+    def test_middleware_tree(self, verbose):
+        sv = inspect.StringVisitor(verbose)
+        mt = inspect.inspect_middlewares(make_app()).middleware_tree
+        lines = []
+        space = ''
+        for r in mt.request:
+            lines.append(space + sv.process(r))
+            space += '  '
+        lines.append('')
+        for r in mt.resource:
+            lines.append(space + sv.process(r))
+            space += '  '
+        lines.append('')
+        lines.append(space + '  ├── Process route responder')
+        lines.append('')
+        for r in mt.response:
+            space = space[:-2]
+            lines.append(space + sv.process(r))
+
+        assert sv.process(mt) == '\n'.join(lines)
+
+    def test_middleware_tree_res_only(self):
+        sv = inspect.StringVisitor(False)
+        mt = inspect.inspect_middlewares(make_app()).middleware_tree
+        mt.request.clear()
+        mt.resource.clear()
+        lines = []
+        space = '  ' * len(mt.response)
+        lines.append('')
+        lines.append(space + '  ├── Process route responder')
+        lines.append('')
+        for r in mt.response:
+            space = space[:-2]
+            lines.append(space + sv.process(r))
+
+        assert sv.process(mt) == '\n'.join(lines)
+
+    def test_middleware_tree_no_res(self):
+        sv = inspect.StringVisitor(False)
+        mt = inspect.inspect_middlewares(make_app()).middleware_tree
+        mt.response.clear()
+        lines = []
+        space = ''
+        for r in mt.request:
+            lines.append(space + sv.process(r))
+            space += '  '
+        lines.append('')
+        for r in mt.resource:
+            lines.append(space + sv.process(r))
+            space += '  '
+        lines.append('')
+        lines.append(space + '  ├── Process route responder')
+
+        assert sv.process(mt) == '\n'.join(lines)
+
+    def test_middleware(self):
+        sv = inspect.StringVisitor(False)
+        m = inspect.inspect_middlewares(make_app())
+
+        assert sv.process(m) == sv.process(m.middleware_tree)
+
+    def test_middleware_verbose(self):
+        sv = inspect.StringVisitor(True)
+        m = inspect.inspect_middlewares(make_app())
+
+        mt = sv.process(m.middleware_tree)
+        sv.indent += 4
+        mc = '\n'.join(sv.process(cls) for cls in m.middleware_classes)
+        exp = '{}\n- Middlewares classes:\n{}'.format(mt, mc)
+        assert inspect.StringVisitor(True).process(m) == exp
+
+    def make(self, sv, app, v, r=True, m=True, sr=True, s=True, e=True):
+        text = 'Falcon App (WSGI)'
+        sv.indent = 4
+        if r:
+            text += '\n• Routes:\n{}'.format('\n'.join(sv.process(r) for r in app.routes))
+        if m:
+            mt = sv.process(app.middleware)
+            text += '\n• Middleware ({}):\n{}'.format(app.middleware.independent_text, mt)
+        if sr:
+            sr = '\n'.join(sv.process(sr) for sr in app.static_routes)
+            text += '\n• Static routes:\n{}'.format(sr)
+        if s:
+            text += '\n• Sinks:\n{}'.format('\n'.join(sv.process(s) for s in app.sinks))
+        if e:
+            err = '\n'.join(sv.process(e) for e in app.error_handlers if not e.internal or v)
+            text += '\n• Error handlers:\n{}'.format(err)
+        return text
+
+    @pytest.mark.parametrize('verbose', (True, False))
+    def test_app(self, verbose):
+        sv = inspect.StringVisitor(verbose)
+        app = inspect.inspect_app(make_app())
+
+        assert inspect.StringVisitor(verbose).process(app) == self.make(sv, app, verbose)
+
+    @pytest.mark.parametrize('verbose', (True, False))
+    def test_app_no_routes(self, verbose):
+        sv = inspect.StringVisitor(verbose)
+        app = inspect.inspect_app(make_app())
+        app.routes.clear()
+        assert inspect.StringVisitor(verbose).process(app) == self.make(sv, app, verbose, r=False)
+
+    @pytest.mark.parametrize('verbose', (True, False))
+    def test_app_no_middleware(self, verbose):
+        sv = inspect.StringVisitor(verbose)
+        app = inspect.inspect_app(make_app())
+        app.middleware.middleware_classes.clear()
+        app.middleware.middleware_tree.request.clear()
+        app.middleware.middleware_tree.resource.clear()
+        app.middleware.middleware_tree.response.clear()
+        assert inspect.StringVisitor(verbose).process(app) == self.make(sv, app, verbose, m=False)
+
+    @pytest.mark.parametrize('verbose', (True, False))
+    def test_app_static_routes(self, verbose):
+        sv = inspect.StringVisitor(verbose)
+        app = inspect.inspect_app(make_app())
+        app.static_routes.clear()
+        assert inspect.StringVisitor(verbose).process(app) == self.make(sv, app, verbose, sr=False)
+
+    @pytest.mark.parametrize('verbose', (True, False))
+    def test_app_no_sink(self, verbose):
+        sv = inspect.StringVisitor(verbose)
+        app = inspect.inspect_app(make_app())
+        app.sinks.clear()
+        assert inspect.StringVisitor(verbose).process(app) == self.make(sv, app, verbose, s=False)
+
+    @pytest.mark.parametrize('verbose', (True, False))
+    def test_app_no_errors(self, verbose):
+        sv = inspect.StringVisitor(verbose)
+        app = inspect.inspect_app(make_app())
+        app.error_handlers.clear()
+        assert inspect.StringVisitor(verbose).process(app) == self.make(sv, app, verbose, e=False)
+
+
+def test_is_internal():
+    assert inspect._is_internal(1) is False
+    assert inspect._is_internal(dict) is False
+    assert inspect._is_internal(inspect) is True

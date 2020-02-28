@@ -626,6 +626,9 @@ class StringVisitor(InspectVisitor):
         before = len(m_tree.request) + len(m_tree.resource)
         after = len(m_tree.response)
 
+        if before + after == 0:
+            return ''
+
         each = 2
         initial = self.indent
         if after > before:
@@ -709,7 +712,7 @@ def _get_source_info(obj, default='[unknown file]'):
     """Tries to get the definition file and line of obj. Returns default on error"""
     try:
         source_file = inspect.getsourcefile(obj)
-        source_lines = inspect.getsourcelines(obj)
+        source_lines = inspect.findsource(obj)
         source_info = '{}:{}'.format(source_file, source_lines[1])
     except Exception:
         # NOTE(vytas): If Falcon is cythonized, all default
