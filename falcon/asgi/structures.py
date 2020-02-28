@@ -84,22 +84,22 @@ class SSEvent:
         #   an error to be raised from the framework when it calls serialize()
         #   after the fact.
 
-        if data and not isinstance(data, bytes):
+        if data is not None and not isinstance(data, bytes):
             raise TypeError('data must be a byte string')
 
-        if text and not isinstance(text, str):
+        if text is not None and not isinstance(text, str):
             raise TypeError('text must be a string')
 
-        if event and not isinstance(event, str):
+        if event is not None and not isinstance(event, str):
             raise TypeError('event name must be a string')
 
-        if event_id and not isinstance(event_id, str):
+        if event_id is not None and not isinstance(event_id, str):
             raise TypeError('event_id must be a string')
 
-        if comment and not isinstance(comment, str):
+        if comment is not None and not isinstance(comment, str):
             raise TypeError('comment must be a string')
 
-        if retry and not isinstance(retry, int):
+        if retry is not None and not isinstance(retry, int):
             raise TypeError('retry must be an int')
 
         self.data = data

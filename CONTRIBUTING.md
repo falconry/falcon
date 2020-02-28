@@ -13,8 +13,8 @@ end up with duplicated effort. Thanks in advance!
 The core Falcon project maintainers are:
 
 * Kurt Griffiths, Project Lead (**kgriffs** on GH, Gitter, and Twitter)
-* John Vrbanac (**jmvrbanac** on GH and Gitter, and **jvrbanac** on Twitter)
-* Vytautas Liuolia (**vytas7** on GH and Gitter)
+* John Vrbanac (**jmvrbanac** on GH, Gitter, and Twitter)
+* Vytautas Liuolia (**vytas7** on GH and Gitter, and **vliuolia** on Twitter)
 * Nick Zaccardi (**nZac** on GH and Gitter)
 
 Please don't hesitate to reach out if you have any questions, or just need a

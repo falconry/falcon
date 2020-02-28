@@ -154,7 +154,10 @@ def test_deserialization_raises(asgi):
             resp.media = {}
 
         async def on_post(self, req, resp):
-            await req.get_media()
+            # NOTE(kgriffs): In this one case we use the property
+            #   instead of get_media(), in order to test that the
+            #   alias works as expected.
+            await req.media
 
     app.add_route('/', ResourceAsync() if asgi else Resource())
 
