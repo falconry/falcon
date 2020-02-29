@@ -498,18 +498,20 @@ class TestFalconUtils:
         with pytest.raises(ValueError):
             misc.secure_filename('')
 
-    @pytest.mark.parametrize('tunneled,expected', [
-        ('', ''),
-        ('/', '/'),
-        ('/api', '/api'),
-        (
-            '/data/items/something?query=apples%20and%20oranges',
-            '/data/items/something?query=apples%20and%20oranges',
-        ),
-        ('/food?item=ð\x9f\x8d\x94', '/food?item=🍔'),
+    @pytest.mark.parametrize('string,expected_ascii', [
+        ('', True),
+        ('/', True),
+        ('/api', True),
+        ('/data/items/something?query=apples%20and%20oranges', True),
+        ('/food?item=ð\x9f\x8d\x94', False),
+        ('\x00\x00\x7F\x00\x00\x7F\x00', True),
+        ('\x00\x00\x7F\x00\x00\x80\x00', False),
     ])
-    def test_decode_wsgi_string(self, tunneled, expected):
-        assert uri.decode_wsgi_string(tunneled) == expected
+    def test_misc_isascii(self, string, expected_ascii):
+        if expected_ascii:
+            assert misc.isascii(string)
+        else:
+            assert not misc.isascii(string)
 
 
 @pytest.mark.parametrize(

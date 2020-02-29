@@ -24,7 +24,8 @@ from falcon.forwarded import Forwarded  # NOQA
 from falcon.media import Handlers
 from falcon.util import json
 from falcon.util import structures
-from falcon.util.uri import decode_wsgi_string, parse_host, parse_query_string
+from falcon.util.misc import isascii
+from falcon.util.uri import parse_host, parse_query_string
 from falcon.vendor import mimeparse
 
 DEFAULT_ERROR_LOG_FORMAT = ('{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
@@ -451,7 +452,8 @@ class Request:
 
         # NOTE(kgriffs): PEP 3333 specifies that PATH_INFO may be the
         # empty string, so normalize it in that case.
-        #
+        path = env['PATH_INFO'] or '/'
+
         # PEP 3333 specifies that the PATH_INFO variable is always
         # "bytes tunneled as latin-1" and must be encoded back.
         #
@@ -463,8 +465,11 @@ class Request:
         # ISO-8859-1, e.g.:
         #
         #   tunnelled_path = path.encode('utf-8').decode('iso-8859-1')
-        #
-        path = decode_wsgi_string(env['PATH_INFO'] or '/')
+
+        # perf(vytas): Only decode the tunnelled path in case it is not ASCII.
+        #   For ASCII-strings, the below decoding chain is a no-op.
+        if not isascii(path):
+            path = path.encode('iso-8859-1').decode('utf-8', 'replace')
 
         if (self.options.strip_url_path_trailing_slash and
                 len(path) != 1 and path.endswith('/')):
