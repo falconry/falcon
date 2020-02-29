@@ -331,8 +331,6 @@ class Request:
 
                 doc = json.load(req.bounded_stream)
 
-        expect (str): Value of the Expect header, or ``None`` if the
-            header is missing.
         media (object): Returns a deserialized form of the request stream.
             When called, it will attempt to deserialize the request stream
             using the Content-Type header as well as the media-type handlers
@@ -344,6 +342,9 @@ class Request:
                 This operation will consume the request stream the first time
                 it's called and cache the results. Follow-up calls will just
                 retrieve a cached version of the object.
+
+        expect (str): Value of the Expect header, or ``None`` if the
+            header is missing.
 
         range (tuple of int): A 2-member ``tuple`` parsed from the value of the
             Range header.
