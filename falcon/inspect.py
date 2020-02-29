@@ -200,26 +200,27 @@ def inspect_compiled_router(router: CompiledRouter) -> 'List[RouteInfo]':
 
     def _traverse(roots, parent):
         for root in roots:
-            methods = []
-            if root.method_map:
-                for method, func in root.method_map.items():
-                    if isinstance(func, partial):
-                        real_func = func.func
-                    else:
-                        real_func = func
-
-                    source_info = _get_source_info(real_func)
-                    internal = _is_internal(real_func)
-
-                    method_info = RouteMethodInfo(
-                        method, source_info, real_func.__name__, internal
-                    )
-                    methods.append(method_info)
-            source_info, class_name = _get_source_info_and_name(root.resource)
-
             path = parent + '/' + root.raw_segment
-            route_info = RouteInfo(path, class_name, source_info, methods)
-            routes.append(route_info)
+            if root.resource is not None:
+                methods = []
+                if root.method_map:
+                    for method, func in root.method_map.items():
+                        if isinstance(func, partial):
+                            real_func = func.func
+                        else:
+                            real_func = func
+
+                        source_info = _get_source_info(real_func)
+                        internal = _is_internal(real_func)
+
+                        method_info = RouteMethodInfo(
+                            method, source_info, real_func.__name__, internal
+                        )
+                        methods.append(method_info)
+                source_info, class_name = _get_source_info_and_name(root.resource)
+
+                route_info = RouteInfo(path, class_name, source_info, methods)
+                routes.append(route_info)
 
             if root.children:
                 _traverse(root.children, path)
@@ -648,7 +649,8 @@ class StringVisitor(InspectVisitor):
             text.append(self.process(r))
             self.indent += each
 
-        text.append('')
+        if m_tree.resource or not text:
+            text.append('')
         self.indent += each
         text.append('{}├── Process route responder'.format(self.tab))
         self.indent -= each

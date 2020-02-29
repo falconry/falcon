@@ -88,29 +88,44 @@ class TestInspectApp:
         assert len(ai.error_handlers) == 4
         assert ai.asgi is asgi
 
+    def check_route(self, asgi, r, p, cn, ml, fnt):
+        assert isinstance(r, inspect.RouteInfo)
+        assert r.path == p
+        if asgi:
+            cn += 'Async'
+        assert r.class_name == cn
+        assert '_inspect_fixture.py' in r.source_info
+
+        for m in r.methods:
+            assert isinstance(m, inspect.RouteMethodInfo)
+            internal = '_inspect_fixture.py' not in m.source_info
+            assert m.internal is internal
+            if not internal:
+                assert m.method in ml
+                assert '_inspect_fixture.py' in m.source_info
+                assert m.function_name == fnt.format(m.method).lower()
+
     def test_routes(self, asgi):
         routes = inspect.inspect_routes(make_app_async() if asgi else make_app())
 
-        def test(r, p, cn, ml, fnt):
-            assert isinstance(r, inspect.RouteInfo)
-            assert r.path == p
-            if asgi:
-                cn += 'Async'
-            assert r.class_name == cn
-            assert '_inspect_fixture.py' in r.source_info
+        self.check_route(asgi, routes[0], '/foo', 'MyResponder', ['GET', 'POST', 'DELETE'], 'on_{}')
+        self.check_route(
+            asgi, routes[1], '/foo/{id}', 'MyResponder', ['GET', 'PUT', 'DELETE'], 'on_{}_id'
+        )
+        self.check_route(asgi, routes[2], '/bar', 'OtherResponder', ['POST'], 'on_{}_id')
 
-            for m in r.methods:
-                assert isinstance(m, inspect.RouteMethodInfo)
-                internal = '_inspect_fixture.py' not in m.source_info
-                assert m.internal is internal
-                if not internal:
-                    assert m.method in ml
-                    assert '_inspect_fixture.py' in m.source_info
-                    assert m.function_name == fnt.format(m.method).lower()
+    def test_routes_empty_paths(self, asgi):
+        app = get_app(asgi)
+        r = i_f.MyResponderAsync() if asgi else i_f.MyResponder()
+        app.add_route('/foo/bar/baz', r)
 
-        test(routes[0], '/foo', 'MyResponder', ['GET', 'POST', 'DELETE'], 'on_{}')
-        test(routes[1], '/foo/{id}', 'MyResponder', ['GET', 'PUT', 'DELETE'], 'on_{}_id')
-        test(routes[2], '/bar', 'OtherResponder', ['POST'], 'on_{}_id')
+        routes = inspect.inspect_routes(app)
+
+        assert len(routes) == 1
+
+        self.check_route(
+            asgi, routes[0], '/foo/bar/baz', 'MyResponder', ['GET', 'POST', 'DELETE'], 'on_{}'
+        )
 
     def test_static_routes(self, asgi):
         routes = inspect.inspect_static_routes(make_app_async() if asgi else make_app())
@@ -459,7 +474,7 @@ class TestStringVisitor:
 
         assert sv.process(mt) == '\n'.join(lines)
 
-    def test_middleware_tree_res_only(self):
+    def test_middleware_tree_response_only(self):
         sv = inspect.StringVisitor(False)
         mt = inspect.inspect_middlewares(make_app()).middleware_tree
         mt.request.clear()
@@ -475,7 +490,7 @@ class TestStringVisitor:
 
         assert sv.process(mt) == '\n'.join(lines)
 
-    def test_middleware_tree_no_res(self):
+    def test_middleware_tree_no_response(self):
         sv = inspect.StringVisitor(False)
         mt = inspect.inspect_middlewares(make_app()).middleware_tree
         mt.response.clear()
@@ -490,6 +505,24 @@ class TestStringVisitor:
             space += '  '
         lines.append('')
         lines.append(space + '  ├── Process route responder')
+
+        assert sv.process(mt) == '\n'.join(lines)
+
+    def test_middleware_tree_no_resource(self):
+        sv = inspect.StringVisitor(False)
+        mt = inspect.inspect_middlewares(make_app()).middleware_tree
+        mt.resource.clear()
+        lines = []
+        space = '  '
+        for r in mt.request:
+            lines.append(space + sv.process(r))
+            space += '  '
+        lines.append('')
+        lines.append(space + '  ├── Process route responder')
+        lines.append('')
+        for r in mt.response:
+            space = space[:-2]
+            lines.append(space + sv.process(r))
 
         assert sv.process(mt) == '\n'.join(lines)
 
