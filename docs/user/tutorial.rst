@@ -310,6 +310,24 @@ representation of the "images" resource.
     threaded web server, resources and their dependencies must be
     thread-safe.
 
+We can use the the :ref:`inspect` to visualize the application configuration:
+
+.. code:: python
+
+    from falcon import inspect
+
+    print(inspect.inspect_app(app))
+
+This prints the following, correctly indicating that we are handling ``GET``
+requests in the ``/images`` route:
+
+.. code::
+
+    Falcon App (WSGI)
+    • Routes:
+        ⇒ /images - Resource:
+           └── GET - on_get
+
 So far we have only implemented a responder for GET. Let's see what
 happens when a different method is requested:
 
@@ -1253,6 +1271,23 @@ HTTPie won't display the image, but you can see that the
 response headers were set correctly. Just for fun, go ahead and paste
 the above URI into your browser. The image should display correctly.
 
+Inspecting the application now returns:
+
+.. code:: python
+
+    from falcon import inspect
+    
+    print(inspect.inspect_app(get_app()))
+
+.. code::
+
+    Falcon App (WSGI)
+    • Routes:
+        ⇒ /images - Collection:
+           ├── GET - on_get
+           └── POST - on_post
+        ⇒ /images/{name} - Item:
+           └── GET - on_get
 
 .. Query Strings
 .. -------------

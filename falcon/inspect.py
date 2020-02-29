@@ -22,14 +22,14 @@ from falcon.routing import CompiledRouter
 
 
 def inspect_app(app: App) -> 'AppInfo':
-    """Inspects an application
+    """Inspects an application.
 
     Args:
-        app (App): The application to inspect
+        app (falcon.App): The application to inspect.
 
     Returns:
-        AppInfo: The information regarding the application.
-            Call the ``to_string`` to obtain a string representation of it
+        AppInfo: The information regarding the application. Call the
+        ``to_string`` to obtain a string representation of it.
     """
     routes = inspect_routes(app)
     static = inspect_static_routes(app)
@@ -40,13 +40,13 @@ def inspect_app(app: App) -> 'AppInfo':
 
 
 def inspect_routes(app: App) -> 'List[RouteInfo]':
-    """Inspects the routes of an application
+    """Inspects the routes of an application.
 
     Args:
-        app (App): The application to inspect
+        app (falcon.App): The application to inspect.
 
     Returns:
-        List[RouteInfo]: The list of routes info of the application
+        List[RouteInfo]: The list of routes info of the application.
     """
     router = app._router
 
@@ -61,17 +61,21 @@ def inspect_routes(app: App) -> 'List[RouteInfo]':
 
 
 def register_router(router_class):
-    """Register a function to inspect a particular router
+    """Register a function to inspect a particular router.
 
     This decorator registers a new function for a custom router
     class, so that it can be inspected with the function
     :func:`.inspect_routes`.
-    An inspection class takes the router instance used by the
-    application and returns a list of ``RouteInfo``
+    An inspection function takes the router instance used by the
+    application and returns a list of :class:`.RouteInfo`. Eg::
+
+        @register_router(MyRouterClass)
+        def inspect_my_router(router):
+            return [RouteInfo('foo', 'bar', '/path/to/foo.py:42', [])]
 
     Args:
         router_class (Type): The router class to register. If
-            already registered an error will be raised
+            already registered an error will be raised.
     """
 
     def wraps(fn):
@@ -91,13 +95,13 @@ _supported_routers = {}
 
 
 def inspect_static_routes(app: App) -> 'List[StaticRouteInfo]':
-    """Inspects the static routes of an application
+    """Inspects the static routes of an application.
 
     Args:
-        app (App): The application to inspect
+        app (falcon.App): The application to inspect.
 
     Returns:
-        List[StaticRouteInfo]: The list of static routes of the application
+        List[StaticRouteInfo]: The list of static routes of the application.
     """
     routes = []
     for sr in app._static_routes:
@@ -107,13 +111,13 @@ def inspect_static_routes(app: App) -> 'List[StaticRouteInfo]':
 
 
 def inspect_sinks(app: App) -> 'List[SinkInfo]':
-    """Inspects the sinks of an application
+    """Inspects the sinks of an application.
 
     Args:
-        app (App): The application to inspect
+        app (falcon.App): The application to inspect.
 
     Returns:
-        List[SinkInfo]: The list of sinks of the application
+        List[SinkInfo]: The list of sinks of the application.
     """
     sinks = []
     for prefix, sink in app._sinks:
@@ -124,13 +128,13 @@ def inspect_sinks(app: App) -> 'List[SinkInfo]':
 
 
 def inspect_error_handlers(app: App) -> 'List[ErrorHandlerInfo]':
-    """Inspects the error handlers of an application
+    """Inspects the error handlers of an application.
 
     Args:
-        app (App): The application to inspect
+        app (falcon.App): The application to inspect.
 
     Returns:
-        List[ErrorHandlerInfo]: The list of error handlers of the application
+        List[ErrorHandlerInfo]: The list of error handlers of the application.
     """
     errors = []
     for exc, fn in app._error_handlers.items():
@@ -141,13 +145,13 @@ def inspect_error_handlers(app: App) -> 'List[ErrorHandlerInfo]':
 
 
 def inspect_middlewares(app: App) -> 'MiddlewareInfo':
-    """Inspects the meddlewares of an application
+    """Inspects the meddlewares of an application.
 
     Args:
-        app (App): The application to inspect
+        app (falcon.App): The application to inspect.
 
     Returns:
-        MiddlewareInfo: The information of the middlewares
+        MiddlewareInfo: The information of the middlewares.
     """
     types_ = app_helpers.prepare_middleware(app._unprepared_middleware, True, app._ASGI)
 
@@ -185,13 +189,13 @@ def inspect_middlewares(app: App) -> 'MiddlewareInfo':
 
 @register_router(CompiledRouter)
 def inspect_compiled_router(router: CompiledRouter) -> 'List[RouteInfo]':
-    """Expores the compiled router and returns the list of defined routes
+    """Expores the compiled router and returns the list of defined routes.
 
     Args:
-        router (CompiledRouter): The router to inspect
+        router (CompiledRouter): The router to inspect.
 
-    Returns
-        List[RouteInfo]: A list of RouteInfo
+    Returns:
+        List[RouteInfo]: A list of RouteInfo.
     """
 
     def _traverse(roots, parent):
@@ -234,13 +238,13 @@ class _Traversable:
     __visit_name__ = 'N/A'
 
     def to_string(self, verbose=False) -> str:
-        """Returns a string representation of this class
+        """Returns a string representation of this class.
 
         Args:
             verbose (bool, optional): Adds more information. Defaults to False.
 
         Returns:
-            str: string representation of this class
+            str: string representation of this class.
         """
         return StringVisitor(verbose).process(self)
 
@@ -249,13 +253,13 @@ class _Traversable:
 
 
 class RouteMethodInfo(_Traversable):
-    """Utility class that contains the description of a responder method
+    """Utility class that contains the description of a responder method.
 
     Args:
-        method (str): The http method of this responder
-        source_info (str): The source path of this function
-        function_name (str): Name of the function
-        internal (bool): If this responder was added by falcon
+        method (str): The http method of this responder.
+        source_info (str): The source path of this function.
+        function_name (str): Name of the function.
+        internal (bool): If this responder was added by falcon.
     """
 
     __visit_name__ = 'route_method'
@@ -270,13 +274,13 @@ class RouteMethodInfo(_Traversable):
 
 
 class RouteInfo(_Traversable):
-    """Utility class that contains the information of a route
+    """Utility class that contains the information of a route.
 
     Args:
-        path (str): The path of this route
-        class_name (str): The class name of the responder of this route
-        source_info (str): The source path where this responder was defined
-        methods (List[MethodInfo]): List of method defined in the route
+        path (str): The path of this route.
+        class_name (str): The class name of the responder of this route.
+        source_info (str): The source path where this responder was defined.
+        methods (List[MethodInfo]): List of method defined in the route.
     """
 
     __visit_name__ = 'route'
@@ -295,12 +299,12 @@ class RouteInfo(_Traversable):
 
 
 class StaticRouteInfo(_Traversable):
-    """Utility class that contains the information of a static route
+    """Utility class that contains the information of a static route.
 
     Args:
-        path (str): The prefix of the static route
-        directory (str): The directory of this static route
-        fallback_filename (str or None): Fallback filename to serve
+        path (str): The prefix of the static route.
+        directory (str): The directory of this static route.
+        fallback_filename (str or None): Fallback filename to serve.
     """
 
     __visit_name__ = 'static_route'
@@ -312,12 +316,12 @@ class StaticRouteInfo(_Traversable):
 
 
 class SinkInfo(_Traversable):
-    """Utility class that contains the information of a sink
+    """Utility class that contains the information of a sink.
 
     Args:
-        prefix (str): The prefix of the sink
-        name (str): The name of the sink function or class
-        source_info (str): The source path where this sink was defined
+        prefix (str): The prefix of the sink.
+        name (str): The name of the sink function or class.
+        source_info (str): The source path where this sink was defined.
     """
 
     __visit_name__ = 'sink'
@@ -329,13 +333,13 @@ class SinkInfo(_Traversable):
 
 
 class ErrorHandlerInfo(_Traversable):
-    """Utility class that contains the information of an error handler
+    """Utility class that contains the information of an error handler.
 
     Args:
-        error (name): The error it manages
-        name (str): The name of the handler
-        source_info (str): The source path where this error handler was defined
-        internal (bool): If this error handler was added by falcon
+        error (name): The error it manages.
+        name (str): The name of the handler.
+        source_info (str): The source path where this error handler was defined.
+        internal (bool): If this error handler was added by falcon.
     """
 
     __visit_name__ = 'error_handler'
@@ -348,11 +352,11 @@ class ErrorHandlerInfo(_Traversable):
 
 
 class MiddlewareMethodInfo(_Traversable):
-    """Utility class that contains the description of a middleware method
+    """Utility class that contains the description of a middleware method.
 
     Args:
-        function_name (str): Name of the method
-        source_info (str): The source path of this function
+        function_name (str): Name of the method.
+        source_info (str): The source path of this function.
     """
 
     __visit_name__ = 'middleware_method'
@@ -364,12 +368,12 @@ class MiddlewareMethodInfo(_Traversable):
 
 
 class MiddlewareClassInfo(_Traversable):
-    """Utility class that contains the information of a middleware class
+    """Utility class that contains the information of a middleware class.
 
     Args:
-        name (str): The name of this middleware
-        source_info (str): The source path where this middleware was defined
-        methods (List[MiddlewareMethodInfo]): List of method defined in the middleware
+        name (str): The name of this middleware.
+        source_info (str): The source path where this middleware was defined.
+        methods (List[MiddlewareMethodInfo]): List of method defined in the middleware.
     """
 
     __visit_name__ = 'middleware_class'
@@ -383,11 +387,11 @@ class MiddlewareClassInfo(_Traversable):
 
 
 class MiddlewareTreeItemInfo(_Traversable):
-    """Utility class that contains the information of a middleware tree entry
+    """Utility class that contains the information of a middleware tree entry.
 
     Args:
-        name (str): The name of the method
-        class_name (str): The class name of this method
+        name (str): The name of the method.
+        class_name (str): The class name of this method.
     """
 
     __visit_name__ = 'middleware_tree_item'
@@ -404,12 +408,12 @@ class MiddlewareTreeItemInfo(_Traversable):
 
 
 class MiddlewareTreeInfo(_Traversable):
-    """Utility class that contains the information of the middleware methods used by the app
+    """Utility class that contains the information of the middleware methods used by the app.
 
     Args:
-        request (List[MiddlewareTreeItemInfo]): The process_request methods
-        resource (List[MiddlewareTreeItemInfo]): The process_resource methods
-        response (List[MiddlewareTreeItemInfo]): The process_response methods
+        request (List[MiddlewareTreeItemInfo]): The process_request methods.
+        resource (List[MiddlewareTreeItemInfo]): The process_resource methods.
+        response (List[MiddlewareTreeItemInfo]): The process_response methods.
     """
 
     __visit_name__ = 'middleware_tree'
@@ -426,15 +430,15 @@ class MiddlewareTreeInfo(_Traversable):
 
 
 class MiddlewareInfo(_Traversable):
-    """Utility class that contains the information of the middleware of the app
+    """Utility class that contains the information of the middleware of the app.
 
     Args:
-        middlewareTree (MiddlewareTreeInfo): The middleware tree of the app
-        middlewareClasses (List[MiddlewareClassInfo]): The middleware classes of the app
-        independent (bool): If the middleware are independent
+        middlewareTree (MiddlewareTreeInfo): The middleware tree of the app.
+        middlewareClasses (List[MiddlewareClassInfo]): The middleware classes of the app.
+        independent (bool): If the middleware are independent.
 
     Attributes:
-        independent_text (str): Text created from the ``independent`` arg
+        independent_text (str): Text created from the ``independent`` arg.
     """
 
     __visit_name__ = 'middleware'
@@ -456,15 +460,15 @@ class MiddlewareInfo(_Traversable):
 
 
 class AppInfo(_Traversable):
-    """Utility class that contains the information of an application
+    """Utility class that contains the information of an application.
 
     Args:
-        routes (List[RouteInfo]): The routes of the application
-        middleware (MiddlewareInfo): The middleware information in the application
-        static_routes (List[StaticRouteInfo]): The static routes of this application
-        sinks (List[SinkInfo]): The sinks of this application
-        error_handlers (List[ErrorHandlerInfo]): The error handlers of this application
-        asgi (bool): If the application is ASGI
+        routes (List[RouteInfo]): The routes of the application.
+        middleware (MiddlewareInfo): The middleware information in the application.
+        static_routes (List[StaticRouteInfo]): The static routes of this application.
+        sinks (List[SinkInfo]): The sinks of this application.
+        error_handlers (List[ErrorHandlerInfo]): The error handlers of this application.
+        asgi (bool): If the application is ASGI.
     """
 
     __visit_name__ = 'app'
@@ -486,14 +490,14 @@ class AppInfo(_Traversable):
         self.asgi = asgi
 
     def to_string(self, verbose=False, name='') -> str:
-        """Returns a string representation of this class
+        """Returns a string representation of this class.
 
         Args:
             verbose (bool, optional): Adds more information. Defaults to False.
             name (str, optional): The name of the application. Will be places at the
-                beginning of the text. Will be 'Falcon App' when not provided
+                beginning of the text. Will be ``Falcon App`` when not provided.
         Returns:
-            str: string representation of the application
+            str: string representation of the application.
         """
         return StringVisitor(verbose, name).process(self)
 
@@ -504,17 +508,17 @@ class AppInfo(_Traversable):
 
 
 class InspectVisitor:
-    """Base visitor class that implements the `process` method
+    """Base visitor class that implements the `process` method.
 
-    Subclasses must implement ``visit_<name>`` methods for each supported class
+    Subclasses must implement ``visit_<name>`` methods for each supported class.
     """
 
     def process(self, instance: _Traversable):
         """Process the instance, by calling the appropriate visit method.
-        Uses the `__visit_name__` attribute of the `instance` to obtain the method to use
+        Uses the `__visit_name__` attribute of the `instance` to obtain the method to use.
 
         Args:
-            instance (_Traversable): The instance to process
+            instance (_Traversable): The instance to process.
         """
         try:
             return getattr(self, 'visit_{}'.format(instance.__visit_name__))(instance)
@@ -528,12 +532,12 @@ class StringVisitor(InspectVisitor):
     """Visitor implementation that returns a string representation of the info class.
 
     This is used automatically by calling a `to_string` method of an info class.
-    It can also be manually used by calling `StringVisitor.process(info_instance)`
+    It can also be manually used by calling `StringVisitor.process(info_instance)`.
 
     Args:
         verbose (bool, optional): Adds more information. Defaults to False.
         name (str, optional): The name of the application. Will be places at the
-            beginning of the text. Will be 'Falcon App' when not provided
+            beginning of the text. Will be 'Falcon App' when not provided.
     """
 
     def __init__(self, verbose: bool, name=''):
