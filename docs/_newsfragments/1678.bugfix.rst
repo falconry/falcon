@@ -1,0 +1,3 @@
+:attr:`falcon.Request.forwarded_host` now contains the port when proxy headers
+are not set, to make it possible to correctly reconstruct the URL when the
+application is not behind a proxy.
