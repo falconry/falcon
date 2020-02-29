@@ -15,6 +15,9 @@
 """ASGI BoundedStream class."""
 
 
+from falcon.errors import OperationNotAllowed
+
+
 __all__ = ['BoundedStream']
 
 
@@ -87,12 +90,14 @@ class BoundedStream:
         '_buffer',
         '_bytes_remaining',
         '_closed',
+        '_iteration_started',
         '_pos',
         '_receive',
     ]
 
     def __init__(self, receive, content_length=None):
         self._closed = False
+        self._iteration_started = False
 
         self._receive = receive
         self._buffer = b''
@@ -108,9 +113,9 @@ class BoundedStream:
         self._pos = 0
 
     def __aiter__(self):
-        # NOTE(kgriffs): Technically we should be returning an async iterator
-        #   here instead of an async generator, but in practice the caller
-        #   should be happy as long as the returned object is iterable.
+        # NOTE(kgriffs): This returns an async generator, but that's OK because
+        #   it also implements the iterator protocol defined in PEP 492, albeit
+        #   in a more efficient way than a regular async iterator.
         return self._iter_content()
 
     # -------------------------------------------------------------------------
@@ -224,7 +229,7 @@ class BoundedStream:
         """
 
         if self._closed:
-            raise ValueError(
+            raise OperationNotAllowed(
                 'This stream is closed; no further operations on it are permitted.'
             )
 
@@ -298,7 +303,7 @@ class BoundedStream:
         """
 
         if self._closed:
-            raise ValueError(
+            raise OperationNotAllowed(
                 'This stream is closed; no further operations on it are permitted.'
             )
 
@@ -360,13 +365,9 @@ class BoundedStream:
 
         return data
 
-    # NOTE: In docs, tell people to not mix reading different modes - make
-    #   sure you exhaust in the finally if you are reading something
-    #   in middleware, or a chance something else might read it. Don't want someone
-    #   to end up trying to read a half-read thing anyway!
     async def _iter_content(self):
         if self._closed:
-            raise ValueError(
+            raise OperationNotAllowed(
                 'This stream is closed; no further operations on it are permitted.'
             )
 
@@ -374,9 +375,17 @@ class BoundedStream:
             yield b''
             return
 
-        # TODO(kgriffs): Should we check for any buffered data and return
-        #   that first? Or simply raise an error if any data has already
-        #   been read?
+        if self._iteration_started:
+            raise OperationNotAllowed('This stream is already being iterated over.')
+
+        self._iteration_started = True
+
+        if self._buffer:
+            next_chunk = self._buffer
+            self._buffer = b''
+
+            self._pos += len(next_chunk)
+            yield next_chunk
 
         while self._bytes_remaining > 0:
             event = await self._receive()
