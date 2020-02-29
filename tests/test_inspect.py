@@ -108,7 +108,9 @@ class TestInspectApp:
     def test_routes(self, asgi):
         routes = inspect.inspect_routes(make_app_async() if asgi else make_app())
 
-        self.check_route(asgi, routes[0], '/foo', 'MyResponder', ['GET', 'POST', 'DELETE'], 'on_{}')
+        self.check_route(
+            asgi, routes[0], '/foo', 'MyResponder', ['GET', 'POST', 'DELETE'], 'on_{}'
+        )
         self.check_route(
             asgi, routes[1], '/foo/{id}', 'MyResponder', ['GET', 'PUT', 'DELETE'], 'on_{}_id'
         )

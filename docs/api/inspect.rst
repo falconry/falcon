@@ -8,16 +8,13 @@ regarding the registered routes, middlewares, static routes, sinks and
 error handlers using the corresponding functions of the module.
 The entire application can be inspected by using the :func:`.inspect_app`
 
-An example usage of the returned information is to obtain a string representation
-of an application, like in the example below:
+The ``falcon-inspect-app`` script uses the inspect module to print a
+string representation of an application, like in the example below:
 
-.. code:: python
+.. code:: bash
 
-    from falcon import inspect
-
-    # app is a falcon application
-    app_info = inspect.inspect_app(app)
-    print(app_info)
+    # my_module is the module that defined tha application under the name app
+    falcon-inspect-app my_module:app
 
 The output would be:
 
@@ -57,8 +54,21 @@ The output would be:
     • Error handlers:
         ⇜ RuntimeError my_runtime_handler
 
-This is the default output of the :meth:`.AppInfo.to_string` method.
-A more verbose version can be obtained by passing ``verbose=True``.
+The example above returns the default output of the :meth:`.AppInfo.to_string`
+method. A more verbose version can be obtained by passing ``verbose=True`` to it.
+``falcon-inspect-app`` has a ``--verbose`` flag to enable this mode.
+
+The output above can also be obtained by programatically using the inspect module.
+This is a python script that returns the same output as the ``falcon-inspect-app``
+command:
+
+.. code:: python
+
+    from falcon import inspect
+    from my_module import app
+
+    app_info = inspect.inspect_app(app)
+    print(app_info)
 
 The values returned by the inspect functions are class instances that
 contain the relevant information collected from the application, to

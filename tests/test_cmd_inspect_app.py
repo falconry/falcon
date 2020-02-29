@@ -1,6 +1,5 @@
 from argparse import Namespace
 import io
-from pathlib import Path
 import sys
 
 import pytest
@@ -27,17 +26,6 @@ class DummyResourceAsync:
     async def on_get(self, req, resp):
         resp.body = 'Test\n'
         resp.status = '200 OK'
-
-
-@pytest.fixture(scope='module')
-def ensure_module():
-    p = str(Path('.').absolute())
-    in_path = p in sys.path
-    if not in_path:
-        sys.path.append(p)
-    yield
-    if not in_path:
-        sys.path.remove(p)
 
 
 def make_app(asgi=False):
@@ -77,7 +65,7 @@ class TestMakeParser:
 
 class TestLoadApp:
     @pytest.mark.parametrize('name', ('_APP', 'make_app'))
-    def test_load_app(self, name, ensure_module):
+    def test_load_app(self, name):
         parser = inspect_app.make_parser()
         args = Namespace(app_module='{}:{}'.format(_MODULE, name), route_only=False, verbose=False)
         app = inspect_app.load_app(parser, args)
@@ -89,13 +77,13 @@ class TestLoadApp:
         '_MODULE',  # not callable and not app
         'DummyResource',  # callable and not app
     ))
-    def test_load_app_error(self, name, ensure_module):
+    def test_load_app_error(self, name):
         parser = inspect_app.make_parser()
         args = Namespace(app_module='{}:{}'.format(_MODULE, name), route_only=False, verbose=False)
         with pytest.raises(SystemExit):
             inspect_app.load_app(parser, args)
 
-    def test_load_app_module_error(self, ensure_module):
+    def test_load_app_module_error(self):
         parser = inspect_app.make_parser()
         args = Namespace(app_module='foo', route_only=False, verbose=False)
         with pytest.raises(SystemExit):
@@ -112,7 +100,7 @@ class TestMain:
         else:
             assert actual == expect
 
-    def test_routes_only(self, verbose, monkeypatch, ensure_module):
+    def test_routes_only(self, verbose, monkeypatch):
         args = ['some-file.py', '{}:{}'.format(_MODULE, '_APP'), '-r']
         if verbose:
             args.append('-v')
@@ -124,7 +112,7 @@ class TestMain:
         expect = '\n'.join([inspect.StringVisitor(verbose).process(r) for r in routes])
         self.check(output.getvalue().strip(), expect)
 
-    def test_inspect(self, verbose, monkeypatch, ensure_module):
+    def test_inspect(self, verbose, monkeypatch):
         args = ['some-file.py', '{}:{}'.format(_MODULE, '_APP')]
         if verbose:
             args.append('-v')

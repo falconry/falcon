@@ -312,11 +312,9 @@ representation of the "images" resource.
 
 We can use the the :ref:`inspect` to visualize the application configuration:
 
-.. code:: python
+.. code:: bash
 
-    from falcon import inspect
-
-    print(inspect.inspect_app(app))
+    falcon-inspect-app look.app:app
 
 This prints the following, correctly indicating that we are handling ``GET``
 requests in the ``/images`` route:
@@ -1273,11 +1271,9 @@ the above URI into your browser. The image should display correctly.
 
 Inspecting the application now returns:
 
-.. code:: python
+.. code:: bash
 
-    from falcon import inspect
-    
-    print(inspect.inspect_app(get_app()))
+    falcon-inspect-app look.app:get_app
 
 .. code::
 

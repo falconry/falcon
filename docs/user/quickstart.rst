@@ -329,11 +329,9 @@ To test this example go to the another terminal and run:
 
 To visualize the application configuration the :ref:`inspect` can be used:
 
-.. code:: python
+.. code:: bash
 
-    from falcon import inspect
-
-    print(inspect.inspect_app(app))
+    falcon-inspect-app things_advanced:app
 
 This would print for this example application:
 

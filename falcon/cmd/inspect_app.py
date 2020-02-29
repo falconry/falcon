@@ -17,9 +17,13 @@ Script that prints out the routes of an App instance.
 """
 import argparse
 import importlib
+import os
+import sys
 
 import falcon
 from falcon.inspect import inspect_app, inspect_routes, StringVisitor
+
+sys.path.append(os.getcwd())
 
 
 def make_parser():
