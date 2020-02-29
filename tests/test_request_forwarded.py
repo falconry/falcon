@@ -17,6 +17,21 @@ def test_no_forwarded_headers(asgi):
     assert req.forwarded_prefix == 'http://example.com/backoffice'
 
 
+def test_no_forwarded_headers_with_port(asgi):
+    req = create_req(
+        asgi,
+        host='example.com',
+        port=8000,
+        path='/languages',
+        root_path='backoffice'
+    )
+
+    assert req.forwarded is None
+    assert req.forwarded_uri == req.uri
+    assert req.forwarded_uri == 'http://example.com:8000/backoffice/languages'
+    assert req.forwarded_prefix == 'http://example.com:8000/backoffice'
+
+
 def test_x_forwarded_host(asgi):
     req = create_req(
         asgi,
@@ -31,6 +46,22 @@ def test_x_forwarded_host(asgi):
     assert req.forwarded_uri == 'http://something.org/languages'
     assert req.forwarded_prefix == 'http://something.org'
     assert req.forwarded_prefix == 'http://something.org'  # Check cached value
+
+
+def test_x_forwarded_host_with_port(asgi):
+    req = create_req(
+        asgi,
+        host='suchproxy.suchtesting.com',
+        path='/languages',
+        headers={'X-Forwarded-Host': 'something.org:8000'}
+    )
+
+    assert req.forwarded is None
+    assert req.forwarded_host == 'something.org:8000'
+    assert req.forwarded_uri != req.uri
+    assert req.forwarded_uri == 'http://something.org:8000/languages'
+    assert req.forwarded_prefix == 'http://something.org:8000'
+    assert req.forwarded_prefix == 'http://something.org:8000'  # Check cached value
 
 
 def test_x_forwarded_proto(asgi):
