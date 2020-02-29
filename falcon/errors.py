@@ -69,7 +69,7 @@ class HTTPBadRequest(HTTPError):
     (See also: RFC 7231, Section 6.5.1)
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -136,7 +136,7 @@ class HTTPUnauthorized(HTTPError):
     (See also: RFC 7235, Section 3.1)
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -217,7 +217,7 @@ class HTTPForbidden(HTTPError):
     (See also: RFC 7231, Section 6.5.4)
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -280,7 +280,7 @@ class HTTPNotFound(OptionalRepresentation, HTTPError):
     (See also: RFC 7231, Section 6.5.3)
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -338,7 +338,7 @@ class HTTPRouteNotFound(HTTPNotFound):
     :class:`~.HTTPRouteNotFound`.
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -392,7 +392,7 @@ class HTTPMethodNotAllowed(OptionalRepresentation, HTTPError):
 
     Note:
         ``allowed_methods`` is the only positional argument allowed, the other
-        arguments should be used as keyword only. Using them as positional
+        arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -468,7 +468,7 @@ class HTTPNotAcceptable(HTTPError):
     (See also: RFC 7231, Section 6.5.6)
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -534,7 +534,7 @@ class HTTPConflict(HTTPError):
     (See also: RFC 7231, Section 6.5.8)
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -605,7 +605,7 @@ class HTTPGone(OptionalRepresentation, HTTPError):
     (See also: RFC 7231, Section 6.5.9)
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -665,7 +665,7 @@ class HTTPLengthRequired(HTTPError):
     (See also: RFC 7231, Section 6.5.10)
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -724,7 +724,7 @@ class HTTPPreconditionFailed(HTTPError):
     (See also: RFC 7232, Section 4.2)
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -785,7 +785,7 @@ class HTTPPayloadTooLarge(HTTPError):
     (See also: RFC 7231, Section 6.5.11)
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -857,7 +857,7 @@ class HTTPUriTooLong(HTTPError):
     (See also: RFC 7231, Section 6.5.12)
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -916,7 +916,7 @@ class HTTPUnsupportedMediaType(HTTPError):
     (See also: RFC 7231, Section 6.5.13)
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -980,7 +980,7 @@ class HTTPRangeNotSatisfiable(OptionalRepresentation, HTTPError):
 
     Note:
         ``resource_length`` is the only positional argument allowed, the other
-        arguments should be used as keyword only. Using them as positional
+        arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -1052,7 +1052,7 @@ class HTTPUnprocessableEntity(HTTPError):
     (See also: RFC 4918, Section 11.2)
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -1108,7 +1108,7 @@ class HTTPLocked(OptionalRepresentation, HTTPError):
     (See also: RFC 4918, Section 11.3)
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -1163,7 +1163,7 @@ class HTTPFailedDependency(OptionalRepresentation, HTTPError):
     (See also: RFC 4918, Section 11.4)
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -1226,7 +1226,7 @@ class HTTPPreconditionRequired(HTTPError):
     (See also: RFC 6585, Section 3)
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -1286,7 +1286,7 @@ class HTTPTooManyRequests(HTTPError):
     (See also: RFC 6585, Section 4)
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -1356,7 +1356,7 @@ class HTTPRequestHeaderFieldsTooLarge(HTTPError):
     (See also: RFC 6585, Section 5)
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -1425,7 +1425,7 @@ class HTTPUnavailableForLegalReasons(OptionalRepresentation, HTTPError):
     (See also: RFC 7725, Section 3)
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -1479,7 +1479,7 @@ class HTTPInternalServerError(HTTPError):
     (See also: RFC 7231, Section 6.6.1)
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -1540,7 +1540,7 @@ class HTTPNotImplemented(HTTPError):
     (See also: RFC 7231, Section 6.6.2)
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -1597,7 +1597,7 @@ class HTTPBadGateway(HTTPError):
     (See also: RFC 7231, Section 6.6.3)
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -1660,7 +1660,7 @@ class HTTPServiceUnavailable(HTTPError):
     (See also: RFC 7231, Section 6.6.4)
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -1724,7 +1724,7 @@ class HTTPGatewayTimeout(HTTPError):
     (See also: RFC 7231, Section 6.6.5)
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -1785,7 +1785,7 @@ class HTTPVersionNotSupported(HTTPError):
     (See also: RFC 7231, Section 6.6.6)
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -1844,7 +1844,7 @@ class HTTPInsufficientStorage(HTTPError):
     (See also: RFC 4918, Section 11.5)
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -1900,7 +1900,7 @@ class HTTPLoopDetected(HTTPError):
     (See also: RFC 5842, Section 7.2)
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -1968,7 +1968,7 @@ class HTTPNetworkAuthenticationRequired(HTTPError):
     (See also: RFC 6585, Section 6)
 
     Note:
-        All the arguments should be used as keyword only. Using them as positional
+        All the arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -2020,7 +2020,7 @@ class HTTPInvalidHeader(HTTPBadRequest):
 
     Note:
         ``msg`` and ``header_name`` are the only positional argument allowed,
-        the other arguments should be used as keyword only. Using them as
+        the other arguments should be passed as keyword only. Using them as
         positional arguments will raise a deprecation warning and will result
         in an error in a future version of falcon.
 
@@ -2075,7 +2075,7 @@ class HTTPMissingHeader(HTTPBadRequest):
 
     Note:
         ``header_name`` is the only positional argument allowed, the other
-        arguments should be used as keyword only. Using them as positional
+        arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
@@ -2131,7 +2131,7 @@ class HTTPInvalidParam(HTTPBadRequest):
 
     Note:
         ``msg`` and ``param_name`` are the only positional argument allowed,
-        the other arguments should be used as keyword only. Using them as
+        the other arguments should be passed as keyword only. Using them as
         positional arguments will raise a deprecation warning and will result
         in an error in a future version of falcon.
 
@@ -2188,7 +2188,7 @@ class HTTPMissingParam(HTTPBadRequest):
 
     Note:
         ``param_name`` is the only positional argument allowed, the other
-        arguments should be used as keyword only. Using them as positional
+        arguments should be passed as keyword only. Using them as positional
         arguments will raise a deprecation warning and will result in an
         error in a future version of falcon.
 
