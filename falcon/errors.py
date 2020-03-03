@@ -58,6 +58,12 @@ class UnsupportedError(RuntimeError):
     """The method or operation is not supported."""
 
 
+# NOTE(kgriffs): This inherits from ValueError to be consistent with the type
+#   raised by Python's built-in file-like objects.
+class OperationNotAllowed(ValueError):
+    """The requested operation is not allowed."""
+
+
 class HTTPBadRequest(HTTPError):
     """400 Bad Request.
 
