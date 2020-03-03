@@ -10,6 +10,17 @@ URI Functions
     :members: encode, encode_value, decode, parse_host,
         parse_query_string, unquote_string
 
+ASGI Helpers
+------------
+
+.. _asgi_helpers:
+
+.. automodule:: falcon
+    :noindex:
+    :members: sync_to_async, wrap_sync_to_async,
+        wrap_sync_to_async_unsafe
+
+
 Miscellaneous
 -------------
 

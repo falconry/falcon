@@ -36,6 +36,11 @@ import warnings
 
 from falcon import status_codes
 
+try:
+    from falcon.cyutil.misc import isascii as _cy_isascii
+except ImportError:
+    _cy_isascii = None
+
 __all__ = (
     'is_python_func',
     'deprecated',
@@ -508,3 +513,31 @@ def deprecated_args(*, allowed_positional, is_method=True):
         return wraps
 
     return deprecated_args
+
+
+def _isascii(string):
+    """Return ``True`` if all characters in the string are ASCII.
+
+    ASCII characters have code points in the range U+0000-U+007F.
+
+    Note:
+        On Python 3.7+, this function is just aliased to ``str.isascii``.
+
+    This is a pure-Python fallback for older CPython (where Cython is
+    unavailable) and PyPy versions.
+
+    Args:
+        string (str): A string to test.
+
+    Returns:
+        ``True`` if all characters are ASCII, ``False`` otherwise.
+    """
+
+    try:
+        string.encode('ascii')
+        return True
+    except ValueError:
+        return False
+
+
+isascii = getattr(str, 'isascii', _cy_isascii or _isascii)

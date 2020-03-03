@@ -195,7 +195,15 @@ def test_read_chunks(body, chunk_size):
 
         assert b''.join(chunks) == body
 
-    for t in (test_nonmixed, test_mixed_a, test_mixed_b):
+    async def test_mixed_iter():
+        s = stream()
+
+        chunks = [await s.read(chunk_size)]
+        chunks += [data async for data in s]
+
+        assert b''.join(chunks) == body
+
+    for t in (test_nonmixed, test_mixed_a, test_mixed_b, test_mixed_iter):
         testing.invoke_coroutine_sync(t)
         testing.invoke_coroutine_sync(t)
 
@@ -215,6 +223,30 @@ def test_exhaust_with_disconnect():
         assert await s.read(1) == b''
         assert await s.read(100) == b''
         assert s.eof
+
+    testing.invoke_coroutine_sync(t)
+
+
+def test_iteration_already_started():
+    body = testing.rand_string(1, 2048).encode()
+    s = _stream(body)
+
+    async def t():
+        stream_iter = s.__aiter__()
+
+        chunks = [await stream_iter.__anext__()]
+
+        with pytest.raises(ValueError):
+            stream_iter2 = s.__aiter__()
+            await stream_iter2.__anext__()
+
+        while True:
+            try:
+                chunks.append(await stream_iter.__anext__())
+            except StopAsyncIteration:
+                break
+
+        assert b''.join(chunks) == body
 
     testing.invoke_coroutine_sync(t)
 
