@@ -12,12 +12,14 @@ This is just a reminder about the most common mistakes.  Please make sure that y
 
 If an item doesn't apply to your pull request, **check it anyway** to make it apparent that there's nothing to do.
 
+- [ ] Applied changes to both WSGI and ASGI code paths and interfaces (where applicable).
 - [ ] Added **tests** for changed code.
 - [ ] Prefixed code comments with GitHub nick and an appropriate prefix.
 - [ ] Coding style is consistent with the rest of the framework.
 - [ ] Updated **documentation** for changed code.
     - [ ] Added docstrings for any new classes, functions, or modules.
     - [ ] Updated docstrings for any modifications to existing code.
+    - [ ] Updated both WSGI and ASGI docs (where applicable).
     - [ ] Added references to new classes, functions, or modules to the relevant RST file under `docs/`.
     - [ ] Updated all relevant supporting documentation files under `docs/`.
     - [ ] A copyright notice is included at the top of any new modules (using your own name or the name of your organization).
