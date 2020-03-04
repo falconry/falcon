@@ -243,8 +243,8 @@ class _Traversable:
 
         Args:
             verbose (bool, optional): Adds more information. Defaults to False.
-            internal (bool, optional): Print also internal falcon route methods.
-                Defaults to False.
+            internal (bool, optional): Print also internal falcon route methods
+                and error handlers. Defaults to False.
 
         Returns:
             str: string representation of this class.
@@ -506,8 +506,8 @@ class AppInfo(_Traversable):
 
         Args:
             verbose (bool, optional): Adds more information. Defaults to False.
-            internal (bool, optional): Print also internal falcon route methods.
-                Defaults to False.
+            internal (bool, optional): Print also internal falcon route methods
+                and error handlers. Defaults to False.
             name (str, optional): The name of the application. Will be places at the
                 beginning of the text. Will be ``Falcon App`` when not provided.
         Returns:
@@ -550,8 +550,8 @@ class StringVisitor(InspectVisitor):
 
     Args:
         verbose (bool, optional): Adds more information. Defaults to False.
-        internal (bool, optional): Print also internal falcon route methods.
-            Defaults to False.
+        internal (bool, optional): Print also internal falcon route methods
+            and error handlers. Defaults to False.
         name (str, optional): The name of the application. Will be places at the
             beginning of the text. Will be 'Falcon App' when not provided.
     """

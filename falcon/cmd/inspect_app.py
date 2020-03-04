@@ -41,7 +41,10 @@ def make_parser():
         '-v', '--verbose', action='store_true', help='More verbose output',
     )
     parser.add_argument(
-        '-i', '--internal', action='store_true', help='Print also internal falcon route methods',
+        '-i',
+        '--internal',
+        action='store_true',
+        help='Print also internal falcon route methods and error handlers',
     )
     parser.add_argument(
         'app_module',

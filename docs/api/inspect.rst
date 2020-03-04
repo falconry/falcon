@@ -55,8 +55,10 @@ The output would be:
         ⇜ RuntimeError my_runtime_handler
 
 The example above returns the default output of the :meth:`.AppInfo.to_string`
-method. A more verbose version can be obtained by passing ``verbose=True`` to it.
-``falcon-inspect-app`` has a ``--verbose`` flag to enable this mode.
+method. A more verbose version can be obtained by passing ``verbose=True`` to it,
+while the configuration added internally by falcon can be shown by passing
+``internal=True``. ``falcon-inspect-app`` has the flags ``--verbose`` and
+``--internal`` to enable these mode.
 
 The output above can also be obtained by programatically using the inspect module.
 This is a python script that returns the same output as the ``falcon-inspect-app``
