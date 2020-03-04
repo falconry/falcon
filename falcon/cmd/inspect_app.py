@@ -41,6 +41,9 @@ def make_parser():
         '-v', '--verbose', action='store_true', help='More verbose output',
     )
     parser.add_argument(
+        '-i', '--internal', action='store_true', help='Print also internal falcon route methods',
+    )
+    parser.add_argument(
         'app_module',
         help='The module and app to inspect. Example: myapp.somemodule:api',
     )
@@ -85,11 +88,11 @@ def main():
     app = load_app(parser, args)
     if args.route_only:
         routes = inspect_routes(app)
-        visitor = StringVisitor(args.verbose)
+        visitor = StringVisitor(args.verbose, args.internal)
         for route in routes:
             print(visitor.process(route))
     else:
-        print(inspect_app(app).to_string(args.verbose))
+        print(inspect_app(app).to_string(args.verbose, args.internal))
 
 
 if __name__ == '__main__':  # pragma: no cover

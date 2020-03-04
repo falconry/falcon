@@ -45,12 +45,35 @@ def app(asgi):
 
 class TestMakeParser:
     @pytest.mark.parametrize('args, exp', (
-        (['foo'], Namespace(app_module='foo', route_only=False, verbose=False)),
-        (['foo', '-r'], Namespace(app_module='foo', route_only=True, verbose=False)),
-        (['foo', '--route_only'], Namespace(app_module='foo', route_only=True, verbose=False)),
-        (['foo', '-v'], Namespace(app_module='foo', route_only=False, verbose=True)),
-        (['foo', '--verbose'], Namespace(app_module='foo', route_only=False, verbose=True)),
-        (['foo', '-r', '-v'], Namespace(app_module='foo', route_only=True, verbose=True)),
+        (['foo'], Namespace(app_module='foo', route_only=False, verbose=False, internal=False)),
+        (
+            ['foo', '-r'],
+            Namespace(app_module='foo', route_only=True, verbose=False, internal=False)
+        ),
+        (
+            ['foo', '--route_only'],
+            Namespace(app_module='foo', route_only=True, verbose=False, internal=False)
+        ),
+        (
+            ['foo', '-v'],
+            Namespace(app_module='foo', route_only=False, verbose=True, internal=False)
+        ),
+        (
+            ['foo', '--verbose'],
+            Namespace(app_module='foo', route_only=False, verbose=True, internal=False)
+        ),
+        (
+            ['foo', '-i'],
+            Namespace(app_module='foo', route_only=False, verbose=False, internal=True)
+        ),
+        (
+            ['foo', '--internal'],
+            Namespace(app_module='foo', route_only=False, verbose=False, internal=True)
+        ),
+        (
+            ['foo', '-r', '-v', '-i'],
+            Namespace(app_module='foo', route_only=True, verbose=True, internal=True)
+        ),
     ))
     def test_make_parser(self, args, exp):
         parser = inspect_app.make_parser()
@@ -92,6 +115,7 @@ class TestLoadApp:
 
 @pytest.mark.skipif(sys.version_info < (3, 6), reason='dict order is not stable')
 @pytest.mark.parametrize('verbose', (True, False), ids=['verbose', 'not-verbose'])
+@pytest.mark.parametrize('internal', (True, False), ids=['internal', 'not-internal'])
 class TestMain:
     def check(self, actual, expect):
         if _WIN32:
@@ -100,28 +124,33 @@ class TestMain:
         else:
             assert actual == expect
 
-    def test_routes_only(self, verbose, monkeypatch):
+    def test_routes_only(self, verbose, internal, monkeypatch):
         args = ['some-file.py', '{}:{}'.format(_MODULE, '_APP'), '-r']
         if verbose:
             args.append('-v')
+        if internal:
+            args.append('-i')
         monkeypatch.setattr('sys.argv', args)
         output = io.StringIO()
         with redirected(stdout=output):
             inspect_app.main()
         routes = inspect.inspect_routes(_APP)
-        expect = '\n'.join([inspect.StringVisitor(verbose).process(r) for r in routes])
+        sv = inspect.StringVisitor(verbose, internal)
+        expect = '\n'.join([sv.process(r) for r in routes])
         self.check(output.getvalue().strip(), expect)
 
-    def test_inspect(self, verbose, monkeypatch):
+    def test_inspect(self, verbose, internal, monkeypatch):
         args = ['some-file.py', '{}:{}'.format(_MODULE, '_APP')]
         if verbose:
             args.append('-v')
+        if internal:
+            args.append('-i')
         monkeypatch.setattr('sys.argv', args)
         output = io.StringIO()
         with redirected(stdout=output):
             inspect_app.main()
         ins = inspect.inspect_app(_APP)
-        self.check(output.getvalue().strip(), ins.to_string(verbose))
+        self.check(output.getvalue().strip(), ins.to_string(verbose, internal))
 
 
 def test_route_main(monkeypatch):

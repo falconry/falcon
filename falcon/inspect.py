@@ -238,16 +238,18 @@ def inspect_compiled_router(router: CompiledRouter) -> 'List[RouteInfo]':
 class _Traversable:
     __visit_name__ = 'N/A'
 
-    def to_string(self, verbose=False) -> str:
+    def to_string(self, verbose=False, internal=False) -> str:
         """Returns a string representation of this class.
 
         Args:
             verbose (bool, optional): Adds more information. Defaults to False.
+            internal (bool, optional): Print also internal falcon route methods.
+                Defaults to False.
 
         Returns:
             str: string representation of this class.
         """
-        return StringVisitor(verbose).process(self)
+        return StringVisitor(verbose, internal).process(self)
 
     def __repr__(self):
         return self.to_string()
@@ -261,6 +263,10 @@ class RouteMethodInfo(_Traversable):
         source_info (str): The source path of this function.
         function_name (str): Name of the function.
         internal (bool): If this responder was added by falcon.
+
+    Attributes:
+        suffix (str): The suffix of this route function. Is an empty string if
+            the function has no suffix
     """
 
     __visit_name__ = 'route_method'
@@ -272,6 +278,11 @@ class RouteMethodInfo(_Traversable):
         self.source_info = source_info
         self.function_name = function_name
         self.internal = internal
+        # NOTE(CaselIT): internal falcon names do not start with on and do not have suffix
+        if function_name.startswith('on'):
+            self.suffix = '_'.join(function_name.split('_')[2:])
+        else:
+            self.suffix = ''
 
 
 class RouteInfo(_Traversable):
@@ -490,17 +501,19 @@ class AppInfo(_Traversable):
         self.error_handlers = error_handlers
         self.asgi = asgi
 
-    def to_string(self, verbose=False, name='') -> str:
+    def to_string(self, verbose=False, internal=False, name='') -> str:
         """Returns a string representation of this class.
 
         Args:
             verbose (bool, optional): Adds more information. Defaults to False.
+            internal (bool, optional): Print also internal falcon route methods.
+                Defaults to False.
             name (str, optional): The name of the application. Will be places at the
                 beginning of the text. Will be ``Falcon App`` when not provided.
         Returns:
             str: string representation of the application.
         """
-        return StringVisitor(verbose, name).process(self)
+        return StringVisitor(verbose, internal, name).process(self)
 
 
 # ------------------------------------------------------------------------
@@ -537,12 +550,15 @@ class StringVisitor(InspectVisitor):
 
     Args:
         verbose (bool, optional): Adds more information. Defaults to False.
+        internal (bool, optional): Print also internal falcon route methods.
+            Defaults to False.
         name (str, optional): The name of the application. Will be places at the
             beginning of the text. Will be 'Falcon App' when not provided.
     """
 
-    def __init__(self, verbose: bool, name=''):
+    def __init__(self, verbose=False, internal=False, name=''):
         self.verbose = verbose
+        self.internal = internal
         self.name = name
         self.indent = 0
 
@@ -561,7 +577,7 @@ class StringVisitor(InspectVisitor):
     def _methods_to_string(self, methods: List):
         """Returns a string from the list of methods"""
         tab = self.tab + ' ' * 3
-        methods = _filter_internal(methods, self.verbose)
+        methods = _filter_internal(methods, self.internal)
         if not methods:
             return ''
         text_list = [self.process(m) for m in methods]
@@ -701,7 +717,7 @@ class StringVisitor(InspectVisitor):
             sinks = '\n'.join(self.process(s) for s in app.sinks)
             text += '\n• Sinks:\n{}'.format(sinks)
 
-        errors = _filter_internal(app.error_handlers, self.verbose)
+        errors = _filter_internal(app.error_handlers, self.internal)
         if errors:
             errs = '\n'.join(self.process(e) for e in errors)
             text += '\n• Error handlers:\n{}'.format(errs)
