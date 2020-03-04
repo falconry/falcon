@@ -348,6 +348,11 @@ class TestInspectVisitor:
 def test_string_visitor_class():
     assert issubclass(inspect.StringVisitor, inspect.InspectVisitor)
 
+    sv = inspect.StringVisitor()
+    assert sv.verbose is False
+    assert sv.internal is False
+    assert sv.name == ''
+
 
 @pytest.mark.parametrize('internal', (True, False))
 class TestStringVisitor:
