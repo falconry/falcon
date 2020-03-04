@@ -1,0 +1,4 @@
+:class:`~falcon.media.URLEncodedFormHandler` was added for handling URL-encoded forms (of content
+type ``application/x-www-form-urlencoded``) as ``Request.media``. The :attr:`~.RequestOptions.auto_parse_form_urlencoded` option is now
+deprecated in favor of :class:`~falcon.media.URLEncodedFormHandler`.
+(See also: :ref:`access_urlencoded_form`).

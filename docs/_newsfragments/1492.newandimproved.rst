@@ -1,0 +1,2 @@
+WSGI path decoding in :class:`falcon.Request` was optimized, and is now
+significantly faster than in Falcon 2.0.
