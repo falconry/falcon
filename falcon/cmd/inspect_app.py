@@ -71,6 +71,11 @@ def load_app(parser, args):
     return app
 
 
+def route_main():
+    print('The "falcon-print-routes" command is deprecated. Please use "falcon-inspect-app"')
+    main()
+
+
 def main():
     """
     Main entrypoint.

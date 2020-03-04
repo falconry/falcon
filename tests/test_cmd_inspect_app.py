@@ -122,3 +122,19 @@ class TestMain:
             inspect_app.main()
         ins = inspect.inspect_app(_APP)
         self.check(output.getvalue().strip(), ins.to_string(verbose))
+
+
+def test_route_main(monkeypatch):
+    called = False
+
+    def mock():
+        nonlocal called
+        called = True
+
+    monkeypatch.setattr(inspect_app, 'main', mock)
+    output = io.StringIO()
+    with redirected(stdout=output):
+        inspect_app.route_main()
+
+    assert 'deprecated' in output.getvalue()
+    assert called
