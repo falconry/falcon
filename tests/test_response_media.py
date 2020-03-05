@@ -154,3 +154,49 @@ def test_mimeparse_edgecases(client):
     # Clear the content type, shouldn't raise this time
     resp.content_type = None
     resp.media = {'something': True}
+
+
+class TestRenderBodyPrecedence:
+    def test_body(self, client):
+        client.simulate_get('/')
+
+        resp = client.resource.captured_resp
+
+        resp.body = 'body'
+        resp.data = b'data'
+        resp.media = ['media']
+
+        assert resp.render_body() == b'body'
+
+    def test_data(self, client):
+        client.simulate_get('/')
+
+        resp = client.resource.captured_resp
+
+        resp.data = b'data'
+        resp.media = ['media']
+
+        assert resp.render_body() == b'data'
+
+    def test_media(self, client):
+        client.simulate_get('/')
+
+        resp = client.resource.captured_resp
+        resp.media = ['media']
+
+        assert json.loads(resp.render_body().decode('utf-8')) == ['media']
+
+
+def test_media_rendered_cached(client):
+    client.simulate_get('/')
+
+    resp = client.resource.captured_resp
+
+    resp.media = {'foo': 'bar'}
+
+    first = resp.render_body()
+    assert first is resp.render_body()
+    assert first is resp._media_rendered
+
+    resp.media = 123
+    assert first is not resp.render_body()
