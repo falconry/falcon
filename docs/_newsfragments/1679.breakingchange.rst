@@ -1,0 +1,3 @@
+The :attr:`~.falcon.response.Response.data` not just returns the set data.
+Use :meth:`~.falcon.response.Response.render_body` to obtain the raw content
+of the response body.
