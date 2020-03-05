@@ -567,17 +567,6 @@ class Request(falcon.request.Request):
         return scheme
 
     @property
-    def prefix(self):
-        if self._cached_prefix is None:
-            self._cached_prefix = (
-                self.scheme + '://' +
-                self.netloc +
-                self.app
-            )
-
-        return self._cached_prefix
-
-    @property
     def host(self):
         try:
             # NOTE(kgriffs): Prefer the host header; the web server

@@ -793,7 +793,7 @@ class Request:
     def prefix(self):
         if self._cached_prefix is None:
             self._cached_prefix = (
-                self.env['wsgi.url_scheme'] + '://' +
+                self.scheme + '://' +
                 self.netloc +
                 self.app
             )
@@ -975,8 +975,27 @@ class Request:
 
         return netloc_value
 
-    @property
-    def media(self):
+    def get_media(self):
+        """Returns a deserialized form of the request stream.
+
+        When called, it will attempt to deserialize the request stream
+        using the Content-Type header as well as the media-type handlers
+        configured via :class:`falcon.RequestOptions`. The result will
+        be cached and returned in subsequent calls::
+
+            deserialized_media = req.get_media()
+
+        If the matched media handler raises an error while attempting to
+        deserialize the request body, the exception will propagate up
+        to the caller.
+
+        See :ref:`media` for more information regarding media handling.
+
+        Warning:
+            This operation will consume the request stream the first time
+            it's called and cache the results. Follow-up calls will just
+            retrieve a cached version of the object.
+        """
         if self._media is not None or self.bounded_stream.eof:
             return self._media
 
@@ -996,6 +1015,8 @@ class Request:
                 self.bounded_stream.exhaust()
 
         return self._media
+
+    media = property(get_media)
 
     # ------------------------------------------------------------------------
     # Methods

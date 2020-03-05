@@ -31,7 +31,7 @@ class ResourceCachedMedia:
         self.captured_req_media = req.media
 
         # NOTE(kgriffs): Ensure that the media object is cached
-        assert self.captured_req_media is req.media
+        assert self.captured_req_media is req.get_media()
 
 
 class ResourceCachedMediaAsync:
