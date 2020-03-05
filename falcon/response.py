@@ -17,6 +17,7 @@
 import mimetypes
 
 from falcon import DEFAULT_MEDIA_TYPE
+from falcon.constants import _UNSET
 from falcon.errors import HeaderNotSupported
 from falcon.media import Handlers
 from falcon.response_helpers import (
@@ -154,6 +155,7 @@ class Response:
         '_extra_headers',
         '_headers',
         '_media',
+        '_media_rendered',
         '__dict__',
     )
 
@@ -184,41 +186,12 @@ class Response:
         self.stream = None
         self._data = None
         self._media = None
+        self._media_rendered = _UNSET
 
         self.context = self.context_type()
 
     @property
     def data(self):
-        # TODO(kgriffs): Remove the side-effect that accessing this
-        #   property causes (do something similar to what we did on the
-        #   ASGI side). This will be a breaking change, so caution is
-        #   advised.
-
-        # NOTE(kgriffs): Test explicitly against None since the
-        # app may have set it to an empty binary string.
-        if self._data is not None:
-            return self._data
-
-        # NOTE(kgriffs): Test explicitly against None since the
-        # app may have set it to an empty string that should still
-        # be serialized.
-        if self._media is None:
-            return None
-
-        if not self.content_type:
-            self.content_type = self.options.default_media_type
-
-        handler = self.options.media_handlers.find_by_media_type(
-            self.content_type,
-            self.options.default_media_type
-        )
-
-        # NOTE(kgriffs): Set _data to avoid re-serializing if the
-        # data() property is called multiple times.
-        self._data = handler.serialize(
-            self._media,
-            self.content_type
-        )
         return self._data
 
     @data.setter
@@ -234,19 +207,9 @@ class Response:
         return self._media
 
     @media.setter
-    def media(self, obj):
-        self._media = obj
-
-        # NOTE(kgriffs): This will be set just-in-time by the data() property,
-        # rather than serializing immediately. That way, if media() is called
-        # multiple times we don't waste time serializing objects that will
-        # just be thrown away.
-        #
-        # TODO(kgriffs): This makes precedence harder to reason about, since
-        #   it is no longer about what attributes have and have not been set,
-        #   but also what order they were set in. On the ASGI side this has
-        #   already been addressed.
-        self._data = None
+    def media(self, value):
+        self._media = value
+        self._media_rendered = _UNSET
 
     @property
     def stream_len(self):
@@ -259,6 +222,51 @@ class Response:
         # NOTE(kgriffs): We explicitly disallow setting the deprecated attribute
         #   so that apps relying on it do not fail silently.
         raise AttributeError(_STREAM_LEN_REMOVED_MSG)
+
+    def render_body(self):
+        """Get the raw content for the response body.
+
+        This method returns the raw body data that should be returned in the
+        HTTP response.
+
+        Returns:
+            bytes: The UTF-8 encoded value of the `body` attribute, if
+                set. Otherwise, the value of the `data` attribute if set, or
+                finally the serialized value of the `media` attribute. If
+                none of these attributes are set, ``None`` is returned.
+        """
+
+        body = self.body
+        if body is None:
+            data = self._data
+
+            if data is None and self._media is not None:
+                # NOTE(kgriffs): We use a special _UNSET singleton since
+                #   None is ambiguous (the media handler might return None).
+                if self._media_rendered is _UNSET:
+                    if not self.content_type:
+                        self.content_type = self.options.default_media_type
+
+                    handler = self.options.media_handlers.find_by_media_type(
+                        self.content_type,
+                        self.options.default_media_type
+                    )
+
+                    self._media_rendered = handler.serialize(
+                        self._media,
+                        self.content_type
+                    )
+
+                data = self._media_rendered
+        else:
+            try:
+                # NOTE(kgriffs): Normally we expect body to be a string
+                data = body.encode()
+            except AttributeError:
+                # NOTE(kgriffs): Assume it was a bytes object already
+                data = body
+
+        return data
 
     def __repr__(self):
         return '<%s: %s>' % (self.__class__.__name__, self.status)

@@ -17,7 +17,7 @@
 from asyncio.coroutines import CoroWrapper
 from inspect import iscoroutine, iscoroutinefunction
 
-from falcon import _UNSET
+from falcon.constants import _UNSET
 import falcon.response
 from falcon.util.misc import is_python_func
 
@@ -199,7 +199,6 @@ class Response(falcon.response.Response):
     #   an additional function call.
     _sse = None
     _registered_callbacks = None
-    _media_rendered = _UNSET
 
     @property
     def sse(self):
@@ -208,23 +207,6 @@ class Response(falcon.response.Response):
     @sse.setter
     def sse(self, value):
         self._sse = value
-
-    @property
-    def media(self):
-        return self._media
-
-    @media.setter
-    def media(self, value):
-        self._media = value
-        self._media_rendered = _UNSET
-
-    @property
-    def data(self):
-        return self._data
-
-    @data.setter
-    def data(self, value):
-        self._data = value
 
     def set_stream(self, stream, content_length):
         """Convenience method for setting both `stream` and `content_length`.

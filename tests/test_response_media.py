@@ -50,7 +50,7 @@ def test_json(client, media_type):
     resp.content_type = media_type
     resp.media = {'something': True}
 
-    assert json.loads(resp.data.decode('utf-8')) == {'something': True}
+    assert json.loads(resp.render_body().decode('utf-8')) == {'something': True}
 
 
 @pytest.mark.parametrize('document', [
@@ -96,11 +96,11 @@ def test_msgpack(media_type):
 
     # Bytes
     resp.media = {b'something': True}
-    assert resp.data == b'\x81\xc4\tsomething\xc3'
+    assert resp.render_body() == b'\x81\xc4\tsomething\xc3'
 
     # Unicode
     resp.media = {'something': True}
-    assert resp.data == b'\x81\xa9something\xc3'
+    assert resp.render_body() == b'\x81\xa9something\xc3'
 
 
 def test_unknown_media_type(client):
@@ -110,7 +110,7 @@ def test_unknown_media_type(client):
     with pytest.raises(errors.HTTPUnsupportedMediaType) as err:
         resp.content_type = 'nope/json'
         resp.media = {'something': True}
-        __ = resp.data  # NOQA
+        resp.render_body()
 
     assert err.value.description == 'nope/json is an unsupported media type.'
 
@@ -132,7 +132,7 @@ def test_default_media_type(client):
     resp.content_type = ''
     resp.media = {'something': True}
 
-    assert json.loads(resp.data.decode('utf-8')) == {'something': True}
+    assert json.loads(resp.render_body().decode('utf-8')) == {'something': True}
     assert resp.content_type == 'application/json'
 
 
@@ -144,12 +144,12 @@ def test_mimeparse_edgecases(client):
     resp.content_type = 'application/vnd.something'
     with pytest.raises(errors.HTTPUnsupportedMediaType):
         resp.media = {'something': True}
-        __ = resp.data  # NOQA
+        resp.render_body()
 
     resp.content_type = 'invalid'
     with pytest.raises(errors.HTTPUnsupportedMediaType):
         resp.media = {'something': True}
-        __ = resp.data  # NOQA
+        resp.render_body()
 
     # Clear the content type, shouldn't raise this time
     resp.content_type = None
