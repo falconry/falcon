@@ -3,6 +3,13 @@
 Status Codes
 ============
 
+* `HTTPStatus`_
+* `1xx Informational`_
+* `2xx Success`_
+* `3xx Redirection`_
+* `4xx Client Error`_
+* `5xx Server Error`_
+
 Falcon provides a list of constants for common
 `HTTP response status codes <http://httpstatus.es>`_.
 
