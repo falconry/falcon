@@ -3,6 +3,9 @@
 WSGI Requests & Responses
 =========================
 
+* `Request`_
+* `Response`_
+
 Instances of the :class:`falcon.Request` and
 :class:`falcon.Response` classes are passed into WSGI app responders as the
 second and third arguments, respectively:
@@ -40,6 +43,3 @@ Response
 
 .. autoclass:: falcon.Response
     :members:
-
-
-

@@ -48,6 +48,24 @@ httpnow = http_now
 
 
 class ASGILifespanEventEmitter:
+    """Emits ASGI lifespan events to an ASGI app.
+
+    This class can be used to drive a standard ASGI app callable in order to
+    perform functional tests on the app in question.
+
+    When simulating both lifespan and per-request events, each event stream
+    will require a separate invocation of the ASGI callable; one with a
+    lifespan event emitter, and one with a request event emitter. An
+    asyncio :class:`~asyncio.Condition` can be used to pause the
+    lifespan emitter until all of the desired request events have been
+    emitted.
+
+    Keyword Args:
+        shutting_down (asyncio.Condition): An instance of
+            :class:`asyncio.Condition` that will be awaited before
+            emitting the final shutdown event (``'lifespan.shutdown``).
+    """
+
     def __init__(self, shutting_down):
         self._state = 0
         self._shutting_down = shutting_down
@@ -73,6 +91,17 @@ class ASGILifespanEventEmitter:
 
 class ASGIRequestEventEmitter:
     """Emits events on-demand to an ASGI app.
+
+    This class can be used to drive a standard ASGI app callable in order to
+    perform functional tests on the app in question.
+
+    Note:
+        In order to ensure the app is able to handle subtle variations
+        in the ASGI events that are allowed by the specification, such
+        variations are applied to the emitted events at unspecified
+        intervals. This includes whether or not the `more_body` field
+        is explicitly set, or whether or not the request `body` chunk in
+        the event is occasionally empty,
 
     Keyword Args:
         body (str): The body content to use when emitting http.request
@@ -177,7 +206,26 @@ class ASGIRequestEventEmitter:
 
 
 class ASGIResponseEventCollector:
-    """Collects and validates ASGI events returned by an app."""
+    """Collects and validates ASGI events returned by an app.
+
+    Attributes:
+        events (iterable): An iterable of events that were emitted by
+            the app, collected as-is from the app.
+        headers (iterable): An iterable of (str, str) tuples representing
+            the UTF-8 decoded headers emitted by the app in the body of
+            the ``'http.response.start'`` event.
+        status (int): HTTP status code emitted by the app in the body of
+            the ``'http.response.start'`` event.
+        body_chunks (iterable): An iterable of ``bytes`` objects emitted
+            by the app via ``'http.response.body'`` events.
+        more_body (bool): Whether or not the app expects to emit more
+            body chunks. Will be ``None`` if unknown (i.e., the app has
+            not yet emitted any ``'http.response.body'`` events.)
+
+    Raises:
+        TypeError: An event field emitted by the app was of an unexpected type.
+        ValueError: Invalid event name or field value.
+    """
 
     _LIFESPAN_EVENT_TYPES = frozenset([
         'lifespan.startup.complete',
