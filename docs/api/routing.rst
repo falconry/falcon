@@ -3,6 +3,15 @@
 Routing
 =======
 
+* `Default Behavior`_
+* `Default Router`_
+* `Field Converters`_
+* `Built-in Converters`_
+* `Custom Converters`_
+* `Custom Routers`_
+* `Routing Utilities`_
+* `Custom HTTP Methods`_
+
 Falcon routes incoming requests to resources based on a set of URI
 templates. If the path requested by the client matches the template for
 a given route, the request is then passed on to the associated resource
@@ -52,8 +61,8 @@ implement a responder for the requested HTTP method, the framework
 invokes a default responder that raises an instance of
 :class:`~.HTTPMethodNotAllowed`.
 
-Default Router
---------------
+Default Behavior
+----------------
 
 Falcon's default routing engine is based on a decision tree that is
 first compiled into Python code, and then evaluated by the runtime.
@@ -97,6 +106,11 @@ Responders must always define at least two arguments to receive
 :class:`~.falcon.Request` and :class:`~.falcon.Response` objects, respectively::
 
     def on_post(self, req, resp):
+        pass
+
+For ASGI apps, the responder must be a coroutine function::
+
+    async def on_post(self, req, resp):
         pass
 
 The :class:`~.falcon.Request` object represents the incoming HTTP
@@ -348,4 +362,3 @@ You then can define request methods like any other HTTP method, such as::
 
     def on_foo(self, req, resp):
         ...
-

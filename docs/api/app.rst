@@ -3,6 +3,10 @@
 The App Class
 =============
 
+* `WSGI App`_
+* `ASGI App`_
+* `Options`_
+
 Falcon supports both the WSGI (:class:`falcon.App`) and
 ASGI (:class:`falcon.asgi.App`) protocols. This is done
 by instantiating the respective ``App`` class to create a
@@ -21,11 +25,20 @@ you can host them with any standard-compliant server.
     wsgi_app = falcon.App()
     asgi_app = falcon.asgi.App()
 
+WSGI App
+--------
+
 .. autoclass:: falcon.App
     :members:
 
+ASGI App
+--------
+
 .. autoclass:: falcon.asgi.App
     :members:
+
+Options
+-------
 
 .. autoclass:: falcon.RequestOptions
     :members:

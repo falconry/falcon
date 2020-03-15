@@ -267,3 +267,11 @@ dl.attribute > dd > p {
 .field-list p {
     margin-bottom: 1em;
 }
+
+div.body div.section > ul.simple > li > dl.simple > dd > ul {
+    margin: 0;
+}
+
+div.body div.toctree-wrapper.compound > ul > li.toctree-l1 > ul {
+    margin-top: 0;
+}

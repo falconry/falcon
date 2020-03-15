@@ -3,6 +3,11 @@
 Cookies
 -------
 
+* `Getting Cookies`_
+* `Setting Cookies`_
+* `The Secure Attribute`_
+* `The SameSite Attribute`_
+
 .. _getting-cookies:
 
 Getting Cookies

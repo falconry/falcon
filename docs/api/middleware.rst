@@ -3,6 +3,9 @@
 Middleware
 ==========
 
+* `Short-Circuiting`_
+* `Exception Handling`_
+
 Middleware components provide a way to execute logic before the
 framework routes each request, after each request is routed but before
 the target responder is called, or just before the response is returned
@@ -240,7 +243,7 @@ like this::
         mob2.process_response
     mob1.process_response
 
-Short-circuiting
+Short-Circuiting
 ----------------
 
 A *process_request* or *process_resource* middleware method may short-circuit

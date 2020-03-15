@@ -3,6 +3,15 @@
 Media
 =====
 
+* `Usage`_
+* `Validating Media`_
+* `Content-Type Negotiation`_
+* `Replacing the Default Handlers`_
+* `Supported Handler Types`_
+* `Custom Handler Type`_
+* `Handlers Mapping`_
+* `Media Type Constants`_
+
 Falcon allows for easy and customizable internet media type handling. By
 default Falcon only enables handlers for JSON and HTML (URL-encoded and
 multipart) forms. However, additional handlers can be configured through the
@@ -141,8 +150,8 @@ provided by Falcon:
     :member-order: bysource
 
 
-Handlers
---------
+Handlers Mapping
+----------------
 
 .. autoclass:: falcon.media.Handlers
     :members:
