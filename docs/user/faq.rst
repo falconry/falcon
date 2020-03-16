@@ -612,31 +612,48 @@ method, making it compatible with ``boto3``\'s
 
 How do I consume a query string that has a JSON value?
 ------------------------------------------------------
-Falcon defaults to treating commas in a query string as literal characters
-delimiting a comma separated list. For example, given
-the query string ``?c=1,2,3``, Falcon defaults to adding this to your
-``request.params`` dictionary as ``{'c': ['1', '2', '3']}``. If you attempt
-to use JSON in the value of the query string, for example ``?c={'a':1,'b':2}``,
-the value will get added to your ``request.params`` in a way that you probably
-don't expect: ``{'c': ["{'a':1", "'b':2}"]}``.
-
-Commas are a reserved character that can be escaped according to
-`RFC 3986 - 2.2. Reserved Characters <https://tools.ietf.org/html/rfc3986#section-2.2>`_,
-so one possible solution is to percent encode any commas that appear in your
-JSON query string. The other option is to switch the way Falcon
-handles commas in a query string by setting the
-:attr:`~falcon.RequestOptions.auto_parse_qs_csv` to ``False`` on an instance of
-:class:`falcon.App`:
+To work with a JSON value in a query string, Falcon provides 
+the :meth:`~falcon.Request.get_param_as_json` method, an example of which is given below:
 
 .. code:: python
 
-    app.req_options.auto_parse_qs_csv = False
+    import falcon
 
-When :attr:`~falcon.RequestOptions.auto_parse_qs_csv` is set to ``False``, the
-value of the query string ``?c={'a':1,'b':2}`` will be added to
-the ``req.params`` dictionary as  ``{'c': "{'a':1,'b':2}"}``.
-This lets you consume JSON whether or not the client chooses to escape
-commas in the request.
+
+    class LocationResource:
+
+        def on_get(self, req, resp):
+            """Handles GET requests"""
+            places = {
+                'Chandigarh, India': {
+                    'lat': 30.692781,
+                    'long': 76.740875
+                },
+
+                'Ontario, Canada': {
+                    'lat': 43.539814,
+                    'long': -80.246094
+                }
+            }
+
+            coordenates = req.get_param_as_json('place')
+
+            for (key, value) in places.items():
+                if coordenates == value:
+                    place = key
+
+            resp.media = {
+                'place': place
+            }
+
+
+    app = falcon.API()
+    app.add_route('/locations', LocationResource())
+
+``LocationResource`` receives a query string that can have a JSON value 
+under the name place which can be obtained by using the :meth:`~falcon.Request.get_param_as_json` 
+method so that the request ``/locations?place={'lat': 43.539814, 'long': -80.246094}`` 
+the value of ``place`` will be a dict.
 
 How can I handle forward slashes within a route template field?
 ---------------------------------------------------------------
