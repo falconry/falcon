@@ -31,7 +31,8 @@ import falcon
 #   * https://github.com/sphinx-doc/sphinx/issues/6803
 #   * https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods
 #
-multiprocessing.set_start_method('fork')
+if not sys.platform.startswith('win'):
+  multiprocessing.set_start_method('fork')
 
 # on_rtd is whether we are on readthedocs.org
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'

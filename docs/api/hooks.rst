@@ -3,6 +3,9 @@
 Hooks
 =====
 
+* `Before Hooks`_
+* `After Hooks`_
+
 Falcon supports *before* and *after* hooks. You install a hook simply by
 applying one of the decorators below, either to an individual responder or
 to an entire resource.
@@ -90,6 +93,12 @@ requests.
     are intended to hold request and response data specific to your app as it
     passes through the framework.
 
+Before Hooks
+------------
+
 .. autofunction:: falcon.before
+
+After Hooks
+-----------
 
 .. autofunction:: falcon.after
