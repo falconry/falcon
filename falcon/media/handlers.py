@@ -63,4 +63,4 @@ MultipartParseOptions._DEFAULT_HANDLERS = Handlers({
     'application/json': JSONHandler(),
     'application/json; charset=UTF-8': JSONHandler(),
     MEDIA_URLENCODED: URLEncodedFormHandler(),
-})
+})  # type: ignore

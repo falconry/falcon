@@ -116,7 +116,7 @@ class ASGIRequestEventEmitter:
 
     # TODO(kgriffs): If this pattern later becomes useful elsewhere,
     #   factor out into a standalone helper class.
-    _branch_decider = defaultdict(bool)
+    _branch_decider = defaultdict(bool)  # type: defaultdict
 
     def __init__(self, body=None, disconnect_at=None, chunk_size=4096):
         if body is None:
