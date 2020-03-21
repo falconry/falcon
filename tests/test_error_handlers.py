@@ -231,7 +231,7 @@ class TestErrorHandler:
                 raise falcon.HTTPNotFound()
 
         def capture_error(req, resp, ex, params):
-            resp.body = ex.__class__.__name__
+            resp.set_header('X-name', ex.__class__.__name__)
             raise ex
 
         app = create_app(asgi)
@@ -242,8 +242,51 @@ class TestErrorHandler:
 
         result = client.simulate_get('/')
         assert result.status_code == 404
-        assert result.text == 'HTTPNotFound'
+        assert result.headers['X-name'] == 'HTTPNotFound'
 
         result = client.simulate_get('/404')
         assert result.status_code == 404
-        assert result.text == 'HTTPRouteNotFound'
+        assert result.headers['X-name'] == 'HTTPRouteNotFound'
+
+
+class NoBodyResource:
+    def on_get(self, req, res):
+        res.data = b'foo'
+        raise falcon.HTTPError(falcon.HTTP_IM_A_TEAPOT)
+
+    def on_post(self, req, res):
+        res.media = {'a': 1}
+        raise falcon.HTTPError(falcon.HTTP_740)
+
+    def on_put(self, req, res):
+        res.body = 'foo'
+        raise falcon.HTTPError(falcon.HTTP_701)
+
+
+@pytest.fixture()
+def body_client(asgi):
+    app = create_app(asgi=asgi)
+    app.add_route('/error', NoBodyResource())
+
+    def no_reps(req, resp, exception):
+        pass
+
+    app.set_error_serializer(no_reps)
+    return testing.TestClient(app)
+
+
+class TestNoBodyWithStatus:
+    def test_data_is_set(self, body_client):
+        res = body_client.simulate_get('/error')
+        assert res.status == falcon.HTTP_IM_A_TEAPOT
+        assert res.content == b''
+
+    def test_media_is_set(self, body_client):
+        res = body_client.simulate_post('/error')
+        assert res.status == falcon.HTTP_740
+        assert res.content == b''
+
+    def test_body_is_set(self, body_client):
+        res = body_client.simulate_put('/error')
+        assert res.status == falcon.HTTP_701
+        assert res.content == b''

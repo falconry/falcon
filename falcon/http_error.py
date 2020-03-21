@@ -79,19 +79,6 @@ class HTTPError(Exception):
 
     Attributes:
         status (str): HTTP status line, e.g. '748 Confounded by Ponies'.
-        has_representation (bool): Read-only property that determines
-            whether error details will be serialized when composing
-            the HTTP response. In ``HTTPError`` this property always
-            returns ``True``, but child classes may override it
-            in order to return ``False`` when an empty HTTP body is desired.
-
-            (See also: :class:`falcon.http_error.OptionalRepresentation`)
-
-            Note:
-                A custom error serializer
-                (see :meth:`~.App.set_error_serializer`) may choose to set a
-                response body regardless of the value of this property.
-
         title (str): Error title to send to the client.
         description (str): Description of the error to send to the client.
         headers (dict): Extra headers to add to the response.
@@ -135,10 +122,6 @@ class HTTPError(Exception):
 
     def __repr__(self):
         return '<%s: %s>' % (self.__class__.__name__, self.status)
-
-    @property
-    def has_representation(self):
-        return True
 
     def to_dict(self, obj_type=dict):
         """Return a basic dictionary representing the error.
@@ -208,26 +191,3 @@ class HTTPError(Exception):
 
         return (b'<?xml version="1.0" encoding="UTF-8"?>' +
                 et.tostring(error_element, encoding='utf-8'))
-
-
-class OptionalRepresentation:
-    """Mixin for ``HTTPError`` child classes that may have a representation.
-
-    This class can be mixed in when inheriting from ``HTTPError`` in order
-    to override the `has_representation` property, such that it will
-    return ``False`` when the error instance has no description
-    (i.e., the `description` kwarg was not set).
-
-    You can use this mixin when defining errors that do not include
-    a body in the HTTP response by default, serializing details only when
-    the web developer provides a description of the error.
-
-    Note:
-        This mixin class must appear before ``HTTPError`` in the base class
-        list when defining the child; otherwise, it will not override the
-        `has_representation` property as expected.
-
-    """
-    @property
-    def has_representation(self):
-        return super().description is not None

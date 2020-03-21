@@ -564,7 +564,7 @@ class TestHTTPError:
         response = client.simulate_request(path='/404')
 
         assert response.status == falcon.HTTP_404
-        assert not response.content
+        assert response.json == falcon.HTTPNotFound().to_dict()
 
     def test_404_with_body(self, client):
         client.app.add_route('/404', NotFoundResourceWithBody())
@@ -583,7 +583,7 @@ class TestHTTPError:
 
         response = client.simulate_request(path='/405')
         assert response.status == falcon.HTTP_405
-        assert not response.content
+        assert response.text == falcon.HTTPMethodNotAllowed(['PUT']).to_json()
         assert response.headers['allow'] == 'PUT'
 
     def test_405_without_body_with_extra_headers(self, client):
@@ -591,7 +591,7 @@ class TestHTTPError:
 
         response = client.simulate_request(path='/405')
         assert response.status == falcon.HTTP_405
-        assert not response.content
+        assert response.text == falcon.HTTPMethodNotAllowed([]).to_json()
         assert response.headers['allow'] == 'PUT'
         assert response.headers['x-ping'] == 'pong'
 
@@ -602,7 +602,7 @@ class TestHTTPError:
 
         response = client.simulate_request(path='/405')
         assert response.status == falcon.HTTP_405
-        assert not response.content
+        assert response.json == falcon.HTTPMethodNotAllowed([]).to_dict()
         assert response.headers['allow'] == 'PUT'
         assert response.headers['allow'] != 'GET,PUT'
         assert response.headers['allow'] != 'GET'
@@ -626,7 +626,7 @@ class TestHTTPError:
         response = client.simulate_request(path='/410')
 
         assert response.status == falcon.HTTP_410
-        assert not response.content
+        assert response.text == falcon.HTTPGone().to_json()
 
     def test_410_with_body(self, client):
         client.app.add_route('/410', GoneResourceWithBody())
@@ -716,9 +716,9 @@ class TestHTTPError:
         response = client.simulate_request(path='/416', headers={'accept': 'text/xml'})
 
         assert response.status == falcon.HTTP_416
-        assert not response.content
+        assert response.content == falcon.HTTPRangeNotSatisfiable(123456).to_xml()
         assert response.headers['content-range'] == 'bytes */123456'
-        assert response.headers['content-length'] == '0'
+        assert response.headers['content-length'] == str(len(response.content))
 
     def test_429_no_retry_after(self, client):
         client.app.add_route('/429', TooManyRequestsResource())

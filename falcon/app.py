@@ -734,16 +734,6 @@ class App:
             convert the error to JSON or XML, respectively.
 
         Note:
-            The default serializer will not render any response body for
-            :class:`~.HTTPError` instances where the `has_representation`
-            property evaluates to ``False`` (such as in the case of types
-            that subclass :class:`falcon.http_error.OptionalRepresentation`
-            and do not provide a description).
-            However a custom serializer will be called regardless of the
-            property value, and it may choose to override the
-            representation logic.
-
-        Note:
             A custom serializer set with this method may not be called if the
             default error handler for :class:`~.HTTPError` has been overriden.
             See :meth:`~.add_error_handler` for more details.
@@ -758,7 +748,7 @@ class App:
                 preferred = req.client_prefers(('application/x-yaml',
                                                 'application/json'))
 
-                if exception.has_representation and preferred is not None:
+                if preferred is not None:
                     if preferred == 'application/json':
                         representation = exception.to_json()
                     else:
@@ -892,6 +882,8 @@ class App:
         if error.headers is not None:
             resp.set_headers(error.headers)
 
+        # NOTE(caselit): Reset body, data and media before calling the serializer
+        resp.body = resp.data = resp.media = None
         self._serialize_error(req, resp, error)
 
     def _http_status_handler(self, req, resp, status, params):

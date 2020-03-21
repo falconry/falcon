@@ -158,9 +158,6 @@ def default_serialize_error(req, resp, exception):
         resp: Instance of ``falcon.Response``
         exception: Instance of ``falcon.HTTPError``
     """
-    if not exception.has_representation:
-        return
-
     representation = None
 
     preferred = req.client_prefers(('application/xml',

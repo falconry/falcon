@@ -592,7 +592,7 @@ class TestFalconTestingUtils:
     def test_decode_empty_result(self, app):
         client = testing.TestClient(app)
         response = client.simulate_request(path='/')
-        assert response.text == ''
+        assert response.json == falcon.HTTPNotFound().to_dict()
 
     def test_httpnow_alias_for_backwards_compat(self):
         assert testing.httpnow is util.http_now
