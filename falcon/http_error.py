@@ -169,7 +169,7 @@ class HTTPError(Exception):
         """Return an XML-encoded representation of the error.
 
         Returns:
-            str: An XML document for the error.
+            bytes: An XML document for the error.
 
         """
 
