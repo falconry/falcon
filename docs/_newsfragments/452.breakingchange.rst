@@ -1,0 +1,6 @@
+The class :class:`~.falcon.http_error.NoRepresentation` and the attribute
+:attr:`~.falcon.HttpError.has_representation` were removed.
+Falcon now ensures that the previously set body is cleared before handling a
+:class:`~.falcon.HttpStatus` or an exception.
+The default error serializer returns a representation every falcon
+error that derive from :class:`~.falcon.HttpError`.

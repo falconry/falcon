@@ -4,7 +4,6 @@ Error Handling
 ==============
 
 * `Base Class`_
-* `Mixins`_
 * `Predefined Errors`_
 
 When it comes to error handling, you can always directly set the error
