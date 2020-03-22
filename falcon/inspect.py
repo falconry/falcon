@@ -15,7 +15,7 @@
 """Inspect utilities for falcon applications"""
 from functools import partial
 import inspect
-from typing import List, Optional
+from typing import Callable, Dict, List, Optional, Type
 
 from falcon import App, app_helpers
 from falcon.routing import CompiledRouter
@@ -91,7 +91,7 @@ def register_router(router_class):
 
 
 # router inspection registry
-_supported_routers = {}
+_supported_routers = {}  # type: Dict[Type, Callable]
 
 
 def inspect_static_routes(app: App) -> 'List[StaticRouteInfo]':
@@ -162,8 +162,7 @@ def inspect_middlewares(app: App) -> 'MiddlewareInfo':
             _, name = _get_source_info_and_name(method)
             cls = type(method.__self__)
             _, cls_name = _get_source_info_and_name(cls)
-            info = MiddlewareTreeItemInfo(name, cls_name)
-            current.append(info)
+            current.append(MiddlewareTreeItemInfo(name, cls_name))
         type_infos.append(current)
     middlewareTree = MiddlewareTreeInfo(*type_infos)
 
@@ -177,8 +176,7 @@ def inspect_middlewares(app: App) -> 'MiddlewareInfo':
             if method:
                 real_func = method[0]
                 source_info = _get_source_info(real_func)
-                info = MiddlewareMethodInfo(real_func.__name__, source_info)
-                methods.append(info)
+                methods.append(MiddlewareMethodInfo(real_func.__name__, source_info))
         m_info = MiddlewareClassInfo(cls_name, class_source_info, methods)
         middlewareClasses.append(m_info)
 
@@ -225,7 +223,7 @@ def inspect_compiled_router(router: CompiledRouter) -> 'List[RouteInfo]':
             if root.children:
                 _traverse(root.children, path)
 
-    routes = []
+    routes = []  # type: List[RouteInfo]
     _traverse(router._roots, '')
     return routes
 
