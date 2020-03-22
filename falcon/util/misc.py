@@ -85,7 +85,7 @@ if (
 ):
     _lru_cache_safe = _lru_cache_nop  # pragma: nocover
 else:
-    _lru_cache_safe = functools.lru_cache
+    _lru_cache_safe = functools.lru_cache  # type: ignore
 
 
 def is_python_func(func):
