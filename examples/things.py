@@ -21,7 +21,7 @@ class ThingsResource:
 
 # falcon.API instances are callable WSGI apps
 # in larger applications the app is created in a separate file
-app = falcon.App()
+app = falcon.API()
 
 # Resources are represented by long-lived class instances
 things = ThingsResource()
