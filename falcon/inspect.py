@@ -187,13 +187,16 @@ def inspect_middlewares(app: App) -> 'MiddlewareInfo':
 
 @register_router(CompiledRouter)
 def inspect_compiled_router(router: CompiledRouter) -> 'List[RouteInfo]':
-    """Expores the compiled router and returns the list of defined routes.
+    """Default route inspector for CompiledRouter.
+
+    Explores an instance of :class:`~.CompiledRouter` and returns a list of
+    defined routes.
 
     Args:
         router (CompiledRouter): The router to inspect.
 
     Returns:
-        List[RouteInfo]: A list of RouteInfo.
+        List[RouteInfo]: A list of :class:`~.RouteInfo`.
     """
 
     def _traverse(roots, parent):
