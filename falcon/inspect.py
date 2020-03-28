@@ -105,7 +105,7 @@ def inspect_static_routes(app: App) -> 'List[StaticRouteInfo]':
             :class:`falcon.App` and :class:`falcon.asgi.App`.
 
     Returns:
-        List[StaticRouteInfo]: The list of static routes that have
+        List[StaticRouteInfo]: A list of static routes that have
         been added to the application.
     """
     routes = []
@@ -123,7 +123,7 @@ def inspect_sinks(app: App) -> 'List[SinkInfo]':
             :class:`falcon.App` and :class:`falcon.asgi.App`.
 
     Returns:
-        List[SinkInfo]: The list of sinks used by the application.
+        List[SinkInfo]: A list of sinks used by the application.
     """
     sinks = []
     for prefix, sink in app._sinks:
@@ -141,7 +141,7 @@ def inspect_error_handlers(app: App) -> 'List[ErrorHandlerInfo]':
             :class:`falcon.App` and :class:`falcon.asgi.App`.
 
     Returns:
-        List[ErrorHandlerInfo]: The list of error handlers used by the
+        List[ErrorHandlerInfo]: A list of error handlers used by the
         application.
     """
     errors = []
