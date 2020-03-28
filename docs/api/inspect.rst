@@ -21,7 +21,7 @@ below:
 
 .. code:: bash
 
-    # my_module exposes tha application as a variable named "app"
+    # my_module exposes the application as a variable named "app"
     $ falcon-inspect-app my_module:app
 
     Falcon App (WSGI)
