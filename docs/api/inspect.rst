@@ -105,7 +105,7 @@ the classes.
 Inspect Functions Reference
 ---------------------------
 
-The inspect module defines the following inspect functions.
+This module defines the following inspect functions.
 
 .. autofunction:: falcon.inspect.inspect_app
 
@@ -131,7 +131,7 @@ The following functions enable route inspection.
 Information Classes
 -------------------
 
-Data returned by the the inspect functions is represented by these classes.
+Information returned by the inspect functions is represented by these classes.
 
 .. autoclass:: falcon.inspect.AppInfo
     :members:
