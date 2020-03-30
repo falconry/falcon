@@ -18,9 +18,13 @@ URI
 Date and Time
 -------------
 
-.. automodule:: falcon
-    :noindex:
-    :members: http_now, dt_to_http, http_date_to_dt
+.. NOTE(kgriffs): Use autofunction instead of automodule w/ the falcon
+     module, since the latter requires :noindex: which prevents us from
+     referencing these docs elsewhere.
+
+.. autofunction:: http_now
+.. autofunction:: dt_to_http
+.. autofunction:: http_date_to_dt
 
 .. autoclass:: falcon.TimezoneGMT
     :members:
@@ -28,17 +32,18 @@ Date and Time
 HTTP Status
 -----------
 
-.. automodule:: falcon
-    :noindex:
-    :members: get_http_status, http_status_to_code, code_to_http_status
+.. autofunction:: http_status_to_code
+.. autofunction:: code_to_http_status
+.. autofunction:: get_http_status
 
 Other
 -----
 
-.. automodule:: falcon
-    :noindex:
-    :members: deprecated, to_query_str,
-        get_bound_method, secure_filename, is_python_func
+.. autofunction:: deprecated
+.. autofunction:: to_query_str
+.. autofunction:: get_bound_method
+.. autofunction:: secure_filename
+.. autofunction:: is_python_func
 
 .. autoclass:: falcon.Context
     :members:
