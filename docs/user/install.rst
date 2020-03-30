@@ -46,14 +46,18 @@ default C compiler.
 .. code:: bash
 
     $ pip install cython
-    $ pip install --no-binary :all: falcon
+    $ pip install --no-build-isolation --no-binary :all: falcon
+
+Note that ``--no-build-isolation`` is necessary to override pip's default
+PEP 517 behavior that can cause Cython not to be found in the build
+environment.
 
 If you want to verify that Cython is being invoked, simply
 pass `-v` to pip in order to echo the compilation commands:
 
 .. code:: bash
 
-    $ pip install -v --no-binary :all: falcon
+    $ pip install -v --no-build-isolation --no-binary :all: falcon
 
 **Installing on OS X**
 
