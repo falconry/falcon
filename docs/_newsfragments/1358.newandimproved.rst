@@ -1,0 +1,5 @@
+ASGI+HTTP support was added to the framework via a new class, :class:`falcon.asgi.App`. The
+:ref:`testing <testing>` module was also updated to fully support ASGI apps, including two
+new helper functions: :func:`falcon.testing.create_scope` and
+:func:`falcon.testing.create_asgi_req`. WSGI users also get a new
+:func:`falcon.testing.create_req` method.
