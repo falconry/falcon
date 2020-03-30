@@ -44,7 +44,6 @@ Async
 .. autofunction:: falcon.wrap_sync_to_async
 .. autofunction:: falcon.wrap_sync_to_async_unsafe
 
-
 Other
 -----
 
