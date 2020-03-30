@@ -35,14 +35,14 @@ def wrap_sync_to_async_unsafe(func) -> Callable:
     This helper makes it easier to use synchronous callables with ASGI
     apps. However, it is considered "unsafe" because it calls the wrapped
     function directly in the same thread as the asyncio loop. Generally, you
-    should use :meth:`~.wrap_sync_to_async` instead.
+    should use :func:`~.wrap_sync_to_async` instead.
 
     Warning:
         This helper is only to be used for functions that do not perform any
         blocking I/O or lengthy CPU-bound operations, since the entire async
         loop will be blocked while the wrapped function is executed.
         For a safer, non-blocking alternative that runs the function in a
-        thread pool executor, use :func:~.sync_to_async instead.
+        thread pool executor, use :func:`~.sync_to_async` instead.
 
     Arguments:
         func (callable): Function, method, or other callable to wrap
@@ -122,7 +122,7 @@ async def sync_to_async(func, *args, **kwargs):
     Warning:
         This helper can only be used to execute thread-safe callables. If
         the callable is not thread-safe, it can be executed serially
-        by first wrapping it with :meth:`~.wrap_sync_to_async`, and then
+        by first wrapping it with :func:`~.wrap_sync_to_async`, and then
         executing the wrapper directly.
 
     Warning:
