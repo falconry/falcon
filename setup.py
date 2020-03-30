@@ -174,7 +174,8 @@ setup(
     entry_points={
         'console_scripts': [
             'falcon-bench = falcon.cmd.bench:main',
-            'falcon-print-routes = falcon.cmd.print_routes:main'
+            'falcon-inspect-app = falcon.cmd.inspect_app:main',
+            'falcon-print-routes = falcon.cmd.inspect_app:route_main',
         ]
     }
 )
