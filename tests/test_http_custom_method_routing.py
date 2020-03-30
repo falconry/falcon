@@ -29,10 +29,9 @@ def cleanup_constants():
     # Forcing reload to make sure we used a module import and didn't import
     # the list directly.
     importlib.reload(falcon.constants)
+    orig = list(falcon.constants.COMBINED_METHODS)
     yield
-    falcon.constants.COMBINED_METHODS = list(
-        set(falcon.constants.COMBINED_METHODS) - set(FALCON_CUSTOM_HTTP_METHODS)
-    )
+    falcon.constants.COMBINED_METHODS = orig
 
     if 'FALCON_CUSTOM_HTTP_METHODS' in os.environ:
         del os.environ['FALCON_CUSTOM_HTTP_METHODS']
