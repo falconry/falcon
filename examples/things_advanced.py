@@ -1,4 +1,5 @@
 # examples/things_advanced.py
+
 import json
 import logging
 import uuid
@@ -22,12 +23,8 @@ class StorageError(Exception):
 
     @staticmethod
     def handle(ex, req, resp, params):
-        description = ("Sorry, couldn't write your thing to the "
-                       'database. It worked on my box.')
-
-        raise falcon.HTTPError(falcon.HTTP_725,
-                               title='Database Error',
-                               description=description)
+        # TODO: Log the error, clean up, etc. before raising
+        raise falcon.HTTPInternalServerError()
 
 
 class SinkAdapter:
@@ -42,7 +39,7 @@ class SinkAdapter:
         params = {'q': req.get_param('q', True)}
         result = requests.get(url, params=params)
 
-        resp.status = str(result.status_code) + ' ' + result.reason
+        resp.status = falcon.code_to_http_status(result.status_code)
         resp.content_type = result.headers['content-type']
         resp.body = result.text
 
@@ -82,7 +79,7 @@ class RequireJSON:
     def process_request(self, req, resp):
         if not req.client_accepts_json:
             raise falcon.HTTPNotAcceptable(
-                title='This API only supports responses encoded as JSON.',
+                description='This API only supports responses encoded as JSON.',
                 href='http://docs.examples.com/api/json')
 
         if req.method in ('POST', 'PUT'):
@@ -115,11 +112,12 @@ class JSONTranslator:
             req.context.doc = json.loads(body.decode('utf-8'))
 
         except (ValueError, UnicodeDecodeError):
-            raise falcon.HTTPError(falcon.HTTP_753,
-                                   title='Malformed JSON',
-                                   description='Could not decode the request body. The '
-                                   'JSON was incorrect or not encoded as '
-                                   'UTF-8.')
+            description = ('Could not decode the request body. The '
+                           'JSON was incorrect or not encoded as '
+                           'UTF-8.')
+
+            raise falcon.HTTPBadRequest(title='Malformed JSON',
+                                        description=description)
 
     def process_response(self, req, resp, resource, req_succeeded):
         if not hasattr(resp.context, 'result'):
