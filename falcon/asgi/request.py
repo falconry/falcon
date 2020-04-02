@@ -263,7 +263,7 @@ class Request(falcon.request.Request):
 
             See also: :class:`falcon.asgi.BoundedStream`
         media (object): An awaitable property that acts as an alias for
-            :meth:`~.get_media`. This can be used to ease the porting of a
+            :meth:`~.get_media`. This can be used to ease the porting of
             a WSGI app to ASGI, although the ``await`` keyword must still be
             added when referencing the property::
 
@@ -680,9 +680,9 @@ class Request(falcon.request.Request):
     async def get_media(self):
         """Returns a deserialized form of the request stream.
 
-        When called the first time, the request stream will be deserialized
-        using the Content-Type header as well as the media-type handlers
-        configured via :class:`falcon.RequestOptions`. The result will
+        The first time this method is called, the request stream will be
+        deserialized using the Content-Type header as well as the media-type
+        handlers configured via :class:`falcon.RequestOptions`. The result will
         be cached and returned in subsequent calls::
 
             deserialized_media = await req.get_media()
@@ -691,7 +691,7 @@ class Request(falcon.request.Request):
         deserialize the request body, the exception will propagate up
         to the caller.
 
-        See :ref:`media` for more information regarding media handling.
+        See also :ref:`media` for more information regarding media handling.
 
         Warning:
             This operation will consume the request stream the first time

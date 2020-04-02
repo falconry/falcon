@@ -332,17 +332,13 @@ class Request:
 
                 doc = json.load(req.bounded_stream)
 
-        media (object): Returns a deserialized form of the request stream.
-            When called, it will attempt to deserialize the request stream
-            using the Content-Type header as well as the media-type handlers
-            configured via :class:`falcon.RequestOptions`.
+        media (object): Property that acts as an alias for
+            :meth:`~.get_media`. This alias provides backwards-compatibility
+            for apps that were built for versions of the framework prior to
+            3.0::
 
-            See :ref:`media` for more information regarding media handling.
-
-            Warning:
-                This operation will consume the request stream the first time
-                it's called and cache the results. Follow-up calls will just
-                retrieve a cached version of the object.
+                # Equivalent to: deserialized_media = req.get_media()
+                deserialized_media = req.media
 
         expect (str): Value of the Expect header, or ``None`` if the
             header is missing.
@@ -978,9 +974,9 @@ class Request:
     def get_media(self):
         """Returns a deserialized form of the request stream.
 
-        When called, it will attempt to deserialize the request stream
-        using the Content-Type header as well as the media-type handlers
-        configured via :class:`falcon.RequestOptions`. The result will
+        The first time this method is called, the request stream will be
+        deserialized using the Content-Type header as well as the media-type
+        handlers configured via :class:`falcon.RequestOptions`. The result will
         be cached and returned in subsequent calls::
 
             deserialized_media = req.get_media()
@@ -989,7 +985,7 @@ class Request:
         deserialize the request body, the exception will propagate up
         to the caller.
 
-        See :ref:`media` for more information regarding media handling.
+        See also :ref:`media` for more information regarding media handling.
 
         Warning:
             This operation will consume the request stream the first time

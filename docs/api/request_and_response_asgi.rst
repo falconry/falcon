@@ -34,6 +34,7 @@ Request
 .. autoclass:: falcon.asgi.Request
     :members:
     :inherited-members:
+    :exclude-members: media
 
 .. autoclass:: falcon.asgi.BoundedStream
     :members:
