@@ -68,14 +68,6 @@ class Response(falcon.response.Response):
                 ensure Unicode characters are properly encoded in the
                 HTTP response.
 
-            Note:
-                Unlike the WSGI Response class, the ASGI Response class
-                does not implement the side-effect of serializing
-                the media object (if one is set) when the `data`
-                attribute is read. Instead,
-                :py:meth:`falcon.asgi.Response.render_body` should
-                be used to get the correct content for the response.
-
         stream: An async iterator or generator that yields a series of
             byte strings that will be streamed to the ASGI server as a
             series of "http.response.body" events. Falcon will assume the
@@ -240,16 +232,21 @@ class Response(falcon.response.Response):
         self._headers['content-length'] = str(content_length)
 
     async def render_body(self):
-        """Get the raw content for the response body.
+        """Get the raw bytestring content for the response body.
 
-        This coroutine can be awaited to get the raw body data that should
-        be returned in the HTTP response.
+        This coroutine can be awaited to get the raw data for the
+        HTTP response body, taking into account the :attr:`~.body`,
+        :attr:`~.data`, and :attr:`~.media` attributes.
+
+        Note:
+            This method ignores :attr:`~.stream`; the caller must check
+            and handle that attribute directly.
 
         Returns:
             bytes: The UTF-8 encoded value of the `body` attribute, if
-                set. Otherwise, the value of the `data` attribute if set, or
-                finally the serialized value of the `media` attribute. If
-                none of these attributes are set, ``None`` is returned.
+            set. Otherwise, the value of the `data` attribute if set, or
+            finally the serialized value of the `media` attribute. If
+            none of these attributes are set, ``None`` is returned.
         """
 
         body = self.body
