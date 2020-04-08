@@ -1,0 +1,5 @@
+A new method, :meth:`~falcon.Request.get_media`, was added that can now be used
+instead of the :attr:`falcon.Request.media` property to make it more clear to
+app maintainers that getting the media object for a request involves a
+side-effect of consuming and deserializing the body stream. The original
+property remains available to ensure backwards-compatibility with existing apps.

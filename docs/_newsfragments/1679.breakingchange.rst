@@ -1,0 +1,7 @@
+The :attr:`falcon.Response.data` property now just simply returns the same data
+object that it was set to, if any, rather than also checking and serializing
+the value of the :attr:`falcon.Response.media` property. Instead, a new
+:meth:`~falcon.Response.render_body` method has been implemented, which can be
+used to obtain the HTTP response body for the request, taking into account
+the :attr:`~falcon.Response.body`, :attr:`~falcon.Response.data`, and
+:attr:`~falcon.Response.media` attributes.
