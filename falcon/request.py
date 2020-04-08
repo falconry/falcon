@@ -332,17 +332,13 @@ class Request:
 
                 doc = json.load(req.bounded_stream)
 
-        media (object): Returns a deserialized form of the request stream.
-            When called, it will attempt to deserialize the request stream
-            using the Content-Type header as well as the media-type handlers
-            configured via :class:`falcon.RequestOptions`.
+        media (object): Property that acts as an alias for
+            :meth:`~.get_media`. This alias provides backwards-compatibility
+            for apps that were built for versions of the framework prior to
+            3.0::
 
-            See :ref:`media` for more information regarding media handling.
-
-            Warning:
-                This operation will consume the request stream the first time
-                it's called and cache the results. Follow-up calls will just
-                retrieve a cached version of the object.
+                # Equivalent to: deserialized_media = req.get_media()
+                deserialized_media = req.media
 
         expect (str): Value of the Expect header, or ``None`` if the
             header is missing.
@@ -793,7 +789,7 @@ class Request:
     def prefix(self):
         if self._cached_prefix is None:
             self._cached_prefix = (
-                self.env['wsgi.url_scheme'] + '://' +
+                self.scheme + '://' +
                 self.netloc +
                 self.app
             )
@@ -975,8 +971,27 @@ class Request:
 
         return netloc_value
 
-    @property
-    def media(self):
+    def get_media(self):
+        """Returns a deserialized form of the request stream.
+
+        The first time this method is called, the request stream will be
+        deserialized using the Content-Type header as well as the media-type
+        handlers configured via :class:`falcon.RequestOptions`. The result will
+        be cached and returned in subsequent calls::
+
+            deserialized_media = req.get_media()
+
+        If the matched media handler raises an error while attempting to
+        deserialize the request body, the exception will propagate up
+        to the caller.
+
+        See also :ref:`media` for more information regarding media handling.
+
+        Warning:
+            This operation will consume the request stream the first time
+            it's called and cache the results. Follow-up calls will just
+            retrieve a cached version of the object.
+        """
         if self._media is not None or self.bounded_stream.eof:
             return self._media
 
@@ -996,6 +1011,8 @@ class Request:
                 self.bounded_stream.exhaust()
 
         return self._media
+
+    media = property(get_media)
 
     # ------------------------------------------------------------------------
     # Methods

@@ -34,6 +34,8 @@ Request
 
 .. autoclass:: falcon.Request
     :members:
+    :exclude-members: media
+
 
 .. autoclass:: falcon.Forwarded
     :members:

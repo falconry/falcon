@@ -326,3 +326,31 @@ To test this example go to the another terminal and run:
 .. code:: bash
 
     $ http localhost:8000/1/things authorization:custom-token
+
+To visualize the application configuration the :ref:`inspect` can be used:
+
+.. code:: bash
+
+    falcon-inspect-app things_advanced:app
+
+This would print for this example application:
+
+.. code::
+
+    Falcon App (WSGI)
+    • Routes:
+        ⇒ /{user_id}/things - ThingsResource:
+           ├── GET - on_get
+           └── POST - on_post
+    • Middleware (Middleware are independent):
+        → AuthMiddleware.process_request
+          → RequireJSON.process_request
+            → JSONTranslator.process_request
+
+                ├── Process route responder
+
+            ↢ JSONTranslator.process_response
+    • Sinks:
+        ⇥ /search/(?P<engine>ddg|y)\Z SinkAdapter
+    • Error handlers:
+        ⇜ StorageError handle

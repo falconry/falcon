@@ -16,5 +16,6 @@ Framework Reference
    cors
    hooks
    routing
+   inspect
    util
    testing

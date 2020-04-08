@@ -1,9 +1,9 @@
 import asyncio
-from collections.abc import Coroutine
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial, wraps
 import inspect
 import os
+from typing import Callable
 
 
 __all__ = [
@@ -29,7 +29,7 @@ except AttributeError:  # pragma: nocover
     """Gets the running asyncio event loop."""
 
 
-def wrap_sync_to_async_unsafe(func) -> Coroutine:
+def wrap_sync_to_async_unsafe(func) -> Callable:
     """Wrap a callable in a coroutine that executes the callable directly.
 
     This helper makes it easier to use synchronous callables with ASGI
@@ -59,7 +59,7 @@ def wrap_sync_to_async_unsafe(func) -> Coroutine:
     return wrapper
 
 
-def wrap_sync_to_async(func, threadsafe=None) -> Coroutine:
+def wrap_sync_to_async(func, threadsafe=None) -> Callable:
     """Wrap a callable in a coroutine that executes the callable in the background.
 
     This helper makes it easier to call functions that can not be
