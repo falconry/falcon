@@ -613,7 +613,7 @@ method, making it compatible with ``boto3``\'s
 How do I retrieve a JSON value from the query string?
 -----------------------------------------------------
 To retrieve a JSON-encoded value from the query string, Falcon provides the
-:meth:`~falcon.Request.get_param_as_json` method, an example of  which is given
+:meth:`~falcon.Request.get_param_as_json` method, an example of which is given
 below:
 
 .. code:: python
@@ -638,6 +638,9 @@ below:
 
             coordinates = req.get_param_as_json('place')
 
+            # some default place
+            place = 'Manizales, Colombia'
+
             for (key, value) in places.items():
                 if coordinates == value:
                     place = key
@@ -656,7 +659,7 @@ decoded from JSON in a single step with the
 :meth:`~falcon.Request.get_param_as_json` method. Given a request URL
 such as:
 
-    ``/locations?place={'lat': 43.539814, 'long': -80.246094}``
+    ``/locations?place={"lat":%2043.539814,%20"long":%20-80.246094}``
 
 The `coordinates` variable will be set to a :class:`dict` as expected.
 
