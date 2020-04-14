@@ -638,12 +638,11 @@ below:
 
             coordinates = req.get_param_as_json('place')
 
-            # some default place
-            place = 'Manizales, Colombia'
-
+            place = None
             for (key, value) in places.items():
                 if coordinates == value:
                     place = key
+                    break
 
             resp.media = {
                 'place': place
@@ -659,7 +658,7 @@ decoded from JSON in a single step with the
 :meth:`~falcon.Request.get_param_as_json` method. Given a request URL
 such as:
 
-    ``/locations?place={"lat":%2043.539814,%20"long":%20-80.246094}``
+    ``/locations?place={"lat":43.539814,"long":-80.246094}``
 
 The `coordinates` variable will be set to a :class:`dict` as expected.
 
@@ -669,11 +668,10 @@ set to ``False``. The example above assumes this default.
 On the other hand, when :attr:`~falcon.RequestOptions.auto_parse_qs_csv` is set
 to ``True``, Falcon treats commas in a query string as literal characters
 delimiting a comma-separated list. For example, given the query string
-``?c=1,2,3``, Falcon defaults to adding this to your ``request.params``
+``?c=1,2,3``, Falcon will add this to your ``request.params``
 dictionary as ``{'c': ['1', '2', '3']}``. If you attempt to use JSON in the
-value of the query string, for example ``?c={'a':1,'b':2}``, the value will get
-added to ``request.params`` in an unexpected way: ``{'c': ["{'a':1",
-"'b':2}"]}``.
+value of the query string, for example ``?c={"a":1,"b":2}``, the value will be
+added to ``request.params`` in an unexpected way: ``{'c': ['{"a":1', '"b":2}']}``.
 
 Commas are a reserved character that can be escaped according to
 `RFC 3986 - 2.2. Reserved Characters <https://tools.ietf.org/html/rfc3986#section-2.2>`_,
@@ -685,8 +683,8 @@ The other option is to leave
 array syntax in lieu of CSV.
 
 When :attr:`~falcon.RequestOptions.auto_parse_qs_csv` is not enabled, the
-value of the query string ``?c={'a':1,'b':2}`` will be added to
-the ``req.params`` dictionary as ``{'c': "{'a':1,'b':2}"}``.
+value of the query string ``?c={"a":1,"b":2}`` will be added to
+the ``req.params`` dictionary as ``{'c': '{"a":1,"b":2}'}``.
 This lets you consume JSON whether or not the client chooses to percent-encode
 commas in the request. In this case, you can retrieve the raw JSON string
 via :meth:`~falcon.Request.get_param`, or use the
