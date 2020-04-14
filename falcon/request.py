@@ -1702,6 +1702,13 @@ class Request:
         Given a JSON value, decode it to an appropriate Python type,
         (e.g., ``dict``, ``list``, ``str``, ``int``, ``bool``, etc.)
 
+        Warning:
+            If the :attr:`~falcon.RequestOptions.auto_parse_qs_csv` option is
+            set to ``True`` (default ``False``), the framework will
+            misinterpret any JSON values that include literal
+            (non-percent-encoded) commas. If the query string may include
+            JSON, you can use JSON array syntax in lieu of CSV as a workaround.
+
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'payload').
 
@@ -1884,6 +1891,12 @@ class RequestOptions:
             is also split on non-percent-encoded commas and these items
             are added to the final list (i.e. ``/?t=1,2,3&t=4``
             becomes ``['1', '2', '3', '4']``).
+
+            Warning:
+                Enabling this option will cause the framework to misinterpret
+                any JSON values that include literal (non-percent-encoded)
+                commas. If the query string may include JSON, you can
+                use JSON array syntax in lieu of CSV as a workaround.
 
         strip_url_path_trailing_slash: Set to ``True`` in order to
             strip the trailing slash, if present, at the end of the URL
