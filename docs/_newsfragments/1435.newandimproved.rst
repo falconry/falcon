@@ -1,0 +1,3 @@
+Added inspect module to collect information about an application regarding
+the registered routes, middlewares, static routes, sinks and error handlers
+(See also: :ref:`inspect`.)

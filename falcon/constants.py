@@ -106,3 +106,7 @@ SINGLETON_HEADERS = frozenset([
     'referer',
     'user-agent',
 ])
+
+# NOTE(kgriffs): Special singleton to be used internally whenever using
+#   None would be ambiguous.
+_UNSET = object()
