@@ -1,0 +1,25 @@
+In order to reconcile differences between the framework's support for WSGI vs. ASGI, the following
+breaking changes were made:
+
+    - :func:`falcon.testing.create_environ` no longer sets a default User-Agent header.
+    - The :func:`falcon.testing.create_environ` function's `protocol` keyword argument was renamed
+      to `http_version` and now only includes the version number (the value is no longer prefixed
+      with ``'HTTP/'``).
+    - The :func:`falcon.testing.create_environ` function's `app` keyword argument was renamed to
+      `root_path`.
+    - The `writeable` property of :class:`~falcon.BoundedStream` was renamed to `writable` per the
+      standard file-like I/O interface (the old name was a misspelling)
+    - If an error handler raises an exception type other than :class:`falcon.HTTPStatus` or
+      :class:`falcon.HTTPError`, remaining middleware `process_response` methods will no longer be
+      executed before bubbling up the unhandled exception to the web server.
+    - :func:`falcon.get_http_status` no longer accepts floats, and the method itself is deprecated.
+    - :func:`falcon.api_helpers.prepare_middleware` no longer accepts a single object; the value
+      that is passed must be an iterable.
+    - :attr:`falcon.Request.access_route` now includes the value of the
+      :attr:`~falcon.Request.remote_addr` property as the last element in the route, if not already
+      present in one of the headers that are checked.
+    - When the ``'REMOTE_ADDR'`` field is not present in the WSGI environ, Falcon will assume
+      ``'127.0.0.1'`` for the value, rather than simply returning ``None`` for
+      :attr:`falcon.Request.remote_addr`.
+
+The changes above were implemented as part of the ASGI+HTTP work stream.
