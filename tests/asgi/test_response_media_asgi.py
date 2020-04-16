@@ -162,3 +162,62 @@ def test_mimeparse_edgecases():
     client = create_client(TestResource())
     result = client.simulate_get('/')
     assert result.json == doc
+
+
+def runTest(test_fn):
+    doc = {'something': True}
+
+    class TestResource:
+        async def on_get(self, req, resp):
+
+            await test_fn(resp)
+
+            resp.body = None
+            resp.data = None
+            resp.media = doc
+
+    client = create_client(TestResource())
+    result = client.simulate_get('/')
+    assert result.json == doc
+
+
+class TestRenderBodyPrecedence:
+    def test_body(self):
+        async def test(resp):
+            resp.body = 'body'
+            resp.data = b'data'
+            resp.media = ['media']
+
+            assert await resp.render_body() == b'body'
+
+        runTest(test)
+
+    def test_data(self):
+        async def test(resp):
+            resp.data = b'data'
+            resp.media = ['media']
+
+            assert await resp.render_body() == b'data'
+
+        runTest(test)
+
+    def test_media(self):
+        async def test(resp):
+            resp.media = ['media']
+            assert json.loads((await resp.render_body()).decode('utf-8')) == ['media']
+
+        runTest(test)
+
+
+def test_media_rendered_cached():
+    async def test(resp):
+        resp.media = {'foo': 'bar'}
+
+        first = await resp.render_body()
+        assert first is await resp.render_body()
+        assert first is resp._media_rendered
+
+        resp.media = 123
+        assert first is not await resp.render_body()
+
+    runTest(test)

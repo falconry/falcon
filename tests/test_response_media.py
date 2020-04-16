@@ -50,7 +50,7 @@ def test_json(client, media_type):
     resp.content_type = media_type
     resp.media = {'something': True}
 
-    assert json.loads(resp.data.decode('utf-8')) == {'something': True}
+    assert json.loads(resp.render_body().decode('utf-8')) == {'something': True}
 
 
 @pytest.mark.parametrize('document', [
@@ -96,11 +96,11 @@ def test_msgpack(media_type):
 
     # Bytes
     resp.media = {b'something': True}
-    assert resp.data == b'\x81\xc4\tsomething\xc3'
+    assert resp.render_body() == b'\x81\xc4\tsomething\xc3'
 
     # Unicode
     resp.media = {'something': True}
-    assert resp.data == b'\x81\xa9something\xc3'
+    assert resp.render_body() == b'\x81\xa9something\xc3'
 
 
 def test_unknown_media_type(client):
@@ -110,7 +110,7 @@ def test_unknown_media_type(client):
     with pytest.raises(errors.HTTPUnsupportedMediaType) as err:
         resp.content_type = 'nope/json'
         resp.media = {'something': True}
-        __ = resp.data  # NOQA
+        resp.render_body()
 
     assert err.value.description == 'nope/json is an unsupported media type.'
 
@@ -132,7 +132,7 @@ def test_default_media_type(client):
     resp.content_type = ''
     resp.media = {'something': True}
 
-    assert json.loads(resp.data.decode('utf-8')) == {'something': True}
+    assert json.loads(resp.render_body().decode('utf-8')) == {'something': True}
     assert resp.content_type == 'application/json'
 
 
@@ -144,13 +144,59 @@ def test_mimeparse_edgecases(client):
     resp.content_type = 'application/vnd.something'
     with pytest.raises(errors.HTTPUnsupportedMediaType):
         resp.media = {'something': True}
-        __ = resp.data  # NOQA
+        resp.render_body()
 
     resp.content_type = 'invalid'
     with pytest.raises(errors.HTTPUnsupportedMediaType):
         resp.media = {'something': True}
-        __ = resp.data  # NOQA
+        resp.render_body()
 
     # Clear the content type, shouldn't raise this time
     resp.content_type = None
     resp.media = {'something': True}
+
+
+class TestRenderBodyPrecedence:
+    def test_body(self, client):
+        client.simulate_get('/')
+
+        resp = client.resource.captured_resp
+
+        resp.body = 'body'
+        resp.data = b'data'
+        resp.media = ['media']
+
+        assert resp.render_body() == b'body'
+
+    def test_data(self, client):
+        client.simulate_get('/')
+
+        resp = client.resource.captured_resp
+
+        resp.data = b'data'
+        resp.media = ['media']
+
+        assert resp.render_body() == b'data'
+
+    def test_media(self, client):
+        client.simulate_get('/')
+
+        resp = client.resource.captured_resp
+        resp.media = ['media']
+
+        assert json.loads(resp.render_body().decode('utf-8')) == ['media']
+
+
+def test_media_rendered_cached(client):
+    client.simulate_get('/')
+
+    resp = client.resource.captured_resp
+
+    resp.media = {'foo': 'bar'}
+
+    first = resp.render_body()
+    assert first is resp.render_body()
+    assert first is resp._media_rendered
+
+    resp.media = 123
+    assert first is not resp.render_body()
