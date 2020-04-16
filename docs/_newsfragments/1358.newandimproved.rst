@@ -1,0 +1,8 @@
+ASGI+HTTP support was added to the framework via a new class, :class:`falcon.asgi.App`. The
+:ref:`testing <testing>` module was also updated to fully support ASGI apps, including two new
+helper functions: :func:`falcon.testing.create_scope` and :func:`falcon.testing.create_asgi_req`.
+WSGI users also get a new :func:`falcon.testing.create_req` method. As part of the ASGI work,
+several additional utility functions were added, including :func:`falcon.is_python_func`,
+:func:`falcon.http_status_to_code` and :func:`falcon.code_to_http_status`; as well as sync/async
+helpers :func:`falcon.get_loop`, :func:`falcon.sync_to_async`,  :func:`falcon.wrap_sync_to_async`,
+and  :func:`falcon.wrap_sync_to_async_unsafe`.
