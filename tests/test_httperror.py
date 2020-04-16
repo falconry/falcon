@@ -286,6 +286,10 @@ class TestHTTPError:
         assert response.status == headers['X-Error-Status']
         assert response.json == expected_body
 
+    def test_has_representation(self):
+        with pytest.warns(misc.DeprecatedWarning, match='has_representation is deprecated'):
+            assert falcon.HTTPError(falcon.HTTP_701).has_representation is True
+
     def test_no_description_json(self, client):
         response = client.simulate_patch('/fail')
         assert response.status == falcon.HTTP_400
@@ -565,6 +569,7 @@ class TestHTTPError:
 
         assert response.status == falcon.HTTP_404
         assert response.json == falcon.HTTPNotFound().to_dict()
+        assert response.json == {'title': falcon.HTTP_NOT_FOUND}
 
     def test_404_with_body(self, client):
         client.app.add_route('/404', NotFoundResourceWithBody())
@@ -584,6 +589,7 @@ class TestHTTPError:
         response = client.simulate_request(path='/405')
         assert response.status == falcon.HTTP_405
         assert response.text == falcon.HTTPMethodNotAllowed(['PUT']).to_json()
+        assert response.json == {'title': falcon.HTTP_METHOD_NOT_ALLOWED}
         assert response.headers['allow'] == 'PUT'
 
     def test_405_without_body_with_extra_headers(self, client):
@@ -627,6 +633,7 @@ class TestHTTPError:
 
         assert response.status == falcon.HTTP_410
         assert response.text == falcon.HTTPGone().to_json()
+        assert response.json == {'title': '410 Gone'}
 
     def test_410_with_body(self, client):
         client.app.add_route('/410', GoneResourceWithBody())
@@ -717,6 +724,11 @@ class TestHTTPError:
 
         assert response.status == falcon.HTTP_416
         assert response.content == falcon.HTTPRangeNotSatisfiable(123456).to_xml()
+        exp = (
+            b'<?xml version="1.0" encoding="UTF-8"?><error>'
+            b'<title>416 Range Not Satisfiable</title></error>'
+        )
+        assert response.content == exp
         assert response.headers['content-range'] == 'bytes */123456'
         assert response.headers['content-length'] == str(len(response.content))
 

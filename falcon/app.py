@@ -870,8 +870,8 @@ class App:
         # NOTE(kgriffs): If http_status.body is None, that's OK because
         # it's acceptable to set resp.body to None (to indicate no body).
         resp.body = http_status.body
-        # NOTE(caselit): Reset the data and media, so that the body is
-        # sent in all cases, even when it's None
+        # NOTE(caselit): Reset the data and media to ensure that an empty body
+        # is returned if body is set to None
         resp.data = resp.media = None
 
     def _compose_error_response(self, req, resp, error):

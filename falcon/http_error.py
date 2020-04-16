@@ -15,9 +15,11 @@
 """HTTPError exception class."""
 
 from collections import OrderedDict
+import warnings
 import xml.etree.ElementTree as et
 
 from falcon.util import deprecated_args, json, uri
+from falcon.util.misc import DeprecatedWarning
 
 
 class HTTPError(Exception):
@@ -122,6 +124,12 @@ class HTTPError(Exception):
 
     def __repr__(self):
         return '<%s: %s>' % (self.__class__.__name__, self.status)
+
+    @property
+    def has_representation(self):
+        warn = 'has_representation is deprecated and is currently unused by falcon'
+        warnings.warn(warn, DeprecatedWarning)
+        return True
 
     def to_dict(self, obj_type=dict):
         """Return a basic dictionary representing the error.
