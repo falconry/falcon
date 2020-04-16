@@ -304,7 +304,7 @@ class RouteInfo(_Traversable):
         path (str): The path of this route.
         class_name (str): The class name of the responder of this route.
         source_info (str): The source path where this responder was defined.
-        methods (List[MethodInfo]): List of methods defined in the route.
+        methods (List[RouteMethodInfo]): List of methods defined in the route.
     """
 
     __visit_name__ = 'route'
