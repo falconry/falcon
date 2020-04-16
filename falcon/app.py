@@ -969,24 +969,16 @@ class App:
             The length is returned as ``None`` when unknown. The
             iterable is determined as follows:
 
-                * If resp.body is not ``None``, returns
-                  ([resp.body], len(resp.body)),
-                  encoded as UTF-8 if it is a Unicode string.
-                  Bytestrings are returned as-is.
-                * If resp.data is not ``None``, returns ([resp.data], len(resp.data))
+                * If the result of render_body() is not ``None``, returns
+                  ([data], len(data))
                 * If resp.stream is not ``None``, returns resp.stream
                   iterable using wsgi.file_wrapper, if necessary:
                   (closeable_iterator, None)
                 * Otherwise, returns ([], 0)
 
         """
-        body = resp.body
-        if body is not None:
-            if not isinstance(body, bytes):
-                body = body.encode('utf-8')
-            return [body], len(body)
 
-        data = resp.data
+        data = resp.render_body()
         if data is not None:
             return [data], len(data)
 
