@@ -6,6 +6,7 @@ Utilities
 * `URI`_
 * `Date and Time`_
 * `HTTP Status`_
+* `Async`_
 * `Other`_
 
 URI
@@ -18,9 +19,13 @@ URI
 Date and Time
 -------------
 
-.. automodule:: falcon
-    :noindex:
-    :members: http_now, dt_to_http, http_date_to_dt
+.. NOTE(kgriffs): Use autofunction instead of automodule w/ the falcon
+     module, since the latter requires :noindex: which prevents us from
+     referencing these docs elsewhere.
+
+.. autofunction:: falcon.http_now
+.. autofunction:: falcon.dt_to_http
+.. autofunction:: falcon.http_date_to_dt
 
 .. autoclass:: falcon.TimezoneGMT
     :members:
@@ -28,17 +33,25 @@ Date and Time
 HTTP Status
 -----------
 
-.. automodule:: falcon
-    :noindex:
-    :members: get_http_status, http_status_to_code, code_to_http_status
+.. autofunction:: falcon.http_status_to_code
+.. autofunction:: falcon.code_to_http_status
+.. autofunction:: falcon.get_http_status
+
+Async
+-----
+.. autofunction:: falcon.get_loop
+.. autofunction:: falcon.sync_to_async
+.. autofunction:: falcon.wrap_sync_to_async
+.. autofunction:: falcon.wrap_sync_to_async_unsafe
 
 Other
 -----
 
-.. automodule:: falcon
-    :noindex:
-    :members: deprecated, to_query_str,
-        get_bound_method, secure_filename, is_python_func
+.. autofunction:: falcon.deprecated
+.. autofunction:: falcon.to_query_str
+.. autofunction:: falcon.get_bound_method
+.. autofunction:: falcon.secure_filename
+.. autofunction:: falcon.is_python_func
 
 .. autoclass:: falcon.Context
     :members:

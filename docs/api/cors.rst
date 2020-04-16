@@ -13,7 +13,7 @@ Falcon provides an easy way to enable a simple CORS policy via a flag passed
 to :any:`falcon.App`.
 
 By default, Falcon's built-in CORS support is disabled, so that any cross-origin
-requests will be blocked by the browser. Passing ``cors_enabled=True`` will
+requests will be blocked by the browser. Passing ``cors_enable=True`` will
 cause the framework to include the necessary response headers to allow access
 from any origin to any route in the app. Individual responders may override this
 behavior by setting the Access-Control-Allow-Origin header explicitly.
