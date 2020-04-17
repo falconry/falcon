@@ -20,17 +20,47 @@ Cookies can be read from a request either via the
 :py:meth:`~.falcon.Request.get_cookie_values` method should be used unless you
 need a collection of all the cookies in the request.
 
+.. note::
+
+    :class:`falcon.asgi.Request` implements the same cookie methods and
+    properties as :class:`falcon.Request`.
+
+Here's an example showing how to get cookies from a WSGI request:
+
 .. code:: python
 
     class Resource:
         def on_get(self, req, resp):
 
+            # Get a dict of name/value cookie pairs.
             cookies = req.cookies
 
             my_cookie_values = req.get_cookie_values('my_cookie')
+
             if my_cookie_values:
                 # NOTE: If there are multiple values set for the cookie, you
-                # will need to choose how to handle the additional values.
+                #   will need to choose how to handle the additional values.
+                v = my_cookie_values[0]
+
+                # ...
+
+The ASGI version is similar:
+
+.. code:: python
+
+    class Resource:
+        async def on_get(self, req, resp):
+
+            # Get a dict of name/value cookie pairs.
+            cookies = req.cookies
+
+            # NOTE: Since get_cookie_values() is synchronous, it does
+            #   not need to be await'd.
+            my_cookie_values = req.get_cookie_values('my_cookie')
+
+            if my_cookie_values:
+                # NOTE: If there are multiple values set for the cookie, you
+                #   will need to choose how to handle the additional values.
                 v = my_cookie_values[0]
 
                 # ...
@@ -47,6 +77,14 @@ One of these methods should be used instead of
 :py:meth:`~falcon.Response.set_header`. With :py:meth:`~falcon.Response.set_header` you
 cannot set multiple headers with the same name (which is how multiple cookies
 are sent to the client).
+
+.. note::
+
+    :class:`falcon.asgi.Request` implements the same cookie methods and
+    properties as :class:`falcon.Request`. The ASGI versions of
+    :meth:`~falcon.asgi.Response.set_cookie` and
+    :meth:`~falcon.asgi.Response.append_header`
+    are synchronous, so they do not need to be ``await``'d.
 
 Simple example:
 
@@ -66,7 +104,7 @@ You can of course also set the domain, path and lifetime of the cookie.
     class Resource:
         def on_get(self, req, resp):
             # Set the maximum age of the cookie to 10 minutes (600 seconds)
-            # and the cookie's domain to 'example.com'
+            #   and the cookie's domain to 'example.com'
             resp.set_cookie('my_cookie', 'my cookie value',
                             max_age=600, domain='example.com')
 
