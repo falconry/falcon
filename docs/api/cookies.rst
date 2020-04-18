@@ -3,10 +3,7 @@
 Cookies
 -------
 
-* `Getting Cookies`_
-* `Setting Cookies`_
-* `The Secure Attribute`_
-* `The SameSite Attribute`_
+.. contents:: :local:
 
 .. _getting-cookies:
 
@@ -25,45 +22,49 @@ need a collection of all the cookies in the request.
     :class:`falcon.asgi.Request` implements the same cookie methods and
     properties as :class:`falcon.Request`.
 
-Here's an example showing how to get cookies from a WSGI request:
+Here's an example showing how to get cookies from a request:
 
-.. code:: python
+.. tabs::
 
-    class Resource:
-        def on_get(self, req, resp):
+    .. tab:: WSGI
 
-            # Get a dict of name/value cookie pairs.
-            cookies = req.cookies
+        .. code:: python
 
-            my_cookie_values = req.get_cookie_values('my_cookie')
+            class Resource:
+                def on_get(self, req, resp):
 
-            if my_cookie_values:
-                # NOTE: If there are multiple values set for the cookie, you
-                #   will need to choose how to handle the additional values.
-                v = my_cookie_values[0]
+                    # Get a dict of name/value cookie pairs.
+                    cookies = req.cookies
 
-                # ...
+                    my_cookie_values = req.get_cookie_values('my_cookie')
 
-The ASGI version is similar:
+                    if my_cookie_values:
+                        # NOTE: If there are multiple values set for the cookie, you
+                        #   will need to choose how to handle the additional values.
+                        v = my_cookie_values[0]
 
-.. code:: python
+                        # ...
 
-    class Resource:
-        async def on_get(self, req, resp):
+    .. tab:: ASGI
 
-            # Get a dict of name/value cookie pairs.
-            cookies = req.cookies
+        .. code:: python
 
-            # NOTE: Since get_cookie_values() is synchronous, it does
-            #   not need to be await'd.
-            my_cookie_values = req.get_cookie_values('my_cookie')
+            class Resource:
+                async def on_get(self, req, resp):
 
-            if my_cookie_values:
-                # NOTE: If there are multiple values set for the cookie, you
-                #   will need to choose how to handle the additional values.
-                v = my_cookie_values[0]
+                    # Get a dict of name/value cookie pairs.
+                    cookies = req.cookies
 
-                # ...
+                    # NOTE: Since get_cookie_values() is synchronous, it does
+                    #   not need to be await'd.
+                    my_cookie_values = req.get_cookie_values('my_cookie')
+
+                    if my_cookie_values:
+                        # NOTE: If there are multiple values set for the cookie, you
+                        #   will need to choose how to handle the additional values.
+                        v = my_cookie_values[0]
+
+                        # ...
 
 .. _setting-cookies:
 
