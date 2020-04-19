@@ -258,7 +258,7 @@ def simulate_request(app, method='GET', path='/', query_string=None,
                      file_wrapper=None, wsgierrors=None, params=None,
                      params_csv=True, protocol='http', host=helpers.DEFAULT_HOST,
                      remote_addr=None, extras=None, http_version='1.1',
-                     port=None, root_path=None, asgi_chunk_size=4096,
+                     port=None, root_path=None, cookies=None, asgi_chunk_size=4096,
                      asgi_disconnect_ttl=300) -> Result:
 
     """Simulates a request to a WSGI or ASGI application.
@@ -401,6 +401,7 @@ def simulate_request(app, method='GET', path='/', query_string=None,
             http_version=http_version,
             port=port,
             root_path=root_path,
+            cookies=cookies,
         )
 
         if 'REQUEST_METHOD' in extras and extras['REQUEST_METHOD'] != method:

@@ -38,7 +38,7 @@ from typing import Any, Dict
 
 from falcon.constants import SINGLETON_HEADERS
 import falcon.request
-from falcon.util import http_now, uri
+from falcon.util import http_now, uri, http_cookies
 
 # Constants
 DEFAULT_HOST = 'falconframework.org'
@@ -493,7 +493,7 @@ def create_environ(path='/', query_string='', http_version='1.1',
                    scheme='http', host=DEFAULT_HOST, port=None,
                    headers=None, app=None, body='', method='GET',
                    wsgierrors=None, file_wrapper=None, remote_addr=None,
-                   root_path=None) -> Dict[str, Any]:
+                   root_path=None, cookies=None) -> Dict[str, Any]:
 
     """Creates a mock PEP-3333 environ ``dict`` for simulating WSGI requests.
 
@@ -630,6 +630,12 @@ def create_environ(path='/', query_string='', http_version='1.1',
 
     if content_length != 0:
         env['CONTENT_LENGTH'] = str(content_length)
+
+    if cookies is not None and method != 'OPTIONS':
+        cookies = http_cookies.SimpleCookie(cookies)
+        env['HTTP_COOKIE'] = ';'.join(
+            ['{}={}'.format(morsel.key, morsel.value) for morsel in cookies.values()]
+        )
 
     if headers is not None:
         _add_headers_to_environ(env, headers)
