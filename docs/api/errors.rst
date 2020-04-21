@@ -55,14 +55,14 @@ All classes are available directly in the ``falcon`` package namespace::
     class MessageResource:
         def on_get(self, req, resp):
 
-            # ...
+            # -- snip --
 
             raise falcon.HTTPBadRequest(
                 title="TTL Out of Range",
                 description="The message's TTL must be between 60 and 300 seconds, inclusive."
             )
 
-            # ...
+            # -- snip --
 
 Note also that any exception (not just instances of
 :class:`~.HTTPError`) can be caught, logged, and otherwise handled
