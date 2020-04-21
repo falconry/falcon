@@ -313,6 +313,10 @@ div.note, pre {
     background-color: rgb(245,245,245);
 }
 
+div.note div.highlight > pre, div.admonition div.highlight > pre {
+    border: none;
+}
+
 div.note, div.admonition {
     /* Match tab radius */
     border-radius: .285714rem;

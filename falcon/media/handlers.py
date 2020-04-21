@@ -9,7 +9,7 @@ from falcon.vendor import mimeparse
 
 
 class Handlers(UserDict):
-    """A dictionary like object that manages internet media type handlers."""
+    """A :class:`dict`-like object that manages Internet media type handlers."""
     def __init__(self, initial=None):
         handlers = initial or {
             'application/json': JSONHandler(),
