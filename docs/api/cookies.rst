@@ -91,23 +91,18 @@ Simple example:
 
 .. code:: python
 
-    class Resource:
-        def on_get(self, req, resp):
-
-            # Set the cookie 'my_cookie' to the value 'my cookie value'
-            resp.set_cookie('my_cookie', 'my cookie value')
+    # Set the cookie 'my_cookie' to the value 'my cookie value'
+    resp.set_cookie('my_cookie', 'my cookie value')
 
 
 You can of course also set the domain, path and lifetime of the cookie.
 
 .. code:: python
 
-    class Resource:
-        def on_get(self, req, resp):
-            # Set the maximum age of the cookie to 10 minutes (600 seconds)
-            #   and the cookie's domain to 'example.com'
-            resp.set_cookie('my_cookie', 'my cookie value',
-                            max_age=600, domain='example.com')
+    # Set the maximum age of the cookie to 10 minutes (600 seconds)
+    #   and the cookie's domain to 'example.com'
+    resp.set_cookie('my_cookie', 'my cookie value',
+                    max_age=600, domain='example.com')
 
 
 You can also instruct the client to remove a cookie with the
@@ -115,12 +110,14 @@ You can also instruct the client to remove a cookie with the
 
 .. code:: python
 
-    class Resource:
-        def on_get(self, req, resp):
-            resp.set_cookie('bad_cookie', ':(')
+    # Set a cookie in middleware or in a previous request.
+    resp.set_cookie('my_cookie', 'my cookie value')
 
-            # Clear the bad cookie
-            resp.unset_cookie('bad_cookie')
+    # -- snip --
+
+    # Clear the cookie for the current request and instruct the user agent
+    #   to expire its own copy of the cookie (if any).
+    resp.unset_cookie('my_cookie')
 
 .. _cookie-secure-attribute:
 
