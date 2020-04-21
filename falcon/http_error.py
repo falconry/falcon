@@ -15,11 +15,9 @@
 """HTTPError exception class."""
 
 from collections import OrderedDict
-import warnings
 import xml.etree.ElementTree as et
 
-from falcon.util import deprecated_args, json, uri
-from falcon.util.misc import DeprecatedWarning
+from falcon.util import deprecated, deprecated_args, json, uri
 
 
 class HTTPError(Exception):
@@ -126,9 +124,11 @@ class HTTPError(Exception):
         return '<%s: %s>' % (self.__class__.__name__, self.status)
 
     @property
+    @deprecated(
+        'has_representation is deprecated and is currently unused by falcon',
+        is_property=True
+    )
     def has_representation(self):
-        warn = 'has_representation is deprecated and is currently unused by falcon'
-        warnings.warn(warn, DeprecatedWarning)
         return True
 
     def to_dict(self, obj_type=dict):
@@ -199,3 +199,68 @@ class HTTPError(Exception):
 
         return (b'<?xml version="1.0" encoding="UTF-8"?>' +
                 et.tostring(error_element, encoding='utf-8'))
+
+
+class NoRepresentation:
+    """Mixin for ``HTTPError`` child classes that have no representation.
+
+    This class can be mixed in when inheriting from ``HTTPError``, in order
+    to override the `has_representation` property such that it always
+    returns ``False``. This, in turn, will cause Falcon to return an empty
+    response body to the client.
+
+    You can use this mixin when defining errors that either should not have
+    a body (as dictated by HTTP standards or common practice), or in the
+    case that a detailed error response may leak information to an attacker.
+
+    Note:
+        This mixin class must appear before ``HTTPError`` in the base class
+        list when defining the child; otherwise, it will not override the
+        `has_representation` property as expected.
+
+    Warning:
+        As of Falcon 3.0, this mixin class is no longer used since all falcon
+        errors have a representation. This class is considered deprecated and
+        will be removed in a future release.
+    """
+
+    @property
+    @deprecated(
+        'has_representation is deprecated and is currently unused by falcon. '
+        'The class NoRepresentation is deprecated and will be removed in a future release',
+        is_property=True
+    )
+    def has_representation(self):
+        return False
+
+
+class OptionalRepresentation:
+    """Mixin for ``HTTPError`` child classes that may have a representation.
+
+    This class can be mixed in when inheriting from ``HTTPError`` in order
+    to override the `has_representation` property, such that it will
+    return ``False`` when the error instance has no description
+    (i.e., the `description` kwarg was not set).
+
+    You can use this mixin when defining errors that do not include
+    a body in the HTTP response by default, serializing details only when
+    the web developer provides a description of the error.
+
+    Note:
+        This mixin class must appear before ``HTTPError`` in the base class
+        list when defining the child; otherwise, it will not override the
+        `has_representation` property as expected.
+
+    Warning:
+        As of Falcon 3.0, this mixin class is no longer used since all falcon
+        errors have a representation. This class is considered deprecated and
+        will be removed in a future release.
+    """
+    @property
+    @deprecated(
+        'has_representation is deprecated and is currently unused by falcon. '
+        'The class OptionalRepresentation is deprecated and will be removed in a future release',
+        is_property=True
+    )
+    def has_representation(self):
+        return self.description is not None

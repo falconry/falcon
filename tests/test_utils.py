@@ -4,7 +4,6 @@ from datetime import datetime
 import functools
 import http
 import itertools
-import os
 import random
 from urllib.parse import quote, unquote_plus
 
@@ -46,10 +45,8 @@ class TestFalconUtils:
         def old_thing():
             pass
 
-        del os.environ['FALCON_TESTING_SESSION']
         with pytest.warns(UserWarning) as rec:
             old_thing()
-        os.environ['FALCON_TESTING_SESSION'] = '1'
 
         warn = rec.pop()
         assert msg in str(warn.message)
@@ -367,6 +364,11 @@ class TestFalconUtils:
         assert uri.parse_host('falcon.example.com:9876') == ('falcon.example.com', 9876)
         assert uri.parse_host('falcon.example.com:42') == ('falcon.example.com', 42)
 
+    def test_get_http_status_warns(self):
+        with pytest.warns(UserWarning, match='Please use falcon'):
+            falcon.get_http_status(400)
+
+    @pytest.mark.filterwarnings('ignore')
     def test_get_http_status(self):
         assert falcon.get_http_status(404) == falcon.HTTP_404
         assert falcon.get_http_status(404.3) == falcon.HTTP_404
@@ -853,7 +855,8 @@ class TestNoApiClass(testing.TestCase):
 class TestSetupApi(testing.TestCase):
     def setUp(self):
         super(TestSetupApi, self).setUp()
-        self.app = falcon.API()
+        with pytest.warns(UserWarning, match='API class may be removed in a future'):
+            self.app = falcon.API()
         self.app.add_route('/', testing.SimpleTestResource(body='test'))
 
     def test_something(self):
