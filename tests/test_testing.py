@@ -6,6 +6,11 @@ import falcon
 from falcon import App, status_codes, testing
 
 
+class CustomCookies:
+    def items(self):
+        return [('foo', 'bar'), ('baz', 'foo')]
+
+
 def another_dummy_wsgi_app(environ, start_response):
     start_response(status_codes.HTTP_OK, [('Content-Type', 'text/plain')])
 
@@ -192,3 +197,13 @@ def test_simulate_request_content_type():
     result = testing.simulate_post(
         app, '/', json={}, headers=headers, content_type=falcon.MEDIA_HTML)
     assert result.text == falcon.MEDIA_JSON
+
+
+@pytest.mark.parametrize('cookies', [
+    {'foo': 'bar', 'baz': 'foo'},
+    CustomCookies()
+])
+def test_create_environ_cookies(cookies):
+    environ = testing.create_environ(cookies=cookies)
+
+    assert environ['HTTP_COOKIE'] == 'foo=bar; baz=foo'

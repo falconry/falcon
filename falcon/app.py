@@ -1005,7 +1005,7 @@ class App:
         return [], 0
 
 
-# TODO(mikeyusko): This class is a compatibility alias, and should be removed
+# TODO(myuz): This class is a compatibility alias, and should be removed
 # in the next major release (4.0).
 class API(App):
     """

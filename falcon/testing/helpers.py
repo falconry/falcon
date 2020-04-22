@@ -38,7 +38,7 @@ from typing import Any, Dict
 
 from falcon.constants import SINGLETON_HEADERS
 import falcon.request
-from falcon.util import http_now, uri, http_cookies
+from falcon.util import http_cookies, http_now, uri
 
 # Constants
 DEFAULT_HOST = 'falconframework.org'
@@ -536,6 +536,10 @@ def create_environ(path='/', query_string='', http_version='1.1',
             the value for *wsgi.file_wrapper* in the environ.
         remote_addr (str): Remote address for the request to use as the
             'REMOTE_ADDR' environ variable (default None)
+        cookies (dict): Cookies as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of items provides the name and value
+            for the 'Set-Cookie' header.
 
     """
 
@@ -633,7 +637,7 @@ def create_environ(path='/', query_string='', http_version='1.1',
 
     if cookies is not None and method != 'OPTIONS':
         cookies = http_cookies.SimpleCookie(cookies)
-        env['HTTP_COOKIE'] = ';'.join(
+        env['HTTP_COOKIE'] = '; '.join(
             ['{}={}'.format(morsel.key, morsel.value) for morsel in cookies.values()]
         )
 
