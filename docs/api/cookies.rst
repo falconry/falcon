@@ -43,8 +43,6 @@ Here's an example showing how to get cookies from a request:
                         #   will need to choose how to handle the additional values.
                         v = my_cookie_values[0]
 
-                        # ...
-
     .. tab:: ASGI
 
         .. code:: python
@@ -63,8 +61,6 @@ Here's an example showing how to get cookies from a request:
                         # NOTE: If there are multiple values set for the cookie, you
                         #   will need to choose how to handle the additional values.
                         v = my_cookie_values[0]
-
-                        # ...
 
 .. _setting-cookies:
 
