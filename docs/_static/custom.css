@@ -281,6 +281,14 @@ div.contents.local.topic {
     border: none;
 }
 
+div.contents.local.topic > ul > li > p {
+    margin-bottom: 0;
+}
+
+div.contents.local.topic > ul > li > ul {
+    margin-top: 0;
+}
+
 .sphinx-tabs .sphinx-menu a.item {
     color: #c77c11 !important;
 }
