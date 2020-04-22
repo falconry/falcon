@@ -207,3 +207,9 @@ def test_create_environ_cookies(cookies):
     environ = testing.create_environ(cookies=cookies)
 
     assert environ['HTTP_COOKIE'] == 'foo=bar; baz=foo'
+
+
+def test_create_environ_cookies_options_method():
+    environ = testing.create_environ(method='OPTIONS', cookies={'foo': 'bar'})
+
+    assert 'HTTP_COOKIE' not in environ
