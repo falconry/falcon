@@ -123,7 +123,7 @@ class HTTPError(Exception):
     def __repr__(self):
         return '<%s: %s>' % (self.__class__.__name__, self.status)
 
-    @property
+    @property  # type: ignore
     @deprecated(
         'has_representation is deprecated and is currently unused by falcon',
         is_property=True
@@ -224,7 +224,7 @@ class NoRepresentation:
         will be removed in a future release.
     """
 
-    @property
+    @property  # type: ignore
     @deprecated(
         'has_representation is deprecated and is currently unused by falcon. '
         'The class NoRepresentation is deprecated and will be removed in a future release',
@@ -256,7 +256,8 @@ class OptionalRepresentation:
         errors have a representation. This class is considered deprecated and
         will be removed in a future release.
     """
-    @property
+
+    @property  # type: ignore
     @deprecated(
         'has_representation is deprecated and is currently unused by falcon. '
         'The class OptionalRepresentation is deprecated and will be removed in a future release',
