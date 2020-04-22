@@ -3,9 +3,7 @@
 Multipart Forms
 ===============
 
-* `Body Part Type`_
-* `Parsing Options`_
-* `Parsing Errors`_
+.. contents:: :local:
 
 Falcon features easy and efficient access to submitted multipart forms by using
 :class:`falcon.media.MultipartFormHandler` to handle the
