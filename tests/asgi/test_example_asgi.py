@@ -4,9 +4,10 @@ import json
 import logging
 import uuid
 
+import httpx
+
 import falcon
 import falcon.asgi
-import httpx
 
 
 class StorageEngine:
