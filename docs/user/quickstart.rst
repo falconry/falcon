@@ -352,7 +352,7 @@ parameters, handling errors, and working with request and response bodies.
             things = ThingsResource(db)
             app.add_route('/{user_id}/things', things)
 
-            # If a responder ever raised an instance of StorageError, pass control to
+            # If a responder ever raises an instance of StorageError, pass control to
             # the given handler.
             app.add_error_handler(StorageError, StorageError.handle)
 
@@ -631,7 +631,7 @@ parameters, handling errors, and working with request and response bodies.
             things = ThingsResource(db)
             app.add_route('/{user_id}/things', things)
 
-            # If a responder ever raised an instance of StorageError, pass control to
+            # If a responder ever raises an instance of StorageError, pass control to
             # the given handler.
             app.add_error_handler(StorageError, StorageError.handle)
 
