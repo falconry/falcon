@@ -69,6 +69,49 @@ class DelimiterError(IOError):
     """The read operation did not find the requested stream delimiter."""
 
 
+class PayloadTypeError(TypeError):
+    """The WebSocket message payload was not of the expected type."""
+
+
+class WebSocketDisconnected(RuntimeError):
+    """The websocket connection is lost.
+
+    This error is raised when attempting to perform an operation on the
+    WebSocket and it is determined that either the client has closed the
+    connection, the server closed the connection, or the socket has otherwise
+    been lost.
+
+    Keyword Args:
+        code (int): The WebSocket close code, as per the WebSocket spec
+            (default ``1000``).
+
+    Attributes:
+        code (int): The WebSocket close code, as per the WebSocket spec.
+    """
+
+    def __init__(self, code: int = None):
+        self.code = code or 1000  # Default to "Normal Closure"
+
+
+class WebSocketPathNotFound(WebSocketDisconnected):
+    """No route could be found for the requested path.
+
+    A simulated WebSocket connection was attempted but the path specified in
+    the handshake request did not match any of the app's routes.
+    """
+    pass
+
+
+class WebSocketHandlerNotFound(WebSocketDisconnected):
+    """The routed resource does not contain an ``on_websocket()`` handler."""
+    pass
+
+
+class WebSocketServerError(WebSocketDisconnected):
+    """The server encountered an unexpected error."""
+    pass
+
+
 class HTTPBadRequest(HTTPError):
     """400 Bad Request.
 

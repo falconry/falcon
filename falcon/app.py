@@ -193,7 +193,11 @@ class App:
                  '_error_handlers', '_router', '_sinks',
                  '_serialize_error', 'req_options', 'resp_options',
                  '_middleware', '_independent_middleware', '_router_search',
-                 '_static_routes', '_cors_enable', '_unprepared_middleware')
+                 '_static_routes', '_cors_enable', '_unprepared_middleware',
+
+                 # NOTE(kgriffs): WebSocket is currently only supported for
+                 #   ASGI apps, but we may add support for WSGI at some point.
+                 '_middleware_ws')
 
     def __init__(self, media_type=DEFAULT_MEDIA_TYPE,
                  request_type=Request, response_type=Response,
@@ -815,7 +819,7 @@ class App:
         """
 
         path = req.path
-        method = req.method
+        method = 'WEBSOCKET' if req.is_websocket else req.method
         uri_template = None
 
         route = self._router_search(path, req=req)
