@@ -1,7 +1,7 @@
 .. _request_asgi:
 
-ASGI Requests & Responses
-=========================
+ASGI Request & Response
+=======================
 
 * `Request`_
 * `Response`_

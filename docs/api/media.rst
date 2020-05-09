@@ -3,14 +3,7 @@
 Media
 =====
 
-* `Usage`_
-* `Validating Media`_
-* `Content-Type Negotiation`_
-* `Replacing the Default Handlers`_
-* `Supported Handler Types`_
-* `Custom Handler Type`_
-* `Handlers Mapping`_
-* `Media Type Constants`_
+.. contents:: :local:
 
 Falcon allows for easy and customizable internet media type handling. By
 default Falcon only enables handlers for JSON and HTML (URL-encoded and
@@ -27,25 +20,65 @@ specified on your :any:`falcon.App`.
 Usage
 -----
 
-Zero configuration is needed if you're creating a JSON API. Just access
-or set the ``media`` attribute as appropriate and let Falcon do the heavy
-lifting for you.
+Zero configuration is needed if you're creating a JSON API. Simply use
+:meth:`~falcon.Request.get_media()` and :attr:`~falcon.Response.media` (WSGI)
+, or :meth:`~falcon.asgi.Request.get_media()` and
+:attr:`~falcon.asgi.Response.media` (ASGI) to let Falcon
+do the heavy lifting for you.
 
-.. code:: python
+.. tabs::
 
-    import falcon
+    .. tab:: WSGI
+
+        .. code:: python
+
+            import falcon
 
 
-    class EchoResource:
-        def on_post(self, req, resp):
-            message = req.media.get('message')
+            class EchoResource:
+                def on_post(self, req, resp):
+                    # Deserialize the request body based on the Content-Type
+                    #   header in the request, or the default media type
+                    #   when the Content-Type header is generic ('*/*') or
+                    #   missing.
+                    obj = req.get_media()
 
-            resp.media = {'message': message}
-            resp.status = falcon.HTTP_200
+                    message = obj.get('message')
+
+                    # The framework will look for a media handler that matches
+                    #   the response's Content-Type header, or fall back to the
+                    #   default media type (typically JSON) when the app does
+                    #   not explicitly set the Content-Type header.
+                    resp.media = {'message': message}
+                    resp.status = falcon.HTTP_200
+
+    .. tab:: ASGI
+
+        .. code:: python
+
+            import falcon
+
+
+            class EchoResource:
+                async def on_post(self, req, resp):
+                    # Deserialize the request body. Note that the ASGI version
+                    #   of this method must be awaited.
+                    obj = await req.get_media()
+
+                    message = obj.get('message')
+
+                    # The framework will look for a media handler that matches
+                    #   the response's Content-Type header, or fall back to the
+                    #   default media type (typically JSON) when the app does
+                    #   not explicitly set the Content-Type header.
+                    resp.media = {'message': message}
+                    resp.status = falcon.HTTP_200
 
 .. warning::
 
-    Once `media` is called on a request, it'll consume the request's stream.
+    Once :meth:`falcon.Request.get_media()` or
+    :meth:`falcon.asgi.Request.get_media()` is called on a request, it will
+    consume the request's body stream.
 
 Validating Media
 ----------------
@@ -63,31 +96,45 @@ Content-Type Negotiation
 ------------------------
 
 Falcon currently only supports partial negotiation out of the box. By default,
-when the ``media`` attribute is used it attempts to de/serialize based on the
-``Content-Type`` header value. The missing link that Falcon doesn't provide
-is the connection between the :any:`falcon.Request` ``Accept`` header provided
-by a user and the :any:`falcon.Response` ``Content-Type`` header.
+when the ``get_media()`` method or the ``media`` attribute is used, the
+framework attempts to (de)serialize based on the ``Content-Type`` header value.
+The missing link that Falcon doesn't provide is the connection between the
+``Accept`` header provided by a user and the ``Content-Type`` header set on the
+response.
 
 If you do need full negotiation, it is very easy to bridge the gap using
 middleware. Here is an example of how this can be done:
 
-.. code-block:: python
+.. tabs::
 
-    class NegotiationMiddleware:
-        def process_request(self, req, resp):
-            resp.content_type = req.accept
+    .. tab:: WSGI
+
+        .. code:: python
+
+            class NegotiationMiddleware:
+                def process_request(self, req, resp):
+                    resp.content_type = req.accept
+
+    .. tab:: ASGI
+
+        .. code:: python
+
+            class NegotiationMiddleware:
+                async def process_request(self, req, resp):
+                    resp.content_type = req.accept
+
 
 .. _custom_media_handlers:
 
 Replacing the Default Handlers
 ------------------------------
 
-When creating your App object you can either add or completely
-replace all of the handlers. For example, lets say you want to write an API
-that sends and receives MessagePack. We can easily do this by telling our
-Falcon API that we want a default media-type of ``application/msgpack`` and
-then create a new :any:`Handlers` object specifying the desired media type and
-a handler that can process that data.
+When creating your App object you can either add or completely replace all of
+the handlers. For example, let's say you want to write an API that sends and
+receives `MessagePack <https://msgpack.org/>`_. We can easily do this by telling
+our Falcon API that we want a default media type of ``application/msgpack`` and
+then create a new :any:`Handlers` object specifying the desired media type and a
+handler that can process that data.
 
 .. code:: python
 
@@ -104,8 +151,8 @@ a handler that can process that data.
     app.req_options.media_handlers = handlers
     app.resp_options.media_handlers = handlers
 
-Alternatively, if you would like to add an additional handler such as
-MessagePack, this can be easily done in the following manner:
+Alternatively, if you would like to add an additional handler without
+removing the default handlers, this can be easily done as follows:
 
 .. code-block:: python
 
@@ -127,21 +174,21 @@ Supported Handler Types
 -----------------------
 
 .. autoclass:: falcon.media.JSONHandler
-    :members:
+    :no-members:
 
 .. autoclass:: falcon.media.MessagePackHandler
-    :members:
+    :no-members:
 
 .. autoclass:: falcon.media.MultipartFormHandler
-    :members:
+    :no-members:
 
 .. autoclass:: falcon.media.URLEncodedFormHandler
-    :members:
+    :no-members:
 
 Custom Handler Type
 -------------------
 
-If Falcon doesn't have an internet media type handler that supports your
+If Falcon doesn't have an Internet media type handler that supports your
 use case, you can easily implement your own using the abstract base class
 provided by Falcon:
 
@@ -163,7 +210,7 @@ Media Type Constants
 --------------------
 
 The ``falcon`` module provides a number of constants for
-common media types, including the following:
+common media type strings, including the following:
 
 .. code:: python
 

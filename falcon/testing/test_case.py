@@ -30,25 +30,26 @@ from falcon.testing.client import Result  # NOQA - hoist for backwards compat
 
 
 class TestCase(unittest.TestCase, TestClient):
-    """Extends :py:mod:`unittest` to support WSGI functional testing.
+    """Extends :py:mod:`unittest` to support WSGI/ASGI functional testing.
 
     Note:
         If available, uses :py:mod:`testtools` in lieu of
         :py:mod:`unittest`.
 
     This base class provides some extra plumbing for unittest-style
-    test cases, to help simulate WSGI calls without having to spin up
-    an actual web server. Various simulation methods are derived
-    from :py:class:`falcon.testing.TestClient`.
+    test cases, to help simulate WSGI or ASGI requests without having
+    to spin up an actual web server. Various simulation methods are
+    derived from :py:class:`falcon.testing.TestClient`.
 
     Simply inherit from this class in your test case classes instead of
     :py:class:`unittest.TestCase` or :py:class:`testtools.TestCase`.
 
     Attributes:
         app (object): A WSGI or ASGI application to target when simulating
-            requests (default: ``falcon.App()``). When testing your
+            requests (defaults to ``falcon.App()``). When testing your
             application, you will need to set this to your own instance
-            of ``falcon.App`` or ``falcon.asgi.App``. For example::
+            of :class:`falcon.App` or :class:`falcon.asgi.App`. For
+            example::
 
                 from falcon import testing
                 import myapp

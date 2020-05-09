@@ -3,11 +3,7 @@
 Utilities
 =========
 
-* `URI`_
-* `Date and Time`_
-* `HTTP Status`_
-* `Async`_
-* `Other`_
+.. contents:: :local:
 
 URI
 ---

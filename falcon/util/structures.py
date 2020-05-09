@@ -232,7 +232,7 @@ class ETag(str):
                     resp.status = falcon.HTTP_304
                     return
 
-            # ...
+            # -- snip --
 
             resp.etag = content_etag
             resp.status = falcon.HTTP_200

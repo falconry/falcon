@@ -3,10 +3,7 @@
 Testing Helpers
 ===============
 
-* `General Helpers`_
-* `Simulating Requests`_
-    * `Main Interface`_
-    * `Low-Level Utils`_
+.. contents:: :local:
 
 .. automodule:: falcon.testing
     :noindex:
@@ -45,6 +42,9 @@ Main Interface
 .. autoclass:: Cookie
 .. autoclass:: TestClient
 .. autofunction:: capture_responder_args
+.. autofunction:: capture_responder_args_async
+.. autofunction:: set_resp_defaults
+.. autofunction:: set_resp_defaults_async
 
 Low-Level Utils
 ~~~~~~~~~~~~~~~

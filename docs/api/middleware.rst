@@ -3,167 +3,176 @@
 Middleware
 ==========
 
-* `Short-Circuiting`_
-* `Exception Handling`_
+.. contents:: :local:
 
 Middleware components provide a way to execute logic before the
 framework routes each request, after each request is routed but before
 the target responder is called, or just before the response is returned
-for each request. Components are registered with the `middleware` kwarg
-when instantiating Falcon's :ref:`App class <app>`.
+for each request.
 
 .. Note::
     Unlike hooks, middleware methods apply globally to the entire App.
 
-Falcon's WSGI middleware interface is defined as follows:
+Components are registered with the `middleware` kwarg
+when instantiating Falcon's :ref:`App class <app>`. A middleware component
+is simply a class that implements one or more of the event handler methods
+defined below.
 
-.. code:: python
+.. tabs::
 
-    class ExampleComponent:
-        def process_request(self, req, resp):
-            """Process the request before routing it.
+    .. tab:: WSGI
 
-            Note:
-                Because Falcon routes each request based on req.path, a
-                request can be effectively re-routed by setting that
-                attribute to a new value from within process_request().
+        Falcon's middleware interface is defined as follows:
 
-            Args:
-                req: Request object that will eventually be
-                    routed to an on_* responder method.
-                resp: Response object that will be routed to
-                    the on_* responder.
-            """
+        .. code:: python
 
-        def process_resource(self, req, resp, resource, params):
-            """Process the request after routing.
+            class ExampleComponent:
+                def process_request(self, req, resp):
+                    """Process the request before routing it.
 
-            Note:
-                This method is only called when the request matches
-                a route to a resource.
+                    Note:
+                        Because Falcon routes each request based on req.path, a
+                        request can be effectively re-routed by setting that
+                        attribute to a new value from within process_request().
 
-            Args:
-                req: Request object that will be passed to the
-                    routed responder.
-                resp: Response object that will be passed to the
-                    responder.
-                resource: Resource object to which the request was
-                    routed.
-                params: A dict-like object representing any additional
-                    params derived from the route's URI template fields,
-                    that will be passed to the resource's responder
-                    method as keyword arguments.
-            """
+                    Args:
+                        req: Request object that will eventually be
+                            routed to an on_* responder method.
+                        resp: Response object that will be routed to
+                            the on_* responder.
+                    """
 
-        def process_response(self, req, resp, resource, req_succeeded):
-            """Post-processing of the response (after routing).
+                def process_resource(self, req, resp, resource, params):
+                    """Process the request after routing.
 
-            Args:
-                req: Request object.
-                resp: Response object.
-                resource: Resource object to which the request was
-                    routed. May be None if no route was found
-                    for the request.
-                req_succeeded: True if no exceptions were raised while
-                    the framework processed and routed the request;
-                    otherwise False.
-            """
+                    Note:
+                        This method is only called when the request matches
+                        a route to a resource.
 
-The ASGI middleware interface is similar, but also supports the
-standard ASGI lifespan events. However, because lifespan events are an
-optional part of the ASGI specification, they may or may not fire depending
-on your ASGI server:
+                    Args:
+                        req: Request object that will be passed to the
+                            routed responder.
+                        resp: Response object that will be passed to the
+                            responder.
+                        resource: Resource object to which the request was
+                            routed.
+                        params: A dict-like object representing any additional
+                            params derived from the route's URI template fields,
+                            that will be passed to the resource's responder
+                            method as keyword arguments.
+                    """
 
-.. code:: python
+                def process_response(self, req, resp, resource, req_succeeded):
+                    """Post-processing of the response (after routing).
 
-    class ExampleComponent:
-        async def process_startup(self, scope, event):
-            """Process the ASGI lifespan startup event.
+                    Args:
+                        req: Request object.
+                        resp: Response object.
+                        resource: Resource object to which the request was
+                            routed. May be None if no route was found
+                            for the request.
+                        req_succeeded: True if no exceptions were raised while
+                            the framework processed and routed the request;
+                            otherwise False.
+                    """
 
-            Invoked when the server is ready to start up and
-            receive connections, but before it has started to
-            do so.
+    .. tab:: ASGI
 
-            To halt startup processing and signal to the server that it
-            should terminate, simply raise an exception and the
-            framework will convert it to a "lifespan.startup.failed"
-            event for the server.
+        The ASGI middleware interface is similar to ASGI, but also supports the
+        standard ASGI lifespan events. However, because lifespan events are an
+        optional part of the ASGI specification, they may or may not fire depending
+        on your ASGI server.
 
-            Args:
-                scope (dict): The ASGI scope dictionary for the
-                    lifespan protocol. The lifespan scope exists
-                    for the duration of the event loop.
-                event (dict): The ASGI event dictionary for the
-                    startup event.
-            """
+        .. code:: python
 
-        async def process_shutdown(self, scope, event):
-            """Process the ASGI lifespan shutdown event.
+            class ExampleComponent:
+                async def process_startup(self, scope, event):
+                    """Process the ASGI lifespan startup event.
 
-            Invoked when the server has stopped accepting
-            connections and closed all active connections.
+                    Invoked when the server is ready to start up and
+                    receive connections, but before it has started to
+                    do so.
 
-            To halt shutdown processing and signal to the server
-            that it should immediately terminate, simply raise an
-            exception and the framework will convert it to a
-            "lifespan.shutdown.failed" event for the server.
+                    To halt startup processing and signal to the server that it
+                    should terminate, simply raise an exception and the
+                    framework will convert it to a "lifespan.startup.failed"
+                    event for the server.
 
-            Args:
-                scope (dict): The ASGI scope dictionary for the
-                    lifespan protocol. The lifespan scope exists
-                    for the duration of the event loop.
-                event (dict): The ASGI event dictionary for the
-                    shutdown event.
-            """
+                    Args:
+                        scope (dict): The ASGI scope dictionary for the
+                            lifespan protocol. The lifespan scope exists
+                            for the duration of the event loop.
+                        event (dict): The ASGI event dictionary for the
+                            startup event.
+                    """
 
-        async def process_request(self, req, resp):
-            """Process the request before routing it.
+                async def process_shutdown(self, scope, event):
+                    """Process the ASGI lifespan shutdown event.
 
-            Note:
-                Because Falcon routes each request based on req.path, a
-                request can be effectively re-routed by setting that
-                attribute to a new value from within process_request().
+                    Invoked when the server has stopped accepting
+                    connections and closed all active connections.
 
-            Args:
-                req: Request object that will eventually be
-                    routed to an on_* responder method.
-                resp: Response object that will be routed to
-                    the on_* responder.
-            """
+                    To halt shutdown processing and signal to the server
+                    that it should immediately terminate, simply raise an
+                    exception and the framework will convert it to a
+                    "lifespan.shutdown.failed" event for the server.
 
-        async def process_resource(self, req, resp, resource, params):
-            """Process the request after routing.
+                    Args:
+                        scope (dict): The ASGI scope dictionary for the
+                            lifespan protocol. The lifespan scope exists
+                            for the duration of the event loop.
+                        event (dict): The ASGI event dictionary for the
+                            shutdown event.
+                    """
 
-            Note:
-                This method is only called when the request matches
-                a route to a resource.
+                async def process_request(self, req, resp):
+                    """Process the request before routing it.
 
-            Args:
-                req: Request object that will be passed to the
-                    routed responder.
-                resp: Response object that will be passed to the
-                    responder.
-                resource: Resource object to which the request was
-                    routed.
-                params: A dict-like object representing any additional
-                    params derived from the route's URI template fields,
-                    that will be passed to the resource's responder
-                    method as keyword arguments.
-            """
+                    Note:
+                        Because Falcon routes each request based on req.path, a
+                        request can be effectively re-routed by setting that
+                        attribute to a new value from within process_request().
 
-        async def process_response(self, req, resp, resource, req_succeeded):
-            """Post-processing of the response (after routing).
+                    Args:
+                        req: Request object that will eventually be
+                            routed to an on_* responder method.
+                        resp: Response object that will be routed to
+                            the on_* responder.
+                    """
 
-            Args:
-                req: Request object.
-                resp: Response object.
-                resource: Resource object to which the request was
-                    routed. May be None if no route was found
-                    for the request.
-                req_succeeded: True if no exceptions were raised while
-                    the framework processed and routed the request;
-                    otherwise False.
-            """
+                async def process_resource(self, req, resp, resource, params):
+                    """Process the request after routing.
+
+                    Note:
+                        This method is only called when the request matches
+                        a route to a resource.
+
+                    Args:
+                        req: Request object that will be passed to the
+                            routed responder.
+                        resp: Response object that will be passed to the
+                            responder.
+                        resource: Resource object to which the request was
+                            routed.
+                        params: A dict-like object representing any additional
+                            params derived from the route's URI template fields,
+                            that will be passed to the resource's responder
+                            method as keyword arguments.
+                    """
+
+                async def process_response(self, req, resp, resource, req_succeeded):
+                    """Post-processing of the response (after routing).
+
+                    Args:
+                        req: Request object.
+                        resp: Response object.
+                        resource: Resource object to which the request was
+                            routed. May be None if no route was found
+                            for the request.
+                        req_succeeded: True if no exceptions were raised while
+                            the framework processed and routed the request;
+                            otherwise False.
+                    """
 
 It is also possible to implement a middleware component that is compatible
 with both ASGI and WSGI apps. This is done by applying an `*_async` postfix
