@@ -1,7 +1,7 @@
 .. _request:
 
-WSGI Requests & Responses
-=========================
+WSGI Request & Response
+=======================
 
 * `Request`_
 * `Response`_

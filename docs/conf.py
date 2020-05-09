@@ -63,6 +63,8 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
 
+    'sphinx_tabs.tabs',
+
     # Falcon-specific extensions
     'ext.rfc',
     'ext.doorway',

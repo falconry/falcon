@@ -3,19 +3,17 @@
 Multipart Forms
 ===============
 
-* `Body Part Type`_
-* `Parsing Options`_
-* `Parsing Errors`_
+.. contents:: :local:
 
 Falcon features easy and efficient access to submitted multipart forms by using
 :class:`falcon.media.MultipartFormHandler` to handle the
 ``multipart/form-data`` :ref:`media <media>` type. This handler is enabled by
-default, allowing you to use ``req.media`` to iterate over the
+default, allowing you to use ``req.get_media()`` to iterate over the
 :class:`body parts <falcon.media.multipart.BodyPart>` in a form:
 
 .. code:: python
 
-    for part in req.media:
+    for part in req.get_media():
         if part.content_type == 'application/json':
             # TODO: Body part is a JSON document, do something useful with it
             resp.media = part.media

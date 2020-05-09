@@ -3,14 +3,7 @@
 Routing
 =======
 
-* `Default Behavior`_
-* `Default Router`_
-* `Field Converters`_
-* `Built-in Converters`_
-* `Custom Converters`_
-* `Custom Routers`_
-* `Routing Utilities`_
-* `Custom HTTP Methods`_
+.. contents:: :local:
 
 Falcon routes incoming requests to resources based on a set of URI
 templates. If the path requested by the client matches the template for
@@ -19,35 +12,78 @@ for processing.
 
 Here's a quick example to show how all the pieces fit together:
 
-.. code:: python
+.. tabs::
 
-    import json
+    .. tab:: WSGI
 
-    import falcon
+        .. code:: python
 
-    class ImagesResource:
+            import json
 
-        def on_get(self, req, resp):
-            doc = {
-                'images': [
-                    {
-                        'href': '/images/1eaf6ef1-7f2d-4ecc-a8d5-6e8adba7cc0e.png'
+            import falcon
+
+
+            class ImagesResource:
+
+                def on_get(self, req, resp):
+                    doc = {
+                        'images': [
+                            {
+                                'href': '/images/1eaf6ef1-7f2d-4ecc-a8d5-6e8adba7cc0e.png'
+                            }
+                        ]
                     }
-                ]
-            }
 
-            # Create a JSON representation of the resource
-            resp.body = json.dumps(doc, ensure_ascii=False)
+                    # Create a JSON representation of the resource; this could
+                    #   also be done automatically by assigning to resp.media
+                    resp.body = json.dumps(doc, ensure_ascii=False)
 
-            # The following line can be omitted because 200 is the default
-            # status returned by the framework, but it is included here to
-            # illustrate how this may be overridden as needed.
-            resp.status = falcon.HTTP_200
+                    # The following line can be omitted because 200 is the default
+                    # status returned by the framework, but it is included here to
+                    # illustrate how this may be overridden as needed.
+                    resp.status = falcon.HTTP_200
 
-    app = application = falcon.App()
 
-    images = ImagesResource()
-    app.add_route('/images', images)
+            app = falcon.App()
+
+            images = ImagesResource()
+            app.add_route('/images', images)
+
+    .. tab:: ASGI
+
+        .. code:: python
+
+            import json
+
+            import falcon
+            import falcon.asgi
+
+
+            class ImagesResource:
+
+                async def on_get(self, req, resp):
+                    doc = {
+                        'images': [
+                            {
+                                'href': '/images/1eaf6ef1-7f2d-4ecc-a8d5-6e8adba7cc0e.png'
+                            }
+                        ]
+                    }
+
+                    # Create a JSON representation of the resource; this could
+                    #   also be done automatically by assigning to resp.media
+                    resp.body = json.dumps(doc, ensure_ascii=False)
+
+                    # The following line can be omitted because 200 is the default
+                    # status returned by the framework, but it is included here to
+                    # illustrate how this may be overridden as needed.
+                    resp.status = falcon.HTTP_200
+
+
+            app = falcon.asgi.App()
+
+            images = ImagesResource()
+            app.add_route('/images', images)
 
 If no route matches the request, control then passes to a default
 responder that simply raises an instance of
@@ -144,12 +180,29 @@ example, given the following template::
 
     /user/{name}
 
-A PUT request to "/user/kgriffs" would be routed to:
+A PUT request to ``'/user/kgriffs'`` would cause the framework to invoke
+the ``on_put()`` responder method on the route's resource class, passing
+``'kgriffs'`` via an additional `name` argument defined by the responder:
 
-.. code:: python
+.. tabs::
 
-    def on_put(self, req, resp, name):
-        pass
+    .. tab:: WSGI
+
+        .. code:: python
+
+            # Template fields correspond to named arguments or keyword
+            #   arguments, following the usual req and resp args.
+            def on_put(self, req, resp, name):
+                pass
+
+    .. tab:: ASGI
+
+        .. code:: python
+
+            # Template fields correspond to named arguments or keyword
+            #   arguments, following the usual req and resp args.
+            async def on_put(self, req, resp, name):
+                pass
 
 Because field names correspond to argument names in responder
 methods, they must be valid Python identifiers.
@@ -245,7 +298,7 @@ Custom Routers
 --------------
 
 A custom routing engine may be specified when instantiating
-:py:meth:`falcon.App`. For example:
+:py:meth:`falcon.App` or :py:meth:`falcon.asgi.App`. For example:
 
 .. code:: python
 
@@ -339,9 +392,9 @@ be used by custom routing engines.
 Custom HTTP Methods
 -------------------
 
-While not advised, some applications need to support non-standard HTTP methods,
-such as FOO or BAR, in addition to the standard HTTP methods like GET and PUT.
-To support custom HTTP methods, use one of the following methods:
+While not normally advised, some applications may need to support non-standard
+HTTP methods, in addition to the standard HTTP methods like GET and PUT. To
+support custom HTTP methods, use one of the following methods:
 
 - Ideally, if you don't use hooks in your application, you can easily add the
   custom methods in your application setup by overriding the value of
@@ -358,7 +411,22 @@ To support custom HTTP methods, use one of the following methods:
 
 
 Once you have used the appropriate method, your custom methods should be active.
-You then can define request methods like any other HTTP method, such as::
+You then can define request methods like any other HTTP method:
 
-    def on_foo(self, req, resp):
-        ...
+.. tabs::
+
+    .. tab:: WSGI
+
+        .. code:: python
+
+            # Handle the custom FOO method
+            def on_foo(self, req, resp):
+                pass
+
+    .. tab:: ASGI
+
+        .. code:: python
+
+            # Handle the custom FOO method
+            async def on_foo(self, req, resp):
+                pass

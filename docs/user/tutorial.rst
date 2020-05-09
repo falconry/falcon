@@ -1332,7 +1332,7 @@ And then attach the hook to the ``on_post()`` responder:
 
     @falcon.before(validate_image_type)
     def on_post(self, req, resp):
-        # ...
+        pass
 
 Now, before every call to that responder, Falcon will first invoke
 ``validate_image_type()``. There isn't anything special about this
@@ -1366,8 +1366,7 @@ by simply decorating the class:
 
     @falcon.before(extract_project_id)
     class Message:
-
-        # ...
+        pass
 
 Similar logic can be applied globally with middleware.
 (See also: :ref:`falcon.middleware <middleware>`)

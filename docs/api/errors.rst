@@ -3,8 +3,7 @@
 Error Handling
 ==============
 
-* `Base Class`_
-* `Predefined Errors`_
+.. contents:: :local:
 
 When it comes to error handling, you can always directly set the error
 status, appropriate response headers, and error body using the ``resp``
@@ -47,21 +46,45 @@ To customize what data is passed to the serializer, subclass
             result['acceptable'] = self._acceptable
             return result
 
-All classes are available directly in the ``falcon`` package namespace::
+All classes are available directly in the ``falcon`` package namespace:
 
-    import falcon
+.. tabs::
 
-    class MessageResource:
-        def on_get(self, req, resp):
+    .. tab:: WSGI
 
-            # ...
+        .. code:: python
 
-            raise falcon.HTTPBadRequest(
-                title="TTL Out of Range",
-                description="The message's TTL must be between 60 and 300 seconds, inclusive."
-            )
+            import falcon
 
-            # ...
+            class MessageResource:
+                def on_get(self, req, resp):
+
+                    # -- snip --
+
+                    raise falcon.HTTPBadRequest(
+                        title="TTL Out of Range",
+                        description="The message's TTL must be between 60 and 300 seconds, inclusive."
+                    )
+
+                    # -- snip --
+
+    .. tab:: ASGI
+
+        .. code:: python
+
+            import falcon
+
+            class MessageResource:
+                async def on_get(self, req, resp):
+
+                    # -- snip --
+
+                    raise falcon.HTTPBadRequest(
+                        title="TTL Out of Range",
+                        description="The message's TTL must be between 60 and 300 seconds, inclusive."
+                    )
+
+                    # -- snip --
 
 Note also that any exception (not just instances of
 :class:`~.HTTPError`) can be caught, logged, and otherwise handled

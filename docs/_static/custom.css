@@ -275,3 +275,73 @@ div.body div.section > ul.simple > li > dl.simple > dd > ul {
 div.body div.toctree-wrapper.compound > ul > li.toctree-l1 > ul {
     margin-top: 0;
 }
+
+div.contents.local.topic {
+    background: none;
+    border: none;
+}
+
+div.contents.local.topic > ul > li > p {
+    margin-bottom: 0;
+}
+
+div.contents.local.topic > ul > li > ul {
+    margin-top: 0;
+}
+
+.sphinx-tabs .sphinx-menu a.item {
+    color: #c77c11 !important;
+}
+
+.sphinx-tabs .sphinx-menu a.item:hover{
+    color: #f0ad4e !important;
+}
+
+.sphinx-tabs .sphinx-menu {
+    border-bottom-color: #eee !important;
+}
+
+.sphinx-tabs .sphinx-menu a.active.item {
+    border-color: #eee !important;
+}
+
+.sphinx-tab {
+    border-color: #eee !important;
+}
+
+.sphinx-tab.tab.active {
+    background-color: rgb(245,245,245);
+}
+
+.sphinx-tabs .sphinx-menu a.active.item  {
+    background-color: rgb(245,245,245) !important;
+}
+
+div.note, pre {
+    background-color: rgb(245,245,245);
+}
+
+div.note div.highlight > pre, div.admonition div.highlight > pre {
+    border: none;
+}
+
+div.note, div.admonition {
+    /* Match tab radius */
+    border-radius: .285714rem;
+    border-color: #eee;
+}
+
+div.ui.bottom.attached.sphinx-tab.tab {
+    /* Match tab radius */
+    border-bottom-left-radius: .285714rem;
+    border-bottom-right-radius: .285714rem;
+}
+
+div.highlight > pre {
+    border: 1px solid #eee;
+    border-radius: .285714rem;
+}
+
+.sphinx-tab pre {
+    border: none !important;
+}

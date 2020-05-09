@@ -267,7 +267,7 @@ same resource class:
             pass
 
 
-    # ...
+    # -- snip --
 
 
     resource = MyResource()
@@ -384,7 +384,7 @@ order to handle all three routes:
             resp.data = b'{"message": "pong"}'
 
 
-    # ...
+    # -- snip --
 
 
     app = falcon.App()
@@ -423,14 +423,15 @@ around:
 .. code:: python
 
     def authorize(req, resp, resource, params):
-        # Check authentication/authorization
-        # ...
+        # TODO: Check authentication/authorization
+
+        # -- snip --
 
         req.context.role = 'root'
         req.context.scopes = ('storage', 'things')
         req.context.uid = 0
 
-    # ...
+    # -- snip --
 
     @falcon.before(authorize)
     def on_post(self, req, resp):
@@ -535,13 +536,11 @@ installed by default, thus making the POSTed form available as
 
     import falcon
 
-    # ...
 
     class MyResource:
         def on_post(self, req, resp):
-            form = req.media
             # TODO: Handle the submitted URL-encoded form
-            # ...
+            form = req.media
 
             # NOTE: Falcon chooses the right media handler automatically, but
             #   if we wanted to differentiate from, for instance, JSON, we
@@ -596,9 +595,10 @@ method, making it compatible with ``boto3``\'s
 .. code:: python
 
     import boto3
-    s3 = boto3.client('s3')
 
-    # ...
+    # -- snip --
+
+    s3 = boto3.client('s3')
 
     for part in req.media:
         if part.name == 'myfile':
@@ -745,7 +745,7 @@ types:
     class ResponseWithDictContext(falcon.Response):
         context_type = dict
 
-    # ...
+    # -- snip --
 
     app = falcon.App(request_type=RequestWithDictContext,
                      response_type=ResponseWithDictContext)
@@ -894,15 +894,18 @@ Then, within ``SomeResource``:
     # Read from the DB
     result = self._engine.execute(some_table.select())
     for row in result:
-        # ....
+        # TODO: Do something with each row
+
     result.close()
 
-    # ...
+    # -- snip --
 
     # Write to the DB within a transaction
     with self._engine.begin() as connection:
         r1 = connection.execute(some_table.select())
-        # ...
+
+        # -- snip --
+
         connection.execute(
             some_table.insert(),
             col1=7,

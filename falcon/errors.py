@@ -24,14 +24,14 @@ package namespace::
     class MessageResource:
         def on_get(self, req, resp):
 
-            # ...
+            # -- snip --
 
             raise falcon.HTTPBadRequest(
                 title='TTL Out of Range',
                 description='The message's TTL must be between 60 and 300 seconds, inclusive.'
             )
 
-            # ...
+            # -- snip --
 
 """
 
