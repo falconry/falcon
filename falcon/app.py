@@ -362,7 +362,7 @@ class App:
                 default_media_type = None
             elif (
                 length is not None and
-                req.method == 'HEAD'and
+                req.method == 'HEAD' and
                 resp_status not in _BODILESS_STATUS_CODES and
                 'content-length' not in resp._headers
             ):

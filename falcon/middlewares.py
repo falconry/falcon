@@ -45,8 +45,8 @@ class CORSMiddleware(object):
         if allow_credentials is False:
             allow_credentials = frozenset()
         elif allow_credentials is not True:
-            allow_credentials = frozenset(allow_credentials)
-        self.allow_credentials = allow_credentials
+            allow_credentials = frozenset(allow_credentials)  # type: ignore
+        self.allow_credentials = allow_credentials  # type: ignore
 
     def process_response(self, req: Request, resp: Response, resource, req_succeeded):
         """Implement the CORS policy for all routes.
@@ -68,7 +68,7 @@ class CORSMiddleware(object):
 
         if resp.get_header('Access-Control-Allow-Origin') is None:
             set_origin = '*' if self.allow_origin == '*' else origin
-            if self.allow_credentials is True or origin in self.allow_credentials:
+            if self.allow_credentials is True or origin in self.allow_credentials:  # type: ignore
                 set_origin = origin
                 resp.set_header('Access-Control-Allow-Credentials', 'true')
             resp.set_header('Access-Control-Allow-Origin', set_origin)

@@ -281,7 +281,7 @@ class App(falcon.app.App):
 
                 if not spec_version.startswith('1.') and not spec_version.startswith('2.'):
                     raise UnsupportedScopeError(
-                        f'Only versions 1.x and 2.x of the ASGI "lifespan" scope are supported.'
+                        'Only versions 1.x and 2.x of the ASGI "lifespan" scope are supported.'
                     )
 
                 await self._call_lifespan_handlers(spec_version, scope, receive, send)
