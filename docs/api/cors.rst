@@ -16,11 +16,16 @@ By default, Falcon's built-in CORS support is disabled, so that any cross-origin
 requests will be blocked by the browser. Passing ``cors_enable=True`` will
 cause the framework to include the necessary response headers to allow access
 from any origin to any route in the app. Individual responders may override this
-behavior by setting the Access-Control-Allow-Origin header explicitly.
+behavior by setting the ``Access-Control-Allow-Origin`` header explicitly.
 
 Whether or not you implement a CORS policy, we recommend also putting a robust
 AuthN/Z layer in place to authorize individual clients, as needed, to protect
 sensitive resources.
+
+Directly passing the :class:`falcon.CORSMiddleware` middleware to the application
+allows customization of the CORS policy applied. The middleware allows customizing
+the allowed origins, if credentials should be allowed and if additional headers
+that can be exposed.
 
 Usage
 -----
@@ -36,6 +41,10 @@ Usage
             # Enable a simple CORS policy for all responses
             app = falcon.App(cors_enable=True)
 
+            # Enable CORS policy for example.com and allows credentials
+            app = falcon.App(middleware=falcon.CORSMiddleware(
+                allow_origin='example.com', allow_credentials=True))
+
     .. tab:: ASGI
 
         .. code:: python
@@ -44,3 +53,12 @@ Usage
 
             # Enable a simple CORS policy for all responses
             app = falcon.asgi.App(cors_enable=True)
+
+            # Enable CORS policy for example.com and allows credentials
+            app = falcon.asgi.App(middleware=falcon.CORSMiddleware(
+                allow_origin='example.com', allow_credentials=True))
+
+CORSMiddleware
+--------------
+
+.. autoclass:: falcon.CORSMiddleware

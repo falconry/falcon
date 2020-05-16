@@ -212,7 +212,9 @@ class App(falcon.app.App):
 
         cors_enable (bool): Set this flag to ``True`` to enable a simple
             CORS policy for all responses, including support for preflighted
-            requests (default ``False``).
+            requests. An instance of :py:class:`..CORSMiddleware` can instead be
+            passet to the middleware argument to customize its behaviour.
+            (default ``False``).
             (See also: :ref:`CORS <cors>`)
 
     Attributes:
