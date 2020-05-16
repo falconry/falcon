@@ -151,6 +151,7 @@ def test_response_complex_case(client):
     cookie = result.cookies['bad']
     assert cookie.value == ''  # An unset cookie has an empty value
     assert cookie.domain is None
+    assert cookie.same_site == 'Lax'
 
     assert cookie.expires < datetime.utcnow()
 
@@ -233,7 +234,7 @@ def test_response_unset_cookie(client):
     len(morsels) == 1
 
     bad_cookie = morsels[0]
-    bad_cookie['expires'] == -1
+    assert bad_cookie['expires'] == -1
 
     output = bad_cookie.OutputString()
     assert 'bad=;' in output or 'bad="";' in output

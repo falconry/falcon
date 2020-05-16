@@ -499,6 +499,10 @@ class Response:
         # thus removing it from future request objects.
         self._cookies[name]['expires'] = -1
 
+        # NOTE(CaselIT): Set SameSite to Lax to avoid setting invalid cookies.
+        # See https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie/SameSite#Fixing_common_warnings  # noqa: E501
+        self._cookies[name]['samesite'] = 'Lax'
+
     def get_header(self, name, default=None):
         """Retrieve the raw string value for the given header.
 
