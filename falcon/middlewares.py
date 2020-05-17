@@ -20,7 +20,13 @@ class CORSMiddleware(object):
             sensitive). The string ``'*'`` acts as a wildcard, matching every origin.
             (default ``'*'``).
         expose_headers (Optional[Union[str, Iterable[str]]]): List of additional headers to
-            expose. (default ``None``).
+            expose via the ``Access-Control-Expose-Headers`` header. These headers are in addition
+            to the CORS-safelisted ones: ``Cache-Control``, ``Content-Language``,
+            ``Content-Length``, ``Content-Type``, ``Expires``, ``Last-Modified``, ``Pragma``.
+            (default ``None``).
+
+            See also:
+            https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Expose-Headers
         allow_credentials (Union[bool, Iterable[str]]): List of origins to allow credentials (case
             sensitive). When ``True`` allows credentials for each allowed origin. This has effect
             only if the origin is allowed by the ``allow_origin`` argument. (default ``False``).
