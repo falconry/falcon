@@ -263,19 +263,18 @@ class NoBodyResource:
         raise falcon.HTTPError(falcon.HTTP_701)
 
 
-@pytest.fixture()
-def body_client(asgi):
-    app = create_app(asgi=asgi)
-    app.add_route('/error', NoBodyResource())
-
-    def no_reps(req, resp, exception):
-        pass
-
-    app.set_error_serializer(no_reps)
-    return testing.TestClient(app)
-
-
 class TestNoBodyWithStatus:
+    @pytest.fixture()
+    def body_client(self, asgi):
+        app = create_app(asgi=asgi)
+        app.add_route('/error', NoBodyResource())
+
+        def no_reps(req, resp, exception):
+            pass
+
+        app.set_error_serializer(no_reps)
+        return testing.TestClient(app)
+
     def test_data_is_set(self, body_client):
         res = body_client.simulate_get('/error')
         assert res.status == falcon.HTTP_IM_A_TEAPOT
@@ -289,4 +288,52 @@ class TestNoBodyWithStatus:
     def test_body_is_set(self, body_client):
         res = body_client.simulate_put('/error')
         assert res.status == falcon.HTTP_701
+        assert res.content == b''
+
+
+class CustomErrorResource:
+    def on_get(self, req, res):
+        res.data = b'foo'
+        raise ZeroDivisionError()
+
+    def on_post(self, req, res):
+        res.media = {'a': 1}
+        raise ZeroDivisionError()
+
+    def on_put(self, req, res):
+        res.body = 'foo'
+        raise ZeroDivisionError()
+
+
+class TestCustomError:
+    @pytest.fixture()
+    def body_client(self, asgi):
+        app = create_app(asgi=asgi)
+        app.add_route('/error', CustomErrorResource())
+
+        if asgi:
+            async def handle_zero_division(req, resp, ex, params):
+                assert await resp.render_body() is None
+                resp.status = falcon.HTTP_719
+        else:
+            def handle_zero_division(req, resp, ex, params):
+                assert resp.render_body() is None
+                resp.status = falcon.HTTP_719
+
+        app.add_error_handler(ZeroDivisionError, handle_zero_division)
+        return testing.TestClient(app)
+
+    def test_data_is_set(self, body_client):
+        res = body_client.simulate_get('/error')
+        assert res.status == falcon.HTTP_719
+        assert res.content == b''
+
+    def test_media_is_set(self, body_client):
+        res = body_client.simulate_post('/error')
+        assert res.status == falcon.HTTP_719
+        assert res.content == b''
+
+    def test_body_is_set(self, body_client):
+        res = body_client.simulate_put('/error')
+        assert res.status == falcon.HTTP_719
         assert res.content == b''

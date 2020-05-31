@@ -870,9 +870,6 @@ class App:
         # NOTE(kgriffs): If http_status.body is None, that's OK because
         # it's acceptable to set resp.body to None (to indicate no body).
         resp.body = http_status.body
-        # NOTE(caselit): Reset the data and media to ensure that an empty body
-        # is returned if body is set to None
-        resp.data = resp.media = None
 
     def _compose_error_response(self, req, resp, error):
         """Compose a response for the given HTTPError instance."""
@@ -882,8 +879,6 @@ class App:
         if error.headers is not None:
             resp.set_headers(error.headers)
 
-        # NOTE(caselit): Reset body, data and media before calling the serializer
-        resp.body = resp.data = resp.media = None
         self._serialize_error(req, resp, error)
 
     def _http_status_handler(self, req, resp, status, params):
@@ -931,6 +926,8 @@ class App:
         """
         err_handler = self._find_error_handler(ex)
 
+        # NOTE(caselit): Reset body, data and media before calling the handler
+        resp.body = resp.data = resp.media = None
         if err_handler is not None:
             try:
                 err_handler(req, resp, ex, params)
