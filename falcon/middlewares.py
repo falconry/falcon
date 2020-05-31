@@ -35,7 +35,7 @@ class CORSMiddleware(object):
         self,
         allow_origin: Union[str, Iterable[str]] = '*',
         expose_headers: Optional[Union[str, Iterable[str]]] = None,
-        allow_credentials: Union[bool, Iterable[str]] = False
+        allow_credentials: Union[bool, Iterable[str]] = False,
     ):
         if allow_origin == '*':
             self.allow_origin = allow_origin
