@@ -219,7 +219,7 @@ class NoRepresentation:
         `has_representation` property as expected.
 
     Warning:
-        As of Falcon 3.0, this mixin class is no longer used since all falcon
+        As of Falcon 3.0, this mixin class is no longer used since all Falcon
         errors have a representation. This class is considered deprecated and
         will be removed in a future release.
     """
@@ -252,7 +252,7 @@ class OptionalRepresentation:
         `has_representation` property as expected.
 
     Warning:
-        As of Falcon 3.0, this mixin class is no longer used since all falcon
+        As of Falcon 3.0, this mixin class is no longer used since all Falcon
         errors have a representation. This class is considered deprecated and
         will be removed in a future release.
     """

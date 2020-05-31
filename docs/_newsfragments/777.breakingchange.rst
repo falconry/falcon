@@ -1,2 +1,2 @@
-The class :class:`~.falcon.http_error.NoRepresentation` was removed. All
+The class :class:`~.falcon.http_error.NoRepresentation` was deprecated. All
 subclasses of :class:`falcon.HTTPError` now have a media type representation.
