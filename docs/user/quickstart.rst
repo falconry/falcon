@@ -370,7 +370,7 @@ parameters, handling errors, and working with request and response bodies.
                 httpd = simple_server.make_server('127.0.0.1', 8000, app)
                 httpd.serve_forever()
 
-        Again this code uses wsgiref, but you you can also run the above example using
+        Again this code uses wsgiref, but you can also run the above example using
         any WSGI server, such as uWSGI or Gunicorn. For example:
 
         .. code:: bash
@@ -378,7 +378,7 @@ parameters, handling errors, and working with request and response bodies.
             $ pip install requests gunicorn
             $ gunicorn things:app
 
-        On Windows where Gunicorn and uWSGI don't work yet you can use Waitress server
+        On Windows you can run Gunicorn and uWSGI via WSL, or you might try Waitress:
 
         .. code:: bash
 
