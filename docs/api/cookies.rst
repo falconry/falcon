@@ -3,10 +3,7 @@
 Cookies
 -------
 
-* `Getting Cookies`_
-* `Setting Cookies`_
-* `The Secure Attribute`_
-* `The SameSite Attribute`_
+.. contents:: :local:
 
 .. _getting-cookies:
 
@@ -20,20 +17,50 @@ Cookies can be read from a request either via the
 :py:meth:`~.falcon.Request.get_cookie_values` method should be used unless you
 need a collection of all the cookies in the request.
 
-.. code:: python
+.. note::
 
-    class Resource:
-        def on_get(self, req, resp):
+    :class:`falcon.asgi.Request` implements the same cookie methods and
+    properties as :class:`falcon.Request`.
 
-            cookies = req.cookies
+Here's an example showing how to get cookies from a request:
 
-            my_cookie_values = req.get_cookie_values('my_cookie')
-            if my_cookie_values:
-                # NOTE: If there are multiple values set for the cookie, you
-                # will need to choose how to handle the additional values.
-                v = my_cookie_values[0]
+.. tabs::
 
-                # ...
+    .. tab:: WSGI
+
+        .. code:: python
+
+            class Resource:
+                def on_get(self, req, resp):
+
+                    # Get a dict of name/value cookie pairs.
+                    cookies = req.cookies
+
+                    my_cookie_values = req.get_cookie_values('my_cookie')
+
+                    if my_cookie_values:
+                        # NOTE: If there are multiple values set for the cookie, you
+                        #   will need to choose how to handle the additional values.
+                        v = my_cookie_values[0]
+
+    .. tab:: ASGI
+
+        .. code:: python
+
+            class Resource:
+                async def on_get(self, req, resp):
+
+                    # Get a dict of name/value cookie pairs.
+                    cookies = req.cookies
+
+                    # NOTE: Since get_cookie_values() is synchronous, it does
+                    #   not need to be await'd.
+                    my_cookie_values = req.get_cookie_values('my_cookie')
+
+                    if my_cookie_values:
+                        # NOTE: If there are multiple values set for the cookie, you
+                        #   will need to choose how to handle the additional values.
+                        v = my_cookie_values[0]
 
 .. _setting-cookies:
 
@@ -48,27 +75,30 @@ One of these methods should be used instead of
 cannot set multiple headers with the same name (which is how multiple cookies
 are sent to the client).
 
+.. note::
+
+    :class:`falcon.asgi.Request` implements the same cookie methods and
+    properties as :class:`falcon.Request`. The ASGI versions of
+    :meth:`~falcon.asgi.Response.set_cookie` and
+    :meth:`~falcon.asgi.Response.append_header`
+    are synchronous, so they do not need to be ``await``'d.
+
 Simple example:
 
 .. code:: python
 
-    class Resource:
-        def on_get(self, req, resp):
-
-            # Set the cookie 'my_cookie' to the value 'my cookie value'
-            resp.set_cookie('my_cookie', 'my cookie value')
+    # Set the cookie 'my_cookie' to the value 'my cookie value'
+    resp.set_cookie('my_cookie', 'my cookie value')
 
 
 You can of course also set the domain, path and lifetime of the cookie.
 
 .. code:: python
 
-    class Resource:
-        def on_get(self, req, resp):
-            # Set the maximum age of the cookie to 10 minutes (600 seconds)
-            # and the cookie's domain to 'example.com'
-            resp.set_cookie('my_cookie', 'my cookie value',
-                            max_age=600, domain='example.com')
+    # Set the maximum age of the cookie to 10 minutes (600 seconds)
+    #   and the cookie's domain to 'example.com'
+    resp.set_cookie('my_cookie', 'my cookie value',
+                    max_age=600, domain='example.com')
 
 
 You can also instruct the client to remove a cookie with the
@@ -76,12 +106,14 @@ You can also instruct the client to remove a cookie with the
 
 .. code:: python
 
-    class Resource:
-        def on_get(self, req, resp):
-            resp.set_cookie('bad_cookie', ':(')
+    # Set a cookie in middleware or in a previous request.
+    resp.set_cookie('my_cookie', 'my cookie value')
 
-            # Clear the bad cookie
-            resp.unset_cookie('bad_cookie')
+    # -- snip --
+
+    # Clear the cookie for the current request and instruct the user agent
+    #   to expire its own copy of the cookie (if any).
+    resp.unset_cookie('my_cookie')
 
 .. _cookie-secure-attribute:
 

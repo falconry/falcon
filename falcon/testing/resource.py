@@ -65,7 +65,7 @@ def capture_responder_args(req, resp, resource, params):
 
 
 async def capture_responder_args_async(req, resp, resource, params):
-    """An asynchronous version of ``capture_responder_args()``."""
+    """An asynchronous version of :meth:`~falcon.testing.capture_responder_args`."""
 
     resource.captured_req = req
     resource.captured_resp = resp
@@ -82,7 +82,14 @@ async def capture_responder_args_async(req, resp, resource, params):
 
 
 def set_resp_defaults(req, resp, resource, params):
-    """Before hook for setting default response properties."""
+    """Before hook for setting default response properties.
+
+    This hook simply sets the the response body, status,
+    and headers to the `_default_status`,
+    `_default_body`, and `_default_headers` attributes
+    that are assumed to be defined on the resource
+    object.
+    """
 
     if resource._default_status is not None:
         resp.status = resource._default_status
@@ -95,7 +102,7 @@ def set_resp_defaults(req, resp, resource, params):
 
 
 async def set_resp_defaults_async(req, resp, resource, params):
-    """Wraps capture_responder_args in a coroutine."""
+    """Wraps :meth:`~falcon.testing.set_resp_defaults` in a coroutine."""
     set_resp_defaults(req, resp, resource, params)
 
 

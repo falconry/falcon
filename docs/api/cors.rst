@@ -10,7 +10,7 @@ browsers to prevent unauthorized requests between different domains.
 When implementing
 a web API, it is common to have to also implement a CORS policy. Therefore,
 Falcon provides an easy way to enable a simple CORS policy via a flag passed
-to :any:`falcon.App`.
+to :class:`falcon.App` or :class:`falcon.asgi.App`.
 
 By default, Falcon's built-in CORS support is disabled, so that any cross-origin
 requests will be blocked by the browser. Passing ``cors_enable=True`` will
@@ -25,10 +25,22 @@ sensitive resources.
 Usage
 -----
 
-.. code:: python
+.. tabs::
 
-    import falcon
+    .. tab:: WSGI
 
-    # Enable a simple CORS policy for all responses
-    app = falcon.App(cors_enable=True)
+        .. code:: python
 
+            import falcon
+
+            # Enable a simple CORS policy for all responses
+            app = falcon.App(cors_enable=True)
+
+    .. tab:: ASGI
+
+        .. code:: python
+
+            import falcon.asgi
+
+            # Enable a simple CORS policy for all responses
+            app = falcon.asgi.App(cors_enable=True)

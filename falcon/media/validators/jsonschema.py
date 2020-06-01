@@ -47,16 +47,47 @@ def validate(req_schema=None, resp_schema=None, is_async=False):
             function is declared using ``async def``.
 
     Example:
-        .. code:: python
 
-            from falcon.media.validators import jsonschema
+        .. tabs::
 
-            # -- snip --
+            .. tab:: WSGI
 
-            @jsonschema.validate(my_post_schema)
-            def on_post(self, req, resp):
+                .. code:: python
 
-            # -- snip --
+                    from falcon.media.validators import jsonschema
+
+                    # -- snip --
+
+                    @jsonschema.validate(my_post_schema)
+                    def on_post(self, req, resp):
+
+                    # -- snip --
+
+            .. tab:: ASGI
+
+                .. code:: python
+
+                    from falcon.media.validators import jsonschema
+
+                    # -- snip --
+
+                    @jsonschema.validate(my_post_schema)
+                    async def on_post(self, req, resp):
+
+                    # -- snip --
+
+            .. tab:: ASGI (Cythonized App)
+
+                .. code:: python
+
+                    from falcon.media.validators import jsonschema
+
+                    # -- snip --
+
+                    @jsonschema.validate(my_post_schema, is_async=True)
+                    async def on_post(self, req, resp):
+
+                    # -- snip --
 
     """
 

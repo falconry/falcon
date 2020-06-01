@@ -3,12 +3,7 @@
 Status Codes
 ============
 
-* `HTTPStatus`_
-* `1xx Informational`_
-* `2xx Success`_
-* `3xx Redirection`_
-* `4xx Client Error`_
-* `5xx Server Error`_
+.. contents:: :local:
 
 Falcon provides a list of constants for common
 `HTTP response status codes <http://httpstatus.es>`_.
@@ -27,12 +22,16 @@ Or, using the more verbose name:
     resp.status = falcon.HTTP_CONFLICT
 
 Using these constants helps avoid typos and cuts down on the number of
-string objects that must be created when preparing responses.
+string objects that must be created when preparing responses. However,
+starting with Falcon version 3.0, an LRU is used to enable efficient use
+of :class:`http.HTTPStatus` and bare ``int`` codes as well (currently only
+implemented for the ASGI interface; see also:
+:attr:`~falcon.asgi.Response.status`).
 
-Falcon also provides a generic ``HTTPStatus`` class. Raise this class from a
-hook, middleware, or a responder to stop handling the request and skip to the
-response handling. It takes status, additional headers and body as input
-arguments.
+Falcon also provides a generic :class:`~.HTTPStatus` class. Simply raise an
+instance of this class from any hook, middleware, or a responder to stop
+handling the request and skip to the response handling. It takes status,
+additional headers and body as input arguments.
 
 HTTPStatus
 ----------
@@ -145,7 +144,7 @@ HTTPStatus
     HTTP_405 = '405 Method Not Allowed'
     HTTP_406 = '406 Not Acceptable'
     HTTP_407 = '407 Proxy Authentication Required'
-    HTTP_408 = '408 Request Time-out'
+    HTTP_408 = '408 Request Timeout'
     HTTP_409 = '409 Conflict'
     HTTP_410 = '410 Gone'
     HTTP_411 = '411 Length Required'
@@ -184,8 +183,8 @@ HTTPStatus
     HTTP_501 = '501 Not Implemented'
     HTTP_502 = '502 Bad Gateway'
     HTTP_503 = '503 Service Unavailable'
-    HTTP_504 = '504 Gateway Time-out'
-    HTTP_505 = '505 HTTP Version not supported'
+    HTTP_504 = '504 Gateway Timeout'
+    HTTP_505 = '505 HTTP Version Not Supported'
     HTTP_507 = '507 Insufficient Storage'
     HTTP_508 = '508 Loop Detected'
     HTTP_511 = '511 Network Authentication Required'

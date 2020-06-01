@@ -1,5 +1,5 @@
-Requests & Responses
-====================
+Request & Response
+==================
 
 Similar to other frameworks, Falcon employs the inversion of control (IoC)
 pattern to coordinate with app methods in order to respond to HTTP requests.
