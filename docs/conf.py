@@ -62,6 +62,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
+    'sphinx_tabs.tabs',
 
     'sphinx_tabs.tabs',
 
