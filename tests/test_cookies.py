@@ -77,12 +77,21 @@ class CookieResourceSameSite:
         resp.set_cookie('baz', 'foo', same_site='')
 
 
+class CookieUnset:
+    def on_get(self, req, resp):
+        resp.unset_cookie('foo')
+        resp.unset_cookie('bar', path='/bar')
+        resp.unset_cookie('baz', domain='www.example.com')
+        resp.unset_cookie('foobar', path='/foo', domain='www.example.com')
+
+
 @pytest.fixture
 def client(asgi):
     app = create_app(asgi)
     app.add_route('/', CookieResource())
     app.add_route('/test-convert', CookieResourceMaxAgeFloatString())
     app.add_route('/same-site', CookieResourceSameSite())
+    app.add_route('/unset-cookie', CookieUnset())
 
     return testing.TestClient(app)
 
@@ -164,6 +173,24 @@ def test_response_complex_case(client):
     assert cookie.max_age is None
     assert cookie.path is None
     assert cookie.secure
+
+
+def test_unset_cookies(client):
+    result = client.simulate_get('/unset-cookie')
+
+    assert len(result.cookies) == 4
+
+    def test(cookie, path, domain):
+        assert cookie.value == ''  # An unset cookie has an empty value
+        assert cookie.domain == domain
+        assert cookie.path == path
+        assert cookie.same_site == 'Lax'
+        assert cookie.expires < datetime.utcnow()
+
+    test(result.cookies['foo'], path=None, domain=None)
+    test(result.cookies['bar'], path='/bar', domain=None)
+    test(result.cookies['baz'], path=None, domain='www.example.com')
+    test(result.cookies['foobar'], path='/foo', domain='www.example.com')
 
 
 def test_cookie_expires_naive(client):
