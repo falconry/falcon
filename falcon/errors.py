@@ -38,7 +38,7 @@ package namespace::
 from datetime import datetime
 
 from falcon import util
-from falcon.http_error import HTTPError, OptionalRepresentation
+from falcon.http_error import HTTPError
 import falcon.status_codes as status
 
 
@@ -268,7 +268,7 @@ class HTTPForbidden(HTTPError):
         )
 
 
-class HTTPNotFound(OptionalRepresentation, HTTPError):
+class HTTPNotFound(HTTPError):
     """404 Not Found.
 
     The origin server did not find a current representation for the
@@ -381,7 +381,7 @@ class HTTPRouteNotFound(HTTPNotFound):
     """
 
 
-class HTTPMethodNotAllowed(OptionalRepresentation, HTTPError):
+class HTTPMethodNotAllowed(HTTPError):
     """405 Method Not Allowed.
 
     The method received in the request-line is known by the origin
@@ -585,7 +585,7 @@ class HTTPConflict(HTTPError):
         )
 
 
-class HTTPGone(OptionalRepresentation, HTTPError):
+class HTTPGone(HTTPError):
     """410 Gone.
 
     The target resource is no longer available at the origin server and
@@ -967,7 +967,7 @@ class HTTPUnsupportedMediaType(HTTPError):
         )
 
 
-class HTTPRangeNotSatisfiable(OptionalRepresentation, HTTPError):
+class HTTPRangeNotSatisfiable(HTTPError):
     """416 Range Not Satisfiable.
 
     None of the ranges in the request's Range header field overlap the
@@ -1103,7 +1103,7 @@ class HTTPUnprocessableEntity(HTTPError):
         )
 
 
-class HTTPLocked(OptionalRepresentation, HTTPError):
+class HTTPLocked(HTTPError):
     """423 Locked.
 
     The 423 (Locked) status code means the source or destination resource
@@ -1159,7 +1159,7 @@ class HTTPLocked(OptionalRepresentation, HTTPError):
         )
 
 
-class HTTPFailedDependency(OptionalRepresentation, HTTPError):
+class HTTPFailedDependency(HTTPError):
     """424 Failed Dependency.
 
     The 424 (Failed Dependency) status code means that the method could
@@ -1407,7 +1407,7 @@ class HTTPRequestHeaderFieldsTooLarge(HTTPError):
         )
 
 
-class HTTPUnavailableForLegalReasons(OptionalRepresentation, HTTPError):
+class HTTPUnavailableForLegalReasons(HTTPError):
     """451 Unavailable For Legal Reasons.
 
     The server is denying access to the resource as a consequence of a

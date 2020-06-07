@@ -158,11 +158,6 @@ def default_serialize_error(req, resp, exception):
         resp: Instance of ``falcon.Response``
         exception: Instance of ``falcon.HTTPError``
     """
-    if not exception.has_representation:
-        return
-
-    representation = None
-
     preferred = req.client_prefers(('application/xml',
                                     'text/xml',
                                     'application/json'))
@@ -188,11 +183,10 @@ def default_serialize_error(req, resp, exception):
 
     if preferred is not None:
         if preferred == 'application/json':
-            representation = exception.to_json()
+            resp.body = exception.to_json()
         else:
-            representation = exception.to_xml()
-
-        resp.body = representation
+            # NOTE(caselit): to_xml already returns bytes
+            resp.data = exception.to_xml()
 
         # NOTE(kgriffs): No need to append the charset param, since
         #   utf-8 is the default for both JSON and XML.

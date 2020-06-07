@@ -17,7 +17,7 @@
 from collections import OrderedDict
 import xml.etree.ElementTree as et
 
-from falcon.util import deprecated_args, json, uri
+from falcon.util import deprecated, deprecated_args, json, uri
 
 
 class HTTPError(Exception):
@@ -79,19 +79,6 @@ class HTTPError(Exception):
 
     Attributes:
         status (str): HTTP status line, e.g. '748 Confounded by Ponies'.
-        has_representation (bool): Read-only property that determines
-            whether error details will be serialized when composing
-            the HTTP response. In ``HTTPError`` this property always
-            returns ``True``, but child classes may override it
-            in order to return ``False`` when an empty HTTP body is desired.
-
-            (See also: :class:`falcon.http_error.OptionalRepresentation`)
-
-            Note:
-                A custom error serializer
-                (see :meth:`~.App.set_error_serializer`) may choose to set a
-                response body regardless of the value of this property.
-
         title (str): Error title to send to the client.
         description (str): Description of the error to send to the client.
         headers (dict): Extra headers to add to the response.
@@ -136,7 +123,11 @@ class HTTPError(Exception):
     def __repr__(self):
         return '<%s: %s>' % (self.__class__.__name__, self.status)
 
-    @property
+    @property  # type: ignore
+    @deprecated(
+        'has_representation is deprecated and is currently unused by falcon',
+        is_property=True
+    )
     def has_representation(self):
         return True
 
@@ -186,7 +177,7 @@ class HTTPError(Exception):
         """Return an XML-encoded representation of the error.
 
         Returns:
-            str: An XML document for the error.
+            bytes: An XML document for the error.
 
         """
 
@@ -210,6 +201,39 @@ class HTTPError(Exception):
                 et.tostring(error_element, encoding='utf-8'))
 
 
+class NoRepresentation:
+    """Mixin for ``HTTPError`` child classes that have no representation.
+
+    This class can be mixed in when inheriting from ``HTTPError``, in order
+    to override the `has_representation` property such that it always
+    returns ``False``. This, in turn, will cause Falcon to return an empty
+    response body to the client.
+
+    You can use this mixin when defining errors that either should not have
+    a body (as dictated by HTTP standards or common practice), or in the
+    case that a detailed error response may leak information to an attacker.
+
+    Note:
+        This mixin class must appear before ``HTTPError`` in the base class
+        list when defining the child; otherwise, it will not override the
+        `has_representation` property as expected.
+
+    Warning:
+        As of Falcon 3.0, this mixin class is no longer used since all Falcon
+        errors have a representation. This class is considered deprecated and
+        will be removed in a future release.
+    """
+
+    @property  # type: ignore
+    @deprecated(
+        'has_representation is deprecated and is currently unused by falcon. '
+        'The class NoRepresentation is deprecated and will be removed in a future release',
+        is_property=True
+    )
+    def has_representation(self):
+        return False
+
+
 class OptionalRepresentation:
     """Mixin for ``HTTPError`` child classes that may have a representation.
 
@@ -227,7 +251,17 @@ class OptionalRepresentation:
         list when defining the child; otherwise, it will not override the
         `has_representation` property as expected.
 
+    Warning:
+        As of Falcon 3.0, this mixin class is no longer used since all Falcon
+        errors have a representation. This class is considered deprecated and
+        will be removed in a future release.
     """
-    @property
+
+    @property  # type: ignore
+    @deprecated(
+        'has_representation is deprecated and is currently unused by falcon. '
+        'The class OptionalRepresentation is deprecated and will be removed in a future release',
+        is_property=True
+    )
     def has_representation(self):
-        return super().description is not None
+        return self.description is not None

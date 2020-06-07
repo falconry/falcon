@@ -8,6 +8,7 @@ import pytest
 import yaml
 
 import falcon
+from falcon.http_error import NoRepresentation, OptionalRepresentation
 import falcon.testing as testing
 from falcon.util import json, misc
 
@@ -285,6 +286,10 @@ class TestHTTPError:
 
         assert response.status == headers['X-Error-Status']
         assert response.json == expected_body
+
+    def test_has_representation(self):
+        with pytest.warns(misc.DeprecatedWarning, match='has_representation is deprecated'):
+            assert falcon.HTTPError(falcon.HTTP_701).has_representation is True
 
     def test_no_description_json(self, client):
         response = client.simulate_patch('/fail')
@@ -564,7 +569,8 @@ class TestHTTPError:
         response = client.simulate_request(path='/404')
 
         assert response.status == falcon.HTTP_404
-        assert not response.content
+        assert response.json == falcon.HTTPNotFound().to_dict()
+        assert response.json == {'title': falcon.HTTP_NOT_FOUND}
 
     def test_404_with_body(self, client):
         client.app.add_route('/404', NotFoundResourceWithBody())
@@ -583,7 +589,8 @@ class TestHTTPError:
 
         response = client.simulate_request(path='/405')
         assert response.status == falcon.HTTP_405
-        assert not response.content
+        assert response.text == falcon.HTTPMethodNotAllowed(['PUT']).to_json()
+        assert response.json == {'title': falcon.HTTP_METHOD_NOT_ALLOWED}
         assert response.headers['allow'] == 'PUT'
 
     def test_405_without_body_with_extra_headers(self, client):
@@ -591,7 +598,7 @@ class TestHTTPError:
 
         response = client.simulate_request(path='/405')
         assert response.status == falcon.HTTP_405
-        assert not response.content
+        assert response.text == falcon.HTTPMethodNotAllowed([]).to_json()
         assert response.headers['allow'] == 'PUT'
         assert response.headers['x-ping'] == 'pong'
 
@@ -602,7 +609,7 @@ class TestHTTPError:
 
         response = client.simulate_request(path='/405')
         assert response.status == falcon.HTTP_405
-        assert not response.content
+        assert response.json == falcon.HTTPMethodNotAllowed([]).to_dict()
         assert response.headers['allow'] == 'PUT'
         assert response.headers['allow'] != 'GET,PUT'
         assert response.headers['allow'] != 'GET'
@@ -626,7 +633,8 @@ class TestHTTPError:
         response = client.simulate_request(path='/410')
 
         assert response.status == falcon.HTTP_410
-        assert not response.content
+        assert response.text == falcon.HTTPGone().to_json()
+        assert response.json == {'title': '410 Gone'}
 
     def test_410_with_body(self, client):
         client.app.add_route('/410', GoneResourceWithBody())
@@ -716,9 +724,14 @@ class TestHTTPError:
         response = client.simulate_request(path='/416', headers={'accept': 'text/xml'})
 
         assert response.status == falcon.HTTP_416
-        assert not response.content
+        assert response.content == falcon.HTTPRangeNotSatisfiable(123456).to_xml()
+        exp = (
+            b'<?xml version="1.0" encoding="UTF-8"?><error>'
+            b'<title>416 Range Not Satisfiable</title></error>'
+        )
+        assert response.content == exp
         assert response.headers['content-range'] == 'bytes */123456'
-        assert response.headers['content-length'] == '0'
+        assert response.headers['content-length'] == str(len(response.content))
 
     def test_429_no_retry_after(self, client):
         client.app.add_route('/429', TooManyRequestsResource())
@@ -865,3 +878,31 @@ def test_kw_only():
     #     falcon.HTTPError(falcon.HTTP_BAD_REQUEST, 'foo', 'bar')
     with pytest.warns(misc.DeprecatedWarning, match='positional args are deprecated'):
         falcon.HTTPError(falcon.HTTP_BAD_REQUEST, 'foo', 'bar')
+
+
+def test_NoRepresentation():
+    with pytest.warns(
+        misc.DeprecatedWarning,
+        match='has_representation is deprecated.*The class NoRepresentation'
+    ):
+        assert NoRepresentation().has_representation is False
+
+
+class TestOptionalRepresentation:
+    def test_OptionalRepresentation_false(self):
+        with pytest.warns(
+            misc.DeprecatedWarning,
+            match='has_representation is deprecated.*The class OptionalRepresentation'
+        ):
+            or_ = OptionalRepresentation()
+            or_.description = None
+            assert or_.has_representation is False
+
+    def test_OptionalRepresentation_true(self):
+        with pytest.warns(
+            misc.DeprecatedWarning,
+            match='has_representation is deprecated.*The class OptionalRepresentation'
+        ):
+            or_ = OptionalRepresentation()
+            or_.description = 'foo'
+            assert or_.has_representation is True

@@ -766,7 +766,7 @@ class TestHeaders:
     def test_content_length_options(self, client):
         result = client.simulate_options()
 
-        content_length = '0'
+        content_length = str(len(falcon.HTTPNotFound().to_json()))
         assert result.headers['Content-Length'] == content_length
 
     def test_disabled_cors_should_not_add_any_extra_headers(self, client):

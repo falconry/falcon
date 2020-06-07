@@ -28,7 +28,6 @@ import datetime
 import functools
 import http
 import inspect
-import os
 import re
 import sys
 import unicodedata
@@ -120,7 +119,7 @@ class DeprecatedWarning(UserWarning):
     pass
 
 
-def deprecated(instructions):
+def deprecated(instructions, is_property=False):
     """Flags a method as deprecated.
 
     This function returns a decorator which can be used to mark deprecated
@@ -129,23 +128,26 @@ def deprecated(instructions):
 
     Args:
         instructions (str): Specific guidance for the developer, e.g.:
-            'Please migrate to add_proxy(...)''
+            'Please migrate to add_proxy(...)'
+        is_property (bool): If the deprecated object is a property. It
+            will omit the ``(...)`` from the generated documentation
     """
 
     def decorator(func):
+
+        object_name = 'property' if is_property else 'function'
+        post_name = '' if is_property else '(...)'
+        message = 'Call to deprecated {} {}{}. {}'.format(
+            object_name, func.__name__, post_name, instructions)
+
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            if 'FALCON_TESTING_SESSION' not in os.environ:
-                message = 'Call to deprecated function {0}(...). {1}'.format(
-                    func.__name__,
-                    instructions)
+            frame = inspect.currentframe().f_back
 
-                frame = inspect.currentframe().f_back
-
-                warnings.warn_explicit(message,
-                                       category=DeprecatedWarning,
-                                       filename=inspect.getfile(frame.f_code),
-                                       lineno=frame.f_lineno)
+            warnings.warn_explicit(message,
+                                   category=DeprecatedWarning,
+                                   filename=inspect.getfile(frame.f_code),
+                                   lineno=frame.f_lineno)
 
             return func(*args, **kwargs)
 
