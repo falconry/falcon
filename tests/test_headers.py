@@ -747,7 +747,7 @@ class TestHeaders:
     def test_content_length_options(self, client):
         result = client.simulate_options()
 
-        content_length = '0'
+        content_length = str(len(falcon.HTTPNotFound().to_json()))
         assert result.headers['Content-Length'] == content_length
 
     def test_set_headers_with_custom_class(self, client):
