@@ -32,7 +32,7 @@ from .response import Response
 from .structures import SSEvent
 
 # TODO(vytas): Clean up these foul workarounds when we drop Python 3.5 support.
-MultipartFormHandler._ASGI_MULTIPART_FORM = MultipartForm
+MultipartFormHandler._ASGI_MULTIPART_FORM = MultipartForm  # type: ignore
 
 __all__ = ['App']
 
