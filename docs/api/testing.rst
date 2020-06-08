@@ -17,6 +17,7 @@ General Helpers
 .. autoclass:: SimpleTestResource
 
 .. autofunction:: invoke_coroutine_sync
+.. autofunction:: runs_sync
 .. autofunction:: rand_string
 .. autofunction:: get_unused_port
 .. autofunction:: redirected

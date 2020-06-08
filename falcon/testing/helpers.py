@@ -316,6 +316,33 @@ def invoke_coroutine_sync(coroutine, *args, **kwargs):
     )
 
 
+def runs_sync(coroutine):
+    """A decorator to transform a coroutine function into a synchronous method.
+
+    This is achieved by always invoking the decorated coroutine function via
+    :meth:`invoke_coroutine_sync`.
+
+    Warning:
+        This decorator is very inefficient and should only be used for adapting
+        asynchronous test functions for use with synchronous test runners such
+        as ``pytest`` or the ``unittest`` module.
+
+        It will create an event loop for the current thread if one is not
+        already running.
+
+    Args:
+        coroutine: A coroutine function to masquerade as a synchronous one.
+
+    Returns:
+        callable: A synchronous function.
+    """
+    @functools.wraps(coroutine)
+    def invoke(*args, **kwargs):
+        return invoke_coroutine_sync(coroutine, *args, **kwargs)
+
+    return invoke
+
+
 # get_encoding_from_headers() is Copyright 2016 Kenneth Reitz, and is
 # used here under the terms of the Apache License, Version 2.0.
 def get_encoding_from_headers(headers):
