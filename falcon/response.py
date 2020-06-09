@@ -477,10 +477,17 @@ class Response:
             self._cookies[name]['samesite'] = same_site.capitalize()
 
     def unset_cookie(self, name, domain=None, path=None):
-        """Unset a cookie in the response
+        """Unset a cookie in the response.
 
         Clears the contents of the cookie, and instructs the user
         agent to immediately expire its own copy of the cookie.
+
+        Note:
+            Modern browsers place restriction on cookies without the
+            "same-site" cookie attribute set. To that end this attribute
+            is set to ``'Lax'`` by this method.
+
+            (See also: `Same-Site warnings`_)
 
         Warning:
             In order to successfully remove a cookie, both the
@@ -512,7 +519,10 @@ class Response:
                     considered an effective security measure.
 
                 (See also: RFC 6265, Section 4.1.2.4)
-        """
+
+        .. _Same-Site warnings:
+            https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie/SameSite#Fixing_common_warnings
+        """  # noqa: E501
         if self._cookies is None:
             self._cookies = http_cookies.SimpleCookie()
 
