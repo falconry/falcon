@@ -476,17 +476,53 @@ class Response:
 
             self._cookies[name]['samesite'] = same_site.capitalize()
 
-    def unset_cookie(self, name):
-        """Unset a cookie in the response
+    def unset_cookie(self, name, domain=None, path=None):
+        """Unset a cookie in the response.
 
         Clears the contents of the cookie, and instructs the user
         agent to immediately expire its own copy of the cookie.
+
+        Note:
+            Modern browsers place restriction on cookies without the
+            "same-site" cookie attribute set. To that end this attribute
+            is set to ``'Lax'`` by this method.
+
+            (See also: `Same-Site warnings`_)
 
         Warning:
             In order to successfully remove a cookie, both the
             path and the domain must match the values that were
             used when the cookie was created.
-        """
+
+        Args:
+            name (str): Cookie name
+
+        Keyword Args:
+            domain (str): Restricts the cookie to a specific domain and
+                    any subdomains of that domain. By default, the user
+                    agent will return the cookie only to the origin server.
+                    When overriding this default behavior, the specified
+                    domain must include the origin server. Otherwise, the
+                    user agent will reject the cookie.
+
+                    (See also: RFC 6265, Section 4.1.2.3)
+
+            path (str): Scopes the cookie to the given path plus any
+                subdirectories under that path (the "/" character is
+                interpreted as a directory separator). If the cookie
+                does not specify a path, the user agent defaults to the
+                path component of the requested URI.
+
+                Warning:
+                    User agent interfaces do not always isolate
+                    cookies by path, and so this should not be
+                    considered an effective security measure.
+
+                (See also: RFC 6265, Section 4.1.2.4)
+
+        .. _Same-Site warnings:
+            https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie/SameSite#Fixing_common_warnings
+        """  # noqa: E501
         if self._cookies is None:
             self._cookies = http_cookies.SimpleCookie()
 
@@ -498,6 +534,16 @@ class Response:
         # basically tell the browser to immediately expire the cookie,
         # thus removing it from future request objects.
         self._cookies[name]['expires'] = -1
+
+        # NOTE(CaselIT): Set SameSite to Lax to avoid setting invalid cookies.
+        # See https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie/SameSite#Fixing_common_warnings  # noqa: E501
+        self._cookies[name]['samesite'] = 'Lax'
+
+        if domain:
+            self._cookies[name]['domain'] = domain
+
+        if path:
+            self._cookies[name]['path'] = path
 
     def get_header(self, name, default=None):
         """Retrieve the raw string value for the given header.
