@@ -1,6 +1,8 @@
 from contextlib import contextmanager
+import hashlib
 import os
 import platform
+import random
 import subprocess
 import sys
 import time
@@ -19,6 +21,7 @@ _WIN32 = sys.platform.startswith('win')
 
 _SERVER_HOST = '127.0.0.1'
 _SIZE_1_KB = 1024
+_SIZE_1_MB = _SIZE_1_KB ** 2
 
 
 _REQUEST_TIMEOUT = 10
@@ -41,6 +44,29 @@ class TestASGIServer:
         body = '{}'
         resp = requests.head(server_base_url, data=body, timeout=_REQUEST_TIMEOUT)
         assert resp.status_code == 405
+
+    def test_post_multipart_form(self, server_base_url):
+        size = random.randint(16 * _SIZE_1_MB, 32 * _SIZE_1_MB)
+        data = os.urandom(size)
+        digest = hashlib.sha1(data).hexdigest()
+        files = {
+            'random': ('random.dat', data),
+            'message': ('hello.txt', b'Hello, World!'),
+        }
+
+        resp = requests.post(
+            server_base_url + 'forms', files=files, timeout=_REQUEST_TIMEOUT)
+        assert resp.status_code == 200
+        assert resp.json() == {
+            'message': {
+                'filename': 'hello.txt',
+                'sha1': '0a0a9f2a6772942557ab5355d76af442f8f65e01',
+            },
+            'random': {
+                'filename': 'random.dat',
+                'sha1': digest,
+            },
+        }
 
     def test_post_multiple(self, server_base_url):
         body = testing.rand_string(_SIZE_1_KB / 2, _SIZE_1_KB)
