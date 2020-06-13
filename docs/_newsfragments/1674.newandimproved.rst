@@ -1,0 +1,3 @@
+:class:`~falcon.media.MultipartFormHandler` was extended for asynchronous
+handling of multipart forms (of content type ``multipart/form-data``) as
+``asgi.Request.media``.
