@@ -227,6 +227,23 @@ def test_exhaust_with_disconnect():
     testing.invoke_coroutine_sync(t)
 
 
+@testing.runs_sync
+async def test_exhaust():
+    emitter = testing.ASGIRequestEventEmitter(b'123456798' * 1024)
+    stream = asgi.BoundedStream(emitter)
+
+    assert await stream.read(1) == b'1'
+    assert await stream.read(6) == b'234567'
+    assert await stream.read(101) == b'98' + b'123456798' * 11
+
+    await stream.exhaust()
+
+    assert await stream.read(1) == b''
+    assert await stream.read(6) == b''
+    assert await stream.read(101) == b''
+    assert stream.eof
+
+
 def test_iteration_already_started():
     body = testing.rand_string(1, 2048).encode()
     s = _stream(body)

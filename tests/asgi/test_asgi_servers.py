@@ -51,7 +51,7 @@ class TestASGIServer:
         digest = hashlib.sha1(data).hexdigest()
         files = {
             'random': ('random.dat', data),
-            'message': ('hello.txt', b'Hello, World!'),
+            'message': ('hello.txt', b'Hello, World!\n'),
         }
 
         resp = requests.post(
@@ -60,7 +60,7 @@ class TestASGIServer:
         assert resp.json() == {
             'message': {
                 'filename': 'hello.txt',
-                'sha1': '0a0a9f2a6772942557ab5355d76af442f8f65e01',
+                'sha1': '60fde9c2310b0d4cad4dab8d126b04387efba289',
             },
             'random': {
                 'filename': 'random.dat',
