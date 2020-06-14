@@ -2,7 +2,8 @@ import io
 
 import pytest
 
-from falcon.util import BufferedReader, DelimiterError
+from falcon.errors import DelimiterError
+from falcon.util import BufferedReader
 
 
 class WouldHang(RuntimeError):

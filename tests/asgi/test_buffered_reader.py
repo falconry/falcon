@@ -4,6 +4,7 @@ import pytest
 
 from falcon import testing
 from falcon.asgi import reader
+from falcon.errors import OperationNotAllowed
 
 
 async def async_iter(data):
@@ -64,8 +65,13 @@ DATA2 = (
     b'123456789ABCDEF\n' * 64 * 1024 * 62 +
     b'--boundary1234567890--'
 )
-
 SOURCE2 = tuple(async_take(chop_data(DATA2)))
+
+SOURCE3 = (
+    b'1' * 1024 * 1024 + b'333',
+    b'2' * 2 * 1024 * 1024 + b'444'
+)
+DATA3 = b''.join(SOURCE3)
 
 
 class AsyncSink:
@@ -91,9 +97,30 @@ def reader2():
     return reader.BufferedReader(async_iter(SOURCE2), chunk_size=2048)
 
 
+@pytest.fixture()
+def reader3():
+    return reader.BufferedReader(async_iter(SOURCE3), chunk_size=2048)
+
+
 def test_basic_aiter(reader1):
     assert async_take(reader1) == [
         b'Hello, World!',
+        b'\nJust tes',
+        b'ting some iterato',
+        b'r goodne',
+        b'ss.\n',
+    ]
+
+
+@testing.runs_sync
+async def test_aiter_from_buffer(reader1):
+    assert await reader1.read(4) == b'Hell'
+
+    collected = []
+    async for chunk in reader1:
+        collected.append(chunk)
+    assert collected == [
+        b'o, World!',
         b'\nJust tes',
         b'ting some iterato',
         b'r goodne',
@@ -247,6 +274,14 @@ def test_placeholder_methods(reader1):
 
 
 @testing.runs_sync
+async def test_iteration_started(reader1):
+    async for chunk in reader1:
+        with pytest.raises(OperationNotAllowed):
+            async for nested in reader1:
+                pass
+
+
+@testing.runs_sync
 async def test_invalid_delimiter_length(reader1):
     with pytest.raises(ValueError):
         await reader1.read_until(b'')
@@ -294,3 +329,47 @@ async def test_read_until_shared_boundary(chunk_size):
     assert await stream.read_until(b'-boundary-like---') == (
         b'-boundary-like-' * 3)
     assert await stream.peek(17) == b'-boundary-like---'
+
+
+# NOTE(vytas): This is woefully unoptimized, and this test highlights that.
+#   Work in progress.
+@testing.runs_sync
+async def test_small_reads(reader3):
+    ops = 0
+    read = 0
+    last = b''
+    size = 0
+
+    while True:
+        size = max(1, (size + ops) % 137)
+        chunk = await reader3.read(size)
+        if not chunk:
+            break
+
+        ops += 1
+        read += len(chunk)
+        last = chunk
+
+    assert ops == 50740
+    assert read == len(DATA3)
+    assert last.endswith(b'4')
+
+
+@pytest.mark.skip('Functional, but unresolved issues with memory consumption')
+@testing.runs_sync
+async def test_small_reads_with_delimiter(reader3):
+    ops = 0
+    read = 0
+    size = 0
+
+    while True:
+        size = max(1, (size + ops) % 137)
+        chunk = await reader3.read_until(b'33', size)
+        assert chunk.strip(b'1') == b''
+        if not chunk:
+            break
+
+        ops += 1
+        read += len(chunk)
+
+    assert read == 1024 * 1024

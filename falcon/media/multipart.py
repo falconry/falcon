@@ -21,7 +21,7 @@ from urllib.parse import unquote_to_bytes
 from falcon import errors
 from falcon import request_helpers
 from falcon.media.base import BaseHandler
-from falcon.util import BufferedReader, DelimiterError
+from falcon.util import BufferedReader
 from falcon.util import deprecated_args, misc
 
 # TODO(vytas):
@@ -387,7 +387,7 @@ class MultipartForm:
                     raise MultipartParseError(
                         description='unexpected form structure')
 
-            except DelimiterError:
+            except errors.DelimiterError:
                 raise MultipartParseError(
                     description='unexpected form structure')
 
@@ -395,7 +395,7 @@ class MultipartForm:
             try:
                 headers_block = stream.read_until(
                     _CRLF_CRLF, max_headers_size, consume_delimiter=True)
-            except DelimiterError:
+            except errors.DelimiterError:
                 raise MultipartParseError(
                     description='incomplete body part headers')
 

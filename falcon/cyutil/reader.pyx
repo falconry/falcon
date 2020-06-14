@@ -19,7 +19,7 @@ from libc.stdint cimport uint32_t
 import functools
 import io
 
-from falcon.util.reader import DEFAULT_CHUNK_SIZE, DelimiterError, _MAX_JOIN_CHUNKS
+from falcon.util.reader import DelimiterError, DEFAULT_CHUNK_SIZE, _MAX_JOIN_CHUNKS
 
 
 cdef class BufferedReader:

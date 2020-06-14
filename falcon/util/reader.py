@@ -24,7 +24,7 @@ _MAX_JOIN_CHUNKS = 128
 
 
 class DelimiterError(IOError):
-    pass
+    """The read operation did not find the requested stream delimiter."""
 
 
 class BufferedReader:

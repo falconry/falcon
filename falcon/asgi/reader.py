@@ -18,7 +18,7 @@
 
 import io
 
-from falcon.util.reader import DelimiterError
+from falcon.errors import DelimiterError, OperationNotAllowed
 
 DEFAULT_CHUNK_SIZE = 8192
 """Default minimum chunk size for :class:`BufferedReader` (8 KiB)."""
@@ -27,6 +27,23 @@ _MAX_JOIN_CHUNKS = 1024
 
 
 class BufferedReader:
+    """File-like input object wrapping asynchronous iterator over bytes.
+
+    This class implements coroutine functions for asynchronous reading or
+    iteration, but otherwise provides an interface similar to that defined by
+    :class:`io.IOBase`.
+    """
+
+    __slots__ = [
+        '_buffer',
+        '_chunk_size',
+        '_consumed',
+        '_exhausted',
+        '_iteration_started',
+        '_max_join_size',
+        '_receive',
+        '_source',
+    ]
 
     def __init__(self, source, chunk_size=None):
         self._source = self._iter_normalized(source)
@@ -36,6 +53,7 @@ class BufferedReader:
         self._buffer = b''
         self._consumed = 0
         self._exhausted = False
+        self._iteration_started = False
 
     async def _iter_normalized(self, source):
         chunk = b''
@@ -57,8 +75,13 @@ class BufferedReader:
             self._consumed += len(chunk)
             yield chunk
 
-    async def _iter_with_buffer(self):
+    async def _iter_with_buffer(self, size_hint=0):
         if self._buffer:
+            if 0 < size_hint < len(self._buffer):
+                output = self._buffer[:size_hint]
+                self._buffer = self._buffer[size_hint:]
+                yield output
+
             output = self._buffer
             self._buffer = b''
             yield output
@@ -66,7 +89,7 @@ class BufferedReader:
         async for chunk in self._source:
             yield chunk
 
-    async def _iter_delimited(self, delimiter, source=None):
+    async def _iter_delimited(self, delimiter, source=None, size_hint=0):
         delimiter_len_1 = len(delimiter) - 1
         if not 0 <= delimiter_len_1 < self._chunk_size:
             raise ValueError('delimiter length must be within [1, chunk_size]')
@@ -78,6 +101,10 @@ class BufferedReader:
                 self._buffer = self._buffer[pos:]
                 yield output
                 return
+            if 0 < size_hint < len(self._buffer) - delimiter_len_1:
+                output = self._buffer[:size_hint]
+                self._buffer = self._buffer[size_hint:]
+                yield output
 
         async for chunk in (source or self._source):
             offset = len(self._buffer) - delimiter_len_1
@@ -172,7 +199,13 @@ class BufferedReader:
     # -------------------------------------------------------------------------
 
     def __aiter__(self):
-        return self._source
+        if self._iteration_started:
+            raise OperationNotAllowed(
+                'This stream is already being iterated over.')
+
+        self._iteration_started = True
+
+        return self._iter_with_buffer()
 
     async def exhaust(self):
         await self.pipe()
@@ -204,7 +237,8 @@ class BufferedReader:
             await self._consume_delimiter(delimiter)
 
     async def read(self, size=-1):
-        return await self._read_from(self._iter_with_buffer(), size)
+        return await self._read_from(
+            self._iter_with_buffer(size_hint=size or 0), size)
 
     async def readall(self):
         """Read and return all remaining data in the request body.
@@ -222,7 +256,8 @@ class BufferedReader:
         return await self._read_from(self._iter_with_buffer())
 
     async def read_until(self, delimiter, size=-1, consume_delimiter=False):
-        result = await self._read_from(self._iter_delimited(delimiter), size)
+        result = await self._read_from(
+            self._iter_delimited(delimiter, size_hint=size or 0), size)
 
         if consume_delimiter:
             await self._consume_delimiter(delimiter)
@@ -233,6 +268,10 @@ class BufferedReader:
     # These methods are included to improve compatibility with Python's
     #   standard "file-like" IO interface.
     # -------------------------------------------------------------------------
+
+    # TODO(vytas): Implement the same close() machinery as in asgi.stream?
+    # def close(self):
+    #     pass
 
     @property
     def eof(self):

@@ -16,7 +16,8 @@
 
 import cgi
 
-from falcon.asgi.reader import BufferedReader, DelimiterError
+from falcon.asgi.reader import BufferedReader
+from falcon.errors import DelimiterError
 from falcon.media import multipart
 
 _ALLOWED_CONTENT_HEADERS = multipart._ALLOWED_CONTENT_HEADERS
