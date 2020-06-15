@@ -5,6 +5,7 @@ requests
 testtools
 
 # ASGI Specific
+httpx; python_version >= '3.6'
 uvicorn; python_version >= '3.6'
 aiofiles; python_version >= '3.6'
 daphne; python_version >= '3.6'

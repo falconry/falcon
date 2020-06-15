@@ -102,12 +102,6 @@ Base Class
 .. autoclass:: falcon.HTTPError
     :members:
 
-Mixins
-------
-
-.. autoclass:: falcon.http_error.OptionalRepresentation
-    :members:
-
 .. _predefined_errors:
 
 Predefined Errors

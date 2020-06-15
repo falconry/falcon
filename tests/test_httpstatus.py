@@ -192,3 +192,41 @@ class TestHTTPStatusWithMiddleware:
         assert response.status == falcon.HTTP_200
         assert response.headers['x-failed'] == 'False'
         assert response.text == 'Pass'
+
+
+class NoBodyResource:
+    def on_get(self, req, res):
+        res.data = b'foo'
+        raise HTTPStatus(falcon.HTTP_745)
+
+    def on_post(self, req, res):
+        res.media = {'a': 1}
+        raise HTTPStatus(falcon.HTTP_725)
+
+    def on_put(self, req, res):
+        res.body = 'foo'
+        raise HTTPStatus(falcon.HTTP_719)
+
+
+@pytest.fixture()
+def body_client(asgi):
+    app = create_app(asgi=asgi)
+    app.add_route('/status', NoBodyResource())
+    return testing.TestClient(app)
+
+
+class TestNoBodyWithStatus:
+    def test_data_is_set(self, body_client):
+        res = body_client.simulate_get('/status')
+        assert res.status == falcon.HTTP_745
+        assert res.content == b''
+
+    def test_media_is_set(self, body_client):
+        res = body_client.simulate_post('/status')
+        assert res.status == falcon.HTTP_725
+        assert res.content == b''
+
+    def test_body_is_set(self, body_client):
+        res = body_client.simulate_put('/status')
+        assert res.status == falcon.HTTP_719
+        assert res.content == b''

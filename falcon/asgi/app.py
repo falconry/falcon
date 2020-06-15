@@ -279,7 +279,7 @@ class App(falcon.app.App):
 
                 if not spec_version.startswith('1.') and not spec_version.startswith('2.'):
                     raise UnsupportedScopeError(
-                        f'Only versions 1.x and 2.x of the ASGI "lifespan" scope are supported.'
+                        'Only versions 1.x and 2.x of the ASGI "lifespan" scope are supported.'
                     )
 
                 await self._call_lifespan_handlers(spec_version, scope, receive, send)
@@ -771,6 +771,8 @@ class App(falcon.app.App):
         """
         err_handler = self._find_error_handler(ex)
 
+        # NOTE(caselit): Reset body, data and media before calling the handler
+        resp.body = resp.data = resp.media = None
         if err_handler is not None:
             try:
                 await err_handler(req, resp, ex, params)

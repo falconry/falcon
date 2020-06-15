@@ -1,0 +1,6 @@
+The class :class:`~.falcon.http_error.OptionalRepresentation` and the attribute
+:attr:`~.falcon.HTTPError.has_representation` were deprecated. The default error
+serializer now generates a representation for every error type that derives from
+:class:`falcon.HTTPError`.
+In addition, Falcon now ensures that any previously set response body is cleared
+before handling any raised exception.
