@@ -206,10 +206,31 @@ def test_simulate_request_content_type():
 def test_create_environ_cookies(cookies):
     environ = testing.create_environ(cookies=cookies)
 
-    assert environ['HTTP_COOKIE'] == 'foo=bar; baz=foo'
+    assert environ['HTTP_COOKIE'] in ('foo=bar; baz=foo', 'baz=foo; foo=bar')
 
 
 def test_create_environ_cookies_options_method():
     environ = testing.create_environ(method='OPTIONS', cookies={'foo': 'bar'})
 
     assert 'HTTP_COOKIE' not in environ
+
+
+def test_cookies_jar():
+    class Foo:
+        def on_get(self, req, resp):
+            resp.set_cookie('has_permission', 'true')
+
+        def on_post(self, req, resp):
+            if req.cookies['has_permission'] == 'true':
+                resp.status = falcon.HTTP_200
+            else:
+                resp.status = falcon.HTTP_403
+    app = App()
+    app.add_route('/jars', Foo())
+
+    client = testing.TestClient(app)
+
+    response_one = client.simulate_get('/jars')
+    response_two = client.simulate_post('/jars', cookies=response_one.cookies)
+
+    assert response_two.status == falcon.HTTP_200

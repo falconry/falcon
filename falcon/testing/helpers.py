@@ -38,7 +38,7 @@ from typing import Any, Dict
 
 from falcon.constants import SINGLETON_HEADERS
 import falcon.request
-from falcon.util import http_cookies, http_now, uri
+from falcon.util import http_now, uri
 
 # Constants
 DEFAULT_HOST = 'falconframework.org'
@@ -636,10 +636,11 @@ def create_environ(path='/', query_string='', http_version='1.1',
         env['CONTENT_LENGTH'] = str(content_length)
 
     if cookies is not None and method != 'OPTIONS':
-        cookies = http_cookies.SimpleCookie(cookies)
-        env['HTTP_COOKIE'] = '; '.join(
-            ['{}={}'.format(morsel.key, morsel.value) for morsel in cookies.values()]
-        )
+        cookies = [
+            '{}={}'.format(key, cookie.value if hasattr(cookie, 'value') else cookie)
+            for key, cookie in cookies.items()
+        ]
+        env['HTTP_COOKIE'] = '; '.join(cookies)
 
     if headers is not None:
         _add_headers_to_environ(env, headers)
