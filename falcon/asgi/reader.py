@@ -36,6 +36,8 @@ class BufferedReader:
 
     __slots__ = [
         '_buffer',
+        '_buffer_len',
+        '_buffer_pos',
         '_chunk_size',
         '_consumed',
         '_exhausted',
@@ -51,6 +53,8 @@ class BufferedReader:
         self._max_join_size = self._chunk_size * _MAX_JOIN_CHUNKS
 
         self._buffer = b''
+        self._buffer_len = 0
+        self._buffer_pos = 0
         self._consumed = 0
         self._exhausted = False
         self._iteration_started = False
@@ -76,58 +80,67 @@ class BufferedReader:
             yield chunk
 
     async def _iter_with_buffer(self, size_hint=0):
-        if self._buffer:
-            if 0 < size_hint < len(self._buffer):
-                output = self._buffer[:size_hint]
-                self._buffer = self._buffer[size_hint:]
-                yield output
+        if self._buffer_len > self._buffer_pos:
+            if 0 < size_hint < self._buffer_len - self._buffer_pos:
+                buffer_pos = self._buffer_pos
+                self._buffer_pos += size_hint
+                yield self._buffer[buffer_pos:self._buffer_pos]
 
-            output = self._buffer
-            self._buffer = b''
-            yield output
+            buffer_pos = self._buffer_pos
+            self._buffer_pos = self._buffer_len
+            yield self._buffer[buffer_pos:self._buffer_pos]
 
         async for chunk in self._source:
             yield chunk
 
-    async def _iter_delimited(self, delimiter, source=None, size_hint=0):
+    async def _iter_delimited(self, delimiter, size_hint=0):
         delimiter_len_1 = len(delimiter) - 1
         if not 0 <= delimiter_len_1 < self._chunk_size:
             raise ValueError('delimiter length must be within [1, chunk_size]')
 
-        if self._buffer:
-            pos = self._buffer.find(delimiter)
+        if self._buffer_len > self._buffer_pos:
+            pos = self._buffer.find(delimiter, self._buffer_pos)
             if pos >= 0:
-                output = self._buffer[:pos]
-                self._buffer = self._buffer[pos:]
-                yield output
+                buffer_pos = self._buffer_pos
+                self._buffer_pos = pos
+                yield self._buffer[buffer_pos:pos]
                 return
-            if 0 < size_hint < len(self._buffer) - delimiter_len_1:
-                output = self._buffer[:size_hint]
-                self._buffer = self._buffer[size_hint:]
-                yield output
+            if 0 < size_hint < (
+                    self._buffer_len - self._buffer_pos - delimiter_len_1):
+                buffer_pos = self._buffer_pos
+                self._buffer_pos += size_hint
+                yield self._buffer[buffer_pos:self._buffer_pos]
 
-        async for chunk in (source or self._source):
-            offset = len(self._buffer) - delimiter_len_1
+        if self._buffer_pos > 0:
+            self._buffer = self._buffer[self._buffer_pos:]
+            self._buffer_len -= self._buffer_pos
+            self._buffer_pos = 0
+
+        async for chunk in self._source:
+            offset = self._buffer_len - delimiter_len_1
             if offset > 0:
                 fragment = self._buffer[offset:] + chunk[:delimiter_len_1]
                 pos = fragment.find(delimiter)
                 if pos < 0:
                     output = self._buffer
                     self._buffer = chunk
+                    self._buffer_len = len(chunk)
                     yield output
                 else:
                     output = self._buffer[:offset + pos]
                     self._buffer = self._buffer[offset + pos:] + chunk
+                    self._buffer_len = len(self._buffer)
                     yield output
                     return
             else:
                 self._buffer += chunk
+                self._buffer_len += len(chunk)
 
             pos = self._buffer.find(delimiter)
             if pos >= 0:
-                output = self._buffer[:pos]
-                self._buffer = self._buffer[pos:]
-                yield output
+                if pos > 0:
+                    self._buffer_pos = pos
+                    yield self._buffer[:pos]
                 return
 
         yield self._buffer
@@ -136,7 +149,17 @@ class BufferedReader:
         delimiter_len = len(delimiter)
         if await self.peek(delimiter_len) != delimiter:
             raise DelimiterError('expected delimiter missing')
-        self._buffer = self._buffer[delimiter_len:]
+        self._buffer_pos += delimiter_len
+
+    def _prepend(self, chunk):
+        if self._buffer_len > self._buffer_pos:
+            self._buffer = chunk + self._buffer[self._buffer_pos:]
+            self._buffer_len = len(self._buffer)
+        else:
+            self._buffer = chunk
+            self._buffer_len = len(chunk)
+
+        self._buffer_pos = 0
 
     async def _read_from(self, source, size=-1):
         if size == -1 or size is None:
@@ -156,11 +179,7 @@ class BufferedReader:
                 chunk_len = len(chunk)
                 if remaining < chunk_len:
                     result.append(chunk[:remaining])
-
-                    current_buffer = self._buffer
-                    self._buffer = chunk[remaining:]
-                    if current_buffer:
-                        self._buffer += current_buffer
+                    self._prepend(chunk[remaining:])
                     break
 
                 result.append(chunk)
@@ -176,11 +195,7 @@ class BufferedReader:
             chunk_len = len(chunk)
             if remaining < chunk_len:
                 result.write(chunk[:remaining])
-
-                current_buffer = self._buffer
-                self._buffer = chunk[remaining:]
-                if current_buffer:
-                    self._buffer += current_buffer
+                self._prepend(chunk[remaining:])
                 break
 
             result.write(chunk)
@@ -214,10 +229,16 @@ class BufferedReader:
         if size < 0 or size > self._chunk_size:
             size = self._chunk_size
 
-        if len(self._buffer) < size:
+        if self._buffer_pos > 0:
+            self._buffer = self._buffer[self._buffer_pos:]
+            self._buffer_len = len(self._buffer)
+            self._buffer_pos = 0
+
+        if self._buffer_len < size:
             async for chunk in self._source:
                 self._buffer += chunk
-                if len(self._buffer) >= size:
+                self._buffer_len = len(self._buffer)
+                if self._buffer_len >= size:
                     break
 
         return self._buffer[:size]
@@ -276,7 +297,7 @@ class BufferedReader:
     @property
     def eof(self):
         """Whether the stream is at EOF."""
-        return self._exhausted and not self._buffer
+        return self._exhausted and self._buffer_len == self._buffer_pos
 
     def fileno(self):
         """Raise an instance of OSError since a file descriptor is not used."""
@@ -300,4 +321,4 @@ class BufferedReader:
 
     def tell(self):
         """Returns the number of bytes read from the stream so far."""
-        return self._consumed - len(self._buffer)
+        return self._consumed - (self._buffer_len - self._buffer_pos)
