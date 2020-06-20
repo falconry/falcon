@@ -1,0 +1,2 @@
+The class :class:`~.falcon.request_helpers.BoundedStream` was deprecated.
+It is now accessible from :class:`falcon.stream.BoundedStream`
