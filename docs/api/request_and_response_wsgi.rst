@@ -40,6 +40,9 @@ Request
 .. autoclass:: falcon.Forwarded
     :members:
 
+.. autoclass:: falcon.stream.BoundedStream
+    :members:
+
 Response
 --------
 

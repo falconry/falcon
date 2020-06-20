@@ -4,6 +4,7 @@ from wsgiref.validate import InputWrapper
 import pytest
 
 import falcon
+import falcon.stream
 from falcon import request_helpers
 import falcon.request
 import falcon.testing as testing
@@ -26,7 +27,7 @@ class TestRequestBody:
     def _get_wrapped_stream(self, req):
         # Getting wrapped wsgi.input:
         stream = req.stream
-        if isinstance(stream, request_helpers.BoundedStream):
+        if isinstance(stream, falcon.stream.BoundedStream):
             stream = stream.stream
         if isinstance(stream, InputWrapper):
             stream = stream.input
