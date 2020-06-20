@@ -15,7 +15,6 @@
 from datetime import datetime
 from uuid import UUID
 
-import falcon.stream
 from falcon import DEFAULT_MEDIA_TYPE
 from falcon import errors
 from falcon import request_helpers as helpers
@@ -23,6 +22,7 @@ from falcon import util
 from falcon.forwarded import _parse_forwarded_header
 from falcon.forwarded import Forwarded  # NOQA
 from falcon.media import Handlers
+from falcon.stream import BoundedStream
 from falcon.util import json
 from falcon.util import structures
 from falcon.util.misc import isascii
@@ -1803,7 +1803,7 @@ class Request:
             # but it had an invalid value. Assume no content.
             content_length = 0
 
-        return falcon.stream.BoundedStream(self.env['wsgi.input'], content_length)
+        return BoundedStream(self.env['wsgi.input'], content_length)
 
     def _parse_form_urlencoded(self):
         content_length = self.content_length
