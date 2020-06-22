@@ -35,6 +35,7 @@ matrix:
         - python: 3.8
           # NOTE(vytas): Big-endian architecture
           arch: s390x
+          dist: bionic
           os: linux
           env: TOXENV=py38_cython
         - python: 3.8
