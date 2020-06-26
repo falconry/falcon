@@ -349,6 +349,10 @@ def simulate_request(app, method='GET', path='/', query_string=None,
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
+        cookies (dict): Cookies as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of items provides the name and value
+            for the 'Set-Cookie' header.
 
     Returns:
         :py:class:`~.Result`: The result of the request
@@ -587,6 +591,10 @@ def simulate_get(app, path, **kwargs) -> Result:
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
+        cookies (dict): Cookies as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of items provides the name and value
+            for the 'Set-Cookie' header.
 
     Returns:
         :py:class:`~.Result`: The result of the request
@@ -666,6 +674,10 @@ def simulate_head(app, path, **kwargs) -> Result:
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
+        cookies (dict): Cookies as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of items provides the name and value
+            for the 'Set-Cookie' header.
 
     Returns:
         :py:class:`~.Result`: The result of the request
@@ -758,6 +770,10 @@ def simulate_post(app, path, **kwargs) -> Result:
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
+        cookies (dict): Cookies as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of items provides the name and value
+            for the 'Set-Cookie' header.
 
     Returns:
         :py:class:`~.Result`: The result of the request
@@ -850,6 +866,10 @@ def simulate_put(app, path, **kwargs) -> Result:
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
+        cookies (dict): Cookies as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of items provides the name and value
+            for the 'Set-Cookie' header.
 
     Returns:
         :py:class:`~.Result`: The result of the request
@@ -1011,6 +1031,10 @@ def simulate_patch(app, path, **kwargs) -> Result:
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
+        cookies (dict): Cookies as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of items provides the name and value
+            for the 'Set-Cookie' header.
 
     Returns:
         :py:class:`~.Result`: The result of the request
@@ -1098,6 +1122,10 @@ def simulate_delete(app, path, **kwargs) -> Result:
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
+        cookies (dict): Cookies as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of items provides the name and value
+            for the 'Set-Cookie' header.
 
     Returns:
         :py:class:`~.Result`: The result of the request
