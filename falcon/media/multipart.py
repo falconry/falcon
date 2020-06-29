@@ -122,6 +122,40 @@ class BodyPart:
             to the server's data stream and is non-seekable. The stream is
             automatically delimited according to the multipart stream boundary.
 
+            With the exception of being buffered to keep track of the boundary,
+            the wrapped body part stream interface and behavior mimic
+            :attr:`Request.bounded_stream <falcon.Request.bounded_stream>`
+            (WSGI) and :attr:`Request.stream <falcon.asgi.Request.stream>`
+            (ASGI), respectively:
+
+            .. tabs::
+
+                .. tab:: WSGI
+
+                    Reading the whole part content:
+
+                    .. code:: python
+
+                        data = part.stream.read()
+
+                    This is also safe:
+
+                    .. code:: python
+
+                        doc = yaml.safe_load(part.stream)
+
+                .. tab:: ASGI
+
+                    Similarly to
+                    :attr:`BoundedStream <falcon.asgi.BoundedStream>`, the most
+                    efficient way to read the body part content is asynchronous
+                    iteration over part data chunks:
+
+                    .. code:: python
+
+                        async for data_chunk in part.stream:
+                            pass
+
         media (object): Property that acts as a convenience alias for
             :meth:`~.get_media`.
 
