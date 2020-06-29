@@ -245,6 +245,11 @@ async def test_readall(reader1, peek):
     (20, b' ', 6, b'esting'),
     (20, b' ', 20, b'esting'),
     (20, b' ', None, b'esting'),
+    (0, b'Hell', 13, b''),
+    (1, b'ell', 13, b''),
+    (2, b'll', 13, b''),
+    (3, b'l', 13, b''),
+    (2, b'l', 13, b''),
     (0, b'good', 13, b'Hello, World!'),
     (7, b'good', 19, b'World!\nJust testing'),
     (7, b'good', 33, b'World!\nJust testing some iterator'),
@@ -261,6 +266,14 @@ async def test_read_until(reader1, offset, delimiter, size, expected, fork):
         assert await reader1.delimit(delimiter).read(size) == expected
     else:
         assert await reader1.read_until(delimiter, size) == expected
+
+
+@testing.runs_sync
+async def test_read_until_with_buffer_edge_case(reader1):
+    assert await reader1.read(12) == b'Hello, World'
+    assert await reader1.peek(1) == b'!'
+    assert await reader1.read_until(b'404', 1) == b'!'
+    assert await reader1.read(13) == b'\nJust testing'
 
 
 def test_placeholder_methods(reader1):

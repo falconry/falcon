@@ -1,5 +1,3 @@
-# WORK IN PROGRESS!!!
-
 # Copyright 2019-2020 by Vytautas Liuolia.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -99,11 +97,18 @@ class BufferedReader:
 
         if self._buffer_len > self._buffer_pos:
             pos = self._buffer.find(delimiter, self._buffer_pos)
-            if pos >= 0:
+            if pos == 0:
+                return
+            if pos > 0:
+                if 0 < size_hint < pos - self._buffer_pos:
+                    buffer_pos = self._buffer_pos
+                    self._buffer_pos += size_hint
+                    yield self._buffer[buffer_pos:self._buffer_pos]
                 buffer_pos = self._buffer_pos
                 self._buffer_pos = pos
                 yield self._buffer[buffer_pos:pos]
                 return
+
             if 0 < size_hint < (
                     self._buffer_len - self._buffer_pos - delimiter_len_1):
                 buffer_pos = self._buffer_pos
@@ -124,14 +129,19 @@ class BufferedReader:
                     self._buffer_len = len(chunk)
                     yield output
                 else:
-                    output = self._buffer[:offset + pos]
-                    self._buffer = self._buffer[offset + pos:] + chunk
-                    self._buffer_len = len(self._buffer)
-                    yield output
+                    self._buffer += chunk
+                    self._buffer_len += len(chunk)
+                    self._buffer_pos = offset + pos
+                    # PERF(vytas): local1 + local2 is faster than self._attr
+                    #   (still true on CPython 3.8)
+                    yield self._buffer[:offset + pos]
                     return
-            else:
+            elif self._buffer:
                 self._buffer += chunk
                 self._buffer_len += len(chunk)
+            else:
+                self._buffer = chunk
+                self._buffer_len = len(chunk)
 
             pos = self._buffer.find(delimiter)
             if pos >= 0:
@@ -160,7 +170,7 @@ class BufferedReader:
 
     def _trim_buffer(self):
         self._buffer = self._buffer[self._buffer_pos:]
-        self._buffer_len = len(self._buffer)
+        self._buffer_len -= self._buffer_pos
         self._buffer_pos = 0
 
     async def _read_from(self, source, size=-1):
