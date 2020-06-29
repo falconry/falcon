@@ -43,7 +43,6 @@ class BufferedReader:
         '_exhausted',
         '_iteration_started',
         '_max_join_size',
-        '_receive',
         '_source',
     ]
 
@@ -73,11 +72,11 @@ class BufferedReader:
 
             chunk += item
 
-        self._exhausted = True
-
         if chunk:
             self._consumed += len(chunk)
             yield chunk
+
+        self._exhausted = True
 
     async def _iter_with_buffer(self, size_hint=0):
         if self._buffer_len > self._buffer_pos:
@@ -88,7 +87,7 @@ class BufferedReader:
 
             buffer_pos = self._buffer_pos
             self._buffer_pos = self._buffer_len
-            yield self._buffer[buffer_pos:self._buffer_pos]
+            yield self._buffer[buffer_pos:self._buffer_len]
 
         async for chunk in self._source:
             yield chunk
@@ -112,9 +111,7 @@ class BufferedReader:
                 yield self._buffer[buffer_pos:self._buffer_pos]
 
         if self._buffer_pos > 0:
-            self._buffer = self._buffer[self._buffer_pos:]
-            self._buffer_len -= self._buffer_pos
-            self._buffer_pos = 0
+            self._trim_buffer()
 
         async for chunk in self._source:
             offset = self._buffer_len - delimiter_len_1
@@ -151,7 +148,7 @@ class BufferedReader:
             raise DelimiterError('expected delimiter missing')
         self._buffer_pos += delimiter_len
 
-    def _prepend(self, chunk):
+    def _prepend_buffer(self, chunk):
         if self._buffer_len > self._buffer_pos:
             self._buffer = chunk + self._buffer[self._buffer_pos:]
             self._buffer_len = len(self._buffer)
@@ -159,6 +156,11 @@ class BufferedReader:
             self._buffer = chunk
             self._buffer_len = len(chunk)
 
+        self._buffer_pos = 0
+
+    def _trim_buffer(self):
+        self._buffer = self._buffer[self._buffer_pos:]
+        self._buffer_len = len(self._buffer)
         self._buffer_pos = 0
 
     async def _read_from(self, source, size=-1):
@@ -179,7 +181,7 @@ class BufferedReader:
                 chunk_len = len(chunk)
                 if remaining < chunk_len:
                     result.append(chunk[:remaining])
-                    self._prepend(chunk[remaining:])
+                    self._prepend_buffer(chunk[remaining:])
                     break
 
                 result.append(chunk)
@@ -187,7 +189,8 @@ class BufferedReader:
                 if remaining == 0:
                     break
 
-            return b''.join(result)
+            # PERF(vytas) Don't join unless necessary.
+            return result[0] if len(result) == 1 else b''.join(result)
 
         # NOTE(vytas): size > self._max_join_size
         result = io.BytesIO()
@@ -195,7 +198,7 @@ class BufferedReader:
             chunk_len = len(chunk)
             if remaining < chunk_len:
                 result.write(chunk[:remaining])
-                self._prepend(chunk[remaining:])
+                self._prepend_buffer(chunk[remaining:])
                 break
 
             result.write(chunk)
@@ -220,7 +223,10 @@ class BufferedReader:
 
         self._iteration_started = True
 
-        return self._iter_with_buffer()
+        # PERF(vytas): Do not wrap unless needed.
+        if self._buffer_len > self._buffer_pos:
+            return self._iter_with_buffer()
+        return self._source
 
     async def exhaust(self):
         await self.pipe()
@@ -230,9 +236,7 @@ class BufferedReader:
             size = self._chunk_size
 
         if self._buffer_pos > 0:
-            self._buffer = self._buffer[self._buffer_pos:]
-            self._buffer_len = len(self._buffer)
-            self._buffer_pos = 0
+            self._trim_buffer()
 
         if self._buffer_len < size:
             async for chunk in self._source:

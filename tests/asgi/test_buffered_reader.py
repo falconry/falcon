@@ -355,7 +355,6 @@ async def test_small_reads(reader3):
     assert last.endswith(b'4')
 
 
-@pytest.mark.skip('Functional, but unresolved issues with memory consumption')
 @testing.runs_sync
 async def test_small_reads_with_delimiter(reader3):
     ops = 0
@@ -363,7 +362,7 @@ async def test_small_reads_with_delimiter(reader3):
     size = 0
 
     while True:
-        size = max(1, (size + ops) % 137)
+        size = max(1, (size + ops) % 1337)
         chunk = await reader3.read_until(b'33', size)
         assert chunk.strip(b'1') == b''
         if not chunk:
