@@ -101,7 +101,7 @@ class TestCustomCorsMiddleware:
         (['foo', 'bar'], ['foo, bar', 'foobar', 'foo,bar', 'Foo', 'BAR'], ['foo', 'bar']),
     ))
     def test_allow_origin(self, make_cors_client, allow, fail_origins, success_origins):
-        client = make_cors_client(falcon.CORSMiddleware(allow_origin=allow))
+        client = make_cors_client(falcon.CORSMiddleware(allow_origins=allow))
         client.app.add_route('/', CORSHeaderResource())
 
         for origin in fail_origins:
@@ -127,8 +127,12 @@ class TestCustomCorsMiddleware:
         assert res.headers['Access-Control-Allow-Origin'] == 'localhost'
         assert res.headers['Access-Control-Allow-Credentials'] == 'true'
 
-    def test_allow_credential_list(self, make_cors_client):
-        client = make_cors_client(falcon.CORSMiddleware(allow_credentials=['foo', 'bar']))
+    @pytest.mark.parametrize('allow, successOrigin', (
+        (['foo', 'bar'], ['foo', 'bar']),
+        ('foo', ['foo']),
+    ))
+    def test_allow_credential_list(self, make_cors_client, allow, successOrigin):
+        client = make_cors_client(falcon.CORSMiddleware(allow_credentials=allow))
         client.app.add_route('/', CORSHeaderResource())
 
         for origin in ('foo, bar', 'foobar', 'foo,bar', 'Foo', 'BAR'):
@@ -138,7 +142,7 @@ class TestCustomCorsMiddleware:
             assert 'Access-Control-Allow-Credentials'.lower() not in h
             assert 'Access-Control-Expose-Headers'.lower() not in h
 
-        for origin in ('foo', 'bar'):
+        for origin in successOrigin:
             res = client.simulate_get(headers={'Origin': origin})
             assert res.headers['Access-Control-Allow-Origin'] == origin
             assert res.headers['Access-Control-Allow-Credentials'] == 'true'
@@ -156,7 +160,7 @@ class TestCustomCorsMiddleware:
 
     def test_allow_origin_allow_credential(self, make_cors_client):
         client = make_cors_client(
-            falcon.CORSMiddleware(allow_origin='test', allow_credentials=True))
+            falcon.CORSMiddleware(allow_origins='test', allow_credentials=True))
         client.app.add_route('/', CORSHeaderResource())
 
         for origin in ['foo', 'TEST']:
@@ -178,7 +182,9 @@ class TestCustomCorsMiddleware:
         (['foo', 'bar'], 'foo, bar'),
     ))
     def test_expose_headers(self, make_cors_client, attr, exp):
-        client = make_cors_client(falcon.CORSMiddleware(expose_headers=attr))
+        client = make_cors_client(
+            falcon.CORSMiddleware(expose_headers=attr, allow_credentials=False)
+        )
         client.app.add_route('/', CORSHeaderResource())
 
         res = client.simulate_get(headers={'Origin': 'something'})

@@ -153,7 +153,7 @@ class App:
         cors_enable (bool): Set this flag to ``True`` to enable a simple
             CORS policy for all responses, including support for preflighted
             requests. An instance of :py:class:`~.CORSMiddleware` can instead be
-            passet to the middleware argument to customize its behaviour.
+            passed to the middleware argument to customize its behaviour.
             (default ``False``).
             (See also: :ref:`CORS <cors>`)
 
