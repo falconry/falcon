@@ -43,7 +43,7 @@ Usage
 
             # Enable CORS policy for example.com and allows credentials
             app = falcon.App(middleware=falcon.CORSMiddleware(
-                allow_origin='example.com', allow_credentials=True))
+                allow_origins='example.com', allow_credentials=True))
 
     .. tab:: ASGI
 
@@ -56,7 +56,7 @@ Usage
 
             # Enable CORS policy for example.com and allows credentials
             app = falcon.asgi.App(middleware=falcon.CORSMiddleware(
-                allow_origin='example.com', allow_credentials=True))
+                allow_origins='example.com', allow_credentials=True))
 
 CORSMiddleware
 --------------
