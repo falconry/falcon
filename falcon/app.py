@@ -29,6 +29,7 @@ import falcon.responders
 from falcon.response import Response, ResponseOptions
 import falcon.status_codes as status
 from falcon.util import misc
+from falcon.util.misc import code_to_http_status
 
 
 # PERF(vytas): On Python 3.5+ (including cythonized modules),
@@ -342,7 +343,7 @@ class App:
 
             req_succeeded = False
 
-        resp_status = resp.status
+        resp_status = code_to_http_status(resp.status)
         default_media_type = self.resp_options.default_media_type
 
         if req.method == 'HEAD' or resp_status in _BODILESS_STATUS_CODES:
