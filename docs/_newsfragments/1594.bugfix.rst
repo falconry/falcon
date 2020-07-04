@@ -1,0 +1,3 @@
+:meth:`falcon.uri.decode` and :meth:`falcon.uri.parse_query_string` no longer
+explode quadratically for a large number of percent-encoded characters. The
+time complexity of these utility functions is now always close to *O*(*n*).
