@@ -702,13 +702,13 @@ class TestFalconTestingUtils:
         assert result.json['detailed']
         assert result.json['things'] == params['things']
 
-        expected_qs = 'things=1,2,3'
+        expected_qs = 'things=1&things=2&things=3'
         result = client.simulate_get(params={'things': [1, 2, 3]})
         assert result.json['query_string'] == expected_qs
 
-        expected_qs = 'things=1&things=2&things=3'
+        expected_qs = 'things=1,2,3'
         result = client.simulate_get(params={'things': [1, 2, 3]},
-                                     params_csv=False)
+                                     params_csv=True)
         assert result.json['query_string'] == expected_qs
 
     def test_query_string_no_question(self, app):
