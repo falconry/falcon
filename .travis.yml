@@ -52,6 +52,8 @@ matrix:
         - python: 3.8
           env: TOXENV=look
         - python: 3.8
+          env: TOXENV=asgilook
+        - python: 3.8
           env: TOXENV=check_vendored
 
         - name: Python 3.8 (Windows)

@@ -8,5 +8,6 @@ User Guide
    install
    quickstart
    tutorial
+   tutorial-asgi
    recipes/index
    faq

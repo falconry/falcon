@@ -1,11 +1,20 @@
 .. _tutorial:
 
-Tutorial
-========
+Tutorial (WSGI)
+===============
 
 In this tutorial we'll walk through building an API for a simple image sharing
 service. Along the way, we'll discuss Falcon's major features and introduce
 the terminology used by the framework.
+
+.. note::
+   This tutorial covers the "traditional", synchronous flavor of Falcon using
+   the `WSGI <https://www.python.org/dev/peps/pep-3333/>`__ protocol.
+
+   Developing an ``async`` application? Check out our
+   :ref:`ASGI tutorial<tutorial-asgi>` instead!
+
+.. _tutorial-first-steps:
 
 First Steps
 -----------

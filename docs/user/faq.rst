@@ -274,6 +274,8 @@ same resource class:
     app.add_route('/resources/{id}', resource)
     app.add_route('/resources', resource, suffix='collection')
 
+.. _recommended-route-layout:
+
 What is the recommended way to map related routes to resource classes?
 ----------------------------------------------------------------------
 
@@ -925,6 +927,8 @@ If you need to transparently handle reconnecting after an error, or for other
 use cases that may not be supported by your client library, simply encapsulate
 the client library within a management class that handles all the tricky bits,
 and pass that around instead.
+
+.. _configuration-approaches:
 
 What is the recommended approach for making configuration variables available to multiple resource classes?
 -----------------------------------------------------------------------------------------------------------
