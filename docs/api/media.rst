@@ -92,6 +92,8 @@ media type that JSON also supports (i.e. dicts, lists, etc).
 If JSON Schema does not meet your needs, a custom validator may be
 implemented in a similar manner to the one above.
 
+.. _content-type-negotiaton:
+
 Content-Type Negotiation
 ------------------------
 
@@ -184,6 +186,8 @@ Supported Handler Types
 
 .. autoclass:: falcon.media.URLEncodedFormHandler
     :no-members:
+
+.. _custom-media-handler-type:
 
 Custom Handler Type
 -------------------
