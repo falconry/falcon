@@ -18,6 +18,11 @@ desired ``dumps`` parameters:
         dumps=functools.partial(json.dumps, indent=4, sort_keys=True),
     )
 
+You can now replace the default ``application/json``
+:attr:`response media handlers <falcon.ResponseOptions.media_handlers>`
+with this customized ``json_handler`` to make your application's JSON responses
+prettier (see also: :ref:`custom_media_handlers`).
+
 .. note::
     Another alternative for debugging is prettifying JSON on the client side,
     for example, the popular `HTTPie <https://httpie.org/>`__ does it by

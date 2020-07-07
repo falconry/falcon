@@ -200,6 +200,15 @@ provided by Falcon:
     :members:
     :member-order: bysource
 
+.. tip::
+    In order to use your custom media handler in a :ref:`Falcon app <app>`,
+    you'll have to add an instance of your class to the app's media handlers
+    (specified in :attr:`RequestOptions <falcon.RequestOptions.media_handlers>`
+    and :attr:`ResponseOptions<falcon.ResponseOptions.media_handlers>`,
+    respectively).
+
+    See also: :ref:`custom_media_handlers`.
+
 
 Handlers Mapping
 ----------------
