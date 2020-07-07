@@ -25,7 +25,7 @@ sensitive resources.
 Directly passing the :class:`falcon.CORSMiddleware` middleware to the application
 allows customization of the CORS policy applied. The middleware allows customizing
 the allowed origins, if credentials should be allowed and if additional headers
-that can be exposed.
+can be exposed.
 
 Usage
 -----
