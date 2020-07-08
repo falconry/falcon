@@ -29,7 +29,7 @@ class CORSMiddleware(object):
             https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Expose-Headers
         allow_credentials (Optional[Union[str, Iterable[str]]]): List of origins (case sensitive)
             for which to allow credentials via the ``Access-Control-Allow-Credentials`` header.
-            The string ``'*'`` acts as a wildcard, matching every allowed origins, while
+            The string ``'*'`` acts as a wildcard, matching every allowed origin, while
             ``None`` disallows all origins. This parameter takes effect only
             if the origin is allowed by the ``allow_origins`` argument. (Default ``None``).
 
