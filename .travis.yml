@@ -21,6 +21,7 @@ matrix:
           #   so we pin to that for testing to make sure we are working around
           #   and quirks that were fixed in later micro versions.
         - python: 3.5.2
+          dist: xenial
           env: TOXENV=py35
         - python: 3.6
           env: TOXENV=py36
