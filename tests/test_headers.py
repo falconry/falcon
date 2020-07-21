@@ -6,7 +6,7 @@ import pytest
 import falcon
 from falcon import testing
 
-from _util import create_app, disable_asgi_non_coroutine_wrapping  # NOQA
+from _util import create_app  # NOQA
 
 
 SAMPLE_BODY = testing.rand_string(0, 128 * 1024)
@@ -15,15 +15,6 @@ SAMPLE_BODY = testing.rand_string(0, 128 * 1024)
 @pytest.fixture
 def client(asgi):
     app = create_app(asgi)
-    return testing.TestClient(app)
-
-
-@pytest.fixture(scope='function')
-def cors_client(asgi):
-    # NOTE(kgriffs): Disable wrapping to test that built-in middleware does
-    #   not require it (since this will be the case for non-test apps).
-    with disable_asgi_non_coroutine_wrapping():
-        app = create_app(asgi, cors_enable=True)
     return testing.TestClient(app)
 
 
@@ -243,16 +234,6 @@ class ExpiresHeaderResource:
 
     def on_get(self, req, resp):
         resp.expires = self._expires
-
-
-class CORSHeaderResource:
-
-    def on_get(self, req, resp):
-        resp.body = "I'm a CORS test response"
-
-    def on_delete(self, req, resp):
-        resp.set_header('Access-Control-Allow-Origin', 'example.com')
-        resp.body = "I'm a CORS test response"
 
 
 class CustomHeaders:
@@ -768,46 +749,6 @@ class TestHeaders:
 
         content_length = str(len(falcon.HTTPNotFound().to_json()))
         assert result.headers['Content-Length'] == content_length
-
-    def test_disabled_cors_should_not_add_any_extra_headers(self, client):
-        client.app.add_route('/', CORSHeaderResource())
-        result = client.simulate_get()
-        assert 'Access-Control-Allow-Origin'.lower() not in dict(
-            result.headers.lower_items()).keys()
-
-    def test_enabled_cors_should_add_extra_headers_on_response(self, cors_client):
-        cors_client.app.add_route('/', CORSHeaderResource())
-        result = cors_client.simulate_get()
-        assert 'Access-Control-Allow-Origin'.lower() in dict(
-            result.headers.lower_items()).keys()
-
-    def test_enabled_cors_should_accept_all_origins_requests(self, cors_client):
-        cors_client.app.add_route('/', CORSHeaderResource())
-
-        result = cors_client.simulate_get()
-        assert result.headers['Access-Control-Allow-Origin'] == '*'
-
-        result = cors_client.simulate_delete()
-        assert result.headers['Access-Control-Allow-Origin'] == 'example.com'
-
-    def test_enabled_cors_handles_preflighting(self, cors_client):
-        cors_client.app.add_route('/', CORSHeaderResource())
-        result = cors_client.simulate_options(headers=(
-            ('Access-Control-Request-Method', 'GET'),
-            ('Access-Control-Request-Headers', 'X-PINGOTHER, Content-Type'),
-        ))
-        assert result.headers['Access-Control-Allow-Methods'] == 'DELETE, GET'
-        assert result.headers['Access-Control-Allow-Headers'] == 'X-PINGOTHER, Content-Type'
-        assert result.headers['Access-Control-Max-Age'] == '86400'  # 24 hours in seconds
-
-    def test_enabled_cors_handles_preflighting_no_headers_in_req(self, cors_client):
-        cors_client.app.add_route('/', CORSHeaderResource())
-        result = cors_client.simulate_options(headers=(
-            ('Access-Control-Request-Method', 'POST'),
-        ))
-        assert result.headers['Access-Control-Allow-Methods'] == 'DELETE, GET'
-        assert result.headers['Access-Control-Allow-Headers'] == '*'
-        assert result.headers['Access-Control-Max-Age'] == '86400'  # 24 hours in seconds
 
     def test_set_headers_with_custom_class(self, client):
         client.app.add_route('/', CustomHeadersResource())
