@@ -606,3 +606,52 @@ def test_invalid_random_form(client):
         body=os.urandom(length))
 
     assert resp.status_code == 400
+
+
+def test_nested_multipart_mixed():
+    class Forms:
+        def on_post(self, req, resp):
+            example = {}
+            for part in req.media:
+                if part.content_type.startswith('multipart/mixed'):
+                    for nested in part.media:
+                        example[nested.filename] = nested.text
+
+            resp.media = example
+
+    parser = media.MultipartFormHandler()
+    parser.parse_options.media_handlers['multipart/mixed'] = (
+        media.MultipartFormHandler())
+
+    app = falcon.App()
+    app.req_options.media_handlers[falcon.MEDIA_MULTIPART] = parser
+    app.add_route('/forms', Forms())
+    client = testing.TestClient(app)
+
+    form_data = (
+        b'--AaB03x\r\n'
+        b'Content-Disposition: form-data; name="field1"\r\n\r\n'
+        b'Joe Blow\r\n'
+        b'--AaB03x\r\n'
+        b'Content-Disposition: form-data; name="docs"\r\n'
+        b'Content-Type: multipart/mixed; boundary=BbC04y\r\n\r\n'
+        b'--BbC04y\r\n'
+        b'Content-Disposition: attachment; filename="file1.txt"\r\n\r\n'
+        b'This is file1.\r\n\r\n'
+        b'--BbC04y\r\n'
+        b'Content-Disposition: attachment; filename="file2.txt"\r\n'
+        b'Content-Transfer-Encoding: binary\r\n\r\n'
+        b'Hello, World!\r\n\r\n'
+        b'--BbC04y--\r\n\r\n'
+        b'--AaB03x--\r\n'
+    )
+    resp = client.simulate_post(
+        '/forms',
+        headers={'Content-Type': 'multipart/form-data; boundary=AaB03x'},
+        body=form_data,
+    )
+    assert resp.status_code == 200
+    assert resp.json == {
+        'file1.txt': 'This is file1.\r\n',
+        'file2.txt': 'Hello, World!\r\n',
+    }

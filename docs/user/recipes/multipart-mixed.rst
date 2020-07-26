@@ -91,3 +91,6 @@ containing a nested ``multipart/mixed`` part::
     --AaB03x--
 
 Note that all line endings in the form above are assumed to be CRLF.
+
+The form should be ``POST``\ed with the ``Content-Type`` header set to
+``multipart/form-data; boundary=AaB03x``.
