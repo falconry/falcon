@@ -9,7 +9,7 @@ cache:
 
 matrix:
     include:
-        - python: pypy3.6-7.2.0
+        - python: pypy3.6-7.3.1
           env: TOXENV=pypy3
         - python: 3.8
           env: TOXENV=pep8
@@ -38,6 +38,8 @@ matrix:
           arch: s390x
           os: linux
           env: TOXENV=py38_cython
+        - python: 3.9-dev
+          env: TOXENV=py39
         - python: 3.8
           env: TOXENV=py38_smoke
         - python: 3.8
