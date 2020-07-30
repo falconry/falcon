@@ -957,7 +957,7 @@ class TestCORSMiddlewareWithAnotherMiddleware(TestMiddleware):
         app = create_app(asgi, middleware=mw, cors_enable=True)
         app.add_route('/', TestCorsResource())
         client = testing.TestClient(app)
-        result = client.simulate_get()
+        result = client.simulate_get(headers={'Origin': 'localhost'})
         assert result.headers['Access-Control-Allow-Origin'] == '*'
 
 
