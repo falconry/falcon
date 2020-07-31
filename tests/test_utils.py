@@ -31,6 +31,15 @@ def _arbitrary_uris(count, length):
     )
 
 
+@pytest.fixture(params=['bytearray', 'join_list'])
+def decode_approach(request, monkeypatch):
+    method = uri._join_tokens_list
+    if request.param == 'bytearray':
+        method = uri._join_tokens_bytearray
+    monkeypatch.setattr(uri, '_join_tokens', method)
+    return method
+
+
 class TestFalconUtils:
 
     def setup_method(self, method):
@@ -196,7 +205,7 @@ class TestFalconUtils:
         assert uri.encode_value('ab/cd') == 'ab%2Fcd'
         assert uri.encode_value('ab+cd=42,9') == 'ab%2Bcd%3D42%2C9'
 
-    def test_uri_decode(self):
+    def test_uri_decode(self, decode_approach):
         assert uri.decode('abcd') == 'abcd'
         assert uri.decode('ab%20cd') == 'ab cd'
 
@@ -211,15 +220,23 @@ class TestFalconUtils:
         ) == 'http://example.com?x=ab+cd=42,9'
 
     @pytest.mark.parametrize('encoded,expected', [
+        ('ab%2Gcd', 'ab%2Gcd'),
+        ('ab%2Fcd: 100% coverage', 'ab/cd: 100% coverage'),
+        ('%s' * 100, '%s' * 100),
+    ])
+    def test_uri_decode_bad_coding(self, encoded, expected, decode_approach):
+        assert uri.decode(encoded) == expected
+
+    @pytest.mark.parametrize('encoded,expected', [
         ('+%80', ' �'),
         ('+++%FF+++', '   �   '),  # impossible byte
         ('%fc%83%bf%bf%bf%bf', '������'),  # overlong sequence
         ('%ed%ae%80%ed%b0%80', '������'),  # paired UTF-16 surrogates
     ])
-    def test_uri_decode_replace_bad_unicode(self, encoded, expected):
+    def test_uri_decode_bad_unicode(self, encoded, expected, decode_approach):
         assert uri.decode(encoded) == expected
 
-    def test_uri_decode_unquote_plus(self):
+    def test_uri_decode_unquote_plus(self, decode_approach):
         assert uri.decode('/disk/lost+found/fd0') == '/disk/lost found/fd0'
         assert uri.decode('/disk/lost+found/fd0', unquote_plus=True) == (
             '/disk/lost found/fd0')
@@ -713,13 +730,13 @@ class TestFalconTestingUtils:
         assert result.json['detailed']
         assert result.json['things'] == params['things']
 
-        expected_qs = 'things=1,2,3'
+        expected_qs = 'things=1&things=2&things=3'
         result = client.simulate_get(params={'things': [1, 2, 3]})
         assert result.json['query_string'] == expected_qs
 
-        expected_qs = 'things=1&things=2&things=3'
+        expected_qs = 'things=1,2,3'
         result = client.simulate_get(params={'things': [1, 2, 3]},
-                                     params_csv=False)
+                                     params_csv=True)
         assert result.json['query_string'] == expected_qs
 
     def test_query_string_no_question(self, app):
