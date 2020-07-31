@@ -852,7 +852,9 @@ cookie in subsequent requests.
 
 (See also the :ref:`cookie documentation <cookie-secure-attribute>`.)
 
-How can I serve a downloadable file with falcon?
+.. _serve-downloadable-as:
+
+How can I serve a downloadable file with Falcon?
 ------------------------------------------------
 In the ``on_get()`` responder method for the resource, you can tell the user
 agent to download the file by setting the Content-Disposition header. Falcon
