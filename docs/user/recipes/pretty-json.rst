@@ -55,6 +55,7 @@ implemented using a :ref:`custom media handler <custom-media-handler-type>`:
 
 
     class CustomJSONHandler(falcon.media.BaseHandler):
+        MAX_INDENT_LEVEL = 8
 
         def deserialize(self, stream, content_type, content_length):
             data = stream.read()
@@ -66,6 +67,9 @@ implemented using a :ref:`custom media handler <custom-media-handler-type>`:
             if indent is not None:
                 try:
                     indent = int(indent)
+                    # NOTE: Impose a reasonable indentation level limit.
+                    if indent < 0 or indent > self.MAX_INDENT_LEVEL:
+                        indent = None
                 except ValueError:
                     # TODO: Handle invalid params?
                     indent = None
