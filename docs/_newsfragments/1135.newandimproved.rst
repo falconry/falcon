@@ -1,0 +1,3 @@
+The :attr:`falcon.Response.status` attribute can now be also set to an
+``http.HTTPStatus`` instance, an integer status code, as well as anything
+supported by the :func:`falcon.code_to_http_status` utility method.

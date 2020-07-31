@@ -1,5 +1,7 @@
 # -*- coding: utf-8
 
+import http
+
 import pytest
 
 import falcon
@@ -230,3 +232,42 @@ class TestNoBodyWithStatus:
         res = body_client.simulate_put('/status')
         assert res.status == falcon.HTTP_719
         assert res.content == b''
+
+
+@pytest.fixture()
+def custom_status_client(asgi):
+    def client(status):
+        class Resource:
+            def on_get(self, req, resp):
+                resp.content_type = falcon.MEDIA_TEXT
+                resp.data = b'Hello, World!'
+                resp.status = status
+
+        app = create_app(asgi=asgi)
+        app.add_route('/status', Resource())
+        return testing.TestClient(app)
+
+    return client
+
+
+@pytest.mark.parametrize('status,expected_code', [
+    (http.HTTPStatus(200), 200),
+    (http.HTTPStatus(202), 202),
+    (http.HTTPStatus(403), 403),
+    (http.HTTPStatus(500), 500),
+    (http.HTTPStatus.OK, 200),
+    (http.HTTPStatus.USE_PROXY, 305),
+    (http.HTTPStatus.NOT_FOUND, 404),
+    (http.HTTPStatus.NOT_IMPLEMENTED, 501),
+    (200, 200),
+    (307, 307),
+    (500, 500),
+    (702, 702),
+    (b'200 OK', 200),
+    (b'702 Emacs', 702),
+])
+def test_non_string_status(custom_status_client, status, expected_code):
+    client = custom_status_client(status)
+    resp = client.simulate_get('/status')
+    assert resp.text == 'Hello, World!'
+    assert resp.status_code == expected_code
