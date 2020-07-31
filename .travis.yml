@@ -1,6 +1,6 @@
 language: python
 
-dist: xenial
+dist: bionic
 
 install: pip install tox
 cache:
@@ -9,7 +9,7 @@ cache:
 
 matrix:
     include:
-        - python: pypy3.6-7.1.1
+        - python: pypy3.6-7.3.1
           env: TOXENV=pypy3
         - python: 3.8
           env: TOXENV=pep8
@@ -21,6 +21,7 @@ matrix:
           #   so we pin to that for testing to make sure we are working around
           #   and quirks that were fixed in later micro versions.
         - python: 3.5.2
+          dist: xenial
           env: TOXENV=py35
         - python: 3.6
           env: TOXENV=py36
@@ -32,13 +33,13 @@ matrix:
           env: TOXENV=py38
         - python: 3.8
           env: TOXENV=py38_cython
-        # TODO(vytas): Re-enable once issues are fixed on the Travis side.
-        # - python: 3.8
-        #   # NOTE(vytas): Big-endian architecture
-        #   arch: s390x
-        #   dist: bionic
-        #   os: linux
-        #   env: TOXENV=py38_cython
+        - python: 3.8
+          # NOTE(vytas): Big-endian architecture
+          arch: s390x
+          os: linux
+          env: TOXENV=py38_cython
+        - python: 3.9-dev
+          env: TOXENV=py39
         - python: 3.8
           env: TOXENV=py38_smoke
         - python: 3.8
