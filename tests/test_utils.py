@@ -415,8 +415,19 @@ class TestFalconUtils:
             (703, falcon.HTTP_703),
             (404, falcon.HTTP_404),
             (404.9, falcon.HTTP_404),
-            ('404', falcon.HTTP_404),
-            (123, '123'),
+            (falcon.HTTP_200, falcon.HTTP_200),
+            (falcon.HTTP_307, falcon.HTTP_307),
+            (falcon.HTTP_404, falcon.HTTP_404),
+            (123, '123 Unknown'),
+            ('123 Wow Such Status', '123 Wow Such Status'),
+            (b'123 Wow Such Status', '123 Wow Such Status'),
+            (b'200 OK', falcon.HTTP_OK),
+            (http.HTTPStatus(200), falcon.HTTP_200),
+            (http.HTTPStatus(307), falcon.HTTP_307),
+            (http.HTTPStatus(401), falcon.HTTP_401),
+            (http.HTTPStatus(410), falcon.HTTP_410),
+            (http.HTTPStatus(429), falcon.HTTP_429),
+            (http.HTTPStatus(500), falcon.HTTP_500),
         ]
     )
     def test_code_to_http_status(self, v_in, v_out):
@@ -424,9 +435,9 @@ class TestFalconUtils:
 
     @pytest.mark.parametrize(
         'v',
-        ['not_a_number', 0, '0', 99, '99', '404.3', -404.3, '-404', '-404.3']
+        [0, 13, 99, 1000, 1337.01, -99, -404.3, -404, -404.3]
     )
-    def test_code_to_http_status_neg(self, v):
+    def test_code_to_http_status_value_error(self, v):
         with pytest.raises(ValueError):
             falcon.code_to_http_status(v)
 
