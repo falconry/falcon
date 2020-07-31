@@ -56,6 +56,8 @@ __all__ = (
     'secure_filename',
 )
 
+_DEFAULT_HTTP_REASON = 'Unknown'
+
 _UNSAFE_CHARS = re.compile(r'[^a-zA-Z0-9.-]')
 
 # PERF(kgriffs): Avoid superfluous namespace lookups
@@ -342,7 +344,7 @@ def get_argnames(func):
 
 
 @deprecated('Please use falcon.code_to_http_status() instead.')
-def get_http_status(status_code, default_reason='Unknown'):
+def get_http_status(status_code, default_reason=_DEFAULT_HTTP_REASON):
     """Gets both the http status code and description from just a code.
 
     Warning:
@@ -430,7 +432,7 @@ def http_status_to_code(status):
     An LRU is used to minimize lookup time.
 
     Args:
-        status: The status code or enum to normalize
+        status: The status code or enum to normalize.
 
     Returns:
         int: Integer code for the HTTP status (e.g., 200)
@@ -458,32 +460,50 @@ def http_status_to_code(status):
 
 
 @_lru_cache_safe(maxsize=64)
-def code_to_http_status(code):
-    """Convert an HTTP status code integer to a status line string.
+def code_to_http_status(status):
+    """Normalize an HTTP status to an HTTP status line string.
+
+    This function takes a member of :class:`http.HTTPStatus`, an ``int`` status
+    code, an HTTP status line string or byte string (e.g., ``'200 OK'``) and
+    returns the corresponding HTTP status line string.
 
     An LRU is used to minimize lookup time.
 
+    Note:
+        Unlike the deprecated :func:`get_http_status`, this function will not
+        attempt to coerce a string status to an integer code, assuming the
+        string already denotes an HTTP status line.
+
     Args:
-        code (int): The integer status code to convert to a status line.
+        status: The status code or enum to normalize.
 
     Returns:
         str: HTTP status line corresponding to the given code. A newline
             is not included at the end of the string.
     """
 
+    if isinstance(status, http.HTTPStatus):
+        return '{} {}'.format(status.value, status.phrase)
+
+    if isinstance(status, str):
+        return status
+
+    if isinstance(status, bytes):
+        return status.decode()
+
     try:
-        code = int(code)
-        if code < 100:
-            raise ValueError()
+        code = int(status)
+        if not 100 <= code <= 999:
+            raise ValueError('{} is not a valid status code'.format(code))
     except (ValueError, TypeError):
-        raise ValueError('"{}" is not a valid status code'.format(code))
+        raise ValueError('{!r} is not a valid status code'.format(code))
 
     try:
         # NOTE(kgriffs): We do this instead of using http.HTTPStatus since
         #   the Falcon module defines a larger number of codes.
         return getattr(status_codes, 'HTTP_' + str(code))
     except AttributeError:
-        return str(code)
+        return '{} {}'.format(code, _DEFAULT_HTTP_REASON)
 
 
 def deprecated_args(*, allowed_positional, is_method=True):
