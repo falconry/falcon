@@ -92,6 +92,8 @@ media type that JSON also supports (i.e. dicts, lists, etc).
 If JSON Schema does not meet your needs, a custom validator may be
 implemented in a similar manner to the one above.
 
+.. _content-type-negotiaton:
+
 Content-Type Negotiation
 ------------------------
 
@@ -185,6 +187,8 @@ Supported Handler Types
 .. autoclass:: falcon.media.URLEncodedFormHandler
     :no-members:
 
+.. _custom-media-handler-type:
+
 Custom Handler Type
 -------------------
 
@@ -195,6 +199,15 @@ provided by Falcon:
 .. autoclass:: falcon.media.BaseHandler
     :members:
     :member-order: bysource
+
+.. tip::
+    In order to use your custom media handler in a :ref:`Falcon app <app>`,
+    you'll have to add an instance of your class to the app's media handlers
+    (specified in :attr:`RequestOptions <falcon.RequestOptions.media_handlers>`
+    and :attr:`ResponseOptions<falcon.ResponseOptions.media_handlers>`,
+    respectively).
+
+    See also: :ref:`custom_media_handlers`.
 
 
 Handlers Mapping
