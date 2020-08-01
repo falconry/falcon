@@ -118,6 +118,8 @@ class Multipart:
 
         form = await req.get_media()
         async for part in form:
+            # NOTE(vytas): SHA1 is no longer recommended for cryptographic
+            #   purposes, but here we are only using it for integrity checking.
             sha1 = hashlib.sha1()
             async for chunk in part.stream:
                 sha1.update(chunk)

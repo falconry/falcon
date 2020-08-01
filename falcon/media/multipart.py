@@ -211,7 +211,7 @@ class BodyPart:
     def get_data(self):
         """Returns the body part content bytes.
 
-        The maximum number of bytes that could be read is configurable via
+        The maximum number of bytes that may be read is configurable via
         :class:`MultipartParseOptions`, and a :class:`.MultipartParseError` is
         raised if the body part is larger that this size.
 
@@ -219,9 +219,9 @@ class BodyPart:
         directly.
 
         Note:
-            Calling this method the first time would consume the part input
+            Calling this method the first time will consume the part's input
             stream. The result is cached for subsequent access, and follow-up
-            calls will just retrieved the cached content.
+            calls will just retrieve the cached content.
 
         Returns:
             bytes: The body part content.
@@ -252,8 +252,8 @@ class BodyPart:
         property.
 
         Note:
-            As this method builds upon :meth:`~.get_data`, it would consume the
-            part input stream in the same way.
+            As this method builds upon :meth:`~.get_data`, it will consume the
+            part's input stream in the same way.
 
         Returns:
             str: The part decoded as a text string provided the part is
