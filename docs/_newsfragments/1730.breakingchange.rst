@@ -1,0 +1,4 @@
+The ``params_csv`` parameter now defaults to ``False`` in
+:func:`falcon.testing.simulate_request`.
+The change was made to match the default value of the request option
+:attr:`~falcon.RequestOptions.auto_parse_qs_csv` (``False`` since Falcon 2.0).
