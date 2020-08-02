@@ -1,3 +1,5 @@
+.. _outputting_csv_recipe:
+
 Outputting CSV Files
 ====================
 
