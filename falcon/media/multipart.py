@@ -215,7 +215,10 @@ class BodyPart:
         :class:`MultipartParseOptions`, and a :class:`.MultipartParseError` is
         raised if the body part is larger that this size.
 
-        For large bodies, such as attached files, use the input `stream`
+        The size limit guards against reading unexpectedly large amount of data
+        into memory by referencing :attr:`data` and :attr:`text` properties
+        that build upon this method.
+        For large bodies, such as attached files, use the input :attr:`stream`
         directly.
 
         Note:

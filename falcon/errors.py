@@ -64,11 +64,8 @@ class OperationNotAllowed(ValueError):
     """The requested operation is not allowed."""
 
 
-# TODO(vytas): Discuss the DelimiterError base class in comparison to
-#   OperationNotAllowed.
-
 # TODO(vytas): Clean up the import hierarchy so that DelimiterError is defined
-#   in errors.py:
+#   here in errors.py:
 #
 #   class DelimiterError(IOError):
 #       """The read operation did not find the requested stream delimiter."""
