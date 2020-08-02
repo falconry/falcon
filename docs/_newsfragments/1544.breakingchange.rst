@@ -1,5 +1,5 @@
 If :attr:`RequestOptions.strip_url_path_trailing_slash
-<falcon.RequestOptions.strip_url_path_trailing_slash>`) is enabled, routes
+<falcon.RequestOptions.strip_url_path_trailing_slash>` is enabled, routes
 should now be added without a trailing slash. Previously, the trailing slash
 was always removed as a side effect of a bug regardless of the
 :attr:`~falcon.RequestOptions.strip_url_path_trailing_slash` option value.
