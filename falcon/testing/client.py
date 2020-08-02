@@ -161,6 +161,13 @@ class Result:
         cookies (dict): A dictionary of
             :py:class:`falcon.testing.Cookie` values parsed from the
             response, by name.
+
+            Also the cookies parameter can be passed directly to subsequent request::
+
+                    client = testing.TestClient(app)
+                    response_one = client.simulate_get('/')
+                    response_two = client.simulate_post('/', cookies=response_one.cookies)
+
         encoding (str): Text encoding of the response body, or ``None``
             if the encoding can not be determined.
         content (bytes): Raw response body, or ``bytes`` if the

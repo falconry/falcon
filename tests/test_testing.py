@@ -218,6 +218,8 @@ def test_create_environ_cookies_options_method():
 def test_cookies_jar():
     class Foo:
         def on_get(self, req, resp):
+            # NOTE(myuz): In the future we shouldn't change the cookie
+            #             a test depends on the input.
             resp.set_cookie('has_permission', 'true')
 
         def on_post(self, req, resp):
@@ -225,6 +227,7 @@ def test_cookies_jar():
                 resp.status = falcon.HTTP_200
             else:
                 resp.status = falcon.HTTP_403
+
     app = App()
     app.add_route('/jars', Foo())
 
