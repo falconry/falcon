@@ -604,7 +604,7 @@ class TestHTTPError:
 
     def test_405_without_body_with_extra_headers_double_check(self, client):
         client.app.add_route(
-            '/405/', MethodNotAllowedResourceWithHeadersWithAccept()
+            '/405', MethodNotAllowedResourceWithHeadersWithAccept()
         )
 
         response = client.simulate_request(path='/405')

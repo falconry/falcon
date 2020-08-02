@@ -198,7 +198,7 @@ class CompiledRouter:
         if re.search(r'\s', _FIELD_PATTERN.sub('{FIELD}', uri_template)):
             raise ValueError('URI templates may not include whitespace.')
 
-        path = uri_template.strip('/').split('/')
+        path = uri_template.lstrip('/').split('/')
 
         used_names = set()
         for segment in path:
