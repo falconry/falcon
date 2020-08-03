@@ -20,7 +20,7 @@ default, allowing you to use ``req.get_media()`` to iterate over the
             form = req.get_media()
             for part in form:
                 if part.content_type == 'application/json':
-                    # TODO: Body part is a JSON document, do something useful with it
+                    # Body part is a JSON document, do something useful with it
                     resp.media = part.get_media()
                 elif part.name == 'datafile':
                     while True:
@@ -35,7 +35,8 @@ default, allowing you to use ``req.get_media()`` to iterate over the
                     with open(filename, 'wb') as dest:
                         part.stream.pipe(dest)
                 else:
-                    # TODO: Do something else
+                    # Do something else
+                    form_data[part.name] = part.text
 
     .. group-tab:: ASGI
 
@@ -44,7 +45,7 @@ default, allowing you to use ``req.get_media()`` to iterate over the
             form = await req.get_media()
             async for part in form:
                 if part.content_type == 'application/json':
-                    # TODO: Body part is a JSON document, do something useful with it
+                    # Body part is a JSON document, do something useful with it
                     resp.media = await part.get_media()
                 elif part.name == 'datafile':
                     # Do something with the uploaded data (file)
@@ -56,7 +57,8 @@ default, allowing you to use ``req.get_media()`` to iterate over the
                     async with aiofiles.open(filename, 'wb') as dest:
                         await part.stream.pipe(dest)
                 else:
-                    # TODO: Do something else
+                    # Do something else
+                    form_data[part.name] = await part.text
 
 .. note::
    Rather than being read in and buffered all at once, the request stream is
