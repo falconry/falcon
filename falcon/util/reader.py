@@ -17,14 +17,12 @@
 import functools
 import io
 
+from falcon.errors import DelimiterError
+
 DEFAULT_CHUNK_SIZE = 32768
 """Default chunk size for :class:`BufferedReader` (32 KiB)."""
 
 _MAX_JOIN_CHUNKS = 128
-
-
-class DelimiterError(IOError):
-    """The read operation did not find the requested stream delimiter."""
 
 
 class BufferedReader:

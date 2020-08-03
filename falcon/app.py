@@ -28,6 +28,7 @@ from falcon.request import Request, RequestOptions
 import falcon.responders
 from falcon.response import Response, ResponseOptions
 import falcon.status_codes as status
+from falcon.util import deprecation
 from falcon.util import misc
 from falcon.util.misc import code_to_http_status
 
@@ -1014,6 +1015,7 @@ class API(App):
     removed in a future release.
     """
 
-    @misc.deprecated('API class may be removed in a future release, use falcon.App instead.')
+    @deprecation.deprecated('API class may be removed in a future release, '
+                            'use falcon.App instead.')
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

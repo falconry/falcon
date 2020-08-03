@@ -37,9 +37,10 @@ package namespace::
 
 from datetime import datetime
 
-from falcon import util
 from falcon.http_error import HTTPError
 import falcon.status_codes as status
+from falcon.util.deprecation import deprecated_args
+from falcon.util.misc import dt_to_http
 
 
 class HeaderNotSupported(ValueError):
@@ -64,12 +65,8 @@ class OperationNotAllowed(ValueError):
     """The requested operation is not allowed."""
 
 
-# TODO(vytas): Clean up the import hierarchy so that DelimiterError is defined
-#   here in errors.py:
-#
-#   class DelimiterError(IOError):
-#       """The read operation did not find the requested stream delimiter."""
-DelimiterError = util.DelimiterError
+class DelimiterError(IOError):
+    """The read operation did not find the requested stream delimiter."""
 
 
 class HTTPBadRequest(HTTPError):
@@ -117,7 +114,7 @@ class HTTPBadRequest(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=0)
+    @deprecated_args(allowed_positional=0)
     def __init__(self, title=None, description=None, headers=None, **kwargs):
         super().__init__(
             status.HTTP_400,
@@ -194,7 +191,7 @@ class HTTPUnauthorized(HTTPError):
 
     """
 
-    @util.deprecated_args(allowed_positional=0)
+    @deprecated_args(allowed_positional=0)
     def __init__(self, title=None, description=None, headers=None, challenges=None, **kwargs):
         if challenges:
             headers = _load_headers(headers)
@@ -265,7 +262,7 @@ class HTTPForbidden(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=0)
+    @deprecated_args(allowed_positional=0)
     def __init__(self, title=None, description=None, headers=None, **kwargs):
         super().__init__(
             status.HTTP_403,
@@ -330,7 +327,7 @@ class HTTPNotFound(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=0)
+    @deprecated_args(allowed_positional=0)
     def __init__(self, title=None, description=None, headers=None, **kwargs):
         super().__init__(
             status.HTTP_404,
@@ -450,7 +447,7 @@ class HTTPMethodNotAllowed(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=1)
+    @deprecated_args(allowed_positional=1)
     def __init__(self, allowed_methods, title=None, description=None, headers=None, **kwargs):
         headers = _load_headers(headers)
         headers['Allow'] = ', '.join(allowed_methods)
@@ -515,7 +512,7 @@ class HTTPNotAcceptable(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=0)
+    @deprecated_args(allowed_positional=0)
     def __init__(self, title=None, description=None, headers=None, **kwargs):
         super().__init__(
             status.HTTP_406,
@@ -582,7 +579,7 @@ class HTTPConflict(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=0)
+    @deprecated_args(allowed_positional=0)
     def __init__(self, title=None, description=None, headers=None, **kwargs):
         super().__init__(
             status.HTTP_409,
@@ -655,7 +652,7 @@ class HTTPGone(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=0)
+    @deprecated_args(allowed_positional=0)
     def __init__(self, title=None, description=None, headers=None, **kwargs):
         super().__init__(
             status.HTTP_410,
@@ -713,7 +710,7 @@ class HTTPLengthRequired(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=0)
+    @deprecated_args(allowed_positional=0)
     def __init__(self, title=None, description=None, headers=None, **kwargs):
         super().__init__(
             status.HTTP_411,
@@ -772,7 +769,7 @@ class HTTPPreconditionFailed(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=0)
+    @deprecated_args(allowed_positional=0)
     def __init__(self, title=None, description=None, headers=None, **kwargs):
         super().__init__(
             status.HTTP_412,
@@ -841,7 +838,7 @@ class HTTPPayloadTooLarge(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=0)
+    @deprecated_args(allowed_positional=0)
     def __init__(self, title=None, description=None, retry_after=None, headers=None, **kwargs):
         super().__init__(
             status.HTTP_413,
@@ -905,7 +902,7 @@ class HTTPUriTooLong(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=0)
+    @deprecated_args(allowed_positional=0)
     def __init__(self, title=None, description=None, headers=None, **kwargs):
         super().__init__(
             status.HTTP_414,
@@ -964,7 +961,7 @@ class HTTPUnsupportedMediaType(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=0)
+    @deprecated_args(allowed_positional=0)
     def __init__(self, title=None, description=None, headers=None, **kwargs):
         super().__init__(
             status.HTTP_415,
@@ -1036,7 +1033,7 @@ class HTTPRangeNotSatisfiable(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=1)
+    @deprecated_args(allowed_positional=1)
     def __init__(self, resource_length, title=None, description=None, headers=None, **kwargs):
         headers = _load_headers(headers)
         headers['Content-Range'] = 'bytes */' + str(resource_length)
@@ -1100,7 +1097,7 @@ class HTTPUnprocessableEntity(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=0)
+    @deprecated_args(allowed_positional=0)
     def __init__(self, title=None, description=None, headers=None, **kwargs):
         super().__init__(
             status.HTTP_422,
@@ -1156,7 +1153,7 @@ class HTTPLocked(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=0)
+    @deprecated_args(allowed_positional=0)
     def __init__(self, title=None, description=None, headers=None, **kwargs):
         super().__init__(
             status.HTTP_423,
@@ -1211,7 +1208,7 @@ class HTTPFailedDependency(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=0)
+    @deprecated_args(allowed_positional=0)
     def __init__(self, title=None, description=None, headers=None, **kwargs):
         super().__init__(
             status.HTTP_424,
@@ -1274,7 +1271,7 @@ class HTTPPreconditionRequired(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=0)
+    @deprecated_args(allowed_positional=0)
     def __init__(self, title=None, description=None, headers=None, **kwargs):
         super().__init__(
             status.HTTP_428,
@@ -1342,7 +1339,7 @@ class HTTPTooManyRequests(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=0)
+    @deprecated_args(allowed_positional=0)
     def __init__(self, title=None, description=None, headers=None, retry_after=None, **kwargs):
         super().__init__(
             status.HTTP_429,
@@ -1404,7 +1401,7 @@ class HTTPRequestHeaderFieldsTooLarge(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=0)
+    @deprecated_args(allowed_positional=0)
     def __init__(self, title=None, description=None, headers=None, **kwargs):
         super().__init__(
             status.HTTP_431,
@@ -1473,7 +1470,7 @@ class HTTPUnavailableForLegalReasons(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=0)
+    @deprecated_args(allowed_positional=0)
     def __init__(self, title=None, description=None, headers=None, **kwargs):
         super().__init__(
             status.HTTP_451,
@@ -1528,7 +1525,7 @@ class HTTPInternalServerError(HTTPError):
 
     """
 
-    @util.deprecated_args(allowed_positional=0)
+    @deprecated_args(allowed_positional=0)
     def __init__(self, title=None, description=None, headers=None, **kwargs):
         super().__init__(
             status.HTTP_500,
@@ -1590,7 +1587,7 @@ class HTTPNotImplemented(HTTPError):
 
     """
 
-    @util.deprecated_args(allowed_positional=0)
+    @deprecated_args(allowed_positional=0)
     def __init__(self, title=None, description=None, headers=None, **kwargs):
         super().__init__(
             status.HTTP_501,
@@ -1645,7 +1642,7 @@ class HTTPBadGateway(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=0)
+    @deprecated_args(allowed_positional=0)
     def __init__(self, title=None, description=None, headers=None, **kwargs):
         super().__init__(
             status.HTTP_502,
@@ -1716,7 +1713,7 @@ class HTTPServiceUnavailable(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=0)
+    @deprecated_args(allowed_positional=0)
     def __init__(self, title=None, description=None, headers=None, retry_after=None, **kwargs):
         super().__init__(
             status.HTTP_503,
@@ -1772,7 +1769,7 @@ class HTTPGatewayTimeout(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=0)
+    @deprecated_args(allowed_positional=0)
     def __init__(self, title=None, description=None, headers=None, **kwargs):
         super().__init__(
             status.HTTP_504,
@@ -1833,7 +1830,7 @@ class HTTPVersionNotSupported(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=0)
+    @deprecated_args(allowed_positional=0)
     def __init__(self, title=None, description=None, headers=None, **kwargs):
         super().__init__(
             status.HTTP_505,
@@ -1892,7 +1889,7 @@ class HTTPInsufficientStorage(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=0)
+    @deprecated_args(allowed_positional=0)
     def __init__(self, title=None, description=None, headers=None, **kwargs):
         super().__init__(
             status.HTTP_507,
@@ -1948,7 +1945,7 @@ class HTTPLoopDetected(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=0)
+    @deprecated_args(allowed_positional=0)
     def __init__(self, title=None, description=None, headers=None, **kwargs):
         super().__init__(
             status.HTTP_508,
@@ -2016,7 +2013,7 @@ class HTTPNetworkAuthenticationRequired(HTTPError):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=0)
+    @deprecated_args(allowed_positional=0)
     def __init__(self, title=None, description=None, headers=None, **kwargs):
         super().__init__(
             status.HTTP_511,
@@ -2069,7 +2066,7 @@ class HTTPInvalidHeader(HTTPBadRequest):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=2)
+    @deprecated_args(allowed_positional=2)
     def __init__(self, msg, header_name, headers=None, **kwargs):
         description = 'The value provided for the "{0}" header is invalid. {1}'
         description = description.format(header_name, msg)
@@ -2123,7 +2120,7 @@ class HTTPMissingHeader(HTTPBadRequest):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=1)
+    @deprecated_args(allowed_positional=1)
     def __init__(self, header_name, headers=None, **kwargs):
         description = 'The "{0}" header is required.'
         description = description.format(header_name)
@@ -2180,7 +2177,7 @@ class HTTPInvalidParam(HTTPBadRequest):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=2)
+    @deprecated_args(allowed_positional=2)
     def __init__(self, msg, param_name, headers=None, **kwargs):
         description = 'The "{0}" parameter is invalid. {1}'
         description = description.format(param_name, msg)
@@ -2236,7 +2233,7 @@ class HTTPMissingParam(HTTPBadRequest):
             base articles related to this error (default ``None``).
     """
 
-    @util.deprecated_args(allowed_positional=1)
+    @deprecated_args(allowed_positional=1)
     def __init__(self, param_name, headers=None, **kwargs):
         description = 'The "{0}" parameter is required.'
         description = description.format(param_name)
@@ -2268,7 +2265,7 @@ def _parse_retry_after(headers, retry_after):
         return headers
     headers = _load_headers(headers)
     if isinstance(retry_after, datetime):
-        headers['Retry-After'] = util.dt_to_http(retry_after)
+        headers['Retry-After'] = dt_to_http(retry_after)
     else:
         headers['Retry-After'] = str(retry_after)
     return headers
