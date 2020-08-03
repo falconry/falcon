@@ -8,6 +8,8 @@ from typing import Callable
 
 __all__ = [
     'get_loop',
+    'invoke_coroutine_sync',
+    'runs_sync',
     'sync_to_async',
     'wrap_sync_to_async',
     'wrap_sync_to_async_unsafe',
@@ -180,3 +182,55 @@ def _wrap_non_coroutine_unsafe(func):
         return func
 
     return wrap_sync_to_async_unsafe(func)
+
+
+def invoke_coroutine_sync(coroutine, *args, **kwargs):
+    """Invokes a coroutine function from a synchronous caller and runs until complete.
+
+    Warning:
+        This method is very inefficient and should only be used
+        for testing purposes. It will create an event loop for the current
+        thread if one is not already running.
+
+    Additional arguments not mentioned below are bound to the given
+    coroutine function via ``functools.partial()``.
+
+    Args:
+        coroutine: A coroutine function to invoke.
+        *args: Additional args are passed through to the coroutine function.
+
+    Keyword Args:
+        **kwargs: Additional args are passed through to the coroutine function.
+    """
+
+    loop = asyncio.get_event_loop()
+    return loop.run_until_complete(
+        partial(coroutine, *args, **kwargs)()
+    )
+
+
+def runs_sync(coroutine):
+    """A decorator to transform a coroutine function into a synchronous method.
+
+    This is achieved by always invoking the decorated coroutine function via
+    :meth:`invoke_coroutine_sync`.
+
+    Warning:
+        This decorator is very inefficient and should only be used for adapting
+        asynchronous test functions for use with synchronous test runners such
+        as ``pytest`` or the ``unittest`` module.
+
+        It will create an event loop for the current thread if one is not
+        already running.
+
+    Args:
+        coroutine: A coroutine function to masquerade as a synchronous one.
+
+    Returns:
+        callable: A synchronous function.
+    """
+    @wraps(coroutine)
+    def invoke(*args, **kwargs):
+        return invoke_coroutine_sync(coroutine, *args, **kwargs)
+
+    return invoke

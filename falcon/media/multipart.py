@@ -22,7 +22,8 @@ from falcon import errors
 from falcon import request_helpers
 from falcon.media.base import BaseHandler
 from falcon.util import BufferedReader
-from falcon.util import deprecated_args, misc
+from falcon.util import misc
+from falcon.util.deprecation import deprecated_args
 
 # TODO(vytas):
 #   * Better support for form-wide charset setting

@@ -2,7 +2,7 @@ import io
 
 import pytest
 
-from falcon import testing
+import falcon
 from falcon.asgi import reader
 from falcon.errors import OperationNotAllowed
 
@@ -21,7 +21,7 @@ def async_take(source, count=None):
                 return result
         return result
 
-    return testing.invoke_coroutine_sync(collect)
+    return falcon.invoke_coroutine_sync(collect)
 
 
 async def chop_data(data, min_size=1024, max_size=64 * 1024):
@@ -112,7 +112,7 @@ def test_basic_aiter(reader1):
     ]
 
 
-@testing.runs_sync
+@falcon.runs_sync
 async def test_aiter_from_buffer(reader1):
     assert await reader1.read(4) == b'Hell'
 
@@ -149,27 +149,27 @@ def test_delimit(reader1, delimiter, expected):
     assert async_take(delimited) == expected
 
 
-@testing.runs_sync
+@falcon.runs_sync
 async def test_exhaust(reader1):
     await reader1.exhaust()
     assert await reader1.peek() == b''
 
 
 @pytest.mark.parametrize('size', [1, 2, 3, 5, 7, 8])
-@testing.runs_sync
+@falcon.runs_sync
 async def test_peek(reader1, size):
     assert await reader1.peek(size) == b'Hello, World'[:size]
     assert reader1.tell() == 0
 
 
-@testing.runs_sync
+@falcon.runs_sync
 async def test_peek_at_eof():
     source = chop_data(b'Hello!')
     stream = reader.BufferedReader(source)
     assert await stream.peek(16) == b'Hello!'
 
 
-@testing.runs_sync
+@falcon.runs_sync
 async def test_pipe(reader1):
     sink = AsyncSink()
     await reader1.pipe(sink)
@@ -178,7 +178,7 @@ async def test_pipe(reader1):
     assert reader1.tell() == len(sink.accumulated)
 
 
-@testing.runs_sync
+@falcon.runs_sync
 async def test_pipe_until_delimiter_not_found(reader1):
     sink = AsyncSink()
     await reader1.pipe_until(b'404', sink)
@@ -200,7 +200,7 @@ async def test_pipe_until_delimiter_not_found(reader1):
     ((1, 50), [b'H', b'ello, World!\nJust testing some iterator goodness.\n']),
     ((50, 1), [b'Hello, World!\nJust testing some iterator goodness.', b'\n']),
 ])
-@testing.runs_sync
+@falcon.runs_sync
 async def test_read(reader1, sizes, expected):
     results = []
     for size in sizes:
@@ -210,7 +210,7 @@ async def test_read(reader1, sizes, expected):
 
 
 @pytest.mark.parametrize('start_size', [1, 16777216])
-@testing.runs_sync
+@falcon.runs_sync
 async def test_varying_read_size(reader2, start_size):
     size = start_size
     result = io.BytesIO()
@@ -227,7 +227,7 @@ async def test_varying_read_size(reader2, start_size):
 
 
 @pytest.mark.parametrize('peek', [0, 1, 8])
-@testing.runs_sync
+@falcon.runs_sync
 async def test_readall(reader1, peek):
     if peek:
         await reader1.peek(peek)
@@ -257,7 +257,7 @@ async def test_readall(reader1, peek):
     (7, b'good', 1337, b'World!\nJust testing some iterator '),
     (7, b'good', -1, b'World!\nJust testing some iterator '),
 ])
-@testing.runs_sync
+@falcon.runs_sync
 async def test_read_until(reader1, offset, delimiter, size, expected, fork):
     if offset:
         await reader1.read(offset)
@@ -268,7 +268,7 @@ async def test_read_until(reader1, offset, delimiter, size, expected, fork):
         assert await reader1.read_until(delimiter, size) == expected
 
 
-@testing.runs_sync
+@falcon.runs_sync
 async def test_read_until_with_buffer_edge_case(reader1):
     assert await reader1.read(12) == b'Hello, World'
     assert await reader1.peek(1) == b'!'
@@ -286,7 +286,7 @@ def test_placeholder_methods(reader1):
     assert not reader1.writable()
 
 
-@testing.runs_sync
+@falcon.runs_sync
 async def test_iteration_started(reader1):
     async for chunk in reader1:
         with pytest.raises(OperationNotAllowed):
@@ -294,7 +294,7 @@ async def test_iteration_started(reader1):
                 pass
 
 
-@testing.runs_sync
+@falcon.runs_sync
 async def test_invalid_delimiter_length(reader1):
     with pytest.raises(ValueError):
         await reader1.read_until(b'')
@@ -310,7 +310,7 @@ async def test_invalid_delimiter_length(reader1):
     (11003077, 22000721),
     (13372477, 51637898),
 ])
-@testing.runs_sync
+@falcon.runs_sync
 async def test_irregular_large_read_until(reader2, size1, size2):
     delimiter = b'--boundary1234567890--'
 
@@ -331,7 +331,7 @@ async def test_irregular_large_read_until(reader2, size1, size2):
     assert chunk1 + chunk2 + remainder == expected[1337:]
 
 
-@testing.runs_sync
+@falcon.runs_sync
 @pytest.mark.parametrize('chunk_size', list(range(46, 63)))
 async def test_read_until_shared_boundary(chunk_size):
     source = chop_data(
@@ -346,7 +346,7 @@ async def test_read_until_shared_boundary(chunk_size):
 
 # NOTE(vytas): This is woefully unoptimized, and this test highlights that.
 #   Work in progress.
-@testing.runs_sync
+@falcon.runs_sync
 async def test_small_reads(reader3):
     ops = 0
     read = 0
@@ -368,7 +368,7 @@ async def test_small_reads(reader3):
     assert last.endswith(b'4')
 
 
-@testing.runs_sync
+@falcon.runs_sync
 async def test_small_reads_with_delimiter(reader3):
     ops = 0
     read = 0

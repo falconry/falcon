@@ -312,7 +312,7 @@ def test_empty_filename():
             part.secure_filename
 
 
-@testing.runs_sync
+@falcon.runs_sync
 async def test_async_unsupported():
     if falcon.ASGI_SUPPORTED:
         pytest.skip('Testing missing ASGI support')

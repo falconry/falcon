@@ -33,7 +33,9 @@ import sys
 import unicodedata
 
 from falcon import status_codes
-from .deprecation import deprecated, deprecated_args
+# NOTE(vytas): Hoist `deprecated` here since it is documented as part of the
+# public Falcon interface.
+from .deprecation import deprecated
 
 try:
     from falcon.cyutil.misc import isascii as _cy_isascii
@@ -52,7 +54,6 @@ __all__ = (
     'get_http_status',
     'http_status_to_code',
     'code_to_http_status',
-    'deprecated_args',
     'secure_filename',
 )
 
