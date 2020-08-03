@@ -1,6 +1,3 @@
-import asyncio
-import time
-
 import pytest
 
 import falcon
@@ -212,14 +209,16 @@ def test_read_chunks(body, chunk_size):
 def test_exhaust_with_disconnect():
     async def t():
         emitter = testing.ASGIRequestEventEmitter(
-            b'123456798' * 1024,
-            disconnect_at=(time.time() + 0.5)
+            b'123456789' * 2,
+
+            # NOTE(kgriffs): This must be small enough to create several events
+            chunk_size=3,
         )
         s = asgi.BoundedStream(emitter)
 
         assert await s.read(1) == b'1'
         assert await s.read(2) == b'23'
-        await asyncio.sleep(0.5)
+        emitter.disconnect(exhaust_body=False)
         await s.exhaust()
         assert await s.read(1) == b''
         assert await s.read(100) == b''
