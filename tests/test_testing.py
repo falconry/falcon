@@ -220,6 +220,10 @@ def test_cookies_jar():
         def on_get(self, req, resp):
             # NOTE(myuz): In the future we shouldn't change the cookie
             #             a test depends on the input.
+            # NOTE(kgriffs): This is the only test that uses a single
+            #   cookie (vs. multiple) as input; if this input ever changes,
+            #   a separate test will need to be added to explicitly verify
+            #   this use case.
             resp.set_cookie('has_permission', 'true')
 
         def on_post(self, req, resp):
