@@ -35,6 +35,7 @@ from falcon.util import (
     get_loop,
     http_cookies,
     http_date_to_dt,
+    invoke_coroutine_sync,
     json as util_json,
     to_query_str,
 )
@@ -514,7 +515,7 @@ def simulate_request(app, method='GET', path='/', query_string=None,
         await _wait_for_shutdown(lifespan_event_collector.events)
         await t
 
-    helpers.invoke_coroutine_sync(conductor)
+    invoke_coroutine_sync(conductor)
 
     return Result(resp_event_collector.body_chunks,
                   code_to_http_status(resp_event_collector.status),

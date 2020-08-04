@@ -31,9 +31,11 @@ import inspect
 import re
 import sys
 import unicodedata
-import warnings
 
 from falcon import status_codes
+# NOTE(vytas): Hoist `deprecated` here since it is documented as part of the
+# public Falcon interface.
+from .deprecation import deprecated
 
 try:
     from falcon.cyutil.misc import isascii as _cy_isascii
@@ -52,7 +54,6 @@ __all__ = (
     'get_http_status',
     'http_status_to_code',
     'code_to_http_status',
-    'deprecated_args',
     'secure_filename',
 )
 
@@ -111,51 +112,6 @@ def is_python_func(func):
         func = func.__func__
 
     return inspect.isfunction(func)
-
-
-# NOTE(kgriffs): We don't want our deprecations to be ignored by default,
-# so create our own type.
-#
-# TODO(kgriffs): Revisit this decision if users complain.
-class DeprecatedWarning(UserWarning):
-    pass
-
-
-def deprecated(instructions, is_property=False):
-    """Flags a method as deprecated.
-
-    This function returns a decorator which can be used to mark deprecated
-    functions. Applying this decorator will result in a warning being
-    emitted when the function is used.
-
-    Args:
-        instructions (str): Specific guidance for the developer, e.g.:
-            'Please migrate to add_proxy(...)'
-        is_property (bool): If the deprecated object is a property. It
-            will omit the ``(...)`` from the generated documentation
-    """
-
-    def decorator(func):
-
-        object_name = 'property' if is_property else 'function'
-        post_name = '' if is_property else '(...)'
-        message = 'Call to deprecated {} {}{}. {}'.format(
-            object_name, func.__name__, post_name, instructions)
-
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            frame = inspect.currentframe().f_back
-
-            warnings.warn_explicit(message,
-                                   category=DeprecatedWarning,
-                                   filename=inspect.getfile(frame.f_code),
-                                   lineno=frame.f_lineno)
-
-            return func(*args, **kwargs)
-
-        return wrapper
-
-    return decorator
 
 
 def http_now():
@@ -504,37 +460,6 @@ def code_to_http_status(status):
         return getattr(status_codes, 'HTTP_' + str(code))
     except AttributeError:
         return '{} {}'.format(code, _DEFAULT_HTTP_REASON)
-
-
-def deprecated_args(*, allowed_positional, is_method=True):
-    """Flags a method call with positional args as deprecated
-
-    Keyword Args:
-        allowed_positional (int): Number of allowed positional arguments
-        is_method (bool, optional): The decorated function is a method. Will
-          add one to the number of allowed positional args to account for
-          ``self``. Defaults to True.
-    """
-
-    template = (
-        'Calls with{} positional args are deprecated.'
-        ' Please specify them as keyword arguments instead.'
-    )
-    text = ' more than {}'.format(allowed_positional) if allowed_positional else ''
-    warn_text = template.format(text)
-    if is_method:
-        allowed_positional += 1
-
-    def deprecated_args(fn):
-        @functools.wraps(fn)
-        def wraps(*args, **kwargs):
-            if len(args) > allowed_positional:
-                warnings.warn(warn_text, DeprecatedWarning, stacklevel=2)
-            return fn(*args, **kwargs)
-
-        return wraps
-
-    return deprecated_args
 
 
 def _isascii(string):

@@ -27,7 +27,6 @@ import asyncio
 import cgi
 from collections import defaultdict
 import contextlib
-import functools
 import io
 import itertools
 import random
@@ -287,33 +286,6 @@ class ASGIResponseEventCollector:
             raise ValueError('Invalid ASGI event type: ' + event_type)
 
     __call__ = collect
-
-
-def invoke_coroutine_sync(coroutine, *args, **kwargs):
-    """Invokes a coroutine function from a synchronous caller and runs until complete.
-
-    Warning:
-        This method is very inefficient and should only be used
-        for testing purposes. It will create an event loop for the current
-        thread if one is not already running.
-
-    Additional arguments not mentioned below are bound to the given
-    coroutine function via ``functools.partial()``.
-
-    Args:
-        coroutine: A coroutine function to invoke.
-        *args: Additional args are passed through to the coroutine function.
-
-    Keyword Args:
-        **kwargs: Additional args are passed through to the coroutine function.
-    """
-
-    loop = asyncio.get_event_loop()
-    return loop.run_until_complete(
-        functools.partial(
-            coroutine, *args, **kwargs
-        )()
-    )
 
 
 # get_encoding_from_headers() is Copyright 2016 Kenneth Reitz, and is
