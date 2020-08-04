@@ -39,6 +39,8 @@ Async
 .. autofunction:: falcon.sync_to_async
 .. autofunction:: falcon.wrap_sync_to_async
 .. autofunction:: falcon.wrap_sync_to_async_unsafe
+.. autofunction:: falcon.invoke_coroutine_sync
+.. autofunction:: falcon.runs_sync
 
 Other
 -----

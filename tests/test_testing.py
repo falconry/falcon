@@ -82,7 +82,7 @@ def test_asgi_request_event_emitter_hang():
 
         assert (elapsed + 0.1) > expected_elasped_min
 
-    testing.invoke_coroutine_sync(t)
+    falcon.invoke_coroutine_sync(t)
 
 
 def test_ignore_extra_asgi_events():
@@ -97,7 +97,7 @@ def test_ignore_extra_asgi_events():
         await collect({'type': 'http.response.body'})
         assert len(collect.events) == 2
 
-    testing.invoke_coroutine_sync(t)
+    falcon.invoke_coroutine_sync(t)
 
 
 def test_invalid_asgi_events():
@@ -149,7 +149,7 @@ def test_invalid_asgi_events():
             # NOTE(kgriffs): Invalid type
             await collect({'type': 'http.response.bod'})
 
-    testing.invoke_coroutine_sync(t)
+    falcon.invoke_coroutine_sync(t)
 
 
 def test_is_asgi_app_cls():
