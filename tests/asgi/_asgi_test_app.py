@@ -1,5 +1,6 @@
 import asyncio
 from collections import Counter
+import hashlib
 import sys
 import time
 
@@ -111,6 +112,26 @@ class Events:
         resp.sse = emit()
 
 
+class Multipart:
+    async def on_post(self, req, resp):
+        parts = {}
+
+        form = await req.get_media()
+        async for part in form:
+            # NOTE(vytas): SHA1 is no longer recommended for cryptographic
+            #   purposes, but here we are only using it for integrity checking.
+            sha1 = hashlib.sha1()
+            async for chunk in part.stream:
+                sha1.update(chunk)
+
+            parts[part.name] = {
+                'filename': part.filename,
+                'sha1': sha1.hexdigest(),
+            }
+
+        resp.media = parts
+
+
 class LifespanHandler:
     def __init__(self):
         self.startup_succeeded = False
@@ -132,6 +153,7 @@ def create_app():
     app.add_route('/', Things())
     app.add_route('/bucket', Bucket())
     app.add_route('/events', Events())
+    app.add_route('/forms', Multipart())
 
     lifespan_handler = LifespanHandler()
     app.add_middleware(lifespan_handler)

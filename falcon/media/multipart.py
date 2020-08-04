@@ -21,8 +21,9 @@ from urllib.parse import unquote_to_bytes
 from falcon import errors
 from falcon import request_helpers
 from falcon.media.base import BaseHandler
-from falcon.util import BufferedReader, DelimiterError
-from falcon.util import deprecated_args, misc
+from falcon.util import BufferedReader
+from falcon.util import misc
+from falcon.util.deprecation import deprecated_args
 
 # TODO(vytas):
 #   * Better support for form-wide charset setting
@@ -71,18 +72,26 @@ class BodyPart:
         content_type (str): Value of the Content-Type header, or the multipart
             form default ``text/plain`` if the header is missing.
 
-        data (bytes): Body part content bytes. The maximum number of bytes that
-            could be read is configurable via :class:`MultipartParseOptions`,
-            and a :class:`.MultipartParseError` is raised if the body part is
-            larger that this size.
+        data (bytes): Property that acts as a convenience alias for
+            :meth:`~.get_data`.
 
-            For large bodies, such as attached files, use the input `stream`
-            directly.
 
-            .. note::
-               Accessing this property the first time would consume the part
-               input stream.
-               The value is cached for subsequent access.
+            .. tabs::
+
+                .. tab:: WSGI
+
+                    .. code:: python
+
+                        # Equivalent to: content = part.get_data()
+                        content = part.data
+
+                .. tab:: ASGI
+
+                    The ``await`` keyword must still be added when referencing
+                    the property::
+
+                        # Equivalent to: content = await part.get_data()
+                        content = await part.data
 
         name(str): The name parameter of the Content-Disposition header.
             The value of the "name" parameter is the original field name from
@@ -114,31 +123,79 @@ class BodyPart:
             to the server's data stream and is non-seekable. The stream is
             automatically delimited according to the multipart stream boundary.
 
-        media (object): Returns a deserialized form of the multipart body part.
-            When called, it will attempt to deserialize the body part stream
-            using the Content-Type header as well as the media-type handlers
-            configured via :class:`MultipartParseOptions`.
+            With the exception of being buffered to keep track of the boundary,
+            the wrapped body part stream interface and behavior mimic
+            :attr:`Request.bounded_stream <falcon.Request.bounded_stream>`
+            (WSGI) and :attr:`Request.stream <falcon.asgi.Request.stream>`
+            (ASGI), respectively:
 
+            .. tabs::
 
-        text (str): The part decoded as a text string provided the part is
-            encoded as ``text/plain``, ``None`` otherwise.
+                .. tab:: WSGI
 
-            Text is decoded from `data` using the charset specified in the
-            `Content-Type` header, or, if omitted, the
-            :data:`default charset <MultipartParseOptions.default_charset>`.
-            The charset must be supported by Python's ``bytes.decode()``
-            function. The list of standard encodings (charsets) supported by
-            the Python 3 standard library can be found `here
-            <https://docs.python.org/3/library/codecs.html#standard-encodings>`__.
+                    Reading the whole part content:
 
-            If decoding fails due to invalid `data` bytes (for the specified
-            encoding), or the specified encoding itself is unsupported, a
-            :class:`MultipartParseError` will be raised when referencing this
-            property.
+                    .. code:: python
 
-            .. note::
-               As this property builds upon `data`, it would consume the part
-               input stream in the same way.
+                        data = part.stream.read()
+
+                    This is also safe:
+
+                    .. code:: python
+
+                        doc = yaml.safe_load(part.stream)
+
+                .. tab:: ASGI
+
+                    Similarly to
+                    :attr:`BoundedStream <falcon.asgi.BoundedStream>`, the most
+                    efficient way to read the body part content is asynchronous
+                    iteration over part data chunks:
+
+                    .. code:: python
+
+                        async for data_chunk in part.stream:
+                            pass
+
+        media (object): Property that acts as a convenience alias for
+            :meth:`~.get_media`.
+
+            .. tabs::
+
+                .. tab:: WSGI
+
+                    .. code:: python
+
+                        # Equivalent to: deserialized_media = part.get_media()
+                        deserialized_media = req.media
+
+                .. tab:: ASGI
+
+                    The ``await`` keyword must still be added when referencing
+                    the property::
+
+                        # Equivalent to: deserialized_media = await part.get_media()
+                        deserialized_media = await part.media
+
+        text (str): Property that acts as a convenience alias for
+            :meth:`~.get_text`.
+
+            .. tabs::
+
+                .. tab:: WSGI
+
+                    .. code:: python
+
+                        # Equivalent to: decoded_text = part.get_text()
+                        decoded_text = part.text
+
+                .. tab:: ASGI
+
+                    The ``await`` keyword must still be added when referencing
+                    the property::
+
+                        # Equivalent to: decoded_text = await part.get_text()
+                        decoded_text = await part.text
     """
 
     _content_disposition = None
@@ -152,8 +209,27 @@ class BodyPart:
         self._headers = headers
         self._parse_options = parse_options
 
-    @property
-    def data(self):
+    def get_data(self):
+        """Returns the body part content bytes.
+
+        The maximum number of bytes that may be read is configurable via
+        :class:`MultipartParseOptions`, and a :class:`.MultipartParseError` is
+        raised if the body part is larger that this size.
+
+        The size limit guards against reading unexpectedly large amount of data
+        into memory by referencing :attr:`data` and :attr:`text` properties
+        that build upon this method.
+        For large bodies, such as attached files, use the input :attr:`stream`
+        directly.
+
+        Note:
+            Calling this method the first time will consume the part's input
+            stream. The result is cached for subsequent access, and follow-up
+            calls will just retrieve the cached content.
+
+        Returns:
+            bytes: The body part content.
+        """
         if self._data is None:
             max_size = self._parse_options.max_body_part_buffer_size + 1
             self._data = self.stream.read(max_size)
@@ -162,8 +238,31 @@ class BodyPart:
 
         return self._data
 
-    @property
-    def text(self):
+    def get_text(self):
+        """Returns the body part content decoded as a text string.
+
+        Text is decoded from the part content (as returned by
+        :meth:`~.get_data`) using the charset specified in the `Content-Type`
+        header, or, if omitted, the
+        :data:`default charset <MultipartParseOptions.default_charset>`.
+        The charset must be supported by Python's ``bytes.decode()``
+        function. The list of standard encodings (charsets) supported by the
+        Python 3 standard library can be found `here
+        <https://docs.python.org/3/library/codecs.html#standard-encodings>`__.
+
+        If decoding fails due to invalid `data` bytes (for the specified
+        encoding), or the specified encoding itself is unsupported, a
+        :class:`MultipartParseError` will be raised when referencing this
+        property.
+
+        Note:
+            As this method builds upon :meth:`~.get_data`, it will consume the
+            part's input stream in the same way.
+
+        Returns:
+            str: The part decoded as a text string provided the part is
+            encoded as ``text/plain``, ``None`` otherwise.
+        """
         content_type, options = cgi.parse_header(self.content_type)
         if content_type != 'text/plain':
             return None
@@ -232,15 +331,46 @@ class BodyPart:
 
         return self._name
 
-    @property
-    def media(self):
+    def get_media(self):
+        """Returns a deserialized form of the multipart body part.
+
+        When called, this method will attempt to deserialize the body part
+        stream using the Content-Type header as well as the media-type handlers
+        configured via :class:`MultipartParseOptions`.
+
+        .. tabs::
+
+            .. tab:: WSGI
+
+                The result will be cached and returned in subsequent calls::
+
+                    deserialized_media = part.get_media()
+
+            .. tab:: ASGI
+
+                The result will be cached and returned in subsequent calls::
+
+                    deserialized_media = await part.get_media()
+
+        Returns:
+            object: The deserialized media representation.
+        """
         if self._media is None:
             handler = self._parse_options.media_handlers.find_by_media_type(
                 self.content_type, 'text/plain')
-            self._media = handler.deserialize(
-                self.stream, self.content_type, None)
+
+            try:
+                self._media = handler.deserialize(
+                    self.stream, self.content_type, None)
+            finally:
+                if handler.exhaust_stream:
+                    self.stream.exhaust()
 
         return self._media
+
+    data = property(get_data)
+    media = property(get_media)
+    text = property(get_text)
 
 
 class MultipartForm:
@@ -295,7 +425,7 @@ class MultipartForm:
                     raise MultipartParseError(
                         description='unexpected form structure')
 
-            except DelimiterError:
+            except errors.DelimiterError:
                 raise MultipartParseError(
                     description='unexpected form structure')
 
@@ -303,7 +433,7 @@ class MultipartForm:
             try:
                 headers_block = stream.read_until(
                     _CRLF_CRLF, max_headers_size, consume_delimiter=True)
-            except DelimiterError:
+            except errors.DelimiterError:
                 raise MultipartParseError(
                     description='incomplete body part headers')
 
@@ -354,12 +484,20 @@ class MultipartFormHandler(BaseHandler):
        handler does not consume the stream immediately. Rather, the stream is
        consumed on-demand and parsed into individual body parts while iterating
        over the media object.
+
+    For examples on parsing the request form, see also: :ref:`multipart`.
     """
+
+    _ASGI_MULTIPART_FORM = None
 
     def __init__(self, parse_options=None):
         self.parse_options = parse_options or MultipartParseOptions()
 
-    def deserialize(self, stream, content_type, content_length):
+    def _deserialize_form(self, stream, content_type, content_length,
+                          form_cls=MultipartForm):
+        if not form_cls:
+            raise NotImplementedError
+
         _, options = cgi.parse_header(content_type)
         try:
             boundary = options['boundary']
@@ -383,8 +521,15 @@ class MultipartFormHandler(BaseHandler):
                 'The boundary parameter must consist of 1 to 70 characters',
                 'Content-Type')
 
-        return MultipartForm(stream, boundary.encode(), content_length,
-                             self.parse_options)
+        return form_cls(stream, boundary.encode(), content_length,
+                        self.parse_options)
+
+    def deserialize(self, stream, content_type, content_length):
+        return self._deserialize_form(stream, content_type, content_length)
+
+    async def deserialize_async(self, stream, content_type, content_length):
+        return self._deserialize_form(stream, content_type, content_length,
+                                      form_cls=self._ASGI_MULTIPART_FORM)
 
     def serialize(self, media, content_type):
         raise NotImplementedError('multipart form serialization unsupported')
@@ -397,7 +542,7 @@ class MultipartParseOptions:
 
     Attributes:
         default_charset (str): The default character encoding for
-            :data:`text fields <BodyPart.text>` (default: ``utf-8``).
+            :meth:`text fields <BodyPart.get_text>` (default: ``utf-8``).
 
         max_body_part_count (int): The maximum number of body parts in the form
             (default: 64). If the form contains more parts than this number,
@@ -405,9 +550,9 @@ class MultipartParseOptions:
             option is set to 0, no limit will be imposed by the parser.
 
         max_body_part_buffer_size (int): The maximum number of bytes to buffer
-            and return when the :data:`BodyPart.data` property is
-            referenced (default: 1 MiB). If the body part size exceeds this
-            value, an instance of :class:`MultipartParseError` will be raised.
+            and return when the :meth:`BodyPart.get_data` method is called
+            (default: 1 MiB). If the body part size exceeds this value, an
+            instance of :class:`MultipartParseError` will be raised.
 
         max_body_part_headers_size (int): The maximum size (in bytes) of the
             body part headers structure (default: 8192). If the body part

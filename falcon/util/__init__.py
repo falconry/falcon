@@ -26,8 +26,6 @@ import sys
 
 # Hoist misc. utils
 from falcon.util.misc import *  # NOQA
-from falcon.util.reader import BufferedReader as _PyBufferedReader
-from falcon.util.reader import DelimiterError  # NOQA
 from falcon.util.structures import *  # NOQA
 from falcon.util.sync import *  # NOQA
 from falcon.util.time import *  # NOQA
@@ -43,6 +41,8 @@ if 'samesite' not in _reserved_cookie_attrs:  # pragma: no cover
 
 
 IS_64_BITS = sys.maxsize > 2**32
+
+from falcon.util.reader import BufferedReader as _PyBufferedReader  # NOQA
 
 try:
     from falcon.cyutil.reader import BufferedReader as _CyBufferedReader

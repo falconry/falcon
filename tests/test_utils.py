@@ -12,7 +12,7 @@ import pytest
 import falcon
 from falcon import testing
 from falcon import util
-from falcon.util import json, misc, structures, uri
+from falcon.util import deprecation, json, misc, structures, uri
 
 from _util import create_app, to_coroutine  # NOQA
 
@@ -1052,7 +1052,7 @@ class TestContextType:
 class TestDeprecatedArgs:
     def test_method(self, recwarn):
         class C:
-            @misc.deprecated_args(allowed_positional=0)
+            @deprecation.deprecated_args(allowed_positional=0)
             def a_method(self, a=1, b=2):
                 pass
 
@@ -1062,7 +1062,7 @@ class TestDeprecatedArgs:
         assert len(recwarn) == 1
 
     def test_function(self, recwarn):
-        @misc.deprecated_args(allowed_positional=0, is_method=False)
+        @deprecation.deprecated_args(allowed_positional=0, is_method=False)
         def a_function(a=1, b=2):
             pass
 
