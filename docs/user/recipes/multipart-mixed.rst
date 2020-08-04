@@ -35,10 +35,10 @@ parse embedded forms of the ``multipart/mixed`` content type:
     Here we create a new parser (with default options) for nested parts,
     effectively disallowing further recursion.
 
-    If traversing into even deeper multipart form hierarchy was desired, we
-    could just reuse the same parser.
+    If traversing into even deeper multipart form hierarchy is desired, we
+    can just reuse the same parser.
 
-Let us now use the nested form enabled parser in an app:
+Let us now use the nesting-aware parser in an app:
 
 .. code:: python
 
@@ -64,9 +64,9 @@ Let us now use the nested form enabled parser in an app:
     app.req_options.media_handlers[falcon.MEDIA_MULTIPART] = parser
     app.add_route('/forms', Forms())
 
-We should now be able to consume a legacy, the now obsolete
-`RFC 1867 <https://tools.ietf.org/html/rfc1867>`_ inspired, multipart form
-containing a nested ``multipart/mixed`` part::
+We should now be able to consume a form containing a nested ``multipart/mixed``
+part (the example is adapted from the now-obsolete
+`RFC 1867 <https://tools.ietf.org/html/rfc1867>`_)::
 
     --AaB03x
     Content-Disposition: form-data; name="field1"
