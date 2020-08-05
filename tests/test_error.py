@@ -3,7 +3,7 @@ import pytest
 import falcon
 import falcon.errors as errors
 import falcon.status_codes as status
-from falcon.util.misc import DeprecatedWarning
+from falcon.util.deprecation import DeprecatedWarning
 
 
 @pytest.mark.parametrize('err, title', [
