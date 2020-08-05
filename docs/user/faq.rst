@@ -1005,29 +1005,9 @@ The easiest way is to simply pass the ``cookies`` parameter into
         assert resp.json == {'cookies': {'cookie': 'cookie value'}}
 
 
-Alternatively, you can set the Cookie header directly, as showing in the
-following example.
+Alternatively, you can set the Cookie header directly as demonstrated in this version of ``test_cookies()``
 
 .. code:: python
-
-    import falcon
-    import falcon.testing
-    import pytest
-
-
-    class TastyCookies:
-
-        def on_get(self, req, resp):
-            resp.media = {'cookies': req.cookies}
-
-
-    @pytest.fixture
-    def client():
-        app = falcon.App()
-        app.add_route('/cookies', TastyCookies())
-
-        return falcon.testing.TestClient(app)
-
 
     def test_cookies(client):
         resp = client.simulate_get('/cookies', headers={'Cookie': 'xxx=yyy'})

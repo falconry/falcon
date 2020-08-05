@@ -607,6 +607,8 @@ def create_environ(path='/', query_string='', http_version='1.1',
     if content_length != 0:
         env['CONTENT_LENGTH'] = str(content_length)
 
+    # NOTE(myuz): Clients discard Set-Cookie header
+    #  in the response to the OPTIONS method.
     if cookies is not None and method != 'OPTIONS':
         cookies = [
             '{}={}'.format(key, cookie.value if hasattr(cookie, 'value') else cookie)
