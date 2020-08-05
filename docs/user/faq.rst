@@ -610,6 +610,20 @@ method, making it compatible with ``boto3``\'s
    pattern can be applied to any storage API that supports streaming directly
    from a file-like object.
 
+How do I parse a nested multipart form?
+---------------------------------------
+Falcon does not offer official support for parsing nested multipart forms
+(i.e., where multiple files for a single field are transmitted using a nested
+``multipart/mixed`` part) at this time. The usage is considered deprecated
+according to the `living HTML5 standard
+<https://html.spec.whatwg.org/multipage/form-control-infrastructure.html>`_ and
+`RFC 7578, Section 4.3 <https://tools.ietf.org/html/rfc7578#section-4.3>`_.
+
+.. tip::
+    If your app absolutely must deal with such legacy forms, the parser may
+    actually be capable of the task. See more in this recipe:
+    :ref:`nested-multipart-forms`.
+
 How do I retrieve a JSON value from the query string?
 -----------------------------------------------------
 To retrieve a JSON-encoded value from the query string, Falcon provides the
