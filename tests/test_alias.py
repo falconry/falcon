@@ -1,4 +1,4 @@
-# NOTE(mikeyusko): A file contains temporary tests for API alias
+# NOTE(myuz): A file contains temporary tests for API alias
 # and it will be deleted once the API alias will be removed
 
 import pytest

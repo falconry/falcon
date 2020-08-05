@@ -465,7 +465,7 @@ def create_environ(path='/', query_string='', http_version='1.1',
                    scheme='http', host=DEFAULT_HOST, port=None,
                    headers=None, app=None, body='', method='GET',
                    wsgierrors=None, file_wrapper=None, remote_addr=None,
-                   root_path=None) -> Dict[str, Any]:
+                   root_path=None, cookies=None) -> Dict[str, Any]:
 
     """Creates a mock PEP-3333 environ ``dict`` for simulating WSGI requests.
 
@@ -508,6 +508,10 @@ def create_environ(path='/', query_string='', http_version='1.1',
             the value for *wsgi.file_wrapper* in the environ.
         remote_addr (str): Remote address for the request to use as the
             'REMOTE_ADDR' environ variable (default None)
+        cookies (dict): Cookies as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of items provides the name and value
+            for the 'Set-Cookie' header.
 
     """
 
@@ -602,6 +606,15 @@ def create_environ(path='/', query_string='', http_version='1.1',
 
     if content_length != 0:
         env['CONTENT_LENGTH'] = str(content_length)
+
+    # NOTE(myuz): Clients discard Set-Cookie header
+    #  in the response to the OPTIONS method.
+    if cookies is not None and method != 'OPTIONS':
+        cookies = [
+            '{}={}'.format(key, cookie.value if hasattr(cookie, 'value') else cookie)
+            for key, cookie in cookies.items()
+        ]
+        env['HTTP_COOKIE'] = '; '.join(cookies)
 
     if headers is not None:
         _add_headers_to_environ(env, headers)

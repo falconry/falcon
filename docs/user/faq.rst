@@ -973,10 +973,10 @@ the tutorial in the docs provides an excellent introduction to
 
 (See also: `Testing <http://falcon.readthedocs.io/en/stable/api/testing.html>`_)
 
-How to set cookies in simulate request for testing?
----------------------------------------------------
+How can I set cookies when simulating requests?
+-----------------------------------------------
 
-This can be done by setting ``headers={'Cookie': 'xxx=yyy'}`` in
+The easiest way is to simply pass the ``cookies`` parameter into
 ``simulate_request``. Here is an example:
 
 .. code:: python
@@ -984,7 +984,6 @@ This can be done by setting ``headers={'Cookie': 'xxx=yyy'}`` in
     import falcon
     import falcon.testing
     import pytest
-
 
     class TastyCookies:
 
@@ -999,6 +998,16 @@ This can be done by setting ``headers={'Cookie': 'xxx=yyy'}`` in
 
         return falcon.testing.TestClient(app)
 
+
+    def test_cookies(client):
+        resp = client.simulate_get('/cookies', cookies={'cookie': 'cookie value'})
+
+        assert resp.json == {'cookies': {'cookie': 'cookie value'}}
+
+
+Alternatively, you can set the Cookie header directly as demonstrated in this version of ``test_cookies()``
+
+.. code:: python
 
     def test_cookies(client):
         resp = client.simulate_get('/cookies', headers={'Cookie': 'xxx=yyy'})
