@@ -140,7 +140,7 @@ class MultipartForm:
                     #
                     #   Currently, no deployed implementations that send such
                     #   bodies have been discovered.
-                    if name == b'content-transfer-encoding':
+                    if name == b'content-transfer-encoding' and value != b'binary':
                         raise MultipartParseError(
                             description=(
                                 'the deprecated Content-Transfer-Encoding '
