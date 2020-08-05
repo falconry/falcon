@@ -297,7 +297,7 @@ def test_resource_with_uri_fields_async():
         await resource.on_get(req, resp, '1', '2')
         assert resource.fields == ('1', '2')
 
-    testing.invoke_coroutine_sync(test_direct)
+    falcon.invoke_coroutine_sync(test_direct)
 
 
 @pytest.mark.parametrize(

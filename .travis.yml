@@ -33,11 +33,12 @@ matrix:
           env: TOXENV=py38
         - python: 3.8
           env: TOXENV=py38_cython
-        - python: 3.8
-          # NOTE(vytas): Big-endian architecture
-          arch: s390x
-          os: linux
-          env: TOXENV=py38_cython
+        # TODO(vytas): Re-enable if s390x starts booting again on Travis...
+        # - python: 3.8
+        #   # NOTE(vytas): Big-endian architecture
+        #   arch: s390x
+        #   os: linux
+        #   env: TOXENV=py38_cython
         - python: 3.9-dev
           env: TOXENV=py39
         - python: 3.8
