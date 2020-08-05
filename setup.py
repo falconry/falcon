@@ -63,8 +63,11 @@ if CYTHON:
         #       * https://github.com/cython/cython/issues/2273
         #       * https://bugs.python.org/issue38225
         #
+        # NOTE(vytas): It is pointless to cythonize reader.py, since cythonized
+        #   Falcon is using reader.pyx instead.
         'falcon.hooks',
         'falcon.responders',
+        'falcon.util.reader',
         'falcon.util.sync',
     ]
 

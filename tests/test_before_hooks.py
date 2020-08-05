@@ -385,7 +385,7 @@ def test_parser_async(body, doc):
         await resource.on_get(req, resp, doc)
         assert resource.doc == doc
 
-    testing.invoke_coroutine_sync(test_direct)
+    falcon.invoke_coroutine_sync(test_direct)
 
 
 def test_wrapped_resource(client, wrapped_resource):

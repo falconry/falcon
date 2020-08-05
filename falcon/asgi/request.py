@@ -717,7 +717,8 @@ class Request(falcon.request.Request):
                 self.content_length
             )
         finally:
-            await self.stream.exhaust()
+            if handler.exhaust_stream:
+                await self.stream.exhaust()
 
         return self._media
 

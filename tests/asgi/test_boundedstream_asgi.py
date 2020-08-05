@@ -3,6 +3,7 @@ import time
 
 import pytest
 
+import falcon
 from falcon import asgi, testing
 
 
@@ -108,7 +109,7 @@ def test_read_all(body, extra_body, set_content_length):
         assert s.closed
 
     for t in (test_iteration, test_readall_a, test_readall_b, test_readall_c, test_readall_d):
-        testing.invoke_coroutine_sync(t)
+        falcon.invoke_coroutine_sync(t)
 
 
 def test_filelike():
@@ -145,7 +146,7 @@ def test_filelike():
             async for chunk in s:
                 pass
 
-    testing.invoke_coroutine_sync(test_iteration)
+    falcon.invoke_coroutine_sync(test_iteration)
 
 
 @pytest.mark.parametrize('body', [
@@ -204,8 +205,8 @@ def test_read_chunks(body, chunk_size):
         assert b''.join(chunks) == body
 
     for t in (test_nonmixed, test_mixed_a, test_mixed_b, test_mixed_iter):
-        testing.invoke_coroutine_sync(t)
-        testing.invoke_coroutine_sync(t)
+        falcon.invoke_coroutine_sync(t)
+        falcon.invoke_coroutine_sync(t)
 
 
 def test_exhaust_with_disconnect():
@@ -224,7 +225,24 @@ def test_exhaust_with_disconnect():
         assert await s.read(100) == b''
         assert s.eof
 
-    testing.invoke_coroutine_sync(t)
+    falcon.invoke_coroutine_sync(t)
+
+
+@falcon.runs_sync
+async def test_exhaust():
+    emitter = testing.ASGIRequestEventEmitter(b'123456798' * 1024)
+    stream = asgi.BoundedStream(emitter)
+
+    assert await stream.read(1) == b'1'
+    assert await stream.read(6) == b'234567'
+    assert await stream.read(101) == b'98' + b'123456798' * 11
+
+    await stream.exhaust()
+
+    assert await stream.read(1) == b''
+    assert await stream.read(6) == b''
+    assert await stream.read(101) == b''
+    assert stream.eof
 
 
 def test_iteration_already_started():
@@ -248,7 +266,7 @@ def test_iteration_already_started():
 
         assert b''.join(chunks) == body
 
-    testing.invoke_coroutine_sync(t)
+    falcon.invoke_coroutine_sync(t)
 
 
 def _stream(body, content_length=None):
