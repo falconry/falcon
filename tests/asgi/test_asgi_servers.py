@@ -132,7 +132,7 @@ def _run_server_isolated(process_factory, host, port):
     if _WIN32:
         # NOTE(kgriffs): Calling server.terminate() is equivalent to
         #   server.kill() on Windows. We don't want to do the this;
-        #   forcefully killing a proc causes the Travis job to fail,
+        #   forcefully killing a proc causes the CI job to fail,
         #   regardless of the tox/pytest exit code. """
         #
         #   Instead, we send CTRL+C. This does require that the handler be
