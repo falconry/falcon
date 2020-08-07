@@ -1,0 +1,28 @@
+name: Run tests (big-endian)
+
+# Trigger the workflow manually.
+on: [workflow_dispatch]
+
+jobs:
+  run_tox_s390x:
+    name: tox -e py38_cython (s390x)
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Set up s390x binfmt
+        run: |
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+      - name: Run tox (big-endian)
+        uses: docker://s390x/python:3.8-buster
+        with:
+          args: |
+            /bin/bash -c "lscpu &&
+            pip install -U pip tox &&
+            python --version &&
+            pip --version &&
+            tox --version &&
+            tox -e py38_cython"

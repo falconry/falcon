@@ -8,7 +8,7 @@
     >
     </a>
 
-|Docs| |Build Status| |codecov.io|
+|Build Status| |Docs| |codecov.io|
 
 The Falcon Web Framework
 ========================
@@ -724,7 +724,7 @@ To test this example, open another terminal and run:
     $ http localhost:8000/1/things authorization:custom-token
 
 You can also view the the application configuration from the CLI via the
-`falcon-inspect-app` script that is bundled with the framework:
+``falcon-inspect-app`` script that is bundled with the framework:
 
 .. code:: bash
 
@@ -1032,7 +1032,7 @@ limitations under the License.
 .. |Runner| image:: https://a248.e.akamai.net/assets.github.com/images/icons/emoji/runner.png
     :width: 20
     :height: 20
-.. |Build Status| image:: https://travis-ci.org/falconry/falcon.svg
-   :target: https://travis-ci.org/falconry/falcon
+.. |Build Status| image:: https://github.com/falconry/falcon/workflows/Run%20tests/badge.svg
+   :target: https://github.com/falconry/falcon/actions?query=workflow%3A%22Run+tests%22
 .. |codecov.io| image:: https://codecov.io/gh/falconry/falcon/branch/master/graphs/badge.svg
    :target: http://codecov.io/gh/falconry/falcon
