@@ -28,7 +28,9 @@ from falcon.request import Request, RequestOptions
 import falcon.responders
 from falcon.response import Response, ResponseOptions
 import falcon.status_codes as status
+from falcon.util import deprecation
 from falcon.util import misc
+from falcon.util.misc import code_to_http_status
 
 
 # PERF(vytas): On Python 3.5+ (including cythonized modules),
@@ -152,7 +154,9 @@ class App:
 
         cors_enable (bool): Set this flag to ``True`` to enable a simple
             CORS policy for all responses, including support for preflighted
-            requests (default ``False``).
+            requests. An instance of :py:class:`~.CORSMiddleware` can instead be
+            passed to the middleware argument to customize its behaviour.
+            (default ``False``).
             (See also: :ref:`CORS <cors>`)
 
     Attributes:
@@ -342,7 +346,7 @@ class App:
 
             req_succeeded = False
 
-        resp_status = resp.status
+        resp_status = code_to_http_status(resp.status)
         default_media_type = self.resp_options.default_media_type
 
         if req.method == 'HEAD' or resp_status in _BODILESS_STATUS_CODES:
@@ -997,7 +1001,7 @@ class App:
         return [], 0
 
 
-# TODO(mikeyusko): This class is a compatibility alias, and should be removed
+# TODO(myuz): This class is a compatibility alias, and should be removed
 # in the next major release (4.0).
 class API(App):
     """
@@ -1011,6 +1015,7 @@ class API(App):
     removed in a future release.
     """
 
-    @misc.deprecated('API class may be removed in a future release, use falcon.App instead.')
+    @deprecation.deprecated('API class may be removed in a future release, '
+                            'use falcon.App instead.')
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

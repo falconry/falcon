@@ -22,13 +22,17 @@ from falcon.app_helpers import prepare_middleware
 from falcon.errors import CompatibilityError, UnsupportedError, UnsupportedScopeError
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
+from falcon.media.multipart import MultipartFormHandler
 import falcon.routing
 from falcon.util.misc import http_status_to_code, is_python_func
 from falcon.util.sync import _wrap_non_coroutine_unsafe, get_loop
+from .multipart import MultipartForm
 from .request import Request
 from .response import Response
 from .structures import SSEvent
 
+# TODO(vytas): Clean up these foul workarounds when we drop Python 3.5 support.
+MultipartFormHandler._ASGI_MULTIPART_FORM = MultipartForm  # type: ignore
 
 __all__ = ['App']
 
@@ -212,7 +216,9 @@ class App(falcon.app.App):
 
         cors_enable (bool): Set this flag to ``True`` to enable a simple
             CORS policy for all responses, including support for preflighted
-            requests (default ``False``).
+            requests. An instance of :py:class:`..CORSMiddleware` can instead be
+            passed to the middleware argument to customize its behaviour.
+            (default ``False``).
             (See also: :ref:`CORS <cors>`)
 
     Attributes:

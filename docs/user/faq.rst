@@ -612,6 +612,20 @@ method, making it compatible with ``boto3``\'s
    pattern can be applied to any storage API that supports streaming directly
    from a file-like object.
 
+How do I parse a nested multipart form?
+---------------------------------------
+Falcon does not offer official support for parsing nested multipart forms
+(i.e., where multiple files for a single field are transmitted using a nested
+``multipart/mixed`` part) at this time. The usage is considered deprecated
+according to the `living HTML5 standard
+<https://html.spec.whatwg.org/multipage/form-control-infrastructure.html>`_ and
+`RFC 7578, Section 4.3 <https://tools.ietf.org/html/rfc7578#section-4.3>`_.
+
+.. tip::
+    If your app absolutely must deal with such legacy forms, the parser may
+    actually be capable of the task. See more in this recipe:
+    :ref:`nested-multipart-forms`.
+
 How do I retrieve a JSON value from the query string?
 -----------------------------------------------------
 To retrieve a JSON-encoded value from the query string, Falcon provides the
@@ -963,10 +977,10 @@ the tutorial in the docs provides an excellent introduction to
 
 (See also: `Testing <http://falcon.readthedocs.io/en/stable/api/testing.html>`_)
 
-How to set cookies in simulate request for testing?
----------------------------------------------------
+How can I set cookies when simulating requests?
+-----------------------------------------------
 
-This can be done by setting ``headers={'Cookie': 'xxx=yyy'}`` in
+The easiest way is to simply pass the ``cookies`` parameter into
 ``simulate_request``. Here is an example:
 
 .. code:: python
@@ -974,7 +988,6 @@ This can be done by setting ``headers={'Cookie': 'xxx=yyy'}`` in
     import falcon
     import falcon.testing
     import pytest
-
 
     class TastyCookies:
 
@@ -989,6 +1002,16 @@ This can be done by setting ``headers={'Cookie': 'xxx=yyy'}`` in
 
         return falcon.testing.TestClient(app)
 
+
+    def test_cookies(client):
+        resp = client.simulate_get('/cookies', cookies={'cookie': 'cookie value'})
+
+        assert resp.json == {'cookies': {'cookie': 'cookie value'}}
+
+
+Alternatively, you can set the Cookie header directly as demonstrated in this version of ``test_cookies()``
+
+.. code:: python
 
     def test_cookies(client):
         resp = client.simulate_get('/cookies', headers={'Cookie': 'xxx=yyy'})

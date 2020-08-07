@@ -6,6 +6,11 @@ import falcon
 from falcon import App, status_codes, testing
 
 
+class CustomCookies:
+    def items(self):
+        return [('foo', 'bar'), ('baz', 'foo')]
+
+
 def another_dummy_wsgi_app(environ, start_response):
     start_response(status_codes.HTTP_OK, [('Content-Type', 'text/plain')])
 
@@ -82,7 +87,7 @@ def test_asgi_request_event_emitter_hang():
 
         assert (elapsed + 0.1) > expected_elasped_min
 
-    testing.invoke_coroutine_sync(t)
+    falcon.invoke_coroutine_sync(t)
 
 
 def test_ignore_extra_asgi_events():
@@ -97,7 +102,7 @@ def test_ignore_extra_asgi_events():
         await collect({'type': 'http.response.body'})
         assert len(collect.events) == 2
 
-    testing.invoke_coroutine_sync(t)
+    falcon.invoke_coroutine_sync(t)
 
 
 def test_invalid_asgi_events():
@@ -149,7 +154,7 @@ def test_invalid_asgi_events():
             # NOTE(kgriffs): Invalid type
             await collect({'type': 'http.response.bod'})
 
-    testing.invoke_coroutine_sync(t)
+    falcon.invoke_coroutine_sync(t)
 
 
 def test_is_asgi_app_cls():
@@ -192,3 +197,47 @@ def test_simulate_request_content_type():
     result = testing.simulate_post(
         app, '/', json={}, headers=headers, content_type=falcon.MEDIA_HTML)
     assert result.text == falcon.MEDIA_JSON
+
+
+@pytest.mark.parametrize('cookies', [
+    {'foo': 'bar', 'baz': 'foo'},
+    CustomCookies()
+])
+def test_create_environ_cookies(cookies):
+    environ = testing.create_environ(cookies=cookies)
+
+    assert environ['HTTP_COOKIE'] in ('foo=bar; baz=foo', 'baz=foo; foo=bar')
+
+
+def test_create_environ_cookies_options_method():
+    environ = testing.create_environ(method='OPTIONS', cookies={'foo': 'bar'})
+
+    assert 'HTTP_COOKIE' not in environ
+
+
+def test_cookies_jar():
+    class Foo:
+        def on_get(self, req, resp):
+            # NOTE(myuz): In the future we shouldn't change the cookie
+            #             a test depends on the input.
+            # NOTE(kgriffs): This is the only test that uses a single
+            #   cookie (vs. multiple) as input; if this input ever changes,
+            #   a separate test will need to be added to explicitly verify
+            #   this use case.
+            resp.set_cookie('has_permission', 'true')
+
+        def on_post(self, req, resp):
+            if req.cookies['has_permission'] == 'true':
+                resp.status = falcon.HTTP_200
+            else:
+                resp.status = falcon.HTTP_403
+
+    app = App()
+    app.add_route('/jars', Foo())
+
+    client = testing.TestClient(app)
+
+    response_one = client.simulate_get('/jars')
+    response_two = client.simulate_post('/jars', cookies=response_one.cookies)
+
+    assert response_two.status == falcon.HTTP_200

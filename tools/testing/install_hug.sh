@@ -2,7 +2,7 @@
 
 HUG_PATH=.ecosystem/hug
 
-# Clean up in case we are running locally and not in travis
+# Clean up in case we are running locally and not in CI
 rm -rf $HUG_PATH
 
 mkdir -p .ecosystem
