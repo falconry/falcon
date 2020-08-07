@@ -1,0 +1,118 @@
+name: Run tests
+
+on:
+  # NOTE(vytas): Trigger the tests workflow on push or pull request
+  #   (pull requests only for the master branch for now).
+  push:
+    branches:
+      - "*"
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  run_tox:
+    name: tox -e ${{ matrix.toxenv }} (${{matrix.python-version}} on ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.8"
+        os:
+          - "ubuntu-20.04"
+        toxenv:
+          - "pep8"
+          - "pep8-examples"
+          - "mypy"
+          - "py38"
+          - "py38_cython"
+          - "py38_smoke"
+          - "py38_smoke_cython"
+          - "docs"
+          - "look"
+          - "check_vendored"
+          - "twine_check"
+          # TODO(kgriffs): Re-enable once hug has a chance to address
+          # breaking changes in Falcon 3.0
+          # - "hug"
+        include:
+          - python-version: pypy3
+            os: ubuntu-20.04
+            toxenv: pypy3
+          - python-version: 3.5.2
+            os: ubuntu-16.04
+            toxenv: py35
+          - python-version: 3.6
+            os: ubuntu-20.04
+            toxenv: py36
+          - python-version: 3.6
+            os: ubuntu-20.04
+            toxenv: py36_cython
+          - python-version: 3.7
+            os: ubuntu-20.04
+            toxenv: py37
+          - python-version: 3.9.0-beta.5
+            os: ubuntu-20.04
+            toxenv: py39
+          - python-version: 3.9.0-beta.5
+            os: ubuntu-20.04
+            toxenv: py39_cython
+          - python-version: 3.8
+            os: macos-latest
+            toxenv: py38_nocover
+          - python-version: 3.8
+            os: windows-latest
+            toxenv: py38_nocover
+
+    # Steps to run in each job.
+    # Some are GitHub actions, others run shell commands.
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        if: ${{ matrix.toxenv != 'py35' }}
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Set up Python 3.5.2
+        if: ${{ matrix.toxenv == 'py35' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential curl python3.5 python3.5-dev
+          sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.5 10
+          curl -sSL https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
+          sudo python /tmp/get-pip.py
+          sudo pip install coverage tox
+
+      - name: Install smoke test dependencies
+        if: ${{ matrix.toxenv == 'py38_smoke' || matrix.toxenv == 'py38_smoke_cython' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libunwind-dev
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install coverage tox
+          python --version
+          pip --version
+          tox --version
+
+      - name: Run tests
+        run: tox -e ${{ matrix.toxenv }}
+
+      - name: Combine coverage
+        if: ${{ matrix.toxenv == 'py35' || matrix.toxenv == 'py38' }}
+        run: |
+          coverage --version
+          coverage combine
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        if: ${{ matrix.toxenv == 'py35' || matrix.toxenv == 'py38' }}
+        with:
+          env_vars: PYTHON
+          fail_ci_if_error: true
