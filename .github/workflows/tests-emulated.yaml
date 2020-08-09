@@ -6,11 +6,11 @@ on:
   push:
     branches:
       - master
-      - arm_action
+      - arm_action # TODO remove
 
 jobs:
   run_tox_emulate:
-    name: tox -e py38_cython (${{matrix.architecture}})
+    name: tox -e py38_cython (${{ matrix.architecture }})
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -28,7 +28,7 @@ jobs:
         with:
           path: |
             .pip
-          key: python-s390x
+          key: python-${{ matrix.architecture }}
 
       - name: Set up emulation
         run: |
