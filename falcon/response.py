@@ -56,13 +56,9 @@ class Response:
         options (dict): Set of global options passed from the App handler.
 
     Attributes:
-        status (str): HTTP status line (e.g., ``'200 OK'``). Falcon requires
-            the full status line, not just the code (e.g., 200). This design
-            makes the framework more efficient because it does not have to
-            do any kind of conversion or lookup when composing the WSGI
-            response.
-
-            If not set explicitly, the status defaults to ``'200 OK'``.
+        status: HTTP status code or line (e.g., ``'200 OK'``). This may be set
+            to a member of :class:`http.HTTPStatus`, an HTTP status line string
+            or byte string (e.g., ``'200 OK'``), or an ``int``.
 
             Note:
                 The Falcon framework itself provides a number of constants for

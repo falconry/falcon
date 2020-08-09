@@ -17,7 +17,8 @@
 from collections import OrderedDict
 import xml.etree.ElementTree as et
 
-from falcon.util import deprecated, deprecated_args, json, uri
+from falcon.util import json, uri
+from falcon.util.deprecation import deprecated, deprecated_args
 
 
 class HTTPError(Exception):

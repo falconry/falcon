@@ -1,6 +1,8 @@
 from contextlib import contextmanager
+import hashlib
 import os
 import platform
+import random
 import subprocess
 import sys
 import time
@@ -19,6 +21,7 @@ _WIN32 = sys.platform.startswith('win')
 
 _SERVER_HOST = '127.0.0.1'
 _SIZE_1_KB = 1024
+_SIZE_1_MB = _SIZE_1_KB ** 2
 
 
 _REQUEST_TIMEOUT = 10
@@ -41,6 +44,29 @@ class TestASGIServer:
         body = '{}'
         resp = requests.head(server_base_url, data=body, timeout=_REQUEST_TIMEOUT)
         assert resp.status_code == 405
+
+    def test_post_multipart_form(self, server_base_url):
+        size = random.randint(16 * _SIZE_1_MB, 32 * _SIZE_1_MB)
+        data = os.urandom(size)
+        digest = hashlib.sha1(data).hexdigest()
+        files = {
+            'random': ('random.dat', data),
+            'message': ('hello.txt', b'Hello, World!\n'),
+        }
+
+        resp = requests.post(
+            server_base_url + 'forms', files=files, timeout=_REQUEST_TIMEOUT)
+        assert resp.status_code == 200
+        assert resp.json() == {
+            'message': {
+                'filename': 'hello.txt',
+                'sha1': '60fde9c2310b0d4cad4dab8d126b04387efba289',
+            },
+            'random': {
+                'filename': 'random.dat',
+                'sha1': digest,
+            },
+        }
 
     def test_post_multiple(self, server_base_url):
         body = testing.rand_string(_SIZE_1_KB / 2, _SIZE_1_KB)
@@ -106,7 +132,7 @@ def _run_server_isolated(process_factory, host, port):
     if _WIN32:
         # NOTE(kgriffs): Calling server.terminate() is equivalent to
         #   server.kill() on Windows. We don't want to do the this;
-        #   forcefully killing a proc causes the Travis job to fail,
+        #   forcefully killing a proc causes the CI job to fail,
         #   regardless of the tox/pytest exit code. """
         #
         #   Instead, we send CTRL+C. This does require that the handler be

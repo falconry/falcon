@@ -35,6 +35,7 @@ from falcon.util import (
     get_loop,
     http_cookies,
     http_date_to_dt,
+    invoke_coroutine_sync,
     json as util_json,
     to_query_str,
 )
@@ -161,6 +162,13 @@ class Result:
         cookies (dict): A dictionary of
             :py:class:`falcon.testing.Cookie` values parsed from the
             response, by name.
+
+            The cookies dictionary can be used directly in subsequent requests::
+
+                client = testing.TestClient(app)
+                response_one = client.simulate_get('/')
+                response_two = client.simulate_post('/', cookies=response_one.cookies)
+
         encoding (str): Text encoding of the response body, or ``None``
             if the encoding can not be determined.
         content (bytes): Raw response body, or ``bytes`` if the
@@ -256,9 +264,9 @@ class Result:
 def simulate_request(app, method='GET', path='/', query_string=None,
                      headers=None, content_type=None, body=None, json=None,
                      file_wrapper=None, wsgierrors=None, params=None,
-                     params_csv=True, protocol='http', host=helpers.DEFAULT_HOST,
+                     params_csv=False, protocol='http', host=helpers.DEFAULT_HOST,
                      remote_addr=None, extras=None, http_version='1.1',
-                     port=None, root_path=None, asgi_chunk_size=4096,
+                     port=None, root_path=None, cookies=None, asgi_chunk_size=4096,
                      asgi_disconnect_ttl=300) -> Result:
 
     """Simulates a request to a WSGI or ASGI application.
@@ -293,11 +301,11 @@ def simulate_request(app, method='GET', path='/', query_string=None,
             into a ``str``, or a list of such values. If a ``list``,
             the value will be converted to a comma-delimited string
             of values (e.g., 'thing=1,2,3').
-        params_csv (bool): Set to ``False`` to encode list values
-            in query string params by specifying multiple instances
-            of the parameter (e.g., 'thing=1&thing=2&thing=3').
-            Otherwise, parameters will be encoded as comma-separated
-            values (e.g., 'thing=1,2,3'). Defaults to ``True``.
+        params_csv (bool): Set to ``True`` to encode list values
+            in query string params as comma-separated values
+            (e.g., 'thing=1,2,3'). Otherwise, parameters will be encoded by
+            specifying multiple instances of the parameter
+            (e.g., 'thing=1&thing=2&thing=3'). Defaults to ``False``.
         query_string (str): A raw query string to include in the
             request (default: ``None``). If specified, overrides
             `params`.
@@ -349,6 +357,10 @@ def simulate_request(app, method='GET', path='/', query_string=None,
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
+        cookies (dict): Cookies as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of items provides the name and value
+            for the 'Set-Cookie' header.
 
     Returns:
         :py:class:`~.Result`: The result of the request
@@ -401,6 +413,7 @@ def simulate_request(app, method='GET', path='/', query_string=None,
             http_version=http_version,
             port=port,
             root_path=root_path,
+            cookies=cookies,
         )
 
         if 'REQUEST_METHOD' in extras and extras['REQUEST_METHOD'] != method:
@@ -502,7 +515,7 @@ def simulate_request(app, method='GET', path='/', query_string=None,
         await _wait_for_shutdown(lifespan_event_collector.events)
         await t
 
-    helpers.invoke_coroutine_sync(conductor)
+    invoke_coroutine_sync(conductor)
 
     return Result(resp_event_collector.body_chunks,
                   code_to_http_status(resp_event_collector.status),
@@ -543,11 +556,11 @@ def simulate_get(app, path, **kwargs) -> Result:
             into a ``str``, or a list of such values. If a ``list``,
             the value will be converted to a comma-delimited string
             of values (e.g., 'thing=1,2,3').
-        params_csv (bool): Set to ``False`` to encode list values
-            in query string params by specifying multiple instances
-            of the parameter (e.g., 'thing=1&thing=2&thing=3').
-            Otherwise, parameters will be encoded as comma-separated
-            values (e.g., 'thing=1,2,3'). Defaults to ``True``.
+        params_csv (bool): Set to ``True`` to encode list values
+            in query string params as comma-separated values
+            (e.g., 'thing=1,2,3'). Otherwise, parameters will be encoded by
+            specifying multiple instances of the parameter
+            (e.g., 'thing=1&thing=2&thing=3'). Defaults to ``False``.
         query_string (str): A raw query string to include in the
             request (default: ``None``). If specified, overrides
             `params`.
@@ -586,6 +599,10 @@ def simulate_get(app, path, **kwargs) -> Result:
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
+        cookies (dict): Cookies as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of items provides the name and value
+            for the 'Set-Cookie' header.
 
     Returns:
         :py:class:`~.Result`: The result of the request
@@ -627,11 +644,11 @@ def simulate_head(app, path, **kwargs) -> Result:
             into a ``str``, or a list of such values. If a ``list``,
             the value will be converted to a comma-delimited string
             of values (e.g., 'thing=1,2,3').
-        params_csv (bool): Set to ``False`` to encode list values
-            in query string params by specifying multiple instances
-            of the parameter (e.g., 'thing=1&thing=2&thing=3').
-            Otherwise, parameters will be encoded as comma-separated
-            values (e.g., 'thing=1,2,3'). Defaults to ``True``.
+        params_csv (bool): Set to ``True`` to encode list values
+            in query string params as comma-separated values
+            (e.g., 'thing=1,2,3'). Otherwise, parameters will be encoded by
+            specifying multiple instances of the parameter
+            (e.g., 'thing=1&thing=2&thing=3'). Defaults to ``False``.
         query_string (str): A raw query string to include in the
             request (default: ``None``). If specified, overrides
             `params`.
@@ -665,6 +682,10 @@ def simulate_head(app, path, **kwargs) -> Result:
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
+        cookies (dict): Cookies as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of items provides the name and value
+            for the 'Set-Cookie' header.
 
     Returns:
         :py:class:`~.Result`: The result of the request
@@ -701,11 +722,11 @@ def simulate_post(app, path, **kwargs) -> Result:
             into a ``str``, or a list of such values. If a ``list``,
             the value will be converted to a comma-delimited string
             of values (e.g., 'thing=1,2,3').
-        params_csv (bool): Set to ``False`` to encode list values
-            in query string params by specifying multiple instances
-            of the parameter (e.g., 'thing=1&thing=2&thing=3').
-            Otherwise, parameters will be encoded as comma-separated
-            values (e.g., 'thing=1,2,3'). Defaults to ``True``.
+        params_csv (bool): Set to ``True`` to encode list values
+            in query string params as comma-separated values
+            (e.g., 'thing=1,2,3'). Otherwise, parameters will be encoded by
+            specifying multiple instances of the parameter
+            (e.g., 'thing=1&thing=2&thing=3'). Defaults to ``False``.
         query_string (str): A raw query string to include in the
             request (default: ``None``). If specified, overrides
             `params`.
@@ -757,6 +778,10 @@ def simulate_post(app, path, **kwargs) -> Result:
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
+        cookies (dict): Cookies as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of items provides the name and value
+            for the 'Set-Cookie' header.
 
     Returns:
         :py:class:`~.Result`: The result of the request
@@ -793,11 +818,11 @@ def simulate_put(app, path, **kwargs) -> Result:
             into a ``str``, or a list of such values. If a ``list``,
             the value will be converted to a comma-delimited string
             of values (e.g., 'thing=1,2,3').
-        params_csv (bool): Set to ``False`` to encode list values
-            in query string params by specifying multiple instances
-            of the parameter (e.g., 'thing=1&thing=2&thing=3').
-            Otherwise, parameters will be encoded as comma-separated
-            values (e.g., 'thing=1,2,3'). Defaults to ``True``.
+        params_csv (bool): Set to ``True`` to encode list values
+            in query string params as comma-separated values
+            (e.g., 'thing=1,2,3'). Otherwise, parameters will be encoded by
+            specifying multiple instances of the parameter
+            (e.g., 'thing=1&thing=2&thing=3'). Defaults to ``False``.
         query_string (str): A raw query string to include in the
             request (default: ``None``). If specified, overrides
             `params`.
@@ -849,6 +874,10 @@ def simulate_put(app, path, **kwargs) -> Result:
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
+        cookies (dict): Cookies as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of items provides the name and value
+            for the 'Set-Cookie' header.
 
     Returns:
         :py:class:`~.Result`: The result of the request
@@ -885,11 +914,11 @@ def simulate_options(app, path, **kwargs) -> Result:
             into a ``str``, or a list of such values. If a ``list``,
             the value will be converted to a comma-delimited string
             of values (e.g., 'thing=1,2,3').
-        params_csv (bool): Set to ``False`` to encode list values
-            in query string params by specifying multiple instances
-            of the parameter (e.g., 'thing=1&thing=2&thing=3').
-            Otherwise, parameters will be encoded as comma-separated
-            values (e.g., 'thing=1,2,3'). Defaults to ``True``.
+        params_csv (bool): Set to ``True`` to encode list values
+            in query string params as comma-separated values
+            (e.g., 'thing=1,2,3'). Otherwise, parameters will be encoded by
+            specifying multiple instances of the parameter
+            (e.g., 'thing=1&thing=2&thing=3'). Defaults to ``False``.
         query_string (str): A raw query string to include in the
             request (default: ``None``). If specified, overrides
             `params`.
@@ -959,11 +988,11 @@ def simulate_patch(app, path, **kwargs) -> Result:
             into a ``str``, or a list of such values. If a ``list``,
             the value will be converted to a comma-delimited string
             of values (e.g., 'thing=1,2,3').
-        params_csv (bool): Set to ``False`` to encode list values
-            in query string params by specifying multiple instances
-            of the parameter (e.g., 'thing=1&thing=2&thing=3').
-            Otherwise, parameters will be encoded as comma-separated
-            values (e.g., 'thing=1,2,3'). Defaults to ``True``.
+        params_csv (bool): Set to ``True`` to encode list values
+            in query string params as comma-separated values
+            (e.g., 'thing=1,2,3'). Otherwise, parameters will be encoded by
+            specifying multiple instances of the parameter
+            (e.g., 'thing=1&thing=2&thing=3'). Defaults to ``False``.
         query_string (str): A raw query string to include in the
             request (default: ``None``). If specified, overrides
             `params`.
@@ -1010,6 +1039,10 @@ def simulate_patch(app, path, **kwargs) -> Result:
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
+        cookies (dict): Cookies as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of items provides the name and value
+            for the 'Set-Cookie' header.
 
     Returns:
         :py:class:`~.Result`: The result of the request
@@ -1046,11 +1079,11 @@ def simulate_delete(app, path, **kwargs) -> Result:
             into a ``str``, or a list of such values. If a ``list``,
             the value will be converted to a comma-delimited string
             of values (e.g., 'thing=1,2,3').
-        params_csv (bool): Set to ``False`` to encode list values
-            in query string params by specifying multiple instances
-            of the parameter (e.g., 'thing=1&thing=2&thing=3').
-            Otherwise, parameters will be encoded as comma-separated
-            values (e.g., 'thing=1,2,3'). Defaults to ``True``.
+        params_csv (bool): Set to ``True`` to encode list values
+            in query string params as comma-separated values
+            (e.g., 'thing=1,2,3'). Otherwise, parameters will be encoded by
+            specifying multiple instances of the parameter
+            (e.g., 'thing=1&thing=2&thing=3'). Defaults to ``False``.
         query_string (str): A raw query string to include in the
             request (default: ``None``). If specified, overrides
             `params`.
@@ -1097,6 +1130,10 @@ def simulate_delete(app, path, **kwargs) -> Result:
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
+        cookies (dict): Cookies as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of items provides the name and value
+            for the 'Set-Cookie' header.
 
     Returns:
         :py:class:`~.Result`: The result of the request

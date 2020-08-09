@@ -17,5 +17,5 @@ ujson
 
 python-rapidjson
 
-# TODO(kgriffs): orjson is failing to build on Travis
+# TODO(kgriffs): orjson is failing to build on CI
 orjson; platform_python_implementation != 'PyPy' and platform_machine != 's390x'
