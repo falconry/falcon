@@ -58,10 +58,7 @@ def test_empty_form(client):
         '/media',
         headers={'Content-Type': 'application/x-www-form-urlencoded'})
 
-    # TODO(kgriffs): The ASGI side implements the recommended fixes from
-    #   https://github.com/falconry/falcon/issues/1589 so we will need to
-    #   update this assert once the WSGI side has been updated to suit.
-    assert resp.content == (b'{}' if client.app._ASGI else b'')
+    assert resp.content == b'{}'
 
 
 @pytest.mark.parametrize('body,expected', [

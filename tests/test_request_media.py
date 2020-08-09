@@ -21,9 +21,9 @@ def create_client(asgi, handlers=None, resource=None):
     return client
 
 
-@pytest.fixture(params=[True, False])
-def client(request):
-    return create_client(request.param)
+@pytest.fixture()
+def client(asgi):
+    return create_client(asgi)
 
 
 class ResourceCachedMedia:
@@ -94,14 +94,14 @@ def test_msgpack(asgi, media_type):
 
     # Bytes
     expected_body = b'\x81\xc4\tsomething\xc3'
-    client.simulate_post('/', body=expected_body, headers=headers)
+    assert client.simulate_post('/', body=expected_body, headers=headers).status_code == 200
 
     req_media = client.resource.captured_req_media
     assert req_media.get(b'something') is True
 
     # Unicode
     expected_body = b'\x81\xa9something\xc3'
-    client.simulate_post('/', body=expected_body, headers=headers)
+    assert client.simulate_post('/', body=expected_body, headers=headers).status_code == 200
 
     req_media = client.resource.captured_req_media
     assert req_media.get('something') is True
@@ -114,7 +114,7 @@ def test_unknown_media_type(asgi, media_type):
     client = _create_client_invalid_media(asgi, errors.HTTPUnsupportedMediaType)
 
     headers = {'Content-Type': media_type}
-    client.simulate_post('/', body=b'something', headers=headers)
+    assert client.simulate_post('/', body=b'something', headers=headers).status_code == 200
 
     title_msg = '415 Unsupported Media Type'
     description_msg = '{} is an unsupported media type.'.format(media_type)
@@ -123,16 +123,18 @@ def test_unknown_media_type(asgi, media_type):
 
 
 @pytest.mark.parametrize('media_type', [
-    ('application/json'),
+    'application/json',
+    'application/msgpack'
 ])
-def test_exhausted_stream(asgi, media_type):
-    client = create_client(asgi, {
+def test_empty_body(asgi, media_type):
+    client = _create_client_invalid_media(asgi, errors.HTTPBadRequest, {
+        'application/msgpack': media.MessagePackHandler(),
         'application/json': media.JSONHandler(),
     })
     headers = {'Content-Type': media_type}
-    client.simulate_post('/', body='', headers=headers)
+    assert client.simulate_post('/', headers=headers).status_code == 200
 
-    assert client.resource.captured_req_media is None
+    assert 'Could not parse' in client.resource.captured_error.value.description
 
 
 def test_invalid_json(asgi):
@@ -140,7 +142,7 @@ def test_invalid_json(asgi):
 
     expected_body = b'{'
     headers = {'Content-Type': 'application/json'}
-    client.simulate_post('/', body=expected_body, headers=headers)
+    assert client.simulate_post('/', body=expected_body, headers=headers).status_code == 200
 
     assert 'Could not parse JSON body' in client.resource.captured_error.value.description
 
@@ -153,20 +155,10 @@ def test_invalid_msgpack(asgi):
 
     expected_body = '/////////////////////'
     headers = {'Content-Type': 'application/msgpack'}
-    client.simulate_post('/', body=expected_body, headers=headers)
+    assert client.simulate_post('/', body=expected_body, headers=headers).status_code == 200
 
     desc = 'Could not parse MessagePack body - unpack(b) received extra data.'
     assert client.resource.captured_error.value.description == desc
-
-
-def test_invalid_stream_fails_gracefully(client):
-    client.simulate_post('/')
-
-    req = client.resource.captured_req
-    req.headers['Content-Type'] = 'application/json'
-    req._bounded_stream = None
-
-    assert client.resource.captured_req_media is None
 
 
 class NopeHandler(media.BaseHandler):
@@ -187,7 +179,7 @@ def test_complete_consumption(asgi):
     body = b'{"something": "abracadabra"}'
     headers = {'Content-Type': 'nope/nope'}
 
-    client.simulate_post('/', body=body, headers=headers)
+    assert client.simulate_post('/', body=body, headers=headers).status_code == 200
 
     req_media = client.resource.captured_req_media
     assert req_media is None
@@ -199,13 +191,14 @@ def test_complete_consumption(asgi):
 def test_empty_json_media(asgi, payload):
     resource = ResourceCachedMediaAsync() if asgi else ResourceCachedMedia()
     client = create_client(asgi, resource=resource)
-    client.simulate_post('/', json=payload)
+    assert client.simulate_post('/', json=payload).status_code == 200
     assert resource.captured_req_media == payload
 
 
 def test_null_json_media(client):
-    client.simulate_post('/', body='null',
-                         headers={'Content-Type': 'application/json'})
+    assert client.simulate_post(
+        '/', body='null', headers={'Content-Type': 'application/json'}
+        ).status_code == 200
     assert client.resource.captured_req_media is None
 
 
@@ -213,3 +206,37 @@ def _create_client_invalid_media(asgi, error_type, handlers=None):
     resource_type = ResourceInvalidMediaAsync if asgi else ResourceInvalidMedia
     resource = resource_type(error_type)
     return create_client(asgi, handlers=handlers, resource=resource)
+
+
+class FallBack:
+    def on_get(self, req, res):
+        res.media = req.get_media('fallback')
+
+
+class FallBackAsync:
+    async def on_get(self, req, res):
+        res.media = await req.get_media('fallback')
+
+
+def test_fallback(asgi):
+    client = create_client(asgi, resource=FallBackAsync() if asgi else FallBack())
+
+    res = client.simulate_get('/')
+    assert res.status_code == 200
+    assert res.json == 'fallback'
+
+
+def test_fallback_not_for_error_body(asgi):
+    client = create_client(asgi,  resource=FallBackAsync() if asgi else FallBack())
+
+    res = client.simulate_get('/', body=b'{')
+    assert res.status_code == 400
+    assert 'Could not parse JSON body' in res.json['description']
+
+
+def test_fallback_does_not_override_media_default(asgi):
+    client = create_client(asgi,  resource=FallBackAsync() if asgi else FallBack())
+
+    res = client.simulate_get('/', headers={'Content-Type': 'application/x-www-form-urlencoded'})
+    assert res.status_code == 200
+    assert res.text == '{}'

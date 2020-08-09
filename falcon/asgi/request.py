@@ -27,6 +27,8 @@ from .stream import BoundedStream
 
 __all__ = ['Request']
 
+_UNSET = falcon.request._UNSET
+
 
 class Request(falcon.request.Request):
     """Represents a client's HTTP request.
@@ -381,7 +383,7 @@ class Request(falcon.request.Request):
         self.method = scope['method']
 
         self.uri_template = None
-        self._media = None
+        self._media = _UNSET
 
         # TODO(kgriffs): ASGI does not specify whether 'path' may be empty,
         #   as was allowed for WSGI.
@@ -677,7 +679,7 @@ class Request(falcon.request.Request):
 
         return netloc_value
 
-    async def get_media(self):
+    async def get_media(self, when_empty_fallback=_UNSET):
         """Returns a deserialized form of the request stream.
 
         The first time this method is called, the request stream will be
@@ -693,16 +695,31 @@ class Request(falcon.request.Request):
 
         See also :ref:`media` for more information regarding media handling.
 
+        Note:
+            When ``get_media`` is called on a request with an empty body,
+            falcon will let the media handler try to deserialize the body
+            and will return the value returned by the handler or propagate
+            the exception raised by it. To instead return a different value
+            in case of an exception by the handler, specify the argument
+            ``when_empty_fallback``.
+
         Warning:
             This operation will consume the request stream the first time
             it's called and cache the results. Follow-up calls will just
             retrieve a cached version of the object.
 
+        Args:
+            when_empty_fallback: Fallback value to return when there is no body
+                in the request and the media handler raises an error
+                (like in the case of the default JSON media handler).
+                By default falcon use the value returned by the media handler
+                or propagate the raised exception.
+
         Returns:
             media (object): The deserialized media representation.
         """
 
-        if self._media is not None or self.stream.eof:
+        if self._media is not _UNSET:
             return self._media
 
         handler = self.options.media_handlers.find_by_media_type(
@@ -716,6 +733,10 @@ class Request(falcon.request.Request):
                 self.content_type,
                 self.content_length
             )
+        except Exception:
+            if when_empty_fallback is _UNSET or self.stream.tell() != 0:
+                raise
+            self._media = when_empty_fallback
         finally:
             if handler.exhaust_stream:
                 await self.stream.exhaust()

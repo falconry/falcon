@@ -1,0 +1,3 @@
+Deserializing an empty JSON body on a request will return a BadRequest.
+Previously the ``None`` was returned. To retain the current behaviour
+please use ``req.get_media(None)``. See also :meth:`Request.get_media`
