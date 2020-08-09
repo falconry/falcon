@@ -17,6 +17,7 @@
 from http import cookies as http_cookies
 import re
 
+# TODO: BoundedStream  import here is for backwards-compatibility and it should be removed in Falcon 4.0
 from falcon.stream import BoundedStream
 from falcon.util import ETag
 
