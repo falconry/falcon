@@ -1,2 +1,2 @@
-The class :class:`~.falcon.request_helpers.BoundedStream` was deprecated.
+Refrencing the :class:`~.falcon.request_helpers.BoundedStream` through the old module is deprecated.
 It is now accessible from :class:`falcon.stream.BoundedStream`
