@@ -198,7 +198,7 @@ def test_empty_json_media(asgi, payload):
 def test_null_json_media(client):
     assert client.simulate_post(
         '/', body='null', headers={'Content-Type': 'application/json'}
-        ).status_code == 200
+    ).status_code == 200
     assert client.resource.captured_req_media is None
 
 
@@ -227,7 +227,7 @@ def test_fallback(asgi):
 
 
 def test_fallback_not_for_error_body(asgi):
-    client = create_client(asgi,  resource=FallBackAsync() if asgi else FallBack())
+    client = create_client(asgi, resource=FallBackAsync() if asgi else FallBack())
 
     res = client.simulate_get('/', body=b'{')
     assert res.status_code == 400
@@ -235,7 +235,7 @@ def test_fallback_not_for_error_body(asgi):
 
 
 def test_fallback_does_not_override_media_default(asgi):
-    client = create_client(asgi,  resource=FallBackAsync() if asgi else FallBack())
+    client = create_client(asgi, resource=FallBackAsync() if asgi else FallBack())
 
     res = client.simulate_get('/', headers={'Content-Type': 'application/x-www-form-urlencoded'})
     assert res.status_code == 200
