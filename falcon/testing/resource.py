@@ -28,8 +28,6 @@ from json import dumps as json_dumps
 
 import falcon
 
-_UNSET = object()
-
 
 def capture_responder_args(req, resp, resource, params):
     """Before hook for capturing responder arguments.
