@@ -32,6 +32,19 @@ class Image:
             'size': self.size,
         }
 
+    def thumbnails(self):
+        def reductions(size, min_size):
+            width, height = size
+            factor = 2
+            while width // factor >= min_size and height // factor >= min_size:
+                yield (width // factor, height // factor)
+                factor *= 2
+
+        return [
+            f'/thumbnails/{self.image_id}/{width}x{height}.jpeg'
+            for width, height in reductions(
+                self.size, self.config.min_thumb_size)]
+
 
 class Store:
 
@@ -49,11 +62,26 @@ class Store:
         rgb_image.save(converted, 'JPEG')
         return converted.getvalue()
 
+    def _resize(self, data, size):
+        image = PIL.Image.open(io.BytesIO(data))
+        image.thumbnail(size)
+
+        resized = io.BytesIO()
+        image.save(resized, 'JPEG')
+        return resized.getvalue()
+
     def get(self, image_id):
         return self._images.get(image_id)
 
     def list_images(self):
         return sorted(self._images.values(), key=lambda item: item.modified)
+
+    async def make_thumbnail(self, image, size):
+        async with aiofiles.open(image.path, 'rb') as img_file:
+            data = await img_file.read()
+
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, self._resize, data, size)
 
     async def save(self, image_id, data):
         loop = asyncio.get_running_loop()
