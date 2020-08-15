@@ -221,7 +221,7 @@ async def test_varying_read_size(reader2, start_size):
             break
 
         result.write(chunk)
-        size += 1
+        size += 7
 
     assert result.getvalue() == DATA2
 
@@ -354,7 +354,7 @@ async def test_small_reads(reader3):
     size = 0
 
     while True:
-        size = max(1, (size + ops) % 137)
+        size = max(1, (size + ops) % 1337)
         chunk = await reader3.read(size)
         if not chunk:
             break
@@ -363,7 +363,7 @@ async def test_small_reads(reader3):
         read += len(chunk)
         last = chunk
 
-    assert ops == 50740
+    assert ops == 4833
     assert read == len(DATA3)
     assert last.endswith(b'4')
 
