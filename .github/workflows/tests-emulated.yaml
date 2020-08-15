@@ -6,7 +6,6 @@ on:
   push:
     branches:
       - master
-      - arm_action # TODO remove
 
 jobs:
   run_tox_emulate:
