@@ -78,7 +78,7 @@ defined below.
 
     .. tab:: ASGI
 
-        The ASGI middleware interface is similar to ASGI, but also supports the
+        The ASGI middleware interface is similar to WSGI, but also supports the
         standard ASGI lifespan events. However, because lifespan events are an
         optional part of the ASGI specification, they may or may not fire depending
         on your ASGI server.
