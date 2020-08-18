@@ -91,7 +91,7 @@ else:
 
 
 def is_python_func(func):
-    """Determines if a function or method uses a standard Python type.
+    """Determine if a function or method uses a standard Python type.
 
     This helper can be used to check a function or method to determine if it
     uses a standard Python type, as opposed to an implementation-specific
@@ -115,7 +115,7 @@ def is_python_func(func):
 
 
 def http_now():
-    """Returns the current UTC time as an IMF-fixdate.
+    """Return the current UTC time as an IMF-fixdate.
 
     Returns:
         str: The current UTC time as an IMF-fixdate,
@@ -126,7 +126,7 @@ def http_now():
 
 
 def dt_to_http(dt):
-    """Converts a ``datetime`` instance to an HTTP date string.
+    """Convert a ``datetime`` instance to an HTTP date string.
 
     Args:
         dt (datetime): A ``datetime`` instance to convert, assumed to be UTC.
@@ -141,7 +141,7 @@ def dt_to_http(dt):
 
 
 def http_date_to_dt(http_date, obs_date=False):
-    """Converts an HTTP date string to a datetime instance.
+    """Convert an HTTP date string to a datetime instance.
 
     Args:
         http_date (str): An RFC 1123 date string, e.g.:
@@ -187,7 +187,7 @@ def http_date_to_dt(http_date, obs_date=False):
 
 
 def to_query_str(params, comma_delimited_lists=True, prefix=True):
-    """Converts a dictionary of parameters to a query string.
+    """Convert a dictionary of parameters to a query string.
 
     Args:
         params (dict): A dictionary of parameters, where each key is
@@ -272,7 +272,7 @@ def get_bound_method(obj, method_name):
 
 
 def get_argnames(func):
-    """Introspecs the arguments of a callable.
+    """Introspect the arguments of a callable.
 
     Args:
         func: The callable to introspect
@@ -301,7 +301,7 @@ def get_argnames(func):
 
 @deprecated('Please use falcon.code_to_http_status() instead.')
 def get_http_status(status_code, default_reason=_DEFAULT_HTTP_REASON):
-    """Gets both the http status code and description from just a code.
+    """Get both the http status code and description from just a code.
 
     Warning:
         As of Falcon 3.0, this method has been deprecated in favor of
