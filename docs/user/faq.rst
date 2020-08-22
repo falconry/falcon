@@ -866,16 +866,21 @@ cookie in subsequent requests.
 
 (See also the :ref:`cookie documentation <cookie-secure-attribute>`.)
 
-How can I serve a downloadable file with falcon?
+.. _serve-downloadable-as:
+
+How can I serve a downloadable file with Falcon?
 ------------------------------------------------
 In the ``on_get()`` responder method for the resource, you can tell the user
 agent to download the file by setting the Content-Disposition header. Falcon
-includes the :attr:`~falcon.Request.downloadable_as` property to make this
+includes the :attr:`~falcon.Response.downloadable_as` property to make this
 easy:
 
 .. code:: python
 
     resp.downloadable_as = 'report.pdf'
+
+See also the :ref:`outputting_csv_recipe` recipe for a more involved example of
+dynamically generated downloadable content.
 
 Can Falcon serve static files?
 ------------------------------
