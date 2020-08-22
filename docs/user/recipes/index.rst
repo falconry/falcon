@@ -6,5 +6,6 @@ Recipes
 
    header-name-case
    multipart-mixed
+   output-csv
    pretty-json
    request-id
