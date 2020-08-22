@@ -77,9 +77,9 @@ class HelloResource:
 
         if 'body' in self.mode:
             if 'bytes' in self.mode:
-                resp.body = self.sample_utf8
+                resp.text = self.sample_utf8
             else:
-                resp.body = self.sample_unicode
+                resp.text = self.sample_unicode
 
         if 'data' in self.mode:
             resp.data = self.sample_utf8
@@ -160,8 +160,8 @@ class TestHelloWorld:
         assert result.status_code == 404
 
     @pytest.mark.parametrize('path,resource,get_body', [
-        ('/body', HelloResource('body'), lambda r: r.body.encode('utf-8')),
-        ('/bytes', HelloResource('body, bytes'), lambda r: r.body),
+        ('/body', HelloResource('body'), lambda r: r.text.encode('utf-8')),
+        ('/bytes', HelloResource('body, bytes'), lambda r: r.text),
         ('/data', HelloResource('data'), lambda r: r.data),
     ])
     def test_body(self, client, path, resource, get_body):

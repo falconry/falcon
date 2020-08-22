@@ -95,7 +95,7 @@ def set_resp_defaults(req, resp, resource, params):
         resp.status = resource._default_status
 
     if resource._default_body is not None:
-        resp.body = resource._default_body
+        resp.text = resource._default_body
 
     if resource._default_headers is not None:
         resp.set_headers(resource._default_headers)

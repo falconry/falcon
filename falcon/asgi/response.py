@@ -50,20 +50,22 @@ class Response(falcon.response.Response):
                 See also :ref:`media` for more information regarding media
                 handling.
 
-        body (str): String representing response content.
+        text (str): String representing response content.
 
             Note:
                 Falcon will encode the given text as UTF-8
                 in the response. If the content is already a byte string,
                 use the :attr:`data` attribute instead (it's faster).
 
+        body (str): Deprecated alias for :attr:`text`.
+
         data (bytes): Byte string representing response content.
 
-            Use this attribute in lieu of `body` when your content is
+            Use this attribute in lieu of `text` when your content is
             already a byte string (of type ``bytes``).
 
             Warning:
-                Always use the `body` attribute for text, or encode it
+                Always use the `text` attribute for text, or encode it
                 first to ``bytes`` when using the `data` attribute, to
                 ensure Unicode characters are properly encoded in the
                 HTTP response.
@@ -141,7 +143,7 @@ class Response(falcon.response.Response):
 
             Note:
                 When the `sse` property is set, it supersedes both the
-                `body` and `data` properties.
+                `text` and `data` properties.
 
             Note:
                 When hosting an app that emits Server-Sent Events, the web
@@ -235,7 +237,7 @@ class Response(falcon.response.Response):
         """Get the raw bytestring content for the response body.
 
         This coroutine can be awaited to get the raw data for the
-        HTTP response body, taking into account the :attr:`~.body`,
+        HTTP response body, taking into account the :attr:`~.text`,
         :attr:`~.data`, and :attr:`~.media` attributes.
 
         Note:
@@ -243,14 +245,14 @@ class Response(falcon.response.Response):
             and handle that attribute directly.
 
         Returns:
-            bytes: The UTF-8 encoded value of the `body` attribute, if
+            bytes: The UTF-8 encoded value of the `text` attribute, if
             set. Otherwise, the value of the `data` attribute if set, or
             finally the serialized value of the `media` attribute. If
             none of these attributes are set, ``None`` is returned.
         """
 
-        body = self.body
-        if body is None:
+        text = self.text
+        if text is None:
             data = self._data
 
             if data is None and self._media is not None:
@@ -273,11 +275,11 @@ class Response(falcon.response.Response):
                 data = self._media_rendered
         else:
             try:
-                # NOTE(kgriffs): Normally we expect body to be a string
-                data = body.encode()
+                # NOTE(kgriffs): Normally we expect text to be a string
+                data = text.encode()
             except AttributeError:
                 # NOTE(kgriffs): Assume it was a bytes object already
-                data = body
+                data = text
 
         return data
 

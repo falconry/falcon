@@ -183,7 +183,7 @@ def default_serialize_error(req, resp, exception):
 
     if preferred is not None:
         if preferred == 'application/json':
-            resp.body = exception.to_json()
+            resp.text = exception.to_json()
         else:
             # NOTE(caselit): to_xml already returns bytes
             resp.data = exception.to_xml()

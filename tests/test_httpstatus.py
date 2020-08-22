@@ -34,7 +34,7 @@ def before_hook(req, resp, resource, params):
 def after_hook(req, resp, resource):
     resp.status = falcon.HTTP_200
     resp.set_header('X-Failed', 'False')
-    resp.body = 'Pass'
+    resp.text = 'Pass'
 
 
 def noop_after_hook(req, resp, resource):
@@ -47,12 +47,12 @@ class TestStatusResource:
     def on_get(self, req, resp):
         resp.status = falcon.HTTP_500
         resp.set_header('X-Failed', 'True')
-        resp.body = 'Fail'
+        resp.text = 'Fail'
 
     def on_post(self, req, resp):
         resp.status = falcon.HTTP_500
         resp.set_header('X-Failed', 'True')
-        resp.body = 'Fail'
+        resp.text = 'Fail'
 
         raise HTTPStatus(falcon.HTTP_200,
                          headers={'X-Failed': 'False'},
@@ -64,7 +64,7 @@ class TestStatusResource:
         # works just fine.
         resp.status = '500 Internal Server Error'
         resp.set_header('X-Failed', 'True')
-        resp.body = 'Fail'
+        resp.text = 'Fail'
 
     def on_patch(self, req, resp):
         raise HTTPStatus(falcon.HTTP_200, body=None)
@@ -81,7 +81,7 @@ class TestHookResource:
     def on_get(self, req, resp):
         resp.status = falcon.HTTP_500
         resp.set_header('X-Failed', 'True')
-        resp.body = 'Fail'
+        resp.text = 'Fail'
 
     def on_patch(self, req, resp):
         raise HTTPStatus(falcon.HTTP_200,
@@ -181,7 +181,7 @@ class TestHTTPStatusWithMiddleware:
             def process_response(self, req, resp, resource, req_succeeded):
                 resp.status = falcon.HTTP_200
                 resp.set_header('X-Failed', 'False')
-                resp.body = 'Pass'
+                resp.text = 'Pass'
 
             async def process_response_async(self, *args):
                 self.process_response(*args)
@@ -206,7 +206,7 @@ class NoBodyResource:
         raise HTTPStatus(falcon.HTTP_725)
 
     def on_put(self, req, res):
-        res.body = 'foo'
+        res.text = 'foo'
         raise HTTPStatus(falcon.HTTP_719)
 
 

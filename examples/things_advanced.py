@@ -41,7 +41,7 @@ class SinkAdapter:
 
         resp.status = falcon.code_to_http_status(result.status_code)
         resp.content_type = result.headers['content-type']
-        resp.body = result.text
+        resp.text = result.text
 
 
 class AuthMiddleware:
@@ -123,7 +123,7 @@ class JSONTranslator:
         if not hasattr(resp.context, 'result'):
             return
 
-        resp.body = json.dumps(resp.context.result)
+        resp.text = json.dumps(resp.context.result)
 
 
 def max_body(limit):

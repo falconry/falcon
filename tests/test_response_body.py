@@ -13,13 +13,13 @@ def resp(asgi):
 
 def test_append_body(resp):
     text = 'Hello beautiful world! '
-    resp.body = ''
+    resp.text = ''
 
     for token in text.split():
-        resp.body += token
-        resp.body += ' '
+        resp.text += token
+        resp.text += ' '
 
-    assert resp.body == text
+    assert resp.text == text
 
 
 def test_response_repr(resp):

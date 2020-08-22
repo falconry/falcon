@@ -778,7 +778,7 @@ class App(falcon.app.App):
         err_handler = self._find_error_handler(ex)
 
         # NOTE(caselit): Reset body, data and media before calling the handler
-        resp.body = resp.data = resp.media = None
+        resp.text = resp.data = resp.media = None
         if err_handler is not None:
             try:
                 await err_handler(req, resp, ex, params)

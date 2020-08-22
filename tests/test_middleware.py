@@ -154,7 +154,7 @@ class MiddlewareClassResource:
 
     def on_get(self, req, resp, **kwargs):
         resp.status = falcon.HTTP_200
-        resp.body = json.dumps(_EXPECTED_BODY)
+        resp.text = json.dumps(_EXPECTED_BODY)
 
     def on_post(self, req, resp):
         raise falcon.HTTPForbidden(title=falcon.HTTP_403, description='Setec Astronomy')
@@ -172,7 +172,7 @@ class EmptySignatureMiddleware:
 class TestCorsResource:
     def on_get(self, req, resp, **kwargs):
         resp.status = falcon.HTTP_200
-        resp.body = 'Test'
+        resp.text = 'Test'
 
 
 class TestMiddleware:
@@ -801,7 +801,7 @@ class TestResourceMiddleware(TestMiddleware):
 
         class Resource:
             def on_get(self, req, resp, **params):
-                resp.body = json.dumps(params)
+                resp.text = json.dumps(params)
 
         app = create_app(asgi, middleware=AccessParamsMiddleware(),
                          independent_middleware=independent_middleware)
@@ -838,7 +838,7 @@ class TestErrorHandling(TestMiddleware):
         assert response.status == falcon.HTTP_403
         assert mw.resp.status == response.status
 
-        composed_body = json.loads(mw.resp.body)
+        composed_body = json.loads(mw.resp.text)
         assert composed_body['title'] == response.status
 
         assert not mw.req_succeeded

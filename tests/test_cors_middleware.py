@@ -24,11 +24,11 @@ def cors_client(asgi):
 class CORSHeaderResource:
 
     def on_get(self, req, resp):
-        resp.body = "I'm a CORS test response"
+        resp.text = "I'm a CORS test response"
 
     def on_delete(self, req, resp):
         resp.set_header('Access-Control-Allow-Origin', 'example.com')
-        resp.body = "I'm a CORS test response"
+        resp.text = "I'm a CORS test response"
 
 
 class TestCorsMiddleware:

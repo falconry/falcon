@@ -758,7 +758,7 @@ class App:
                     else:
                         representation = yaml.dump(exception.to_dict(),
                                                    encoding=None)
-                    resp.body = representation
+                    resp.text = representation
                     resp.content_type = preferred
 
                 resp.append_header('Vary', 'Accept')
@@ -872,8 +872,8 @@ class App:
             resp.set_headers(http_status.headers)
 
         # NOTE(kgriffs): If http_status.body is None, that's OK because
-        # it's acceptable to set resp.body to None (to indicate no body).
-        resp.body = http_status.body
+        # it's acceptable to set resp.text to None (to indicate no body).
+        resp.text = http_status.body
 
     def _compose_error_response(self, req, resp, error):
         """Compose a response for the given HTTPError instance."""
@@ -931,7 +931,7 @@ class App:
         err_handler = self._find_error_handler(ex)
 
         # NOTE(caselit): Reset body, data and media before calling the handler
-        resp.body = resp.data = resp.media = None
+        resp.text = resp.data = resp.media = None
         if err_handler is not None:
             try:
                 err_handler(req, resp, ex, params)

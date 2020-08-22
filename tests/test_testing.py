@@ -169,7 +169,7 @@ def test_is_asgi_app_cls():
 def test_simulate_request_content_type():
     class Foo:
         def on_post(self, req, resp):
-            resp.body = req.content_type
+            resp.text = req.content_type
 
     app = App()
     app.add_route('/', Foo())

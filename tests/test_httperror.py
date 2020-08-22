@@ -355,7 +355,7 @@ class TestHTTPError:
                     representation = yaml.dump(exception.to_dict(),
                                                encoding=None)
 
-                resp.body = representation
+                resp.text = representation
                 resp.content_type = preferred
 
         def _check(media_type, deserializer):
@@ -406,7 +406,7 @@ class TestHTTPError:
     def test_custom_serializer_no_representation(self, client):
         def _chatty_serializer(req, resp, exception):
             resp.content_type = falcon.MEDIA_TEXT
-            resp.body = b'You might think this error should not have a body'
+            resp.text = b'You might think this error should not have a body'
 
         client.app.add_route('/416', RangeNotSatisfiableResource())
         client.app.set_error_serializer(_chatty_serializer)
