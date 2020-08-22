@@ -882,6 +882,31 @@ easy:
 See also the :ref:`outputting_csv_recipe` recipe for a more involved example of
 dynamically generated downloadable content.
 
+.. _faq_header_names_lowercase:
+
+Why is Falcon changing my header names to lowercase?
+----------------------------------------------------
+
+Falcon always lowercases header names before storing them in the internal
+:class:`Response <falcon.Response>` structures in order to make the response
+header handling straightforward and performant, as header name lookup can be
+done using a simple ``dict``. Since HTTP headers are case insensitive, this
+optimization should normally not affect your API consumers.
+
+In the unlikely case you absolutely must deal with non-conformant HTTP clients
+expecting a specific header name capitalization, see this recipe how to
+override header names using generic WSGI middleware:
+:ref:`capitalizing_response_headers`.
+
+Note that this question only applies to the WSGI flavor of Falcon. The
+`ASGI HTTP scope specification
+<https://asgi.readthedocs.io/en/latest/specs/www.html#response-start-send-event>`_
+requires HTTP header names to be lowercased.
+
+Furthermore, the HTTP2 standard also mandates that header field names MUST be
+converted to lowercase (see `RFC 7540, Section 8.1.2
+<https://httpwg.org/specs/rfc7540.html#rfc.section.8.1.2>`_).
+
 Can Falcon serve static files?
 ------------------------------
 
