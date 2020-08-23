@@ -395,7 +395,7 @@ WSGI app (the ASGI version is included further down):
             """Handles GET requests"""
             resp.status = falcon.HTTP_200  # This is the default status
             resp.content_type = falcon.MEDIA_TEXT  # Default is JSON, so override
-            resp.body = ('\nTwo things awe me most, the starry sky '
+            resp.text = ('\nTwo things awe me most, the starry sky '
                          'above me and the moral law within me.\n'
                          '\n'
                          '    ~ Immanuel Kant\n\n')
@@ -449,7 +449,7 @@ The ASGI version of the example is similar:
             """Handles GET requests"""
             resp.status = falcon.HTTP_200  # This is the default status
             resp.content_type = falcon.MEDIA_TEXT  # Default is JSON, so override
-            resp.body = ('\nTwo things awe me most, the starry sky '
+            resp.text = ('\nTwo things awe me most, the starry sky '
                          'above me and the moral law within me.\n'
                          '\n'
                          '    ~ Immanuel Kant\n\n')
@@ -527,7 +527,7 @@ Note that this example assumes that the
 
             resp.status = str(result.status_code) + ' ' + result.reason
             resp.content_type = result.headers['content-type']
-            resp.body = result.text
+            resp.text = result.text
 
 
     class AuthMiddleware:
@@ -609,7 +609,7 @@ Note that this example assumes that the
             if not hasattr(resp.context, 'result'):
                 return
 
-            resp.body = json.dumps(resp.context.result)
+            resp.text = json.dumps(resp.context.result)
 
 
     def max_body(limit):
@@ -784,7 +784,7 @@ Here's the ASGI version of the app from above. Note that it uses the
 
             resp.status = result.status_code
             resp.content_type = result.headers['content-type']
-            resp.body = result.text
+            resp.text = result.text
 
 
     class AuthMiddleware:
@@ -866,7 +866,7 @@ Here's the ASGI version of the app from above. Note that it uses the
             if not hasattr(resp.context, 'result'):
                 return
 
-            resp.body = json.dumps(resp.context.result)
+            resp.text = json.dumps(resp.context.result)
 
 
     def max_body(limit):
