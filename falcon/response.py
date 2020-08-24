@@ -942,9 +942,14 @@ class Response:
         'Content-Disposition',
         """Set the Content-Disposition header using the given filename.
 
-        The value will be used for the *filename* directive. For example,
+        The value will be used for the ``filename`` directive. For example,
         given ``'report.pdf'``, the Content-Disposition header would be set
         to: ``'attachment; filename="report.pdf"'``.
+
+        As per `RFC 6266 <https://tools.ietf.org/html/rfc6266#appendix-D>`_
+        recommendations, non-ASCII filenames will be encoded using the
+        ``filename*`` directive, whereas ``filename`` will contain the US
+        ASCII fallback.
         """,
         format_content_disposition)
 
