@@ -1,6 +1,5 @@
 import multiprocessing
 import os
-import sys
 import time
 from wsgiref.simple_server import make_server
 
@@ -113,10 +112,15 @@ def _setup_wsgi_server():
 
     process.start()
 
-    # NOTE(kgriffs): Let the server start up. Since Python 3.8 switched
-    #   to the 'spawn' start method by default on macOS, which is rather slow
-    #   compared to 'fork', we have to wait longer in that case.
-    time.sleep(1 if sys.platform == 'darwin' else 0.2)
+    # NOTE(vytas): Give the server some time to start.
+    for attempt in range(3):
+        try:
+            requests.get(_SERVER_BASE_URL, timeout=1)
+            break
+        except requests.exceptions.RequestException:
+            pass
+
+        time.sleep(attempt + 0.2)
 
     yield
 
