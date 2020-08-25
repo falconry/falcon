@@ -82,6 +82,18 @@ class FileDetailsResource:
         self.called = True
 
 
+class KitchenSinkResource:
+    def __init__(self):
+        self.called = False
+        self.kwargs = None
+        self.uri_template = None
+
+    def on_get(self, req, resp, **kwargs):
+        self.called = True
+        self.kwargs = kwargs
+        self.uri_template = req.uri_template
+
+
 class ResourceWithSuffixRoutes:
     def __init__(self):
         self.get_called = False
@@ -474,6 +486,34 @@ def test_adding_suffix_routes(client):
     assert resource_with_suffix_routes.put_called
     client.simulate_put('/collections/foo321/items')
     assert resource_with_suffix_routes.collection_id == 'foo321'
+
+
+@pytest.mark.parametrize('reverse', [True, False])
+def test_with_and_without_trailing_slash(client, reverse):
+    resource = KitchenSinkResource()
+
+    routes = [
+        ('/kitchen', resource),
+        ('/kitchen/', resource),
+        ('/kitchen/{item}', resource),
+        ('/kitchen/{item}/', resource),
+        ('/kitchen/sink', resource),
+        ('/kitchen/sink/', resource),
+    ]
+    if reverse:
+        routes.reverse()
+
+    for route in routes:
+        client.app.add_route(*route)
+
+    for uri_template, _ in routes:
+        item = 'kettle' if '{item}' in uri_template else None
+        resp = client.simulate_get(uri_template.replace('{item}', 'kettle'))
+
+        assert resp.status_code == 200
+        assert resource.called
+        assert resource.kwargs.get('item') == item
+        assert resource.uri_template == uri_template
 
 
 def test_custom_error_on_suffix_route_not_found(client):
