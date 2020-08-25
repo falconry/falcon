@@ -84,12 +84,12 @@ class FileDetailsResource:
 
 class KitchenSinkResource:
     def __init__(self):
-        self.called = False
+        self.call_count = 0
         self.kwargs = None
         self.uri_template = None
 
     def on_get(self, req, resp, **kwargs):
-        self.called = True
+        self.call_count += 1
         self.kwargs = kwargs
         self.uri_template = req.uri_template
 
@@ -490,15 +490,13 @@ def test_adding_suffix_routes(client):
 
 @pytest.mark.parametrize('reverse', [True, False])
 def test_with_and_without_trailing_slash(client, reverse):
-    resource = KitchenSinkResource()
-
     routes = [
-        ('/kitchen', resource),
-        ('/kitchen/', resource),
-        ('/kitchen/{item}', resource),
-        ('/kitchen/{item}/', resource),
-        ('/kitchen/sink', resource),
-        ('/kitchen/sink/', resource),
+        ('/kitchen', KitchenSinkResource()),
+        ('/kitchen/', KitchenSinkResource()),
+        ('/kitchen/{item}', KitchenSinkResource()),
+        ('/kitchen/{item}/', KitchenSinkResource()),
+        ('/kitchen/sink', KitchenSinkResource()),
+        ('/kitchen/sink/', KitchenSinkResource()),
     ]
     if reverse:
         routes.reverse()
@@ -506,12 +504,14 @@ def test_with_and_without_trailing_slash(client, reverse):
     for route in routes:
         client.app.add_route(*route)
 
-    for uri_template, _ in routes:
-        item = 'kettle' if '{item}' in uri_template else None
-        resp = client.simulate_get(uri_template.replace('{item}', 'kettle'))
+    for uri_template, resource in routes:
+        item = None
+        if '{item}' in uri_template:
+            item = 'kettle' if uri_template.endswith('/') else 'teapot'
+        resp = client.simulate_get(uri_template.replace('{item}', item or ''))
 
         assert resp.status_code == 200
-        assert resource.called
+        assert resource.call_count == 1
         assert resource.kwargs.get('item') == item
         assert resource.uri_template == uri_template
 
