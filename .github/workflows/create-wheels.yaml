@@ -1,7 +1,5 @@
 name: Create wheel
 
-# TODO: replace falcon_caselit with falcon
-
 on:
   # run when a release has been created
   release:
@@ -66,7 +64,7 @@ jobs:
           FALCON_ASGI_WRAP_NON_COROUTINES: Y
           FALCON_TESTING_SESSION: Y
         run: |
-          pip install -f dist --no-index falcon_caselit
+          pip install -f dist --no-index falcon
           python -c 'import sys; sys.path.pop(0); from falcon.cyutil import misc, reader, uri'
           pip install -r requirements/tests
           pytest -q tests ${{ matrix.pytest-extra }}
@@ -179,7 +177,7 @@ jobs:
           FALCON_ASGI_WRAP_NON_COROUTINES: Y
           FALCON_TESTING_SESSION: Y
         run: |
-          pip install -f dist --no-index falcon_caselit
+          pip install -f dist --no-index falcon
           python -c 'import sys; sys.path.pop(0); from falcon.cyutil import misc, reader, uri'
           pip install -r requirements/tests
           pytest -q tests ${{ matrix.pytest-extra }}
@@ -357,7 +355,7 @@ jobs:
             bash -c "
             export PATH=/opt/python/${{ matrix.python-version }}/bin:$PATH &&
             yum install -y openssl-devel &&
-            pip install -f dist --no-index falcon_caselit &&
+            pip install -f dist --no-index falcon &&
             python -c 'import sys; sys.path.pop(0); from falcon.cyutil import misc, reader, uri' &&
             [[ $PYTHON_VERSION != 'cp35-cp35m' ]] && (
             pip install -r requirements/tests &&
@@ -386,7 +384,7 @@ jobs:
             bash -c "
             export PATH=/opt/python/${{ matrix.python-version }}/bin:$PATH &&
             yum install -y openssl-devel &&
-            pip install -f dist --no-index falcon_caselit &&
+            pip install -f dist --no-index falcon &&
             python -c 'import sys; sys.path.pop(0); from falcon.cyutil import misc, reader, uri' &&
             pip install -r requirements/tests &&
             pytest -q tests ${{ matrix.pytest-extra }}

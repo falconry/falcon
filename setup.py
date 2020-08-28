@@ -135,8 +135,7 @@ def load_description():
 
 
 setup(
-    # TODO change
-    name='falcon-caselit',
+    name='falcon',
     version=VERSION,
     description='An unladen web framework for building APIs and app backends.',
     long_description=load_description(),
