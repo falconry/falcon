@@ -872,6 +872,28 @@ class TestHTTPError:
         assert response.status == headers['X-Error-Status']
         assert response.json['title'] == headers['X-Error-Status']
 
+    def test_to_json_dumps(self):
+        e = falcon.HTTPError(status=falcon.HTTP_418, title='foo', description='bar')
+        assert e.to_json() == '{"title": "foo", "description": "bar"}'
+        assert e.to_json(lambda r: '{"a": "b"}') == '{"a": "b"}'
+
+    def test_serialize_error_uses_media_handler(self, client):
+        client.app.add_route('/path', NotFoundResource())
+        h = client.app.resp_options.media_handlers[falcon.MEDIA_JSON]
+        h.dumps = lambda x: json.dumps(x).upper()
+        response = client.simulate_request(path='/path')
+
+        assert response.status == falcon.HTTP_404
+        assert response.json == {'TITLE': falcon.HTTP_NOT_FOUND.upper()}
+
+    def test_serialize_no_json_media_handler(self, client):
+        client.app.add_route('/path', NotFoundResource())
+        client.app.resp_options.media_handlers.pop(falcon.MEDIA_JSON)
+        response = client.simulate_request(path='/path')
+
+        assert response.status == falcon.HTTP_404
+        assert response.json == {'title': falcon.HTTP_NOT_FOUND}
+
 
 def test_kw_only():
     # only deprecated for now

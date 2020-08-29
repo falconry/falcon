@@ -16,6 +16,7 @@
 
 from inspect import iscoroutinefunction
 
+from falcon import MEDIA_JSON
 from falcon import util
 from falcon.errors import CompatibilityError
 from falcon.util.sync import _wrap_non_coroutine_unsafe
@@ -183,7 +184,8 @@ def default_serialize_error(req, resp, exception):
 
     if preferred is not None:
         if preferred == 'application/json':
-            resp.body = exception.to_json()
+            dumps = getattr(resp.options.media_handlers.get(MEDIA_JSON), 'dumps', None)
+            resp.body = exception.to_json(dumps)
         else:
             # NOTE(caselit): to_xml already returns bytes
             resp.data = exception.to_xml()

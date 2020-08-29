@@ -19,6 +19,7 @@ import traceback
 
 import falcon.app
 from falcon.app_helpers import prepare_middleware
+from falcon.constants import MEDIA_JSON
 from falcon.errors import CompatibilityError, UnsupportedError, UnsupportedScopeError
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
@@ -468,6 +469,8 @@ class App(falcon.app.App):
 
             self._schedule_callbacks(resp)
 
+            dumps = getattr(self.resp_options.media_handlers.get(MEDIA_JSON), 'dumps', None)
+
             # TODO(kgriffs): Do we need to do anything special to handle when
             #   a connection is closed?
             async for event in sse_emitter:
@@ -476,7 +479,7 @@ class App(falcon.app.App):
 
                 await send({
                     'type': 'http.response.body',
-                    'body': event.serialize(),
+                    'body': event.serialize(dumps),
                     'more_body': True
                 })
 

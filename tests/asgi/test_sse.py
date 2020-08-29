@@ -1,5 +1,8 @@
+import json
+
 import pytest
 
+from falcon import MEDIA_JSON
 from falcon import testing
 from falcon.asgi import App, SSEvent
 
@@ -101,6 +104,49 @@ def test_multiple_events():
         'data: {"condiment": "salsa"}\n'
         '\n'
     )
+
+
+class TestSerializeJson:
+    @pytest.fixture
+    def client(self):
+        class SomeResource:
+            async def on_get(self, req, resp):
+                async def emitter():
+                    yield SSEvent(json={'foo': 'bar'})
+                    yield SSEvent(json={'bar': 'baz'})
+
+                resp.sse = emitter()
+
+        resource = SomeResource()
+
+        app = App()
+        app.add_route('/', resource)
+
+        client = testing.TestClient(app)
+        return client
+
+    def test_use_media_handler_dumps(self, client):
+        h = client.app.resp_options.media_handlers[MEDIA_JSON]
+        h.dumps = lambda x: json.dumps(x).upper()
+
+        result = client.simulate_get()
+        assert result.text == (
+            'data: {"FOO": "BAR"}\n'
+            '\n'
+            'data: {"BAR": "BAZ"}\n'
+            '\n'
+        )
+
+    def test_no_json_media_handler(self, client):
+        client.app.resp_options.media_handlers.pop(MEDIA_JSON)
+
+        result = client.simulate_get()
+        assert result.text == (
+            'data: {"foo": "bar"}\n'
+            '\n'
+            'data: {"bar": "baz"}\n'
+            '\n'
+        )
 
 
 def test_invalid_event_values():

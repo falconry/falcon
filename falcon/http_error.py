@@ -164,8 +164,12 @@ class HTTPError(Exception):
 
         return obj
 
-    def to_json(self):
-        """Return a pretty-printed JSON representation of the error.
+    def to_json(self, dumps=None):
+        """Return a JSON representation of the error.
+
+        Args:
+            dumps: Callable used to serialize the representation of this error to JSON.
+                When not provided the python json library will be used (default ``None``).
 
         Returns:
             str: A JSON document for the error.
@@ -173,7 +177,10 @@ class HTTPError(Exception):
         """
 
         obj = self.to_dict(OrderedDict)
-        return json_dumps(obj, ensure_ascii=False)
+        if dumps:
+            return dumps(obj)
+        else:
+            return json_dumps(obj, ensure_ascii=False)
 
     def to_xml(self):
         """Return an XML-encoded representation of the error.

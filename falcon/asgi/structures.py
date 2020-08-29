@@ -1,4 +1,4 @@
-from json import dumps as json_dumps
+from json import dumps as json_module_dumps
 
 
 __all__ = ['SSEvent']
@@ -111,7 +111,16 @@ class SSEvent:
 
         self.comment = comment
 
-    def serialize(self):
+    def serialize(self, json_dumps=None):
+        """Serialize this event to string.
+
+        Args:
+            json_dumps: Callable used to serialize the ``json`` attribute to string.
+                When not provided the python json library will be used (default ``None``).
+
+        Returns:
+            str: string representation of this event.
+        """
         if self.comment is not None:
             block = ': ' + self.comment + '\n'
         else:
@@ -138,7 +147,11 @@ class SSEvent:
         elif self.text is not None:
             block += 'data: ' + self.text + '\n'
         elif self.json is not None:
-            block += 'data: ' + json_dumps(self.json, ensure_ascii=False) + '\n'
+            if json_dumps:
+                string = json_dumps(self.json)
+            else:
+                string = json_module_dumps(self.json, ensure_ascii=False)
+            block += 'data: ' + string + '\n'
 
         if not block:
             return b': ping\n\n'
