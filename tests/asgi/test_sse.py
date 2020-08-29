@@ -1,8 +1,9 @@
+import asyncio
 import json
 
 import pytest
 
-from falcon import MEDIA_JSON
+import falcon
 from falcon import testing
 from falcon.asgi import App, SSEvent
 
@@ -61,27 +62,7 @@ def test_single_event():
 
 
 def test_multiple_events():
-    class SomeResource:
-        async def on_get(self, req, resp):
-            async def emitter():
-                yield SSEvent(data=b'ketchup')
-                yield SSEvent(data=b'mustard', event='condiment')
-                yield SSEvent(data=b'mayo', event='condiment', event_id='1234')
-                yield SSEvent(data=b'onions', event='topping', event_id='5678', retry=100)
-                yield SSEvent(text='guacamole \u1F951', retry=100, comment='Serve with chips.')
-                yield SSEvent(json={'condiment': 'salsa'}, retry=100)
-
-            resp.sse = emitter()
-
-    resource = SomeResource()
-
-    app = App()
-    app.add_route('/', resource)
-
-    client = testing.TestClient(app)
-
-    result = client.simulate_get()
-    assert result.text == (
+    expected_result_text = (
         'data: ketchup\n'
         '\n'
         'event: condiment\n'
@@ -105,6 +86,102 @@ def test_multiple_events():
         '\n'
     )
 
+    class SomeResource:
+        async def on_get(self, req, resp):
+            async def emitter():
+                for event in [
+                    SSEvent(data=b'ketchup'),
+                    SSEvent(data=b'mustard', event='condiment'),
+                    SSEvent(data=b'mayo', event='condiment', event_id='1234'),
+                    SSEvent(data=b'onions', event='topping', event_id='5678', retry=100),
+                    SSEvent(text='guacamole \u1F951', retry=100, comment='Serve with chips.'),
+                    SSEvent(json={'condiment': 'salsa'}, retry=100),
+                ]:
+                    yield event
+                    await asyncio.sleep(0.001)
+
+            resp.sse = emitter()
+
+    resource = SomeResource()
+
+    app = App()
+    app.add_route('/', resource)
+
+    client = testing.TestClient(app)
+
+    async def _test():
+        async with client as conductor:
+            # NOTE(kgriffs): Single-shot test will only allow the first
+            #   one or two events since a client disconnect will be emitted
+            #   into the app immediately.
+            result = await conductor.simulate_get()
+            assert expected_result_text.startswith(result.text)
+
+            async with conductor.simulate_get_stream() as sr:
+                event_count = 0
+
+                result_text = ''
+
+                while True:
+                    chunk = (await sr.stream.read()).decode()
+
+                    if not chunk:
+                        continue
+
+                    result_text += chunk
+                    event_count += len(chunk.strip().split('\n\n'))
+
+                    if 'salsa' in chunk:
+                        break
+
+                assert not (await sr.stream.read())
+
+                assert event_count == 6
+                assert result_text == expected_result_text
+
+    falcon.invoke_coroutine_sync(_test)
+
+
+def test_multiple_events_early_disconnect():
+    class SomeResource:
+        async def on_get(self, req, resp):
+            async def emitter():
+                while True:
+                    yield SSEvent(data=b'whassup')
+                    await asyncio.sleep(0.01)
+
+            resp.sse = emitter()
+
+    resource = SomeResource()
+
+    app = App()
+    app.add_route('/', resource)
+
+    async def _test():
+        conductor = testing.ASGIConductor(app)
+        result = await conductor.simulate_get()
+        assert 'data: whassup' in result.text
+
+        async with testing.ASGIConductor(app) as conductor:
+            async with conductor.simulate_get_stream() as sr:
+
+                event_count = 0
+
+                result_text = ''
+
+                while event_count < 5:
+                    chunk = (await sr.stream.read()).decode()
+                    if not chunk:
+                        continue
+
+                    result_text += chunk
+                    event_count += len(chunk.strip().split('\n\n'))
+
+                assert result_text.startswith('data: whassup\n\n' * 5)
+                assert event_count == 5
+
+    falcon.invoke_coroutine_sync(_test)
+
 
 class TestSerializeJson:
     @pytest.fixture
@@ -126,7 +203,7 @@ class TestSerializeJson:
         return client
 
     def test_use_media_handler_dumps(self, client):
-        h = client.app.resp_options.media_handlers[MEDIA_JSON]
+        h = client.app.resp_options.media_handlers[falcon.MEDIA_JSON]
         h.dumps = lambda x: json.dumps(x).upper()
 
         result = client.simulate_get()
@@ -138,7 +215,7 @@ class TestSerializeJson:
         )
 
     def test_no_json_media_handler(self, client):
-        client.app.resp_options.media_handlers.pop(MEDIA_JSON)
+        client.app.resp_options.media_handlers.pop(falcon.MEDIA_JSON)
 
         result = client.simulate_get()
         assert result.text == (
