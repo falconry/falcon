@@ -53,8 +53,8 @@ except ImportError:
 BufferedReader = (_CyBufferedReader or _PyBufferedReader) if IS_64_BITS else _PyBufferedReader
 
 if sys.version_info >= (3, 7):
-    # NOTE(caselit): __getattr__ support for modules was added only in py 3.7. Deprecating an import
-    # on previous version is hard to do, so we are displaying the warning only on 3.7+
+    # NOTE(caselit): __getattr__ support for modules was added only in py 3.7. Deprecating an
+    # import on previous version is hard to do, so we are displaying the warning only on 3.7+
     def __getattr__(name):
         if name == 'json':
             import warnings

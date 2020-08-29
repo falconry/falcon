@@ -15,8 +15,8 @@
 """HTTPError exception class."""
 
 from collections import OrderedDict
-import xml.etree.ElementTree as et
 from json import dumps as json_dumps
+import xml.etree.ElementTree as et
 
 from falcon.util import uri
 from falcon.util.deprecation import deprecated, deprecated_args

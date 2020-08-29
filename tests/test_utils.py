@@ -1074,7 +1074,7 @@ class TestDeprecatedArgs:
         assert len(recwarn) == 1
 
 
-@pytest.mark.skip_if(sys.version_info < (3, 7), reason='module __getattr__ requires python 3.7')
+@pytest.mark.skipif(sys.version_info < (3, 7), reason='module __getattr__ requires python 3.7')
 def test_json_deprecation():
     with pytest.warns(deprecation.DeprecatedWarning, match='json'):
         util.json
