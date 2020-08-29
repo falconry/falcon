@@ -1,0 +1,4 @@
+Use ``Response`` media handlers when serializing to json ``HTTPError``
+and ``SSEvent``. Use ``Request`` media handler when loading a query parameter
+as json.
+Deprecate importing ``json`` from ``falcon.util``.
