@@ -140,7 +140,7 @@ class TestInspectApp:
         assert routes[-2].directory == os.path.abspath('tests')
         assert routes[-2].fallback_filename.endswith('conftest.py')
 
-    def test_sync(self, asgi):
+    def test_sink(self, asgi):
         sinks = inspect.inspect_sinks(make_app_async() if asgi else make_app())
 
         assert all(isinstance(s, inspect.SinkInfo) for s in sinks)

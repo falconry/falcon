@@ -109,7 +109,7 @@ def inspect_static_routes(app: App) -> 'List[StaticRouteInfo]':
         been added to the application.
     """
     routes = []
-    for sr in app._static_routes:
+    for sr, _, _ in app._static_routes:
         info = StaticRouteInfo(sr._prefix, sr._directory, sr._fallback_filename)
         routes.append(info)
     return routes
@@ -126,7 +126,7 @@ def inspect_sinks(app: App) -> 'List[SinkInfo]':
         List[SinkInfo]: A list of sinks used by the application.
     """
     sinks = []
-    for prefix, sink in app._sinks:
+    for prefix, sink, _ in app._sinks:
         source_info, name = _get_source_info_and_name(sink)
         info = SinkInfo(prefix.pattern, name, source_info)
         sinks.append(info)

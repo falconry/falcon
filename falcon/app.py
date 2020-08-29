@@ -159,6 +159,10 @@ class App:
             (default ``False``).
             (See also: :ref:`CORS <cors>`)
 
+        sink_before_static_routes (bool): Indicates if the sinks should be processed
+            before (when ``True``) or after (when ``False``) the static routes.
+            This has effect only if no route was matched. (default ``True``)
+
     Attributes:
         req_options: A set of behavioral options related to incoming
             requests. (See also: :py:class:`~.RequestOptions`)
@@ -189,18 +193,40 @@ class App:
     _default_responder_bad_request = falcon.responders.bad_request
     _default_responder_path_not_found = falcon.responders.path_not_found
 
-    __slots__ = ('_request_type', '_response_type',
-                 '_error_handlers', '_router', '_sinks',
-                 '_serialize_error', 'req_options', 'resp_options',
-                 '_middleware', '_independent_middleware', '_router_search',
-                 '_static_routes', '_cors_enable', '_unprepared_middleware')
+    __slots__ = (
+        '_cors_enable',
+        '_error_handlers',
+        '_independent_middleware',
+        '_middleware',
+        '_request_type',
+        '_response_type',
+        '_router_search',
+        '_router',
+        '_serialize_error',
+        '_sink_and_static_routes',
+        '_sink_before_static_routes',
+        '_sinks',
+        '_static_routes',
+        '_unprepared_middleware',
+        'req_options',
+        'resp_options',
+    )
 
-    def __init__(self, media_type=DEFAULT_MEDIA_TYPE,
-                 request_type=Request, response_type=Response,
-                 middleware=None, router=None,
-                 independent_middleware=True, cors_enable=False):
+    def __init__(
+        self,
+        media_type=DEFAULT_MEDIA_TYPE,
+        request_type=Request,
+        response_type=Response,
+        middleware=None,
+        router=None,
+        independent_middleware=True,
+        cors_enable=False,
+        sink_before_static_routes=True,
+    ):
+        self._sink_before_static_routes = sink_before_static_routes
         self._sinks = []
         self._static_routes = []
+        self._sink_and_static_routes = ()
 
         if cors_enable:
             cm = CORSMiddleware()
@@ -560,11 +586,11 @@ class App:
 
         """
 
-        self._static_routes.insert(
-            0,
-            self._STATIC_ROUTE_TYPE(prefix, directory, downloadable=downloadable,
-                                    fallback_filename=fallback_filename)
+        sr = self._STATIC_ROUTE_TYPE(
+            prefix, directory, downloadable=downloadable, fallback_filename=fallback_filename
         )
+        self._static_routes.insert(0, (sr, sr, False))
+        self._update_sink_and_static_routes()
 
     def add_sink(self, sink, prefix=r'/'):
         """Register a sink method for the App.
@@ -579,7 +605,10 @@ class App:
         proxy that forwards requests to one or more backend services.
 
         Args:
-            sink (callable): A callable taking the form ``func(req, resp)``.
+            sink (callable): A callable taking the form ``func(req, resp, **kwargs)``.
+
+                Note:
+                    When using an async version of the ``App``, this must be a coroutine.
 
             prefix (str): A regex string, typically starting with '/', which
                 will trigger the sink if it matches the path portion of the
@@ -606,7 +635,8 @@ class App:
         # NOTE(kgriffs): Insert at the head of the list such that
         # in the case of a duplicate prefix, the last one added
         # is preferred.
-        self._sinks.insert(0, (prefix, sink))
+        self._sinks.insert(0, (prefix, sink, True))
+        self._update_sink_and_static_routes()
 
     def add_error_handler(self, exception, handler=None):
         """Register a handler for one or more exception types.
@@ -849,21 +879,16 @@ class App:
         else:
             params = {}
 
-            for pattern, sink in self._sinks:
-                m = pattern.match(path)
+            for matcher, obj, is_sink in self._sink_and_static_routes:
+                m = matcher.match(path)
                 if m:
-                    params = m.groupdict()
-                    responder = sink
+                    if is_sink:
+                        params = m.groupdict()
+                    responder = obj
 
                     break
             else:
-
-                for sr in self._static_routes:
-                    if sr.match(path):
-                        responder = sr
-                        break
-                else:
-                    responder = self.__class__._default_responder_path_not_found
+                responder = self.__class__._default_responder_path_not_found
 
         return (responder, params, resource, uri_template)
 
@@ -1006,6 +1031,12 @@ class App:
             return iterable, None
 
         return [], 0
+
+    def _update_sink_and_static_routes(self):
+        if self._sink_before_static_routes:
+            self._sink_and_static_routes = tuple(self._sinks + self._static_routes)
+        else:
+            self._sink_and_static_routes = tuple(self._static_routes + self._sinks)
 
 
 # TODO(myuz): This class is a compatibility alias, and should be removed
