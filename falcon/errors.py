@@ -48,7 +48,7 @@ class HeaderNotSupported(ValueError):
 
 
 class CompatibilityError(ValueError):
-    """The given method or value is not compatibile."""
+    """The given method, value, or type is not compatible."""
 
 
 class UnsupportedScopeError(RuntimeError):

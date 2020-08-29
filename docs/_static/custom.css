@@ -176,11 +176,6 @@ pre {
     float: right;
 }
 
-
-div.admonition {
-    padding-bottom: 0;
-}
-
 div input[type="text"] {
     padding: 5px;
     margin: 0 0 0.5em 0;
@@ -268,6 +263,10 @@ dl.attribute > dd > p {
     margin-bottom: 1em;
 }
 
+dl.function, dl.method, dl.attribute, dl.class {
+    padding-top: 1em;
+}
+
 div.body div.section > ul.simple > li > dl.simple > dd > ul {
     margin: 0;
 }
@@ -345,3 +344,4 @@ div.highlight > pre {
 .sphinx-tab pre {
     border: none !important;
 }
+
