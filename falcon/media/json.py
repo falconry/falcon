@@ -1,8 +1,8 @@
 from functools import partial
+import json
 
 from falcon import errors
 from falcon.media import BaseHandler
-from falcon.util import json
 
 
 class JSONHandler(BaseHandler):

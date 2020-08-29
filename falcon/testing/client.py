@@ -21,6 +21,7 @@ WSGI callable, without having to stand up a WSGI server.
 import asyncio
 import datetime as dt
 import inspect
+import json as json_module
 import time
 from typing import Dict, Optional, Union
 import warnings
@@ -36,7 +37,6 @@ from falcon.util import (
     http_cookies,
     http_date_to_dt,
     invoke_coroutine_sync,
-    json as util_json,
     to_query_str,
 )
 
@@ -254,7 +254,7 @@ class Result:
         if not self.text:
             return None
 
-        return util_json.loads(self.text)
+        return json_module.loads(self.text)
 
 
 # NOTE(kgriffs): The default of asgi_disconnect_ttl was chosen to be
@@ -394,7 +394,7 @@ def simulate_request(app, method='GET', path='/', query_string=None,
         headers['Content-Type'] = content_type
 
     if json is not None:
-        body = util_json.dumps(json, ensure_ascii=False)
+        body = json_module.dumps(json, ensure_ascii=False)
         headers = headers or {}
         headers['Content-Type'] = MEDIA_JSON
 

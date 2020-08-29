@@ -1,6 +1,7 @@
 # -*- coding: utf-8
 
 import datetime
+import json
 import wsgiref.validate
 import xml.etree.ElementTree as et  # noqa: I202
 
@@ -10,7 +11,6 @@ import yaml
 import falcon
 from falcon.http_error import NoRepresentation, OptionalRepresentation
 import falcon.testing as testing
-from falcon.util import json
 from falcon.util.deprecation import DeprecatedWarning
 
 from _util import create_app  # NOQA

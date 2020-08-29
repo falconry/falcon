@@ -16,8 +16,9 @@
 
 from collections import OrderedDict
 import xml.etree.ElementTree as et
+from json import dumps as json_dumps
 
-from falcon.util import json, uri
+from falcon.util import uri
 from falcon.util.deprecation import deprecated, deprecated_args
 
 
@@ -172,7 +173,7 @@ class HTTPError(Exception):
         """
 
         obj = self.to_dict(OrderedDict)
-        return json.dumps(obj, ensure_ascii=False)
+        return json_dumps(obj, ensure_ascii=False)
 
     def to_xml(self):
         """Return an XML-encoded representation of the error.
