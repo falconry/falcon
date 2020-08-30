@@ -82,6 +82,18 @@ class FileDetailsResource:
         self.called = True
 
 
+class KitchenSinkResource:
+    def __init__(self):
+        self.call_count = 0
+        self.kwargs = None
+        self.uri_template = None
+
+    def on_get(self, req, resp, **kwargs):
+        self.call_count += 1
+        self.kwargs = kwargs
+        self.uri_template = req.uri_template
+
+
 class ResourceWithSuffixRoutes:
     def __init__(self):
         self.get_called = False
@@ -349,21 +361,22 @@ def test_converter_custom(client, resource, uri_template, path, expected):
 def test_single_trailing_slash(client):
     resource1 = IDResource()
     client.app.add_route('/1/{id}/', resource1)
-    result = client.simulate_get('/1/123')
+    assert client.simulate_get('/1/123').status_code == 404
+    result = client.simulate_get('/1/123/')
     assert result.status == falcon.HTTP_200
     assert resource1.called
     assert resource1.id == '123'
-    assert resource1.req.path == '/1/123'
+    assert resource1.req.path == '/1/123/'
 
     resource2 = IDResource()
     client.app.add_route('/2/{id}/', resource2)
-    result = client.simulate_get('/2/123/')
+    result = client.simulate_get('/2/123')
     assert result.status == falcon.HTTP_404
     assert not resource2.called
     assert resource2.id is None
 
     resource3 = IDResource()
-    client.app.add_route('/3/{id}/', resource3)
+    client.app.add_route('/3/{id}', resource3)
     client.app.req_options.strip_url_path_trailing_slash = True
     result = client.simulate_get('/3/123/')
     assert result.status == falcon.HTTP_200
@@ -473,6 +486,34 @@ def test_adding_suffix_routes(client):
     assert resource_with_suffix_routes.put_called
     client.simulate_put('/collections/foo321/items')
     assert resource_with_suffix_routes.collection_id == 'foo321'
+
+
+@pytest.mark.parametrize('reverse', [True, False])
+def test_with_and_without_trailing_slash(client, reverse):
+    routes = [
+        ('/kitchen', KitchenSinkResource()),
+        ('/kitchen/', KitchenSinkResource()),
+        ('/kitchen/{item}', KitchenSinkResource()),
+        ('/kitchen/{item}/', KitchenSinkResource()),
+        ('/kitchen/sink', KitchenSinkResource()),
+        ('/kitchen/sink/', KitchenSinkResource()),
+    ]
+    if reverse:
+        routes.reverse()
+
+    for route in routes:
+        client.app.add_route(*route)
+
+    for uri_template, resource in routes:
+        item = None
+        if '{item}' in uri_template:
+            item = 'kettle' if uri_template.endswith('/') else 'teapot'
+        resp = client.simulate_get(uri_template.replace('{item}', item or ''))
+
+        assert resp.status_code == 200
+        assert resource.call_count == 1
+        assert resource.kwargs.get('item') == item
+        assert resource.uri_template == uri_template
 
 
 def test_custom_error_on_suffix_route_not_found(client):

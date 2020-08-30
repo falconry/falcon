@@ -35,7 +35,21 @@ HTTP Status
 
 Async
 -----
-.. autofunction:: falcon.get_loop
+
+Aliases
+~~~~~~~
+
+These functions provide simple aliases for those implemented in :any:`asyncio`, with
+fallbacks for older versions of Python.
+
+.. autofunction:: falcon.get_running_loop
+.. autofunction:: falcon.create_task
+
+Adapters
+~~~~~~~~
+
+These functions help traverse the barrier between sync and async code.
+
 .. autofunction:: falcon.sync_to_async
 .. autofunction:: falcon.wrap_sync_to_async
 .. autofunction:: falcon.wrap_sync_to_async_unsafe
