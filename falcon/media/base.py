@@ -3,10 +3,10 @@ import io
 
 
 class BaseHandler(metaclass=abc.ABCMeta):
-    """Abstract Base Class for an internet media type handler"""
+    """Abstract Base Class for an internet media type handler."""
 
     def serialize(self, media, content_type):
-        """Serialize the media object on a :any:`falcon.Response`
+        """Serialize the media object on a :any:`falcon.Response`.
 
         By default, this method raises an instance of
         :py:class:`NotImplementedError`. Therefore, it must be
@@ -25,7 +25,7 @@ class BaseHandler(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     async def serialize_async(self, media, content_type):
-        """Serialize the media object on a :any:`falcon.Response`
+        """Serialize the media object on a :any:`falcon.Response`.
 
         This method is similar to :py:meth:`~.BaseHandler.serialize`
         except that it is asynchronous. The default implementation simply calls

@@ -318,21 +318,21 @@ class BufferedReader:
         raise OSError('This IO object does not use a file descriptor')
 
     def isatty(self):
-        """Always returns ``False``."""
+        """Return ``False`` always."""
         return False
 
     def readable(self):
-        """Always returns ``True``."""
+        """Return ``True`` always."""
         return True
 
     def seekable(self):
-        """Always returns ``False``."""
+        """Return ``False`` always."""
         return False
 
     def writable(self):
-        """Always returns ``False``."""
+        """Return ``False`` always."""
         return False
 
     def tell(self):
-        """Returns the number of bytes read from the stream so far."""
+        """Return the number of bytes read from the stream so far."""
         return self._consumed - (self._buffer_len - self._buffer_pos)
