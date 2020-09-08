@@ -273,7 +273,7 @@ class Response:
         return '<%s: %s>' % (self.__class__.__name__, self.status)
 
     def set_stream(self, stream, content_length):
-        """Convenience method for setting both `stream` and `content_length`.
+        """Set both `stream` and `content_length`.
 
         Although the :attr:`~falcon.Response.stream` and
         :attr:`~falcon.Response.content_length` properties may be set
@@ -342,6 +342,10 @@ class Response:
                 domain must include the origin server. Otherwise, the
                 user agent will reject the cookie.
 
+                Note:
+                    Cookies do not provide isolation by port, so the domain
+                    should not provide one. (See also: RFC 6265, Section 8.5)
+
                 (See also: RFC 6265, Section 4.1.2.3)
 
             path (str): Scopes the cookie to the given path plus any
@@ -374,10 +378,16 @@ class Response:
 
                 (See also: RFC 6265, Section 4.1.2.5)
 
-            http_only (bool): Direct the client to only transfer the
-                cookie with unscripted HTTP requests
-                (default: ``True``). This is intended to mitigate some
-                forms of cross-site scripting.
+            http_only (bool): The HttpOnly attribute limits the scope of the
+                cookie to HTTP requests.  In particular, the attribute
+                instructs the user agent to omit the cookie when providing
+                access to cookies via "non-HTTP" APIs. This is intended to
+                mitigate some forms of cross-site scripting. (default: ``True``)
+
+                Note:
+                    HttpOnly cookies are not visible to javascript scripts
+                    in the browser. They are automatically sent to the server
+                    on javascript ``XMLHttpRequest`` or ``Fetch`` requests.
 
                 (See also: RFC 6265, Section 4.1.2.6)
 
@@ -500,6 +510,10 @@ class Response:
                     When overriding this default behavior, the specified
                     domain must include the origin server. Otherwise, the
                     user agent will reject the cookie.
+
+                    Note:
+                        Cookies do not provide isolation by port, so the domain
+                        should not provide one. (See also: RFC 6265, Section 8.5)
 
                     (See also: RFC 6265, Section 4.1.2.3)
 
@@ -1037,7 +1051,7 @@ class Response:
         """)
 
     def _set_media_type(self, media_type=None):
-        """Wrapper around set_header to set a content-type.
+        """Set a content-type; wrapper around set_header.
 
         Args:
             media_type: Media type to use for the Content-Type

@@ -144,7 +144,7 @@ class CompiledRouter:
         return map_http_methods(resource, suffix=kwargs.get('suffix', None))
 
     def add_route(self, uri_template, resource, **kwargs):
-        """Adds a route between a URI path template and a resource.
+        """Add a route between a URI path template and a resource.
 
         This method may be overridden to customize how a route is added.
 
@@ -321,7 +321,7 @@ class CompiledRouter:
                 raise TypeError(msg)
 
     def _validate_template_segment(self, segment, used_names):
-        """Validates a single path segment of a URI template.
+        """Validate a single path segment of a URI template.
 
         1. Ensure field names are valid Python identifiers, since they
            will be passed as kwargs to responders.
@@ -369,7 +369,7 @@ class CompiledRouter:
                     raise ValueError(msg) from e
 
     def _generate_ast(self, nodes, parent, return_values, patterns, level=0, fast_return=True):
-        """Generates a coarse AST for the router."""
+        """Generate a coarse AST for the router."""
 
         # NOTE(kgriffs): Base case
         if not nodes:
@@ -533,7 +533,7 @@ class CompiledRouter:
         return parent
 
     def _compile(self):
-        """Generates Python code for the entire routing tree.
+        """Generate Python code for the entire routing tree.
 
         The generated code is compiled and the resulting Python method
         is returned.
@@ -579,7 +579,7 @@ class CompiledRouter:
         return eval(src, {klass.__name__: klass})
 
     def _compile_and_find(self, path, _return_values, _patterns, _converters, params):
-        """Compile the router, sets the `_find` attribute and returns its result.
+        """Compile the router, set the `_find` attribute and return its result.
 
         This method is set to the `_find` attribute to delay the compilation of the
         router until it's used for the first time. Subsequent calls to `_find` will
@@ -689,12 +689,12 @@ class CompiledRouterNode:
             assert self.is_var
 
     def matches(self, segment):
-        """Returns True if this node matches the supplied template segment."""
+        """Return True if this node matches the supplied template segment."""
 
         return segment == self.raw_segment
 
     def conflicts_with(self, segment):
-        """Returns True if this node conflicts with a given template segment."""
+        """Return True if this node conflicts with a given template segment."""
 
         # NOTE(kgriffs): This method assumes that the caller has already
         # checked if the segment matches. By definition, only unmatched

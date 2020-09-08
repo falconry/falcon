@@ -210,7 +210,7 @@ class BodyPart:
         self._parse_options = parse_options
 
     def get_data(self):
-        """Returns the body part content bytes.
+        """Return the body part content bytes.
 
         The maximum number of bytes that may be read is configurable via
         :class:`MultipartParseOptions`, and a :class:`.MultipartParseError` is
@@ -239,7 +239,7 @@ class BodyPart:
         return self._data
 
     def get_text(self):
-        """Returns the body part content decoded as a text string.
+        """Return the body part content decoded as a text string.
 
         Text is decoded from the part content (as returned by
         :meth:`~.get_data`) using the charset specified in the `Content-Type`
@@ -332,7 +332,7 @@ class BodyPart:
         return self._name
 
     def get_media(self):
-        """Returns a deserialized form of the multipart body part.
+        """Return a deserialized form of the multipart body part.
 
         When called, this method will attempt to deserialize the body part
         stream using the Content-Type header as well as the media-type handlers
