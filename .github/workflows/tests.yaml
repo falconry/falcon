@@ -24,6 +24,7 @@ jobs:
         toxenv:
           - "pep8"
           - "pep8-examples"
+          - "pep8-docstrings"
           - "mypy"
           - "py38"
           - "py38_cython"

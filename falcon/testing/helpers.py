@@ -334,7 +334,7 @@ class ASGIResponseEventCollector:
 # get_encoding_from_headers() is Copyright 2016 Kenneth Reitz, and is
 # used here under the terms of the Apache License, Version 2.0.
 def get_encoding_from_headers(headers):
-    """Returns encoding from given HTTP Header Dict.
+    """Return encoding from given HTTP Header Dict.
 
     Args:
         headers(dict): Dictionary from which to extract encoding. Header
@@ -363,7 +363,7 @@ def get_encoding_from_headers(headers):
 
 
 def get_unused_port() -> int:
-    """Gets an unused localhost port for use by a test server.
+    """Get an unused localhost port for use by a test server.
 
     Warning:
         It is possible for a third party to bind to the returned port
@@ -381,7 +381,7 @@ def get_unused_port() -> int:
 
 
 def rand_string(min, max) -> str:
-    """Returns a randomly-generated string, of a random length.
+    """Return a randomly-generated string, of a random length.
 
     Args:
         min (int): Minimum string length to return, inclusive
@@ -510,7 +510,7 @@ def create_environ(path='/', query_string='', http_version='1.1',
                    wsgierrors=None, file_wrapper=None, remote_addr=None,
                    root_path=None, cookies=None) -> Dict[str, Any]:
 
-    """Creates a mock PEP-3333 environ ``dict`` for simulating WSGI requests.
+    """Create a mock PEP-3333 environ ``dict`` for simulating WSGI requests.
 
     Keyword Args:
         path (str): The path for the request (default '/')
@@ -723,8 +723,7 @@ def create_asgi_req(body=None, req_type=None, options=None, **kwargs) -> falcon.
 
 @contextlib.contextmanager
 def redirected(stdout=sys.stdout, stderr=sys.stderr):
-    """
-    A context manager to temporarily redirect stdout or stderr
+    """Redirect stdout or stderr temporarily.
 
     e.g.:
 
@@ -741,7 +740,7 @@ def redirected(stdout=sys.stdout, stderr=sys.stderr):
 
 
 def closed_wsgi_iterable(iterable):
-    """Wraps an iterable to ensure its ``close()`` method is called.
+    """Wrap an iterable to ensure its ``close()`` method is called.
 
     Wraps the given `iterable` in an iterator utilizing a ``for`` loop as
     illustrated in

@@ -273,7 +273,7 @@ class Response:
         return '<%s: %s>' % (self.__class__.__name__, self.status)
 
     def set_stream(self, stream, content_length):
-        """Convenience method for setting both `stream` and `content_length`.
+        """Set both `stream` and `content_length`.
 
         Although the :attr:`~falcon.Response.stream` and
         :attr:`~falcon.Response.content_length` properties may be set
@@ -1037,7 +1037,7 @@ class Response:
         """)
 
     def _set_media_type(self, media_type=None):
-        """Wrapper around set_header to set a content-type.
+        """Set a content-type; wrapper around set_header.
 
         Args:
             media_type: Media type to use for the Content-Type

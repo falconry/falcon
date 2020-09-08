@@ -137,9 +137,17 @@ $ xdg-open docs/_build/html/index.html
 
 ### Code style rules
 
-* Docstrings are required for classes, attributes, methods, and functions.
-* Docstrings should utilize the [napolean style][docstrings] in order to make them read well, regardless of whether they are viewed through `help()` or on [Read the Docs][rtd].
-* Please try to be consistent with the way existing docstrings are formatted. In particular, note the use of single vs. double backticks as follows:
+* Docstrings are required for classes, attributes, methods, and functions. Follow the
+ following guidelines for docstrings:
+   * Docstrings should utilize the [napolean style][docstrings] in order to make them read well, regardless of whether they are viewed through `help()` or on [Read the Docs][rtd].
+   * Docstrings should begin with a short (~70 characters or less) summary line that ends in a period.
+       * The summary line should begin immediately after the opening quotes (do not add 
+    a line break before the summary line)
+       * The summary line should describe what it is if it is a class (e.g., "An 
+    asynchronous, file-like object for reading ASGI streams.")
+       * The summary line should describe what it does when called, if it is a 
+     function, structured as an imperative (e.g., "Delete a header that was previously set for this response.")
+   * Please try to be consistent with the way existing docstrings are formatted. In particular, note the use of single vs. double backticks as follows:
     * Double backticks
         * Inline code
         * Variables
