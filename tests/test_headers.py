@@ -500,6 +500,12 @@ class TestHeaders:
             'attachment; filename=A_ngstro_m_unit.txt; '
             "filename*=UTF-8''%C3%85ngstr%C3%B6m%20unit.txt",
         ),
+        ('one,two.txt', 'attachment; filename="one,two.txt"'),
+        (
+            '½,²⁄₂.txt',
+            'attachment; filename=1_2_2_2.txt; '
+            "filename*=UTF-8''%C2%BD%2C%C2%B2%E2%81%84%E2%82%82.txt"
+        ),
     ])
     def test_content_disposition_header(self, client, filename, expected):
         resource = DownloadableResource(filename)
