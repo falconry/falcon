@@ -102,7 +102,7 @@ def format_content_disposition(value):
     #     "filename" should occur first, due to parsing problems in some
     #     existing implementations.
     return "attachment; filename=%s; filename*=UTF-8''%s" % (
-        secure_filename(value), uri.encode(value))
+        secure_filename(value), uri.encode_value(value))
 
 
 def format_etag_header(value):
