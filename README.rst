@@ -369,6 +369,8 @@ index page in your browser. On OS X it's as simple as::
 
 Or on Linux:
 
+.. code:: bash
+
     $ xdg-open docs/_build/html/index.html
 
 Getting Started

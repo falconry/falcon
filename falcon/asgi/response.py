@@ -203,7 +203,7 @@ class Response(falcon.response.Response):
         self._sse = value
 
     def set_stream(self, stream, content_length):
-        """Convenience method for setting both `stream` and `content_length`.
+        """Set both `stream` and `content_length`.
 
         Although the :attr:`~falcon.asgi.Response.stream` and
         :attr:`~falcon.asgi.Response.content_length` properties may be set

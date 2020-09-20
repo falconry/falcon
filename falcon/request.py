@@ -972,7 +972,7 @@ class Request:
         return netloc_value
 
     def get_media(self):
-        """Returns a deserialized form of the request stream.
+        """Return a deserialized form of the request stream.
 
         The first time this method is called, the request stream will be
         deserialized using the Content-Type header as well as the media-type

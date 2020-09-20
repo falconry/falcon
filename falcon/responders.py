@@ -21,27 +21,27 @@ from falcon.status_codes import HTTP_200
 
 
 def path_not_found(req, resp, **kwargs):
-    """Raise 404 HTTPRouteNotFound error"""
+    """Raise 404 HTTPRouteNotFound error."""
     raise HTTPRouteNotFound()
 
 
 async def path_not_found_async(req, resp, **kwargs):
-    """Raise 404 HTTPRouteNotFound error"""
+    """Raise 404 HTTPRouteNotFound error."""
     raise HTTPRouteNotFound()
 
 
 def bad_request(req, resp, **kwargs):
-    """Raise 400 HTTPBadRequest error"""
+    """Raise 400 HTTPBadRequest error."""
     raise HTTPBadRequest(title='Bad request', description='Invalid HTTP method')
 
 
 async def bad_request_async(req, resp, **kwargs):
-    """Raise 400 HTTPBadRequest error"""
+    """Raise 400 HTTPBadRequest error."""
     raise HTTPBadRequest(title='Bad request', description='Invalid HTTP method')
 
 
 def create_method_not_allowed(allowed_methods, asgi=False):
-    """Create a responder for "405 Method Not Allowed"
+    """Create a responder for "405 Method Not Allowed".
 
     Args:
         allowed_methods: A list of HTTP methods (uppercase) that should be
@@ -63,7 +63,7 @@ def create_method_not_allowed(allowed_methods, asgi=False):
 
 
 def create_default_options(allowed_methods, asgi=False):
-    """Create a default responder for the OPTIONS method
+    """Create a default responder for the OPTIONS method.
 
     Args:
         allowed_methods (iterable): An iterable of HTTP methods (uppercase)

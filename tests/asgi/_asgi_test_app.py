@@ -8,6 +8,7 @@ import falcon
 import falcon.asgi
 import falcon.util
 
+SSE_TEST_MAX_DELAY_SEC = 1
 _WIN32 = sys.platform.startswith('win')
 
 
@@ -69,7 +70,7 @@ class Things:
             safely_values.append((a, b, c))
 
         cms = falcon.util.wrap_sync_to_async(callmesafely, threadsafe=False)
-        loop = falcon.util.get_loop()
+        loop = falcon.util.get_running_loop()
 
         # NOTE(caselit): on windows it takes more time so create less tasks
         num_cms_tasks = 100 if _WIN32 else 1000
@@ -104,10 +105,11 @@ class Bucket:
 class Events:
     async def on_get(self, req, resp):
         async def emit():
-            start = time.time()
-            while time.time() - start < 1:
+            s = 0
+            while s <= SSE_TEST_MAX_DELAY_SEC:
                 yield falcon.asgi.SSEvent(text='hello world')
-                await asyncio.sleep(0.2)
+                await asyncio.sleep(s)
+                s += (SSE_TEST_MAX_DELAY_SEC / 4)
 
         resp.sse = emit()
 

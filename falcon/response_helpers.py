@@ -82,7 +82,7 @@ def format_range(value):
 
 
 def format_content_disposition(value):
-    """Formats a Content-Disposition header given a filename."""
+    """Format a Content-Disposition header given a filename."""
 
     # NOTE(vytas): RFC 6266, Appendix D.
     #   Include a "filename" parameter when US-ASCII ([US-ASCII]) is
@@ -102,11 +102,11 @@ def format_content_disposition(value):
     #     "filename" should occur first, due to parsing problems in some
     #     existing implementations.
     return "attachment; filename=%s; filename*=UTF-8''%s" % (
-        secure_filename(value), uri.encode(value))
+        secure_filename(value), uri.encode_value(value))
 
 
 def format_etag_header(value):
-    """Formats an ETag header, wrap it with " " in case of need."""
+    """Format an ETag header, wrap it with " " in case of need."""
 
     if value[-1] != '\"':
         value = '\"' + value + '\"'

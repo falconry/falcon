@@ -1,5 +1,6 @@
 import pytest
 
+import falcon
 from falcon import testing
 from falcon.asgi import App
 
@@ -203,3 +204,33 @@ def test_multiple_handlers():
     assert b._called_shutdown == 6
 
     assert e._called_request
+
+
+def test_asgi_conductor_raised_error_skips_shutdown():
+    class SomeException(Exception):
+        pass
+
+    class Foo:
+        def __init__(self):
+            self.called_startup = False
+            self.called_shutdown = False
+
+        async def process_startup(self, scope, event):
+            self.called_startup = True
+
+        async def process_shutdown(self, scope, event):
+            self.called_shutdown = True
+
+    foo = Foo()
+
+    app = App()
+    app.add_middleware(foo)
+
+    async def t():
+        with pytest.raises(SomeException):
+            async with testing.ASGIConductor(app):
+                raise SomeException()
+
+    falcon.invoke_coroutine_sync(t)
+    assert foo.called_startup
+    assert not foo.called_shutdown
