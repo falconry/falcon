@@ -398,7 +398,7 @@ def rand_string(min, max) -> str:
 def create_scope(path='/', query_string='', method='GET', headers=None,
                  host=DEFAULT_HOST, scheme=None, port=None, http_version='1.1',
                  remote_addr=None, root_path=None, content_length=None,
-                 include_server=True) -> Dict[str, Any]:
+                 include_server=True, cookies=None) -> Dict[str, Any]:
 
     """Create a mock ASGI scope ``dict`` for simulating ASGI requests.
 
@@ -437,6 +437,10 @@ def create_scope(path='/', query_string='', method='GET', headers=None,
             used to set the Content-Length header in the request.
         include_server (bool): Set to ``False`` to not set the 'server' key
             in the scope ``dict`` (default ``True``).
+        cookies (dict): Cookies as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of items provides the name and value
+            for the 'Set-Cookie' header.
     """
 
     http_version = _fixup_http_version(http_version)
@@ -499,7 +503,13 @@ def create_scope(path='/', query_string='', method='GET', headers=None,
     if include_server:
         scope['server'] = iter([host, port])
 
-    _add_headers_to_scope(scope, headers, content_length, host, port, scheme, http_version)
+    # NOTE(myusko): Clients discard Set-Cookie header
+    #  in the response to the OPTIONS method.
+    if method == 'OPTIONS' and cookies is not None:
+        cookies = None
+
+    _add_headers_to_scope(scope, headers, content_length, host,
+                          port, scheme, http_version, cookies)
 
     return scope
 
@@ -650,14 +660,10 @@ def create_environ(path='/', query_string='', http_version='1.1',
     if content_length != 0:
         env['CONTENT_LENGTH'] = str(content_length)
 
-    # NOTE(myuz): Clients discard Set-Cookie header
+    # NOTE(myusko): Clients discard Set-Cookie header
     #  in the response to the OPTIONS method.
     if cookies is not None and method != 'OPTIONS':
-        cookies = [
-            '{}={}'.format(key, cookie.value if hasattr(cookie, 'value') else cookie)
-            for key, cookie in cookies.items()
-        ]
-        env['HTTP_COOKIE'] = '; '.join(cookies)
+        env['HTTP_COOKIE'] = _make_cookie_values(cookies)
 
     if headers is not None:
         _add_headers_to_environ(env, headers)
@@ -805,7 +811,8 @@ def _add_headers_to_environ(env, headers):
             env[name_wsgi] += ',' + value
 
 
-def _add_headers_to_scope(scope, headers, content_length, host, port, scheme, http_version):
+def _add_headers_to_scope(scope, headers, content_length, host,
+                          port, scheme, http_version, cookies):
     if headers:
         try:
             items = headers.items()
@@ -842,6 +849,9 @@ def _add_headers_to_scope(scope, headers, content_length, host, port, scheme, ht
 
         prepared_headers.append([b'host', host_header.encode()])
 
+    if cookies is not None:
+        prepared_headers.append([b'cookie', _make_cookie_values(cookies).encode()])
+
     # NOTE(kgriffs): Make it an iterator to ensure the app is not expecting
     #   a specific type (ASGI only specified that it is an iterable).
     scope['headers'] = iter(prepared_headers)
@@ -859,3 +869,10 @@ def _fixup_http_version(http_version) -> str:
         http_version = '1.0'
 
     return http_version
+
+
+def _make_cookie_values(cookies: Dict) -> str:
+    return '; '.join([
+        '{}={}'.format(key, cookie.value if hasattr(cookie, 'value') else cookie)
+        for key, cookie in cookies.items()
+    ])

@@ -520,7 +520,7 @@ def simulate_request(app, method='GET', path='/', query_string=None,
             params=params, params_csv=params_csv, protocol=protocol, host=host,
             remote_addr=remote_addr, extras=extras, http_version=http_version,
             port=port, root_path=root_path, asgi_chunk_size=asgi_chunk_size,
-            asgi_disconnect_ttl=asgi_disconnect_ttl,
+            asgi_disconnect_ttl=asgi_disconnect_ttl, cookies=cookies
         )
 
     path, query_string, headers, body, extras = _prepare_sim_args(
@@ -574,7 +574,7 @@ async def _simulate_request_asgi(
     params_csv=True, protocol='http', host=helpers.DEFAULT_HOST,
     remote_addr=None, extras=None, http_version='1.1',
     port=None, root_path=None, asgi_chunk_size=4096,
-    asgi_disconnect_ttl=300,
+    asgi_disconnect_ttl=300, cookies=None,
 
     # NOTE(kgriffs): These are undocumented because they are only
     #   meant to be used internally by the framework (i.e., they are
@@ -663,6 +663,10 @@ async def _simulate_request_asgi(
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
+        cookies (dict): Cookies as a dict-like (Mapping) object, or an
+        iterable yielding a series of two-member (*name*, *value*)
+        iterables. Each pair of items provides the name and value
+        for the 'Set-Cookie' header.
 
     Returns:
         :py:class:`~.Result`: The result of the request
@@ -694,6 +698,7 @@ async def _simulate_request_asgi(
         remote_addr=remote_addr,
         root_path=root_path,
         content_length=content_length,
+        cookies=cookies,
     )
 
     if 'method' in extras and extras['method'] != method.upper():
