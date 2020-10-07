@@ -3,7 +3,7 @@ import time
 import pytest
 
 import falcon
-from falcon import testing, asgi
+from falcon import asgi, testing
 
 
 @pytest.mark.asyncio

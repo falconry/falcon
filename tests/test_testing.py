@@ -1,7 +1,7 @@
 import pytest
 
 import falcon
-from falcon import App, asgi, status_codes, testing
+from falcon import App, status_codes, testing
 
 
 class CustomCookies:
