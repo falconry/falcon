@@ -134,31 +134,3 @@ def test_cookies_jar():
     response_two = client.simulate_post('/jars', cookies=response_one.cookies)
 
     assert response_two.status == falcon.HTTP_200
-
-
-def test_cookies_jar_async():
-    class Bar:
-        async def on_get(self, req, resp):
-            # NOTE(myusko): In the future we shouldn't change the cookie
-            #             a test depends on the input.
-            # NOTE(kgriffs): This is the only test that uses a single
-            #   cookie (vs. multiple) as input; if this input ever changes,
-            #   a separate test will need to be added to explicitly verify
-            #   this use case.
-            resp.set_cookie('has_permission', 'true')
-
-        async def on_post(self, req, resp):
-            if req.cookies['has_permission'] == 'true':
-                resp.status = falcon.HTTP_200
-            else:
-                resp.status = falcon.HTTP_403
-
-    app = asgi.App()
-    app.add_route('/async_jars', Bar())
-
-    client = testing.TestClient(app)
-
-    response_one = client.simulate_get('/async_jars')
-    response_two = client.simulate_post('/async_jars', cookies=response_one.cookies)
-
-    assert response_two.status == falcon.HTTP_200
