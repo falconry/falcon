@@ -1886,12 +1886,17 @@ class RequestOptions:
             any non-percent-encoded commas (default ``False``). When ``False``,
             values containing commas are left as-is. In this mode, list items
             are taken only from multiples of the same parameter name within the
-            query string (i.e. ``/?t=1,2,3&t=4`` becomes ``['1,2,3', '4']``).
+            query string (i.e. ``t=1,2,3&t=4`` becomes ``['1,2,3', '4']``).
             When `auto_parse_qs_csv` is set to ``True``, the query string value
             is also split on non-percent-encoded commas and these items
-            are added to the final list (i.e. ``/?t=1,2,3&t=4``
+            are added to the final list (i.e. ``t=1,2,3&t=4``
             becomes ``['1', '2', '3', '4']``).
 
+            Warning:
+                When `auto_parse_qs_csv` is set to either ``True`` or ``False``,
+                only the first set of values for the same key are are split.
+                For example, ``t=1,2&t=3,4`` becomes ``['1', '2', '3,4'``.
+                
             Warning:
                 Enabling this option will cause the framework to misinterpret
                 any JSON values that include literal (non-percent-encoded)
