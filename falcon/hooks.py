@@ -28,7 +28,7 @@ _DECORABLE_METHOD_NAME = re.compile(r'^on_({})(_\w+)?$'.format(
 
 
 def before(action, *args, is_async=False, **kwargs):
-    """Decorator to execute the given action function *before* the responder.
+    """Execute the given action function *before* the responder.
 
     The `params` argument that is passed to the hook
     contains only the fields from the URI template path; it does not
@@ -112,7 +112,7 @@ def before(action, *args, is_async=False, **kwargs):
 
 
 def after(action, *args, is_async=False, **kwargs):
-    """Decorator to execute the given action function *after* the responder.
+    """Execute the given action function *after* the responder.
 
     Args:
         action (callable): A function of the form
