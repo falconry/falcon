@@ -194,7 +194,7 @@ ctypes.windll.kernel32.SetConsoleCtrlHandler(None, 0)
 uvicorn.run('_asgi_test_app:application', host='{host}', port={port})
 """
         return subprocess.Popen(
-            ('python', '-c', script),
+            (sys.executable, '-c', script),
             cwd=_MODULE_DIR,
             creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
         )
