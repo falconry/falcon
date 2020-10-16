@@ -27,6 +27,7 @@ jobs:
           - "3.6"
           - "3.7"
           - "3.8"
+          - "3.9"
         architecture:
           - x64
 
@@ -116,6 +117,7 @@ jobs:
           - cp36-cp36m
           - cp37-cp37m
           - cp38-cp38
+          - cp39-cp39
         architecture:
           - x64
 
@@ -244,7 +246,7 @@ jobs:
         os:
           - "ubuntu-latest"
         python-version:
-          - "3.8"
+          - "3.9"
         architecture:
           - x64
 
@@ -309,6 +311,7 @@ jobs:
           - cp36-cp36m
           - cp37-cp37m
           - cp38-cp38
+          - cp39-cp39
         architecture:
           - aarch64
           - s390x
