@@ -1895,7 +1895,7 @@ class RequestOptions:
             Warning:
                 When `auto_parse_qs_csv` is set to either ``True`` or ``False``,
                 only the first set of values for the same key are are split.
-                For example, ``t=1,2&t=3,4`` becomes ``['1', '2', '3,4'``.
+                For example, ``t=1,2&t=3,4`` becomes ``['1', '2', '3,4']``.
 
             Warning:
                 Enabling this option will cause the framework to misinterpret
