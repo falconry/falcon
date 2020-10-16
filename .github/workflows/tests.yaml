@@ -53,10 +53,10 @@ jobs:
           - python-version: 3.7
             os: ubuntu-20.04
             toxenv: py37
-          - python-version: 3.9.0-beta.5
+          - python-version: 3.9
             os: ubuntu-20.04
             toxenv: py39
-          - python-version: 3.9.0-beta.5
+          - python-version: 3.9
             os: ubuntu-20.04
             toxenv: py39_cython
           - python-version: 3.8
