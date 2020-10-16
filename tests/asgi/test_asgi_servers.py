@@ -12,6 +12,7 @@ import requests
 import requests.exceptions
 
 from falcon import testing
+from . import _asgi_test_app
 
 
 _MODULE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -118,6 +119,21 @@ class TestASGIServer:
 
         assert not events[-1]
 
+    def test_sse_client_disconnects_early(self, server_base_url):
+        """Test that when the client connection is lost, the server task does not hang.
+
+        In the case of SSE, Falcon should detect when the client connection is
+        lost and immediately bail out. Currently this is observable by watching
+        the output of the uvicorn and daphne server processes. Also, the
+        _run_server_isolated() method will fail the test if the server process
+        takes too long to shut down.
+        """
+        with pytest.raises(requests.exceptions.ConnectionError):
+            requests.get(
+                server_base_url + 'events',
+                timeout=(_asgi_test_app.SSE_TEST_MAX_DELAY_SEC / 2)
+            )
+
 
 @contextmanager
 def _run_server_isolated(process_factory, host, port):
@@ -149,8 +165,11 @@ def _run_server_isolated(process_factory, host, port):
             pass
         except subprocess.TimeoutExpired:
             print('\n[Killing stubborn server process...]')
+
             server.kill()
             server.communicate()
+
+            pytest.fail('Server process did not exit in a timely manner and had to be killed.')
     else:
         print('\n[Sending SIGTERM to server process...]')
         server.terminate()
@@ -159,8 +178,11 @@ def _run_server_isolated(process_factory, host, port):
             server.communicate(timeout=10)
         except subprocess.TimeoutExpired:
             print('\n[Killing stubborn server process...]')
+
             server.kill()
             server.communicate()
+
+            pytest.fail('Server process did not exit in a timely manner and had to be killed.')
 
 
 def _uvicorn_factory(host, port):

@@ -48,7 +48,7 @@ class HeaderNotSupported(ValueError):
 
 
 class CompatibilityError(ValueError):
-    """The given method or value is not compatibile."""
+    """The given method, value, or type is not compatible."""
 
 
 class UnsupportedScopeError(RuntimeError):
@@ -1781,7 +1781,7 @@ class HTTPGatewayTimeout(HTTPError):
 
 
 class HTTPVersionNotSupported(HTTPError):
-    """505 HTTP Version Not Supported
+    """505 HTTP Version Not Supported.
 
     The 505 (HTTP Version Not Supported) status code indicates that the
     server does not support, or refuses to support, the major version of
@@ -2080,7 +2080,7 @@ class HTTPInvalidHeader(HTTPBadRequest):
 
 
 class HTTPMissingHeader(HTTPBadRequest):
-    """400 Bad Request
+    """400 Bad Request.
 
     A header is missing from the request.
 
@@ -2134,7 +2134,7 @@ class HTTPMissingHeader(HTTPBadRequest):
 
 
 class HTTPInvalidParam(HTTPBadRequest):
-    """400 Bad Request
+    """400 Bad Request.
 
     A parameter in the request is invalid. This error may refer to a
     parameter in a query string, form, or document that was submitted
@@ -2191,7 +2191,7 @@ class HTTPInvalidParam(HTTPBadRequest):
 
 
 class HTTPMissingParam(HTTPBadRequest):
-    """400 Bad Request
+    """400 Bad Request.
 
     A parameter is missing from the request. This error may refer to a
     parameter in a query string, form, or document that was submitted
@@ -2251,7 +2251,7 @@ class HTTPMissingParam(HTTPBadRequest):
 
 
 def _load_headers(headers):
-    """Transforms the headers to dict"""
+    """Transform the headers to dict."""
     if headers is None:
         return {}
     if isinstance(headers, dict):
@@ -2260,7 +2260,7 @@ def _load_headers(headers):
 
 
 def _parse_retry_after(headers, retry_after):
-    """Sets the Retry-After to the headers when required"""
+    """Set the Retry-After to the headers when required."""
     if retry_after is None:
         return headers
     headers = _load_headers(headers)

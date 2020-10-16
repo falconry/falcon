@@ -219,7 +219,7 @@ _join_tokens = _join_tokens_list if _PYPY else _join_tokens_bytearray
 
 
 def decode(encoded_uri, unquote_plus=True):
-    """Decodes percent-encoded characters in a URI or query string.
+    """Decode percent-encoded characters in a URI or query string.
 
     This function models the behavior of `urllib.parse.unquote_plus`,
     albeit in a faster, more straightforward manner.

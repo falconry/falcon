@@ -8,24 +8,27 @@ Testing Helpers
 .. automodule:: falcon.testing
     :noindex:
 
-.. TODO: Add TOC here, and to other large RSTs?
-
-General Helpers
----------------
-
-.. autoclass:: TestCase
-.. autoclass:: SimpleTestResource
-.. autofunction:: rand_string
-.. autofunction:: get_unused_port
-.. autofunction:: redirected
-.. autofunction:: get_encoding_from_headers
-
-
 Simulating Requests
 -------------------
 
 Main Interface
 ~~~~~~~~~~~~~~
+
+.. autoclass:: TestClient
+   :members:
+.. autoclass:: ASGIConductor
+   :members:
+.. autoclass:: Result
+   :members:
+.. autoclass:: StreamedResult
+   :members:
+.. autoclass:: ResultBodyStream
+   :members:
+.. autoclass:: Cookie
+   :members:
+
+Standalone Methods
+~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: simulate_get
 .. autofunction:: simulate_head
@@ -36,9 +39,6 @@ Main Interface
 .. autofunction:: simulate_delete
 .. autofunction:: simulate_request
 
-.. autoclass:: Result
-.. autoclass:: Cookie
-.. autoclass:: TestClient
 .. autofunction:: capture_responder_args
 .. autofunction:: capture_responder_args_async
 .. autofunction:: set_resp_defaults
@@ -48,11 +48,34 @@ Low-Level Utils
 ~~~~~~~~~~~~~~~
 
 .. autoclass:: StartResponseMock
+   :members:
 .. autoclass:: ASGIRequestEventEmitter
+   :members:
 .. autoclass:: ASGILifespanEventEmitter
+   :members:
 .. autoclass:: ASGIResponseEventCollector
+   :members:
 .. autofunction:: create_environ
 .. autofunction:: create_scope
 .. autofunction:: create_req
 .. autofunction:: create_asgi_req
 .. autofunction:: closed_wsgi_iterable
+
+Other Helpers
+-------------
+
+Test Cases
+~~~~~~~~~~
+
+.. autoclass:: TestCase
+   :members:
+.. autoclass:: SimpleTestResource
+   :members:
+
+Functions
+~~~~~~~~~
+
+.. autofunction:: rand_string
+.. autofunction:: get_unused_port
+.. autofunction:: redirected
+.. autofunction:: get_encoding_from_headers

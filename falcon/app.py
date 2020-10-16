@@ -984,7 +984,7 @@ class App:
     # to call using self, and this function is called for most
     # requests.
     def _get_body(self, resp, wsgi_file_wrapper=None):
-        """Convert resp content into an iterable as required by PEP 333
+        """Convert resp content into an iterable as required by PEP 333.
 
         Args:
             resp: Instance of falcon.Response
