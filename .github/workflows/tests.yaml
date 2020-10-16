@@ -24,6 +24,7 @@ jobs:
         toxenv:
           - "pep8"
           - "pep8-examples"
+          - "pep8-docstrings"
           - "mypy"
           - "py38"
           - "py38_cython"
@@ -77,15 +78,18 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        if: ${{ matrix.toxenv == 'py35' }}
+        with:
+          python-version: 3.8
+
       - name: Set up Python 3.5.2
         if: ${{ matrix.toxenv == 'py35' }}
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential curl python3.5 python3.5-dev
-          sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.5 10
-          curl -sSL https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
-          sudo python /tmp/get-pip.py
-          sudo pip install coverage tox
+          python3.5 --version
 
       - name: Install smoke test dependencies
         if: ${{ matrix.toxenv == 'py38_smoke' || matrix.toxenv == 'py38_smoke_cython' }}
@@ -100,6 +104,7 @@ jobs:
           python --version
           pip --version
           tox --version
+          coverage --version
 
       - name: Run tests
         run: tox -e ${{ matrix.toxenv }}
