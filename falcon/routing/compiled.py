@@ -368,8 +368,21 @@ class CompiledRouter:
                     msg = 'Cannot instantiate converter "{}"'.format(name)
                     raise ValueError(msg) from e
 
-    def _generate_ast(self, nodes, parent, return_values, patterns, level=0, fast_return=True):
+    def _generate_ast(
+        self,
+        nodes: list,
+        parent,
+        return_values: list,
+        patterns: list,
+        params_stack: list,
+        level=0,
+        fast_return=True
+    ):
         """Generate a coarse AST for the router."""
+        # NOTE(caselit): setting of the parameters in the params dict is delayed until
+        # a match has been found by adding the to the param_stack. This way superfluous
+        # parameters are not set to the params dict while descending on branches that
+        # ultimately do not match.
 
         # NOTE(kgriffs): Base case
         if not nodes:
@@ -400,7 +413,9 @@ class CompiledRouter:
 
                 fast_return = not found_var_nodes
 
+        original_params_stack = params_stack.copy()
         for node in nodes:
+            params_stack = original_params_stack.copy()
             if node.is_var:
                 if node.is_complex:
                     # NOTE(richardolsson): Complex nodes are nodes which
@@ -417,10 +432,13 @@ class CompiledRouter:
 
                     if node.var_converter_map:
                         parent.append_child(_CxPrefetchGroupsFromPatternMatch())
-                        parent = self._generate_conversion_ast(parent, node)
+                        parent = self._generate_conversion_ast(parent, node, params_stack)
 
                     else:
-                        parent.append_child(_CxSetParamsFromPatternMatch())
+                        construct = _CxVariableFromPatternMatch(len(params_stack) + 1)
+                        setter = _CxSetParamsFromDict(construct.dict_variable_name)
+                        params_stack.append(setter)
+                        parent.append_child(construct)
 
                 else:
                     # NOTE(kgriffs): Simple nodes just capture the entire path
@@ -442,15 +460,14 @@ class CompiledRouter:
                         converter_idx = len(self._converters)
                         self._converters.append(converter_obj)
 
-                        construct = _CxIfConverterField(
-                            field_name,
-                            converter_idx,
-                        )
+                        construct = _CxIfConverterField(len(params_stack) + 1, converter_idx)
+                        setter = _CxSetParamFromValue(field_name, construct.field_variable_name)
+                        params_stack.append(setter)
 
                         parent.append_child(construct)
                         parent = construct
                     else:
-                        parent.append_child(_CxSetParam(node.var_name, level))
+                        params_stack.append(_CxSetParamFromPath(node.var_name, level))
 
                     # NOTE(kgriffs): We don't allow multiple simple var nodes
                     # to exist at the same level, e.g.:
@@ -479,6 +496,7 @@ class CompiledRouter:
                 parent,
                 return_values,
                 patterns,
+                params_stack.copy(),
                 level + 1,
                 fast_return
             )
@@ -491,6 +509,8 @@ class CompiledRouter:
                 # the segments for the requested route; otherwise we could
                 # mistakenly match "/foo/23/bar" against "/foo/{id}".
                 construct = _CxIfPathLength('==', level + 1)
+                for params in params_stack:
+                    construct.append_child(params)
                 construct.append_child(_CxReturnValue(resource_idx))
                 parent.append_child(construct)
 
@@ -502,7 +522,7 @@ class CompiledRouter:
         if not found_simple and fast_return:
             parent.append_child(_CxReturnNone())
 
-    def _generate_conversion_ast(self, parent, node):
+    def _generate_conversion_ast(self, parent, node: 'CompiledRouterNode', params_stack: list):
         # NOTE(kgriffs): Unroll the converter loop into
         # a series of nested "if" constructs.
         for field_name, converter_name, converter_argstr in node.var_converter_map:
@@ -517,10 +537,9 @@ class CompiledRouter:
 
             parent.append_child(_CxSetFragmentFromField(field_name))
 
-            construct = _CxIfConverterField(
-                field_name,
-                converter_idx,
-            )
+            construct = _CxIfConverterField(len(params_stack) + 1, converter_idx)
+            setter = _CxSetParamFromValue(field_name, construct.field_variable_name)
+            params_stack.append(setter)
 
             parent.append_child(construct)
             parent = construct
@@ -528,7 +547,10 @@ class CompiledRouter:
         # NOTE(kgriffs): Add remaining fields that were not
         # converted, if any.
         if node.num_fields > len(node.var_converter_map):
-            parent.append_child(_CxSetParamsFromPatternMatchPrefetched())
+            construct = _CxVariableFromPatternMatchPrefetched(len(params_stack)+1)
+            setter = _CxSetParamsFromDict(construct.dict_variable_name)
+            params_stack.append(setter)
+            parent.append_child(construct)
 
         return parent
 
@@ -553,7 +575,8 @@ class CompiledRouter:
             self._roots,
             self._ast,
             self._return_values,
-            self._patterns
+            self._patterns,
+            params_stack=[]
         )
 
         src_lines.append(self._ast.src(0))
@@ -859,7 +882,7 @@ class _CxParent:
 
 class _CxIfPathLength(_CxParent):
     def __init__(self, comparison, length):
-        super(_CxIfPathLength, self).__init__()
+        super().__init__()
         self._comparison = comparison
         self._length = length
 
@@ -875,7 +898,7 @@ class _CxIfPathLength(_CxParent):
 
 class _CxIfPathSegmentLiteral(_CxParent):
     def __init__(self, segment_idx, literal):
-        super(_CxIfPathSegmentLiteral, self).__init__()
+        super().__init__()
         self._segment_idx = segment_idx
         self._literal = literal
 
@@ -891,7 +914,7 @@ class _CxIfPathSegmentLiteral(_CxParent):
 
 class _CxIfPathSegmentPattern(_CxParent):
     def __init__(self, segment_idx, pattern_idx, pattern_text):
-        super(_CxIfPathSegmentPattern, self).__init__()
+        super().__init__()
         self._segment_idx = segment_idx
         self._pattern_idx = pattern_idx
         self._pattern_text = pattern_text
@@ -912,21 +935,22 @@ class _CxIfPathSegmentPattern(_CxParent):
 
 
 class _CxIfConverterField(_CxParent):
-    def __init__(self, field_name, converter_idx):
-        super(_CxIfConverterField, self).__init__()
-        self._field_name = field_name
+    def __init__(self, unique_idx, converter_idx):
+        super().__init__()
         self._converter_idx = converter_idx
+        self._unique_idx = unique_idx
+        self.field_variable_name = 'field_value_{0}'.format(unique_idx)
 
     def src(self, indentation):
         lines = [
-            '{0}field_value = converters[{1}].convert(fragment)'.format(
+            '{0}{1} = converters[{2}].convert(fragment)'.format(
                 _TAB_STR * indentation,
+                self.field_variable_name,
                 self._converter_idx,
             ),
-            '{0}if field_value is not None:'.format(_TAB_STR * indentation),
-            "{0}params['{1}'] = field_value".format(
-                _TAB_STR * (indentation + 1),
-                self._field_name,
+            '{0}if {1} is not None:'.format(
+                _TAB_STR * indentation,
+                self.field_variable_name
             ),
             self._children_src(indentation + 1),
         ]
@@ -956,17 +980,27 @@ class _CxSetFragmentFromPath:
         )
 
 
-class _CxSetParamsFromPatternMatch:
+class _CxVariableFromPatternMatch:
+    def __init__(self, unique_idx):
+        self._unique_idx = unique_idx
+        self.dict_variable_name = 'dict_value_{0}'.format(unique_idx)
+
     def src(self, indentation):
-        return '{0}params.update(match.groupdict())'.format(
-            _TAB_STR * indentation
+        return '{0}{1} = match.groupdict()'.format(
+            _TAB_STR * indentation,
+            self.dict_variable_name
         )
 
 
-class _CxSetParamsFromPatternMatchPrefetched:
+class _CxVariableFromPatternMatchPrefetched:
+    def __init__(self, unique_idx):
+        self._unique_idx = unique_idx
+        self.dict_variable_name = 'dict1_value_{0}'.format(unique_idx)
+
     def src(self, indentation):
-        return '{0}params.update(groups)'.format(
-            _TAB_STR * indentation
+        return '{0}{1} = groups'.format(
+            _TAB_STR * indentation,
+            self.dict_variable_name
         )
 
 
@@ -993,7 +1027,7 @@ class _CxReturnValue:
         )
 
 
-class _CxSetParam:
+class _CxSetParamFromPath:
     def __init__(self, param_name, segment_idx):
         self._param_name = param_name
         self._segment_idx = segment_idx
@@ -1003,4 +1037,28 @@ class _CxSetParam:
             _TAB_STR * indentation,
             self._param_name,
             self._segment_idx,
+        )
+
+
+class _CxSetParamFromValue:
+    def __init__(self, param_name, field_value_name):
+        self._param_name = param_name
+        self._field_value_name = field_value_name
+
+    def src(self, indentation):
+        return "{0}params['{1}'] = {2}".format(
+            _TAB_STR * indentation,
+            self._param_name,
+            self._field_value_name,
+        )
+
+
+class _CxSetParamsFromDict:
+    def __init__(self, dict_value_name):
+        self._dict_value_name = dict_value_name
+
+    def src(self, indentation):
+        return "{0}params.update({1})".format(
+            _TAB_STR * indentation,
+            self._dict_value_name,
         )
