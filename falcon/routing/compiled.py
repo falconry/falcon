@@ -382,7 +382,7 @@ class CompiledRouter:
     ):
         """Generate a coarse AST for the router."""
         # NOTE(caselit): setting of the parameters in the params dict is delayed until
-        # a match has been found by adding the to the param_stack. This way superfluous
+        # a match has been found by adding them to the param_stack. This way superfluous
         # parameters are not set to the params dict while descending on branches that
         # ultimately do not match.
 
@@ -989,7 +989,7 @@ class _CxSetFragmentFromPath:
 class _CxVariableFromPatternMatch:
     def __init__(self, unique_idx):
         self._unique_idx = unique_idx
-        self.dict_variable_name = 'dict_value_{0}'.format(unique_idx)
+        self.dict_variable_name = 'dict_match_{0}'.format(unique_idx)
 
     def src(self, indentation):
         return '{0}{1} = match.groupdict()'.format(
@@ -1001,7 +1001,7 @@ class _CxVariableFromPatternMatch:
 class _CxVariableFromPatternMatchPrefetched:
     def __init__(self, unique_idx):
         self._unique_idx = unique_idx
-        self.dict_variable_name = 'dict1_value_{0}'.format(unique_idx)
+        self.dict_variable_name = 'dict_groups_{0}'.format(unique_idx)
 
     def src(self, indentation):
         return '{0}{1} = groups'.format(
