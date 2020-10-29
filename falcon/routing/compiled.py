@@ -26,6 +26,8 @@ from falcon.routing.util import map_http_methods, set_default_responders
 from falcon.util.misc import is_python_func
 from falcon.util.sync import _should_wrap_non_coroutines, wrap_sync_to_async
 
+if False:
+    from typing import Any
 
 _TAB_STR = ' ' * 4
 _FIELD_PATTERN = re.compile(
@@ -413,6 +415,8 @@ class CompiledRouter:
 
                 fast_return = not found_var_nodes
 
+        construct = None  # type: Any
+        setter = None  # type: Any
         original_params_stack = params_stack.copy()
         for node in nodes:
             params_stack = original_params_stack.copy()
@@ -523,6 +527,8 @@ class CompiledRouter:
             parent.append_child(_CxReturnNone())
 
     def _generate_conversion_ast(self, parent, node: 'CompiledRouterNode', params_stack: list):
+        construct = None  # type: Any
+        setter = None  # type: Any
         # NOTE(kgriffs): Unroll the converter loop into
         # a series of nested "if" constructs.
         for field_name, converter_name, converter_argstr in node.var_converter_map:
@@ -547,7 +553,7 @@ class CompiledRouter:
         # NOTE(kgriffs): Add remaining fields that were not
         # converted, if any.
         if node.num_fields > len(node.var_converter_map):
-            construct = _CxVariableFromPatternMatchPrefetched(len(params_stack)+1)
+            construct = _CxVariableFromPatternMatchPrefetched(len(params_stack) + 1)
             setter = _CxSetParamsFromDict(construct.dict_variable_name)
             params_stack.append(setter)
             parent.append_child(construct)
@@ -1058,7 +1064,7 @@ class _CxSetParamsFromDict:
         self._dict_value_name = dict_value_name
 
     def src(self, indentation):
-        return "{0}params.update({1})".format(
+        return '{0}params.update({1})'.format(
             _TAB_STR * indentation,
             self._dict_value_name,
         )
