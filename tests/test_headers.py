@@ -207,6 +207,16 @@ class RemoveHeaderResource:
         resp.downloadable_as = None
 
 
+class DownloadableResource:
+    def __init__(self, filename):
+        self.filename = filename
+
+    def on_get(self, req, resp):
+        resp.body = 'Hello, World!\n'
+        resp.content_type = falcon.MEDIA_TEXT
+        resp.downloadable_as = self.filename
+
+
 class ContentLengthHeaderResource:
 
     def __init__(self, content_length, body=None, data=None):
@@ -476,6 +486,40 @@ class TestHeaders:
         for name, value in result.headers.items():
             hist[name] += 1
             assert 1 == hist[name]
+
+    @pytest.mark.parametrize('filename,expected', [
+        ('report.csv', 'attachment; filename="report.csv"'),
+        ('Hello World.txt', 'attachment; filename="Hello World.txt"'),
+        (
+            'Bold Digit 𝟏.txt',
+            'attachment; filename=Bold_Digit_1.txt; '
+            "filename*=UTF-8''Bold%20Digit%20%F0%9D%9F%8F.txt",
+        ),
+        (
+            'Ångström unit.txt',
+            'attachment; filename=A_ngstro_m_unit.txt; '
+            "filename*=UTF-8''%C3%85ngstr%C3%B6m%20unit.txt",
+        ),
+        ('one,two.txt', 'attachment; filename="one,two.txt"'),
+        (
+            '½,²⁄₂.txt',
+            'attachment; filename=1_2_2_2.txt; '
+            "filename*=UTF-8''%C2%BD%2C%C2%B2%E2%81%84%E2%82%82.txt"
+        ),
+        ('[foo] @ bar.txt', 'attachment; filename="[foo] @ bar.txt"'),
+        (
+            '[fòó]@bàr,bäz.txt',
+            'attachment; filename=_fo_o___ba_r_ba_z.txt; '
+            "filename*=UTF-8''%5Bf%C3%B2%C3%B3%5D%40b%C3%A0r%2Cb%C3%A4z.txt"
+        ),
+    ])
+    def test_content_disposition_header(self, client, filename, expected):
+        resource = DownloadableResource(filename)
+        client.app.add_route('/', resource)
+        resp = client.simulate_get()
+
+        assert resp.status_code == 200
+        assert resp.headers['Content-Disposition'] == expected
 
     def test_unicode_location_headers(self, client):
         client.app.add_route('/', LocationHeaderUnicodeResource())

@@ -38,7 +38,7 @@ class DeprecatedWarning(UserWarning):
 
 
 def deprecated(instructions, is_property=False):
-    """Flags a method as deprecated.
+    """Flag a method as deprecated.
 
     This function returns a decorator which can be used to mark deprecated
     functions. Applying this decorator will result in a warning being
@@ -75,7 +75,7 @@ def deprecated(instructions, is_property=False):
 
 
 def deprecated_args(*, allowed_positional, is_method=True):
-    """Flags a method call with positional args as deprecated
+    """Flag a method call with positional args as deprecated.
 
     Keyword Args:
         allowed_positional (int): Number of allowed positional arguments

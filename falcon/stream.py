@@ -60,7 +60,7 @@ class BoundedStream(io.IOBase):
     next = __next__
 
     def _read(self, size, target):
-        """Helper function for proxing reads to the underlying stream.
+        """Proxy reads to the underlying stream.
 
         Args:
             size (int): Maximum number of bytes to read. Will be
@@ -86,15 +86,15 @@ class BoundedStream(io.IOBase):
         return target(size)
 
     def readable(self):
-        """Always returns ``True``."""
+        """Return ``True`` always."""
         return True
 
     def seekable(self):
-        """Always returns ``False``."""
+        """Return ``False`` always."""
         return False
 
     def writable(self):
-        """Always returns ``False``."""
+        """Return ``False`` always."""
         return False
 
     def read(self, size=None):
@@ -140,7 +140,7 @@ class BoundedStream(io.IOBase):
         return self._read(hint, self.stream.readlines)
 
     def write(self, data):
-        """Always raises IOError; writing is not supported."""
+        """Raise IOError always; writing is not supported."""
 
         raise IOError('Stream is not writeable')
 

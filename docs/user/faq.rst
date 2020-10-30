@@ -478,6 +478,8 @@ being fully defined by the WSGI spec (PEP-3333). This is discussed in the
 reference documentation for :attr:`~falcon.Request.stream`, and a workaround
 is provided in the form of :attr:`~falcon.Request.bounded_stream`.
 
+.. _trailing_slash_in_path:
+
 How does Falcon handle a trailing slash in the request path?
 ------------------------------------------------------------
 If your app sets :attr:`~falcon.RequestOptions.strip_url_path_trailing_slash` to
@@ -490,6 +492,16 @@ as traditionally used by websites to reference index pages.
 For example, with this option enabled, adding a route for ``'/foo/bar'``
 implicitly adds a route for ``'/foo/bar/'``. In other words, requests coming
 in for either path will be sent to the same resource.
+
+.. warning::
+
+    If :attr:`~falcon.RequestOptions.strip_url_path_trailing_slash` is enabled,
+    adding a route with a trailing slash will effectively make it unreachable
+    from normal routing (theoretically, it may still be matched by rewriting
+    the request path in middleware).
+
+    In this case, routes should be added without a trailing slash (obviously
+    except the root path ``'/'``), such as ``'/foo/bar'`` in the example above.
 
 .. note::
 

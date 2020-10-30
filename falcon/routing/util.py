@@ -86,7 +86,7 @@ def compile_uri_template(template):
 
 
 def map_http_methods(resource, suffix=None):
-    """Maps HTTP methods (e.g., GET, POST) to methods of a resource object.
+    """Map HTTP methods (e.g., GET, POST) to methods of a resource object.
 
     Args:
         resource: An object with *responder* methods, following the naming
@@ -131,7 +131,7 @@ def map_http_methods(resource, suffix=None):
 
 
 def set_default_responders(method_map, asgi=False):
-    """Maps HTTP methods not explicitly defined on a resource to default responders.
+    """Map HTTP methods not explicitly defined on a resource to default responders.
 
     Args:
         method_map: A dict with HTTP methods mapped to responders explicitly

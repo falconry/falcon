@@ -456,6 +456,13 @@ class App:
 
                 (See also: :meth:`~.App.add_sink`)
 
+                Warning:
+                    If :attr:`~falcon.RequestOptions.strip_url_path_trailing_slash`
+                    is enabled, `uri_template` should be provided without a
+                    trailing slash.
+
+                    (See also: :ref:`trailing_slash_in_path`)
+
             resource (instance): Object which represents a REST
                 resource. Falcon will pass GET requests to ``on_get()``,
                 PUT requests to ``on_put()``, etc. If any HTTP methods are not
@@ -952,7 +959,7 @@ class App:
     # to call using self, and this function is called for most
     # requests.
     def _get_body(self, resp, wsgi_file_wrapper=None):
-        """Convert resp content into an iterable as required by PEP 333
+        """Convert resp content into an iterable as required by PEP 333.
 
         Args:
             resp: Instance of falcon.Response
