@@ -163,3 +163,7 @@ class BoundedStream(io.IOBase):
         return self._bytes_remaining <= 0
 
     is_exhausted = eof
+
+
+# NOTE(kgriffs): Alias for backwards-compat
+Body = BoundedStream

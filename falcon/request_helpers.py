@@ -17,9 +17,9 @@
 from http import cookies as http_cookies
 import re
 
-# TODO: BoundedStream  import here is for backwards-compatibility 
+# TODO: BoundedStream  import here is for backwards-compatibility
 # and it should be removed in Falcon 4.0
-from falcon.stream import BoundedStream
+from falcon.stream import BoundedStream, Body  # NOQA
 from falcon.util import ETag
 
 # https://tools.ietf.org/html/rfc6265#section-4.1.1
@@ -173,5 +173,4 @@ def _parse_etags(etag_str):
     return etags or None
 
 
-# NOTE(kgriffs): Alias for backwards-compat
-Body = BoundedStream
+
