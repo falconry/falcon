@@ -171,6 +171,3 @@ def _parse_etags(etag_str):
     #   are all set to nothing, and so therefore basically should be
     #   treated as not having been set in the first place.
     return etags or None
-
-
-
