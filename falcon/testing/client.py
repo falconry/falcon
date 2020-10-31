@@ -664,9 +664,9 @@ async def _simulate_request_asgi(
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
         cookies (dict): Cookies as a dict-like (Mapping) object, or an
-        iterable yielding a series of two-member (*name*, *value*)
-        iterables. Each pair of items provides the name and value
-        for the 'Set-Cookie' header.
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of items provides the name and value
+            for the 'Set-Cookie' header.
 
     Returns:
         :py:class:`~.Result`: The result of the request
