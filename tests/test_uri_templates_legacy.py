@@ -55,7 +55,8 @@ class TestUriTemplates:
         assert result
         assert result.groupdict() == {'name': 'Kelsier'}
 
-        fields, pattern = routing.compile_uri_template('/character/{name}/profile')
+        fields, pattern = routing.compile_uri_template(
+            '/character/{name}/profile')
         assert fields == {'name'}
 
         assert not pattern.match('/character')

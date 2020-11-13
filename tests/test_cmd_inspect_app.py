@@ -45,34 +45,42 @@ def app(asgi):
 
 class TestMakeParser:
     @pytest.mark.parametrize('args, exp', (
-        (['foo'], Namespace(app_module='foo', route_only=False, verbose=False, internal=False)),
+        (['foo'], Namespace(app_module='foo',
+                            route_only=False, verbose=False, internal=False)),
         (
             ['foo', '-r'],
-            Namespace(app_module='foo', route_only=True, verbose=False, internal=False)
+            Namespace(app_module='foo', route_only=True,
+                      verbose=False, internal=False)
         ),
         (
             ['foo', '--route_only'],
-            Namespace(app_module='foo', route_only=True, verbose=False, internal=False)
+            Namespace(app_module='foo', route_only=True,
+                      verbose=False, internal=False)
         ),
         (
             ['foo', '-v'],
-            Namespace(app_module='foo', route_only=False, verbose=True, internal=False)
+            Namespace(app_module='foo', route_only=False,
+                      verbose=True, internal=False)
         ),
         (
             ['foo', '--verbose'],
-            Namespace(app_module='foo', route_only=False, verbose=True, internal=False)
+            Namespace(app_module='foo', route_only=False,
+                      verbose=True, internal=False)
         ),
         (
             ['foo', '-i'],
-            Namespace(app_module='foo', route_only=False, verbose=False, internal=True)
+            Namespace(app_module='foo', route_only=False,
+                      verbose=False, internal=True)
         ),
         (
             ['foo', '--internal'],
-            Namespace(app_module='foo', route_only=False, verbose=False, internal=True)
+            Namespace(app_module='foo', route_only=False,
+                      verbose=False, internal=True)
         ),
         (
             ['foo', '-r', '-v', '-i'],
-            Namespace(app_module='foo', route_only=True, verbose=True, internal=True)
+            Namespace(app_module='foo', route_only=True,
+                      verbose=True, internal=True)
         ),
     ))
     def test_make_parser(self, args, exp):
@@ -90,7 +98,8 @@ class TestLoadApp:
     @pytest.mark.parametrize('name', ('_APP', 'make_app'))
     def test_load_app(self, name):
         parser = inspect_app.make_parser()
-        args = Namespace(app_module='{}:{}'.format(_MODULE, name), route_only=False, verbose=False)
+        args = Namespace(app_module='{}:{}'.format(
+            _MODULE, name), route_only=False, verbose=False)
         app = inspect_app.load_app(parser, args)
         assert isinstance(app, App)
         assert app._router.find('/test') is not None
@@ -102,7 +111,8 @@ class TestLoadApp:
     ))
     def test_load_app_error(self, name):
         parser = inspect_app.make_parser()
-        args = Namespace(app_module='{}:{}'.format(_MODULE, name), route_only=False, verbose=False)
+        args = Namespace(app_module='{}:{}'.format(
+            _MODULE, name), route_only=False, verbose=False)
         with pytest.raises(SystemExit):
             inspect_app.load_app(parser, args)
 

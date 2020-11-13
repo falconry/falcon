@@ -138,7 +138,8 @@ class SSEvent:
         elif self.text is not None:
             block += 'data: ' + self.text + '\n'
         elif self.json is not None:
-            block += 'data: ' + json_dumps(self.json, ensure_ascii=False) + '\n'
+            block += 'data: ' + \
+                json_dumps(self.json, ensure_ascii=False) + '\n'
 
         if not block:
             return b': ping\n\n'

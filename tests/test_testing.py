@@ -75,13 +75,15 @@ def test_simulate_request_content_type():
     result = testing.simulate_post(app, '/', content_type=falcon.MEDIA_HTML)
     assert result.text == falcon.MEDIA_HTML
 
-    result = testing.simulate_post(app, '/', content_type=falcon.MEDIA_HTML, headers=headers)
+    result = testing.simulate_post(
+        app, '/', content_type=falcon.MEDIA_HTML, headers=headers)
     assert result.text == falcon.MEDIA_HTML
 
     result = testing.simulate_post(app, '/', json={})
     assert result.text == falcon.MEDIA_JSON
 
-    result = testing.simulate_post(app, '/', json={}, content_type=falcon.MEDIA_HTML)
+    result = testing.simulate_post(
+        app, '/', json={}, content_type=falcon.MEDIA_HTML)
     assert result.text == falcon.MEDIA_JSON
 
     result = testing.simulate_post(app, '/', json={}, headers=headers)

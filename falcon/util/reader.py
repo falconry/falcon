@@ -81,7 +81,8 @@ class BufferedReader:
         #   cdef Py_ssize_t read_size
 
         if self._buffer_len - self._buffer_pos < self._chunk_size:
-            read_size = self._chunk_size - (self._buffer_len - self._buffer_pos)
+            read_size = self._chunk_size - \
+                (self._buffer_len - self._buffer_pos)
 
             if self._buffer_pos == 0:
                 self._buffer += self._perform_read(read_size)

@@ -399,7 +399,6 @@ def create_scope(path='/', query_string='', method='GET', headers=None,
                  host=DEFAULT_HOST, scheme=None, port=None, http_version='1.1',
                  remote_addr=None, root_path=None, content_length=None,
                  include_server=True) -> Dict[str, Any]:
-
     """Create a mock ASGI scope ``dict`` for simulating ASGI requests.
 
     Keyword Args:
@@ -499,7 +498,8 @@ def create_scope(path='/', query_string='', method='GET', headers=None,
     if include_server:
         scope['server'] = iter([host, port])
 
-    _add_headers_to_scope(scope, headers, content_length, host, port, scheme, http_version)
+    _add_headers_to_scope(scope, headers, content_length,
+                          host, port, scheme, http_version)
 
     return scope
 
@@ -509,7 +509,6 @@ def create_environ(path='/', query_string='', http_version='1.1',
                    headers=None, app=None, body='', method='GET',
                    wsgierrors=None, file_wrapper=None, remote_addr=None,
                    root_path=None, cookies=None) -> Dict[str, Any]:
-
     """Create a mock PEP-3333 environ ``dict`` for simulating WSGI requests.
 
     Keyword Args:
@@ -654,7 +653,8 @@ def create_environ(path='/', query_string='', http_version='1.1',
     #  in the response to the OPTIONS method.
     if cookies is not None and method != 'OPTIONS':
         cookies = [
-            '{}={}'.format(key, cookie.value if hasattr(cookie, 'value') else cookie)
+            '{}={}'.format(key, cookie.value if hasattr(
+                cookie, 'value') else cookie)
             for key, cookie in cookies.items()
         ]
         env['HTTP_COOKIE'] = '; '.join(cookies)
@@ -710,7 +710,8 @@ def create_asgi_req(body=None, req_type=None, options=None, **kwargs) -> falcon.
     body = body or b''
     disconnect_at = time.time() + 300
 
-    req_event_emitter = ASGIRequestEventEmitter(body, disconnect_at=disconnect_at)
+    req_event_emitter = ASGIRequestEventEmitter(
+        body, disconnect_at=disconnect_at)
 
     # NOTE(kgriffs): Import here in case the app is running under
     #   Python 3.5 (in which case as long as it does not call the

@@ -51,4 +51,5 @@ except ImportError:
 
 # NOTE(vytas): Cythonized BufferedReader makes heavy use of Py_ssize_t which
 #   would overflow on 32-bit systems with form parts larger than 2 GiB.
-BufferedReader = (_CyBufferedReader or _PyBufferedReader) if IS_64_BITS else _PyBufferedReader
+BufferedReader = (
+    _CyBufferedReader or _PyBufferedReader) if IS_64_BITS else _PyBufferedReader

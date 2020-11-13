@@ -42,6 +42,7 @@ def test_api_media_type_overriding(client):
     assert response.text == "{'foo': 'bar'}"
     assert response.headers['content-type'] == falcon.MEDIA_TEXT
 
-    response = client.simulate_post('/', body='foobar', content_type=falcon.MEDIA_TEXT)
+    response = client.simulate_post(
+        '/', body='foobar', content_type=falcon.MEDIA_TEXT)
     assert response.text == 'foobar'
     assert response.headers['content-type'] == falcon.MEDIA_TEXT

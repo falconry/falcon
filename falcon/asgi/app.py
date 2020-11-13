@@ -247,7 +247,8 @@ class App(falcon.app.App):
     _default_responder_path_not_found = falcon.responders.path_not_found_async
 
     def __init__(self, *args, request_type=Request, response_type=Response, **kwargs):
-        super().__init__(*args, request_type=request_type, response_type=response_type, **kwargs)
+        super().__init__(*args, request_type=request_type,
+                         response_type=response_type, **kwargs)
 
     async def __call__(self, scope, receive, send):  # noqa: C901
         try:
@@ -357,7 +358,8 @@ class App(falcon.app.App):
                 # next-hop child resource. In that case, the object
                 # being asked to dispatch to its child will raise an
                 # HTTP exception signaling the problem, e.g. a 404.
-                responder, params, resource, req.uri_template = self._get_responder(req)
+                responder, params, resource, req.uri_template = self._get_responder(
+                    req)
 
         except Exception as ex:
             if not await self._handle_exception(req, resp, ex, params):
@@ -441,7 +443,8 @@ class App(falcon.app.App):
                 #   in this case according to my reading of the RFCs. By
                 #   optionally using len(data) we let a resource simulate HEAD
                 #   by turning around and calling it's own on_get().
-                resp._headers['content-length'] = str(len(data)) if data else '0'
+                resp._headers['content-length'] = str(
+                    len(data)) if data else '0'
 
             await send({
                 'type': EventType.HTTP_RESPONSE_START,
@@ -782,7 +785,8 @@ class App(falcon.app.App):
 
     async def _python_error_handler(self, req, resp, error, params):
         falcon._logger.error('Unhandled exception in ASGI app', exc_info=error)
-        self._compose_error_response(req, resp, falcon.HTTPInternalServerError())
+        self._compose_error_response(
+            req, resp, falcon.HTTPInternalServerError())
 
     async def _handle_exception(self, req, resp, ex, params):
         """Handle an exception raised from mw or a responder.

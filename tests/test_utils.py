@@ -70,14 +70,16 @@ class TestFalconUtils:
         assert delta_sec <= 1
 
     def test_dt_to_http(self):
-        assert falcon.dt_to_http(datetime(2013, 4, 4)) == 'Thu, 04 Apr 2013 00:00:00 GMT'
+        assert falcon.dt_to_http(
+            datetime(2013, 4, 4)) == 'Thu, 04 Apr 2013 00:00:00 GMT'
 
         assert falcon.dt_to_http(
             datetime(2013, 4, 4, 10, 28, 54)
         ) == 'Thu, 04 Apr 2013 10:28:54 GMT'
 
     def test_http_date_to_dt(self):
-        assert falcon.http_date_to_dt('Thu, 04 Apr 2013 00:00:00 GMT') == datetime(2013, 4, 4)
+        assert falcon.http_date_to_dt(
+            'Thu, 04 Apr 2013 00:00:00 GMT') == datetime(2013, 4, 4)
 
         assert falcon.http_date_to_dt(
             'Thu, 04 Apr 2013 10:28:54 GMT'
@@ -211,7 +213,8 @@ class TestFalconUtils:
 
         assert uri.decode('This thing is %C3%A7') == 'This thing is \u00e7'
 
-        assert uri.decode('This thing is %C3%A7%E2%82%AC') == 'This thing is \u00e7\u20ac'
+        assert uri.decode(
+            'This thing is %C3%A7%E2%82%AC') == 'This thing is \u00e7\u20ac'
 
         assert uri.decode('ab%2Fcd') == 'ab/cd'
 
@@ -355,7 +358,8 @@ class TestFalconUtils:
 
     def test_parse_host(self):
         assert uri.parse_host('::1') == ('::1', None)
-        assert uri.parse_host('2001:ODB8:AC10:FE01::') == ('2001:ODB8:AC10:FE01::', None)
+        assert uri.parse_host('2001:ODB8:AC10:FE01::') == (
+            '2001:ODB8:AC10:FE01::', None)
         assert uri.parse_host(
             '2001:ODB8:AC10:FE01::', default_port=80
         ) == ('2001:ODB8:AC10:FE01::', 80)
@@ -364,22 +368,29 @@ class TestFalconUtils:
 
         assert uri.parse_host(ipv6_addr) == (ipv6_addr, None)
         assert uri.parse_host('[' + ipv6_addr + ']') == (ipv6_addr, None)
-        assert uri.parse_host('[' + ipv6_addr + ']:28080') == (ipv6_addr, 28080)
+        assert uri.parse_host(
+            '[' + ipv6_addr + ']:28080') == (ipv6_addr, 28080)
         assert uri.parse_host('[' + ipv6_addr + ']:8080') == (ipv6_addr, 8080)
         assert uri.parse_host('[' + ipv6_addr + ']:123') == (ipv6_addr, 123)
         assert uri.parse_host('[' + ipv6_addr + ']:42') == (ipv6_addr, 42)
 
         assert uri.parse_host('173.203.44.122') == ('173.203.44.122', None)
-        assert uri.parse_host('173.203.44.122', default_port=80) == ('173.203.44.122', 80)
-        assert uri.parse_host('173.203.44.122:27070') == ('173.203.44.122', 27070)
+        assert uri.parse_host('173.203.44.122', default_port=80) == (
+            '173.203.44.122', 80)
+        assert uri.parse_host('173.203.44.122:27070') == (
+            '173.203.44.122', 27070)
         assert uri.parse_host('173.203.44.122:123') == ('173.203.44.122', 123)
         assert uri.parse_host('173.203.44.122:42') == ('173.203.44.122', 42)
 
         assert uri.parse_host('example.com') == ('example.com', None)
-        assert uri.parse_host('example.com', default_port=443) == ('example.com', 443)
-        assert uri.parse_host('falcon.example.com') == ('falcon.example.com', None)
-        assert uri.parse_host('falcon.example.com:9876') == ('falcon.example.com', 9876)
-        assert uri.parse_host('falcon.example.com:42') == ('falcon.example.com', 42)
+        assert uri.parse_host('example.com', default_port=443) == (
+            'example.com', 443)
+        assert uri.parse_host('falcon.example.com') == (
+            'falcon.example.com', None)
+        assert uri.parse_host('falcon.example.com:9876') == (
+            'falcon.example.com', 9876)
+        assert uri.parse_host('falcon.example.com:42') == (
+            'falcon.example.com', 42)
 
     def test_get_http_status_warns(self):
         with pytest.warns(UserWarning, match='Please use falcon'):
@@ -547,7 +558,8 @@ class TestFalconUtils:
 @pytest.mark.parametrize(
     'protocol,method',
     zip(
-        ['https'] * len(falcon.HTTP_METHODS) + ['http'] * len(falcon.HTTP_METHODS),
+        ['https'] * len(falcon.HTTP_METHODS) + ['http'] *
+        len(falcon.HTTP_METHODS),
         falcon.HTTP_METHODS * 2
     )
 )
@@ -661,7 +673,8 @@ class TestFalconTestingUtils:
 
         assert resource.captured_req.auth == headers['Authorization']
         assert resource.captured_req.accept == headers['Accept']
-        assert resource.captured_req.get_header('X-Override-Me') == override_after
+        assert resource.captured_req.get_header(
+            'X-Override-Me') == override_after
 
     def test_status(self, app):
         resource = testing.SimpleTestResource(status=falcon.HTTP_702)
@@ -713,7 +726,8 @@ class TestFalconTestingUtils:
         app.add_route('/', SomeResource())
         client = testing.TestClient(app)
 
-        result = client.simulate_get(query_string='oid=42&detailed=no&things=1')
+        result = client.simulate_get(
+            query_string='oid=42&detailed=no&things=1')
         assert result.json['oid'] == 42
         assert not result.json['detailed']
         assert result.json['things'] == [1]
@@ -784,13 +798,15 @@ class TestFalconTestingUtils:
         },
     ])
     def test_simulate_json_body(self, asgi, document):
-        resource = testing.SimpleTestResourceAsync() if asgi else testing.SimpleTestResource()
+        resource = testing.SimpleTestResourceAsync(
+        ) if asgi else testing.SimpleTestResource()
         app = create_app(asgi)
         app.add_route('/', resource)
 
         json_types = ('application/json', 'application/json; charset=UTF-8')
         client = testing.TestClient(app)
-        client.simulate_post('/', json=document, headers={'capture-req-body-bytes': '-1'})
+        client.simulate_post('/', json=document,
+                             headers={'capture-req-body-bytes': '-1'})
         assert json.loads(resource.captured_req_body.decode()) == document
         assert resource.captured_req.content_type in json_types
 

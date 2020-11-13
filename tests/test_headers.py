@@ -399,7 +399,8 @@ class TestHeaders:
 
     def test_default_media_type(self, client):
         resource = testing.SimpleTestResource(body='Hello world!')
-        self._check_header(client, resource, 'Content-Type', falcon.DEFAULT_MEDIA_TYPE)
+        self._check_header(client, resource, 'Content-Type',
+                           falcon.DEFAULT_MEDIA_TYPE)
 
     @pytest.mark.parametrize('asgi', [True, False])
     @pytest.mark.parametrize('content_type,body', [
@@ -554,7 +555,8 @@ class TestHeaders:
             assert resource.resp.get_header('content-TyPe') == content_type
 
             content_type_alt = 'x-falcon/merlin'
-            value = resource.resp.get_header('Content-Type', default=content_type_alt)
+            value = resource.resp.get_header(
+                'Content-Type', default=content_type_alt)
             assert value == content_type
 
             assert result.headers['Cache-Control'] == 'no-store'
@@ -563,9 +565,11 @@ class TestHeaders:
             assert resource.resp.location is None
             assert resource.resp.get_header('X-Header-Not-Set') is None
             assert resource.resp.get_header('X-Header-Not-Set', 'Yes') == 'Yes'
-            assert resource.resp.get_header('X-Header-Not-Set', default='') == ''
+            assert resource.resp.get_header(
+                'X-Header-Not-Set', default='') == ''
 
-            value = resource.resp.get_header('X-Header-Not-Set', default=content_type_alt)
+            value = resource.resp.get_header(
+                'X-Header-Not-Set', default=content_type_alt)
             assert value == content_type_alt
 
             # Check for duplicate headers
@@ -575,7 +579,8 @@ class TestHeaders:
                 assert hist[name] == 1
 
             # Ensure that deleted headers were not sent
-            assert resource.resp.get_header('x-client-should-never-see-this') is None
+            assert resource.resp.get_header(
+                'x-client-should-never-see-this') is None
 
     def test_response_append_header(self, client):
         client.app.add_route('/', AppendHeaderResource())

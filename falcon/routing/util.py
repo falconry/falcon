@@ -125,7 +125,8 @@ def map_http_methods(resource, suffix=None):
 
     # If suffix is specified and doesn't map to any methods, raise an error
     if suffix and not method_map:
-        raise SuffixedMethodNotFoundError('No responders found for the specified suffix')
+        raise SuffixedMethodNotFoundError(
+            'No responders found for the specified suffix')
 
     return method_map
 
@@ -145,11 +146,13 @@ def set_default_responders(method_map, asgi=False):
 
     if 'OPTIONS' not in method_map:
         # OPTIONS itself is intentionally excluded from the Allow header
-        opt_responder = responders.create_default_options(allowed_methods, asgi=asgi)
+        opt_responder = responders.create_default_options(
+            allowed_methods, asgi=asgi)
         method_map['OPTIONS'] = opt_responder
         allowed_methods.append('OPTIONS')
 
-    na_responder = responders.create_method_not_allowed(allowed_methods, asgi=asgi)
+    na_responder = responders.create_method_not_allowed(
+        allowed_methods, asgi=asgi)
 
     for method in constants.COMBINED_METHODS:
         if method not in allowed_methods:

@@ -89,9 +89,12 @@ def prepare_middleware(middleware, independent_middleware=False, asgi=False):
                     raise CompatibilityError(msg.format(m))
 
         else:
-            process_request = util.get_bound_method(component, 'process_request')
-            process_resource = util.get_bound_method(component, 'process_resource')
-            process_response = util.get_bound_method(component, 'process_response')
+            process_request = util.get_bound_method(
+                component, 'process_request')
+            process_resource = util.get_bound_method(
+                component, 'process_resource')
+            process_response = util.get_bound_method(
+                component, 'process_response')
 
             for m in (process_request, process_resource, process_response):
                 if m and iscoroutinefunction(m):
@@ -106,7 +109,8 @@ def prepare_middleware(middleware, independent_middleware=False, asgi=False):
 
         if not (process_request or process_resource or process_response):
             if asgi and (
-                hasattr(component, 'process_startup') or hasattr(component, 'process_shutdown')
+                hasattr(component, 'process_startup') or hasattr(
+                    component, 'process_shutdown')
             ):
                 # NOTE(kgriffs): This middleware only has ASGI lifespan
                 #   event handlers

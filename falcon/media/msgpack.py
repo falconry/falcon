@@ -1,4 +1,5 @@
-from __future__ import absolute_import  # NOTE(kgriffs): Work around a Cython bug
+# NOTE(kgriffs): Work around a Cython bug
+from __future__ import absolute_import
 
 from falcon import errors
 from falcon.media import BaseHandler
@@ -38,7 +39,8 @@ class MessagePackHandler(BaseHandler):
         except ValueError as err:
             raise errors.HTTPBadRequest(
                 title='Invalid MessagePack',
-                description='Could not parse MessagePack body - {0}'.format(err)
+                description='Could not parse MessagePack body - {0}'.format(
+                    err)
             )
 
     async def deserialize_async(self, stream, content_type, content_length):
@@ -51,7 +53,8 @@ class MessagePackHandler(BaseHandler):
         except ValueError as err:
             raise errors.HTTPBadRequest(
                 title='Invalid MessagePack',
-                description='Could not parse MessagePack body - {0}'.format(err)
+                description='Could not parse MessagePack body - {0}'.format(
+                    err)
             )
 
     def serialize(self, media, content_type):

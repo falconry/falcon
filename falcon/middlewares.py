@@ -34,6 +34,7 @@ class CORSMiddleware(object):
             if the origin is allowed by the ``allow_origins`` argument. (Default ``None``).
 
     """
+
     def __init__(
         self,
         allow_origins: Union[str, Iterable[str]] = '*',
@@ -95,7 +96,8 @@ class CORSMiddleware(object):
             resp.set_header('Access-Control-Allow-Origin', set_origin)
 
         if self.expose_headers:
-            resp.set_header('Access-Control-Expose-Headers', self.expose_headers)
+            resp.set_header('Access-Control-Expose-Headers',
+                            self.expose_headers)
 
         if (req_succeeded and
                 req.method == 'OPTIONS' and
@@ -107,7 +109,8 @@ class CORSMiddleware(object):
             allow = resp.get_header('Allow')
             resp.delete_header('Allow')
 
-            allow_headers = req.get_header('Access-Control-Request-Headers', default='*')
+            allow_headers = req.get_header(
+                'Access-Control-Request-Headers', default='*')
 
             resp.set_header('Access-Control-Allow-Methods', allow)
             resp.set_header('Access-Control-Allow-Headers', allow_headers)

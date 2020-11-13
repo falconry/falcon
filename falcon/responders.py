@@ -32,12 +32,14 @@ async def path_not_found_async(req, resp, **kwargs):
 
 def bad_request(req, resp, **kwargs):
     """Raise 400 HTTPBadRequest error."""
-    raise HTTPBadRequest(title='Bad request', description='Invalid HTTP method')
+    raise HTTPBadRequest(title='Bad request',
+                         description='Invalid HTTP method')
 
 
 async def bad_request_async(req, resp, **kwargs):
     """Raise 400 HTTPBadRequest error."""
-    raise HTTPBadRequest(title='Bad request', description='Invalid HTTP method')
+    raise HTTPBadRequest(title='Bad request',
+                         description='Invalid HTTP method')
 
 
 def create_method_not_allowed(allowed_methods, asgi=False):

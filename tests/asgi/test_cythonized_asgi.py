@@ -76,7 +76,8 @@ def test_jsonchema_validator(client):
         client.app.add_route('/', _cythonized.TestResourceWithValidation())
 
         with pytest.raises(TypeError):
-            client.app.add_route('/wowsuchfail', _cythonized.TestResourceWithValidationNoHint())
+            client.app.add_route(
+                '/wowsuchfail', _cythonized.TestResourceWithValidationNoHint())
 
     client.simulate_get()
 
@@ -101,7 +102,8 @@ def test_scheduled_jobs(client):
     )
 )
 def test_scheduled_jobs_type_error(client):
-    client.app.add_route('/wowsuchfail', _cythonized.TestResourceWithScheduledJobsAsyncRequired())
+    client.app.add_route(
+        '/wowsuchfail', _cythonized.TestResourceWithScheduledJobsAsyncRequired())
 
     # NOTE(kgriffs): Normally an unhandled exception is translated to a
     #   500 response, but since jobs aren't supposed to be scheduled until
@@ -117,8 +119,10 @@ def test_scheduled_jobs_type_error(client):
 def test_hooks(client):
     with disable_asgi_non_coroutine_wrapping():
         with pytest.raises(TypeError):
-            client.app.add_route('/', _cythonized.TestResourceWithHooksNoHintBefore())
-            client.app.add_route('/', _cythonized.TestResourceWithHooksNoHintAfter())
+            client.app.add_route(
+                '/', _cythonized.TestResourceWithHooksNoHintBefore())
+            client.app.add_route(
+                '/', _cythonized.TestResourceWithHooksNoHintAfter())
 
         client.app.add_route('/', _cythonized.TestResourceWithHooks())
 

@@ -133,7 +133,8 @@ def test_invalid_args_fallback_filename(client, default):
         create_sr(client.asgi, prefix, directory, fallback_filename=default)
 
     with pytest.raises(ValueError, match='fallback_filename'):
-        client.app.add_static_route(prefix, directory, fallback_filename=default)
+        client.app.add_static_route(
+            prefix, directory, fallback_filename=default)
 
 
 # NOTE(caselit) depending on the system configuration mime types can have alternative names
@@ -153,14 +154,16 @@ _MIME_ALTERNATIVE = {
     ),
     ('/static', '/.test.css', '/.test.css', 'text/css'),
     ('/some/download/', '/report.pdf', '/report.pdf', 'application/pdf'),
-    ('/some/download/', '/Fancy Report.pdf', '/Fancy Report.pdf', 'application/pdf'),
+    ('/some/download/', '/Fancy Report.pdf',
+     '/Fancy Report.pdf', 'application/pdf'),
     ('/some/download', '/report.zip', '/report.zip', 'application/zip'),
     ('/some/download', '/foo/../report.zip', '/report.zip', 'application/zip'),
     ('/some/download', '/foo/../bar/../report.zip', '/report.zip', 'application/zip'),
     ('/some/download', '/foo/bar/../../report.zip', '/report.zip', 'application/zip'),
 ])
 def test_good_path(asgi, uri_prefix, uri_path, expected_path, mtype, monkeypatch):
-    monkeypatch.setattr(io, 'open', lambda path, mode: io.BytesIO(path.encode()))
+    monkeypatch.setattr(io, 'open', lambda path,
+                        mode: io.BytesIO(path.encode()))
 
     sr = create_sr(asgi, uri_prefix, '/var/www/statics')
 
@@ -191,14 +194,16 @@ def test_good_path(asgi, uri_prefix, uri_path, expected_path, mtype, monkeypatch
 
 
 def test_lifo(client, monkeypatch):
-    monkeypatch.setattr(io, 'open', lambda path, mode: io.BytesIO(path.encode()))
+    monkeypatch.setattr(io, 'open', lambda path,
+                        mode: io.BytesIO(path.encode()))
 
     client.app.add_static_route('/downloads', '/opt/somesite/downloads')
     client.app.add_static_route('/downloads/archive', '/opt/somesite/x')
 
     response = client.simulate_request(path='/downloads/thing.zip')
     assert response.status == falcon.HTTP_200
-    assert response.text == os.path.normpath('/opt/somesite/downloads/thing.zip')
+    assert response.text == os.path.normpath(
+        '/opt/somesite/downloads/thing.zip')
 
     response = client.simulate_request(path='/downloads/archive/thingtoo.zip')
     assert response.status == falcon.HTTP_200
@@ -206,24 +211,29 @@ def test_lifo(client, monkeypatch):
 
 
 def test_lifo_negative(client, monkeypatch):
-    monkeypatch.setattr(io, 'open', lambda path, mode: io.BytesIO(path.encode()))
+    monkeypatch.setattr(io, 'open', lambda path,
+                        mode: io.BytesIO(path.encode()))
 
     client.app.add_static_route('/downloads/archive', '/opt/somesite/x')
     client.app.add_static_route('/downloads', '/opt/somesite/downloads')
 
     response = client.simulate_request(path='/downloads/thing.zip')
     assert response.status == falcon.HTTP_200
-    assert response.text == os.path.normpath('/opt/somesite/downloads/thing.zip')
+    assert response.text == os.path.normpath(
+        '/opt/somesite/downloads/thing.zip')
 
     response = client.simulate_request(path='/downloads/archive/thingtoo.zip')
     assert response.status == falcon.HTTP_200
-    assert response.text == os.path.normpath('/opt/somesite/downloads/archive/thingtoo.zip')
+    assert response.text == os.path.normpath(
+        '/opt/somesite/downloads/archive/thingtoo.zip')
 
 
 def test_downloadable(client, monkeypatch):
-    monkeypatch.setattr(io, 'open', lambda path, mode: io.BytesIO(path.encode()))
+    monkeypatch.setattr(io, 'open', lambda path,
+                        mode: io.BytesIO(path.encode()))
 
-    client.app.add_static_route('/downloads', '/opt/somesite/downloads', downloadable=True)
+    client.app.add_static_route(
+        '/downloads', '/opt/somesite/downloads', downloadable=True)
     client.app.add_static_route('/assets/', '/opt/somesite/assets')
 
     response = client.simulate_request(path='/downloads/thing.zip')
@@ -240,7 +250,8 @@ def test_downloadable(client, monkeypatch):
 
 
 def test_downloadable_not_found(client):
-    client.app.add_static_route('/downloads', '/opt/somesite/downloads', downloadable=True)
+    client.app.add_static_route(
+        '/downloads', '/opt/somesite/downloads', downloadable=True)
 
     response = client.simulate_request(path='/downloads/thing.zip')
     assert response.status == falcon.HTTP_404
@@ -253,7 +264,8 @@ def test_downloadable_not_found(client):
     ('index2', 'index', 'index2', 'application/octet-stream'),
     ('absolute', '/foo/bar/index', '/foo/bar/index', 'application/octet-stream'),
     ('docs/notes/test.txt', 'index.html', 'index.html', 'text/html'),
-    ('index.html_files/test.txt', 'index.html', 'index.html_files/test.txt', 'text/plain'),
+    ('index.html_files/test.txt', 'index.html',
+     'index.html_files/test.txt', 'text/plain'),
 ])
 @pytest.mark.parametrize('downloadable', [True, False])
 def test_fallback_filename(asgi, uri, default, expected, content_type, downloadable,
@@ -266,7 +278,8 @@ def test_fallback_filename(asgi, uri, default, expected, content_type, downloada
         raise IOError()
 
     monkeypatch.setattr(io, 'open', mock_open)
-    monkeypatch.setattr('os.path.isfile', lambda file: os.path.normpath(default) in file)
+    monkeypatch.setattr(
+        'os.path.isfile', lambda file: os.path.normpath(default) in file)
 
     sr = create_sr(
         asgi,
@@ -297,8 +310,10 @@ def test_fallback_filename(asgi, uri, default, expected, content_type, downloada
         body = resp.stream.read()
 
     assert sr.match(req.path)
-    assert body.decode() == os.path.normpath(os.path.join('/var/www/statics', expected))
-    assert resp.content_type in _MIME_ALTERNATIVE.get(content_type, (content_type, ))
+    assert body.decode() == os.path.normpath(
+        os.path.join('/var/www/statics', expected))
+    assert resp.content_type in _MIME_ALTERNATIVE.get(
+        content_type, (content_type, ))
 
     if downloadable:
         assert os.path.basename(expected) in resp.downloadable_as
@@ -354,7 +369,8 @@ def test_e2e_fallback_filename(client, monkeypatch, strip_slash, path, fallback,
 ])
 def test_match(asgi, default, path, expected, monkeypatch):
     monkeypatch.setattr('os.path.isfile', lambda file: True)
-    sr = create_sr(asgi, '/static', '/var/www/statics', fallback_filename=default)
+    sr = create_sr(asgi, '/static', '/var/www/statics',
+                   fallback_filename=default)
 
     assert sr.match(path) == expected
 

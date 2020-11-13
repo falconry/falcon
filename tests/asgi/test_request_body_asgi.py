@@ -72,14 +72,16 @@ class TestRequestBody:
 
     def test_bounded_stream_alias(self):
         scope = testing.create_scope()
-        req_event_emitter = testing.ASGIRequestEventEmitter(b'', disconnect_at=0)
+        req_event_emitter = testing.ASGIRequestEventEmitter(
+            b'', disconnect_at=0)
         req = falcon.asgi.Request(scope, req_event_emitter)
 
         assert req.bounded_stream is req.stream
 
     def test_request_repr(self):
         scope = testing.create_scope()
-        req_event_emitter = testing.ASGIRequestEventEmitter(b'', disconnect_at=0)
+        req_event_emitter = testing.ASGIRequestEventEmitter(
+            b'', disconnect_at=0)
         req = falcon.asgi.Request(scope, req_event_emitter)
 
         _repr = '<%s: %s %r>' % (req.__class__.__name__, req.method, req.url)

@@ -104,7 +104,8 @@ def before(action, *args, is_async=False, **kwargs):
 
         else:
             responder = responder_or_resource
-            do_before_one = _wrap_with_before(responder, action, args, kwargs, is_async)
+            do_before_one = _wrap_with_before(
+                responder, action, args, kwargs, is_async)
 
             return do_before_one
 
@@ -167,7 +168,8 @@ def after(action, *args, is_async=False, **kwargs):
 
         else:
             responder = responder_or_resource
-            do_after_one = _wrap_with_after(responder, action, args, kwargs, is_async)
+            do_after_one = _wrap_with_after(
+                responder, action, args, kwargs, is_async)
 
             return do_after_one
 

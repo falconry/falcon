@@ -157,7 +157,8 @@ class MiddlewareClassResource:
         resp.body = json.dumps(_EXPECTED_BODY)
 
     def on_post(self, req, resp):
-        raise falcon.HTTPForbidden(title=falcon.HTTP_403, description='Setec Astronomy')
+        raise falcon.HTTPForbidden(
+            title=falcon.HTTP_403, description='Setec Astronomy')
 
 
 class EmptySignatureMiddleware:
@@ -883,7 +884,8 @@ class TestShortCircuiting(TestMiddleware):
             ResponseCacheMiddlware(),
             TransactionIdMiddleware(),
         ]
-        app = create_app(asgi, middleware=mw, independent_middleware=independent_middleware)
+        app = create_app(asgi, middleware=mw,
+                         independent_middleware=independent_middleware)
         app.add_route('/', MiddlewareClassResource())
         app.add_route('/cached', MiddlewareClassResource())
         app.add_route('/cached/resource', MiddlewareClassResource())
@@ -901,7 +903,8 @@ class TestShortCircuiting(TestMiddleware):
 
     @pytest.mark.parametrize('independent_middleware', [True, False])
     def test_process_request_cached(self, asgi, independent_middleware):
-        response = self._make_client(asgi, independent_middleware).simulate_get('/cached')
+        response = self._make_client(
+            asgi, independent_middleware).simulate_get('/cached')
         assert response.status == falcon.HTTP_200
         assert response.json == ResponseCacheMiddlware.PROCESS_REQUEST_CACHED_BODY
 
@@ -922,7 +925,8 @@ class TestShortCircuiting(TestMiddleware):
 
     @pytest.mark.parametrize('independent_middleware', [True, False])
     def test_process_resource_cached(self, asgi, independent_middleware):
-        response = self._make_client(asgi, independent_middleware).simulate_get('/cached/resource')
+        response = self._make_client(
+            asgi, independent_middleware).simulate_get('/cached/resource')
         assert response.status == falcon.HTTP_200
         assert response.json == ResponseCacheMiddlware.PROCESS_RESOURCE_CACHED_BODY
 

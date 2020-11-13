@@ -40,8 +40,10 @@ def test_sync_helpers():
                 return v
 
             # NOTE(kgriffs): Test setting threadsafe=True explicitly
-            cmus = falcon.util.wrap_sync_to_async(callme_unsafely, threadsafe=True)
-            cms = falcon.util.wrap_sync_to_async(callme_safely, threadsafe=False)
+            cmus = falcon.util.wrap_sync_to_async(
+                callme_unsafely, threadsafe=True)
+            cms = falcon.util.wrap_sync_to_async(
+                callme_safely, threadsafe=False)
 
             loop = falcon.util.get_running_loop()
 
@@ -57,7 +59,8 @@ def test_sync_helpers():
                     loop.create_task(cmus(i, i + 1, c=i + 2))
                 )
                 shirley_coroutine_objects.append(
-                    loop.create_task(falcon.util.sync_to_async(callme_shirley, 24, b=i))
+                    loop.create_task(falcon.util.sync_to_async(
+                        callme_shirley, 24, b=i))
                 )
 
             await asyncio.gather(

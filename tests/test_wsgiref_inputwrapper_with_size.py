@@ -11,7 +11,8 @@ class TypeResource(testing.SimpleTestResource):
         resp.status = falcon.HTTP_200
         # NOTE(masterkale): No size needs to be specified here because we're
         # emulating a stream read in production.
-        resp.body = json.dumps({'data': req.bounded_stream.read().decode('utf-8')})
+        resp.body = json.dumps(
+            {'data': req.bounded_stream.read().decode('utf-8')})
 
 
 class TestWsgiRefInputWrapper:

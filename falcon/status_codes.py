@@ -43,7 +43,8 @@ HTTP_308 = HTTP_PERMANENT_REDIRECT = '308 Permanent Redirect'
 
 # 4xx - Client Error
 HTTP_400 = HTTP_BAD_REQUEST = '400 Bad Request'
-HTTP_401 = HTTP_UNAUTHORIZED = '401 Unauthorized'  # <-- Really means "unauthenticated"
+# <-- Really means "unauthenticated"
+HTTP_401 = HTTP_UNAUTHORIZED = '401 Unauthorized'
 HTTP_402 = HTTP_PAYMENT_REQUIRED = '402 Payment Required'
 HTTP_403 = HTTP_FORBIDDEN = '403 Forbidden'  # <-- Really means "unauthorized"
 HTTP_404 = HTTP_NOT_FOUND = '404 Not Found'

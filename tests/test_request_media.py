@@ -7,7 +7,8 @@ from _util import create_app  # NOQA
 
 def create_client(asgi, handlers=None, resource=None):
     if not resource:
-        resource = testing.SimpleTestResourceAsync() if asgi else testing.SimpleTestResource()
+        resource = testing.SimpleTestResourceAsync(
+        ) if asgi else testing.SimpleTestResource()
 
     app = create_app(asgi)
     app.add_route('/', resource)
@@ -111,7 +112,8 @@ def test_msgpack(asgi, media_type):
     ('nope/json'),
 ])
 def test_unknown_media_type(asgi, media_type):
-    client = _create_client_invalid_media(asgi, errors.HTTPUnsupportedMediaType)
+    client = _create_client_invalid_media(
+        asgi, errors.HTTPUnsupportedMediaType)
 
     headers = {'Content-Type': media_type}
     client.simulate_post('/', body=b'something', headers=headers)
@@ -149,7 +151,8 @@ def test_invalid_msgpack(asgi):
     handlers = {
         'application/msgpack': media.MessagePackHandler()
     }
-    client = _create_client_invalid_media(asgi, errors.HTTPBadRequest, handlers=handlers)
+    client = _create_client_invalid_media(
+        asgi, errors.HTTPBadRequest, handlers=handlers)
 
     expected_body = '/////////////////////'
     headers = {'Content-Type': 'application/msgpack'}

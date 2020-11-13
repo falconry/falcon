@@ -154,7 +154,8 @@ class TestHelloWorld:
         assert not result.content
         assert result.status_code == 200
         assert resource.called
-        assert result.headers['content-length'] == str(len(HelloResource.sample_utf8))
+        assert result.headers['content-length'] == str(
+            len(HelloResource.sample_utf8))
 
     def test_stream_chunked(self, client):
         resource = HelloResource('stream')
@@ -183,7 +184,8 @@ class TestHelloWorld:
         client.app.add_route('/filelike', resource)
 
         for file_wrapper in (None, FileWrapper):
-            result = client.simulate_get('/filelike', file_wrapper=file_wrapper)
+            result = client.simulate_get(
+                '/filelike', file_wrapper=file_wrapper)
             assert resource.called
 
             expected_len = int(resource.resp.content_length)
@@ -192,7 +194,8 @@ class TestHelloWorld:
             assert len(result.content) == expected_len
 
         for file_wrapper in (None, FileWrapper):
-            result = client.simulate_get('/filelike', file_wrapper=file_wrapper)
+            result = client.simulate_get(
+                '/filelike', file_wrapper=file_wrapper)
             assert resource.called
 
             expected_len = int(resource.resp.content_length)

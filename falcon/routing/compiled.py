@@ -363,7 +363,8 @@ class CompiledRouter:
                     msg = 'Unknown converter: "{0}"'.format(name)
                     raise ValueError(msg)
                 try:
-                    self._instantiate_converter(self._converter_map[name], field.group('argstr'))
+                    self._instantiate_converter(
+                        self._converter_map[name], field.group('argstr'))
                 except Exception as e:
                     msg = 'Cannot instantiate converter "{}"'.format(name)
                     raise ValueError(msg) from e
@@ -416,7 +417,8 @@ class CompiledRouter:
                     parent = construct
 
                     if node.var_converter_map:
-                        parent.append_child(_CxPrefetchGroupsFromPatternMatch())
+                        parent.append_child(
+                            _CxPrefetchGroupsFromPatternMatch())
                         parent = self._generate_conversion_ast(parent, node)
 
                     else:
@@ -677,9 +679,11 @@ class CompiledRouterNode:
                 # parser would examine 'g<0>' and not realize it is a
                 # group-escape sequence. So we add an extra backslash to
                 # trick the parser into doing the right thing.
-                escaped_segment = re.sub(r'[\.\(\)\[\]\?\$\*\+\^\|]', r'\\\g<0>', raw_segment)
+                escaped_segment = re.sub(
+                    r'[\.\(\)\[\]\?\$\*\+\^\|]', r'\\\g<0>', raw_segment)
 
-                pattern_text = _FIELD_PATTERN.sub(r'(?P<\2>.+)', escaped_segment)
+                pattern_text = _FIELD_PATTERN.sub(
+                    r'(?P<\2>.+)', escaped_segment)
                 pattern_text = '^' + pattern_text + '$'
 
                 self.is_complex = True

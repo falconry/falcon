@@ -884,7 +884,8 @@ class Request:
                 else:
                     self._cookies = {}
 
-            self._cookies_collapsed = {n: v[0] for n, v in self._cookies.items()}
+            self._cookies_collapsed = {n: v[0]
+                                       for n, v in self._cookies.items()}
 
         return self._cookies_collapsed
 

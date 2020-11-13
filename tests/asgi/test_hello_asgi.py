@@ -108,7 +108,8 @@ class ClosingFilelikeHelloResource:
 
 class AIOFilesHelloResource:
     def __init__(self):
-        self.sample_utf8 = testing.rand_string(8 * SIZE_1_KB, 16 * SIZE_1_KB).encode()
+        self.sample_utf8 = testing.rand_string(
+            8 * SIZE_1_KB, 16 * SIZE_1_KB).encode()
 
         fh, self.tempfile_name = tempfile.mkstemp()
         with open(fh, 'wb') as f:
@@ -186,7 +187,8 @@ class TestHelloWorld:
         assert not result.content
         assert result.status_code == 200
         assert resource.called
-        assert result.headers['content-length'] == str(len(HelloResource.sample_utf8))
+        assert result.headers['content-length'] == str(
+            len(HelloResource.sample_utf8))
 
     def test_stream_chunked(self, client):
         resource = HelloResource('stream')
@@ -304,7 +306,8 @@ class TestHelloWorld:
             with pytest.raises(TypeError) as exinfo:
                 client.app.add_route('/', PartialCoroutineResource())
 
-            assert 'responder must be a non-blocking async coroutine' in str(exinfo.value)
+            assert 'responder must be a non-blocking async coroutine' in str(
+                exinfo.value)
 
     def test_noncoroutine_required(self):
         wsgi_app = falcon.App()
@@ -312,4 +315,5 @@ class TestHelloWorld:
         with pytest.raises(TypeError) as exinfo:
             wsgi_app.add_route('/', PartialCoroutineResource())
 
-        assert 'responder must be a regular synchronous method' in str(exinfo.value)
+        assert 'responder must be a regular synchronous method' in str(
+            exinfo.value)

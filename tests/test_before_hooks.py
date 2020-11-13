@@ -49,7 +49,8 @@ def parse_body(req, resp, resource, params):
 
     length = req.content_length
     if length:
-        params['doc'] = json.load(io.TextIOWrapper(req.bounded_stream, 'utf-8'))
+        params['doc'] = json.load(
+            io.TextIOWrapper(req.bounded_stream, 'utf-8'))
 
 
 async def parse_body_async(req, resp, resource, params):
@@ -456,7 +457,8 @@ class PiggybackingCollection:
     @falcon.before(header_hook)
     def on_delete_collection(self, req, resp, fish):
         if fish != 'wet':
-            raise falcon.HTTPUnavailableForLegalReasons(title='fish must be wet')
+            raise falcon.HTTPUnavailableForLegalReasons(
+                title='fish must be wet')
         self._items = {}
         resp.status = falcon.HTTP_NO_CONTENT
 

@@ -126,7 +126,8 @@ class TestRequestBody:
         stream = io.BytesIO(expected_body)
         body = request_helpers.Body(stream, expected_len)
         for i in range(expected_len + 1):
-            expected_value = expected_body[i:i + 1] if i < expected_len else b''
+            expected_value = expected_body[i:i +
+                                           1] if i < expected_len else b''
             assert body.read(1) == expected_value
 
         stream = io.BytesIO(expected_body)

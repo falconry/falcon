@@ -66,7 +66,7 @@ JIT_WARMING_MULTIPLIER = 30
 
 PYPY = platform.python_implementation() == 'PyPy'
 
-BODY = helpers.rand_string(10240, 10240).encode('utf-8') # NOQA
+BODY = helpers.rand_string(10240, 10240).encode('utf-8')  # NOQA
 HEADERS = {'X-Test': 'Funky Chicken'}  # NOQA
 
 

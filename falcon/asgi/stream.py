@@ -376,7 +376,8 @@ class BoundedStream:
             return
 
         if self._iteration_started:
-            raise OperationNotAllowed('This stream is already being iterated over.')
+            raise OperationNotAllowed(
+                'This stream is already being iterated over.')
 
         self._iteration_started = True
 

@@ -30,7 +30,8 @@ def test_urlencoded_form_handler_serialize(data, expected):
     handler = media.URLEncodedFormHandler()
     assert handler.serialize(data, falcon.MEDIA_URLENCODED) == expected
 
-    value = falcon.invoke_coroutine_sync(handler.serialize_async, data, falcon.MEDIA_URLENCODED)
+    value = falcon.invoke_coroutine_sync(
+        handler.serialize_async, data, falcon.MEDIA_URLENCODED)
     assert value == expected
 
 

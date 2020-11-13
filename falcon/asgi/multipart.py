@@ -72,7 +72,8 @@ class BodyPart(multipart.BodyPart):
 class MultipartForm:
 
     def __init__(self, stream, boundary, content_length, parse_options):
-        self._stream = stream if isinstance(stream, BufferedReader) else BufferedReader(stream)
+        self._stream = stream if isinstance(
+            stream, BufferedReader) else BufferedReader(stream)
         self._boundary = boundary
         # NOTE(vytas): Here self._dash_boundary is not prepended with CRLF
         #   (yet) for parsing the prologue. The CRLF will be prepended later to

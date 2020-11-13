@@ -195,7 +195,8 @@ class TestRequestAttributes:
         assert self.req.uri == uri
         assert self.req.uri == uri
 
-        uri_noqs = ('http://' + testing.DEFAULT_HOST + self.root_path + self.path)
+        uri_noqs = ('http://' + testing.DEFAULT_HOST +
+                    self.root_path + self.path)
         assert self.req_noqs.uri == uri_noqs
 
     def test_uri_https(self, asgi):

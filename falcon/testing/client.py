@@ -108,7 +108,8 @@ class Cookie:
     @property
     def expires(self) -> Optional[dt.datetime]:
         if self._expires:  # type: ignore[attr-defined]
-            return http_date_to_dt(self._expires, obs_date=True)  # type: ignore[attr-defined]
+            # type: ignore[attr-defined]
+            return http_date_to_dt(self._expires, obs_date=True)
 
         return None
 
@@ -122,7 +123,8 @@ class Cookie:
 
     @property
     def max_age(self) -> Optional[int]:
-        return int(self._max_age) if self._max_age else None  # type: ignore[attr-defined]
+        # type: ignore[attr-defined]
+        return int(self._max_age) if self._max_age else None
 
     @property
     def secure(self) -> bool:
@@ -134,7 +136,8 @@ class Cookie:
 
     @property
     def same_site(self) -> Optional[int]:
-        return self._samesite if self._samesite else None  # type: ignore[attr-defined]
+        # type: ignore[attr-defined]
+        return self._samesite if self._samesite else None
 
 
 class _ResultBase:
@@ -403,7 +406,6 @@ def simulate_request(app, method='GET', path='/', query_string=None,
                      remote_addr=None, extras=None, http_version='1.1',
                      port=None, root_path=None, cookies=None, asgi_chunk_size=4096,
                      asgi_disconnect_ttl=300) -> _ResultBase:
-
     """Simulate a request to a WSGI or ASGI application.
 
     Performs a request against a WSGI or ASGI application. In the case of
@@ -715,7 +717,8 @@ async def _simulate_request_asgi(
     resp_event_collector = helpers.ASGIResponseEventCollector()
 
     if not _one_shot:
-        task_req = create_task(app(http_scope, req_event_emitter, resp_event_collector))
+        task_req = create_task(
+            app(http_scope, req_event_emitter, resp_event_collector))
 
         if _stream_result:
             # NOTE(kgriffs): Wait until the response has been started and give
@@ -725,7 +728,8 @@ async def _simulate_request_asgi(
                 await asyncio.sleep(0)
 
             return StreamedResult(resp_event_collector.body_chunks,
-                                  code_to_http_status(resp_event_collector.status),
+                                  code_to_http_status(
+                                      resp_event_collector.status),
                                   resp_event_collector.headers,
                                   task_req,
                                   req_event_emitter)
@@ -762,7 +766,8 @@ async def _simulate_request_asgi(
 
         await _wait_for_startup(lifespan_event_collector.events)
 
-        task_req = create_task(app(http_scope, req_event_emitter, resp_event_collector))
+        task_req = create_task(
+            app(http_scope, req_event_emitter, resp_event_collector))
         req_event_emitter.disconnect()
         await task_req
 
@@ -857,9 +862,11 @@ class ASGIConductor:
         app: The app that this client instance was configured to use.
 
     """
+
     def __init__(self, app, headers=None):
         if not _is_asgi_app(app):
-            raise CompatibilityError('ASGIConductor may only be used with an ASGI app')
+            raise CompatibilityError(
+                'ASGIConductor may only be used with an ASGI app')
 
         self.app = app
         self._default_headers = headers
@@ -877,13 +884,15 @@ class ASGIConductor:
             },
         }
 
-        lifespan_event_emitter = helpers.ASGILifespanEventEmitter(self._shutting_down)
+        lifespan_event_emitter = helpers.ASGILifespanEventEmitter(
+            self._shutting_down)
 
         # NOTE(kgriffs): We assume this is a Falcon ASGI app, which supports
         #   the lifespan protocol and thus we do not need to catch
         #   exceptions that would signify no lifespan protocol support.
         self._lifespan_task = get_running_loop().create_task(
-            self.app(lifespan_scope, lifespan_event_emitter, self._lifespan_event_collector)
+            self.app(lifespan_scope, lifespan_event_emitter,
+                     self._lifespan_event_collector)
         )
 
         await _wait_for_startup(self._lifespan_event_collector.events)
@@ -1752,7 +1761,8 @@ class TestClient:
         #   contexts, so this is just a sanity-check.
         assert not self._conductor
 
-        self._conductor = ASGIConductor(self.app, headers=self._default_headers)
+        self._conductor = ASGIConductor(
+            self.app, headers=self._default_headers)
         await self._conductor.__aenter__()
 
         return self._conductor
@@ -1923,7 +1933,8 @@ async def _wait_for_startup(events):
     while True:  # pragma: nocover
         for e in events:
             if e['type'] == 'lifespan.startup.failed':
-                raise RuntimeError('ASGI app returned lifespan.startup.failed. ' + e['message'])
+                raise RuntimeError(
+                    'ASGI app returned lifespan.startup.failed. ' + e['message'])
 
         if any(e['type'] == 'lifespan.startup.complete' for e in events):
             break
@@ -1938,7 +1949,8 @@ async def _wait_for_shutdown(events):
     while True:  # pragma: nocover
         for e in events:
             if e['type'] == 'lifespan.shutdown.failed':
-                raise RuntimeError('ASGI app returned lifespan.shutdown.failed. ' + e['message'])
+                raise RuntimeError(
+                    'ASGI app returned lifespan.shutdown.failed. ' + e['message'])
 
         if any(e['type'] == 'lifespan.shutdown.complete' for e in events):
             break

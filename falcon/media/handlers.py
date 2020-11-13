@@ -10,6 +10,7 @@ from falcon.vendor import mimeparse
 
 class Handlers(UserDict):
     """A :class:`dict`-like object that manages Internet media type handlers."""
+
     def __init__(self, initial=None):
         handlers = initial or {
             'application/json': JSONHandler(),
@@ -52,7 +53,8 @@ class Handlers(UserDict):
 
         if not resolved:
             raise errors.HTTPUnsupportedMediaType(
-                description='{0} is an unsupported media type.'.format(media_type)
+                description='{0} is an unsupported media type.'.format(
+                    media_type)
             )
 
         return self.data[resolved]

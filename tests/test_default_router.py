@@ -183,12 +183,18 @@ def test_user_regression_recipes():
 
 
 @pytest.mark.parametrize('uri_template,path,expected_params', [
-    ('/serviceRoot/People|{field}', '/serviceRoot/People|susie', {'field': 'susie'}),
-    ('/serviceRoot/People[{field}]', "/serviceRoot/People['calvin']", {'field': "'calvin'"}),
-    ('/serviceRoot/People({field})', "/serviceRoot/People('hobbes')", {'field': "'hobbes'"}),
-    ('/serviceRoot/People({field})', "/serviceRoot/People('hob)bes')", {'field': "'hob)bes'"}),
-    ('/serviceRoot/People({field})(z)', '/serviceRoot/People(hobbes)(z)', {'field': 'hobbes'}),
-    ("/serviceRoot/People('{field}')", "/serviceRoot/People('rosalyn')", {'field': 'rosalyn'}),
+    ('/serviceRoot/People|{field}',
+     '/serviceRoot/People|susie', {'field': 'susie'}),
+    ('/serviceRoot/People[{field}]',
+     "/serviceRoot/People['calvin']", {'field': "'calvin'"}),
+    ('/serviceRoot/People({field})',
+     "/serviceRoot/People('hobbes')", {'field': "'hobbes'"}),
+    ('/serviceRoot/People({field})',
+     "/serviceRoot/People('hob)bes')", {'field': "'hob)bes'"}),
+    ('/serviceRoot/People({field})(z)',
+     '/serviceRoot/People(hobbes)(z)', {'field': 'hobbes'}),
+    ("/serviceRoot/People('{field}')",
+     "/serviceRoot/People('rosalyn')", {'field': 'rosalyn'}),
     ('/^{field}', '/^42', {'field': '42'}),
     ('/+{field}', '/+42', {'field': '42'}),
     (
@@ -214,7 +220,8 @@ def test_user_regression_recipes():
     ('/items/{x}^^{y}', '/items/1080^^768', {'x': '1080', 'y': '768'}),
     ('/items/{x}*{y}*', '/items/1080*768*', {'x': '1080', 'y': '768'}),
     ('/thing-2/something+{field}+', '/thing-2/something+42+', {'field': '42'}),
-    ('/thing-2/something*{field}/notes', '/thing-2/something*42/notes', {'field': '42'}),
+    ('/thing-2/something*{field}/notes',
+     '/thing-2/something*42/notes', {'field': '42'}),
     (
         '/thing-2/something+{field}|{q}/notes',
         '/thing-2/something+else|z/notes',

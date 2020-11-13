@@ -29,10 +29,11 @@ if sys.version_info >= (3, 5):
 COMMON_SERIALIZATION_PARAM_LIST = [
     # Default json.dumps, with only ascii
     (None, {'test': 'value'}, b'{"test":"value"}'),
-    (partial(mujson.dumps, ensure_ascii=True), {'test': 'value'}, b'{"test":"value"}'),
+    (partial(mujson.dumps, ensure_ascii=True),
+     {'test': 'value'}, b'{"test":"value"}'),
     (ujson.dumps, {'test': 'value'}, b'{"test":"value"}'),
     (partial(lambda media, **kwargs: json.dumps([media, kwargs]),
-     ensure_ascii=True),
+             ensure_ascii=True),
      {'test': 'value'},
      b'[{"test":"value"},{"ensure_ascii":true}]'),
 ]

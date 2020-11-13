@@ -63,7 +63,8 @@ def test_custom_router_find_should_be_used(asgi):
     response = client.simulate_request(path='/test/42/no-uri-template')
     assert response.content == b'{"uri_template": "None"}'
 
-    response = client.simulate_request(path='/test/42/uri-template/backwards-compat')
+    response = client.simulate_request(
+        path='/test/42/uri-template/backwards-compat')
     assert response.content == b'{"uri_template": "None"}'
 
     for uri in ('/404', '/404/backwards-compat'):

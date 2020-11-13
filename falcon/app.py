@@ -298,7 +298,8 @@ class App:
                 # next-hop child resource. In that case, the object
                 # being asked to dispatch to its child will raise an
                 # HTTP exception signalling the problem, e.g. a 404.
-                responder, params, resource, req.uri_template = self._get_responder(req)
+                responder, params, resource, req.uri_template = self._get_responder(
+                    req)
         except Exception as ex:
             if not self._handle_exception(req, resp, ex, params):
                 raise
@@ -999,7 +1000,8 @@ class App:
                     iterable = wsgi_file_wrapper(stream,
                                                  self._STREAM_BLOCK_SIZE)
                 else:
-                    iterable = helpers.CloseableStreamIterator(stream, self._STREAM_BLOCK_SIZE)
+                    iterable = helpers.CloseableStreamIterator(
+                        stream, self._STREAM_BLOCK_SIZE)
             else:
                 iterable = stream
 

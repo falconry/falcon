@@ -92,8 +92,10 @@ def test_multiple_events():
                     SSEvent(data=b'ketchup'),
                     SSEvent(data=b'mustard', event='condiment'),
                     SSEvent(data=b'mayo', event='condiment', event_id='1234'),
-                    SSEvent(data=b'onions', event='topping', event_id='5678', retry=100),
-                    SSEvent(text='guacamole \u1F951', retry=100, comment='Serve with chips.'),
+                    SSEvent(data=b'onions', event='topping',
+                            event_id='5678', retry=100),
+                    SSEvent(text='guacamole \u1F951', retry=100,
+                            comment='Serve with chips.'),
                     SSEvent(json={'condiment': 'salsa'}, retry=100),
                 ]:
                     yield event

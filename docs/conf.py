@@ -19,9 +19,9 @@ import sys
 import os
 
 try:
-  import configparser
+    import configparser
 except ImportError:
-  import ConfigParser as configparser
+    import ConfigParser as configparser
 
 import falcon
 
@@ -32,7 +32,7 @@ import falcon
 #   * https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods
 #
 if not sys.platform.startswith('win'):
-  multiprocessing.set_start_method('fork')
+    multiprocessing.set_start_method('fork')
 
 # on_rtd is whether we are on readthedocs.org
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
@@ -86,7 +86,7 @@ master_doc = 'index'
 # General information about the project.
 project = u'Falcon'
 copyright = u"{year} Falcon Contributors".format(
-  year=datetime.utcnow().year
+    year=datetime.utcnow().year
 )
 
 # The version info for the project you're documenting, acts as replacement for
@@ -98,7 +98,7 @@ cfg.read('../setup.cfg')
 tag = cfg.get('egg_info', 'tag_build')
 
 html_context = {
-  'prerelease': bool(tag),  # True if tag is not the empty string
+    'prerelease': bool(tag),  # True if tag is not the empty string
 }
 
 # The short X.Y version.
@@ -175,11 +175,11 @@ html_theme_options = {
     'fixed_sidebar': False,
     'show_powered_by': False,
     'extra_nav_links': OrderedDict([
-      ('Falcon Home', 'https://falconframework.org/'),
-      ('Falcon Wiki', 'https://github.com/falconry/falcon/wiki'),
-      ('GitHub Project', 'https://github.com/falconry/falcon'),
-      ('Get Help', '/community/help.html'),
-      ('Support Falcon', 'https://falconframework.org/#sectionSupportFalconDevelopment'),
+        ('Falcon Home', 'https://falconframework.org/'),
+        ('Falcon Wiki', 'https://github.com/falconry/falcon/wiki'),
+        ('GitHub Project', 'https://github.com/falconry/falcon'),
+        ('Get Help', '/community/help.html'),
+        ('Support Falcon', 'https://falconframework.org/#sectionSupportFalconDevelopment'),
     ]),
 }
 
@@ -277,22 +277,22 @@ htmlhelp_basename = 'Falcondoc'
 # -- Options for LaTeX output ---------------------------------------------
 
 latex_elements = {
-# The paper size ('letterpaper' or 'a4paper').
-#'papersize': 'letterpaper',
+    # The paper size ('letterpaper' or 'a4paper').
+    # 'papersize': 'letterpaper',
 
-# The font size ('10pt', '11pt' or '12pt').
-#'pointsize': '10pt',
+    # The font size ('10pt', '11pt' or '12pt').
+    # 'pointsize': '10pt',
 
-# Additional stuff for the LaTeX preamble.
-#'preamble': '',
+    # Additional stuff for the LaTeX preamble.
+    # 'preamble': '',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'Falcon.tex', u'Falcon Documentation',
-   u'Kurt Griffiths et al.', 'manual'),
+    ('index', 'Falcon.tex', u'Falcon Documentation',
+     u'Kurt Griffiths et al.', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -335,9 +335,9 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'Falcon', u'Falcon Documentation',
-   u'Kurt Griffiths et al.', 'Falcon', 'One line description of project.',
-   'Miscellaneous'),
+    ('index', 'Falcon', u'Falcon Documentation',
+     u'Kurt Griffiths et al.', 'Falcon', 'One line description of project.',
+     'Miscellaneous'),
 ]
 
 # Documents to append as an appendix to all manuals.

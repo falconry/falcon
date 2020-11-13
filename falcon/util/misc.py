@@ -404,15 +404,18 @@ def http_status_to_code(status):
         status = status.decode()
 
     if not isinstance(status, str):
-        raise ValueError('status must be an int, str, or a member of http.HTTPStatus')
+        raise ValueError(
+            'status must be an int, str, or a member of http.HTTPStatus')
 
     if len(status) < 3:
-        raise ValueError('status strings must be at least three characters long')
+        raise ValueError(
+            'status strings must be at least three characters long')
 
     try:
         return int(status[:3])
     except ValueError:
-        raise ValueError('status strings must start with a three-digit integer')
+        raise ValueError(
+            'status strings must start with a three-digit integer')
 
 
 @_lru_cache_safe(maxsize=64)

@@ -213,10 +213,12 @@ def test_http_error_repr():
 @pytest.mark.parametrize('err, args, title, desc', (
     (falcon.HTTPInvalidHeader, ('foo', 'bar'), 'Invalid header value',
      'The value provided for the "bar" header is invalid. foo'),
-    (falcon.HTTPMissingHeader, ('foo',), 'Missing header value', 'The "foo" header is required.'),
+    (falcon.HTTPMissingHeader, ('foo',),
+     'Missing header value', 'The "foo" header is required.'),
     (falcon.HTTPInvalidParam, ('foo', 'bar'), 'Invalid parameter',
      'The "bar" parameter is invalid. foo'),
-    (falcon.HTTPMissingParam, ('foo',), 'Missing parameter', 'The "foo" parameter is required.'),
+    (falcon.HTTPMissingParam, ('foo',), 'Missing parameter',
+     'The "foo" parameter is required.'),
 ))
 def test_custom_400(err, args, title, desc):
     with pytest.raises(err) as e:
@@ -227,10 +229,13 @@ def test_custom_400(err, args, title, desc):
 
 
 @pytest.mark.parametrize('err, header_name, kw_name, args, res, kw_required', (
-    (falcon.HTTPUnauthorized, 'WWW-Authenticate', 'challenges', ('a', 'b'), 'a, b', False),
-    (falcon.HTTPMethodNotAllowed, 'Allow', 'allowed_methods', ('a', 'b'), 'a, b', True),
+    (falcon.HTTPUnauthorized, 'WWW-Authenticate',
+     'challenges', ('a', 'b'), 'a, b', False),
+    (falcon.HTTPMethodNotAllowed, 'Allow',
+     'allowed_methods', ('a', 'b'), 'a, b', True),
     (falcon.HTTPPayloadTooLarge, 'Retry-After', 'retry_after', 123, '123', False),
-    (falcon.HTTPRangeNotSatisfiable, 'Content-Range', 'resource_length', 123, 'bytes */123', True),
+    (falcon.HTTPRangeNotSatisfiable, 'Content-Range',
+     'resource_length', 123, 'bytes */123', True),
     (falcon.HTTPTooManyRequests, 'Retry-After', 'retry_after', 123, '123', False),
     (falcon.HTTPServiceUnavailable, 'Retry-After', 'retry_after', 123, '123', False),
 ))

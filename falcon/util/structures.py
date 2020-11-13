@@ -60,6 +60,7 @@ class CaseInsensitiveDict(MutableMapping):  # pragma: no cover
     behavior is undefined.
 
     """
+
     def __init__(self, data=None, **kwargs):
         self._store = dict()
         if data is None:

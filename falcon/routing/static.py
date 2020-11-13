@@ -39,7 +39,8 @@ class StaticRoute:
     """
 
     # NOTE(kgriffs): Don't allow control characters and reserved chars
-    _DISALLOWED_CHARS_PATTERN = re.compile('[\x00-\x1f\x80-\x9f\ufffd~?<>:*|\'"]')
+    _DISALLOWED_CHARS_PATTERN = re.compile(
+        '[\x00-\x1f\x80-\x9f\ufffd~?<>:*|\'"]')
 
     # NOTE(kgriffs): If somehow an executable code exploit is triggerable, this
     # minimizes how much can be included in the payload.

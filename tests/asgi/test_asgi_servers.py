@@ -37,13 +37,15 @@ class TestASGIServer:
 
     def test_put(self, server_base_url):
         body = '{}'
-        resp = requests.put(server_base_url, data=body, timeout=_REQUEST_TIMEOUT)
+        resp = requests.put(server_base_url, data=body,
+                            timeout=_REQUEST_TIMEOUT)
         assert resp.status_code == 200
         assert resp.text == '{}'
 
     def test_head_405(self, server_base_url):
         body = '{}'
-        resp = requests.head(server_base_url, data=body, timeout=_REQUEST_TIMEOUT)
+        resp = requests.head(server_base_url, data=body,
+                             timeout=_REQUEST_TIMEOUT)
         assert resp.status_code == 405
 
     def test_post_multipart_form(self, server_base_url):
@@ -71,21 +73,24 @@ class TestASGIServer:
 
     def test_post_multiple(self, server_base_url):
         body = testing.rand_string(_SIZE_1_KB / 2, _SIZE_1_KB)
-        resp = requests.post(server_base_url, data=body, timeout=_REQUEST_TIMEOUT)
+        resp = requests.post(server_base_url, data=body,
+                             timeout=_REQUEST_TIMEOUT)
         assert resp.status_code == 200
         assert resp.text == body
         assert resp.headers['X-Counter'] == '0'
 
         time.sleep(1)
 
-        resp = requests.post(server_base_url, data=body, timeout=_REQUEST_TIMEOUT)
+        resp = requests.post(server_base_url, data=body,
+                             timeout=_REQUEST_TIMEOUT)
         assert resp.headers['X-Counter'] == '2002'
 
     def test_post_invalid_content_length(self, server_base_url):
         headers = {'Content-Length': 'invalid'}
 
         try:
-            resp = requests.post(server_base_url, headers=headers, timeout=_REQUEST_TIMEOUT)
+            resp = requests.post(
+                server_base_url, headers=headers, timeout=_REQUEST_TIMEOUT)
 
             # Daphne responds with a 400
             assert resp.status_code == 400
@@ -100,16 +105,19 @@ class TestASGIServer:
 
     def test_post_read_bounded_stream(self, server_base_url):
         body = testing.rand_string(_SIZE_1_KB / 2, _SIZE_1_KB)
-        resp = requests.post(server_base_url + 'bucket', data=body, timeout=_REQUEST_TIMEOUT)
+        resp = requests.post(server_base_url + 'bucket',
+                             data=body, timeout=_REQUEST_TIMEOUT)
         assert resp.status_code == 200
         assert resp.text == body
 
     def test_post_read_bounded_stream_no_body(self, server_base_url):
-        resp = requests.post(server_base_url + 'bucket', timeout=_REQUEST_TIMEOUT)
+        resp = requests.post(server_base_url + 'bucket',
+                             timeout=_REQUEST_TIMEOUT)
         assert not resp.text
 
     def test_sse(self, server_base_url):
-        resp = requests.get(server_base_url + 'events', timeout=_REQUEST_TIMEOUT)
+        resp = requests.get(server_base_url + 'events',
+                            timeout=_REQUEST_TIMEOUT)
         assert resp.status_code == 200
 
         events = resp.text.split('\n\n')
@@ -169,7 +177,8 @@ def _run_server_isolated(process_factory, host, port):
             server.kill()
             server.communicate()
 
-            pytest.fail('Server process did not exit in a timely manner and had to be killed.')
+            pytest.fail(
+                'Server process did not exit in a timely manner and had to be killed.')
     else:
         print('\n[Sending SIGTERM to server process...]')
         server.terminate()
@@ -182,7 +191,8 @@ def _run_server_isolated(process_factory, host, port):
             server.kill()
             server.communicate()
 
-            pytest.fail('Server process did not exit in a timely manner and had to be killed.')
+            pytest.fail(
+                'Server process did not exit in a timely manner and had to be killed.')
 
 
 def _uvicorn_factory(host, port):
