@@ -30,16 +30,22 @@ when adding a route, Falcon requires an *instance* of your resource class,
 rather than the class type. That same instance will be used to serve all
 requests coming in on that route.
 
-Why does raising an error inside a resource crash my app?
----------------------------------------------------------
+What happens if my responder raises an error?
+---------------------------------------------
 Generally speaking, Falcon assumes that resource responders (such as
 ``on_get()``, ``on_post()``, etc.) will, for the most part, do the right thing.
 In other words, Falcon doesn't try very hard to protect responder code from
 itself.
 
-This approach reduces the number of checks that Falcon
-would otherwise have to perform, making the framework more efficient. With
-that in mind, writing a high-quality API based on Falcon requires that:
+.. note::
+    As of version 3.0, the framework will no longer propagate uncaught
+    exceptions to the application server.
+    Instead, the default ``Exception`` handler will return an HTTP 500 response
+    and log details of the exception to ``wsgi.errors``.
+
+Although providing basic error handlers, Falcon optimizes for the most common
+case where resource responders do not raise any errors for valid requests.
+With that in mind, writing a high-quality API based on Falcon requires that:
 
 #. Resource responders set response variables to sane values.
 #. Your code is well-tested, with high code coverage.
@@ -103,19 +109,20 @@ run into any issues, please let us know.
 Does Falcon support asyncio?
 ------------------------------
 
-Due to the limitations of WSGI, Falcon is unable to support ``asyncio`` at this
-time. However, we are exploring alternatives to WSGI (such
-as `ASGI <https://github.com/django/asgiref/blob/master/specs/asgi.rst>`_)
-that will allow us to support asyncio natively in the future.
+Starting with version 3.0, the `ASGI <https://asgi.readthedocs.io/en/latest/>`_
+flavor of Falcon now proudly supports :any:`asyncio`!
+Use the :class:`falcon.asgi.App` class to create an async application.
 
-In the meantime, we recommend using the battle-tested
-`gevent <http://www.gevent.org/>`_ library via
-Gunicorn or uWSGI to scale IO-bound services.
+Alternatively, IO-bound WSGI applications can be scaled using the battle-tested
+`gevent <http://www.gevent.org/>`_ library via Gunicorn or uWSGI.
 `meinheld <https://pypi.org/project/meinheld/>`_ has also been used
-successfully by the community to power high-throughput, low-latency services.
-Note that if you use Gunicorn, you can combine gevent and PyPy to achieve an
-impressive level of performance. (Unfortunately, uWSGI does not yet support
-using gevent and PyPy together.)
+successfully by the community to power high-throughput, low-latency WSGI
+services.
+
+.. tip::
+    Note that if you use Gunicorn, you can combine gevent and PyPy to achieve
+    an impressive level of performance.
+    (Unfortunately, uWSGI does not yet support using gevent and PyPy together.)
 
 Does Falcon support WebSocket?
 ------------------------------
@@ -137,43 +144,14 @@ How do I implement CORS with Falcon?
 In order for a website or SPA to access an API hosted under a different
 domain name, that API must implement
 `Cross-Origin Resource Sharing (CORS) <https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS>`_.
-For a public API, implementing CORS in Falcon can be as simple as implementing
-a middleware component similar to the following:
+For a public API, implementing CORS in Falcon can be as simple as passing the
+``cors_enable`` flag (set to ``True``) when instantiating
+:ref:`your application <app>`.
 
-.. code:: python
+Further CORS customization is possible via :class:`~falcon.CORSMiddleware`
+(for more information on managing CORS in Falcon, see also :ref:`cors`).
 
-    class CORSComponent:
-        def process_response(self, req, resp, resource, req_succeeded):
-            resp.set_header('Access-Control-Allow-Origin', '*')
-
-            if (req_succeeded
-                and req.method == 'OPTIONS'
-                and req.get_header('Access-Control-Request-Method')
-            ):
-                # NOTE(kgriffs): This is a CORS preflight request. Patch the
-                #   response accordingly.
-
-                allow = resp.get_header('Allow')
-                resp.delete_header('Allow')
-
-                allow_headers = req.get_header(
-                    'Access-Control-Request-Headers',
-                    default='*'
-                )
-
-                resp.set_headers((
-                    ('Access-Control-Allow-Methods', allow),
-                    ('Access-Control-Allow-Headers', allow_headers),
-                    ('Access-Control-Max-Age', '86400'),  # 24 hours
-                ))
-
-When using the above approach, OPTIONS requests must also be special-cased in
-any other middleware or hooks you use for auth, content-negotiation, etc. For
-example, you will typically skip auth for preflight requests because it is
-simply unnecessary; note that such request do not include the Authorization
-header in any case.
-
-For more sophisticated use cases, have a look at Falcon add-ons from the
+For even more sophisticated use cases, have a look at Falcon add-ons from the
 community, such as `falcon-cors <https://github.com/lwcolton/falcon-cors>`_, or
 try one of the generic
 `WSGI CORS libraries available on PyPI <https://pypi.python.org/pypi?%3Aaction=search&term=cors&submit=search>`_.
@@ -723,7 +701,8 @@ How can I handle forward slashes within a route template field?
 In Falcon 1.3 we shipped initial support for
 `field converters <http://falcon.readthedocs.io/en/stable/api/routing.html#field-converters>`_.
 We’ve discussed building on this feature to support consuming multiple path
-segments ala Flask. This work is currently planned for 2.0.
+segments ala Flask. This work is currently planned to commence after the 3.0
+release.
 
 In the meantime, the workaround is to percent-encode the forward slash. If you
 don’t control the clients and can't enforce this, you can implement a Falcon
