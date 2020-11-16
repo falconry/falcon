@@ -27,7 +27,7 @@ sys.path.append(os.getcwd())
 
 
 def make_parser():
-    """Creates the parsed or the application"""
+    """Create the parser or the application."""
     parser = argparse.ArgumentParser(
         description='Example: falcon-inspect-app myprogram:app'
     )
@@ -83,9 +83,6 @@ def route_main():
 
 
 def main():
-    """
-    Main entrypoint.
-    """
     parser = make_parser()
     args = parser.parse_args()
     app = load_app(parser, args)

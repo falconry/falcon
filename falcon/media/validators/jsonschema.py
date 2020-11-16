@@ -10,7 +10,7 @@ except ImportError:  # pragma: nocover
 
 
 def validate(req_schema=None, resp_schema=None, is_async=False):
-    """Decorator for validating ``req.media`` using JSON Schema.
+    """Validate ``req.media`` using JSON Schema.
 
     This decorator provides standard JSON Schema validation via the
     ``jsonschema`` package available from PyPI. Semantic validation via

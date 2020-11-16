@@ -83,7 +83,7 @@ class Forwarded:
 
 
 def _parse_forwarded_header(forwarded):
-    """Parses the value of a Forwarded header.
+    """Parse the value of a Forwarded header.
 
     Makes an effort to parse Forwarded headers as specified by RFC 7239:
 
