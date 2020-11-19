@@ -56,13 +56,9 @@ class Response:
         options (dict): Set of global options passed from the App handler.
 
     Attributes:
-        status (str): HTTP status line (e.g., ``'200 OK'``). Falcon requires
-            the full status line, not just the code (e.g., 200). This design
-            makes the framework more efficient because it does not have to
-            do any kind of conversion or lookup when composing the WSGI
-            response.
-
-            If not set explicitly, the status defaults to ``'200 OK'``.
+        status: HTTP status code or line (e.g., ``'200 OK'``). This may be set
+            to a member of :class:`http.HTTPStatus`, an HTTP status line string
+            or byte string (e.g., ``'200 OK'``), or an ``int``.
 
             Note:
                 The Falcon framework itself provides a number of constants for
@@ -277,7 +273,7 @@ class Response:
         return '<%s: %s>' % (self.__class__.__name__, self.status)
 
     def set_stream(self, stream, content_length):
-        """Convenience method for setting both `stream` and `content_length`.
+        """Set both `stream` and `content_length`.
 
         Although the :attr:`~falcon.Response.stream` and
         :attr:`~falcon.Response.content_length` properties may be set
@@ -346,6 +342,10 @@ class Response:
                 domain must include the origin server. Otherwise, the
                 user agent will reject the cookie.
 
+                Note:
+                    Cookies do not provide isolation by port, so the domain
+                    should not provide one. (See also: RFC 6265, Section 8.5)
+
                 (See also: RFC 6265, Section 4.1.2.3)
 
             path (str): Scopes the cookie to the given path plus any
@@ -378,10 +378,16 @@ class Response:
 
                 (See also: RFC 6265, Section 4.1.2.5)
 
-            http_only (bool): Direct the client to only transfer the
-                cookie with unscripted HTTP requests
-                (default: ``True``). This is intended to mitigate some
-                forms of cross-site scripting.
+            http_only (bool): The HttpOnly attribute limits the scope of the
+                cookie to HTTP requests.  In particular, the attribute
+                instructs the user agent to omit the cookie when providing
+                access to cookies via "non-HTTP" APIs. This is intended to
+                mitigate some forms of cross-site scripting. (default: ``True``)
+
+                Note:
+                    HttpOnly cookies are not visible to javascript scripts
+                    in the browser. They are automatically sent to the server
+                    on javascript ``XMLHttpRequest`` or ``Fetch`` requests.
 
                 (See also: RFC 6265, Section 4.1.2.6)
 
@@ -504,6 +510,10 @@ class Response:
                     When overriding this default behavior, the specified
                     domain must include the origin server. Otherwise, the
                     user agent will reject the cookie.
+
+                    Note:
+                        Cookies do not provide isolation by port, so the domain
+                        should not provide one. (See also: RFC 6265, Section 8.5)
 
                     (See also: RFC 6265, Section 4.1.2.3)
 
@@ -946,9 +956,14 @@ class Response:
         'Content-Disposition',
         """Set the Content-Disposition header using the given filename.
 
-        The value will be used for the *filename* directive. For example,
+        The value will be used for the ``filename`` directive. For example,
         given ``'report.pdf'``, the Content-Disposition header would be set
         to: ``'attachment; filename="report.pdf"'``.
+
+        As per `RFC 6266 <https://tools.ietf.org/html/rfc6266#appendix-D>`_
+        recommendations, non-ASCII filenames will be encoded using the
+        ``filename*`` directive, whereas ``filename`` will contain the US
+        ASCII fallback.
         """,
         format_content_disposition)
 
@@ -1036,7 +1051,7 @@ class Response:
         """)
 
     def _set_media_type(self, media_type=None):
-        """Wrapper around set_header to set a content-type.
+        """Set a content-type; wrapper around set_header.
 
         Args:
             media_type: Media type to use for the Content-Type

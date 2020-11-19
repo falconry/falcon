@@ -63,8 +63,11 @@ if CYTHON:
         #       * https://github.com/cython/cython/issues/2273
         #       * https://bugs.python.org/issue38225
         #
+        # NOTE(vytas): It is pointless to cythonize reader.py, since cythonized
+        #   Falcon is using reader.pyx instead.
         'falcon.hooks',
         'falcon.responders',
+        'falcon.util.reader',
         'falcon.util.sync',
     ]
 
@@ -147,7 +150,10 @@ setup(
         'Operating System :: MacOS :: MacOS X',
         'Operating System :: Microsoft :: Windows',
         'Operating System :: POSIX',
+        'Operating System :: POSIX :: Linux',
+        'Topic :: Internet :: WWW/HTTP',
         'Topic :: Internet :: WWW/HTTP :: WSGI',
+        # 'Topic :: Internet :: WWW/HTTP :: ASGI',
         'Topic :: Software Development :: Libraries :: Application Frameworks',
         'Programming Language :: Python',
         'Programming Language :: Python :: Implementation :: CPython',
@@ -157,6 +163,7 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Cython',
     ],
     keywords='wsgi web api framework rest http cloud',
     author='Kurt Griffiths',

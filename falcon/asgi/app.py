@@ -14,26 +14,32 @@
 
 """ASGI application class."""
 
+import asyncio
 from inspect import isasyncgenfunction, iscoroutinefunction
 import traceback
 
 import falcon.app
 from falcon.app_helpers import prepare_middleware
+from falcon.asgi_spec import EventType
 from falcon.errors import CompatibilityError, UnsupportedError, UnsupportedScopeError
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
+from falcon.media.multipart import MultipartFormHandler
 import falcon.routing
 from falcon.util.misc import http_status_to_code, is_python_func
-from falcon.util.sync import _wrap_non_coroutine_unsafe, get_loop
+from falcon.util.sync import _wrap_non_coroutine_unsafe, get_running_loop
+from .multipart import MultipartForm
 from .request import Request
 from .response import Response
 from .structures import SSEvent
 
+# TODO(vytas): Clean up these foul workarounds when we drop Python 3.5 support.
+MultipartFormHandler._ASGI_MULTIPART_FORM = MultipartForm  # type: ignore
 
 __all__ = ['App']
 
 
-_EVT_RESP_EOF = {'type': 'http.response.body'}
+_EVT_RESP_EOF = {'type': EventType.HTTP_RESPONSE_BODY}
 
 _BODILESS_STATUS_CODES = frozenset([
     100,
@@ -212,7 +218,9 @@ class App(falcon.app.App):
 
         cors_enable (bool): Set this flag to ``True`` to enable a simple
             CORS policy for all responses, including support for preflighted
-            requests (default ``False``).
+            requests. An instance of :py:class:`..CORSMiddleware` can instead be
+            passed to the middleware argument to customize its behaviour.
+            (default ``False``).
             (See also: :ref:`CORS <cors>`)
 
     Attributes:
@@ -436,7 +444,7 @@ class App(falcon.app.App):
                 resp._headers['content-length'] = str(len(data)) if data else '0'
 
             await send({
-                'type': 'http.response.start',
+                'type': EventType.HTTP_RESPONSE_START,
                 'status': resp_status,
                 'headers': resp._asgi_headers(default_media_type)
             })
@@ -454,8 +462,19 @@ class App(falcon.app.App):
                     'the result to Response.sse, e.g.: resp.sse = some_asyncgen_function()'
                 )
 
+            # NOTE(kgriffs): This must be done in a separate task because
+            #   receive() can block for some time (until the connection is
+            #   actually closed).
+            async def watch_disconnect():
+                while True:
+                    received_event = await receive()
+                    if received_event['type'] == EventType.HTTP_DISCONNECT:
+                        break
+
+            watcher = falcon.create_task(watch_disconnect())
+
             await send({
-                'type': 'http.response.start',
+                'type': EventType.HTTP_RESPONSE_START,
                 'status': resp_status,
                 'headers': resp._asgi_headers('text/event-stream')
             })
@@ -468,13 +487,25 @@ class App(falcon.app.App):
                 if not event:
                     event = SSEvent()
 
+                # NOTE(kgriffs): According to the ASGI spec, once the client
+                #   disconnects, send() acts as a no-op. We have to check
+                #   the connection state using watch_disconnect() above.
                 await send({
-                    'type': 'http.response.body',
+                    'type': EventType.HTTP_RESPONSE_BODY,
                     'body': event.serialize(),
                     'more_body': True
                 })
 
-            await send({'type': 'http.response.body'})
+                if watcher.done():
+                    break
+
+            watcher.cancel()
+            try:
+                await watcher
+            except asyncio.CancelledError:
+                pass
+
+            await send({'type': EventType.HTTP_RESPONSE_BODY})
             return
 
         if data is not None:
@@ -488,13 +519,13 @@ class App(falcon.app.App):
             resp._headers['content-length'] = str(len(data))
 
             await send({
-                'type': 'http.response.start',
+                'type': EventType.HTTP_RESPONSE_START,
                 'status': resp_status,
                 'headers': resp._asgi_headers(default_media_type)
             })
 
             await send({
-                'type': 'http.response.body',
+                'type': EventType.HTTP_RESPONSE_BODY,
                 'body': data
             })
 
@@ -506,7 +537,7 @@ class App(falcon.app.App):
             resp._headers['content-length'] = '0'
 
         await send({
-            'type': 'http.response.start',
+            'type': EventType.HTTP_RESPONSE_START,
             'status': resp_status,
             'headers': resp._asgi_headers(default_media_type)
         })
@@ -526,7 +557,7 @@ class App(falcon.app.App):
                         break
                     else:
                         await send({
-                            'type': 'http.response.body',
+                            'type': EventType.HTTP_RESPONSE_BODY,
 
                             # NOTE(kgriffs): Handle the case in which data == None
                             'body': data or b'',
@@ -546,7 +577,7 @@ class App(falcon.app.App):
                             break
 
                         await send({
-                            'type': 'http.response.body',
+                            'type': EventType.HTTP_RESPONSE_BODY,
                             'body': data,
                             'more_body': True
                         })
@@ -696,7 +727,7 @@ class App(falcon.app.App):
         if not callbacks:
             return
 
-        loop = get_loop()
+        loop = get_running_loop()
 
         for cb, is_async in callbacks:
             if is_async:
@@ -714,12 +745,12 @@ class App(falcon.app.App):
                             await handler.process_startup(scope, event)
                         except Exception:
                             await send({
-                                'type': 'lifespan.startup.failed',
+                                'type': EventType.LIFESPAN_STARTUP_FAILED,
                                 'message': traceback.format_exc(),
                             })
                             return
 
-                await send({'type': 'lifespan.startup.complete'})
+                await send({'type': EventType.LIFESPAN_STARTUP_COMPLETE})
 
             elif event['type'] == 'lifespan.shutdown':
                 for handler in reversed(self._unprepared_middleware):
@@ -728,12 +759,12 @@ class App(falcon.app.App):
                             await handler.process_shutdown(scope, event)
                         except Exception:
                             await send({
-                                'type': 'lifespan.shutdown.failed',
+                                'type': EventType.LIFESPAN_SHUTDOWN_FAILED,
                                 'message': traceback.format_exc(),
                             })
                             return
 
-                await send({'type': 'lifespan.shutdown.complete'})
+                await send({'type': EventType.LIFESPAN_SHUTDOWN_COMPLETE})
                 return
 
     def _prepare_middleware(self, middleware=None, independent_middleware=False):

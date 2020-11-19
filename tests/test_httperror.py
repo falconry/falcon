@@ -10,7 +10,8 @@ import yaml
 import falcon
 from falcon.http_error import NoRepresentation, OptionalRepresentation
 import falcon.testing as testing
-from falcon.util import json, misc
+from falcon.util import json
+from falcon.util.deprecation import DeprecatedWarning
 
 from _util import create_app  # NOQA
 
@@ -288,7 +289,7 @@ class TestHTTPError:
         assert response.json == expected_body
 
     def test_has_representation(self):
-        with pytest.warns(misc.DeprecatedWarning, match='has_representation is deprecated'):
+        with pytest.warns(DeprecatedWarning, match='has_representation is deprecated'):
             assert falcon.HTTPError(falcon.HTTP_701).has_representation is True
 
     def test_no_description_json(self, client):
@@ -604,7 +605,7 @@ class TestHTTPError:
 
     def test_405_without_body_with_extra_headers_double_check(self, client):
         client.app.add_route(
-            '/405/', MethodNotAllowedResourceWithHeadersWithAccept()
+            '/405', MethodNotAllowedResourceWithHeadersWithAccept()
         )
 
         response = client.simulate_request(path='/405')
@@ -876,13 +877,13 @@ def test_kw_only():
     # only deprecated for now
     # with pytest.raises(TypeError, match='positional argument'):
     #     falcon.HTTPError(falcon.HTTP_BAD_REQUEST, 'foo', 'bar')
-    with pytest.warns(misc.DeprecatedWarning, match='positional args are deprecated'):
+    with pytest.warns(DeprecatedWarning, match='positional args are deprecated'):
         falcon.HTTPError(falcon.HTTP_BAD_REQUEST, 'foo', 'bar')
 
 
 def test_NoRepresentation():
     with pytest.warns(
-        misc.DeprecatedWarning,
+        DeprecatedWarning,
         match='has_representation is deprecated.*The class NoRepresentation'
     ):
         assert NoRepresentation().has_representation is False
@@ -891,7 +892,7 @@ def test_NoRepresentation():
 class TestOptionalRepresentation:
     def test_OptionalRepresentation_false(self):
         with pytest.warns(
-            misc.DeprecatedWarning,
+            DeprecatedWarning,
             match='has_representation is deprecated.*The class OptionalRepresentation'
         ):
             or_ = OptionalRepresentation()
@@ -900,7 +901,7 @@ class TestOptionalRepresentation:
 
     def test_OptionalRepresentation_true(self):
         with pytest.warns(
-            misc.DeprecatedWarning,
+            DeprecatedWarning,
             match='has_representation is deprecated.*The class OptionalRepresentation'
         ):
             or_ = OptionalRepresentation()

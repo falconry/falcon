@@ -27,15 +27,15 @@ import asyncio
 import cgi
 from collections import defaultdict
 import contextlib
-import functools
 import io
 import itertools
 import random
 import socket
 import sys
 import time
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
+from falcon.asgi_spec import EventType, ScopeType
 from falcon.constants import SINGLETON_HEADERS
 import falcon.request
 from falcon.util import http_now, uri
@@ -73,18 +73,18 @@ class ASGILifespanEventEmitter:
     async def emit(self):
         if self._state == 0:
             self._state += 1
-            return {'type': 'lifespan.startup'}
+            return {'type': EventType.LIFESPAN_STARTUP}
 
         if self._state == 1:
             self._state += 1
-            # NOTE(kgriffs): This ensures the app ignores events it does
+            # NOTE(kgriffs): This verifies the app ignores events it does
             #   not recognize.
             return {'type': 'lifespan._nonstandard_event'}
 
         async with self._shutting_down:
             await self._shutting_down.wait()
 
-        return {'type': 'lifespan.shutdown'}
+        return {'type': EventType.LIFESPAN_SHUTDOWN}
 
     __call__ = emit
 
@@ -108,17 +108,28 @@ class ASGIRequestEventEmitter:
             events. May be an empty string. If a byte string, it will
             be used as-is; otherwise it will be encoded as UTF-8
             (default b'').
-        disconnect_at (int): The Unix timestamp after which to begin
-            returning http.disconnect events (default now + 30s).
         chunk_size (int): The maximum number of bytes to include in
             a single http.request event (default 4096).
+        disconnect_at (float): The Unix timestamp after which to begin
+            emitting http.disconnect events (default now + 30s). The
+            value may be either an ``int`` or a ``float``, depending
+            on the precision required.
+
+    Attributes:
+        disconnected (bool): Returns ``True`` if the simulated client
+            connection is in a "disconnected" state.
     """
 
     # TODO(kgriffs): If this pattern later becomes useful elsewhere,
     #   factor out into a standalone helper class.
     _branch_decider = defaultdict(bool)  # type: defaultdict
 
-    def __init__(self, body=None, disconnect_at=None, chunk_size=4096):
+    def __init__(
+        self,
+        body: Union[str, bytes] = None,
+        chunk_size: int = None,
+        disconnect_at: Union[int, float] = None
+    ):
         if body is None:
             body = b''
         elif not isinstance(body, bytes):
@@ -127,25 +138,56 @@ class ASGIRequestEventEmitter:
         if disconnect_at is None:
             disconnect_at = time.time() + 30
 
+        if chunk_size is None:
+            chunk_size = 4096
+
         self._body = body
         self._chunk_size = chunk_size
         self._disconnect_at = disconnect_at
+        self._disconnected = False
+        self._exhaust_body = True
 
         self._emitted_empty_chunk_a = False
         self._emitted_empty_chunk_b = False
 
+    @property
+    def disconnected(self):
+        return self._disconnected or (self._disconnect_at <= time.time())
+
+    def disconnect(self, exhaust_body: bool = None):
+        """Set the client connection state to disconnected.
+
+        Call this method to simulate an immediate client disconnect and
+        begin emitting 'http.disconnect' events.
+
+        Arguments:
+            exhaust_body (bool): Set to ``False`` in order to
+                begin emitting 'http.disconnect' events without first
+                emitting at least one 'http.request' event.
+        """
+
+        if exhaust_body is not None:
+            self._exhaust_body = exhaust_body
+
+        self._disconnected = True
+
     async def emit(self):
-        if self._body is None:
+        #
+        # NOTE(kgriffs): Based on my reading of the ASGI spec, at least one
+        #   'http.request' event should be emitted before 'http.disconnect'.
+        #
+        #   See also: https://asgi.readthedocs.io/en/latest/specs/main.html#events
+        #
+        if self._body is None or not self._exhaust_body:
             # NOTE(kgriffs): When there are no more events, an ASGI
             #   server will hang until the client connection
             #   disconnects.
-            while time.time() < self._disconnect_at:
-                await asyncio.sleep(1)
+            while not self.disconnected:
+                await asyncio.sleep(0.1)
 
-        if self._disconnect_at <= time.time():
-            return {'type': 'http.disconnect'}
+            return {'type': EventType.HTTP_DISCONNECT}
 
-        event = {'type': 'http.request'}
+        event = {'type': EventType.HTTP_REQUEST}
 
         # NOTE(kgriffs): Return a couple variations on empty chunks
         #   every time, to ensure test coverage.
@@ -200,7 +242,7 @@ class ASGIRequestEventEmitter:
 
     __call__ = emit
 
-    def _toggle_branch(self, name):
+    def _toggle_branch(self, name: str):
         self._branch_decider[name] = not self._branch_decider[name]
         return self._branch_decider[name]
 
@@ -241,7 +283,7 @@ class ASGIResponseEventCollector:
         self.body_chunks = []
         self.more_body = None
 
-    async def collect(self, event):
+    async def collect(self, event: Dict[str, Any]):
         if self.more_body is False:
             # NOTE(kgriffs): According to the ASGI spec, once we get a
             #   message setting more_body to False, any further messages
@@ -289,37 +331,10 @@ class ASGIResponseEventCollector:
     __call__ = collect
 
 
-def invoke_coroutine_sync(coroutine, *args, **kwargs):
-    """Invokes a coroutine function from a synchronous caller and runs until complete.
-
-    Warning:
-        This method is very inefficient and should only be used
-        for testing purposes. It will create an event loop for the current
-        thread if one is not already running.
-
-    Additional arguments not mentioned below are bound to the given
-    coroutine function via ``functools.partial()``.
-
-    Args:
-        coroutine: A coroutine function to invoke.
-        *args: Additional args are passed through to the coroutine function.
-
-    Keyword Args:
-        **kwargs: Additional args are passed through to the coroutine function.
-    """
-
-    loop = asyncio.get_event_loop()
-    return loop.run_until_complete(
-        functools.partial(
-            coroutine, *args, **kwargs
-        )()
-    )
-
-
 # get_encoding_from_headers() is Copyright 2016 Kenneth Reitz, and is
 # used here under the terms of the Apache License, Version 2.0.
 def get_encoding_from_headers(headers):
-    """Returns encoding from given HTTP Header Dict.
+    """Return encoding from given HTTP Header Dict.
 
     Args:
         headers(dict): Dictionary from which to extract encoding. Header
@@ -348,7 +363,7 @@ def get_encoding_from_headers(headers):
 
 
 def get_unused_port() -> int:
-    """Gets an unused localhost port for use by a test server.
+    """Get an unused localhost port for use by a test server.
 
     Warning:
         It is possible for a third party to bind to the returned port
@@ -366,7 +381,7 @@ def get_unused_port() -> int:
 
 
 def rand_string(min, max) -> str:
-    """Returns a randomly-generated string, of a random length.
+    """Return a randomly-generated string, of a random length.
 
     Args:
         min (int): Minimum string length to return, inclusive
@@ -435,7 +450,7 @@ def create_scope(path='/', query_string='', method='GET', headers=None,
         raise ValueError("query_string should not start with '?'")
 
     scope = {
-        'type': 'http',
+        'type': ScopeType.HTTP,
         'asgi': {
             'version': '3.0',
             'spec_version': '2.1',
@@ -493,9 +508,9 @@ def create_environ(path='/', query_string='', http_version='1.1',
                    scheme='http', host=DEFAULT_HOST, port=None,
                    headers=None, app=None, body='', method='GET',
                    wsgierrors=None, file_wrapper=None, remote_addr=None,
-                   root_path=None) -> Dict[str, Any]:
+                   root_path=None, cookies=None) -> Dict[str, Any]:
 
-    """Creates a mock PEP-3333 environ ``dict`` for simulating WSGI requests.
+    """Create a mock PEP-3333 environ ``dict`` for simulating WSGI requests.
 
     Keyword Args:
         path (str): The path for the request (default '/')
@@ -536,6 +551,10 @@ def create_environ(path='/', query_string='', http_version='1.1',
             the value for *wsgi.file_wrapper* in the environ.
         remote_addr (str): Remote address for the request to use as the
             'REMOTE_ADDR' environ variable (default None)
+        cookies (dict): Cookies as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of items provides the name and value
+            for the 'Set-Cookie' header.
 
     """
 
@@ -631,6 +650,15 @@ def create_environ(path='/', query_string='', http_version='1.1',
     if content_length != 0:
         env['CONTENT_LENGTH'] = str(content_length)
 
+    # NOTE(myuz): Clients discard Set-Cookie header
+    #  in the response to the OPTIONS method.
+    if cookies is not None and method != 'OPTIONS':
+        cookies = [
+            '{}={}'.format(key, cookie.value if hasattr(cookie, 'value') else cookie)
+            for key, cookie in cookies.items()
+        ]
+        env['HTTP_COOKIE'] = '; '.join(cookies)
+
     if headers is not None:
         _add_headers_to_environ(env, headers)
 
@@ -682,7 +710,7 @@ def create_asgi_req(body=None, req_type=None, options=None, **kwargs) -> falcon.
     body = body or b''
     disconnect_at = time.time() + 300
 
-    req_event_emitter = ASGIRequestEventEmitter(body, disconnect_at)
+    req_event_emitter = ASGIRequestEventEmitter(body, disconnect_at=disconnect_at)
 
     # NOTE(kgriffs): Import here in case the app is running under
     #   Python 3.5 (in which case as long as it does not call the
@@ -695,8 +723,7 @@ def create_asgi_req(body=None, req_type=None, options=None, **kwargs) -> falcon.
 
 @contextlib.contextmanager
 def redirected(stdout=sys.stdout, stderr=sys.stderr):
-    """
-    A context manager to temporarily redirect stdout or stderr
+    """Redirect stdout or stderr temporarily.
 
     e.g.:
 
@@ -713,7 +740,7 @@ def redirected(stdout=sys.stdout, stderr=sys.stderr):
 
 
 def closed_wsgi_iterable(iterable):
-    """Wraps an iterable to ensure its ``close()`` method is called.
+    """Wrap an iterable to ensure its ``close()`` method is called.
 
     Wraps the given `iterable` in an iterator utilizing a ``for`` loop as
     illustrated in

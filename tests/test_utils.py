@@ -12,7 +12,7 @@ import pytest
 import falcon
 from falcon import testing
 from falcon import util
-from falcon.util import json, misc, structures, uri
+from falcon.util import deprecation, json, misc, structures, uri
 
 from _util import create_app, to_coroutine  # NOQA
 
@@ -29,6 +29,15 @@ def _arbitrary_uris(count, length):
              for _ in range(length)]
         ) for __ in range(count)
     )
+
+
+@pytest.fixture(params=['bytearray', 'join_list'])
+def decode_approach(request, monkeypatch):
+    method = uri._join_tokens_list
+    if request.param == 'bytearray':
+        method = uri._join_tokens_bytearray
+    monkeypatch.setattr(uri, '_join_tokens', method)
+    return method
 
 
 class TestFalconUtils:
@@ -196,7 +205,7 @@ class TestFalconUtils:
         assert uri.encode_value('ab/cd') == 'ab%2Fcd'
         assert uri.encode_value('ab+cd=42,9') == 'ab%2Bcd%3D42%2C9'
 
-    def test_uri_decode(self):
+    def test_uri_decode(self, decode_approach):
         assert uri.decode('abcd') == 'abcd'
         assert uri.decode('ab%20cd') == 'ab cd'
 
@@ -211,15 +220,23 @@ class TestFalconUtils:
         ) == 'http://example.com?x=ab+cd=42,9'
 
     @pytest.mark.parametrize('encoded,expected', [
+        ('ab%2Gcd', 'ab%2Gcd'),
+        ('ab%2Fcd: 100% coverage', 'ab/cd: 100% coverage'),
+        ('%s' * 100, '%s' * 100),
+    ])
+    def test_uri_decode_bad_coding(self, encoded, expected, decode_approach):
+        assert uri.decode(encoded) == expected
+
+    @pytest.mark.parametrize('encoded,expected', [
         ('+%80', ' �'),
         ('+++%FF+++', '   �   '),  # impossible byte
         ('%fc%83%bf%bf%bf%bf', '������'),  # overlong sequence
         ('%ed%ae%80%ed%b0%80', '������'),  # paired UTF-16 surrogates
     ])
-    def test_uri_decode_replace_bad_unicode(self, encoded, expected):
+    def test_uri_decode_bad_unicode(self, encoded, expected, decode_approach):
         assert uri.decode(encoded) == expected
 
-    def test_uri_decode_unquote_plus(self):
+    def test_uri_decode_unquote_plus(self, decode_approach):
         assert uri.decode('/disk/lost+found/fd0') == '/disk/lost found/fd0'
         assert uri.decode('/disk/lost+found/fd0', unquote_plus=True) == (
             '/disk/lost found/fd0')
@@ -398,8 +415,19 @@ class TestFalconUtils:
             (703, falcon.HTTP_703),
             (404, falcon.HTTP_404),
             (404.9, falcon.HTTP_404),
-            ('404', falcon.HTTP_404),
-            (123, '123'),
+            (falcon.HTTP_200, falcon.HTTP_200),
+            (falcon.HTTP_307, falcon.HTTP_307),
+            (falcon.HTTP_404, falcon.HTTP_404),
+            (123, '123 Unknown'),
+            ('123 Wow Such Status', '123 Wow Such Status'),
+            (b'123 Wow Such Status', '123 Wow Such Status'),
+            (b'200 OK', falcon.HTTP_OK),
+            (http.HTTPStatus(200), falcon.HTTP_200),
+            (http.HTTPStatus(307), falcon.HTTP_307),
+            (http.HTTPStatus(401), falcon.HTTP_401),
+            (http.HTTPStatus(410), falcon.HTTP_410),
+            (http.HTTPStatus(429), falcon.HTTP_429),
+            (http.HTTPStatus(500), falcon.HTTP_500),
         ]
     )
     def test_code_to_http_status(self, v_in, v_out):
@@ -407,9 +435,9 @@ class TestFalconUtils:
 
     @pytest.mark.parametrize(
         'v',
-        ['not_a_number', 0, '0', 99, '99', '404.3', -404.3, '-404', '-404.3']
+        [0, 13, 99, 1000, 1337.01, -99, -404.3, -404, -404.3]
     )
-    def test_code_to_http_status_neg(self, v):
+    def test_code_to_http_status_value_error(self, v):
         with pytest.raises(ValueError):
             falcon.code_to_http_status(v)
 
@@ -702,13 +730,13 @@ class TestFalconTestingUtils:
         assert result.json['detailed']
         assert result.json['things'] == params['things']
 
-        expected_qs = 'things=1,2,3'
+        expected_qs = 'things=1&things=2&things=3'
         result = client.simulate_get(params={'things': [1, 2, 3]})
         assert result.json['query_string'] == expected_qs
 
-        expected_qs = 'things=1&things=2&things=3'
+        expected_qs = 'things=1,2,3'
         result = client.simulate_get(params={'things': [1, 2, 3]},
-                                     params_csv=False)
+                                     params_csv=True)
         assert result.json['query_string'] == expected_qs
 
     def test_query_string_no_question(self, app):
@@ -1024,7 +1052,7 @@ class TestContextType:
 class TestDeprecatedArgs:
     def test_method(self, recwarn):
         class C:
-            @misc.deprecated_args(allowed_positional=0)
+            @deprecation.deprecated_args(allowed_positional=0)
             def a_method(self, a=1, b=2):
                 pass
 
@@ -1034,7 +1062,7 @@ class TestDeprecatedArgs:
         assert len(recwarn) == 1
 
     def test_function(self, recwarn):
-        @misc.deprecated_args(allowed_positional=0, is_method=False)
+        @deprecation.deprecated_args(allowed_positional=0, is_method=False)
         def a_function(a=1, b=2):
             pass
 

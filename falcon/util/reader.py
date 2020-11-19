@@ -17,14 +17,12 @@
 import functools
 import io
 
+from falcon.errors import DelimiterError
+
 DEFAULT_CHUNK_SIZE = 32768
 """Default chunk size for :class:`BufferedReader` (32 KiB)."""
 
 _MAX_JOIN_CHUNKS = 128
-
-
-class DelimiterError(IOError):
-    pass
 
 
 class BufferedReader:
@@ -372,13 +370,13 @@ class BufferedReader:
     # --- implementing IOBase methods, the duck-typing way ---
 
     def readable(self):
-        """Always returns ``True``."""
+        """Return ``True`` always."""
         return True
 
     def seekable(self):
-        """Always returns ``False``."""
+        """Return ``False`` always."""
         return False
 
     def writeable(self):
-        """Always returns ``False``."""
+        """Return ``False`` always."""
         return False

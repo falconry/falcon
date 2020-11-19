@@ -1,6 +1,8 @@
 from contextlib import contextmanager
+import hashlib
 import os
 import platform
+import random
 import subprocess
 import sys
 import time
@@ -10,6 +12,7 @@ import requests
 import requests.exceptions
 
 from falcon import testing
+from . import _asgi_test_app
 
 
 _MODULE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -19,6 +22,7 @@ _WIN32 = sys.platform.startswith('win')
 
 _SERVER_HOST = '127.0.0.1'
 _SIZE_1_KB = 1024
+_SIZE_1_MB = _SIZE_1_KB ** 2
 
 
 _REQUEST_TIMEOUT = 10
@@ -41,6 +45,29 @@ class TestASGIServer:
         body = '{}'
         resp = requests.head(server_base_url, data=body, timeout=_REQUEST_TIMEOUT)
         assert resp.status_code == 405
+
+    def test_post_multipart_form(self, server_base_url):
+        size = random.randint(16 * _SIZE_1_MB, 32 * _SIZE_1_MB)
+        data = os.urandom(size)
+        digest = hashlib.sha1(data).hexdigest()
+        files = {
+            'random': ('random.dat', data),
+            'message': ('hello.txt', b'Hello, World!\n'),
+        }
+
+        resp = requests.post(
+            server_base_url + 'forms', files=files, timeout=_REQUEST_TIMEOUT)
+        assert resp.status_code == 200
+        assert resp.json() == {
+            'message': {
+                'filename': 'hello.txt',
+                'sha1': '60fde9c2310b0d4cad4dab8d126b04387efba289',
+            },
+            'random': {
+                'filename': 'random.dat',
+                'sha1': digest,
+            },
+        }
 
     def test_post_multiple(self, server_base_url):
         body = testing.rand_string(_SIZE_1_KB / 2, _SIZE_1_KB)
@@ -92,6 +119,21 @@ class TestASGIServer:
 
         assert not events[-1]
 
+    def test_sse_client_disconnects_early(self, server_base_url):
+        """Test that when the client connection is lost, the server task does not hang.
+
+        In the case of SSE, Falcon should detect when the client connection is
+        lost and immediately bail out. Currently this is observable by watching
+        the output of the uvicorn and daphne server processes. Also, the
+        _run_server_isolated() method will fail the test if the server process
+        takes too long to shut down.
+        """
+        with pytest.raises(requests.exceptions.ConnectionError):
+            requests.get(
+                server_base_url + 'events',
+                timeout=(_asgi_test_app.SSE_TEST_MAX_DELAY_SEC / 2)
+            )
+
 
 @contextmanager
 def _run_server_isolated(process_factory, host, port):
@@ -106,7 +148,7 @@ def _run_server_isolated(process_factory, host, port):
     if _WIN32:
         # NOTE(kgriffs): Calling server.terminate() is equivalent to
         #   server.kill() on Windows. We don't want to do the this;
-        #   forcefully killing a proc causes the Travis job to fail,
+        #   forcefully killing a proc causes the CI job to fail,
         #   regardless of the tox/pytest exit code. """
         #
         #   Instead, we send CTRL+C. This does require that the handler be
@@ -123,8 +165,11 @@ def _run_server_isolated(process_factory, host, port):
             pass
         except subprocess.TimeoutExpired:
             print('\n[Killing stubborn server process...]')
+
             server.kill()
             server.communicate()
+
+            pytest.fail('Server process did not exit in a timely manner and had to be killed.')
     else:
         print('\n[Sending SIGTERM to server process...]')
         server.terminate()
@@ -133,8 +178,11 @@ def _run_server_isolated(process_factory, host, port):
             server.communicate(timeout=10)
         except subprocess.TimeoutExpired:
             print('\n[Killing stubborn server process...]')
+
             server.kill()
             server.communicate()
+
+            pytest.fail('Server process did not exit in a timely manner and had to be killed.')
 
 
 def _uvicorn_factory(host, port):
@@ -146,7 +194,7 @@ ctypes.windll.kernel32.SetConsoleCtrlHandler(None, 0)
 uvicorn.run('_asgi_test_app:application', host='{host}', port={port})
 """
         return subprocess.Popen(
-            ('python', '-c', script),
+            (sys.executable, '-c', script),
             cwd=_MODULE_DIR,
             creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
         )

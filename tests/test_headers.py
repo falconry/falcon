@@ -6,7 +6,7 @@ import pytest
 import falcon
 from falcon import testing
 
-from _util import create_app, disable_asgi_non_coroutine_wrapping  # NOQA
+from _util import create_app  # NOQA
 
 
 SAMPLE_BODY = testing.rand_string(0, 128 * 1024)
@@ -15,15 +15,6 @@ SAMPLE_BODY = testing.rand_string(0, 128 * 1024)
 @pytest.fixture
 def client(asgi):
     app = create_app(asgi)
-    return testing.TestClient(app)
-
-
-@pytest.fixture(scope='function')
-def cors_client(asgi):
-    # NOTE(kgriffs): Disable wrapping to test that built-in middleware does
-    #   not require it (since this will be the case for non-test apps).
-    with disable_asgi_non_coroutine_wrapping():
-        app = create_app(asgi, cors_enable=True)
     return testing.TestClient(app)
 
 
@@ -216,6 +207,16 @@ class RemoveHeaderResource:
         resp.downloadable_as = None
 
 
+class DownloadableResource:
+    def __init__(self, filename):
+        self.filename = filename
+
+    def on_get(self, req, resp):
+        resp.body = 'Hello, World!\n'
+        resp.content_type = falcon.MEDIA_TEXT
+        resp.downloadable_as = self.filename
+
+
 class ContentLengthHeaderResource:
 
     def __init__(self, content_length, body=None, data=None):
@@ -243,16 +244,6 @@ class ExpiresHeaderResource:
 
     def on_get(self, req, resp):
         resp.expires = self._expires
-
-
-class CORSHeaderResource:
-
-    def on_get(self, req, resp):
-        resp.body = "I'm a CORS test response"
-
-    def on_delete(self, req, resp):
-        resp.set_header('Access-Control-Allow-Origin', 'example.com')
-        resp.body = "I'm a CORS test response"
 
 
 class CustomHeaders:
@@ -495,6 +486,40 @@ class TestHeaders:
         for name, value in result.headers.items():
             hist[name] += 1
             assert 1 == hist[name]
+
+    @pytest.mark.parametrize('filename,expected', [
+        ('report.csv', 'attachment; filename="report.csv"'),
+        ('Hello World.txt', 'attachment; filename="Hello World.txt"'),
+        (
+            'Bold Digit 𝟏.txt',
+            'attachment; filename=Bold_Digit_1.txt; '
+            "filename*=UTF-8''Bold%20Digit%20%F0%9D%9F%8F.txt",
+        ),
+        (
+            'Ångström unit.txt',
+            'attachment; filename=A_ngstro_m_unit.txt; '
+            "filename*=UTF-8''%C3%85ngstr%C3%B6m%20unit.txt",
+        ),
+        ('one,two.txt', 'attachment; filename="one,two.txt"'),
+        (
+            '½,²⁄₂.txt',
+            'attachment; filename=1_2_2_2.txt; '
+            "filename*=UTF-8''%C2%BD%2C%C2%B2%E2%81%84%E2%82%82.txt"
+        ),
+        ('[foo] @ bar.txt', 'attachment; filename="[foo] @ bar.txt"'),
+        (
+            '[fòó]@bàr,bäz.txt',
+            'attachment; filename=_fo_o___ba_r_ba_z.txt; '
+            "filename*=UTF-8''%5Bf%C3%B2%C3%B3%5D%40b%C3%A0r%2Cb%C3%A4z.txt"
+        ),
+    ])
+    def test_content_disposition_header(self, client, filename, expected):
+        resource = DownloadableResource(filename)
+        client.app.add_route('/', resource)
+        resp = client.simulate_get()
+
+        assert resp.status_code == 200
+        assert resp.headers['Content-Disposition'] == expected
 
     def test_unicode_location_headers(self, client):
         client.app.add_route('/', LocationHeaderUnicodeResource())
@@ -768,46 +793,6 @@ class TestHeaders:
 
         content_length = str(len(falcon.HTTPNotFound().to_json()))
         assert result.headers['Content-Length'] == content_length
-
-    def test_disabled_cors_should_not_add_any_extra_headers(self, client):
-        client.app.add_route('/', CORSHeaderResource())
-        result = client.simulate_get()
-        assert 'Access-Control-Allow-Origin'.lower() not in dict(
-            result.headers.lower_items()).keys()
-
-    def test_enabled_cors_should_add_extra_headers_on_response(self, cors_client):
-        cors_client.app.add_route('/', CORSHeaderResource())
-        result = cors_client.simulate_get()
-        assert 'Access-Control-Allow-Origin'.lower() in dict(
-            result.headers.lower_items()).keys()
-
-    def test_enabled_cors_should_accept_all_origins_requests(self, cors_client):
-        cors_client.app.add_route('/', CORSHeaderResource())
-
-        result = cors_client.simulate_get()
-        assert result.headers['Access-Control-Allow-Origin'] == '*'
-
-        result = cors_client.simulate_delete()
-        assert result.headers['Access-Control-Allow-Origin'] == 'example.com'
-
-    def test_enabled_cors_handles_preflighting(self, cors_client):
-        cors_client.app.add_route('/', CORSHeaderResource())
-        result = cors_client.simulate_options(headers=(
-            ('Access-Control-Request-Method', 'GET'),
-            ('Access-Control-Request-Headers', 'X-PINGOTHER, Content-Type'),
-        ))
-        assert result.headers['Access-Control-Allow-Methods'] == 'DELETE, GET'
-        assert result.headers['Access-Control-Allow-Headers'] == 'X-PINGOTHER, Content-Type'
-        assert result.headers['Access-Control-Max-Age'] == '86400'  # 24 hours in seconds
-
-    def test_enabled_cors_handles_preflighting_no_headers_in_req(self, cors_client):
-        cors_client.app.add_route('/', CORSHeaderResource())
-        result = cors_client.simulate_options(headers=(
-            ('Access-Control-Request-Method', 'POST'),
-        ))
-        assert result.headers['Access-Control-Allow-Methods'] == 'DELETE, GET'
-        assert result.headers['Access-Control-Allow-Headers'] == '*'
-        assert result.headers['Access-Control-Max-Age'] == '86400'  # 24 hours in seconds
 
     def test_set_headers_with_custom_class(self, client):
         client.app.add_route('/', CustomHeadersResource())

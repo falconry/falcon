@@ -31,9 +31,11 @@ import inspect
 import re
 import sys
 import unicodedata
-import warnings
 
 from falcon import status_codes
+# NOTE(vytas): Hoist `deprecated` here since it is documented as part of the
+# public Falcon interface.
+from .deprecation import deprecated
 
 try:
     from falcon.cyutil.misc import isascii as _cy_isascii
@@ -52,9 +54,10 @@ __all__ = (
     'get_http_status',
     'http_status_to_code',
     'code_to_http_status',
-    'deprecated_args',
     'secure_filename',
 )
+
+_DEFAULT_HTTP_REASON = 'Unknown'
 
 _UNSAFE_CHARS = re.compile(r'[^a-zA-Z0-9.-]')
 
@@ -88,7 +91,7 @@ else:
 
 
 def is_python_func(func):
-    """Determines if a function or method uses a standard Python type.
+    """Determine if a function or method uses a standard Python type.
 
     This helper can be used to check a function or method to determine if it
     uses a standard Python type, as opposed to an implementation-specific
@@ -111,53 +114,8 @@ def is_python_func(func):
     return inspect.isfunction(func)
 
 
-# NOTE(kgriffs): We don't want our deprecations to be ignored by default,
-# so create our own type.
-#
-# TODO(kgriffs): Revisit this decision if users complain.
-class DeprecatedWarning(UserWarning):
-    pass
-
-
-def deprecated(instructions, is_property=False):
-    """Flags a method as deprecated.
-
-    This function returns a decorator which can be used to mark deprecated
-    functions. Applying this decorator will result in a warning being
-    emitted when the function is used.
-
-    Args:
-        instructions (str): Specific guidance for the developer, e.g.:
-            'Please migrate to add_proxy(...)'
-        is_property (bool): If the deprecated object is a property. It
-            will omit the ``(...)`` from the generated documentation
-    """
-
-    def decorator(func):
-
-        object_name = 'property' if is_property else 'function'
-        post_name = '' if is_property else '(...)'
-        message = 'Call to deprecated {} {}{}. {}'.format(
-            object_name, func.__name__, post_name, instructions)
-
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            frame = inspect.currentframe().f_back
-
-            warnings.warn_explicit(message,
-                                   category=DeprecatedWarning,
-                                   filename=inspect.getfile(frame.f_code),
-                                   lineno=frame.f_lineno)
-
-            return func(*args, **kwargs)
-
-        return wrapper
-
-    return decorator
-
-
 def http_now():
-    """Returns the current UTC time as an IMF-fixdate.
+    """Return the current UTC time as an IMF-fixdate.
 
     Returns:
         str: The current UTC time as an IMF-fixdate,
@@ -168,7 +126,7 @@ def http_now():
 
 
 def dt_to_http(dt):
-    """Converts a ``datetime`` instance to an HTTP date string.
+    """Convert a ``datetime`` instance to an HTTP date string.
 
     Args:
         dt (datetime): A ``datetime`` instance to convert, assumed to be UTC.
@@ -183,7 +141,7 @@ def dt_to_http(dt):
 
 
 def http_date_to_dt(http_date, obs_date=False):
-    """Converts an HTTP date string to a datetime instance.
+    """Convert an HTTP date string to a datetime instance.
 
     Args:
         http_date (str): An RFC 1123 date string, e.g.:
@@ -229,7 +187,7 @@ def http_date_to_dt(http_date, obs_date=False):
 
 
 def to_query_str(params, comma_delimited_lists=True, prefix=True):
-    """Converts a dictionary of parameters to a query string.
+    """Convert a dictionary of parameters to a query string.
 
     Args:
         params (dict): A dictionary of parameters, where each key is
@@ -314,7 +272,7 @@ def get_bound_method(obj, method_name):
 
 
 def get_argnames(func):
-    """Introspecs the arguments of a callable.
+    """Introspect the arguments of a callable.
 
     Args:
         func: The callable to introspect
@@ -342,8 +300,8 @@ def get_argnames(func):
 
 
 @deprecated('Please use falcon.code_to_http_status() instead.')
-def get_http_status(status_code, default_reason='Unknown'):
-    """Gets both the http status code and description from just a code.
+def get_http_status(status_code, default_reason=_DEFAULT_HTTP_REASON):
+    """Get both the http status code and description from just a code.
 
     Warning:
         As of Falcon 3.0, this method has been deprecated in favor of
@@ -430,7 +388,7 @@ def http_status_to_code(status):
     An LRU is used to minimize lookup time.
 
     Args:
-        status: The status code or enum to normalize
+        status: The status code or enum to normalize.
 
     Returns:
         int: Integer code for the HTTP status (e.g., 200)
@@ -458,63 +416,50 @@ def http_status_to_code(status):
 
 
 @_lru_cache_safe(maxsize=64)
-def code_to_http_status(code):
-    """Convert an HTTP status code integer to a status line string.
+def code_to_http_status(status):
+    """Normalize an HTTP status to an HTTP status line string.
+
+    This function takes a member of :class:`http.HTTPStatus`, an ``int`` status
+    code, an HTTP status line string or byte string (e.g., ``'200 OK'``) and
+    returns the corresponding HTTP status line string.
 
     An LRU is used to minimize lookup time.
 
+    Note:
+        Unlike the deprecated :func:`get_http_status`, this function will not
+        attempt to coerce a string status to an integer code, assuming the
+        string already denotes an HTTP status line.
+
     Args:
-        code (int): The integer status code to convert to a status line.
+        status: The status code or enum to normalize.
 
     Returns:
         str: HTTP status line corresponding to the given code. A newline
             is not included at the end of the string.
     """
 
+    if isinstance(status, http.HTTPStatus):
+        return '{} {}'.format(status.value, status.phrase)
+
+    if isinstance(status, str):
+        return status
+
+    if isinstance(status, bytes):
+        return status.decode()
+
     try:
-        code = int(code)
-        if code < 100:
-            raise ValueError()
+        code = int(status)
+        if not 100 <= code <= 999:
+            raise ValueError('{} is not a valid status code'.format(status))
     except (ValueError, TypeError):
-        raise ValueError('"{}" is not a valid status code'.format(code))
+        raise ValueError('{!r} is not a valid status code'.format(status))
 
     try:
         # NOTE(kgriffs): We do this instead of using http.HTTPStatus since
         #   the Falcon module defines a larger number of codes.
         return getattr(status_codes, 'HTTP_' + str(code))
     except AttributeError:
-        return str(code)
-
-
-def deprecated_args(*, allowed_positional, is_method=True):
-    """Flags a method call with positional args as deprecated
-
-    Keyword Args:
-        allowed_positional (int): Number of allowed positional arguments
-        is_method (bool, optional): The decorated function is a method. Will
-          add one to the number of allowed positional args to account for
-          ``self``. Defaults to True.
-    """
-
-    template = (
-        'Calls with{} positional args are deprecated.'
-        ' Please specify them as keyword arguments instead.'
-    )
-    text = ' more than {}'.format(allowed_positional) if allowed_positional else ''
-    warn_text = template.format(text)
-    if is_method:
-        allowed_positional += 1
-
-    def deprecated_args(fn):
-        @functools.wraps(fn)
-        def wraps(*args, **kwargs):
-            if len(args) > allowed_positional:
-                warnings.warn(warn_text, DeprecatedWarning, stacklevel=2)
-            return fn(*args, **kwargs)
-
-        return wraps
-
-    return deprecated_args
+        return '{} {}'.format(code, _DEFAULT_HTTP_REASON)
 
 
 def _isascii(string):

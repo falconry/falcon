@@ -478,6 +478,8 @@ being fully defined by the WSGI spec (PEP-3333). This is discussed in the
 reference documentation for :attr:`~falcon.Request.stream`, and a workaround
 is provided in the form of :attr:`~falcon.Request.bounded_stream`.
 
+.. _trailing_slash_in_path:
+
 How does Falcon handle a trailing slash in the request path?
 ------------------------------------------------------------
 If your app sets :attr:`~falcon.RequestOptions.strip_url_path_trailing_slash` to
@@ -490,6 +492,16 @@ as traditionally used by websites to reference index pages.
 For example, with this option enabled, adding a route for ``'/foo/bar'``
 implicitly adds a route for ``'/foo/bar/'``. In other words, requests coming
 in for either path will be sent to the same resource.
+
+.. warning::
+
+    If :attr:`~falcon.RequestOptions.strip_url_path_trailing_slash` is enabled,
+    adding a route with a trailing slash will effectively make it unreachable
+    from normal routing (theoretically, it may still be matched by rewriting
+    the request path in middleware).
+
+    In this case, routes should be added without a trailing slash (obviously
+    except the root path ``'/'``), such as ``'/foo/bar'`` in the example above.
 
 .. note::
 
@@ -609,6 +621,20 @@ method, making it compatible with ``boto3``\'s
    and ``boto3`` are referenced here just as a popular example. The same
    pattern can be applied to any storage API that supports streaming directly
    from a file-like object.
+
+How do I parse a nested multipart form?
+---------------------------------------
+Falcon does not offer official support for parsing nested multipart forms
+(i.e., where multiple files for a single field are transmitted using a nested
+``multipart/mixed`` part) at this time. The usage is considered deprecated
+according to the `living HTML5 standard
+<https://html.spec.whatwg.org/multipage/form-control-infrastructure.html>`_ and
+`RFC 7578, Section 4.3 <https://tools.ietf.org/html/rfc7578#section-4.3>`_.
+
+.. tip::
+    If your app absolutely must deal with such legacy forms, the parser may
+    actually be capable of the task. See more in this recipe:
+    :ref:`nested-multipart-forms`.
 
 How do I retrieve a JSON value from the query string?
 -----------------------------------------------------
@@ -852,16 +878,46 @@ cookie in subsequent requests.
 
 (See also the :ref:`cookie documentation <cookie-secure-attribute>`.)
 
-How can I serve a downloadable file with falcon?
+.. _serve-downloadable-as:
+
+How can I serve a downloadable file with Falcon?
 ------------------------------------------------
 In the ``on_get()`` responder method for the resource, you can tell the user
 agent to download the file by setting the Content-Disposition header. Falcon
-includes the :attr:`~falcon.Request.downloadable_as` property to make this
+includes the :attr:`~falcon.Response.downloadable_as` property to make this
 easy:
 
 .. code:: python
 
     resp.downloadable_as = 'report.pdf'
+
+See also the :ref:`outputting_csv_recipe` recipe for a more involved example of
+dynamically generated downloadable content.
+
+.. _faq_header_names_lowercase:
+
+Why is Falcon changing my header names to lowercase?
+----------------------------------------------------
+
+Falcon always lowercases header names before storing them in the internal
+:class:`Response <falcon.Response>` structures in order to make the response
+header handling straightforward and performant, as header name lookup can be
+done using a simple ``dict``. Since HTTP headers are case insensitive, this
+optimization should normally not affect your API consumers.
+
+In the unlikely case you absolutely must deal with non-conformant HTTP clients
+expecting a specific header name capitalization, see this recipe how to
+override header names using generic WSGI middleware:
+:ref:`capitalizing_response_headers`.
+
+Note that this question only applies to the WSGI flavor of Falcon. The
+`ASGI HTTP scope specification
+<https://asgi.readthedocs.io/en/latest/specs/www.html#response-start-send-event>`_
+requires HTTP header names to be lowercased.
+
+Furthermore, the HTTP2 standard also mandates that header field names MUST be
+converted to lowercase (see `RFC 7540, Section 8.1.2
+<https://httpwg.org/specs/rfc7540.html#rfc.section.8.1.2>`_).
 
 Can Falcon serve static files?
 ------------------------------
@@ -959,10 +1015,10 @@ the tutorial in the docs provides an excellent introduction to
 
 (See also: `Testing <http://falcon.readthedocs.io/en/stable/api/testing.html>`_)
 
-How to set cookies in simulate request for testing?
----------------------------------------------------
+How can I set cookies when simulating requests?
+-----------------------------------------------
 
-This can be done by setting ``headers={'Cookie': 'xxx=yyy'}`` in
+The easiest way is to simply pass the ``cookies`` parameter into
 ``simulate_request``. Here is an example:
 
 .. code:: python
@@ -970,7 +1026,6 @@ This can be done by setting ``headers={'Cookie': 'xxx=yyy'}`` in
     import falcon
     import falcon.testing
     import pytest
-
 
     class TastyCookies:
 
@@ -985,6 +1040,16 @@ This can be done by setting ``headers={'Cookie': 'xxx=yyy'}`` in
 
         return falcon.testing.TestClient(app)
 
+
+    def test_cookies(client):
+        resp = client.simulate_get('/cookies', cookies={'cookie': 'cookie value'})
+
+        assert resp.json == {'cookies': {'cookie': 'cookie value'}}
+
+
+Alternatively, you can set the Cookie header directly as demonstrated in this version of ``test_cookies()``
+
+.. code:: python
 
     def test_cookies(client):
         resp = client.simulate_get('/cookies', headers={'Cookie': 'xxx=yyy'})

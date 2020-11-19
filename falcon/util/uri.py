@@ -24,6 +24,8 @@ in the `falcon` module, and so must be explicitly imported::
 
 """
 
+import platform
+
 try:
     from falcon.cyutil.uri import (
         decode as _cy_decode,
@@ -50,6 +52,8 @@ _HEX_DIGITS = '0123456789ABCDEFabcdef'
 _HEX_TO_BYTE = dict(((a + b).encode(), bytes([int(a + b, 16)]))
                     for a in _HEX_DIGITS
                     for b in _HEX_DIGITS)
+
+_PYPY = platform.python_implementation() == 'PyPy'
 
 
 def _create_char_encoder(allowed_chars):
@@ -168,8 +172,54 @@ Returns:
 """
 
 
+def _join_tokens_bytearray(tokens):
+    decoded_uri = bytearray(tokens[0])
+    for token in tokens[1:]:
+        token_partial = token[:2]
+        try:
+            decoded_uri += _HEX_TO_BYTE[token_partial] + token[2:]
+        except KeyError:
+            # malformed percentage like "x=%" or "y=%+"
+            decoded_uri += b'%' + token
+
+    # Convert back to str
+    return decoded_uri.decode('utf-8', 'replace')
+
+
+def _join_tokens_list(tokens):
+    decoded = tokens[:1]
+    # PERF(vytas): Do not copy list: a simple bool flag is fastest on PyPy JIT.
+    skip = True
+    for token in tokens:
+        if skip:
+            skip = False
+            continue
+
+        token_partial = token[:2]
+        try:
+            decoded.append(_HEX_TO_BYTE[token_partial] + token[2:])
+        except KeyError:
+            # malformed percentage like "x=%" or "y=%+"
+            decoded.append(b'%' + token)
+
+    # Convert back to str
+    return b''.join(decoded).decode('utf-8', 'replace')
+
+
+# PERF(vytas): The best method to join many byte strings depends on the Python
+#   implementation and many other factors such as the total string length,
+#   and the number of items to join.
+# Considering that CPython users are likely to choose the Cython implementation
+#   of decode anyway, we pick one best allrounder per platform:
+#   * On pure CPython, bytearray += often comes on top, also with the added
+#     benefit of being able to decode() off it directly.
+#   * On PyPy, b''.join(list) is the recommended approach, although it may
+#     narrowly lose to BytesIO on the extreme end.
+_join_tokens = _join_tokens_list if _PYPY else _join_tokens_bytearray
+
+
 def decode(encoded_uri, unquote_plus=True):
-    """Decodes percent-encoded characters in a URI or query string.
+    """Decode percent-encoded characters in a URI or query string.
 
     This function models the behavior of `urllib.parse.unquote_plus`,
     albeit in a faster, more straightforward manner.
@@ -209,17 +259,23 @@ def decode(encoded_uri, unquote_plus=True):
     # PERF(kgriffs): This was found to be faster than using
     # a regex sub call or list comprehension with a join.
     tokens = decoded_uri.split(b'%')
-    decoded_uri = tokens[0]
-    for token in tokens[1:]:
-        token_partial = token[:2]
-        try:
-            decoded_uri += _HEX_TO_BYTE[token_partial] + token[2:]
-        except KeyError:
-            # malformed percentage like "x=%" or "y=%+"
-            decoded_uri += b'%' + token
+    # PERF(vytas): Just use in-place add for a low number of items:
+    if len(tokens) < 8:
+        decoded_uri = tokens[0]
+        for token in tokens[1:]:
+            token_partial = token[:2]
+            try:
+                decoded_uri += _HEX_TO_BYTE[token_partial] + token[2:]
+            except KeyError:
+                # malformed percentage like "x=%" or "y=%+"
+                decoded_uri += b'%' + token
 
-    # Convert back to str
-    return decoded_uri.decode('utf-8', 'replace')
+        # Convert back to str
+        return decoded_uri.decode('utf-8', 'replace')
+
+    # NOTE(vytas): Decode percent-encoded bytestring fragments and join them
+    # back to a string using the platform-dependent method.
+    return _join_tokens(tokens)
 
 
 def parse_query_string(query_string, keep_blank=False, csv=True):
