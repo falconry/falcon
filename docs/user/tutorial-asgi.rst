@@ -786,6 +786,274 @@ The project's structure should now look like this::
       ├── images.py
       └── store.py
 
+Testing Our Application
+-----------------------
+
+So far, so good? We have only tested our application by sending a handful of
+requests manually. Have we tested all code paths? Have we covered typical user
+inputs to the application?
+
+Having a comprehensive test suite is vital not only for verifying that
+application is correctly behaving at the moment, but also limiting the impact
+of future regressions that will have been introduced into the codebase.
+
+In order to ease testing automation, it would be good to gather our
+dependencies that we installed as we went through the tutorial. Furthermore,
+many Python testing automation tools such as the popular Tox are best suited to
+test a Python package. Let's kill two birds with one stone and define a
+``setup.py`` (inside the first ``asgilook``) for our project:
+
+.. code:: python
+
+    #!/usr/bin/env python
+
+    from setuptools import setup, find_packages
+
+
+    description = 'ASGI version of the Falcon "Look" tutorial.'
+
+    requirements = [
+        'falcon>=3.0.0a2',
+        'aiofiles>=0.4.0',
+        'aioredis>=1.3.0',
+        'msgpack',
+        'Pillow>=6.0.0',
+    ]
+
+    extras_require = {
+        'dev': [
+            'httpie',
+            'uvicorn>=0.11.0',
+        ],
+        'test': [
+            'pytest',
+        ],
+    }
+
+    setup(
+        name='falcon_asgi_example',
+        version='0.0.3dev0',
+        description=description,
+        long_description=description,
+        url='https://github.com/falconry/falcon',
+        author='Vytautas Liuolia',
+        author_email='vytautas.liuolia@gmail.com',
+        license='Apache v2',
+        classifiers=[
+            'Development Status :: 3 - Alpha',
+            'Intended Audience :: Developers',
+            'License :: OSI Approved :: Apache Software License',
+            'Programming Language :: Python :: 3.7',
+            'Programming Language :: Python :: 3.8',
+	    'Programming Language :: Python :: 3.9',
+        ],
+        keywords='falcon asgi asyncio cache redis uvicorn',
+        packages=find_packages(exclude=['contrib', 'docs', 'test*']),
+        python_requires='>=3.7',
+        install_requires=requirements,
+        extras_require=extras_require,
+        package_data={},
+        data_files=[],
+    )
+
+We will also introduce a simplistic ``tox.ini``, invoking ``flake8`` checks as
+well as running ``pytest`` against our test suite::
+
+  [tox]
+  envlist = flake8, py38
+
+  [testenv:flake8]
+  basepython = python3.8
+  skip_install = true
+  deps =
+      flake8
+  commands =
+      flake8 setup.py asgilook/ tests/
+
+  [testenv]
+  deps =
+      .[test]
+  commands =
+      pytest tests/
+
+Wait... what test suite? Let's create a dummy test in ``tests/test_image.py``
+just to verify our test and packaging setup is working:
+
+.. code:: python
+
+    def test_setup():
+        pass
+
+If you don't already have ``tox`` around, install it in the current
+environment::
+
+  pip install tox
+
+And, let's run our tests::
+
+  tox
+
+  <...>
+
+  tests/test_images.py .                                             [100%]
+
+  =========================== 1 passed in 0.00s ============================
+  ________________________________ summary _________________________________
+    flake8: commands succeeded
+    py37: commands succeeded
+    congratulations :)
+
+Woohoo, success!
+
+In order to implement actual tests, we'll need to revise our dependencies and
+decide which abstraction level we are after:
+
+* Will we run a real Redis server?
+* Will we store "real" files or just provide a fixture for ``aiofiles``?
+* Will we use mocks and monkey patching, or would we inject dependencies?
+
+There is no right and wrong here, as different testing strategies (or a
+combination thereof) have their own advantages in terms of test running time,
+how easy it is to implement new tests, how close tests are to the "real"
+service, and so on.
+
+In order to deliver something working faster, let's allow our tests to access
+the real filesystem. We'll leverage the ``ASGI_LOOK_STORAGE_PATH`` envvar in
+``config.py`` to override the storage location to Tox's
+`envtmpdir <https://tox.readthedocs.io/en/latest/config.html#conf-envtmpdir>`_.
+
+We'll try to avoid running a real Redis server for now by trying out
+`Bruce Merry's birdisle <https://github.com/bmerry/birdisle>`_. It builds upon
+the Redis codebase, so we should hopefully stay as close to the real Redis as
+possible without needing to spin up any servers. We'll include ``birdisle`` in
+our test dependencies:
+
+.. code:: python
+
+    extras_require = {
+        'dev': [
+            'httpie',
+            'uvicorn>=0.11.0',
+        ],
+        'test': [
+            'birdisle',
+            'pytest',
+        ],
+    }
+
+Let's write fixtures to replace ``uuid`` and ``aioredis``, and inject them into
+our tests via ``conftest.py``:
+
+.. code:: python
+
+    import uuid
+
+    import birdisle.aioredis
+    import falcon.asgi
+    import falcon.testing
+    import pytest
+
+    from asgilook.app import create_app
+    from asgilook.config import Config
+
+
+    @pytest.fixture()
+    def predictable_uuid():
+        fixtures = (
+            uuid.UUID('36562622-48e5-4a61-be67-e426b11821ed'),
+            uuid.UUID('3bc731ac-8cd8-4f39-b6fe-1a195d3b4e74'),
+            uuid.UUID('ba1c4951-73bc-45a4-a1f6-aa2b958dafa4'),
+        )
+
+        def uuid_func():
+            try:
+                return next(fixtures_it)
+            except StopIteration:
+                return uuid.uuid4()
+
+        fixtures_it = iter(fixtures)
+        return uuid_func
+
+
+    @pytest.fixture
+    def client(predictable_uuid):
+        config = Config()
+        config.create_redis_pool = birdisle.aioredis.create_redis_pool
+        config.uuid_generator = predictable_uuid
+
+        app = create_app(config)
+        return falcon.testing.TestClient(app)
+
+``tests/test_images.py`` will now attempt to access our ``/images`` end-point:
+
+.. code:: python
+
+    def test_list_images(client):
+        resp = client.simulate_get('/images')
+
+        assert resp.status_code == 200
+        assert resp.json == []
+
+The moment of truth::
+
+  tox
+
+Ouch, that did not work. Looking closer at the ``birdisle.aioredis`` source
+code, it seems that it requires exactly ``aioredis==1.2.0`` (not the latest
+version). Let's try pinning to this version in our ``tox.ini`` in order aid Pip
+with dependency resolution, and try again in a fresh test environment::
+
+  tox --recreate
+
+Woohoo! Looking better now.
+
+An exercise for the reader: expand our first test to make sure subsequent
+access to ``/images`` is cached by checking the ``X-ASGILook-Cache``
+header. To verify, run ``tox`` again!
+
+We need to more tests now!
+
+Feel free to try writing some yourself. Otherwise, check out ``asgilook/tests``
+in this repository.
+
+Writing tests may also help to find erroneous application behaviour that was
+missed by manual testing. For instance, we noticed that routes accepting an
+``image_id:uuid`` parameter were exploding with a 500 if the provided
+``image_id`` was not found in the store. That is now fixed.
+
+Furthermore, we have realized that thumbnail resolutions are not validated
+against what we are exposing in the API. That is now also fixed.
+
+
+Code Coverage
+-------------
+
+How much of our ``asgilook`` code is covered by these tests?
+
+And easy way to get the coverage report is using the ``pytest-cov``
+plugin. Adding it to our test requirements and ``tox.ini`` should do the
+trick.
+
+The end of ``tox.ini`` should now read::
+
+  commands =
+      pytest --cov=asgilook --cov-report=term-missing tests/
+
+  [coverage:run]
+  omit =
+      asgilook/asgi.py
+
+Oh, wow! We do happen to have full line coverage.
+
+We could turn this fact into a future requirement by specifying
+``--cov-fail-under=100`` in our Tox command.
+
+.. note::
+   The ``pytest-cov`` plugin is quite simplistic; more advanced testing
+   strategies such as combining different type of tests and/or running the same
+   tests in multiple environments would most probably involve running
+   ``coverage`` directly, and combining results.
+
 What Now?
 ---------
 
@@ -801,7 +1069,8 @@ numerous ways:
   threadpool executor.
 * Test `Pillow-SIMD <https://pypi.org/project/Pillow-SIMD/>`_ to boost
   performance.
-* Publish image upload events via SSE or WebSockets.
+* Publish image upload events via :attr:`SSE <falcon.asgi.Response.sse>` or
+  WebSockets.
 * ...And much more (patches welcome, as they say)!
 
 Compared to the sync version, asynchronous code can at times be harder to
