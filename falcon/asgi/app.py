@@ -225,7 +225,7 @@ class App(falcon.app.App):
 
         sink_before_static_routes (bool): Indicates if the sinks should be processed
             before (when ``True``) or after (when ``False``) the static routes.
-            This has effect only if no route was matched. (default ``True``)
+            This has an effect only if no route was matched. (default ``True``)
 
     Attributes:
         req_options: A set of behavioral options related to incoming
