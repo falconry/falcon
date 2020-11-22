@@ -2,10 +2,6 @@ import importlib
 import os
 import wsgiref.validate
 
-try:
-    import cython
-except ImportError:
-    cython = None
 import pytest
 
 import falcon
@@ -13,7 +9,7 @@ from falcon import testing
 import falcon.constants
 from falcon.routing import util
 
-from _util import create_app  # NOQA
+from _util import create_app, has_cython  # NOQA
 
 
 FALCON_CUSTOM_HTTP_METHODS = ['FOO', 'BAR']
@@ -67,7 +63,7 @@ def test_map_http_methods(custom_http_client, resource_things):
     assert 'BAR' not in method_map
 
 
-@pytest.mark.skipif(cython, reason='Reloading modules on Cython does not work')
+@pytest.mark.skipif(has_cython, reason='Reloading modules on Cython does not work')
 @pytest.mark.parametrize('env_str,expected', [
     ('foo', ['FOO']),
     ('FOO', ['FOO']),
