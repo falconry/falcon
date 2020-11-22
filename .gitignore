@@ -36,6 +36,9 @@ pip-log.txt
 htmlcov
 nosetests.xml
 
+# ASGI tutorial
+!examples/asgilook/.coveragerc
+
 # Docs
 docs/_build
 dash
