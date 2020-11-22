@@ -30,6 +30,7 @@ class Image:
             'image': self.uri,
             'modified': falcon.dt_to_http(self.modified),
             'size': self.size,
+            'thumbnails': self.thumbnails(),
         }
 
     def thumbnails(self):

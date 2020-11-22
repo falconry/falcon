@@ -921,6 +921,8 @@ Furthermore, the HTTP2 standard also mandates that header field names MUST be
 converted to lowercase (see `RFC 7540, Section 8.1.2
 <https://httpwg.org/specs/rfc7540.html#rfc.section.8.1.2>`_).
 
+.. _faq_static_files:
+
 Can Falcon serve static files?
 ------------------------------
 

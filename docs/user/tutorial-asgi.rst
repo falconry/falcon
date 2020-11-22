@@ -119,8 +119,6 @@ In this tutorial, we'll just pass around a ``Config`` instance to resource
 initializers for easier testing (coming later in this tutorial). Create a new
 module, ``config.py`` next to ``app.py``, and add the following code to it:
 
-.. Copy-paste under: examples/asgilook/asgilook/config.py
-
 .. code:: python
 
     import os
@@ -238,9 +236,7 @@ Images Resource(s)
 In the ASGI flavor of Falcon, all responder methods, hooks and middleware
 methods must be awaitable coroutines. With that in mind, let's go on to
 implement the image collection, and the individual image resources (the code
-below should go into ``image.py``):
-
-.. Copy-paste under: examples/asgilook/asgilook/image.py
+below should go into ``images.py``):
 
 .. code:: python
 
@@ -288,7 +284,7 @@ resource per class. See also: :ref:`recommended-route-layout`
 .. warning::
    In production deployment, serving files directly from the web server, rather
    than through the Falcon ASGI app, will likely be more efficient, and therefore
-   should be preferred.
+   should be preferred. See also: :ref:`faq_static_files`
 
 Running Our Application
 -----------------------
@@ -497,6 +493,7 @@ The updated ``store.py`` should now look like:
                 'image': self.uri,
                 'modified': falcon.dt_to_http(self.modified),
                 'size': self.size,
+                'thumbnails': self.thumbnails(),
             }
 
         def thumbnails(self):
@@ -562,6 +559,59 @@ The updated ``store.py`` should now look like:
             stored = Image(self.config, image_id, image.size)
             self._images[image_id] = stored
             return stored
+
+Let's also add a new ``Thumbnails`` resource to expose the new
+functionality. The final version of ``images.py`` reads:
+
+.. Copy-paste under: examples/asgilook/asgilook/images.py
+
+.. code:: python
+
+    import aiofiles
+    import falcon
+
+
+    class Images:
+
+        def __init__(self, config, store):
+            self.config = config
+            self.store = store
+
+        async def on_get(self, req, resp):
+            resp.media = [image.serialize() for image in self.store.list_images()]
+
+        async def on_get_image(self, req, resp, image_id):
+            image = self.store.get(str(image_id))
+            if not image:
+                raise falcon.HTTPNotFound
+
+            resp.stream = await aiofiles.open(image.path, 'rb')
+            resp.content_type = falcon.MEDIA_JPEG
+
+        async def on_post(self, req, resp):
+            data = await req.stream.read()
+            image_id = str(self.config.uuid_generator())
+            image = await self.store.save(image_id, data)
+
+            resp.location = image.uri
+            resp.media = image.serialize()
+            resp.status = falcon.HTTP_201
+
+
+    class Thumbnails:
+
+        def __init__(self, store):
+            self.store = store
+
+        async def on_get(self, req, resp, image_id, width, height):
+            image = self.store.get(str(image_id))
+            if not image:
+                raise falcon.HTTPNotFound
+            if req.path not in image.thumbnails():
+                raise falcon.HTTPNotFound
+
+            resp.content_type = falcon.MEDIA_JPEG
+            resp.data = await self.store.make_thumbnail(image, (width, height))
 
 Adding a new thumbnails route in ``app.py`` is left as an exercise for the
 reader (if you get stuck, see the final version of ``app.py`` later in this
@@ -638,9 +688,10 @@ installing Redis server on your machine, one could also:
 
     pifpaf run redis -- uvicorn asgilook.asgi:app
 
-We are going to perform caching in Falcon Middleware. Again, note that all
-middleware methods must be asynchronous; even initializing the Redis connection
-must be ``await``\ed. How to achieve that in the ``__init__()`` method?
+We are going to perform caching in Falcon :ref:`middleware`. Again, note that
+all middleware methods must be asynchronous; even initializing the Redis
+connection must be ``await``\ed. How to achieve that in the ``__init__()``
+method?
 
 `ASGI application lifespan events
 <https://asgi.readthedocs.io/en/latest/specs/lifespan.html>`_ come to the
@@ -722,8 +773,44 @@ The complete Redis cache component (``cache.py``) could look like:
                 data = await self.serialize_response(resp)
                 await self.redis.set(key, data, expire=self.TTL)
 
-For caching to come into effect, we need to add the ``RedisCache`` component to
-our application's middleware list. The final version of ``app.py`` now reads:
+By adding Redis caching, we have also introduced new items to our
+configuration, namely ``redis_host`` and the ``create_redis_pool()`` factory
+method.
+
+The final version of our ``config.py`` now reads:
+
+.. Copy-paste under: examples/asgilook/asgilook/config.py
+
+.. code:: python
+
+    import os
+    import uuid
+
+    import aioredis
+
+
+    class Config:
+        DEFAULT_CONFIG_PATH = '/tmp/asgilook'
+        DEFAULT_MIN_THUMB_SIZE = 64
+        DEFAULT_REDIS_HOST = 'redis://localhost'
+        DEFAULT_REDIS_POOL = aioredis.create_redis_pool
+        DEFAULT_UUID_GENERATOR = uuid.uuid4
+
+        def __init__(self):
+            self.storage_path = (os.environ.get('ASGI_LOOK_STORAGE_PATH')
+                                 or self.DEFAULT_CONFIG_PATH)
+            if not os.path.exists(self.storage_path):
+                os.makedirs(self.storage_path)  # pragma: nocover
+
+            self.create_redis_pool = Config.DEFAULT_REDIS_POOL
+            self.min_thumb_size = self.DEFAULT_MIN_THUMB_SIZE
+            self.redis_host = self.DEFAULT_REDIS_HOST
+            self.uuid_generator = Config.DEFAULT_UUID_GENERATOR
+
+
+For caching to come into effect, we also need to add the ``RedisCache``
+component to our application's middleware list.
+The final definition of all components in ``app.py`` now is:
 
 .. Copy-paste under: examples/asgilook/asgilook/app.py
 
@@ -797,113 +884,8 @@ Having a comprehensive test suite is vital not only for verifying that
 application is correctly behaving at the moment, but also limiting the impact
 of future regressions that will have been introduced into the codebase.
 
-In order to ease testing automation, it would be good to gather our
-dependencies that we installed as we went through the tutorial. Furthermore,
-many Python testing automation tools such as the popular Tox are best suited to
-test a Python package. Let's kill two birds with one stone and define a
-``setup.py`` (inside the first ``asgilook``) for our project:
-
-.. code:: python
-
-    #!/usr/bin/env python
-
-    from setuptools import setup, find_packages
-
-
-    description = 'ASGI version of the Falcon "Look" tutorial.'
-
-    requirements = [
-        'falcon>=3.0.0a2',
-        'aiofiles>=0.4.0',
-        'aioredis>=1.3.0',
-        'msgpack',
-        'Pillow>=6.0.0',
-    ]
-
-    extras_require = {
-        'dev': [
-            'httpie',
-            'uvicorn>=0.11.0',
-        ],
-        'test': [
-            'pytest',
-        ],
-    }
-
-    setup(
-        name='falcon_asgi_example',
-        version='0.0.3dev0',
-        description=description,
-        long_description=description,
-        url='https://github.com/falconry/falcon',
-        author='Vytautas Liuolia',
-        author_email='vytautas.liuolia@gmail.com',
-        license='Apache v2',
-        classifiers=[
-            'Development Status :: 3 - Alpha',
-            'Intended Audience :: Developers',
-            'License :: OSI Approved :: Apache Software License',
-            'Programming Language :: Python :: 3.7',
-            'Programming Language :: Python :: 3.8',
-	    'Programming Language :: Python :: 3.9',
-        ],
-        keywords='falcon asgi asyncio cache redis uvicorn',
-        packages=find_packages(exclude=['contrib', 'docs', 'test*']),
-        python_requires='>=3.7',
-        install_requires=requirements,
-        extras_require=extras_require,
-        package_data={},
-        data_files=[],
-    )
-
-We will also introduce a simplistic ``tox.ini``, invoking ``flake8`` checks as
-well as running ``pytest`` against our test suite::
-
-  [tox]
-  envlist = flake8, py38
-
-  [testenv:flake8]
-  basepython = python3.8
-  skip_install = true
-  deps =
-      flake8
-  commands =
-      flake8 setup.py asgilook/ tests/
-
-  [testenv]
-  deps =
-      .[test]
-  commands =
-      pytest tests/
-
-Wait... what test suite? Let's create a dummy test in ``tests/test_image.py``
-just to verify our test and packaging setup is working:
-
-.. code:: python
-
-    def test_setup():
-        pass
-
-If you don't already have ``tox`` around, install it in the current
-environment::
-
-  pip install tox
-
-And, let's run our tests::
-
-  tox
-
-  <...>
-
-  tests/test_images.py .                                             [100%]
-
-  =========================== 1 passed in 0.00s ============================
-  ________________________________ summary _________________________________
-    flake8: commands succeeded
-    py37: commands succeeded
-    congratulations :)
-
-Woohoo, success!
+.. danger::
+   Work in progress!
 
 In order to implement actual tests, we'll need to revise our dependencies and
 decide which abstraction level we are after:
@@ -922,35 +904,25 @@ the real filesystem. We'll leverage the ``ASGI_LOOK_STORAGE_PATH`` envvar in
 ``config.py`` to override the storage location to Tox's
 `envtmpdir <https://tox.readthedocs.io/en/latest/config.html#conf-envtmpdir>`_.
 
-We'll try to avoid running a real Redis server for now by trying out
-`Bruce Merry's birdisle <https://github.com/bmerry/birdisle>`_. It builds upon
-the Redis codebase, so we should hopefully stay as close to the real Redis as
-possible without needing to spin up any servers. We'll include ``birdisle`` in
-our test dependencies:
-
-.. code:: python
-
-    extras_require = {
-        'dev': [
-            'httpie',
-            'uvicorn>=0.11.0',
-        ],
-        'test': [
-            'birdisle',
-            'pytest',
-        ],
-    }
+.. danger::
+   Work in progress!
 
 Let's write fixtures to replace ``uuid`` and ``aioredis``, and inject them into
 our tests via ``conftest.py``:
 
+.. Copy-paste under: examples/asgilook/tests/conftest.py
+
 .. code:: python
 
+    import io
+    import random
     import uuid
 
     import birdisle.aioredis
     import falcon.asgi
     import falcon.testing
+    import PIL.Image
+    import PIL.ImageDraw
     import pytest
 
     from asgilook.app import create_app
@@ -979,10 +951,41 @@ our tests via ``conftest.py``:
     def client(predictable_uuid):
         config = Config()
         config.create_redis_pool = birdisle.aioredis.create_redis_pool
+        config.redis_host = None
         config.uuid_generator = predictable_uuid
 
         app = create_app(config)
         return falcon.testing.TestClient(app)
+
+
+    @pytest.fixture(scope='session')
+    def png_image():
+        image = PIL.Image.new('RGBA', (640, 360), color='black')
+
+        draw = PIL.ImageDraw.Draw(image)
+        for _ in range(32):
+            x0 = random.randint(20, 620)
+            y0 = random.randint(20, 340)
+            x1 = random.randint(20, 620)
+            y1 = random.randint(20, 340)
+            if x0 > x1:
+                x0, x1 = x1, x0
+            if y0 > y1:
+                y0, y1 = y1, y0
+            draw.ellipse([(x0, y0), (x1, y1)], fill='yellow', outline='red')
+
+        output = io.BytesIO()
+        image.save(output, 'PNG')
+        return output.getvalue()
+
+
+    @pytest.fixture(scope='session')
+    def image_size():
+        def report_size(data):
+            image = PIL.Image.open(io.BytesIO(data))
+            return image.size
+
+        return report_size
 
 ``tests/test_images.py`` will now attempt to access our ``/images`` end-point:
 
@@ -1028,13 +1031,16 @@ against what we are exposing in the API. That is now also fixed.
 Code Coverage
 -------------
 
+.. danger::
+   Work in progress!
+
 How much of our ``asgilook`` code is covered by these tests?
 
 And easy way to get the coverage report is using the ``pytest-cov``
 plugin. Adding it to our test requirements and ``tox.ini`` should do the
 trick.
 
-The end of ``tox.ini`` should now read::
+The updated ``tox.ini`` should now read::
 
   commands =
       pytest --cov=asgilook --cov-report=term-missing tests/
