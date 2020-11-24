@@ -5,13 +5,16 @@ import functools
 import http
 import itertools
 import random
+from unittest import mock
 from urllib.parse import quote, unquote_plus
 
 import pytest
 
 import falcon
+from falcon import media
 from falcon import testing
 from falcon import util
+from falcon.constants import MEDIA_JSON
 from falcon.util import deprecation, json, misc, structures, uri
 
 from _util import create_app, to_coroutine  # NOQA
@@ -873,6 +876,76 @@ class TestFalconTestingUtils:
         result = client.simulate_get('/', extras={'REQUEST_METHOD': 'GET'})
         assert result.status_code == 200
         assert result.text == 'test'
+
+    @pytest.mark.parametrize('content_type', [
+        'application/json',
+        'application/json; charset=UTF-8',
+        'application/yaml',
+    ])
+    def test_simulate_content_type(self, content_type):
+        class Resource():
+            def on_post(self, req, resp):
+                self._body = req.media
+
+        resource = Resource()
+        app = create_app(asgi=False)
+        app.add_route('/', resource)
+
+        # default json handler
+        json_handler = app.req_options.media_handlers[MEDIA_JSON]
+
+        # default content types
+        client = testing.TestClient(app)
+        headers = {'Content-Type': content_type}
+        payload = {'hello': 'world'}
+
+        with mock.patch.object(json_handler, 'loads') as mock_loads:
+            if MEDIA_JSON in content_type:
+                client.simulate_post('/', headers=headers, json=payload)
+                mock_loads.assert_called()
+            else:
+                # mock json Handler should not have been called for yaml
+                client.simulate_post('/', headers=headers, body=b'hello=world')
+                mock_loads.assert_not_called()
+
+    @pytest.mark.parametrize('content_type', [
+        'application/json',
+        'application/json; charset=UTF-8',
+        'application/yaml'
+    ])
+    def test_simulate_content_type_extra_handler(self, asgi, content_type):
+        resource = testing.SimpleTestResourceAsync() if asgi else testing.SimpleTestResource()
+        app = create_app(asgi)
+        app.add_route('/', resource)
+
+        # extra json handler
+        def _loads(s):
+            document = json.loads(s) or {}
+            document['hello'] = 'mars'
+            return document
+
+        json_handler = media.JSONHandler(
+            loads=_loads, dumps=json.dumps
+        )
+        extra_handlers = {
+            'application/json': json_handler,
+        }
+        app.req_options.media_handlers.update(extra_handlers)
+        app.resp_options.media_handlers.update(extra_handlers)
+
+        client = testing.TestClient(app)
+        headers = {
+            'Content-Type': content_type,
+            'capture-req-media': 'y',
+        }
+        payload = b"""{"hello": "world"}"""
+        client.simulate_post('/', headers=headers, body=payload)
+        if MEDIA_JSON in content_type:
+            # test that our custom loads was called
+            assert resource.captured_req_media['hello'] == 'mars'
+        else:
+            # yaml should not get handled
+            assert resource.captured_req_media is None
 
 
 class TestNoApiClass(testing.TestCase):
