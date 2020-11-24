@@ -262,7 +262,9 @@ class App(falcon.app.App):
     _default_responder_bad_request = falcon.responders.bad_request_async
     _default_responder_path_not_found = falcon.responders.path_not_found_async
 
-    __slots__ = ()
+    __slots__ = (
+        'ws_options',
+    )
 
     def __init__(self, *args, request_type=Request, response_type=Response, **kwargs):
         super().__init__(*args, request_type=request_type, response_type=response_type, **kwargs)

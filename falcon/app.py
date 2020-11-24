@@ -203,7 +203,7 @@ class App:
         '_middleware',
         # NOTE(kgriffs): WebSocket is currently only supported for
         #   ASGI apps, but we may add support for WSGI at some point.
-        '_middleware_ws'
+        '_middleware_ws',
         '_request_type',
         '_response_type',
         '_router_search',
