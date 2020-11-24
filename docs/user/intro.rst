@@ -57,17 +57,20 @@ and to debug edge cases in large-scale deployments.
 Features
 --------
 
+- :ref:`ASGI and WSGI <app>` Support
+- :ref:`WebSocket <ws>` Support
+- Strict adherence to RFCs
 - Highly-optimized, extensible code base
-- Intuitive routing via URI templates and REST-inspired resource
+- Intuitive :ref:`routing <routing>` via URI templates and REST-inspired resource
   classes
-- Easy access to headers and bodies through request and response
+- Easy access to headers and bodies through :ref:`request and response <rr>`
   classes
-- DRY request processing via middleware components and hooks
-- Idiomatic HTTP error responses
+- DRY request processing via :ref:`middleware <middleware>` components and hooks
+- Idiomatic :ref:`HTTP error <errors>` responses
 - Straightforward exception handling
-- Snappy unit testing through WSGI helpers and mocks
-- Supports Python 3.5+
-- Compatible with PyPy
+- Snappy :ref:`testing <testing>` through WSGI/ASGI helpers and mocks
+- CPython 3.5+ and PyPy 3.5+ support
+- ~20% speed boost under CPython when Cython is available
 
 About Apache 2.0
 ----------------

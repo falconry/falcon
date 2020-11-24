@@ -105,8 +105,14 @@ def prepare_middleware(middleware, independent_middleware=False, asgi=False):
                     raise CompatibilityError(msg.format(component))
 
         if not (process_request or process_resource or process_response):
-            if asgi and (
-                hasattr(component, 'process_startup') or hasattr(component, 'process_shutdown')
+            if asgi and any(
+                hasattr(component, m)
+                for m in [
+                    'process_startup',
+                    'process_shutdown',
+                    'process_request_ws',
+                    'process_resource_ws',
+                ]
             ):
                 # NOTE(kgriffs): This middleware only has ASGI lifespan
                 #   event handlers
@@ -131,6 +137,54 @@ def prepare_middleware(middleware, independent_middleware=False, asgi=False):
             resource_mw.append(process_resource)
 
     return (tuple(request_mw), tuple(resource_mw), tuple(response_mw))
+
+
+def prepare_middleware_ws(middleware):
+    """Check middleware interfaces and prepare WebSocket methods for request handling.
+
+    Note:
+        This method is only applicable to ASGI apps.
+
+    Arguments:
+        middleware (iterable): An iterable of middleware objects.
+
+    Returns:
+        tuple: A two-item ``(request_mw, resource_mw)`` tuple, where
+        *request_mw* is an ordered list of ``process_request_ws()`` methods,
+        and *resource_mw* is an ordered list of ``process_resource_ws()``
+        methods.
+    """
+
+    # PERF(kgriffs): do getattr calls once, in advance, so we don't
+    # have to do them every time in the request path.
+    request_mw = []
+    resource_mw = []
+
+    for component in middleware:
+        process_request_ws = util.get_bound_method(component, 'process_request_ws')
+        process_resource_ws = util.get_bound_method(component, 'process_resource_ws')
+
+        for m in (process_request_ws, process_resource_ws):
+            if not m:
+                continue
+
+            # NOTE(kgriffs): iscoroutinefunction() always returns False
+            #   for cythonized functions.
+            #
+            #   https://github.com/cython/cython/issues/2273
+            #   https://bugs.python.org/issue38225
+            #
+            if not iscoroutinefunction(m) and util.is_python_func(m):
+                msg = '{} must be implemented as an awaitable coroutine.'
+                raise CompatibilityError(msg.format(m))
+
+        if process_request_ws:
+            request_mw.append(process_request_ws)
+
+        if process_resource_ws:
+            resource_mw.append(process_resource_ws)
+
+    return request_mw, resource_mw
 
 
 def default_serialize_error(req, resp, exception):
