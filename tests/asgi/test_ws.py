@@ -97,6 +97,10 @@ async def test_ws_not_accepted(path, conductor):
 
 @pytest.mark.asyncio
 async def test_echo():  # noqa: C901
+    consumer_sleep = 0.01
+    producer_loop = 10
+    producer_sleep_factor = consumer_sleep / (producer_loop / 2)
+
     class Resource:
         def __init__(self):
             self.caught_operation_not_allowed = False
@@ -146,7 +150,7 @@ async def test_echo():  # noqa: C901
             while True:
                 # NOTE(kgriffs): Throttle slightly to allow messages to
                 #   fill up the buffer.
-                await asyncio.sleep(0.001)
+                await asyncio.sleep(consumer_sleep)
 
                 try:
                     message = await ws.receive_text()
@@ -183,15 +187,17 @@ async def test_echo():  # noqa: C901
         async with c.simulate_ws('/v1/v2', headers={}) as ws:
             assert (await ws.receive_text()) == 'v1:v2:hello:42'
 
-            for i in range(10):
-                message = str(i) or ''  # Test round-tripping the empty string as well
+            for i in range(producer_loop):
+                message = str(i) if i else ''  # Test round-tripping the empty string as well
 
                 for i in range(100):
                     await ws.send_text('ignore')
 
-                # NOTE(kgriffs): Cause the buffered receive() on the
-                #   server side to wait occasionally on a new message.
-                await asyncio.sleep(0.001)
+                # NOTE(kgriffs): For part of the time, cause the buffer on the
+                #   server side to fill up, and for the remainder of the time
+                #   for the buffer to be empty and wait on the client for
+                #   additional messages.
+                await asyncio.sleep(i * producer_sleep_factor)
 
                 await ws.send_text(message)
                 assert (await ws.receive_text()) == message
@@ -375,6 +381,8 @@ async def test_client_disconnect_early(  # noqa: C901
 @pytest.mark.parametrize('custom_text', [True, False])
 @pytest.mark.parametrize('custom_data', [True, False])
 async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
+    # TODO(kgriffs): Refactor to reduce McCabe score
+
     sample_doc = {
         'answer': 42,
         'runes': b'\xe1\x9a\xa0\xe1\x9b\x87\xe1\x9a\xbb'.decode(),
@@ -449,7 +457,7 @@ async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
 
             if custom_data:
                 data = await ws.receive_data()
-                cbor2.loads(data)  # NOT(kgriffs): Validate serialization format
+                cbor2.loads(data)  # NOTE(kgriffs): Validate serialization format
                 await ws.send_data(data)
             else:
                 doc = await ws.receive_msgpack()

@@ -82,12 +82,6 @@ class WebSocket:
         #   will be able to find out about the 'websocket.disconnect'
         #   event via one of their receive() calls, and there is no
         #   need for the added overhead.
-        #
-        #   On the other hand, using _BufferedReceiver may still be
-        #   useful in the case of a server that does not have any
-        #   back pressure handling (even though _BufferedReceiver
-        #   only provides somewhat unsophisticated back pressure
-        #   mitigation, it is probably better than nothing).
         self._buffered_receiver = _BufferedReceiver(receive, max_receive_queue)
         self._asgi_receive = self._buffered_receiver.receive
         self._asgi_send = send
@@ -437,8 +431,8 @@ class WebSocket:
         try:
             await self._asgi_send(msg)
         except Exception as ex:
-            # NOTE(kgriffs): If uvicorn or any other server using the
-            #   the "websockets" library that allows exceptions to bubble up,
+            # NOTE(kgriffs): If uvicorn (or any other server that uses the
+            #   the "websockets" library) allows exceptions to bubble up,
             #   we will have an error raised on client disconnect.
             #
             #   Daphne, on the other hand, does not raise an error but just
@@ -506,12 +500,25 @@ class WebSocketOptions:
         media_handlers (dict): A dict-like object for configuring media handlers
             according to the WebSocket payload type (TEXT vs. BINARY) of a
             given message. See also: :ref:`ws_media_handlers`.
+        max_receive_queue (int): The maximum number of incoming messages to
+            enqueue if the reception rate exceeds the consumption rate of the
+            application (default ``4``). When this limit is reached, the
+            framework will wait to accept new messages from the ASGI server
+            until the application is able to catch up.
+
+            This limit applies to Falcon's incoming message queue, and should
+            generally be kept small since the ASGI server maintains its
+            own receive queue. Falcon's queue can be disabled altogether by
+            setting `max_receive_queue` to ``0`` (see also: :ref:`ws_lost_connection`).
+
     """
 
     __slots__ = ['error_close_code', 'max_receive_queue', 'media_handlers']
 
     def __init__(self):
-        self.media_handlers = {
+        self.media_handlers: Dict[
+            WebSocketPayloadType, Union[media.TextBaseHandlerWS, media.BinaryBaseHandlerWS]
+        ] = {
             WebSocketPayloadType.TEXT: media.JSONHandlerWS(),
             WebSocketPayloadType.BINARY: media.MessagePackHandlerWS(),
         }
@@ -520,33 +527,28 @@ class WebSocketOptions:
         #
         #   See also: https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
         #
-        self.error_close_code = WSCloseCode.SERVER_ERROR
+        self.error_close_code: int = WSCloseCode.SERVER_ERROR
 
         # NOTE(kgriffs): The websockets library itself will buffer, so we keep
-        #   this value fairly small to reduce memory usage by default. On the
-        #   other hand, AFAICT, autobahn-based servers such as Daphne do not
-        #   limit the received message queue length, and so in that case they
-        #   don't properly deal with back pressure and it may make sense to
-        #   increase this value.
-        #
-        #   For now, we leave this as undocumented since the default should
-        #   be generally sufficient. If we find this is not the case, we can
-        #   surface documentation at that time.
+        #   this value fairly small by default to mitigate buffer bloat. But in
+        #   the case that we have a large spillover from the websocket server's
+        #   own queue, increasing the queue length on our side may reduce the
+        #   number of pauses in the pump task as it drains the message
+        #   backlog. Whether or not this hypothetical will have a material
+        #   real-world impact remains to be seen.
         #
         #   See also:
         #       * https://websockets.readthedocs.io/en/stable/design.html#buffers
         #       * https://websockets.readthedocs.io/en/stable/deployment.html#buffers
         #
-        self.max_receive_queue = 4
+        self.max_receive_queue: int = 4
 
 
 class _BufferedReceiver:
     """Buffer incoming WebSocket messages.
 
     This class is used internally to monitor the WebSocket status (so that we
-    can detect when it is disconnected), as well as to ensure at least
-    a minimum amount of back pressure when the application can't keep up with
-    the incoming event stream.
+    can detect when it is disconnected).
     """
 
     __slots__ = [

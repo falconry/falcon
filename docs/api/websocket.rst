@@ -96,6 +96,39 @@ Similarly, if a route exists but the target resource does not implement an
 raises an instance of :class:`~.HTTPMethodNotAllowed`. This class will be
 rendered by default as a 403 response with a 3405 close code.
 
+.. _ws_lost_connection:
+
+Lost Connections
+----------------
+
+When the app attempts to receive a message from the client, the ASGI server
+emits a `disconnect` event if the connection has been lost for any reason. Falcon
+surfaces this event by raising an instance of :class:`~.WebSocketDisconnected`
+to the caller.
+
+On the other hand, the ASGI spec requires the ASGI server to silently consume
+messages sent by the app after the connection has been lost (i.e.,  it should
+not be considered an error). Therefore, an endpoint that primarily streams
+outbound events to the client might continue consuming resources unnecessarily
+for some time after the connection is lost.
+
+As a workaround, Falcon implements a small incoming message queue that is used
+to detect a lost connection and then raise an instance of
+:class:`~.WebSocketDisconnected` to the caller the next time it attempts to send
+a message.
+
+This workaround is only necessary when the app itself does not consume messages
+from the client often enough to quickly detect when the connection is lost.
+Otherwise, Falcon's receive queue can be disabled for a slight performance boost
+by setting :attr:`~falcon.asgi.WebSocketOptions.max_receive_queue` to ``0`` via
+:attr:`~falcon.asgi.App.ws_options`.
+
+Note also that some ASGI server implementations do not strictly follow the ASGI
+spec in this regard, and in fact will raise an error when the app attempts to
+send a message after the client disconnects. If testing reveals this to be the
+case for your ASGI server of choice, Falcon's own receive queue can be safely
+disabled.
+
 .. _ws_media_handlers:
 
 Media Handlers
