@@ -20,7 +20,8 @@ import re
 import traceback
 
 from falcon import app_helpers as helpers, routing
-from falcon.constants import DEFAULT_MEDIA_TYPE
+import falcon.constants
+from falcon.errors import HTTPBadRequest
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 from falcon.middlewares import CORSMiddleware
@@ -176,6 +177,8 @@ class App:
             (See also: :ref:`CompiledRouterOptions <compiled_router_options>`)
     """
 
+    _META_METHODS = frozenset(falcon.constants._META_METHODS)
+
     _STREAM_BLOCK_SIZE = 8 * 1024  # 8 KiB
 
     _STATIC_ROUTE_TYPE = routing.StaticRoute
@@ -198,6 +201,9 @@ class App:
         '_error_handlers',
         '_independent_middleware',
         '_middleware',
+        # NOTE(kgriffs): WebSocket is currently only supported for
+        #   ASGI apps, but we may add support for WSGI at some point.
+        '_middleware_ws'
         '_request_type',
         '_response_type',
         '_router_search',
@@ -214,7 +220,7 @@ class App:
 
     def __init__(
         self,
-        media_type=DEFAULT_MEDIA_TYPE,
+        media_type=falcon.constants.DEFAULT_MEDIA_TYPE,
         request_type=Request,
         response_type=Response,
         middleware=None,
@@ -298,6 +304,9 @@ class App:
         req_succeeded = False
 
         try:
+            if req.method in self._META_METHODS:
+                raise HTTPBadRequest()
+
             # NOTE(ealogar): The execution of request middleware
             # should be before routing. This will allow request mw
             # to modify the path.
@@ -845,7 +854,7 @@ class App:
         """
 
         path = req.path
-        method = req.method
+        method = 'WEBSOCKET' if req.is_websocket else req.method
         uri_template = None
 
         route = self._router_search(path, req=req)

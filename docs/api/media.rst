@@ -13,9 +13,9 @@ specified on your :any:`falcon.App`.
 
 .. note::
 
-    To avoid unnecessary overhead, Falcon will only process request media
-    the first time the media property is referenced. Once it has been
-    referenced, it'll use the cached result for subsequent interactions.
+    WebSocket media is handled differently from regular HTTP requests. For
+    information regarding WebSocket media handlers, please
+    see: :ref:`ws_media_handlers`.
 
 Usage
 -----
@@ -78,7 +78,9 @@ do the heavy lifting for you.
 
     Once :meth:`falcon.Request.get_media()` or
     :meth:`falcon.asgi.Request.get_media()` is called on a request, it will
-    consume the request's body stream.
+    consume the request's body stream. To avoid unnecessary overhead, Falcon
+    will only process request media the first time it is referenced. Subsequent
+    interactions will use a cached object.
 
 Validating Media
 ----------------

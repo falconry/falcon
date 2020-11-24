@@ -124,6 +124,8 @@ class HTTPError(Exception):
     def __repr__(self):
         return '<%s: %s>' % (self.__class__.__name__, self.status)
 
+    __str__ = __repr__
+
     @property  # type: ignore
     @deprecated(
         'has_representation is deprecated and is currently unused by falcon',
