@@ -159,7 +159,7 @@ class App:
             (default ``False``).
             (See also: :ref:`CORS <cors>`)
 
-        sink_before_static_routes (bool): Indicates if the sinks should be processed
+        sink_before_static_route (bool): Indicates if the sinks should be processed
             before (when ``True``) or after (when ``False``) the static routes.
             This has an effect only if no route was matched. (default ``True``)
 
@@ -204,7 +204,7 @@ class App:
         '_router',
         '_serialize_error',
         '_sink_and_static_routes',
-        '_sink_before_static_routes',
+        '_sink_before_static_route',
         '_sinks',
         '_static_routes',
         '_unprepared_middleware',
@@ -221,9 +221,9 @@ class App:
         router=None,
         independent_middleware=True,
         cors_enable=False,
-        sink_before_static_routes=True,
+        sink_before_static_route=True,
     ):
-        self._sink_before_static_routes = sink_before_static_routes
+        self._sink_before_static_route = sink_before_static_route
         self._sinks = []
         self._static_routes = []
         self._sink_and_static_routes = ()
@@ -1033,7 +1033,7 @@ class App:
         return [], 0
 
     def _update_sink_and_static_routes(self):
-        if self._sink_before_static_routes:
+        if self._sink_before_static_route:
             self._sink_and_static_routes = tuple(self._sinks + self._static_routes)
         else:
             self._sink_and_static_routes = tuple(self._static_routes + self._sinks)

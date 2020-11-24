@@ -1,3 +1,3 @@
-Add new argument ``sink_before_static_routes`` to the ``App`` class to
-specify if routes added as sink should be handled before or after
+The ``App`` class now supports a new argument ``sink_before_static_routes``
+to specify if routes added as sink should be handled before or after
 the static routes.
