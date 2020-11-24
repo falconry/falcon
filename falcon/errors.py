@@ -455,7 +455,7 @@ class HTTPMethodNotAllowed(HTTPError):
             resource (e.g., ``['GET', 'POST', 'HEAD']``).
 
             Note:
-                The existing valuessss of the Allow in headers will be
+                If previously set, the Allow response header will be
                 overridden by this value.
 
     Keyword Args:

@@ -23,6 +23,7 @@ from falcon.app_helpers import prepare_middleware, prepare_middleware_ws
 from falcon.asgi_spec import EventType, WSCloseCode
 from falcon.errors import (
     CompatibilityError,
+    HTTPBadRequest,
     UnsupportedError,
     UnsupportedScopeError,
     WebSocketDisconnected,
@@ -352,6 +353,7 @@ class App(falcon.app.App):
 
         resp = self._response_type(options=self.resp_options)
         req = self._request_type(scope, receive, options=self.req_options)
+
         if self.req_options.auto_parse_form_urlencoded:
             raise UnsupportedError(
                 'The deprecated WSGI RequestOptions.auto_parse_form_urlencoded option '
@@ -368,6 +370,9 @@ class App(falcon.app.App):
         req_succeeded = False
 
         try:
+            if req.method in self._META_METHODS:
+                raise HTTPBadRequest()
+
             # NOTE(ealogar): The execution of request middleware
             # should be before routing. This will allow request mw
             # to modify the path.
@@ -706,7 +711,7 @@ class App(falcon.app.App):
             :attr:`~falcon.asgi.WebSocketOptions.error_close_code`
             property of :attr:`~.ws_options`.
 
-            On the other hand, if a ``on_websocket()`` handler raises an
+            On the other hand, if an ``on_websocket()`` responder raises an
             instance of :class:`~falcon.HTTPError`, the default error handler
             will close the :ref:`WebSocket <ws>` connection with a framework
             close code derived by adding ``3000`` to the HTTP status code (e.g.,
@@ -722,7 +727,7 @@ class App(falcon.app.App):
             handler (callable): A coroutine function taking the
                 form::
 
-                    async func(req, resp, ex, params, ws=None):
+                    async def func(req, resp, ex, params, ws=None):
                         pass
 
                 In the case of a WebSocket connection, the `resp` argument

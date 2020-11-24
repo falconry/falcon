@@ -9,10 +9,10 @@ Falcon builds upon the
 `ASGI WebSocket Specification <https://asgi.readthedocs.io/en/latest/specs/www.html#websocket>`_
 to provide a simple, no-nonsense WebSocket server implementation.
 
-With support for both
-`WebSocket <https://tools.ietf.org/html/rfc6455>`_ and
-`Server-Sent Events <https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events>`_ (SSE), Falcon facilitates real-time, event-oriented communication between an ASGI
-application and a web browser, mobile app, or other client application.
+With support for both `WebSocket <https://tools.ietf.org/html/rfc6455>`_ and
+`Server-Sent Events <https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events>`_
+(SSE), Falcon facilitates real-time, event-oriented communication between an
+ASGI application and a web browser, mobile app, or other client application.
 
 .. note::
 
@@ -128,6 +128,46 @@ spec in this regard, and in fact will raise an error when the app attempts to
 send a message after the client disconnects. If testing reveals this to be the
 case for your ASGI server of choice, Falcon's own receive queue can be safely
 disabled.
+
+.. _ws_error_handling:
+
+Error Handling
+--------------
+
+Falcon handles errors raised by an ``on_websocket()`` responder in a
+similar way to errors raised by other responders, with the following caveats.
+
+First, when calling a custom error handler, the framework will pass ``None``
+for the `resp` argument, while the :class:`~falcon.asgi.WebSocket` object
+representing the current connection will be passed as a keyword argument
+named `ws`::
+
+    async def my_error_handler(req, resp, ex, params, ws=None):
+        # When invoked as a result of an error being raised by an
+        #   on_websocket() responder, resp will be None and
+        #   ws will be the same falcon.asgi.WebSocket object that
+        #   was passed into the responder.
+        pass
+
+Second, it's important to note that if no route matches the path in the
+WebSocket handshake request, or the matched resource does not implement an
+``on_websocket()`` responder, the default HTTP error responders will be invoked,
+resulting in the request being denied with an ``HTTP 403`` response and a
+WebSocket close code of either ``3404`` (Not Found) or ``3405`` (Method Not
+Allowed). Generally speaking, if either a default responder or
+``on_websocket()`` raises an instance of :class:`~falcon.HTTPError`, the default
+error handler will close the :ref:`WebSocket <ws>` connection with a framework
+close code derived by adding ``3000`` to the HTTP status code (e.g., ``3404``).
+
+Finally, in the case of a generic unhandled exception, a default error handler
+is invoked that will do its best to clean up the connection, closing it with the
+standard WebSocket close code ``1011`` (Internal Error). If your ASGI server
+does not support this code, the framework will use code ``3011`` instead; or you
+can customize it via the :attr:`~falcon.asgi.WebSocketOptions.error_close_code`
+property of :attr:`~.ws_options`.
+
+As with any responder, the default error handlers for the app may be
+overridden via :meth:`~falcon.asgi.App.add_error_handler`.
 
 .. _ws_media_handlers:
 
@@ -332,10 +372,7 @@ by the framework.
                     #   bubbled up to a default error handler that simply
                     #   logs the message as a warning and then closes the
                     #   server side of the connection. This handler can be
-                    #   overwritten as with any other error handler for the app.
-
-                    # NOTE: If the error handler accepts an 'ws' kwarg, the framework
-                    #   will pass in the falcon.asgi.WebSocket instance.
+                    #   overridden as with any other error handler for the app.
 
                     return
 
