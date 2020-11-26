@@ -69,6 +69,49 @@ class DelimiterError(IOError):
     """The read operation did not find the requested stream delimiter."""
 
 
+class PayloadTypeError(TypeError):
+    """The WebSocket message payload was not of the expected type."""
+
+
+class WebSocketDisconnected(RuntimeError):
+    """The websocket connection is lost.
+
+    This error is raised when attempting to perform an operation on the
+    WebSocket and it is determined that either the client has closed the
+    connection, the server closed the connection, or the socket has otherwise
+    been lost.
+
+    Keyword Args:
+        code (int): The WebSocket close code, as per the WebSocket spec
+            (default ``1000``).
+
+    Attributes:
+        code (int): The WebSocket close code, as per the WebSocket spec.
+    """
+
+    def __init__(self, code: int = None):
+        self.code = code or 1000  # Default to "Normal Closure"
+
+
+class WebSocketPathNotFound(WebSocketDisconnected):
+    """No route could be found for the requested path.
+
+    A simulated WebSocket connection was attempted but the path specified in
+    the handshake request did not match any of the app's routes.
+    """
+    pass
+
+
+class WebSocketHandlerNotFound(WebSocketDisconnected):
+    """The routed resource does not contain an ``on_websocket()`` handler."""
+    pass
+
+
+class WebSocketServerError(WebSocketDisconnected):
+    """The server encountered an unexpected error."""
+    pass
+
+
 class HTTPBadRequest(HTTPError):
     """400 Bad Request.
 
@@ -412,7 +455,7 @@ class HTTPMethodNotAllowed(HTTPError):
             resource (e.g., ``['GET', 'POST', 'HEAD']``).
 
             Note:
-                The existing valuessss of the Allow in headers will be
+                If previously set, the Allow response header will be
                 overridden by this value.
 
     Keyword Args:
@@ -1781,7 +1824,7 @@ class HTTPGatewayTimeout(HTTPError):
 
 
 class HTTPVersionNotSupported(HTTPError):
-    """505 HTTP Version Not Supported
+    """505 HTTP Version Not Supported.
 
     The 505 (HTTP Version Not Supported) status code indicates that the
     server does not support, or refuses to support, the major version of
@@ -2080,7 +2123,7 @@ class HTTPInvalidHeader(HTTPBadRequest):
 
 
 class HTTPMissingHeader(HTTPBadRequest):
-    """400 Bad Request
+    """400 Bad Request.
 
     A header is missing from the request.
 
@@ -2134,7 +2177,7 @@ class HTTPMissingHeader(HTTPBadRequest):
 
 
 class HTTPInvalidParam(HTTPBadRequest):
-    """400 Bad Request
+    """400 Bad Request.
 
     A parameter in the request is invalid. This error may refer to a
     parameter in a query string, form, or document that was submitted
@@ -2191,7 +2234,7 @@ class HTTPInvalidParam(HTTPBadRequest):
 
 
 class HTTPMissingParam(HTTPBadRequest):
-    """400 Bad Request
+    """400 Bad Request.
 
     A parameter is missing from the request. This error may refer to a
     parameter in a query string, form, or document that was submitted
@@ -2251,7 +2294,7 @@ class HTTPMissingParam(HTTPBadRequest):
 
 
 def _load_headers(headers):
-    """Transforms the headers to dict"""
+    """Transform the headers to dict."""
     if headers is None:
         return {}
     if isinstance(headers, dict):
@@ -2260,7 +2303,7 @@ def _load_headers(headers):
 
 
 def _parse_retry_after(headers, retry_after):
-    """Sets the Retry-After to the headers when required"""
+    """Set the Retry-After to the headers when required."""
     if retry_after is None:
         return headers
     headers = _load_headers(headers)

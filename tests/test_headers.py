@@ -129,7 +129,7 @@ class UnicodeHeaderResource:
         resp.set_headers([
             ('X-auTH-toKEN', 'toomanysecrets'),
             ('Content-TYpE', 'application/json'),
-            ('X-symBOl', '@'),
+            ('X-symbOl', '@'),
         ])
 
     def on_post(self, req, resp):
@@ -500,6 +500,18 @@ class TestHeaders:
             'attachment; filename=A_ngstro_m_unit.txt; '
             "filename*=UTF-8''%C3%85ngstr%C3%B6m%20unit.txt",
         ),
+        ('one,two.txt', 'attachment; filename="one,two.txt"'),
+        (
+            '½,²⁄₂.txt',
+            'attachment; filename=1_2_2_2.txt; '
+            "filename*=UTF-8''%C2%BD%2C%C2%B2%E2%81%84%E2%82%82.txt"
+        ),
+        ('[foo] @ bar.txt', 'attachment; filename="[foo] @ bar.txt"'),
+        (
+            '[fòó]@bàr,bäz.txt',
+            'attachment; filename=_fo_o___ba_r_ba_z.txt; '
+            "filename*=UTF-8''%5Bf%C3%B2%C3%B3%5D%40b%C3%A0r%2Cb%C3%A4z.txt"
+        ),
     ])
     def test_content_disposition_header(self, client, filename, expected):
         resource = DownloadableResource(filename)
@@ -521,7 +533,7 @@ class TestHeaders:
         assert result.headers['Content-Location'] == '/%C3%A7runchy/bacon'
         assert result.headers['Location'] == 'ab%C3%A7'
 
-    def test_unicode_headers_convertable(self, client):
+    def test_unicode_headers_contain_only_ascii(self, client):
         client.app.add_route('/', UnicodeHeaderResource())
 
         result = client.simulate_get('/')
@@ -529,6 +541,29 @@ class TestHeaders:
         assert result.headers['Content-Type'] == 'application/json'
         assert result.headers['X-Auth-Token'] == 'toomanysecrets'
         assert result.headers['X-Symbol'] == '@'
+
+    @pytest.mark.parametrize('method', ['POST', 'PUT'])
+    def test_unicode_headers_contain_non_ascii(self, method, client):
+        app = client.app
+        app.add_route('/', UnicodeHeaderResource())
+
+        if app._ASGI:
+            # NOTE(kgriffs): Unlike PEP-3333, the ASGI spec requires the
+            #   app to encode header names and values to a byte string. This
+            #   gives Falcon the opportunity to verify the character set
+            #   in the process and raise an error as appropriate.
+            error_type, pattern = ValueError, 'ASCII'
+        elif method == 'PUT':
+            pytest.skip('The wsgiref validator does not check header values.')
+        else:
+            # NOTE(kgriffs): The wsgiref validator that is integrated into
+            #   Falcon's testing framework will catch this. However, Falcon
+            #   itself does not do the check to avoid potential overhead
+            #   in a production deployment.
+            error_type, pattern = AssertionError, 'Bad header name'
+
+        with pytest.raises(error_type, match=pattern):
+            client.simulate_request(method, '/')
 
     def test_response_set_and_get_header(self, client):
         resource = HeaderHelpersResource()

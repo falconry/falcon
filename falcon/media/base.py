@@ -1,12 +1,13 @@
 import abc
 import io
+from typing import Union
 
 
 class BaseHandler(metaclass=abc.ABCMeta):
-    """Abstract Base Class for an internet media type handler"""
+    """Abstract Base Class for an internet media type handler."""
 
     def serialize(self, media, content_type):
-        """Serialize the media object on a :any:`falcon.Response`
+        """Serialize the media object on a :any:`falcon.Response`.
 
         By default, this method raises an instance of
         :py:class:`NotImplementedError`. Therefore, it must be
@@ -25,7 +26,7 @@ class BaseHandler(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     async def serialize_async(self, media, content_type):
-        """Serialize the media object on a :any:`falcon.Response`
+        """Serialize the media object on a :any:`falcon.Response`.
 
         This method is similar to :py:meth:`~.BaseHandler.serialize`
         except that it is asynchronous. The default implementation simply calls
@@ -112,3 +113,77 @@ class BaseHandler(metaclass=abc.ABCMeta):
     consume the whole stream, but the deserialized media object is complete and
     does not involve further streaming.
     """
+
+
+class TextBaseHandlerWS(metaclass=abc.ABCMeta):
+    """Abstract Base Class for a WebSocket TEXT media handler."""
+
+    def serialize(self, media: object) -> str:
+        """Serialize the media object to a Unicode string.
+
+        By default, this method raises an instance of
+        :py:class:`NotImplementedError`. Therefore, it must be
+        overridden if the child class wishes to support
+        serialization to TEXT (0x01) message payloads.
+
+        Args:
+            media (object): A serializable object.
+
+        Returns:
+            str: The resulting serialized string from the input object.
+        """
+        raise NotImplementedError()
+
+    def deserialize(self, payload: str) -> object:
+        """Deserialize TEXT payloads from a Unicode string.
+
+        By default, this method raises an instance of
+        :py:class:`NotImplementedError`. Therefore, it must be
+        overridden if the child class wishes to support
+        deserialization from TEXT (0x01) message payloads.
+
+        Args:
+            payload (str): Message payload to deserialize.
+
+        Returns:
+            object: A deserialized object.
+        """
+        raise NotImplementedError()
+
+
+class BinaryBaseHandlerWS(metaclass=abc.ABCMeta):
+    """Abstract Base Class for a WebSocket BINARY media handler."""
+
+    def serialize(self, media: object) -> Union[bytes, bytearray, memoryview]:
+        """Serialize the media object to a byte string.
+
+        By default, this method raises an instance of
+        :py:class:`NotImplementedError`. Therefore, it must be
+        overridden if the child class wishes to support
+        serialization to BINARY (0x02) message payloads.
+
+        Args:
+            media (object): A serializable object.
+
+        Returns:
+            bytes: The resulting serialized byte string from the input
+            object. May be an instance of :class:`bytes`,
+            :class:`bytearray`, or :class:`memoryview`.
+        """
+        raise NotImplementedError()
+
+    def deserialize(self, payload: bytes) -> object:
+        """Deserialize BINARY payloads from a byte string.
+
+        By default, this method raises an instance of
+        :py:class:`NotImplementedError`. Therefore, it must be
+        overridden if the child class wishes to support
+        deserialization from BINARY (0x02) message payloads.
+
+        Args:
+            payload (bytes): Message payload to deserialize.
+
+        Returns:
+            object: A deserialized object.
+        """
+        raise NotImplementedError()

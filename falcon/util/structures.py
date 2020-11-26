@@ -247,7 +247,7 @@ class ETag(str):
     is_weak = False
 
     def strong_compare(self, other):
-        """Performs a strong entity-tag comparison.
+        """Perform a strong entity-tag comparison.
 
         Two entity-tags are equivalent if both are not weak and their
         opaque-tags match character-by-character.
@@ -284,7 +284,7 @@ class ETag(str):
 
     @classmethod
     def loads(cls, etag_str):
-        """Class method that deserializes a single entity-tag string from a precondition header.
+        """Deserialize a single entity-tag string from a precondition header.
 
         Note:
 

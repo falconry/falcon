@@ -143,17 +143,20 @@ and to debug edge cases in large-scale deployments.
 Features
 --------
 
--  Highly-optimized, extensible code base
--  Intuitive routing via URI templates and REST-inspired resource
-   classes
--  Easy access to headers and bodies through request and response
-   classes
--  DRY request processing via middleware components and hooks
--  Idiomatic HTTP error responses
--  Straightforward exception handling
--  Snappy unit testing through WSGI/ASGI helpers and mocks
--  CPython 3.5+ and PyPy 3.5+ support
--  ~20% speed boost under CPython when Cython is available
+- ASGI and WSGI Support
+- WebSocket Support
+- Strict adherence to RFCs
+- Highly-optimized, extensible code base
+- Intuitive routing via URI templates and REST-inspired resource
+  classes
+- Easy access to headers and bodies through request and response
+  classes
+- DRY request processing via middleware components and hooks
+- Idiomatic HTTP error responses
+- Straightforward exception handling
+- Snappy testing through WSGI/ASGI helpers and mocks
+- CPython 3.5+ and PyPy 3.5+ support
+- ~20% speed boost under CPython when Cython is available
 
 Who's Using Falcon?
 -------------------
@@ -368,6 +371,8 @@ index page in your browser. On OS X it's as simple as::
     $ open docs/_build/html/index.html
 
 Or on Linux:
+
+.. code:: bash
 
     $ xdg-open docs/_build/html/index.html
 
