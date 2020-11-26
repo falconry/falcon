@@ -13,7 +13,7 @@
 """Request class."""
 
 from datetime import datetime
-from json import loads as json_loads
+from io import BytesIO
 from uuid import UUID
 
 from falcon import DEFAULT_MEDIA_TYPE
@@ -24,6 +24,7 @@ from falcon import util
 from falcon.forwarded import _parse_forwarded_header
 from falcon.forwarded import Forwarded  # NOQA
 from falcon.media import Handlers
+from falcon.media.json import _DEFAULT_JSON_HANDLER
 from falcon.util import structures
 from falcon.util.misc import isascii
 from falcon.util.uri import parse_host, parse_query_string
@@ -1740,12 +1741,17 @@ class Request:
         if param_value is None:
             return default
 
-        handler = self.options.media_handlers.get(MEDIA_JSON)
-        loads = getattr(handler, 'loads', json_loads)
+        handler = self.options.media_handlers.find_by_media_type(
+            MEDIA_JSON, MEDIA_JSON, raise_not_found=False
+        )
+        if handler is None:
+            handler = _DEFAULT_JSON_HANDLER
 
         try:
-            val = loads(param_value)
-        except ValueError:
+            val = handler.deserialize(
+                BytesIO(param_value.encode('utf-8')), MEDIA_JSON, len(param_value)
+            )
+        except errors.HTTPBadRequest:
             msg = 'It could not be parsed as JSON.'
             raise errors.HTTPInvalidParam(msg, name)
 

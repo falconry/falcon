@@ -1,4 +1,5 @@
-from json import dumps as json_module_dumps
+from falcon.constants import MEDIA_JSON
+from falcon.media.json import _DEFAULT_JSON_HANDLER
 
 
 __all__ = ['SSEvent']
@@ -111,12 +112,13 @@ class SSEvent:
 
         self.comment = comment
 
-    def serialize(self, json_dumps=None):
+    def serialize(self, handler=None):
         """Serialize this event to string.
 
         Args:
-            json_dumps: Callable used to serialize the ``json`` attribute to string.
-                When not provided the python json library will be used (default ``None``).
+            handler: Handler object that will be used to serialize the ``json`` attribute to
+                string. When not provided a default handler using the python builtin
+                json library will be used (default ``None``).
 
         Returns:
             str: string representation of this event.
@@ -147,10 +149,9 @@ class SSEvent:
         elif self.text is not None:
             block += 'data: ' + self.text + '\n'
         elif self.json is not None:
-            if json_dumps:
-                string = json_dumps(self.json)
-            else:
-                string = json_module_dumps(self.json, ensure_ascii=False)
+            if handler is None:
+                handler = _DEFAULT_JSON_HANDLER
+            string = handler.serialize(self.json, MEDIA_JSON).decode()
             block += 'data: ' + string + '\n'
 
         if not block:

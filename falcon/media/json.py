@@ -2,6 +2,7 @@ from functools import partial
 import json
 
 from falcon import errors
+from falcon import http_error
 from falcon.media.base import BaseHandler, TextBaseHandlerWS
 
 
@@ -75,7 +76,7 @@ class JSONHandler(BaseHandler):
         except ValueError as err:
             raise errors.HTTPBadRequest(
                 title='Invalid JSON',
-                description='Could not parse JSON body - {0}'.format(err)
+                description='Could not parse JSON - {0}'.format(err)
             )
 
     async def deserialize_async(self, stream, content_type, content_length):
@@ -86,7 +87,7 @@ class JSONHandler(BaseHandler):
         except ValueError as err:
             raise errors.HTTPBadRequest(
                 title='Invalid JSON',
-                description='Could not parse JSON body - {0}'.format(err)
+                description='Could not parse JSON - {0}'.format(err)
             )
 
     def serialize(self, media, content_type):
@@ -179,3 +180,6 @@ class JSONHandlerWS(TextBaseHandlerWS):
 
     def deserialize(self, payload: str) -> object:
         return self.loads(payload)
+
+
+http_error._DEFAULT_JSON_HANDLER = _DEFAULT_JSON_HANDLER = JSONHandler()

@@ -205,11 +205,11 @@ def test_sync_methods_not_overridden(asgi):
 
     app.add_route('/', ResourceAsync() if asgi else Resource())
 
-    result = testing.simulate_get(app, '/')
-    assert result.status_code == 500
+    with pytest.raises(NotImplementedError):
+        testing.simulate_get(app, '/')
 
-    result = testing.simulate_post(app, '/', json={})
-    assert result.status_code == 500
+    with pytest.raises(NotImplementedError):
+        testing.simulate_post(app, '/', json={})
 
 
 def test_async_methods_not_overridden():

@@ -526,7 +526,9 @@ class App(falcon.app.App):
 
             self._schedule_callbacks(resp)
 
-            dumps = getattr(self.resp_options.media_handlers.get(MEDIA_JSON), 'dumps', None)
+            handler = self.resp_options.media_handlers.find_by_media_type(
+                MEDIA_JSON, MEDIA_JSON, raise_not_found=False
+            )
 
             # TODO(kgriffs): Do we need to do anything special to handle when
             #   a connection is closed?
@@ -539,7 +541,7 @@ class App(falcon.app.App):
                 #   the connection state using watch_disconnect() above.
                 await send({
                     'type': EventType.HTTP_RESPONSE_BODY,
-                    'body': event.serialize(dumps),
+                    'body': event.serialize(handler),
                     'more_body': True
                 })
 

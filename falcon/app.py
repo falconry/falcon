@@ -771,11 +771,9 @@ class App:
 
                 if preferred is not None:
                     if preferred == 'application/json':
-                        representation = exception.to_json()
+                        resp.data = exception.to_json()
                     else:
-                        representation = yaml.dump(exception.to_dict(),
-                                                   encoding=None)
-                    resp.body = representation
+                        resp.body = yaml.dump(exception.to_dict(), encoding=None)
                     resp.content_type = preferred
 
                 resp.append_header('Vary', 'Accept')

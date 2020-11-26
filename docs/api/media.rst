@@ -173,6 +173,11 @@ removing the default handlers, this can be easily done as follows:
     app.req_options.media_handlers.update(extra_handlers)
     app.resp_options.media_handlers.update(extra_handlers)
 
+.. note::
+
+    The JSON handler is also used to serialize instances of :class:`falcon.HTTPError` to JSON,
+    the ``json`` attribute of :class:`falcon.asgi.SSEvent`. It is also used by
+     :meth:`falcon.Request.get_param_as_json`. to de-serialize :class:`falcon.Request` params.
 
 Supported Handler Types
 -----------------------

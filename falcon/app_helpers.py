@@ -16,7 +16,7 @@
 
 from inspect import iscoroutinefunction
 
-from falcon import MEDIA_JSON
+from falcon import MEDIA_JSON, MEDIA_XML
 from falcon import util
 from falcon.errors import CompatibilityError
 from falcon.util.sync import _wrap_non_coroutine_unsafe
@@ -213,9 +213,7 @@ def default_serialize_error(req, resp, exception):
         resp: Instance of ``falcon.Response``
         exception: Instance of ``falcon.HTTPError``
     """
-    preferred = req.client_prefers(('application/xml',
-                                    'text/xml',
-                                    'application/json'))
+    preferred = req.client_prefers((MEDIA_XML, 'text/xml', MEDIA_JSON))
 
     if preferred is None:
         # NOTE(kgriffs): See if the client expects a custom media
@@ -232,16 +230,17 @@ def default_serialize_error(req, resp, exception):
         # need to be more sophisticated, we can always change it
         # later (YAGNI).
         if '+json' in accept:
-            preferred = 'application/json'
+            preferred = MEDIA_JSON
         elif '+xml' in accept:
-            preferred = 'application/xml'
+            preferred = MEDIA_XML
 
     if preferred is not None:
-        if preferred == 'application/json':
-            dumps = getattr(resp.options.media_handlers.get(MEDIA_JSON), 'dumps', None)
-            resp.body = exception.to_json(dumps)
+        if preferred == MEDIA_JSON:
+            handler = resp.options.media_handlers.find_by_media_type(
+                MEDIA_JSON, MEDIA_JSON, raise_not_found=False
+            )
+            resp.data = exception.to_json(handler)
         else:
-            # NOTE(caselit): to_xml already returns bytes
             resp.data = exception.to_xml()
 
         # NOTE(kgriffs): No need to append the charset param, since

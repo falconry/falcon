@@ -15,9 +15,9 @@
 """HTTPError exception class."""
 
 from collections import OrderedDict
-from json import dumps as json_dumps
 import xml.etree.ElementTree as et
 
+from falcon.constants import MEDIA_JSON
 from falcon.util import uri
 from falcon.util.deprecation import deprecated, deprecated_args
 
@@ -166,23 +166,23 @@ class HTTPError(Exception):
 
         return obj
 
-    def to_json(self, dumps=None):
+    def to_json(self, handler=None):
         """Return a JSON representation of the error.
 
         Args:
-            dumps: Callable used to serialize the representation of this error to JSON.
-                When not provided the python json library will be used (default ``None``).
+            handler: Handler object that will be used to serialize the representation of this
+                error to JSON. When not provided a default handler using the python builtin
+                json library will be used (default ``None``).
 
         Returns:
-            str: A JSON document for the error.
+            bytes: A JSON document for the error.
 
         """
 
         obj = self.to_dict(OrderedDict)
-        if dumps:
-            return dumps(obj)
-        else:
-            return json_dumps(obj, ensure_ascii=False)
+        if not handler:
+            handler = _DEFAULT_JSON_HANDLER
+        return handler.serialize(obj, MEDIA_JSON)
 
     def to_xml(self):
         """Return an XML-encoded representation of the error.
@@ -210,6 +210,11 @@ class HTTPError(Exception):
 
         return (b'<?xml version="1.0" encoding="UTF-8"?>' +
                 et.tostring(error_element, encoding='utf-8'))
+
+
+# NOTE: initialized in falcon.media.json, that is always imported since Request/Respose
+# are imported by falcon init.
+_DEFAULT_JSON_HANDLER = None
 
 
 class NoRepresentation:
