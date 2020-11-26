@@ -1,4 +1,4 @@
-Use ``Response`` media handlers when serializing to json ``HTTPError``
-and ``SSEvent``. Use ``Request`` media handler when loading a query parameter
-as json.
-Deprecate importing ``json`` from ``falcon.util``.
+Falcon now uses the :class:`falcon.Response` media handlers when serializing
+to JSON :class:`falcon.HTTPError` and :class:`falcon.asgi.SSEvent`.
+:class:`falcon.Request` will use it's defined media handler when loading a
+param as JSON with :meth:`falcon.Request.get_param_as_json`.

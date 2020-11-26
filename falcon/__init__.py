@@ -50,7 +50,7 @@ from falcon.request import Request, RequestOptions, Forwarded  # NOQA
 from falcon.response import Response, ResponseOptions  # NOQA
 
 
-ASGI_SUPPORTED = _sys.version_info > (3, 5)
+ASGI_SUPPORTED = _sys.version_info >= (3, 6)
 """Set to ``True`` when ASGI is supported for the current Python version."""
 
 

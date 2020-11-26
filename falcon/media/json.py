@@ -182,4 +182,4 @@ class JSONHandlerWS(TextBaseHandlerWS):
         return self.loads(payload)
 
 
-http_error._DEFAULT_JSON_HANDLER = _DEFAULT_JSON_HANDLER = JSONHandler()
+http_error._DEFAULT_JSON_HANDLER = _DEFAULT_JSON_HANDLER = JSONHandler()  # type: ignore

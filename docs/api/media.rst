@@ -177,7 +177,7 @@ removing the default handlers, this can be easily done as follows:
 
     The JSON handler is also used to serialize instances of :class:`falcon.HTTPError` to JSON,
     the ``json`` attribute of :class:`falcon.asgi.SSEvent`. It is also used by
-     :meth:`falcon.Request.get_param_as_json`. to de-serialize :class:`falcon.Request` params.
+    :meth:`falcon.Request.get_param_as_json`. to de-serialize :class:`falcon.Request` params.
 
 Supported Handler Types
 -----------------------
