@@ -424,6 +424,7 @@ class Request:
         'stream',
         'uri_template',
         '_media',
+        'is_websocket',
     )
 
     _cookies = None
@@ -437,6 +438,8 @@ class Request:
     _wsgi_input_type_known = False
 
     def __init__(self, env, options=None):
+        self.is_websocket = False
+
         self.env = env
         self.options = options if options else RequestOptions()
 

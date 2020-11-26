@@ -25,17 +25,20 @@ directly from the `testing` package::
 
 import asyncio
 import cgi
-from collections import defaultdict
+from collections import defaultdict, deque
 import contextlib
+from enum import Enum
 import io
 import itertools
+import json
 import random
 import socket
 import sys
 import time
-from typing import Any, Dict, Union
+from typing import Any, Dict, Iterable, Optional, Union
 
-from falcon.asgi_spec import EventType, ScopeType
+from falcon import errors as falcon_errors
+from falcon.asgi_spec import EventType, ScopeType, WSCloseCode
 from falcon.constants import SINGLETON_HEADERS
 import falcon.request
 from falcon.util import http_now, uri
@@ -107,7 +110,7 @@ class ASGIRequestEventEmitter:
         body (str): The body content to use when emitting http.request
             events. May be an empty string. If a byte string, it will
             be used as-is; otherwise it will be encoded as UTF-8
-            (default b'').
+            (default ``b''``).
         chunk_size (int): The maximum number of bytes to include in
             a single http.request event (default 4096).
         disconnect_at (float): The Unix timestamp after which to begin
@@ -141,7 +144,7 @@ class ASGIRequestEventEmitter:
         if chunk_size is None:
             chunk_size = 4096
 
-        self._body = body
+        self._body = body  # type: Optional[bytes]
         self._chunk_size = chunk_size
         self._disconnect_at = disconnect_at
         self._disconnected = False
@@ -171,7 +174,7 @@ class ASGIRequestEventEmitter:
 
         self._disconnected = True
 
-    async def emit(self):
+    async def emit(self) -> Dict[str, Any]:
         #
         # NOTE(kgriffs): Based on my reading of the ASGI spec, at least one
         #   'http.request' event should be emitted before 'http.disconnect'.
@@ -183,11 +186,11 @@ class ASGIRequestEventEmitter:
             #   server will hang until the client connection
             #   disconnects.
             while not self.disconnected:
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0.001)
 
             return {'type': EventType.HTTP_DISCONNECT}
 
-        event = {'type': EventType.HTTP_REQUEST}
+        event = {'type': EventType.HTTP_REQUEST}  # type: Dict[str, Any]
 
         # NOTE(kgriffs): Return a couple variations on empty chunks
         #   every time, to ensure test coverage.
@@ -331,6 +334,413 @@ class ASGIResponseEventCollector:
     __call__ = collect
 
 
+_WebSocketState = Enum('_WebSocketState', 'CONNECT HANDSHAKE ACCEPTED DENIED CLOSED')
+
+
+class ASGIWebSocketSimulator:
+    """Simulates a WebSocket client for testing a Falcon ASGI app.
+
+    This class provides a way to test WebSocket endpoints in a Falcon ASGI app
+    without having to interact with an actual ASGI server. While it is certainly
+    important to test against a real server, a number of functional tests can be
+    satisfied more efficiently and transparently with a simulated connection.
+
+    Note:
+
+        The ASGIWebSocketSimulator class is not designed to be instantiated
+        directly; rather it should be obtained via
+        :meth:`~falcon.testing.ASGIConductor.simulate_ws`.
+
+    Attributes:
+        ready (bool): ``True`` if the WebSocket connection has been
+            accepted and the client is still connected, ``False`` otherwise.
+        closed (bool): ``True`` if the WebSocket connection has been
+            denied or closed by the app, or the client has disconnected.
+        close_code (int): The WebSocket close code provided by the app if
+            the connection is closed, or ``None`` if the connection is open.
+        subprotocol (str): The subprotocol the app wishes to accept, or
+            ``None`` if not specified.
+        headers (Iterable[Iterable[bytes]]): An iterable of ``[name, value]``
+            two-item iterables, where *name* is the header name, and *value* is
+            the header value for each header returned by the app when
+            it accepted the WebSocket connection. This property resolves to
+            ``None`` if the connection has not been accepted.
+    """
+
+    def __init__(self):
+        self.__msgpack = None
+
+        self._state = _WebSocketState.CONNECT
+        self._disconnect_emitted = False
+        self._close_code = None
+        self._accepted_subprotocol = None
+        self._accepted_headers = None
+        self._collected_server_events = deque()
+        self._collected_client_events = deque()
+
+        self._event_handshake_complete = asyncio.Event()
+
+    @property
+    def ready(self) -> bool:
+        return self._state == _WebSocketState.ACCEPTED
+
+    @property
+    def closed(self) -> bool:
+        return self._state in {_WebSocketState.DENIED, _WebSocketState.CLOSED}
+
+    @property
+    def close_code(self) -> int:
+        return self._close_code
+
+    @property
+    def subprotocol(self) -> str:
+        return self._accepted_subprotocol
+
+    @property
+    def headers(self) -> Iterable[Iterable[bytes]]:
+        return self._accepted_headers
+
+    async def wait_ready(self, timeout: Optional[int] = 5):
+        """Wait until the connection has been accepted or denied.
+
+        This coroutine can be awaited in order to pause execution until the
+        app has accepted or denied the connection. In the latter case, an
+        error will be raised to the caller.
+
+        Keyword Args:
+            timeout (int): Number of seconds to wait before giving up and
+                raising an error (default: ``5``).
+        """
+
+        try:
+            await asyncio.wait_for(self._event_handshake_complete.wait(), timeout)
+        except asyncio.TimeoutError:
+            msg = (
+                'Timed out after waiting {} seconds for '
+                'the WebSocket handshake to complete. Check the '
+                'on_websocket responder and '
+                'any middleware for any conditions that may be stalling the '
+                'request flow.'
+            ).format(timeout)
+            raise asyncio.TimeoutError(msg)
+
+        self._require_accepted()
+
+    # NOTE(kgriffs): This is a coroutine just in case we need it to be
+    #   in a future code revision. It also makes it more consistent
+    #   with the other methods.
+    async def close(self, code: Optional[int] = None):
+        """Close the simulated connection.
+
+        Keyword Args:
+            code (int): The WebSocket close code to send to the application
+                per the WebSocket spec (default: ``1000``).
+        """
+
+        # NOTE(kgriffs): Give our collector a chance in case the
+        #   server is trying to close at the same time (e.g., there was an
+        #   unhandled error and the server wants to disconnect with an error
+        #   code.) We await a few times to let the server app settle across
+        #   multiple of its own await's.
+        for __ in range(3):
+            await asyncio.sleep(0)
+
+        if self.closed:
+            return
+
+        assert self._close_code is None
+
+        if code is None:
+            code = WSCloseCode.NORMAL
+
+        self._state = _WebSocketState.CLOSED
+        self._close_code = code
+
+    async def send_text(self, payload: str):
+        """Send a message to the app with a Unicode string payload.
+
+        Arguments:
+            payload (str): The string to send.
+        """
+
+        # NOTE(kgriffs): We have to check ourselves because some ASGI
+        #   servers are not very strict which can lead to hard-to-debug
+        #   errors.
+        if not isinstance(payload, str):
+            raise TypeError('payload must be a string')
+
+        # NOTE(kgriffs): From the client's perspective, it was a send,
+        #   but the server will be expecting websocket.receive
+        await self._send(text=payload)
+
+    async def send_data(self, payload: Union[bytes, bytearray, memoryview]):
+        """Send a message to the app with a binary data payload.
+
+        Arguments:
+            payload (Union[bytes, bytearray, memoryview]): The binary data to send.
+        """
+
+        # NOTE(kgriffs): We have to check ourselves because some ASGI
+        #   servers are not very strict which can lead to hard-to-debug
+        #   errors.
+        if not isinstance(payload, (bytes, bytearray, memoryview)):
+            raise TypeError('payload must be a byte string')
+
+        # NOTE(kgriffs): From the client's perspective, it was a send,
+        #   but the server will be expecting websocket.receive
+        await self._send(data=bytes(payload))
+
+    async def send_json(self, media: object):
+        """Send a message to the app with a JSON-encoded payload.
+
+        Arguments:
+            media: A JSON-encodable object to send as a TEXT (0x01) payload.
+        """
+
+        text = json.dumps(media)
+        await self.send_text(text)
+
+    async def send_msgpack(self, media: object):
+        """Send a message to the app with a MessagePack-encoded payload.
+
+        Arguments:
+            media: A MessagePack-encodable object to send as a BINARY (0x02) payload.
+        """
+
+        data = self._msgpack.packb(media, use_bin_type=True)
+        await self.send_data(data)
+
+    async def receive_text(self) -> str:
+        """Receive a message from the app with a Unicode string payload.
+
+        Awaiting this coroutine will block until a message is available or
+        the WebSocket is disconnected.
+        """
+
+        event = await self._receive()
+
+        # PERF(kgriffs): When we normally expect the key to be
+        #   present, this pattern is faster than get()
+        try:
+            text = event['text']
+        except KeyError:
+            text = None
+
+        # NOTE(kgriffs): Even if the key is present, it may be None
+        if text is None:
+            raise falcon_errors.PayloadTypeError('Expected TEXT payload but got BINARY instead')
+
+        return text
+
+    async def receive_data(self) -> bytes:
+        """Receive a message from the app with a binary data payload.
+
+        Awaiting this coroutine will block until a message is available or
+        the WebSocket is disconnected.
+        """
+
+        event = await self._receive()
+
+        # PERF(kgriffs): When we normally expect the key to be
+        #   present, EAFP is faster than get()
+        try:
+            data = event['bytes']
+        except KeyError:
+            data = None
+
+        # NOTE(kgriffs): Even if the key is present, it may be None
+        if data is None:
+            raise falcon_errors.PayloadTypeError('Expected BINARY payload but got TEXT instead')
+
+        return data
+
+    async def receive_json(self) -> object:
+        """Receive a message from the app with a JSON-encoded TEXT payload.
+
+        Awaiting this coroutine will block until a message is available or
+        the WebSocket is disconnected.
+        """
+
+        text = await self.receive_text()
+        return json.loads(text)
+
+    async def receive_msgpack(self) -> object:
+        """Receive a message from the app with a MessagePack-encoded BINARY payload.
+
+        Awaiting this coroutine will block until a message is available or
+        the WebSocket is disconnected.
+        """
+
+        data = await self.receive_data()
+        return self._msgpack.unpackb(data, use_list=True, raw=False)
+
+    @property
+    def _msgpack(self):
+        # NOTE(kgriffs): A property is used in lieu of referencing
+        #   the msgpack module directly, in order to bubble up the
+        #   import error in an obvious way, when the package has
+        #   not been installed.
+
+        if not self.__msgpack:
+            import msgpack
+            self.__msgpack = msgpack
+
+        return self.__msgpack
+
+    def _require_accepted(self):
+        if self._state == _WebSocketState.ACCEPTED:
+            return
+
+        if self._state in {_WebSocketState.CONNECT, _WebSocketState.HANDSHAKE}:
+            raise falcon_errors.OperationNotAllowed(
+                'WebSocket connection has not yet been accepted'
+            )
+        elif self._state == _WebSocketState.CLOSED:
+            raise falcon_errors.WebSocketDisconnected(self._close_code)
+
+        assert self._state == _WebSocketState.DENIED
+
+        if self._close_code == WSCloseCode.PATH_NOT_FOUND:
+            raise falcon_errors.WebSocketPathNotFound(WSCloseCode.PATH_NOT_FOUND)
+
+        if self._close_code == WSCloseCode.SERVER_ERROR:
+            raise falcon_errors.WebSocketServerError(WSCloseCode.SERVER_ERROR)
+
+        if self._close_code == WSCloseCode.HANDLER_NOT_FOUND:
+            raise falcon_errors.WebSocketHandlerNotFound(WSCloseCode.HANDLER_NOT_FOUND)
+
+        raise falcon_errors.WebSocketDisconnected(self._close_code)
+
+    # NOTE(kgriffs): This is a coroutine just in case we need it to be
+    #   in a future code revision. It also makes it more consistent
+    #   with the other methods.
+    async def _send(self, data: bytes = None, text: str = None):
+        self._require_accepted()
+
+        # NOTE(kgriffs): From the client's perspective, it was a send,
+        #   but the server will be expecting websocket.receive
+        event = {'type': EventType.WS_RECEIVE}  # type: Dict[str, Union[bytes, str]]
+
+        if data is not None:
+            event['bytes'] = data
+
+        if text is not None:
+            event['text'] = text
+
+        self._collected_client_events.append(event)
+
+        # NOTE(kgriffs): If something is waiting to read this data on the
+        #   other side, give it a chance to progress (because we like to party
+        #   like it's 1992.)
+        await asyncio.sleep(0)
+
+    async def _receive(self) -> Dict[str, Any]:
+        while not self._collected_server_events:
+            self._require_accepted()
+            await asyncio.sleep(0)
+
+        self._require_accepted()
+        return self._collected_server_events.popleft()
+
+    async def _emit(self) -> Dict[str, Any]:
+        if self._state == _WebSocketState.CONNECT:
+            self._state = _WebSocketState.HANDSHAKE
+            return {'type': EventType.WS_CONNECT}
+
+        if self._state == _WebSocketState.HANDSHAKE:
+            # NOTE(kgriffs): We need to wait for the handshake to
+            #   complete, before proceeding.
+            await self._event_handshake_complete.wait()
+
+        while not self._collected_client_events:
+            await asyncio.sleep(0)
+            if self.closed:
+                return self._create_checked_disconnect()
+
+        return self._collected_client_events.popleft()
+
+    async def _collect(self, event: Dict[str, Any]):
+        assert event
+
+        if self._state == _WebSocketState.CONNECT:
+            raise falcon_errors.OperationNotAllowed(
+                'An ASGI application must receive the first websocket.connect '
+                'event before attempting to send any events.'
+            )
+
+        event_type = event['type']
+        if self._state == _WebSocketState.HANDSHAKE:
+            if event_type == EventType.WS_ACCEPT:
+                self._state = _WebSocketState.ACCEPTED
+                self._accepted_subprotocol = event.get('subprotocol')
+                self._accepted_headers = event.get('headers')
+                self._event_handshake_complete.set()
+
+                # NOTE(kgriffs): Yield to other pending tasks that may be
+                #   waiting on the completion of the handshake. This ensures
+                #   that the simulated client connection can enter its context
+                #   before the app logic continues and potentially closes the
+                #   connection from that side.
+                await asyncio.sleep(0)
+
+            elif event_type == EventType.WS_CLOSE:
+                self._state = _WebSocketState.DENIED
+
+                desired_code = event.get('code', WSCloseCode.NORMAL)
+                if desired_code == WSCloseCode.SERVER_ERROR or (3000 <= desired_code < 4000):
+                    # NOTE(kgriffs): Pass this code through since it is a
+                    #   special code we have set in the framework to trigger
+                    #   different raised error types or to pass through a
+                    #   raised HTTPError status code.
+                    self._close_code = desired_code
+                else:
+                    # NOTE(kgriffs): Force the close code to this since it is
+                    #   similar to what happens with a real web server (the HTTP
+                    #   connection is closed with a 403 and there is no websocket
+                    #   close code).
+                    self._close_code = WSCloseCode.FORBIDDEN
+
+                self._event_handshake_complete.set()
+
+            else:
+                raise falcon_errors.OperationNotAllowed(
+                    'An ASGI application must send either websocket.accept or '
+                    'websocket.close before sending any other event types (got '
+                    '{0})'.format(event_type)
+                )
+
+        elif self._state == _WebSocketState.ACCEPTED:
+            if event_type == EventType.WS_CLOSE:
+                self._state = _WebSocketState.CLOSED
+                self._close_code = event.get('code', WSCloseCode.NORMAL)
+            else:
+                assert event_type == EventType.WS_SEND
+                self._collected_server_events.append(event)
+        else:
+            assert self.closed
+
+            # NOTE(kgriffs): According to the ASGI spec, we are
+            #   supposed to just silently eat events once the
+            #   socket is disconnected.
+            pass
+
+        # NOTE(kgriffs): Give whatever is waiting on the handshake or a
+        #   collected data/text event a chance to progress.
+        await asyncio.sleep(0)
+
+    def _create_checked_disconnect(self) -> Dict[str, Any]:
+        if self._disconnect_emitted:
+            raise falcon_errors.OperationNotAllowed(
+                'The websocket.disconnect event has already been emitted, '
+                'and so the app should not attempt to receive any more '
+                'events, since ASGI servers will likely block indefinitely '
+                'rather than re-emitting websocket.disconnect events.'
+            )
+
+        self._disconnect_emitted = True
+        return {'type': EventType.WS_DISCONNECT, 'code': self._close_code}
+
+
 # get_encoding_from_headers() is Copyright 2016 Kenneth Reitz, and is
 # used here under the terms of the Apache License, Version 2.0.
 def get_encoding_from_headers(headers):
@@ -400,14 +810,14 @@ def create_scope(path='/', query_string='', method='GET', headers=None,
                  remote_addr=None, root_path=None, content_length=None,
                  include_server=True) -> Dict[str, Any]:
 
-    """Create a mock ASGI scope ``dict`` for simulating ASGI requests.
+    """Create a mock ASGI scope ``dict`` for simulating HTTP requests.
 
     Keyword Args:
-        path (str): The path for the request (default '/')
+        path (str): The path for the request (default ``'/'``)
         query_string (str): The query string to simulate, without a
-            leading '?' (default ''). The query string is passed as-is
+            leading ``'?'`` (default ``''``). The query string is passed as-is
             (it will not be percent-encoded).
-        method (str): The HTTP method to use (default 'GET')
+        method (str): The HTTP method to use (default ``'GET'``)
         headers (dict): Headers as a dict-like (Mapping) object, or an
             iterable yielding a series of two-member (*name*, *value*)
             iterables. Each pair of strings provides the name and value
@@ -417,21 +827,23 @@ def create_scope(path='/', query_string='', method='GET', headers=None,
             format (see also RFC 7230 and RFC 7231). When the
             request will include a body, the Content-Length header should be
             included in this list. Header names are not case-sensitive.
-        host(str): Hostname for the request (default 'falconframework.org').
+        host(str): Hostname for the request (default ``'falconframework.org'``).
             This also determines the the value of the Host header in the
             request.
-        scheme (str): URL scheme, either 'http' or 'https' (default 'http')
+        scheme (str): URL scheme, either ``'http'`` or ``'https'``
+            (default ``'http'``)
         port (int): The TCP port to simulate. Defaults to
-            the standard port used by the given scheme (i.e., 80 for 'http'
-            and 443 for 'https'). A string may also be passed, as long as
+            the standard port used by the given scheme (i.e., 80 for ``'http'``
+            and 443 for ``'https'``). A string may also be passed, as long as
             it can be parsed as an int.
         http_version (str): The HTTP version to simulate. Must be either
-            '2', '2.0', 1.1', '1.0', or '1' (default '1.1'). If set to '1.0',
-            the Host header will not be added to the scope.
+            ``'2'``, ``'2.0'``, ``'1.1'``, ``'1.0'``, or ``'1'``
+            (default ``'1.1'``). If set to ``'1.0'``, the Host header will not
+            be added to the scope.
         remote_addr (str): Remote address for the request to use for
             the 'client' field in the connection scope (default None)
         root_path (str): The root path this application is mounted at; same as
-            SCRIPT_NAME in WSGI (default '').
+            SCRIPT_NAME in WSGI (default ``''``).
         content_length (int): The expected content length of the request
             body (default ``None``). If specified, this value will be
             used to set the Content-Length header in the request.
@@ -475,13 +887,13 @@ def create_scope(path='/', query_string='', method='GET', headers=None,
             scope['root_path'] = root_path
 
     if scheme:
-        if scheme not in ('http', 'https'):
-            raise ValueError("scheme must be either 'http' or 'https'")
+        if scheme not in {'http', 'https', 'ws', 'wss'}:
+            raise ValueError("scheme must be either 'http', 'https', 'ws', or 'wss'")
 
         scope['scheme'] = scheme
 
     if port is None:
-        if (scheme or 'http') == 'http':
+        if (scheme or 'http') in {'http', 'ws'}:
             port = 80
         else:
             port = 443
@@ -504,6 +916,74 @@ def create_scope(path='/', query_string='', method='GET', headers=None,
     return scope
 
 
+def create_scope_ws(path='/', query_string='', headers=None,
+                    host=DEFAULT_HOST, scheme=None, port=None, http_version='1.1',
+                    remote_addr=None, root_path=None, include_server=True,
+                    subprotocols=None, spec_version='2.1') -> Dict[str, Any]:
+
+    """Create a mock ASGI scope ``dict`` for simulating WebSocket requests.
+
+    Keyword Args:
+        path (str): The path for the request (default ``'/'``)
+        query_string (str): The query string to simulate, without a
+            leading ``'?'`` (default ``''``). The query string is passed as-is
+            (it will not be percent-encoded).
+        headers (dict): Headers as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of strings provides the name and value
+            for an HTTP header. If desired, multiple header values may be
+            combined into a single (*name*, *value*) pair by joining the values
+            with a comma when the header in question supports the list
+            format (see also RFC 7230 and RFC 7231). When the
+            request will include a body, the Content-Length header should be
+            included in this list. Header names are not case-sensitive.
+        host(str): Hostname for the request (default ``'falconframework.org'``).
+            This also determines the the value of the Host header in the
+            request.
+        scheme (str): URL scheme, either ``'ws'`` or ``'wss'``
+            (default ``'ws'``)
+        port (int): The TCP port to simulate. Defaults to
+            the standard port used by the given scheme (i.e., 80 for ``'ws'``
+            and 443 for ``'wss'``). A string may also be passed, as long as
+            it can be parsed as an int.
+        http_version (str): The HTTP version to simulate. Must be either
+            ``'2'``, ``'2.0'``, or ``'1.1'`` (default ``'1.1'``).
+        remote_addr (str): Remote address for the request to use for
+            the 'client' field in the connection scope (default None)
+        root_path (str): The root path this application is mounted at; same as
+            SCRIPT_NAME in WSGI (default ``''``).
+        include_server (bool): Set to ``False`` to not set the 'server' key
+            in the scope ``dict`` (default ``True``).
+        spec_version (str): The ASGI spec version to emulate (default ``'2.1'``).
+        subprotocols (Iterable[str]): Subprotocols the client wishes to
+            advertise to the server (default ``[]``).
+    """
+
+    scope = create_scope(
+        path=path,
+        query_string=query_string,
+        headers=headers,
+        host=host,
+        scheme=(scheme or 'ws'),
+        port=port,
+        http_version=http_version,
+        remote_addr=remote_addr,
+        root_path=root_path,
+        include_server=include_server,
+    )
+
+    scope['type'] = ScopeType.WS
+    scope['asgi']['spec_version'] = spec_version
+    del scope['method']
+
+    # NOTE(kgriffiths): Explicit check against None affords simulating a request
+    #   with a scope that does not contain the optional 'subprotocols' key.
+    if subprotocols is not None:
+        scope['subprotocols'] = subprotocols
+
+    return scope
+
+
 def create_environ(path='/', query_string='', http_version='1.1',
                    scheme='http', host=DEFAULT_HOST, port=None,
                    headers=None, app=None, body='', method='GET',
@@ -513,18 +993,20 @@ def create_environ(path='/', query_string='', http_version='1.1',
     """Create a mock PEP-3333 environ ``dict`` for simulating WSGI requests.
 
     Keyword Args:
-        path (str): The path for the request (default '/')
+        path (str): The path for the request (default ``'/'``)
         query_string (str): The query string to simulate, without a
-            leading '?' (default ''). The query string is passed as-is
+            leading ``'?'`` (default ``''``). The query string is passed as-is
             (it will not be percent-encoded).
         http_version (str): The HTTP version to simulate. Must be either
-            '2', '2.0', 1.1', '1.0', or '1' (default '1.1'). If set to '1.0',
-            the Host header will not be added to the scope.
-        scheme (str): URL scheme, either 'http' or 'https' (default 'http')
-        host(str): Hostname for the request (default 'falconframework.org')
+            ``'2'``, ``'2.0'``, ``'1.1'``, ``'1.0'``, or ``'1'``
+            (default ``'1.1'``). If set to ``'1.0'``, the Host header will not
+            be added to the scope.
+        scheme (str): URL scheme, either ``'http'`` or ``'https'``
+            (default ``'http'``)
+        host(str): Hostname for the request (default ``'falconframework.org'``)
         port (int): The TCP port to simulate. Defaults to
-            the standard port used by the given scheme (i.e., 80 for 'http'
-            and 443 for 'https'). A string may also be passed, as long as
+            the standard port used by the given scheme (i.e., 80 for ``'http'``
+            and 443 for ``'https'``). A string may also be passed, as long as
             it can be parsed as an int.
         headers (dict): Headers as a dict-like (Mapping) object, or an
             iterable yielding a series of two-member (*name*, *value*)
@@ -538,23 +1020,23 @@ def create_environ(path='/', query_string='', http_version='1.1',
             PEP-333: 'The initial portion of the request URL's "path" that
             corresponds to the application object, so that the application
             knows its virtual "location". This may be an empty string, if the
-            application corresponds to the "root" of the server.' (default '')
+            application corresponds to the "root" of the server.' (default ``''``)
         app (str): Deprecated alias for `root_path`. If both kwargs are passed,
             `root_path` takes precedence.
-        body (str): The body of the request (default ''). The value will be
+        body (str): The body of the request (default ``''``). The value will be
             encoded as UTF-8 in the WSGI environ. Alternatively, a byte string
             may be passed, in which case it will be used as-is.
-        method (str): The HTTP method to use (default 'GET')
+        method (str): The HTTP method to use (default ``'GET'``)
         wsgierrors (io): The stream to use as *wsgierrors*
             (default ``sys.stderr``)
         file_wrapper: Callable that returns an iterable, to be used as
             the value for *wsgi.file_wrapper* in the environ.
         remote_addr (str): Remote address for the request to use as the
-            'REMOTE_ADDR' environ variable (default None)
+            ``'REMOTE_ADDR'`` environ variable (default ``None``)
         cookies (dict): Cookies as a dict-like (Mapping) object, or an
             iterable yielding a series of two-member (*name*, *value*)
             iterables. Each pair of items provides the name and value
-            for the 'Set-Cookie' header.
+            for the Set-Cookie header.
 
     """
 
