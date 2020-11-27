@@ -117,19 +117,19 @@ class SSEvent:
 
         Args:
             handler: Handler object that will be used to serialize the ``json`` attribute to
-                string. When not provided a default handler using the python builtin
-                json library will be used (default ``None``).
+                string. When not provided, a default handler using the builtin
+                JSON library will be used (default ``None``).
 
         Returns:
-            str: string representation of this event.
+            bytes: string representation of this event.
         """
         if self.comment is not None:
-            block = ': ' + self.comment + '\n'
+            block = f': {self.comment}\n'
         else:
             block = ''
 
         if self.event is not None:
-            block += 'event: ' + self.event + '\n'
+            block += f'event: {self.event}\n'
 
         if self.event_id is not None:
             # NOTE(kgriffs): f-strings are a tiny bit faster than str().
@@ -145,14 +145,15 @@ class SSEvent:
             #   attribute, but rather the text and json ones instead. If that
             #   is true, it makes sense to construct the entire string
             #   first, then encode it all in one go at the end.
-            block += 'data: ' + self.data.decode() + '\n'
+            block += f'data: {self.data.decode()}\n'
         elif self.text is not None:
-            block += 'data: ' + self.text + '\n'
+            block += f'data: {self.text}\n'
         elif self.json is not None:
             if handler is None:
                 handler = _DEFAULT_JSON_HANDLER
-            string = handler.serialize(self.json, MEDIA_JSON).decode()
-            block += 'data: ' + string + '\n'
+            string = handler.serialize(self.json, MEDIA_JSON)
+            block += 'data: '
+            return block.encode() + string + b'\n\n'
 
         if not block:
             return b': ping\n\n'

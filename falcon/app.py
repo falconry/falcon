@@ -766,10 +766,10 @@ class App:
             def my_serializer(req, resp, exception):
                 representation = None
 
-                preferred = req.client_prefers((MEDIA_YAML, MEDIAL_JSON))
+                preferred = req.client_prefers((falcon.MEDIA_YAML, falcon.MEDIA_JSON))
 
                 if preferred is not None:
-                    if preferred == MEDIAL_JSON:
+                    if preferred == falcon.MEDIA_JSON:
                         resp.data = exception.to_json()
                     else:
                         resp.body = yaml.dump(exception.to_dict(), encoding=None)

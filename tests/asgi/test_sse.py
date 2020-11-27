@@ -215,7 +215,9 @@ class TestSerializeJson:
         )
 
     def test_no_json_media_handler(self, client):
-        client.app.resp_options.media_handlers.pop(falcon.MEDIA_JSON)
+        for h in list(client.app.resp_options.media_handlers):
+            if 'json' in h.casefold():
+                client.app.resp_options.media_handlers.pop(h)
 
         result = client.simulate_get()
         assert result.text == (

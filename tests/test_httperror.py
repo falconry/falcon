@@ -889,7 +889,9 @@ class TestHTTPError:
 
     def test_serialize_no_json_media_handler(self, client):
         client.app.add_route('/path', NotFoundResource())
-        client.app.resp_options.media_handlers.pop(falcon.MEDIA_JSON)
+        for h in list(client.app.resp_options.media_handlers):
+            if 'json' in h.casefold():
+                client.app.resp_options.media_handlers.pop(h)
         response = client.simulate_request(path='/path')
 
         assert response.status == falcon.HTTP_404

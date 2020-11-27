@@ -171,8 +171,8 @@ class HTTPError(Exception):
 
         Args:
             handler: Handler object that will be used to serialize the representation of this
-                error to JSON. When not provided a default handler using the python builtin
-                json library will be used (default ``None``).
+                error to JSON. When not provided, a default handler using the builtin
+                JSON library will be used (default ``None``).
 
         Returns:
             bytes: A JSON document for the error.
