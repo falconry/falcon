@@ -117,10 +117,10 @@ def test_cookies_jar():
             #   cookie (vs. multiple) as input; if this input ever changes,
             #   a separate test will need to be added to explicitly verify
             #   this use case.
-            resp.set_cookie('has_async_permission', 'true')
+            resp.set_cookie('has_permission', 'true')
 
         def on_post(self, req, resp):
-            if req.cookies['has_async_permission'] == 'true':
+            if req.cookies['has_permission'] == 'true':
                 resp.status = falcon.HTTP_200
             else:
                 resp.status = falcon.HTTP_403

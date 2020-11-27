@@ -150,12 +150,30 @@ class LifespanHandler:
         self.shutdown_succeeded = True
 
 
+class TestJar:
+    async def on_get(self, req, resp):
+        # NOTE(myusko): In the future we shouldn't change the cookie
+        #             a test depends on the input.
+        # NOTE(kgriffs): This is the only test that uses a single
+        #   cookie (vs. multiple) as input; if this input ever changes,
+        #   a separate test will need to be added to explicitly verify
+        #   this use case.
+        resp.set_cookie('has_permission', 'true')
+
+    async def on_post(self, req, resp):
+        if req.cookies['has_permission'] == 'true':
+            resp.status = falcon.HTTP_200
+        else:
+            resp.status = falcon.HTTP_403
+
+
 def create_app():
     app = falcon.asgi.App()
     app.add_route('/', Things())
     app.add_route('/bucket', Bucket())
     app.add_route('/events', Events())
     app.add_route('/forms', Multipart())
+    app.add_route('/jars', TestJar())
 
     lifespan_handler = LifespanHandler()
     app.add_middleware(lifespan_handler)

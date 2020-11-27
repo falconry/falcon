@@ -215,6 +215,11 @@ def test_cookies(cookies):
     assert any(header == b'cookie' for header, _ in scope['headers'])
 
 
+def test_cookies_options_meathod():
+    scope = testing.create_scope(method='OPTIONS', cookies={'foo': 'bar'})
+    assert not any(header == b'cookie' for header, _ in scope['headers'])
+
+
 def _call_with_scope(scope):
     app = App()
 
