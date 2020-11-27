@@ -6,12 +6,12 @@ from falcon import testing
 from _util import create_app  # NOQA
 
 
-def sink(req, res, **kw):
-    res.body = 'sink'
+def sink(req, resp, **kw):
+    resp.body = 'sink'
 
 
-async def sink_async(req, res, **kw):
-    res.body = 'sink'
+async def sink_async(req, resp, **kw):
+    resp.body = 'sink'
 
 
 @pytest.fixture

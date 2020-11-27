@@ -233,7 +233,7 @@ class App(falcon.app.App):
             (default ``False``).
             (See also: :ref:`CORS <cors>`)
 
-        sink_before_static_routes (bool): Indicates if the sinks should be processed
+        sink_before_static_route (bool): Indicates if the sinks should be processed
             before (when ``True``) or after (when ``False``) the static routes.
             This has an effect only if no route was matched. (default ``True``)
 
