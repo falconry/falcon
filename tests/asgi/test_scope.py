@@ -55,7 +55,7 @@ def test_supported_asgi_version(version, supported):
             _call_with_scope(scope)
 
 
-@pytest.mark.parametrize('scope_type', ['websocket', 'tubes', 'http3', 'htt'])
+@pytest.mark.parametrize('scope_type', ['tubes', 'http3', 'htt'])
 def test_unsupported_scope_type(scope_type):
     scope = testing.create_scope()
     scope['type'] = scope_type

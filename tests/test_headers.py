@@ -129,7 +129,7 @@ class UnicodeHeaderResource:
         resp.set_headers([
             ('X-auTH-toKEN', 'toomanysecrets'),
             ('Content-TYpE', 'application/json'),
-            ('X-symBOl', '@'),
+            ('X-symbOl', '@'),
         ])
 
     def on_post(self, req, resp):
@@ -533,7 +533,7 @@ class TestHeaders:
         assert result.headers['Content-Location'] == '/%C3%A7runchy/bacon'
         assert result.headers['Location'] == 'ab%C3%A7'
 
-    def test_unicode_headers_convertable(self, client):
+    def test_unicode_headers_contain_only_ascii(self, client):
         client.app.add_route('/', UnicodeHeaderResource())
 
         result = client.simulate_get('/')
@@ -541,6 +541,29 @@ class TestHeaders:
         assert result.headers['Content-Type'] == 'application/json'
         assert result.headers['X-Auth-Token'] == 'toomanysecrets'
         assert result.headers['X-Symbol'] == '@'
+
+    @pytest.mark.parametrize('method', ['POST', 'PUT'])
+    def test_unicode_headers_contain_non_ascii(self, method, client):
+        app = client.app
+        app.add_route('/', UnicodeHeaderResource())
+
+        if app._ASGI:
+            # NOTE(kgriffs): Unlike PEP-3333, the ASGI spec requires the
+            #   app to encode header names and values to a byte string. This
+            #   gives Falcon the opportunity to verify the character set
+            #   in the process and raise an error as appropriate.
+            error_type, pattern = ValueError, 'ASCII'
+        elif method == 'PUT':
+            pytest.skip('The wsgiref validator does not check header values.')
+        else:
+            # NOTE(kgriffs): The wsgiref validator that is integrated into
+            #   Falcon's testing framework will catch this. However, Falcon
+            #   itself does not do the check to avoid potential overhead
+            #   in a production deployment.
+            error_type, pattern = AssertionError, 'Bad header name'
+
+        with pytest.raises(error_type, match=pattern):
+            client.simulate_request(method, '/')
 
     def test_response_set_and_get_header(self, client):
         resource = HeaderHelpersResource()

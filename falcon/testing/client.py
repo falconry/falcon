@@ -792,7 +792,9 @@ class ASGIConductor:
     This class provides more control over the lifecycle of a simulated
     request as compared to :class:`~.TestClient`. In addition, the conductor's
     asynchronous interface affords interleaved requests and the testing of
-    streaming protocols such as server-sent events (SSE) and WebSocket.
+    streaming protocols such as
+    :attr:`Server-Sent Events (SSE) <falcon.asgi.Response.sse>`
+    and :ref:`WebSocket <ws>`.
 
     :class:`~.ASGIConductor` is implemented as a context manager. Upon
     entering and exiting the context, the appropriate ASGI lifespan events
@@ -919,7 +921,10 @@ class ASGIConductor:
     def simulate_get_stream(self, path='/', **kwargs):
         """Simulate a GET request to an ASGI application with a streamed response.
 
-        This method returns a context manager that can be used to obtain
+        (See also: :py:meth:`falcon.testing.simulate_get` for a list of
+        supported keyword arguments.)
+
+        This method returns an async context manager that can be used to obtain
         a managed :class:`~.StreamedResult` instance. Exiting the context
         will automatically finalize the result object, causing the request
         event emitter to begin emitting 'http.disconnect' events and then
@@ -946,6 +951,34 @@ class ASGIConductor:
         kwargs['_stream_result'] = True
 
         return _AsyncContextManager(self.simulate_request('GET', path, **kwargs))
+
+    def simulate_ws(self, path='/', **kwargs):
+        """Simulate a WebSocket connection to an ASGI application.
+
+        All keyword arguments are passed through to
+        :py:meth:`falcon.testing.create_scope_ws`.
+
+        This method returns an async context manager that can be used to obtain
+        a managed :class:`falcon.testing.ASGIWebSocketSimulator` instance.
+        Exiting the context will simulate a close on the WebSocket (if not
+        already closed) and await the completion of the task that is
+        running the simulated ASGI request.
+
+        In the following example, a series of WebSocket TEXT events are
+        received from the ASGI app::
+
+            async with conductor.simulate_ws('/events') as ws:
+                while some_condition:
+                    message = await ws.receive_text()
+
+        """
+
+        scope = helpers.create_scope_ws(path=path, **kwargs)
+        ws = helpers.ASGIWebSocketSimulator()
+
+        task_req = create_task(self.app(scope, ws._emit, ws._collect))
+
+        return _WSContextManager(ws, task_req)
 
     async def simulate_head(self, path='/', **kwargs) -> _ResultBase:
         """Simulate a HEAD request to an ASGI application.
@@ -1859,6 +1892,41 @@ class _AsyncContextManager:
     async def __aexit__(self, exc_type, exc, tb):
         await self._obj.finalize()
         self._obj = None
+
+
+class _WSContextManager:
+    def __init__(self, ws, task_req):
+        self._ws = ws
+        self._task_req = task_req
+
+    async def __aenter__(self):
+        ready_waiter = create_task(self._ws.wait_ready())
+
+        # NOTE(kgriffs): Wait on both so that in the case that the request
+        #   task raises an error, we don't just end up masking it with an
+        #   asyncio.TimeoutError.
+        await asyncio.wait(
+            [ready_waiter, self._task_req],
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+
+        if ready_waiter.done():
+            await ready_waiter
+        else:
+            # NOTE(kgriffs): Retrieve the exception, if any
+            await self._task_req
+
+            # NOTE(kgriffs): This should complete gracefully (without a
+            #   timeout). It may raise WebSocketDisconnected, but that
+            #   is expected and desired for "normal" reasons that the
+            #   request task finished without accepting the connection.
+            await ready_waiter
+
+        return self._ws
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self._ws.close()
+        await self._task_req
 
 
 def _prepare_sim_args(

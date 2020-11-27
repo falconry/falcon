@@ -3,6 +3,7 @@ from functools import wraps
 import pytest
 
 import falcon
+import falcon.constants
 import falcon.testing as testing
 
 from _util import create_app  # NOQA
@@ -108,6 +109,9 @@ class ThingsResource:
 
         self.req, self.resp = req, resp
         resp.status = falcon.HTTP_204
+
+    def on_websocket(self, req, resp, id, sid):
+        self.called = True
 
 
 class Stonewall:
@@ -275,11 +279,9 @@ class TestHttpMethodRouting:
         headers = response.headers
         assert headers['allow'] == 'GET'
 
-    def test_bogus_method(self, client, resource_things):
-        client.app.add_route('/things', resource_things)
+    @pytest.mark.parametrize('method', falcon.constants._META_METHODS + ['SETECASTRONOMY'])
+    def test_meta_and_others_disallowed(self, client, resource_things, method):
         client.app.add_route('/things/{id}/stuff/{sid}', resource_things)
-
-        response = client.simulate_request(path='/things', method='SETECASTRONOMY')
-
-        assert not resource_things.called
+        response = client.simulate_request(path='/things/42/stuff/1337', method='WEBSOCKET')
         assert response.status == falcon.HTTP_400
+        assert not resource_things.called

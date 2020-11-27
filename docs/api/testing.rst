@@ -24,6 +24,8 @@ Main Interface
    :members:
 .. autoclass:: ResultBodyStream
    :members:
+.. autoclass:: ASGIWebSocketSimulator
+   :members:
 .. autoclass:: Cookie
    :members:
 
@@ -57,6 +59,7 @@ Low-Level Utils
    :members:
 .. autofunction:: create_environ
 .. autofunction:: create_scope
+.. autofunction:: create_scope_ws
 .. autofunction:: create_req
 .. autofunction:: create_asgi_req
 .. autofunction:: closed_wsgi_iterable
