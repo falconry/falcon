@@ -447,8 +447,6 @@ def test_literal(router):
     )
 ])
 def test_converters(router, path, expected_params):
-    with open('finder.py', 'w') as f:
-        f.write(router.finder_src)
     __, __, params, __ = router.find(path)
     assert params == expected_params
 
@@ -680,6 +678,6 @@ def param_router():
 ))
 def test_params_in_non_taken_branches(param_router, route, expected, num):
     resource, __, params, __ = param_router.find(route)
-    print(param_router.finder_src)
+
     assert resource.resource_id == num
     assert params == expected
