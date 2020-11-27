@@ -257,7 +257,6 @@ def create_app():
     app.add_route('/forms', Multipart())
     app.add_route('/jars', TestJar())
     app.add_route('/feeds/{feed_id}', Feed())
-    
     lifespan_handler = LifespanHandler()
     app.add_middleware(lifespan_handler)
 
