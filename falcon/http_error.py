@@ -180,7 +180,7 @@ class HTTPError(Exception):
         """
 
         obj = self.to_dict(OrderedDict)
-        if not handler:
+        if handler is None:
             handler = _DEFAULT_JSON_HANDLER
         return handler.serialize(obj, MEDIA_JSON)
 
