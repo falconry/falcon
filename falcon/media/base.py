@@ -16,6 +16,12 @@ class BaseHandler(metaclass=abc.ABCMeta):
         with ASGI apps, as long as they override
         :py:meth:`~.BaseHandler.serialize_async`.
 
+        Note:
+
+            The JSON media handler is an exception in requiring the implementation of
+            the sync version also for ASGI apps. See the
+            :ref:`this section<note_json_handler>` for more details.
+
         Args:
             media (object): A serializable object.
             content_type (str): Type of response content.
@@ -62,6 +68,11 @@ class BaseHandler(metaclass=abc.ABCMeta):
         with ASGI apps, as long as they override
         :py:meth:`~.BaseHandler.deserialize_async`.
 
+        Note:
+
+            The JSON media handler is an exception in requiring the implementation of
+            the sync version also for ASGI apps. See the
+            :ref:`this section<note_json_handler>` for more details.
 
         Args:
             stream (object): Readable file-like object to deserialize.
