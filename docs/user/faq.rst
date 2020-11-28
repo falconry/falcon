@@ -127,13 +127,21 @@ services.
 Does Falcon support WebSocket?
 ------------------------------
 
-Due to the limitations of WSGI, Falcon is unable to support the WebSocket
-protocol as stated above.
+The async flavor of Falcon supports the
+`ASGI <https://asgi.readthedocs.io/en/latest/>`_ WebSocket protocol.
+See also: :ref:`ws`.
 
-In the meantime, you might try leveraging
-`uWSGI's native WebSocket support <http://uwsgi.readthedocs.io/en/latest/WebSockets.html>`_,
-or implementing a standalone service via Aymeric Augustin's
-handy `websockets <https://pypi.python.org/pypi/websockets/4.0.1>`_ library.
+WSGI applications might try leveraging
+`uWSGI's native WebSocket support <http://uwsgi.readthedocs.io/en/latest/WebSockets.html>`_
+or `gevent-websocket's <https://pypi.org/project/gevent-websocket>`_
+``GeventWebSocketWorker`` for Gunicorn.
+
+As an option, it may make sense to design WebSocket support as a separate
+service due to very different performance characteristics and interaction
+patterns, compared to a regular RESTful API. In addition to (obviously!)
+Falcon's native ASGI support, a standalone WebSocket service could also be
+implemented via Aymeric Augustin's handy
+`websockets <https://pypi.python.org/pypi/websockets>`_ library.
 
 Routing
 ~~~~~~~
