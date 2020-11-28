@@ -67,7 +67,7 @@ class TestInspectApp:
         assert ai.middleware.independent is True
         assert ai.static_routes == []
         assert ai.sinks == []
-        assert len(ai.error_handlers) == 3
+        assert len(ai.error_handlers) == 4 if asgi else 3
         assert ai.asgi is asgi
 
     def test_dependent_middlewares(self, asgi):
@@ -85,7 +85,7 @@ class TestInspectApp:
         assert len(ai.middleware.middleware_classes) == 3
         assert len(ai.static_routes) == 2
         assert len(ai.sinks) == 2
-        assert len(ai.error_handlers) == 4
+        assert len(ai.error_handlers) == 5 if asgi else 4
         assert ai.asgi is asgi
 
     def check_route(self, asgi, r, p, cn, ml, fnt):
@@ -162,7 +162,7 @@ class TestInspectApp:
         assert errors[-1].internal is False
         for eh in errors[:-1]:
             assert eh.internal
-            assert eh.error in ('Exception', 'HTTPStatus', 'HTTPError')
+            assert eh.error in ('WebSocketDisconnected', 'Exception', 'HTTPStatus', 'HTTPError')
 
     def test_middleware(self, asgi):
         mi = inspect.inspect_middlewares(make_app_async() if asgi else make_app())

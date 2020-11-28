@@ -37,3 +37,4 @@ from .structures import SSEvent  # NOQA
 from .request import Request  # NOQA
 from .response import Response  # NOQA
 from .stream import BoundedStream  # NOQA
+from .ws import WebSocket, WebSocketOptions  # NOQA

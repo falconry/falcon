@@ -1,3 +1,5 @@
+.. _rr:
+
 Request & Response
 ==================
 

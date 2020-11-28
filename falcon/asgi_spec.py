@@ -16,6 +16,8 @@
 
 
 class EventType:
+    """Standard ASGI event type strings."""
+
     HTTP_REQUEST = 'http.request'
     HTTP_RESPONSE_START = 'http.response.start'
     HTTP_RESPONSE_BODY = 'http.response.body'
@@ -28,8 +30,31 @@ class EventType:
     LIFESPAN_SHUTDOWN_COMPLETE = 'lifespan.shutdown.complete'
     LIFESPAN_SHUTDOWN_FAILED = 'lifespan.shutdown.failed'
 
+    WS_CONNECT = 'websocket.connect'
+    WS_ACCEPT = 'websocket.accept'
+    WS_RECEIVE = 'websocket.receive'
+    WS_SEND = 'websocket.send'
+    WS_DISCONNECT = 'websocket.disconnect'
+    WS_CLOSE = 'websocket.close'
+
 
 class ScopeType:
+    """Standard ASGI event type strings."""
+
     HTTP = 'http'
     WS = 'websocket'
     LIFESPAN = 'lifespan'
+
+
+#
+class WSCloseCode:
+    """WebSocket close codes used by the Falcon ASGI framework.
+
+    See also: https://tools.ietf.org/html/rfc6455#section-7.4
+    """
+
+    NORMAL = 1000
+    SERVER_ERROR = 1011
+    FORBIDDEN = 3403
+    PATH_NOT_FOUND = 3404
+    HANDLER_NOT_FOUND = 3405
