@@ -107,6 +107,8 @@ Woohoo, it works!!!
 
 Well, sort of. Onwards to adding some real functionality!
 
+.. _asgi_tutorial_config:
+
 Configuration
 -------------
 
@@ -711,7 +713,44 @@ to execute code upon our application startup:
 
     ``uvicorn`` (that we picked for this tutorial) supports Lifespan.
 
-The complete Redis cache component (``cache.py``) could look like:
+At minimum, our middleware will need to know the Redis host(s) to connect to.
+In addition, we are also going to make our Redis connection factory
+configurable in order to afford injecting different Redis client
+implementations for production and testing.
+
+Assuming we call our new :ref:`configuration <asgi_tutorial_config>` items
+``redis_host`` and ``create_redis_pool()``, respectively, the final version of
+``config.py`` now reads:
+
+.. Copy-paste under: examples/asgilook/asgilook/config.py
+
+.. code:: python
+
+    import os
+    import uuid
+
+    import aioredis
+
+
+    class Config:
+        DEFAULT_CONFIG_PATH = '/tmp/asgilook'
+        DEFAULT_MIN_THUMB_SIZE = 64
+        DEFAULT_REDIS_HOST = 'redis://localhost'
+        DEFAULT_REDIS_POOL = aioredis.create_redis_pool
+        DEFAULT_UUID_GENERATOR = uuid.uuid4
+
+        def __init__(self):
+            self.storage_path = (os.environ.get('ASGI_LOOK_STORAGE_PATH')
+                                 or self.DEFAULT_CONFIG_PATH)
+            if not os.path.exists(self.storage_path):
+                os.makedirs(self.storage_path)  # pragma: nocover
+
+            self.create_redis_pool = Config.DEFAULT_REDIS_POOL
+            self.min_thumb_size = self.DEFAULT_MIN_THUMB_SIZE
+            self.redis_host = self.DEFAULT_REDIS_HOST
+            self.uuid_generator = Config.DEFAULT_UUID_GENERATOR
+
+A complete Redis cache component (``cache.py``) could look like:
 
 .. Copy-paste under: examples/asgilook/asgilook/cache.py
 
@@ -772,41 +811,6 @@ The complete Redis cache component (``cache.py``) could look like:
             elif not resp.context.cached:
                 data = await self.serialize_response(resp)
                 await self.redis.set(key, data, expire=self.TTL)
-
-By adding Redis caching, we have also introduced new items to our
-configuration, namely ``redis_host`` and the ``create_redis_pool()`` factory
-method.
-
-The final version of our ``config.py`` now reads:
-
-.. Copy-paste under: examples/asgilook/asgilook/config.py
-
-.. code:: python
-
-    import os
-    import uuid
-
-    import aioredis
-
-
-    class Config:
-        DEFAULT_CONFIG_PATH = '/tmp/asgilook'
-        DEFAULT_MIN_THUMB_SIZE = 64
-        DEFAULT_REDIS_HOST = 'redis://localhost'
-        DEFAULT_REDIS_POOL = aioredis.create_redis_pool
-        DEFAULT_UUID_GENERATOR = uuid.uuid4
-
-        def __init__(self):
-            self.storage_path = (os.environ.get('ASGI_LOOK_STORAGE_PATH')
-                                 or self.DEFAULT_CONFIG_PATH)
-            if not os.path.exists(self.storage_path):
-                os.makedirs(self.storage_path)  # pragma: nocover
-
-            self.create_redis_pool = Config.DEFAULT_REDIS_POOL
-            self.min_thumb_size = self.DEFAULT_MIN_THUMB_SIZE
-            self.redis_host = self.DEFAULT_REDIS_HOST
-            self.uuid_generator = Config.DEFAULT_UUID_GENERATOR
-
 
 For caching to come into effect, we also need to add the ``RedisCache``
 component to our application's middleware list.
