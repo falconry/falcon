@@ -3,4 +3,7 @@
 pip install -U tox coverage
 
 rm -f .coverage.*
-tox -e pep8 && tox -e mypy && tox -e py35,py38 && tools/testing/combine_coverage.sh
+
+# NOTE(kgriffs): Do one at a time so we can just bail and not waste time
+#   with the other envs which will also likely fail anyway.
+tox -e pep8 && tox -e mypy && tox -e py35 && tox -e py38 && tools/testing/combine_coverage.sh
