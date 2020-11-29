@@ -328,6 +328,7 @@ div.note, div.admonition {
     /* Match tab radius */
     border-radius: .285714rem;
     border-color: #eee;
+    padding-bottom: 1em;
 }
 
 div.ui.bottom.attached.sphinx-tab.tab {
@@ -344,4 +345,3 @@ div.highlight > pre {
 .sphinx-tab pre {
     border: none !important;
 }
-
