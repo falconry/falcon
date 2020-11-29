@@ -8,6 +8,11 @@ from falcon.asgi import App
 from falcon.errors import UnsupportedScopeError
 
 
+class CustomCookies:
+    def items(self):
+        return [('foo', 'bar')]
+
+
 def test_missing_asgi_version():
     scope = testing.create_scope()
     del scope['asgi']
@@ -199,6 +204,20 @@ def test_scheme(scheme, valid):
     else:
         with pytest.raises(ValueError):
             testing.create_scope(scheme=scheme)
+
+
+@pytest.mark.parametrize('cookies', [
+    {'foo': 'bar', 'baz': 'foo'},
+    CustomCookies()
+])
+def test_cookies(cookies):
+    scope = testing.create_scope(cookies=cookies)
+    assert any(header == b'cookie' for header, _ in scope['headers'])
+
+
+def test_cookies_options_meathod():
+    scope = testing.create_scope(method='OPTIONS', cookies={'foo': 'bar'})
+    assert not any(header == b'cookie' for header, _ in scope['headers'])
 
 
 def _call_with_scope(scope):
