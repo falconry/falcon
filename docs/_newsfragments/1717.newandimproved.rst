@@ -1,1 +1,5 @@
-Changed :class:`~falcon.media.Handlers` to remove a separate handler for `application/json; charset=UTF-8` so that providing a custom `application/json` handler will also apply to the former `content-type`.
+:class:`Default media handlers <falcon.media.Handlers>` were simplified by
+removing a separate handler for the now-obsolete
+``application/json; charset=UTF-8``.
+As a result, providing a custom JSON media handler will now unambiguously cover
+both ``application/json`` and the former ``Content-type``.
