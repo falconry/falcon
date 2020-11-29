@@ -5,7 +5,6 @@ import functools
 import http
 import itertools
 import random
-from unittest import mock
 from urllib.parse import quote, unquote_plus
 
 import pytest
@@ -883,30 +882,25 @@ class TestFalconTestingUtils:
         'application/yaml',
     ])
     def test_simulate_content_type(self, content_type):
-        class Resource():
+        class MediaMirror():
             def on_post(self, req, resp):
-                self._body = req.media
+                resp.media = req.media
 
-        resource = Resource()
         app = create_app(asgi=False)
-        app.add_route('/', resource)
+        app.add_route('/', MediaMirror())
 
-        # default json handler
-        json_handler = app.req_options.media_handlers[MEDIA_JSON]
-
-        # default content types
         client = testing.TestClient(app)
         headers = {'Content-Type': content_type}
-        payload = {'hello': 'world'}
+        payload = b'{"hello": "world"}'
 
-        with mock.patch.object(json_handler, 'loads') as mock_loads:
-            if MEDIA_JSON in content_type:
-                client.simulate_post('/', headers=headers, json=payload)
-                mock_loads.assert_called()
-            else:
-                # mock json Handler should not have been called for yaml
-                client.simulate_post('/', headers=headers, body=b'hello=world')
-                mock_loads.assert_not_called()
+        if MEDIA_JSON in content_type:
+            resp = client.simulate_post('/', headers=headers, body=payload)
+            assert resp.status_code == 200
+            assert resp.json == {'hello': 'world'}
+        else:
+            # JSON handler should not have been called for YAML
+            resp = client.simulate_post('/', headers=headers, body=payload)
+            assert resp.status_code == 415
 
     @pytest.mark.parametrize('content_type', [
         'application/json',
@@ -914,22 +908,27 @@ class TestFalconTestingUtils:
         'application/yaml'
     ])
     def test_simulate_content_type_extra_handler(self, asgi, content_type):
+        class TrackingJSONHandler(media.JSONHandler):
+            def __init__(self):
+                super().__init__()
+                self.deserialize_count = 0
+
+            def deserialize(self, *args, **kwargs):
+                result = super().deserialize(*args, **kwargs)
+                self.deserialize_count += 1
+                return result
+
+            async def deserialize_async(self, *args, **kwargs):
+                result = await super().deserialize_async(*args, **kwargs)
+                self.deserialize_count += 1
+                return result
+
         resource = testing.SimpleTestResourceAsync() if asgi else testing.SimpleTestResource()
         app = create_app(asgi)
         app.add_route('/', resource)
 
-        # extra json handler
-        def _loads(s):
-            document = json.loads(s) or {}
-            document['hello'] = 'mars'
-            return document
-
-        json_handler = media.JSONHandler(
-            loads=_loads, dumps=json.dumps
-        )
-        extra_handlers = {
-            'application/json': json_handler,
-        }
+        handler = TrackingJSONHandler()
+        extra_handlers = {'application/json': handler}
         app.req_options.media_handlers.update(extra_handlers)
         app.resp_options.media_handlers.update(extra_handlers)
 
@@ -938,14 +937,19 @@ class TestFalconTestingUtils:
             'Content-Type': content_type,
             'capture-req-media': 'y',
         }
-        payload = b"""{"hello": "world"}"""
-        client.simulate_post('/', headers=headers, body=payload)
+        payload = b'{"hello": "world"}'
+        resp = client.simulate_post('/', headers=headers, body=payload)
+
         if MEDIA_JSON in content_type:
-            # test that our custom loads was called
-            assert resource.captured_req_media['hello'] == 'mars'
+            # Test that our custom deserializer was called
+            assert handler.deserialize_count == 1
+            assert resource.captured_req_media == {'hello': 'world'}
+            assert resp.status_code == 200
         else:
-            # yaml should not get handled
+            # YAML should not get handled
+            assert handler.deserialize_count == 0
             assert resource.captured_req_media is None
+            assert resp.status_code == 415
 
 
 class TestNoApiClass(testing.TestCase):
