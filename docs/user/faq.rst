@@ -111,7 +111,9 @@ Does Falcon support asyncio?
 
 Starting with version 3.0, the `ASGI <https://asgi.readthedocs.io/en/latest/>`_
 flavor of Falcon now proudly supports :any:`asyncio`!
-Use the :class:`falcon.asgi.App` class to create an async application.
+Use the :class:`falcon.asgi.App` class to create an async application, and
+serve it via an :ref:`ASGI application server <install_asgi_server>` such as
+Uvicorn.
 
 Alternatively, IO-bound WSGI applications can be scaled using the battle-tested
 `gevent <http://www.gevent.org/>`_ library via Gunicorn or uWSGI.
