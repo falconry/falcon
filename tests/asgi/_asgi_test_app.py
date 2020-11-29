@@ -6,6 +6,7 @@ import time
 
 import falcon
 import falcon.asgi
+import falcon.errors
 import falcon.util
 
 SSE_TEST_MAX_DELAY_SEC = 1
@@ -102,6 +103,12 @@ class Bucket:
         resp.body = await req.stream.read()
 
 
+class Feed:
+    async def on_websocket(self, req, ws, feed_id):
+        await ws.accept()
+        await ws.send_text(feed_id)
+
+
 class Events:
     async def on_get(self, req, resp):
         async def emit():
@@ -112,6 +119,81 @@ class Events:
                 s += (SSE_TEST_MAX_DELAY_SEC / 4)
 
         resp.sse = emit()
+
+    async def on_websocket(self, req, ws):  # noqa: C901
+        recv_command = req.get_header('X-Command') == 'recv'
+        send_mismatched = req.get_header('X-Mismatch') == 'send'
+        recv_mismatched = req.get_header('X-Mismatch') == 'recv'
+
+        mismatch_type = req.get_header('X-Mismatch-Type', default='text')
+
+        raise_error = req.get_header('X-Raise-Error')
+
+        close = req.get_header('X-Close')
+        close_code = req.get_header('X-Close-Code')
+        if close_code:
+            close_code = int(close_code)
+
+        accept = req.get_header('X-Accept', default='accept')
+
+        if accept == 'accept':
+            subprotocol = req.get_header('X-Subprotocol')
+
+            if subprotocol == '*':
+                subprotocol = ws.subprotocols[0]
+
+            if subprotocol:
+                await ws.accept(subprotocol)
+            else:
+                await ws.accept()
+        elif accept == 'reject':
+            if close:
+                await ws.close()
+            return
+
+        if send_mismatched:
+            if mismatch_type == 'text':
+                await ws.send_text(b'fizzbuzz')
+            else:
+                await ws.send_data('fizzbuzz')
+
+        if recv_mismatched:
+            if mismatch_type == 'text':
+                await ws.receive_text()
+            else:
+                await ws.receive_data()
+
+        start = time.time()
+        while time.time() - start < 1:
+            try:
+                msg = None
+
+                if recv_command:
+                    msg = await ws.receive_media()
+                else:
+                    msg = None
+
+                await ws.send_text('hello world')
+                print('on_websocket:send_text')
+
+                if msg and msg['command'] == 'echo':
+                    await ws.send_text(msg['echo'])
+
+                await ws.send_data(b'hello\x00world')
+                await asyncio.sleep(0.2)
+            except falcon.errors.WebSocketDisconnected:
+                print('on_websocket:WebSocketDisconnected')
+                raise
+
+            if raise_error == 'generic':
+                raise Exception('Test: Generic Unhandled Error')
+            elif raise_error == 'http':
+                raise falcon.HTTPBadRequest()
+
+        if close:
+            # NOTE(kgriffs): Tests that the default is used
+            #   when close_code is None.
+            await ws.close(close_code)
 
 
 class Multipart:
@@ -150,15 +232,47 @@ class LifespanHandler:
         self.shutdown_succeeded = True
 
 
+class TestJar:
+    async def on_get(self, req, resp):
+        # NOTE(myusko): In the future we shouldn't change the cookie
+        #             a test depends on the input.
+        # NOTE(kgriffs): This is the only test that uses a single
+        #   cookie (vs. multiple) as input; if this input ever changes,
+        #   a separate test will need to be added to explicitly verify
+        #   this use case.
+        resp.set_cookie('has_permission', 'true')
+
+    async def on_post(self, req, resp):
+        if req.cookies['has_permission'] == 'true':
+            resp.status = falcon.HTTP_200
+        else:
+            resp.status = falcon.HTTP_403
+
+
 def create_app():
     app = falcon.asgi.App()
     app.add_route('/', Things())
     app.add_route('/bucket', Bucket())
     app.add_route('/events', Events())
     app.add_route('/forms', Multipart())
-
+    app.add_route('/jars', TestJar())
+    app.add_route('/feeds/{feed_id}', Feed())
     lifespan_handler = LifespanHandler()
     app.add_middleware(lifespan_handler)
+
+    async def _on_ws_error(req, resp, error, params, ws=None):
+        if not ws:
+            raise
+
+        if ws.unaccepted:
+            await ws.accept()
+
+        if not ws.closed:
+            await ws.send_text(error.__class__.__name__)
+            await ws.close()
+
+    app.add_error_handler(falcon.errors.OperationNotAllowed, _on_ws_error)
+    app.add_error_handler(ValueError, _on_ws_error)
 
     return app
 

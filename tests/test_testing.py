@@ -111,7 +111,7 @@ def test_create_environ_cookies_options_method():
 def test_cookies_jar():
     class Foo:
         def on_get(self, req, resp):
-            # NOTE(myuz): In the future we shouldn't change the cookie
+            # NOTE(myusko): In the future we shouldn't change the cookie
             #             a test depends on the input.
             # NOTE(kgriffs): This is the only test that uses a single
             #   cookie (vs. multiple) as input; if this input ever changes,
