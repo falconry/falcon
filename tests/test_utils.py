@@ -893,13 +893,13 @@ class TestFalconTestingUtils:
         headers = {'Content-Type': content_type}
         payload = b'{"hello": "world"}'
 
+        resp = client.simulate_post('/', headers=headers, body=payload)
+
         if MEDIA_JSON in content_type:
-            resp = client.simulate_post('/', headers=headers, body=payload)
             assert resp.status_code == 200
             assert resp.json == {'hello': 'world'}
         else:
             # JSON handler should not have been called for YAML
-            resp = client.simulate_post('/', headers=headers, body=payload)
             assert resp.status_code == 415
 
     @pytest.mark.parametrize('content_type', [
