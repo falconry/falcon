@@ -31,11 +31,17 @@ def predictable_uuid():
     return uuid_func
 
 
+@pytest.fixture(scope='session')
+def storage_path(tmpdir_factory):
+    return str(tmpdir_factory.mktemp('asgilook'))
+
+
 @pytest.fixture
-def client(predictable_uuid):
+def client(predictable_uuid, storage_path):
     config = Config()
     config.create_redis_pool = fakeredis.aioredis.create_redis_pool
     config.redis_host = None
+    config.storage_path = storage_path
     config.uuid_generator = predictable_uuid
 
     app = create_app(config)

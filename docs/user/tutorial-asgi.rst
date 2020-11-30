@@ -888,14 +888,12 @@ Having a comprehensive test suite is vital not only for verifying that
 application is correctly behaving at the moment, but also limiting the impact
 of future regressions that will have been introduced into the codebase.
 
-.. danger::
-   Work in progress!
-
 In order to implement actual tests, we'll need to revise our dependencies and
 decide which abstraction level we are after:
 
 * Will we run a real Redis server?
-* Will we store "real" files or just provide a fixture for ``aiofiles``?
+* Will we store "real" files on a filesystem or just provide a fixture for
+  ``aiofiles``?
 * Will we use mocks and monkey patching, or would we inject dependencies?
 
 There is no right and wrong here, as different testing strategies (or a
@@ -903,10 +901,16 @@ combination thereof) have their own advantages in terms of test running time,
 how easy it is to implement new tests, how close tests are to the "real"
 service, and so on.
 
-In order to deliver something working faster, let's allow our tests to access
-the real filesystem. We'll leverage the ``ASGI_LOOK_STORAGE_PATH`` envvar in
-``config.py`` to override the storage location to Tox's
-`envtmpdir <https://tox.readthedocs.io/en/latest/config.html#conf-envtmpdir>`_.
+Another thing to choose is a testing framework. Just as in the
+:ref:`WSGI tutorial <testing_tutorial>`, let's use
+`pytest <http://docs.pytest.org/en/latest/>`_.
+This is a matter of taste; if you prefer xUnit/JUnit-style layout, you'll feel
+at home with the stdlib's :mod:`unittest`.
+
+In order to deliver something working faster, we'll allow our tests to access
+the real filesystem. As ``pytest`` offers various temporary directory out of
+the box, Let's create a simple ``storage_path`` fixture shared among all tests
+in the whole suite (in the ``pytest`` parlance, a "session"-scoped fixture).
 
 .. danger::
    Work in progress!
@@ -951,11 +955,17 @@ our tests via ``conftest.py``:
         return uuid_func
 
 
+    @pytest.fixture(scope='session')
+    def storage_path(tmpdir_factory):
+        return str(tmpdir_factory.mktemp('asgilook'))
+
+
     @pytest.fixture
-    def client(predictable_uuid):
+    def client(predictable_uuid, storage_path):
         config = Config()
         config.create_redis_pool = fakeredis.aioredis.create_redis_pool
         config.redis_host = None
+        config.storage_path = storage_path
         config.uuid_generator = predictable_uuid
 
         app = create_app(config)
@@ -1001,36 +1011,10 @@ our tests via ``conftest.py``:
         assert resp.status_code == 200
         assert resp.json == []
 
-The moment of truth::
+We need more tests now!
 
-  tox
-
-Ouch, that did not work. Looking closer at the ``birdisle.aioredis`` source
-code, it seems that it requires exactly ``aioredis==1.2.0`` (not the latest
-version). Let's try pinning to this version in our ``tox.ini`` in order aid Pip
-with dependency resolution, and try again in a fresh test environment::
-
-  tox --recreate
-
-Woohoo! Looking better now.
-
-An exercise for the reader: expand our first test to make sure subsequent
-access to ``/images`` is cached by checking the ``X-ASGILook-Cache``
-header. To verify, run ``tox`` again!
-
-We need to more tests now!
-
-Feel free to try writing some yourself. Otherwise, check out ``asgilook/tests``
-in this repository.
-
-Writing tests may also help to find erroneous application behaviour that was
-missed by manual testing. For instance, we noticed that routes accepting an
-``image_id:uuid`` parameter were exploding with a 500 if the provided
-``image_id`` was not found in the store. That is now fixed.
-
-Furthermore, we have realized that thumbnail resolutions are not validated
-against what we are exposing in the API. That is now also fixed.
-
+Feel free to try writing some yourself. Otherwise, check out
+``examples/asgilook/tests`` in the Falcon repository.
 
 Code Coverage
 -------------
