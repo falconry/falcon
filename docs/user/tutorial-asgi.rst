@@ -922,7 +922,7 @@ our tests via ``conftest.py``:
     import random
     import uuid
 
-    import birdisle.aioredis
+    import fakeredis.aioredis
     import falcon.asgi
     import falcon.testing
     import PIL.Image
@@ -954,7 +954,7 @@ our tests via ``conftest.py``:
     @pytest.fixture
     def client(predictable_uuid):
         config = Config()
-        config.create_redis_pool = birdisle.aioredis.create_redis_pool
+        config.create_redis_pool = fakeredis.aioredis.create_redis_pool
         config.redis_host = None
         config.uuid_generator = predictable_uuid
 
