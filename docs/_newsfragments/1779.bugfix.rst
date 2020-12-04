@@ -1,0 +1,2 @@
+The :class:`falcon.routing.CompiledRouter` no longer mistakenly sets route parameters
+while exploring non matching routes.

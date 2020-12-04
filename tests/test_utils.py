@@ -12,8 +12,10 @@ from urllib.parse import quote, unquote_plus
 import pytest
 
 import falcon
+from falcon import media
 from falcon import testing
 from falcon import util
+from falcon.constants import MEDIA_JSON
 from falcon.util import deprecation, misc, structures, uri
 
 from _util import create_app, to_coroutine  # NOQA
@@ -875,6 +877,81 @@ class TestFalconTestingUtils:
         result = client.simulate_get('/', extras={'REQUEST_METHOD': 'GET'})
         assert result.status_code == 200
         assert result.text == 'test'
+
+    @pytest.mark.parametrize('content_type', [
+        'application/json',
+        'application/json; charset=UTF-8',
+        'application/yaml',
+    ])
+    def test_simulate_content_type(self, content_type):
+        class MediaMirror():
+            def on_post(self, req, resp):
+                resp.media = req.media
+
+        app = create_app(asgi=False)
+        app.add_route('/', MediaMirror())
+
+        client = testing.TestClient(app)
+        headers = {'Content-Type': content_type}
+        payload = b'{"hello": "world"}'
+
+        resp = client.simulate_post('/', headers=headers, body=payload)
+
+        if MEDIA_JSON in content_type:
+            assert resp.status_code == 200
+            assert resp.json == {'hello': 'world'}
+        else:
+            # JSON handler should not have been called for YAML
+            assert resp.status_code == 415
+
+    @pytest.mark.parametrize('content_type', [
+        'application/json',
+        'application/json; charset=UTF-8',
+        'application/yaml'
+    ])
+    def test_simulate_content_type_extra_handler(self, asgi, content_type):
+        class TrackingJSONHandler(media.JSONHandler):
+            def __init__(self):
+                super().__init__()
+                self.deserialize_count = 0
+
+            def deserialize(self, *args, **kwargs):
+                result = super().deserialize(*args, **kwargs)
+                self.deserialize_count += 1
+                return result
+
+            async def deserialize_async(self, *args, **kwargs):
+                result = await super().deserialize_async(*args, **kwargs)
+                self.deserialize_count += 1
+                return result
+
+        resource = testing.SimpleTestResourceAsync() if asgi else testing.SimpleTestResource()
+        app = create_app(asgi)
+        app.add_route('/', resource)
+
+        handler = TrackingJSONHandler()
+        extra_handlers = {'application/json': handler}
+        app.req_options.media_handlers.update(extra_handlers)
+        app.resp_options.media_handlers.update(extra_handlers)
+
+        client = testing.TestClient(app)
+        headers = {
+            'Content-Type': content_type,
+            'capture-req-media': 'y',
+        }
+        payload = b'{"hello": "world"}'
+        resp = client.simulate_post('/', headers=headers, body=payload)
+
+        if MEDIA_JSON in content_type:
+            # Test that our custom deserializer was called
+            assert handler.deserialize_count == 1
+            assert resource.captured_req_media == {'hello': 'world'}
+            assert resp.status_code == 200
+        else:
+            # YAML should not get handled
+            assert handler.deserialize_count == 0
+            assert resource.captured_req_media is None
+            assert resp.status_code == 415
 
 
 class TestNoApiClass(testing.TestCase):
