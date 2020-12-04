@@ -178,14 +178,16 @@ removing the default handlers, this can be easily done as follows:
 .. note::
 
     The configured :class:`falcon.Response` JSON handler is also used to serialize
-    :class:`falcon.HTTPError` the ``json`` attribute of :class:`falcon.asgi.SSEvent`.
-    The JSON handler configured in the :class:`falcon.Request` is used by
+    :class:`falcon.HTTPError` and the ``json`` attribute of :class:`falcon.asgi.SSEvent`.
+    The JSON handler configured in :class:`falcon.Request` is used by
     :meth:`falcon.Request.get_param_as_json` to deserialize query params.
 
     When implementing a custom handler for the JSON media it is therefore required
     that the sync interface methods, meaning
     :meth:`falcon.media.BaseHandler.serialize` and :meth:`falcon.media.BaseHandler.deserialize`,
-    are implemented even in ``ASGI`` application.
+    are implemented even in ``ASGI`` applications. The default json handler
+    :class:`falcon.media.JSONHandler` already implements all the required methods to
+    work with both type of applications.
 
 Supported Handler Types
 -----------------------
@@ -214,7 +216,7 @@ provided by Falcon and documented below.
 In general ``WSGI`` applications only use the sync methods, while
 ``ASGI`` applications only use the async one.
 The JSON handled is an exception to this, since it's used also by
-other part of the framework, not only the the media handling.
+other parts of the framework, not only in the media handling.
 See the :ref:`note above<note_json_handler>` for more details.
 
 .. autoclass:: falcon.media.BaseHandler

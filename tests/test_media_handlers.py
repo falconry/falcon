@@ -285,3 +285,30 @@ def test_json_err_no_handler(asgi):
     result = testing.simulate_get(app, '/')
     assert result.status_code == 403
     assert result.json == falcon.HTTPForbidden().to_dict()
+
+
+class TestBaseHandler:
+    def test_defaultError(self):
+        h = media.BaseHandler()
+
+        def test(call):
+            with pytest.raises(NotImplementedError) as e:
+                call()
+
+            assert e.value.args == ()
+
+        test(lambda: h.serialize({}, 'my-type'))
+        test(lambda: h.deserialize('', 'my-type', 0))
+
+    def test_json(self):
+        h = media.BaseHandler()
+
+        with pytest.raises(NotImplementedError, match='The JSON media handler requires'):
+            h.serialize({}, falcon.MEDIA_JSON)
+        with pytest.raises(NotImplementedError, match='The JSON media handler requires'):
+            h.deserialize('', falcon.MEDIA_JSON, 0)
+
+        with pytest.raises(NotImplementedError, match='The JSON media handler requires'):
+            h.serialize({}, falcon.MEDIA_JSON + '; charset=UTF-8')
+        with pytest.raises(NotImplementedError, match='The JSON media handler requires'):
+            h.deserialize('', falcon.MEDIA_JSON + '; charset=UTF-8', 0)

@@ -2,6 +2,8 @@ import abc
 import io
 from typing import Union
 
+from falcon.constants import MEDIA_JSON
+
 
 class BaseHandler(metaclass=abc.ABCMeta):
     """Abstract Base Class for an internet media type handler."""
@@ -29,7 +31,13 @@ class BaseHandler(metaclass=abc.ABCMeta):
         Returns:
             bytes: The resulting serialized bytes from the input object.
         """
-        raise NotImplementedError()
+        if MEDIA_JSON in content_type:
+            raise NotImplementedError(
+                'The JSON media handler requires the sync interface to be implemented even in '
+                "ASGI applications, because it's used internally by the falcon."
+            )
+        else:
+            raise NotImplementedError()
 
     async def serialize_async(self, media, content_type):
         """Serialize the media object on a :any:`falcon.Response`.
@@ -82,7 +90,13 @@ class BaseHandler(metaclass=abc.ABCMeta):
         Returns:
             object: A deserialized object.
         """
-        raise NotImplementedError()
+        if MEDIA_JSON in content_type:
+            raise NotImplementedError(
+                'The JSON media handler requires the sync interface to be implemented even in '
+                "ASGI applications, because it's used internally by the falcon."
+            )
+        else:
+            raise NotImplementedError()
 
     async def deserialize_async(self, stream, content_type, content_length):
         """Deserialize the :any:`falcon.Request` body.
