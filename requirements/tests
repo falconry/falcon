@@ -15,7 +15,7 @@ uvicorn; python_version >= '3.6'
 websockets; python_version >= '3.6'
 
 # Handler Specific
-cbor2
+cbor2; python_version >= '3.6'
 msgpack
 mujson
 ujson
