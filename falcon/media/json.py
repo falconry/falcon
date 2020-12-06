@@ -69,41 +69,22 @@ class JSONHandler(BaseHandler):
         self.dumps = dumps or partial(json.dumps, ensure_ascii=False)
         self.loads = loads or json.loads
 
-    def deserialize(self, stream, content_type, content_length):
-        try:
-            return self.loads(stream.read().decode('utf-8'))
-        except ValueError as err:
-            raise errors.HTTPBadRequest(
-                title='Invalid JSON',
-                description='Could not parse JSON body - {0}'.format(err)
-            )
-
-    async def deserialize_async(self, stream, content_type, content_length):
-        data = await stream.read()
-
+    def _deserialize(self, data):
+        if not data:
+            raise errors.MediaNotFoundError()
         try:
             return self.loads(data.decode('utf-8'))
         except ValueError as err:
-            raise errors.HTTPBadRequest(
-                title='Invalid JSON',
-                description='Could not parse JSON body - {0}'.format(err)
-            )
+            raise errors.MediaMalformedError(err, 'JSON')
+
+    def deserialize(self, stream, content_type, content_length):
+        return self._deserialize(stream.read())
+
+    async def deserialize_async(self, stream, content_type, content_length):
+        return self._deserialize(await stream.read())
 
     def serialize(self, media, content_type):
-        result = self.dumps(media)
-
-        try:
-            result = result.encode('utf-8')
-        except AttributeError:  # pragma: nocover
-            # NOTE(kgriffs): Assume that dumps() is non-standard in that it
-            #   returned a byte string.
-            # TODO(kgriffs): This branch is not currently covered since
-            #   orjson testing has been temporarily disabled.
-            pass
-
-        return result
-
-    async def serialize_async(self, media, content_type):
+        # NOTE: this is also called by serialize_async
         result = self.dumps(media)
 
         if not isinstance(result, bytes):

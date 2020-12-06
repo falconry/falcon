@@ -28,6 +28,7 @@ from .stream import BoundedStream
 __all__ = ['Request']
 
 _UNSET = falcon.request._UNSET
+_ERROR = falcon.request._ERROR
 
 
 class Request(falcon.request.Request):
@@ -706,6 +707,8 @@ class Request(falcon.request.Request):
 
         See also :ref:`media` for more information regarding media handling.
 
+        TODO update docs and change when_empty_fallback name
+
         Note:
             When ``get_media`` is called on a request with an empty body,
             falcon will let the media handler try to deserialize the body
@@ -730,6 +733,8 @@ class Request(falcon.request.Request):
             media (object): The deserialized media representation.
         """
 
+        if self._media is _ERROR:
+            raise errors.MediaError()
         if self._media is not _UNSET:
             return self._media
 
@@ -744,10 +749,14 @@ class Request(falcon.request.Request):
                 self.content_type,
                 self.content_length
             )
-        except Exception:
-            if when_empty_fallback is _UNSET or self.stream.tell() != 0:
+        except errors.MediaNotFoundError:
+            if when_empty_fallback is _UNSET:
+                self._media = _ERROR
                 raise
             self._media = when_empty_fallback
+        except Exception:
+            self._media = _ERROR
+            raise
         finally:
             if handler.exhaust_stream:
                 await self.stream.exhaust()

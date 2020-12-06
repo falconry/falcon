@@ -9,7 +9,7 @@ from falcon.media.base import BaseHandler, BinaryBaseHandlerWS
 class MessagePackHandler(BaseHandler):
     """Handler built using the :py:mod:`msgpack` module.
 
-    This handler uses ``msgpack.unpackb()`` and ``msgpack.packb()``. The
+    This handler uses ``msgpack.unpackb()`` and ``msgpack.Packer().pack()``. The
     MessagePack ``bin`` type is used to distinguish between Unicode strings
     (of type ``str``) and byte strings (of type ``bytes``).
 
@@ -32,29 +32,21 @@ class MessagePackHandler(BaseHandler):
             use_bin_type=True,
         )
 
-    def deserialize(self, stream, content_type, content_length):
-        try:
-            # NOTE(jmvrbanac): Using unpackb since we would need to manage
-            # a buffer for Unpacker() which wouldn't gain us much.
-            return self.msgpack.unpackb(stream.read(), raw=False)
-        except ValueError as err:
-            raise errors.HTTPBadRequest(
-                title='Invalid MessagePack',
-                description='Could not parse MessagePack body - {0}'.format(err)
-            )
-
-    async def deserialize_async(self, stream, content_type, content_length):
-        data = await stream.read()
-
+    def _deserialize(self, data):
+        if not data:
+            raise errors.MediaNotFoundError()
         try:
             # NOTE(jmvrbanac): Using unpackb since we would need to manage
             # a buffer for Unpacker() which wouldn't gain us much.
             return self.msgpack.unpackb(data, raw=False)
         except ValueError as err:
-            raise errors.HTTPBadRequest(
-                title='Invalid MessagePack',
-                description='Could not parse MessagePack body - {0}'.format(err)
-            )
+            raise errors.MediaMalformedError(err, 'MessagePack')
+
+    def deserialize(self, stream, content_type, content_length):
+        return self._deserialize(stream.read())
+
+    async def deserialize_async(self, stream, content_type, content_length):
+        return self._deserialize(await stream.read())
 
     def serialize(self, media, content_type):
         return self.packer.pack(media)

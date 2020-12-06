@@ -40,6 +40,7 @@ strptime = datetime.strptime
 now = datetime.now
 
 _UNSET = object()  # flag object used as the default unset value
+_ERROR = object()  # flag object used to indicate a media error
 
 
 class Request:
@@ -992,6 +993,8 @@ class Request:
 
         See also :ref:`media` for more information regarding media handling.
 
+        TODO update docs and change when_empty_fallback name
+
         Note:
             When ``get_media`` is called on a request with an empty body,
             falcon will let the media handler try to deserialize the body
@@ -1015,6 +1018,8 @@ class Request:
         Returns:
             media (object): The deserialized media representation.
         """
+        if self._media is _ERROR:
+            raise errors.MediaError()
         if self._media is not _UNSET:
             return self._media
 
@@ -1029,10 +1034,14 @@ class Request:
                 self.content_type,
                 self.content_length
             )
-        except Exception:
-            if when_empty_fallback is _UNSET or self.bounded_stream.stream_len != 0:
+        except errors.MediaNotFoundError:
+            if when_empty_fallback is _UNSET:
+                self._media = _ERROR
                 raise
             self._media = when_empty_fallback
+        except Exception:
+            self._media = _ERROR
+            raise
         finally:
             if handler.exhaust_stream:
                 self.bounded_stream.exhaust()

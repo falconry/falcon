@@ -2288,6 +2288,27 @@ class HTTPMissingParam(HTTPBadRequest):
             **kwargs
         )
 
+
+class MediaError(HTTPBadRequest):
+    """TODO"""
+
+class MediaNotFoundError(MediaError):
+    """TODO"""
+
+    def __init__(self):
+        super().__init__()
+
+
+class MediaMalformedError(MediaError):
+    """TODO"""
+
+    def __init__(self, inner, media_type):
+        super().__init__(
+            title='Invalid {0}'.format(media_type),
+            description='Could not parse the body - {0}'.format(inner)
+        )
+        self.inner = inner
+
 # -----------------------------------------------------------------------------
 # Helpers
 # -----------------------------------------------------------------------------
