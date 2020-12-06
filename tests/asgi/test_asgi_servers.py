@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import contextmanager
 import hashlib
 import os
@@ -10,8 +11,11 @@ import time
 import pytest
 import requests
 import requests.exceptions
+import websockets
+import websockets.exceptions
 
 from falcon import testing
+from . import _asgi_test_app
 
 
 _MODULE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -118,6 +122,241 @@ class TestASGIServer:
 
         assert not events[-1]
 
+    def test_sse_client_disconnects_early(self, server_base_url):
+        """Test that when the client connection is lost, the server task does not hang.
+
+        In the case of SSE, Falcon should detect when the client connection is
+        lost and immediately bail out. Currently this is observable by watching
+        the output of the uvicorn and daphne server processes. Also, the
+        _run_server_isolated() method will fail the test if the server process
+        takes too long to shut down.
+        """
+        with pytest.raises(requests.exceptions.ConnectionError):
+            requests.get(
+                server_base_url + 'events',
+                timeout=(_asgi_test_app.SSE_TEST_MAX_DELAY_SEC / 2)
+            )
+
+
+class TestWebSocket:
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize('explicit_close', [True, False])
+    @pytest.mark.parametrize('close_code', [None, 4321])
+    async def test_hello(self, explicit_close, close_code, server_url_events_ws):
+        echo_expected = 'Check 1 - \U0001f600'
+
+        extra_headers = {'X-Command': 'recv'}
+
+        if explicit_close:
+            extra_headers['X-Close'] = 'True'
+
+        if close_code:
+            extra_headers['X-Close-Code'] = str(close_code)
+
+        async with websockets.connect(
+            server_url_events_ws,
+            extra_headers=extra_headers,
+        ) as ws:
+            got_message = False
+
+            while True:
+                try:
+                    # TODO: Why is this failing to decode on the other side? (raises an error)
+                    # TODO: Why does this cause Daphne to hang?
+                    await ws.send(f'{{"command": "echo", "echo": "{echo_expected}"}}')
+
+                    message_text = await ws.recv()
+                    message_echo = await ws.recv()
+                    message_binary = await ws.recv()
+                except websockets.exceptions.ConnectionClosed as ex:
+                    if explicit_close and close_code:
+                        assert ex.code == close_code
+                    else:
+                        assert ex.code == 1000
+
+                    break
+
+                got_message = True
+                assert message_text == 'hello world'
+                assert message_echo == echo_expected
+                assert message_binary == b'hello\x00world'
+
+            assert got_message
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize('explicit_close', [True, False])
+    @pytest.mark.parametrize('close_code', [None, 4040])
+    async def test_rejected(self, explicit_close, close_code, server_url_events_ws):
+        extra_headers = {'X-Accept': 'reject'}
+        if explicit_close:
+            extra_headers['X-Close'] = 'True'
+
+        if close_code:
+            extra_headers['X-Close-Code'] = str(close_code)
+
+        with pytest.raises(websockets.exceptions.InvalidStatusCode) as exc_info:
+            async with websockets.connect(server_url_events_ws, extra_headers=extra_headers):
+                pass
+
+        assert exc_info.value.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_missing_responder(self, server_url_events_ws):
+        server_url_events_ws += '/404'
+
+        with pytest.raises(websockets.exceptions.InvalidStatusCode) as exc_info:
+            async with websockets.connect(server_url_events_ws):
+                pass
+
+        assert exc_info.value.status_code == 403
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize('subprotocol, expected', [
+        ('*', 'amqp'),
+        ('wamp', 'wamp'),
+    ])
+    async def test_select_subprotocol_known(self, subprotocol, expected, server_url_events_ws):
+        extra_headers = {
+            'X-Subprotocol': subprotocol
+        }
+        async with websockets.connect(
+            server_url_events_ws,
+            extra_headers=extra_headers,
+            subprotocols=['amqp', 'wamp'],
+        ) as ws:
+            assert ws.subprotocol == expected
+
+    @pytest.mark.asyncio
+    async def test_select_subprotocol_unknown(self, server_url_events_ws):
+        extra_headers = {
+            'X-Subprotocol': 'xmpp'
+        }
+
+        try:
+            async with websockets.connect(
+                server_url_events_ws,
+                extra_headers=extra_headers,
+                subprotocols=['amqp', 'wamp'],
+            ):
+                pass
+
+            # NOTE(kgriffs): Taking the approach of asserting inside
+            #   except clauses is a little bit cleaner in this case vs.
+            #   multiple pytest.raises(), so we fail the test if no
+            #   error is raised as expected.
+            pytest.fail('no error raised')
+
+        # Uvicorn
+        except websockets.exceptions.NegotiationError as ex:
+            assert 'unsupported subprotocol: xmpp' in str(ex)
+
+        # Daphne
+        except websockets.exceptions.InvalidMessage:
+            pass
+
+    # NOTE(kgriffs): When executing this test under pytest with the -s
+    #   argument, one should be able to see the message
+    #   "on_websocket:WebSocketDisconnected" printed to the console. I have
+    #   tried to capture this output and check it in the test below,
+    #   but the usual ways of capturing stdout/stderr with pytest do
+    #   not work.
+    @pytest.mark.asyncio
+    async def test_disconnecting_client_early(self, server_url_events_ws):
+        ws = await websockets.connect(server_url_events_ws, extra_headers={'X-Close': 'True'})
+        await asyncio.sleep(0.2)
+
+        message_text = await ws.recv()
+        assert message_text == 'hello world'
+
+        message_binary = await ws.recv()
+        assert message_binary == b'hello\x00world'
+
+        await ws.close()
+        print('closed')
+
+        # NOTE(kgriffs): Let the app continue to attempt to send us
+        #   messages after the close.
+        await asyncio.sleep(1)
+
+    @pytest.mark.asyncio
+    async def test_send_before_accept(self, server_url_events_ws):
+        extra_headers = {'x-accept': 'skip'}
+
+        async with websockets.connect(server_url_events_ws, extra_headers=extra_headers) as ws:
+            message = await ws.recv()
+            assert message == 'OperationNotAllowed'
+
+    @pytest.mark.asyncio
+    async def test_recv_before_accept(self, server_url_events_ws):
+        extra_headers = {'x-accept': 'skip', 'x-command': 'recv'}
+
+        async with websockets.connect(server_url_events_ws, extra_headers=extra_headers) as ws:
+            message = await ws.recv()
+            assert message == 'OperationNotAllowed'
+
+    @pytest.mark.asyncio
+    async def test_invalid_close_code(self, server_url_events_ws):
+        extra_headers = {'x-close': 'True', 'x-close-code': 42}
+
+        async with websockets.connect(server_url_events_ws, extra_headers=extra_headers) as ws:
+            start = time.time()
+
+            while True:
+                message = await asyncio.wait_for(ws.recv(), timeout=1)
+                if message == 'ValueError':
+                    break
+
+                elapsed = time.time() - start
+                assert elapsed < 2
+
+    @pytest.mark.asyncio
+    async def test_close_code_on_unhandled_error(self, server_url_events_ws):
+        extra_headers = {'x-raise-error': 'generic'}
+
+        async with websockets.connect(server_url_events_ws, extra_headers=extra_headers) as ws:
+            await ws.wait_closed()
+
+        assert ws.close_code in {3011, 1011}
+
+    @pytest.mark.asyncio
+    async def test_close_code_on_unhandled_http_error(self, server_url_events_ws):
+        extra_headers = {'x-raise-error': 'http'}
+
+        async with websockets.connect(server_url_events_ws, extra_headers=extra_headers) as ws:
+            await ws.wait_closed()
+
+        assert ws.close_code == 3400
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize('mismatch', ['send', 'recv'])
+    @pytest.mark.parametrize('mismatch_type', ['text', 'data'])
+    async def test_type_mismatch(self, mismatch, mismatch_type, server_url_events_ws):
+        extra_headers = {
+            'X-Mismatch': mismatch,
+            'X-Mismatch-Type': mismatch_type,
+        }
+
+        async with websockets.connect(server_url_events_ws, extra_headers=extra_headers) as ws:
+            if mismatch == 'recv':
+                if mismatch_type == 'text':
+                    await ws.send(b'hello')
+                else:
+                    await ws.send('hello')
+
+            await ws.wait_closed()
+
+        assert ws.close_code in {3011, 1011}
+
+    @pytest.mark.asyncio
+    async def test_passing_path_params(self, server_base_url_ws):
+        expected_feed_id = '1ee7'
+        url = f'{server_base_url_ws}feeds/{expected_feed_id}'
+
+        async with websockets.connect(url) as ws:
+            feed_id = await ws.recv()
+            assert feed_id == expected_feed_id
+
 
 @contextmanager
 def _run_server_isolated(process_factory, host, port):
@@ -149,8 +388,11 @@ def _run_server_isolated(process_factory, host, port):
             pass
         except subprocess.TimeoutExpired:
             print('\n[Killing stubborn server process...]')
+
             server.kill()
             server.communicate()
+
+            pytest.fail('Server process did not exit in a timely manner and had to be killed.')
     else:
         print('\n[Sending SIGTERM to server process...]')
         server.terminate()
@@ -159,8 +401,11 @@ def _run_server_isolated(process_factory, host, port):
             server.communicate(timeout=10)
         except subprocess.TimeoutExpired:
             print('\n[Killing stubborn server process...]')
+
             server.kill()
             server.communicate()
+
+            pytest.fail('Server process did not exit in a timely manner and had to be killed.')
 
 
 def _uvicorn_factory(host, port):
@@ -172,7 +417,7 @@ ctypes.windll.kernel32.SetConsoleCtrlHandler(None, 0)
 uvicorn.run('_asgi_test_app:application', host='{host}', port={port})
 """
         return subprocess.Popen(
-            ('python', '-c', script),
+            (sys.executable, '-c', script),
             cwd=_MODULE_DIR,
             creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
         )
@@ -183,6 +428,8 @@ uvicorn.run('_asgi_test_app:application', host='{host}', port={port})
     options = (
         '--host', host,
         '--port', str(port),
+
+        '--interface', 'asgi3',
 
         '_asgi_test_app:application'
     )
@@ -251,3 +498,13 @@ def server_base_url(request):
 
     else:
         pytest.fail('Could not start server')
+
+
+@pytest.fixture
+def server_base_url_ws(server_base_url):
+    return server_base_url.replace('http', 'ws')
+
+
+@pytest.fixture
+def server_url_events_ws(server_base_url_ws):
+    return server_base_url_ws + 'events'

@@ -426,6 +426,7 @@ class Request:
         'stream',
         'uri_template',
         '_media',
+        'is_websocket',
     )
 
     _cookies = None
@@ -439,6 +440,8 @@ class Request:
     _wsgi_input_type_known = False
 
     def __init__(self, env, options=None):
+        self.is_websocket = False
+
         self.env = env
         self.options = options if options else RequestOptions()
 
@@ -974,7 +977,7 @@ class Request:
         return netloc_value
 
     def get_media(self, when_empty_fallback=_UNSET):
-        """Returns a deserialized form of the request stream.
+        """Return a deserialized form of the request stream.
 
         The first time this method is called, the request stream will be
         deserialized using the Content-Type header as well as the media-type

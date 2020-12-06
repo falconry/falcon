@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Inspect utilities for falcon applications"""
+"""Inspect utilities for falcon applications."""
 from functools import partial
 import inspect
 from typing import Callable, Dict, List, Optional, Type
@@ -196,10 +196,9 @@ def inspect_middlewares(app: App) -> 'MiddlewareInfo':
 
 @register_router(CompiledRouter)
 def inspect_compiled_router(router: CompiledRouter) -> 'List[RouteInfo]':
-    """Default route inspector for CompiledRouter.
+    """Walk an instance of :class:`~.CompiledRouter` to return a list of defined routes.
 
-    Walks an instance of :class:`~.CompiledRouter` and returns a list of
-    defined routes.
+    Default route inspector for CompiledRouter.
 
     Args:
         router (CompiledRouter): The router to inspect.
@@ -249,7 +248,7 @@ class _Traversable:
     __visit_name__ = 'N/A'
 
     def to_string(self, verbose=False, internal=False) -> str:
-        """Returns a string representation of this class.
+        """Return a string representation of this class.
 
         Args:
             verbose (bool, optional): Adds more information. Defaults to False.
@@ -516,7 +515,7 @@ class AppInfo(_Traversable):
         self.asgi = asgi
 
     def to_string(self, verbose=False, internal=False, name='') -> str:
-        """Returns a string representation of this class.
+        """Return a string representation of this class.
 
         Args:
             verbose (bool, optional): Adds more information. Defaults to False.
@@ -543,6 +542,7 @@ class InspectVisitor:
 
     def process(self, instance: _Traversable):
         """Process the instance, by calling the appropriate visit method.
+
         Uses the `__visit_name__` attribute of the `instance` to obtain the method to use.
 
         Args:
@@ -557,7 +557,7 @@ class InspectVisitor:
 
 
 class StringVisitor(InspectVisitor):
-    """Visitor implementation that returns a string representation of the info class.
+    """Visitor that returns a string representation of the info class.
 
     This is used automatically by calling ``to_string()`` on the info class.
     It can also be used directly by calling ``StringVisitor.process(info_instance)``.
@@ -578,18 +578,18 @@ class StringVisitor(InspectVisitor):
 
     @property
     def tab(self):
-        """Gets the current tabulation"""
+        """Get the current tabulation."""
         return ' ' * self.indent
 
     def visit_route_method(self, route_method: RouteMethodInfo) -> str:
-        """Visit a RouteMethodInfo instance. Usually called by `process`"""
+        """Visit a RouteMethodInfo instance. Usually called by `process`."""
         text = '{0.method} - {0.function_name}'.format(route_method)
         if self.verbose:
             text += ' ({0.source_info})'.format(route_method)
         return text
 
     def _methods_to_string(self, methods: List):
-        """Returns a string from the list of methods"""
+        """Return a string from the list of methods."""
         tab = self.tab + ' ' * 3
         methods = _filter_internal(methods, self.internal)
         if not methods:
@@ -600,7 +600,7 @@ class StringVisitor(InspectVisitor):
         return '\n'.join(method_text)
 
     def visit_route(self, route: RouteInfo) -> str:
-        """Visit a RouteInfo instance. Usually called by `process`"""
+        """Visit a RouteInfo instance. Usually called by `process`."""
         text = '{0}⇒ {1.path} - {1.class_name}'.format(self.tab, route)
         if self.verbose:
             text += ' ({0.source_info})'.format(route)
@@ -612,35 +612,35 @@ class StringVisitor(InspectVisitor):
         return '{}:\n{}'.format(text, method_text)
 
     def visit_static_route(self, static_route: StaticRouteInfo) -> str:
-        """Visit a StaticRouteInfo instance. Usually called by `process`"""
+        """Visit a StaticRouteInfo instance. Usually called by `process`."""
         text = '{0}↦ {1.prefix} {1.directory}'.format(self.tab, static_route)
         if static_route.fallback_filename:
             text += ' [{0.fallback_filename}]'.format(static_route)
         return text
 
     def visit_sink(self, sink: SinkInfo) -> str:
-        """Visit a SinkInfo instance. Usually called by `process`"""
+        """Visit a SinkInfo instance. Usually called by `process`."""
         text = '{0}⇥ {1.prefix} {1.name}'.format(self.tab, sink)
         if self.verbose:
             text += ' ({0.source_info})'.format(sink)
         return text
 
     def visit_error_handler(self, error_handler: ErrorHandlerInfo) -> str:
-        """Visit a ErrorHandlerInfo instance. Usually called by `process`"""
+        """Visit a ErrorHandlerInfo instance. Usually called by `process`."""
         text = '{0}⇜ {1.error} {1.name}'.format(self.tab, error_handler)
         if self.verbose:
             text += ' ({0.source_info})'.format(error_handler)
         return text
 
     def visit_middleware_method(self, middleware_method: MiddlewareMethodInfo) -> str:
-        """Visit a MiddlewareMethodInfo instance. Usually called by `process`"""
+        """Visit a MiddlewareMethodInfo instance. Usually called by `process`."""
         text = '{0.function_name}'.format(middleware_method)
         if self.verbose:
             text += ' ({0.source_info})'.format(middleware_method)
         return text
 
     def visit_middleware_class(self, middleware_class: MiddlewareClassInfo) -> str:
-        """Visit a ErrorHandlerInfo instance. Usually called by `process`"""
+        """Visit a ErrorHandlerInfo instance. Usually called by `process`."""
         text = '{0}↣ {1.name}'.format(self.tab, middleware_class)
         if self.verbose:
             text += ' ({0.source_info})'.format(middleware_class)
@@ -652,12 +652,12 @@ class StringVisitor(InspectVisitor):
         return '{}:\n{}'.format(text, method_text)
 
     def visit_middleware_tree_item(self, mti: MiddlewareTreeItemInfo) -> str:
-        """Visit a MiddlewareTreeItemInfo instance. Usually called by `process`"""
+        """Visit a MiddlewareTreeItemInfo instance. Usually called by `process`."""
         symbol = mti._symbols.get(mti.name, '→')
         return '{0}{1} {2.class_name}.{2.name}'.format(self.tab, symbol, mti)
 
     def visit_middleware_tree(self, m_tree: MiddlewareTreeInfo) -> str:
-        """Visit a MiddlewareTreeInfo instance. Usually called by `process`"""
+        """Visit a MiddlewareTreeInfo instance. Usually called by `process`."""
         before = len(m_tree.request) + len(m_tree.resource)
         after = len(m_tree.response)
 
@@ -695,7 +695,7 @@ class StringVisitor(InspectVisitor):
         return '\n'.join(text)
 
     def visit_middleware(self, middleware: MiddlewareInfo) -> str:
-        """Visit a MiddlewareInfo instance. Usually called by `process`"""
+        """Visit a MiddlewareInfo instance. Usually called by `process`."""
         text = self.process(middleware.middleware_tree)
         if self.verbose:
             self.indent += 4
@@ -707,7 +707,7 @@ class StringVisitor(InspectVisitor):
         return text
 
     def visit_app(self, app: AppInfo) -> str:
-        """Visit a AppInfo instance. Usually called by `process`"""
+        """Visit a AppInfo instance. Usually called by `process`."""
 
         type_ = 'ASGI' if app.asgi else 'WSGI'
         self.indent = 4
@@ -745,7 +745,10 @@ class StringVisitor(InspectVisitor):
 
 
 def _get_source_info(obj, default='[unknown file]'):
-    """Tries to get the definition file and line of obj. Returns default on error"""
+    """Try to get the definition file and line of obj.
+
+     Return default on error.
+     """
     try:
         source_file = inspect.getsourcefile(obj)
         source_lines = inspect.findsource(obj)
@@ -760,7 +763,7 @@ def _get_source_info(obj, default='[unknown file]'):
 
 
 def _get_source_info_and_name(obj):
-    """Tries to get the definition file and line of obj and its name"""
+    """Attempt to get the definition file and line of obj and its name."""
     source_info = _get_source_info(obj, None)
     if source_info is None:
         # NOTE(caselit): a class instances return None. Try the type
@@ -772,7 +775,7 @@ def _get_source_info_and_name(obj):
 
 
 def _is_internal(obj):
-    """Checks if the module of the object is a falcon module"""
+    """Check if the module of the object is a falcon module."""
     module = inspect.getmodule(obj)
     if module:
         return module.__name__.startswith('falcon.')
@@ -780,7 +783,7 @@ def _is_internal(obj):
 
 
 def _filter_internal(iterable, return_internal):
-    """Filters the internal elements of an iterable"""
+    """Filter the internal elements of an iterable."""
     if return_internal:
         return iterable
     return [el for el in iterable if not el.internal]

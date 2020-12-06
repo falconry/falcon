@@ -62,7 +62,10 @@ def capture_responder_args(req, resp, resource, params):
 
 
 async def capture_responder_args_async(req, resp, resource, params):
-    """An asynchronous version of :meth:`~falcon.testing.capture_responder_args`."""
+    """Before hook for capturing responder arguments.
+
+    An asynchronous version of :meth:`~falcon.testing.capture_responder_args`.
+    """
 
     resource.captured_req = req
     resource.captured_resp = resp
@@ -96,7 +99,7 @@ def set_resp_defaults(req, resp, resource, params):
 
 
 async def set_resp_defaults_async(req, resp, resource, params):
-    """Wraps :meth:`~falcon.testing.set_resp_defaults` in a coroutine."""
+    """Wrap :meth:`~falcon.testing.set_resp_defaults` in a coroutine."""
     set_resp_defaults(req, resp, resource, params)
 
 

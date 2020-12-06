@@ -5,7 +5,7 @@ from .response import Response
 
 
 class CORSMiddleware(object):
-    """CORS Middleware
+    """CORS Middleware.
 
     This middleware provides a simple out-of-the box CORS policy, including handling
     of preflighted requests from the browser.

@@ -7,7 +7,8 @@ from typing import Callable
 
 
 __all__ = [
-    'get_loop',
+    'create_task',
+    'get_running_loop',
     'invoke_coroutine_sync',
     'runs_sync',
     'sync_to_async',
@@ -20,15 +21,24 @@ _one_thread_to_rule_them_all = ThreadPoolExecutor(max_workers=1)
 
 
 try:
-    get_loop = asyncio.get_running_loop
-    """Gets the running asyncio event loop."""
+    get_running_loop = asyncio.get_running_loop
 except AttributeError:  # pragma: nocover
     # NOTE(kgriffs): This branch is definitely covered under py35 and py36
     #   but for some reason the codecov gate doesn't pick this up, hence
     #   the pragma above.
 
-    get_loop = asyncio.get_event_loop
-    """Gets the running asyncio event loop."""
+    get_running_loop = asyncio.get_event_loop
+
+
+try:
+    create_task = asyncio.create_task
+except AttributeError:  # pragma: nocover
+    # NOTE(kgriffs): This branch is definitely covered under py35 and py36
+    #   but for some reason the codecov gate doesn't pick this up, hence
+    #   the pragma above.
+
+    def create_task(coro, name=None):
+        return asyncio.ensure_future(coro)
 
 
 def wrap_sync_to_async_unsafe(func) -> Callable:
@@ -102,13 +112,13 @@ def wrap_sync_to_async(func, threadsafe=None) -> Callable:
 
     @wraps(func)
     async def wrapper(*args, **kwargs):
-        return await get_loop().run_in_executor(executor, partial(func, *args, **kwargs))
+        return await get_running_loop().run_in_executor(executor, partial(func, *args, **kwargs))
 
     return wrapper
 
 
 async def sync_to_async(func, *args, **kwargs):
-    """Schedules a synchronous callable on the loop's default executor and awaits the result.
+    """Schedule a synchronous callable on the loop's default executor and await the result.
 
     This helper makes it easier to call functions that can not be
     ported to use async natively (e.g., functions exported by a database
@@ -145,20 +155,19 @@ async def sync_to_async(func, *args, **kwargs):
         synchronous callable.
     """
 
-    return await get_loop().run_in_executor(None, partial(func, *args, **kwargs))
+    return await get_running_loop().run_in_executor(None, partial(func, *args, **kwargs))
 
 
 def _should_wrap_non_coroutines() -> bool:
-    """Returns True IFF FALCON_ASGI_WRAP_NON_COROUTINES is set in the environ.
+    """Return ``True`` IFF ``FALCON_ASGI_WRAP_NON_COROUTINES`` is set in the environ.
 
     This should only be used for Falcon's own test suite.
     """
-
     return 'FALCON_ASGI_WRAP_NON_COROUTINES' in os.environ
 
 
 def _wrap_non_coroutine_unsafe(func):
-    """Wraps a coroutine using ``wrap_sync_to_async_unsafe()`` for internal test cases.
+    """Wrap a coroutine using ``wrap_sync_to_async_unsafe()`` for internal test cases.
 
     This method is intended for Falcon's own test suite and should not be
     used by apps themselves. It provides a convenient way to reuse sync
@@ -185,7 +194,7 @@ def _wrap_non_coroutine_unsafe(func):
 
 
 def invoke_coroutine_sync(coroutine, *args, **kwargs):
-    """Invokes a coroutine function from a synchronous caller and runs until complete.
+    """Invoke a coroutine function from a synchronous caller and runs until complete.
 
     Warning:
         This method is very inefficient and should only be used
@@ -210,7 +219,7 @@ def invoke_coroutine_sync(coroutine, *args, **kwargs):
 
 
 def runs_sync(coroutine):
-    """A decorator to transform a coroutine function into a synchronous method.
+    """Transform a coroutine function into a synchronous method.
 
     This is achieved by always invoking the decorated coroutine function via
     :meth:`invoke_coroutine_sync`.

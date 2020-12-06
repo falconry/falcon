@@ -86,7 +86,7 @@ def compile_uri_template(template):
 
 
 def map_http_methods(resource, suffix=None):
-    """Maps HTTP methods (e.g., GET, POST) to methods of a resource object.
+    """Map HTTP methods (e.g., GET, POST) to methods of a resource object.
 
     Args:
         resource: An object with *responder* methods, following the naming
@@ -131,7 +131,7 @@ def map_http_methods(resource, suffix=None):
 
 
 def set_default_responders(method_map, asgi=False):
-    """Maps HTTP methods not explicitly defined on a resource to default responders.
+    """Map HTTP methods not explicitly defined on a resource to default responders.
 
     Args:
         method_map: A dict with HTTP methods mapped to responders explicitly
@@ -141,7 +141,10 @@ def set_default_responders(method_map, asgi=False):
     """
 
     # Attach a resource for unsupported HTTP methods
-    allowed_methods = sorted(list(method_map.keys()))
+    allowed_methods = [
+        m for m in sorted(list(method_map.keys()))
+        if m not in constants._META_METHODS
+    ]
 
     if 'OPTIONS' not in method_map:
         # OPTIONS itself is intentionally excluded from the Allow header
@@ -152,5 +155,5 @@ def set_default_responders(method_map, asgi=False):
     na_responder = responders.create_method_not_allowed(allowed_methods, asgi=asgi)
 
     for method in constants.COMBINED_METHODS:
-        if method not in allowed_methods:
+        if method not in method_map:
             method_map[method] = na_responder

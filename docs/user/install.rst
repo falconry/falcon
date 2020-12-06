@@ -100,6 +100,30 @@ Waitress can be good alternative for Windows users if they want quick start usin
 
     $ pip install [gunicorn|uwsgi|waitress]
 
+.. _install_asgi_server:
+
+ASGI Server
+-----------
+
+Conversely, in order to run an ``async``
+:class:`Falcon ASGI app <falcon.asgi.App>`, you will need an
+`ASGI <https://asgi.readthedocs.io/en/latest/>`_ application server
+(Falcon only supports ASGI 3.0+, aka the single-callable application style).
+
+Uvicorn is a popular choice, owing to its fast and stable
+implementation. What is more, Uvicorn is supported on Windows, and on PyPy
+(however, both at a performance loss compared to CPython on Unix-like systems).
+
+Falcon is also regularly tested against Daphne, the current ASGI reference
+server.
+
+For a more in-depth overview of available servers, see also:
+`ASGI Implementations <https://asgi.readthedocs.io/en/latest/implementations.html>`_.
+
+.. code:: bash
+
+    $ pip install [uvicorn|daphne|hypercorn]
+
 Source Code
 -----------
 

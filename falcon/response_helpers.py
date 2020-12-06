@@ -14,6 +14,9 @@
 
 """Utilities for the Response class."""
 
+from falcon.util import uri
+from falcon.util.misc import isascii, secure_filename
+
 
 def header_property(name, doc, transform=None):
     """Create a header getter/setter.
@@ -79,13 +82,31 @@ def format_range(value):
 
 
 def format_content_disposition(value):
-    """Formats a Content-Disposition header given a filename."""
+    """Format a Content-Disposition header given a filename."""
 
-    return 'attachment; filename="' + value + '"'
+    # NOTE(vytas): RFC 6266, Appendix D.
+    #   Include a "filename" parameter when US-ASCII ([US-ASCII]) is
+    #   sufficiently expressive.
+    if isascii(value):
+        return 'attachment; filename="' + value + '"'
+
+    # NOTE(vytas): RFC 6266, Appendix D.
+    #   * Include a "filename*" parameter where the desired filename cannot be
+    #     expressed faithfully using the "filename" form.  Note that legacy
+    #     user agents will not process this, and will fall back to using the
+    #     "filename" parameter's content.
+    #   * When a "filename*" parameter is sent, to also generate a "filename"
+    #     parameter as a fallback for user agents that do not support the
+    #     "filename*" form, if possible.
+    #   * When a "filename" parameter is included as a fallback (as per above),
+    #     "filename" should occur first, due to parsing problems in some
+    #     existing implementations.
+    return "attachment; filename=%s; filename*=UTF-8''%s" % (
+        secure_filename(value), uri.encode_value(value))
 
 
 def format_etag_header(value):
-    """Formats an ETag header, wrap it with " " in case of need."""
+    """Format an ETag header, wrap it with " " in case of need."""
 
     if value[-1] != '\"':
         value = '\"' + value + '\"'
