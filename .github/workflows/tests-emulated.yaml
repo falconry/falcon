@@ -27,7 +27,7 @@ jobs:
         with:
           path: |
             .pip
-          key: python-${{ matrix.architecture }}
+          key: python-${{ matrix.architecture }}-${{ hashFiles('requirements/tests') }}
 
       - name: Set up emulation
         run: |
