@@ -1048,7 +1048,7 @@ class App:
             self._sink_and_static_routes = tuple(self._static_routes + self._sinks)
 
 
-# TODO(myuz): This class is a compatibility alias, and should be removed
+# TODO(myusko): This class is a compatibility alias, and should be removed
 # in the next major release (4.0).
 class API(App):
     """
