@@ -233,6 +233,10 @@ class App(falcon.app.App):
             (default ``False``).
             (See also: :ref:`CORS <cors>`)
 
+        sink_before_static_route (bool): Indicates if the sinks should be processed
+            before (when ``True``) or after (when ``False``) the static routes.
+            This has an effect only if no route was matched. (default ``True``)
+
     Attributes:
         req_options: A set of behavioral options related to incoming
             requests. (See also: :py:class:`~.RequestOptions`)
@@ -257,6 +261,10 @@ class App(falcon.app.App):
 
     _default_responder_bad_request = falcon.responders.bad_request_async
     _default_responder_path_not_found = falcon.responders.path_not_found_async
+
+    __slots__ = (
+        'ws_options',
+    )
 
     def __init__(self, *args, request_type=Request, response_type=Response, **kwargs):
         super().__init__(*args, request_type=request_type, response_type=response_type, **kwargs)
