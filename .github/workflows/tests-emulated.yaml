@@ -39,6 +39,7 @@ jobs:
         env:
           PIP_CACHE_DIR: /github/workspace/.pip/
         with:
+          # NOTE: without 'pip install ujson' tox fails to install it with "Requested ujson from <url> has different version in metadata: '0.0.0'"
           args: |
             /bin/bash -c "
             lscpu &&
@@ -48,6 +49,7 @@ jobs:
             python --version &&
             pip --version &&
             tox --version &&
+            pip install ujson &&
             tox -e py38_cython"
 
       - name: Run tox arm64v8
