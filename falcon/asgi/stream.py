@@ -82,6 +82,8 @@ class BoundedStream:
             request event dictionary when one is available.
 
     Keyword Args:
+        first_event (dict): First ASGI event received from the client,
+            if one was preloaded (default ``None``).
         content_length (int): Expected content length of the stream, derived
             from the Content-Length header in the request (if available).
     """
@@ -95,22 +97,46 @@ class BoundedStream:
         '_receive',
     ]
 
-    def __init__(self, receive, content_length=None):
+    def __init__(self, receive, *, first_event=None, content_length=None):
         self._closed = False
         self._iteration_started = False
 
         self._receive = receive
-        self._buffer = b''
 
-        # NOTE(kgriffs): If length is unknown we just set remaining bytes
-        #   to a ridiculously high number so that we will keep reading
-        #   until we get an event with more_body == False. We do not
-        #   use sys.maxsize because 2**31 on 32-bit systems is not
-        #   a large enough number (someone may have an API that accepts
-        #   multi-GB payloads).
-        self._bytes_remaining = 2**63 if content_length is None else content_length
+        # NOTE(kgriffs): Outside of testing, first_event will always be set
+        #   and we also assume a body is expected, otherwise why bother
+        #   creating a stream object to read it? But just in case this
+        #   object is created in other cases, use "in" here rather than
+        #   EAFP.
+        if first_event and 'body' in first_event:
+            first_chunk = first_event['body']
+        else:
+            first_chunk = b''
 
-        self._pos = 0
+        if content_length is None:
+            self._buffer = first_chunk
+
+            # NOTE(kgriffs): If length is unknown we just set remaining bytes
+            #   to a ridiculously high number so that we will keep reading
+            #   until we get an event with more_body == False. We do not
+            #   use sys.maxsize because 2**31 on 32-bit systems is not
+            #   a large enough number (someone may have an API that accepts
+            #   multi-GB payloads).
+            self._bytes_remaining = 2**63
+        else:
+            if len(first_chunk) > content_length:
+                self._buffer = first_chunk[:content_length]
+            else:
+                self._buffer = first_chunk
+
+            self._bytes_remaining = content_length - len(self._buffer)
+
+        self._pos = len(self._buffer)
+
+        if first_event and self._bytes_remaining:
+            # NOTE(kgriffs): Override if the event says there's no more data
+            if not ('more_body' in first_event and first_event['more_body']):
+                self._bytes_remaining = 0
 
     def __aiter__(self):
         # NOTE(kgriffs): This returns an async generator, but that's OK because

@@ -113,10 +113,15 @@ class ASGIRequestEventEmitter:
             (default ``b''``).
         chunk_size (int): The maximum number of bytes to include in
             a single http.request event (default 4096).
+        emit_empty_chunks (bool): Set to ``False`` to disable emitting
+            an occasional empty byte string as a body chunk (default ``True``).
         disconnect_at (float): The Unix timestamp after which to begin
-            emitting http.disconnect events (default now + 30s). The
+            emitting ``'http.disconnect'`` events (default now + 30s). The
             value may be either an ``int`` or a ``float``, depending
-            on the precision required.
+            on the precision required. Setting `disconnect_at` to
+            ``0`` is treated as a special case, and will result in an
+            ``'http.disconnect'`` event being immediately emitted (rather than
+            first emitting an ``'http.request'`` event).
 
     Attributes:
         disconnected (bool): Returns ``True`` if the simulated client
@@ -131,6 +136,7 @@ class ASGIRequestEventEmitter:
         self,
         body: Union[str, bytes] = None,
         chunk_size: int = None,
+        emit_empty_chunks: bool = True,
         disconnect_at: Union[int, float] = None
     ):
         if body is None:
@@ -146,6 +152,7 @@ class ASGIRequestEventEmitter:
 
         self._body = body  # type: Optional[bytes]
         self._chunk_size = chunk_size
+        self._emit_empty_chunks = emit_empty_chunks
         self._disconnect_at = disconnect_at
         self._disconnected = False
         self._exhaust_body = True
@@ -175,9 +182,17 @@ class ASGIRequestEventEmitter:
         self._disconnected = True
 
     async def emit(self) -> Dict[str, Any]:
+        # NOTE(kgriffs): Special case: if we are immediately disconnected,
+        #   the first event should be 'http.disconnnect'
+        if self._disconnect_at == 0:
+            return {'type': EventType.HTTP_DISCONNECT}
+
         #
         # NOTE(kgriffs): Based on my reading of the ASGI spec, at least one
-        #   'http.request' event should be emitted before 'http.disconnect'.
+        #   'http.request' event should be emitted before 'http.disconnect'
+        #   for normal requests. However, the server may choose to
+        #   immediately abandon a connection for some reason, in which case
+        #   an 'http.request' event may never be sent.
         #
         #   See also: https://asgi.readthedocs.io/en/latest/specs/main.html#events
         #
@@ -192,33 +207,34 @@ class ASGIRequestEventEmitter:
 
         event = {'type': EventType.HTTP_REQUEST}  # type: Dict[str, Any]
 
-        # NOTE(kgriffs): Return a couple variations on empty chunks
-        #   every time, to ensure test coverage.
-        if not self._emitted_empty_chunk_a:
-            self._emitted_empty_chunk_a = True
-            event['more_body'] = True
-            return event
+        if self._emit_empty_chunks:
+            # NOTE(kgriffs): Return a couple variations on empty chunks
+            #   every time, to ensure test coverage.
+            if not self._emitted_empty_chunk_a:
+                self._emitted_empty_chunk_a = True
+                event['more_body'] = True
+                return event
 
-        if not self._emitted_empty_chunk_b:
-            self._emitted_empty_chunk_b = True
-            event['more_body'] = True
-            event['body'] = b''
-            return event
-
-        # NOTE(kgriffs): Part of the time just return an
-        #   empty chunk to make sure the app handles that
-        #   correctly.
-        if self._toggle_branch('return_empty_chunk'):
-            event['more_body'] = True
-
-            # NOTE(kgriffs): Since ASGI specifies that
-            #   'body' is optional, we toggle whether
-            #   or not to explicitly set it to b'' to ensure
-            #   the app handles both correctly.
-            if self._toggle_branch('explicit_empty_body_1'):
+            if not self._emitted_empty_chunk_b:
+                self._emitted_empty_chunk_b = True
+                event['more_body'] = True
                 event['body'] = b''
+                return event
 
-            return event
+            # NOTE(kgriffs): Part of the time just return an
+            #   empty chunk to make sure the app handles that
+            #   correctly.
+            if self._toggle_branch('return_empty_chunk'):
+                event['more_body'] = True
+
+                # NOTE(kgriffs): Since ASGI specifies that
+                #   'body' is optional, we toggle whether
+                #   or not to explicitly set it to b'' to ensure
+                #   the app handles both correctly.
+                if self._toggle_branch('explicit_empty_body_1'):
+                    event['body'] = b''
+
+                return event
 
         chunk = self._body[:self._chunk_size]
         self._body = self._body[self._chunk_size:] or None
@@ -299,7 +315,7 @@ class ASGIResponseEventCollector:
         if not isinstance(event_type, str):
             raise TypeError('ASGI event type must be a Unicode string')
 
-        if event_type == 'http.response.start':
+        if event_type == EventType.HTTP_RESPONSE_START:
             for name, value in event.get('headers', []):
                 if not isinstance(name, bytes):
                     raise TypeError('ASGI header names must be byte strings')
@@ -317,7 +333,7 @@ class ASGIResponseEventCollector:
             if not isinstance(self.status, int):
                 raise TypeError('ASGI status must be an int')
 
-        elif event_type == 'http.response.body':
+        elif event_type == EventType.HTTP_RESPONSE_BODY:
             chunk = event.get('body', b'')
             if not isinstance(chunk, bytes):
                 raise TypeError('ASGI body content must be a byte string')
