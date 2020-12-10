@@ -108,13 +108,8 @@ def test_read_all(body, extra_body, set_content_length):
         s.close()
         assert s.closed
 
-    import time
-
-    # for t in (test_iteration, test_readall_a, test_readall_b, test_readall_c, test_readall_d):
-    for t in (test_iteration, test_readall_a):
-        s = time.time()
+    for t in (test_iteration, test_readall_a, test_readall_b, test_readall_c, test_readall_d):
         falcon.invoke_coroutine_sync(t)
-        print(f'Elapsed: {time.time() - s}')
 
 
 def test_filelike():
