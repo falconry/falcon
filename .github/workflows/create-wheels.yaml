@@ -65,11 +65,8 @@ jobs:
           FALCON_ASGI_WRAP_NON_COROUTINES: Y
           FALCON_TESTING_SESSION: Y
         run: |
-          pip install -f dist --no-index falcon
-          python -c 'import sys; sys.path.pop(0); from falcon.cyutil import misc, reader, uri'
-          pip install 'setuptools>=44'
-          pip install -r requirements/tests
-          pytest -q tests ${{ matrix.pytest-extra }}
+          pip install 'tox>=3.20'
+          tox -e wheel_check -- ${{ matrix.pytest-extra }}
 
       - name: Get wheel name
         id: wheel-name
@@ -180,11 +177,8 @@ jobs:
           FALCON_ASGI_WRAP_NON_COROUTINES: Y
           FALCON_TESTING_SESSION: Y
         run: |
-          pip install 'setuptools>=44'
-          pip install -f dist --no-index falcon
-          python -c 'import sys; sys.path.pop(0); from falcon.cyutil import misc, reader, uri'
-          pip install -r requirements/tests
-          pytest -q tests ${{ matrix.pytest-extra }}
+          pip install 'tox>=3.20'
+          tox -e wheel_check -- ${{ matrix.pytest-extra }}
 
       - name: Get wheel names
         id: wheel-name
@@ -359,14 +353,8 @@ jobs:
           args: |
             bash -c "
             export PATH=/opt/python/${{ matrix.python-version }}/bin:$PATH &&
-            yum install -y openssl-devel &&
-            pip install -f dist --no-index falcon &&
-            pip install 'setuptools>=44' 'cryptography<3.2' &&
-            python -c 'import sys; sys.path.pop(0); from falcon.cyutil import misc, reader, uri' &&
-            [[ $PYTHON_VERSION != 'cp35-cp35m' ]] && (
-            pip install -r requirements/tests &&
-            pytest -q tests ${{ matrix.pytest-extra }}
-            ) || echo 'Install requirements fails on python 3.5 on arm. Skipping tests.'
+            pip install 'tox>=3.20' 'pip>=20' &&
+            tox -e wheel_check -- ${{ matrix.pytest-extra }}
             "
 
       - name: Create wheel for manylinux 2014 for s390x
@@ -389,12 +377,8 @@ jobs:
           args: |
             bash -c "
             export PATH=/opt/python/${{ matrix.python-version }}/bin:$PATH &&
-            yum install -y openssl-devel &&
-            pip install -f dist --no-index falcon &&
-            pip install 'setuptools>=44' 'cryptography<3.2' &&
-            python -c 'import sys; sys.path.pop(0); from falcon.cyutil import misc, reader, uri' &&
-            pip install -r requirements/tests &&
-            pytest -q tests ${{ matrix.pytest-extra }}
+            pip install 'tox>=3.20' 'pip>=20' &&
+            tox -e wheel_check -- ${{ matrix.pytest-extra }}
             "
 
       - name: Get wheel name
