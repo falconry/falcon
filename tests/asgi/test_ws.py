@@ -690,7 +690,7 @@ async def test_unexpected_param(conductor):
     b'DEADBEEF',
     ['SIS508'],
     [],
-    (),
+    tuple(),
     {},
 
     'OK',  # control
