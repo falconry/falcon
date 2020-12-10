@@ -101,7 +101,7 @@ class BoundedStream:
         '_receive',
     ]
 
-    def __init__(self, receive, *, first_event=None, content_length=None):
+    def __init__(self, receive, first_event=None, content_length=None):
         self._closed = False
         self._iteration_started = False
 
