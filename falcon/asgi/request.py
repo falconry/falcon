@@ -44,6 +44,8 @@ class Request(falcon.request.Request):
             event dictionary when one is available.
 
     Keyword Args:
+        first_event (dict): First ASGI event received from the client,
+            if one was preloaded (default ``None``).
         options (falcon.request.RequestOptions): Set of global request options
             passed from the App handler.
 
@@ -345,12 +347,13 @@ class Request(falcon.request.Request):
     __slots__ = [
         '_asgi_headers',
         '_asgi_server_cached',
+        '_first_event',
         '_receive',
         '_stream',
         'scope',
     ]
 
-    def __init__(self, scope, receive, options=None):
+    def __init__(self, scope, receive, first_event=None, options=None):
 
         # =====================================================================
         # Prepare headers
@@ -453,6 +456,7 @@ class Request(falcon.request.Request):
 
         self._stream = None
         self._receive = receive
+        self._first_event = first_event
 
         # =====================================================================
         # Create a context object
@@ -522,7 +526,11 @@ class Request(falcon.request.Request):
             )
 
         if not self._stream:
-            self._stream = BoundedStream(self._receive, self.content_length)
+            self._stream = BoundedStream(
+                self._receive,
+                first_event=self._first_event,
+                content_length=self.content_length
+            )
 
         return self._stream
 

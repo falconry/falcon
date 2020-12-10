@@ -113,3 +113,10 @@ def test_cookies_jar():
     response_two = client.simulate_post('/jars', cookies=response_one.cookies)
 
     assert response_two.status == falcon.HTTP_200
+
+
+def test_immediate_disconnect():
+    client = testing.TestClient(_asgi_test_app.application)
+
+    with pytest.raises(ConnectionError):
+        client.simulate_get('/', asgi_disconnect_ttl=0)

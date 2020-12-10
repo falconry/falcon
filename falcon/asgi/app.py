@@ -233,6 +233,10 @@ class App(falcon.app.App):
             (default ``False``).
             (See also: :ref:`CORS <cors>`)
 
+        sink_before_static_route (bool): Indicates if the sinks should be processed
+            before (when ``True``) or after (when ``False``) the static routes.
+            This has an effect only if no route was matched. (default ``True``)
+
     Attributes:
         req_options: A set of behavioral options related to incoming
             requests. (See also: :py:class:`~.RequestOptions`)
@@ -257,6 +261,10 @@ class App(falcon.app.App):
 
     _default_responder_bad_request = falcon.responders.bad_request_async
     _default_responder_path_not_found = falcon.responders.path_not_found_async
+
+    __slots__ = (
+        'ws_options',
+    )
 
     def __init__(self, *args, request_type=Request, response_type=Response, **kwargs):
         super().__init__(*args, request_type=request_type, response_type=response_type, **kwargs)
@@ -351,8 +359,21 @@ class App(falcon.app.App):
                 f'The ASGI http scope version {spec_version} is not supported.'
             )
 
+        # NOTE(kgriffs): Per the ASGI spec, we should not proceed with request
+        #   processing until after we receive an initial 'http.request' event.
+        first_event = await receive()
+        first_event_type = first_event['type']
+        if first_event_type == EventType.HTTP_DISCONNECT:
+            # NOTE(kgriffs): Bail out immediately to minimize resource usage
+            return
+
+        # NOTE(kgriffs): This is the only other type defined by the ASGI spec,
+        #   but we just assert it to make it easier to track down a potential
+        #   incompatibility with a future spec version.
+        assert first_event_type == EventType.HTTP_REQUEST
+
+        req = self._request_type(scope, receive, first_event=first_event, options=self.req_options)
         resp = self._response_type(options=self.resp_options)
-        req = self._request_type(scope, receive, options=self.req_options)
 
         if self.req_options.auto_parse_form_urlencoded:
             raise UnsupportedError(
@@ -841,8 +862,10 @@ class App(falcon.app.App):
     async def _handle_websocket(self, ver, scope, receive, send):
         first_event = await receive()
         if first_event['type'] != EventType.WS_CONNECT:
-            # The handshake was abandoned or this is a message we don't
-            #   support, so bail out.
+            # NOTE(kgriffs): The handshake was abandoned or this is a message
+            #   we don't support, so bail out. This also fulfills the ASGI
+            #   spec requirement to only process the request after
+            #   receiving and verifying the first event.
             await send({
                 'type': EventType.WS_CLOSE,
                 'code': WSCloseCode.SERVER_ERROR
