@@ -41,10 +41,15 @@ def test_read_all(body, extra_body, set_content_length):
 
     async def test_iteration():
         s = stream()
-        assert b''.join([chunk async for chunk in s]) == expected_body
+
+        chunks = [chunk async for chunk in s]
+        if not (expected_body or extra_body):
+            assert not chunks
+
+        assert b''.join(chunks) == expected_body
         assert await s.read() == b''
         assert await s.readall() == b''
-        assert [chunk async for chunk in s][0] == b''
+        assert not [chunk async for chunk in s]
         assert s.tell() == len(expected_body)
         assert s.eof
 
@@ -53,7 +58,7 @@ def test_read_all(body, extra_body, set_content_length):
         assert await s.readall() == expected_body
         assert await s.read() == b''
         assert await s.readall() == b''
-        assert [chunk async for chunk in s][0] == b''
+        assert not [chunk async for chunk in s]
         assert s.tell() == len(expected_body)
         assert s.eof
 
@@ -62,7 +67,7 @@ def test_read_all(body, extra_body, set_content_length):
         assert await s.read() == expected_body
         assert await s.readall() == b''
         assert await s.read() == b''
-        assert [chunk async for chunk in s][0] == b''
+        assert not [chunk async for chunk in s]
         assert s.tell() == len(expected_body)
         assert s.eof
 
@@ -97,7 +102,7 @@ def test_read_all(body, extra_body, set_content_length):
         assert await s.read(-1) == b''
         assert await s.readall() == b''
         assert await s.read() == b''
-        assert [chunk async for chunk in s][0] == b''
+        assert not [chunk async for chunk in s]
 
         assert await s.read(-2) == b''
 
