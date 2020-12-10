@@ -1,0 +1,434 @@
+name: Create wheel
+
+on:
+  # run when a release has been created
+  release:
+    types: [created]
+
+env:
+  # set this so the falcon test uses the installed version and not the local one
+  PYTHONNOUSERSITE: 1
+  # comment TWINE_REPOSITORY_URL to use the real pypi. NOTE: change also the secret used in TWINE_PASSWORD
+  TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
+
+jobs:
+  # four jobs are defined make-wheel-win-osx, make-wheel-linux, make-source-dist and make-emulated-wheels
+  # the wheels jobs do the the same steps, but linux wheels need to be build to target manylinux
+  make-wheel-win-osx:
+    name: ${{ matrix.python-version }}-${{ matrix.architecture }}-${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - "windows-latest"
+          - "macos-latest"
+        python-version:
+          - "3.5"
+          - "3.6"
+          - "3.7"
+          - "3.8"
+          - "3.9"
+        architecture:
+          - x64
+
+        include:
+          - python-version: "3.5"
+            pytest-extra: --ignore=tests/asgi
+
+      fail-fast: false
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: ${{ matrix.architecture }}
+
+      - name: Create wheel
+        # create the wheel using --no-use-pep517 since locally we have pyproject
+        # this flag should be removed once falcon supports pep517
+        # `--no-deps` is used to only generate the wheel for the current library. Redundant in falcon since it has no dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip --version
+          pip install 'setuptools>=44' 'wheel>=0.34' 'cython>=0.29.21'
+          pip wheel -w dist --no-use-pep517 -v --no-deps .
+
+      - name: Check created wheel
+        # - install the created wheel without using the pypi index
+        # - check the cython extension
+        # - runs the tests
+        env:
+          FALCON_ASGI_WRAP_NON_COROUTINES: Y
+          FALCON_TESTING_SESSION: Y
+        run: |
+          pip install -f dist --no-index falcon
+          python -c 'import sys; sys.path.pop(0); from falcon.cyutil import misc, reader, uri'
+          pip install 'setuptools>=44'
+          pip install -r requirements/tests
+          pytest -q tests ${{ matrix.pytest-extra }}
+
+      - name: Get wheel name
+        id: wheel-name
+        shell: bash
+        # the command `echo "::set-output ...` is used to create an step output that can be used in following steps
+        # ref https://github.community/t5/GitHub-Actions/Using-the-output-of-run-inside-of-if-condition/td-p/33920
+        run: |
+          echo ::set-output name=wheel::`ls dist`
+
+      - name: Upload wheel to release
+        # upload the generated wheel to the github release.
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # this is a release to the event is called release: https://help.github.com/en/actions/reference/events-that-trigger-workflows#release-event-release
+          # the release event has the structure of this response https://developer.github.com/v3/repos/releases/#create-a-release
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: dist/${{ steps.wheel-name.outputs.wheel }}
+          asset_name: ${{ steps.wheel-name.outputs.wheel }}
+          asset_content_type: application/zip # application/octet-stream
+
+      - name: Publish wheel
+        # the action https://github.com/marketplace/actions/pypi-publish runs only on linux and we cannot specify
+        # additional options
+        env:
+          TWINE_USERNAME: __token__
+          # replace TWINE_PASSWORD with token for real pypi
+          TWINE_PASSWORD: ${{ secrets.test_pypi_token }}
+          # TWINE_PASSWORD: ${{ secrets.pypi_token }}
+        run: |
+          pip install -U twine
+          twine upload --skip-existing dist/*
+
+  make-wheel-linux:
+    # see also comments in the make-wheel-win-osx job for details on the steps
+    name: ${{ matrix.python-version }}-${{ matrix.architecture }}-${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - "ubuntu-latest"
+        python-version:
+          # the versions are <python tag>-<abi tag> as specified in PEP 425.
+          - cp35-cp35m
+          - cp36-cp36m
+          - cp37-cp37m
+          - cp38-cp38
+          - cp39-cp39
+        architecture:
+          - x64
+
+        include:
+          - python-version: cp35-cp35m
+            pytest-extra: --ignore=tests/asgi
+
+      fail-fast: false
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Get python version
+        id: linux-py-version
+        env:
+          py_tag: ${{ matrix.python-version }}
+        run: |
+          version="${py_tag: 2:1}.${py_tag: 3:1}"
+          echo $version
+          echo "::set-output name=python-version::$version"
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ steps.linux-py-version.outputs.python-version }}
+          architecture: ${{ matrix.architecture }}
+
+      - name: Create wheel for manylinux 2010 and 1
+        # this step uses the image provided by pypa here https://github.com/pypa/manylinux to generate the wheels on linux
+        # the action uses the image for manylinux2010 but can generate also a manylinux1 wheel
+        # change the tag of this image to change the image used
+        uses: RalfG/python-wheels-manylinux-build@v0.3.2-manylinux2010_x86_64
+        # this action generates 3 wheels in dist/. linux manylinux1 and manylinux2010
+        with:
+          python-versions: ${{ matrix.python-version }}
+          build-requirements: "setuptools>=44 wheel>=0.34 cython>=0.29.21"
+          # Create the wheel using --no-use-pep517 since locally we have pyproject
+          # This flag should be removed once falcon supports pep517
+          # `--no-deps` is used to only generate the wheel for the current library. Redundant in falcon since it has no dependencies
+          pip-wheel-args: "-w ./dist --no-use-pep517 -v --no-deps"
+
+      - name: Create wheel for manylinux 2014
+        # as previous step but for manylinux2014
+        uses: RalfG/python-wheels-manylinux-build@v0.3.2-manylinux2014_x86_64
+        # this action generates 2 wheels in dist/. linux, manylinux2014
+        with:
+          # Remove previous original wheel just to be sure it is recreated. Should not be needed
+          pre-build-command: "rm ./dist/*-linux*.whl"
+          python-versions: ${{ matrix.python-version }}
+          build-requirements: "setuptools>=44 wheel>=0.34 cython>=0.29.21"
+          pip-wheel-args: "-w ./dist --no-use-pep517 -v --no-deps"
+
+      - name: Check created wheel
+        # - install the created wheel without using the pypi index
+        # - check the cython extension
+        # - runs the tests
+        env:
+          FALCON_ASGI_WRAP_NON_COROUTINES: Y
+          FALCON_TESTING_SESSION: Y
+        run: |
+          pip install 'setuptools>=44'
+          pip install -f dist --no-index falcon
+          python -c 'import sys; sys.path.pop(0); from falcon.cyutil import misc, reader, uri'
+          pip install -r requirements/tests
+          pytest -q tests ${{ matrix.pytest-extra }}
+
+      - name: Get wheel names
+        id: wheel-name
+        shell: bash
+        # the wheel creation step generates 4 wheels: linux, manylinux1, manylinux2010 and manylinux2014
+        # Pypi accepts only the manylinux versions
+        run: |
+          cd dist
+          ls -l
+          echo ::set-output name=wheel1::`ls *manylinux1*`
+          echo ::set-output name=wheel2010::`ls *manylinux2010*`
+          echo ::set-output name=wheel2014::`ls *manylinux2014*`
+
+      - name: Upload wheel manylinux1 to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: dist/${{ steps.wheel-name.outputs.wheel1 }}
+          asset_name: ${{ steps.wheel-name.outputs.wheel1 }}
+          asset_content_type: application/zip # application/octet-stream
+
+      - name: Upload wheel manylinux2010 to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: dist/${{ steps.wheel-name.outputs.wheel2010 }}
+          asset_name: ${{ steps.wheel-name.outputs.wheel2010 }}
+          asset_content_type: application/zip # application/octet-stream
+
+      - name: Upload wheel manylinux2014 to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: dist/${{ steps.wheel-name.outputs.wheel2014 }}
+          asset_name: ${{ steps.wheel-name.outputs.wheel2014 }}
+          asset_content_type: application/zip # application/octet-stream
+
+      - name: Publish wheel
+        # We upload all manylinux wheels. pip will download the appropriate one according to the system.
+        env:
+          TWINE_USERNAME: __token__
+          # replace TWINE_PASSWORD with token for real pypi
+          TWINE_PASSWORD: ${{ secrets.test_pypi_token }}
+          # TWINE_PASSWORD: ${{ secrets.pypi_token }}
+        run: |
+          pip install -U twine
+          twine upload --skip-existing dist/*manylinux*
+
+  make-source-dist:
+    # see also comments in the make-wheel-win-osx job for details on the steps
+    name: sdist-${{ matrix.python-version }}-${{ matrix.architecture }}-${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - "ubuntu-latest"
+        python-version:
+          - "3.9"
+        architecture:
+          - x64
+
+      fail-fast: false
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: ${{ matrix.architecture }}
+
+      - name: Create sdist
+        # TODO should we generate the c files? Only for pyx files or also for py files?
+        run: |
+          python -m pip install --upgrade pip
+          pip --version
+          pip install setuptools>=44 wheel>=0.34 cython>=0.29.21
+          # cythonize -3 falcon/**/*.pyx
+          python setup.py sdist --dist-dir dist
+
+      - name: Get sdist name
+        id: sdist-name
+        shell: bash
+        run: |
+          echo ::set-output name=sdist::`ls dist`
+
+      - name: Upload sdist to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: dist/${{ steps.sdist-name.outputs.sdist }}
+          asset_name: ${{ steps.sdist-name.outputs.sdist }}
+          asset_content_type: application/zip # application/octet-stream
+
+      - name: Publish sdist
+        env:
+          TWINE_USERNAME: __token__
+          # replace TWINE_PASSWORD with token for real pypi
+          TWINE_PASSWORD: ${{ secrets.test_pypi_token }}
+          # TWINE_PASSWORD: ${{ secrets.pypi_token }}
+        run: |
+          pip install -U twine
+          twine upload --skip-existing dist/*
+
+  make-emulated-wheels:
+    # see also comments in the make-wheel-linux job for details on the steps
+    name: ${{ matrix.python-version }}-${{ matrix.architecture }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os:
+          - "ubuntu-latest"
+        python-version:
+          # the versions are <python tag>-<abi tag> as specified in PEP 425.
+          - cp35-cp35m
+          - cp36-cp36m
+          - cp37-cp37m
+          - cp38-cp38
+          - cp39-cp39
+        architecture:
+          - aarch64
+          - s390x
+
+        include:
+          - python-version: cp35-cp35m
+            pytest-extra: --ignore=tests/asgi
+
+      fail-fast: false
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Cache wheels
+        uses: actions/cache@v2
+        with:
+          path: .pip
+          key: ${{ matrix.python-version }}-${{ matrix.architecture }}-pip-${{ hashFiles('requirements/tests') }}
+
+      - name: Set up emulation
+        run: |
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+      - name: Create wheel for manylinux 2014 for arm
+        if: ${{ matrix.architecture == 'aarch64' }}
+        uses: RalfG/python-wheels-manylinux-build@v0.3.2-manylinux2014_aarch64
+        # this action generates 2 wheels in dist/. linux manylinux1 and manylinux2010
+        with:
+          python-versions: ${{ matrix.python-version }}
+          build-requirements: "setuptools>=44 wheel>=0.34 cython>=0.29.21"
+          pip-wheel-args: "-w ./dist --no-use-pep517 -v --no-deps"
+
+      - name: Check created wheel for arm
+        if: ${{ matrix.architecture == 'aarch64' }}
+        uses: docker://quay.io/pypa/manylinux2014_aarch64
+        env:
+          FALCON_ASGI_WRAP_NON_COROUTINES: Y
+          FALCON_TESTING_SESSION: Y
+          PIP_CACHE_DIR: /github/workspace/.pip/
+          PYTHON_VERSION: ${{ matrix.python-version }}
+        with:
+          args: |
+            bash -c "
+            export PATH=/opt/python/${{ matrix.python-version }}/bin:$PATH &&
+            yum install -y openssl-devel &&
+            pip install -f dist --no-index falcon &&
+            pip install 'setuptools>=44' 'cryptography<3.2' &&
+            python -c 'import sys; sys.path.pop(0); from falcon.cyutil import misc, reader, uri' &&
+            [[ $PYTHON_VERSION != 'cp35-cp35m' ]] && (
+            pip install -r requirements/tests &&
+            pytest -q tests ${{ matrix.pytest-extra }}
+            ) || echo 'Install requirements fails on python 3.5 on arm. Skipping tests.'
+            "
+
+      - name: Create wheel for manylinux 2014 for s390x
+        if: ${{ matrix.architecture == 's390x' }}
+        uses: RalfG/python-wheels-manylinux-build@v0.3.2-manylinux2014_s390x
+        # this action generates 2 wheels in dist/. linux manylinux1 and manylinux2010
+        with:
+          python-versions: ${{ matrix.python-version }}
+          build-requirements: "setuptools>=44 wheel>=0.34 cython>=0.29.21"
+          pip-wheel-args: "-w ./dist --no-use-pep517 -v --no-deps"
+
+      - name: Check created wheel for s390x
+        if: ${{ matrix.architecture == 's390x' }}
+        uses: docker://quay.io/pypa/manylinux2014_s390x
+        env:
+          FALCON_ASGI_WRAP_NON_COROUTINES: Y
+          FALCON_TESTING_SESSION: Y
+          PIP_CACHE_DIR: /github/workspace/.pip/
+        with:
+          args: |
+            bash -c "
+            export PATH=/opt/python/${{ matrix.python-version }}/bin:$PATH &&
+            yum install -y openssl-devel &&
+            pip install -f dist --no-index falcon &&
+            pip install 'setuptools>=44' 'cryptography<3.2' &&
+            python -c 'import sys; sys.path.pop(0); from falcon.cyutil import misc, reader, uri' &&
+            pip install -r requirements/tests &&
+            pytest -q tests ${{ matrix.pytest-extra }}
+            "
+
+      - name: Get wheel name
+        id: wheel-name
+        shell: bash
+        # the wheel creation step generates 2 wheels: linux and manylinux2014
+        # Pypi accepts only the manylinux version
+        run: |
+          cd dist
+          ls -l
+          echo ::set-output name=wheel2014::`ls *manylinux2014*`
+
+      - name: Upload wheel manylinux2014 to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: dist/${{ steps.wheel-name.outputs.wheel2014 }}
+          asset_name: ${{ steps.wheel-name.outputs.wheel2014 }}
+          asset_content_type: application/zip # application/octet-stream
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+          architecture: "x64"
+
+      - name: Publish wheel
+        env:
+          TWINE_USERNAME: __token__
+          # replace TWINE_PASSWORD with token for real pypi
+          TWINE_PASSWORD: ${{ secrets.test_pypi_token }}
+          # TWINE_PASSWORD: ${{ secrets.pypi_token }}
+        run: |
+          pip install -U twine
+          twine upload --skip-existing dist/*manylinux*

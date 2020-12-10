@@ -10,8 +10,10 @@ from urllib.parse import quote, unquote_plus
 import pytest
 
 import falcon
+from falcon import media
 from falcon import testing
 from falcon import util
+from falcon.constants import MEDIA_JSON
 from falcon.util import deprecation, json, misc, structures, uri
 
 from _util import create_app, to_coroutine  # NOQA
@@ -70,16 +72,14 @@ class TestFalconUtils:
         assert delta_sec <= 1
 
     def test_dt_to_http(self):
-        assert falcon.dt_to_http(
-            datetime(2013, 4, 4)) == 'Thu, 04 Apr 2013 00:00:00 GMT'
+        assert falcon.dt_to_http(datetime(2013, 4, 4)) == 'Thu, 04 Apr 2013 00:00:00 GMT'
 
         assert falcon.dt_to_http(
             datetime(2013, 4, 4, 10, 28, 54)
         ) == 'Thu, 04 Apr 2013 10:28:54 GMT'
 
     def test_http_date_to_dt(self):
-        assert falcon.http_date_to_dt(
-            'Thu, 04 Apr 2013 00:00:00 GMT') == datetime(2013, 4, 4)
+        assert falcon.http_date_to_dt('Thu, 04 Apr 2013 00:00:00 GMT') == datetime(2013, 4, 4)
 
         assert falcon.http_date_to_dt(
             'Thu, 04 Apr 2013 10:28:54 GMT'
@@ -213,8 +213,7 @@ class TestFalconUtils:
 
         assert uri.decode('This thing is %C3%A7') == 'This thing is \u00e7'
 
-        assert uri.decode(
-            'This thing is %C3%A7%E2%82%AC') == 'This thing is \u00e7\u20ac'
+        assert uri.decode('This thing is %C3%A7%E2%82%AC') == 'This thing is \u00e7\u20ac'
 
         assert uri.decode('ab%2Fcd') == 'ab/cd'
 
@@ -358,8 +357,7 @@ class TestFalconUtils:
 
     def test_parse_host(self):
         assert uri.parse_host('::1') == ('::1', None)
-        assert uri.parse_host('2001:ODB8:AC10:FE01::') == (
-            '2001:ODB8:AC10:FE01::', None)
+        assert uri.parse_host('2001:ODB8:AC10:FE01::') == ('2001:ODB8:AC10:FE01::', None)
         assert uri.parse_host(
             '2001:ODB8:AC10:FE01::', default_port=80
         ) == ('2001:ODB8:AC10:FE01::', 80)
@@ -368,29 +366,22 @@ class TestFalconUtils:
 
         assert uri.parse_host(ipv6_addr) == (ipv6_addr, None)
         assert uri.parse_host('[' + ipv6_addr + ']') == (ipv6_addr, None)
-        assert uri.parse_host(
-            '[' + ipv6_addr + ']:28080') == (ipv6_addr, 28080)
+        assert uri.parse_host('[' + ipv6_addr + ']:28080') == (ipv6_addr, 28080)
         assert uri.parse_host('[' + ipv6_addr + ']:8080') == (ipv6_addr, 8080)
         assert uri.parse_host('[' + ipv6_addr + ']:123') == (ipv6_addr, 123)
         assert uri.parse_host('[' + ipv6_addr + ']:42') == (ipv6_addr, 42)
 
         assert uri.parse_host('173.203.44.122') == ('173.203.44.122', None)
-        assert uri.parse_host('173.203.44.122', default_port=80) == (
-            '173.203.44.122', 80)
-        assert uri.parse_host('173.203.44.122:27070') == (
-            '173.203.44.122', 27070)
+        assert uri.parse_host('173.203.44.122', default_port=80) == ('173.203.44.122', 80)
+        assert uri.parse_host('173.203.44.122:27070') == ('173.203.44.122', 27070)
         assert uri.parse_host('173.203.44.122:123') == ('173.203.44.122', 123)
         assert uri.parse_host('173.203.44.122:42') == ('173.203.44.122', 42)
 
         assert uri.parse_host('example.com') == ('example.com', None)
-        assert uri.parse_host('example.com', default_port=443) == (
-            'example.com', 443)
-        assert uri.parse_host('falcon.example.com') == (
-            'falcon.example.com', None)
-        assert uri.parse_host('falcon.example.com:9876') == (
-            'falcon.example.com', 9876)
-        assert uri.parse_host('falcon.example.com:42') == (
-            'falcon.example.com', 42)
+        assert uri.parse_host('example.com', default_port=443) == ('example.com', 443)
+        assert uri.parse_host('falcon.example.com') == ('falcon.example.com', None)
+        assert uri.parse_host('falcon.example.com:9876') == ('falcon.example.com', 9876)
+        assert uri.parse_host('falcon.example.com:42') == ('falcon.example.com', 42)
 
     def test_get_http_status_warns(self):
         with pytest.warns(UserWarning, match='Please use falcon'):
@@ -558,8 +549,7 @@ class TestFalconUtils:
 @pytest.mark.parametrize(
     'protocol,method',
     zip(
-        ['https'] * len(falcon.HTTP_METHODS) + ['http'] *
-        len(falcon.HTTP_METHODS),
+        ['https'] * len(falcon.HTTP_METHODS) + ['http'] * len(falcon.HTTP_METHODS),
         falcon.HTTP_METHODS * 2
     )
 )
@@ -673,8 +663,7 @@ class TestFalconTestingUtils:
 
         assert resource.captured_req.auth == headers['Authorization']
         assert resource.captured_req.accept == headers['Accept']
-        assert resource.captured_req.get_header(
-            'X-Override-Me') == override_after
+        assert resource.captured_req.get_header('X-Override-Me') == override_after
 
     def test_status(self, app):
         resource = testing.SimpleTestResource(status=falcon.HTTP_702)
@@ -726,8 +715,7 @@ class TestFalconTestingUtils:
         app.add_route('/', SomeResource())
         client = testing.TestClient(app)
 
-        result = client.simulate_get(
-            query_string='oid=42&detailed=no&things=1')
+        result = client.simulate_get(query_string='oid=42&detailed=no&things=1')
         assert result.json['oid'] == 42
         assert not result.json['detailed']
         assert result.json['things'] == [1]
@@ -798,15 +786,13 @@ class TestFalconTestingUtils:
         },
     ])
     def test_simulate_json_body(self, asgi, document):
-        resource = testing.SimpleTestResourceAsync(
-        ) if asgi else testing.SimpleTestResource()
+        resource = testing.SimpleTestResourceAsync() if asgi else testing.SimpleTestResource()
         app = create_app(asgi)
         app.add_route('/', resource)
 
         json_types = ('application/json', 'application/json; charset=UTF-8')
         client = testing.TestClient(app)
-        client.simulate_post('/', json=document,
-                             headers={'capture-req-body-bytes': '-1'})
+        client.simulate_post('/', json=document, headers={'capture-req-body-bytes': '-1'})
         assert json.loads(resource.captured_req_body.decode()) == document
         assert resource.captured_req.content_type in json_types
 
@@ -889,6 +875,81 @@ class TestFalconTestingUtils:
         result = client.simulate_get('/', extras={'REQUEST_METHOD': 'GET'})
         assert result.status_code == 200
         assert result.text == 'test'
+
+    @pytest.mark.parametrize('content_type', [
+        'application/json',
+        'application/json; charset=UTF-8',
+        'application/yaml',
+    ])
+    def test_simulate_content_type(self, content_type):
+        class MediaMirror():
+            def on_post(self, req, resp):
+                resp.media = req.media
+
+        app = create_app(asgi=False)
+        app.add_route('/', MediaMirror())
+
+        client = testing.TestClient(app)
+        headers = {'Content-Type': content_type}
+        payload = b'{"hello": "world"}'
+
+        resp = client.simulate_post('/', headers=headers, body=payload)
+
+        if MEDIA_JSON in content_type:
+            assert resp.status_code == 200
+            assert resp.json == {'hello': 'world'}
+        else:
+            # JSON handler should not have been called for YAML
+            assert resp.status_code == 415
+
+    @pytest.mark.parametrize('content_type', [
+        'application/json',
+        'application/json; charset=UTF-8',
+        'application/yaml'
+    ])
+    def test_simulate_content_type_extra_handler(self, asgi, content_type):
+        class TrackingJSONHandler(media.JSONHandler):
+            def __init__(self):
+                super().__init__()
+                self.deserialize_count = 0
+
+            def deserialize(self, *args, **kwargs):
+                result = super().deserialize(*args, **kwargs)
+                self.deserialize_count += 1
+                return result
+
+            async def deserialize_async(self, *args, **kwargs):
+                result = await super().deserialize_async(*args, **kwargs)
+                self.deserialize_count += 1
+                return result
+
+        resource = testing.SimpleTestResourceAsync() if asgi else testing.SimpleTestResource()
+        app = create_app(asgi)
+        app.add_route('/', resource)
+
+        handler = TrackingJSONHandler()
+        extra_handlers = {'application/json': handler}
+        app.req_options.media_handlers.update(extra_handlers)
+        app.resp_options.media_handlers.update(extra_handlers)
+
+        client = testing.TestClient(app)
+        headers = {
+            'Content-Type': content_type,
+            'capture-req-media': 'y',
+        }
+        payload = b'{"hello": "world"}'
+        resp = client.simulate_post('/', headers=headers, body=payload)
+
+        if MEDIA_JSON in content_type:
+            # Test that our custom deserializer was called
+            assert handler.deserialize_count == 1
+            assert resource.captured_req_media == {'hello': 'world'}
+            assert resp.status_code == 200
+        else:
+            # YAML should not get handled
+            assert handler.deserialize_count == 0
+            assert resource.captured_req_media is None
+            assert resp.status_code == 415
 
 
 class TestNoApiClass(testing.TestCase):

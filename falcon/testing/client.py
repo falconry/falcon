@@ -108,8 +108,7 @@ class Cookie:
     @property
     def expires(self) -> Optional[dt.datetime]:
         if self._expires:  # type: ignore[attr-defined]
-            # type: ignore[attr-defined]
-            return http_date_to_dt(self._expires, obs_date=True)
+            return http_date_to_dt(self._expires, obs_date=True)  # type: ignore[attr-defined]
 
         return None
 
@@ -123,8 +122,7 @@ class Cookie:
 
     @property
     def max_age(self) -> Optional[int]:
-        # type: ignore[attr-defined]
-        return int(self._max_age) if self._max_age else None
+        return int(self._max_age) if self._max_age else None  # type: ignore[attr-defined]
 
     @property
     def secure(self) -> bool:
@@ -136,8 +134,7 @@ class Cookie:
 
     @property
     def same_site(self) -> Optional[int]:
-        # type: ignore[attr-defined]
-        return self._samesite if self._samesite else None
+        return self._samesite if self._samesite else None  # type: ignore[attr-defined]
 
 
 class _ResultBase:
@@ -406,6 +403,7 @@ def simulate_request(app, method='GET', path='/', query_string=None,
                      remote_addr=None, extras=None, http_version='1.1',
                      port=None, root_path=None, cookies=None, asgi_chunk_size=4096,
                      asgi_disconnect_ttl=300) -> _ResultBase:
+
     """Simulate a request to a WSGI or ASGI application.
 
     Performs a request against a WSGI or ASGI application. In the case of
@@ -522,7 +520,7 @@ def simulate_request(app, method='GET', path='/', query_string=None,
             params=params, params_csv=params_csv, protocol=protocol, host=host,
             remote_addr=remote_addr, extras=extras, http_version=http_version,
             port=port, root_path=root_path, asgi_chunk_size=asgi_chunk_size,
-            asgi_disconnect_ttl=asgi_disconnect_ttl,
+            asgi_disconnect_ttl=asgi_disconnect_ttl, cookies=cookies
         )
 
     path, query_string, headers, body, extras = _prepare_sim_args(
@@ -576,7 +574,7 @@ async def _simulate_request_asgi(
     params_csv=True, protocol='http', host=helpers.DEFAULT_HOST,
     remote_addr=None, extras=None, http_version='1.1',
     port=None, root_path=None, asgi_chunk_size=4096,
-    asgi_disconnect_ttl=300,
+    asgi_disconnect_ttl=300, cookies=None,
 
     # NOTE(kgriffs): These are undocumented because they are only
     #   meant to be used internally by the framework (i.e., they are
@@ -665,6 +663,10 @@ async def _simulate_request_asgi(
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
+        cookies (dict): Cookies as a dict-like (Mapping) object, or an
+            iterable yielding a series of two-member (*name*, *value*)
+            iterables. Each pair of items provides the name and value
+            for the 'Set-Cookie' header.
 
     Returns:
         :py:class:`~.Result`: The result of the request
@@ -696,6 +698,7 @@ async def _simulate_request_asgi(
         remote_addr=remote_addr,
         root_path=root_path,
         content_length=content_length,
+        cookies=cookies,
     )
 
     if 'method' in extras and extras['method'] != method.upper():
@@ -707,7 +710,11 @@ async def _simulate_request_asgi(
     http_scope.update(extras)
     # ---------------------------------------------------------------------
 
-    disconnect_at = time.time() + max(0, asgi_disconnect_ttl)
+    if asgi_disconnect_ttl == 0:  # Special case
+        disconnect_at = 0
+    else:
+        disconnect_at = time.time() + max(0, asgi_disconnect_ttl)
+
     req_event_emitter = helpers.ASGIRequestEventEmitter(
         (body or b''),
         chunk_size=asgi_chunk_size,
@@ -717,8 +724,7 @@ async def _simulate_request_asgi(
     resp_event_collector = helpers.ASGIResponseEventCollector()
 
     if not _one_shot:
-        task_req = create_task(
-            app(http_scope, req_event_emitter, resp_event_collector))
+        task_req = create_task(app(http_scope, req_event_emitter, resp_event_collector))
 
         if _stream_result:
             # NOTE(kgriffs): Wait until the response has been started and give
@@ -728,8 +734,7 @@ async def _simulate_request_asgi(
                 await asyncio.sleep(0)
 
             return StreamedResult(resp_event_collector.body_chunks,
-                                  code_to_http_status(
-                                      resp_event_collector.status),
+                                  code_to_http_status(resp_event_collector.status),
                                   resp_event_collector.headers,
                                   task_req,
                                   req_event_emitter)
@@ -766,8 +771,7 @@ async def _simulate_request_asgi(
 
         await _wait_for_startup(lifespan_event_collector.events)
 
-        task_req = create_task(
-            app(http_scope, req_event_emitter, resp_event_collector))
+        task_req = create_task(app(http_scope, req_event_emitter, resp_event_collector))
         req_event_emitter.disconnect()
         await task_req
 
@@ -781,6 +785,11 @@ async def _simulate_request_asgi(
 
     await conductor()
 
+    if resp_event_collector.status is None:
+        # NOTE(kgriffs): An immediate disconnect was simulated, and so
+        #   the app could not return a status.
+        raise ConnectionError('An immediate disconnect was simulated.')
+
     return Result(resp_event_collector.body_chunks,
                   code_to_http_status(resp_event_collector.status),
                   resp_event_collector.headers)
@@ -792,7 +801,9 @@ class ASGIConductor:
     This class provides more control over the lifecycle of a simulated
     request as compared to :class:`~.TestClient`. In addition, the conductor's
     asynchronous interface affords interleaved requests and the testing of
-    streaming protocols such as server-sent events (SSE) and WebSocket.
+    streaming protocols such as
+    :attr:`Server-Sent Events (SSE) <falcon.asgi.Response.sse>`
+    and :ref:`WebSocket <ws>`.
 
     :class:`~.ASGIConductor` is implemented as a context manager. Upon
     entering and exiting the context, the appropriate ASGI lifespan events
@@ -862,11 +873,9 @@ class ASGIConductor:
         app: The app that this client instance was configured to use.
 
     """
-
     def __init__(self, app, headers=None):
         if not _is_asgi_app(app):
-            raise CompatibilityError(
-                'ASGIConductor may only be used with an ASGI app')
+            raise CompatibilityError('ASGIConductor may only be used with an ASGI app')
 
         self.app = app
         self._default_headers = headers
@@ -884,15 +893,13 @@ class ASGIConductor:
             },
         }
 
-        lifespan_event_emitter = helpers.ASGILifespanEventEmitter(
-            self._shutting_down)
+        lifespan_event_emitter = helpers.ASGILifespanEventEmitter(self._shutting_down)
 
         # NOTE(kgriffs): We assume this is a Falcon ASGI app, which supports
         #   the lifespan protocol and thus we do not need to catch
         #   exceptions that would signify no lifespan protocol support.
         self._lifespan_task = get_running_loop().create_task(
-            self.app(lifespan_scope, lifespan_event_emitter,
-                     self._lifespan_event_collector)
+            self.app(lifespan_scope, lifespan_event_emitter, self._lifespan_event_collector)
         )
 
         await _wait_for_startup(self._lifespan_event_collector.events)
@@ -923,7 +930,10 @@ class ASGIConductor:
     def simulate_get_stream(self, path='/', **kwargs):
         """Simulate a GET request to an ASGI application with a streamed response.
 
-        This method returns a context manager that can be used to obtain
+        (See also: :py:meth:`falcon.testing.simulate_get` for a list of
+        supported keyword arguments.)
+
+        This method returns an async context manager that can be used to obtain
         a managed :class:`~.StreamedResult` instance. Exiting the context
         will automatically finalize the result object, causing the request
         event emitter to begin emitting 'http.disconnect' events and then
@@ -950,6 +960,34 @@ class ASGIConductor:
         kwargs['_stream_result'] = True
 
         return _AsyncContextManager(self.simulate_request('GET', path, **kwargs))
+
+    def simulate_ws(self, path='/', **kwargs):
+        """Simulate a WebSocket connection to an ASGI application.
+
+        All keyword arguments are passed through to
+        :py:meth:`falcon.testing.create_scope_ws`.
+
+        This method returns an async context manager that can be used to obtain
+        a managed :class:`falcon.testing.ASGIWebSocketSimulator` instance.
+        Exiting the context will simulate a close on the WebSocket (if not
+        already closed) and await the completion of the task that is
+        running the simulated ASGI request.
+
+        In the following example, a series of WebSocket TEXT events are
+        received from the ASGI app::
+
+            async with conductor.simulate_ws('/events') as ws:
+                while some_condition:
+                    message = await ws.receive_text()
+
+        """
+
+        scope = helpers.create_scope_ws(path=path, **kwargs)
+        ws = helpers.ASGIWebSocketSimulator()
+
+        task_req = create_task(self.app(scope, ws._emit, ws._collect))
+
+        return _WSContextManager(ws, task_req)
 
     async def simulate_head(self, path='/', **kwargs) -> _ResultBase:
         """Simulate a HEAD request to an ASGI application.
@@ -1098,7 +1136,8 @@ def simulate_get(app, path, **kwargs) -> _ResultBase:
         asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
             'http.disconnect' event when the app calls the
-            receive() function (default 300).
+            receive() function (default 300). Set to ``0`` to simulate an
+            immediate disconnection without first emitting 'http.request'.
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
@@ -1189,7 +1228,8 @@ def simulate_head(app, path, **kwargs) -> _ResultBase:
         asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
             'http.disconnect' event when the app calls the
-            receive() function (default 300).
+            receive() function (default 300). Set to ``0`` to simulate an
+            immediate disconnection without first emitting 'http.request'.
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
@@ -1293,7 +1333,8 @@ def simulate_post(app, path, **kwargs) -> _ResultBase:
         asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
             'http.disconnect' event when the app calls the
-            receive() function (default 300).
+            receive() function (default 300). Set to ``0`` to simulate an
+            immediate disconnection without first emitting 'http.request'.
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
@@ -1397,7 +1438,8 @@ def simulate_put(app, path, **kwargs) -> _ResultBase:
         asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
             'http.disconnect' event when the app calls the
-            receive() function (default 300).
+            receive() function (default 300). Set to ``0`` to simulate an
+            immediate disconnection without first emitting 'http.request'.
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
@@ -1483,7 +1525,8 @@ def simulate_options(app, path, **kwargs) -> _ResultBase:
         asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
             'http.disconnect' event when the app calls the
-            receive() function (default 300).
+            receive() function (default 300). Set to ``0`` to simulate an
+            immediate disconnection without first emitting 'http.request'.
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
@@ -1578,7 +1621,8 @@ def simulate_patch(app, path, **kwargs) -> _ResultBase:
         asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
             'http.disconnect' event when the app calls the
-            receive() function (default 300).
+            receive() function (default 300). Set to ``0`` to simulate an
+            immediate disconnection without first emitting 'http.request'.
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
@@ -1677,7 +1721,8 @@ def simulate_delete(app, path, **kwargs) -> _ResultBase:
         asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
             'http.disconnect' event when the app calls the
-            receive() function (default 300).
+            receive() function (default 300). Set to ``0`` to simulate an
+            immediate disconnection without first emitting 'http.request'.
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
@@ -1761,8 +1806,7 @@ class TestClient:
         #   contexts, so this is just a sanity-check.
         assert not self._conductor
 
-        self._conductor = ASGIConductor(
-            self.app, headers=self._default_headers)
+        self._conductor = ASGIConductor(self.app, headers=self._default_headers)
         await self._conductor.__aenter__()
 
         return self._conductor
@@ -1866,6 +1910,41 @@ class _AsyncContextManager:
         self._obj = None
 
 
+class _WSContextManager:
+    def __init__(self, ws, task_req):
+        self._ws = ws
+        self._task_req = task_req
+
+    async def __aenter__(self):
+        ready_waiter = create_task(self._ws.wait_ready())
+
+        # NOTE(kgriffs): Wait on both so that in the case that the request
+        #   task raises an error, we don't just end up masking it with an
+        #   asyncio.TimeoutError.
+        await asyncio.wait(
+            [ready_waiter, self._task_req],
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+
+        if ready_waiter.done():
+            await ready_waiter
+        else:
+            # NOTE(kgriffs): Retrieve the exception, if any
+            await self._task_req
+
+            # NOTE(kgriffs): This should complete gracefully (without a
+            #   timeout). It may raise WebSocketDisconnected, but that
+            #   is expected and desired for "normal" reasons that the
+            #   request task finished without accepting the connection.
+            await ready_waiter
+
+        return self._ws
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self._ws.close()
+        await self._task_req
+
+
 def _prepare_sim_args(
     path,
     query_string,
@@ -1933,8 +2012,7 @@ async def _wait_for_startup(events):
     while True:  # pragma: nocover
         for e in events:
             if e['type'] == 'lifespan.startup.failed':
-                raise RuntimeError(
-                    'ASGI app returned lifespan.startup.failed. ' + e['message'])
+                raise RuntimeError('ASGI app returned lifespan.startup.failed. ' + e['message'])
 
         if any(e['type'] == 'lifespan.startup.complete' for e in events):
             break
@@ -1949,8 +2027,7 @@ async def _wait_for_shutdown(events):
     while True:  # pragma: nocover
         for e in events:
             if e['type'] == 'lifespan.shutdown.failed':
-                raise RuntimeError(
-                    'ASGI app returned lifespan.shutdown.failed. ' + e['message'])
+                raise RuntimeError('ASGI app returned lifespan.shutdown.failed. ' + e['message'])
 
         if any(e['type'] == 'lifespan.shutdown.complete' for e in events):
             break

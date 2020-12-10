@@ -129,7 +129,7 @@ class UnicodeHeaderResource:
         resp.set_headers([
             ('X-auTH-toKEN', 'toomanysecrets'),
             ('Content-TYpE', 'application/json'),
-            ('X-symBOl', '@'),
+            ('X-symbOl', '@'),
         ])
 
     def on_post(self, req, resp):
@@ -399,8 +399,7 @@ class TestHeaders:
 
     def test_default_media_type(self, client):
         resource = testing.SimpleTestResource(body='Hello world!')
-        self._check_header(client, resource, 'Content-Type',
-                           falcon.DEFAULT_MEDIA_TYPE)
+        self._check_header(client, resource, 'Content-Type', falcon.DEFAULT_MEDIA_TYPE)
 
     @pytest.mark.parametrize('asgi', [True, False])
     @pytest.mark.parametrize('content_type,body', [
@@ -534,7 +533,7 @@ class TestHeaders:
         assert result.headers['Content-Location'] == '/%C3%A7runchy/bacon'
         assert result.headers['Location'] == 'ab%C3%A7'
 
-    def test_unicode_headers_convertable(self, client):
+    def test_unicode_headers_contain_only_ascii(self, client):
         client.app.add_route('/', UnicodeHeaderResource())
 
         result = client.simulate_get('/')
@@ -542,6 +541,29 @@ class TestHeaders:
         assert result.headers['Content-Type'] == 'application/json'
         assert result.headers['X-Auth-Token'] == 'toomanysecrets'
         assert result.headers['X-Symbol'] == '@'
+
+    @pytest.mark.parametrize('method', ['POST', 'PUT'])
+    def test_unicode_headers_contain_non_ascii(self, method, client):
+        app = client.app
+        app.add_route('/', UnicodeHeaderResource())
+
+        if app._ASGI:
+            # NOTE(kgriffs): Unlike PEP-3333, the ASGI spec requires the
+            #   app to encode header names and values to a byte string. This
+            #   gives Falcon the opportunity to verify the character set
+            #   in the process and raise an error as appropriate.
+            error_type, pattern = ValueError, 'ASCII'
+        elif method == 'PUT':
+            pytest.skip('The wsgiref validator does not check header values.')
+        else:
+            # NOTE(kgriffs): The wsgiref validator that is integrated into
+            #   Falcon's testing framework will catch this. However, Falcon
+            #   itself does not do the check to avoid potential overhead
+            #   in a production deployment.
+            error_type, pattern = AssertionError, 'Bad header name'
+
+        with pytest.raises(error_type, match=pattern):
+            client.simulate_request(method, '/')
 
     def test_response_set_and_get_header(self, client):
         resource = HeaderHelpersResource()
@@ -555,8 +577,7 @@ class TestHeaders:
             assert resource.resp.get_header('content-TyPe') == content_type
 
             content_type_alt = 'x-falcon/merlin'
-            value = resource.resp.get_header(
-                'Content-Type', default=content_type_alt)
+            value = resource.resp.get_header('Content-Type', default=content_type_alt)
             assert value == content_type
 
             assert result.headers['Cache-Control'] == 'no-store'
@@ -565,11 +586,9 @@ class TestHeaders:
             assert resource.resp.location is None
             assert resource.resp.get_header('X-Header-Not-Set') is None
             assert resource.resp.get_header('X-Header-Not-Set', 'Yes') == 'Yes'
-            assert resource.resp.get_header(
-                'X-Header-Not-Set', default='') == ''
+            assert resource.resp.get_header('X-Header-Not-Set', default='') == ''
 
-            value = resource.resp.get_header(
-                'X-Header-Not-Set', default=content_type_alt)
+            value = resource.resp.get_header('X-Header-Not-Set', default=content_type_alt)
             assert value == content_type_alt
 
             # Check for duplicate headers
@@ -579,8 +598,7 @@ class TestHeaders:
                 assert hist[name] == 1
 
             # Ensure that deleted headers were not sent
-            assert resource.resp.get_header(
-                'x-client-should-never-see-this') is None
+            assert resource.resp.get_header('x-client-should-never-see-this') is None
 
     def test_response_append_header(self, client):
         client.app.add_route('/', AppendHeaderResource())

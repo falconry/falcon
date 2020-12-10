@@ -50,8 +50,7 @@ def test_json(client, media_type):
     resp.content_type = media_type
     resp.media = {'something': True}
 
-    assert json.loads(resp.render_body().decode(
-        'utf-8')) == {'something': True}
+    assert json.loads(resp.render_body().decode('utf-8')) == {'something': True}
 
 
 @pytest.mark.parametrize('document', [
@@ -133,8 +132,7 @@ def test_default_media_type(client):
     resp.content_type = ''
     resp.media = {'something': True}
 
-    assert json.loads(resp.render_body().decode(
-        'utf-8')) == {'something': True}
+    assert json.loads(resp.render_body().decode('utf-8')) == {'something': True}
     assert resp.content_type == 'application/json'
 
 

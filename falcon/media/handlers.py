@@ -1,7 +1,7 @@
 from collections import UserDict
 
 from falcon import errors
-from falcon.constants import MEDIA_MULTIPART, MEDIA_URLENCODED
+from falcon.constants import MEDIA_JSON, MEDIA_MULTIPART, MEDIA_URLENCODED
 from falcon.media.json import JSONHandler
 from falcon.media.multipart import MultipartFormHandler, MultipartParseOptions
 from falcon.media.urlencoded import URLEncodedFormHandler
@@ -10,11 +10,9 @@ from falcon.vendor import mimeparse
 
 class Handlers(UserDict):
     """A :class:`dict`-like object that manages Internet media type handlers."""
-
     def __init__(self, initial=None):
         handlers = initial or {
-            'application/json': JSONHandler(),
-            'application/json; charset=UTF-8': JSONHandler(),
+            MEDIA_JSON: JSONHandler(),
             MEDIA_MULTIPART: MultipartFormHandler(),
             MEDIA_URLENCODED: URLEncodedFormHandler(),
         }
@@ -53,8 +51,7 @@ class Handlers(UserDict):
 
         if not resolved:
             raise errors.HTTPUnsupportedMediaType(
-                description='{0} is an unsupported media type.'.format(
-                    media_type)
+                description='{0} is an unsupported media type.'.format(media_type)
             )
 
         return self.data[resolved]
@@ -62,7 +59,6 @@ class Handlers(UserDict):
 
 # NOTE(vytas): An ugly way to work around circular imports.
 MultipartParseOptions._DEFAULT_HANDLERS = Handlers({
-    'application/json': JSONHandler(),
-    'application/json; charset=UTF-8': JSONHandler(),
+    MEDIA_JSON: JSONHandler(),
     MEDIA_URLENCODED: URLEncodedFormHandler(),
 })  # type: ignore

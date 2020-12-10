@@ -3,6 +3,7 @@ from functools import wraps
 import pytest
 
 import falcon
+import falcon.constants
 import falcon.testing as testing
 
 from _util import create_app  # NOQA
@@ -109,6 +110,9 @@ class ThingsResource:
         self.req, self.resp = req, resp
         resp.status = falcon.HTTP_204
 
+    def on_websocket(self, req, resp, id, sid):
+        self.called = True
+
 
 class Stonewall:
     pass
@@ -193,24 +197,21 @@ class TestHttpMethodRouting:
     def test_put(self, client, resource_things):
         client.app.add_route('/things', resource_things)
         client.app.add_route('/things/{id}/stuff/{sid}', resource_things)
-        response = client.simulate_request(
-            path='/things/42/stuff/1337', method='PUT')
+        response = client.simulate_request(path='/things/42/stuff/1337', method='PUT')
         assert response.status == falcon.HTTP_201
         assert resource_things.called
 
     def test_post_not_allowed(self, client, resource_things):
         client.app.add_route('/things', resource_things)
         client.app.add_route('/things/{id}/stuff/{sid}', resource_things)
-        response = client.simulate_request(
-            path='/things/42/stuff/1337', method='POST')
+        response = client.simulate_request(path='/things/42/stuff/1337', method='POST')
         assert response.status == falcon.HTTP_405
         assert not resource_things.called
 
     def test_report(self, client, resource_things):
         client.app.add_route('/things', resource_things)
         client.app.add_route('/things/{id}/stuff/{sid}', resource_things)
-        response = client.simulate_request(
-            path='/things/42/stuff/1337', method='REPORT')
+        response = client.simulate_request(path='/things/42/stuff/1337', method='REPORT')
         assert response.status == falcon.HTTP_204
         assert resource_things.called
 
@@ -225,8 +226,7 @@ class TestHttpMethodRouting:
     def test_methods_not_allowed_simple(self, client, stonewall):
         client.app.add_route('/stonewall', stonewall)
         for method in ['GET', 'HEAD', 'PUT', 'PATCH']:
-            response = client.simulate_request(
-                path='/stonewall', method=method)
+            response = client.simulate_request(path='/stonewall', method=method)
             assert response.status == falcon.HTTP_405
 
     def test_methods_not_allowed_complex(self, client, resource_things):
@@ -237,8 +237,7 @@ class TestHttpMethodRouting:
                 continue
 
             resource_things.called = False
-            response = client.simulate_request(
-                path='/things/84/stuff/65', method=method)
+            response = client.simulate_request(path='/things/84/stuff/65', method=method)
 
             assert not resource_things.called
             assert response.status == falcon.HTTP_405
@@ -247,8 +246,7 @@ class TestHttpMethodRouting:
             assert headers['allow'] == 'GET, HEAD, PUT, REPORT, OPTIONS'
 
     def test_method_not_allowed_with_param(self, client, resource_get_with_faulty_put):
-        client.app.add_route(
-            '/get_with_param/{param}', resource_get_with_faulty_put)
+        client.app.add_route('/get_with_param/{param}', resource_get_with_faulty_put)
         for method in HTTP_METHODS + WEBDAV_METHODS:
             if method in ('GET', 'PUT', 'OPTIONS'):
                 continue
@@ -268,8 +266,7 @@ class TestHttpMethodRouting:
     def test_default_on_options(self, client, resource_things):
         client.app.add_route('/things', resource_things)
         client.app.add_route('/things/{id}/stuff/{sid}', resource_things)
-        response = client.simulate_request(
-            path='/things/84/stuff/65', method='OPTIONS')
+        response = client.simulate_request(path='/things/84/stuff/65', method='OPTIONS')
         assert response.status == falcon.HTTP_200
 
         headers = response.headers
@@ -282,12 +279,9 @@ class TestHttpMethodRouting:
         headers = response.headers
         assert headers['allow'] == 'GET'
 
-    def test_bogus_method(self, client, resource_things):
-        client.app.add_route('/things', resource_things)
+    @pytest.mark.parametrize('method', falcon.constants._META_METHODS + ['SETECASTRONOMY'])
+    def test_meta_and_others_disallowed(self, client, resource_things, method):
         client.app.add_route('/things/{id}/stuff/{sid}', resource_things)
-
-        response = client.simulate_request(
-            path='/things', method='SETECASTRONOMY')
-
-        assert not resource_things.called
+        response = client.simulate_request(path='/things/42/stuff/1337', method='WEBSOCKET')
         assert response.status == falcon.HTTP_400
+        assert not resource_things.called

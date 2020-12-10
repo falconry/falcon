@@ -53,8 +53,7 @@ class RedirectingResourceWithHeaders:
     # done to simplify testing.
 
     def on_get(self, req, resp):
-        raise falcon.HTTPMovedPermanently(
-            '/moved/perm', headers={'foo': 'bar'})
+        raise falcon.HTTPMovedPermanently('/moved/perm', headers={'foo': 'bar'})
 
     def on_post(self, req, resp):
         raise falcon.HTTPFound('/found', headers={'foo': 'bar'})
@@ -63,12 +62,10 @@ class RedirectingResourceWithHeaders:
         raise falcon.HTTPSeeOther('/see/other', headers={'foo': 'bar'})
 
     def on_delete(self, req, resp):
-        raise falcon.HTTPTemporaryRedirect(
-            '/tmp/redirect', headers={'foo': 'bar'})
+        raise falcon.HTTPTemporaryRedirect('/tmp/redirect', headers={'foo': 'bar'})
 
     def on_head(self, req, resp):
-        raise falcon.HTTPPermanentRedirect(
-            '/perm/redirect', headers={'foo': 'bar'})
+        raise falcon.HTTPPermanentRedirect('/perm/redirect', headers={'foo': 'bar'})
 
 
 class TestRedirects:
@@ -95,8 +92,7 @@ class TestRedirects:
     ])
     def test_redirect_with_headers(self, client_exercising_headers, method,
                                    expected_status, expected_location):
-        result = client_exercising_headers.simulate_request(
-            path='/', method=method)
+        result = client_exercising_headers.simulate_request(path='/', method=method)
 
         assert not result.content
         assert result.status == expected_status

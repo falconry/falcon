@@ -73,8 +73,7 @@ class TestCorsMiddleware:
         ))
         assert result.headers['Access-Control-Allow-Methods'] == 'DELETE, GET'
         assert result.headers['Access-Control-Allow-Headers'] == 'X-PINGOTHER, Content-Type'
-        # 24 hours in seconds
-        assert result.headers['Access-Control-Max-Age'] == '86400'
+        assert result.headers['Access-Control-Max-Age'] == '86400'  # 24 hours in seconds
 
     def test_enabled_cors_handles_preflighting_no_headers_in_req(self, cors_client):
         cors_client.app.add_route('/', CORSHeaderResource())
@@ -84,8 +83,7 @@ class TestCorsMiddleware:
         ))
         assert result.headers['Access-Control-Allow-Methods'] == 'DELETE, GET'
         assert result.headers['Access-Control-Allow-Headers'] == '*'
-        # 24 hours in seconds
-        assert result.headers['Access-Control-Max-Age'] == '86400'
+        assert result.headers['Access-Control-Max-Age'] == '86400'  # 24 hours in seconds
 
 
 @pytest.fixture(scope='function')
@@ -107,8 +105,7 @@ class TestCustomCorsMiddleware:
     @pytest.mark.parametrize('allow, fail_origins, success_origins', (
         ('*', [None], ['foo', 'bar']),
         ('test', ['other', 'Test', 'TEST'], ['test']),
-        (['foo', 'bar'], ['foo, bar', 'foobar',
-                          'foo,bar', 'Foo', 'BAR'], ['foo', 'bar']),
+        (['foo', 'bar'], ['foo, bar', 'foobar', 'foo,bar', 'Foo', 'BAR'], ['foo', 'bar']),
     ))
     def test_allow_origin(self, make_cors_client, allow, fail_origins, success_origins):
         client = make_cors_client(falcon.CORSMiddleware(allow_origins=allow))
@@ -142,8 +139,7 @@ class TestCustomCorsMiddleware:
         ('foo', ['foo']),
     ))
     def test_allow_credential_list_or_str(self, make_cors_client, allow, successOrigin):
-        client = make_cors_client(
-            falcon.CORSMiddleware(allow_credentials=allow))
+        client = make_cors_client(falcon.CORSMiddleware(allow_credentials=allow))
         client.app.add_route('/', CORSHeaderResource())
 
         for origin in ('foo, bar', 'foobar', 'foo,bar', 'Foo', 'BAR'):

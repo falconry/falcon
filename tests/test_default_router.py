@@ -183,18 +183,12 @@ def test_user_regression_recipes():
 
 
 @pytest.mark.parametrize('uri_template,path,expected_params', [
-    ('/serviceRoot/People|{field}',
-     '/serviceRoot/People|susie', {'field': 'susie'}),
-    ('/serviceRoot/People[{field}]',
-     "/serviceRoot/People['calvin']", {'field': "'calvin'"}),
-    ('/serviceRoot/People({field})',
-     "/serviceRoot/People('hobbes')", {'field': "'hobbes'"}),
-    ('/serviceRoot/People({field})',
-     "/serviceRoot/People('hob)bes')", {'field': "'hob)bes'"}),
-    ('/serviceRoot/People({field})(z)',
-     '/serviceRoot/People(hobbes)(z)', {'field': 'hobbes'}),
-    ("/serviceRoot/People('{field}')",
-     "/serviceRoot/People('rosalyn')", {'field': 'rosalyn'}),
+    ('/serviceRoot/People|{field}', '/serviceRoot/People|susie', {'field': 'susie'}),
+    ('/serviceRoot/People[{field}]', "/serviceRoot/People['calvin']", {'field': "'calvin'"}),
+    ('/serviceRoot/People({field})', "/serviceRoot/People('hobbes')", {'field': "'hobbes'"}),
+    ('/serviceRoot/People({field})', "/serviceRoot/People('hob)bes')", {'field': "'hob)bes'"}),
+    ('/serviceRoot/People({field})(z)', '/serviceRoot/People(hobbes)(z)', {'field': 'hobbes'}),
+    ("/serviceRoot/People('{field}')", "/serviceRoot/People('rosalyn')", {'field': 'rosalyn'}),
     ('/^{field}', '/^42', {'field': '42'}),
     ('/+{field}', '/+42', {'field': '42'}),
     (
@@ -220,8 +214,7 @@ def test_user_regression_recipes():
     ('/items/{x}^^{y}', '/items/1080^^768', {'x': '1080', 'y': '768'}),
     ('/items/{x}*{y}*', '/items/1080*768*', {'x': '1080', 'y': '768'}),
     ('/thing-2/something+{field}+', '/thing-2/something+42+', {'field': '42'}),
-    ('/thing-2/something*{field}/notes',
-     '/thing-2/something*42/notes', {'field': '42'}),
+    ('/thing-2/something*{field}/notes', '/thing-2/something*42/notes', {'field': '42'}),
     (
         '/thing-2/something+{field}|{q}/notes',
         '/thing-2/something+else|z/notes',
@@ -660,3 +653,31 @@ def test_options_converters_invalid_name_on_update(router):
             'valid_name': SpamConverter,
             '7eleven': SpamConverter,
         })
+
+
+@pytest.fixture
+def param_router():
+    r = DefaultRouter()
+
+    r.add_route('/c/foo/{bar}/baz', ResourceWithId(1))
+    r.add_route('/c/{foo}/bar/other', ResourceWithId(2))
+    r.add_route('/c/foo/{a:int}-{b}/a', ResourceWithId(3))
+    r.add_route('/upload/{service}/auth/token', ResourceWithId(4))
+    r.add_route('/upload/youtube/{project_id}/share', ResourceWithId(5))
+    r.add_route('/x/y/{a}.{b}/z', ResourceWithId(6))
+    r.add_route('/x/{y}/o.o/w', ResourceWithId(7))
+    return r
+
+
+@pytest.mark.parametrize('route, expected, num', (
+    ('/c/foo/arg/baz', {'bar': 'arg'}, 1),
+    ('/c/foo/bar/other', {'foo': 'foo'}, 2),
+    ('/c/foo/42-7/baz', {'bar': '42-7'}, 1),
+    ('/upload/youtube/auth/token', {'service': 'youtube'}, 4),
+    ('/x/y/o.o/w', {'y': 'y'}, 7),
+))
+def test_params_in_non_taken_branches(param_router, route, expected, num):
+    resource, __, params, __ = param_router.find(route)
+
+    assert resource.resource_id == num
+    assert params == expected

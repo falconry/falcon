@@ -75,15 +75,13 @@ def test_simulate_request_content_type():
     result = testing.simulate_post(app, '/', content_type=falcon.MEDIA_HTML)
     assert result.text == falcon.MEDIA_HTML
 
-    result = testing.simulate_post(
-        app, '/', content_type=falcon.MEDIA_HTML, headers=headers)
+    result = testing.simulate_post(app, '/', content_type=falcon.MEDIA_HTML, headers=headers)
     assert result.text == falcon.MEDIA_HTML
 
     result = testing.simulate_post(app, '/', json={})
     assert result.text == falcon.MEDIA_JSON
 
-    result = testing.simulate_post(
-        app, '/', json={}, content_type=falcon.MEDIA_HTML)
+    result = testing.simulate_post(app, '/', json={}, content_type=falcon.MEDIA_HTML)
     assert result.text == falcon.MEDIA_JSON
 
     result = testing.simulate_post(app, '/', json={}, headers=headers)
@@ -113,7 +111,7 @@ def test_create_environ_cookies_options_method():
 def test_cookies_jar():
     class Foo:
         def on_get(self, req, resp):
-            # NOTE(myuz): In the future we shouldn't change the cookie
+            # NOTE(myusko): In the future we shouldn't change the cookie
             #             a test depends on the input.
             # NOTE(kgriffs): This is the only test that uses a single
             #   cookie (vs. multiple) as input; if this input ever changes,

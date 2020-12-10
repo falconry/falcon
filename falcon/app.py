@@ -20,7 +20,8 @@ import re
 import traceback
 
 from falcon import app_helpers as helpers, routing
-from falcon.constants import DEFAULT_MEDIA_TYPE
+import falcon.constants
+from falcon.errors import HTTPBadRequest
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 from falcon.middlewares import CORSMiddleware
@@ -159,6 +160,10 @@ class App:
             (default ``False``).
             (See also: :ref:`CORS <cors>`)
 
+        sink_before_static_route (bool): Indicates if the sinks should be processed
+            before (when ``True``) or after (when ``False``) the static routes.
+            This has an effect only if no route was matched. (default ``True``)
+
     Attributes:
         req_options: A set of behavioral options related to incoming
             requests. (See also: :py:class:`~.RequestOptions`)
@@ -171,6 +176,8 @@ class App:
 
             (See also: :ref:`CompiledRouterOptions <compiled_router_options>`)
     """
+
+    _META_METHODS = frozenset(falcon.constants._META_METHODS)
 
     _STREAM_BLOCK_SIZE = 8 * 1024  # 8 KiB
 
@@ -189,18 +196,43 @@ class App:
     _default_responder_bad_request = falcon.responders.bad_request
     _default_responder_path_not_found = falcon.responders.path_not_found
 
-    __slots__ = ('_request_type', '_response_type',
-                 '_error_handlers', '_router', '_sinks',
-                 '_serialize_error', 'req_options', 'resp_options',
-                 '_middleware', '_independent_middleware', '_router_search',
-                 '_static_routes', '_cors_enable', '_unprepared_middleware')
+    __slots__ = (
+        '_cors_enable',
+        '_error_handlers',
+        '_independent_middleware',
+        '_middleware',
+        # NOTE(kgriffs): WebSocket is currently only supported for
+        #   ASGI apps, but we may add support for WSGI at some point.
+        '_middleware_ws',
+        '_request_type',
+        '_response_type',
+        '_router_search',
+        '_router',
+        '_serialize_error',
+        '_sink_and_static_routes',
+        '_sink_before_static_route',
+        '_sinks',
+        '_static_routes',
+        '_unprepared_middleware',
+        'req_options',
+        'resp_options',
+    )
 
-    def __init__(self, media_type=DEFAULT_MEDIA_TYPE,
-                 request_type=Request, response_type=Response,
-                 middleware=None, router=None,
-                 independent_middleware=True, cors_enable=False):
+    def __init__(
+        self,
+        media_type=falcon.constants.DEFAULT_MEDIA_TYPE,
+        request_type=Request,
+        response_type=Response,
+        middleware=None,
+        router=None,
+        independent_middleware=True,
+        cors_enable=False,
+        sink_before_static_route=True,
+    ):
+        self._sink_before_static_route = sink_before_static_route
         self._sinks = []
         self._static_routes = []
+        self._sink_and_static_routes = ()
 
         if cors_enable:
             cm = CORSMiddleware()
@@ -272,6 +304,9 @@ class App:
         req_succeeded = False
 
         try:
+            if req.method in self._META_METHODS:
+                raise HTTPBadRequest()
+
             # NOTE(ealogar): The execution of request middleware
             # should be before routing. This will allow request mw
             # to modify the path.
@@ -298,8 +333,7 @@ class App:
                 # next-hop child resource. In that case, the object
                 # being asked to dispatch to its child will raise an
                 # HTTP exception signalling the problem, e.g. a 404.
-                responder, params, resource, req.uri_template = self._get_responder(
-                    req)
+                responder, params, resource, req.uri_template = self._get_responder(req)
         except Exception as ex:
             if not self._handle_exception(req, resp, ex, params):
                 raise
@@ -561,11 +595,11 @@ class App:
 
         """
 
-        self._static_routes.insert(
-            0,
-            self._STATIC_ROUTE_TYPE(prefix, directory, downloadable=downloadable,
-                                    fallback_filename=fallback_filename)
+        sr = self._STATIC_ROUTE_TYPE(
+            prefix, directory, downloadable=downloadable, fallback_filename=fallback_filename
         )
+        self._static_routes.insert(0, (sr, sr, False))
+        self._update_sink_and_static_routes()
 
     def add_sink(self, sink, prefix=r'/'):
         """Register a sink method for the App.
@@ -580,7 +614,10 @@ class App:
         proxy that forwards requests to one or more backend services.
 
         Args:
-            sink (callable): A callable taking the form ``func(req, resp)``.
+            sink (callable): A callable taking the form ``func(req, resp, **kwargs)``.
+
+                Note:
+                    When using an async version of the ``App``, this must be a coroutine.
 
             prefix (str): A regex string, typically starting with '/', which
                 will trigger the sink if it matches the path portion of the
@@ -607,7 +644,8 @@ class App:
         # NOTE(kgriffs): Insert at the head of the list such that
         # in the case of a duplicate prefix, the last one added
         # is preferred.
-        self._sinks.insert(0, (prefix, sink))
+        self._sinks.insert(0, (prefix, sink, True))
+        self._update_sink_and_static_routes()
 
     def add_error_handler(self, exception, handler=None):
         """Register a handler for one or more exception types.
@@ -816,7 +854,7 @@ class App:
         """
 
         path = req.path
-        method = req.method
+        method = 'WEBSOCKET' if req.is_websocket else req.method
         uri_template = None
 
         route = self._router_search(path, req=req)
@@ -850,21 +888,16 @@ class App:
         else:
             params = {}
 
-            for pattern, sink in self._sinks:
-                m = pattern.match(path)
+            for matcher, obj, is_sink in self._sink_and_static_routes:
+                m = matcher.match(path)
                 if m:
-                    params = m.groupdict()
-                    responder = sink
+                    if is_sink:
+                        params = m.groupdict()
+                    responder = obj
 
                     break
             else:
-
-                for sr in self._static_routes:
-                    if sr.match(path):
-                        responder = sr
-                        break
-                else:
-                    responder = self.__class__._default_responder_path_not_found
+                responder = self.__class__._default_responder_path_not_found
 
         return (responder, params, resource, uri_template)
 
@@ -1000,8 +1033,7 @@ class App:
                     iterable = wsgi_file_wrapper(stream,
                                                  self._STREAM_BLOCK_SIZE)
                 else:
-                    iterable = helpers.CloseableStreamIterator(
-                        stream, self._STREAM_BLOCK_SIZE)
+                    iterable = helpers.CloseableStreamIterator(stream, self._STREAM_BLOCK_SIZE)
             else:
                 iterable = stream
 
@@ -1009,8 +1041,14 @@ class App:
 
         return [], 0
 
+    def _update_sink_and_static_routes(self):
+        if self._sink_before_static_route:
+            self._sink_and_static_routes = tuple(self._sinks + self._static_routes)
+        else:
+            self._sink_and_static_routes = tuple(self._static_routes + self._sinks)
 
-# TODO(myuz): This class is a compatibility alias, and should be removed
+
+# TODO(myusko): This class is a compatibility alias, and should be removed
 # in the next major release (4.0).
 class API(App):
     """

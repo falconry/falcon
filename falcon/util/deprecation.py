@@ -88,8 +88,7 @@ def deprecated_args(*, allowed_positional, is_method=True):
         'Calls with{} positional args are deprecated.'
         ' Please specify them as keyword arguments instead.'
     )
-    text = ' more than {}'.format(
-        allowed_positional) if allowed_positional else ''
+    text = ' more than {}'.format(allowed_positional) if allowed_positional else ''
     warn_text = template.format(text)
     if is_method:
         allowed_positional += 1

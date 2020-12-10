@@ -109,9 +109,8 @@ def inspect_static_routes(app: App) -> 'List[StaticRouteInfo]':
         been added to the application.
     """
     routes = []
-    for sr in app._static_routes:
-        info = StaticRouteInfo(sr._prefix, sr._directory,
-                               sr._fallback_filename)
+    for sr, _, _ in app._static_routes:
+        info = StaticRouteInfo(sr._prefix, sr._directory, sr._fallback_filename)
         routes.append(info)
     return routes
 
@@ -127,7 +126,7 @@ def inspect_sinks(app: App) -> 'List[SinkInfo]':
         List[SinkInfo]: A list of sinks used by the application.
     """
     sinks = []
-    for prefix, sink in app._sinks:
+    for prefix, sink, _ in app._sinks:
         source_info, name = _get_source_info_and_name(sink)
         info = SinkInfo(prefix.pattern, name, source_info)
         sinks.append(info)
@@ -148,8 +147,7 @@ def inspect_error_handlers(app: App) -> 'List[ErrorHandlerInfo]':
     errors = []
     for exc, fn in app._error_handlers.items():
         source_info, name = _get_source_info_and_name(fn)
-        info = ErrorHandlerInfo(
-            exc.__name__, name, source_info, _is_internal(fn))
+        info = ErrorHandlerInfo(exc.__name__, name, source_info, _is_internal(fn))
         errors.append(info)
     return errors
 
@@ -164,8 +162,7 @@ def inspect_middlewares(app: App) -> 'MiddlewareInfo':
     Returns:
         MiddlewareInfo: Information about the app's middleware components.
     """
-    types_ = app_helpers.prepare_middleware(
-        app._unprepared_middleware, True, app._ASGI)
+    types_ = app_helpers.prepare_middleware(app._unprepared_middleware, True, app._ASGI)
 
     type_infos = []
     for stack in types_:
@@ -188,8 +185,7 @@ def inspect_middlewares(app: App) -> 'MiddlewareInfo':
             if method:
                 real_func = method[0]
                 source_info = _get_source_info(real_func)
-                methods.append(MiddlewareMethodInfo(
-                    real_func.__name__, source_info))
+                methods.append(MiddlewareMethodInfo(real_func.__name__, source_info))
         m_info = MiddlewareClassInfo(cls_name, class_source_info, methods)
         middlewareClasses.append(m_info)
 
@@ -230,8 +226,7 @@ def inspect_compiled_router(router: CompiledRouter) -> 'List[RouteInfo]':
                             method, source_info, real_func.__name__, internal
                         )
                         methods.append(method_info)
-                source_info, class_name = _get_source_info_and_name(
-                    root.resource)
+                source_info, class_name = _get_source_info_and_name(root.resource)
 
                 route_info = RouteInfo(path, class_name, source_info, methods)
                 routes.append(route_info)
@@ -704,12 +699,10 @@ class StringVisitor(InspectVisitor):
         text = self.process(middleware.middleware_tree)
         if self.verbose:
             self.indent += 4
-            m_text = '\n'.join(self.process(m)
-                               for m in middleware.middleware_classes)
+            m_text = '\n'.join(self.process(m) for m in middleware.middleware_classes)
             self.indent -= 4
             if m_text:
-                text += '\n{}- Middlewares classes:\n{}'.format(
-                    self.tab, m_text)
+                text += '\n{}- Middlewares classes:\n{}'.format(self.tab, m_text)
 
         return text
 
@@ -731,8 +724,7 @@ class StringVisitor(InspectVisitor):
             )
 
         if app.static_routes:
-            static_routes = '\n'.join(self.process(sr)
-                                      for sr in app.static_routes)
+            static_routes = '\n'.join(self.process(sr) for sr in app.static_routes)
             text += '\n• Static routes:\n{}'.format(static_routes)
 
         if app.sinks:

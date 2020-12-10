@@ -34,8 +34,7 @@ class FaultyResource:
         description = req.get_header('X-Error-Description')
         code = 10042
 
-        raise falcon.HTTPError(status, title=title,
-                               description=description, code=code)
+        raise falcon.HTTPError(status, title=title, description=description, code=code)
 
     def on_post(self, req, resp):
         raise falcon.HTTPForbidden(
@@ -79,8 +78,7 @@ class MiscErrorsResource:
 
     def on_get(self, req, resp):
         if self.needs_title:
-            raise self._exception(
-                title='Excuse Us', description='Something went boink!')
+            raise self._exception(title='Excuse Us', description='Something went boink!')
         else:
             raise self._exception(title='Something went boink!')
 
@@ -160,8 +158,7 @@ class MethodNotAllowedResourceWithBody:
 class LengthRequiredResource:
 
     def on_get(self, req, resp):
-        raise falcon.HTTPLengthRequired(
-            title='title', description='description')
+        raise falcon.HTTPLengthRequired(title='title', description='description')
 
 
 class RequestEntityTooLongResource:
@@ -254,8 +251,7 @@ class MissingParamResource:
 class TestHTTPError:
 
     def _misc_test(self, client, exception, status, needs_title=True):
-        client.app.add_route(
-            '/misc', MiscErrorsResource(exception, needs_title))
+        client.app.add_route('/misc', MiscErrorsResource(exception, needs_title))
 
         response = client.simulate_request(path='/misc')
         assert response.status == status
@@ -673,8 +669,7 @@ class TestHTTPError:
         assert 'retry-after' not in response.headers
 
     def test_temporary_413_integer_retry_after(self, client):
-        client.app.add_route(
-            '/413', TemporaryRequestEntityTooLongResource('6'))
+        client.app.add_route('/413', TemporaryRequestEntityTooLongResource('6'))
         response = client.simulate_request(path='/413')
         assert response.status == falcon.HTTP_413
 
@@ -712,8 +707,7 @@ class TestHTTPError:
 
     def test_414_with_description(self, client):
         description = 'Be short please.'
-        client.app.add_route(
-            '/414', UriTooLongResource(description=description))
+        client.app.add_route('/414', UriTooLongResource(description=description))
         response = client.simulate_request(path='/414', headers={})
         parsed_body = json.loads(response.content.decode())
         assert parsed_body['description'] == description
@@ -728,12 +722,10 @@ class TestHTTPError:
     def test_416(self, client, asgi):
         client.app = create_app(asgi)
         client.app.add_route('/416', RangeNotSatisfiableResource())
-        response = client.simulate_request(
-            path='/416', headers={'accept': 'text/xml'})
+        response = client.simulate_request(path='/416', headers={'accept': 'text/xml'})
 
         assert response.status == falcon.HTTP_416
-        assert response.content == falcon.HTTPRangeNotSatisfiable(
-            123456).to_xml()
+        assert response.content == falcon.HTTPRangeNotSatisfiable(123456).to_xml()
         exp = (
             b'<?xml version="1.0" encoding="UTF-8"?><error>'
             b'<title>416 Range Not Satisfiable</title></error>'
@@ -864,12 +856,10 @@ class TestHTTPError:
         self._misc_test(client, falcon.HTTPPreconditionFailed, falcon.HTTP_412)
         self._misc_test(client, falcon.HTTPUnsupportedMediaType, falcon.HTTP_415,
                         needs_title=False)
-        self._misc_test(client, falcon.HTTPUnprocessableEntity,
-                        falcon.HTTP_422)
+        self._misc_test(client, falcon.HTTPUnprocessableEntity, falcon.HTTP_422)
         self._misc_test(client, falcon.HTTPUnavailableForLegalReasons, falcon.HTTP_451,
                         needs_title=False)
-        self._misc_test(client, falcon.HTTPInternalServerError,
-                        falcon.HTTP_500)
+        self._misc_test(client, falcon.HTTPInternalServerError, falcon.HTTP_500)
         self._misc_test(client, falcon.HTTPBadGateway, falcon.HTTP_502)
 
     def test_title_default_message_if_none(self, client):
