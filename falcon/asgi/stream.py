@@ -39,6 +39,10 @@ class BoundedStream:
     framework, this is the most memory-efficient way of reading the request
     body::
 
+        # If the request body is empty or has already be consumed, the iteration
+        #   will immediately stop without yielding any data chunks. Otherwise, a
+        #   series of byte #   strings will be yielded until the entire request
+        #   body has been yielded or the client disconnects.
         async for data_chunk in req.stream
             pass
 
@@ -398,7 +402,6 @@ class BoundedStream:
             )
 
         if self.eof:
-            yield b''
             return
 
         if self._iteration_started:
@@ -423,6 +426,10 @@ class BoundedStream:
             except KeyError:
                 pass
             else:
+                # NOTE(kgriffs): No need to yield empty body chunks.
+                if not next_chunk:
+                    continue
+
                 next_chunk_len = len(next_chunk)
 
                 if next_chunk_len <= self._bytes_remaining:

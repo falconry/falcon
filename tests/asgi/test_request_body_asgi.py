@@ -66,7 +66,8 @@ class TestRequestBody:
         body_in = os.urandom(body_length)
 
         scope = testing.create_scope(content_length=content_length)
-        req_event_emitter = testing.ASGIRequestEventEmitter(body=body_in, emit_empty_chunks=False)
+        req_event_emitter = testing.ASGIRequestEventEmitter(body=body_in)
+        req_event_emitter._emit_empty_chunks = False
         first_event = await req_event_emitter.emit()
         req = falcon.asgi.Request(scope, req_event_emitter, first_event=first_event)
 

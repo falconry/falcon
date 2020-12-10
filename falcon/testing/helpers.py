@@ -113,8 +113,6 @@ class ASGIRequestEventEmitter:
             (default ``b''``).
         chunk_size (int): The maximum number of bytes to include in
             a single http.request event (default 4096).
-        emit_empty_chunks (bool): Set to ``False`` to disable emitting
-            an occasional empty byte string as a body chunk (default ``True``).
         disconnect_at (float): The Unix timestamp after which to begin
             emitting ``'http.disconnect'`` events (default now + 30s). The
             value may be either an ``int`` or a ``float``, depending
@@ -136,8 +134,7 @@ class ASGIRequestEventEmitter:
         self,
         body: Union[str, bytes] = None,
         chunk_size: int = None,
-        emit_empty_chunks: bool = True,
-        disconnect_at: Union[int, float] = None
+        disconnect_at: Union[int, float] = None,
     ):
         if body is None:
             body = b''
@@ -152,7 +149,7 @@ class ASGIRequestEventEmitter:
 
         self._body = body  # type: Optional[bytes]
         self._chunk_size = chunk_size
-        self._emit_empty_chunks = emit_empty_chunks
+        self._emit_empty_chunks = True
         self._disconnect_at = disconnect_at
         self._disconnected = False
         self._exhaust_body = True
