@@ -14,7 +14,6 @@
 
 """ASGI BoundedStream class."""
 
-
 from falcon.errors import OperationNotAllowed
 
 
@@ -33,11 +32,11 @@ class BoundedStream:
     the stream will yield data until the ASGI server indicates that no more
     bytes are available.
 
-    The preferred method of using the stream object is as an asynchronous
-    iterator. In this mode, each body chunk is simply yielded in its entirety,
-    as it is received from the ASGI server. Because no data is buffered by the
-    framework, this is the most memory-efficient way of reading the request
-    body::
+    For large request bodies, the preferred method of using the stream object is
+    as an asynchronous iterator. In this mode, each body chunk is simply yielded
+    in its entirety, as it is received from the ASGI server. Because no data is
+    buffered by the framework, this is the most memory-efficient way of reading
+    the request body::
 
         # If the request body is empty or has already be consumed, the iteration
         #   will immediately stop without yielding any data chunks. Otherwise, a
@@ -51,14 +50,18 @@ class BoundedStream:
 
         # Read all of the data at once; use only when you are confident
         #   that the request body is small enough to not eat up all of
-        #   your memory.
+        #   your memory. For small bodies, this is the most performant
+        #   option.
         data = await req.stream.readall()
 
         # ...or call read() without arguments
         data = await req.stream.read()
 
         # ...or read the data in chunks. You may choose to read more
-        #   or less than 32 KiB as shown in this example.
+        #   or less than 32 KiB as shown in this example. But note that
+        #   this approach will generally be less efficient as compared
+        #   to async iteration, resulting in more usage and
+        #   copying of memory.
         while True:
             data_chunk = await req.stream.read(32 * 1024)
             if not data_chunk:
@@ -330,6 +333,10 @@ class BoundedStream:
                 available, and may be smaller than the amount requested. If the
                 size is -1 or not specified, all remaining data is read and
                 returned.
+
+        Returns:
+            bytes: The request body data, or ``b''`` if the body is empty or
+            has already been consumed.
         """
 
         if self._closed:
@@ -419,7 +426,7 @@ class BoundedStream:
         while self._bytes_remaining > 0:
             event = await self._receive()
 
-            # PERF(kgriffs): Use try..except because we normally expect the
+            # PERF(kgriffs): Use try...except because we normally expect the
             #   'body' key to be present.
             try:
                 next_chunk = event['body']

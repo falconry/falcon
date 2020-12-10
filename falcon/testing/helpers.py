@@ -141,13 +141,15 @@ class ASGIRequestEventEmitter:
         elif not isinstance(body, bytes):
             body = body.encode()
 
+        body = memoryview(body)
+
         if disconnect_at is None:
             disconnect_at = time.time() + 30
 
         if chunk_size is None:
             chunk_size = 4096
 
-        self._body = body  # type: Optional[bytes]
+        self._body = body  # type: Optional[memoryview]
         self._chunk_size = chunk_size
         self._emit_empty_chunks = True
         self._disconnect_at = disconnect_at
@@ -237,7 +239,7 @@ class ASGIRequestEventEmitter:
         self._body = self._body[self._chunk_size:] or None
 
         if chunk:
-            event['body'] = chunk
+            event['body'] = bytes(chunk)
         elif self._toggle_branch('explicit_empty_body_2'):
             # NOTE(kgriffs): Since ASGI specifies that
             #   'body' is optional, we toggle whether

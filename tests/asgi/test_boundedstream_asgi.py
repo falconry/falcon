@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 import falcon
@@ -11,7 +13,8 @@ from falcon import asgi, testing
     b'catsup',
     b'\xDE\xAD\xBE\xEF' * 512,
     testing.rand_string(1, 2048),
-], ids=['empty', 'null', 'null-ff', 'normal', 'long', 'random'])
+    os.urandom(100 * 2**20),
+], ids=['empty', 'null', 'null-ff', 'normal', 'long', 'random', 'random-large'])
 @pytest.mark.parametrize('extra_body', [True, False])
 @pytest.mark.parametrize('set_content_length', [True, False])
 def test_read_all(body, extra_body, set_content_length):
