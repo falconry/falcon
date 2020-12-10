@@ -710,7 +710,11 @@ async def _simulate_request_asgi(
     http_scope.update(extras)
     # ---------------------------------------------------------------------
 
-    disconnect_at = time.time() + max(0, asgi_disconnect_ttl)
+    if asgi_disconnect_ttl == 0:  # Special case
+        disconnect_at = 0
+    else:
+        disconnect_at = time.time() + max(0, asgi_disconnect_ttl)
+
     req_event_emitter = helpers.ASGIRequestEventEmitter(
         (body or b''),
         chunk_size=asgi_chunk_size,
@@ -780,6 +784,11 @@ async def _simulate_request_asgi(
         await task_lifespan
 
     await conductor()
+
+    if resp_event_collector.status is None:
+        # NOTE(kgriffs): An immediate disconnect was simulated, and so
+        #   the app could not return a status.
+        raise ConnectionError('An immediate disconnect was simulated.')
 
     return Result(resp_event_collector.body_chunks,
                   code_to_http_status(resp_event_collector.status),
@@ -1127,7 +1136,8 @@ def simulate_get(app, path, **kwargs) -> _ResultBase:
         asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
             'http.disconnect' event when the app calls the
-            receive() function (default 300).
+            receive() function (default 300). Set to ``0`` to simulate an
+            immediate disconnection without first emitting 'http.request'.
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
@@ -1218,7 +1228,8 @@ def simulate_head(app, path, **kwargs) -> _ResultBase:
         asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
             'http.disconnect' event when the app calls the
-            receive() function (default 300).
+            receive() function (default 300). Set to ``0`` to simulate an
+            immediate disconnection without first emitting 'http.request'.
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
@@ -1322,7 +1333,8 @@ def simulate_post(app, path, **kwargs) -> _ResultBase:
         asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
             'http.disconnect' event when the app calls the
-            receive() function (default 300).
+            receive() function (default 300). Set to ``0`` to simulate an
+            immediate disconnection without first emitting 'http.request'.
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
@@ -1426,7 +1438,8 @@ def simulate_put(app, path, **kwargs) -> _ResultBase:
         asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
             'http.disconnect' event when the app calls the
-            receive() function (default 300).
+            receive() function (default 300). Set to ``0`` to simulate an
+            immediate disconnection without first emitting 'http.request'.
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
@@ -1512,7 +1525,8 @@ def simulate_options(app, path, **kwargs) -> _ResultBase:
         asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
             'http.disconnect' event when the app calls the
-            receive() function (default 300).
+            receive() function (default 300). Set to ``0`` to simulate an
+            immediate disconnection without first emitting 'http.request'.
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
@@ -1607,7 +1621,8 @@ def simulate_patch(app, path, **kwargs) -> _ResultBase:
         asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
             'http.disconnect' event when the app calls the
-            receive() function (default 300).
+            receive() function (default 300). Set to ``0`` to simulate an
+            immediate disconnection without first emitting 'http.request'.
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
@@ -1706,7 +1721,8 @@ def simulate_delete(app, path, **kwargs) -> _ResultBase:
         asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
             'http.disconnect' event when the app calls the
-            receive() function (default 300).
+            receive() function (default 300). Set to ``0`` to simulate an
+            immediate disconnection without first emitting 'http.request'.
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
