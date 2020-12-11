@@ -2,9 +2,6 @@
 *.c
 *.so
 
-# static analysis
-.deepsource.toml
-
 # Jython
 *$py.class
 
