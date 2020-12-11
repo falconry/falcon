@@ -751,9 +751,9 @@ class Response:
 
             _headers[name] = value
 
-    def add_link(self, target, rel, title=None, title_star=None,
-                 anchor=None, hreflang=None, type_hint=None, crossorigin=None):
-        """Add a link header to the response.
+    def append_link(self, target, rel, title=None, title_star=None,
+                    anchor=None, hreflang=None, type_hint=None, crossorigin=None):
+        """Append a link header to the response.
 
         (See also: RFC 5988, Section 1)
 
@@ -876,6 +876,9 @@ class Response:
             _headers['link'] += ', ' + value
         else:
             _headers['link'] = value
+
+    # NOTE(kgriffs): Alias deprecated as of 3.0
+    add_link = append_link
 
     cache_control = header_property(
         'Cache-Control',

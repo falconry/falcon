@@ -158,14 +158,16 @@ class LinkHeaderResource:
     def __init__(self):
         self._links = []
 
-    def add_link(self, *args, **kwargs):
+    def append_link(self, *args, **kwargs):
         self._links.append((args, kwargs))
 
     def on_get(self, req, resp):
         resp.body = '{}'
 
+        append_link = None
         for args, kwargs in self._links:
-            resp.add_link(*args, **kwargs)
+            append_link = resp.append_link if append_link is resp.add_link else resp.add_link
+            append_link(*args, **kwargs)
 
 
 class AppendHeaderResource:
@@ -666,15 +668,15 @@ class TestHeaders:
         resource = XmlResource(content_type)
         self._check_header(client, resource, 'Content-Type', content_type)
 
-    def test_add_link_single(self, client):
+    def test_append_link_single(self, client):
         expected_value = '</things/2842>; rel=next'
 
         resource = LinkHeaderResource()
-        resource.add_link('/things/2842', 'next')
+        resource.append_link('/things/2842', 'next')
 
         self._check_link_header(client, resource, expected_value)
 
-    def test_add_link_multiple(self, client):
+    def test_append_link_multiple(self, client):
         expected_value = (
             '</things/2842>; rel=next, ' +
             '<http://%C3%A7runchy/bacon>; rel=contents, ' +
@@ -686,81 +688,81 @@ class TestHeaders:
         uri = 'ab\u00e7'
 
         resource = LinkHeaderResource()
-        resource.add_link('/things/2842', 'next')
-        resource.add_link('http://\u00e7runchy/bacon', 'contents')
-        resource.add_link(uri, 'http://example.com/ext-type')
-        resource.add_link(uri, 'http://example.com/\u00e7runchy')
-        resource.add_link(uri, 'https://example.com/too-\u00e7runchy')
-        resource.add_link('/alt-thing',
-                          'alternate http://example.com/\u00e7runchy')
+        resource.append_link('/things/2842', 'next')
+        resource.append_link('http://\u00e7runchy/bacon', 'contents')
+        resource.append_link(uri, 'http://example.com/ext-type')
+        resource.append_link(uri, 'http://example.com/\u00e7runchy')
+        resource.append_link(uri, 'https://example.com/too-\u00e7runchy')
+        resource.append_link('/alt-thing',
+                             'alternate http://example.com/\u00e7runchy')
 
         self._check_link_header(client, resource, expected_value)
 
-    def test_add_link_with_title(self, client):
+    def test_append_link_with_title(self, client):
         expected_value = ('</related/thing>; rel=item; '
                           'title="A related thing"')
 
         resource = LinkHeaderResource()
-        resource.add_link('/related/thing', 'item',
-                          title='A related thing')
+        resource.append_link('/related/thing', 'item',
+                             title='A related thing')
 
         self._check_link_header(client, resource, expected_value)
 
-    def test_add_link_with_title_star(self, client):
+    def test_append_link_with_title_star(self, client):
         expected_value = ('</related/thing>; rel=item; '
                           "title*=UTF-8''A%20related%20thing, "
                           '</%C3%A7runchy/thing>; rel=item; '
                           "title*=UTF-8'en'A%20%C3%A7runchy%20thing")
 
         resource = LinkHeaderResource()
-        resource.add_link('/related/thing', 'item',
-                          title_star=('', 'A related thing'))
+        resource.append_link('/related/thing', 'item',
+                             title_star=('', 'A related thing'))
 
-        resource.add_link('/\u00e7runchy/thing', 'item',
-                          title_star=('en', 'A \u00e7runchy thing'))
+        resource.append_link('/\u00e7runchy/thing', 'item',
+                             title_star=('en', 'A \u00e7runchy thing'))
 
         self._check_link_header(client, resource, expected_value)
 
-    def test_add_link_with_anchor(self, client):
+    def test_append_link_with_anchor(self, client):
         expected_value = ('</related/thing>; rel=item; '
                           'anchor="/some%20thing/or-other"')
 
         resource = LinkHeaderResource()
-        resource.add_link('/related/thing', 'item',
-                          anchor='/some thing/or-other')
+        resource.append_link('/related/thing', 'item',
+                             anchor='/some thing/or-other')
 
         self._check_link_header(client, resource, expected_value)
 
-    def test_add_link_with_hreflang(self, client):
+    def test_append_link_with_hreflang(self, client):
         expected_value = ('</related/thing>; rel=about; '
                           'hreflang=en')
 
         resource = LinkHeaderResource()
-        resource.add_link('/related/thing', 'about', hreflang='en')
+        resource.append_link('/related/thing', 'about', hreflang='en')
 
         self._check_link_header(client, resource, expected_value)
 
-    def test_add_link_with_hreflang_multi(self, client):
+    def test_append_link_with_hreflang_multi(self, client):
         expected_value = ('</related/thing>; rel=about; '
                           'hreflang=en-GB; hreflang=de')
 
         resource = LinkHeaderResource()
-        resource.add_link('/related/thing', 'about',
-                          hreflang=('en-GB', 'de'))
+        resource.append_link('/related/thing', 'about',
+                             hreflang=('en-GB', 'de'))
 
         self._check_link_header(client, resource, expected_value)
 
-    def test_add_link_with_type_hint(self, client):
+    def test_append_link_with_type_hint(self, client):
         expected_value = ('</related/thing>; rel=alternate; '
                           'type="video/mp4; codecs=avc1.640028"')
 
         resource = LinkHeaderResource()
-        resource.add_link('/related/thing', 'alternate',
-                          type_hint='video/mp4; codecs=avc1.640028')
+        resource.append_link('/related/thing', 'alternate',
+                             type_hint='video/mp4; codecs=avc1.640028')
 
         self._check_link_header(client, resource, expected_value)
 
-    def test_add_link_complex(self, client):
+    def test_append_link_complex(self, client):
         expected_value = ('</related/thing>; rel=alternate; '
                           'title="A related thing"; '
                           "title*=UTF-8'en'A%20%C3%A7runchy%20thing; "
@@ -768,11 +770,11 @@ class TestHeaders:
                           'hreflang=en-GB; hreflang=de')
 
         resource = LinkHeaderResource()
-        resource.add_link('/related/thing', 'alternate',
-                          title='A related thing',
-                          hreflang=('en-GB', 'de'),
-                          type_hint='application/json',
-                          title_star=('en', 'A \u00e7runchy thing'))
+        resource.append_link('/related/thing', 'alternate',
+                             title='A related thing',
+                             hreflang=('en-GB', 'de'),
+                             type_hint='application/json',
+                             title_star=('en', 'A \u00e7runchy thing'))
 
         self._check_link_header(client, resource, expected_value)
 
@@ -790,10 +792,10 @@ class TestHeaders:
             '</related/thing>; rel=alternate; crossorigin="use-credentials"',
         ),
     ])
-    def test_add_link_crossorigin(self, client, crossorigin, expected_value):
+    def test_append_link_crossorigin(self, client, crossorigin, expected_value):
         resource = LinkHeaderResource()
-        resource.add_link('/related/thing', 'alternate',
-                          crossorigin=crossorigin)
+        resource.append_link('/related/thing', 'alternate',
+                             crossorigin=crossorigin)
 
         self._check_link_header(client, resource, expected_value)
 
@@ -805,11 +807,11 @@ class TestHeaders:
         'Strict',
         'deny',
     ])
-    def test_add_link_invalid_crossorigin_value(self, crossorigin):
+    def test_append_link_invalid_crossorigin_value(self, crossorigin):
         resp = falcon.Response()
 
         with pytest.raises(ValueError):
-            resp.add_link('/related/resource', 'next', crossorigin=crossorigin)
+            resp.append_link('/related/resource', 'next', crossorigin=crossorigin)
 
     def test_content_length_options(self, client):
         result = client.simulate_options()
