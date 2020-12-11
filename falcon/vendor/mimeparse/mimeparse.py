@@ -98,7 +98,7 @@ def quality_and_fitness_parsed(mime_type, parsed_ranges):
         if type_match and subtype_match:
 
             # 100 points if the type matches w/o a wildcard
-            fitness = 100 if type == target_type else 0
+            fitness = type == target_type and 100 or 0
 
             # 10 points if the subtype matches w/o a wildcard
             fitness += subtype == target_subtype and 10 or 0
@@ -181,7 +181,7 @@ def best_match(supported, header):
         pos += 1
     weighted_matches.sort()
 
-    return weighted_matches[-1][2] if weighted_matches[-1][0][0] else ''
+    return weighted_matches[-1][0][0] and weighted_matches[-1][2] or ''
 
 
 def _filter_blank(i):
