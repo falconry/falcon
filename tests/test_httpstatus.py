@@ -7,6 +7,7 @@ import pytest
 import falcon
 from falcon.http_status import HTTPStatus
 import falcon.testing as testing
+from falcon.util.deprecation import DeprecatedWarning
 
 from _util import create_app  # NOQA
 
@@ -28,7 +29,7 @@ def hook_test_client(request):
 def before_hook(req, resp, resource, params):
     raise HTTPStatus(falcon.HTTP_200,
                      headers={'X-Failed': 'False'},
-                     body='Pass')
+                     text='Pass')
 
 
 def after_hook(req, resp, resource):
@@ -56,7 +57,7 @@ class TestStatusResource:
 
         raise HTTPStatus(falcon.HTTP_200,
                          headers={'X-Failed': 'False'},
-                         body='Pass')
+                         text='Pass')
 
     @falcon.after(after_hook)
     def on_put(self, req, resp):
@@ -67,13 +68,13 @@ class TestStatusResource:
         resp.text = 'Fail'
 
     def on_patch(self, req, resp):
-        raise HTTPStatus(falcon.HTTP_200, body=None)
+        raise HTTPStatus(falcon.HTTP_200, text=None)
 
     @falcon.after(noop_after_hook)
     def on_delete(self, req, resp):
         raise HTTPStatus(falcon.HTTP_200,
                          headers={'X-Failed': 'False'},
-                         body='Pass')
+                         text='Pass')
 
 
 class TestHookResource:
@@ -85,12 +86,12 @@ class TestHookResource:
 
     def on_patch(self, req, resp):
         raise HTTPStatus(falcon.HTTP_200,
-                         body=None)
+                         text=None)
 
     def on_delete(self, req, resp):
         raise HTTPStatus(falcon.HTTP_200,
                          headers={'X-Failed': 'False'},
-                         body='Pass')
+                         text='Pass')
 
 
 class TestHTTPStatus:
@@ -138,7 +139,7 @@ class TestHTTPStatusWithMiddleware:
             def process_request(self, req, resp):
                 raise HTTPStatus(falcon.HTTP_200,
                                  headers={'X-Failed': 'False'},
-                                 body='Pass')
+                                 text='Pass')
 
             # NOTE(kgriffs): Test the side-by-side support for dual WSGI and
             #   ASGI compatibility.
@@ -160,7 +161,7 @@ class TestHTTPStatusWithMiddleware:
             def process_resource(self, req, resp, resource, params):
                 raise HTTPStatus(falcon.HTTP_200,
                                  headers={'X-Failed': 'False'},
-                                 body='Pass')
+                                 text='Pass')
 
             async def process_resource_async(self, *args):
                 self.process_resource(*args)
@@ -271,3 +272,18 @@ def test_non_string_status(custom_status_client, status, expected_code):
     resp = client.simulate_get('/status')
     assert resp.text == 'Hello, World!'
     assert resp.status_code == expected_code
+
+
+def test_deprecated_body():
+    with pytest.warns(DeprecatedWarning, match='Please use text instead'):
+        sts = HTTPStatus(falcon.HTTP_701, body='foo')
+        assert sts.text == 'foo'
+        assert sts.body == 'foo'
+
+        sts = HTTPStatus(falcon.HTTP_701, text='bar', body='foo')
+        assert sts.text == 'bar'
+        assert sts.body == 'bar'
+
+        sts = HTTPStatus(falcon.HTTP_701, text='', body='foo')
+        assert sts.text == ''
+        assert sts.body == ''

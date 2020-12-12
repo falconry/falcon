@@ -14,6 +14,8 @@
 
 """HTTPStatus exception class."""
 
+from falcon.util import deprecated
+
 
 class HTTPStatus(Exception):
     """Represents a generic HTTP status.
@@ -26,24 +28,35 @@ class HTTPStatus(Exception):
         status (str): HTTP status code and text, such as
             '748 Confounded by Ponies'.
         headers (dict): Extra headers to add to the response.
-        body (str): String representing response content. Falcon will encode
+        text (str): String representing response content. Falcon will encode
             this value as UTF-8 in the response.
+        body (str): Deprecated alias to :attr:`text`. Will be removed in a future Falcon version.
+            :attr:`text` take precedence if provided.
 
     Attributes:
         status (str): HTTP status line, e.g. '748 Confounded by Ponies'.
         headers (dict): Extra headers to add to the response.
-        body (str): String representing response content. Falcon will encode
+        text (str): String representing response content. Falcon will encode
             this value as UTF-8 in the response.
+        body (str): Deprecated alias to :attr:`text`. Will be removed in a future Falcon version.
 
     """
 
     __slots__ = (
         'status',
         'headers',
-        'body'
+        'text'
     )
 
-    def __init__(self, status, headers=None, body=None):
+    def __init__(self, status, headers=None, text=None, body=None):
         self.status = status
         self.headers = headers
-        self.body = body
+        self.text = text if text is not None else body
+
+    @property
+    @deprecated(
+        'Please use text instead.',
+        is_property=True
+    )
+    def body(self):
+        return self.text

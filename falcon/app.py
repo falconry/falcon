@@ -912,9 +912,9 @@ class App:
         if http_status.headers is not None:
             resp.set_headers(http_status.headers)
 
-        # NOTE(kgriffs): If http_status.body is None, that's OK because
+        # NOTE(kgriffs): If http_status.text is None, that's OK because
         # it's acceptable to set resp.text to None (to indicate no body).
-        resp.text = http_status.body
+        resp.text = http_status.text
 
     def _compose_error_response(self, req, resp, error):
         """Compose a response for the given HTTPError instance."""
