@@ -1,5 +1,8 @@
+import json
+import msgpack
 import pytest
 
+import falcon
 from falcon import errors, media, testing
 
 from _util import create_app  # NOQA
@@ -141,12 +144,18 @@ def test_empty_body(asgi, media_type):
 def test_invalid_json(asgi):
     client = _create_client_invalid_media(asgi, errors.HTTPBadRequest)
 
-    expected_body = b'{'
+    expected_body = '{'
     headers = {'Content-Type': 'application/json'}
     assert client.simulate_post('/', body=expected_body, headers=headers).status_code == 200
 
     assert 'Could not parse JSON body' in client.resource.captured_error.value.description
     assert isinstance(client.resource.captured_error.value, errors.MediaMalformedError)
+
+    try:
+        json.loads(expected_body)
+    except Exception as e:
+        assert type(client.resource.captured_error.value.source_error) == type(e)
+        assert str(client.resource.captured_error.value.source_error) == str(e)
 
 
 def test_invalid_msgpack(asgi):
@@ -162,6 +171,12 @@ def test_invalid_msgpack(asgi):
     desc = 'Could not parse MessagePack body - unpack(b) received extra data.'
     assert client.resource.captured_error.value.description == desc
     assert isinstance(client.resource.captured_error.value, errors.MediaMalformedError)
+
+    try:
+        msgpack.unpackb(expected_body.encode('utf-8'))
+    except Exception as e:
+        assert type(client.resource.captured_error.value.source_error) == type(e)
+        assert str(client.resource.captured_error.value.source_error) == str(e)
 
 
 class NopeHandler(media.BaseHandler):
@@ -248,3 +263,48 @@ def test_fallback_does_not_override_media_default(asgi):
     res = client.simulate_get('/', headers={'Content-Type': 'application/x-www-form-urlencoded'})
     assert res.status_code == 200
     assert res.text == '{}'
+
+
+def _check_error(err, err2):
+    assert err is not None
+    assert err2 is not None
+    assert err2 is err
+    if isinstance(err, errors.MediaMalformedError):
+        assert err2.source_error is err.source_error
+    raise errors.HTTPError(falcon.HTTP_IM_A_TEAPOT)
+
+
+class RepeatedError:
+    def on_get(self, req, resp):
+        err, err2 = None, None
+        try:
+            req.media
+        except Exception as e:
+            err = e
+        try:
+            req.get_media()
+        except Exception as e:
+            err2 = e
+        _check_error(err, err2)
+
+
+class RepeatedErrorAsync:
+    async def on_get(self, req, resp):
+        err, err2 = None, None
+        try:
+            await req.media
+        except Exception as e:
+            err = e
+        try:
+            await req.get_media()
+        except Exception as e:
+            err2 = e
+        _check_error(err, err2)
+
+
+@pytest.mark.parametrize('body', ('{', ''))
+def test_repeated_error(asgi, body):
+    client = create_client(asgi, resource=RepeatedErrorAsync() if asgi else RepeatedError())
+
+    res = client.simulate_get('/', body=body)
+    assert res.status == falcon.HTTP_IM_A_TEAPOT
