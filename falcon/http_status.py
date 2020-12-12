@@ -53,7 +53,7 @@ class HTTPStatus(Exception):
         self.headers = headers
         self.text = text if text is not None else body
 
-    @property
+    @property  # type: ignore
     @deprecated(
         'Please use text instead.',
         is_property=True
