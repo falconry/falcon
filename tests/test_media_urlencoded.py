@@ -18,8 +18,9 @@ def test_deserialize_empty_form():
 def test_deserialize_invalid_unicode():
     handler = media.URLEncodedFormHandler()
     stream = io.BytesIO('spade=♠'.encode())
-    with pytest.raises(UnicodeDecodeError):
+    with pytest.raises(falcon.MediaMalformedError) as err:
         handler.deserialize(stream, falcon.MEDIA_URLENCODED, 9)
+    assert isinstance(err.value.source_error, UnicodeDecodeError)
 
 
 @pytest.mark.parametrize('data,expected', [
@@ -37,7 +38,7 @@ def test_urlencoded_form_handler_serialize(data, expected):
 class MediaMirror:
 
     def on_post(self, req, resp):
-        resp.media = req.media
+        resp.media = req.get_media()
 
 
 class MediaMirrorAsync:

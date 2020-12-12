@@ -2289,25 +2289,97 @@ class HTTPMissingParam(HTTPBadRequest):
         )
 
 
-class MediaError(HTTPBadRequest):
-    """TODO"""
+class MediaNotFoundError(HTTPBadRequest):
+    """400 Bad Request.
 
-class MediaNotFoundError(MediaError):
-    """TODO"""
+    Exception raised by a media handler when trying to parse an empty body.
 
-    def __init__(self):
-        super().__init__()
+    Note:
+        Some media handler, like the URL-encoded form one, allow an empty body.
+        In these cases this exception will not be raised.
 
+    Args:
+        media_type (str): The media type that was raised this exception.
 
-class MediaMalformedError(MediaError):
-    """TODO"""
+    Keyword Args:
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
 
-    def __init__(self, inner, media_type):
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (default 'API documentation
+            for this error').
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
+    """
+
+    def __init__(self, media_type, **kwargs):
         super().__init__(
             title='Invalid {0}'.format(media_type),
-            description='Could not parse the body - {0}'.format(inner)
+            description='Could not parse an empty {0} body'.format(media_type),
+            **kwargs
         )
-        self.inner = inner
+
+
+class MediaMalformedError(HTTPBadRequest):
+    """400 Bad Request.
+
+    Exception raised by a media handler when trying to parse a malformed body.
+    The actual exception is stored in the ``source_error`` attribute.
+
+    Args:
+        media_type (str): The media type that was raised this exception.
+        source_error (Exception): The source exception that was the cause of this one.
+
+    Keyword Args:
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (default 'API documentation
+            for this error').
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
+    """
+
+    def __init__(self, media_type, source_error, **kwargs):
+        super().__init__(
+            title='Invalid {0}'.format(media_type),
+            description='Could not parse {0} body - {1}'.format(media_type, source_error),
+            **kwargs
+        )
+        self.source_error = source_error
 
 # -----------------------------------------------------------------------------
 # Helpers

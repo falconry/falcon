@@ -54,6 +54,9 @@ def capture_responder_args(req, resp, resource, params):
     resource.captured_resp = resp
     resource.captured_kwargs = params
 
+    resource.captured_req_media = None
+    resource.captured_req_body = None
+
     num_bytes = req.get_header('capture-req-body-bytes')
     if num_bytes:
         resource.captured_req_body = req.stream.read(int(num_bytes))
@@ -70,6 +73,9 @@ async def capture_responder_args_async(req, resp, resource, params):
     resource.captured_req = req
     resource.captured_resp = resp
     resource.captured_kwargs = params
+
+    resource.captured_req_media = None
+    resource.captured_req_body = None
 
     num_bytes = req.get_header('capture-req-body-bytes')
     if num_bytes:

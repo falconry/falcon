@@ -13,6 +13,10 @@ class MessagePackHandler(BaseHandler):
     MessagePack ``bin`` type is used to distinguish between Unicode strings
     (of type ``str``) and byte strings (of type ``bytes``).
 
+    This handler will raise a :class:`falcon.error.MediaNotFoundError` when attempting
+    to parse an empty body; it will raise a :class:`falcon.error.MediaMalformedError`
+    when if an error happens while parsing the body.
+
     Note:
         This handler requires the extra ``msgpack`` package (version 0.5.2
         or higher), which must be installed in addition to ``falcon`` from
@@ -34,13 +38,13 @@ class MessagePackHandler(BaseHandler):
 
     def _deserialize(self, data):
         if not data:
-            raise errors.MediaNotFoundError()
+            raise errors.MediaNotFoundError('MessagePack')
         try:
             # NOTE(jmvrbanac): Using unpackb since we would need to manage
             # a buffer for Unpacker() which wouldn't gain us much.
             return self.msgpack.unpackb(data, raw=False)
         except ValueError as err:
-            raise errors.MediaMalformedError(err, 'MessagePack')
+            raise errors.MediaMalformedError('MessagePack', err) from err
 
     def deserialize(self, stream, content_type, content_length):
         return self._deserialize(stream.read())

@@ -134,7 +134,8 @@ def test_empty_body(asgi, media_type):
     headers = {'Content-Type': media_type}
     assert client.simulate_post('/', headers=headers).status_code == 200
 
-    assert 'Could not parse' in client.resource.captured_error.value.description
+    assert 'Could not parse an empty' in client.resource.captured_error.value.description
+    assert isinstance(client.resource.captured_error.value, errors.MediaNotFoundError)
 
 
 def test_invalid_json(asgi):
@@ -145,6 +146,7 @@ def test_invalid_json(asgi):
     assert client.simulate_post('/', body=expected_body, headers=headers).status_code == 200
 
     assert 'Could not parse JSON body' in client.resource.captured_error.value.description
+    assert isinstance(client.resource.captured_error.value, errors.MediaMalformedError)
 
 
 def test_invalid_msgpack(asgi):
@@ -159,6 +161,7 @@ def test_invalid_msgpack(asgi):
 
     desc = 'Could not parse MessagePack body - unpack(b) received extra data.'
     assert client.resource.captured_error.value.description == desc
+    assert isinstance(client.resource.captured_error.value, errors.MediaMalformedError)
 
 
 class NopeHandler(media.BaseHandler):
