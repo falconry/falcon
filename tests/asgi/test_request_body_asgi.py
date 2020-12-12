@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 import falcon
@@ -50,6 +52,27 @@ class TestRequestBody:
 
         assert resource.captured_req_body == expected_body.encode('utf-8')
         assert stream.tell() == expected_len
+
+    @pytest.mark.parametrize('body_length, content_length', [
+        (1, 0),
+        (2, 1),
+        (3, 2),
+        (100, None),
+        (100, 50),
+        (8192, 50),
+    ])
+    @pytest.mark.asyncio
+    async def test_content_length_smaller_than_body(self, body_length, content_length):
+        body_in = os.urandom(body_length)
+
+        scope = testing.create_scope(content_length=content_length)
+        req_event_emitter = testing.ASGIRequestEventEmitter(body=body_in)
+        req_event_emitter._emit_empty_chunks = False
+        first_event = await req_event_emitter.emit()
+        req = falcon.asgi.Request(scope, req_event_emitter, first_event=first_event)
+
+        body_out = await req.bounded_stream.read()
+        assert body_out == body_in[:content_length]
 
     def test_read_body(self, client, resource):
         client.app.add_route('/', resource)

@@ -460,11 +460,20 @@ def _daphne_factory(host, port):
     )
 
 
+def _can_run(factory):
+    if _WIN32 and factory == _daphne_factory:
+        pytest.skip('daphne does not support windows')
+    if factory == _daphne_factory:
+        try:
+            import daphne  # noqa
+        except Exception:
+            pytest.skip('daphne not installed')
+
+
 @pytest.fixture(params=[_uvicorn_factory, _daphne_factory])
 def server_base_url(request):
     process_factory = request.param
-    if _WIN32 and process_factory == _daphne_factory:
-        pytest.skip('daphne does not support windows')
+    _can_run(process_factory)
 
     for i in range(3):
         server_port = testing.get_unused_port()
