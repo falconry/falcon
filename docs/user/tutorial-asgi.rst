@@ -4,7 +4,9 @@ Tutorial (ASGI)
 ===============
 
 In this tutorial we'll walk through building an API for a simple image sharing
-service. Along the way, we'll discuss
+service. Along the way, we'll discuss the basic anatomy of an asynchronous
+Falcon application: responders, routing, middleware, executing synchronous
+functions in an executor, and more!
 
 .. note::
    This tutorial covers the asynchronous flavor of Falcon using
@@ -49,7 +51,7 @@ WSGI tutorial::
 At the time of writing, ASGI is not yet available in a stable Falcon release.
 We'll need to either install an alpha release::
 
-  $ pip install falcon==3.0.0a2
+  $ pip install falcon==3.0.0a3
 
 Or, just check out the latest development version straight from GitHub::
 
@@ -321,14 +323,8 @@ suffix in the respective :func:`add_route <falcon.asgi.App.add_route>` call.
 
 The ASGI application now resides in ``asgi.py``:
 
-.. Copy-paste under: examples/asgilook/asgilook/asgi.py
-
-.. code:: python
-
-    from .app import create_app
-
-    app = create_app()
-
+.. literalinclude:: ../../examples/asgilook/asgilook/asgi.py
+    :language: python
 
 Running the application is not too dissimilar from the previous command line::
 
@@ -459,161 +455,14 @@ The ``store.Image`` class can be extended to also return URIs to thumbnails:
 
 The updated ``store.py`` should now look like:
 
-.. Copy-paste under: examples/asgilook/asgilook/store.py
-
-.. code:: python
-
-    import asyncio
-    import datetime
-    import io
-    import os.path
-
-    import aiofiles
-    import falcon
-    import PIL.Image
-
-
-    class Image:
-
-        def __init__(self, config, image_id, size):
-            self.config = config
-            self.image_id = image_id
-            self.size = size
-            self.modified = datetime.datetime.utcnow()
-
-        @property
-        def path(self):
-            return os.path.join(self.config.storage_path, self.image_id)
-
-        @property
-        def uri(self):
-            return f'/images/{self.image_id}.jpeg'
-
-        def serialize(self):
-            return {
-                'id': self.image_id,
-                'image': self.uri,
-                'modified': falcon.dt_to_http(self.modified),
-                'size': self.size,
-                'thumbnails': self.thumbnails(),
-            }
-
-        def thumbnails(self):
-            def reductions(size, min_size):
-                width, height = size
-                factor = 2
-                while width // factor >= min_size and height // factor >= min_size:
-                    yield (width // factor, height // factor)
-                    factor *= 2
-
-            return [
-                f'/thumbnails/{self.image_id}/{width}x{height}.jpeg'
-                for width, height in reductions(
-                    self.size, self.config.min_thumb_size)]
-
-
-    class Store:
-
-        def __init__(self, config):
-            self.config = config
-            self._images = {}
-
-        def _load_from_bytes(self, data):
-            return PIL.Image.open(io.BytesIO(data))
-
-        def _convert(self, image):
-            rgb_image = image.convert('RGB')
-
-            converted = io.BytesIO()
-            rgb_image.save(converted, 'JPEG')
-            return converted.getvalue()
-
-        def _resize(self, data, size):
-            image = PIL.Image.open(io.BytesIO(data))
-            image.thumbnail(size)
-
-            resized = io.BytesIO()
-            image.save(resized, 'JPEG')
-            return resized.getvalue()
-
-        def get(self, image_id):
-            return self._images.get(image_id)
-
-        def list_images(self):
-            return sorted(self._images.values(), key=lambda item: item.modified)
-
-        async def make_thumbnail(self, image, size):
-            async with aiofiles.open(image.path, 'rb') as img_file:
-                data = await img_file.read()
-
-            loop = asyncio.get_running_loop()
-            return await loop.run_in_executor(None, self._resize, data, size)
-
-        async def save(self, image_id, data):
-            loop = asyncio.get_running_loop()
-            image = await loop.run_in_executor(None, self._load_from_bytes, data)
-            converted = await loop.run_in_executor(None, self._convert, image)
-
-            path = os.path.join(self.config.storage_path, image_id)
-            async with aiofiles.open(path, 'wb') as output:
-                await output.write(converted)
-
-            stored = Image(self.config, image_id, image.size)
-            self._images[image_id] = stored
-            return stored
+.. literalinclude:: ../../examples/asgilook/asgilook/store.py
+    :language: python
 
 Let's also add a new ``Thumbnails`` resource to expose the new
 functionality. The final version of ``images.py`` reads:
 
-.. Copy-paste under: examples/asgilook/asgilook/images.py
-
-.. code:: python
-
-    import aiofiles
-    import falcon
-
-
-    class Images:
-
-        def __init__(self, config, store):
-            self.config = config
-            self.store = store
-
-        async def on_get(self, req, resp):
-            resp.media = [image.serialize() for image in self.store.list_images()]
-
-        async def on_get_image(self, req, resp, image_id):
-            image = self.store.get(str(image_id))
-            if not image:
-                raise falcon.HTTPNotFound
-
-            resp.stream = await aiofiles.open(image.path, 'rb')
-            resp.content_type = falcon.MEDIA_JPEG
-
-        async def on_post(self, req, resp):
-            data = await req.stream.read()
-            image_id = str(self.config.uuid_generator())
-            image = await self.store.save(image_id, data)
-
-            resp.location = image.uri
-            resp.media = image.serialize()
-            resp.status = falcon.HTTP_201
-
-
-    class Thumbnails:
-
-        def __init__(self, store):
-            self.store = store
-
-        async def on_get(self, req, resp, image_id, width, height):
-            image = self.store.get(str(image_id))
-            if not image:
-                raise falcon.HTTPNotFound
-            if req.path not in image.thumbnails():
-                raise falcon.HTTPNotFound
-
-            resp.content_type = falcon.MEDIA_JPEG
-            resp.data = await self.store.make_thumbnail(image, (width, height))
+.. literalinclude:: ../../examples/asgilook/asgilook/images.py
+    :language: python
 
 Adding a new thumbnails route in ``app.py`` is left as an exercise for the
 reader (if you get stuck, see the final version of ``app.py`` later in this
@@ -686,7 +535,7 @@ installing Redis server on your machine, one could also:
 
     docker run -p 6379:6379 redis
 
-* Considering Redis is installed on the machine, one could also try
+* Assuming Redis is installed on the machine, one could also try
   `pifpaf <https://github.com/jd/pifpaf>`_ for spinning up Redis just
   temporarily for ``uvicorn``::
 
@@ -724,126 +573,20 @@ Assuming we call our new :ref:`configuration <asgi_tutorial_config>` items
 ``redis_host`` and ``create_redis_pool()``, respectively, the final version of
 ``config.py`` now reads:
 
-.. Copy-paste under: examples/asgilook/asgilook/config.py
-
-.. code:: python
-
-    import os
-    import uuid
-
-    import aioredis
-
-
-    class Config:
-        DEFAULT_CONFIG_PATH = '/tmp/asgilook'
-        DEFAULT_MIN_THUMB_SIZE = 64
-        DEFAULT_REDIS_HOST = 'redis://localhost'
-        DEFAULT_REDIS_POOL = aioredis.create_redis_pool
-        DEFAULT_UUID_GENERATOR = uuid.uuid4
-
-        def __init__(self):
-            self.storage_path = (os.environ.get('ASGI_LOOK_STORAGE_PATH')
-                                 or self.DEFAULT_CONFIG_PATH)
-            if not os.path.exists(self.storage_path):
-                os.makedirs(self.storage_path)  # pragma: nocover
-
-            self.create_redis_pool = Config.DEFAULT_REDIS_POOL
-            self.min_thumb_size = self.DEFAULT_MIN_THUMB_SIZE
-            self.redis_host = self.DEFAULT_REDIS_HOST
-            self.uuid_generator = Config.DEFAULT_UUID_GENERATOR
+.. literalinclude:: ../../examples/asgilook/asgilook/config.py
+    :language: python
 
 A complete Redis cache component (``cache.py``) could look like:
 
-.. Copy-paste under: examples/asgilook/asgilook/cache.py
-
-.. code:: python
-
-    import msgpack
-
-
-    class RedisCache:
-        PREFIX = 'asgilook:'
-        INVALIDATE_ON = frozenset({'DELETE', 'POST', 'PUT'})
-        CACHE_HEADER = 'X-ASGILook-Cache'
-        TTL = 3600
-
-        def __init__(self, config):
-            self.config = config
-
-            # NOTE(vytas): To be initialized upon application startup (see the
-            #   method below).
-            self.redis = None
-
-        async def process_startup(self, scope, event):
-            if self.redis is None:
-                self.redis = await self.config.create_redis_pool(
-                    self.config.redis_host)
-
-        async def serialize_response(self, resp):
-            data = await resp.render_body()
-            return msgpack.packb([resp.content_type, data], use_bin_type=True)
-
-        def deserialize_response(self, resp, data):
-            resp.content_type, resp.data = msgpack.unpackb(data, raw=False)
-            resp.complete = True
-            resp.context.cached = True
-
-        async def process_request(self, req, resp):
-            resp.context.cached = False
-
-            if req.method in self.INVALIDATE_ON:
-                return
-
-            key = f'{self.PREFIX}/{req.path}'
-            data = await self.redis.get(key)
-            if data is not None:
-                self.deserialize_response(resp, data)
-                resp.set_header(self.CACHE_HEADER, 'Hit')
-            else:
-                resp.set_header(self.CACHE_HEADER, 'Miss')
-
-        async def process_response(self, req, resp, resource, req_succeeded):
-            if not req_succeeded:
-                return
-
-            key = f'{self.PREFIX}/{req.path}'
-
-            if req.method in self.INVALIDATE_ON:
-                await self.redis.delete(key)
-            elif not resp.context.cached:
-                data = await self.serialize_response(resp)
-                await self.redis.set(key, data, expire=self.TTL)
+.. literalinclude:: ../../examples/asgilook/asgilook/cache.py
+    :language: python
 
 For caching to come into effect, we also need to add the ``RedisCache``
 component to our application's middleware list.
 The final definition of all components in ``app.py`` now is:
 
-.. Copy-paste under: examples/asgilook/asgilook/app.py
-
-.. code:: python
-
-    import falcon.asgi
-
-    from .cache import RedisCache
-    from .config import Config
-    from .images import Images, Thumbnails
-    from .store import Store
-
-
-    def create_app(config=None):
-        config = config or Config()
-        cache = RedisCache(config)
-        store = Store(config)
-        images = Images(config, store)
-        thumbnails = Thumbnails(store)
-
-        app = falcon.asgi.App(middleware=[cache])
-        app.add_route('/images', images)
-        app.add_route('/images/{image_id:uuid}.jpeg', images, suffix='image')
-        app.add_route('/thumbnails/{image_id:uuid}/{width:int}x{height:int}.jpeg',
-                      thumbnails)
-
-        return app
+.. literalinclude:: ../../examples/asgilook/asgilook/app.py
+    :language: python
 
 Now, subsequent access to ``/thumbnails`` should be cached, as indicated by the
 ``x-asgilook-cache`` header::
@@ -888,7 +631,7 @@ inputs to the application?
 
 Having a comprehensive test suite is vital not only for verifying that
 application is correctly behaving at the moment, but also limiting the impact
-of future regressions that will have been introduced into the codebase.
+of future regressions that will be eventually introduced into the codebase.
 
 In order to implement actual tests, we'll need to revise our dependencies and
 decide which abstraction level we are after:
@@ -923,88 +666,8 @@ implementation tailored specifically for writing unit tests.
 Let's now write fixtures to replace ``uuid`` and ``aioredis``, and inject them
 into our tests via ``conftest.py``:
 
-.. Copy-paste under: examples/asgilook/tests/conftest.py
-
-.. code:: python
-
-    import io
-    import random
-    import uuid
-
-    import fakeredis.aioredis
-    import falcon.asgi
-    import falcon.testing
-    import PIL.Image
-    import PIL.ImageDraw
-    import pytest
-
-    from asgilook.app import create_app
-    from asgilook.config import Config
-
-
-    @pytest.fixture()
-    def predictable_uuid():
-        fixtures = (
-            uuid.UUID('36562622-48e5-4a61-be67-e426b11821ed'),
-            uuid.UUID('3bc731ac-8cd8-4f39-b6fe-1a195d3b4e74'),
-            uuid.UUID('ba1c4951-73bc-45a4-a1f6-aa2b958dafa4'),
-        )
-
-        def uuid_func():
-            try:
-                return next(fixtures_it)
-            except StopIteration:
-                return uuid.uuid4()
-
-        fixtures_it = iter(fixtures)
-        return uuid_func
-
-
-    @pytest.fixture(scope='session')
-    def storage_path(tmpdir_factory):
-        return str(tmpdir_factory.mktemp('asgilook'))
-
-
-    @pytest.fixture
-    def client(predictable_uuid, storage_path):
-        config = Config()
-        config.create_redis_pool = fakeredis.aioredis.create_redis_pool
-        config.redis_host = None
-        config.storage_path = storage_path
-        config.uuid_generator = predictable_uuid
-
-        app = create_app(config)
-        return falcon.testing.TestClient(app)
-
-
-    @pytest.fixture(scope='session')
-    def png_image():
-        image = PIL.Image.new('RGBA', (640, 360), color='black')
-
-        draw = PIL.ImageDraw.Draw(image)
-        for _ in range(32):
-            x0 = random.randint(20, 620)
-            y0 = random.randint(20, 340)
-            x1 = random.randint(20, 620)
-            y1 = random.randint(20, 340)
-            if x0 > x1:
-                x0, x1 = x1, x0
-            if y0 > y1:
-                y0, y1 = y1, y0
-            draw.ellipse([(x0, y0), (x1, y1)], fill='yellow', outline='red')
-
-        output = io.BytesIO()
-        image.save(output, 'PNG')
-        return output.getvalue()
-
-
-    @pytest.fixture(scope='session')
-    def image_size():
-        def report_size(data):
-            image = PIL.Image.open(io.BytesIO(data))
-            return image.size
-
-        return report_size
+.. literalinclude:: ../../examples/asgilook/tests/conftest.py
+    :language: python
 
 .. note::
    In the ``png_image`` fixture above, we are drawing random images that will
