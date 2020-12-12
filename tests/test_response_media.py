@@ -4,6 +4,7 @@ import pytest
 
 import falcon
 from falcon import errors, media, testing
+from falcon.util.deprecation import DeprecatedWarning
 
 
 @pytest.fixture
@@ -172,8 +173,8 @@ class TestRenderBodyPrecedence:
         client.simulate_get('/')
 
         resp = client.resource.captured_resp
-
-        resp.body = 'body'
+        with pytest.warns(DeprecatedWarning, match='Please use text instead'):
+            resp.body = 'body'
         resp.data = b'data'
         resp.media = ['media']
 

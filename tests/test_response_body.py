@@ -2,6 +2,7 @@ import pytest
 
 import falcon
 from falcon import testing
+from falcon.util.deprecation import DeprecatedWarning
 
 from _util import create_app, create_resp  # NOQA
 
@@ -14,12 +15,13 @@ def resp(asgi):
 def test_append_body(resp):
     text = 'Hello beautiful world! '
     resp.text = ''
+    with pytest.warns(DeprecatedWarning, match='Please use text instead'):
+        for token in text.split():
+            resp.text += token
+            resp.body += ' '
 
-    for token in text.split():
-        resp.text += token
-        resp.text += ' '
-
-    assert resp.text == text
+        assert resp.text == text
+        assert resp.body == text
 
 
 def test_response_repr(resp):

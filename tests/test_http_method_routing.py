@@ -280,6 +280,7 @@ class TestHttpMethodRouting:
         assert headers['allow'] == 'GET'
 
     @pytest.mark.parametrize('method', falcon.constants._META_METHODS + ['SETECASTRONOMY'])
+    @pytest.mark.filterwarnings('ignore:Unknown REQUEST_METHOD')
     def test_meta_and_others_disallowed(self, client, resource_things, method):
         client.app.add_route('/things/{id}/stuff/{sid}', resource_things)
         response = client.simulate_request(path='/things/42/stuff/1337', method='WEBSOCKET')

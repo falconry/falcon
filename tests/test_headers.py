@@ -212,7 +212,7 @@ class DownloadableResource:
         self.filename = filename
 
     def on_get(self, req, resp):
-        resp.body = 'Hello, World!\n'
+        resp.text = 'Hello, World!\n'
         resp.content_type = falcon.MEDIA_TEXT
         resp.downloadable_as = self.filename
 
