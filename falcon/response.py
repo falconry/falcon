@@ -80,7 +80,7 @@ class Response:
                 in the response. If the content is already a byte string,
                 use the :attr:`data` attribute instead (it's faster).
 
-        body (str): Deprecated alias for :attr:`text`.
+        body (str): Deprecated alias for :attr:`text`. Will be removed in a future Falcon version.
 
         data (bytes): Byte string representing response content.
 
@@ -191,7 +191,7 @@ class Response:
 
     @property  # type: ignore
     @deprecated(
-        'body is deprecated. Please use Response.text.',
+        'Please use text instead.',
         is_property=True
     )
     def body(self):
@@ -199,7 +199,7 @@ class Response:
 
     @body.setter  # type: ignore
     @deprecated(
-        'body is deprecated. Please use Response.text.',
+        'Please use text instead.',
         is_property=True
     )
     def body(self, value):

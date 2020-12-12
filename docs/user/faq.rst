@@ -785,7 +785,7 @@ rest.
             resp.media = { 'hello': 'World' }
 
 `resp.text` and `resp.data` are very similar, they both allow you to set the
-body of the response. The difference being, `body` takes a string and `data`
+body of the response. The difference being, `text` takes a string and `data`
 takes bytes.
 
 .. code:: python
