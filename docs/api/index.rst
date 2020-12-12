@@ -6,6 +6,7 @@ Framework Reference
 
    app
    request_and_response
+   websocket
    cookies
    status
    errors

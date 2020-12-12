@@ -408,10 +408,16 @@ class Response(falcon.response.Response):
         if media_type is not None and 'content-type' not in headers:
             headers['content-type'] = media_type
 
-        items = [(n.encode(), v.encode()) for n, v in headers.items()]
+        try:
+            items = [(n.encode('ascii'), v.encode('ascii')) for n, v in headers.items()]
+        except UnicodeEncodeError as ex:
+            raise ValueError(
+                'The modern series of HTTP standards require that header names and values '
+                f'use only ASCII characters: {ex}'
+            )
 
         if self._extra_headers:
-            items += [(n.encode(), v.encode()) for n, v in self._extra_headers]
+            items += [(n.encode('ascii'), v.encode('ascii')) for n, v in self._extra_headers]
 
         # NOTE(kgriffs): It is important to append these after self._extra_headers
         #   in case the latter contains Set-Cookie headers that should be
@@ -425,6 +431,6 @@ class Response(falcon.response.Response):
             #
             # Even without the .split("\\r\\n"), the below
             # is still ~17% faster, so don't use .output()
-            items += [(b'set-cookie', c.OutputString().encode())
+            items += [(b'set-cookie', c.OutputString().encode('ascii'))
                       for c in self._cookies.values()]
         return items

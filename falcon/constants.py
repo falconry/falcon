@@ -1,3 +1,4 @@
+from enum import Enum
 import os
 
 # RFC 7231, 5789 methods
@@ -38,7 +39,16 @@ FALCON_CUSTOM_HTTP_METHODS = [
     if method.strip() != ''
 ]
 
-COMBINED_METHODS = HTTP_METHODS + WEBDAV_METHODS + FALCON_CUSTOM_HTTP_METHODS
+_META_METHODS = [
+    'WEBSOCKET',
+]
+
+COMBINED_METHODS = (
+    HTTP_METHODS +
+    WEBDAV_METHODS +
+    FALCON_CUSTOM_HTTP_METHODS +
+    _META_METHODS
+)
 
 # NOTE(kgriffs): According to RFC 7159, most JSON parsers assume
 # UTF-8 and so it is the recommended default charset going forward,
@@ -110,3 +120,6 @@ SINGLETON_HEADERS = frozenset([
 # NOTE(kgriffs): Special singleton to be used internally whenever using
 #   None would be ambiguous.
 _UNSET = object()
+
+WebSocketPayloadType = Enum('WebSocketPayloadType', 'TEXT BINARY')
+"""Enum representing the two possible WebSocket payload types."""

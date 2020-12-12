@@ -41,6 +41,8 @@ class Request(falcon.request.Request):
             event dictionary when one is available.
 
     Keyword Args:
+        first_event (dict): First ASGI event received from the client,
+            if one was preloaded (default ``None``).
         options (falcon.request.RequestOptions): Set of global request options
             passed from the App handler.
 
@@ -74,15 +76,20 @@ class Request(falcon.request.Request):
                 the current ``Request`` instance. Therefore the first argument
                 is the Request instance itself (i.e., `self`).
 
-        scheme (str): URL scheme used for the request. Either ``'http'`` or
-            ``'https'``. Defaults to ``'http'`` if the ASGI server does not
-            include the scheme in the connection scope.
+        scheme (str): URL scheme used for the request. One of ``'http'``,
+            ``'https'``, ``'ws'``, or ``'wss'``. Defaults to ``'http'`` for
+            the ``http`` scope, or ``'ws'`` for the ``websocket`` scope, when
+            the ASGI server does not include the scheme in the connection
+            scope.
 
             Note:
                 If the request was proxied, the scheme may not
                 match what was originally requested by the client.
                 :py:attr:`forwarded_scheme` can be used, instead,
                 to handle such cases.
+
+        is_websocket (bool): Set to ``True`` IFF this request was made as part
+            of a WebSocket handshake.
 
         forwarded_scheme (str): Original URL scheme requested by the
             user agent, if the request was proxied. Typical values are
@@ -337,12 +344,13 @@ class Request(falcon.request.Request):
     __slots__ = [
         '_asgi_headers',
         '_asgi_server_cached',
+        '_first_event',
         '_receive',
         '_stream',
         'scope',
     ]
 
-    def __init__(self, scope, receive, options=None):
+    def __init__(self, scope, receive, first_event=None, options=None):
 
         # =====================================================================
         # Prepare headers
@@ -373,12 +381,13 @@ class Request(falcon.request.Request):
         # =====================================================================
 
         self._asgi_server_cached = None  # Lazy
-
         self.scope = scope
+        self.is_websocket = scope['type'] == 'websocket'
+
         self.options = options if options else falcon.request.RequestOptions()
 
         self._wsgierrors = None
-        self.method = scope['method']
+        self.method = 'GET' if self.is_websocket else scope['method']
 
         self.uri_template = None
         self._media = None
@@ -444,6 +453,7 @@ class Request(falcon.request.Request):
 
         self._stream = None
         self._receive = receive
+        self._first_event = first_event
 
         # =====================================================================
         # Create a context object
@@ -507,8 +517,17 @@ class Request(falcon.request.Request):
 
     @property
     def stream(self):
+        if self.is_websocket:
+            raise errors.UnsupportedError(
+                'ASGI does not support reading the WebSocket handshake request body.'
+            )
+
         if not self._stream:
-            self._stream = BoundedStream(self._receive, self.content_length)
+            self._stream = BoundedStream(
+                self._receive,
+                first_event=self._first_event,
+                content_length=self.content_length
+            )
 
         return self._stream
 
@@ -542,7 +561,7 @@ class Request(falcon.request.Request):
         except KeyError:
             pass
 
-        return 'http'
+        return 'ws' if self.is_websocket else 'http'
 
     @property
     def forwarded_scheme(self):
@@ -652,7 +671,7 @@ class Request(falcon.request.Request):
     def port(self):
         try:
             host_header = self._asgi_headers['host']
-            default_port = 80 if self.scheme == 'http' else 443
+            default_port = 443 if self._secure_scheme else 80
             __, port = parse_host(host_header, default_port=default_port)
         except KeyError:
             __, port = self._asgi_server
@@ -668,7 +687,7 @@ class Request(falcon.request.Request):
         except KeyError:
             netloc_value, port = self._asgi_server
 
-            if self.scheme == 'https':
+            if self._secure_scheme:
                 if port != 443:
                     netloc_value = f'{netloc_value}:{port}'
             else:
@@ -871,7 +890,11 @@ class Request(falcon.request.Request):
                 self._asgi_server_cached = tuple(self.scope['server'])
             except (KeyError, TypeError):
                 # NOTE(kgriffs): Not found, or was None
-                default_port = 80 if self.scheme == 'http' else 443
+                default_port = 443 if self._secure_scheme else 80
                 self._asgi_server_cached = ('localhost', default_port)
 
         return self._asgi_server_cached
+
+    @property
+    def _secure_scheme(self):
+        return self.scheme == 'https' or self.scheme == 'wss'

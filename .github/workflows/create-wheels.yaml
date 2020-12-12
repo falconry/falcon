@@ -54,7 +54,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip --version
-          pip install setuptools>=44 wheel>=0.34 cython>=0.29.21
+          pip install 'setuptools>=44' 'wheel>=0.34' 'cython>=0.29.21'
           pip wheel -w dist --no-use-pep517 -v --no-deps .
 
       - name: Check created wheel
@@ -65,10 +65,8 @@ jobs:
           FALCON_ASGI_WRAP_NON_COROUTINES: Y
           FALCON_TESTING_SESSION: Y
         run: |
-          pip install -f dist --no-index falcon
-          python -c 'import sys; sys.path.pop(0); from falcon.cyutil import misc, reader, uri'
-          pip install -r requirements/tests
-          pytest -q tests ${{ matrix.pytest-extra }}
+          pip install 'tox>=3.20'
+          tox -e wheel_check -- ${{ matrix.pytest-extra }}
 
       - name: Get wheel name
         id: wheel-name
@@ -150,7 +148,7 @@ jobs:
         # this step uses the image provided by pypa here https://github.com/pypa/manylinux to generate the wheels on linux
         # the action uses the image for manylinux2010 but can generate also a manylinux1 wheel
         # change the tag of this image to change the image used
-        uses: RalfG/python-wheels-manylinux-build@v0.3.1-manylinux2010_x86_64
+        uses: RalfG/python-wheels-manylinux-build@v0.3.2-manylinux2010_x86_64
         # this action generates 3 wheels in dist/. linux manylinux1 and manylinux2010
         with:
           python-versions: ${{ matrix.python-version }}
@@ -162,7 +160,7 @@ jobs:
 
       - name: Create wheel for manylinux 2014
         # as previous step but for manylinux2014
-        uses: RalfG/python-wheels-manylinux-build@v0.3.1-manylinux2014_x86_64
+        uses: RalfG/python-wheels-manylinux-build@v0.3.2-manylinux2014_x86_64
         # this action generates 2 wheels in dist/. linux, manylinux2014
         with:
           # Remove previous original wheel just to be sure it is recreated. Should not be needed
@@ -179,10 +177,8 @@ jobs:
           FALCON_ASGI_WRAP_NON_COROUTINES: Y
           FALCON_TESTING_SESSION: Y
         run: |
-          pip install -f dist --no-index falcon
-          python -c 'import sys; sys.path.pop(0); from falcon.cyutil import misc, reader, uri'
-          pip install -r requirements/tests
-          pytest -q tests ${{ matrix.pytest-extra }}
+          pip install 'tox>=3.20'
+          tox -e wheel_check -- ${{ matrix.pytest-extra }}
 
       - name: Get wheel names
         id: wheel-name
@@ -338,7 +334,7 @@ jobs:
 
       - name: Create wheel for manylinux 2014 for arm
         if: ${{ matrix.architecture == 'aarch64' }}
-        uses: RalfG/python-wheels-manylinux-build@v0.3.1-manylinux2014_aarch64
+        uses: RalfG/python-wheels-manylinux-build@v0.3.2-manylinux2014_aarch64
         # this action generates 2 wheels in dist/. linux manylinux1 and manylinux2010
         with:
           python-versions: ${{ matrix.python-version }}
@@ -357,18 +353,13 @@ jobs:
           args: |
             bash -c "
             export PATH=/opt/python/${{ matrix.python-version }}/bin:$PATH &&
-            yum install -y openssl-devel &&
-            pip install -f dist --no-index falcon &&
-            python -c 'import sys; sys.path.pop(0); from falcon.cyutil import misc, reader, uri' &&
-            [[ $PYTHON_VERSION != 'cp35-cp35m' ]] && (
-            pip install -r requirements/tests &&
-            pytest -q tests ${{ matrix.pytest-extra }}
-            ) || echo 'Install requirements fails on python 3.5 on arm. Skipping tests.'
+            pip install 'tox>=3.20' 'pip>=20' &&
+            tox -e wheel_check -- ${{ matrix.pytest-extra }}
             "
 
       - name: Create wheel for manylinux 2014 for s390x
         if: ${{ matrix.architecture == 's390x' }}
-        uses: RalfG/python-wheels-manylinux-build@v0.3.1-manylinux2014_s390x
+        uses: RalfG/python-wheels-manylinux-build@v0.3.2-manylinux2014_s390x
         # this action generates 2 wheels in dist/. linux manylinux1 and manylinux2010
         with:
           python-versions: ${{ matrix.python-version }}
@@ -386,11 +377,8 @@ jobs:
           args: |
             bash -c "
             export PATH=/opt/python/${{ matrix.python-version }}/bin:$PATH &&
-            yum install -y openssl-devel &&
-            pip install -f dist --no-index falcon &&
-            python -c 'import sys; sys.path.pop(0); from falcon.cyutil import misc, reader, uri' &&
-            pip install -r requirements/tests &&
-            pytest -q tests ${{ matrix.pytest-extra }}
+            pip install 'tox>=3.20' 'pip>=20' &&
+            tox -e wheel_check -- ${{ matrix.pytest-extra }}
             "
 
       - name: Get wheel name

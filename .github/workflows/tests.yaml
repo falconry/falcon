@@ -34,6 +34,8 @@ jobs:
           - "look"
           - "check_vendored"
           - "twine_check"
+          - "daphne"
+          - "no_optional_packages"
           # TODO(kgriffs): Re-enable once hug has a chance to address
           # breaking changes in Falcon 3.0
           # - "hug"

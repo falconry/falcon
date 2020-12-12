@@ -2,7 +2,9 @@ import time
 
 import pytest
 
+import falcon
 from falcon import testing
+from . import _asgi_test_app
 
 
 @pytest.mark.asyncio
@@ -102,3 +104,19 @@ def test_is_asgi_app_cls():
             pass
 
     assert testing.client._is_asgi_app(Foo.class_meth)
+
+
+def test_cookies_jar():
+    client = testing.TestClient(_asgi_test_app.application)
+
+    response_one = client.simulate_get('/jars')
+    response_two = client.simulate_post('/jars', cookies=response_one.cookies)
+
+    assert response_two.status == falcon.HTTP_200
+
+
+def test_immediate_disconnect():
+    client = testing.TestClient(_asgi_test_app.application)
+
+    with pytest.raises(ConnectionError):
+        client.simulate_get('/', asgi_disconnect_ttl=0)
