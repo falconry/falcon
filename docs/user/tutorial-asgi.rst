@@ -114,7 +114,7 @@ Configuration
 
 As in the WSGI "Look" tutorial, we are going to configure at least the storage
 location.
-There are many approaches to handling application configuration; see also the
+There are many approaches to handling application configuration; see also a
 related discussion in our FAQ: :ref:`configuration-approaches`
 
 In this tutorial, we'll just pass around a ``Config`` instance to resource
@@ -660,6 +660,8 @@ The new ``thumbnails`` end-point should now render thumbnails on-the-fly::
 Again, we could also verify thumbnail URIs in the browser or image viewer that
 supports HTTP input.
 
+.. _asgi_tutorial_caching:
+
 Caching Responses
 -----------------
 
@@ -912,11 +914,14 @@ the real filesystem. As ``pytest`` offers various temporary directory out of
 the box, Let's create a simple ``storage_path`` fixture shared among all tests
 in the whole suite (in the ``pytest`` parlance, a "session"-scoped fixture).
 
-.. danger::
-   Work in progress!
+As mentioned in the :ref:`previous section <asgi_tutorial_caching>`, there are
+many ways to spin up a temporary or permanent Redis server; or mock it
+altogether. For our tests, we'll try
+`fakeredis <https://pypi.org/project/fakeredis/>`__, a pure Python
+implementation tailored specifically for writing unit tests.
 
-Let's write fixtures to replace ``uuid`` and ``aioredis``, and inject them into
-our tests via ``conftest.py``:
+Let's now write fixtures to replace ``uuid`` and ``aioredis``, and inject them
+into our tests via ``conftest.py``:
 
 .. Copy-paste under: examples/asgilook/tests/conftest.py
 
@@ -1001,7 +1006,23 @@ our tests via ``conftest.py``:
 
         return report_size
 
-``tests/test_images.py`` will now attempt to access our ``/images`` end-point:
+.. note::
+   In the ``png_image`` fixture above, we are drawing random images that will
+   look different every time the tests are run.
+
+   If your testing flow affords that, it is often a great idea to introduce
+   some unpredictability in your test inputs. This will provide more confidence
+   that your application can handle a broader range of inputs than just 2-3
+   test cases crafted specifically for that sole purpose.
+
+   On the other hand, random inputs can make assertions less stringent and
+   harder to formulate, so judge according to what is the most important for
+   your application. You can also try to combine the best of both worlds by
+   using a healthy mix of rigid fixtures and fuzz testing.
+
+With the groundwork in place, we can write a simple test (called
+``tests/test_images.py``) that will attempt to simulate access our ``/images``
+end-point:
 
 .. code:: python
 
@@ -1011,40 +1032,35 @@ our tests via ``conftest.py``:
         assert resp.status_code == 200
         assert resp.json == []
 
-We need more tests now!
+Now, we need more tests!
 
-Feel free to try writing some yourself. Otherwise, check out
-``examples/asgilook/tests`` in the Falcon repository.
+Feel free to try writing some yourself.
+Otherwise, check out ``examples/asgilook/tests`` in the Falcon repository.
 
 Code Coverage
 -------------
 
-.. danger::
-   Work in progress!
-
 How much of our ``asgilook`` code is covered by these tests?
 
-And easy way to get the coverage report is using the ``pytest-cov``
-plugin. Adding it to our test requirements and ``tox.ini`` should do the
-trick.
+An easy way to get a coverage report is using the ``pytest-cov`` plugin
+(available on PyPi).
 
-The updated ``tox.ini`` should now read::
+The updated ``pytest`` command line to use this plugin reads::
 
-  commands =
-      pytest --cov=asgilook --cov-report=term-missing tests/
+  $ pytest --cov=asgilook --cov-report=term-missing tests/
 
-  [coverage:run]
-  omit =
-      asgilook/asgi.py
+Oh, wow! We do happen to have full line coverage (except ``asgilook/asgi.py``
+which is meant for the application server).
+We can instruct ``coverage`` to omit this file by listing it in the ``omit``
+section of a ``.coveragerc`` file.
 
-Oh, wow! We do happen to have full line coverage.
-
-We could turn this fact into a future requirement by specifying
-``--cov-fail-under=100`` in our Tox command.
+What is more, we could turn the current coverage into a future requirement by
+adding ``--cov-fail-under=100`` (or any other percent threshold) to our
+``pytest`` command.
 
 .. note::
    The ``pytest-cov`` plugin is quite simplistic; more advanced testing
-   strategies such as combining different type of tests and/or running the same
+   strategies such as blending different type of tests and/or running the same
    tests in multiple environments would most probably involve running
    ``coverage`` directly, and combining results.
 
