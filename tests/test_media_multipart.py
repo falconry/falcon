@@ -183,7 +183,7 @@ def test_empty_input():
     handler = media.MultipartFormHandler()
     form = handler.deserialize(
         io.BytesIO(), 'multipart/form-data; boundary=404', 0)
-    with pytest.raises(falcon.HTTPBadRequest):
+    with pytest.raises(falcon.MediaMalformedError):
         for part in form:
             pass
 
@@ -219,7 +219,7 @@ def test_invalid_text_or_charset(charset, data):
 
     form = handler.deserialize(
         io.BytesIO(data), 'multipart/form-data; boundary=BOUNDARY', len(data))
-    with pytest.raises(falcon.HTTPBadRequest):
+    with pytest.raises(falcon.MediaMalformedError):
         for part in form:
             part.text
 
@@ -308,7 +308,7 @@ def test_empty_filename():
 
     for part in form:
         assert part.filename == ''
-        with pytest.raises(falcon.HTTPBadRequest):
+        with pytest.raises(falcon.MediaMalformedError):
             part.secure_filename
 
 

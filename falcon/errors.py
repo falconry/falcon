@@ -2344,7 +2344,8 @@ class MediaMalformedError(HTTPBadRequest):
 
     Args:
         media_type (str): The media type that was raised this exception.
-        source_error (Exception): The source exception that was the cause of this one.
+        source_error (Exception or None): The source exception that was the cause
+            of this one. It is ``None`` if no source exception is present.
 
     Keyword Args:
         headers (dict or list): A ``dict`` of header names and values

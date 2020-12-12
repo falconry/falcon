@@ -34,7 +34,9 @@ class BodyPart(multipart.BodyPart):
             max_size = self._parse_options.max_body_part_buffer_size + 1
             self._data = await self.stream.read(max_size)
             if len(self._data) >= max_size:
-                raise MultipartParseError(description='body part is too large')
+                raise MultipartParseError(
+                    source_error=None, description='body part is too large'
+                )
 
         return self._data
 
@@ -60,9 +62,10 @@ class BodyPart(multipart.BodyPart):
         charset = options.get('charset', self._parse_options.default_charset)
         try:
             return (await self.get_data()).decode(charset)
-        except (ValueError, LookupError):
+        except (ValueError, LookupError) as err:
             raise MultipartParseError(
-                description='invalid text or charset: {}'.format(charset))
+                source_error=err, description='invalid text or charset: {}'.format(charset)
+            )
 
     data = property(get_data)
     media = property(get_media)
@@ -113,19 +116,22 @@ class MultipartForm:
                     break
                 elif separator:
                     raise MultipartParseError(
-                        description='unexpected form structure')
+                        source_error=None, description='unexpected form structure'
+                    )
 
-            except DelimiterError:
+            except DelimiterError as err:
                 raise MultipartParseError(
-                    description='unexpected form structure')
+                    source_error=err, description='unexpected form structure'
+                )
 
             headers = {}
             try:
                 headers_block = await stream.read_until(
                     _CRLF_CRLF, max_headers_size, consume_delimiter=True)
-            except DelimiterError:
+            except DelimiterError as err:
                 raise MultipartParseError(
-                    description='incomplete body part headers')
+                    source_error=err, description='incomplete body part headers'
+                )
 
             for line in headers_block.split(_CRLF):
                 name, sep, value = line.partition(b': ')
@@ -142,9 +148,10 @@ class MultipartForm:
                     #   bodies have been discovered.
                     if name == b'content-transfer-encoding' and value != b'binary':
                         raise MultipartParseError(
-                            description=(
-                                'the deprecated Content-Transfer-Encoding '
-                                'header field is unsupported'))
+                            source_error=None,
+                            description=('the deprecated Content-Transfer-Encoding '
+                                         'header field is unsupported')
+                        )
                     # NOTE(vytas): RFC 7578, section 4.8.
                     #   Other header fields MUST NOT be included and MUST be
                     #   ignored.
@@ -154,7 +161,9 @@ class MultipartForm:
             remaining_parts -= 1
             if remaining_parts < 0 < self._parse_options.max_body_part_count:
                 raise MultipartParseError(
-                    description='maximum number of form body parts exceeded')
+                    source_error=None,
+                    description='maximum number of form body parts exceeded'
+                )
 
             yield BodyPart(stream.delimit(delimiter), headers,
                            self._parse_options)

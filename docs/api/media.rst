@@ -141,7 +141,7 @@ Version 3 of Falcon updated how the handling of exceptions raised by handlers be
    argument when calling ``get_media`` for the first time. In this case, this value will
    be returned by the call. The same value is also returned by all following invocations.
 *  If an handler encounters an error while parsing a non-empty body, an instance of
-   :class:`falcon.MediaMalformedError` should be raised. The original exception
+   :class:`falcon.MediaMalformedError` should be raised. The original exception, if any,
    is stored in the ``source_error`` attribute of the raised instance. By default, this
    error will return a  ``400 Bad Request`` response to the client.
 
