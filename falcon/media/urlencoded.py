@@ -13,7 +13,7 @@ class URLEncodedFormHandler(BaseHandler):
     ``dict`` in a similar way that URL query parameters are parsed. An empty body
     will be parsed as an empty dict.
 
-    This handler will raise :class:`falcon.error.MediaMalformedError` in case of errors,
+    This handler will raise :class:`falcon.MediaMalformedError` in case of errors,
     usually only if the body cannot be parsed as ASCII.
 
     Keyword Arguments:

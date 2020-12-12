@@ -1,3 +1,16 @@
-Deserializing an empty JSON body on a request will return a BadRequest.
-Previously the ``None`` was returned. To retain the current behaviour
-please use ``req.get_media(None)``. See also :meth:`Request.get_media`
+General refactoring of internal media handler:
+
+*  Deserializing an empty body in handler that do not support them will
+   raise :class:`falcon.MediaNotFoundError`, and return a
+   ``400 Bad Request`` response. This error may be suppressed by passing
+   a default value to ``get_media`` to be used in case of empty body.
+   See also :meth:`Request.get_media` for details.
+   Previously ``None`` was returned in all cases.
+*  Exceptions raised by the handlers are wrapped as
+   :class:`falcon.MediaMalformedError`, and return a
+   ``400 Bad Request`` response.
+*  Subsequent calls to :meth:`Request.get_media` or ``Request.media`` will
+   re-raise the same exception, if the fist call ended in an error.
+   Previously ``None`` was returned.
+
+External handlers should update their logic to align to the internal falcon handlers.

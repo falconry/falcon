@@ -13,8 +13,8 @@ class MessagePackHandler(BaseHandler):
     MessagePack ``bin`` type is used to distinguish between Unicode strings
     (of type ``str``) and byte strings (of type ``bytes``).
 
-    This handler will raise a :class:`falcon.error.MediaNotFoundError` when attempting
-    to parse an empty body; it will raise a :class:`falcon.error.MediaMalformedError`
+    This handler will raise a :class:`falcon.MediaNotFoundError` when attempting
+    to parse an empty body; it will raise a :class:`falcon.MediaMalformedError`
     when if an error happens while parsing the body.
 
     Note:

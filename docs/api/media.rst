@@ -128,6 +128,28 @@ middleware. Here is an example of how this can be done:
                     resp.content_type = req.accept
 
 
+Exception Handling
+------------------
+
+Version 3 of Falcon updated how the handling of exceptions raised by handlers behaves:
+
+*  Falcon lets the media handler try to deserialized an empty body. For the media Types
+   that don't allow empty bodies as a valid value, such as ``JSON``, an instance of
+   :class:`falcon.MediaNotFoundError` should be raised. By default, this error
+   will return a  ``400 Bad Request`` response to the client.
+   This exception may be suppressed by passing a value to the ``when_empty_fallback``
+   argument when calling ``get_media`` for the first time. In this case, this value will
+   be returned by the call. The same value is also returned by all following invocations.
+*  If an handler encounters an error while parsing a non-empty body, an instance of
+   :class:`falcon.MediaMalformedError` should be raised. The original exception
+   is stored in the ``source_error`` attribute of the raised instance. By default, this
+   error will return a  ``400 Bad Request`` response to the client.
+
+If any exception was raised by the handler while parsing the body, all subsequent invocations
+of ``get_media`` or ``media`` will result in a re-raise of the same exception.
+
+External handlers should update their logic to align to the internal falcon handlers.
+
 .. _custom_media_handlers:
 
 Replacing the Default Handlers

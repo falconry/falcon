@@ -717,7 +717,7 @@ class Request(falcon.request.Request):
 
         Note:
             When ``get_media`` is called on a request with an empty body,
-            falcon will let the media handler try to deserialize the body
+            Falcon will let the media handler try to deserialize the body
             and will return the value returned by the handler or propagate
             the exception raised by it. To instead return a different value
             in case of an exception by the handler, specify the argument
@@ -732,8 +732,8 @@ class Request(falcon.request.Request):
             when_empty_fallback: Fallback value to return when there is no body
                 in the request and the media handler raises an error
                 (like in the case of the default JSON media handler).
-                By default falcon use the value returned by the media handler
-                or propagate the raised exception.
+                By default, Falcon uses the value returned by the media handler
+                or propagates the raised exception, if any.
 
         Returns:
             media (object): The deserialized media representation.
