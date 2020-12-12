@@ -4,13 +4,19 @@ import os
 
 import cbor2
 import pytest
-import rapidjson
+
 
 import falcon
 from falcon import media, testing
 from falcon.asgi import App
 from falcon.asgi.ws import _WebSocketState as ServerWebSocketState
 from falcon.testing.helpers import _WebSocketState as ClientWebSocketState
+
+
+try:
+    import rapidjson  # type: ignore
+except ImportError:
+    rapidjson = None
 
 
 # NOTE(kgriffs): We do not use codes defined in the framework because we
@@ -425,6 +431,9 @@ async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
     app.add_route('/', resource)
 
     if custom_text:
+        if rapidjson is None:
+            pytest.skip('rapidjson is required for this test')
+
         # Let's say we want to use a faster JSON library. You could also use this
         #   pattern to add serialization support for custom types that aren't
         #   normally JSON-serializable out of the box.

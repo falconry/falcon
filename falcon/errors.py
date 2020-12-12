@@ -73,7 +73,7 @@ class PayloadTypeError(TypeError):
     """The WebSocket message payload was not of the expected type."""
 
 
-class WebSocketDisconnected(RuntimeError):
+class WebSocketDisconnected(ConnectionError):
     """The websocket connection is lost.
 
     This error is raised when attempting to perform an operation on the
