@@ -45,4 +45,4 @@ Response
 
 .. autoclass:: falcon.Response
     :members:
-    :exclude-members: context_type
+    :exclude-members: context_type, add_link
