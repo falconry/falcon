@@ -37,7 +37,7 @@ def inspect_app(app: App) -> 'AppInfo':
     static = inspect_static_routes(app)
     sinks = inspect_sinks(app)
     error_handlers = inspect_error_handlers(app)
-    middleware = inspect_middlewares(app)
+    middleware = inspect_middleware(app)
     return AppInfo(routes, middleware, static, sinks, error_handlers, app._ASGI)
 
 
@@ -152,7 +152,7 @@ def inspect_error_handlers(app: App) -> 'List[ErrorHandlerInfo]':
     return errors
 
 
-def inspect_middlewares(app: App) -> 'MiddlewareInfo':
+def inspect_middleware(app: App) -> 'MiddlewareInfo':
     """Inspects the middleware components of an application.
 
     Args:
@@ -702,7 +702,7 @@ class StringVisitor(InspectVisitor):
             m_text = '\n'.join(self.process(m) for m in middleware.middleware_classes)
             self.indent -= 4
             if m_text:
-                text += '\n{}- Middlewares classes:\n{}'.format(self.tab, m_text)
+                text += '\n{}- Middleware classes:\n{}'.format(self.tab, m_text)
 
         return text
 
