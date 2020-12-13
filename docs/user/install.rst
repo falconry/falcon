@@ -40,7 +40,7 @@ Or, to install the latest beta or release candidate, if any:
 In order to provide an extra speed boost, Falcon can compile itself with
 Cython. Wheels containing pre-compiled binaries are available from PyPI for
 several common platforms. However, if a wheel for your platform of choice is not
-available, you can choose to stick with the pure python wheel, or use the
+available, you can choose to stick with the source distribution, or use the
 instructions below to cythonize Falcon for your environment.
 
 The following commands tell pip to install Cython, and then to invoke
