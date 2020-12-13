@@ -69,9 +69,14 @@ class JSONHandler(BaseHandler):
         self.dumps = dumps or partial(json.dumps, ensure_ascii=False)
         self.loads = loads or json.loads
 
+        # PERF(kgriffs): Test dumps once up front so we can just quickly
+        #   check the flag later.
+        result = self.dumps({'message': '\xa1Hello Unicode! \U0001F638'})
+        self._dumps_str = isinstance(result, str)
+
     def deserialize(self, stream, content_type, content_length):
         try:
-            return self.loads(stream.read().decode('utf-8'))
+            return self.loads(stream.read().decode())
         except ValueError as err:
             raise errors.HTTPBadRequest(
                 title='Invalid JSON',
@@ -82,7 +87,7 @@ class JSONHandler(BaseHandler):
         data = await stream.read()
 
         try:
-            return self.loads(data.decode('utf-8'))
+            return self.loads(data.decode())
         except ValueError as err:
             raise errors.HTTPBadRequest(
                 title='Invalid JSON',
@@ -92,22 +97,16 @@ class JSONHandler(BaseHandler):
     def serialize(self, media, content_type):
         result = self.dumps(media)
 
-        try:
-            result = result.encode('utf-8')
-        except AttributeError:  # pragma: nocover
-            # NOTE(kgriffs): Assume that dumps() is non-standard in that it
-            #   returned a byte string.
-            # TODO(kgriffs): This branch is not currently covered since
-            #   orjson testing has been temporarily disabled.
-            pass
+        if self._dumps_str:
+            result = result.encode()
 
         return result
 
     async def serialize_async(self, media, content_type):
         result = self.dumps(media)
 
-        if not isinstance(result, bytes):
-            return result.encode('utf-8')
+        if self._dumps_str:
+            result = result.encode()
 
         return result
 
