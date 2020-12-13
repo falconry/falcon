@@ -98,6 +98,26 @@ documentation. It basically can't be wrong."
 
 "What other framework has integrated support for 786 TRY IT NOW ?"
 
+Features
+--------
+
+- ASGI and WSGI Support
+- WebSocket Support
+- Native asyncio support (no hacks or compatibility layers)
+- Strict adherence to RFCs
+- Highly-optimized, extensible code base
+- Intuitive routing via URI templates and REST-inspired
+  resource classes
+- No reliance on magic globals for routing and state management
+- Easy access to headers and bodies through request and response
+  classes
+- DRY request processing via middleware components and hooks
+- Idiomatic HTTP error responses
+- Straightforward exception handling
+- Snappy testing through WSGI/ASGI helpers and mocks
+- CPython 3.5+ and PyPy 3.5+ support
+- ~20% speed boost under CPython when Cython is available
+
 How is Falcon Different?
 ------------------------
 
@@ -126,37 +146,20 @@ increment. The code is rigorously tested with numerous inputs and we
 require 100% coverage at all times. Falcon does not depend on any
 external Python packages.
 
+**Debuggable.** Falcon eschews magic. It's easy to tell which inputs lead to
+which outputs. To avoid incentivizing the use of hard-to-debug global state,
+Falcon does not use decorators to define routes. Unhandled exceptions are never
+encapsulated or masked. Potentially surprising behaviors, such as automatic
+request body parsing, are well-documented and disabled by default. Finally, we
+take care to keep logic paths within the framework simple, shallow and
+understandable. All of this makes it easier to reason about the code and to
+debug edge cases in large-scale deployments.
+
 **Flexible.** Falcon leaves a lot of decisions and implementation
 details to you, the API developer. This gives you a lot of freedom to
 customize and tune your implementation. Due to Falcon's minimalist
 design, Python community members are free to independently innovate on
 `Falcon add-ons and complementary packages <https://github.com/falconry/falcon/wiki>`__.
-
-**Debuggable.** Falcon eschews magic. It's easy to tell which inputs
-lead to which outputs. Unhandled exceptions are never encapsulated or
-masked. Potentially surprising behaviors, such as automatic request body
-parsing, are well-documented and disabled by default. Finally, when it
-comes to the framework itself, we take care to keep logic paths simple
-and understandable. All this makes it easier to reason about the code
-and to debug edge cases in large-scale deployments.
-
-Features
---------
-
-- ASGI and WSGI Support
-- WebSocket Support
-- Strict adherence to RFCs
-- Highly-optimized, extensible code base
-- Intuitive routing via URI templates and REST-inspired resource
-  classes
-- Easy access to headers and bodies through request and response
-  classes
-- DRY request processing via middleware components and hooks
-- Idiomatic HTTP error responses
-- Straightforward exception handling
-- Snappy testing through WSGI/ASGI helpers and mocks
-- CPython 3.5+ and PyPy 3.5+ support
-- ~20% speed boost under CPython when Cython is available
 
 Who's Using Falcon?
 -------------------
