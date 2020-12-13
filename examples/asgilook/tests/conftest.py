@@ -33,7 +33,7 @@ def predictable_uuid():
 
 @pytest.fixture(scope='session')
 def storage_path(tmpdir_factory):
-    return str(tmpdir_factory.mktemp('asgilook'))
+    return tmpdir_factory.mktemp('asgilook')
 
 
 @pytest.fixture

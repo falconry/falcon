@@ -1,7 +1,6 @@
 import asyncio
 import datetime
 import io
-import os.path
 
 import aiofiles
 import falcon
@@ -18,7 +17,7 @@ class Image:
 
     @property
     def path(self):
-        return os.path.join(self.config.storage_path, self.image_id)
+        return self.config.storage_path / self.image_id
 
     @property
     def uri(self):
@@ -89,7 +88,7 @@ class Store:
         image = await loop.run_in_executor(None, self._load_from_bytes, data)
         converted = await loop.run_in_executor(None, self._convert, image)
 
-        path = os.path.join(self.config.storage_path, image_id)
+        path = self.config.storage_path / image_id
         async with aiofiles.open(path, 'wb') as output:
             await output.write(converted)
 

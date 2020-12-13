@@ -1,4 +1,5 @@
 import os
+import pathlib
 import uuid
 
 import aioredis
@@ -12,10 +13,9 @@ class Config:
     DEFAULT_UUID_GENERATOR = uuid.uuid4
 
     def __init__(self):
-        self.storage_path = (os.environ.get('ASGI_LOOK_STORAGE_PATH')
-                             or self.DEFAULT_CONFIG_PATH)
-        if not os.path.exists(self.storage_path):
-            os.makedirs(self.storage_path)  # pragma: nocover
+        self.storage_path = pathlib.Path(
+            os.environ.get('ASGI_LOOK_STORAGE_PATH', self.DEFAULT_CONFIG_PATH))
+        self.storage_path.mkdir(parents=True, exist_ok=True)
 
         self.create_redis_pool = Config.DEFAULT_REDIS_POOL
         self.min_thumb_size = self.DEFAULT_MIN_THUMB_SIZE
