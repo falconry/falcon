@@ -19,6 +19,12 @@ except ImportError:
     rapidjson = None
 
 
+try:
+    import msgpack  # type: ignore
+except ImportError:
+    msgpack = None
+
+
 # NOTE(kgriffs): We do not use codes defined in the framework because we
 #   want to verify that the correct value is being used.
 class CloseCode:
@@ -1056,3 +1062,14 @@ async def test_ws_simulator_collect_edge_cases(conductor):
         m = 'websocket.disconnect event has already been emitted'
         with pytest.raises(falcon.OperationNotAllowed, match=m):
             event = await ws._emit()
+
+
+@pytest.mark.skipif(msgpack, reason='msgpack installed')
+def test_msgpack_missing():
+    handler = media.MessagePackHandlerWS()
+
+    with pytest.raises(RuntimeError):
+        handler.serialize({})
+
+    with pytest.raises(RuntimeError):
+        handler.deserialize(b'{}')

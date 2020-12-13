@@ -3,7 +3,6 @@ import itertools
 import os
 import random
 
-import msgpack
 import pytest
 
 import falcon
@@ -12,6 +11,12 @@ from falcon import testing
 from falcon.util import BufferedReader
 
 from _util import create_app  # NOQA: I100
+
+
+try:
+    import msgpack  # type: ignore
+except ImportError:
+    msgpack = None
 
 
 EXAMPLE1 = (
@@ -557,6 +562,7 @@ def test_too_many_body_parts(custom_client, max_body_part_count):
         assert len(resp.json) == EXAMPLE2_PART_COUNT
 
 
+@pytest.mark.skipif(not msgpack, reason='msgpack not installed')
 def test_random_form(client):
     part_data = [os.urandom(random.randint(0, 2**18)) for _ in range(64)]
     form_data = b''.join(
