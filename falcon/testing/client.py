@@ -346,7 +346,7 @@ class StreamedResult(_ResultBase):
             to the event emitter used to simulate events sent to the ASGI
             application via its receive() method.
             :meth:`~.finalize` will cause the event emitter to
-            simulate an 'http.disconnect' event before returning.
+            simulate an ``'http.disconnect'`` event before returning.
 
     Attributes:
         status (str): HTTP status string given in the response
@@ -385,7 +385,7 @@ class StreamedResult(_ResultBase):
         """Finalize the encapsulated simulated request.
 
         This method causes the request event emitter to begin emitting
-        'http.disconnect' events and then awaits the completion of the
+        ``'http.disconnect'`` events and then awaits the completion of the
         asyncio task that is running the simulated ASGI request.
         """
         self._req_event_emitter.disconnect()
@@ -491,11 +491,11 @@ def simulate_request(app, method='GET', path='/', query_string=None,
         wsgierrors (io): The stream to use as *wsgierrors* in the WSGI
             environ (default ``sys.stderr``)
         asgi_chunk_size (int): The maximum number of bytes that will be
-            sent to the ASGI app in a single 'http.request' event (default
+            sent to the ASGI app in a single ``'http.request'`` event (default
             4096).
         asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
-            'http.disconnect' event when the app calls the
+            ``'http.disconnect'`` event when the app calls the
             receive() function (default 300).
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
@@ -654,11 +654,11 @@ async def _simulate_request_asgi(
             '2', '2.0', 1.1', '1.0', or '1' (default '1.1'). If set to '1.0',
             the Host header will not be added to the scope.
         asgi_chunk_size (int): The maximum number of bytes that will be
-            sent to the ASGI app in a single 'http.request' event (default
+            sent to the ASGI app in a single ``'http.request'`` event (default
             4096).
         asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
-            'http.disconnect' event when the app calls the
+            ``'http.disconnect'`` event when the app calls the
             receive() function (default 300).
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
@@ -840,7 +840,7 @@ class ASGIConductor:
                             pass
 
                     # Exiting the context causes the request event emitter to
-                    # begin emitting 'http.disconnect' events and then awaits
+                    # begin emitting ``'http.disconnect'`` events and then awaits
                     # the completion of the asyncio task that is running the
                     # simulated ASGI request.
 
@@ -936,7 +936,7 @@ class ASGIConductor:
         This method returns an async context manager that can be used to obtain
         a managed :class:`~.StreamedResult` instance. Exiting the context
         will automatically finalize the result object, causing the request
-        event emitter to begin emitting 'http.disconnect' events and then
+        event emitter to begin emitting ``'http.disconnect'`` events and then
         await the completion of the task that is running the simulated ASGI
         request.
 
@@ -1131,13 +1131,13 @@ def simulate_get(app, path, **kwargs) -> _ResultBase:
         wsgierrors (io): The stream to use as *wsgierrors* in the WSGI
             environ (default ``sys.stderr``)
         asgi_chunk_size (int): The maximum number of bytes that will be
-            sent to the ASGI app in a single 'http.request' event (default
+            sent to the ASGI app in a single ``'http.request'`` event (default
             4096).
         asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
-            'http.disconnect' event when the app calls the
+            ``'http.disconnect'`` event when the app calls the
             receive() function (default 300). Set to ``0`` to simulate an
-            immediate disconnection without first emitting 'http.request'.
+            immediate disconnection without first emitting ``'http.request'``.
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
@@ -1223,13 +1223,13 @@ def simulate_head(app, path, **kwargs) -> _ResultBase:
         wsgierrors (io): The stream to use as *wsgierrors* in the WSGI
             environ (default ``sys.stderr``)
         asgi_chunk_size (int): The maximum number of bytes that will be
-            sent to the ASGI app in a single 'http.request' event (default
+            sent to the ASGI app in a single ``'http.request'`` event (default
             4096).
         asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
-            'http.disconnect' event when the app calls the
+            ``'http.disconnect'`` event when the app calls the
             receive() function (default 300). Set to ``0`` to simulate an
-            immediate disconnection without first emitting 'http.request'.
+            immediate disconnection without first emitting ``'http.request'``.
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
@@ -1328,13 +1328,13 @@ def simulate_post(app, path, **kwargs) -> _ResultBase:
         wsgierrors (io): The stream to use as *wsgierrors* in the WSGI
             environ (default ``sys.stderr``)
         asgi_chunk_size (int): The maximum number of bytes that will be
-            sent to the ASGI app in a single 'http.request' event (default
+            sent to the ASGI app in a single ``'http.request'`` event (default
             4096).
         asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
-            'http.disconnect' event when the app calls the
+            ``'http.disconnect'`` event when the app calls the
             receive() function (default 300). Set to ``0`` to simulate an
-            immediate disconnection without first emitting 'http.request'.
+            immediate disconnection without first emitting ``'http.request'``.
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
@@ -1433,13 +1433,13 @@ def simulate_put(app, path, **kwargs) -> _ResultBase:
         wsgierrors (io): The stream to use as *wsgierrors* in the WSGI
             environ (default ``sys.stderr``)
         asgi_chunk_size (int): The maximum number of bytes that will be
-            sent to the ASGI app in a single 'http.request' event (default
+            sent to the ASGI app in a single ``'http.request'`` event (default
             4096).
         asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
-            'http.disconnect' event when the app calls the
+            ``'http.disconnect'`` event when the app calls the
             receive() function (default 300). Set to ``0`` to simulate an
-            immediate disconnection without first emitting 'http.request'.
+            immediate disconnection without first emitting ``'http.request'``.
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
@@ -1520,13 +1520,13 @@ def simulate_options(app, path, **kwargs) -> _ResultBase:
         wsgierrors (io): The stream to use as *wsgierrors* in the WSGI
             environ (default ``sys.stderr``)
         asgi_chunk_size (int): The maximum number of bytes that will be
-            sent to the ASGI app in a single 'http.request' event (default
+            sent to the ASGI app in a single ``'http.request'`` event (default
             4096).
         asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
-            'http.disconnect' event when the app calls the
+            ``'http.disconnect'`` event when the app calls the
             receive() function (default 300). Set to ``0`` to simulate an
-            immediate disconnection without first emitting 'http.request'.
+            immediate disconnection without first emitting ``'http.request'``.
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
@@ -1616,13 +1616,13 @@ def simulate_patch(app, path, **kwargs) -> _ResultBase:
         wsgierrors (io): The stream to use as *wsgierrors* in the WSGI
             environ (default ``sys.stderr``)
         asgi_chunk_size (int): The maximum number of bytes that will be
-            sent to the ASGI app in a single 'http.request' event (default
+            sent to the ASGI app in a single ``'http.request'`` event (default
             4096).
         asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
-            'http.disconnect' event when the app calls the
+            ``'http.disconnect'`` event when the app calls the
             receive() function (default 300). Set to ``0`` to simulate an
-            immediate disconnection without first emitting 'http.request'.
+            immediate disconnection without first emitting ``'http.request'``.
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
@@ -1716,13 +1716,13 @@ def simulate_delete(app, path, **kwargs) -> _ResultBase:
         wsgierrors (io): The stream to use as *wsgierrors* in the WSGI
             environ (default ``sys.stderr``)
         asgi_chunk_size (int): The maximum number of bytes that will be
-            sent to the ASGI app in a single 'http.request' event (default
+            sent to the ASGI app in a single ``'http.request'`` event (default
             4096).
         asgi_disconnect_ttl (int): The maximum number of seconds to wait
             since the request was initiated, before emitting an
-            'http.disconnect' event when the app calls the
+            ``'http.disconnect'`` event when the app calls the
             receive() function (default 300). Set to ``0`` to simulate an
-            immediate disconnection without first emitting 'http.request'.
+            immediate disconnection without first emitting ``'http.request'``.
         extras (dict): Additional values to add to the WSGI
             ``environ`` dictionary or the ASGI scope for the request
             (default: ``None``)
