@@ -49,7 +49,7 @@ unique ID for each request, persisting it in the thread local:
 
         # It may also be helpful to include the ID in the response
         def process_response(self, req, resp, resource, req_succeeded):
-            resp.set_header('Request-ID', ctx.request_id)
+            resp.set_header('X-Request-ID', ctx.request_id)
 
 Alternatively, if all of your application logic has access to the :ref:`request
 <request>`, you can simply use the `context` object to store the ID:
@@ -75,7 +75,7 @@ Alternatively, if all of your application logic has access to the :ref:`request
 
         # It may also be helpful to include the ID in the response
         def process_response(self, req, resp, resource, req_succeeded):
-            resp.set_header('Request-ID', req.context.request_id)
+            resp.set_header('X-Request-ID', req.context.request_id)
 
 .. note::
 
