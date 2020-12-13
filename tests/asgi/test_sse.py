@@ -138,7 +138,7 @@ def test_multiple_events():
                 assert event_count == 6
                 assert result_text == expected_result_text
 
-    falcon.invoke_coroutine_sync(_test)
+    falcon.async_to_sync(_test)
 
 
 def test_multiple_events_early_disconnect():
@@ -179,7 +179,7 @@ def test_multiple_events_early_disconnect():
                 assert result_text.startswith('data: whassup\n\n' * 5)
                 assert event_count == 5
 
-    falcon.invoke_coroutine_sync(_test)
+    falcon.async_to_sync(_test)
 
 
 def test_invalid_event_values():

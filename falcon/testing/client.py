@@ -32,13 +32,13 @@ from falcon.errors import CompatibilityError
 from falcon.testing import helpers
 from falcon.testing.srmock import StartResponseMock
 from falcon.util import (
+    async_to_sync,
     CaseInsensitiveDict,
     code_to_http_status,
     create_task,
     get_running_loop,
     http_cookies,
     http_date_to_dt,
-    invoke_coroutine_sync,
     json as util_json,
     to_query_str,
 )
@@ -510,7 +510,7 @@ def simulate_request(app, method='GET', path='/', query_string=None,
     """
 
     if _is_asgi_app(app):
-        return invoke_coroutine_sync(
+        return async_to_sync(
             _simulate_request_asgi,
 
             app,
@@ -853,7 +853,7 @@ class ASGIConductor:
 
         As a workaround, the test can be adapted by wrapping it in
         an inline async function and then invoking it via
-        :meth:`falcon.invoke_coroutine_sync` or decorating the test function
+        :meth:`falcon.async_to_sync` or decorating the test function
         with :meth:`falcon.runs_sync`.
 
         Alternatively, you can try searching PyPI to see if an async plugin is
