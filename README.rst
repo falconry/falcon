@@ -228,18 +228,23 @@ CPython
 Falcon also fully supports
 `CPython <https://www.python.org/downloads/>`__ 3.5+.
 
-A universal wheel is available on PyPI for the the Falcon framework.
-Installing it is as simple as:
+The latest stable version of Falcon can be installed directly from PyPI:
 
 .. code:: bash
 
     $ pip install falcon
 
-Installing the Falcon wheel is a great way to get up and running
-quickly in a development environment, but for an extra speed boost when
-deploying your application in production, Falcon can compile itself with
-Cython. Note, however, that Cython is currently incompatible with
-the falcon.asgi module.
+Or, to install the latest beta or release candidate, if any:
+
+.. code:: bash
+
+    $ pip install --pre falcon
+
+In order to provide an extra speed boost, Falcon can compile itself with
+Cython. Wheels containing pre-compiled binaries are available from PyPI for
+several common platforms. However, if a wheel for your platform of choice is not
+available, you can choose to stick with the source distribution, or use the
+instructions below to cythonize Falcon for your environment.
 
 The following commands tell pip to install Cython, and then to invoke
 Falcon's ``setup.py``, which will in turn detect the presence of Cython
@@ -249,14 +254,18 @@ default C compiler.
 .. code:: bash
 
     $ pip install cython
-    $ pip install --no-binary :all: falcon
+    $ pip install --no-build-isolation --no-binary :all: falcon
+
+Note that ``--no-build-isolation`` is necessary to override pip's default
+PEP 517 behavior that can cause Cython not to be found in the build
+environment.
 
 If you want to verify that Cython is being invoked, simply
 pass `-v` to pip in order to echo the compilation commands:
 
 .. code:: bash
 
-    $ pip install -v --no-binary :all: falcon
+    $ pip install -v --no-build-isolation --no-binary :all: falcon
 
 **Installing on OS X**
 
