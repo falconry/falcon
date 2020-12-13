@@ -31,7 +31,7 @@ def test_sync_helpers():
                 # NOTE(vytas): Deliberately exaggerate a race condition here
                 #   in order to ensure a more deterministic test outcome.
                 if a == 137:
-                    for _ in range(10000):
+                    for _ in range(1000):
                         if len(unsafely_values) > 137:
                             break
                         time.sleep(0.01)
