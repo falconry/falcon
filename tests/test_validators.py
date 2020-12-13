@@ -121,7 +121,7 @@ def call_method(asgi, method_name, *args):
     resource = ResourceAsync() if asgi else Resource()
 
     if asgi:
-        return falcon.invoke_coroutine_sync(getattr(resource, method_name), *args)
+        return falcon.async_to_sync(getattr(resource, method_name), *args)
 
     return getattr(resource, method_name)(*args)
 
