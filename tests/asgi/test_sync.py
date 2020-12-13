@@ -24,12 +24,19 @@ def test_sync_helpers():
                 #   instance running in parallel that is able to race ahead.
                 time.sleep(0.001)
                 safely_values.append((a, b, c))
-                pass
 
             def callme_unsafely(a, b, c=None):
                 time.sleep(0.01)
+
+                # NOTE(vytas): Deliberately exaggerate a race condition here
+                #   in order to ensure a more deterministic test outcome.
+                if a == 137:
+                    for _ in range(10000):
+                        if len(unsafely_values) > 137:
+                            break
+                        time.sleep(0.01)
+
                 unsafely_values.append((a, b, c))
-                pass
 
             def callme_shirley(a=42, b=None):
                 time.sleep(0.01)
