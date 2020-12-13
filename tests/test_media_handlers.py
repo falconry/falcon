@@ -78,7 +78,7 @@ def test_serialization(asgi, func, body, expected):
     args = (body, b'application/javacript')
 
     if asgi:
-        result = falcon.invoke_coroutine_sync(handler.serialize_async, *args)
+        result = falcon.async_to_sync(handler.serialize_async, *args)
     else:
         result = handler.serialize(*args)
 
@@ -102,7 +102,7 @@ def test_deserialization(asgi, func, body, expected):
         s = BoundedStream(testing.ASGIRequestEventEmitter(body))
         args.insert(0, s)
 
-        result = falcon.invoke_coroutine_sync(handler.deserialize_async, *args)
+        result = falcon.async_to_sync(handler.deserialize_async, *args)
     else:
         args.insert(0, io.BytesIO(body))
         result = handler.deserialize(*args)

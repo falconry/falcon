@@ -231,6 +231,6 @@ def test_asgi_conductor_raised_error_skips_shutdown():
             async with testing.ASGIConductor(app):
                 raise SomeException()
 
-    falcon.invoke_coroutine_sync(t)
+    falcon.async_to_sync(t)
     assert foo.called_startup
     assert not foo.called_shutdown

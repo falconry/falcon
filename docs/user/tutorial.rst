@@ -1433,10 +1433,6 @@ that are designed to set the response headers and body appropriately
 for each error type.
 
 .. tip::
-    Falcon will re-raise errors that do not inherit from
-    :class:`falcon.HTTPError`
-    unless you have registered a custom error handler for that type.
-
     Error handlers may be registered for any type, including
     :class:`~.HTTPError`. This feature provides a central location
     for logging and otherwise handling exceptions raised by
