@@ -32,9 +32,14 @@ def test_missing_size(client, png_image):
 def test_thumbnail_caching(client, png_image):
     client.simulate_post('/images', body=png_image)
 
+    reference = None
     for retry in range(4):
         resp = client.simulate_get(
             '/thumbnails/36562622-48e5-4a61-be67-e426b11821ed/160x90.jpeg')
         assert resp.status_code == 200
-        assert resp.headers.get('X-ASGILook-Cache') == (
-            'Miss' if retry == 0 else 'Hit')
+        if retry == 0:
+            assert resp.headers.get('X-ASGILook-Cache') == 'Miss'
+            reference = resp.content
+        else:
+            assert resp.headers.get('X-ASGILook-Cache') == 'Hit'
+            assert resp.content == reference
