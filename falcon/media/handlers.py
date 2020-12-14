@@ -9,7 +9,7 @@ from falcon.vendor import mimeparse
 
 
 class MissingDependencyHandler:
-    """Placeholder handler that always raises an error."
+    """Placeholder handler that always raises an error.
 
     This handler is used by the framework for media types that require an
     external dependency that can not be found.
