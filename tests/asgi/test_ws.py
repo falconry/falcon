@@ -10,6 +10,7 @@ import falcon
 from falcon import media, testing
 from falcon.asgi import App
 from falcon.asgi.ws import _WebSocketState as ServerWebSocketState
+from falcon.asgi.ws import WebSocketOptions
 from falcon.testing.helpers import _WebSocketState as ClientWebSocketState
 
 
@@ -17,6 +18,12 @@ try:
     import rapidjson  # type: ignore
 except ImportError:
     rapidjson = None
+
+
+try:
+    import msgpack  # type: ignore
+except ImportError:
+    msgpack = None
 
 
 # NOTE(kgriffs): We do not use codes defined in the framework because we
@@ -1056,3 +1063,16 @@ async def test_ws_simulator_collect_edge_cases(conductor):
         m = 'websocket.disconnect event has already been emitted'
         with pytest.raises(falcon.OperationNotAllowed, match=m):
             event = await ws._emit()
+
+
+@pytest.mark.skipif(msgpack, reason='test requires msgpack lib to be missing')
+def test_msgpack_missing():
+
+    options = WebSocketOptions()
+    handler = options.media_handlers[falcon.WebSocketPayloadType.BINARY]
+
+    with pytest.raises(RuntimeError):
+        handler.serialize({})
+
+    with pytest.raises(RuntimeError):
+        handler.deserialize(b'{}')
