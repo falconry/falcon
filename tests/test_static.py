@@ -102,7 +102,7 @@ def test_bad_path(asgi, uri, monkeypatch):
 
     with pytest.raises(falcon.HTTPNotFound):
         if asgi:
-            falcon.invoke_coroutine_sync(sr, req, resp)
+            falcon.async_to_sync(sr, req, resp)
         else:
             sr(req, resp)
 
@@ -181,7 +181,7 @@ def test_good_path(asgi, uri_prefix, uri_path, expected_path, mtype, monkeypatch
             await sr(req, resp)
             return await resp.stream.read()
 
-        body = falcon.invoke_coroutine_sync(run)
+        body = falcon.async_to_sync(run)
     else:
         sr(req, resp)
         body = resp.stream.read()
@@ -291,7 +291,7 @@ def test_fallback_filename(asgi, uri, default, expected, content_type, downloada
             await sr(req, resp)
             return await resp.stream.read()
 
-        body = falcon.invoke_coroutine_sync(run)
+        body = falcon.async_to_sync(run)
     else:
         sr(req, resp)
         body = resp.stream.read()
