@@ -31,6 +31,7 @@ jobs:
           - "py38_smoke"
           - "py38_smoke_cython"
           - "docs"
+          - "towncrier"
           - "look"
           - "check_vendored"
           - "twine_check"
