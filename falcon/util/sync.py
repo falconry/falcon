@@ -7,9 +7,9 @@ from typing import Callable
 
 
 __all__ = [
+    'async_to_sync',
     'create_task',
     'get_running_loop',
-    'invoke_coroutine_sync',
     'runs_sync',
     'sync_to_async',
     'wrap_sync_to_async',
@@ -193,16 +193,20 @@ def _wrap_non_coroutine_unsafe(func):
     return wrap_sync_to_async_unsafe(func)
 
 
-def invoke_coroutine_sync(coroutine, *args, **kwargs):
-    """Invoke a coroutine function from a synchronous caller and runs until complete.
+def async_to_sync(coroutine, *args, **kwargs):
+    """Invoke a coroutine function from a synchronous caller.
+
+    This method can be used to invoke an asynchronous task from a synchronous
+    context. The coroutine will be scheduled to run on the current event
+    loop for the current OS thread. If an event loop is not already running,
+    one will be created.
 
     Warning:
-        This method is very inefficient and should only be used
-        for testing purposes. It will create an event loop for the current
-        thread if one is not already running.
+        This method is very inefficient and is intended primarily for testing
+        and prototyping.
 
     Additional arguments not mentioned below are bound to the given
-    coroutine function via ``functools.partial()``.
+    coroutine function via :any:`functools.partial`.
 
     Args:
         coroutine: A coroutine function to invoke.
@@ -222,7 +226,7 @@ def runs_sync(coroutine):
     """Transform a coroutine function into a synchronous method.
 
     This is achieved by always invoking the decorated coroutine function via
-    :meth:`invoke_coroutine_sync`.
+    :meth:`async_to_sync`.
 
     Warning:
         This decorator is very inefficient and should only be used for adapting
@@ -240,6 +244,6 @@ def runs_sync(coroutine):
     """
     @wraps(coroutine)
     def invoke(*args, **kwargs):
-        return invoke_coroutine_sync(coroutine, *args, **kwargs)
+        return async_to_sync(coroutine, *args, **kwargs)
 
     return invoke

@@ -24,7 +24,7 @@ import falcon.constants
 from falcon.errors import HTTPBadRequest
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
-from falcon.middlewares import CORSMiddleware
+from falcon.middleware import CORSMiddleware
 from falcon.request import Request, RequestOptions
 import falcon.responders
 from falcon.response import Response, ResponseOptions

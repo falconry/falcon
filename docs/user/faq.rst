@@ -52,10 +52,6 @@ With that in mind, writing a high-quality API based on Falcon requires that:
 #. Errors are anticipated, detected, and handled appropriately within
    each responder and with the aid of custom error handlers.
 
-.. tip:: Falcon will re-raise errors that do not inherit from
-    :class:`~falcon.HTTPError` unless you have registered a custom error
-    handler for that type (see also: :ref:`falcon.App <app>`).
-
 How do I generate API documentation for my Falcon API?
 ------------------------------------------------------
 When it comes to API documentation, some developers prefer to use the API

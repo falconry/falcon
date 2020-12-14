@@ -3,7 +3,7 @@
 Capitalizing Response Header Names
 ==================================
 
-Falcon is opting to always render WSGI response header names in lower case; see
+Falcon always renders WSGI response header names in lower case; see
 also: :ref:`faq_header_names_lowercase`
 
 While this should normally never be an issue for standards-conformant HTTP
