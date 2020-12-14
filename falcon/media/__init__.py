@@ -1,5 +1,5 @@
 from .base import BaseHandler, BinaryBaseHandlerWS, TextBaseHandlerWS
-from .handlers import Handlers
+from .handlers import Handlers, MissingDependencyHandler
 from .json import JSONHandler, JSONHandlerWS
 from .msgpack import MessagePackHandler, MessagePackHandlerWS
 from .multipart import MultipartFormHandler
@@ -15,6 +15,7 @@ __all__ = [
     'JSONHandlerWS',
     'MessagePackHandler',
     'MessagePackHandlerWS',
+    'MissingDependencyHandler',
     'MultipartFormHandler',
     'URLEncodedFormHandler',
 ]
