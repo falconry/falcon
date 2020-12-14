@@ -111,7 +111,7 @@ This module defines the following inspect functions.
 
 .. autofunction:: falcon.inspect.inspect_routes
 
-.. autofunction:: falcon.inspect.inspect_middlewares
+.. autofunction:: falcon.inspect.inspect_middleware
 
 .. autofunction:: falcon.inspect.inspect_static_routes
 

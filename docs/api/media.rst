@@ -147,10 +147,10 @@ handler that can process that data.
 
 
     handlers = media.Handlers({
-        'application/msgpack': media.MessagePackHandler(),
+        falcon.MEDIA_MSGPACK: media.MessagePackHandler(),
     })
 
-    app = falcon.App(media_type='application/msgpack')
+    app = falcon.App(media_type=falcon.MEDIA_MSGPACK)
 
     app.req_options.media_handlers = handlers
     app.resp_options.media_handlers = handlers
@@ -165,7 +165,7 @@ removing the default handlers, this can be easily done as follows:
 
 
     extra_handlers = {
-        'application/msgpack': media.MessagePackHandler(),
+        falcon.MEDIA_MSGPACK: media.MessagePackHandler(),
     }
 
     app = falcon.App()
@@ -173,6 +173,8 @@ removing the default handlers, this can be easily done as follows:
     app.req_options.media_handlers.update(extra_handlers)
     app.resp_options.media_handlers.update(extra_handlers)
 
+The ``falcon`` module provides a number of constants for common media types.
+See also: :ref:`media_type_constants`.
 
 Supported Handler Types
 -----------------------

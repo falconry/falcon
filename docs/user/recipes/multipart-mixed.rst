@@ -14,7 +14,7 @@ using a nested ``multipart/mixed`` part).
     and
     `RFC 7578, Section 4.3 <https://tools.ietf.org/html/rfc7578#section-4.3>`_.
 
-However, if your app needs that, nested forms can be handled in the same
+If your app needs to handle nested forms, this can be done in the same
 fashion as any other part embedded in the form -- by installing an appropriate
 media handler.
 

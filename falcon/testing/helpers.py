@@ -167,12 +167,12 @@ class ASGIRequestEventEmitter:
         """Set the client connection state to disconnected.
 
         Call this method to simulate an immediate client disconnect and
-        begin emitting 'http.disconnect' events.
+        begin emitting ``'http.disconnect'`` events.
 
         Arguments:
             exhaust_body (bool): Set to ``False`` in order to
-                begin emitting 'http.disconnect' events without first
-                emitting at least one 'http.request' event.
+                begin emitting ``'http.disconnect'`` events without first
+                emitting at least one ``'http.request'`` event.
         """
 
         if exhaust_body is not None:

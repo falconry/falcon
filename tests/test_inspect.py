@@ -70,7 +70,7 @@ class TestInspectApp:
         assert len(ai.error_handlers) == 4 if asgi else 3
         assert ai.asgi is asgi
 
-    def test_dependent_middlewares(self, asgi):
+    def test_dependent_middleware(self, asgi):
         app = get_app(asgi, cors=False, independent_middleware=False)
         ai = inspect.inspect_app(app)
         assert ai.middleware.independent is False
@@ -165,7 +165,7 @@ class TestInspectApp:
             assert eh.error in ('WebSocketDisconnected', 'Exception', 'HTTPStatus', 'HTTPError')
 
     def test_middleware(self, asgi):
-        mi = inspect.inspect_middlewares(make_app_async() if asgi else make_app())
+        mi = inspect.inspect_middleware(make_app_async() if asgi else make_app())
 
         def test(m, cn, ml, inte):
             assert isinstance(m, inspect.MiddlewareClassInfo)
@@ -203,7 +203,7 @@ class TestInspectApp:
         )
 
     def test_middleware_tree(self, asgi):
-        mi = inspect.inspect_middlewares(make_app_async() if asgi else make_app())
+        mi = inspect.inspect_middleware(make_app_async() if asgi else make_app())
 
         def test(tl, names, cls):
             for (t, n, c) in zip(tl, names, cls):
@@ -436,19 +436,19 @@ class TestStringVisitor:
 
     def test_middleware_method(self, internal):
         sv = inspect.StringVisitor(False, internal)
-        mm = inspect.inspect_middlewares(make_app()).middleware_classes[0].methods[0]
+        mm = inspect.inspect_middleware(make_app()).middleware_classes[0].methods[0]
 
         assert sv.process(mm) == '{0.function_name}'.format(mm)
 
     def test_middleware_method_verbose(self, internal):
         sv = inspect.StringVisitor(True, internal)
-        mm = inspect.inspect_middlewares(make_app()).middleware_classes[0].methods[0]
+        mm = inspect.inspect_middleware(make_app()).middleware_classes[0].methods[0]
 
         assert sv.process(mm) == '{0.function_name} ({0.source_info})'.format(mm)
 
     def test_middleware_class(self, internal):
         sv = inspect.StringVisitor(False, internal)
-        mc = inspect.inspect_middlewares(make_app()).middleware_classes[0]
+        mc = inspect.inspect_middleware(make_app()).middleware_classes[0]
 
         mml = ['   ├── {}'.format(sv.process(m)) for m in mc.methods][:-1]
         mml += ['   └── {}'.format(sv.process(m)) for m in mc.methods][-1:]
@@ -458,7 +458,7 @@ class TestStringVisitor:
 
     def test_middleware_class_verbose(self, internal):
         sv = inspect.StringVisitor(True, internal)
-        mc = inspect.inspect_middlewares(make_app()).middleware_classes[0]
+        mc = inspect.inspect_middleware(make_app()).middleware_classes[0]
 
         mml = ['   ├── {}'.format(sv.process(m)) for m in mc.methods][:-1]
         mml += ['   └── {}'.format(sv.process(m)) for m in mc.methods][-1:]
@@ -468,7 +468,7 @@ class TestStringVisitor:
 
     def test_middleware_class_no_methods(self, internal):
         sv = inspect.StringVisitor(False, internal)
-        mc = inspect.inspect_middlewares(make_app()).middleware_classes[0]
+        mc = inspect.inspect_middleware(make_app()).middleware_classes[0]
         mc.methods.clear()
         exp = '↣ {0.name}'.format(mc)
         assert sv.process(mc) == exp
@@ -476,14 +476,14 @@ class TestStringVisitor:
     @pytest.mark.parametrize('verbose', (True, False))
     def test_middleware_tree_item(self, verbose, internal):
         sv = inspect.StringVisitor(verbose, internal)
-        mt = inspect.inspect_middlewares(make_app()).middleware_tree
+        mt = inspect.inspect_middleware(make_app()).middleware_tree
         for r, s in ((mt.request[0], '→'), (mt.resource[0], '↣'), (mt.response[0], '↢')):
             assert sv.process(r) == '{0} {1.class_name}.{1.name}'.format(s, r)
 
     @pytest.mark.parametrize('verbose', (True, False))
     def test_middleware_tree(self, verbose, internal):
         sv = inspect.StringVisitor(verbose, internal)
-        mt = inspect.inspect_middlewares(make_app()).middleware_tree
+        mt = inspect.inspect_middleware(make_app()).middleware_tree
         lines = []
         space = ''
         for r in mt.request:
@@ -504,7 +504,7 @@ class TestStringVisitor:
 
     def test_middleware_tree_response_only(self, internal):
         sv = inspect.StringVisitor(False, internal)
-        mt = inspect.inspect_middlewares(make_app()).middleware_tree
+        mt = inspect.inspect_middleware(make_app()).middleware_tree
         mt.request.clear()
         mt.resource.clear()
         lines = []
@@ -520,7 +520,7 @@ class TestStringVisitor:
 
     def test_middleware_tree_no_response(self, internal):
         sv = inspect.StringVisitor(False, internal)
-        mt = inspect.inspect_middlewares(make_app()).middleware_tree
+        mt = inspect.inspect_middleware(make_app()).middleware_tree
         mt.response.clear()
         lines = []
         space = ''
@@ -538,7 +538,7 @@ class TestStringVisitor:
 
     def test_middleware_tree_no_resource(self, internal):
         sv = inspect.StringVisitor(False, internal)
-        mt = inspect.inspect_middlewares(make_app()).middleware_tree
+        mt = inspect.inspect_middleware(make_app()).middleware_tree
         mt.resource.clear()
         lines = []
         space = '  '
@@ -556,18 +556,18 @@ class TestStringVisitor:
 
     def test_middleware(self, internal):
         sv = inspect.StringVisitor(False, internal)
-        m = inspect.inspect_middlewares(make_app())
+        m = inspect.inspect_middleware(make_app())
 
         assert sv.process(m) == sv.process(m.middleware_tree)
 
     def test_middleware_verbose(self, internal):
         sv = inspect.StringVisitor(True, internal)
-        m = inspect.inspect_middlewares(make_app())
+        m = inspect.inspect_middleware(make_app())
 
         mt = sv.process(m.middleware_tree)
         sv.indent += 4
         mc = '\n'.join(sv.process(cls) for cls in m.middleware_classes)
-        exp = '{}\n- Middlewares classes:\n{}'.format(mt, mc)
+        exp = '{}\n- Middleware classes:\n{}'.format(mt, mc)
         assert inspect.StringVisitor(True).process(m) == exp
 
     def make(self, sv, app, v, i, r=True, m=True, sr=True, s=True, e=True):

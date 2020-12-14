@@ -21,7 +21,7 @@ def async_take(source, count=None):
                 return result
         return result
 
-    return falcon.invoke_coroutine_sync(collect)
+    return falcon.async_to_sync(collect)
 
 
 async def chop_data(data, min_size=1024, max_size=64 * 1024):
