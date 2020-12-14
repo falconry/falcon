@@ -8,6 +8,24 @@ from falcon.media.urlencoded import URLEncodedFormHandler
 from falcon.vendor import mimeparse
 
 
+class MissingDependencyHandler:
+    """Placeholder handler that always raises an error."
+
+    This handler is used by the framework for media types that require an
+    external dependency that can not be found.
+    """
+    def __init__(self, handler: str, library: str):
+        self._msg = (
+            'The {} requires the {} library, which is not installed.'
+        ).format(handler, library)
+
+    def _raise(self, *args, **kwargs):
+        raise RuntimeError(self._msg)
+
+    # TODO(kgriffs): Add support for async later if needed.
+    serialize = deserialize = _raise
+
+
 class Handlers(UserDict):
     """A :class:`dict`-like object that manages Internet media type handlers."""
     def __init__(self, initial=None):

@@ -10,6 +10,7 @@ import falcon
 from falcon import media, testing
 from falcon.asgi import App
 from falcon.asgi.ws import _WebSocketState as ServerWebSocketState
+from falcon.asgi.ws import WebSocketOptions
 from falcon.testing.helpers import _WebSocketState as ClientWebSocketState
 
 
@@ -1064,9 +1065,11 @@ async def test_ws_simulator_collect_edge_cases(conductor):
             event = await ws._emit()
 
 
-@pytest.mark.skipif(msgpack, reason='msgpack installed')
+@pytest.mark.skipif(msgpack, reason='test requires msgpack lib to be missing')
 def test_msgpack_missing():
-    handler = media.MessagePackHandlerWS()
+
+    options = WebSocketOptions()
+    handler = options.media_handlers[falcon.WebSocketPayloadType.BINARY]
 
     with pytest.raises(RuntimeError):
         handler.serialize({})
