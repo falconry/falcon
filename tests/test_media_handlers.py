@@ -263,11 +263,7 @@ def test_json_err_no_handler(asgi):
         def on_get(self, req, resp):
             raise falcon.HTTPForbidden()
 
-    class ResourceAsync:
-        async def on_get(self, req, resp):
-            raise falcon.HTTPForbidden()
-
-    app.add_route('/', ResourceAsync() if asgi else Resource())
+    app.add_route('/', Resource())
 
     result = testing.simulate_get(app, '/')
     assert result.status_code == 403

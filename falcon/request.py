@@ -1748,8 +1748,10 @@ class Request:
             handler = _DEFAULT_JSON_HANDLER
 
         try:
+            # TODO(CaselIT): find a way to avoid encode + BytesIO if handlers
+            # interface is refactored.
             val = handler.deserialize(
-                BytesIO(param_value.encode('utf-8')), MEDIA_JSON, len(param_value)
+                BytesIO(param_value.encode()), MEDIA_JSON, len(param_value)
             )
         except errors.HTTPBadRequest:
             msg = 'It could not be parsed as JSON.'

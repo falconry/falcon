@@ -34,7 +34,7 @@ class BaseHandler(metaclass=abc.ABCMeta):
         if MEDIA_JSON in content_type:
             raise NotImplementedError(
                 'The JSON media handler requires the sync interface to be implemented even in '
-                "ASGI applications, because it's used internally by the falcon."
+                "ASGI applications, because it's used internally by the Falcon framework."
             )
         else:
             raise NotImplementedError()
@@ -93,7 +93,7 @@ class BaseHandler(metaclass=abc.ABCMeta):
         if MEDIA_JSON in content_type:
             raise NotImplementedError(
                 'The JSON media handler requires the sync interface to be implemented even in '
-                "ASGI applications, because it's used internally by the falcon."
+                "ASGI applications, because it's used internally by the Falcon framework."
             )
         else:
             raise NotImplementedError()
