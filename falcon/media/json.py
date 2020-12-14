@@ -71,8 +71,13 @@ class JSONHandler(BaseHandler):
 
         # PERF(kgriffs): Test dumps once up front so we can just quickly
         #   check the flag later.
-        result = self.dumps({'message': '\xa1Hello Unicode! \U0001F638'})
-        self._dumps_str = isinstance(result, str)
+        result = self.dumps({'message': 'Hello World'})
+        if isinstance(result, str):
+            self.serialize = self._serialize_s
+            self.serialize_async = self._serialize_async_s
+        else:
+            self.serialize = self._serialize_b
+            self.serialize_async = self._serialize_async_b
 
     def deserialize(self, stream, content_type, content_length):
         try:
@@ -94,21 +99,17 @@ class JSONHandler(BaseHandler):
                 description='Could not parse JSON body - {0}'.format(err)
             )
 
-    def serialize(self, media, content_type):
-        result = self.dumps(media)
+    def _serialize_s(self, media, content_type):
+        return self.dumps(media).encode()
 
-        if self._dumps_str:
-            result = result.encode()
+    async def _serialize_async_s(self, media, content_type):
+        return self.dumps(media).encode()
 
-        return result
+    def _serialize_b(self, media, content_type):
+        return self.dumps(media)
 
-    async def serialize_async(self, media, content_type):
-        result = self.dumps(media)
-
-        if self._dumps_str:
-            result = result.encode()
-
-        return result
+    async def _serialize_async_b(self, media, content_type):
+        return self.dumps(media)
 
 
 class JSONHandlerWS(TextBaseHandlerWS):
