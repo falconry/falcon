@@ -48,7 +48,7 @@ class JSONHandler(BaseHandler):
     If you override the ``dumps`` function, you will need to explicitly set
     ``ensure_ascii`` to ``False`` in order to enable the serialization of
     Unicode characters to UTF-8. This is easily done by using
-    ``functools.partial`` to apply the desired keyword argument. In fact, you
+    :any:`functools.partial` to apply the desired keyword argument. In fact, you
     can use this same technique to customize any option supported by the
     ``dumps`` and ``loads`` functions::
 
@@ -132,7 +132,7 @@ class JSONHandlerWS(TextBaseHandlerWS):
     If you override the ``dumps`` function, you will need to explicitly set
     ``ensure_ascii`` to ``False`` in order to enable the serialization of
     Unicode characters to UTF-8. This is easily done by using
-    ``functools.partial`` to apply the desired keyword argument. In fact, you
+    :any:`functools.partial` to apply the desired keyword argument. In fact, you
     can use this same technique to customize any option supported by the
     ``dumps`` and ``loads`` functions::
 

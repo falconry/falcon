@@ -114,7 +114,7 @@ def test_read_all(body, extra_body, set_content_length):
         assert s.closed
 
     for t in (test_iteration, test_readall_a, test_readall_b, test_readall_c, test_readall_d):
-        falcon.invoke_coroutine_sync(t)
+        falcon.async_to_sync(t)
 
 
 def test_filelike():
@@ -151,7 +151,7 @@ def test_filelike():
             async for chunk in s:
                 pass
 
-    falcon.invoke_coroutine_sync(test_iteration)
+    falcon.async_to_sync(test_iteration)
 
 
 @pytest.mark.parametrize('body', [
@@ -210,8 +210,8 @@ def test_read_chunks(body, chunk_size):
         assert b''.join(chunks) == body
 
     for t in (test_nonmixed, test_mixed_a, test_mixed_b, test_mixed_iter):
-        falcon.invoke_coroutine_sync(t)
-        falcon.invoke_coroutine_sync(t)
+        falcon.async_to_sync(t)
+        falcon.async_to_sync(t)
 
 
 def test_exhaust_with_disconnect():
@@ -232,7 +232,7 @@ def test_exhaust_with_disconnect():
         assert await s.read(100) == b''
         assert s.eof
 
-    falcon.invoke_coroutine_sync(t)
+    falcon.async_to_sync(t)
 
 
 @falcon.runs_sync
@@ -273,7 +273,7 @@ def test_iteration_already_started():
 
         assert b''.join(chunks) == body
 
-    falcon.invoke_coroutine_sync(t)
+    falcon.async_to_sync(t)
 
 
 def _stream(body, content_length=None):
