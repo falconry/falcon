@@ -1018,7 +1018,12 @@ class Request:
             media (object): The deserialized media representation.
         """
         if self._media_error is not None:
-            raise self._media_error
+            if when_empty_fallback is _UNSET or not isinstance(
+                self._media_error, errors.MediaNotFoundError
+            ):
+                raise self._media_error
+            self._media = when_empty_fallback
+            self._media_error = None
         if self._media is not _UNSET:
             return self._media
 

@@ -4,7 +4,7 @@ import msgpack
 import pytest
 
 import falcon
-from falcon import errors, media, testing
+from falcon import errors, media, testing, util
 
 from _util import create_app  # NOQA
 
@@ -266,46 +266,49 @@ def test_fallback_does_not_override_media_default(asgi):
     assert res.text == '{}'
 
 
-def _check_error(err, err2):
+async def _check_error(req, isasync):
+    err, err2 = None, None
+    try:
+        (await req.media) if isasync else req.media
+    except Exception as e:
+        err = e
+    try:
+        (await req.get_media()) if isasync else req.get_media()
+    except Exception as e:
+        err2 = e
     assert err is not None
     assert err2 is not None
     assert err2 is err
     if isinstance(err, errors.MediaMalformedError):
         assert err2.__cause__ is err.__cause__
+    obj = {}
+    if req.get_param_as_bool('empty'):
+        res = (await req.get_media(obj)) if isasync else req.get_media(obj)
+        assert res is obj
+        assert ((await req.media) if isasync else req.media) is obj
+    else:
+        err3 = None
+        try:
+            (await req.get_media(obj)) if isasync else req.get_media(obj)
+        except Exception as e:
+            err3 = e
+        assert err3 is err
     raise errors.HTTPError(falcon.HTTP_IM_A_TEAPOT)
 
 
 class RepeatedError:
     def on_get(self, req, resp):
-        err, err2 = None, None
-        try:
-            req.media
-        except Exception as e:
-            err = e
-        try:
-            req.get_media()
-        except Exception as e:
-            err2 = e
-        _check_error(err, err2)
+        util.async_to_sync(_check_error, req, False)
 
 
 class RepeatedErrorAsync:
     async def on_get(self, req, resp):
-        err, err2 = None, None
-        try:
-            await req.media
-        except Exception as e:
-            err = e
-        try:
-            await req.get_media()
-        except Exception as e:
-            err2 = e
-        _check_error(err, err2)
+        await _check_error(req, True)
 
 
 @pytest.mark.parametrize('body', ('{', ''))
 def test_repeated_error(asgi, body):
     client = create_client(asgi, resource=RepeatedErrorAsync() if asgi else RepeatedError())
 
-    res = client.simulate_get('/', body=body)
+    res = client.simulate_get('/', body=body, params={'empty': not bool(body)})
     assert res.status == falcon.HTTP_IM_A_TEAPOT

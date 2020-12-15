@@ -1,16 +1,17 @@
 General refactoring of internal media handler:
 
-*  Deserializing an empty body in handler that do not support them will
+*  Deserializing an empty body with an handler that does not support it will
    raise :class:`falcon.MediaNotFoundError`, and return a
    ``400 Bad Request`` response. This error may be suppressed by passing
    a default value to ``get_media`` to be used in case of empty body.
    See also :meth:`Request.get_media` for details.
-   Previously ``None`` was returned in all cases.
+   Previously ``None`` was returned in all cases without calling the handler.
 *  Exceptions raised by the handlers are wrapped as
    :class:`falcon.MediaMalformedError`, and return a
    ``400 Bad Request`` response.
-*  Subsequent calls to :meth:`Request.get_media` or ``Request.media`` will
-   re-raise the same exception, if the fist call ended in an error.
+*  Subsequent calls to :meth:`Request.get_media` or :attr:`Request.media` will
+   re-raise the same exception, if the fist call ended in an error, unless the
+   exception was a :class:`falcon.MediaNotFoundError` and a default value is passed.
    Previously ``None`` was returned.
 
 External handlers should update their logic to align to the internal falcon handlers.
