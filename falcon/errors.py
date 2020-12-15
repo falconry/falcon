@@ -2295,11 +2295,11 @@ class MediaNotFoundError(HTTPBadRequest):
     Exception raised by a media handler when trying to parse an empty body.
 
     Note:
-        Some media handler, like the URL-encoded form one, allow an empty body.
-        In these cases this exception will not be raised.
+        Some media handlers, like the one for URL-encoded forms, allow an
+        empty body. In these cases this exception will not be raised.
 
     Args:
-        media_type (str): The media type that was raised this exception.
+        media_type (str): The media type that was expected.
 
     Keyword Args:
         headers (dict or list): A ``dict`` of header names and values
@@ -2340,12 +2340,11 @@ class MediaMalformedError(HTTPBadRequest):
     """400 Bad Request.
 
     Exception raised by a media handler when trying to parse a malformed body.
-    The actual exception is stored in the ``source_error`` attribute.
+    The cause of this exception, if any, is stored in the ``__cause__`` attribute
+    using the "raise ... from" form when raising.
 
     Args:
-        media_type (str): The media type that was raised this exception.
-        source_error (Exception or None): The source exception that was the cause
-            of this one. It is ``None`` if no source exception is present.
+        media_type (str): The media type that was expected.
 
     Keyword Args:
         headers (dict or list): A ``dict`` of header names and values
@@ -2374,13 +2373,22 @@ class MediaMalformedError(HTTPBadRequest):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, media_type, source_error, **kwargs):
+    def __init__(self, media_type, **kwargs):
         super().__init__(
-            title='Invalid {0}'.format(media_type),
-            description='Could not parse {0} body - {1}'.format(media_type, source_error),
-            **kwargs
+            title='Invalid {0}'.format(media_type), description=None, **kwargs
         )
-        self.source_error = source_error
+        self._media_type = media_type
+
+    @property
+    def description(self):
+        msg = 'Could not parse {} body'.format(self._media_type)
+        if self.__cause__ is not None:
+            msg += ' - {}'.format(self.__cause__)
+        return msg
+
+    @description.setter
+    def description(self, value):
+        pass
 
 # -----------------------------------------------------------------------------
 # Helpers

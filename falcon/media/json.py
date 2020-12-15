@@ -16,8 +16,8 @@ class JSONHandler(BaseHandler):
     `python-rapidjson`, and `mujson`.
 
     This handler will raise a :class:`falcon.MediaNotFoundError` when attempting
-    to parse an empty body; it will raise a :class:`falcon.MediaMalformedError`
-    when if an error happens while parsing the body.
+    to parse an empty body, or a :class:`falcon.MediaMalformedError`
+    if an error happens while parsing the body.
 
     Note:
         If you are deploying to PyPy, we recommend sticking with the standard
@@ -79,7 +79,7 @@ class JSONHandler(BaseHandler):
         try:
             return self.loads(data.decode('utf-8'))
         except ValueError as err:
-            raise errors.MediaMalformedError('JSON', err) from err
+            raise errors.MediaMalformedError('JSON') from err
 
     def deserialize(self, stream, content_type, content_length):
         return self._deserialize(stream.read())

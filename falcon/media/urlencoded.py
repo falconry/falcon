@@ -42,7 +42,7 @@ class URLEncodedFormHandler(BaseHandler):
                 body, keep_blank=self.keep_blank, csv=self.csv
             )
         except Exception as err:
-            raise errors.MediaMalformedError('URL-encoded', err) from err
+            raise errors.MediaMalformedError('URL-encoded') from err
 
     def deserialize(self, stream, content_type, content_length):
         return self._deserialize(stream.read())

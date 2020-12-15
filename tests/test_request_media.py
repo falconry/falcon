@@ -155,8 +155,8 @@ def test_invalid_json(asgi):
     try:
         json.loads(expected_body)
     except Exception as e:
-        assert type(client.resource.captured_error.value.source_error) == type(e)
-        assert str(client.resource.captured_error.value.source_error) == str(e)
+        assert type(client.resource.captured_error.value.__cause__) == type(e)
+        assert str(client.resource.captured_error.value.__cause__) == str(e)
 
 
 def test_invalid_msgpack(asgi):
@@ -176,8 +176,8 @@ def test_invalid_msgpack(asgi):
     try:
         msgpack.unpackb(expected_body.encode('utf-8'))
     except Exception as e:
-        assert type(client.resource.captured_error.value.source_error) == type(e)
-        assert str(client.resource.captured_error.value.source_error) == str(e)
+        assert type(client.resource.captured_error.value.__cause__) == type(e)
+        assert str(client.resource.captured_error.value.__cause__) == str(e)
 
 
 class NopeHandler(media.BaseHandler):
@@ -271,7 +271,7 @@ def _check_error(err, err2):
     assert err2 is not None
     assert err2 is err
     if isinstance(err, errors.MediaMalformedError):
-        assert err2.source_error is err.source_error
+        assert err2.__cause__ is err.__cause__
     raise errors.HTTPError(falcon.HTTP_IM_A_TEAPOT)
 
 

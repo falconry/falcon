@@ -20,7 +20,7 @@ def test_deserialize_invalid_unicode():
     stream = io.BytesIO('spade=♠'.encode())
     with pytest.raises(falcon.MediaMalformedError) as err:
         handler.deserialize(stream, falcon.MEDIA_URLENCODED, 9)
-    assert isinstance(err.value.source_error, UnicodeDecodeError)
+    assert isinstance(err.value.__cause__, UnicodeDecodeError)
 
 
 @pytest.mark.parametrize('data,expected', [

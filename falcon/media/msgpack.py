@@ -44,7 +44,7 @@ class MessagePackHandler(BaseHandler):
             # a buffer for Unpacker() which wouldn't gain us much.
             return self.msgpack.unpackb(data, raw=False)
         except ValueError as err:
-            raise errors.MediaMalformedError('MessagePack', err) from err
+            raise errors.MediaMalformedError('MessagePack') from err
 
     def deserialize(self, stream, content_type, content_length):
         return self._deserialize(stream.read())
