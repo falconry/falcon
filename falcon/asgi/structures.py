@@ -151,9 +151,9 @@ class SSEvent:
         elif self.json is not None:
             if handler is None:
                 handler = _DEFAULT_JSON_HANDLER
-            string = handler.serialize(self.json, MEDIA_JSON)
+            serialized = handler.serialize(self.json, MEDIA_JSON)
             block += 'data: '
-            return block.encode() + string + b'\n\n'
+            return block.encode() + serialized + b'\n\n'
 
         if not block:
             return b': ping\n\n'

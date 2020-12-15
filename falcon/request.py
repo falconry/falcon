@@ -1749,7 +1749,7 @@ class Request:
 
         try:
             # TODO(CaselIT): find a way to avoid encode + BytesIO if handlers
-            # interface is refactored.
+            # interface is refactored. Possibly using the WS interface?
             val = handler.deserialize(
                 BytesIO(param_value.encode()), MEDIA_JSON, len(param_value)
             )
