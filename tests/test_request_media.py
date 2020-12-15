@@ -1,6 +1,5 @@
 import json
 
-import msgpack
 import pytest
 
 import falcon
@@ -160,6 +159,8 @@ def test_invalid_json(asgi):
 
 
 def test_invalid_msgpack(asgi):
+    import msgpack
+
     handlers = {
         'application/msgpack': media.MessagePackHandler()
     }
