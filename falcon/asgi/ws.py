@@ -516,11 +516,24 @@ class WebSocketOptions:
     __slots__ = ['error_close_code', 'max_receive_queue', 'media_handlers']
 
     def __init__(self):
+        try:
+            import msgpack
+        except ImportError:
+            msgpack = None
+
+        if msgpack:
+            bin_handler = media.MessagePackHandlerWS()
+        else:
+            bin_handler = media.MissingDependencyHandler(
+                'default WebSocket media handler for BINARY payloads',
+                'msgpack'
+            )
+
         self.media_handlers: Dict[
             WebSocketPayloadType, Union[media.TextBaseHandlerWS, media.BinaryBaseHandlerWS]
         ] = {
             WebSocketPayloadType.TEXT: media.JSONHandlerWS(),
-            WebSocketPayloadType.BINARY: media.MessagePackHandlerWS(),
+            WebSocketPayloadType.BINARY: bin_handler,
         }
 
         # Internal Error

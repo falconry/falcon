@@ -21,6 +21,7 @@ import traceback
 import falcon.app
 from falcon.app_helpers import prepare_middleware, prepare_middleware_ws
 from falcon.asgi_spec import EventType, WSCloseCode
+from falcon.constants import MEDIA_JSON
 from falcon.errors import (
     CompatibilityError,
     HTTPBadRequest,
@@ -546,6 +547,10 @@ class App(falcon.app.App):
 
             self._schedule_callbacks(resp)
 
+            handler = self.resp_options.media_handlers.find_by_media_type(
+                MEDIA_JSON, MEDIA_JSON, raise_not_found=False
+            )
+
             # TODO(kgriffs): Do we need to do anything special to handle when
             #   a connection is closed?
             async for event in sse_emitter:
@@ -557,7 +562,7 @@ class App(falcon.app.App):
                 #   the connection state using watch_disconnect() above.
                 await send({
                     'type': EventType.HTTP_RESPONSE_BODY,
-                    'body': event.serialize(),
+                    'body': event.serialize(handler),
                     'more_body': True
                 })
 

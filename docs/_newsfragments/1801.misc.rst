@@ -1,0 +1,3 @@
+The `add_link()` method of the :class:`falcon.Request` class was renamed to
+:meth:`falcon.Request.append_link`. The old name is still available as a
+deprecated alias.

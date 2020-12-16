@@ -3,7 +3,7 @@
 Outputting CSV Files
 ====================
 
-Generating a CSV (or PDF etc) report and making it available as a downloadable
+Generating a CSV (or PDF, etc.) report and making it available as a downloadable
 file is a fairly common back-end service task.
 
 The easiest approach is to simply write CSV rows to an ``io.StringIO`` stream,
@@ -45,8 +45,8 @@ and then assign its value to :attr:`resp.text <falcon.Response.text>`:
                     resp.downloadable_as = 'report.csv'
                     resp.text = output.getvalue()
 
-Here we are setting the response ``Content-Type`` to ``"text/csv"`` as
-recommended by `RFC 4180 <https://tools.ietf.org/html/rfc4180>`_, and assigning
+Here we set the response ``Content-Type`` to ``"text/csv"`` as
+recommended by `RFC 4180 <https://tools.ietf.org/html/rfc4180>`_, and assign
 the downloadable file name ``report.csv`` via the ``Content-Disposition``
 header (see also: :ref:`serve-downloadable-as`).
 
@@ -54,15 +54,13 @@ Streaming Large CSV Files on the Fly
 ------------------------------------
 
 If generated CSV responses are expected to be very large, it might be worth
-considering streaming CSV data on the fly. This will both avoid excessive
-memory consumption to hold whole response data, and reduce the time to first
-byte for the viewer.
+streaming the CSV data as it is produced. This approach will both avoid excessive
+memory consumption, and reduce the viewer's time-to-first-byte (TTFB).
 
 In order to stream CSV rows on the fly, we will initialize the CSV writer with
-our own pseudo stream object which implements the ``write()`` method by
-accumulating data in a list. We will then set :attr:`resp.stream
+our own pseudo stream object. Our stream's ``write()`` method will simply
+accumulate the CSV data in a list. We will then set :attr:`resp.stream
 <falcon.Response.stream>` to a generator yielding data chunks from this list:
-
 
 .. tabs::
 

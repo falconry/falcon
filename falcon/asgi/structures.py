@@ -1,4 +1,5 @@
-from json import dumps as json_dumps
+from falcon.constants import MEDIA_JSON
+from falcon.media.json import _DEFAULT_JSON_HANDLER
 
 
 __all__ = ['SSEvent']
@@ -111,14 +112,24 @@ class SSEvent:
 
         self.comment = comment
 
-    def serialize(self):
+    def serialize(self, handler=None):
+        """Serialize this event to string.
+
+        Args:
+            handler: Handler object that will be used to serialize the ``json`` attribute to
+                string. When not provided, a default handler using the builtin
+                JSON library will be used (default ``None``).
+
+        Returns:
+            bytes: string representation of this event.
+        """
         if self.comment is not None:
-            block = ': ' + self.comment + '\n'
+            block = f': {self.comment}\n'
         else:
             block = ''
 
         if self.event is not None:
-            block += 'event: ' + self.event + '\n'
+            block += f'event: {self.event}\n'
 
         if self.event_id is not None:
             # NOTE(kgriffs): f-strings are a tiny bit faster than str().
@@ -134,11 +145,15 @@ class SSEvent:
             #   attribute, but rather the text and json ones instead. If that
             #   is true, it makes sense to construct the entire string
             #   first, then encode it all in one go at the end.
-            block += 'data: ' + self.data.decode() + '\n'
+            block += f'data: {self.data.decode()}\n'
         elif self.text is not None:
-            block += 'data: ' + self.text + '\n'
+            block += f'data: {self.text}\n'
         elif self.json is not None:
-            block += 'data: ' + json_dumps(self.json, ensure_ascii=False) + '\n'
+            if handler is None:
+                handler = _DEFAULT_JSON_HANDLER
+            serialized = handler.serialize(self.json, MEDIA_JSON)
+            block += 'data: '
+            return block.encode() + serialized + b'\n\n'
 
         if not block:
             return b': ping\n\n'
