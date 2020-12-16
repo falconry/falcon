@@ -74,11 +74,21 @@ class JSONHandler(BaseHandler):
         self.dumps = dumps or partial(json.dumps, ensure_ascii=False)
         self.loads = loads or json.loads
 
+        # PERF(kgriffs): Test dumps once up front so we can set the
+        #     proper serialize implementation.
+        result = self.dumps({'message': 'Hello World'})
+        if isinstance(result, str):
+            self.serialize = self._serialize_s
+            self.serialize_async = self._serialize_async_s
+        else:
+            self.serialize = self._serialize_b
+            self.serialize_async = self._serialize_async_b
+
     def _deserialize(self, data):
         if not data:
             raise errors.MediaNotFoundError('JSON')
         try:
-            return self.loads(data.decode('utf-8'))
+            return self.loads(data.decode())
         except ValueError as err:
             raise errors.MediaMalformedError('JSON') from err
 
@@ -88,14 +98,17 @@ class JSONHandler(BaseHandler):
     async def deserialize_async(self, stream, content_type, content_length):
         return self._deserialize(await stream.read())
 
-    def serialize(self, media, content_type):
-        # NOTE: this is also called by serialize_async
-        result = self.dumps(media)
+    def _serialize_s(self, media, content_type):
+        return self.dumps(media).encode()
 
-        if not isinstance(result, bytes):
-            return result.encode('utf-8')
+    async def _serialize_async_s(self, media, content_type):
+        return self.dumps(media).encode()
 
-        return result
+    def _serialize_b(self, media, content_type):
+        return self.dumps(media)
+
+    async def _serialize_async_b(self, media, content_type):
+        return self.dumps(media)
 
 
 class JSONHandlerWS(TextBaseHandlerWS):
