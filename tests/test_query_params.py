@@ -841,6 +841,24 @@ class TestQueryParams:
         with pytest.raises(HTTPInvalidParam):
             req.get_param_as_json('payload')
 
+    def test_get_param_as_json_handler_json(self, client, resource):
+        client.app.add_route('/', resource)
+        payload_dict = {'foo': 'bar'}
+        query_string = 'payload={}'.format(json.dumps(payload_dict))
+        client.app.req_options.media_handlers[falcon.MEDIA_JSON].loads = lambda x: {'x': 'y'}
+        client.simulate_get(path='/', query_string=query_string)
+        req = resource.captured_req
+        assert req.get_param_as_json('payload') == {'x': 'y'}
+
+    def test_get_param_as_json_no_handler_json(self, client, resource):
+        client.app.add_route('/', resource)
+        payload_dict = {'foo': 'bar'}
+        query_string = 'payload={}'.format(json.dumps(payload_dict))
+        client.app.req_options.media_handlers.pop(falcon.MEDIA_JSON)
+        client.simulate_get(path='/', query_string=query_string)
+        req = resource.captured_req
+        assert req.get_param_as_json('payload') == {'foo': 'bar'}
+
     def test_has_param(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         query_string = 'ant=1'

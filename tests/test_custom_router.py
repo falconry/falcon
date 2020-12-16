@@ -68,7 +68,7 @@ def test_custom_router_find_should_be_used(asgi):
 
     for uri in ('/404', '/404/backwards-compat'):
         response = client.simulate_request(path=uri)
-        assert response.text == falcon.HTTPNotFound().to_json()
+        assert response.content == falcon.HTTPNotFound().to_json()
         assert response.status == falcon.HTTP_404
 
     assert router.reached_backwards_compat

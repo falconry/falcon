@@ -1,8 +1,9 @@
 from functools import partial
+import json
 
 from falcon import errors
+from falcon import http_error
 from falcon.media.base import BaseHandler, TextBaseHandlerWS
-from falcon.util import json
 
 
 class JSONHandler(BaseHandler):
@@ -164,3 +165,6 @@ class JSONHandlerWS(TextBaseHandlerWS):
 
     def deserialize(self, payload: str) -> object:
         return self.loads(payload)
+
+
+http_error._DEFAULT_JSON_HANDLER = _DEFAULT_JSON_HANDLER = JSONHandler()  # type: ignore

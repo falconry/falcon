@@ -13,16 +13,18 @@
 """Request class."""
 
 from datetime import datetime
+from io import BytesIO
 from uuid import UUID
 
 from falcon import DEFAULT_MEDIA_TYPE
 from falcon import errors
+from falcon import MEDIA_JSON
 from falcon import request_helpers as helpers
 from falcon import util
 from falcon.forwarded import _parse_forwarded_header
 from falcon.forwarded import Forwarded  # NOQA
 from falcon.media import Handlers
-from falcon.util import json
+from falcon.media.json import _DEFAULT_JSON_HANDLER
 from falcon.util import structures
 from falcon.util.misc import isascii
 from falcon.util.uri import parse_host, parse_query_string
@@ -1776,9 +1778,19 @@ class Request:
         if param_value is None:
             return default
 
+        handler = self.options.media_handlers.find_by_media_type(
+            MEDIA_JSON, MEDIA_JSON, raise_not_found=False
+        )
+        if handler is None:
+            handler = _DEFAULT_JSON_HANDLER
+
         try:
-            val = json.loads(param_value)
-        except ValueError:
+            # TODO(CaselIT): find a way to avoid encode + BytesIO if handlers
+            # interface is refactored. Possibly using the WS interface?
+            val = handler.deserialize(
+                BytesIO(param_value.encode()), MEDIA_JSON, len(param_value)
+            )
+        except errors.HTTPBadRequest:
             msg = 'It could not be parsed as JSON.'
             raise errors.HTTPInvalidParam(msg, name)
 
