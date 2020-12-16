@@ -1,0 +1,2 @@
+The :meth:`falcon.HTTPError.to_json` now returns ``bytes`` instead of ``str``.
+Importing ``json`` from ``falcon.util`` is deprecated.

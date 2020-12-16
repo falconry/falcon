@@ -29,7 +29,7 @@ question.
 
 import sys as _sys
 
-if _sys.version_info.minor < 6:
+if _sys.version_info < (3, 6):
     raise ImportError('falcon.asgi requires Python 3.6+')
 
 from .app import App  # NOQA

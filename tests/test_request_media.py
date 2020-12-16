@@ -142,7 +142,7 @@ def test_invalid_json(asgi):
     headers = {'Content-Type': 'application/json'}
     client.simulate_post('/', body=expected_body, headers=headers)
 
-    assert 'Could not parse JSON body' in client.resource.captured_error.value.description
+    assert 'Could not parse JSON' in client.resource.captured_error.value.description
 
 
 def test_invalid_msgpack(asgi):
