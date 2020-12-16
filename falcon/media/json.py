@@ -70,8 +70,8 @@ class JSONHandler(BaseHandler):
         self.dumps = dumps or partial(json.dumps, ensure_ascii=False)
         self.loads = loads or json.loads
 
-        # PERF(kgriffs): Test dumps once up front so we can just quickly
-        #   check the flag later.
+        # PERF(kgriffs): Test dumps once up front so we can just set the
+        #     proper serialize implementation.
         result = self.dumps({'message': 'Hello World'})
         if isinstance(result, str):
             self.serialize = self._serialize_s
