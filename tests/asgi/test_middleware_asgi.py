@@ -25,7 +25,7 @@ class MiddlewareIncompatibleWithWSGI_C:
     (MiddlewareIncompatibleWithWSGI_C(), MiddlewareIncompatibleWithWSGI_A()),
 ])
 def test_raise_on_incompatible(middleware):
-    api = falcon.API()
+    api = falcon.App()
 
     with pytest.raises(falcon.CompatibilityError):
         api.add_middleware(middleware)
