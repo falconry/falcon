@@ -838,7 +838,7 @@ class TestErrorHandling(TestMiddleware):
         assert response.status == falcon.HTTP_403
         assert mw.resp.status == response.status
 
-        composed_body = json.loads(mw.resp.body)
+        composed_body = json.loads(mw.resp.data.decode())
         assert composed_body['title'] == response.status
 
         assert not mw.req_succeeded

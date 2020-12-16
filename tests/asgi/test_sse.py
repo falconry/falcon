@@ -1,4 +1,5 @@
 import asyncio
+import json
 
 import pytest
 
@@ -138,7 +139,7 @@ def test_multiple_events():
                 assert event_count == 6
                 assert result_text == expected_result_text
 
-    falcon.invoke_coroutine_sync(_test)
+    falcon.async_to_sync(_test)
 
 
 def test_multiple_events_early_disconnect():
@@ -179,7 +180,52 @@ def test_multiple_events_early_disconnect():
                 assert result_text.startswith('data: whassup\n\n' * 5)
                 assert event_count == 5
 
-    falcon.invoke_coroutine_sync(_test)
+    falcon.async_to_sync(_test)
+
+
+class TestSerializeJson:
+    @pytest.fixture
+    def client(self):
+        class SomeResource:
+            async def on_get(self, req, resp):
+                async def emitter():
+                    yield SSEvent(json={'foo': 'bar'})
+                    yield SSEvent(json={'bar': 'baz'})
+
+                resp.sse = emitter()
+
+        resource = SomeResource()
+
+        app = App()
+        app.add_route('/', resource)
+
+        client = testing.TestClient(app)
+        return client
+
+    def test_use_media_handler_dumps(self, client):
+        h = client.app.resp_options.media_handlers[falcon.MEDIA_JSON]
+        h.dumps = lambda x: json.dumps(x).upper()
+
+        result = client.simulate_get()
+        assert result.text == (
+            'data: {"FOO": "BAR"}\n'
+            '\n'
+            'data: {"BAR": "BAZ"}\n'
+            '\n'
+        )
+
+    def test_no_json_media_handler(self, client):
+        for h in list(client.app.resp_options.media_handlers):
+            if 'json' in h.casefold():
+                client.app.resp_options.media_handlers.pop(h)
+
+        result = client.simulate_get()
+        assert result.text == (
+            'data: {"foo": "bar"}\n'
+            '\n'
+            'data: {"bar": "baz"}\n'
+            '\n'
+        )
 
 
 def test_invalid_event_values():

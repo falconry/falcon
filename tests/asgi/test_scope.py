@@ -113,7 +113,7 @@ def test_lifespan_scope_default_version():
 
         await t
 
-    falcon.invoke_coroutine_sync(t)
+    falcon.async_to_sync(t)
 
     assert not resource.called
 
@@ -145,7 +145,7 @@ def test_lifespan_scope_version(spec_version, supported):
 
     if not supported:
         with pytest.raises(UnsupportedScopeError):
-            falcon.invoke_coroutine_sync(
+            falcon.async_to_sync(
                 app.__call__, scope, req_event_emitter, resp_event_collector
             )
 
@@ -164,7 +164,7 @@ def test_lifespan_scope_version(spec_version, supported):
 
         await t
 
-    falcon.invoke_coroutine_sync(t)
+    falcon.async_to_sync(t)
 
 
 def test_query_string_values():
@@ -230,7 +230,7 @@ def _call_with_scope(scope):
     req_event_emitter = testing.ASGIRequestEventEmitter()
     resp_event_collector = testing.ASGIResponseEventCollector()
 
-    falcon.invoke_coroutine_sync(
+    falcon.async_to_sync(
         app.__call__, scope, req_event_emitter, resp_event_collector
     )
 
