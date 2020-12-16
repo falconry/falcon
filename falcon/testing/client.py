@@ -21,6 +21,7 @@ WSGI callable, without having to stand up a WSGI server.
 import asyncio
 import datetime as dt
 import inspect
+import json as json_module
 import time
 from typing import Dict, Optional, Sequence, Union
 import warnings
@@ -39,7 +40,6 @@ from falcon.util import (
     get_running_loop,
     http_cookies,
     http_date_to_dt,
-    json as util_json,
     to_query_str,
 )
 
@@ -326,7 +326,7 @@ class Result(_ResultBase):
         if not self.text:
             return None
 
-        return util_json.loads(self.text)
+        return json_module.loads(self.text)
 
 
 class StreamedResult(_ResultBase):
@@ -1984,7 +1984,7 @@ def _prepare_sim_args(
         headers['Content-Type'] = content_type
 
     if json is not None:
-        body = util_json.dumps(json, ensure_ascii=False)
+        body = json_module.dumps(json, ensure_ascii=False)
         headers = headers or {}
         headers['Content-Type'] = MEDIA_JSON
 

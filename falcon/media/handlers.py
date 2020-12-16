@@ -54,7 +54,7 @@ class Handlers(UserDict):
 
         return resolved
 
-    def find_by_media_type(self, media_type, default):
+    def find_by_media_type(self, media_type, default, raise_not_found=True):
         # PERF(jmvrbanac): Check via a quick methods first for performance
         if media_type == '*/*' or not media_type:
             media_type = default
@@ -68,9 +68,11 @@ class Handlers(UserDict):
         resolved = self._resolve_media_type(media_type, self.data.keys())
 
         if not resolved:
-            raise errors.HTTPUnsupportedMediaType(
-                description='{0} is an unsupported media type.'.format(media_type)
-            )
+            if raise_not_found:
+                raise errors.HTTPUnsupportedMediaType(
+                    description='{0} is an unsupported media type.'.format(media_type)
+                )
+            return None
 
         return self.data[resolved]
 
