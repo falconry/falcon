@@ -1,6 +1,7 @@
 # -*- coding: utf-8
 
 import datetime
+import json
 import wsgiref.validate
 import xml.etree.ElementTree as et  # noqa: I202
 
@@ -10,7 +11,6 @@ import yaml
 import falcon
 from falcon.http_error import NoRepresentation, OptionalRepresentation
 import falcon.testing as testing
-from falcon.util import json
 from falcon.util.deprecation import DeprecatedWarning
 
 from _util import create_app  # NOQA
@@ -343,19 +343,14 @@ class TestHTTPError:
         }
 
         def _my_serializer(req, resp, exception):
-            representation = None
-
-            preferred = req.client_prefers(('application/x-yaml',
-                                            'application/json'))
+            preferred = req.client_prefers((falcon.MEDIA_YAML, falcon.MEDIA_JSON))
 
             if preferred is not None:
-                if preferred == 'application/json':
-                    representation = exception.to_json()
+                if preferred == falcon.MEDIA_JSON:
+                    resp.data = exception.to_json()
                 else:
-                    representation = yaml.dump(exception.to_dict(),
-                                               encoding=None)
+                    resp.body = yaml.dump(exception.to_dict(), encoding=None)
 
-                resp.body = representation
                 resp.content_type = preferred
 
         def _check(media_type, deserializer):
@@ -367,8 +362,8 @@ class TestHTTPError:
             actual_doc = deserializer(response.content.decode('utf-8'))
             assert expected_doc == actual_doc
 
-        _check('application/x-yaml', yaml.safe_load)
-        _check('application/json', json.loads)
+        _check(falcon.MEDIA_YAML, yaml.safe_load)
+        _check(falcon.MEDIA_JSON, json.loads)
 
     @pytest.mark.parametrize('method,path,status', [
         ('GET', '/404', 404),
@@ -590,7 +585,7 @@ class TestHTTPError:
 
         response = client.simulate_request(path='/405')
         assert response.status == falcon.HTTP_405
-        assert response.text == falcon.HTTPMethodNotAllowed(['PUT']).to_json()
+        assert response.content == falcon.HTTPMethodNotAllowed(['PUT']).to_json()
         assert response.json == {'title': falcon.HTTP_METHOD_NOT_ALLOWED}
         assert response.headers['allow'] == 'PUT'
 
@@ -599,7 +594,7 @@ class TestHTTPError:
 
         response = client.simulate_request(path='/405')
         assert response.status == falcon.HTTP_405
-        assert response.text == falcon.HTTPMethodNotAllowed([]).to_json()
+        assert response.content == falcon.HTTPMethodNotAllowed([]).to_json()
         assert response.headers['allow'] == 'PUT'
         assert response.headers['x-ping'] == 'pong'
 
@@ -634,7 +629,7 @@ class TestHTTPError:
         response = client.simulate_request(path='/410')
 
         assert response.status == falcon.HTTP_410
-        assert response.text == falcon.HTTPGone().to_json()
+        assert response.content == falcon.HTTPGone().to_json()
         assert response.json == {'title': '410 Gone'}
 
     def test_410_with_body(self, client):
@@ -871,6 +866,36 @@ class TestHTTPError:
 
         assert response.status == headers['X-Error-Status']
         assert response.json['title'] == headers['X-Error-Status']
+
+    def test_to_json_dumps(self):
+        e = falcon.HTTPError(status=falcon.HTTP_418, title='foo', description='bar')
+        assert e.to_json() == b'{"title": "foo", "description": "bar"}'
+
+        class Handler:
+            def serialize(self, obj, type):
+                assert type == falcon.MEDIA_JSON
+                return b'{"a": "b"}'
+
+        assert e.to_json(Handler()) == b'{"a": "b"}'
+
+    def test_serialize_error_uses_media_handler(self, client):
+        client.app.add_route('/path', NotFoundResource())
+        h = client.app.resp_options.media_handlers[falcon.MEDIA_JSON]
+        h.dumps = lambda x: json.dumps(x).upper()
+        response = client.simulate_request(path='/path')
+
+        assert response.status == falcon.HTTP_404
+        assert response.json == {'TITLE': falcon.HTTP_NOT_FOUND.upper()}
+
+    def test_serialize_no_json_media_handler(self, client):
+        client.app.add_route('/path', NotFoundResource())
+        for h in list(client.app.resp_options.media_handlers):
+            if 'json' in h.casefold():
+                client.app.resp_options.media_handlers.pop(h)
+        response = client.simulate_request(path='/path')
+
+        assert response.status == falcon.HTTP_404
+        assert response.json == {'title': falcon.HTTP_NOT_FOUND}
 
 
 def test_kw_only():
