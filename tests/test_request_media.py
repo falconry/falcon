@@ -247,16 +247,20 @@ def test_fallback(asgi):
 
 
 @pytest.mark.parametrize('exhaust_stream', (True, False))
-def test_fallback_not_for_error_body(asgi, exhaust_stream):
+@pytest.mark.parametrize('body', (True, False))
+def test_fallback_not_for_error_body(asgi, exhaust_stream, body):
     js = media.JSONHandler()
     js.exhaust_stream = exhaust_stream
     client = create_client(asgi, resource=FallBackAsync() if asgi else FallBack(), handlers={
         'application/json': js,
     })
 
-    res = client.simulate_get('/', body=b'{')
-    assert res.status_code == 400
-    assert 'Could not parse JSON body' in res.json['description']
+    res = client.simulate_get('/', body=b'{' if body else '')
+    if body:
+        assert res.status_code == 400
+        assert 'Could not parse JSON body' in res.json['description']
+    else:
+        assert res.status_code == 200
 
 
 def test_fallback_does_not_override_media_default(asgi):
