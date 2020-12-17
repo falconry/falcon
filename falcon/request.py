@@ -25,6 +25,7 @@ from falcon.forwarded import _parse_forwarded_header
 from falcon.forwarded import Forwarded  # NOQA
 from falcon.media import Handlers
 from falcon.media.json import _DEFAULT_JSON_HANDLER
+from falcon.stream import BoundedStream
 from falcon.util import structures
 from falcon.util.misc import isascii
 from falcon.util.uri import parse_host, parse_query_string
@@ -1855,7 +1856,7 @@ class Request:
             # but it had an invalid value. Assume no content.
             content_length = 0
 
-        return helpers.BoundedStream(self.env['wsgi.input'], content_length)
+        return BoundedStream(self.env['wsgi.input'], content_length)
 
     def _parse_form_urlencoded(self):
         content_length = self.content_length

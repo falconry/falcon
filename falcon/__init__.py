@@ -36,6 +36,7 @@ from falcon.errors import *  # NOQA
 from falcon.redirects import *  # NOQA
 from falcon.http_error import HTTPError  # NOQA
 from falcon.http_status import HTTPStatus  # NOQA
+from falcon.stream import BoundedStream # NOQA
 from falcon.middleware import CORSMiddleware  # NOQA
 
 # NOTE(kgriffs): Ensure that "from falcon import uri" will import
