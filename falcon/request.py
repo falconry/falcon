@@ -980,7 +980,7 @@ class Request:
 
         return netloc_value
 
-    def get_media(self, when_empty_fallback=_UNSET):
+    def get_media(self, default_when_empty=_UNSET):
         """Return a deserialized form of the request stream.
 
         The first time this method is called, the request stream will be
@@ -1002,7 +1002,7 @@ class Request:
             and will return the value returned by the handler or propagate
             the exception raised by it. To instead return a different value
             in case of an exception by the handler, specify the argument
-            ``when_empty_fallback``.
+            ``default_when_empty``.
 
         Warning:
             This operation will consume the request stream the first time
@@ -1010,24 +1010,25 @@ class Request:
             retrieve a cached version of the object.
 
         Args:
-            when_empty_fallback: Fallback value to return when there is no body
+            default_when_empty: Fallback value to return when there is no body
                 in the request and the media handler raises an error
                 (like in the case of the default JSON media handler).
                 By default, Falcon uses the value returned by the media handler
                 or propagates the raised exception, if any.
+                This value is not cached, and will be used only for the current
+                call.
 
         Returns:
             media (object): The deserialized media representation.
         """
-        if self._media_error is not None:
-            if when_empty_fallback is _UNSET or not isinstance(
-                self._media_error, errors.MediaNotFoundError
-            ):
-                raise self._media_error
-            self._media = when_empty_fallback
-            self._media_error = None
         if self._media is not _UNSET:
             return self._media
+        if self._media_error is not None:
+            if default_when_empty is not _UNSET and isinstance(
+                self._media_error, errors.MediaNotFoundError
+            ):
+                return default_when_empty
+            raise self._media_error
 
         handler = self.options.media_handlers.find_by_media_type(
             self.content_type,
@@ -1041,10 +1042,10 @@ class Request:
                 self.content_length
             )
         except errors.MediaNotFoundError as err:
-            if when_empty_fallback is _UNSET:
-                self._media_error = err
-                raise
-            self._media = when_empty_fallback
+            self._media_error = err
+            if default_when_empty is not _UNSET:
+                return default_when_empty
+            raise
         except Exception as err:
             self._media_error = err
             raise

@@ -284,9 +284,15 @@ async def _check_error(req, isasync):
         assert err2.__cause__ is err.__cause__
     obj = {}
     if req.get_param_as_bool('empty'):
+        # default_when_empty is not cached
         res = (await req.get_media(obj)) if isasync else req.get_media(obj)
         assert res is obj
-        assert ((await req.media) if isasync else req.media) is obj
+        err3 = None
+        try:
+            ((await req.media) if isasync else req.media) is obj
+        except Exception as e:
+            err3 = e
+        assert err3 is err
     else:
         err3 = None
         try:
@@ -313,3 +319,26 @@ def test_repeated_error(asgi, body):
 
     res = client.simulate_get('/', body=body, params={'empty': not bool(body)})
     assert res.status == falcon.HTTP_IM_A_TEAPOT
+
+
+def test_error_after_first_default(asgi):
+    async def _check_error(req, isasync):
+        assert (await req.get_media(42)) if isasync else req.get_media(42) == 42
+        try:
+            (await req.get_media()) if isasync else req.get_media()
+        except falcon.MediaNotFoundError:
+            raise falcon.HTTPStatus(falcon.HTTP_749)
+        raise falcon.HTTPStatus(falcon.HTTP_703)
+
+    class Res:
+        def on_get(self, req, resp):
+            util.async_to_sync(_check_error, req, False)
+
+    class ResAsync:
+        async def on_get(self, req, resp):
+            await _check_error(req, True)
+
+    client = create_client(asgi, resource=ResAsync() if asgi else Res())
+
+    res = client.simulate_get('/', body='')
+    assert res.status == falcon.HTTP_749

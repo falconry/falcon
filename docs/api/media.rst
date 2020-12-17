@@ -137,7 +137,7 @@ Version 3 of Falcon updated how the handling of exceptions raised by handlers be
    that don't allow empty bodies as a valid value, such as ``JSON``, an instance of
    :class:`falcon.MediaNotFoundError` should be raised. By default, this error
    will return a  ``400 Bad Request`` response to the client.
-   This exception may be suppressed by passing a value to the ``when_empty_fallback``
+   This exception may be suppressed by passing a value to the ``default_when_empty``
    argument when calling :meth:`Request.get_media`. In this case, this value will
    be returned by the call. The same value is also returned by all following invocations.
 *  If an handler encounters an error while parsing a non-empty body, an instance of
@@ -148,7 +148,7 @@ Version 3 of Falcon updated how the handling of exceptions raised by handlers be
 If any exception was raised by the handler while parsing the body, all subsequent invocations
 of :meth:`Request.get_media` or :attr:`Request.media` will result in a re-raise of the same
 exception, unless the exception was a :class:`falcon.MediaNotFoundError` and a default value
-is passed in ``when_empty_fallback``.
+is passed in ``default_when_empty``.
 
 External handlers should update their logic to align to the internal Falcon handlers.
 
