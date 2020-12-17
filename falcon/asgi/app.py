@@ -979,7 +979,7 @@ class App(falcon.app.App):
 
         if resp:
             # NOTE(caselit): Reset body, data and media before calling the handler
-            resp.body = resp.data = resp.media = None
+            resp.text = resp.data = resp.media = None
 
         if err_handler is not None:
             try:

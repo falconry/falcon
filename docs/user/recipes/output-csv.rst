@@ -7,7 +7,7 @@ Generating a CSV (or PDF, etc.) report and making it available as a downloadable
 file is a fairly common back-end service task.
 
 The easiest approach is to simply write CSV rows to an ``io.StringIO`` stream,
-and then assign its value to :attr:`resp.body <falcon.Response.body>`:
+and then assign its value to :attr:`resp.text <falcon.Response.text>`:
 
 .. tabs::
 
@@ -26,7 +26,7 @@ and then assign its value to :attr:`resp.body <falcon.Response.body>`:
 
                     resp.content_type = 'text/csv'
                     resp.downloadable_as = 'report.csv'
-                    resp.body = output.getvalue()
+                    resp.text = output.getvalue()
 
     .. group-tab:: ASGI
 
@@ -43,7 +43,7 @@ and then assign its value to :attr:`resp.body <falcon.Response.body>`:
 
                     resp.content_type = 'text/csv'
                     resp.downloadable_as = 'report.csv'
-                    resp.body = output.getvalue()
+                    resp.text = output.getvalue()
 
 Here we set the response ``Content-Type`` to ``"text/csv"`` as
 recommended by `RFC 4180 <https://tools.ietf.org/html/rfc4180>`_, and assign

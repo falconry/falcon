@@ -7,11 +7,11 @@ from _util import create_app  # NOQA
 
 
 def sink(req, resp, **kw):
-    resp.body = 'sink'
+    resp.text = 'sink'
 
 
 async def sink_async(req, resp, **kw):
-    resp.body = 'sink'
+    resp.text = 'sink'
 
 
 @pytest.fixture

@@ -39,7 +39,7 @@ class HeaderHelpersResource:
         resp.cache_control = ['no-store']
 
     def on_get(self, req, resp):
-        resp.body = '{}'
+        resp.text = '{}'
         resp.content_type = 'x-falcon/peregrine'
         resp.cache_control = [
             'public', 'private', 'no-cache', 'no-store', 'must-revalidate',
@@ -149,7 +149,7 @@ class VaryHeaderResource:
         self.vary = vary
 
     def on_get(self, req, resp):
-        resp.body = '{}'
+        resp.text = '{}'
         resp.vary = self.vary
 
 
@@ -162,7 +162,7 @@ class LinkHeaderResource:
         self._links.append((args, kwargs))
 
     def on_get(self, req, resp):
-        resp.body = '{}'
+        resp.text = '{}'
 
         append_link = None
         for args, kwargs in self._links:
@@ -214,7 +214,7 @@ class DownloadableResource:
         self.filename = filename
 
     def on_get(self, req, resp):
-        resp.body = 'Hello, World!\n'
+        resp.text = 'Hello, World!\n'
         resp.content_type = falcon.MEDIA_TEXT
         resp.downloadable_as = self.filename
 
@@ -230,7 +230,7 @@ class ContentLengthHeaderResource:
         resp.content_length = self._content_length
 
         if self._body:
-            resp.body = self._body
+            resp.text = self._body
 
         if self._data:
             resp.data = self._data

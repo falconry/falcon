@@ -17,14 +17,14 @@ _MODULE = 'tests.test_cmd_inspect_app'
 class DummyResource:
 
     def on_get(self, req, resp):
-        resp.body = 'Test\n'
+        resp.text = 'Test\n'
         resp.status = '200 OK'
 
 
 class DummyResourceAsync:
 
     async def on_get(self, req, resp):
-        resp.body = 'Test\n'
+        resp.text = 'Test\n'
         resp.status = '200 OK'
 
 

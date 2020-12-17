@@ -5,6 +5,7 @@ import pytest
 
 import falcon
 import falcon.testing as testing
+from falcon.util.deprecation import DeprecatedWarning
 
 
 class CookieResource:
@@ -14,7 +15,8 @@ class CookieResource:
 
 @pytest.fixture
 def alias_client():
-    api = falcon.API()
+    with pytest.warns(DeprecatedWarning, match='API class may be removed'):
+        api = falcon.API()
     api.add_route('/get-cookie', CookieResource())
     return testing.TestClient(api)
 
@@ -40,5 +42,6 @@ def test_cookies(alias_client, app_client):
 
 
 def test_alias_equals_to_app(alias_client):
-    api = falcon.API()
+    with pytest.warns(DeprecatedWarning, match='API class may be removed'):
+        api = falcon.API()
     assert isinstance(api, falcon.API)

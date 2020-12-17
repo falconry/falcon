@@ -8,7 +8,7 @@ from _util import create_app, disable_asgi_non_coroutine_wrapping  # NOQA
 
 def capture_error(req, resp, ex, params):
     resp.status = falcon.HTTP_723
-    resp.body = 'error: %s' % str(ex)
+    resp.text = 'error: %s' % str(ex)
 
 
 async def capture_error_async(*args):
@@ -17,7 +17,7 @@ async def capture_error_async(*args):
 
 def handle_error_first(req, resp, ex, params):
     resp.status = falcon.HTTP_200
-    resp.body = 'first error handler'
+    resp.text = 'first error handler'
 
 
 class CustomBaseException(Exception):
@@ -259,7 +259,7 @@ class NoBodyResource:
         raise falcon.HTTPError(falcon.HTTP_740)
 
     def on_put(self, req, res):
-        res.body = 'foo'
+        res.text = 'foo'
         raise falcon.HTTPError(falcon.HTTP_701)
 
 
@@ -301,7 +301,7 @@ class CustomErrorResource:
         raise ZeroDivisionError()
 
     def on_put(self, req, res):
-        res.body = 'foo'
+        res.text = 'foo'
         raise ZeroDivisionError()
 
 
