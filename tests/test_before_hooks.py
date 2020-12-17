@@ -335,7 +335,7 @@ def test_field_validator(client, resource):
     ]
 )
 def test_parser_sync(body, doc):
-    app = falcon.API()
+    app = falcon.App()
 
     resource = WrappedRespondersBodyParserResource()
     app.add_route('/', resource)

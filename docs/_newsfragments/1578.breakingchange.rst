@@ -1,0 +1,2 @@
+Rename :attr:`Response.body` and :attr:`HTTPStatus.body` to ``text``.
+The old name is deprecated, but still available.
