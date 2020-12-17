@@ -118,7 +118,7 @@ class ResourceWithId:
         return 'ResourceWithId({})'.format(self.resource_id)
 
     def on_get(self, req, resp):
-        resp.body = self.resource_id
+        resp.text = self.resource_id
 
 
 class SpamConverter:

@@ -5,6 +5,7 @@ import pytest
 import falcon
 from falcon import errors, media, testing
 import falcon.asgi
+from falcon.util.deprecation import DeprecatedWarning
 
 
 def create_client(resource, handlers=None):
@@ -172,7 +173,7 @@ def runTest(test_fn):
 
             await test_fn(resp)
 
-            resp.body = None
+            resp.text = None
             resp.data = None
             resp.media = doc
 
@@ -182,9 +183,20 @@ def runTest(test_fn):
 
 
 class TestRenderBodyPrecedence:
+    def test_text(self):
+        async def test(resp):
+            resp.text = 'body'
+            resp.data = b'data'
+            resp.media = ['media']
+
+            assert await resp.render_body() == b'body'
+
+        runTest(test)
+
     def test_body(self):
         async def test(resp):
-            resp.body = 'body'
+            with pytest.warns(DeprecatedWarning, match='Please use text instead'):
+                resp.body = 'body'
             resp.data = b'data'
             resp.media = ['media']
 

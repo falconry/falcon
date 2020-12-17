@@ -37,6 +37,7 @@ def client(request):
 
 
 @pytest.mark.parametrize('client', (falcon.App, falcon.API,), indirect=True)
+@pytest.mark.filterwarnings('ignore:Call to deprecated function')
 def test_api_media_type_overriding(client):
     response = client.simulate_get('/')
     assert response.text == "{'foo': 'bar'}"

@@ -59,12 +59,12 @@ class TestWSGIServer:
 def _run_server(stop_event, host, port):
     class Things:
         def on_get(self, req, resp):
-            resp.body = req.remote_addr
+            resp.text = req.remote_addr
 
         def on_post(self, req, resp):
             # NOTE(kgriffs): Elsewhere we just use req.bounded_stream, so
             # here we read the stream directly to test that use case.
-            resp.body = req.stream.read(req.content_length or 0)
+            resp.text = req.stream.read(req.content_length or 0)
 
         def on_put(self, req, resp):
             # NOTE(kgriffs): Test that reading past the end does
@@ -72,7 +72,7 @@ def _run_server(stop_event, host, port):
             req_body = (req.bounded_stream.read(1)
                         for i in range(req.content_length + 1))
 
-            resp.body = b''.join(req_body)
+            resp.text = b''.join(req_body)
 
     class Bucket:
         def on_post(self, req, resp):
@@ -82,7 +82,7 @@ def _run_server(stop_event, host, port):
             # make sure req.bounded_stream is what we think it is;
             # BoundedStream itself has its own unit tests in
             # test_request_body.py
-            resp.body = req.bounded_stream.read()
+            resp.text = req.bounded_stream.read()
 
             # NOTE(kgriffs): No need to also test the same read() for
             # req.stream, since we already asserted they are the same

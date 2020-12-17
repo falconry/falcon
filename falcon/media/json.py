@@ -70,9 +70,19 @@ class JSONHandler(BaseHandler):
         self.dumps = dumps or partial(json.dumps, ensure_ascii=False)
         self.loads = loads or json.loads
 
+        # PERF(kgriffs): Test dumps once up front so we can set the
+        #     proper serialize implementation.
+        result = self.dumps({'message': 'Hello World'})
+        if isinstance(result, str):
+            self.serialize = self._serialize_s
+            self.serialize_async = self._serialize_async_s
+        else:
+            self.serialize = self._serialize_b
+            self.serialize_async = self._serialize_async_b
+
     def deserialize(self, stream, content_type, content_length):
         try:
-            return self.loads(stream.read().decode('utf-8'))
+            return self.loads(stream.read().decode())
         except ValueError as err:
             raise errors.HTTPBadRequest(
                 title='Invalid JSON',
@@ -83,34 +93,24 @@ class JSONHandler(BaseHandler):
         data = await stream.read()
 
         try:
-            return self.loads(data.decode('utf-8'))
+            return self.loads(data.decode())
         except ValueError as err:
             raise errors.HTTPBadRequest(
                 title='Invalid JSON',
                 description='Could not parse JSON - {0}'.format(err)
             )
 
-    def serialize(self, media, content_type):
-        result = self.dumps(media)
+    def _serialize_s(self, media, content_type):
+        return self.dumps(media).encode()
 
-        try:
-            result = result.encode('utf-8')
-        except AttributeError:  # pragma: nocover
-            # NOTE(kgriffs): Assume that dumps() is non-standard in that it
-            #   returned a byte string.
-            # TODO(kgriffs): This branch is not currently covered since
-            #   orjson testing has been temporarily disabled.
-            pass
+    async def _serialize_async_s(self, media, content_type):
+        return self.dumps(media).encode()
 
-        return result
+    def _serialize_b(self, media, content_type):
+        return self.dumps(media)
 
-    async def serialize_async(self, media, content_type):
-        result = self.dumps(media)
-
-        if not isinstance(result, bytes):
-            return result.encode('utf-8')
-
-        return result
+    async def _serialize_async_b(self, media, content_type):
+        return self.dumps(media)
 
 
 class JSONHandlerWS(TextBaseHandlerWS):
