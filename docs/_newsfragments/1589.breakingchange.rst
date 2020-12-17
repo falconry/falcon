@@ -14,4 +14,4 @@ General refactoring of internal media handler:
    exception was a :class:`falcon.MediaNotFoundError` and a default value is passed.
    Previously ``None`` was returned.
 
-External handlers should update their logic to align to the internal falcon handlers.
+External handlers should update their logic to align to the internal Falcon handlers.

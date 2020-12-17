@@ -15,7 +15,7 @@ class MessagePackHandler(BaseHandler):
 
     This handler will raise a :class:`falcon.MediaNotFoundError` when attempting
     to parse an empty body; it will raise a :class:`falcon.MediaMalformedError`
-    when if an error happens while parsing the body.
+    if an error happens while parsing the body.
 
     Note:
         This handler requires the extra ``msgpack`` package (version 0.5.2

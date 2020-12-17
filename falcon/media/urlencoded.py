@@ -13,8 +13,9 @@ class URLEncodedFormHandler(BaseHandler):
     ``dict`` in a similar way that URL query parameters are parsed. An empty body
     will be parsed as an empty dict.
 
-    This handler will raise :class:`falcon.MediaMalformedError` in case of errors,
-    usually only if the body cannot be parsed as ASCII.
+    When deserializing, this handler will raise :class:`falcon.MediaMalformedError`
+    if the request payload cannot be parsed as ASCII or if any of the URL-encoded
+    strings in the payload are not valid UTF-8.
 
     Keyword Arguments:
         keep_blank (bool): Whether to keep empty-string values from the form

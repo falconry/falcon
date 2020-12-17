@@ -150,7 +150,7 @@ of :meth:`Request.get_media` or :attr:`Request.media` will result in a re-raise 
 exception, unless the exception was a :class:`falcon.MediaNotFoundError` and a default value
 is passed in ``when_empty_fallback``.
 
-External handlers should update their logic to align to the internal falcon handlers.
+External handlers should update their logic to align to the internal Falcon handlers.
 
 .. _custom_media_handlers:
 
