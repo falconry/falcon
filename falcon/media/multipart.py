@@ -19,11 +19,12 @@ import re
 from urllib.parse import unquote_to_bytes
 
 from falcon import errors
-from falcon import request_helpers
 from falcon.media.base import BaseHandler
+from falcon.stream import BoundedStream
 from falcon.util import BufferedReader
 from falcon.util import misc
 from falcon.util.deprecation import deprecated_args
+
 
 # TODO(vytas):
 #   * Better support for form-wide charset setting
@@ -381,7 +382,7 @@ class MultipartForm:
         # This approach makes testing both the Cythonized and pure-Python
         #   streams easier within the same test/benchmark suite.
         if not hasattr(stream, 'read_until'):
-            if isinstance(stream, request_helpers.BoundedStream):
+            if isinstance(stream, BoundedStream):
                 stream = BufferedReader(stream.stream.read, content_length)
             else:
                 stream = BufferedReader(stream.read, content_length)

@@ -2,7 +2,7 @@ import io
 
 import pytest
 
-from falcon.request_helpers import BoundedStream
+from falcon.stream import BoundedStream
 
 
 @pytest.fixture
