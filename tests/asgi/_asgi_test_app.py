@@ -19,7 +19,7 @@ class Things:
 
     async def on_get(self, req, resp):
         await asyncio.sleep(0.01)
-        resp.body = req.remote_addr
+        resp.text = req.remote_addr
 
     async def on_post(self, req, resp):
         resp.data = await req.stream.read(req.content_length or 0)
@@ -55,7 +55,7 @@ class Things:
         #   it is slightly less performant).
         # TODO(kgriffs): Perhaps in Falcon 4.0 be more strict? We would
         #   also have to change the WSGI behavior to match.
-        resp.body = b''.join(chunks)
+        resp.text = b''.join(chunks)
 
         # =================================================================
         # NOTE(kgriffs): Test the sync_to_async helpers here to make sure
@@ -100,7 +100,7 @@ class Things:
 
 class Bucket:
     async def on_post(self, req, resp):
-        resp.body = await req.stream.read()
+        resp.text = await req.stream.read()
 
 
 class Feed:

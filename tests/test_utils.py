@@ -711,7 +711,7 @@ class TestFalconTestingUtils:
                 doc['things'] = req.get_param_as_list('things', int)
                 doc['query_string'] = req.query_string
 
-                resp.body = json.dumps(doc)
+                resp.text = json.dumps(doc)
 
         app.req_options.auto_parse_qs_csv = True
         app.add_route('/', SomeResource())
@@ -819,7 +819,7 @@ class TestFalconTestingUtils:
     def test_simulate_remote_addr(self, app, remote_addr):
         class ShowMyIPResource:
             def on_get(self, req, resp):
-                resp.body = req.remote_addr
+                resp.text = req.remote_addr
                 resp.content_type = falcon.MEDIA_TEXT
 
         app.add_route('/', ShowMyIPResource())
