@@ -2288,6 +2288,108 @@ class HTTPMissingParam(HTTPBadRequest):
             **kwargs
         )
 
+
+class MediaNotFoundError(HTTPBadRequest):
+    """400 Bad Request.
+
+    Exception raised by a media handler when trying to parse an empty body.
+
+    Note:
+        Some media handlers, like the one for URL-encoded forms, allow an
+        empty body. In these cases this exception will not be raised.
+
+    Args:
+        media_type (str): The media type that was expected.
+
+    Keyword Args:
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (default 'API documentation
+            for this error').
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
+    """
+
+    def __init__(self, media_type, **kwargs):
+        super().__init__(
+            title='Invalid {0}'.format(media_type),
+            description='Could not parse an empty {0} body'.format(media_type),
+            **kwargs
+        )
+
+
+class MediaMalformedError(HTTPBadRequest):
+    """400 Bad Request.
+
+    Exception raised by a media handler when trying to parse a malformed body.
+    The cause of this exception, if any, is stored in the ``__cause__`` attribute
+    using the "raise ... from" form when raising.
+
+    Args:
+        media_type (str): The media type that was expected.
+
+    Keyword Args:
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (default 'API documentation
+            for this error').
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
+    """
+
+    def __init__(self, media_type, **kwargs):
+        super().__init__(
+            title='Invalid {0}'.format(media_type), description=None, **kwargs
+        )
+        self._media_type = media_type
+
+    @property
+    def description(self):
+        msg = 'Could not parse {} body'.format(self._media_type)
+        if self.__cause__ is not None:
+            msg += ' - {}'.format(self.__cause__)
+        return msg
+
+    @description.setter
+    def description(self, value):
+        pass
+
 # -----------------------------------------------------------------------------
 # Helpers
 # -----------------------------------------------------------------------------

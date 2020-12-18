@@ -897,6 +897,13 @@ class TestHTTPError:
         assert response.status == falcon.HTTP_404
         assert response.json == {'title': falcon.HTTP_NOT_FOUND}
 
+    def test_MediaMalformedError(self):
+        err = falcon.MediaMalformedError('foo-media')
+        assert err.description == 'Could not parse foo-media body'
+
+        err.__cause__ = ValueError('some error')
+        assert err.description == 'Could not parse foo-media body - some error'
+
 
 def test_kw_only():
     # only deprecated for now

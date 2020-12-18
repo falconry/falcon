@@ -43,7 +43,7 @@ _CRLF = b'\r\n'
 _CRLF_CRLF = _CRLF + _CRLF
 
 
-class MultipartParseError(errors.HTTPBadRequest):
+class MultipartParseError(errors.MediaMalformedError):
     """Represents a multipart form parsing error.
 
     This error may refer to a malformed or truncated form, usage of deprecated
@@ -52,12 +52,25 @@ class MultipartParseError(errors.HTTPBadRequest):
 
     :class:`MultipartParseError` instances raised in this module always include
     a short human-readable description of the error.
+
+    The cause of this exception, if any, is stored in the ``__cause__`` attribute
+    using the "raise ... from" form when raising.
+
+    Args:
+        source_error (Exception): The source exception that was the cause of this one.
     """
 
+    # NOTE(caselit): remove the description @property in MediaMalformedError
+    description = None
+
     @deprecated_args(allowed_positional=0)
-    def __init__(self, description=None, headers=None, **kwargs):
-        super().__init__(title='Malformed multipart/form-data request media',
-                         description=description, headers=headers, **kwargs)
+    def __init__(self, description=None, **kwargs):
+        errors.HTTPBadRequest.__init__(
+            self,
+            title='Malformed multipart/form-data request media',
+            description=description,
+            **kwargs
+        )
 
 
 # TODO(vytas): Consider supporting -charset- stuff.
@@ -271,9 +284,10 @@ class BodyPart:
         charset = options.get('charset', self._parse_options.default_charset)
         try:
             return self.data.decode(charset)
-        except (ValueError, LookupError):
+        except (ValueError, LookupError) as err:
             raise MultipartParseError(
-                description='invalid text or charset: {}'.format(charset))
+                description='invalid text or charset: {}'.format(charset)
+            ) from err
 
     @property
     def content_type(self):
@@ -300,10 +314,10 @@ class BodyPart:
                 charset, value = match.groups()
                 try:
                     self._filename = unquote_to_bytes(value).decode(charset)
-                except (ValueError, LookupError):
+                except (ValueError, LookupError) as err:
                     raise MultipartParseError(
-                        description='invalid text or charset: {}'.format(
-                            charset))
+                        description='invalid text or charset: {}'.format(charset)
+                    ) from err
             else:
                 value = params.get('filename')
                 if value is None:
@@ -317,7 +331,7 @@ class BodyPart:
         try:
             return misc.secure_filename(self.filename)
         except ValueError as ex:
-            raise MultipartParseError(description=str(ex))
+            raise MultipartParseError(description=str(ex)) from ex
 
     @property
     def name(self):
@@ -423,20 +437,17 @@ class MultipartForm:
                     # end of a multipart form.
                     break
                 elif separator:
-                    raise MultipartParseError(
-                        description='unexpected form structure')
+                    raise MultipartParseError(description='unexpected form structure')
 
-            except errors.DelimiterError:
-                raise MultipartParseError(
-                    description='unexpected form structure')
+            except errors.DelimiterError as err:
+                raise MultipartParseError(description='unexpected form structure') from err
 
             headers = {}
             try:
                 headers_block = stream.read_until(
                     _CRLF_CRLF, max_headers_size, consume_delimiter=True)
-            except errors.DelimiterError:
-                raise MultipartParseError(
-                    description='incomplete body part headers')
+            except errors.DelimiterError as err:
+                raise MultipartParseError(description='incomplete body part headers') from err
 
             for line in headers_block.split(_CRLF):
                 name, sep, value = line.partition(b': ')
@@ -453,9 +464,9 @@ class MultipartForm:
                     #   bodies have been discovered.
                     if name == b'content-transfer-encoding' and value != b'binary':
                         raise MultipartParseError(
-                            description=(
-                                'the deprecated Content-Transfer-Encoding '
-                                'header field is unsupported'))
+                            description=('the deprecated Content-Transfer-Encoding '
+                                         'header field is unsupported')
+                        )
                     # NOTE(vytas): RFC 7578, section 4.8.
                     #   Other header fields MUST NOT be included and MUST be
                     #   ignored.
@@ -465,7 +476,8 @@ class MultipartForm:
             remaining_parts -= 1
             if remaining_parts < 0 < self._parse_options.max_body_part_count:
                 raise MultipartParseError(
-                    description='maximum number of form body parts exceeded')
+                    description='maximum number of form body parts exceeded'
+                )
 
             yield BodyPart(stream.delimit(delimiter), headers,
                            self._parse_options)

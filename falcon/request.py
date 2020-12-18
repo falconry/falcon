@@ -42,6 +42,8 @@ WSGI_CONTENT_HEADERS = frozenset(['CONTENT_TYPE', 'CONTENT_LENGTH'])
 strptime = datetime.strptime
 now = datetime.now
 
+_UNSET = object()  # flag object used as the default unset value
+
 
 class Request:
     """Represents a client's HTTP request.
@@ -427,6 +429,7 @@ class Request:
         'stream',
         'uri_template',
         '_media',
+        '_media_error',
         'is_websocket',
     )
 
@@ -450,7 +453,8 @@ class Request:
         self.method = env['REQUEST_METHOD']
 
         self.uri_template = None
-        self._media = None
+        self._media = _UNSET
+        self._media_error = None
 
         # NOTE(kgriffs): PEP 3333 specifies that PATH_INFO may be the
         # empty string, so normalize it in that case.
@@ -977,7 +981,7 @@ class Request:
 
         return netloc_value
 
-    def get_media(self):
+    def get_media(self, default_when_empty=_UNSET):
         """Return a deserialized form of the request stream.
 
         The first time this method is called, the request stream will be
@@ -993,13 +997,39 @@ class Request:
 
         See also :ref:`media` for more information regarding media handling.
 
+        Note:
+            When ``get_media`` is called on a request with an empty body,
+            Falcon will let the media handler try to deserialize the body
+            and will return the value returned by the handler or propagate
+            the exception raised by it. To instead return a different value
+            in case of an exception by the handler, specify the argument
+            ``default_when_empty``.
+
         Warning:
             This operation will consume the request stream the first time
             it's called and cache the results. Follow-up calls will just
             retrieve a cached version of the object.
+
+        Args:
+            default_when_empty: Fallback value to return when there is no body
+                in the request and the media handler raises an error
+                (like in the case of the default JSON media handler).
+                By default, Falcon uses the value returned by the media handler
+                or propagates the raised exception, if any.
+                This value is not cached, and will be used only for the current
+                call.
+
+        Returns:
+            media (object): The deserialized media representation.
         """
-        if self._media is not None or self.bounded_stream.eof:
+        if self._media is not _UNSET:
             return self._media
+        if self._media_error is not None:
+            if default_when_empty is not _UNSET and isinstance(
+                self._media_error, errors.MediaNotFoundError
+            ):
+                return default_when_empty
+            raise self._media_error
 
         handler = self.options.media_handlers.find_by_media_type(
             self.content_type,
@@ -1012,6 +1042,14 @@ class Request:
                 self.content_type,
                 self.content_length
             )
+        except errors.MediaNotFoundError as err:
+            self._media_error = err
+            if default_when_empty is not _UNSET:
+                return default_when_empty
+            raise
+        except Exception as err:
+            self._media_error = err
+            raise
         finally:
             if handler.exhaust_stream:
                 self.bounded_stream.exhaust()

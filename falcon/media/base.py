@@ -132,7 +132,7 @@ class BaseHandler(metaclass=abc.ABCMeta):
         return self.deserialize(io.BytesIO(data), content_type, content_length)
 
     exhaust_stream = False
-    """Whether to exhaust the WSGI input stream upon finishing deserialization.
+    """Whether to exhaust the input stream upon finishing deserialization.
 
     Exhausting the stream may be useful for handlers that do not necessarily
     consume the whole stream, but the deserialized media object is complete and
