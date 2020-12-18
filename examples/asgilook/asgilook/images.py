@@ -5,14 +5,14 @@ import falcon
 class Images:
 
     def __init__(self, config, store):
-        self.config = config
-        self.store = store
+        self._config = config
+        self._store = store
 
     async def on_get(self, req, resp):
-        resp.media = [image.serialize() for image in self.store.list_images()]
+        resp.media = [image.serialize() for image in self._store.list_images()]
 
     async def on_get_image(self, req, resp, image_id):
-        image = self.store.get(str(image_id))
+        image = self._store.get(str(image_id))
         if not image:
             raise falcon.HTTPNotFound
 
@@ -21,8 +21,8 @@ class Images:
 
     async def on_post(self, req, resp):
         data = await req.stream.read()
-        image_id = str(self.config.uuid_generator())
-        image = await self.store.save(image_id, data)
+        image_id = str(self._config.uuid_generator())
+        image = await self._store.save(image_id, data)
 
         resp.location = image.uri
         resp.media = image.serialize()
@@ -32,14 +32,14 @@ class Images:
 class Thumbnails:
 
     def __init__(self, store):
-        self.store = store
+        self._store = store
 
     async def on_get(self, req, resp, image_id, width, height):
-        image = self.store.get(str(image_id))
+        image = self._store.get(str(image_id))
         if not image:
             raise falcon.HTTPNotFound
         if req.path not in image.thumbnails():
             raise falcon.HTTPNotFound
 
         resp.content_type = falcon.MEDIA_JPEG
-        resp.data = await self.store.make_thumbnail(image, (width, height))
+        resp.data = await self._store.make_thumbnail(image, (width, height))

@@ -49,9 +49,9 @@ WSGI tutorial::
    particularly when it comes to hopping between several environments.
 
 At the time of writing, ASGI is not yet available in a stable Falcon release.
-We'll need to either install an alpha release::
+We'll need to either install a beta release::
 
-  $ pip install falcon==3.0.0a3
+  $ pip install falcon==3.0.0b1
 
 Or, just check out the latest development version straight from GitHub::
 
@@ -172,14 +172,15 @@ We can now implement a basic async image store as (save the following code as
     class Image:
 
         def __init__(self, config, image_id, size):
-            self.config = config
+            self._config = config
+
             self.image_id = image_id
             self.size = size
             self.modified = datetime.datetime.utcnow()
 
         @property
         def path(self):
-            return self.config.storage_path / self.image_id
+            return self._config.storage_path / self.image_id
 
         @property
         def uri(self):
@@ -197,7 +198,7 @@ We can now implement a basic async image store as (save the following code as
     class Store:
 
         def __init__(self, config):
-            self.config = config
+            self._config = config
             self._images = {}
 
         def _load_from_bytes(self, data):
@@ -221,11 +222,11 @@ We can now implement a basic async image store as (save the following code as
             image = await loop.run_in_executor(None, self._load_from_bytes, data)
             converted = await loop.run_in_executor(None, self._convert, image)
 
-            path = self.config.storage_path / image_id
+            path = self._config.storage_path / image_id
             async with aiofiles.open(path, 'wb') as output:
                 await output.write(converted)
 
-            stored = Image(self.config, image_id, image.size)
+            stored = Image(self._config, image_id, image.size)
             self._images[image_id] = stored
             return stored
 
@@ -250,21 +251,21 @@ below should go into ``images.py``):
     class Images:
 
         def __init__(self, config, store):
-            self.config = config
-            self.store = store
+            self._config = config
+            self._store = store
 
         async def on_get(self, req, resp):
-            resp.media = [image.serialize() for image in self.store.list_images()]
+            resp.media = [image.serialize() for image in self._store.list_images()]
 
         async def on_get_image(self, req, resp, image_id):
-            image = self.store.get(str(image_id))
+            image = self._store.get(str(image_id))
             resp.stream = await aiofiles.open(image.path, 'rb')
             resp.content_type = falcon.MEDIA_JPEG
 
         async def on_post(self, req, resp):
             data = await req.stream.read()
-            image_id = str(self.config.uuid_generator())
-            image = await self.store.save(image_id, data)
+            image_id = str(self._config.uuid_generator())
+            image = await self._store.save(image_id, data)
 
             resp.location = image.uri
             resp.media = image.serialize()
@@ -450,7 +451,44 @@ The ``store.Image`` class can be extended to also return URIs to thumbnails:
         return [
             f'/thumbnails/{self.image_id}/{width}x{height}.jpeg'
             for width, height in reductions(
-                self.size, self.config.min_thumb_size)]
+                self.size, self._config.min_thumb_size)]
+
+Here, we are refererring to downsized resolutions in advance, and the actual
+scaling will happen on the fly upon requesting these URIs.
+
+We choose to provide a series of thumbnail images, where each image is
+approximately twice (four times area-wise) smaller than the previous one,
+similarly to how `mipmapping <https://en.wikipedia.org/wiki/Mipmap>`_ works in
+computer graphics. You may want to tune this resolution distribution to better
+match the sizes that are common in your application.
+
+Furthermore, it is practical to impose a minimum resolution, as any potential
+benefit from switching between very small thumbnails (a few kilobytes each) is
+likely to be overshadowed by the request overhead. As you may have noticed in
+the above snippet, we are referencing this lower size limit as
+``self._config.min_thumb_size``.
+The revised :ref:`configuration <asgi_tutorial_config>` with support for
+``min_thumb_size`` (by default initialized to 64 pixels) reads:
+
+.. code:: python
+
+    import os
+    import pathlib
+    import uuid
+
+
+    class Config:
+        DEFAULT_CONFIG_PATH = '/tmp/asgilook'
+        DEFAULT_MIN_THUMB_SIZE = 64
+        DEFAULT_UUID_GENERATOR = uuid.uuid4
+
+        def __init__(self):
+            self.storage_path = pathlib.Path(
+                os.environ.get('ASGI_LOOK_STORAGE_PATH', self.DEFAULT_CONFIG_PATH))
+            self.storage_path.mkdir(parents=True, exist_ok=True)
+
+            self.uuid_generator = Config.DEFAULT_UUID_GENERATOR
+            self.min_thumb_size = self.DEFAULT_MIN_THUMB_SIZE
 
 The updated ``store.py`` should now look like:
 
@@ -554,8 +592,8 @@ to execute code upon our application startup:
 .. code:: python
 
     async def process_startup(self, scope, event):
-        self.redis = await self.config.create_redis_pool(
-            self.config.redis_host)
+        self.redis = await self._config.create_redis_pool(
+            self._config.redis_host)
 
 .. warning::
     The Lifespan Protocol is an optional extention; please check if your ASGI

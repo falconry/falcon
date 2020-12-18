@@ -10,14 +10,15 @@ import PIL.Image
 class Image:
 
     def __init__(self, config, image_id, size):
-        self.config = config
+        self._config = config
+
         self.image_id = image_id
         self.size = size
         self.modified = datetime.datetime.utcnow()
 
     @property
     def path(self):
-        return self.config.storage_path / self.image_id
+        return self._config.storage_path / self.image_id
 
     @property
     def uri(self):
@@ -43,13 +44,13 @@ class Image:
         return [
             f'/thumbnails/{self.image_id}/{width}x{height}.jpeg'
             for width, height in reductions(
-                self.size, self.config.min_thumb_size)]
+                self.size, self._config.min_thumb_size)]
 
 
 class Store:
 
     def __init__(self, config):
-        self.config = config
+        self._config = config
         self._images = {}
 
     def _load_from_bytes(self, data):
@@ -88,10 +89,10 @@ class Store:
         image = await loop.run_in_executor(None, self._load_from_bytes, data)
         converted = await loop.run_in_executor(None, self._convert, image)
 
-        path = self.config.storage_path / image_id
+        path = self._config.storage_path / image_id
         async with aiofiles.open(path, 'wb') as output:
             await output.write(converted)
 
-        stored = Image(self.config, image_id, image.size)
+        stored = Image(self._config, image_id, image.size)
         self._images[image_id] = stored
         return stored
