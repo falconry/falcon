@@ -42,7 +42,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v2.1.4
         with:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.architecture }}
@@ -139,7 +139,7 @@ jobs:
           echo "::set-output name=python-version::$version"
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v2.1.4
         with:
           python-version: ${{ steps.linux-py-version.outputs.python-version }}
           architecture: ${{ matrix.architecture }}
@@ -253,7 +253,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v2.1.4
         with:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.architecture }}
@@ -402,7 +402,7 @@ jobs:
           asset_content_type: application/zip # application/octet-stream
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v2.1.4
         with:
           python-version: "3.8"
           architecture: "x64"

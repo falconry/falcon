@@ -16,6 +16,10 @@ class JSONHandler(BaseHandler):
     alternative library. Good options in this respect include `orjson`,
     `python-rapidjson`, and `mujson`.
 
+    This handler will raise a :class:`falcon.MediaNotFoundError` when attempting
+    to parse an empty body, or a :class:`falcon.MediaMalformedError`
+    if an error happens while parsing the body.
+
     Note:
         If you are deploying to PyPy, we recommend sticking with the standard
         library's JSON implementation, since it will be faster in most cases
@@ -80,25 +84,19 @@ class JSONHandler(BaseHandler):
             self.serialize = self._serialize_b
             self.serialize_async = self._serialize_async_b
 
-    def deserialize(self, stream, content_type, content_length):
-        try:
-            return self.loads(stream.read().decode())
-        except ValueError as err:
-            raise errors.HTTPBadRequest(
-                title='Invalid JSON',
-                description='Could not parse JSON - {0}'.format(err)
-            )
-
-    async def deserialize_async(self, stream, content_type, content_length):
-        data = await stream.read()
-
+    def _deserialize(self, data):
+        if not data:
+            raise errors.MediaNotFoundError('JSON')
         try:
             return self.loads(data.decode())
         except ValueError as err:
-            raise errors.HTTPBadRequest(
-                title='Invalid JSON',
-                description='Could not parse JSON - {0}'.format(err)
-            )
+            raise errors.MediaMalformedError('JSON') from err
+
+    def deserialize(self, stream, content_type, content_length):
+        return self._deserialize(stream.read())
+
+    async def deserialize_async(self, stream, content_type, content_length):
+        return self._deserialize(await stream.read())
 
     def _serialize_s(self, media, content_type):
         return self.dumps(media).encode()

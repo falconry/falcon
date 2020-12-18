@@ -61,7 +61,7 @@ def capture_responder_args(req, resp, resource, params):
     if num_bytes:
         resource.captured_req_body = req.stream.read(int(num_bytes))
     elif req.get_header('capture-req-media'):
-        resource.captured_req_media = req.media
+        resource.captured_req_media = req.get_media()
 
 
 async def capture_responder_args_async(req, resp, resource, params):
