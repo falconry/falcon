@@ -49,6 +49,9 @@ dash
 # System
 .DS_Store
 
+# Valgrind artefacts
+perf/cachegrind.out.*
+
 # VIM swap files
 .*.swp
 
