@@ -316,7 +316,7 @@ Falcon's default router supports simple validation and transformation using
 :ref:`field converters <routing_field_converters>`. In this example, we
 will use the :class:`~falcon.routing.UUIDConverter` to validate
 the ``image_id`` input as :class:`~uuid.UUID`. Converters are specified using
-their :ref:`shorthand identifiers <routing_builting_converters>`; for instance,
+their :ref:`shorthand identifiers <routing_builtin_converters>`; for instance,
 the route corresponding to ``on_get_image`` will look like (see also the next
 chapter)::
 
@@ -574,8 +574,8 @@ is left as an exercise for the reader.
     automatically render an ``HTTP 404 Not Found`` response by raising an
     instance of :class:`~falcon.HTTPNotFound` (unless that exception is
     intercepted by a
-    :meth:`custom error handler <falcon.asgi.App.add_error_handler>`, or masked
-    by a sink).
+    :meth:`custom error handler <falcon.asgi.App.add_error_handler>`, or if the
+    path matches a sink prefix).
 
     Conversely, if a route was matched, but there is no responder for the
     HTTP method in question, Falcon would render

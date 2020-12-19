@@ -261,7 +261,7 @@ specifications in the URI template:
         some_resource
     )
 
-.. _routing_builting_converters:
+.. _routing_builtin_converters:
 
 Built-in Converters
 -------------------
