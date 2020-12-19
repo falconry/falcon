@@ -23,3 +23,10 @@ ENVIRON_BOILERPLATE = {
     'wsgi.url_scheme': 'http',
     'wsgi.version': (1, 0),
 }
+
+
+def start_response_factory(expected_status):
+    def start_response(status, headers, exc_info=None):
+        assert status == expected_status
+
+    return start_response

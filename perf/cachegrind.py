@@ -1,4 +1,3 @@
-# flake8: noqa
 """
 As per the original author's recommendation, this script was simply copied from
 https://github.com/pythonspeed/cachegrind-benchmarking @ b9dabb6c.
