@@ -548,8 +548,8 @@ functionality. The final version of ``images.py`` reads:
 .. literalinclude:: ../../examples/asgilook/asgilook/images.py
     :language: python
 
-Adding a new thumbnails route in ``app.py`` is left as an exercise for the
-reader.
+Adding a new thumbnails :meth:`route <falcon.asgi.App.add_route>` in ``app.py``
+is left as an exercise for the reader.
 
 .. tip::
     Draw inspiration from the thumbnail URI formatting string:
@@ -573,9 +573,10 @@ reader.
     automatically render an ``HTTP 404 Not Found`` response by raising an
     instance of :class:`~falcon.HTTPNotFound` (unless that exception is
     intercepted by a
-    :meth:`custom error handler <falcon.asgi.App.add_error_handler>`.
+    :meth:`custom error handler <falcon.asgi.App.add_error_handler>`, or masked
+    by a sink).
 
-    Conversely, if the route was matched, but there is no responder for the
+    Conversely, if a route was matched, but there is no responder for the
     HTTP method in question, Falcon would render
     ``HTTP 405 Method Not Allowed`` via :class:`~falcon.HTTPMethodNotAllowed`.
 
