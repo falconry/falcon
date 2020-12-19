@@ -549,8 +549,35 @@ functionality. The final version of ``images.py`` reads:
     :language: python
 
 Adding a new thumbnails route in ``app.py`` is left as an exercise for the
-reader (if you get stuck, see the final version of ``app.py`` later in this
-tutorial).
+reader.
+
+.. tip::
+    Draw inspiration from the thumbnail URI formatting string:
+
+        .. code:: python
+
+            f'/thumbnails/{self.image_id}/{width}x{height}.jpeg'
+
+    The actual URI template for the thumbnails route should look quite similar
+    to the above.
+
+    Remember that we want to use the ``uuid`` converter for the ``image_id``
+    field, and image dimensions (``width`` and ``height``) should ideally be
+    converted to ``int``\s.
+
+(If you get stuck, see the final version of ``app.py`` later in this tutorial.)
+
+.. note::
+    If you tried to access a non-existent route (e.g., if you forgot to add an
+    intended route, or simply misspelled the URI), the framework would
+    automatically render an ``HTTP 404 Not Found`` response by raising an
+    instance of :class:`~falcon.HTTPNotFound` (unless that exception is
+    intercepted by a
+    :meth:`custom error handler <falcon.asgi.App.add_error_handler>`.
+
+    Conversely, if the route was matched, but there is no responder for the
+    HTTP method in question, Falcon would render
+    ``HTTP 405 Method Not Allowed`` via :class:`~falcon.HTTPMethodNotAllowed`.
 
 The new ``thumbnails`` end-point should now render thumbnails on-the-fly::
 
