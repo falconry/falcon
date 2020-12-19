@@ -50,8 +50,8 @@ _HEX_DIGITS = '0123456789ABCDEFabcdef'
 
 # This map construction is based on urllib's implementation
 _HEX_TO_BYTE = {(a + b).encode(): bytes([int(a + b, 16)])
-                    for a in _HEX_DIGITS
-                    for b in _HEX_DIGITS}
+                for a in _HEX_DIGITS
+                for b in _HEX_DIGITS}
 
 _PYPY = platform.python_implementation() == 'PyPy'
 
