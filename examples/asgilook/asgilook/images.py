@@ -12,6 +12,7 @@ class Images:
         resp.media = [image.serialize() for image in self._store.list_images()]
 
     async def on_get_image(self, req, resp, image_id):
+        # NOTE: image_id: UUID is converted back to a string identifier.
         image = self._store.get(str(image_id))
         if not image:
             raise falcon.HTTPNotFound

@@ -66,6 +66,13 @@ could look like:
 
    app = falcon.asgi.App()
 
+As in the :ref:`WSGI tutorial's introductory part <tutorial-first-steps>`,
+let's not forget to mark ``asgilook`` as a Python module:
+
+.. code:: bash
+
+    $ touch asgilook/__init__.py
+
 Hosting Our App
 ---------------
 
@@ -231,8 +238,17 @@ We can now implement a basic async image store as (save the following code as
             return stored
 
 Here we store data using ``aiofiles``, and run ``Pillow`` image transformation
-functions in a threadpool executor, hoping that at least some of them release
-the GIL during processing.
+functions in the default :class:`~concurrent.futures.ThreadPoolExecutor`,
+hoping that at least some of these image operations release the GIL during
+processing.
+
+The :class:`~concurrent.futures.ProcessPoolExecutor` is another alternative for
+long running tasks that do not release the GIL, such as CPU-bound pure Python
+code. Note, however, that :class:`~concurrent.futures.ProcessPoolExecutor`
+builds upon the :mod:`multiprocessing` module, and thus inherits its caveats:
+higher synchronization overhead, the requirement for the task and its arguments
+to be picklable (which also implies that the task must be reachable from the
+global namespace, i.e., an anonymous ``lambda`` simply won't work).
 
 Images Resource(s)
 ------------------
@@ -258,6 +274,7 @@ below should go into ``images.py``):
             resp.media = [image.serialize() for image in self._store.list_images()]
 
         async def on_get_image(self, req, resp, image_id):
+            # NOTE: image_id: UUID is converted back to a string identifier.
             image = self._store.get(str(image_id))
             resp.stream = await aiofiles.open(image.path, 'rb')
             resp.content_type = falcon.MEDIA_JPEG
@@ -282,13 +299,41 @@ the code cleaner by splitting classes to strictly represent one RESTful
 resource per class. See also: :ref:`recommended-route-layout`
 
 .. note::
-   Here, we serve the image by simply assigning an open ``aiofiles`` file to
-   :attr:`resp.stream <falcon.asgi.Response.stream>`.
+    Here, we serve the image by simply assigning an open ``aiofiles`` file to
+    :attr:`resp.stream <falcon.asgi.Response.stream>`.
 
 .. warning::
-   In production deployment, serving files directly from the web server, rather
-   than through the Falcon ASGI app, will likely be more efficient, and therefore
-   should be preferred. See also: :ref:`faq_static_files`
+    In production deployment, serving files directly from the web server,
+    rather than through the Falcon ASGI app, will likely be more efficient, and
+    therefore should be preferred. See also: :ref:`faq_static_files`
+
+Also worth noting is that the ``on_get_image`` responder will be receiving
+an ``image_id`` of type :class:`~uuid.UUID`.
+What is going on here? How will the ``image_id`` field, matched from a string
+path segment, now become a :class:`~uuid.UUID`?
+
+Falcon's default router supports simple validation and transformation using
+:ref:`field converters <routing_field_converters>`. In this example, we
+will use the :class:`~falcon.routing.UUIDConverter` to validate
+the ``image_id`` input as :class:`~uuid.UUID`. Converters are specified using
+their :ref:`shorthand identifiers <routing_builting_converters>`; for instance,
+the route corresponding to ``on_get_image`` will look like (see also the next
+chapter)::
+
+    /images/{image_id:uuid}.jpeg
+
+Since our application is still internally centered on string identifiers, feel
+free to experiment with refactoring the image ``Store`` to use
+:class:`~uuid.UUID`\s natively!
+
+(Alternatively, one could implement a
+:ref:`custom field converter <routing_custom_converters>` to use ``uuid`` only
+for validation, but return an unmodified string.)
+
+.. note::
+    In contrast to asynchronous building blocks (responders, middleware, hooks
+    etc) of a Falcon ASGI application, field converters are simple synchronous
+    data transformation functions that are not expected to perform any I/O.
 
 Running Our Application
 -----------------------
@@ -319,7 +364,9 @@ it, be it tests or the ASGI application module:
 But how about route suffixes for the ``Images`` class?
 Here, we have to remember to map the single image resource to the
 ``'/images/{image_id:uuid}.jpeg'`` URI template using the ``'image'``
-suffix in the respective :func:`add_route <falcon.asgi.App.add_route>` call.
+suffix in the respective :func:`add_route <falcon.asgi.App.add_route>` call, as
+well as specify the ``uuid`` field converter as discussed in the previous
+chapter.
 
 The ASGI application now resides in ``asgi.py``:
 
@@ -772,7 +819,7 @@ Congratulations, you have successfully completed the Falcon ASGI tutorial!
 Needless to say, our first Falcon+ASGI application could still be improved in
 numerous ways:
 
-* Make image store persistent and reusable across worker processes.
+* Make the image store persistent and reusable across worker processes.
   Maybe by using a database?
 * Improve error handling for malformed images.
 * Check how and when Pillow releases the GIL, and tune what is offloaded to a
@@ -780,7 +827,7 @@ numerous ways:
 * Test `Pillow-SIMD <https://pypi.org/project/Pillow-SIMD/>`_ to boost
   performance.
 * Publish image upload events via :attr:`SSE <falcon.asgi.Response.sse>` or
-  WebSockets.
+  :ref:`WebSockets <ws>`.
 * ...And much more (patches welcome, as they say)!
 
 Compared to the sync version, asynchronous code can at times be harder to

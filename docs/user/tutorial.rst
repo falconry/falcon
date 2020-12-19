@@ -66,7 +66,7 @@ Now, open ``app.py`` in your favorite text editor and add the following lines:
 
     app = application = falcon.App()
 
-This code creates your WSGI application and aliases it as ``api``. You can use any
+This code creates your WSGI application and aliases it as ``app``. You can use any
 variable names you like, but we'll use ``application`` since that is what
 Gunicorn, by default, expects it to be called (we'll see how this works
 in the next section of the tutorial).
