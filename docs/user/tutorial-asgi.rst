@@ -561,9 +561,10 @@ is left as an exercise for the reader.
     The actual URI template for the thumbnails route should look quite similar
     to the above.
 
-    Remember that we want to use the ``uuid`` converter for the ``image_id``
+    Remember that we want to use the
+    :class:`uuid <falcon.routing.UUIDConverter>` converter for the ``image_id``
     field, and image dimensions (``width`` and ``height``) should ideally be
-    converted to ``int``\s.
+    converted to :class:`int <falcon.routing.IntConverter>`\s.
 
 (If you get stuck, see the final version of ``app.py`` later in this tutorial.)
 
@@ -769,31 +770,51 @@ the real filesystem. As ``pytest`` offers various temporary directory out of
 the box, Let's create a simple ``storage_path`` fixture shared among all tests
 in the whole suite (in the ``pytest`` parlance, a "session"-scoped fixture).
 
+More in-depth documentation of ``pytest`` fixtures can be found here:
+`pytest fixtures: explicit, modular, scalable
+<https://docs.pytest.org/en/stable/fixture.html>`__.
+
 As mentioned in the :ref:`previous section <asgi_tutorial_caching>`, there are
 many ways to spin up a temporary or permanent Redis server; or mock it
 altogether. For our tests, we'll try
 `fakeredis <https://pypi.org/project/fakeredis/>`__, a pure Python
 implementation tailored specifically for writing unit tests.
 
+``pytest`` and ``fakeredis`` can be installed as::
+
+  $ pip install fakeredis pytest
+
+While at it, we'll also initialize the ``tests`` directory structure::
+
+  $ mkdir -p tests
+  $ touch tests/__init__.py
+
 Let's now write fixtures to replace ``uuid`` and ``aioredis``, and inject them
-into our tests via ``conftest.py``:
+into our tests via ``conftest.py`` (place it in the newly created ``tests``
+directory):
 
 .. literalinclude:: ../../examples/asgilook/tests/conftest.py
     :language: python
 
 .. note::
-   In the ``png_image`` fixture above, we are drawing random images that will
-   look different every time the tests are run.
+    In the ``png_image`` fixture above, we are drawing random images that will
+    look different every time the tests are run.
 
-   If your testing flow affords that, it is often a great idea to introduce
-   some unpredictability in your test inputs. This will provide more confidence
-   that your application can handle a broader range of inputs than just 2-3
-   test cases crafted specifically for that sole purpose.
+    If your testing flow affords that, it is often a great idea to introduce
+    some unpredictability in your test inputs. This will provide more
+    confidence that your application can handle a broader range of inputs than
+    just 2-3 test cases crafted specifically for that sole purpose.
 
-   On the other hand, random inputs can make assertions less stringent and
-   harder to formulate, so judge according to what is the most important for
-   your application. You can also try to combine the best of both worlds by
-   using a healthy mix of rigid fixtures and fuzz testing.
+    On the other hand, random inputs can make assertions less stringent and
+    harder to formulate, so judge according to what is the most important for
+    your application. You can also try to combine the best of both worlds by
+    using a healthy mix of rigid fixtures and fuzz testing.
+
+.. note::
+    More information on ``conftest.py``\'s anatomy and ``pytest`` configuration
+    can be found in the latter's documentation:
+    `conftest.py: local per-directory plugins
+    <https://docs.pytest.org/en/stable/writing_plugins.html#localplugin>`__.
 
 With the groundwork in place, we can write a simple test (called
 ``tests/test_images.py``) that will attempt to simulate access our ``/images``
@@ -806,6 +827,39 @@ end-point:
 
         assert resp.status_code == 200
         assert resp.json == []
+
+``test_images.py`` can be run as::
+
+  $ pytest tests/test_images.py
+
+  ========================= test session starts ==========================
+  platform linux -- Python 3.8.0, pytest-6.2.1, py-1.10.0, pluggy-0.13.1
+  rootdir: /falcon/tutorials/asgilook
+  collected 1 item
+
+  tests/test_images.py .                                           [100%]
+
+  ========================== 1 passed in 0.01s ===========================
+
+Success! 🎉
+
+At this point, our project structure (containing the ``asgilook`` and ``test``
+modules) should look like::
+
+  asgilook
+  ├── .venv
+  ├── asgilook
+  │   ├── __init__.py
+  │   ├── app.py
+  │   ├── asgi.py
+  │   ├── cache.py
+  │   ├── config.py
+  │   ├── images.py
+  │   └── store.py
+  └── tests
+      ├── __init__.py
+      ├── conftest.py
+      └── test_images.py
 
 Now, we need more tests!
 
@@ -834,10 +888,10 @@ adding ``--cov-fail-under=100`` (or any other percent threshold) to our
 ``pytest`` command.
 
 .. note::
-   The ``pytest-cov`` plugin is quite simplistic; more advanced testing
-   strategies such as blending different type of tests and/or running the same
-   tests in multiple environments would most probably involve running
-   ``coverage`` directly, and combining results.
+    The ``pytest-cov`` plugin is quite simplistic; more advanced testing
+    strategies such as blending different type of tests and/or running the same
+    tests in multiple environments would most probably involve running
+    ``coverage`` directly, and combining results.
 
 What Now?
 ---------
