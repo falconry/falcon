@@ -1,10 +1,10 @@
 Prettifying JSON Responses
 ==========================
 
-To make JSON responses even more human readable, it might be desirable to
-prettify the output indendation. By default, Falcon's :class:`JSONHandler
-<falcon.media.JSONHandler>` is configured to minimize the serialization
-overhead. However, it is easy to prettify the output by simply providing the
+To make JSON responses more human-readable, it may be desirable to
+prettify the output. By default, Falcon's :class:`JSONHandler
+<falcon.media.JSONHandler>` is configured to minimize serialization overhead.
+However, you can easily customize the output by simply providing the
 desired ``dumps`` parameters:
 
 .. code:: python
@@ -25,8 +25,9 @@ prettier (see also: :ref:`custom_media_handlers`).
 
 .. note::
     Another alternative for debugging is prettifying JSON on the client side,
-    for example, the popular `HTTPie <https://httpie.org/>`__ does it by
-    default.
+    for example, the popular `HTTPie <https://httpie.org/>`_ does it by
+    default. Another option is to simply pipe the JSON response into
+    `jq <https://stedolan.github.io/jq/>`_.
 
     If your debugging case allows it, the client side approach should be
     preferred since it neither incurs performance overhead on the server side
@@ -35,16 +36,17 @@ prettier (see also: :ref:`custom_media_handlers`).
 Supporting optional indentation
 -------------------------------
 
-A canonical way of handling HTTP representation preferences is media
-content-type negotiation. Although not a part of the ``application/json`` media
-type standard, some frameworks (such as the Django REST Framework) and services
-support requesting a specific JSON indentation level using the ``indent``
-content-type parameter. This recipe leaves interpretation for the reader
-whether this parameter adds "new functionality" as per
-`RFC 6836, Section 4.3 <https://tools.ietf.org/html/rfc6838#section-4.3>`_.
+Internet media type (content-type) negotiation is the canonical way to
+express resource representation preferences. Although not a part of the
+``application/json`` media type standard, some frameworks (such as the Django
+REST Framework) and services support requesting a specific JSON indentation
+level using the ``indent`` content-type parameter. This recipe leaves the
+interpretation to the reader as to whether such a parameter adds "new
+functionality" as per `RFC 6836, Section 4.3
+<https://tools.ietf.org/html/rfc6838#section-4.3>`_.
 
-Assuming we want to add JSON ``indent`` support to a Falcon app, this could be
-implemented using a :ref:`custom media handler <custom-media-handler-type>`:
+Assuming we want to add JSON ``indent`` support to a Falcon app, this can be
+implemented with a :ref:`custom media handler <custom-media-handler-type>`:
 
 .. code:: python
 
@@ -78,11 +80,11 @@ implemented using a :ref:`custom media handler <custom-media-handler-type>`:
             return result.encode()
 
 Furthermore, we'll need to implement content-type negotiation to accept the
-indented JSON content type for response serialization. The bare minimum
-example using middleware is described here: :ref:`content-type-negotiaton`.
+indented JSON content type for response serialization. The bare-minimum
+example uses a middleware component as described here: :ref:`content-type-negotiaton`.
 
 After installing this handler for ``application/json`` response media, as well
-as adding the negotiation middleware, we should be able to get indented
+as adding the negotiation middleware, we should be able to produce indented
 JSON output (building upon the frontpage ``QuoteResource`` example)::
 
     $ curl -H 'Accept: application/json; indent=4' http://localhost:8000/quote
@@ -95,10 +97,10 @@ JSON output (building upon the frontpage ``QuoteResource`` example)::
     Implementing this in a public API available to untrusted, unauthenticated
     clients could be viewed as an unnecessary attack vector.
 
-    In case of a denial of service type of attack, you would be providing the
+    In the case of a denial-of-service attack, you would be providing the
     attacker with a convenient way to increase CPU load by simply asking to
     indent the output, particularly if large JSON responses are available.
 
-    Furthemore, replaying exactly the same requests with and without indentation
+    Furthermore, replaying exactly the same requests with and without indentation
     may reveal information that is useful for timing attacks, especially if the
     attacker is able to guess the exact flavor of the JSON module used.

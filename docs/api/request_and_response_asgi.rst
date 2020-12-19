@@ -45,7 +45,7 @@ Response
 .. autoclass:: falcon.asgi.Response
     :members:
     :inherited-members:
-    :exclude-members: context_type
+    :exclude-members: context_type, add_link
 
 .. autoclass:: falcon.asgi.SSEvent
     :members:

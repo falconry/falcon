@@ -36,7 +36,7 @@ Here's a quick example to show how all the pieces fit together:
 
                     # Create a JSON representation of the resource; this could
                     #   also be done automatically by assigning to resp.media
-                    resp.body = json.dumps(doc, ensure_ascii=False)
+                    resp.text = json.dumps(doc, ensure_ascii=False)
 
                     # The following line can be omitted because 200 is the default
                     # status returned by the framework, but it is included here to
@@ -72,7 +72,7 @@ Here's a quick example to show how all the pieces fit together:
 
                     # Create a JSON representation of the resource; this could
                     #   also be done automatically by assigning to resp.media
-                    resp.body = json.dumps(doc, ensure_ascii=False)
+                    resp.text = json.dumps(doc, ensure_ascii=False)
 
                     # The following line can be omitted because 200 is the default
                     # status returned by the framework, but it is included here to

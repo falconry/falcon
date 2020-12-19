@@ -29,6 +29,7 @@ from falcon.response_helpers import (
     is_ascii_encodable,
 )
 from falcon.util import dt_to_http, http_cookies, structures, TimezoneGMT
+from falcon.util.deprecation import deprecated
 from falcon.util.uri import encode as uri_encode
 from falcon.util.uri import encode_value as uri_encode_value
 
@@ -72,20 +73,22 @@ class Response:
                 See also :ref:`media` for more information regarding media
                 handling.
 
-        body (str): String representing response content.
+        text (str): String representing response content.
 
             Note:
                 Falcon will encode the given text as UTF-8
                 in the response. If the content is already a byte string,
                 use the :attr:`data` attribute instead (it's faster).
 
+        body (str): Deprecated alias for :attr:`text`. Will be removed in a future Falcon version.
+
         data (bytes): Byte string representing response content.
 
-            Use this attribute in lieu of `body` when your content is
+            Use this attribute in lieu of `text` when your content is
             already a byte string (of type ``bytes``). See also the note below.
 
             Warning:
-                Always use the `body` attribute for text, or encode it
+                Always use the `text` attribute for text, or encode it
                 first to ``bytes`` when using the `data` attribute, to
                 ensure Unicode characters are properly encoded in the
                 HTTP response.
@@ -141,7 +144,7 @@ class Response:
     """
 
     __slots__ = (
-        'body',
+        'text',
         'context',
         'options',
         'status',
@@ -178,13 +181,29 @@ class Response:
         # when cookie is set via set_cookie
         self._cookies = None
 
-        self.body = None
+        self.text = None
         self.stream = None
         self._data = None
         self._media = None
         self._media_rendered = _UNSET
 
         self.context = self.context_type()
+
+    @property  # type: ignore
+    @deprecated(
+        'Please use text instead.',
+        is_property=True
+    )
+    def body(self):
+        return self.text
+
+    @body.setter  # type: ignore
+    @deprecated(
+        'Please use text instead.',
+        is_property=True
+    )
+    def body(self, value):
+        self.text = value
 
     @property
     def data(self):
@@ -223,7 +242,7 @@ class Response:
         """Get the raw bytestring content for the response body.
 
         This method returns the raw data for the HTTP response body, taking
-        into account the :attr:`~.body`, :attr:`~.data`, and :attr:`~.media`
+        into account the :attr:`~.text`, :attr:`~.data`, and :attr:`~.media`
         attributes.
 
         Note:
@@ -231,14 +250,14 @@ class Response:
             and handle that attribute directly.
 
         Returns:
-            bytes: The UTF-8 encoded value of the `body` attribute, if
+            bytes: The UTF-8 encoded value of the `text` attribute, if
             set. Otherwise, the value of the `data` attribute if set, or
             finally the serialized value of the `media` attribute. If
             none of these attributes are set, ``None`` is returned.
         """
 
-        body = self.body
-        if body is None:
+        text = self.text
+        if text is None:
             data = self._data
 
             if data is None and self._media is not None:
@@ -261,11 +280,11 @@ class Response:
                 data = self._media_rendered
         else:
             try:
-                # NOTE(kgriffs): Normally we expect body to be a string
-                data = body.encode()
+                # NOTE(kgriffs): Normally we expect text to be a string
+                data = text.encode()
             except AttributeError:
                 # NOTE(kgriffs): Assume it was a bytes object already
-                data = body
+                data = text
 
         return data
 
@@ -751,9 +770,9 @@ class Response:
 
             _headers[name] = value
 
-    def add_link(self, target, rel, title=None, title_star=None,
-                 anchor=None, hreflang=None, type_hint=None, crossorigin=None):
-        """Add a link header to the response.
+    def append_link(self, target, rel, title=None, title_star=None,
+                    anchor=None, hreflang=None, type_hint=None, crossorigin=None):
+        """Append a link header to the response.
 
         (See also: RFC 5988, Section 1)
 
@@ -877,6 +896,9 @@ class Response:
         else:
             _headers['link'] = value
 
+    # NOTE(kgriffs): Alias deprecated as of 3.0
+    add_link = append_link
+
     cache_control = header_property(
         'Cache-Control',
         """Set the Cache-Control header.
@@ -904,9 +926,9 @@ class Response:
 
         This property can be used for responding to HEAD requests when you
         aren't actually providing the response body, or when streaming the
-        response. If either the `body` property or the `data` property is set
+        response. If either the `text` property or the `data` property is set
         on the response, the framework will force Content-Length to be the
-        length of the given body bytes. Therefore, it is only necessary to
+        length of the given text bytes. Therefore, it is only necessary to
         manually set the content length when those properties are not used.
 
         Note:

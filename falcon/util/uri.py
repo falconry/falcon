@@ -107,7 +107,7 @@ def _create_str_encoder(is_value):
             # partially encoded, the caller will need to normalize it
             # before passing it in here.
 
-        uri = uri.encode('utf-8')
+        uri = uri.encode()
 
         # Use our map to encode each char and join the result into a new uri
         #
@@ -254,7 +254,7 @@ def decode(encoded_uri, unquote_plus=True):
     # NOTE(kgriffs): Clients should never submit a URI that has
     # unescaped non-ASCII chars in them, but just in case they
     # do, let's encode into a non-lossy format.
-    decoded_uri = decoded_uri.encode('utf-8')
+    decoded_uri = decoded_uri.encode()
 
     # PERF(kgriffs): This was found to be faster than using
     # a regex sub call or list comprehension with a join.

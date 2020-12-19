@@ -42,11 +42,11 @@ def validate_output(req, resp, resource):
 def serialize_body(req, resp, resource):
     assert resource
 
-    body = resp.body
+    body = resp.text
     if body is not None:
-        resp.body = json.dumps(body)
+        resp.text = json.dumps(body)
     else:
-        resp.body = 'Nothing to see here. Move along.'
+        resp.text = 'Nothing to see here. Move along.'
 
 
 async def serialize_body_async(*args):
@@ -56,7 +56,7 @@ async def serialize_body_async(*args):
 def fluffiness(req, resp, resource, animal=''):
     assert resource
 
-    resp.body = 'fluffy'
+    resp.text = 'fluffy'
     if animal:
         resp.set_header('X-Animal', animal)
 
@@ -68,8 +68,8 @@ class ResourceAwareFluffiness:
 
 def cuteness(req, resp, resource, check, postfix=' and cute'):
     assert resource
-    if resp.body == check:
-        resp.body += postfix
+    if resp.text == check:
+        resp.text += postfix
 
 
 def resource_aware_cuteness(req, resp, resource):
@@ -80,10 +80,10 @@ def resource_aware_cuteness(req, resp, resource):
 class Smartness:
     def __call__(self, req, resp, resource):
         assert resource
-        if resp.body:
-            resp.body += ' and smart'
+        if resp.text:
+            resp.text += ' and smart'
         else:
-            resp.body = 'smart'
+            resp.text = 'smart'
 
 
 # NOTE(kgriffs): Use partial methods for these next two in order
@@ -122,7 +122,7 @@ class WrappedRespondersResource:
     def on_put(self, req, resp):
         self.req = req
         self.resp = resp
-        resp.body = {'animal': 'falcon'}
+        resp.text = {'animal': 'falcon'}
 
     @falcon.after(Smartness())
     def on_post(self, req, resp):
@@ -141,7 +141,7 @@ class WrappedRespondersResourceAsync:
     async def on_put(self, req, resp):
         self.req = req
         self.resp = resp
-        resp.body = {'animal': 'falcon'}
+        resp.text = {'animal': 'falcon'}
 
     @falcon.after(Smartness())
     async def on_post(self, req, resp):
@@ -297,7 +297,7 @@ def test_resource_with_uri_fields_async():
         await resource.on_get(req, resp, '1', '2')
         assert resource.fields == ('1', '2')
 
-    falcon.invoke_coroutine_sync(test_direct)
+    falcon.async_to_sync(test_direct)
 
 
 @pytest.mark.parametrize(
@@ -348,7 +348,7 @@ def test_wrapped_resource_with_hooks_aware_of_resource(client, wrapped_resource_
     ):
         result = test(path='/wrapped_aware')
         assert result.status_code == 200
-        assert wrapped_resource_aware.resp.body == expected
+        assert wrapped_resource_aware.resp.text == expected
 
     result = client.simulate_patch('/wrapped_aware')
     assert result.status_code == 405

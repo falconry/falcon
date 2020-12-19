@@ -18,8 +18,9 @@ def test_deserialize_empty_form():
 def test_deserialize_invalid_unicode():
     handler = media.URLEncodedFormHandler()
     stream = io.BytesIO('spade=♠'.encode())
-    with pytest.raises(UnicodeDecodeError):
+    with pytest.raises(falcon.MediaMalformedError) as err:
         handler.deserialize(stream, falcon.MEDIA_URLENCODED, 9)
+    assert isinstance(err.value.__cause__, UnicodeDecodeError)
 
 
 @pytest.mark.parametrize('data,expected', [
@@ -30,14 +31,14 @@ def test_urlencoded_form_handler_serialize(data, expected):
     handler = media.URLEncodedFormHandler()
     assert handler.serialize(data, falcon.MEDIA_URLENCODED) == expected
 
-    value = falcon.invoke_coroutine_sync(handler.serialize_async, data, falcon.MEDIA_URLENCODED)
+    value = falcon.async_to_sync(handler.serialize_async, data, falcon.MEDIA_URLENCODED)
     assert value == expected
 
 
 class MediaMirror:
 
     def on_post(self, req, resp):
-        resp.media = req.media
+        resp.media = req.get_media()
 
 
 class MediaMirrorAsync:
@@ -58,10 +59,7 @@ def test_empty_form(client):
         '/media',
         headers={'Content-Type': 'application/x-www-form-urlencoded'})
 
-    # TODO(kgriffs): The ASGI side implements the recommended fixes from
-    #   https://github.com/falconry/falcon/issues/1589 so we will need to
-    #   update this assert once the WSGI side has been updated to suit.
-    assert resp.content == (b'{}' if client.app._ASGI else b'')
+    assert resp.content == b'{}'
 
 
 @pytest.mark.parametrize('body,expected', [

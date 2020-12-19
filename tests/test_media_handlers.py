@@ -2,7 +2,6 @@ from functools import partial
 import io
 import json
 import platform
-import sys
 
 import mujson
 import pytest
@@ -16,17 +15,20 @@ from _util import create_app  # NOQA
 
 orjson = None
 rapidjson = None
-if sys.version_info >= (3, 5):
+try:
     import rapidjson  # type: ignore
+except ImportError:
+    pass
 
-    if platform.python_implementation() == 'CPython':
-        try:
-            import orjson  # type: ignore
-        except ImportError:
-            pass
+if platform.python_implementation() == 'CPython':
+    try:
+        import orjson  # type: ignore
+    except ImportError:
+        pass
 
+YEN = b'\xc2\xa5'
 
-COMMON_SERIALIZATION_PARAM_LIST = [
+SERIALIZATION_PARAM_LIST = [
     # Default json.dumps, with only ascii
     (None, {'test': 'value'}, b'{"test":"value"}'),
     (partial(mujson.dumps, ensure_ascii=True), {'test': 'value'}, b'{"test":"value"}'),
@@ -35,9 +37,11 @@ COMMON_SERIALIZATION_PARAM_LIST = [
      ensure_ascii=True),
      {'test': 'value'},
      b'[{"test":"value"},{"ensure_ascii":true}]'),
+    # Default json.dumps, with non-ascii characters
+    (None, {'yen': YEN.decode()}, b'{"yen":"' + YEN + b'"}'),
 ]
 
-COMMON_DESERIALIZATION_PARAM_LIST = [
+DESERIALIZATION_PARAM_LIST = [
     (None, b'[1, 2]', [1, 2]),
     (partial(json.loads,
              object_hook=lambda data: {k: v.upper() for k, v in data.items()}),
@@ -48,40 +52,23 @@ COMMON_DESERIALIZATION_PARAM_LIST = [
     (ujson.loads, b'{"test": "value"}', {'test': 'value'}),
 ]
 
-YEN = b'\xc2\xa5'
 
 if orjson:
-    SERIALIZATION_PARAM_LIST = COMMON_SERIALIZATION_PARAM_LIST + [
-        # Default json.dumps, with non-ascii characters
-        (None, {'yen': YEN.decode()}, b'{"yen":"' + YEN + b'"}'),
-
-        # Extra Python 3 json libraries
-        (rapidjson.dumps, {'test': 'value'}, b'{"test":"value"}'),
+    SERIALIZATION_PARAM_LIST += [
         (orjson.dumps, {'test': 'value'}, b'{"test":"value"}'),
     ]
 
-    DESERIALIZATION_PARAM_LIST = COMMON_DESERIALIZATION_PARAM_LIST + [
-        (rapidjson.loads, b'{"test": "value"}', {'test': 'value'}),
+    DESERIALIZATION_PARAM_LIST += [
         (orjson.loads, b'{"test": "value"}', {'test': 'value'}),
     ]
-elif rapidjson:
-    SERIALIZATION_PARAM_LIST = COMMON_SERIALIZATION_PARAM_LIST + [
-        # Default json.dumps, with non-ascii characters
-        (None, {'yen': YEN.decode()}, b'{"yen":"' + YEN + b'"}'),
-
-        # Extra Python 3 json libraries
+if rapidjson:
+    SERIALIZATION_PARAM_LIST += [
         (rapidjson.dumps, {'test': 'value'}, b'{"test":"value"}'),
     ]
 
-    DESERIALIZATION_PARAM_LIST = COMMON_DESERIALIZATION_PARAM_LIST + [
+    DESERIALIZATION_PARAM_LIST += [
         (rapidjson.loads, b'{"test": "value"}', {'test': 'value'}),
     ]
-else:
-    SERIALIZATION_PARAM_LIST = COMMON_SERIALIZATION_PARAM_LIST + [
-        # Default json.dumps, with non-ascii characters
-        (None, {'yen': YEN.decode('utf-8')}, b'{"yen":"' + YEN + b'"}'),
-    ]
-    DESERIALIZATION_PARAM_LIST = COMMON_DESERIALIZATION_PARAM_LIST
 
 
 @pytest.mark.parametrize('func, body, expected', SERIALIZATION_PARAM_LIST)
@@ -91,7 +78,7 @@ def test_serialization(asgi, func, body, expected):
     args = (body, b'application/javacript')
 
     if asgi:
-        result = falcon.invoke_coroutine_sync(handler.serialize_async, *args)
+        result = falcon.async_to_sync(handler.serialize_async, *args)
     else:
         result = handler.serialize(*args)
 
@@ -115,7 +102,7 @@ def test_deserialization(asgi, func, body, expected):
         s = BoundedStream(testing.ASGIRequestEventEmitter(body))
         args.insert(0, s)
 
-        result = falcon.invoke_coroutine_sync(handler.deserialize_async, *args)
+        result = falcon.async_to_sync(handler.deserialize_async, *args)
     else:
         args.insert(0, io.BytesIO(body))
         result = handler.deserialize(*args)
@@ -205,10 +192,11 @@ def test_sync_methods_not_overridden(asgi):
 
     app.add_route('/', ResourceAsync() if asgi else Resource())
 
-    result = testing.simulate_get(app, '/')
+    # NOTE(caselit): force serialization in xml, since error.to_json uses the faulty handler
+    result = testing.simulate_get(app, '/', headers={'Accept': 'text/xml'})
     assert result.status_code == 500
 
-    result = testing.simulate_post(app, '/', json={})
+    result = testing.simulate_post(app, '/', json={}, headers={'Accept': 'text/xml'})
     assert result.status_code == 500
 
 
@@ -262,3 +250,48 @@ def test_async_handler_returning_none():
     result = testing.simulate_post(app, '/', json=doc)
     assert result.status_code == 200
     assert result.json == [None]
+
+
+def test_json_err_no_handler(asgi):
+    app = create_app(asgi)
+
+    handlers = media.Handlers({falcon.MEDIA_URLENCODED: media.URLEncodedFormHandler()})
+    app.req_options.media_handlers = handlers
+    app.resp_options.media_handlers = handlers
+
+    class Resource:
+        def on_get(self, req, resp):
+            raise falcon.HTTPForbidden()
+
+    app.add_route('/', Resource())
+
+    result = testing.simulate_get(app, '/')
+    assert result.status_code == 403
+    assert result.json == falcon.HTTPForbidden().to_dict()
+
+
+class TestBaseHandler:
+    def test_defaultError(self):
+        h = media.BaseHandler()
+
+        def test(call):
+            with pytest.raises(NotImplementedError) as e:
+                call()
+
+            assert e.value.args == ()
+
+        test(lambda: h.serialize({}, 'my-type'))
+        test(lambda: h.deserialize('', 'my-type', 0))
+
+    def test_json(self):
+        h = media.BaseHandler()
+
+        with pytest.raises(NotImplementedError, match='The JSON media handler requires'):
+            h.serialize({}, falcon.MEDIA_JSON)
+        with pytest.raises(NotImplementedError, match='The JSON media handler requires'):
+            h.deserialize('', falcon.MEDIA_JSON, 0)
+
+        with pytest.raises(NotImplementedError, match='The JSON media handler requires'):
+            h.serialize({}, falcon.MEDIA_JSON + '; charset=UTF-8')
+        with pytest.raises(NotImplementedError, match='The JSON media handler requires'):
+            h.deserialize('', falcon.MEDIA_JSON + '; charset=UTF-8', 0)

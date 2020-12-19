@@ -237,7 +237,7 @@ and add the following code to it:
             }
 
             # Create a JSON representation of the resource
-            resp.body = json.dumps(doc, ensure_ascii=False)
+            resp.text = json.dumps(doc, ensure_ascii=False)
 
             # The following line can be omitted because 200 is the default
             # status returned by the framework, but it is included here to
@@ -394,7 +394,7 @@ Then, update the responder to use the new media type:
             resp.content_type = falcon.MEDIA_MSGPACK
             resp.status = falcon.HTTP_200
 
-Note the use of ``resp.data`` in lieu of ``resp.body``. If you assign a
+Note the use of ``resp.data`` in lieu of ``resp.text``. If you assign a
 bytestring to the latter, Falcon will figure it out, but you can
 realize a small performance gain by assigning directly to ``resp.data``.
 
@@ -1205,7 +1205,7 @@ URI parameters in a moment.
 Inside the ``on_get()`` responder,
 we set the Content-Type header based on the filename extension, and then
 stream out the image directly from an open file handle. Note the use of
-``resp.content_length``. Whenever using ``resp.stream`` instead of ``resp.body`` or
+``resp.content_length``. Whenever using ``resp.stream`` instead of ``resp.text`` or
 ``resp.data``, you typically also specify the expected length of the stream using the
 Content-Length header, so that the web client knows how much data to read from the response.
 
@@ -1424,10 +1424,6 @@ that are designed to set the response headers and body appropriately
 for each error type.
 
 .. tip::
-    Falcon will re-raise errors that do not inherit from
-    :class:`falcon.HTTPError`
-    unless you have registered a custom error handler for that type.
-
     Error handlers may be registered for any type, including
     :class:`~.HTTPError`. This feature provides a central location
     for logging and otherwise handling exceptions raised by

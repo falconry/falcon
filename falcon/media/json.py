@@ -1,8 +1,9 @@
 from functools import partial
+import json
 
 from falcon import errors
+from falcon import http_error
 from falcon.media.base import BaseHandler, TextBaseHandlerWS
-from falcon.util import json
 
 
 class JSONHandler(BaseHandler):
@@ -14,6 +15,10 @@ class JSONHandler(BaseHandler):
     realize a significant performance boost under CPython by using an
     alternative library. Good options in this respect include `orjson`,
     `python-rapidjson`, and `mujson`.
+
+    This handler will raise a :class:`falcon.MediaNotFoundError` when attempting
+    to parse an empty body, or a :class:`falcon.MediaMalformedError`
+    if an error happens while parsing the body.
 
     Note:
         If you are deploying to PyPy, we recommend sticking with the standard
@@ -44,7 +49,7 @@ class JSONHandler(BaseHandler):
     If you override the ``dumps`` function, you will need to explicitly set
     ``ensure_ascii`` to ``False`` in order to enable the serialization of
     Unicode characters to UTF-8. This is easily done by using
-    ``functools.partial`` to apply the desired keyword argument. In fact, you
+    :any:`functools.partial` to apply the desired keyword argument. In fact, you
     can use this same technique to customize any option supported by the
     ``dumps`` and ``loads`` functions::
 
@@ -69,47 +74,41 @@ class JSONHandler(BaseHandler):
         self.dumps = dumps or partial(json.dumps, ensure_ascii=False)
         self.loads = loads or json.loads
 
-    def deserialize(self, stream, content_type, content_length):
+        # PERF(kgriffs): Test dumps once up front so we can set the
+        #     proper serialize implementation.
+        result = self.dumps({'message': 'Hello World'})
+        if isinstance(result, str):
+            self.serialize = self._serialize_s
+            self.serialize_async = self._serialize_async_s
+        else:
+            self.serialize = self._serialize_b
+            self.serialize_async = self._serialize_async_b
+
+    def _deserialize(self, data):
+        if not data:
+            raise errors.MediaNotFoundError('JSON')
         try:
-            return self.loads(stream.read().decode('utf-8'))
+            return self.loads(data.decode())
         except ValueError as err:
-            raise errors.HTTPBadRequest(
-                title='Invalid JSON',
-                description='Could not parse JSON body - {0}'.format(err)
-            )
+            raise errors.MediaMalformedError('JSON') from err
+
+    def deserialize(self, stream, content_type, content_length):
+        return self._deserialize(stream.read())
 
     async def deserialize_async(self, stream, content_type, content_length):
-        data = await stream.read()
+        return self._deserialize(await stream.read())
 
-        try:
-            return self.loads(data.decode('utf-8'))
-        except ValueError as err:
-            raise errors.HTTPBadRequest(
-                title='Invalid JSON',
-                description='Could not parse JSON body - {0}'.format(err)
-            )
+    def _serialize_s(self, media, content_type):
+        return self.dumps(media).encode()
 
-    def serialize(self, media, content_type):
-        result = self.dumps(media)
+    async def _serialize_async_s(self, media, content_type):
+        return self.dumps(media).encode()
 
-        try:
-            result = result.encode('utf-8')
-        except AttributeError:  # pragma: nocover
-            # NOTE(kgriffs): Assume that dumps() is non-standard in that it
-            #   returned a byte string.
-            # TODO(kgriffs): This branch is not currently covered since
-            #   orjson testing has been temporarily disabled.
-            pass
+    def _serialize_b(self, media, content_type):
+        return self.dumps(media)
 
-        return result
-
-    async def serialize_async(self, media, content_type):
-        result = self.dumps(media)
-
-        if not isinstance(result, bytes):
-            return result.encode('utf-8')
-
-        return result
+    async def _serialize_async_b(self, media, content_type):
+        return self.dumps(media)
 
 
 class JSONHandlerWS(TextBaseHandlerWS):
@@ -147,7 +146,7 @@ class JSONHandlerWS(TextBaseHandlerWS):
     If you override the ``dumps`` function, you will need to explicitly set
     ``ensure_ascii`` to ``False`` in order to enable the serialization of
     Unicode characters to UTF-8. This is easily done by using
-    ``functools.partial`` to apply the desired keyword argument. In fact, you
+    :any:`functools.partial` to apply the desired keyword argument. In fact, you
     can use this same technique to customize any option supported by the
     ``dumps`` and ``loads`` functions::
 
@@ -179,3 +178,6 @@ class JSONHandlerWS(TextBaseHandlerWS):
 
     def deserialize(self, payload: str) -> object:
         return self.loads(payload)
+
+
+http_error._DEFAULT_JSON_HANDLER = _DEFAULT_JSON_HANDLER = JSONHandler()  # type: ignore

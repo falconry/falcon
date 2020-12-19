@@ -35,7 +35,7 @@ started writing an app.
                     """Handles GET requests"""
                     resp.status = falcon.HTTP_200  # This is the default status
                     resp.content_type = falcon.MEDIA_TEXT  # Default is JSON, so override
-                    resp.body = ('\nTwo things awe me most, the starry sky '
+                    resp.text = ('\nTwo things awe me most, the starry sky '
                                  'above me and the moral law within me.\n'
                                  '\n'
                                  '    ~ Immanuel Kant\n\n')
@@ -97,7 +97,7 @@ started writing an app.
                     """Handles GET requests"""
                     resp.status = falcon.HTTP_200  # This is the default status
                     resp.content_type = falcon.MEDIA_TEXT  # Default is JSON, so override
-                    resp.body = ('\nTwo things awe me most, the starry sky '
+                    resp.text = ('\nTwo things awe me most, the starry sky '
                                  'above me and the moral law within me.\n'
                                  '\n'
                                  '    ~ Immanuel Kant\n\n')
@@ -194,7 +194,7 @@ parameters, handling errors, and working with request and response bodies.
 
                     resp.status = str(result.status_code) + ' ' + result.reason
                     resp.content_type = result.headers['content-type']
-                    resp.body = result.text
+                    resp.text = result.text
 
 
             class AuthMiddleware:
@@ -276,7 +276,7 @@ parameters, handling errors, and working with request and response bodies.
                     if not hasattr(resp.context, 'result'):
                         return
 
-                    resp.body = json.dumps(resp.context.result)
+                    resp.text = json.dumps(resp.context.result)
 
 
             def max_body(limit):
@@ -473,7 +473,7 @@ parameters, handling errors, and working with request and response bodies.
 
                     resp.status = result.status_code
                     resp.content_type = result.headers['content-type']
-                    resp.body = result.text
+                    resp.text = result.text
 
 
             class AuthMiddleware:
@@ -555,7 +555,7 @@ parameters, handling errors, and working with request and response bodies.
                     if not hasattr(resp.context, 'result'):
                         return
 
-                    resp.body = json.dumps(resp.context.result)
+                    resp.text = json.dumps(resp.context.result)
 
 
             def max_body(limit):

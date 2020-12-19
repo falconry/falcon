@@ -52,10 +52,6 @@ With that in mind, writing a high-quality API based on Falcon requires that:
 #. Errors are anticipated, detected, and handled appropriately within
    each responder and with the aid of custom error handlers.
 
-.. tip:: Falcon will re-raise errors that do not inherit from
-    :class:`~falcon.HTTPError` unless you have registered a custom error
-    handler for that type (see also: :ref:`falcon.App <app>`).
-
 How do I generate API documentation for my Falcon API?
 ------------------------------------------------------
 When it comes to API documentation, some developers prefer to use the API
@@ -301,7 +297,7 @@ classes:
     class Ping:
 
         def on_get(self, req, resp):
-            resp.body = '{"message": "pong"}'
+            resp.text = '{"message": "pong"}'
 
 
     class Game:
@@ -784,15 +780,15 @@ rest.
         def on_get(self, req, resp):
             resp.media = { 'hello': 'World' }
 
-`resp.body` and `resp.data` are very similar, they both allow you to set the
-body of the response. The difference being, `body` takes a string and `data`
+`resp.text` and `resp.data` are very similar, they both allow you to set the
+body of the response. The difference being, `text` takes a string and `data`
 takes bytes.
 
 .. code:: python
 
     class MyResource:
         def on_get(self, req, resp):
-            resp.body = json.dumps({ 'hello': 'World' })
+            resp.text = json.dumps({ 'hello': 'World' })
 
         def on_post(self, req, resp):
             resp.data = b'{ "hello": "World" }'
@@ -822,7 +818,7 @@ When deserializing an incoming request body, you may also wish to implement
 
 Does Falcon set Content-Length or do I need to do that explicitly?
 ------------------------------------------------------------------
-Falcon will try to do this for you, based on the value of ``resp.body``,
+Falcon will try to do this for you, based on the value of ``resp.text``,
 ``resp.data``, or ``resp.stream_len`` (whichever is set in the response,
 checked in that order.)
 

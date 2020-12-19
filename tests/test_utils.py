@@ -4,7 +4,9 @@ from datetime import datetime
 import functools
 import http
 import itertools
+import json
 import random
+import sys
 from urllib.parse import quote, unquote_plus
 
 import pytest
@@ -14,7 +16,7 @@ from falcon import media
 from falcon import testing
 from falcon import util
 from falcon.constants import MEDIA_JSON
-from falcon.util import deprecation, json, misc, structures, uri
+from falcon.util import deprecation, misc, structures, uri
 
 from _util import create_app, to_coroutine  # NOQA
 
@@ -709,7 +711,7 @@ class TestFalconTestingUtils:
                 doc['things'] = req.get_param_as_list('things', int)
                 doc['query_string'] = req.query_string
 
-                resp.body = json.dumps(doc)
+                resp.text = json.dumps(doc)
 
         app.req_options.auto_parse_qs_csv = True
         app.add_route('/', SomeResource())
@@ -817,7 +819,7 @@ class TestFalconTestingUtils:
     def test_simulate_remote_addr(self, app, remote_addr):
         class ShowMyIPResource:
             def on_get(self, req, resp):
-                resp.body = req.remote_addr
+                resp.text = req.remote_addr
                 resp.content_type = falcon.MEDIA_TEXT
 
         app.add_route('/', ShowMyIPResource())
@@ -1147,3 +1149,12 @@ class TestDeprecatedArgs:
         assert len(recwarn) == 0
         a_function(1, b=2)
         assert len(recwarn) == 1
+
+
+@pytest.mark.skipif(sys.version_info < (3, 7), reason='module __getattr__ requires python 3.7')
+def test_json_deprecation():
+    with pytest.warns(deprecation.DeprecatedWarning, match='json'):
+        util.json
+
+    with pytest.raises(AttributeError):
+        util.some_imaginary_module

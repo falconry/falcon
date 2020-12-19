@@ -28,10 +28,10 @@ def test_custom_router_add_route_should_be_used(asgi):
 def test_custom_router_find_should_be_used(asgi):
     if asgi:
         async def resource(req, resp, **kwargs):
-            resp.body = '{{"uri_template": "{0}"}}'.format(req.uri_template)
+            resp.text = '{{"uri_template": "{0}"}}'.format(req.uri_template)
     else:
         def resource(req, resp, **kwargs):
-            resp.body = '{{"uri_template": "{0}"}}'.format(req.uri_template)
+            resp.text = '{{"uri_template": "{0}"}}'.format(req.uri_template)
 
     class CustomRouter:
         def __init__(self):
@@ -68,7 +68,7 @@ def test_custom_router_find_should_be_used(asgi):
 
     for uri in ('/404', '/404/backwards-compat'):
         response = client.simulate_request(path=uri)
-        assert response.text == falcon.HTTPNotFound().to_json()
+        assert response.content == falcon.HTTPNotFound().to_json()
         assert response.status == falcon.HTTP_404
 
     assert router.reached_backwards_compat
@@ -105,10 +105,10 @@ def test_can_pass_additional_params_to_add_route(asgi):
 def test_custom_router_takes_req_positional_argument(asgi):
     if asgi:
         async def responder(req, resp):
-            resp.body = 'OK'
+            resp.text = 'OK'
     else:
         def responder(req, resp):
-            resp.body = 'OK'
+            resp.text = 'OK'
 
     class CustomRouter:
         def find(self, uri, req):
@@ -126,10 +126,10 @@ def test_custom_router_takes_req_positional_argument(asgi):
 def test_custom_router_takes_req_keyword_argument(asgi):
     if asgi:
         async def responder(req, resp):
-            resp.body = 'OK'
+            resp.text = 'OK'
     else:
         def responder(req, resp):
-            resp.body = 'OK'
+            resp.text = 'OK'
 
     class CustomRouter:
         def find(self, uri, req=None):

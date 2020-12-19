@@ -27,13 +27,17 @@ jobs:
           - "pep8-docstrings"
           - "mypy"
           - "py38"
+          - "py38_sans_msgpack"
           - "py38_cython"
           - "py38_smoke"
           - "py38_smoke_cython"
           - "docs"
+          - "towncrier"
           - "look"
           - "check_vendored"
           - "twine_check"
+          - "daphne"
+          - "no_optional_packages"
           # TODO(kgriffs): Re-enable once hug has a chance to address
           # breaking changes in Falcon 3.0
           # - "hug"
@@ -60,6 +64,9 @@ jobs:
             os: ubuntu-20.04
             toxenv: py39_cython
           - python-version: 3.8
+            os: ubuntu-20.04
+            toxenv: py38_sans_msgpack
+          - python-version: 3.8
             os: macos-latest
             toxenv: py38_nocover
           - python-version: 3.8
@@ -73,13 +80,13 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v2.1.4
         if: ${{ matrix.toxenv != 'py35' }}
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v2.1.4
         if: ${{ matrix.toxenv == 'py35' }}
         with:
           python-version: 3.8
@@ -110,14 +117,14 @@ jobs:
         run: tox -e ${{ matrix.toxenv }}
 
       - name: Combine coverage
-        if: ${{ matrix.toxenv == 'py35' || matrix.toxenv == 'py38' }}
+        if: ${{ matrix.toxenv == 'py35' || matrix.toxenv == 'py38' || matrix.toxenv == 'py38_sans_msgpack' }}
         run: |
           coverage --version
           coverage combine
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
-        if: ${{ matrix.toxenv == 'py35' || matrix.toxenv == 'py38' }}
+        if: ${{ matrix.toxenv == 'py35' || matrix.toxenv == 'py38' || matrix.toxenv == 'py38_sans_msgpack' }}
         with:
           env_vars: PYTHON
           fail_ci_if_error: true

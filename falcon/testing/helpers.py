@@ -167,12 +167,12 @@ class ASGIRequestEventEmitter:
         """Set the client connection state to disconnected.
 
         Call this method to simulate an immediate client disconnect and
-        begin emitting 'http.disconnect' events.
+        begin emitting ``'http.disconnect'`` events.
 
         Arguments:
             exhaust_body (bool): Set to ``False`` in order to
-                begin emitting 'http.disconnect' events without first
-                emitting at least one 'http.request' event.
+                begin emitting ``'http.disconnect'`` events without first
+                emitting at least one ``'http.request'`` event.
         """
 
         if exhaust_body is not None:
@@ -1070,8 +1070,7 @@ def create_environ(path='/', query_string='', http_version='1.1',
     if query_string and query_string.startswith('?'):
         raise ValueError("query_string should not start with '?'")
 
-    body = io.BytesIO(body.encode('utf-8')
-                      if isinstance(body, str) else body)
+    body = io.BytesIO(body.encode() if isinstance(body, str) else body)
 
     # NOTE(kgriffs): wsgiref, gunicorn, and uWSGI all unescape
     # the paths before setting PATH_INFO
@@ -1091,7 +1090,7 @@ def create_environ(path='/', query_string='', http_version='1.1',
     #
     #   path = tunnelled_path.encode('iso-8859-1').decode('utf-8', 'replace')
     #
-    path = path.encode('utf-8').decode('iso-8859-1')
+    path = path.encode().decode('iso-8859-1')
 
     scheme = scheme.lower()
     if port is None:

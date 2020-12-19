@@ -15,7 +15,7 @@ specified on your :any:`falcon.App`.
 
     WebSocket media is handled differently from regular HTTP requests. For
     information regarding WebSocket media handlers, please
-    see: :ref:`ws_media_handlers`.
+    see: :ref:`ws_media_handlers` in the WebSocket section.
 
 Usage
 -----
@@ -128,6 +128,30 @@ middleware. Here is an example of how this can be done:
                     resp.content_type = req.accept
 
 
+Exception Handling
+------------------
+
+Version 3 of Falcon updated how the handling of exceptions raised by handlers behaves:
+
+*  Falcon lets the media handler try to deserialized an empty body. For the media types
+   that don't allow empty bodies as a valid value, such as ``JSON``, an instance of
+   :class:`falcon.MediaNotFoundError` should be raised. By default, this error
+   will be rendered as a ``400 Bad Request`` response to the client.
+   This exception may be suppressed by passing a value to the ``default_when_empty``
+   argument when calling :meth:`Request.get_media`. In this case, this value will
+   be returned by the call.
+*  If a handler encounters an error while parsing a non-empty body, an instance of
+   :class:`falcon.MediaMalformedError` should be raised. The original exception, if any,
+   is stored in the ``__cause__`` attribute of the raised instance. By default, this
+   error will be rendered as a ``400 Bad Request`` response to the client.
+
+If any exception was raised by the handler while parsing the body, all subsequent invocations
+of :meth:`Request.get_media` or :attr:`Request.media` will result in a re-raise of the same
+exception, unless the exception was a :class:`falcon.MediaNotFoundError` and a default value
+is passed to the ``default_when_empty`` attribute of the current invocation.
+
+External handlers should update their logic to align to the internal Falcon handlers.
+
 .. _custom_media_handlers:
 
 Replacing the Default Handlers
@@ -147,10 +171,10 @@ handler that can process that data.
 
 
     handlers = media.Handlers({
-        'application/msgpack': media.MessagePackHandler(),
+        falcon.MEDIA_MSGPACK: media.MessagePackHandler(),
     })
 
-    app = falcon.App(media_type='application/msgpack')
+    app = falcon.App(media_type=falcon.MEDIA_MSGPACK)
 
     app.req_options.media_handlers = handlers
     app.resp_options.media_handlers = handlers
@@ -165,13 +189,32 @@ removing the default handlers, this can be easily done as follows:
 
 
     extra_handlers = {
-        'application/msgpack': media.MessagePackHandler(),
+        falcon.MEDIA_MSGPACK: media.MessagePackHandler(),
     }
 
     app = falcon.App()
 
     app.req_options.media_handlers.update(extra_handlers)
     app.resp_options.media_handlers.update(extra_handlers)
+
+The ``falcon`` module provides a number of constants for common media types.
+See also: :ref:`media_type_constants`.
+
+.. _note_json_handler:
+
+.. note::
+
+    The configured :class:`falcon.Response` JSON handler is also used to serialize
+    :class:`falcon.HTTPError` and the ``json`` attribute of :class:`falcon.asgi.SSEvent`.
+    The JSON handler configured in :class:`falcon.Request` is used by
+    :meth:`falcon.Request.get_param_as_json` to deserialize query params.
+
+    When implementing a custom handler for the JSON media it is therefore required
+    that the sync interface methods, meaning
+    :meth:`falcon.media.BaseHandler.serialize` and :meth:`falcon.media.BaseHandler.deserialize`,
+    are implemented even in ``ASGI`` applications. The default json handler
+    :class:`falcon.media.JSONHandler` already implements all the required methods to
+    work with both type of applications.
 
 
 Supported Handler Types
@@ -196,7 +239,13 @@ Custom Handler Type
 
 If Falcon doesn't have an Internet media type handler that supports your
 use case, you can easily implement your own using the abstract base class
-provided by Falcon:
+provided by Falcon and documented below.
+
+In general ``WSGI`` applications only use the sync methods, while
+``ASGI`` applications only use the async one.
+The JSON handled is an exception to this, since it's used also by
+other parts of the framework, not only in the media handling.
+See the :ref:`note above<note_json_handler>` for more details.
 
 .. autoclass:: falcon.media.BaseHandler
     :members:

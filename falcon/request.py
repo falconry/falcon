@@ -13,16 +13,19 @@
 """Request class."""
 
 from datetime import datetime
+from io import BytesIO
 from uuid import UUID
 
 from falcon import DEFAULT_MEDIA_TYPE
 from falcon import errors
+from falcon import MEDIA_JSON
 from falcon import request_helpers as helpers
 from falcon import util
 from falcon.forwarded import _parse_forwarded_header
 from falcon.forwarded import Forwarded  # NOQA
 from falcon.media import Handlers
-from falcon.util import json
+from falcon.media.json import _DEFAULT_JSON_HANDLER
+from falcon.stream import BoundedStream
 from falcon.util import structures
 from falcon.util.misc import isascii
 from falcon.util.uri import parse_host, parse_query_string
@@ -38,6 +41,8 @@ WSGI_CONTENT_HEADERS = frozenset(['CONTENT_TYPE', 'CONTENT_LENGTH'])
 # PERF(kgriffs): Avoid an extra namespace lookup when using these functions
 strptime = datetime.strptime
 now = datetime.now
+
+_UNSET = object()  # flag object used as the default unset value
 
 
 class Request:
@@ -424,6 +429,7 @@ class Request:
         'stream',
         'uri_template',
         '_media',
+        '_media_error',
         'is_websocket',
     )
 
@@ -447,7 +453,8 @@ class Request:
         self.method = env['REQUEST_METHOD']
 
         self.uri_template = None
-        self._media = None
+        self._media = _UNSET
+        self._media_error = None
 
         # NOTE(kgriffs): PEP 3333 specifies that PATH_INFO may be the
         # empty string, so normalize it in that case.
@@ -974,7 +981,7 @@ class Request:
 
         return netloc_value
 
-    def get_media(self):
+    def get_media(self, default_when_empty=_UNSET):
         """Return a deserialized form of the request stream.
 
         The first time this method is called, the request stream will be
@@ -990,13 +997,39 @@ class Request:
 
         See also :ref:`media` for more information regarding media handling.
 
+        Note:
+            When ``get_media`` is called on a request with an empty body,
+            Falcon will let the media handler try to deserialize the body
+            and will return the value returned by the handler or propagate
+            the exception raised by it. To instead return a different value
+            in case of an exception by the handler, specify the argument
+            ``default_when_empty``.
+
         Warning:
             This operation will consume the request stream the first time
             it's called and cache the results. Follow-up calls will just
             retrieve a cached version of the object.
+
+        Args:
+            default_when_empty: Fallback value to return when there is no body
+                in the request and the media handler raises an error
+                (like in the case of the default JSON media handler).
+                By default, Falcon uses the value returned by the media handler
+                or propagates the raised exception, if any.
+                This value is not cached, and will be used only for the current
+                call.
+
+        Returns:
+            media (object): The deserialized media representation.
         """
-        if self._media is not None or self.bounded_stream.eof:
+        if self._media is not _UNSET:
             return self._media
+        if self._media_error is not None:
+            if default_when_empty is not _UNSET and isinstance(
+                self._media_error, errors.MediaNotFoundError
+            ):
+                return default_when_empty
+            raise self._media_error
 
         handler = self.options.media_handlers.find_by_media_type(
             self.content_type,
@@ -1009,6 +1042,14 @@ class Request:
                 self.content_type,
                 self.content_length
             )
+        except errors.MediaNotFoundError as err:
+            self._media_error = err
+            if default_when_empty is not _UNSET:
+                return default_when_empty
+            raise
+        except Exception as err:
+            self._media_error = err
+            raise
         finally:
             if handler.exhaust_stream:
                 self.bounded_stream.exhaust()
@@ -1739,9 +1780,19 @@ class Request:
         if param_value is None:
             return default
 
+        handler = self.options.media_handlers.find_by_media_type(
+            MEDIA_JSON, MEDIA_JSON, raise_not_found=False
+        )
+        if handler is None:
+            handler = _DEFAULT_JSON_HANDLER
+
         try:
-            val = json.loads(param_value)
-        except ValueError:
+            # TODO(CaselIT): find a way to avoid encode + BytesIO if handlers
+            # interface is refactored. Possibly using the WS interface?
+            val = handler.deserialize(
+                BytesIO(param_value.encode()), MEDIA_JSON, len(param_value)
+            )
+        except errors.HTTPBadRequest:
             msg = 'It could not be parsed as JSON.'
             raise errors.HTTPInvalidParam(msg, name)
 
@@ -1805,7 +1856,7 @@ class Request:
             # but it had an invalid value. Assume no content.
             content_length = 0
 
-        return helpers.BoundedStream(self.env['wsgi.input'], content_length)
+        return BoundedStream(self.env['wsgi.input'], content_length)
 
     def _parse_form_urlencoded(self):
         content_length = self.content_length

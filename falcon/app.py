@@ -24,7 +24,7 @@ import falcon.constants
 from falcon.errors import HTTPBadRequest
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
-from falcon.middlewares import CORSMiddleware
+from falcon.middleware import CORSMiddleware
 from falcon.request import Request, RequestOptions
 import falcon.responders
 from falcon.response import Response, ResponseOptions
@@ -795,16 +795,13 @@ class App:
             def my_serializer(req, resp, exception):
                 representation = None
 
-                preferred = req.client_prefers(('application/x-yaml',
-                                                'application/json'))
+                preferred = req.client_prefers((falcon.MEDIA_YAML, falcon.MEDIA_JSON))
 
                 if preferred is not None:
-                    if preferred == 'application/json':
-                        representation = exception.to_json()
+                    if preferred == falcon.MEDIA_JSON:
+                        resp.data = exception.to_json()
                     else:
-                        representation = yaml.dump(exception.to_dict(),
-                                                   encoding=None)
-                    resp.body = representation
+                        resp.text = yaml.dump(exception.to_dict(), encoding=None)
                     resp.content_type = preferred
 
                 resp.append_header('Vary', 'Accept')
@@ -912,9 +909,9 @@ class App:
         if http_status.headers is not None:
             resp.set_headers(http_status.headers)
 
-        # NOTE(kgriffs): If http_status.body is None, that's OK because
-        # it's acceptable to set resp.body to None (to indicate no body).
-        resp.body = http_status.body
+        # NOTE(kgriffs): If http_status.text is None, that's OK because
+        # it's acceptable to set resp.text to None (to indicate no body).
+        resp.text = http_status.text
 
     def _compose_error_response(self, req, resp, error):
         """Compose a response for the given HTTPError instance."""
@@ -972,7 +969,7 @@ class App:
         err_handler = self._find_error_handler(ex)
 
         # NOTE(caselit): Reset body, data and media before calling the handler
-        resp.body = resp.data = resp.media = None
+        resp.text = resp.data = resp.media = None
         if err_handler is not None:
             try:
                 err_handler(req, resp, ex, params)

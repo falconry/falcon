@@ -98,6 +98,26 @@ documentation. It basically can't be wrong."
 
 "What other framework has integrated support for 786 TRY IT NOW ?"
 
+Features
+--------
+
+- ASGI and WSGI Support
+- WebSocket Support
+- Native asyncio support (no hacks or compatibility layers)
+- Strict adherence to RFCs
+- Highly-optimized, extensible code base
+- Intuitive routing via URI templates and REST-inspired
+  resource classes
+- No reliance on magic globals for routing and state management
+- Easy access to headers and bodies through request and response
+  classes
+- DRY request processing via middleware components and hooks
+- Idiomatic HTTP error responses
+- Straightforward exception handling
+- Snappy testing through WSGI/ASGI helpers and mocks
+- CPython 3.5+ and PyPy 3.5+ support
+- ~20% speed boost under CPython when Cython is available
+
 How is Falcon Different?
 ------------------------
 
@@ -126,37 +146,20 @@ increment. The code is rigorously tested with numerous inputs and we
 require 100% coverage at all times. Falcon does not depend on any
 external Python packages.
 
+**Debuggable.** Falcon eschews magic. It's easy to tell which inputs lead to
+which outputs. To avoid incentivizing the use of hard-to-debug global state,
+Falcon does not use decorators to define routes. Unhandled exceptions are never
+encapsulated or masked. Potentially surprising behaviors, such as automatic
+request body parsing, are well-documented and disabled by default. Finally, we
+take care to keep logic paths within the framework simple, shallow and
+understandable. All of this makes it easier to reason about the code and to
+debug edge cases in large-scale deployments.
+
 **Flexible.** Falcon leaves a lot of decisions and implementation
 details to you, the API developer. This gives you a lot of freedom to
 customize and tune your implementation. Due to Falcon's minimalist
 design, Python community members are free to independently innovate on
 `Falcon add-ons and complementary packages <https://github.com/falconry/falcon/wiki>`__.
-
-**Debuggable.** Falcon eschews magic. It's easy to tell which inputs
-lead to which outputs. Unhandled exceptions are never encapsulated or
-masked. Potentially surprising behaviors, such as automatic request body
-parsing, are well-documented and disabled by default. Finally, when it
-comes to the framework itself, we take care to keep logic paths simple
-and understandable. All this makes it easier to reason about the code
-and to debug edge cases in large-scale deployments.
-
-Features
---------
-
-- ASGI and WSGI Support
-- WebSocket Support
-- Strict adherence to RFCs
-- Highly-optimized, extensible code base
-- Intuitive routing via URI templates and REST-inspired resource
-  classes
-- Easy access to headers and bodies through request and response
-  classes
-- DRY request processing via middleware components and hooks
-- Idiomatic HTTP error responses
-- Straightforward exception handling
-- Snappy testing through WSGI/ASGI helpers and mocks
-- CPython 3.5+ and PyPy 3.5+ support
-- ~20% speed boost under CPython when Cython is available
 
 Who's Using Falcon?
 -------------------
@@ -225,18 +228,23 @@ CPython
 Falcon also fully supports
 `CPython <https://www.python.org/downloads/>`__ 3.5+.
 
-A universal wheel is available on PyPI for the the Falcon framework.
-Installing it is as simple as:
+The latest stable version of Falcon can be installed directly from PyPI:
 
 .. code:: bash
 
     $ pip install falcon
 
-Installing the Falcon wheel is a great way to get up and running
-quickly in a development environment, but for an extra speed boost when
-deploying your application in production, Falcon can compile itself with
-Cython. Note, however, that Cython is currently incompatible with
-the falcon.asgi module.
+Or, to install the latest beta or release candidate, if any:
+
+.. code:: bash
+
+    $ pip install --pre falcon
+
+In order to provide an extra speed boost, Falcon can compile itself with
+Cython. Wheels containing pre-compiled binaries are available from PyPI for
+several common platforms. However, if a wheel for your platform of choice is not
+available, you can choose to stick with the source distribution, or use the
+instructions below to cythonize Falcon for your environment.
 
 The following commands tell pip to install Cython, and then to invoke
 Falcon's ``setup.py``, which will in turn detect the presence of Cython
@@ -246,14 +254,18 @@ default C compiler.
 .. code:: bash
 
     $ pip install cython
-    $ pip install --no-binary :all: falcon
+    $ pip install --no-build-isolation --no-binary :all: falcon
+
+Note that ``--no-build-isolation`` is necessary to override pip's default
+PEP 517 behavior that can cause Cython not to be found in the build
+environment.
 
 If you want to verify that Cython is being invoked, simply
 pass `-v` to pip in order to echo the compilation commands:
 
 .. code:: bash
 
-    $ pip install -v --no-binary :all: falcon
+    $ pip install -v --no-build-isolation --no-binary :all: falcon
 
 **Installing on OS X**
 
@@ -400,7 +412,7 @@ WSGI app (the ASGI version is included further down):
             """Handles GET requests"""
             resp.status = falcon.HTTP_200  # This is the default status
             resp.content_type = falcon.MEDIA_TEXT  # Default is JSON, so override
-            resp.body = ('\nTwo things awe me most, the starry sky '
+            resp.text = ('\nTwo things awe me most, the starry sky '
                          'above me and the moral law within me.\n'
                          '\n'
                          '    ~ Immanuel Kant\n\n')
@@ -454,7 +466,7 @@ The ASGI version of the example is similar:
             """Handles GET requests"""
             resp.status = falcon.HTTP_200  # This is the default status
             resp.content_type = falcon.MEDIA_TEXT  # Default is JSON, so override
-            resp.body = ('\nTwo things awe me most, the starry sky '
+            resp.text = ('\nTwo things awe me most, the starry sky '
                          'above me and the moral law within me.\n'
                          '\n'
                          '    ~ Immanuel Kant\n\n')
@@ -532,7 +544,7 @@ Note that this example assumes that the
 
             resp.status = str(result.status_code) + ' ' + result.reason
             resp.content_type = result.headers['content-type']
-            resp.body = result.text
+            resp.text = result.text
 
 
     class AuthMiddleware:
@@ -614,7 +626,7 @@ Note that this example assumes that the
             if not hasattr(resp.context, 'result'):
                 return
 
-            resp.body = json.dumps(resp.context.result)
+            resp.text = json.dumps(resp.context.result)
 
 
     def max_body(limit):
@@ -789,7 +801,7 @@ Here's the ASGI version of the app from above. Note that it uses the
 
             resp.status = result.status_code
             resp.content_type = result.headers['content-type']
-            resp.body = result.text
+            resp.text = result.text
 
 
     class AuthMiddleware:
@@ -871,7 +883,7 @@ Here's the ASGI version of the app from above. Note that it uses the
             if not hasattr(resp.context, 'result'):
                 return
 
-            resp.body = json.dumps(resp.context.result)
+            resp.text = json.dumps(resp.context.result)
 
 
     def max_body(limit):

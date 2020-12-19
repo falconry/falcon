@@ -8,6 +8,24 @@ from falcon.media.urlencoded import URLEncodedFormHandler
 from falcon.vendor import mimeparse
 
 
+class MissingDependencyHandler:
+    """Placeholder handler that always raises an error.
+
+    This handler is used by the framework for media types that require an
+    external dependency that can not be found.
+    """
+    def __init__(self, handler: str, library: str):
+        self._msg = (
+            'The {} requires the {} library, which is not installed.'
+        ).format(handler, library)
+
+    def _raise(self, *args, **kwargs):
+        raise RuntimeError(self._msg)
+
+    # TODO(kgriffs): Add support for async later if needed.
+    serialize = deserialize = _raise
+
+
 class Handlers(UserDict):
     """A :class:`dict`-like object that manages Internet media type handlers."""
     def __init__(self, initial=None):
@@ -36,7 +54,7 @@ class Handlers(UserDict):
 
         return resolved
 
-    def find_by_media_type(self, media_type, default):
+    def find_by_media_type(self, media_type, default, raise_not_found=True):
         # PERF(jmvrbanac): Check via a quick methods first for performance
         if media_type == '*/*' or not media_type:
             media_type = default
@@ -50,9 +68,11 @@ class Handlers(UserDict):
         resolved = self._resolve_media_type(media_type, self.data.keys())
 
         if not resolved:
-            raise errors.HTTPUnsupportedMediaType(
-                description='{0} is an unsupported media type.'.format(media_type)
-            )
+            if raise_not_found:
+                raise errors.HTTPUnsupportedMediaType(
+                    description='{0} is an unsupported media type.'.format(media_type)
+                )
+            return None
 
         return self.data[resolved]
 

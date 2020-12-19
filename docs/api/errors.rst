@@ -211,3 +211,9 @@ Predefined Errors
 
 .. autoclass:: falcon.HTTPNetworkAuthenticationRequired
     :members:
+
+.. autoclass:: falcon.MediaNotFoundError
+    :members:
+
+.. autoclass:: falcon.MediaMalformedError
+    :members:

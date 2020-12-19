@@ -3,7 +3,6 @@ import itertools
 import os
 import random
 
-import msgpack
 import pytest
 
 import falcon
@@ -12,6 +11,12 @@ from falcon import testing
 from falcon.util import BufferedReader
 
 from _util import create_app  # NOQA: I100
+
+
+try:
+    import msgpack  # type: ignore
+except ImportError:
+    msgpack = None
 
 
 EXAMPLE1 = (
@@ -183,7 +188,7 @@ def test_empty_input():
     handler = media.MultipartFormHandler()
     form = handler.deserialize(
         io.BytesIO(), 'multipart/form-data; boundary=404', 0)
-    with pytest.raises(falcon.HTTPBadRequest):
+    with pytest.raises(falcon.MediaMalformedError):
         for part in form:
             pass
 
@@ -219,7 +224,7 @@ def test_invalid_text_or_charset(charset, data):
 
     form = handler.deserialize(
         io.BytesIO(data), 'multipart/form-data; boundary=BOUNDARY', len(data))
-    with pytest.raises(falcon.HTTPBadRequest):
+    with pytest.raises(falcon.MediaMalformedError):
         for part in form:
             part.text
 
@@ -308,7 +313,7 @@ def test_empty_filename():
 
     for part in form:
         assert part.filename == ''
-        with pytest.raises(falcon.HTTPBadRequest):
+        with pytest.raises(falcon.MediaMalformedError):
             part.secure_filename
 
 
@@ -557,6 +562,7 @@ def test_too_many_body_parts(custom_client, max_body_part_count):
         assert len(resp.json) == EXAMPLE2_PART_COUNT
 
 
+@pytest.mark.skipif(not msgpack, reason='msgpack not installed')
 def test_random_form(client):
     part_data = [os.urandom(random.randint(0, 2**18)) for _ in range(64)]
     form_data = b''.join(
