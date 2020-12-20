@@ -1,0 +1,25 @@
+cpython_38:
+  hello:
+    expected:
+      cost: 85133
+      variation: 0.001
+    points:
+      - 10000
+      - 15000
+      - 20000
+      - 25000
+    tolerance:
+      - -0.004
+      - +0.001
+  media:
+    expected:
+      cost: 222400
+      variation: 0.001
+    points:
+      - 5000
+      - 7500
+      - 10000
+      - 12500
+    tolerance:
+      - -0.004
+      - +0.001

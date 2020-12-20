@@ -1,5 +1,8 @@
 import io
 import sys
+import timeit
+
+from .common import get_work_factor
 
 ENVIRON_BOILERPLATE = {
     'HTTP_HOST': 'falconframework.org',
@@ -25,8 +28,22 @@ ENVIRON_BOILERPLATE = {
 }
 
 
-def start_response_factory(expected_status):
+def run(app, environ, expected_status, expected_body, number=None):
     def start_response(status, headers, exc_info=None):
         assert status == expected_status
 
-    return start_response
+    def request_simple():
+        assert b''.join(app(environ, start_response)) == expected_body
+
+    def request_with_payload():
+        stream.seek(0)
+        assert b''.join(app(environ, start_response)) == expected_body
+
+    environ = dict(ENVIRON_BOILERPLATE, **environ)
+    stream = environ['wsgi.input']
+    request = request_with_payload if stream.getvalue() else request_simple
+
+    if number is None:
+        number = get_work_factor()
+
+    timeit.timeit(request, number=number)

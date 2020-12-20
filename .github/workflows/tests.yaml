@@ -38,6 +38,8 @@ jobs:
           - "twine_check"
           - "daphne"
           - "no_optional_packages"
+          - "perf_hello"
+          - "perf_media"
           # TODO(kgriffs): Re-enable once hug has a chance to address
           # breaking changes in Falcon 3.0
           # - "hug"
@@ -103,6 +105,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libunwind-dev
+
+      - name: Install valgrind
+        if: ${{ matrix.toxenv == 'perf_hello' || matrix.toxenv == 'perf_media' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y valgrind
 
       - name: Install dependencies
         run: |
