@@ -1,7 +1,7 @@
 cpython_38:
   hello:
     expected:
-      cost: 85133
+      cost: 94700
       variation: 0.001
     points:
       - 10000
@@ -13,7 +13,7 @@ cpython_38:
       - +0.001
   media:
     expected:
-      cost: 222400
+      cost: 242000
       variation: 0.001
     points:
       - 5000
