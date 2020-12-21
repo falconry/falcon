@@ -605,7 +605,7 @@ class App:
         self._static_routes.insert(0, (sr, sr, False))
         self._update_sink_and_static_routes()
 
-    def add_sink(self, sink, prefix=r'/', _asgi=False):
+    def add_sink(self, sink, prefix=r'/'):
         """Register a sink method for the App.
 
         If no route matches a request, but the path in the requested URI
@@ -641,9 +641,7 @@ class App:
 
         """
 
-        # NOTE(vytas): falcon.asgi.App sets the private _asgi kwarg to True;
-        #   it is only intended to be used internally.
-        if not _asgi and iscoroutinefunction(sink):
+        if not self._ASGI and iscoroutinefunction(sink):
             raise CompatibilityError(
                 'The sink method must be a regular synchronous function '
                 'in order to be used with a WSGI app.'

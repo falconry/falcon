@@ -697,10 +697,7 @@ class App(falcon.app.App):
                     'in order to be used safely with an ASGI app.'
                 )
 
-        # NOTE(vytas): Set the private _asgi kwarg to True to indicate that the
-        #   sink method should not be validated as a synchronous method in
-        #   App.add_sink().
-        super().add_sink(sink, prefix=prefix, _asgi=True)
+        super().add_sink(sink, prefix=prefix)
 
     add_sink.__doc__ = falcon.app.App.add_sink.__doc__
 
