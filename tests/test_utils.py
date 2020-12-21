@@ -845,7 +845,7 @@ class TestFalconTestingUtils:
     @pytest.mark.parametrize('extras,expected_headers', [
         (
             {},
-            (('user-agent', None),),
+            (('user-agent', 'falcon-client/' + falcon.__version__),),
         ),
         (
             {'HTTP_USER_AGENT': 'URL/Emacs', 'HTTP_X_FALCON': 'peregrine'},
