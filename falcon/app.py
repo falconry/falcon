@@ -21,7 +21,7 @@ import traceback
 
 from falcon import app_helpers as helpers, routing
 import falcon.constants
-from falcon.errors import HTTPBadRequest
+from falcon.errors import CompatibilityError, HTTPBadRequest
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 from falcon.middleware import CORSMiddleware
@@ -505,6 +505,10 @@ class App:
                 corresponding request handlers, and Falcon will do the right
                 thing.
 
+                Note:
+                    When using an async version of the ``App``, all request
+                    handlers must be awaitable coroutine functions.
+
         Keyword Args:
             suffix (str): Optional responder name suffix for this route. If
                 a suffix is provided, Falcon will map GET requests to
@@ -601,7 +605,7 @@ class App:
         self._static_routes.insert(0, (sr, sr, False))
         self._update_sink_and_static_routes()
 
-    def add_sink(self, sink, prefix=r'/'):
+    def add_sink(self, sink, prefix=r'/', _asgi=False):
         """Register a sink method for the App.
 
         If no route matches a request, but the path in the requested URI
@@ -636,6 +640,14 @@ class App:
                     (See also: :meth:`~.add_route`)
 
         """
+
+        # NOTE(vytas): falcon.asgi.App sets the private _asgi kwarg to True;
+        #   it is only intended to be used internally.
+        if not _asgi and iscoroutinefunction(sink):
+            raise CompatibilityError(
+                'The sink method must be a regular synchronous function '
+                'in order to be used with a WSGI app.'
+            )
 
         if not hasattr(prefix, 'match'):
             # Assume it is a string

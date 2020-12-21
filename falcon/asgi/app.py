@@ -34,7 +34,12 @@ from falcon.http_status import HTTPStatus
 from falcon.media.multipart import MultipartFormHandler
 import falcon.routing
 from falcon.util.misc import http_status_to_code, is_python_func
-from falcon.util.sync import _wrap_non_coroutine_unsafe, get_running_loop
+from falcon.util.sync import (
+    _should_wrap_non_coroutines,
+    _wrap_non_coroutine_unsafe,
+    get_running_loop,
+    wrap_sync_to_async,
+)
 from .multipart import MultipartForm
 from .request import Request
 from .response import Response
@@ -681,6 +686,23 @@ class App(falcon.app.App):
         super().add_route(uri_template, resource, **kwargs)
 
     add_route.__doc__ = falcon.app.App.add_route.__doc__
+
+    def add_sink(self, sink, prefix=r'/'):
+        if not iscoroutinefunction(sink) and is_python_func(sink):
+            if _should_wrap_non_coroutines():
+                sink = wrap_sync_to_async(sink)
+            else:
+                raise CompatibilityError(
+                    'The sink method must be an awaitable coroutine function '
+                    'in order to be used safely with an ASGI app.'
+                )
+
+        # NOTE(vytas): Set the private _asgi kwarg to True to indicate that the
+        #   sink method should not be validated as a synchronous method in
+        #   App.add_sink().
+        super().add_sink(sink, prefix=prefix, _asgi=True)
+
+    add_sink.__doc__ = falcon.app.App.add_sink.__doc__
 
     def add_error_handler(self, exception, handler=None):
         """Register a handler for one or more exception types.
