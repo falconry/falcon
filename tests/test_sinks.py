@@ -5,7 +5,7 @@ import pytest
 import falcon
 import falcon.testing as testing
 
-from _util import create_app  # NOQA
+from _util import create_app, disable_asgi_non_coroutine_wrapping  # NOQA
 
 
 class Proxy:
@@ -25,6 +25,14 @@ class Sink:
 class SinkAsync(Sink):
     async def __call__(self, req, resp, **kwargs):
         super().__call__(req, resp, **kwargs)
+
+
+def kitchen_sink(req, resp, **kwargs):
+    resp.set_header('X-Missing-Feature', 'kitchen-sink')
+
+
+async def async_kitchen_sink(req, resp, **kwargs):
+    kitchen_sink(req, resp, **kwargs)
 
 
 class BookCollection(testing.SimpleTestResource):
@@ -137,3 +145,32 @@ class TestDefaultRouting:
         response = client.simulate_request(path='/books/123')
         assert resource.called
         assert response.status == falcon.HTTP_200
+
+
+class TestSinkMethodCompatibility:
+
+    def _verify_kitchen_sink(self, client):
+        resp = client.simulate_request('BREW', '/features')
+        assert resp.status_code == 200
+        assert resp.headers.get('X-Missing-Feature') == 'kitchen-sink'
+
+    def test_add_async_sink(self, client, asgi):
+        if not asgi:
+            with pytest.raises(falcon.CompatibilityError):
+                client.app.add_sink(async_kitchen_sink)
+        else:
+            client.app.add_sink(async_kitchen_sink, '/features')
+            self._verify_kitchen_sink(client)
+
+    def test_add_sync_sink(self, client, asgi):
+        if asgi:
+            with disable_asgi_non_coroutine_wrapping():
+                with pytest.raises(falcon.CompatibilityError):
+                    client.app.add_sink(kitchen_sink)
+        else:
+            client.app.add_sink(kitchen_sink, '/features')
+            self._verify_kitchen_sink(client)
+
+    def test_add_sync_sink_with_wrapping(self, client, asgi):
+        client.app.add_sink(kitchen_sink, '/features')
+        self._verify_kitchen_sink(client)
