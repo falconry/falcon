@@ -230,6 +230,11 @@ Contributors to this Release
 
 Many thanks to all of our talented and stylish contributors for this release!
 
+.. note::
+
+  If we missed you below, don't worry! We will capture the full list of
+  contributors before the 3.0.0 final release.
+
 - `BigBlueHat <https://github.com/BigBlueHat>`_
 - `CaselIT <https://github.com/CaselIT>`_
 - `Ciemaar <https://github.com/Ciemaar>`_
