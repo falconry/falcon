@@ -261,6 +261,8 @@ specifications in the URI template:
         some_resource
     )
 
+.. _routing_builtin_converters:
+
 Built-in Converters
 -------------------
 
@@ -282,6 +284,8 @@ Built-in Converters
 
 .. autoclass:: falcon.routing.DateTimeConverter
     :members:
+
+.. _routing_custom_converters:
 
 Custom Converters
 -----------------

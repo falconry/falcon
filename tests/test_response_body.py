@@ -92,3 +92,31 @@ def test_content_length_not_set_when_streaming_response(asgi, method):
 
     if method == 'GET':
         assert result.text == 'Hello, World!'
+
+
+class CodeResource:
+    def on_get(self, req, resp):
+        resp.content_type = 'text/x-malbolge'
+        resp.media = '\'&%$#"!76543210/43,P0).\'&%I6'
+        resp.status = falcon.HTTP_725
+
+
+def test_unsupported_response_content_type(asgi):
+    app = create_app(asgi)
+    app.add_route('/test.mal', CodeResource())
+
+    resp = testing.simulate_get(app, '/test.mal')
+    assert resp.status_code == 415
+
+
+def test_response_body_rendition_error(asgi):
+    class MalbolgeHandler(falcon.media.BaseHandler):
+        def serialize(self, media, content_type):
+            raise falcon.HTTPError(falcon.HTTP_753)
+
+    app = create_app(asgi)
+    app.resp_options.media_handlers['text/x-malbolge'] = MalbolgeHandler()
+    app.add_route('/test.mal', CodeResource())
+
+    resp = testing.simulate_get(app, '/test.mal')
+    assert resp.status_code == 753
