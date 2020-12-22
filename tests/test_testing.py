@@ -134,3 +134,28 @@ def test_cookies_jar():
     response_two = client.simulate_post('/jars', cookies=response_one.cookies)
 
     assert response_two.status == falcon.HTTP_200
+
+
+def test_create_environ_default_ua():
+    default_ua = 'falcon-client/' + falcon.__version__
+
+    environ = testing.create_environ()
+    assert environ['HTTP_USER_AGENT'] == default_ua
+
+    req = falcon.request.Request(environ)
+    assert req.user_agent == default_ua
+
+
+def test_create_environ_default_ua_override():
+    ua = 'curl/7.64.1'
+
+    environ = testing.create_environ(headers={'user-agent': ua})
+    assert environ['HTTP_USER_AGENT'] == ua
+
+    req = falcon.request.Request(environ)
+    assert req.user_agent == ua
+
+
+def test_missing_header_is_none():
+    req = testing.create_req()
+    assert req.auth is None
