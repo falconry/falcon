@@ -289,7 +289,7 @@ class Request(falcon.request.Request):
             where -1 is the last byte, -2 is the second-to-last byte,
             and so forth.
 
-            Only continous ranges are supported (e.g., "bytes=0-0,-1" would
+            Only continuous ranges are supported (e.g., "bytes=0-0,-1" would
             result in an HTTPBadRequest exception when the attribute is
             accessed.)
         range_unit (str): Unit of the range parsed from the value of the
