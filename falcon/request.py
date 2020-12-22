@@ -1246,11 +1246,17 @@ class Request:
             See also: :ref:`access_urlencoded_form`
 
         Note:
-            Similar to the way multiple keys in form data is handled,
-            if a query parameter is assigned a comma-separated list of
-            values (e.g., ``foo=a,b,c``), only one of those values will be
-            returned, and it is undefined which one. Use
-            :meth:`~.get_param_as_list` to retrieve all the values.
+            Similar to the way multiple keys in form data are handled, if a
+            query parameter is included in the query string multiple times,
+            only one of those values will be returned, and it is undefined which
+            one. This caveat also applies when
+            :attr:`~falcon.RequestOptions.auto_parse_qs_csv` is enabled and the
+            given parameter is assigned to a comma-separated list of values
+            (e.g., ``foo=a,b,c``).
+
+            When multiple values are expected for a parameter,
+            :meth:`~.get_param_as_list` can be used to retrieve all of
+            them at once.
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'sort').
@@ -1586,6 +1592,11 @@ class Request:
         as multiple instances of the same param in the query string
         ala *application/x-www-form-urlencoded*.
 
+        Note:
+            To enable the interpretation of comma-separated parameter values,
+            the :attr:`~falcon.RequestOptions.auto_parse_qs_csv` option must
+            be set to ``True`` (default ``False``).
+
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'ids').
 
@@ -1606,12 +1617,21 @@ class Request:
 
         Returns:
             list: The value of the param if it is found. Otherwise, returns
-            ``None`` unless required is True. Empty list elements will be
-            discarded. For example, the following query strings would
-            both result in `['1', '3']`::
+            ``None`` unless *required* is ``True``.
 
-                things=1,,3
+            Empty list elements will be included by default, but this behavior
+            can be configured by setting the
+            :attr:`~falcon.RequestOptions.keep_blank_qs_values` option. For
+            example, by default the following query strings would both result in
+            ``['1', '', '3']``::
+
                 things=1&things=&things=3
+                things=1,,3
+
+            Note, however, that for the second example string above to be
+            interpreted as a list, the
+            :attr:`~falcon.RequestOptions.auto_parse_qs_csv` option must be
+            set to ``True``.
 
         Raises:
             HTTPBadRequest: A required param is missing from the request, or
