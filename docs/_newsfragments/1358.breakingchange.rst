@@ -1,7 +1,11 @@
 In order to reconcile differences between the framework's support for WSGI vs. ASGI, the following
 breaking changes were made:
 
-    - :func:`falcon.testing.create_environ` no longer sets a default User-Agent header.
+    - :func:`falcon.testing.create_environ` previously set a default User-Agent header, when one
+      was not provided, to the value ``'curl/7.24.0 (x86_64-apple-darwin12.0)'``. As of Falcon
+      3.0, the default User-Agent string is now ``f'falcon-client/{falcon.__version__}'``. This
+      value can be overridden for the sake of backwards-compatibility by setting
+      ``falcon.testing.helpers.DEFAULT_UA``.
     - The :func:`falcon.testing.create_environ` function's `protocol` keyword argument was renamed
       to `http_version` and now only includes the version number (the value is no longer prefixed
       with ``'HTTP/'``).

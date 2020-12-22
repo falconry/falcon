@@ -695,7 +695,7 @@ class TestRequestAttributes:
         ('Content-Type', 'text/plain', 'content_type', None),
         ('Expect', '100-continue', 'expect', None),
         ('If-Range', 'Wed, 21 Oct 2015 07:28:00 GMT', 'if_range', None),
-        ('User-Agent', 'testing/3.0', 'user_agent', None),
+        ('User-Agent', 'testing/3.0', 'user_agent', 'falcon-client/' + falcon.__version__),
         ('Referer', 'https://www.google.com/', 'referer', None),
     ])
     def test_attribute_headers(self, asgi, name, value, attr, default):

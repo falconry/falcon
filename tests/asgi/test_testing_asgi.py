@@ -115,6 +115,44 @@ def test_cookies_jar():
     assert response_two.status == falcon.HTTP_200
 
 
+def test_create_scope_default_ua():
+    default_ua = 'falcon-client/' + falcon.__version__
+
+    scope = testing.create_scope()
+    assert dict(scope['headers'])[b'user-agent'] == default_ua.encode()
+
+    req = testing.create_asgi_req()
+    assert req.user_agent == default_ua
+
+
+def test_create_scope_default_ua_override():
+    ua = 'curl/7.64.1'
+
+    scope = testing.create_scope(headers={'user-agent': ua})
+    assert dict(scope['headers'])[b'user-agent'] == ua.encode()
+
+    req = testing.create_asgi_req(headers={'user-agent': ua})
+    assert req.user_agent == ua
+
+
+def test_create_scope_default_ua_modify_global():
+    default_ua = 'URL/Emacs Emacs/26.3 (x86_64-pc-linux-gnu)'
+
+    prev_default = falcon.testing.helpers.DEFAULT_UA
+    falcon.testing.helpers.DEFAULT_UA = default_ua
+
+    try:
+        req = testing.create_asgi_req()
+        assert req.user_agent == default_ua
+    finally:
+        falcon.testing.helpers.DEFAULT_UA = prev_default
+
+
+def test_missing_header_is_none():
+    req = testing.create_asgi_req()
+    assert req.auth is None
+
+
 def test_immediate_disconnect():
     client = testing.TestClient(_asgi_test_app.application)
 

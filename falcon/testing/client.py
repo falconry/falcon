@@ -465,6 +465,12 @@ def simulate_request(app, method='GET', path='/', query_string=None,
             with a comma when the header in question supports the list
             format (see also RFC 7230 and RFC 7231). Header names are not
             case-sensitive.
+
+            Note:
+                If a User-Agent header is not provided, it will default to::
+
+                    f'falcon-client/{falcon.__version__}'
+
         body (str): The body of the request (default ''). The value will be
             encoded as UTF-8 in the WSGI environ. Alternatively, a byte string
             may be passed, in which case it will be used as-is.
@@ -635,6 +641,12 @@ async def _simulate_request_asgi(
             with a comma when the header in question supports the list
             format (see also RFC 7230 and RFC 7231). Header names are not
             case-sensitive.
+
+            Note:
+                If a User-Agent header is not provided, it will default to::
+
+                    f'falcon-client/{falcon.__version__}'
+
         body (str): The body of the request (default ''). The value will be
             encoded as UTF-8 in the WSGI environ. Alternatively, a byte string
             may be passed, in which case it will be used as-is.
@@ -1113,6 +1125,12 @@ def simulate_get(app, path, **kwargs) -> _ResultBase:
             with a comma when the header in question supports the list
             format (see also RFC 7230 and RFC 7231). Header names are not
             case-sensitive.
+
+            Note:
+                If a User-Agent header is not provided, it will default to::
+
+                    f'falcon-client/{falcon.__version__}'
+
         file_wrapper (callable): Callable that returns an iterable,
             to be used as the value for *wsgi.file_wrapper* in the
             WSGI environ (default: ``None``). This can be used to test
@@ -1210,6 +1228,12 @@ def simulate_head(app, path, **kwargs) -> _ResultBase:
             with a comma when the header in question supports the list
             format (see also RFC 7230 and RFC 7231). Header names are not
             case-sensitive.
+
+            Note:
+                If a User-Agent header is not provided, it will default to::
+
+                    f'falcon-client/{falcon.__version__}'
+
         host(str): A string to use for the hostname part of the fully
             qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
@@ -1302,6 +1326,12 @@ def simulate_post(app, path, **kwargs) -> _ResultBase:
             with a comma when the header in question supports the list
             format (see also RFC 7230 and RFC 7231). Header names are not
             case-sensitive.
+
+            Note:
+                If a User-Agent header is not provided, it will default to::
+
+                    f'falcon-client/{falcon.__version__}'
+
         body (str): The body of the request (default ''). The value will be
             encoded as UTF-8 in the WSGI environ. Alternatively, a byte string
             may be passed, in which case it will be used as-is.
@@ -1407,6 +1437,12 @@ def simulate_put(app, path, **kwargs) -> _ResultBase:
             with a comma when the header in question supports the list
             format (see also RFC 7230 and RFC 7231). Header names are not
             case-sensitive.
+
+            Note:
+                If a User-Agent header is not provided, it will default to::
+
+                    f'falcon-client/{falcon.__version__}'
+
         body (str): The body of the request (default ''). The value will be
             encoded as UTF-8 in the WSGI environ. Alternatively, a byte string
             may be passed, in which case it will be used as-is.
@@ -1507,6 +1543,12 @@ def simulate_options(app, path, **kwargs) -> _ResultBase:
             with a comma when the header in question supports the list
             format (see also RFC 7230 and RFC 7231). Header names are not
             case-sensitive.
+
+            Note:
+                If a User-Agent header is not provided, it will default to::
+
+                    f'falcon-client/{falcon.__version__}'
+
         host(str): A string to use for the hostname part of the fully
             qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
@@ -1595,6 +1637,12 @@ def simulate_patch(app, path, **kwargs) -> _ResultBase:
             with a comma when the header in question supports the list
             format (see also RFC 7230 and RFC 7231). Header names are not
             case-sensitive.
+
+            Note:
+                If a User-Agent header is not provided, it will default to::
+
+                    f'falcon-client/{falcon.__version__}'
+
         body (str): The body of the request (default ''). The value will be
             encoded as UTF-8 in the WSGI environ. Alternatively, a byte string
             may be passed, in which case it will be used as-is.
@@ -1695,6 +1743,12 @@ def simulate_delete(app, path, **kwargs) -> _ResultBase:
             with a comma when the header in question supports the list
             format (see also RFC 7230 and RFC 7231). Header names are not
             case-sensitive.
+
+            Note:
+                If a User-Agent header is not provided, it will default to::
+
+                    f'falcon-client/{falcon.__version__}'
+
         body (str): The body of the request (default ''). The value will be
             encoded as UTF-8 in the WSGI environ. Alternatively, a byte string
             may be passed, in which case it will be used as-is.
