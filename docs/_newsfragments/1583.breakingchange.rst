@@ -1,3 +1,0 @@
-Referencing the class :class:`falcon.stream.BoundedStream` through the
-``falcon.request_helpers`` module is deprecated. It is now accessible from
-the module ``falcon.stream``.

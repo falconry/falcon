@@ -1,2 +1,0 @@
-The deprecated ``stream_len`` property was removed from the :class:`~falcon.Response` class.
-Please use :meth:`~falcon.Response.set_stream()` or :attr:`~falcon.Response.content_length` instead.
