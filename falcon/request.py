@@ -1946,8 +1946,8 @@ class RequestOptions:
 
             When `auto_parse_qs_csv` is set to ``True``, the query string value
             is also split on non-percent-encoded commas and these items
-            are added to the final list (i.e. ``t=1,2,3&t=4``
-            becomes ``['1', '2', '3', '4']``).
+            are added to the final list (i.e. ``t=1,2,3&t=4,5``
+            becomes ``['1', '2', '3', '4', '5']``).
 
             Warning:
                 Enabling this option will cause the framework to misinterpret

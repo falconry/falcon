@@ -232,13 +232,6 @@ class TestQueryParams:
 
         req = resource.captured_req
 
-        # Old Behavior
-        #
-        # assert req.params['t'] == ['1', '2', '3,4']
-        # assert req.get_param('t') in ['1', '2', '3,4']
-        # assert req.get_param_as_list('t') == ['1', '2', '3,4']
-
-        # New Behavior
         assert req.params['t'] == expected
         assert req.get_param('t') in expected
         assert req.get_param_as_list('t') == expected
