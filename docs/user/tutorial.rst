@@ -1,11 +1,20 @@
 .. _tutorial:
 
-Tutorial
-========
+Tutorial (WSGI)
+===============
 
 In this tutorial we'll walk through building an API for a simple image sharing
 service. Along the way, we'll discuss Falcon's major features and introduce
 the terminology used by the framework.
+
+.. note::
+   This tutorial covers the "traditional", synchronous flavor of Falcon using
+   the `WSGI <https://www.python.org/dev/peps/pep-3333/>`__ protocol.
+
+   Developing an ``async`` application? Check out our
+   :ref:`ASGI tutorial<tutorial-asgi>` instead!
+
+.. _tutorial-first-steps:
 
 First Steps
 -----------
@@ -57,7 +66,7 @@ Now, open ``app.py`` in your favorite text editor and add the following lines:
 
     app = application = falcon.App()
 
-This code creates your WSGI application and aliases it as ``api``. You can use any
+This code creates your WSGI application and aliases it as ``app``. You can use any
 variable names you like, but we'll use ``application`` since that is what
 Gunicorn, by default, expects it to be called (we'll see how this works
 in the next section of the tutorial).
