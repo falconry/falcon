@@ -1,0 +1,3 @@
+fakeredis
+pytest
+pytest-cov

@@ -258,6 +258,8 @@ same resource class:
     app.add_route('/resources/{id}', resource)
     app.add_route('/resources', resource, suffix='collection')
 
+.. _recommended-route-layout:
+
 What is the recommended way to map related routes to resource classes?
 ----------------------------------------------------------------------
 
@@ -904,6 +906,8 @@ Furthermore, the HTTP2 standard also mandates that header field names MUST be
 converted to lowercase (see `RFC 7540, Section 8.1.2
 <https://httpwg.org/specs/rfc7540.html#rfc.section.8.1.2>`_).
 
+.. _faq_static_files:
+
 Can Falcon serve static files?
 ------------------------------
 
@@ -966,6 +970,8 @@ If you need to transparently handle reconnecting after an error, or for other
 use cases that may not be supported by your client library, simply encapsulate
 the client library within a management class that handles all the tricky bits,
 and pass that around instead.
+
+.. _configuration-approaches:
 
 What is the recommended approach for making configuration variables available to multiple resource classes?
 -----------------------------------------------------------------------------------------------------------
