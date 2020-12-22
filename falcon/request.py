@@ -1617,11 +1617,13 @@ class Request:
 
         Returns:
             list: The value of the param if it is found. Otherwise, returns
-            ``None`` unless *required* is ``True``. Empty list elements will be
-            discarded by default, but this can be configured by setting the
+            ``None`` unless *required* is ``True``.
+
+            Empty list elements will be included by default, but this behavior
+            can be configured by setting the
             :attr:`~falcon.RequestOptions.keep_blank_qs_values` option. For
-            example, by default the following query strings would both result
-            in `['1', '3']`::
+            example, by default the following query strings would both result in
+            ``['1', '', '3']``::
 
                 things=1&things=&things=3
                 things=1,,3
