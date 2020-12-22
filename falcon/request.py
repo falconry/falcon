@@ -1937,13 +1937,16 @@ class RequestOptions:
                 also http://goo.gl/6rlcux).
 
         auto_parse_qs_csv: Set to ``True`` to split query string values on
-            any non-percent-encoded commas (default ``False``). When ``False``,
+            any non-percent-encoded commas (default ``False``).
+
+            When ``False``,
             values containing commas are left as-is. In this mode, list items
             are taken only from multiples of the same parameter name within the
-            query string (i.e. ``/?t=1,2,3&t=4`` becomes ``['1,2,3', '4']``).
+            query string (i.e. ``t=1,2,3&t=4`` becomes ``['1,2,3', '4']``).
+
             When `auto_parse_qs_csv` is set to ``True``, the query string value
             is also split on non-percent-encoded commas and these items
-            are added to the final list (i.e. ``/?t=1,2,3&t=4``
+            are added to the final list (i.e. ``t=1,2,3&t=4``
             becomes ``['1', '2', '3', '4']``).
 
             Warning:
