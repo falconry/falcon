@@ -182,6 +182,67 @@ class TestQueryParams:
         assert req.get_param('id') in ['23', '42', '2']
         assert req.get_param_as_list('id', int) == [23, 42, 2]
 
+    def test_option_auto_parse_qs_csv_multiple_fields_false(
+        self,
+        simulate_request,
+        client,
+        resource
+    ):
+        client.app.add_route('/', resource)
+
+        query_string = 't=1,2&t=3,4'
+        simulate_request(client=client, path='/', query_string=query_string)
+
+        req = resource.captured_req
+
+        assert req.params['t'] == ['1,2', '3,4']
+        assert req.get_param('t') in ['1,2', '3,4']
+        assert req.get_param_as_list('t') == ['1,2', '3,4']
+
+    @pytest.mark.parametrize(
+        'qs, keep_blank, expected',
+        [
+            ('t=1&t=3,4', False, ['1', '3', '4']),
+            ('t=1&t=2&t=3,4', False, ['1', '2', '3', '4']),
+            ('t=1,2&t=3,4', False, ['1', '2', '3', '4']),
+            ('t=1,,2&t=3,4', False, ['1', '2', '3', '4']),
+            ('t=1,,2&t=3,4', True, ['1', '', '2', '3', '4']),
+            ('t=1,2&t=3,4,,5', False, ['1', '2', '3', '4', '5']),
+            ('t=1&t=,1,4,,5', False, ['1', '1', '4', '5']),
+            ('t=1&t=,1,4,,5', True, ['1', '', '1', '4', '', '5']),
+            ('t=1&t=,1,4,,5&t=a,b,c', True, ['1', '', '1', '4', '', '5', 'a', 'b', 'c']),
+        ]
+    )
+    def test_option_auto_parse_qs_csv_multiple_fields_true(
+        self,
+        simulate_request,
+        client,
+        resource,
+
+        qs,
+        keep_blank,
+        expected,
+    ):
+        client.app.add_route('/', resource)
+        client.app.req_options.auto_parse_qs_csv = True
+        client.app.req_options.keep_blank_qs_values = keep_blank
+
+        query_string = qs
+        simulate_request(client=client, path='/', query_string=query_string)
+
+        req = resource.captured_req
+
+        # Old Behavior
+        #
+        # assert req.params['t'] == ['1', '2', '3,4']
+        # assert req.get_param('t') in ['1', '2', '3,4']
+        # assert req.get_param_as_list('t') == ['1', '2', '3,4']
+
+        # New Behavior
+        assert req.params['t'] == expected
+        assert req.get_param('t') in expected
+        assert req.get_param_as_list('t') == expected
+
     def test_option_auto_parse_qs_csv_complex_false(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         client.app.req_options.auto_parse_qs_csv = False
