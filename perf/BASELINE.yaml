@@ -25,7 +25,7 @@ cpython_38:
       - +0.001
   query:
     expected:
-      cost: 198740
+      cost: 182580
       variation: 0.0001
     points:
       - 5000
