@@ -41,6 +41,7 @@ jobs:
           - "no_optional_packages"
           - "perf_hello"
           - "perf_media"
+          - "perf_query"
           # TODO(kgriffs): Re-enable once hug has a chance to address
           # breaking changes in Falcon 3.0
           # - "hug"

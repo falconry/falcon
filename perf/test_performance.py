@@ -1,6 +1,11 @@
 import pytest
 
 
+@pytest.mark.asgi
+def test_asgi_metric(gauge):
+    gauge('asgi')
+
+
 @pytest.mark.hello
 def test_hello_metric(gauge):
     gauge('hello')
