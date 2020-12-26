@@ -1,7 +1,6 @@
 import timeit
 
 import falcon.asgi
-
 from .common import get_work_factor
 
 SCOPE_BOILERPLATE = {
