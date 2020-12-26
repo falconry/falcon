@@ -133,6 +133,18 @@ For a more in-depth overview of available servers, see also:
 
     $ pip install [uvicorn|daphne|hypercorn]
 
+.. note::
+
+    By default, the ``uvicorn`` package comes only with a minimal set of
+    pure-Python dependencies.
+    For CPython-based production deployments, you can install Uvicorn along
+    with faster alternatives such as ``uvloop`` and ``httptools``::
+
+        $ pip install uvicorn[standard]
+
+    See also a longer explanation on Uvicorn's website:
+    `Quickstart <https://www.uvicorn.org/#quickstart>`_.
+
 Source Code
 -----------
 
