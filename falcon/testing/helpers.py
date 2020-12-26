@@ -37,13 +37,15 @@ import sys
 import time
 from typing import Any, Dict, Iterable, Optional, Union
 
+import falcon
 from falcon import errors as falcon_errors
 from falcon.asgi_spec import EventType, ScopeType, WSCloseCode
 from falcon.constants import SINGLETON_HEADERS
 import falcon.request
 from falcon.util import http_now, uri
 
-# Constants
+# NOTE(kgriffs): Changed in 3.0 from 'curl/7.24.0 (x86_64-apple-darwin12.0)'
+DEFAULT_UA = 'falcon-client/' + falcon.__version__
 DEFAULT_HOST = 'falconframework.org'
 
 # NOTE(kgriffs): Alias for backwards-compatibility with Falcon 0.2
@@ -842,6 +844,12 @@ def create_scope(path='/', query_string='', method='GET', headers=None,
             format (see also RFC 7230 and RFC 7231). When the
             request will include a body, the Content-Length header should be
             included in this list. Header names are not case-sensitive.
+
+            Note:
+                If a User-Agent header is not provided, it will default to::
+
+                    f'falcon-client/{falcon.__version__}'
+
         host(str): Hostname for the request (default ``'falconframework.org'``).
             This also determines the the value of the Host header in the
             request.
@@ -962,6 +970,12 @@ def create_scope_ws(path='/', query_string='', headers=None,
             format (see also RFC 7230 and RFC 7231). When the
             request will include a body, the Content-Length header should be
             included in this list. Header names are not case-sensitive.
+
+            Note:
+                If a User-Agent header is not provided, it will default to::
+
+                    f'falcon-client/{falcon.__version__}'
+
         host(str): Hostname for the request (default ``'falconframework.org'``).
             This also determines the the value of the Host header in the
             request.
@@ -1041,6 +1055,12 @@ def create_environ(path='/', query_string='', http_version='1.1',
             with a comma when the header in question supports the list
             format (see also RFC 7230 and RFC 7231). Header names are not
             case-sensitive.
+
+            Note:
+                If a User-Agent header is not provided, it will default to::
+
+                    f'falcon-client/{falcon.__version__}'
+
         root_path (str): Value for the ``SCRIPT_NAME`` environ variable, described in
             PEP-333: 'The initial portion of the request URL's "path" that
             corresponds to the application object, so that the application
@@ -1161,8 +1181,7 @@ def create_environ(path='/', query_string='', http_version='1.1',
     if cookies is not None and method != 'OPTIONS':
         env['HTTP_COOKIE'] = _make_cookie_values(cookies)
 
-    if headers is not None:
-        _add_headers_to_environ(env, headers)
+    _add_headers_to_environ(env, headers)
 
     return env
 
@@ -1286,48 +1305,55 @@ def closed_wsgi_iterable(iterable):
 
 
 def _add_headers_to_environ(env, headers):
-    try:
-        items = headers.items()
-    except AttributeError:
-        items = headers
-
-    for name, value in items:
-        name_wsgi = name.upper().replace('-', '_')
-        if name_wsgi not in ('CONTENT_TYPE', 'CONTENT_LENGTH'):
-            name_wsgi = 'HTTP_' + name_wsgi
-
-        if value is None:
-            value = ''
-        else:
-            value = value.strip()
-
-        if name_wsgi not in env or name.lower() in SINGLETON_HEADERS:
-            env[name_wsgi] = value
-        else:
-            env[name_wsgi] += ',' + value
-
-
-def _add_headers_to_scope(scope, headers, content_length, host,
-                          port, scheme, http_version, cookies):
     if headers:
         try:
             items = headers.items()
         except AttributeError:
             items = headers
 
-        prepared_headers = [
-            # NOTE(kgriffs): Expose as an iterable to ensure the framework/app
-            #   isn't hard-coded to only work with a list or tuple.
+        for name, value in items:
+            name_wsgi = name.upper().replace('-', '_')
+            if name_wsgi not in ('CONTENT_TYPE', 'CONTENT_LENGTH'):
+                name_wsgi = 'HTTP_' + name_wsgi
+
+            if value is None:
+                value = ''
+            else:
+                value = value.strip()
+
+            if name_wsgi not in env or name.lower() in SINGLETON_HEADERS:
+                env[name_wsgi] = value
+            else:
+                env[name_wsgi] += ',' + value
+
+    env.setdefault('HTTP_USER_AGENT', DEFAULT_UA)
+
+
+def _add_headers_to_scope(scope, headers, content_length, host,
+                          port, scheme, http_version, cookies):
+    found_ua = False
+    prepared_headers = []
+
+    if headers:
+        try:
+            items = headers.items()
+        except AttributeError:
+            items = headers
+
+        for name, value in items:
+            n = name.lower().encode()
+            found_ua = found_ua or (n == b'user-agent')
+
             # NOTE(kgriffs): Value is stripped if not empty, otherwise defaults
             #   to b'' to be consistent with _add_headers_to_environ().
-            iter([name.lower().encode(), value.strip().encode() if value else b''])
+            v = b'' if value is None else value.strip().encode()
 
-            # NOTE(kgriffs): Use tuple unpacking to support iterables
-            #   that yield arbitary two-item iterable objects.
-            for name, value in items
-        ]
-    else:
-        prepared_headers = []
+            # NOTE(kgriffs): Expose as an iterable to ensure the framework/app
+            #   isn't hard-coded to only work with a list or tuple.
+            prepared_headers.append(iter([n, v]))
+
+    if not found_ua:
+        prepared_headers.append([b'user-agent', DEFAULT_UA.encode()])
 
     if content_length is not None:
         value = str(content_length).encode()

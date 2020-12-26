@@ -1,4 +1,4 @@
-# Copyright 2019 by Vytautas Liuolia.
+# Copyright 2019-2020 by Vytautas Liuolia.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -101,7 +101,7 @@ cdef unicode cy_decode(unsigned char* data, Py_ssize_t start, Py_ssize_t end,
         PyMem_Free(result)
 
 
-cdef cy_handle_csv(dict result, bint keep_blank, unicode key, unicode value):
+cdef cy_handle_csv(dict result, bint keep_blank, unicode key, bytes value):
     # NOTE(kgriffs): Falcon supports a more compact form of lists, in which the
     # elements are comma-separated and assigned to a single param instance. If
     # it turns out that very few people use this, it can be deprecated at some
@@ -111,27 +111,39 @@ cdef cy_handle_csv(dict result, bint keep_blank, unicode key, unicode value):
     # option so we largely reimplement the unoptimized Python version here.
 
     cdef old_value = result.get(key)
+    cdef list additional_values
+    cdef unicode decoded
 
     # NOTE(steffgrez): Falcon decodes value at the last moment. So query parser
     # won't mix up between percent-encoded comma (as value) and comma-separated
     # list (as reserved character for sub-delimiter).
-    if old_value is None:
-        if ',' in value:
-            if not keep_blank:
-                # NOTE(kgriffs): Normalize the result in the case that some
-                # elements are empty strings, such that the result will be the
-                # same for 'foo=1,,3' as 'foo=1&foo=&foo=3'.
-                result[key] = [decode(element) for element in value.split(',')
-                               if element]
-            else:
-                result[key] = [decode(element) for element in value.split(',')]
-        else:
-            result[key] = decode(value)
+    if b',' in value:
+        # NOTE(kgriffs,vytas): Normalize the result in the case that some
+        #   elements are empty strings, such that the result will be the same
+        #   for 'foo=1,,3' as 'foo=1&foo=&foo=3'
+        #   (but only if keep_blank is set to False).
+        additional_values = [
+            cy_decode(element, 0, len(element), 0, True)
+            for element in value.split(b',') if keep_blank or element
+        ]
 
-    elif isinstance(old_value, list):
-        old_value.append(decode(value))
+        if old_value is None:
+            result[key] = additional_values
+        elif isinstance(old_value, list):
+            old_value.extend(additional_values)
+        else:
+            additional_values.insert(0, old_value)
+            result[key] = additional_values
+
     else:
-        result[key] = [old_value, decode(value)]
+        decoded = cy_decode(value, 0, len(value), 0, True)
+
+        if old_value is None:
+            result[key] = decoded
+        elif isinstance(old_value, list):
+            old_value.append(decoded)
+        else:
+            result[key] = [old_value, decoded]
 
 
 cdef cy_parse_query_string(unsigned char* data, Py_ssize_t length,
@@ -165,8 +177,7 @@ cdef cy_parse_query_string(unsigned char* data, Py_ssize_t length,
                 if partition >= 0:
                     key = cy_decode(data, start, partition, encoded_start_key, True)
                     if csv and encoded_start_val >= 0:
-                        cy_handle_csv(result, keep_blank, key,
-                                      data[partition+1:pos].decode())
+                        cy_handle_csv(result, keep_blank, key, data[partition+1:pos])
                         start = pos + 1
                         encoded_start_key = -1
                         encoded_start_val = -1
@@ -218,8 +229,7 @@ cdef cy_parse_query_string(unsigned char* data, Py_ssize_t length,
         if partition >= 0:
             key = cy_decode(data, start, partition, encoded_start_key, True)
             if csv and encoded_start_val >= 0:
-                cy_handle_csv(result, keep_blank, key,
-                              data[partition+1:length].decode())
+                cy_handle_csv(result, keep_blank, key, data[partition+1:length])
                 return result
 
             value = cy_decode(data, partition+1, length, encoded_start_val, True)

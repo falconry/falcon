@@ -289,7 +289,7 @@ class Request(falcon.request.Request):
             where -1 is the last byte, -2 is the second-to-last byte,
             and so forth.
 
-            Only continous ranges are supported (e.g., "bytes=0-0,-1" would
+            Only continuous ranges are supported (e.g., "bytes=0-0,-1" would
             result in an HTTPBadRequest exception when the attribute is
             accessed.)
         range_unit (str): Unit of the range parsed from the value of the
@@ -859,11 +859,17 @@ class Request(falcon.request.Request):
             See also: :ref:`access_urlencoded_form`
 
         Note:
-            Similar to the way multiple keys in form data is handled,
-            if a query parameter is assigned a comma-separated list of
-            values (e.g., ``foo=a,b,c``), only one of those values will be
-            returned, and it is undefined which one. Use
-            :meth:`~.get_param_as_list` to retrieve all the values.
+            Similar to the way multiple keys in form data are handled, if a
+            query parameter is included in the query string multiple times,
+            only one of those values will be returned, and it is undefined which
+            one. This caveat also applies when
+            :attr:`~falcon.RequestOptions.auto_parse_qs_csv` is enabled and the
+            given parameter is assigned to a comma-separated list of values
+            (e.g., ``foo=a,b,c``).
+
+            When multiple values are expected for a parameter,
+            :meth:`~.get_param_as_list` can be used to retrieve all of
+            them at once.
 
         Args:
             name (str): Parameter name, case-sensitive (e.g., 'sort').

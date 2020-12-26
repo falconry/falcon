@@ -146,10 +146,12 @@ class TestInspectApp:
         assert all(isinstance(s, inspect.SinkInfo) for s in sinks)
         assert sinks[-1].prefix == '/sink_fn'
         assert sinks[-1].name == 'sinkFn'
-        assert '_inspect_fixture.py' in sinks[-1].source_info
+        if not asgi:
+            assert '_inspect_fixture.py' in sinks[-1].source_info
         assert sinks[-2].prefix == '/sink_cls'
         assert sinks[-2].name == 'SinkClass'
-        assert '_inspect_fixture.py' in sinks[-2].source_info
+        if not asgi:
+            assert '_inspect_fixture.py' in sinks[-2].source_info
 
     @pytest.mark.skipif(sys.version_info < (3, 6), reason='dict order is not stable')
     def test_error_handler(self, asgi):

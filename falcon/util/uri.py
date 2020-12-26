@@ -346,13 +346,36 @@ def parse_query_string(query_string, keep_blank=False, csv=True):
             # a list, or append the next value to the list.
             old_value = params[k]
 
-            if is_encoded:
-                v = decode(v)
+            if csv and ',' in v:
+                # NOTE(kgriffs): Falcon supports a more compact form of
+                # lists, in which the elements are comma-separated and
+                # assigned to a single param instance. If it turns out that
+                # very few people use this, it can be deprecated at some
+                # point.
+                v = v.split(',')
 
-            if isinstance(old_value, list):
-                old_value.append(v)
+                if not keep_blank:
+                    # NOTE(kgriffs): Normalize the result in the case that
+                    # some elements are empty strings, such that the result
+                    # will be the same for 'foo=1,,3' as 'foo=1&foo=&foo=3'.
+                    additional_values = [decode(element) for element in v if element]
+                else:
+                    additional_values = [decode(element) for element in v]
+
+                if isinstance(old_value, list):
+                    old_value.extend(additional_values)
+                else:
+                    additional_values.insert(0, old_value)
+                    params[k] = additional_values
+
             else:
-                params[k] = [old_value, v]
+                if is_encoded:
+                    v = decode(v)
+
+                if isinstance(old_value, list):
+                    old_value.append(v)
+                else:
+                    params[k] = [old_value, v]
 
         else:
             if csv and ',' in v:

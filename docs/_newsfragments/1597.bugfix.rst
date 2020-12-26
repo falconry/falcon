@@ -1,0 +1,5 @@
+When :attr:`~falcon.RequestOptions.auto_parse_qs_csv` is enabled, the framework
+now correctly parses all occurrences of the same parameter in the query string,
+rather than only splitting the values in the first occurrence. For example,
+whereas previously ``t=1,2&t=3,4`` would become ``['1', '2', '3,4']``, now the
+resulting list will be ``['1', '2', '3', '4']``
