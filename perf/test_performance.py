@@ -9,3 +9,8 @@ def test_hello_metric(gauge):
 @pytest.mark.media
 def test_media_metric(gauge):
     gauge('media')
+
+
+@pytest.mark.query
+def test_query_metric(gauge):
+    gauge('query')

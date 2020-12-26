@@ -23,3 +23,15 @@ cpython_38:
     tolerance:
       - -0.002
       - +0.001
+  query:
+    expected:
+      cost: 198740
+      variation: 0.0001
+    points:
+      - 5000
+      - 7500
+      - 10000
+      - 12500
+    tolerance:
+      - -0.002
+      - +0.001
