@@ -89,6 +89,8 @@ Let's pick the popular ``uvicorn`` for now::
 
   $ pip install uvicorn
 
+See also: :ref:`ASGI Server Installation <install_asgi_server>`.
+
 While at it, it might be handy to also install
 `HTTPie <https://github.com/jakubroztocil/httpie>`_ HTTP client::
 
@@ -672,7 +674,7 @@ to execute code upon our application startup:
             self._config.redis_host)
 
 .. warning::
-    The Lifespan Protocol is an optional extention; please check if your ASGI
+    The Lifespan Protocol is an optional extension; please check if your ASGI
     server of choice implements it.
 
     ``uvicorn`` (that we picked for this tutorial) supports Lifespan.
@@ -766,9 +768,10 @@ This is a matter of taste; if you prefer xUnit/JUnit-style layout, you'll feel
 at home with the stdlib's :mod:`unittest`.
 
 In order to deliver something working faster, we'll allow our tests to access
-the real filesystem. As ``pytest`` offers various temporary directory out of
-the box, Let's create a simple ``storage_path`` fixture shared among all tests
-in the whole suite (in the ``pytest`` parlance, a "session"-scoped fixture).
+the real filesystem. For our convenience, ``pytest`` offers several temporary
+directory utilities out of the box. Let's wrap its ``tmpdir_factory`` to create
+a simple ``storage_path`` fixture shared among all tests in the whole suite
+(in the ``pytest`` parlance, a "session"-scoped fixture).
 
 More in-depth documentation of ``pytest`` fixtures can be found here:
 `pytest fixtures: explicit, modular, scalable

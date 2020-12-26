@@ -101,9 +101,9 @@ Falcon speaks WSGI, and so in order to serve a Falcon app, you will
 need a WSGI server. Gunicorn and uWSGI are some of the more popular
 ones out there, but anything that can load a WSGI app will do.
 
-All Windows developers can use Waitress production-quality pure-Python WSGI server with very acceptable performance.
-Unfortunately Gunicorn is still not working on Windows and uWSGI need to have Cygwin on Windows installed.
-Waitress can be good alternative for Windows users if they want quick start using Falcon on it.
+Windows users can try Waitress, a production-quality, pure-Python WSGI server.
+Other alternatives on Windows include running Gunicorn and uWSGI via WSL,
+as well as inside Linux Docker containers via Hyper-V.
 
 .. code:: bash
 
