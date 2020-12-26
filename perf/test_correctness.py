@@ -1,9 +1,20 @@
 import pytest
 
 from falcon.testing import TestClient
+from metrics import asgi
 from metrics import hello
 from metrics import media
 from metrics import query
+
+
+@pytest.mark.asgi
+def test_asgi():
+    client = TestClient(asgi.create_app())
+
+    resp = client.simulate_get('/')
+    assert resp.status_code == 200
+    assert resp.headers.get('Content-Type') == 'text/plain; charset=utf-8'
+    assert resp.text == 'Hello, World!\n'
 
 
 @pytest.mark.hello

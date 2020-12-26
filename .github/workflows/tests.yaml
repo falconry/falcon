@@ -39,6 +39,7 @@ jobs:
           - "twine_check"
           - "daphne"
           - "no_optional_packages"
+          - "perf_asgi"
           - "perf_hello"
           - "perf_media"
           - "perf_query"

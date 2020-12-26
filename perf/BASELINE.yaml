@@ -1,4 +1,16 @@
 cpython_38:
+  asgi:
+    expected:
+      cost: 100000
+      variation: 0.0001
+    points:
+      - 10000
+      - 15000
+      - 20000
+      - 25000
+    tolerance:
+      - -0.002
+      - +0.001
   hello:
     expected:
       cost: 75950
