@@ -103,7 +103,7 @@ ones out there, but anything that can load a WSGI app will do.
 
 Windows users can try Waitress, a production-quality, pure-Python WSGI server.
 Other alternatives on Windows include running Gunicorn and uWSGI via WSL,
-as well as inside Linux Docker containers via Hyper-V.
+as well as inside Linux Docker containers.
 
 .. code:: bash
 
