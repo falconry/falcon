@@ -84,15 +84,9 @@ jobs:
 
       - name: Set up Python
         uses: actions/setup-python@v2.1.4
-        if: ${{ matrix.toxenv != 'py35' }}
+        if: ${{ matrix.toxenv != 'py35' && matrix.toxenv != 'perf_hello' && matrix.toxenv != 'perf_media' }}
         with:
           python-version: ${{ matrix.python-version }}
-
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2.1.4
-        if: ${{ matrix.toxenv == 'py35' }}
-        with:
-          python-version: 3.8
 
       - name: Set up Python 3.5.2
         if: ${{ matrix.toxenv == 'py35' }}
@@ -100,6 +94,21 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential curl python3.5 python3.5-dev
           python3.5 --version
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2.1.4
+        if: ${{ matrix.toxenv == 'py35' }}
+        with:
+          python-version: 3.8
+
+      - name: Set up Python 3.8 (Ubuntu 20.04 build)
+        if: ${{ matrix.toxenv == 'perf_hello' || matrix.toxenv == 'perf_media' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential curl python3.8 python3.8-dev python3.8-distutils python-is-python3
+          curl --silent https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py
+          sudo python3.8 /tmp/get-pip.py
+          sudo pip install coverage tox
 
       - name: Install smoke test dependencies
         if: ${{ matrix.toxenv == 'py38_smoke' || matrix.toxenv == 'py38_smoke_cython' }}
@@ -114,9 +123,13 @@ jobs:
           sudo apt-get install -y valgrind
 
       - name: Install dependencies
+        if: ${{ matrix.toxenv != 'perf_hello' && matrix.toxenv != 'perf_media' }}
         run: |
           python -m pip install --upgrade pip
           pip install coverage tox
+
+      - name: Print versions
+        run: |
           python --version
           pip --version
           tox --version
