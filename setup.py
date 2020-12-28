@@ -44,6 +44,7 @@ if CYTHON:
 
     package_names = [
         'falcon',
+        'falcon.asgi',
         'falcon.cyutil',
         'falcon.media',
         'falcon.routing',
@@ -65,6 +66,15 @@ if CYTHON:
         #
         # NOTE(vytas): It is pointless to cythonize reader.py, since cythonized
         #   Falcon is using reader.pyx instead.
+        'falcon.asgi._asgi_helpers',
+        'falcon.asgi.multipart',
+        'falcon.asgi.reader',
+        'falcon.asgi.request',
+        'falcon.asgi._request_helpers',
+        'falcon.asgi.response',
+        'falcon.asgi.stream',
+        'falcon.asgi.structures',
+        'falcon.asgi.ws',
         'falcon.hooks',
         'falcon.responders',
         'falcon.util.reader',
