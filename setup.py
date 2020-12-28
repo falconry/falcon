@@ -67,9 +67,6 @@ if CYTHON:
         # NOTE(vytas): It is pointless to cythonize reader.py, since cythonized
         #   Falcon is using reader.pyx instead.
         'falcon.asgi._asgi_helpers',
-        'falcon.asgi._request_helpers',
-        'falcon.asgi.stream',
-        'falcon.asgi.structures',
         'falcon.hooks',
         'falcon.responders',
         'falcon.util.reader',
