@@ -17,11 +17,13 @@ def test_missing_asgi_version():
     scope = testing.create_scope()
     del scope['asgi']
 
-    resource = _call_with_scope(scope)
+    with pytest.raises(UnsupportedScopeError):
+        _call_with_scope(scope)
 
     # NOTE(kgriffs): According to the ASGI spec, the version should
     #   default to "2.0".
-    assert resource.captured_req.scope['asgi']['version'] == '2.0'
+    # TODO(vytas): WiP; decision needed.
+    # assert resource.captured_req.scope['asgi']['version'] == '2.0'
 
 
 @pytest.mark.parametrize('version, supported', [
@@ -99,6 +101,9 @@ def test_lifespan_scope_default_version():
     resp_event_collector = testing.ASGIResponseEventCollector()
 
     scope = {'type': 'lifespan'}
+
+    # TODO(vytas): WiP; decision needed.
+    scope['asgi'] = {'version': '3.0'}
 
     async def t():
         t = asyncio.get_event_loop().create_task(
