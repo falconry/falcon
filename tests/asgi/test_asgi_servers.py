@@ -460,6 +460,22 @@ def _daphne_factory(host, port):
     )
 
 
+def _hypercorn_factory(host, port):
+    return subprocess.Popen(
+        (
+            'hypercorn',
+
+            '--bind', f'{host}:{port}',
+
+            '--access-log', '-',
+            '--debug',
+
+            '_asgi_test_app:application'
+        ),
+        cwd=_MODULE_DIR,
+    )
+
+
 def _can_run(factory):
     if _WIN32 and factory == _daphne_factory:
         pytest.skip('daphne does not support windows')
@@ -468,9 +484,14 @@ def _can_run(factory):
             import daphne  # noqa
         except Exception:
             pytest.skip('daphne not installed')
+    if factory == _hypercorn_factory:
+        try:
+            import hypercorn  # noqa
+        except Exception:
+            pytest.skip('hypercorn not installed')
 
 
-@pytest.fixture(params=[_uvicorn_factory, _daphne_factory])
+@pytest.fixture(params=[_uvicorn_factory, _daphne_factory, _hypercorn_factory])
 def server_base_url(request):
     process_factory = request.param
     _can_run(process_factory)
