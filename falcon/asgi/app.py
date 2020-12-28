@@ -280,7 +280,8 @@ class App(falcon.app.App):
 
         self.add_error_handler(WebSocketDisconnected, self._ws_disconnected_error_handler)
 
-    async def _call_impl(self, scope, receive, send):  # noqa: C901
+    @_wrap_asgi_coroutine_func
+    async def __call__(self, scope, receive, send):  # noqa: C901
         try:
             asgi_info = scope['asgi']
 
@@ -678,8 +679,6 @@ class App(falcon.app.App):
 
         await send(_EVT_RESP_EOF)
         self._schedule_callbacks(resp)
-
-    __call__ = _wrap_asgi_coroutine_func(_call_impl)
 
     def add_route(self, uri_template, resource, **kwargs):
         # NOTE(kgriffs): Inject an extra kwarg so that the compiled router
