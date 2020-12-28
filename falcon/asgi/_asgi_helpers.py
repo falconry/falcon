@@ -37,10 +37,12 @@ def _wrap_asgi_coroutine_func(asgi_impl):
 
     # NOTE(vytas): We are wrapping unbound class methods, hence the first
     #   "self" parameter.
-    async def wrapper(self, scope, receive, send):
+    # NOTE(vytas): Intentionally not using functools.wraps as it erroneously
+    #   inherits the cythonized method's traits.
+    async def __call__(self, scope, receive, send):
         await asgi_impl(self, scope, receive, send)
 
     if inspect.iscoroutinefunction(asgi_impl):
         return asgi_impl
 
-    return wrapper
+    return __call__
