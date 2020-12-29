@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import inspect
+
 from falcon.errors import UnsupportedError, UnsupportedScopeError
 from falcon.util.misc import _lru_cache_safe
 
@@ -61,3 +63,36 @@ def _validate_asgi_scope(asgi_version, scope_type, spec_version, http_version):
     raise UnsupportedScopeError(
         f'The ASGI "{scope_type}" scope type is not supported.'
     )
+
+
+def _wrap_asgi_coroutine_func(asgi_impl):
+    """Wrap an ASGI application in another coroutine.
+
+    This utility is used to wrap the cythonized ``App.__call__`` in order to
+    masquerade it as a pure-Python coroutine function.
+
+    Conversely, if the ASGI callable is not detected as a coroutine function,
+    the application server might incorrectly assume an ASGI 2.0 application
+    (i.e., the double-callable style).
+
+    In case the app class is not cythonized, this function is a simple
+    passthrough of the original implementation.
+
+    Args:
+        asgi_impl(callable): An ASGI application class method.
+
+    Returns:
+        A pure-Python ``__call__`` implementation.
+    """
+
+    # NOTE(vytas): We are wrapping unbound class methods, hence the first
+    #   "self" parameter.
+    # NOTE(vytas): Intentionally not using functools.wraps as it erroneously
+    #   inherits the cythonized method's traits.
+    async def __call__(self, scope, receive, send):
+        await asgi_impl(self, scope, receive, send)
+
+    if inspect.iscoroutinefunction(asgi_impl):
+        return asgi_impl
+
+    return __call__
