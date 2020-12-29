@@ -1,4 +1,4 @@
-# Copyright 2019 by Kurt Griffiths
+# Copyright 2019-2020 by Kurt Griffiths
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ from falcon.util.sync import (
     get_running_loop,
     wrap_sync_to_async,
 )
+from ._asgi_helpers import _wrap_asgi_coroutine_func
 from .multipart import MultipartForm
 from .request import Request
 from .response import Response
@@ -279,6 +280,7 @@ class App(falcon.app.App):
 
         self.add_error_handler(WebSocketDisconnected, self._ws_disconnected_error_handler)
 
+    @_wrap_asgi_coroutine_func
     async def __call__(self, scope, receive, send):  # noqa: C901
         try:
             asgi_info = scope['asgi']
@@ -809,7 +811,14 @@ class App(falcon.app.App):
                                      'method named "handle" that is a '
                                      'member of the given exception class.')
 
-        handler = _wrap_non_coroutine_unsafe(handler)
+        # NOTE(vytas): Do not shoot ourselves in the foot in case error
+        #   handlers are our own cythonized code.
+        if handler not in (
+            self._http_status_handler,
+            self._http_error_handler,
+            self._python_error_handler,
+        ):
+            handler = _wrap_non_coroutine_unsafe(handler)
 
         # NOTE(kgriffs): iscoroutinefunction() always returns False
         #   for cythonized functions.
