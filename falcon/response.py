@@ -238,7 +238,7 @@ class Response:
         #   so that apps relying on it do not fail silently.
         raise AttributeError(_STREAM_LEN_REMOVED_MSG)
 
-    def render_body(self):
+    def render_body(self, _shortcut_cache={}):
         """Get the raw bytestring content for the response body.
 
         This method returns the raw data for the HTTP response body, taking

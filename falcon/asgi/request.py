@@ -19,6 +19,7 @@ from falcon import request_helpers as helpers  # NOQA: Required by fixed up WSGI
 from falcon.constants import SINGLETON_HEADERS
 from falcon.forwarded import _parse_forwarded_header  # NOQA: Req. by fixed up WSGI Request attrs
 from falcon.forwarded import Forwarded  # NOQA
+import falcon.media
 import falcon.request
 from falcon.util.uri import parse_host, parse_query_string
 from . import _request_helpers as asgi_helpers
@@ -699,7 +700,7 @@ class Request(falcon.request.Request):
 
         return netloc_value
 
-    async def get_media(self, default_when_empty=_UNSET):
+    async def get_media(self, default_when_empty=_UNSET, _shortcut_cache={}):
         """Return a deserialized form of the request stream.
 
         The first time this method is called, the request stream will be
@@ -755,12 +756,29 @@ class Request(falcon.request.Request):
             self.options.default_media_type
         )
 
+        # PERF(kgriffs): Avoid using an additional await and flatten the call
+        #   stack when possible.
         try:
-            self._media = await handler.deserialize_async(
-                self.stream,
-                self.content_type,
-                self.content_length
+            use_shortcut = _shortcut_cache[handler]
+        except KeyError:
+            # NOTE(kgriffs): Do not use isinstance() because we can't be sure if
+            #   we can use our shortcut for subclasses.
+            use_shortcut = type(handler) in (
+                falcon.media.JSONHandler,
+                falcon.media.MessagePackHandler
             )
+            _shortcut_cache[handler] = use_shortcut
+
+        try:
+            if use_shortcut:
+                self._media = handler._deserialize(await self.stream.read())
+            else:
+                self._media = await handler.deserialize_async(
+                    self.stream,
+                    self.content_type,
+                    self.content_length
+                )
+
         except errors.MediaNotFoundError as err:
             self._media_error = err
             if default_when_empty is not _UNSET:

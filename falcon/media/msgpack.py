@@ -30,8 +30,9 @@ class MessagePackHandler(BaseHandler):
     def __init__(self):
         import msgpack
 
-        self.msgpack = msgpack
-        self.packer = msgpack.Packer(autoreset=True, use_bin_type=True)
+        packer = msgpack.Packer(autoreset=True, use_bin_type=True)
+        self._pack = packer.pack
+        self._unpackb = msgpack.unpackb
 
     def _deserialize(self, data):
         if not data:
@@ -39,7 +40,7 @@ class MessagePackHandler(BaseHandler):
         try:
             # NOTE(jmvrbanac): Using unpackb since we would need to manage
             # a buffer for Unpacker() which wouldn't gain us much.
-            return self.msgpack.unpackb(data, raw=False)
+            return self._unpackb(data, raw=False)
         except ValueError as err:
             raise errors.MediaMalformedError('MessagePack') from err
 
@@ -50,10 +51,10 @@ class MessagePackHandler(BaseHandler):
         return self._deserialize(await stream.read())
 
     def serialize(self, media, content_type):
-        return self.packer.pack(media)
+        return self._pack(media)
 
     async def serialize_async(self, media, content_type):
-        return self.packer.pack(media)
+        return self._pack(media)
 
 
 class MessagePackHandlerWS(BinaryBaseHandlerWS):
@@ -78,13 +79,14 @@ class MessagePackHandlerWS(BinaryBaseHandlerWS):
     def __init__(self):
         import msgpack
 
-        self.msgpack = msgpack
-        self.packer = msgpack.Packer(autoreset=True, use_bin_type=True)
+        packer = msgpack.Packer(autoreset=True, use_bin_type=True)
+        self._pack = packer.pack
+        self._unpackb = msgpack.unpackb
 
     def serialize(self, media: object) -> Union[bytes, bytearray, memoryview]:
-        return self.packer.pack(media)
+        return self._pack(media)
 
     def deserialize(self, payload: bytes) -> object:
         # NOTE(jmvrbanac): Using unpackb since we would need to manage
         #   a buffer for Unpacker() which wouldn't gain us much.
-        return self.msgpack.unpackb(payload, raw=False)
+        return self._unpackb(payload, raw=False)

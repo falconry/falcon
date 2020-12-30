@@ -15,7 +15,7 @@ import falcon
 from falcon import media
 from falcon import testing
 from falcon import util
-from falcon.constants import MEDIA_JSON
+from falcon.constants import MEDIA_JSON, MEDIA_MSGPACK
 from falcon.util import deprecation, misc, structures, uri
 
 from _util import create_app, to_coroutine  # NOQA
@@ -907,7 +907,8 @@ class TestFalconTestingUtils:
     @pytest.mark.parametrize('content_type', [
         'application/json',
         'application/json; charset=UTF-8',
-        'application/yaml'
+        'application/yaml',
+        'application/msgpack',
     ])
     def test_simulate_content_type_extra_handler(self, asgi, content_type):
         class TrackingJSONHandler(media.JSONHandler):
@@ -925,31 +926,85 @@ class TestFalconTestingUtils:
                 self.deserialize_count += 1
                 return result
 
-        resource = testing.SimpleTestResourceAsync() if asgi else testing.SimpleTestResource()
+        class TrackingMessagePackHandler(media.MessagePackHandler):
+            def __init__(self):
+                super().__init__()
+                self.deserialize_count = 0
+
+            def deserialize(self, *args, **kwargs):
+                result = super().deserialize(*args, **kwargs)
+                self.deserialize_count += 1
+                return result
+
+            async def deserialize_async(self, *args, **kwargs):
+                result = await super().deserialize_async(*args, **kwargs)
+                self.deserialize_count += 1
+                return result
+
+        class TestResourceAsync(testing.SimpleTestResourceAsync):
+            def __init__(self):
+                super().__init__()
+
+            async def on_post(self, req, resp):
+                await super().on_post(req, resp)
+
+                resp.media = {'hello': 'back'}
+                resp.content_type = content_type
+
+        class TestResource(testing.SimpleTestResource):
+            def __init__(self):
+                super().__init__()
+
+            def on_post(self, req, resp):
+                super().on_post(req, resp)
+
+                resp.media = {'hello': 'back'}
+                resp.content_type = content_type
+
+        resource = TestResourceAsync() if asgi else TestResource()
         app = create_app(asgi)
         app.add_route('/', resource)
 
-        handler = TrackingJSONHandler()
-        extra_handlers = {'application/json': handler}
+        json_handler = TrackingJSONHandler()
+        msgpack_handler = TrackingMessagePackHandler()
+        extra_handlers = {
+            'application/json': json_handler,
+            'application/msgpack': msgpack_handler,
+        }
         app.req_options.media_handlers.update(extra_handlers)
         app.resp_options.media_handlers.update(extra_handlers)
+
+        do_json = MEDIA_JSON in content_type
 
         client = testing.TestClient(app)
         headers = {
             'Content-Type': content_type,
             'capture-req-media': 'y',
         }
-        payload = b'{"hello": "world"}'
+        payload = b'{"hello": "world"}' if do_json else b'\x81\xa5hello\xa5world'
         resp = client.simulate_post('/', headers=headers, body=payload)
 
-        if MEDIA_JSON in content_type:
-            # Test that our custom deserializer was called
-            assert handler.deserialize_count == 1
-            assert resource.captured_req_media == {'hello': 'world'}
+        if do_json:
             assert resp.status_code == 200
+            assert resp.json == {'hello': 'back'}
+
+            # Test that our custom deserializer was called
+            assert json_handler.deserialize_count == 1
+            assert resource.captured_req_media == {'hello': 'world'}
+
+        elif MEDIA_MSGPACK in content_type:
+            assert resp.status_code == 200
+            assert resp.content == b'\x81\xa5hello\xa4back'
+
+            # Test that our custom deserializer was called
+            assert msgpack_handler.deserialize_count == 1
+            assert resource.captured_req_media == {'hello': 'world'}
+
         else:
             # YAML should not get handled
-            assert handler.deserialize_count == 0
+            for handler in (json_handler, msgpack_handler):
+                assert handler.deserialize_count == 0
+
             assert resource.captured_req_media is None
             assert resp.status_code == 415
 

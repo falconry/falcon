@@ -18,6 +18,7 @@ from asyncio.coroutines import CoroWrapper  # type: ignore
 from inspect import iscoroutine, iscoroutinefunction
 
 from falcon.constants import _UNSET
+import falcon.media
 import falcon.response
 from falcon.util.misc import is_python_func
 
@@ -233,7 +234,7 @@ class Response(falcon.response.Response):
         #   the self.content_length property.
         self._headers['content-length'] = str(content_length)
 
-    async def render_body(self):
+    async def render_body(self, _serialize_cache={}):
         """Get the raw bytestring content for the response body.
 
         This coroutine can be awaited to get the raw data for the
@@ -267,10 +268,30 @@ class Response(falcon.response.Response):
                         self.options.default_media_type
                     )
 
-                    self._media_rendered = await handler.serialize_async(
-                        self._media,
-                        self.content_type
-                    )
+                    # PERF(kgriffs): Avoid using an additional await and flatten
+                    #   the call stack when possible.
+                    try:
+                        serialize = _serialize_cache[handler]
+                    except KeyError:
+                        # NOTE(kgriffs): Do not use isinstance() because we can't be sure if
+                        #   we can use our shortcut for subclasses.
+                        t = type(handler)
+                        if t is falcon.media.JSONHandler:
+                            serialize = handler.serialize
+                        elif t is falcon.media.MessagePackHandler:
+                            serialize = handler._pack
+                        else:
+                            serialize = None
+
+                        _serialize_cache[handler] = serialize
+
+                    if serialize:
+                        self._media_rendered = serialize(self._media)
+                    else:
+                        self._media_rendered = await handler.serialize_async(
+                            self._media,
+                            self.content_type
+                        )
 
                 data = self._media_rendered
         else:
