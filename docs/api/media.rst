@@ -157,12 +157,20 @@ External handlers should update their logic to align to the internal Falcon hand
 Replacing the Default Handlers
 ------------------------------
 
+By default, the framework installs :class:`falcon.media.JSONHandler` and
+:class:`falcon.media.URLEncodedFormHandler` for the ``application/json``
+and ``application/x-www-form-urlencoded`` media types, respectively.
+
 When creating your App object you can either add or completely replace all of
 the handlers. For example, let's say you want to write an API that sends and
 receives `MessagePack <https://msgpack.org/>`_. We can easily do this by telling
-our Falcon API that we want a default media type of ``application/msgpack`` and
-then create a new :any:`Handlers` object specifying the desired media type and a
-handler that can process that data.
+our Falcon API that we want a default media type of ``application/msgpack``, and
+then creating a new :any:`Handlers` object to map that media type to an
+appropriate handler.
+
+The following example demonstrates how to replace the default handlers with an
+instance of Falcon's built-in MessagePack handler. However, you can always
+substitute a :ref:`custom media handler <custom-media-handler-type>` as needed.
 
 .. code:: python
 
@@ -179,8 +187,8 @@ handler that can process that data.
     app.req_options.media_handlers = handlers
     app.resp_options.media_handlers = handlers
 
-Alternatively, if you would like to add an additional handler without
-removing the default handlers, this can be easily done as follows:
+Alternatively, you can simply update the existing :any:`Handlers` object to
+retain the default handlers:
 
 .. code-block:: python
 
