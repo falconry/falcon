@@ -371,7 +371,7 @@ class BodyPart:
             object: The deserialized media representation.
         """
         if self._media is None:
-            handler = self._parse_options.media_handlers.find_by_media_type(
+            handler, *_ = self._parse_options.media_handlers.find_by_media_type(
                 self.content_type, 'text/plain')
 
             try:

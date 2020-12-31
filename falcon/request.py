@@ -1031,7 +1031,7 @@ class Request:
                 return default_when_empty
             raise self._media_error
 
-        handler = self.options.media_handlers.find_by_media_type(
+        handler, *_ = self.options.media_handlers.find_by_media_type(
             self.content_type,
             self.options.default_media_type
         )
@@ -1800,7 +1800,7 @@ class Request:
         if param_value is None:
             return default
 
-        handler = self.options.media_handlers.find_by_media_type(
+        handler, *_ = self.options.media_handlers.find_by_media_type(
             MEDIA_JSON, MEDIA_JSON, raise_not_found=False
         )
         if handler is None:

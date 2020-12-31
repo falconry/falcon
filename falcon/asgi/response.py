@@ -234,7 +234,7 @@ class Response(falcon.response.Response):
         #   the self.content_length property.
         self._headers['content-length'] = str(content_length)
 
-    async def render_body(self, _serialize_cache={}):
+    async def render_body(self):
         """Get the raw bytestring content for the response body.
 
         This coroutine can be awaited to get the raw data for the
@@ -263,21 +263,10 @@ class Response(falcon.response.Response):
                     if not self.content_type:
                         self.content_type = self.options.default_media_type
 
-                    handler = self.options.media_handlers.find_by_media_type(
+                    handler, serialize_sync, _ = self.options.media_handlers.find_by_media_type(
                         self.content_type,
                         self.options.default_media_type
                     )
-
-                    # PERF(kgriffs): Avoid using an additional await and flatten
-                    #   the call stack when possible.
-                    try:
-                        serialize_sync = _serialize_cache[handler]
-                    except KeyError:
-                        # PERF(kgriffs): Do not use EAFP, but rather check and
-                        #   cache since we don't want a significant penalty if
-                        #   a custom handler does not subclass the ABC.
-                        serialize_sync = getattr(handler, '_serialize_sync', None)
-                        _serialize_cache[handler] = serialize_sync
 
                     if serialize_sync:
                         self._media_rendered = serialize_sync(self._media)

@@ -29,6 +29,7 @@ class MissingDependencyHandler:
 class Handlers(UserDict):
     """A :class:`dict`-like object that manages Internet media type handlers."""
     def __init__(self, initial=None):
+        self.__handler_cache = {}
         handlers = initial or {
             MEDIA_JSON: JSONHandler(),
             MEDIA_MULTIPART: MultipartFormHandler(),
@@ -38,6 +39,22 @@ class Handlers(UserDict):
         # NOTE(jmvrbanac): Directly calling UserDict as it's not inheritable.
         # Also, this results in self.update(...) being called.
         UserDict.__init__(self, handlers)
+
+    def __setitem__(self, key, item):
+        self.__handler_cache.clear()
+        return super().__setitem__(key, item)
+
+    # def _normalize_handler(self, handler):
+    #     if not handler:
+    #         return
+    #     try:
+    #         if not hasattr(handler, '_serialize_sync'):
+    #             handler._serialize_sync = None
+    #         if not hasattr(handler, '_deserialize_sync'):
+    #             handler._deserialize_sync = None
+    #         return handler
+    #     except AttributeError:
+    #         return _WrapHandler(handler)
 
     def _resolve_media_type(self, media_type, all_media_types):
         resolved = None
@@ -60,21 +77,44 @@ class Handlers(UserDict):
             media_type = default
 
         try:
-            return self.data[media_type]
+            return self.__handler_cache[media_type]
         except KeyError:
             pass
 
-        # PERF(jmvrbanac): Fallback to the slower method
-        resolved = self._resolve_media_type(media_type, self.data.keys())
+        try:
+            handler = self.data[media_type]
+        except KeyError:
+            handler = None
 
-        if not resolved:
-            if raise_not_found:
-                raise errors.HTTPUnsupportedMediaType(
-                    description='{0} is an unsupported media type.'.format(media_type)
-                )
-            return None
+        if handler is None:
+            # PERF(jmvrbanac): Fallback to the slower method
+            resolved = self._resolve_media_type(media_type, self.data.keys())
 
-        return self.data[resolved]
+            if not resolved:
+                if raise_not_found:
+                    raise errors.HTTPUnsupportedMediaType(
+                        description='{0} is an unsupported media type.'.format(media_type)
+                    )
+                return None, None, None
+
+            handler = self.data[resolved]
+
+        cache = self.__handler_cache[media_type] = (
+            handler,
+            getattr(handler, '_serialize_sync', None),
+            getattr(handler, '_deserialize_sync', None),
+        )
+        return cache
+
+class _WrapHandler():
+    _serialize_sync = None
+    _deserialize_sync = None
+
+    def __init__(self, original):
+        self.__original = original
+        for key in dir(original):
+            if not key.startswith('_') or key in {'__getattr__', '__getattribute__'}:
+                setattr(self, key, getattr(original, key))
 
 
 # NOTE(vytas): An ugly way to work around circular imports.

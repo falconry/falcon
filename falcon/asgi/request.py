@@ -751,21 +751,10 @@ class Request(falcon.request.Request):
                 return default_when_empty
             raise self._media_error
 
-        handler = self.options.media_handlers.find_by_media_type(
+        handler, _, deserialize_sync = self.options.media_handlers.find_by_media_type(
             self.content_type,
             self.options.default_media_type
         )
-
-        # PERF(kgriffs): Avoid using an additional await and flatten the call
-        #   stack when possible.
-        try:
-            deserialize_sync = _deserialize_cache[handler]
-        except KeyError:
-            # PERF(kgriffs): Do not use EAFP, but rather check and
-            #   cache since we don't want a significant penalty if
-            #   a custom handler does not subclass the ABC.
-            deserialize_sync = getattr(handler, '_deserialize_sync', None)
-            _deserialize_cache[handler] = deserialize_sync
 
         try:
             if deserialize_sync:

@@ -40,7 +40,7 @@ class BodyPart(multipart.BodyPart):
 
     async def get_media(self):
         if self._media is None:
-            handler = self._parse_options.media_handlers.find_by_media_type(
+            handler, *_ = self._parse_options.media_handlers.find_by_media_type(
                 self.content_type, 'text/plain')
 
             try:
