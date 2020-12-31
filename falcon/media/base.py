@@ -8,6 +8,12 @@ from falcon.constants import MEDIA_JSON
 class BaseHandler(metaclass=abc.ABCMeta):
     """Abstract Base Class for an internet media type handler."""
 
+    __serialize_sync__ = None
+    """Override to provide a synchronous serialization method that takes an object."""
+
+    __deserialize_sync__ = None
+    """Override to provide a synchronous derialization method that takes a byte string."""
+
     def serialize(self, media, content_type):
         """Serialize the media object on a :any:`falcon.Response`.
 

@@ -25,10 +25,17 @@ class URLEncodedFormHandler(BaseHandler):
     """
 
     def __init__(self, keep_blank=True, csv=False):
-        self.keep_blank = keep_blank
-        self.csv = csv
+        self._keep_blank = keep_blank
+        self._csv = csv
 
-    def serialize(self, media, content_type):
+        # NOTE(kgriffs): To be safe, only enable the optimization when not subclassed
+        if type(self) is URLEncodedFormHandler:
+            self.__serialize_sync__ = self.serialize
+            self.__deserialize_sync__ = self._deserialize
+
+    # NOTE(kgriffs): Make content_type a kwarg to support the
+    #   Request.render_body() shortcut optimization.
+    def serialize(self, media, content_type=None):
         # NOTE(vytas): Setting doseq to True to mirror the parse_query_string
         # behaviour.
         return urlencode(media, doseq=True)
@@ -40,7 +47,7 @@ class URLEncodedFormHandler(BaseHandler):
             # catch malicious input.
             body = body.decode('ascii')
             return parse_query_string(
-                body, keep_blank=self.keep_blank, csv=self.csv
+                body, keep_blank=self._keep_blank, csv=self._csv
             )
         except Exception as err:
             raise errors.MediaMalformedError('URL-encoded') from err

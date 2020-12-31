@@ -84,6 +84,11 @@ class JSONHandler(BaseHandler):
             self.serialize = self._serialize_b
             self.serialize_async = self._serialize_async_b
 
+        # NOTE(kgriffs): To be safe, only enable the optimization when not subclassed
+        if type(self) is JSONHandler:
+            self.__serialize_sync__ = self.serialize
+            self.__deserialize_sync__ = self._deserialize
+
     def _deserialize(self, data):
         if not data:
             raise errors.MediaNotFoundError('JSON')

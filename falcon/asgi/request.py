@@ -700,7 +700,7 @@ class Request(falcon.request.Request):
 
         return netloc_value
 
-    async def get_media(self, default_when_empty=_UNSET, _shortcut_cache={}):
+    async def get_media(self, default_when_empty=_UNSET, _deserialize_cache={}):
         """Return a deserialized form of the request stream.
 
         The first time this method is called, the request stream will be
@@ -759,19 +759,17 @@ class Request(falcon.request.Request):
         # PERF(kgriffs): Avoid using an additional await and flatten the call
         #   stack when possible.
         try:
-            use_shortcut = _shortcut_cache[handler]
+            __deserialize_sync__ = _deserialize_cache[handler]
         except KeyError:
-            # NOTE(kgriffs): Do not use isinstance() because we can't be sure if
-            #   we can use our shortcut for subclasses.
-            use_shortcut = type(handler) in (
-                falcon.media.JSONHandler,
-                falcon.media.MessagePackHandler
-            )
-            _shortcut_cache[handler] = use_shortcut
+            # PERF(kgriffs): Do not use EAFP, but rather check and
+            #   cache since we don't want a significant penalty if
+            #   a custom handler does not subclass the ABC.
+            __deserialize_sync__ = getattr(handler, '__deserialize_sync__', None)
+            _deserialize_cache[handler] = __deserialize_sync__
 
         try:
-            if use_shortcut:
-                self._media = handler._deserialize(await self.stream.read())
+            if __deserialize_sync__:
+                self._media = __deserialize_sync__(await self.stream.read())
             else:
                 self._media = await handler.deserialize_async(
                     self.stream,

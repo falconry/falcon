@@ -34,6 +34,11 @@ class MessagePackHandler(BaseHandler):
         self._pack = packer.pack
         self._unpackb = msgpack.unpackb
 
+        # NOTE(kgriffs): To be safe, only enable the optimization when not subclassed
+        if type(self) is MessagePackHandler:
+            self.__serialize_sync__ = self._pack
+            self.__deserialize_sync__ = self._deserialize
+
     def _deserialize(self, data):
         if not data:
             raise errors.MediaNotFoundError('MessagePack')
