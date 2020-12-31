@@ -34,10 +34,11 @@ class MessagePackHandler(BaseHandler):
         self._pack = packer.pack
         self._unpackb = msgpack.unpackb
 
-        # NOTE(kgriffs): To be safe, only enable the optimization when not subclassed
+        # NOTE(kgriffs): To be safe, only enable the optimized protocol when
+        #   not subclassed.
         if type(self) is MessagePackHandler:
-            self.__serialize_sync__ = self._pack
-            self.__deserialize_sync__ = self._deserialize
+            self._serialize_sync = self._pack
+            self._deserialize_sync = self._deserialize
 
     def _deserialize(self, data):
         if not data:
@@ -55,10 +56,10 @@ class MessagePackHandler(BaseHandler):
     async def deserialize_async(self, stream, content_type, content_length):
         return self._deserialize(await stream.read())
 
-    def serialize(self, media, content_type):
+    def serialize(self, media, content_type) -> bytes:
         return self._pack(media)
 
-    async def serialize_async(self, media, content_type):
+    async def serialize_async(self, media, content_type) -> bytes:
         return self._pack(media)
 
 

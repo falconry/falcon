@@ -84,10 +84,11 @@ class JSONHandler(BaseHandler):
             self.serialize = self._serialize_b
             self.serialize_async = self._serialize_async_b
 
-        # NOTE(kgriffs): To be safe, only enable the optimization when not subclassed
+        # NOTE(kgriffs): To be safe, only enable the optimized protocol when
+        #   not subclassed.
         if type(self) is JSONHandler:
-            self.__serialize_sync__ = self.serialize
-            self.__deserialize_sync__ = self._deserialize
+            self._serialize_sync = self.serialize
+            self._deserialize_sync = self._deserialize
 
     def _deserialize(self, data):
         if not data:
@@ -105,16 +106,16 @@ class JSONHandler(BaseHandler):
 
     # NOTE(kgriffs): Make content_type a kwarg to support the
     #   Request.render_body() shortcut optimization.
-    def _serialize_s(self, media, content_type=None):
+    def _serialize_s(self, media, content_type=None) -> bytes:
         return self._dumps(media).encode()
 
-    async def _serialize_async_s(self, media, content_type):
+    async def _serialize_async_s(self, media, content_type) -> bytes:
         return self._dumps(media).encode()
 
-    def _serialize_b(self, media, content_type):
+    def _serialize_b(self, media, content_type) -> bytes:
         return self._dumps(media)
 
-    async def _serialize_async_b(self, media, content_type):
+    async def _serialize_async_b(self, media, content_type) -> bytes:
         return self._dumps(media)
 
 

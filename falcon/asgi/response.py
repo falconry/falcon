@@ -271,16 +271,16 @@ class Response(falcon.response.Response):
                     # PERF(kgriffs): Avoid using an additional await and flatten
                     #   the call stack when possible.
                     try:
-                        __serialize_sync__ = _serialize_cache[handler]
+                        serialize_sync = _serialize_cache[handler]
                     except KeyError:
                         # PERF(kgriffs): Do not use EAFP, but rather check and
                         #   cache since we don't want a significant penalty if
                         #   a custom handler does not subclass the ABC.
-                        __serialize_sync__ = getattr(handler, '__serialize_sync__', None)
-                        _serialize_cache[handler] = __serialize_sync__
+                        serialize_sync = getattr(handler, '_serialize_sync', None)
+                        _serialize_cache[handler] = serialize_sync
 
-                    if __serialize_sync__:
-                        self._media_rendered = __serialize_sync__(self._media)
+                    if serialize_sync:
+                        self._media_rendered = serialize_sync(self._media)
                     else:
                         self._media_rendered = await handler.serialize_async(
                             self._media,

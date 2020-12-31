@@ -759,17 +759,17 @@ class Request(falcon.request.Request):
         # PERF(kgriffs): Avoid using an additional await and flatten the call
         #   stack when possible.
         try:
-            __deserialize_sync__ = _deserialize_cache[handler]
+            deserialize_sync = _deserialize_cache[handler]
         except KeyError:
             # PERF(kgriffs): Do not use EAFP, but rather check and
             #   cache since we don't want a significant penalty if
             #   a custom handler does not subclass the ABC.
-            __deserialize_sync__ = getattr(handler, '__deserialize_sync__', None)
-            _deserialize_cache[handler] = __deserialize_sync__
+            deserialize_sync = getattr(handler, '_deserialize_sync', None)
+            _deserialize_cache[handler] = deserialize_sync
 
         try:
-            if __deserialize_sync__:
-                self._media = __deserialize_sync__(await self.stream.read())
+            if deserialize_sync:
+                self._media = deserialize_sync(await self.stream.read())
             else:
                 self._media = await handler.deserialize_async(
                     self.stream,
