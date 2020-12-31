@@ -236,7 +236,7 @@ def default_serialize_error(req, resp, exception):
 
     if preferred is not None:
         if preferred == MEDIA_JSON:
-            handler, *_ = resp.options.media_handlers.find_by_media_type(
+            handler, _, _ = resp.options.media_handlers.find_by_media_type(
                 MEDIA_JSON, MEDIA_JSON, raise_not_found=False
             )
             resp.data = exception.to_json(handler)

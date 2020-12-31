@@ -554,7 +554,7 @@ class App(falcon.app.App):
 
             self._schedule_callbacks(resp)
 
-            handler, *_ = self.resp_options.media_handlers.find_by_media_type(
+            handler, _, _ = self.resp_options.media_handlers.find_by_media_type(
                 MEDIA_JSON, MEDIA_JSON, raise_not_found=False
             )
 
