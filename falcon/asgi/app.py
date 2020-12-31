@@ -17,6 +17,7 @@
 import asyncio
 from inspect import isasyncgenfunction, iscoroutinefunction
 import traceback
+import weakref
 
 import falcon.app
 from falcon.app_helpers import prepare_middleware, prepare_middleware_ws
@@ -270,8 +271,32 @@ class App(falcon.app.App):
     _default_responder_path_not_found = falcon.responders.path_not_found_async
 
     __slots__ = (
+        '_lifespan_status',
+        '__weakref__',
         'ws_options',
     )
+
+    _known_instances = set()  # type: ignore
+
+    @classmethod
+    def _update_asgi_call_impl(cls):
+        all_started = True
+        disposed = set()
+
+        for ref in cls._known_instances:
+            app = ref()
+            if app:
+                if app._lifespan_status != EventType.LIFESPAN_STARTUP_COMPLETE:
+                    all_started = False
+            else:
+                disposed.add(ref)
+
+        cls._known_instances.difference_update(disposed)
+
+        if all_started:
+            cls.__call__ = cls._call_impl
+        else:
+            cls.__call__ = _wrap_asgi_coroutine_func(cls._call_impl)
 
     def __init__(self, *args, request_type=Request, response_type=Response, **kwargs):
         super().__init__(*args, request_type=request_type, response_type=response_type, **kwargs)
@@ -280,8 +305,10 @@ class App(falcon.app.App):
 
         self.add_error_handler(WebSocketDisconnected, self._ws_disconnected_error_handler)
 
-    @_wrap_asgi_coroutine_func
-    async def __call__(self, scope, receive, send):  # noqa: C901
+        self._lifespan_status = None
+        self._known_instances.add(weakref.ref(self))
+
+    async def _call_impl(self, scope, receive, send):  # noqa: C901
         try:
             asgi_info = scope['asgi']
 
@@ -680,6 +707,8 @@ class App(falcon.app.App):
         await send(_EVT_RESP_EOF)
         self._schedule_callbacks(resp)
 
+    __call__ = _wrap_asgi_coroutine_func(_call_impl)
+
     def add_route(self, uri_template, resource, **kwargs):
         # NOTE(kgriffs): Inject an extra kwarg so that the compiled router
         #   will know to validate the responder methods to make sure they
@@ -863,32 +892,44 @@ class App(falcon.app.App):
     async def _call_lifespan_handlers(self, ver, scope, receive, send):
         while True:
             event = await receive()
-            if event['type'] == 'lifespan.startup':
+            if event['type'] == EventType.LIFESPAN_STARTUP:
+                self._lifespan_status = EventType.LIFESPAN_STARTUP
+                self._update_asgi_call_impl()
+
                 for handler in self._unprepared_middleware:
                     if hasattr(handler, 'process_startup'):
                         try:
                             await handler.process_startup(scope, event)
                         except Exception:
+                            self._lifespan_status = EventType.LIFESPAN_STARTUP_FAILED
                             await send({
                                 'type': EventType.LIFESPAN_STARTUP_FAILED,
                                 'message': traceback.format_exc(),
                             })
                             return
 
+                self._lifespan_status = EventType.LIFESPAN_STARTUP_COMPLETE
+                self._update_asgi_call_impl()
+
                 await send({'type': EventType.LIFESPAN_STARTUP_COMPLETE})
 
-            elif event['type'] == 'lifespan.shutdown':
+            elif event['type'] == EventType.LIFESPAN_SHUTDOWN:
+                self._lifespan_status = EventType.LIFESPAN_SHUTDOWN
+                self._update_asgi_call_impl()
+
                 for handler in reversed(self._unprepared_middleware):
                     if hasattr(handler, 'process_shutdown'):
                         try:
                             await handler.process_shutdown(scope, event)
                         except Exception:
+                            self._lifespan_status = EventType.LIFESPAN_SHUTDOWN_FAILED
                             await send({
                                 'type': EventType.LIFESPAN_SHUTDOWN_FAILED,
                                 'message': traceback.format_exc(),
                             })
                             return
 
+                self._lifespan_status = EventType.LIFESPAN_SHUTDOWN_COMPLETE
                 await send({'type': EventType.LIFESPAN_SHUTDOWN_COMPLETE})
                 return
 
