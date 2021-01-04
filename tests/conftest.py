@@ -1,6 +1,16 @@
+import os
+
 import pytest
 
 import falcon
+
+
+_FALCON_TEST_ENV = (
+    ('FALCON_ASGI_WRAP_NON_COROUTINES', 'Y'),
+    ('FALCON_TESTING_SESSION', 'Y'),
+    # NOTE: PYTHONASYNCIODEBUG is optional (set in tox.ini).
+    # ('PYTHONASYNCIODEBUG', '1'),
+)
 
 
 @pytest.fixture(params=[True, False], ids=['asgi', 'wsgi'])
@@ -26,6 +36,10 @@ def pytest_configure(config):
     plugin = config.pluginmanager.getplugin('mypy')
     if plugin:
         plugin.mypy_argv.append('--ignore-missing-imports')
+
+
+def pytest_sessionstart(session):
+    os.environ.update(_FALCON_TEST_ENV)
 
 
 @pytest.hookimpl(hookwrapper=True)
