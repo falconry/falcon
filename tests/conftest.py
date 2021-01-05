@@ -39,7 +39,8 @@ def pytest_configure(config):
 
 
 def pytest_sessionstart(session):
-    os.environ.update(_FALCON_TEST_ENV)
+    for key, value in _FALCON_TEST_ENV:
+        os.environ.setdefault(key, value)
 
 
 @pytest.hookimpl(hookwrapper=True)
