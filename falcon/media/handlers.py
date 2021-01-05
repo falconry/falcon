@@ -1,4 +1,5 @@
 from collections import UserDict
+import functools
 
 from falcon import errors
 from falcon.constants import MEDIA_JSON, MEDIA_MULTIPART, MEDIA_URLENCODED
@@ -29,7 +30,8 @@ class MissingDependencyHandler:
 class Handlers(UserDict):
     """A :class:`dict`-like object that manages Internet media type handlers."""
     def __init__(self, initial=None):
-        self.__handler_cache = {}
+        self._hash = 0
+
         handlers = initial or {
             MEDIA_JSON: JSONHandler(),
             MEDIA_MULTIPART: MultipartFormHandler(),
@@ -41,20 +43,56 @@ class Handlers(UserDict):
         UserDict.__init__(self, handlers)
 
     def __setitem__(self, key, item):
-        self.__handler_cache.clear()
-        return super().__setitem__(key, item)
+        self.find_by_media_type.cache_clear()
+        super().__setitem__(key, item)
+        self._rehash()
 
-    # def _normalize_handler(self, handler):
-    #     if not handler:
-    #         return
-    #     try:
-    #         if not hasattr(handler, '_serialize_sync'):
-    #             handler._serialize_sync = None
-    #         if not hasattr(handler, '_deserialize_sync'):
-    #             handler._deserialize_sync = None
-    #         return handler
-    #     except AttributeError:
-    #         return _WrapHandler(handler)
+    def __delitem__(self, key):
+        self.find_by_media_type.cache_clear()
+        super().__delitem__(key)
+        self._rehash()
+
+    # NOTE(kgriffs): Make instances hashable so that we can use lru_cache().
+    def __hash__(self):
+        return self._hash
+
+    def _rehash(self):
+        # NOTE(kgriffs): We could have done something simpler, but it would
+        #   have been a leaky abstraction, and it is probably better to avoid
+        #   any potential suprises from instances of Handlers not appearing to
+        #   be logically equivalent.
+        # NOTE(kgriffs): The generator must be wrapped in tuple() in order to
+        #   get a consistent hash value, because otherwise we end up hashing
+        #   the generator object itself.
+        self._hash = hash(tuple((k, v) for k, v in self.data.items()))
+
+    # NOTE(kgriffs): Even though apps probably don't need this, it is included
+    #   in order to conform to the guidelines layed out in the Python Data Model:
+    #
+    #   https://docs.python.org/3/reference/datamodel.html#object.__hash__
+    #
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+
+    def _resolve(self, media_type):
+        # PERF(kgriffs): Even though it is slightly less performant, we can use
+        #   get() here since the result will be cached.
+        handler = self.data.get(media_type)
+
+        if not handler:
+            # PERF(jmvrbanac): Fallback to the slower method
+            resolved = self._resolve_media_type(media_type, self.data.keys())
+
+            if not resolved:
+                return None
+
+            handler = self.data[resolved]
+
+        return (
+            handler,
+            getattr(handler, '_serialize_sync', None),
+            getattr(handler, '_deserialize_sync', None),
+        )
 
     def _resolve_media_type(self, media_type, all_media_types):
         resolved = None
@@ -71,50 +109,27 @@ class Handlers(UserDict):
 
         return resolved
 
+    # NOTE(kgriffs): Most apps will probably only use one or two media handlers,
+    #   but we use maxsize=64 to give us some wiggle room just in case someone
+    #   is using versioned media types or something, and to cover various
+    #   combinations of the method args. We may need to tune this later.
+    @functools.lru_cache(maxsize=64)
     def find_by_media_type(self, media_type, default, raise_not_found=True):
-        # PERF(jmvrbanac): Check via a quick methods first for performance
+        # PERF(jmvrbanac): Check via a quick method first for performance
         if media_type == '*/*' or not media_type:
             media_type = default
 
-        try:
-            return self.__handler_cache[media_type]
-        except KeyError:
-            pass
+        handler_info = self._resolve(media_type)
 
-        try:
-            handler = self.data[media_type]
-        except KeyError:
-            handler = None
+        if not handler_info:
+            if raise_not_found:
+                raise errors.HTTPUnsupportedMediaType(
+                    description='{0} is an unsupported media type.'.format(media_type)
+                )
 
-        if handler is None:
-            # PERF(jmvrbanac): Fallback to the slower method
-            resolved = self._resolve_media_type(media_type, self.data.keys())
+            return None, None, None
 
-            if not resolved:
-                if raise_not_found:
-                    raise errors.HTTPUnsupportedMediaType(
-                        description='{0} is an unsupported media type.'.format(media_type)
-                    )
-                return None, None, None
-
-            handler = self.data[resolved]
-
-        cache = self.__handler_cache[media_type] = (
-            handler,
-            getattr(handler, '_serialize_sync', None),
-            getattr(handler, '_deserialize_sync', None),
-        )
-        return cache
-
-class _WrapHandler():
-    _serialize_sync = None
-    _deserialize_sync = None
-
-    def __init__(self, original):
-        self.__original = original
-        for key in dir(original):
-            if not key.startswith('_') or key in {'__getattr__', '__getattribute__'}:
-                setattr(self, key, getattr(original, key))
+        return handler_info
 
 
 # NOTE(vytas): An ugly way to work around circular imports.

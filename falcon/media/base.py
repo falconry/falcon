@@ -11,7 +11,9 @@ class BaseHandler(metaclass=abc.ABCMeta):
     # NOTE(kgriffs): The following special methods are used to enable an
     #   optimized media (de)serialization protocol for ASGI. This is not
     #   currently part of the public interface for Falcon, and is not
-    #   included in the docs.
+    #   included in the docs. Once we are happy with the protocol, we
+    #   might make it part of the public interface for use by custom
+    #   media type handlers.
 
     _serialize_sync = None
     """Override to provide a synchronous serialization method that takes an object."""

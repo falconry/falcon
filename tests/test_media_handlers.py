@@ -127,6 +127,9 @@ def test_deserialization_raises(asgi):
             raise SuchException('Wow such error.')
 
     handlers = media.Handlers({'application/json': FaultyHandler()})
+
+    assert app.req_options.media_handlers != handlers
+
     app.req_options.media_handlers = handlers
     app.resp_options.media_handlers = handlers
 
@@ -268,6 +271,28 @@ def test_json_err_no_handler(asgi):
     result = testing.simulate_get(app, '/')
     assert result.status_code == 403
     assert result.json == falcon.HTTPForbidden().to_dict()
+
+
+def test_handlers_eq():
+    class EmptyHandler():
+        pass
+
+    mapping_a = {'application/json': EmptyHandler()}
+    mapping_b = {'application/json': EmptyHandler()}
+
+    assert media.Handlers(mapping_a) == media.Handlers(mapping_a)
+    assert media.Handlers(mapping_a) != media.Handlers(mapping_b)
+    assert media.Handlers(mapping_b) != media.Handlers(mapping_a)
+
+    handlers_a = media.Handlers(mapping_a)
+    handlers_a['application/json'] = EmptyHandler()
+    assert handlers_a != media.Handlers(mapping_a)
+
+    handlers_b = media.Handlers(mapping_b)
+    handlers_b['text/plain'] = EmptyHandler()
+    assert handlers_b != media.Handlers(mapping_b)
+    del handlers_b['text/plain']
+    assert handlers_b == media.Handlers(mapping_b)
 
 
 class TestBaseHandler:

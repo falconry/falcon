@@ -700,7 +700,7 @@ class Request(falcon.request.Request):
 
         return netloc_value
 
-    async def get_media(self, default_when_empty=_UNSET, _deserialize_cache={}):
+    async def get_media(self, default_when_empty=_UNSET):
         """Return a deserialized form of the request stream.
 
         The first time this method is called, the request stream will be
