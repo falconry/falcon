@@ -138,7 +138,8 @@ For a more in-depth overview of available servers, see also:
     By default, the ``uvicorn`` package comes only with a minimal set of
     pure-Python dependencies.
     For CPython-based production deployments, you can install Uvicorn along
-    with faster alternatives such as ``uvloop`` and ``httptools``::
+    with more optimized alternatives such as ``uvloop`` (a faster event loop),
+    ``httptools`` (a faster HTTP protocol implementation) etc::
 
         $ pip install uvicorn[standard]
 
