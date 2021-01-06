@@ -43,8 +43,8 @@ class Handlers(UserDict):
         # Also, this results in self.update(...) being called.
         UserDict.__init__(self, handlers)
 
-    def __setitem__(self, key, item):
-        super().__setitem__(key, item)
+    def __setitem__(self, key, value):
+        super().__setitem__(key, value)
 
         # NOTE(kgriffs): When the mapping changes, we do not want to use a
         #   cached handler from the previous mapping, in case it was
