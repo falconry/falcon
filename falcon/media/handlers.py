@@ -1,11 +1,12 @@
 from collections import UserDict
-import functools
 
 from falcon import errors
 from falcon.constants import MEDIA_JSON, MEDIA_MULTIPART, MEDIA_URLENCODED
 from falcon.media.json import JSONHandler
 from falcon.media.multipart import MultipartFormHandler, MultipartParseOptions
 from falcon.media.urlencoded import URLEncodedFormHandler
+from falcon.util import deprecation
+from falcon.util import misc
 from falcon.vendor import mimeparse
 
 
@@ -30,8 +31,6 @@ class MissingDependencyHandler:
 class Handlers(UserDict):
     """A :class:`dict`-like object that manages Internet media type handlers."""
     def __init__(self, initial=None):
-        self._hash = 0
-
         handlers = initial or {
             MEDIA_JSON: JSONHandler(),
             MEDIA_MULTIPART: MultipartFormHandler(),
@@ -43,93 +42,94 @@ class Handlers(UserDict):
         UserDict.__init__(self, handlers)
 
     def __setitem__(self, key, item):
-        self.find_by_media_type.cache_clear()
+        # NOTE(kgriffs): When the mapping changes, we do not want to use a
+        #   cached handler from the previous mapping, in case it was
+        #   replaced. Always creating a new resolver is a simple way to ensure
+        #   this.
+        self._resolve = self._create_resolver()
         super().__setitem__(key, item)
-        self._rehash()
 
     def __delitem__(self, key):
-        self.find_by_media_type.cache_clear()
+        # NOTE(kgriffs): Similar to __setitem__(), we need to avoid resolving
+        #   to a cached handler that was removed.
+        self._resolve = self._create_resolver()
         super().__delitem__(key)
-        self._rehash()
 
-    # NOTE(kgriffs): Make instances hashable so that we can use lru_cache().
-    def __hash__(self):
-        return self._hash
-
-    def _rehash(self):
-        # NOTE(kgriffs): We could have done something simpler, but it would
-        #   have been a leaky abstraction, and it is probably better to avoid
-        #   any potential suprises from instances of Handlers not appearing to
-        #   be logically equivalent.
-        # NOTE(kgriffs): The generator must be wrapped in tuple() in order to
-        #   get a consistent hash value, because otherwise we end up hashing
-        #   the generator object itself.
-        self._hash = hash(tuple((k, v) for k, v in self.data.items()))
-
-    # NOTE(kgriffs): Even though apps probably don't need this, it is included
-    #   in order to conform to the guidelines layed out in the Python Data Model:
-    #
-    #   https://docs.python.org/3/reference/datamodel.html#object.__hash__
-    #
-    def __eq__(self, other):
-        return hash(self) == hash(other)
-
-    def _resolve(self, media_type):
-        # PERF(kgriffs): Even though it is slightly less performant, we can use
-        #   get() here since the result will be cached.
-        handler = self.data.get(media_type)
-
-        if not handler:
-            # PERF(jmvrbanac): Fallback to the slower method
-            resolved = self._resolve_media_type(media_type, self.data.keys())
-
-            if not resolved:
-                return None
-
-            handler = self.data[resolved]
-
-        return (
-            handler,
-            getattr(handler, '_serialize_sync', None),
-            getattr(handler, '_deserialize_sync', None),
-        )
-
-    def _resolve_media_type(self, media_type, all_media_types):
-        resolved = None
+    def _best_match(self, media_type, all_media_types):
+        result = None
 
         try:
             # NOTE(jmvrbanac): Mimeparse will return an empty string if it can
             # parse the media type, but cannot find a suitable type.
-            resolved = mimeparse.best_match(
+            result = mimeparse.best_match(
                 all_media_types,
                 media_type
             )
         except ValueError:
             pass
 
-        return resolved
+        return result
 
-    # NOTE(kgriffs): Most apps will probably only use one or two media handlers,
-    #   but we use maxsize=64 to give us some wiggle room just in case someone
-    #   is using versioned media types or something, and to cover various
-    #   combinations of the method args. We may need to tune this later.
-    @functools.lru_cache(maxsize=64)
+    def _create_resolver(self):
+        # NOTE(kgriffs): This is defined as a private method since it is meant to
+        #   only be called by the framework, rather than the app.
+        # NOTE(kgriffs): Most apps will probably only use one or two media handlers,
+        #   but we use maxsize=64 to give us some wiggle room just in case someone
+        #   is using versioned media types or something, and to cover various
+        #   combinations of the method args. We may need to tune this later.
+        @misc._lru_cache_safe(maxsize=64)
+        def resolve(media_type, default, raise_not_found=True):
+            if media_type == '*/*' or not media_type:
+                media_type = default
+
+            # PERF(kgriffs): We just do this slower check every time, rather
+            #   than trying to first check the dict directly, since the result
+            #   will almost always be cached anyway.
+            matched_type = self._best_match(media_type, self.data.keys())
+
+            if not matched_type:
+                if raise_not_found:
+                    raise errors.HTTPUnsupportedMediaType(
+                        description='{0} is an unsupported media type.'.format(media_type)
+                    )
+
+                return None, None, None
+
+            handler = self.data[matched_type]
+
+            return (
+                handler,
+                getattr(handler, '_serialize_sync', None),
+                getattr(handler, '_deserialize_sync', None),
+            )
+
+        return resolve
+
+    @deprecation.deprecated(
+        'This undocumented method is no longer supported as part of the public '
+        'interface and will be removed in a future release.'
+    )
     def find_by_media_type(self, media_type, default, raise_not_found=True):
-        # PERF(jmvrbanac): Check via a quick method first for performance
+        # PERF(jmvrbanac): Check via a quick methods first for performance
         if media_type == '*/*' or not media_type:
             media_type = default
 
-        handler_info = self._resolve(media_type)
+        try:
+            return self.data[media_type]
+        except KeyError:
+            pass
 
-        if not handler_info:
+        # PERF(jmvrbanac): Fallback to the slower method
+        resolved = self._best_match(media_type, self.data.keys())
+
+        if not resolved:
             if raise_not_found:
                 raise errors.HTTPUnsupportedMediaType(
                     description='{0} is an unsupported media type.'.format(media_type)
                 )
+            return None
 
-            return None, None, None
-
-        return handler_info
+        return self.data[resolved]
 
 
 # NOTE(vytas): An ugly way to work around circular imports.

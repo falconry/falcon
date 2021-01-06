@@ -71,6 +71,7 @@ utcnow = datetime.datetime.utcnow
 #   workstations, so we use the nocover pragma here.
 def _lru_cache_nop(*args, **kwargs):  # pragma: nocover
     def decorator(func):
+        func.cache_clear = lambda: None
         return func
 
     return decorator

@@ -751,7 +751,7 @@ class Request(falcon.request.Request):
                 return default_when_empty
             raise self._media_error
 
-        handler, _, deserialize_sync = self.options.media_handlers.find_by_media_type(
+        handler, _, deserialize_sync = self.options.media_handlers._resolve(
             self.content_type,
             self.options.default_media_type
         )

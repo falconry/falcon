@@ -267,7 +267,7 @@ class Response:
                     if not self.content_type:
                         self.content_type = self.options.default_media_type
 
-                    handler, _, _ = self.options.media_handlers.find_by_media_type(
+                    handler, _, _ = self.options.media_handlers._resolve(
                         self.content_type,
                         self.options.default_media_type
                     )

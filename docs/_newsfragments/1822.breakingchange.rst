@@ -1,3 +1,5 @@
 The private attributes for :class:`~.falcon.media.JSONHandler` were renamed, and
 the private attributes used by :class:`~.falcon.media.MessagePackHandler` were
-replaced. Subclasses that refer to these variables will need to be updated.
+replaced. Subclasses that refer to these variables will need to be updated. In
+addition, the undocumented :meth:`falcon.media.Handlers.find_by_media_type`
+method was deprecated and may be removed in a future release.
