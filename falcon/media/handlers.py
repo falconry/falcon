@@ -31,6 +31,8 @@ class MissingDependencyHandler:
 class Handlers(UserDict):
     """A :class:`dict`-like object that manages Internet media type handlers."""
     def __init__(self, initial=None):
+        self._resolve = self._create_resolver()
+
         handlers = initial or {
             MEDIA_JSON: JSONHandler(),
             MEDIA_MULTIPART: MultipartFormHandler(),
@@ -42,18 +44,19 @@ class Handlers(UserDict):
         UserDict.__init__(self, handlers)
 
     def __setitem__(self, key, item):
-        # NOTE(kgriffs): When the mapping changes, we do not want to use a
-        #   cached handler from the previous mapping, in case it was
-        #   replaced. Always creating a new resolver is a simple way to ensure
-        #   this.
-        self._resolve = self._create_resolver()
         super().__setitem__(key, item)
 
+        # NOTE(kgriffs): When the mapping changes, we do not want to use a
+        #   cached handler from the previous mapping, in case it was
+        #   replaced.
+        self._resolve.cache_clear()
+
     def __delitem__(self, key):
+        super().__delitem__(key)
+
         # NOTE(kgriffs): Similar to __setitem__(), we need to avoid resolving
         #   to a cached handler that was removed.
-        self._resolve = self._create_resolver()
-        super().__delitem__(key)
+        self._resolve.cache_clear()
 
     def _best_match(self, media_type, all_media_types):
         result = None
