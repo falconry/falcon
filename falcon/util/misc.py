@@ -77,14 +77,12 @@ def _lru_cache_nop(*args, **kwargs):  # pragma: nocover
     return decorator
 
 
-if (
-    # NOTE(kgriffs): https://bugs.python.org/issue28969
-    (sys.version_info.minor == 5 and sys.version_info.micro < 4) or
-    (sys.version_info.minor == 6 and sys.version_info.micro < 1)
-):
-    _lru_cache_safe = _lru_cache_nop  # pragma: nocover
-else:
+# NOTE(kgriffs): https://bugs.python.org/issue28969
+_PYVER_TRIPLET = sys.version_info[:3]
+if _PYVER_TRIPLET >= (3, 5, 4) and _PYVER_TRIPLET != (3, 6, 0):
     _lru_cache_safe = functools.lru_cache  # type: ignore
+else:
+    _lru_cache_safe = _lru_cache_nop  # pragma: nocover
 
 
 # PERF(kgriffs): Using lru_cache is slower on pypy when the wrapped
@@ -92,7 +90,7 @@ else:
 if sys.implementation.name == 'pypy':
     _lru_cache_for_simple_logic = _lru_cache_nop  # pragma: nocover
 else:
-    _lru_cache_for_simple_logic = _lru_cache_safe
+    _lru_cache_for_simple_logic = _lru_cache_safe  # type: ignore
 
 
 def is_python_func(func):
