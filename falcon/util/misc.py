@@ -33,6 +33,7 @@ import sys
 import unicodedata
 
 from falcon import status_codes
+from falcon.constants import PYPY
 # NOTE(vytas): Hoist `deprecated` here since it is documented as part of the
 # public Falcon interface.
 from .deprecation import deprecated
@@ -71,7 +72,10 @@ utcnow = datetime.datetime.utcnow
 #   workstations, so we use the nocover pragma here.
 def _lru_cache_nop(*args, **kwargs):  # pragma: nocover
     def decorator(func):
+        # NOTE(kgriffs): Partially emulate the lru_cache protocol; only add
+        #   cache_info() later if/when it becomes necessary.
         func.cache_clear = lambda: None
+
         return func
 
     return decorator
@@ -87,7 +91,7 @@ else:
 
 # PERF(kgriffs): Using lru_cache is slower on pypy when the wrapped
 #   function is just doing a few non-IO operations.
-if sys.implementation.name == 'pypy':
+if PYPY:
     _lru_cache_for_simple_logic = _lru_cache_nop  # pragma: nocover
 else:
     _lru_cache_for_simple_logic = _lru_cache_safe  # type: ignore

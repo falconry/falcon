@@ -1,7 +1,7 @@
 from collections import UserDict
 
 from falcon import errors
-from falcon.constants import MEDIA_JSON, MEDIA_MULTIPART, MEDIA_URLENCODED
+from falcon.constants import MEDIA_JSON, MEDIA_MULTIPART, MEDIA_URLENCODED, PYPY
 from falcon.media.json import JSONHandler
 from falcon.media.multipart import MultipartFormHandler, MultipartParseOptions
 from falcon.media.urlencoded import URLEncodedFormHandler
@@ -58,47 +58,46 @@ class Handlers(UserDict):
         #   to a cached handler that was removed.
         self._resolve.cache_clear()
 
-    def _best_match(self, media_type, all_media_types):
-        result = None
-
-        try:
-            # NOTE(jmvrbanac): Mimeparse will return an empty string if it can
-            # parse the media type, but cannot find a suitable type.
-            result = mimeparse.best_match(
-                all_media_types,
-                media_type
-            )
-        except ValueError:
-            pass
-
-        return result
-
     def _create_resolver(self):
-        # NOTE(kgriffs): This is defined as a private method since it is meant to
-        #   only be called by the framework, rather than the app.
-        # NOTE(kgriffs): Most apps will probably only use one or two media handlers,
+        # PERF(kgriffs): Under PyPy the LRU is relatively expensive as compared
+        #   to the common case of the self.data lookup succeeding. Using
+        #   _lru_cache_for_simple_logic() takes this into account by essentially
+        #   creating a nop but also decorating the method with a dummy
+        #   cache_clear().
+        # PERF(kgriffs): Most apps will probably only use one or two media handlers,
         #   but we use maxsize=64 to give us some wiggle room just in case someone
         #   is using versioned media types or something, and to cover various
         #   combinations of the method args. We may need to tune this later.
-        @misc._lru_cache_safe(maxsize=64)
+        @misc._lru_cache_for_simple_logic(maxsize=64)
         def resolve(media_type, default, raise_not_found=True):
             if media_type == '*/*' or not media_type:
                 media_type = default
 
-            # PERF(kgriffs): We just do this slower check every time, rather
-            #   than trying to first check the dict directly, since the result
-            #   will almost always be cached anyway.
-            matched_type = self._best_match(media_type, self.data.keys())
+            # PERF(kgriffs): Under CPython we do not need this shortcut to
+            #   improve performance since most calls will be resolved by the
+            #   LRU cache on resolve(). On the other hand, it doesn't hurt,
+            #   and it certainly makes a difference under PyPy.
+            try:
+                handler = self.data[media_type]
+            except KeyError:
+                handler = None
 
-            if not matched_type:
-                if raise_not_found:
-                    raise errors.HTTPUnsupportedMediaType(
-                        description='{0} is an unsupported media type.'.format(media_type)
-                    )
+            if not handler:
+                # PERF(kgriffs): We just do this slower check every time, rather
+                #   than trying to first check the dict directly, since the result
+                #   will almost always be cached anyway.
+                # NOTE(kgriffs): Wrap keys in a tuple to make them hashable.
+                matched_type = _best_match(media_type, tuple(self.data.keys()))
 
-                return None, None, None
+                if not matched_type:
+                    if raise_not_found:
+                        raise errors.HTTPUnsupportedMediaType(
+                            description='{0} is an unsupported media type.'.format(media_type)
+                        )
 
-            handler = self.data[matched_type]
+                    return None, None, None
+
+                handler = self.data[matched_type]
 
             return (
                 handler,
@@ -122,8 +121,9 @@ class Handlers(UserDict):
         except KeyError:
             pass
 
-        # PERF(jmvrbanac): Fallback to the slower method
-        resolved = self._best_match(media_type, self.data.keys())
+        # PERF(jmvrbanac): Fallback to the slower method.
+        # NOTE(kgriffs): Wrap keys in a tuple to make them hashable.
+        resolved = _best_match(media_type, tuple(self.data.keys()))
 
         if not resolved:
             if raise_not_found:
@@ -133,6 +133,34 @@ class Handlers(UserDict):
             return None
 
         return self.data[resolved]
+
+
+def _best_match(media_type, all_media_types):
+    result = None
+
+    try:
+        # NOTE(jmvrbanac): Mimeparse will return an empty string if it can
+        # parse the media type, but cannot find a suitable type.
+        result = mimeparse.best_match(
+            all_media_types,
+            media_type
+        )
+    except ValueError:
+        pass
+
+    return result
+
+
+if PYPY:
+    # NOTE(kgriffs): The most common case for resolve() is that the
+    #   direct self.data shortcut will succeed. In this case, the LRU
+    #   lookup for resolve() is actually slower under PyPy than just
+    #   executing the method's body each time.
+    #
+    #   However, if the shortcut does not succeed, invoking best_match()
+    #   is relatively expensive, so it does make sense to use an LRU
+    #   in that case.
+    _best_match = misc._lru_cache_safe(maxsize=64)(_best_match)  # pragma: nocover
 
 
 # NOTE(vytas): An ugly way to work around circular imports.

@@ -49,6 +49,7 @@ except ImportError:
     vmprof = None
 
 from falcon.bench import create  # NOQA
+from falcon.constants import PYPY
 import falcon.testing as helpers
 
 
@@ -63,8 +64,6 @@ ITER_DETECTION_DURATION_MIN = 1.0
 ITER_DETECTION_DURATION_MAX = 6.0
 
 JIT_WARMING_MULTIPLIER = 30
-
-PYPY = platform.python_implementation() == 'PyPy'
 
 BODY = helpers.rand_string(10240, 10240).encode('utf-8') # NOQA
 HEADERS = {'X-Test': 'Funky Chicken'}  # NOQA
