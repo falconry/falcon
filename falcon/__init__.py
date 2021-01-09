@@ -25,7 +25,6 @@ the framework's classes, functions, and variables::
 """
 
 import logging as _logging
-import sys as _sys
 
 # Hoist classes and functions into the falcon namespace
 from falcon.version import __version__  # NOQA
@@ -49,10 +48,6 @@ from falcon.util import *  # NOQA
 from falcon.hooks import before, after  # NOQA
 from falcon.request import Request, RequestOptions, Forwarded  # NOQA
 from falcon.response import Response, ResponseOptions  # NOQA
-
-
-ASGI_SUPPORTED = _sys.version_info >= (3, 6)
-"""Set to ``True`` when ASGI is supported for the current Python version."""
 
 
 # NOTE(kgriffs): Only to be used internally on the rare occasion that we

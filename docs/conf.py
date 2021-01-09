@@ -67,8 +67,9 @@ extensions = [
     'sphinx_tabs.tabs',
 
     # Falcon-specific extensions
-    'ext.rfc',
     'ext.doorway',
+    'ext.private_args',
+    'ext.rfc',
 ]
 
 # Add any paths that contain templates here, relative to this directory.

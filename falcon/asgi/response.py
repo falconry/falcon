@@ -18,6 +18,7 @@ from asyncio.coroutines import CoroWrapper  # type: ignore
 from inspect import iscoroutine, iscoroutinefunction
 
 from falcon.constants import _UNSET
+import falcon.media
 import falcon.response
 from falcon.util.misc import is_python_func
 
@@ -262,15 +263,18 @@ class Response(falcon.response.Response):
                     if not self.content_type:
                         self.content_type = self.options.default_media_type
 
-                    handler = self.options.media_handlers.find_by_media_type(
+                    handler, serialize_sync, _ = self.options.media_handlers._resolve(
                         self.content_type,
                         self.options.default_media_type
                     )
 
-                    self._media_rendered = await handler.serialize_async(
-                        self._media,
-                        self.content_type
-                    )
+                    if serialize_sync:
+                        self._media_rendered = serialize_sync(self._media)
+                    else:
+                        self._media_rendered = await handler.serialize_async(
+                            self._media,
+                            self.content_type
+                        )
 
                 data = self._media_rendered
         else:
