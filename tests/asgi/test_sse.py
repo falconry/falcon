@@ -204,7 +204,7 @@ class TestSerializeJson:
 
     def test_use_media_handler_dumps(self, client):
         h = client.app.resp_options.media_handlers[falcon.MEDIA_JSON]
-        h.dumps = lambda x: json.dumps(x).upper()
+        h._dumps = lambda x: json.dumps(x).upper()
 
         result = client.simulate_get()
         assert result.text == (

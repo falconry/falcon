@@ -24,8 +24,7 @@ in the `falcon` module, and so must be explicitly imported::
 
 """
 
-import platform
-
+from falcon.constants import PYPY
 try:
     from falcon.cyutil.uri import (
         decode as _cy_decode,
@@ -52,8 +51,6 @@ _HEX_DIGITS = '0123456789ABCDEFabcdef'
 _HEX_TO_BYTE = {(a + b).encode(): bytes([int(a + b, 16)])
                 for a in _HEX_DIGITS
                 for b in _HEX_DIGITS}
-
-_PYPY = platform.python_implementation() == 'PyPy'
 
 
 def _create_char_encoder(allowed_chars):
@@ -215,7 +212,7 @@ def _join_tokens_list(tokens):
 #     benefit of being able to decode() off it directly.
 #   * On PyPy, b''.join(list) is the recommended approach, although it may
 #     narrowly lose to BytesIO on the extreme end.
-_join_tokens = _join_tokens_list if _PYPY else _join_tokens_bytearray
+_join_tokens = _join_tokens_list if PYPY else _join_tokens_bytearray
 
 
 def decode(encoded_uri, unquote_plus=True):

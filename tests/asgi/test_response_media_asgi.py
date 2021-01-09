@@ -141,7 +141,8 @@ def test_default_media_type():
     assert result.json == doc
 
 
-def test_mimeparse_edgecases():
+@pytest.mark.parametrize('monkeypatch_resolver', [True, False])
+def test_mimeparse_edgecases(monkeypatch_resolver):
     doc = {'something': True}
 
     class TestResource:
@@ -156,11 +157,29 @@ def test_mimeparse_edgecases():
                 resp.media = {'something': False}
                 await resp.render_body()
 
-            # Clear the content type, shouldn't raise this time
-            resp.content_type = None
-            resp.media = doc
+            # Shouldn't raise
+            for content_type in (None, '*/*'):
+                resp.content_type = content_type
+                resp.media = doc
 
     client = create_client(TestResource())
+
+    handlers = client.app.resp_options.media_handlers
+
+    # NOTE(kgriffs): Test the pre-3.0 method. Although undocumented, it was
+    #   technically a public method, and so we make sure it still works here.
+    if monkeypatch_resolver:
+        def _resolve(media_type, default, raise_not_found=True):
+            with pytest.warns(DeprecatedWarning, match='This undocumented method'):
+                h = handlers.find_by_media_type(
+                    media_type,
+                    default,
+                    raise_not_found=raise_not_found
+                )
+            return h, None, None
+
+        handlers._resolve = _resolve
+
     result = client.simulate_get('/')
     assert result.json == doc
 

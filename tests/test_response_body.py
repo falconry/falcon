@@ -120,3 +120,8 @@ def test_response_body_rendition_error(asgi):
 
     resp = testing.simulate_get(app, '/test.mal')
     assert resp.status_code == 753
+
+    # NOTE(kgriffs): Validate that del works on media handlers.
+    del app.resp_options.media_handlers['text/x-malbolge']
+    resp = testing.simulate_get(app, '/test.mal')
+    assert resp.status_code == 415
