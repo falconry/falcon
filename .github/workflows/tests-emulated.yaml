@@ -6,6 +6,10 @@ on:
   push:
     branches:
       - master
+  # TODO(vytas): Remove after the first demo run.
+  pull_request:
+    branches:
+      - master
 
 jobs:
   run_tox_emulate:
@@ -33,6 +37,10 @@ jobs:
         run: |
           docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
+      # TODO(vytas): Revisit second half of 2021 to see if we still need to pin tox
+      #
+      #   See also: https://github.com/tox-dev/tox/issues/1777
+      #
       - name: Run tox s390x
         if: ${{ matrix.architecture == 's390x' }}
         uses: docker://s390x/python:3.8-buster
@@ -45,7 +53,7 @@ jobs:
             lscpu &&
             mkdir -p $PIP_CACHE_DIR &&
             chown -R $(whoami) $PIP_CACHE_DIR &&
-            pip install -U pip tox &&
+            pip install -U pip tox==3.20 &&
             python --version &&
             pip --version &&
             tox --version &&
@@ -63,7 +71,7 @@ jobs:
             lscpu &&
             mkdir -p $PIP_CACHE_DIR &&
             chown -R $(whoami) $PIP_CACHE_DIR &&
-            pip install -U pip tox &&
+            pip install -U pip tox==3.20 &&
             python --version &&
             pip --version &&
             tox --version &&
