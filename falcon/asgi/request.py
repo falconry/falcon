@@ -19,6 +19,7 @@ from falcon import request_helpers as helpers  # NOQA: Required by fixed up WSGI
 from falcon.constants import SINGLETON_HEADERS
 from falcon.forwarded import _parse_forwarded_header  # NOQA: Req. by fixed up WSGI Request attrs
 from falcon.forwarded import Forwarded  # NOQA
+import falcon.media
 import falcon.request
 from falcon.util.uri import parse_host, parse_query_string
 from . import _request_helpers as asgi_helpers
@@ -750,17 +751,21 @@ class Request(falcon.request.Request):
                 return default_when_empty
             raise self._media_error
 
-        handler = self.options.media_handlers.find_by_media_type(
+        handler, _, deserialize_sync = self.options.media_handlers._resolve(
             self.content_type,
             self.options.default_media_type
         )
 
         try:
-            self._media = await handler.deserialize_async(
-                self.stream,
-                self.content_type,
-                self.content_length
-            )
+            if deserialize_sync:
+                self._media = deserialize_sync(await self.stream.read())
+            else:
+                self._media = await handler.deserialize_async(
+                    self.stream,
+                    self.content_type,
+                    self.content_length
+                )
+
         except errors.MediaNotFoundError as err:
             self._media_error = err
             if default_when_empty is not _UNSET:

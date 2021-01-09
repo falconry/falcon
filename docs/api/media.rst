@@ -157,12 +157,23 @@ External handlers should update their logic to align to the internal Falcon hand
 Replacing the Default Handlers
 ------------------------------
 
+By default, the framework installs :class:`falcon.media.JSONHandler`,
+:class:`falcon.media.URLEncodedFormHandler`, and
+:class:`falcon.media.MultipartFormHandler` for the ``application/json``,
+``application/x-www-form-urlencoded``, and ``multipart/form-data`` media types,
+respectively.
+
 When creating your App object you can either add or completely replace all of
 the handlers. For example, let's say you want to write an API that sends and
 receives `MessagePack <https://msgpack.org/>`_. We can easily do this by telling
-our Falcon API that we want a default media type of ``application/msgpack`` and
-then create a new :any:`Handlers` object specifying the desired media type and a
-handler that can process that data.
+our Falcon API that we want a default media type of ``application/msgpack``, and
+then creating a new :any:`Handlers` object to map that media type to an
+appropriate handler.
+
+The following example demonstrates how to replace the default handlers. Because
+Falcon provides a :class:`~.falcon.media.MessagePackHandler` that is not enabled
+by default, we use it in our examples below. However, you can always substitute
+a :ref:`custom media handler <custom-media-handler-type>` as needed.
 
 .. code:: python
 
@@ -179,8 +190,8 @@ handler that can process that data.
     app.req_options.media_handlers = handlers
     app.resp_options.media_handlers = handlers
 
-Alternatively, if you would like to add an additional handler without
-removing the default handlers, this can be easily done as follows:
+Alternatively, you can simply update the existing :any:`Handlers` object to
+retain the default handlers:
 
 .. code-block:: python
 
@@ -209,12 +220,12 @@ See also: :ref:`media_type_constants`.
     The JSON handler configured in :class:`falcon.Request` is used by
     :meth:`falcon.Request.get_param_as_json` to deserialize query params.
 
-    When implementing a custom handler for the JSON media it is therefore required
+    Therefore, when implementing a custom handler for the JSON media type, it is required
     that the sync interface methods, meaning
     :meth:`falcon.media.BaseHandler.serialize` and :meth:`falcon.media.BaseHandler.deserialize`,
-    are implemented even in ``ASGI`` applications. The default json handler
-    :class:`falcon.media.JSONHandler` already implements all the required methods to
-    work with both type of applications.
+    are implemented even in ``ASGI`` applications. The default JSON handler,
+    :class:`falcon.media.JSONHandler`, already implements the methods required to
+    work with both types of applications.
 
 
 Supported Handler Types
