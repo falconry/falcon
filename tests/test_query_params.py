@@ -899,7 +899,7 @@ class TestQueryParams:
         client.app.add_route('/', resource)
         payload_dict = {'foo': 'bar'}
         query_string = 'payload={}'.format(json.dumps(payload_dict))
-        client.app.req_options.media_handlers[falcon.MEDIA_JSON].loads = lambda x: {'x': 'y'}
+        client.app.req_options.media_handlers[falcon.MEDIA_JSON]._loads = lambda x: {'x': 'y'}
         client.simulate_get(path='/', query_string=query_string)
         req = resource.captured_req
         assert req.get_param_as_json('payload') == {'x': 'y'}

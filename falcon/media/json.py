@@ -71,12 +71,12 @@ class JSONHandler(BaseHandler):
     """
 
     def __init__(self, dumps=None, loads=None):
-        self.dumps = dumps or partial(json.dumps, ensure_ascii=False)
-        self.loads = loads or json.loads
+        self._dumps = dumps or partial(json.dumps, ensure_ascii=False)
+        self._loads = loads or json.loads
 
         # PERF(kgriffs): Test dumps once up front so we can set the
         #     proper serialize implementation.
-        result = self.dumps({'message': 'Hello World'})
+        result = self._dumps({'message': 'Hello World'})
         if isinstance(result, str):
             self.serialize = self._serialize_s
             self.serialize_async = self._serialize_async_s
@@ -84,11 +84,17 @@ class JSONHandler(BaseHandler):
             self.serialize = self._serialize_b
             self.serialize_async = self._serialize_async_b
 
+        # NOTE(kgriffs): To be safe, only enable the optimized protocol when
+        #   not subclassed.
+        if type(self) is JSONHandler:
+            self._serialize_sync = self.serialize
+            self._deserialize_sync = self._deserialize
+
     def _deserialize(self, data):
         if not data:
             raise errors.MediaNotFoundError('JSON')
         try:
-            return self.loads(data.decode())
+            return self._loads(data.decode())
         except ValueError as err:
             raise errors.MediaMalformedError('JSON') from err
 
@@ -98,17 +104,19 @@ class JSONHandler(BaseHandler):
     async def deserialize_async(self, stream, content_type, content_length):
         return self._deserialize(await stream.read())
 
-    def _serialize_s(self, media, content_type):
-        return self.dumps(media).encode()
+    # NOTE(kgriffs): Make content_type a kwarg to support the
+    #   Request.render_body() shortcut optimization.
+    def _serialize_s(self, media, content_type=None) -> bytes:
+        return self._dumps(media).encode()
 
-    async def _serialize_async_s(self, media, content_type):
-        return self.dumps(media).encode()
+    async def _serialize_async_s(self, media, content_type) -> bytes:
+        return self._dumps(media).encode()
 
-    def _serialize_b(self, media, content_type):
-        return self.dumps(media)
+    def _serialize_b(self, media, content_type) -> bytes:
+        return self._dumps(media)
 
-    async def _serialize_async_b(self, media, content_type):
-        return self.dumps(media)
+    async def _serialize_async_b(self, media, content_type) -> bytes:
+        return self._dumps(media)
 
 
 class JSONHandlerWS(TextBaseHandlerWS):
@@ -170,14 +178,14 @@ class JSONHandlerWS(TextBaseHandlerWS):
     __slots__ = ['dumps', 'loads']
 
     def __init__(self, dumps=None, loads=None):
-        self.dumps = dumps or partial(json.dumps, ensure_ascii=False)
-        self.loads = loads or json.loads
+        self._dumps = dumps or partial(json.dumps, ensure_ascii=False)
+        self._loads = loads or json.loads
 
     def serialize(self, media: object) -> str:
-        return self.dumps(media)
+        return self._dumps(media)
 
     def deserialize(self, payload: str) -> object:
-        return self.loads(payload)
+        return self._loads(payload)
 
 
 http_error._DEFAULT_JSON_HANDLER = _DEFAULT_JSON_HANDLER = JSONHandler()  # type: ignore

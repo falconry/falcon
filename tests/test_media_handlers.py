@@ -9,6 +9,7 @@ import ujson
 
 import falcon
 from falcon import ASGI_SUPPORTED, media, testing
+from falcon.util.deprecation import DeprecatedWarning
 
 from _util import create_app  # NOQA
 
@@ -110,7 +111,14 @@ def test_deserialization(asgi, func, body, expected):
     assert result == expected
 
 
-def test_deserialization_raises(asgi):
+@pytest.mark.parametrize('monkeypatch_resolver', [True, False])
+@pytest.mark.parametrize('handler_mt', [
+    'application/json',
+
+    # NOTE(kgriffs): Include a bogus parameter to validate fuzzy matching logic
+    'application/json; answer=42'
+])
+def test_deserialization_raises(asgi, handler_mt, monkeypatch_resolver):
     app = create_app(asgi)
 
     class SuchException(Exception):
@@ -126,7 +134,22 @@ def test_deserialization_raises(asgi):
         def serialize(self, media, content_type):
             raise SuchException('Wow such error.')
 
-    handlers = media.Handlers({'application/json': FaultyHandler()})
+    handlers = media.Handlers({handler_mt: FaultyHandler()})
+
+    # NOTE(kgriffs): Test the pre-3.0 method. Although undocumented, it was
+    #   technically a public method, and so we make sure it still works here.
+    if monkeypatch_resolver:
+        def _resolve(media_type, default, raise_not_found=True):
+            with pytest.warns(DeprecatedWarning, match='This undocumented method'):
+                h = handlers.find_by_media_type(
+                    media_type,
+                    default,
+                    raise_not_found=raise_not_found
+                )
+            return h, None, None
+
+        handlers._resolve = _resolve
+
     app.req_options.media_handlers = handlers
     app.resp_options.media_handlers = handlers
 
@@ -252,10 +275,26 @@ def test_async_handler_returning_none():
     assert result.json == [None]
 
 
-def test_json_err_no_handler(asgi):
+@pytest.mark.parametrize('monkeypatch_resolver', [True, False])
+def test_json_err_no_handler(asgi, monkeypatch_resolver):
     app = create_app(asgi)
 
     handlers = media.Handlers({falcon.MEDIA_URLENCODED: media.URLEncodedFormHandler()})
+
+    # NOTE(kgriffs): Test the pre-3.0 method. Although undocumented, it was
+    #   technically a public method, and so we make sure it still works here.
+    if monkeypatch_resolver:
+        def _resolve(media_type, default, raise_not_found=True):
+            with pytest.warns(DeprecatedWarning, match='This undocumented method'):
+                h = handlers.find_by_media_type(
+                    media_type,
+                    default,
+                    raise_not_found=raise_not_found
+                )
+            return h, None, None
+
+        handlers._resolve = _resolve
+
     app.req_options.media_handlers = handlers
     app.resp_options.media_handlers = handlers
 

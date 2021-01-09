@@ -24,8 +24,8 @@ def test_deserialize_invalid_unicode():
 
 
 @pytest.mark.parametrize('data,expected', [
-    ({'hello': 'world'}, 'hello=world'),
-    ({'number': [1, 2]}, 'number=1&number=2'),
+    ({'hello': 'world'}, b'hello=world'),
+    ({'number': [1, 2]}, b'number=1&number=2'),
 ])
 def test_urlencoded_form_handler_serialize(data, expected):
     handler = media.URLEncodedFormHandler()

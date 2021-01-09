@@ -15,7 +15,12 @@ import falcon
 from falcon import media
 from falcon import testing
 from falcon import util
-from falcon.constants import MEDIA_JSON
+from falcon.constants import (
+    MEDIA_JSON,
+    MEDIA_MSGPACK,
+    MEDIA_URLENCODED,
+    MEDIA_YAML
+)
 from falcon.util import deprecation, misc, structures, uri
 
 from _util import create_app, to_coroutine  # NOQA
@@ -42,6 +47,54 @@ def decode_approach(request, monkeypatch):
         method = uri._join_tokens_bytearray
     monkeypatch.setattr(uri, '_join_tokens', method)
     return method
+
+
+class TrackingJSONHandler(media.JSONHandler):
+    def __init__(self):
+        super().__init__()
+        self.deserialize_count = 0
+
+    def deserialize(self, *args, **kwargs):
+        result = super().deserialize(*args, **kwargs)
+        self.deserialize_count += 1
+        return result
+
+    async def deserialize_async(self, *args, **kwargs):
+        result = await super().deserialize_async(*args, **kwargs)
+        self.deserialize_count += 1
+        return result
+
+
+class TrackingMessagePackHandler(media.MessagePackHandler):
+    def __init__(self):
+        super().__init__()
+        self.deserialize_count = 0
+
+    def deserialize(self, *args, **kwargs):
+        result = super().deserialize(*args, **kwargs)
+        self.deserialize_count += 1
+        return result
+
+    async def deserialize_async(self, *args, **kwargs):
+        result = await super().deserialize_async(*args, **kwargs)
+        self.deserialize_count += 1
+        return result
+
+
+class TrackingFormHandler(media.URLEncodedFormHandler):
+    def __init__(self):
+        super().__init__()
+        self.deserialize_count = 0
+
+    def deserialize(self, *args, **kwargs):
+        result = super().deserialize(*args, **kwargs)
+        self.deserialize_count += 1
+        return result
+
+    async def deserialize_async(self, *args, **kwargs):
+        result = await super().deserialize_async(*args, **kwargs)
+        self.deserialize_count += 1
+        return result
 
 
 class TestFalconUtils:
@@ -905,32 +958,49 @@ class TestFalconTestingUtils:
             assert resp.status_code == 415
 
     @pytest.mark.parametrize('content_type', [
-        'application/json',
-        'application/json; charset=UTF-8',
-        'application/yaml'
+        MEDIA_JSON,
+        MEDIA_JSON + '; charset=UTF-8',
+        MEDIA_YAML,
+        MEDIA_MSGPACK,
+        MEDIA_URLENCODED,
     ])
     def test_simulate_content_type_extra_handler(self, asgi, content_type):
-        class TrackingJSONHandler(media.JSONHandler):
+        class TestResourceAsync(testing.SimpleTestResourceAsync):
             def __init__(self):
                 super().__init__()
-                self.deserialize_count = 0
 
-            def deserialize(self, *args, **kwargs):
-                result = super().deserialize(*args, **kwargs)
-                self.deserialize_count += 1
-                return result
+            async def on_post(self, req, resp):
+                await super().on_post(req, resp)
 
-            async def deserialize_async(self, *args, **kwargs):
-                result = await super().deserialize_async(*args, **kwargs)
-                self.deserialize_count += 1
-                return result
+                resp.media = {'hello': 'back'}
+                resp.content_type = content_type
 
-        resource = testing.SimpleTestResourceAsync() if asgi else testing.SimpleTestResource()
+        class TestResource(testing.SimpleTestResource):
+            def __init__(self):
+                super().__init__()
+
+            def on_post(self, req, resp):
+                super().on_post(req, resp)
+
+                resp.media = {'hello': 'back'}
+                resp.content_type = content_type
+
+        resource = TestResourceAsync() if asgi else TestResource()
         app = create_app(asgi)
         app.add_route('/', resource)
 
-        handler = TrackingJSONHandler()
-        extra_handlers = {'application/json': handler}
+        json_handler = TrackingJSONHandler()
+        msgpack_handler = TrackingMessagePackHandler()
+        form_handler = TrackingFormHandler()
+
+        # NOTE(kgriffs): Do not use MEDIA_* so that we can sanity-check that
+        #   our constants that are used in the pytest parametrization match
+        #   up to what we expect them to be.
+        extra_handlers = {
+            'application/json': json_handler,
+            'application/msgpack': msgpack_handler,
+            'application/x-www-form-urlencoded': form_handler,
+        }
         app.req_options.media_handlers.update(extra_handlers)
         app.resp_options.media_handlers.update(extra_handlers)
 
@@ -939,17 +1009,59 @@ class TestFalconTestingUtils:
             'Content-Type': content_type,
             'capture-req-media': 'y',
         }
-        payload = b'{"hello": "world"}'
+
+        if MEDIA_JSON in content_type:
+            payload = b'{"hello": "world"}'
+        elif content_type == MEDIA_MSGPACK:
+            payload = b'\x81\xa5hello\xa5world'
+        elif content_type == MEDIA_URLENCODED:
+            payload = b'hello=world'
+        else:
+            payload = None
+
         resp = client.simulate_post('/', headers=headers, body=payload)
 
         if MEDIA_JSON in content_type:
-            # Test that our custom deserializer was called
-            assert handler.deserialize_count == 1
-            assert resource.captured_req_media == {'hello': 'world'}
             assert resp.status_code == 200
+            assert resp.json == {'hello': 'back'}
+
+            # Test that our custom deserializer was called
+            assert json_handler.deserialize_count == 1
+            assert resource.captured_req_media == {'hello': 'world'}
+
+            # Verify that other handlers were not called
+            assert msgpack_handler.deserialize_count == 0
+            assert form_handler.deserialize_count == 0
+
+        elif content_type == MEDIA_MSGPACK:
+            assert resp.status_code == 200
+            assert resp.content == b'\x81\xa5hello\xa4back'
+
+            # Test that our custom deserializer was called
+            assert msgpack_handler.deserialize_count == 1
+            assert resource.captured_req_media == {'hello': 'world'}
+
+            # Verify that other handlers were not called
+            assert json_handler.deserialize_count == 0
+            assert form_handler.deserialize_count == 0
+
+        elif content_type == MEDIA_URLENCODED:
+            assert resp.status_code == 200
+            assert resp.content == b'hello=back'
+
+            # Test that our custom deserializer was called
+            assert form_handler.deserialize_count == 1
+            assert resource.captured_req_media == {'hello': 'world'}
+
+            # Verify that other handlers were not called
+            assert json_handler.deserialize_count == 0
+            assert msgpack_handler.deserialize_count == 0
+
         else:
             # YAML should not get handled
-            assert handler.deserialize_count == 0
+            for handler in (json_handler, msgpack_handler):
+                assert handler.deserialize_count == 0
+
             assert resource.captured_req_media is None
             assert resp.status_code == 415
 

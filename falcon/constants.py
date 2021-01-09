@@ -1,5 +1,13 @@
 from enum import Enum
 import os
+import sys
+
+
+PYPY = (sys.implementation.name == 'pypy')
+"""Evaluates to ``True`` when the current Python implementation is PyPy."""
+
+ASGI_SUPPORTED = sys.version_info >= (3, 6)
+"""Evaluates to ``True`` when ASGI is supported for the current Python version."""
 
 # RFC 7231, 5789 methods
 HTTP_METHODS = [
