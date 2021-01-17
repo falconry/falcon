@@ -1211,7 +1211,7 @@ def create_asgi_req(body=None, req_type=None, options=None, **kwargs) -> falcon.
     in one go.
 
     The arguments for this function are identical to those
-    of :py:meth:`falcon.testing.create_environ`, with the addition of
+    of :py:meth:`falcon.testing.create_scope`, with the addition of
     `body`, `req_type`, and `options` arguments as documented below.
 
     Keyword Arguments:
