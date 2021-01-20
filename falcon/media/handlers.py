@@ -1,9 +1,13 @@
 from collections import UserDict
 
 from falcon import errors
-from falcon.constants import MEDIA_JSON, MEDIA_MULTIPART, MEDIA_URLENCODED, PYPY
+from falcon.constants import MEDIA_JSON
+from falcon.constants import MEDIA_MULTIPART
+from falcon.constants import MEDIA_URLENCODED
+from falcon.constants import PYPY
 from falcon.media.json import JSONHandler
-from falcon.media.multipart import MultipartFormHandler, MultipartParseOptions
+from falcon.media.multipart import MultipartFormHandler
+from falcon.media.multipart import MultipartParseOptions
 from falcon.media.urlencoded import URLEncodedFormHandler
 from falcon.util import deprecation
 from falcon.util import misc
