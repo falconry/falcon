@@ -75,6 +75,7 @@ The testing framework supports both unittest and pytest::
 """
 
 # Hoist classes and functions into the falcon.testing namespace
+from falcon import util as _util
 from falcon.testing.client import ASGIConductor
 from falcon.testing.client import Cookie
 from falcon.testing.client import Result
@@ -113,3 +114,6 @@ from falcon.testing.resource import SimpleTestResource
 from falcon.testing.resource import SimpleTestResourceAsync
 from falcon.testing.srmock import StartResponseMock
 from falcon.testing.test_case import TestCase
+# NOTE(kgriffs): Alias for backwards-compatibility with Falcon 0.2
+# TODO: remove in falcon 4
+httpnow = _util.http_now
