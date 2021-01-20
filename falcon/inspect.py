@@ -21,8 +21,8 @@ from typing import List
 from typing import Optional
 from typing import Type
 
-from falcon import App
 from falcon import app_helpers
+from falcon.app import App
 from falcon.routing import CompiledRouter
 
 

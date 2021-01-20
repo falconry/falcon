@@ -16,8 +16,8 @@
 
 import mimetypes
 
-from falcon import DEFAULT_MEDIA_TYPE
 from falcon.constants import _UNSET
+from falcon.constants import DEFAULT_MEDIA_TYPE
 from falcon.errors import HeaderNotSupported
 from falcon.media import Handlers
 from falcon.response_helpers import format_content_disposition

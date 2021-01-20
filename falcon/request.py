@@ -16,11 +16,11 @@ from datetime import datetime
 from io import BytesIO
 from uuid import UUID
 
-from falcon import DEFAULT_MEDIA_TYPE
 from falcon import errors
-from falcon import MEDIA_JSON
 from falcon import request_helpers as helpers
 from falcon import util
+from falcon.constants import DEFAULT_MEDIA_TYPE
+from falcon.constants import MEDIA_JSON
 from falcon.forwarded import _parse_forwarded_header
 from falcon.forwarded import Forwarded  # NOQA
 from falcon.media import Handlers
