@@ -26,10 +26,8 @@ in the `falcon` module, and so must be explicitly imported::
 
 from falcon.constants import PYPY
 try:
-    from falcon.cyutil.uri import (
-        decode as _cy_decode,
-        parse_query_string as _cy_parse_query_string,
-    )
+    from falcon.cyutil.uri import decode as _cy_decode
+    from falcon.cyutil.uri import parse_query_string as _cy_parse_query_string
 except ImportError:
     _cy_decode = None
     _cy_parse_query_string = None
