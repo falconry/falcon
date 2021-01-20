@@ -15,13 +15,13 @@
 """ASGI Request class."""
 
 from falcon import errors
-from falcon import request_helpers as helpers  # NOQA: Required by fixed up WSGI Request attrs
+from falcon import request_helpers as helpers
 from falcon.constants import SINGLETON_HEADERS
-from falcon.forwarded import _parse_forwarded_header  # NOQA: Req. by fixed up WSGI Request attrs
 from falcon.forwarded import Forwarded  # NOQA
 import falcon.media
 import falcon.request
-from falcon.util.uri import parse_host, parse_query_string
+from falcon.util.uri import parse_host
+from falcon.util.uri import parse_query_string
 from . import _request_helpers as asgi_helpers
 from .stream import BoundedStream
 

@@ -14,8 +14,9 @@
 
 """ASGI Response class."""
 
-from asyncio.coroutines import CoroWrapper  # type: ignore
-from inspect import iscoroutine, iscoroutinefunction
+from asyncio.coroutines import CoroWrapper
+from inspect import iscoroutine
+from inspect import iscoroutinefunction
 
 from falcon.constants import _UNSET
 import falcon.media
