@@ -19,9 +19,11 @@ from uuid import UUID
 from falcon import errors
 from falcon import request_helpers as helpers
 from falcon import util
+from falcon.constants import _UNSET
 from falcon.constants import DEFAULT_MEDIA_TYPE
 from falcon.constants import MEDIA_JSON
 from falcon.forwarded import _parse_forwarded_header
+# TODO: remove import in falcon 4
 from falcon.forwarded import Forwarded  # NOQA
 from falcon.media import Handlers
 from falcon.media.json import _DEFAULT_JSON_HANDLER
@@ -42,8 +44,6 @@ WSGI_CONTENT_HEADERS = frozenset(['CONTENT_TYPE', 'CONTENT_LENGTH'])
 # PERF(kgriffs): Avoid an extra namespace lookup when using these functions
 strptime = datetime.strptime
 now = datetime.now
-
-_UNSET = object()  # flag object used as the default unset value
 
 
 class Request:
