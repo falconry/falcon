@@ -15,7 +15,8 @@
 """Hook decorators."""
 
 from functools import wraps
-from inspect import getmembers, iscoroutinefunction
+from inspect import getmembers
+from inspect import iscoroutinefunction
 import re
 
 from falcon import COMBINED_METHODS

@@ -19,15 +19,19 @@ from inspect import iscoroutinefunction
 import re
 import traceback
 
-from falcon import app_helpers as helpers, routing
+from falcon import app_helpers as helpers
+from falcon import routing
 import falcon.constants
-from falcon.errors import CompatibilityError, HTTPBadRequest
+from falcon.errors import CompatibilityError
+from falcon.errors import HTTPBadRequest
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 from falcon.middleware import CORSMiddleware
-from falcon.request import Request, RequestOptions
+from falcon.request import Request
+from falcon.request import RequestOptions
 import falcon.responders
-from falcon.response import Response, ResponseOptions
+from falcon.response import Response
+from falcon.response import ResponseOptions
 import falcon.status_codes as status
 from falcon.util import deprecation
 from falcon.util import misc

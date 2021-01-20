@@ -28,7 +28,8 @@ from falcon.media.json import _DEFAULT_JSON_HANDLER
 from falcon.stream import BoundedStream
 from falcon.util import structures
 from falcon.util.misc import isascii
-from falcon.util.uri import parse_host, parse_query_string
+from falcon.util.uri import parse_host
+from falcon.util.uri import parse_query_string
 from falcon.vendor import mimeparse
 
 DEFAULT_ERROR_LOG_FORMAT = ('{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
