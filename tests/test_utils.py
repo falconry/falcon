@@ -681,9 +681,6 @@ class TestFalconTestingUtils:
         response = client.simulate_request(path='/')
         assert response.json == falcon.HTTPNotFound().to_dict()
 
-    def test_httpnow_alias_for_backwards_compat(self):
-        assert testing.httpnow is util.http_now
-
     def test_default_headers(self, app):
         resource = testing.SimpleTestResource()
         app.add_route('/', resource)

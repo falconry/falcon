@@ -25,8 +25,8 @@ except ImportError:  # pragma: nocover
 
 import falcon
 import falcon.request
-from falcon.testing.client import TestClient
 from falcon.testing.client import Result  # NOQA - hoist for backwards compat
+from falcon.testing.client import TestClient
 
 
 class TestCase(unittest.TestCase, TestClient):
