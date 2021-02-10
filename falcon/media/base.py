@@ -8,7 +8,20 @@ from falcon.constants import MEDIA_JSON
 class BaseHandler(metaclass=abc.ABCMeta):
     """Abstract Base Class for an internet media type handler."""
 
-    def serialize(self, media, content_type):
+    # NOTE(kgriffs): The following special methods are used to enable an
+    #   optimized media (de)serialization protocol for ASGI. This is not
+    #   currently part of the public interface for Falcon, and is not
+    #   included in the docs. Once we are happy with the protocol, we
+    #   might make it part of the public interface for use by custom
+    #   media type handlers.
+
+    _serialize_sync = None
+    """Override to provide a synchronous serialization method that takes an object."""
+
+    _deserialize_sync = None
+    """Override to provide a synchronous deserialization method that takes a byte string."""
+
+    def serialize(self, media, content_type) -> bytes:
         """Serialize the media object on a :any:`falcon.Response`.
 
         By default, this method raises an instance of
@@ -39,7 +52,7 @@ class BaseHandler(metaclass=abc.ABCMeta):
         else:
             raise NotImplementedError()
 
-    async def serialize_async(self, media, content_type):
+    async def serialize_async(self, media, content_type) -> bytes:
         """Serialize the media object on a :any:`falcon.Response`.
 
         This method is similar to :py:meth:`~.BaseHandler.serialize`
@@ -66,7 +79,7 @@ class BaseHandler(metaclass=abc.ABCMeta):
         """
         return self.serialize(media, content_type)
 
-    def deserialize(self, stream, content_type, content_length):
+    def deserialize(self, stream, content_type, content_length) -> object:
         """Deserialize the :any:`falcon.Request` body.
 
         By default, this method raises an instance of
@@ -98,7 +111,7 @@ class BaseHandler(metaclass=abc.ABCMeta):
         else:
             raise NotImplementedError()
 
-    async def deserialize_async(self, stream, content_type, content_length):
+    async def deserialize_async(self, stream, content_type, content_length) -> object:
         """Deserialize the :any:`falcon.Request` body.
 
         This method is similar to :py:meth:`~.BaseHandler.deserialize` except

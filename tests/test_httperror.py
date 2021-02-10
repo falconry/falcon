@@ -881,7 +881,7 @@ class TestHTTPError:
     def test_serialize_error_uses_media_handler(self, client):
         client.app.add_route('/path', NotFoundResource())
         h = client.app.resp_options.media_handlers[falcon.MEDIA_JSON]
-        h.dumps = lambda x: json.dumps(x).upper()
+        h._dumps = lambda x: json.dumps(x).upper()
         response = client.simulate_request(path='/path')
 
         assert response.status == falcon.HTTP_404

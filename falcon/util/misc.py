@@ -33,6 +33,7 @@ import sys
 import unicodedata
 
 from falcon import status_codes
+from falcon.constants import PYPY
 # NOTE(vytas): Hoist `deprecated` here since it is documented as part of the
 # public Falcon interface.
 from .deprecation import deprecated
@@ -71,23 +72,29 @@ utcnow = datetime.datetime.utcnow
 #   workstations, so we use the nocover pragma here.
 def _lru_cache_nop(*args, **kwargs):  # pragma: nocover
     def decorator(func):
+        # NOTE(kgriffs): Partially emulate the lru_cache protocol; only add
+        #   cache_info() later if/when it becomes necessary.
+        func.cache_clear = lambda: None
+
         return func
 
     return decorator
 
 
-if (
-    # NOTE(kgriffs): https://bugs.python.org/issue28969
-    (sys.version_info.minor == 5 and sys.version_info.micro < 4) or
-    (sys.version_info.minor == 6 and sys.version_info.micro < 1) or
-
-    # PERF(kgriffs): Using lru_cache is slower on pypy when the wrapped
-    #   function is just doing a few non-IO operations.
-    (sys.implementation.name == 'pypy')
-):
-    _lru_cache_safe = _lru_cache_nop  # pragma: nocover
-else:
+# NOTE(kgriffs): https://bugs.python.org/issue28969
+_PYVER_TRIPLET = sys.version_info[:3]
+if _PYVER_TRIPLET >= (3, 5, 4) and _PYVER_TRIPLET != (3, 6, 0):
     _lru_cache_safe = functools.lru_cache  # type: ignore
+else:
+    _lru_cache_safe = _lru_cache_nop  # pragma: nocover
+
+
+# PERF(kgriffs): Using lru_cache is slower on pypy when the wrapped
+#   function is just doing a few non-IO operations.
+if PYPY:
+    _lru_cache_for_simple_logic = _lru_cache_nop  # pragma: nocover
+else:
+    _lru_cache_for_simple_logic = _lru_cache_safe  # type: ignore
 
 
 def is_python_func(func):
@@ -377,7 +384,7 @@ def secure_filename(filename):
     return _UNSAFE_CHARS.sub('_', filename)
 
 
-@_lru_cache_safe(maxsize=64)
+@_lru_cache_for_simple_logic(maxsize=64)
 def http_status_to_code(status):
     """Normalize an HTTP status to an integer code.
 
@@ -415,7 +422,7 @@ def http_status_to_code(status):
         raise ValueError('status strings must start with a three-digit integer')
 
 
-@_lru_cache_safe(maxsize=64)
+@_lru_cache_for_simple_logic(maxsize=64)
 def code_to_http_status(status):
     """Normalize an HTTP status to an HTTP status line string.
 

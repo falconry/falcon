@@ -33,11 +33,11 @@ You can check all this by running the following from within the Falcon project d
 $ tools/mintest.sh
 ```
 
-You may also use Python 3.6 or 3.7 if you don't have 3.8 installed on your system. Substitute "py36" or "py37" as appropriate. For example:
+You may also use Python 3.6 or 3.7 if you don't have 3.8 installed on your system. Substitute "py36" or "py37" as appropriate. Note also that due to a bug introduced in tox version 3.21, you will need to pin to 3.20 in order to run Falcon's test suite. For example:
 
 
 ```bash
-$ pip install -U tox coverage
+$ pip install -U tox==3.20 coverage
 $ rm -f .coverage.*
 $ tox -e pep8 && tox -e py35,py37 && tools/testing/combine_coverage.sh
 ```
@@ -141,11 +141,11 @@ $ xdg-open docs/_build/html/index.html
  following guidelines for docstrings:
    * Docstrings should utilize the [napolean style][docstrings] in order to make them read well, regardless of whether they are viewed through `help()` or on [Read the Docs][rtd].
    * Docstrings should begin with a short (~70 characters or less) summary line that ends in a period.
-       * The summary line should begin immediately after the opening quotes (do not add 
+       * The summary line should begin immediately after the opening quotes (do not add
     a line break before the summary line)
-       * The summary line should describe what it is if it is a class (e.g., "An 
+       * The summary line should describe what it is if it is a class (e.g., "An
     asynchronous, file-like object for reading ASGI streams.")
-       * The summary line should describe what it does when called, if it is a 
+       * The summary line should describe what it does when called, if it is a
      function, structured as an imperative (e.g., "Delete a header that was previously set for this response.")
    * Please try to be consistent with the way existing docstrings are formatted. In particular, note the use of single vs. double backticks as follows:
     * Double backticks
