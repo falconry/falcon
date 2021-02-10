@@ -1,0 +1,30 @@
+body {
+    margin: 0px;
+    padding: 0px;
+    min-width: 640px;
+    background-color: black;
+    font-family: sans-serif;
+    color: #f0ad4e;
+}
+
+.header {
+    padding: 1em;
+    background-color: #232323;
+    text-align: center;
+    font-size: larger;
+}
+
+.column {
+    float: left;
+    width: 50%;
+}
+
+.terminal {
+    padding: 1em;
+}
+
+.log {
+    clear: both;
+    padding: 1em;
+    font-family: monospace;
+}

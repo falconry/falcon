@@ -1,5 +1,5 @@
 from .app import create_app
 
-__all__ = ['app']
+__all__ = ['app', 'application']
 
-app = create_app()
+app = application = create_app()

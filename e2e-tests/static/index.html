@@ -4,11 +4,33 @@
 <head>
   <meta charset="utf-8">
   <title>Falcon E2E Tests</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-  <script src="js/main.js"></script>
+  <div class="header">WebSockets and SSE</div>
+
+  <div class="column">
+    <div class="terminal">
+      <h3>Terminal 1</h3>
+      <input type="text" id="input1">
+      <button id="send1">Send (WS1)</button>
+     </div>
+  </div>
+
+  <div class="column">
+    <div class="terminal">
+      <h3>Terminal 2</h3>
+      <input type="text" id="input2">
+      <button id="send2">Send (WS2)</button>
+    </div>
+  </div>
+
+  <div class="log">
+    <p>item</p>
+  </div>
+
+  <script src="main.js"></script>
 </body>
 
 </html>
