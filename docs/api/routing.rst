@@ -5,10 +5,27 @@ Routing
 
 .. contents:: :local:
 
-Falcon routes incoming requests (including :ref:`WebSocket handshakes <ws>`) to resources based on a set of URI
-templates. If the path requested by the client matches the template for
-a given route, the request is then passed on to the associated resource
-for processing.
+Falcon uses resource-based routing to encourage a RESTful architectural style.
+Each resource is represented by a class that is responsible for handling all of
+the HTTP methods that the resource supports.
+
+For each HTTP method supported by the resource, the class implements a
+corresponding Python method with a name that starts with ``on_`` and ends in the
+lowercased HTTP method name (e.g., ``on_get()``, ``on_patch()``,
+``on_delete()``, etc.)
+
+.. note::
+    Resources in Falcon are represented by a single class instance that is
+    created at application startup when the routes are configured. This
+    minimizes routing overhead and simplifies the implementation of resource
+    classes. In the case of WSGI apps, this also means that resource classes
+    must be implemented in a thread-safe manner (see also:
+    :ref:`faq_thread_safety`).
+
+Falcon routes incoming requests (including :ref:`WebSocket handshakes <ws>`) to
+resources based on a set of URI templates. If the path requested by the client
+matches the template for a given route, the request is then passed on to the
+associated resource for processing.
 
 Here's a quick example to show how all the pieces fit together:
 
@@ -97,6 +114,9 @@ responder for the requested HTTP method, the framework invokes a default
 responder that raises an instance of :class:`~.HTTPMethodNotAllowed`. This class
 will be rendered by default as a 405 response for a regular HTTP request, and a
 403 response with a 3405 close code for a :ref:`WebSocket <ws>` handshake.
+
+Falcon also provides a default responder for OPTIONS requests that takes into
+account which methods are implemented for the target resource.
 
 Default Behavior
 ----------------
