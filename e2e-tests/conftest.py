@@ -9,6 +9,7 @@ import falcon.testing
 
 
 HERE = pathlib.Path(__file__).resolve().parent
+INDEX = '/static/index.html'
 
 
 @pytest.fixture(scope='session')
@@ -36,10 +37,13 @@ def base_url():
     yield base_url
 
     uvicorn.terminate()
-    uvicorn.communicate(timeout=5)
+
+    # NOTE(vytas): give Unicorn a rather generous time period to stop since it
+    #   is waiting for the browser to close open connections such as WS & SSE.
+    uvicorn.communicate(timeout=30)
 
 
 @pytest.fixture()
 def browser(sb, base_url):
-    sb.open(base_url + '/ping')
+    sb.open(base_url + INDEX)
     return sb

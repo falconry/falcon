@@ -1,3 +1,3 @@
-def test_basic(browser):
-    src = browser.get_page_source()
-    assert 'PONG' in src
+def test_sse_message(browser):
+    message = browser.find_element('div.sse', timeout=5)
+    assert message.text == 'Hello'
