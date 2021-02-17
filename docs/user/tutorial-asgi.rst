@@ -31,12 +31,11 @@ WSGI tutorial::
       ├── __init__.py
       └── app.py
 
-Installing `virtualenv <https://virtualenv.pypa.io/>`_ is not usually needed
-for recent Python 3.x versions. We can simply create a *virtualenv* using the
-``venv`` module from the standard library::
+We'll create a *virtualenv* using the ``venv`` module from the standard library
+(Falcon requires Python 3.6+ for ASGI)::
 
   $ mkdir asgilook
-  $ python3.8 -m venv asgilook/.venv
+  $ python3 -m venv asgilook/.venv
   $ source asgilook/.venv/bin/activate
 
 .. note::
@@ -397,9 +396,12 @@ As mentioned earlier, we need to use a route suffix for the ``Images`` class to
 distinguish between a GET for a single image vs. the entire collection of
 images.
 
-Here, we map the single image resource to the ``'/images/{image_id:uuid}.jpeg'`` URI template using the ``'image'``
-suffix in the respective :func:`add_route <falcon.asgi.App.add_route>` call. We
-also specify the ``uuid`` field converter as discussed in the previous
+Here, we map the ``'/images/{image_id:uuid}.jpeg'`` URI template to a
+single image resource. By specifying an ``'image'`` suffix, we cause the
+framework to look for responder methods that have names ending in ``'_image'``
+(e.g, ``on_get_image()``).
+
+We also specify the ``uuid`` field converter as discussed in the previous
 section.
 
 In order to bootstrap an ASGI app instance for ``uvicorn`` to reference, we'll
@@ -588,7 +590,7 @@ functionality. The final version of ``images.py`` reads:
   cultivate a habit of making your code secure by design and secure by default.
 
   In this case, we see that generating thumbnails on the fly, based on
-  arbitrary dimensions embedded in the URI, could easily be misused to
+  arbitrary dimensions embedded in the URI, could easily be abused to
   create a denial-of-service attack.
 
   This particular attack is mitigated by validating the input (in this case, the
@@ -928,7 +930,7 @@ Now, we need more tests! Try adding a few more test cases to ``tests/test_images
 using the :ref:`WSGI Testing Tutorial <testing_tutorial>` as your guide (the
 interface for Falcon's testing framework is mostly the same for ASGI vs.
 WSGI). Additional examples are available under ``examples/asgilook/tests`` in
-the Falcon repository
+the Falcon repository.
 
 .. tip::
     For more advanced test cases, the :class:`falcon.testing.ASGIConductor`
