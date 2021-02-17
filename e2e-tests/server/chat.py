@@ -19,3 +19,5 @@ class Chat:
                 break
 
             await ws.send_text(message.upper())
+
+        self._hub.broadcast(f'{name} DISCONNECTED')
