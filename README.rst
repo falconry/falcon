@@ -23,50 +23,6 @@ Falcon apps work with any `WSGI <https://www.python.org/dev/peps/pep-3333/>`_
 or `ASGI <https://asgi.readthedocs.io/en/latest/>`_ server, and run like a
 champ under CPython 3.5+ and PyPy 3.5+ (3.6+ required for ASGI).
 
-.. Patron list starts here. For Python package, we substitute this section with:
-   Support Falcon Development
-   --------------------------
-
-A Big Thank You to Our Patrons
-------------------------------
-
-Platinum
-
-.. raw:: html
-
-    <p>
-    <a href="https://www.govcert.lu/" target="_blank"><img src="https://falconframework.org/img/sponsors/govcert.png" height="60" alt="CERT Gouvernemental Luxembourg" ></a>
-     </p>
-
-Gold
-
-.. raw:: html
-
-    <p>
-    <a href="https://www.likalo.com/" target="_blank"><img src="https://falconframework.org/img/sponsors/likalo.svg" height="20" alt="LIKALO" ></a>&nbsp;&nbsp;&nbsp;
-    <a href="https://www.kontrolnaya-rabota.ru/s/" target="_blank"><img src="https://falconframework.org/img/sponsors/rabota.jpg" height="20" alt="Examination RU" ></a>
-    </p>
-    <p>
-    <a href="https://www.luhnar.com/" target="_blank"><img src="https://falconframework.org/img/sponsors/luhnar-dark.svg" height="16" alt="Luhnar Site Accelerator" style="padding-bottom: 2px"></a>
-     </p>
-
-Silver
-
-.. raw:: html
-
-    <p>
-    <a href="https://www.pnk.sh/python-falcon" target="_blank"><img src="https://falconframework.org/img/sponsors/paris.svg" height="20" alt="Paris Kejser"></a>
-    </p>
-
-.. Patron list ends here (see the comment above this section).
-
-Has Falcon helped you make an awesome app? Show your support today with a one-time donation or by becoming a patron. Supporters get cool gear, an opportunity to promote their brand to Python developers, and
-prioritized support.
-
-`Learn how to support Falcon development <https://falconframework.org/#sectionSupportFalconDevelopment>`_
-
-Thanks!
-
 Quick Links
 -----------
 
@@ -117,6 +73,43 @@ Features
 - Snappy testing through WSGI/ASGI helpers and mocks
 - CPython 3.5+ and PyPy 3.5+ support
 - ~20% speed boost under CPython when Cython is available
+
+.. Patron list starts here. For Python package, we substitute this section with:
+   Support Falcon Development
+   --------------------------
+
+A Big Thank You to Our Patrons!
+-------------------------------
+
+.. raw:: html
+
+    <p>
+    <a href="https://www.govcert.lu/" target="_blank"><img src="https://falconframework.org/img/sponsors/govcert.png" height="60" alt="CERT Gouvernemental Luxembourg" ></a>
+     </p>
+
+    <p>
+        <a href="https://www.kontrolnaya-rabota.ru/s/" target="_blank"><img src="https://falconframework.org/img/sponsors/rabota.jpg" height="30" alt="Examination RU" style="margin-right: 10px"></a>
+
+        <a href="https://www.pnk.sh/python-falcon" target="_blank"><img src="https://falconframework.org/img/sponsors/paris.svg" height="30" alt="Paris Kejser" style="margin-right: 10px"></a>
+
+        <a href="https://www.algolia.com" target="_blank" style="margin-right: 10px"><img src="https://res.cloudinary.com/hilnmyskv/image/upload/q_auto/v1612864505/Algolia_com_Website_assets/images/shared/algolia_logo/algolia-blue-mark.svg" height="30" alt="Algolia"></a>
+
+        <a href="https://www.salesforce.com" target="_blank"><img src="https://www.salesforce.com/content/dam/sfdc-docs/www/logos/logo-salesforce.svg" height="30" alt="Salesforce"></a>
+    </p>
+
+    <p>
+        <a href="https://www.misaka.io" target="_blank" style="margin-right: 10px"><img src="https://app.misaka.io/static/media/logo.d39932ca.svg" height="30" alt="Misaka Network"></a>
+        <a href="https://github.com/LikaloLLC" target="_blank" style="margin-right: 10px"><img src="https://avatars.githubusercontent.com/u/40338604" height="30" alt="Likalo"></a>
+    </p>
+
+.. Patron list ends here (see the comment above this section).
+
+Has Falcon helped you make an awesome app? Show your support today with a one-time donation or by becoming a patron. Supporters get cool gear, an opportunity to promote their brand to Python developers, and
+prioritized support.
+
+* `Learn how to support Falcon development <https://falconframework.org/#sectionSupportFalconDevelopment>`_
+
+Thanks!
 
 How is Falcon Different?
 ------------------------
