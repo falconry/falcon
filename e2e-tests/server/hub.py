@@ -14,6 +14,7 @@ class Emitter:
     async def events(self):
         try:
             yield SSEvent(text='SSE CONNECTED')
+
             while True:
                 try:
                     event = await asyncio.wait_for(
@@ -26,9 +27,9 @@ class Emitter:
             # TODO(vytas): Is there a more elegant way to detect a disconnect?
             self._done = True
 
-    def enqueue(self, message, topic=None):
-        event = SSEvent(text=message, event=topic, event_id=uuid.uuid4())
-        self._queue.put_nowait(event)
+    async def enqueue(self, message):
+        event = SSEvent(text=message, event_id=str(uuid.uuid4()))
+        await self._queue.put(event)
 
     @property
     def done(self):
@@ -38,15 +39,28 @@ class Emitter:
 class Hub:
     def __init__(self):
         self._emitters = set()
+        self._users = {}
 
     def _update_emitters(self):
         done = {emitter for emitter in self._emitters if emitter.done}
         self._emitters.difference_update(done)
         return self._emitters.copy()
 
-    def broadcast(self, message, topic=None):
+    def add_user(self, name, ws):
+        self._users[name] = ws
+
+    def remove_user(self, name):
+        self._users.pop(name, None)
+
+    async def broadcast(self, message):
         for emitter in self._update_emitters():
-            emitter.enqueue(message, topic=topic)
+            await emitter.enqueue(message)
+
+    async def message(self, name, text):
+        ws = self._users.get(name)
+        if ws:
+            # TODO(vytas): What if this overlaps with another ongoing send?
+            await ws.send_text(text)
 
     def events(self):
         emitter = Emitter()
