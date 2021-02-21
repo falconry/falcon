@@ -2,9 +2,8 @@ import pathlib
 
 import falcon
 import falcon.asgi
-
 from .chat import Chat
-from .hub import Hub, Events
+from .hub import Events, Hub
 from .ping import Pong
 
 HERE = pathlib.Path(__file__).resolve().parent
