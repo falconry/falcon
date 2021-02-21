@@ -1,34 +1,30 @@
 # Falcon Patrons
 
-Thank you to our generous project patrons who help make this project possible!
+Thank you to our generous patrons who help make this project possible!
 
-## Platinum Patrons
+See also: https://opencollective.com/falcon
+
+## Platinum Patron
 
 * [GOVCERT.LU](https://www.govcert.lu/)
 
-## Gold Patrons
+## Commercial Patrons
 
-* [Likalo](https://www.likalo.com/)
+* [Algolia](https://www.algolia.com/)
 * [Examination RU](https://www.kontrolnaya-rabota.ru/s/)
-* [Luhnar](https://www.luhnar.com/)
-
-## Silver Patrons
-
-* [Paris Kejser](https://www.pnk.sh/python-falcon)
-
-## Bronze Patrons
-
-* Gerardo Cardenas
-* Zach Riddle
-
-## Copper Patrons
-
+* [Likalo](https://github.com/LikaloLLC)
 * [Misaka Network](https://www.misaka.io/)
+* [Paris Kejser](https://www.pnk.sh/python-falcon)
+* [Protoku](https://protoku.io/)
+* [Salesforce](https://www.salesforce.com)
 
-## Community Supporters
+## Our Talented and Stylish Community Patrons
 
 * Andrei Drang
+* Gerardo Cardenas
+* Hagar Marmari
 * Ivan Petukhov
-* [Protoku](https://protoku.io/)
+* Konstantinos Mouratidis
 * Vlad Shulkevich
 * Vincent Albanese
+* Zach Riddle
