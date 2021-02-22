@@ -58,6 +58,9 @@ def base_url():
 
 
 @pytest.fixture()
+# NOTE(vytas): sb here is seleniumbase's pytest fixture, see also
+#   "The sb pytest fixture (no class)" at
+#   https://seleniumbase.io/help_docs/syntax_formats/.
 def browser(sb, base_url):
     sb.open(base_url + INDEX)
 

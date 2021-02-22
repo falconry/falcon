@@ -7,7 +7,6 @@ class Chat:
 
     def __init__(self, hub):
         self._hub = hub
-        self._banned = set()
 
     async def on_websocket(self, req, ws, name):
         await ws.accept()
