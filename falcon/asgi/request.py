@@ -27,6 +27,10 @@ from .stream import BoundedStream
 
 __all__ = ['Request']
 
+_SINGLETON_HEADERS_BYTESTR = frozenset([
+    h.encode() for h in SINGLETON_HEADERS
+])
+
 
 class Request(request.Request):
     """Represents a client's HTTP request.
@@ -344,6 +348,7 @@ class Request(request.Request):
     __slots__ = [
         '_asgi_headers',
         '_asgi_server_cached',
+        '_cached_headers',
         '_first_event',
         '_receive',
         '_stream',
@@ -361,20 +366,25 @@ class Request(request.Request):
             # NOTE(kgriffs): According to ASGI 3.0, header names are always
             #   lowercased, and both name and value are byte strings. Although
             #   technically header names and values are restricted to US-ASCII
-            #   we decode using the default 'utf-8' because it is a little
-            #   faster than passing an encoding option.
-            header_name = header_name.decode()
-            header_value = header_value.decode()
+            #   we decode later (just-in-time) using the default 'utf-8' because
+            #   it is a little faster than passing an encoding option (except
+            #   under Cython).
+            #
+            #   The reason we wait to decode is that the typical app will not
+            #   need to decode all request headers, and we usually can just
+            #   leave the header name as a byte string and look it up that way.
+            #
 
             # NOTE(kgriffs): There are no standard request headers that
             #   allow multiple instances to appear in the request while also
             #   disallowing list syntax.
-            if header_name not in req_headers or header_name in SINGLETON_HEADERS:
+            if header_name not in req_headers or header_name in _SINGLETON_HEADERS_BYTESTR:
                 req_headers[header_name] = header_value
             else:
-                req_headers[header_name] += ',' + header_value
+                req_headers[header_name] += b',' + header_value
 
         self._asgi_headers = req_headers
+        self._cached_headers = None
 
         # =====================================================================
         #  Misc.
@@ -419,7 +429,6 @@ class Request(request.Request):
         self._cached_forwarded = None
         self._cached_forwarded_prefix = None
         self._cached_forwarded_uri = None
-        self._cached_headers = req_headers
         self._cached_prefix = None
         self._cached_relative_uri = None
         self._cached_uri = None
@@ -427,15 +436,15 @@ class Request(request.Request):
         if self.method == 'GET':
             # PERF(kgriffs): Normally we expect no Content-Type header, so
             #   use this pattern which is a little bit faster than dict.get()
-            if 'content-type' in req_headers:
-                self.content_type = req_headers['content-type']
+            if b'content-type' in req_headers:
+                self.content_type = req_headers[b'content-type'].decode()
             else:
                 self.content_type = None
         else:
             # PERF(kgriffs): This is the most performant pattern when we expect
             #   the key to be present most of the time.
             try:
-                self.content_type = req_headers['content-type']
+                self.content_type = req_headers[b'content-type'].decode()
             except KeyError:
                 self.content_type = None
 
@@ -484,14 +493,14 @@ class Request(request.Request):
         # NOTE(kgriffs): Per RFC, a missing accept header is
         # equivalent to '*/*'
         try:
-            return self._asgi_headers['accept'] or '*/*'
+            return self._asgi_headers[b'accept'].decode() or '*/*'
         except KeyError:
             return '*/*'
 
     @property
     def content_length(self):
         try:
-            value = self._asgi_headers['content-length']
+            value = self._asgi_headers[b'content-length'].decode()
         except KeyError:
             return None
 
@@ -571,7 +580,7 @@ class Request(request.Request):
         # try to avoid calling self.forwarded if we can, since it uses a
         # try...catch that will usually result in a relatively expensive
         # raised exception.
-        if 'forwarded' in self._asgi_headers:
+        if b'forwarded' in self._asgi_headers:
             first_hop = self.forwarded[0]
             scheme = first_hop.scheme or self.scheme
         else:
@@ -580,7 +589,7 @@ class Request(request.Request):
             # first. Note also that the indexing operator is
             # slightly faster than using get().
             try:
-                scheme = self._asgi_headers['x-forwarded-proto'].lower()
+                scheme = self._asgi_headers[b'x-forwarded-proto'].decode().lower()
             except KeyError:
                 scheme = self.scheme
 
@@ -592,7 +601,7 @@ class Request(request.Request):
             # NOTE(kgriffs): Prefer the host header; the web server
             # isn't supposed to mess with it, so it should be what
             # the client actually sent.
-            host_header = self._asgi_headers['host']
+            host_header = self._asgi_headers[b'host'].decode()
             host, __ = parse_host(host_header)
         except KeyError:
             host, __ = self._asgi_server
@@ -606,7 +615,7 @@ class Request(request.Request):
         # try to avoid calling self.forwarded if we can, since it uses a
         # try...catch that will usually result in a relatively expensive
         # raised exception.
-        if 'forwarded' in self._asgi_headers:
+        if b'forwarded' in self._asgi_headers:
             first_hop = self.forwarded[0]
             host = first_hop.host or self.netloc
         else:
@@ -615,7 +624,7 @@ class Request(request.Request):
             # just go for it without wasting time checking it
             # first.
             try:
-                host = self._asgi_headers['x-forwarded-host']
+                host = self._asgi_headers[b'x-forwarded-host'].decode()
             except KeyError:
                 host = self.netloc
 
@@ -643,17 +652,17 @@ class Request(request.Request):
 
             headers = self._asgi_headers
 
-            if 'forwarded' in headers:
+            if b'forwarded' in headers:
                 self._cached_access_route = []
                 for hop in self.forwarded:
                     if hop.src is not None:
                         host, __ = parse_host(hop.src)
                         self._cached_access_route.append(host)
-            elif 'x-forwarded-for' in headers:
-                addresses = headers['x-forwarded-for'].split(',')
+            elif b'x-forwarded-for' in headers:
+                addresses = headers[b'x-forwarded-for'].decode().split(',')
                 self._cached_access_route = [ip.strip() for ip in addresses]
-            elif 'x-real-ip' in headers:
-                self._cached_access_route = [headers['x-real-ip']]
+            elif b'x-real-ip' in headers:
+                self._cached_access_route = [headers[b'x-real-ip'].decode()]
 
             if self._cached_access_route:
                 if self._cached_access_route[-1] != client:
@@ -671,7 +680,7 @@ class Request(request.Request):
     @property
     def port(self):
         try:
-            host_header = self._asgi_headers['host']
+            host_header = self._asgi_headers[b'host'].decode()
             default_port = 443 if self._secure_scheme else 80
             __, port = parse_host(host_header, default_port=default_port)
         except KeyError:
@@ -684,7 +693,7 @@ class Request(request.Request):
         # PERF(kgriffs): try..except is faster than get() when we
         # expect the key to be present most of the time.
         try:
-            netloc_value = self._asgi_headers['host']
+            netloc_value = self._asgi_headers[b'host'].decode()
         except KeyError:
             netloc_value, port = self._asgi_server
 
@@ -791,26 +800,42 @@ class Request(request.Request):
         #   gets a None back on the first reference to property, it
         #   probably isn't going to access the property again (TBD).
         if self._cached_if_match is None:
-            header_value = self._asgi_headers.get('if-match')
+            header_value = self._asgi_headers.get(b'if-match')
             if header_value:
-                self._cached_if_match = helpers._parse_etags(header_value)
+                self._cached_if_match = helpers._parse_etags(header_value.decode())
 
         return self._cached_if_match
 
     @property
     def if_none_match(self):
         if self._cached_if_none_match is None:
-            header_value = self._asgi_headers.get('if-none-match')
+            header_value = self._asgi_headers.get(b'if-none-match')
             if header_value:
-                self._cached_if_none_match = helpers._parse_etags(header_value)
+                self._cached_if_none_match = helpers._parse_etags(header_value.decode())
 
         return self._cached_if_none_match
+
+    @property
+    def headers(self):
+        # NOTE(kgriffs: First time here will cache the dict so all we
+        # have to do is clone it in the future.
+        if self._cached_headers is None:
+            self._cached_headers = {
+                name.decode(): value.decode()
+                for name, value in self._asgi_headers.items()
+            }
+
+        return self._cached_headers
 
     # ------------------------------------------------------------------------
     # Public Methods
     # ------------------------------------------------------------------------
 
-    def get_header(self, name, required=False, default=None):
+    # PERF(kgriffs): Using kwarg cache, in lieu of @lru_cache on a helper method
+    #   that is then called from get_header(), was benchmarked to be more
+    #   efficient across CPython 3.6/3.8 (regardless of cythonization) and
+    #   PyPy 3.6.
+    def get_header(self, name, required=False, default=None, _name_cache={}):
         """Retrieve the raw string value for the given header.
 
         Args:
@@ -834,14 +859,19 @@ class Request(request.Request):
 
         """
 
-        asgi_name = name.lower()
+        try:
+            asgi_name = _name_cache[name]
+        except KeyError:
+            asgi_name = name.lower().encode()
+            if len(_name_cache) < 64:  # Somewhat arbitrary ceiling to mitigate abuse
+                _name_cache[name] = asgi_name
 
         # Use try..except to optimize for the header existing in most cases
         try:
             # Don't take the time to cache beforehand, using HTTP naming.
             # This will be faster, assuming that most headers are looked
             # up only once, and not all headers will be requested.
-            return self._asgi_headers[asgi_name]
+            return self._asgi_headers[asgi_name].decode()
 
         except KeyError:
             if not required:

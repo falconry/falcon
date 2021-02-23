@@ -33,6 +33,7 @@ pip-log.txt
 .ecosystem
 .tox
 .pytest_cache
+geckodriver.log
 htmlcov
 nosetests.xml
 

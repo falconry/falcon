@@ -1,0 +1,35 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Falcon E2E Tests</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div class="header">WebSockets and SSE</div>
+
+  <div class="column">
+    <div class="terminal">
+      <h3>Terminal 1</h3>
+      <input type="text" disabled id="input1">
+      <button id="button1">Connect (WS1)</button>
+     </div>
+  </div>
+
+  <div class="column">
+    <div class="terminal">
+      <h3>Terminal 2</h3>
+      <input type="text" disabled id="input2">
+      <button id="button2">Connect (WS2)</button>
+    </div>
+  </div>
+
+  <div class="log" id="messages">
+  </div>
+
+  <script src="main.js"></script>
+</body>
+
+</html>

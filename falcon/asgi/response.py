@@ -132,7 +132,7 @@ class Response(response.Response):
 
                         # ...or
 
-                        yield SSEvent(data=b'somethingsomething', id=some_id)
+                        yield SSEvent(data=b'something', event_id=some_id)
 
                         # Alternatively, you may yield anything that implements
                         #   a serialize() method that returns a byte string

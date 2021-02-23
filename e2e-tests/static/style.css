@@ -1,0 +1,48 @@
+body {
+    margin: 0px;
+    padding: 0px;
+    min-width: 640px;
+    background-color: black;
+    font-family: sans-serif;
+    color: #f0ad4e;
+}
+
+.header {
+    padding: 1em;
+    background-color: #232323;
+    text-align: center;
+    font-size: larger;
+}
+
+.column {
+    float: left;
+    width: 50%;
+}
+
+.terminal {
+    padding: 1em;
+}
+
+.log {
+    clear: both;
+    padding: 1em;
+    font-family: monospace;
+}
+
+.message {
+    margin: 0.5em 0.5em 1.5em 0.5em;
+    padding: 0.5em;
+    border: 1px dashed #f0ad4e;
+}
+
+.sse {
+    color: #729fcf;
+}
+
+.ws1 {
+    color: #edd400;
+}
+
+.ws2 {
+    color: #c17d11;
+}
