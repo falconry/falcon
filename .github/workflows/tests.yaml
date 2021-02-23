@@ -39,6 +39,8 @@ jobs:
           - "twine_check"
           - "daphne"
           - "hypercorn"
+          - "e2e_chrome"
+          - "e2e_firefox"
           - "no_optional_packages"
           # TODO(kgriffs): Re-enable once hug has a chance to address
           # breaking changes in Falcon 3.0
