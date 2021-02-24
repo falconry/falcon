@@ -25,11 +25,11 @@ def header_property(header_name):
 
     """
 
-    header_name = header_name.lower()
+    header_name = header_name.lower().encode()
 
     def fget(self):
         try:
-            return self._asgi_headers[header_name] or None
+            return self._asgi_headers[header_name].decode() or None
         except KeyError:
             return None
 

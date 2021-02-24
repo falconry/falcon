@@ -15,36 +15,38 @@
 """ASGI application class."""
 
 import asyncio
-from inspect import isasyncgenfunction, iscoroutinefunction
+from inspect import isasyncgenfunction
+from inspect import iscoroutinefunction
 import traceback
 
 import falcon.app
-from falcon.app_helpers import prepare_middleware, prepare_middleware_ws
-from falcon.asgi_spec import EventType, WSCloseCode
+from falcon.app_helpers import prepare_middleware
+from falcon.app_helpers import prepare_middleware_ws
+from falcon.asgi_spec import EventType
+from falcon.asgi_spec import WSCloseCode
 from falcon.constants import MEDIA_JSON
-from falcon.errors import (
-    CompatibilityError,
-    HTTPBadRequest,
-    UnsupportedError,
-    WebSocketDisconnected,
-)
+from falcon.errors import CompatibilityError
+from falcon.errors import HTTPBadRequest
+from falcon.errors import UnsupportedError
+from falcon.errors import WebSocketDisconnected
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 from falcon.media.multipart import MultipartFormHandler
 import falcon.routing
-from falcon.util.misc import http_status_to_code, is_python_func
-from falcon.util.sync import (
-    _should_wrap_non_coroutines,
-    _wrap_non_coroutine_unsafe,
-    get_running_loop,
-    wrap_sync_to_async,
-)
-from ._asgi_helpers import _validate_asgi_scope, _wrap_asgi_coroutine_func
+from falcon.util.misc import http_status_to_code
+from falcon.util.misc import is_python_func
+from falcon.util.sync import _should_wrap_non_coroutines
+from falcon.util.sync import _wrap_non_coroutine_unsafe
+from falcon.util.sync import get_running_loop
+from falcon.util.sync import wrap_sync_to_async
+from ._asgi_helpers import _validate_asgi_scope
+from ._asgi_helpers import _wrap_asgi_coroutine_func
 from .multipart import MultipartForm
 from .request import Request
 from .response import Response
 from .structures import SSEvent
-from .ws import WebSocket, WebSocketOptions
+from .ws import WebSocket
+from .ws import WebSocketOptions
 
 
 __all__ = ['App']

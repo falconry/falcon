@@ -16,8 +16,9 @@
 
 from inspect import iscoroutinefunction
 
-from falcon import MEDIA_JSON, MEDIA_XML
 from falcon import util
+from falcon.constants import MEDIA_JSON
+from falcon.constants import MEDIA_XML
 from falcon.errors import CompatibilityError
 from falcon.util.sync import _wrap_non_coroutine_unsafe
 

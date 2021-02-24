@@ -1,1 +1,1 @@
-from . import jsonschema  # NOQA
+from . import jsonschema

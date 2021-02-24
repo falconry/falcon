@@ -25,7 +25,8 @@ directly from the `testing` package::
 
 import asyncio
 import cgi
-from collections import defaultdict, deque
+from collections import defaultdict
+from collections import deque
 import contextlib
 from enum import Enum
 import io
@@ -35,21 +36,24 @@ import random
 import socket
 import sys
 import time
-from typing import Any, Dict, Iterable, Optional, Union
+from typing import Any
+from typing import Dict
+from typing import Iterable
+from typing import Optional
+from typing import Union
 
 import falcon
 from falcon import errors as falcon_errors
-from falcon.asgi_spec import EventType, ScopeType, WSCloseCode
+from falcon.asgi_spec import EventType
+from falcon.asgi_spec import ScopeType
+from falcon.asgi_spec import WSCloseCode
 from falcon.constants import SINGLETON_HEADERS
 import falcon.request
-from falcon.util import http_now, uri
+from falcon.util import uri
 
 # NOTE(kgriffs): Changed in 3.0 from 'curl/7.24.0 (x86_64-apple-darwin12.0)'
 DEFAULT_UA = 'falcon-client/' + falcon.__version__
 DEFAULT_HOST = 'falconframework.org'
-
-# NOTE(kgriffs): Alias for backwards-compatibility with Falcon 0.2
-httpnow = http_now
 
 
 class ASGILifespanEventEmitter:

@@ -16,7 +16,8 @@
 
 import re
 
-from falcon import constants, responders
+from falcon import constants
+from falcon import responders
 
 
 class SuffixedMethodNotFoundError(Exception):

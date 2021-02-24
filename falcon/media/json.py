@@ -3,7 +3,8 @@ import json
 
 from falcon import errors
 from falcon import http_error
-from falcon.media.base import BaseHandler, TextBaseHandlerWS
+from falcon.media.base import BaseHandler
+from falcon.media.base import TextBaseHandlerWS
 
 
 class JSONHandler(BaseHandler):

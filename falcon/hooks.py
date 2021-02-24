@@ -15,10 +15,11 @@
 """Hook decorators."""
 
 from functools import wraps
-from inspect import getmembers, iscoroutinefunction
+from inspect import getmembers
+from inspect import iscoroutinefunction
 import re
 
-from falcon import COMBINED_METHODS
+from falcon.constants import COMBINED_METHODS
 from falcon.util.misc import get_argnames
 from falcon.util.sync import _wrap_non_coroutine_unsafe
 
