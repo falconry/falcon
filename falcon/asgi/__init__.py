@@ -32,9 +32,10 @@ import sys as _sys
 if _sys.version_info < (3, 6):
     raise ImportError('falcon.asgi requires Python 3.6+')
 
-from .app import App  # NOQA
-from .structures import SSEvent  # NOQA
-from .request import Request  # NOQA
-from .response import Response  # NOQA
-from .stream import BoundedStream  # NOQA
-from .ws import WebSocket, WebSocketOptions  # NOQA
+from .app import App
+from .request import Request
+from .response import Response
+from .stream import BoundedStream
+from .structures import SSEvent
+from .ws import WebSocket
+from .ws import WebSocketOptions

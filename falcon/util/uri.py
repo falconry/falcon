@@ -28,7 +28,7 @@ from falcon.constants import PYPY
 try:
     from falcon.cyutil.uri import (
         decode as _cy_decode,
-        parse_query_string as _cy_parse_query_string,
+        parse_query_string as _cy_parse_query_string
     )
 except ImportError:
     _cy_decode = None

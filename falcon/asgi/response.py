@@ -15,17 +15,17 @@
 """ASGI Response class."""
 
 from asyncio.coroutines import CoroWrapper  # type: ignore
-from inspect import iscoroutine, iscoroutinefunction
+from inspect import iscoroutine
+from inspect import iscoroutinefunction
 
+from falcon import response
 from falcon.constants import _UNSET
-import falcon.media
-import falcon.response
 from falcon.util.misc import is_python_func
 
 __all__ = ['Response']
 
 
-class Response(falcon.response.Response):
+class Response(response.Response):
     """Represents an HTTP response to a client request.
 
     Note:

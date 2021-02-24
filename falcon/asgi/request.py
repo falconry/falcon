@@ -15,26 +15,24 @@
 """ASGI Request class."""
 
 from falcon import errors
-from falcon import request_helpers as helpers  # NOQA: Required by fixed up WSGI Request attrs
+from falcon import request
+from falcon import request_helpers as helpers
+from falcon.constants import _UNSET
 from falcon.constants import SINGLETON_HEADERS
-from falcon.forwarded import _parse_forwarded_header  # NOQA: Req. by fixed up WSGI Request attrs
-from falcon.forwarded import Forwarded  # NOQA
-import falcon.media
-import falcon.request
-from falcon.util.uri import parse_host, parse_query_string
+from falcon.util.uri import parse_host
+from falcon.util.uri import parse_query_string
 from . import _request_helpers as asgi_helpers
 from .stream import BoundedStream
 
 
 __all__ = ['Request']
 
-_UNSET = falcon.request._UNSET
 _SINGLETON_HEADERS_BYTESTR = frozenset([
     h.encode() for h in SINGLETON_HEADERS
 ])
 
 
-class Request(falcon.request.Request):
+class Request(request.Request):
     """Represents a client's HTTP request.
 
     Note:
@@ -396,7 +394,7 @@ class Request(falcon.request.Request):
         self.scope = scope
         self.is_websocket = scope['type'] == 'websocket'
 
-        self.options = options if options else falcon.request.RequestOptions()
+        self.options = options if options else request.RequestOptions()
 
         self._wsgierrors = None
         self.method = 'GET' if self.is_websocket else scope['method']

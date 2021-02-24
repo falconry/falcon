@@ -43,6 +43,58 @@ from falcon.util.deprecation import deprecated_args
 from falcon.util.misc import dt_to_http
 
 
+__all__ = (
+    'CompatibilityError',
+    'DelimiterError',
+    'HeaderNotSupported',
+    'HTTPBadGateway',
+    'HTTPBadRequest',
+    'HTTPConflict',
+    'HTTPFailedDependency',
+    'HTTPForbidden',
+    'HTTPGatewayTimeout',
+    'HTTPGone',
+    'HTTPInsufficientStorage',
+    'HTTPInternalServerError',
+    'HTTPInvalidHeader',
+    'HTTPInvalidParam',
+    'HTTPLengthRequired',
+    'HTTPLocked',
+    'HTTPLoopDetected',
+    'HTTPMethodNotAllowed',
+    'HTTPMissingHeader',
+    'HTTPMissingParam',
+    'HTTPNetworkAuthenticationRequired',
+    'HTTPNotAcceptable',
+    'HTTPNotFound',
+    'HTTPNotImplemented',
+    'HTTPPayloadTooLarge',
+    'HTTPPreconditionFailed',
+    'HTTPPreconditionRequired',
+    'HTTPRangeNotSatisfiable',
+    'HTTPRequestHeaderFieldsTooLarge',
+    'HTTPRouteNotFound',
+    'HTTPServiceUnavailable',
+    'HTTPTooManyRequests',
+    'HTTPUnauthorized',
+    'HTTPUnavailableForLegalReasons',
+    'HTTPUnprocessableEntity',
+    'HTTPUnsupportedMediaType',
+    'HTTPUriTooLong',
+    'HTTPVersionNotSupported',
+    'MediaMalformedError',
+    'MediaNotFoundError',
+    'OperationNotAllowed',
+    'PayloadTypeError',
+    'UnsupportedError',
+    'UnsupportedScopeError',
+    'WebSocketDisconnected',
+    'WebSocketHandlerNotFound',
+    'WebSocketPathNotFound',
+    'WebSocketServerError',
+)
+
+
 class HeaderNotSupported(ValueError):
     """The specified header is not supported by this method."""
 

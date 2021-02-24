@@ -21,7 +21,9 @@ import os
 import sys
 
 import falcon
-from falcon.inspect import inspect_app, inspect_routes, StringVisitor
+from falcon.inspect import inspect_app
+from falcon.inspect import inspect_routes
+from falcon.inspect import StringVisitor
 
 sys.path.append(os.getcwd())
 

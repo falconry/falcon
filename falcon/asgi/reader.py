@@ -16,7 +16,8 @@
 
 import io
 
-from falcon.errors import DelimiterError, OperationNotAllowed
+from falcon.errors import DelimiterError
+from falcon.errors import OperationNotAllowed
 
 DEFAULT_CHUNK_SIZE = 8192
 """Default minimum chunk size for :class:`BufferedReader` (8 KiB)."""
