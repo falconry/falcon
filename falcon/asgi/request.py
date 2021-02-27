@@ -355,8 +355,9 @@ class Request(request.Request):
         'scope',
     ]
 
-    # PERF(vytas): Dirty hack to fall back to class attributes when unset;
-    #   shadow class attributes upon setting.
+    # PERF(vytas): These boilerplates values will be shadowed when set on an
+    #   instance. Avoiding a statement per each of those values allows to speed
+    #   up __init__ substantially.
     _asgi_server_cached = None
     _cached_access_route = None
     _cached_forwarded = None

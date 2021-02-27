@@ -19,12 +19,7 @@ from falcon.util.misc import _lru_cache_safe
 
 
 @_lru_cache_safe(maxsize=16)
-def _validate_asgi_scope(asgi_version, scope_type, spec_version, http_version):
-    if not asgi_version.startswith('3.'):
-        raise UnsupportedScopeError(
-            f'Falcon requires ASGI version 3.x. Detected: {asgi_version}'
-        )
-
+def _validate_asgi_scope(scope_type, spec_version, http_version):
     if scope_type == 'http':
         spec_version = spec_version or '2.0'
         if not spec_version.startswith('2.'):

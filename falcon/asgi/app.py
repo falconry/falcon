@@ -1,4 +1,4 @@
-# Copyright 2019-2020 by Kurt Griffiths
+# Copyright 2019-2021 by Kurt Griffiths
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ from falcon.asgi_spec import WSCloseCode
 from falcon.constants import MEDIA_JSON
 from falcon.errors import CompatibilityError
 from falcon.errors import HTTPBadRequest
-from falcon.errors import UnsupportedError
 from falcon.errors import WebSocketDisconnected
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
@@ -291,16 +290,9 @@ class App(falcon.app.App):
         try:
             asgi_info = scope['asgi']
         except KeyError:
-            asgi_info = scope['asgi'] = {'version': '2.0'}
-
-        # PERF(kgriffs): This should usually be present, so use a
-        #   try..except
-        try:
-            asgi_version = asgi_info['version']
-        except KeyError:
             # NOTE(kgriffs): According to the ASGI spec, "2.0" is
             #   the default version.
-            asgi_version = '2.0'
+            asgi_info = scope['asgi'] = {'version': '2.0'}
 
         try:
             spec_version = asgi_info['spec_version']
@@ -312,8 +304,7 @@ class App(falcon.app.App):
         except KeyError:
             http_version = '1.1'
 
-        spec_version = _validate_asgi_scope(
-            asgi_version, scope_type, spec_version, http_version)
+        spec_version = _validate_asgi_scope(scope_type, spec_version, http_version)
 
         if scope_type != 'http':
             if scope_type == 'lifespan':
@@ -328,23 +319,21 @@ class App(falcon.app.App):
         #   processing until after we receive an initial 'http.request' event.
         first_event = await receive()
         first_event_type = first_event['type']
-        if first_event_type == EventType.HTTP_DISCONNECT:
+        # PERF(vytas): Inline the value of EventType.HTTP_DISCONNECT in this
+        #   critical code path.
+        if first_event_type == 'http.disconnect':
             # NOTE(kgriffs): Bail out immediately to minimize resource usage
             return
 
         # NOTE(kgriffs): This is the only other type defined by the ASGI spec,
         #   but we just assert it to make it easier to track down a potential
         #   incompatibility with a future spec version.
-        assert first_event_type == EventType.HTTP_REQUEST
+        # PERF(vytas): Inline the value of EventType.HTTP_REQUEST in this
+        #   critical code path.
+        assert first_event_type == 'http.request'
 
         req = self._request_type(scope, receive, first_event=first_event, options=self.req_options)
         resp = self._response_type(options=self.resp_options)
-
-        if self.req_options.auto_parse_form_urlencoded:
-            raise UnsupportedError(
-                'The deprecated WSGI RequestOptions.auto_parse_form_urlencoded option '
-                'is not supported for ASGI apps. Please use Request.get_media() instead. '
-            )
 
         resource = None
         responder = None
@@ -474,7 +463,9 @@ class App(falcon.app.App):
                 resp._headers['content-length'] = str(len(data)) if data else '0'
 
             await send({
-                'type': EventType.HTTP_RESPONSE_START,
+                # PERF(vytas): Inline the value of
+                #   EventType.HTTP_RESPONSE_START in this critical code path.
+                'type': 'http.response.start',
                 'status': resp_status,
                 'headers': resp._asgi_headers(default_media_type)
             })
@@ -562,13 +553,17 @@ class App(falcon.app.App):
             resp._headers['content-length'] = str(len(data))
 
             await send({
-                'type': EventType.HTTP_RESPONSE_START,
+                # PERF(vytas): Inline the value of
+                #   EventType.HTTP_RESPONSE_START in this critical code path.
+                'type': 'http.response.start',
                 'status': resp_status,
                 'headers': resp._asgi_headers(default_media_type)
             })
 
             await send({
-                'type': EventType.HTTP_RESPONSE_BODY,
+                # PERF(vytas): Inline the value of
+                #   EventType.HTTP_RESPONSE_BODY in this critical code path.
+                'type': 'http.response.body',
                 'body': data
             })
 
@@ -583,7 +578,9 @@ class App(falcon.app.App):
             resp._headers['content-length'] = '0'
 
         await send({
-            'type': EventType.HTTP_RESPONSE_START,
+            # PERF(vytas): Inline the value of
+            #   EventType.HTTP_RESPONSE_START in this critical code path.
+            'type': 'http.response.start',
             'status': resp_status,
             'headers': resp._asgi_headers(default_media_type)
         })
@@ -839,6 +836,29 @@ class App(falcon.app.App):
         while True:
             event = await receive()
             if event['type'] == 'lifespan.startup':
+                # PERF(vytas): Perform these sanity checks upon application
+                #   startup, as opposed to repeating them every request.
+
+                # NOTE(vytas): If missing, these keys populated in __call__.
+                version = scope['asgi']['version']
+                if not version.startswith('3.'):
+                    await send({
+                        'type': EventType.LIFESPAN_STARTUP_FAILED,
+                        'message': f'Falcon requires ASGI version 3.x. Detected: {version}.',
+                    })
+                    return
+
+                if self.req_options.auto_parse_form_urlencoded:
+                    await send({
+                        'type': EventType.LIFESPAN_STARTUP_FAILED,
+                        'message': (
+                            'The deprecated WSGI RequestOptions.auto_parse_form_urlencoded option '
+                            'is not supported for Falcon ASGI apps. '
+                            'Please use Request.get_media() instead. '
+                        ),
+                    })
+                    return
+
                 for handler in self._unprepared_middleware:
                     if hasattr(handler, 'process_startup'):
                         try:
