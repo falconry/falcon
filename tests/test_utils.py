@@ -211,6 +211,21 @@ class TestFalconUtils:
 
         assert expected == garbage_out
 
+    @pytest.mark.parametrize('csv', [True, False])
+    @pytest.mark.parametrize('params', [
+        {'a & b': 'a and b', 'b and c': 'b & c'},
+        {'apples and oranges': '🍏 & 🍊'},
+        {'garbage': ['&', '&+&', 'a=1&b=2', 'c=4&'], 'one': '1'},
+        {'&': '&amp;', '™': '&trade;', '&&&': ['&amp;', '&amp;', '&amp;']},
+
+        # NOTE(vytas): Would fail because of https://github.com/falconry/falcon/issues/1872
+        # {'&': '%26', '&&': '%26', '&&&': ['%26', '%2', '%']},
+    ])
+    def test_to_query_str_encoding(self, params, csv):
+        query_str = falcon.to_query_str(params, comma_delimited_lists=csv, prefix=False)
+
+        assert uri.parse_query_string(query_str, csv=csv) == params
+
     def test_uri_encode(self):
         url = 'http://example.com/v1/fizbit/messages?limit=3&echo=true'
         assert uri.encode(url) == url
