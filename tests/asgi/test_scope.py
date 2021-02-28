@@ -5,7 +5,7 @@ import pytest
 import falcon
 from falcon import testing
 from falcon.asgi import App
-from falcon.errors import UnsupportedScopeError
+from falcon.errors import UnsupportedError, UnsupportedScopeError
 
 
 class CustomCookies:
@@ -13,19 +13,24 @@ class CustomCookies:
         return [('foo', 'bar')]
 
 
-# TODO(vytas): WiP; decision needed.
-@pytest.mark.xfail
 def test_missing_asgi_version():
     scope = testing.create_scope()
     del scope['asgi']
 
-    with pytest.raises(UnsupportedScopeError):
-        _call_with_scope(scope)
+    resource = _call_with_scope(scope)
 
     # NOTE(kgriffs): According to the ASGI spec, the version should
     #   default to "2.0".
-    # TODO(vytas): WiP; decision needed.
-    # assert resource.captured_req.scope['asgi']['version'] == '2.0'
+    assert resource.captured_req.scope['asgi']['version'] == '2.0'
+
+
+@pytest.mark.parametrize('http_version', ['0.9', '1.9', '4.0', '1337'])
+def test_unsupported_http_version(http_version):
+    scope = testing.create_scope()
+    scope['http_version'] = http_version
+
+    with pytest.raises(UnsupportedError):
+        _call_with_scope(scope)
 
 
 @pytest.mark.parametrize('version, supported', [
@@ -42,13 +47,15 @@ def test_missing_asgi_version():
     ('2.0', False),
     ('2.1', False),
     ('2.10', False),
-    # (None, False),
+    (None, False),
 ])
 def test_supported_asgi_version(version, supported):
     scope = {
         'type': 'lifespan',
         'asgi': {'spec_version': '2.0', 'version': version},
     }
+    if version is None:
+        del scope['asgi']['version']
 
     app = App()
 

@@ -307,13 +307,16 @@ class App(falcon.app.App):
         spec_version = _validate_asgi_scope(scope_type, spec_version, http_version)
 
         if scope_type != 'http':
-            if scope_type == 'lifespan':
-                await self._call_lifespan_handlers(spec_version, scope, receive, send)
-                return
-
-            elif scope_type == 'websocket':
+            # PERF(vytas): Evaluate the potentially recurring WebSocket path
+            #   first (in contrast to one-shot lifespan events).
+            if scope_type == 'websocket':
                 await self._handle_websocket(spec_version, scope, receive, send)
                 return
+
+            # NOTE(vytas): Else 'lifespan' -- other scope_type values have been
+            #   eliminated by _validate_asgi_scope at this point.
+            await self._call_lifespan_handlers(spec_version, scope, receive, send)
+            return
 
         # NOTE(kgriffs): Per the ASGI spec, we should not proceed with request
         #   processing until after we receive an initial 'http.request' event.
@@ -839,8 +842,9 @@ class App(falcon.app.App):
                 # PERF(vytas): Perform these sanity checks upon application
                 #   startup, as opposed to repeating them every request.
 
-                # NOTE(vytas): If missing, these keys populated in __call__.
-                version = scope['asgi']['version']
+                # NOTE(vytas): If missing, 'asgi' is populated in __call__.
+                asgi_info = scope['asgi']
+                version = asgi_info.get('version', '2.0 (implicit)')
                 if not version.startswith('3.'):
                     await send({
                         'type': EventType.LIFESPAN_STARTUP_FAILED,
