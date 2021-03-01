@@ -34,6 +34,7 @@ import unicodedata
 
 from falcon import status_codes
 from falcon.constants import PYPY
+from falcon.uri import encode_value
 # NOTE(vytas): Hoist `deprecated` here since it is documented as part of the
 # public Falcon interface.
 from .deprecation import deprecated
@@ -230,7 +231,7 @@ def to_query_str(params, comma_delimited_lists=True, prefix=True):
             v = 'false'
         elif isinstance(v, list):
             if comma_delimited_lists:
-                v = ','.join(map(str, v))
+                v = ','.join(map(encode_value, map(str, v)))
             else:
                 for list_value in v:
                     if list_value is True:
@@ -238,15 +239,15 @@ def to_query_str(params, comma_delimited_lists=True, prefix=True):
                     elif list_value is False:
                         list_value = 'false'
                     else:
-                        list_value = str(list_value)
+                        list_value = encode_value(str(list_value))
 
-                    query_str += k + '=' + list_value + '&'
+                    query_str += encode_value(k) + '=' + list_value + '&'
 
                 continue
         else:
-            v = str(v)
+            v = encode_value(str(v))
 
-        query_str += k + '=' + v + '&'
+        query_str += encode_value(k) + '=' + v + '&'
 
     return query_str[:-1]
 
