@@ -1,0 +1,4 @@
+The :func:`~falcon.to_query_str` method now correctly encodes parameter keys
+and values. As a result, the `params` parameter in
+:func:`~falcon.testing.simulate_request` will now correctly pass values
+containing special characters (such as ``'&'``) to the application.
