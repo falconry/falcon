@@ -24,6 +24,7 @@ from falcon.app_helpers import prepare_middleware
 from falcon.app_helpers import prepare_middleware_ws
 from falcon.asgi_spec import EventType
 from falcon.asgi_spec import WSCloseCode
+from falcon.constants import _UNSET
 from falcon.constants import MEDIA_JSON
 from falcon.errors import CompatibilityError
 from falcon.errors import HTTPBadRequest
@@ -424,7 +425,40 @@ class App(falcon.app.App):
         data = b''
 
         try:
-            data = await resp.render_body()
+            # PERF(vytas): inline Response.render_body() in this critical code
+            #   path in order to shave off an await.
+            text = resp.text
+            if text is None:
+                data = resp._data
+
+                if data is None and resp._media is not None:
+                    # NOTE(kgriffs): We use a special _UNSET singleton since
+                    #   None is ambiguous (the media handler might return None).
+                    if resp._media_rendered is _UNSET:
+                        if not resp.content_type:
+                            resp.content_type = resp.options.default_media_type
+
+                        handler, serialize_sync, _ = resp.options.media_handlers._resolve(
+                            resp.content_type,
+                            resp.options.default_media_type
+                        )
+
+                        if serialize_sync:
+                            resp._media_rendered = serialize_sync(resp._media)
+                        else:
+                            resp._media_rendered = await handler.serialize_async(
+                                resp._media,
+                                resp.content_type
+                            )
+
+                    data = resp._media_rendered
+            else:
+                try:
+                    # NOTE(kgriffs): Normally we expect text to be a string
+                    data = text.encode()
+                except AttributeError:
+                    # NOTE(kgriffs): Assume it was a bytes object already
+                    data = text
         except Exception as ex:
             if not await self._handle_exception(req, resp, ex, params):
                 raise
