@@ -519,7 +519,9 @@ class App:
                 for a single item vs. a collection of those same items.
                 Another class might use a suffixed responder to handle
                 a shortlink route in addition to the regular route for the
-                resource. Example::
+                resource. 
+                
+                Example::
 
                     class Baz(object):
 
