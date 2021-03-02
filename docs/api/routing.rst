@@ -374,6 +374,54 @@ A custom router is any class that implements the following interface:
 
             """
 
+Suffixed Responders
+-------------------
+
+While Falcon encourages the REST architectural style, it is flexible enough to accomodate other architectures. Consider the task of building an API 
+for a calculator which can both add add subtract two numbers. You could implement the following:
+
+.. code:: python
+
+    class Add(object):
+        def on_get(self, req, resp):
+            resp.body = str(int(req.get_param('x')) + int(req.get_param('y')))
+            resp.status = falcon.HTTP_200
+
+    class Subtract(object):
+        def on_get(self, req, resp):
+            resp.body = str(int(req.get_param('x')) - int(req.get_param('y')))
+            resp.status = falcon.HTTP_200
+
+    add = Add()
+    subtract = Subtract()
+    api = falcon.API()
+    api.add_route('/add', add)
+    api.add_route('/subtract', subtract)
+
+However, in addition to being slightly verbose it's also logically a bit strange because adding and subtracting don't seem to conceptually map to two seperate resource 
+collections and they don't seem like they would ever require other HTTP verbs such as POST, DELETE, etc.
+
+With Suffixed Responders, we can rewrite the example above in a more procedural style:
+
+.. code:: python
+
+    class Calculator(object):
+        def on_get_add(self, req, resp):
+            resp.body = str(int(req.get_param('x')) + int(req.get_param('y')))
+            resp.status = falcon.HTTP_200
+
+        def on_get_subtract(self, req, resp):
+            resp.body = str(int(req.get_param('x')) - int(req.get_param('y')))
+            resp.status = falcon.HTTP_200
+
+    calc = Calculator()
+    api = falcon.API()
+    api.add_route('/add', calc, suffix='add')
+    api.add_route('/subtract', calc, suffix='subtract')
+
+In the second iteration, using Suffixed Responders, we're able to group conceptually similar actions in the same class, giving us added flexibility.
+
+
 Default Router
 --------------
 
