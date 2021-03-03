@@ -377,12 +377,13 @@ A custom router is any class that implements the following interface:
 Suffixed Responders
 -------------------
 
-While Falcon encourages the REST architectural style, it is flexible enough to accomodate other architectures. Consider the task of building an API 
-for a calculator which can both add add subtract two numbers. You could implement the following:
+While Falcon encourages the REST architectural style, it is flexible enough to accomodate other architectures. Consider
+the task of building an API for a calculator which can both add and subtract two numbers. You could implement the 
+following:
 
 .. code:: python
 
-    class Add(object):
+    class Add():
         def on_get(self, req, resp):
             resp.body = str(int(req.get_param('x')) + int(req.get_param('y')))
             resp.status = falcon.HTTP_200
@@ -398,14 +399,18 @@ for a calculator which can both add add subtract two numbers. You could implemen
     api.add_route('/add', add)
     api.add_route('/subtract', subtract)
 
-However, in addition to being slightly verbose it's also logically a bit strange because adding and subtracting don't seem to conceptually map to two seperate resource 
-collections and they don't seem like they would ever require other HTTP verbs such as POST, DELETE, etc.
+However, in addition to being slightly verbose it's also logically a bit strange because adding and
+subtracting don't seem to conceptually map to two seperate resource collections. Instead of 
+seperating them based on the idea of "getting" different resources from each, we might want to 
+group them based on the attributes of their function (ie. take two numbers, do something to them, 
+and return the result).
 
-With Suffixed Responders, we can rewrite the example above in a more procedural style:
+With Suffixed Responders, we can do just that, rewriting the example above in a more procedural 
+style:
 
 .. code:: python
 
-    class Calculator(object):
+    class Calculator():
         def on_get_add(self, req, resp):
             resp.body = str(int(req.get_param('x')) + int(req.get_param('y')))
             resp.status = falcon.HTTP_200
@@ -419,8 +424,9 @@ With Suffixed Responders, we can rewrite the example above in a more procedural 
     api.add_route('/add', calc, suffix='add')
     api.add_route('/subtract', calc, suffix='subtract')
 
-In the second iteration, using Suffixed Responders, we're able to group conceptually similar actions in the same class, giving us added flexibility.
-
+In the second iteration, using Suffixed Responders, we're able to group responders based on their 
+actions rather than the data they represent. This gives us added flexibility to accomodate 
+situations in which a purely RESTful approach simply doesn't fit.
 
 Default Router
 --------------
