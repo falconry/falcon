@@ -1,4 +1,0 @@
-The :class:`falcon.App` class initializer now supports a new argument
-``sink_before_static_route`` (default ``True``, maintaining 2.0 behavior) to
-specify if :meth:`sinks <falcon.App.add_sink>` should be handled before or
-after :meth:`static routes <falcon.App.add_static_route>`.
