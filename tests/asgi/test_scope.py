@@ -5,7 +5,7 @@ import pytest
 import falcon
 from falcon import testing
 from falcon.asgi import App
-from falcon.errors import UnsupportedScopeError
+from falcon.errors import UnsupportedError, UnsupportedScopeError
 
 
 class CustomCookies:
@@ -22,6 +22,15 @@ def test_missing_asgi_version():
     # NOTE(kgriffs): According to the ASGI spec, the version should
     #   default to "2.0".
     assert resource.captured_req.scope['asgi']['version'] == '2.0'
+
+
+@pytest.mark.parametrize('http_version', ['0.9', '1.9', '4.0', '1337'])
+def test_unsupported_http_version(http_version):
+    scope = testing.create_scope()
+    scope['http_version'] = http_version
+
+    with pytest.raises(UnsupportedError):
+        _call_with_scope(scope)
 
 
 @pytest.mark.parametrize('version, supported', [
@@ -41,18 +50,44 @@ def test_missing_asgi_version():
     (None, False),
 ])
 def test_supported_asgi_version(version, supported):
-    scope = testing.create_scope()
-
-    if version:
-        scope['asgi']['version'] = version
-    else:
+    scope = {
+        'type': 'lifespan',
+        'asgi': {'spec_version': '2.0', 'version': version},
+    }
+    if version is None:
         del scope['asgi']['version']
 
-    if supported:
-        _call_with_scope(scope)
-    else:
-        with pytest.raises(UnsupportedScopeError):
-            _call_with_scope(scope)
+    app = App()
+
+    resource = testing.SimpleTestResourceAsync()
+    app.add_route('/', resource)
+
+    shutting_down = asyncio.Condition()
+    req_event_emitter = testing.ASGILifespanEventEmitter(shutting_down)
+    resp_event_collector = testing.ASGIResponseEventCollector()
+
+    async def task():
+        coro = asyncio.get_event_loop().create_task(
+            app(scope, req_event_emitter, resp_event_collector)
+        )
+
+        # NOTE(vytas): Yield to the lifespan task above.
+        await asyncio.sleep(0)
+
+        assert len(resp_event_collector.events) == 1
+        event = resp_event_collector.events[0]
+        if supported:
+            assert event['type'] == 'lifespan.startup.complete'
+        else:
+            assert event['type'] == 'lifespan.startup.failed'
+            assert event['message'].startswith('Falcon requires ASGI version 3.x')
+
+        async with shutting_down:
+            shutting_down.notify()
+
+        await coro
+
+    falcon.async_to_sync(task)
 
 
 @pytest.mark.parametrize('scope_type', ['tubes', 'http3', 'htt'])

@@ -1,4 +1,4 @@
-# Copyright 2019 by Kurt Griffiths
+# Copyright 2019-2020 by Kurt Griffiths
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -347,13 +347,30 @@ class Request(request.Request):
 
     __slots__ = [
         '_asgi_headers',
-        '_asgi_server_cached',
-        '_cached_headers',
+        # '_asgi_server_cached',
+        # '_cached_headers',
         '_first_event',
         '_receive',
-        '_stream',
+        # '_stream',
         'scope',
     ]
+
+    # PERF(vytas): These boilerplates values will be shadowed when set on an
+    #   instance. Avoiding a statement per each of those values allows to speed
+    #   up __init__ substantially.
+    _asgi_server_cached = None
+    _cached_access_route = None
+    _cached_forwarded = None
+    _cached_forwarded_prefix = None
+    _cached_forwarded_uri = None
+    _cached_headers = None
+    _cached_prefix = None
+    _cached_relative_uri = None
+    _cached_uri = None
+    _media = _UNSET
+    _media_error = None
+    _stream = None
+    _wsgi_errors = None
 
     def __init__(self, scope, receive, first_event=None, options=None):
 
@@ -384,24 +401,28 @@ class Request(request.Request):
                 req_headers[header_name] += b',' + header_value
 
         self._asgi_headers = req_headers
-        self._cached_headers = None
+        # PERF(vytas): Fall back to class variable(s) when unset.
+        # self._cached_headers = None
 
         # =====================================================================
         #  Misc.
         # =====================================================================
 
-        self._asgi_server_cached = None  # Lazy
+        # PERF(vytas): Fall back to class variable(s) when unset.
+        # self._asgi_server_cached = None  # Lazy
         self.scope = scope
         self.is_websocket = scope['type'] == 'websocket'
 
         self.options = options if options else request.RequestOptions()
 
-        self._wsgierrors = None
+        # PERF(vytas): Fall back to class variable(s) when unset.
+        # self._wsgierrors = None
         self.method = 'GET' if self.is_websocket else scope['method']
 
         self.uri_template = None
-        self._media = _UNSET
-        self._media_error = None
+        # PERF(vytas): Fall back to class variable(s) when unset.
+        # self._media = _UNSET
+        # self._media_error = None
 
         # TODO(kgriffs): ASGI does not specify whether 'path' may be empty,
         #   as was allowed for WSGI.
@@ -425,13 +446,14 @@ class Request(request.Request):
         else:
             self._params = {}
 
-        self._cached_access_route = None
-        self._cached_forwarded = None
-        self._cached_forwarded_prefix = None
-        self._cached_forwarded_uri = None
-        self._cached_prefix = None
-        self._cached_relative_uri = None
-        self._cached_uri = None
+        # PERF(vytas): Fall back to class variable(s) when unset.
+        # self._cached_access_route = None
+        # self._cached_forwarded = None
+        # self._cached_forwarded_prefix = None
+        # self._cached_forwarded_uri = None
+        # self._cached_prefix = None
+        # self._cached_relative_uri = None
+        # self._cached_uri = None
 
         if self.method == 'GET':
             # PERF(kgriffs): Normally we expect no Content-Type header, so
@@ -461,7 +483,8 @@ class Request(request.Request):
         #   (for example) by not confirming a 100 Continue request unless
         #   the app calls receive() to read the request body.
 
-        self._stream = None
+        # PERF(vytas): Fall back to class variable(s) when unset.
+        # self._stream = None
         self._receive = receive
         self._first_event = first_event
 

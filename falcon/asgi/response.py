@@ -252,6 +252,8 @@ class Response(response.Response):
             none of these attributes are set, ``None`` is returned.
         """
 
+        # NOTE(vytas): The code below is also inlined in asgi.App.__call__.
+
         text = self.text
         if text is None:
             data = self._data
