@@ -84,6 +84,8 @@ between HTTP/2 and HTTP/1.1. Eventually we expect that Python web servers (such
 as uWSGI) will support HTTP/2 natively, eliminating the need for a translation
 layer.
 
+.. _faq_thread_safety:
+
 Is Falcon thread-safe?
 ----------------------
 
@@ -95,12 +97,6 @@ other types of hooks, such as custom error handlers, are likewise shared.
 Therefore, as long as you implement these classes and callables in a
 thread-safe manner, and ensure that any third-party libraries used by your
 app are also thread-safe, your WSGI app as a whole will be thread-safe.
-
-That being said, IO-bound Falcon APIs are usually scaled via multiple
-processes and green threads (courtesy of the `gevent <http://www.gevent.org/>`_
-library or similar) which aren't truly running concurrently, so there may be
-some edge cases where Falcon is not thread-safe that we aren't aware of. If you
-run into any issues, please let us know.
 
 Does Falcon support asyncio?
 ------------------------------
@@ -209,6 +205,8 @@ implement a simple WSGI wrapper that does the same thing:
 
 See also `PEP 3333 <https://www.python.org/dev/peps/pep-3333/#environ-variables>`_
 for a complete list of the variables that are provided via ``environ``.
+
+.. _collection-vs-item-routing:
 
 How do I implement both POSTing and GETing items for the same resource?
 -----------------------------------------------------------------------
@@ -973,8 +971,21 @@ and pass that around instead.
 
 .. _configuration-approaches:
 
-What is the recommended approach for making configuration variables available to multiple resource classes?
------------------------------------------------------------------------------------------------------------
+What is the recommended approach for app configuration?
+-------------------------------------------------------
+
+When it comes to app configuration, Falcon is not opinionated. You are free to
+choose from any of the excellent general-purpose configuration libraries
+maintained by the Python community. It’s pretty much up to you if you want to
+use the standard library or something like ``aumbry`` as demonstrated by this
+`falcon example app <https://github.com/jmvrbanac/falcon-example/tree/master/example>`_
+
+(See also the **Configuration** section of our
+`Complementary Packages wiki page <https://github.com/falconry/falcon/wiki/Complementary-Packages>`_.
+You may also wish to search PyPI for other options).
+
+After choosing a configuration library, the only remaining question is how to
+access configuration options throughout your app.
 
 People usually fall into two camps when it comes to this question. The first
 camp likes to instantiate a config object and pass that around to the
@@ -988,14 +999,6 @@ side-effects that may be caused by loading the config whenever Python happens
 to process the first import of the config module. Instead,
 consider implementing a function in the module that returns a new or cached
 config object on demand.
-
-Other than that, it’s pretty much up to you if you want to use the standard
-library config library or something like ``aumbry`` as demonstrated by this
-`falcon example app <https://github.com/jmvrbanac/falcon-example/tree/master/example>`_
-
-(See also the **Configuration** section of our
-`Complementary Packages wiki page <https://github.com/falconry/falcon/wiki/Complementary-Packages>`_.
-You may also wish to search PyPI for other options).
 
 How do I test my Falcon app? Can I use pytest?
 ----------------------------------------------

@@ -19,12 +19,16 @@ classes, and utility functions to aid in the implementation of custom
 routers.
 """
 
-from falcon.routing.compiled import CompiledRouter, CompiledRouterOptions  # NOQA
-from falcon.routing.static import StaticRoute, StaticRouteAsync  # NOQA
-from falcon.routing.util import map_http_methods  # NOQA
-from falcon.routing.util import set_default_responders  # NOQA
-from falcon.routing.util import compile_uri_template  # NOQA
-from falcon.routing.converters import *  # NOQA
-
+from falcon.routing.compiled import CompiledRouter
+from falcon.routing.compiled import CompiledRouterOptions
+from falcon.routing.converters import BaseConverter
+from falcon.routing.converters import DateTimeConverter
+from falcon.routing.converters import IntConverter
+from falcon.routing.converters import UUIDConverter
+from falcon.routing.static import StaticRoute
+from falcon.routing.static import StaticRouteAsync
+from falcon.routing.util import compile_uri_template
+from falcon.routing.util import map_http_methods
+from falcon.routing.util import set_default_responders
 
 DefaultRouter = CompiledRouter

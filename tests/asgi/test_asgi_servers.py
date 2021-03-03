@@ -434,12 +434,9 @@ uvicorn.run('_asgi_test_app:application', host='{host}', port={port})
         '_asgi_test_app:application'
     )
 
-    creationflags = subprocess.CREATE_NEW_PROCESS_GROUP if _WIN32 else 0
-
     return subprocess.Popen(
         ('uvicorn',) + loop_options + options,
         cwd=_MODULE_DIR,
-        creationflags=creationflags,
     )
 
 
@@ -461,13 +458,30 @@ def _daphne_factory(host, port):
 
 
 def _hypercorn_factory(host, port):
+    if _WIN32:
+        script = f"""
+from hypercorn.run import Config, run
+import ctypes
+ctypes.windll.kernel32.SetConsoleCtrlHandler(None, 0)
+config = Config()
+config.application_path = '_asgi_test_app:application'
+config.bind = ['{host}:{port}']
+config.accesslog = '-'
+config.debug = True
+run(config)
+"""
+        return subprocess.Popen(
+            (sys.executable, '-c', script),
+            cwd=_MODULE_DIR,
+            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+        )
     return subprocess.Popen(
         (
             'hypercorn',
 
             '--bind', f'{host}:{port}',
 
-            '--access-log', '-',
+            '--access-logfile', '-',
             '--debug',
 
             '_asgi_test_app:application'

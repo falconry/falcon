@@ -19,7 +19,8 @@ import xml.etree.ElementTree as et
 
 from falcon.constants import MEDIA_JSON
 from falcon.util import uri
-from falcon.util.deprecation import deprecated, deprecated_args
+from falcon.util.deprecation import deprecated
+from falcon.util.deprecation import deprecated_args
 
 
 class HTTPError(Exception):

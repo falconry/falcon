@@ -39,6 +39,8 @@ jobs:
           - "twine_check"
           - "daphne"
           - "hypercorn"
+          - "e2e_chrome"
+          - "e2e_firefox"
           - "no_optional_packages"
           # TODO(kgriffs): Re-enable once hug has a chance to address
           # breaking changes in Falcon 3.0
@@ -80,6 +82,10 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v2
+        # NOTE(vytas): Work around
+        #   https://github.com/codecov/codecov-action/issues/190
+        with:
+          fetch-depth: 2
 
       - name: Set up Python
         uses: actions/setup-python@v2.1.4
@@ -113,7 +119,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install coverage tox==3.20
+          pip install coverage tox
           python --version
           pip --version
           tox --version
