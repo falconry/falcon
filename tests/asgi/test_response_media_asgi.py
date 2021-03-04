@@ -282,3 +282,31 @@ def test_media_rendered_cached():
         assert first is not await resp.render_body()
 
     run_test(test)
+
+
+def test_custom_render_body():
+
+    class CustomResponse(falcon.asgi.Response):
+        async def render_body(self):
+            body = await super().render_body()
+
+            if not self.content_type.startswith('text/plain'):
+                return body
+
+            if not body.endswith(b'\n'):
+                # Be a good Unix netizen
+                return body + b'\n'
+
+            return body
+
+    class HelloResource:
+        async def on_get(self, req, resp):
+            resp.content_type = falcon.MEDIA_TEXT
+            resp.text = 'Hello, World!'
+
+    app = falcon.asgi.App(response_type=CustomResponse)
+    app.add_route('/', HelloResource())
+
+    resp = testing.simulate_get(app, '/')
+    assert resp.headers['Content-Type'] == 'text/plain; charset=utf-8'
+    assert resp.text == 'Hello, World!\n'
