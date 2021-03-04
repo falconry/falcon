@@ -377,8 +377,9 @@ A custom router is any class that implements the following interface:
 Suffixed Responders
 -------------------
 
-While Falcon encourages the REST architectural style, it is flexible enough to accomodate other architectures. Consider
-the task of building an API for a calculator which can both add and subtract two numbers. You could implement the 
+While Falcon encourages the REST architectural style, it is flexible enough to accomodate other 
+paradigms. Consider the task of building an API for a calculator which can both add and subtract 
+two numbers. You could implement the 
 following:
 
 .. code:: python
@@ -388,7 +389,7 @@ following:
             resp.body = str(int(req.get_param('x')) + int(req.get_param('y')))
             resp.status = falcon.HTTP_200
 
-    class Subtract(object):
+    class Subtract():
         def on_get(self, req, resp):
             resp.body = str(int(req.get_param('x')) - int(req.get_param('y')))
             resp.status = falcon.HTTP_200
@@ -399,11 +400,11 @@ following:
     api.add_route('/add', add)
     api.add_route('/subtract', subtract)
 
-However, in addition to being slightly verbose it's also logically a bit strange because adding and
-subtracting don't seem to conceptually map to two seperate resource collections. Instead of 
-seperating them based on the idea of "getting" different resources from each, we might want to 
-group them based on the attributes of their function (ie. take two numbers, do something to them, 
-and return the result).
+However, this approach highlights a situation in which grouping by resource may not make sense for 
+your domain. In this context, adding and subtracting don't seem to conceptually map to two separate resource 
+collections. Instead of separating them based on the idea of "getting" different resources from 
+each, we might want to group them based on the attributes of their function (i.e., take two
+numbers, do something to them, return the result).
 
 With Suffixed Responders, we can do just that, rewriting the example above in a more procedural 
 style:
