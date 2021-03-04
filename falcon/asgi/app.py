@@ -1,4 +1,4 @@
-# Copyright 2019-2020 by Kurt Griffiths
+# Copyright 2019-2021 by Kurt Griffiths
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,37 +15,38 @@
 """ASGI application class."""
 
 import asyncio
-from inspect import isasyncgenfunction, iscoroutinefunction
+from inspect import isasyncgenfunction
+from inspect import iscoroutinefunction
 import traceback
 
 import falcon.app
-from falcon.app_helpers import prepare_middleware, prepare_middleware_ws
-from falcon.asgi_spec import EventType, WSCloseCode
+from falcon.app_helpers import prepare_middleware
+from falcon.app_helpers import prepare_middleware_ws
+from falcon.asgi_spec import EventType
+from falcon.asgi_spec import WSCloseCode
+from falcon.constants import _UNSET
 from falcon.constants import MEDIA_JSON
-from falcon.errors import (
-    CompatibilityError,
-    HTTPBadRequest,
-    UnsupportedError,
-    UnsupportedScopeError,
-    WebSocketDisconnected,
-)
+from falcon.errors import CompatibilityError
+from falcon.errors import HTTPBadRequest
+from falcon.errors import WebSocketDisconnected
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 from falcon.media.multipart import MultipartFormHandler
 import falcon.routing
-from falcon.util.misc import http_status_to_code, is_python_func
-from falcon.util.sync import (
-    _should_wrap_non_coroutines,
-    _wrap_non_coroutine_unsafe,
-    get_running_loop,
-    wrap_sync_to_async,
-)
+from falcon.util.misc import http_status_to_code
+from falcon.util.misc import is_python_func
+from falcon.util.sync import _should_wrap_non_coroutines
+from falcon.util.sync import _wrap_non_coroutine_unsafe
+from falcon.util.sync import get_running_loop
+from falcon.util.sync import wrap_sync_to_async
+from ._asgi_helpers import _validate_asgi_scope
 from ._asgi_helpers import _wrap_asgi_coroutine_func
 from .multipart import MultipartForm
 from .request import Request
 from .response import Response
 from .structures import SSEvent
-from .ws import WebSocket, WebSocketOptions
+from .ws import WebSocket
+from .ws import WebSocketOptions
 
 
 __all__ = ['App']
@@ -282,112 +283,61 @@ class App(falcon.app.App):
 
     @_wrap_asgi_coroutine_func
     async def __call__(self, scope, receive, send):  # noqa: C901
-        try:
-            asgi_info = scope['asgi']
-
-            # NOTE(kgriffs): We only check this here because
-            #   uvicorn does not explicitly set the 'asgi' key, which
-            #   would normally mean we should assume '2.0', but uvicorn
-            #   actually *does* support 3.0. But in that case, we will
-            #   end up in the except clause, below, and not raise an
-            #   error.
-            # PERF(kgriffs): This should usually be present, so use a
-            #   try..except
-            try:
-                version = asgi_info['version']
-            except KeyError:
-                # NOTE(kgriffs): According to the ASGI spec, "2.0" is
-                #   the default version.
-                version = '2.0'
-
-            if not version.startswith('3.'):
-                raise UnsupportedScopeError(
-                    f'Falcon requires ASGI version 3.x. Detected: {asgi_info}'
-                )
-
-        except KeyError:
-            asgi_info = scope['asgi'] = {'version': '2.0'}
-
         # NOTE(kgriffs): The ASGI spec requires the 'type' key to be present.
         scope_type = scope['type']
+
+        # PERF(kgriffs): This should usually be present, so use a
+        #   try..except
+        try:
+            asgi_info = scope['asgi']
+        except KeyError:
+            # NOTE(kgriffs): According to the ASGI spec, "2.0" is
+            #   the default version.
+            asgi_info = scope['asgi'] = {'version': '2.0'}
+
+        try:
+            spec_version = asgi_info['spec_version']
+        except KeyError:
+            spec_version = None
+
+        try:
+            http_version = scope['http_version']
+        except KeyError:
+            http_version = '1.1'
+
+        spec_version = _validate_asgi_scope(scope_type, spec_version, http_version)
+
         if scope_type != 'http':
-            if scope_type == 'lifespan':
-                try:
-                    spec_version = asgi_info['spec_version']
-                except KeyError:
-                    spec_version = '1.0'
-
-                if not spec_version.startswith('1.') and not spec_version.startswith('2.'):
-                    raise UnsupportedScopeError(
-                        'Only versions 1.x and 2.x of the ASGI "lifespan" scope are supported.'
-                    )
-
-                await self._call_lifespan_handlers(spec_version, scope, receive, send)
-                return
-
-            elif scope_type == 'websocket':
-                try:
-                    spec_version = asgi_info['spec_version']
-                except KeyError:
-                    spec_version = '2.0'
-
-                if not spec_version.startswith('2.'):
-                    raise UnsupportedScopeError(
-                        'Only versions 2.x of the ASGI "websocket" scope are supported.'
-                    )
-
-                try:
-                    http_version = scope['http_version']
-                except KeyError:
-                    http_version = '1.1'
-
-                if http_version not in {'1.1', '2', '3'}:
-                    raise UnsupportedError(
-                        f'The ASGI "websocket" scope does not support HTTP version {http_version}.'
-                    )
-
+            # PERF(vytas): Evaluate the potentially recurring WebSocket path
+            #   first (in contrast to one-shot lifespan events).
+            if scope_type == 'websocket':
                 await self._handle_websocket(spec_version, scope, receive, send)
                 return
 
-            # NOTE(kgriffs): According to the ASGI spec: "Applications should
-            #   actively reject any protocol that they do not understand with
-            #   an Exception (of any type)."
-            raise UnsupportedScopeError(
-                f'The ASGI "{scope_type}" scope type is not supported.'
-            )
-
-        # PERF(kgriffs): This is slighter faster than using dict.get()
-        # TODO(kgriffs): Use this to determine what features are supported by
-        #   the server (e.g., the headers key in the WebSocket Accept
-        #   response).
-        spec_version = asgi_info['spec_version'] if 'spec_version' in asgi_info else '2.0'
-
-        if not spec_version.startswith('2.'):
-            raise UnsupportedScopeError(
-                f'The ASGI http scope version {spec_version} is not supported.'
-            )
+            # NOTE(vytas): Else 'lifespan' -- other scope_type values have been
+            #   eliminated by _validate_asgi_scope at this point.
+            await self._call_lifespan_handlers(spec_version, scope, receive, send)
+            return
 
         # NOTE(kgriffs): Per the ASGI spec, we should not proceed with request
         #   processing until after we receive an initial 'http.request' event.
         first_event = await receive()
         first_event_type = first_event['type']
-        if first_event_type == EventType.HTTP_DISCONNECT:
+        # PERF(vytas): Inline the value of EventType.HTTP_DISCONNECT in this
+        #   critical code path.
+        if first_event_type == 'http.disconnect':
             # NOTE(kgriffs): Bail out immediately to minimize resource usage
             return
 
         # NOTE(kgriffs): This is the only other type defined by the ASGI spec,
         #   but we just assert it to make it easier to track down a potential
         #   incompatibility with a future spec version.
-        assert first_event_type == EventType.HTTP_REQUEST
+        # PERF(vytas): Inline the value of EventType.HTTP_REQUEST in this
+        #   critical code path.
+        assert first_event_type == 'http.request'
 
         req = self._request_type(scope, receive, first_event=first_event, options=self.req_options)
         resp = self._response_type(options=self.resp_options)
-
-        if self.req_options.auto_parse_form_urlencoded:
-            raise UnsupportedError(
-                'The deprecated WSGI RequestOptions.auto_parse_form_urlencoded option '
-                'is not supported for ASGI apps. Please use Request.get_media() instead. '
-            )
 
         resource = None
         responder = None
@@ -475,7 +425,40 @@ class App(falcon.app.App):
         data = b''
 
         try:
-            data = await resp.render_body()
+            # PERF(vytas): inline Response.render_body() in this critical code
+            #   path in order to shave off an await.
+            text = resp.text
+            if text is None:
+                data = resp._data
+
+                if data is None and resp._media is not None:
+                    # NOTE(kgriffs): We use a special _UNSET singleton since
+                    #   None is ambiguous (the media handler might return None).
+                    if resp._media_rendered is _UNSET:
+                        if not resp.content_type:
+                            resp.content_type = resp.options.default_media_type
+
+                        handler, serialize_sync, _ = resp.options.media_handlers._resolve(
+                            resp.content_type,
+                            resp.options.default_media_type
+                        )
+
+                        if serialize_sync:
+                            resp._media_rendered = serialize_sync(resp._media)
+                        else:
+                            resp._media_rendered = await handler.serialize_async(
+                                resp._media,
+                                resp.content_type
+                            )
+
+                    data = resp._media_rendered
+            else:
+                try:
+                    # NOTE(kgriffs): Normally we expect text to be a string
+                    data = text.encode()
+                except AttributeError:
+                    # NOTE(kgriffs): Assume it was a bytes object already
+                    data = text
         except Exception as ex:
             if not await self._handle_exception(req, resp, ex, params):
                 raise
@@ -517,17 +500,25 @@ class App(falcon.app.App):
                 resp._headers['content-length'] = str(len(data)) if data else '0'
 
             await send({
-                'type': EventType.HTTP_RESPONSE_START,
+                # PERF(vytas): Inline the value of
+                #   EventType.HTTP_RESPONSE_START in this critical code path.
+                'type': 'http.response.start',
                 'status': resp_status,
                 'headers': resp._asgi_headers(default_media_type)
             })
 
             await send(_EVT_RESP_EOF)
-            self._schedule_callbacks(resp)
+
+            # PERF(vytas): Check resp._registered_callbacks directly to shave
+            #   off a function call since this is a hot/critical code path.
+            if resp._registered_callbacks:
+                self._schedule_callbacks(resp)
             return
 
-        sse_emitter = resp.sse
-        if sse_emitter:
+        # PERF(vytas): Operate directly on the resp private interface to reduce
+        #   overhead since this is a hot/critical code path.
+        if resp._sse:
+            sse_emitter = resp._sse
             if isasyncgenfunction(sse_emitter):
                 raise TypeError(
                     'Response.sse must be an async iterable. This can be obtained by '
@@ -552,7 +543,10 @@ class App(falcon.app.App):
                 'headers': resp._asgi_headers('text/event-stream')
             })
 
-            self._schedule_callbacks(resp)
+            # PERF(vytas): Check resp._registered_callbacks directly to shave
+            #   off a function call since this is a hot/critical code path.
+            if resp._registered_callbacks:
+                self._schedule_callbacks(resp)
 
             handler, _, _ = self.resp_options.media_handlers._resolve(
                 MEDIA_JSON, MEDIA_JSON, raise_not_found=False
@@ -596,17 +590,24 @@ class App(falcon.app.App):
             resp._headers['content-length'] = str(len(data))
 
             await send({
-                'type': EventType.HTTP_RESPONSE_START,
+                # PERF(vytas): Inline the value of
+                #   EventType.HTTP_RESPONSE_START in this critical code path.
+                'type': 'http.response.start',
                 'status': resp_status,
                 'headers': resp._asgi_headers(default_media_type)
             })
 
             await send({
-                'type': EventType.HTTP_RESPONSE_BODY,
+                # PERF(vytas): Inline the value of
+                #   EventType.HTTP_RESPONSE_BODY in this critical code path.
+                'type': 'http.response.body',
                 'body': data
             })
 
-            self._schedule_callbacks(resp)
+            # PERF(vytas): Check resp._registered_callbacks directly to shave
+            #   off a function call since this is a hot/critical code path.
+            if resp._registered_callbacks:
+                self._schedule_callbacks(resp)
             return
 
         stream = resp.stream
@@ -614,7 +615,9 @@ class App(falcon.app.App):
             resp._headers['content-length'] = '0'
 
         await send({
-            'type': EventType.HTTP_RESPONSE_START,
+            # PERF(vytas): Inline the value of
+            #   EventType.HTTP_RESPONSE_START in this critical code path.
+            'type': 'http.response.start',
             'status': resp_status,
             'headers': resp._asgi_headers(default_media_type)
         })
@@ -678,7 +681,11 @@ class App(falcon.app.App):
                 await stream.close()
 
         await send(_EVT_RESP_EOF)
-        self._schedule_callbacks(resp)
+
+        # PERF(vytas): Check resp._registered_callbacks directly to shave
+        #   off a function call since this is a hot/critical code path.
+        if resp._registered_callbacks:
+            self._schedule_callbacks(resp)
 
     def add_route(self, uri_template, resource, **kwargs):
         # NOTE(kgriffs): Inject an extra kwarg so that the compiled router
@@ -849,8 +856,10 @@ class App(falcon.app.App):
 
     def _schedule_callbacks(self, resp):
         callbacks = resp._registered_callbacks
-        if not callbacks:
-            return
+        # PERF(vytas): resp._registered_callbacks is already checked directly
+        # to shave off a function call since this is a hot/critical code path.
+        # if not callbacks:
+        #     return
 
         loop = get_running_loop()
 
@@ -864,6 +873,30 @@ class App(falcon.app.App):
         while True:
             event = await receive()
             if event['type'] == 'lifespan.startup':
+                # PERF(vytas): Perform these sanity checks upon application
+                #   startup, as opposed to repeating them every request.
+
+                # NOTE(vytas): If missing, 'asgi' is populated in __call__.
+                asgi_info = scope['asgi']
+                version = asgi_info.get('version', '2.0 (implicit)')
+                if not version.startswith('3.'):
+                    await send({
+                        'type': EventType.LIFESPAN_STARTUP_FAILED,
+                        'message': f'Falcon requires ASGI version 3.x. Detected: {version}.',
+                    })
+                    return
+
+                if self.req_options.auto_parse_form_urlencoded:
+                    await send({
+                        'type': EventType.LIFESPAN_STARTUP_FAILED,
+                        'message': (
+                            'The deprecated WSGI RequestOptions.auto_parse_form_urlencoded option '
+                            'is not supported for Falcon ASGI apps. '
+                            'Please use Request.get_media() instead. '
+                        ),
+                    })
+                    return
+
                 for handler in self._unprepared_middleware:
                     if hasattr(handler, 'process_startup'):
                         try:

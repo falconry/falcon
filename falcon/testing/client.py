@@ -23,25 +23,27 @@ import datetime as dt
 import inspect
 import json as json_module
 import time
-from typing import Dict, Optional, Sequence, Union
+from typing import Dict
+from typing import Optional
+from typing import Sequence
+from typing import Union
 import warnings
 import wsgiref.validate
 
 from falcon.asgi_spec import ScopeType
-from falcon.constants import COMBINED_METHODS, MEDIA_JSON
+from falcon.constants import COMBINED_METHODS
+from falcon.constants import MEDIA_JSON
 from falcon.errors import CompatibilityError
 from falcon.testing import helpers
 from falcon.testing.srmock import StartResponseMock
-from falcon.util import (
-    async_to_sync,
-    CaseInsensitiveDict,
-    code_to_http_status,
-    create_task,
-    get_running_loop,
-    http_cookies,
-    http_date_to_dt,
-    to_query_str,
-)
+from falcon.util import async_to_sync
+from falcon.util import CaseInsensitiveDict
+from falcon.util import code_to_http_status
+from falcon.util import create_task
+from falcon.util import get_running_loop
+from falcon.util import http_cookies
+from falcon.util import http_date_to_dt
+from falcon.util import to_query_str
 
 warnings.filterwarnings(
     'error',

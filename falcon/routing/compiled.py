@@ -22,9 +22,11 @@ import textwrap
 from threading import Lock
 
 from falcon.routing import converters
-from falcon.routing.util import map_http_methods, set_default_responders
+from falcon.routing.util import map_http_methods
+from falcon.routing.util import set_default_responders
 from falcon.util.misc import is_python_func
-from falcon.util.sync import _should_wrap_non_coroutines, wrap_sync_to_async
+from falcon.util.sync import _should_wrap_non_coroutines
+from falcon.util.sync import wrap_sync_to_async
 
 if False:  # TODO: switch to TYPE_CHECKING once support for py3.5 is dropped
     from typing import Any

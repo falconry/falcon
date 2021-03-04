@@ -15,7 +15,8 @@
 """Utilities for the Response class."""
 
 from falcon.util import uri
-from falcon.util.misc import isascii, secure_filename
+from falcon.util.misc import isascii
+from falcon.util.misc import secure_filename
 
 
 def header_property(name, doc, transform=None):

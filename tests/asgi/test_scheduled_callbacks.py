@@ -1,8 +1,10 @@
+import asyncio
 from collections import Counter
 import time
 
 import pytest
 
+from falcon import runs_sync
 from falcon import testing
 from falcon.asgi import App
 
@@ -75,3 +77,70 @@ def test_multiple():
         client.simulate_put()
 
     assert 'coroutine' in str(exinfo.value)
+
+
+class SimpleCallback:
+    def __init__(self):
+        self.called = 0
+        self.event = asyncio.Event()
+
+    async def _call_me(self):
+        self.called += 1
+        self.event.set()
+
+    async def on_get(self, req, resp):
+        resp.content_type = 'text/plain'
+        resp.data = b'Hello, World!\n'
+        resp.schedule(self._call_me)
+
+    on_head = on_get
+
+    async def on_get_sse(self, req, resp):
+        async def nop_emitter():
+            yield None
+
+        resp.sse = nop_emitter()
+        resp.schedule(self._call_me)
+
+    async def on_get_stream(self, req, resp):
+        async def stream():
+            yield b'One\n'
+            yield b'Two\n'
+            yield b'Three\n'
+
+        resp.content_type = 'text/plain'
+        resp.stream = stream()
+        resp.schedule(self._call_me)
+
+
+@pytest.fixture()
+def simple_resource():
+    return SimpleCallback()
+
+
+@pytest.fixture()
+def callback_app(simple_resource):
+    app = App()
+    app.add_route('/', simple_resource)
+    app.add_route('/sse', simple_resource, suffix='sse')
+    app.add_route('/stream', simple_resource, suffix='stream')
+
+    return app
+
+
+@pytest.mark.parametrize('method,uri,expected', [
+    ('GET', '/', 'Hello, World!\n'),
+    ('HEAD', '/', ''),
+    ('GET', '/sse', ': ping\n\n'),
+    ('GET', '/stream', 'One\nTwo\nThree\n'),
+])
+@runs_sync
+async def test_callback(callback_app, simple_resource, method, uri, expected):
+    async with testing.ASGIConductor(callback_app) as conductor:
+        resp = await conductor.simulate_request(method, uri)
+        assert resp.status_code == 200
+        assert resp.text == expected
+
+        await asyncio.wait_for(simple_resource.event.wait(), 3.0)
+
+        assert simple_resource.called == 1

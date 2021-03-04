@@ -75,10 +75,45 @@ The testing framework supports both unittest and pytest::
 """
 
 # Hoist classes and functions into the falcon.testing namespace
-from falcon.testing.client import *  # NOQA
-from falcon.testing.helpers import *  # NOQA
-from falcon.testing.resource import capture_responder_args, set_resp_defaults  # NOQA
-from falcon.testing.resource import capture_responder_args_async, set_resp_defaults_async  # NOQA
-from falcon.testing.resource import SimpleTestResource, SimpleTestResourceAsync  # NOQA
-from falcon.testing.srmock import StartResponseMock  # NOQA
-from falcon.testing.test_case import TestCase  # NOQA
+from falcon import util as _util
+from falcon.testing.client import ASGIConductor
+from falcon.testing.client import Cookie
+from falcon.testing.client import Result
+from falcon.testing.client import ResultBodyStream
+from falcon.testing.client import simulate_delete
+from falcon.testing.client import simulate_get
+from falcon.testing.client import simulate_head
+from falcon.testing.client import simulate_options
+from falcon.testing.client import simulate_patch
+from falcon.testing.client import simulate_post
+from falcon.testing.client import simulate_put
+from falcon.testing.client import simulate_request
+from falcon.testing.client import StreamedResult
+from falcon.testing.client import TestClient
+from falcon.testing.helpers import ASGILifespanEventEmitter
+from falcon.testing.helpers import ASGIRequestEventEmitter
+from falcon.testing.helpers import ASGIResponseEventCollector
+from falcon.testing.helpers import ASGIWebSocketSimulator
+from falcon.testing.helpers import closed_wsgi_iterable
+from falcon.testing.helpers import create_asgi_req
+from falcon.testing.helpers import create_environ
+from falcon.testing.helpers import create_req
+from falcon.testing.helpers import create_scope
+from falcon.testing.helpers import create_scope_ws
+from falcon.testing.helpers import DEFAULT_HOST
+from falcon.testing.helpers import DEFAULT_UA
+from falcon.testing.helpers import get_encoding_from_headers
+from falcon.testing.helpers import get_unused_port
+from falcon.testing.helpers import rand_string
+from falcon.testing.helpers import redirected
+from falcon.testing.resource import capture_responder_args
+from falcon.testing.resource import capture_responder_args_async
+from falcon.testing.resource import set_resp_defaults
+from falcon.testing.resource import set_resp_defaults_async
+from falcon.testing.resource import SimpleTestResource
+from falcon.testing.resource import SimpleTestResourceAsync
+from falcon.testing.srmock import StartResponseMock
+from falcon.testing.test_case import TestCase
+# NOTE(kgriffs): Alias for backwards-compatibility with Falcon 0.2
+# TODO: remove in falcon 4
+httpnow = _util.http_now

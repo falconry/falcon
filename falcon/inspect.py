@@ -15,9 +15,14 @@
 """Inspect utilities for falcon applications."""
 from functools import partial
 import inspect
-from typing import Callable, Dict, List, Optional, Type
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Type
 
-from falcon import App, app_helpers
+from falcon import app_helpers
+from falcon.app import App
 from falcon.routing import CompiledRouter
 
 
