@@ -406,12 +406,12 @@ following:
 
     class Add():
         def on_get(self, req, resp):
-            resp.body = str(int(req.get_param('x')) + int(req.get_param('y')))
+            resp.text = str(req.get_param_as_int('x) + req.get_param_as_int('y'))
             resp.status = falcon.HTTP_200
 
     class Subtract():
         def on_get(self, req, resp):
-            resp.body = str(int(req.get_param('x')) - int(req.get_param('y')))
+            resp.text = str(req.get_param_as_int('x) - req.get_param_as_int('y'))
             resp.status = falcon.HTTP_200
 
     add = Add()
@@ -433,11 +433,11 @@ style:
 
     class Calculator():
         def on_get_add(self, req, resp):
-            resp.body = str(int(req.get_param('x')) + int(req.get_param('y')))
+            resp.text = str(int(req.get_param('x')) + int(req.get_param('y')))
             resp.status = falcon.HTTP_200
 
         def on_get_subtract(self, req, resp):
-            resp.body = str(int(req.get_param('x')) - int(req.get_param('y')))
+            resp.text = str(int(req.get_param('x')) - int(req.get_param('y')))
             resp.status = falcon.HTTP_200
 
     calc = Calculator()
@@ -448,7 +448,7 @@ style:
 In the second iteration, using Suffixed Responders, we're able to group responders based on their 
 actions rather than the data they represent. This gives us added flexibility to accomodate 
 situations in which a purely RESTful approach simply doesn't fit.
-
+ 
 Default Router
 --------------
 
