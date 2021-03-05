@@ -406,19 +406,19 @@ following:
 
     class Add():
         def on_get(self, req, resp):
-            resp.text = str(req.get_param_as_int('x) + req.get_param_as_int('y'))
+            resp.text = str(req.get_param_as_int('x') + req.get_param_as_int('y'))
             resp.status = falcon.HTTP_200
 
     class Subtract():
         def on_get(self, req, resp):
-            resp.text = str(req.get_param_as_int('x) - req.get_param_as_int('y'))
+            resp.text = str(req.get_param_as_int('x') - req.get_param_as_int('y'))
             resp.status = falcon.HTTP_200
 
     add = Add()
     subtract = Subtract()
-    api = falcon.API()
-    api.add_route('/add', add)
-    api.add_route('/subtract', subtract)
+    app = falcon.App()
+    app.add_route('/add', add)
+    app.add_route('/subtract', subtract)
 
 However, this approach highlights a situation in which grouping by resource may not make sense for 
 your domain. In this context, adding and subtracting don't seem to conceptually map to two separate resource 
@@ -433,17 +433,17 @@ style:
 
     class Calculator():
         def on_get_add(self, req, resp):
-            resp.text = str(int(req.get_param('x')) + int(req.get_param('y')))
+            resp.text = str(req.get_param_as_int('x') + req.get_param_as_int('y'))
             resp.status = falcon.HTTP_200
 
         def on_get_subtract(self, req, resp):
-            resp.text = str(int(req.get_param('x')) - int(req.get_param('y')))
+            resp.text = str(req.get_param_as_int('x') - req.get_param_as_int('y'))
             resp.status = falcon.HTTP_200
 
     calc = Calculator()
-    api = falcon.API()
-    api.add_route('/add', calc, suffix='add')
-    api.add_route('/subtract', calc, suffix='subtract')
+    app = falcon.App()
+    app.add_route('/add', calc, suffix='add')
+    app.add_route('/subtract', calc, suffix='subtract')
 
 In the second iteration, using Suffixed Responders, we're able to group responders based on their 
 actions rather than the data they represent. This gives us added flexibility to accomodate 
