@@ -535,9 +535,9 @@ class App:
                             pass
 
                     baz = Baz()
-                    api = falcon.API()
-                    api.add_route('/foo', baz, suffix='foo')
-                    api.add_route('/bar', baz, suffix='bar')
+                    app = falcon.App()
+                    app.add_route('/foo', baz, suffix='foo')
+                    app.add_route('/bar', baz, suffix='bar')
 
             compile (bool): Optional flag that can be provided when using the default
                 :class:`.CompiledRouter` to compile the routing logic on this call,
