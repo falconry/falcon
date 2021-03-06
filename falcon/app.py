@@ -524,7 +524,21 @@ class App:
                 for a single item vs. a collection of those same items.
                 Another class might use a suffixed responder to handle
                 a shortlink route in addition to the regular route for the
-                resource.
+                resource. For example::
+
+                    class Baz(object):
+
+                        def on_get_foo(self, req, resp):
+                            pass
+
+                        def on_get_bar(self, req, resp):
+                            pass
+
+                    baz = Baz()
+                    app = falcon.App()
+                    app.add_route('/foo', baz, suffix='foo')
+                    app.add_route('/bar', baz, suffix='bar')
+
             compile (bool): Optional flag that can be provided when using the default
                 :class:`.CompiledRouter` to compile the routing logic on this call,
                 since it will otherwise delay compilation until the first request
