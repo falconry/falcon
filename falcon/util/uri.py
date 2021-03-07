@@ -74,12 +74,16 @@ def _create_str_encoder(is_value):
     allowed_chars_plus_percent = allowed_chars + '%'
     encode_char = _create_char_encoder(allowed_chars)
 
-    def encoder(uri):
+    def encoder(uri, check_is_escaped=False):
         # PERF(kgriffs): Very fast way to check, learned from urlib.quote
         if not uri.rstrip(allowed_chars):
             return uri
 
-        if not uri.rstrip(allowed_chars_plus_percent):
+        if check_is_escaped and not uri.rstrip(allowed_chars_plus_percent):
+            # NOTE(minesja): There's only certain situations in which we should
+            # check again (ex. location, content_location, append_link).
+            # In all other cases we should allow characters that could appear
+            # escaped to actually be encodded (ex. '%')
             # NOTE(kgriffs): There's a good chance the string has already
             # been escaped. Do one more check to increase our certainty.
             tokens = uri.split('%')
@@ -132,6 +136,8 @@ Note:
 
 Args:
     uri (str): URI or part of a URI to encode.
+    check_is_escaped (boolean): Indicates a uri may have already been escaped
+        and should be treated as such
 
 Returns:
     str: An escaped version of `uri`, where all disallowed characters
@@ -161,6 +167,8 @@ Args:
     uri (str): URI fragment to encode. It is assumed not to cross delimiter
         boundaries, and so any reserved URI delimiter characters
         included in it will be percent-encoded.
+    check_is_escaped (boolean): Indicates a uri may have already been escaped
+        and should be treated as such
 
 Returns:
     str: An escaped version of `uri`, where all disallowed characters
@@ -355,7 +363,8 @@ def parse_query_string(query_string, keep_blank=False, csv=True):
                     # NOTE(kgriffs): Normalize the result in the case that
                     # some elements are empty strings, such that the result
                     # will be the same for 'foo=1,,3' as 'foo=1&foo=&foo=3'.
-                    additional_values = [decode(element) for element in v if element]
+                    additional_values = [decode(element)
+                                         for element in v if element]
                 else:
                     additional_values = [decode(element) for element in v]
 

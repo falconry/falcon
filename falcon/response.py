@@ -14,6 +14,7 @@
 
 """Response class."""
 
+from functools import partial
 import mimetypes
 
 from falcon import DEFAULT_MEDIA_TYPE
@@ -30,9 +31,12 @@ from falcon.response_helpers import (
 )
 from falcon.util import dt_to_http, http_cookies, structures, TimezoneGMT
 from falcon.util.deprecation import deprecated
-from falcon.util.uri import encode as uri_encode
-from falcon.util.uri import encode_value as uri_encode_value
+from falcon.util.uri import encode
+from falcon.util.uri import encode_value
 
+
+uri_encode = partial(encode, check_is_escaped=True)
+uri_encode_value = partial(encode_value, check_is_escaped=True)
 
 GMT_TIMEZONE = TimezoneGMT()
 
@@ -497,7 +501,8 @@ class Response:
             same_site = same_site.lower()
 
             if same_site not in _RESERVED_SAMESITE_VALUES:
-                raise ValueError("same_site must be set to either 'lax', 'strict', or 'none'")
+                raise ValueError(
+                    "same_site must be set to either 'lax', 'strict', or 'none'")
 
             self._cookies[name]['samesite'] = same_site.capitalize()
 
@@ -602,7 +607,8 @@ class Response:
         name = name.lower()
 
         if name == 'set-cookie':
-            raise HeaderNotSupported('Getting Set-Cookie is not currently supported.')
+            raise HeaderNotSupported(
+                'Getting Set-Cookie is not currently supported.')
 
         return self._headers.get(name, default)
 
@@ -638,7 +644,8 @@ class Response:
         name = name.lower()
 
         if name == 'set-cookie':
-            raise HeaderNotSupported('This method cannot be used to set cookies')
+            raise HeaderNotSupported(
+                'This method cannot be used to set cookies')
 
         self._headers[name] = value
 
@@ -672,7 +679,8 @@ class Response:
         name = name.lower()
 
         if name == 'set-cookie':
-            raise HeaderNotSupported('This method cannot be used to remove cookies')
+            raise HeaderNotSupported(
+                'This method cannot be used to remove cookies')
 
         self._headers.pop(name, None)
 
@@ -766,7 +774,8 @@ class Response:
 
             name = name.lower()
             if name == 'set-cookie':
-                raise HeaderNotSupported('This method cannot be used to set cookies')
+                raise HeaderNotSupported(
+                    'This method cannot be used to set cookies')
 
             _headers[name] = value
 

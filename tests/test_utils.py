@@ -224,33 +224,48 @@ class TestFalconUtils:
                     '?limit=3&e%C3%A7ho=true')
         assert uri.encode(url) == expected
 
+    def test_uri_encode_escaped_default(self):
+        # NOTE(minesja): Default behavior should escape strings that
+        #   may appear to already be escaped. Addresses #1872
+        url = '%26'
+        expected = '%2526'
+        assert uri.encode(url) == expected
+        assert uri.encode_value(url) == expected
+
+        url = '%26'
+        assert uri.decode(uri.encode(url)) == url
+        assert uri.decode(uri.encode_value(url)) == url
+
     def test_uri_encode_double(self):
+        # NOTE(minesja): check_is_escaped added to address maintain
+        #   ignoring escaped values (addresses #68) while also
+        #   addressing #1872 which should escape all values by default
         url = 'http://example.com/v1/fiz bit/messages'
         expected = 'http://example.com/v1/fiz%20bit/messages'
-        assert uri.encode(uri.encode(url)) == expected
+        assert uri.encode(uri.encode(url), check_is_escaped=True) == expected
 
         url = 'http://example.com/v1/fizbit/messages?limit=3&e\u00e7ho=true'
         expected = ('http://example.com/v1/fizbit/messages'
                     '?limit=3&e%C3%A7ho=true')
-        assert uri.encode(uri.encode(url)) == expected
+        assert uri.encode(uri.encode(url), check_is_escaped=True) == expected
 
         url = 'http://example.com/v1/fiz%bit/mess%ages/%'
         expected = 'http://example.com/v1/fiz%25bit/mess%25ages/%25'
-        assert uri.encode(uri.encode(url)) == expected
+        assert uri.encode(uri.encode(url), check_is_escaped=True) == expected
 
         url = 'http://example.com/%%'
         expected = 'http://example.com/%25%25'
-        assert uri.encode(uri.encode(url)) == expected
+        assert uri.encode(uri.encode(url), check_is_escaped=True) == expected
 
         # NOTE(kgriffs): Specific example cited in GH issue
         url = 'http://something?redirect_uri=http%3A%2F%2Fsite'
-        assert uri.encode(url) == url
+        assert uri.encode(url, check_is_escaped=True) == url
 
         hex_digits = 'abcdefABCDEF0123456789'
         for c1 in hex_digits:
             for c2 in hex_digits:
                 url = 'http://example.com/%' + c1 + c2
-                encoded = uri.encode(uri.encode(url))
+                encoded = uri.encode(uri.encode(url, check_is_escaped=True), check_is_escaped=True)
                 assert encoded == url
 
     def test_uri_encode_value(self):
