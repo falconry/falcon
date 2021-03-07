@@ -501,8 +501,7 @@ class Response:
             same_site = same_site.lower()
 
             if same_site not in _RESERVED_SAMESITE_VALUES:
-                raise ValueError(
-                    "same_site must be set to either 'lax', 'strict', or 'none'")
+                raise ValueError("same_site must be set to either 'lax', 'strict', or 'none'")
 
             self._cookies[name]['samesite'] = same_site.capitalize()
 
@@ -607,8 +606,7 @@ class Response:
         name = name.lower()
 
         if name == 'set-cookie':
-            raise HeaderNotSupported(
-                'Getting Set-Cookie is not currently supported.')
+            raise HeaderNotSupported('Getting Set-Cookie is not currently supported.')
 
         return self._headers.get(name, default)
 
@@ -644,8 +642,7 @@ class Response:
         name = name.lower()
 
         if name == 'set-cookie':
-            raise HeaderNotSupported(
-                'This method cannot be used to set cookies')
+            raise HeaderNotSupported('This method cannot be used to set cookies')
 
         self._headers[name] = value
 
@@ -678,9 +675,8 @@ class Response:
         # NOTE(kgriffs): normalize name by lowercasing it
         name = name.lower()
 
-        if name == 'set-cookie':
-            raise HeaderNotSupported(
-                'This method cannot be used to remove cookies')
+        if name == 'set-cookie': 
+            raise HeaderNotSupported('This method cannot be used to remove cookies')
 
         self._headers.pop(name, None)
 
@@ -773,9 +769,8 @@ class Response:
             value = str(value)
 
             name = name.lower()
-            if name == 'set-cookie':
-                raise HeaderNotSupported(
-                    'This method cannot be used to set cookies')
+            if name == 'set-cookie': 
+                raise HeaderNotSupported('This method cannot be used to set cookies')
 
             _headers[name] = value
 

@@ -224,17 +224,9 @@ class TestFalconUtils:
                     '?limit=3&e%C3%A7ho=true')
         assert uri.encode(url) == expected
 
-    def test_uri_encode_escaped_default(self):
-        # NOTE(minesja): Default behavior should escape strings that
-        #   may appear to already be escaped. Addresses #1872
-        url = '%26'
-        expected = '%2526'
-        assert uri.encode(url) == expected
-        assert uri.encode_value(url) == expected
-
-        url = '%26'
-        assert uri.decode(uri.encode(url)) == url
-        assert uri.decode(uri.encode_value(url)) == url
+        # NOTE(minesja): Addresses #1872
+        assert uri.encode('%26') == '%2526'
+        assert uri.decode(uri.encode('%26') == '%26')
 
     def test_uri_encode_double(self):
         # NOTE(minesja): check_is_escaped added to address maintain
@@ -276,6 +268,10 @@ class TestFalconUtils:
         assert uri.encode_value('\u00e7\u20ac') == '%C3%A7%E2%82%AC'
         assert uri.encode_value('ab/cd') == 'ab%2Fcd'
         assert uri.encode_value('ab+cd=42,9') == 'ab%2Bcd%3D42%2C9'
+        
+        # NOTE(minesja): Addresses #1872
+        assert uri.encode_value('%26') == '%2526'
+        assert uri.decode(uri.encode_value('%26')) == '%26'
 
     def test_uri_decode(self, decode_approach):
         assert uri.decode('abcd') == 'abcd'

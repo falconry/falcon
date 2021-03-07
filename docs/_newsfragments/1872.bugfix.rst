@@ -1,4 +1,4 @@
-:attr:`falcon.Request.encode` and :attr:`falcon.Uri.encode_value` now escape all
+:attr:`falcon.Uri.encode` and :attr:`falcon.Uri.encode_value` now escape all
 percent characters by default even if it appears they have already been escaped. 
 The ``check_is_escaped`` flag has been added to allow the option of retaining the previous
 behavior of ignoring strings that look like they've already been escaped.

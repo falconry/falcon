@@ -80,12 +80,13 @@ def _create_str_encoder(is_value):
             return uri
 
         if check_is_escaped and not uri.rstrip(allowed_chars_plus_percent):
-            # NOTE(minesja): There's only certain situations in which we should
-            # check again (ex. location, content_location, append_link).
-            # In all other cases we should allow characters that could appear
-            # escaped to actually be encodded (ex. '%')
             # NOTE(kgriffs): There's a good chance the string has already
             # been escaped. Do one more check to increase our certainty.
+            # NOTE(minesja): Per issue #1872, there's only certain situations 
+            # in which we should check again (ex. location, content_location, 
+            # append_link).In all other cases we should allow characters that 
+            # could appear escaped to still be encoded (ex. '%' would be encoded
+            # as '%25).
             tokens = uri.split('%')
             for token in tokens[1:]:
                 hex_octet = token[:2]
@@ -363,8 +364,7 @@ def parse_query_string(query_string, keep_blank=False, csv=True):
                     # NOTE(kgriffs): Normalize the result in the case that
                     # some elements are empty strings, such that the result
                     # will be the same for 'foo=1,,3' as 'foo=1&foo=&foo=3'.
-                    additional_values = [decode(element)
-                                         for element in v if element]
+                    additional_values = [decode(element) for element in v if element]
                 else:
                     additional_values = [decode(element) for element in v]
 
