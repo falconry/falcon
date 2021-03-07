@@ -82,9 +82,9 @@ def _create_str_encoder(is_value):
         if check_is_escaped and not uri.rstrip(allowed_chars_plus_percent):
             # NOTE(kgriffs): There's a good chance the string has already
             # been escaped. Do one more check to increase our certainty.
-            # NOTE(minesja): Per issue #1872, there's only certain situations 
-            # in which we should check again (ex. location, content_location, 
-            # append_link).In all other cases we should allow characters that 
+            # NOTE(minesja): Per issue #1872, there's only certain situations
+            # in which we should check again (ex. location, content_location,
+            # append_link).In all other cases we should allow characters that
             # could appear escaped to still be encoded (ex. '%' would be encoded
             # as '%25).
             tokens = uri.split('%')

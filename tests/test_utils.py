@@ -226,12 +226,11 @@ class TestFalconUtils:
 
         # NOTE(minesja): Addresses #1872
         assert uri.encode('%26') == '%2526'
-        assert uri.decode(uri.encode('%26') == '%26')
+        assert uri.decode(uri.encode('%26')) == '%26'
 
     def test_uri_encode_double(self):
-        # NOTE(minesja): check_is_escaped added to address maintain
-        #   ignoring escaped values (addresses #68) while also
-        #   addressing #1872 which should escape all values by default
+        # NOTE(minesja): check_is_escaped added to allow option to
+        # retain behavior of ignoring already escaped values (#68)
         url = 'http://example.com/v1/fiz bit/messages'
         expected = 'http://example.com/v1/fiz%20bit/messages'
         assert uri.encode(uri.encode(url), check_is_escaped=True) == expected
@@ -268,7 +267,7 @@ class TestFalconUtils:
         assert uri.encode_value('\u00e7\u20ac') == '%C3%A7%E2%82%AC'
         assert uri.encode_value('ab/cd') == 'ab%2Fcd'
         assert uri.encode_value('ab+cd=42,9') == 'ab%2Bcd%3D42%2C9'
-        
+
         # NOTE(minesja): Addresses #1872
         assert uri.encode_value('%26') == '%2526'
         assert uri.decode(uri.encode_value('%26')) == '%26'

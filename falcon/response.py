@@ -675,7 +675,7 @@ class Response:
         # NOTE(kgriffs): normalize name by lowercasing it
         name = name.lower()
 
-        if name == 'set-cookie': 
+        if name == 'set-cookie':
             raise HeaderNotSupported('This method cannot be used to remove cookies')
 
         self._headers.pop(name, None)
@@ -769,7 +769,7 @@ class Response:
             value = str(value)
 
             name = name.lower()
-            if name == 'set-cookie': 
+            if name == 'set-cookie':
                 raise HeaderNotSupported('This method cannot be used to set cookies')
 
             _headers[name] = value
