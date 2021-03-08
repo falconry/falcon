@@ -231,22 +231,26 @@ class TestFalconUtils:
     def test_uri_encode_double(self):
         # NOTE(minesja): check_is_escaped added to allow option to
         # retain behavior of ignoring already escaped values (#68)
+
+        from functools import partial
+        uri_encode = partial(uri.encode, check_is_escaped=True)
+
         url = 'http://example.com/v1/fiz bit/messages'
         expected = 'http://example.com/v1/fiz%20bit/messages'
-        assert uri.encode(uri.encode(url), check_is_escaped=True) == expected
+        assert uri_encode(uri_encode(url)) == expected
 
         url = 'http://example.com/v1/fizbit/messages?limit=3&e\u00e7ho=true'
         expected = ('http://example.com/v1/fizbit/messages'
                     '?limit=3&e%C3%A7ho=true')
-        assert uri.encode(uri.encode(url), check_is_escaped=True) == expected
+        assert uri_encode(uri_encode(url)) == expected
 
         url = 'http://example.com/v1/fiz%bit/mess%ages/%'
         expected = 'http://example.com/v1/fiz%25bit/mess%25ages/%25'
-        assert uri.encode(uri.encode(url), check_is_escaped=True) == expected
+        assert uri_encode(uri_encode(url)) == expected
 
         url = 'http://example.com/%%'
         expected = 'http://example.com/%25%25'
-        assert uri.encode(uri.encode(url), check_is_escaped=True) == expected
+        assert uri_encode(uri_encode(url)) == expected
 
         # NOTE(kgriffs): Specific example cited in GH issue
         url = 'http://something?redirect_uri=http%3A%2F%2Fsite'
@@ -256,7 +260,7 @@ class TestFalconUtils:
         for c1 in hex_digits:
             for c2 in hex_digits:
                 url = 'http://example.com/%' + c1 + c2
-                encoded = uri.encode(uri.encode(url, check_is_escaped=True), check_is_escaped=True)
+                encoded = uri_encode(uri_encode(url))
                 assert encoded == url
 
     def test_uri_encode_value(self):
