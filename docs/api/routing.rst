@@ -394,6 +394,61 @@ A custom router is any class that implements the following interface:
 
             """
 
+Suffixed Responders
+-------------------
+
+While Falcon encourages the REST architectural style, it is flexible enough to accomodate other 
+paradigms. Consider the task of building an API for a calculator which can both add and subtract 
+two numbers. You could implement the 
+following:
+
+.. code:: python
+
+    class Add():
+        def on_get(self, req, resp):
+            resp.text = str(req.get_param_as_int('x') + req.get_param_as_int('y'))
+            resp.status = falcon.HTTP_200
+
+    class Subtract():
+        def on_get(self, req, resp):
+            resp.text = str(req.get_param_as_int('x') - req.get_param_as_int('y'))
+            resp.status = falcon.HTTP_200
+
+    add = Add()
+    subtract = Subtract()
+    app = falcon.App()
+    app.add_route('/add', add)
+    app.add_route('/subtract', subtract)
+
+However, this approach highlights a situation in which grouping by resource may not make sense for 
+your domain. In this context, adding and subtracting don't seem to conceptually map to two separate resource 
+collections. Instead of separating them based on the idea of "getting" different resources from 
+each, we might want to group them based on the attributes of their function (i.e., take two
+numbers, do something to them, return the result).
+
+With Suffixed Responders, we can do just that, rewriting the example above in a more procedural 
+style:
+
+.. code:: python
+
+    class Calculator():
+        def on_get_add(self, req, resp):
+            resp.text = str(req.get_param_as_int('x') + req.get_param_as_int('y'))
+            resp.status = falcon.HTTP_200
+
+        def on_get_subtract(self, req, resp):
+            resp.text = str(req.get_param_as_int('x') - req.get_param_as_int('y'))
+            resp.status = falcon.HTTP_200
+
+    calc = Calculator()
+    app = falcon.App()
+    app.add_route('/add', calc, suffix='add')
+    app.add_route('/subtract', calc, suffix='subtract')
+
+In the second iteration, using Suffixed Responders, we're able to group responders based on their 
+actions rather than the data they represent. This gives us added flexibility to accomodate 
+situations in which a purely RESTful approach simply doesn't fit.
+ 
 Default Router
 --------------
 
