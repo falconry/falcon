@@ -322,6 +322,10 @@ class TestHeaders:
         value = req.get_header('X-Not-Found', default='some-value')
         assert value == 'some-value'
 
+        # Excercise any result caching and associated abuse mitigations
+        for i in range(10000):
+            assert req.get_header('X-Not-Found-{0}'.format(i)) is None
+
     @pytest.mark.parametrize('with_double_quotes', [True, False])
     def test_unset_header(self, client, with_double_quotes):
         client.app.add_route('/', RemoveHeaderResource(with_double_quotes))
@@ -373,6 +377,9 @@ class TestHeaders:
             assert actual_value == expected_value
 
         client.simulate_get(headers=resource.captured_req.headers)
+
+        # Validate that the property has been cached
+        assert resource.captured_req.headers is resource.captured_req.headers
 
         # Compare the request HTTP headers with the original headers
         for name, expected_value in request_headers.items():

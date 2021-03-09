@@ -24,10 +24,29 @@ from http import cookies as http_cookies
 import sys
 
 # Hoist misc. utils
-from falcon.util.misc import *  # NOQA
-from falcon.util.structures import *  # NOQA
-from falcon.util.sync import *  # NOQA
-from falcon.util.time import *  # NOQA
+from falcon.util.deprecation import deprecated
+from falcon.util.misc import code_to_http_status
+from falcon.util.misc import dt_to_http
+from falcon.util.misc import get_argnames
+from falcon.util.misc import get_bound_method
+from falcon.util.misc import get_http_status
+from falcon.util.misc import http_date_to_dt
+from falcon.util.misc import http_now
+from falcon.util.misc import http_status_to_code
+from falcon.util.misc import is_python_func
+from falcon.util.misc import secure_filename
+from falcon.util.misc import to_query_str
+from falcon.util.structures import CaseInsensitiveDict
+from falcon.util.structures import Context
+from falcon.util.structures import ETag
+from falcon.util.sync import async_to_sync
+from falcon.util.sync import create_task
+from falcon.util.sync import get_running_loop
+from falcon.util.sync import runs_sync
+from falcon.util.sync import sync_to_async
+from falcon.util.sync import wrap_sync_to_async
+from falcon.util.sync import wrap_sync_to_async_unsafe
+from falcon.util.time import TimezoneGMT
 
 
 # NOTE(kgriffs): Backport support for the new 'SameSite' attribute

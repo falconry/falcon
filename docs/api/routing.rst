@@ -5,10 +5,27 @@ Routing
 
 .. contents:: :local:
 
-Falcon routes incoming requests (including :ref:`WebSocket handshakes <ws>`) to resources based on a set of URI
-templates. If the path requested by the client matches the template for
-a given route, the request is then passed on to the associated resource
-for processing.
+Falcon uses resource-based routing to encourage a RESTful architectural style.
+Each resource is represented by a class that is responsible for handling all of
+the HTTP methods that the resource supports.
+
+For each HTTP method supported by the resource, the class implements a
+corresponding Python method with a name that starts with ``on_`` and ends in the
+lowercased HTTP method name (e.g., ``on_get()``, ``on_patch()``,
+``on_delete()``, etc.)
+
+.. note::
+    Resources in Falcon are represented by a single class instance that is
+    created at application startup when the routes are configured. This
+    minimizes routing overhead and simplifies the implementation of resource
+    classes. In the case of WSGI apps, this also means that resource classes
+    must be implemented in a thread-safe manner (see also:
+    :ref:`faq_thread_safety`).
+
+Falcon routes incoming requests (including :ref:`WebSocket handshakes <ws>`) to
+resources based on a set of URI templates. If the path requested by the client
+matches the template for a given route, the request is then passed on to the
+associated resource for processing.
 
 Here's a quick example to show how all the pieces fit together:
 
@@ -97,6 +114,9 @@ responder for the requested HTTP method, the framework invokes a default
 responder that raises an instance of :class:`~.HTTPMethodNotAllowed`. This class
 will be rendered by default as a 405 response for a regular HTTP request, and a
 403 response with a 3405 close code for a :ref:`WebSocket <ws>` handshake.
+
+Falcon also provides a default responder for OPTIONS requests that takes into
+account which methods are implemented for the target resource.
 
 Default Behavior
 ----------------
@@ -374,6 +394,61 @@ A custom router is any class that implements the following interface:
 
             """
 
+Suffixed Responders
+-------------------
+
+While Falcon encourages the REST architectural style, it is flexible enough to accomodate other 
+paradigms. Consider the task of building an API for a calculator which can both add and subtract 
+two numbers. You could implement the 
+following:
+
+.. code:: python
+
+    class Add():
+        def on_get(self, req, resp):
+            resp.text = str(req.get_param_as_int('x') + req.get_param_as_int('y'))
+            resp.status = falcon.HTTP_200
+
+    class Subtract():
+        def on_get(self, req, resp):
+            resp.text = str(req.get_param_as_int('x') - req.get_param_as_int('y'))
+            resp.status = falcon.HTTP_200
+
+    add = Add()
+    subtract = Subtract()
+    app = falcon.App()
+    app.add_route('/add', add)
+    app.add_route('/subtract', subtract)
+
+However, this approach highlights a situation in which grouping by resource may not make sense for 
+your domain. In this context, adding and subtracting don't seem to conceptually map to two separate resource 
+collections. Instead of separating them based on the idea of "getting" different resources from 
+each, we might want to group them based on the attributes of their function (i.e., take two
+numbers, do something to them, return the result).
+
+With Suffixed Responders, we can do just that, rewriting the example above in a more procedural 
+style:
+
+.. code:: python
+
+    class Calculator():
+        def on_get_add(self, req, resp):
+            resp.text = str(req.get_param_as_int('x') + req.get_param_as_int('y'))
+            resp.status = falcon.HTTP_200
+
+        def on_get_subtract(self, req, resp):
+            resp.text = str(req.get_param_as_int('x') - req.get_param_as_int('y'))
+            resp.status = falcon.HTTP_200
+
+    calc = Calculator()
+    app = falcon.App()
+    app.add_route('/add', calc, suffix='add')
+    app.add_route('/subtract', calc, suffix='subtract')
+
+In the second iteration, using Suffixed Responders, we're able to group responders based on their 
+actions rather than the data they represent. This gives us added flexibility to accomodate 
+situations in which a purely RESTful approach simply doesn't fit.
+ 
 Default Router
 --------------
 

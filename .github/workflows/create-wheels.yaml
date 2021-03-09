@@ -40,6 +40,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
 
       - name: Set up Python
         uses: actions/setup-python@v2.1.4
@@ -65,11 +67,7 @@ jobs:
           FALCON_ASGI_WRAP_NON_COROUTINES: Y
           FALCON_TESTING_SESSION: Y
         run: |
-          # TODO(kgriffs): Revisit second half of 2021 to see if we still need to pin tox
-          #
-          #   See also: https://github.com/tox-dev/tox/issues/1777
-          #
-          pip install 'tox==3.20'
+          pip install tox
           tox -e wheel_check -- ${{ matrix.pytest-extra }}
 
       - name: Get wheel name
@@ -132,6 +130,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
 
       - name: Get python version
         id: linux-py-version
@@ -181,7 +181,7 @@ jobs:
           FALCON_ASGI_WRAP_NON_COROUTINES: Y
           FALCON_TESTING_SESSION: Y
         run: |
-          pip install 'tox==3.20'
+          pip install tox
           tox -e wheel_check -- ${{ matrix.pytest-extra }}
 
       - name: Get wheel names
@@ -255,6 +255,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
 
       - name: Set up Python
         uses: actions/setup-python@v2.1.4
@@ -325,6 +327,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
 
       - name: Cache wheels
         uses: actions/cache@v2
@@ -357,7 +361,7 @@ jobs:
           args: |
             bash -c "
             export PATH=/opt/python/${{ matrix.python-version }}/bin:$PATH &&
-            pip install 'tox==3.20' 'pip>=20' &&
+            pip install tox 'pip>=20' &&
             tox -e wheel_check -- ${{ matrix.pytest-extra }}
             "
 
@@ -381,7 +385,7 @@ jobs:
           args: |
             bash -c "
             export PATH=/opt/python/${{ matrix.python-version }}/bin:$PATH &&
-            pip install 'tox==3.20' 'pip>=20' &&
+            pip install tox 'pip>=20' &&
             tox -e wheel_check -- ${{ matrix.pytest-extra }}
             "
 

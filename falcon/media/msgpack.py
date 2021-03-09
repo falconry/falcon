@@ -3,7 +3,8 @@ from __future__ import absolute_import  # NOTE(kgriffs): Work around a Cython bu
 from typing import Union
 
 from falcon import errors
-from falcon.media.base import BaseHandler, BinaryBaseHandlerWS
+from falcon.media.base import BaseHandler
+from falcon.media.base import BinaryBaseHandlerWS
 
 
 class MessagePackHandler(BaseHandler):

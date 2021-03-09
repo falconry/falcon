@@ -19,15 +19,20 @@ from inspect import iscoroutinefunction
 import re
 import traceback
 
-from falcon import app_helpers as helpers, routing
-import falcon.constants
-from falcon.errors import CompatibilityError, HTTPBadRequest
+from falcon import app_helpers as helpers
+from falcon import constants
+from falcon import responders
+from falcon import routing
+from falcon.errors import CompatibilityError
+from falcon.errors import HTTPBadRequest
+from falcon.errors import HTTPInternalServerError
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 from falcon.middleware import CORSMiddleware
-from falcon.request import Request, RequestOptions
-import falcon.responders
-from falcon.response import Response, ResponseOptions
+from falcon.request import Request
+from falcon.request import RequestOptions
+from falcon.response import Response
+from falcon.response import ResponseOptions
 import falcon.status_codes as status
 from falcon.util import deprecation
 from falcon.util import misc
@@ -177,7 +182,7 @@ class App:
             (See also: :ref:`CompiledRouterOptions <compiled_router_options>`)
     """
 
-    _META_METHODS = frozenset(falcon.constants._META_METHODS)
+    _META_METHODS = frozenset(constants._META_METHODS)
 
     _STREAM_BLOCK_SIZE = 8 * 1024  # 8 KiB
 
@@ -193,8 +198,8 @@ class App:
     #   responders colocated in the same module. This will make it more
     #   likely that the implementations of the async and non-async versions
     #   of the methods are kept in sync (pun intended).
-    _default_responder_bad_request = falcon.responders.bad_request
-    _default_responder_path_not_found = falcon.responders.path_not_found
+    _default_responder_bad_request = responders.bad_request
+    _default_responder_path_not_found = responders.path_not_found
 
     __slots__ = (
         '_cors_enable',
@@ -220,7 +225,7 @@ class App:
 
     def __init__(
         self,
-        media_type=falcon.constants.DEFAULT_MEDIA_TYPE,
+        media_type=constants.DEFAULT_MEDIA_TYPE,
         request_type=Request,
         response_type=Response,
         middleware=None,
@@ -274,8 +279,8 @@ class App:
 
         # NOTE(kgriffs): Add default error handlers
         self.add_error_handler(Exception, self._python_error_handler)
-        self.add_error_handler(falcon.HTTPError, self._http_error_handler)
-        self.add_error_handler(falcon.HTTPStatus, self._http_status_handler)
+        self.add_error_handler(HTTPError, self._http_error_handler)
+        self.add_error_handler(HTTPStatus, self._http_status_handler)
 
     def __call__(self, env, start_response):  # noqa: C901
         """WSGI `app` method.
@@ -519,7 +524,21 @@ class App:
                 for a single item vs. a collection of those same items.
                 Another class might use a suffixed responder to handle
                 a shortlink route in addition to the regular route for the
-                resource.
+                resource. For example::
+
+                    class Baz(object):
+
+                        def on_get_foo(self, req, resp):
+                            pass
+
+                        def on_get_bar(self, req, resp):
+                            pass
+
+                    baz = Baz()
+                    app = falcon.App()
+                    app.add_route('/foo', baz, suffix='foo')
+                    app.add_route('/bar', baz, suffix='bar')
+
             compile (bool): Optional flag that can be provided when using the default
                 :class:`.CompiledRouter` to compile the routing logic on this call,
                 since it will otherwise delay compilation until the first request
@@ -941,8 +960,7 @@ class App:
 
     def _python_error_handler(self, req, resp, error, params):
         req.log_error(traceback.format_exc())
-        self._compose_error_response(
-            req, resp, falcon.HTTPInternalServerError())
+        self._compose_error_response(req, resp, HTTPInternalServerError())
 
     def _find_error_handler(self, ex):
         # NOTE(csojinb): The `__mro__` class attribute returns the method

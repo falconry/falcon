@@ -104,6 +104,27 @@ def test_msgpack(media_type):
     client.simulate_get('/')
 
 
+def test_custom_media_handler():
+
+    class PythonRepresentation(media.BaseHandler):
+        async def serialize_async(media, content_type):
+            return repr(media).encode()
+
+    class TestResource:
+        async def on_get(self, req, resp):
+            resp.content_type = 'text/x-python-repr'
+            resp.media = {'something': True}
+
+            body = await resp.render_body()
+
+            assert body == b"{'something': True}"
+
+    client = create_client(TestResource(), handlers={
+        'text/x-python-repr': PythonRepresentation(),
+    })
+    client.simulate_get('/')
+
+
 def test_unknown_media_type():
     class TestResource:
         async def on_get(self, req, resp):
@@ -184,7 +205,7 @@ def test_mimeparse_edgecases(monkeypatch_resolver):
     assert result.json == doc
 
 
-def runTest(test_fn):
+def run_test(test_fn):
     doc = {'something': True}
 
     class TestResource:
@@ -210,7 +231,7 @@ class TestRenderBodyPrecedence:
 
             assert await resp.render_body() == b'body'
 
-        runTest(test)
+        run_test(test)
 
     def test_body(self):
         async def test(resp):
@@ -221,7 +242,7 @@ class TestRenderBodyPrecedence:
 
             assert await resp.render_body() == b'body'
 
-        runTest(test)
+        run_test(test)
 
     def test_data(self):
         async def test(resp):
@@ -230,14 +251,23 @@ class TestRenderBodyPrecedence:
 
             assert await resp.render_body() == b'data'
 
-        runTest(test)
+        run_test(test)
+
+    def test_data_masquerading_as_text(self):
+        async def test(resp):
+            resp.text = b'data'
+            resp.media = ['media']
+
+            assert await resp.render_body() == b'data'
+
+        run_test(test)
 
     def test_media(self):
         async def test(resp):
             resp.media = ['media']
             assert json.loads((await resp.render_body()).decode('utf-8')) == ['media']
 
-        runTest(test)
+        run_test(test)
 
 
 def test_media_rendered_cached():
@@ -251,4 +281,32 @@ def test_media_rendered_cached():
         resp.media = 123
         assert first is not await resp.render_body()
 
-    runTest(test)
+    run_test(test)
+
+
+def test_custom_render_body():
+
+    class CustomResponse(falcon.asgi.Response):
+        async def render_body(self):
+            body = await super().render_body()
+
+            if not self.content_type.startswith('text/plain'):
+                return body
+
+            if not body.endswith(b'\n'):
+                # Be a good Unix netizen
+                return body + b'\n'
+
+            return body
+
+    class HelloResource:
+        async def on_get(self, req, resp):
+            resp.content_type = falcon.MEDIA_TEXT
+            resp.text = 'Hello, World!'
+
+    app = falcon.asgi.App(response_type=CustomResponse)
+    app.add_route('/', HelloResource())
+
+    resp = testing.simulate_get(app, '/')
+    assert resp.headers['Content-Type'] == 'text/plain; charset=utf-8'
+    assert resp.text == 'Hello, World!\n'
