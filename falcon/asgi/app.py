@@ -271,6 +271,7 @@ class App(falcon.app.App):
     _default_responder_path_not_found = falcon.responders.path_not_found_async
 
     __slots__ = (
+        '_standard_response_type',
         'ws_options',
     )
 
@@ -278,6 +279,7 @@ class App(falcon.app.App):
         super().__init__(*args, request_type=request_type, response_type=response_type, **kwargs)
 
         self.ws_options = WebSocketOptions()
+        self._standard_response_type = (response_type is Response)
 
         self.add_error_handler(WebSocketDisconnected, self._ws_disconnected_error_handler)
 
@@ -425,40 +427,49 @@ class App(falcon.app.App):
         data = b''
 
         try:
-            # PERF(vytas): inline Response.render_body() in this critical code
-            #   path in order to shave off an await.
-            text = resp.text
-            if text is None:
-                data = resp._data
+            # NOTE(vytas): It is only safe to inline Response.render_body()
+            #   where we can be sure it hasn't been overridden, either directly
+            #   or by modifying the behavior of its dependencies.
+            if self._standard_response_type:
+                # PERF(vytas): inline Response.render_body() in this critical code
+                #   path in order to shave off an await.
+                text = resp.text
+                if text is None:
+                    data = resp._data
 
-                if data is None and resp._media is not None:
-                    # NOTE(kgriffs): We use a special _UNSET singleton since
-                    #   None is ambiguous (the media handler might return None).
-                    if resp._media_rendered is _UNSET:
-                        if not resp.content_type:
-                            resp.content_type = resp.options.default_media_type
+                    if data is None and resp._media is not None:
+                        # NOTE(kgriffs): We use a special _UNSET singleton since
+                        #   None is ambiguous (the media handler might return None).
+                        if resp._media_rendered is _UNSET:
+                            if not resp.content_type:
+                                resp.content_type = resp.options.default_media_type
 
-                        handler, serialize_sync, _ = resp.options.media_handlers._resolve(
-                            resp.content_type,
-                            resp.options.default_media_type
-                        )
-
-                        if serialize_sync:
-                            resp._media_rendered = serialize_sync(resp._media)
-                        else:
-                            resp._media_rendered = await handler.serialize_async(
-                                resp._media,
-                                resp.content_type
+                            handler, serialize_sync, _ = resp.options.media_handlers._resolve(
+                                resp.content_type,
+                                resp.options.default_media_type
                             )
 
-                    data = resp._media_rendered
+                            if serialize_sync:
+                                resp._media_rendered = serialize_sync(resp._media)
+                            else:
+                                resp._media_rendered = await handler.serialize_async(
+                                    resp._media,
+                                    resp.content_type
+                                )
+
+                        data = resp._media_rendered
+                else:
+                    try:
+                        # NOTE(kgriffs): Normally we expect text to be a string
+                        data = text.encode()
+                    except AttributeError:
+                        # NOTE(kgriffs): Assume it was a bytes object already
+                        data = text
+
             else:
-                try:
-                    # NOTE(kgriffs): Normally we expect text to be a string
-                    data = text.encode()
-                except AttributeError:
-                    # NOTE(kgriffs): Assume it was a bytes object already
-                    data = text
+                # NOTE(vytas): Custom reponse type.
+                data = await resp.render_body()
+
         except Exception as ex:
             if not await self._handle_exception(req, resp, ex, params):
                 raise
