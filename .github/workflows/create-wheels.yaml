@@ -223,6 +223,7 @@ jobs:
           pip install setuptools>=44 wheel>=0.34 cython>=0.29.21
           # cythonize -3 falcon/**/*.pyx
           python setup.py sdist --dist-dir dist
+          python .github/workflows/scripts/verify_tag.py dist
 
       - name: Upload wheels to release
         # upload the generated wheels to the github release
