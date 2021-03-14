@@ -25,7 +25,7 @@ owns the source code for your application. The application user should *NOT*
 have write access to your source. This mitigates the chance that someone could
 write a malicious Python file to your source directory through an upload
 endpoint you might define; when your application restarts, the malicious file is
-loaded and proceeds to cause any number of BadThings\ :sup:(tm) to happen.
+loaded and proceeds to cause any number of Bad Things™ to happen.
 
 .. code:: sh
 
@@ -78,7 +78,7 @@ Preparing your Application for Service
 
 For the purposes of this tutorial, we'll assume that you have implemented
 a way to configure your application, such as with a
-``create_api()`` function or a module-level script. This role of this
+``create_app()`` function or a module-level script. The role of this
 function or script is to supply an instance of :any:`falcon.App`, which
 implements the standard WSGI callable interface.
 
@@ -98,7 +98,7 @@ is assigned to your :any:`falcon.App` instance.
   config = myproject.get_config(os.environ['MYPROJECT_CONFIG'])
 
   # uWSGI will look for this variable
-  application = myproject.create_api(config)
+  application = myproject.create_app(config)
 
 Note that in the above example, the WSGI callable is simple assigned to a
 variable, ``application``, rather than being passed to a self-hosting
@@ -210,7 +210,7 @@ platform <https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-n
 Then, create an NGINX conf file that looks something like this:
 
 .. code-block:: ini
-  :caption: /etc/nginx/sites-avaiable/myproject.conf
+  :caption: /etc/nginx/sites-available/myproject.conf
 
   server {
     listen 80;
