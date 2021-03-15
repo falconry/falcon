@@ -33,10 +33,10 @@ def _gunicorn_args(host, port, extra_opts=()):
         '--bind', '{}:{}'.format(host, port),
 
         # NOTE(vytas): Although rare, but Meinheld workers have been noticed to
-        # occasionally hang on shutdown.
+        #   occasionally hang on shutdown.
         '--graceful-timeout', str(_SHUTDOWN_TIMEOUT // 2),
         # NOTE(vytas): In case a worker hangs for an unexpectedly long time
-        # while reading or processing request (the default value is 30).
+        #   while reading or processing request (the default value is 30).
         '--timeout', str(_REQUEST_TIMEOUT),
     )
     return args + extra_opts + ('_wsgi_test_app:app',)
