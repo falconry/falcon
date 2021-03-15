@@ -21,6 +21,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
 
       - name: Cache PIP
         uses: actions/cache@v2
@@ -49,7 +51,7 @@ jobs:
             lscpu &&
             mkdir -p $PIP_CACHE_DIR &&
             chown -R $(whoami) $PIP_CACHE_DIR &&
-            pip install -U pip tox==3.20 &&
+            pip install -U pip tox &&
             python --version &&
             pip --version &&
             tox --version &&
@@ -67,7 +69,7 @@ jobs:
             lscpu &&
             mkdir -p $PIP_CACHE_DIR &&
             chown -R $(whoami) $PIP_CACHE_DIR &&
-            pip install -U pip tox==3.20 &&
+            pip install -U pip tox &&
             python --version &&
             pip --version &&
             tox --version &&

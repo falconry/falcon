@@ -22,6 +22,11 @@ def test_no_events():
             self._called = True
             resp.sse = Emitter()
 
+            # NOTE(vytas): Test explicitly referencing property since it is
+            # normally optimized away by operating directly on the private
+            # attribute in hot App.__call__ code paths.
+            assert resp.sse is not None
+
     resource = SomeResource()
 
     app = App()
@@ -304,7 +309,3 @@ def test_non_iterable():
 
     with pytest.raises(TypeError):
         client.simulate_get()
-
-
-# TODO: Test with uvicorn
-# TODO: Test in browser with JavaScript

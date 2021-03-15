@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 
-# TODO(kgriffs): Revisit second half of 2021 to see if we still need to pin tox
-#
-#   See also: https://github.com/tox-dev/tox/issues/1777
-#
-pip install -U tox==3.20 coverage
+pip install -U tox coverage
 
 rm -f .coverage.*
 

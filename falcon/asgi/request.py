@@ -1,4 +1,4 @@
-# Copyright 2019 by Kurt Griffiths
+# Copyright 2019-2020 by Kurt Griffiths
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,23 +15,24 @@
 """ASGI Request class."""
 
 from falcon import errors
-from falcon import request_helpers as helpers  # NOQA: Required by fixed up WSGI Request attrs
+from falcon import request
+from falcon import request_helpers as helpers
+from falcon.constants import _UNSET
 from falcon.constants import SINGLETON_HEADERS
-from falcon.forwarded import _parse_forwarded_header  # NOQA: Req. by fixed up WSGI Request attrs
-from falcon.forwarded import Forwarded  # NOQA
-import falcon.media
-import falcon.request
-from falcon.util.uri import parse_host, parse_query_string
+from falcon.util.uri import parse_host
+from falcon.util.uri import parse_query_string
 from . import _request_helpers as asgi_helpers
 from .stream import BoundedStream
 
 
 __all__ = ['Request']
 
-_UNSET = falcon.request._UNSET
+_SINGLETON_HEADERS_BYTESTR = frozenset([
+    h.encode() for h in SINGLETON_HEADERS
+])
 
 
-class Request(falcon.request.Request):
+class Request(request.Request):
     """Represents a client's HTTP request.
 
     Note:
@@ -346,12 +347,30 @@ class Request(falcon.request.Request):
 
     __slots__ = [
         '_asgi_headers',
-        '_asgi_server_cached',
+        # '_asgi_server_cached',
+        # '_cached_headers',
         '_first_event',
         '_receive',
-        '_stream',
+        # '_stream',
         'scope',
     ]
+
+    # PERF(vytas): These boilerplates values will be shadowed when set on an
+    #   instance. Avoiding a statement per each of those values allows to speed
+    #   up __init__ substantially.
+    _asgi_server_cached = None
+    _cached_access_route = None
+    _cached_forwarded = None
+    _cached_forwarded_prefix = None
+    _cached_forwarded_uri = None
+    _cached_headers = None
+    _cached_prefix = None
+    _cached_relative_uri = None
+    _cached_uri = None
+    _media = _UNSET
+    _media_error = None
+    _stream = None
+    _wsgi_errors = None
 
     def __init__(self, scope, receive, first_event=None, options=None):
 
@@ -364,37 +383,46 @@ class Request(falcon.request.Request):
             # NOTE(kgriffs): According to ASGI 3.0, header names are always
             #   lowercased, and both name and value are byte strings. Although
             #   technically header names and values are restricted to US-ASCII
-            #   we decode using the default 'utf-8' because it is a little
-            #   faster than passing an encoding option.
-            header_name = header_name.decode()
-            header_value = header_value.decode()
+            #   we decode later (just-in-time) using the default 'utf-8' because
+            #   it is a little faster than passing an encoding option (except
+            #   under Cython).
+            #
+            #   The reason we wait to decode is that the typical app will not
+            #   need to decode all request headers, and we usually can just
+            #   leave the header name as a byte string and look it up that way.
+            #
 
             # NOTE(kgriffs): There are no standard request headers that
             #   allow multiple instances to appear in the request while also
             #   disallowing list syntax.
-            if header_name not in req_headers or header_name in SINGLETON_HEADERS:
+            if header_name not in req_headers or header_name in _SINGLETON_HEADERS_BYTESTR:
                 req_headers[header_name] = header_value
             else:
-                req_headers[header_name] += ',' + header_value
+                req_headers[header_name] += b',' + header_value
 
         self._asgi_headers = req_headers
+        # PERF(vytas): Fall back to class variable(s) when unset.
+        # self._cached_headers = None
 
         # =====================================================================
         #  Misc.
         # =====================================================================
 
-        self._asgi_server_cached = None  # Lazy
+        # PERF(vytas): Fall back to class variable(s) when unset.
+        # self._asgi_server_cached = None  # Lazy
         self.scope = scope
         self.is_websocket = scope['type'] == 'websocket'
 
-        self.options = options if options else falcon.request.RequestOptions()
+        self.options = options if options else request.RequestOptions()
 
-        self._wsgierrors = None
+        # PERF(vytas): Fall back to class variable(s) when unset.
+        # self._wsgierrors = None
         self.method = 'GET' if self.is_websocket else scope['method']
 
         self.uri_template = None
-        self._media = _UNSET
-        self._media_error = None
+        # PERF(vytas): Fall back to class variable(s) when unset.
+        # self._media = _UNSET
+        # self._media_error = None
 
         # TODO(kgriffs): ASGI does not specify whether 'path' may be empty,
         #   as was allowed for WSGI.
@@ -418,27 +446,27 @@ class Request(falcon.request.Request):
         else:
             self._params = {}
 
-        self._cached_access_route = None
-        self._cached_forwarded = None
-        self._cached_forwarded_prefix = None
-        self._cached_forwarded_uri = None
-        self._cached_headers = req_headers
-        self._cached_prefix = None
-        self._cached_relative_uri = None
-        self._cached_uri = None
+        # PERF(vytas): Fall back to class variable(s) when unset.
+        # self._cached_access_route = None
+        # self._cached_forwarded = None
+        # self._cached_forwarded_prefix = None
+        # self._cached_forwarded_uri = None
+        # self._cached_prefix = None
+        # self._cached_relative_uri = None
+        # self._cached_uri = None
 
         if self.method == 'GET':
             # PERF(kgriffs): Normally we expect no Content-Type header, so
             #   use this pattern which is a little bit faster than dict.get()
-            if 'content-type' in req_headers:
-                self.content_type = req_headers['content-type']
+            if b'content-type' in req_headers:
+                self.content_type = req_headers[b'content-type'].decode()
             else:
                 self.content_type = None
         else:
             # PERF(kgriffs): This is the most performant pattern when we expect
             #   the key to be present most of the time.
             try:
-                self.content_type = req_headers['content-type']
+                self.content_type = req_headers[b'content-type'].decode()
             except KeyError:
                 self.content_type = None
 
@@ -455,7 +483,8 @@ class Request(falcon.request.Request):
         #   (for example) by not confirming a 100 Continue request unless
         #   the app calls receive() to read the request body.
 
-        self._stream = None
+        # PERF(vytas): Fall back to class variable(s) when unset.
+        # self._stream = None
         self._receive = receive
         self._first_event = first_event
 
@@ -487,14 +516,14 @@ class Request(falcon.request.Request):
         # NOTE(kgriffs): Per RFC, a missing accept header is
         # equivalent to '*/*'
         try:
-            return self._asgi_headers['accept'] or '*/*'
+            return self._asgi_headers[b'accept'].decode() or '*/*'
         except KeyError:
             return '*/*'
 
     @property
     def content_length(self):
         try:
-            value = self._asgi_headers['content-length']
+            value = self._asgi_headers[b'content-length'].decode()
         except KeyError:
             return None
 
@@ -574,7 +603,7 @@ class Request(falcon.request.Request):
         # try to avoid calling self.forwarded if we can, since it uses a
         # try...catch that will usually result in a relatively expensive
         # raised exception.
-        if 'forwarded' in self._asgi_headers:
+        if b'forwarded' in self._asgi_headers:
             first_hop = self.forwarded[0]
             scheme = first_hop.scheme or self.scheme
         else:
@@ -583,7 +612,7 @@ class Request(falcon.request.Request):
             # first. Note also that the indexing operator is
             # slightly faster than using get().
             try:
-                scheme = self._asgi_headers['x-forwarded-proto'].lower()
+                scheme = self._asgi_headers[b'x-forwarded-proto'].decode().lower()
             except KeyError:
                 scheme = self.scheme
 
@@ -595,7 +624,7 @@ class Request(falcon.request.Request):
             # NOTE(kgriffs): Prefer the host header; the web server
             # isn't supposed to mess with it, so it should be what
             # the client actually sent.
-            host_header = self._asgi_headers['host']
+            host_header = self._asgi_headers[b'host'].decode()
             host, __ = parse_host(host_header)
         except KeyError:
             host, __ = self._asgi_server
@@ -609,7 +638,7 @@ class Request(falcon.request.Request):
         # try to avoid calling self.forwarded if we can, since it uses a
         # try...catch that will usually result in a relatively expensive
         # raised exception.
-        if 'forwarded' in self._asgi_headers:
+        if b'forwarded' in self._asgi_headers:
             first_hop = self.forwarded[0]
             host = first_hop.host or self.netloc
         else:
@@ -618,7 +647,7 @@ class Request(falcon.request.Request):
             # just go for it without wasting time checking it
             # first.
             try:
-                host = self._asgi_headers['x-forwarded-host']
+                host = self._asgi_headers[b'x-forwarded-host'].decode()
             except KeyError:
                 host = self.netloc
 
@@ -646,17 +675,17 @@ class Request(falcon.request.Request):
 
             headers = self._asgi_headers
 
-            if 'forwarded' in headers:
+            if b'forwarded' in headers:
                 self._cached_access_route = []
                 for hop in self.forwarded:
                     if hop.src is not None:
                         host, __ = parse_host(hop.src)
                         self._cached_access_route.append(host)
-            elif 'x-forwarded-for' in headers:
-                addresses = headers['x-forwarded-for'].split(',')
+            elif b'x-forwarded-for' in headers:
+                addresses = headers[b'x-forwarded-for'].decode().split(',')
                 self._cached_access_route = [ip.strip() for ip in addresses]
-            elif 'x-real-ip' in headers:
-                self._cached_access_route = [headers['x-real-ip']]
+            elif b'x-real-ip' in headers:
+                self._cached_access_route = [headers[b'x-real-ip'].decode()]
 
             if self._cached_access_route:
                 if self._cached_access_route[-1] != client:
@@ -674,7 +703,7 @@ class Request(falcon.request.Request):
     @property
     def port(self):
         try:
-            host_header = self._asgi_headers['host']
+            host_header = self._asgi_headers[b'host'].decode()
             default_port = 443 if self._secure_scheme else 80
             __, port = parse_host(host_header, default_port=default_port)
         except KeyError:
@@ -687,7 +716,7 @@ class Request(falcon.request.Request):
         # PERF(kgriffs): try..except is faster than get() when we
         # expect the key to be present most of the time.
         try:
-            netloc_value = self._asgi_headers['host']
+            netloc_value = self._asgi_headers[b'host'].decode()
         except KeyError:
             netloc_value, port = self._asgi_server
 
@@ -794,26 +823,42 @@ class Request(falcon.request.Request):
         #   gets a None back on the first reference to property, it
         #   probably isn't going to access the property again (TBD).
         if self._cached_if_match is None:
-            header_value = self._asgi_headers.get('if-match')
+            header_value = self._asgi_headers.get(b'if-match')
             if header_value:
-                self._cached_if_match = helpers._parse_etags(header_value)
+                self._cached_if_match = helpers._parse_etags(header_value.decode())
 
         return self._cached_if_match
 
     @property
     def if_none_match(self):
         if self._cached_if_none_match is None:
-            header_value = self._asgi_headers.get('if-none-match')
+            header_value = self._asgi_headers.get(b'if-none-match')
             if header_value:
-                self._cached_if_none_match = helpers._parse_etags(header_value)
+                self._cached_if_none_match = helpers._parse_etags(header_value.decode())
 
         return self._cached_if_none_match
+
+    @property
+    def headers(self):
+        # NOTE(kgriffs: First time here will cache the dict so all we
+        # have to do is clone it in the future.
+        if self._cached_headers is None:
+            self._cached_headers = {
+                name.decode(): value.decode()
+                for name, value in self._asgi_headers.items()
+            }
+
+        return self._cached_headers
 
     # ------------------------------------------------------------------------
     # Public Methods
     # ------------------------------------------------------------------------
 
-    def get_header(self, name, required=False, default=None):
+    # PERF(kgriffs): Using kwarg cache, in lieu of @lru_cache on a helper method
+    #   that is then called from get_header(), was benchmarked to be more
+    #   efficient across CPython 3.6/3.8 (regardless of cythonization) and
+    #   PyPy 3.6.
+    def get_header(self, name, required=False, default=None, _name_cache={}):
         """Retrieve the raw string value for the given header.
 
         Args:
@@ -837,14 +882,19 @@ class Request(falcon.request.Request):
 
         """
 
-        asgi_name = name.lower()
+        try:
+            asgi_name = _name_cache[name]
+        except KeyError:
+            asgi_name = name.lower().encode()
+            if len(_name_cache) < 64:  # Somewhat arbitrary ceiling to mitigate abuse
+                _name_cache[name] = asgi_name
 
         # Use try..except to optimize for the header existing in most cases
         try:
             # Don't take the time to cache beforehand, using HTTP naming.
             # This will be faster, assuming that most headers are looked
             # up only once, and not all headers will be requested.
-            return self._asgi_headers[asgi_name]
+            return self._asgi_headers[asgi_name].decode()
 
         except KeyError:
             if not required:

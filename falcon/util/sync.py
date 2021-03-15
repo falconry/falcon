@@ -1,6 +1,7 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from functools import partial, wraps
+from functools import partial
+from functools import wraps
 import inspect
 import os
 from typing import Callable
