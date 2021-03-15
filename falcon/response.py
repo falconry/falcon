@@ -14,7 +14,6 @@
 
 """Response class."""
 
-from functools import partial
 import mimetypes
 
 from falcon import DEFAULT_MEDIA_TYPE
@@ -31,12 +30,9 @@ from falcon.response_helpers import (
 )
 from falcon.util import dt_to_http, http_cookies, structures, TimezoneGMT
 from falcon.util.deprecation import deprecated
-from falcon.util.uri import encode
-from falcon.util.uri import encode_value
+from falcon.util.uri import encode_check_escaped as uri_encode
+from falcon.util.uri import encode_value_check_escaped as uri_encode_value
 
-
-uri_encode = partial(encode, check_is_escaped=True)
-uri_encode_value = partial(encode_value, check_is_escaped=True)
 
 GMT_TIMEZONE = TimezoneGMT()
 
