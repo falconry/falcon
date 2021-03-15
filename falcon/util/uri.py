@@ -172,9 +172,33 @@ Returns:
 
 """
 
+encode_check_escaped = _create_str_encoder(False, True)
+encode_check_escaped.name = 'encode_check_escaped'
+encode_check_escaped.__doc__ = """Encodes a full or relative URI according to RFC 3986.
+
+RFC 3986 defines a set of "unreserved" characters as well as a
+set of "reserved" characters used as delimiters. This function escapes
+all other "disallowed" characters by percent-encoding them unless they
+appear to have been previously encoded. For example, '%26' will not be
+encoded again as it follows the format of an encoded value.
+
+Note:
+    This utility is faster in the average case than the similar
+    `quote` function found in ``urlib``. It also strives to be easier
+    to use by assuming a sensible default of allowed characters.
+
+Args:
+    uri (str): URI or part of a URI to encode.
+
+Returns:
+    str: An escaped version of `uri`, where all disallowed characters
+    have been percent-encoded.
+
+"""
+
 encode_value_check_escaped = _create_str_encoder(True, True)
-encode_value.name = 'encode_value'
-encode_value.__doc__ = """Encodes a value string according to RFC 3986.
+encode_value_check_escaped.name = 'encode_value_check_escaped'
+encode_value_check_escaped.__doc__ = """Encodes a value string according to RFC 3986.
 
 RFC 3986 defines a set of "unreserved" characters as well as a
 set of "reserved" characters used as delimiters. Disallowed characters
@@ -194,30 +218,6 @@ Args:
     uri (str): URI fragment to encode. It is assumed not to cross delimiter
         boundaries, and so any reserved URI delimiter characters
         included in it will be percent-encoded.
-
-Returns:
-    str: An escaped version of `uri`, where all disallowed characters
-    have been percent-encoded.
-
-"""
-
-encode_check_escaped = _create_str_encoder(True, True)
-encode_check_escaped.name = 'encode_value'
-encode_check_escaped.__doc__ = """Encodes a full or relative URI according to RFC 3986.
-
-RFC 3986 defines a set of "unreserved" characters as well as a
-set of "reserved" characters used as delimiters. This function escapes
-all other "disallowed" characters by percent-encoding them unless they
-appear to have been previously encoded. For example, '%26' will not be
-encoded again as it follows the format of an encoded value.
-
-Note:
-    This utility is faster in the average case than the similar
-    `quote` function found in ``urlib``. It also strives to be easier
-    to use by assuming a sensible default of allowed characters.
-
-Args:
-    uri (str): URI or part of a URI to encode.
 
 Returns:
     str: An escaped version of `uri`, where all disallowed characters
@@ -549,7 +549,9 @@ __all__ = [
     'decode',
     'encode',
     'encode_value',
+    'encode_check_escaped',
+    'encode_value_check_escaped',
     'parse_host',
     'parse_query_string',
-    'unquote_string',
+    'unquote_string'
 ]
