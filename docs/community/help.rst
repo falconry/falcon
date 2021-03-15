@@ -35,7 +35,7 @@ Submit Issues
 If you have an idea for a feature, run into something that is harder to
 use than it should be, or find a bug, please let the crew know
 in `falconry/dev <https://gitter.im/falconry/dev>`_ or by
-`submitting an issue <https://github.com/racker/falcon/issues>`_. We
+`submitting an issue <https://github.com/falconry/falcon/issues>`_. We
 need your help to make Falcon awesome!
 
 Pay it Forward
@@ -43,7 +43,7 @@ Pay it Forward
 We'd like to invite you to help other community members with their
 questions in `falconry/user
 <https://gitter.im/falconry/user>`_, and to help peer-review
-`pull requests <https://github.com/racker/falcon/pulls>`_. If you use the
+`pull requests <https://github.com/falconry/falcon/pulls>`_. If you use the
 Chrome browser, we recommend installing the
 `NotHub extension <http://nothub.org/>`_ to stay up to date with PRs.
 
