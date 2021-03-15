@@ -244,9 +244,6 @@ class TestFalconUtils:
         assert uri.decode(uri.encode('%26')) == '%26'
 
     def test_uri_encode_double(self):
-        # NOTE(minesja): check_is_escaped added to allow option to
-        # retain behavior of ignoring already escaped values (#68)
-
         url = 'http://example.com/v1/fiz bit/messages'
         expected = 'http://example.com/v1/fiz%20bit/messages'
         assert uri.encode_check_escaped(uri.encode_check_escaped(url)) == expected

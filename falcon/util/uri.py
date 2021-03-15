@@ -553,5 +553,5 @@ __all__ = [
     'encode_value_check_escaped',
     'parse_host',
     'parse_query_string',
-    'unquote_string'
+    'unquote_string',
 ]
