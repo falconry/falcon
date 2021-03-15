@@ -20,44 +20,42 @@ _STARTUP_TIMEOUT = 10
 _SHUTDOWN_TIMEOUT = 20
 
 
-def _gunicorn_args(host, port):
+def _gunicorn_args(host, port, extra_opts=()):
     """Gunicorn"""
     try:
         import gunicorn  # noqa: F401
     except ImportError:
         pytest.skip('gunicorn not installed')
 
-    return (
+    args = (
         'gunicorn',
         '--access-logfile', '-',
         '--bind', '{}:{}'.format(host, port),
-        '--graceful-timeout', '10',
-        '--timeout', '10',
-        '_wsgi_test_app:app',
+
+        # NOTE(vytas): Although rare, but Meinheld workers have been noticed to
+        # occasionally hang on shutdown.
+        '--graceful-timeout', str(_SHUTDOWN_TIMEOUT // 2),
+        # NOTE(vytas): In case a worker hangs for an unexpectedly long time
+        # while reading or processing request (the default value is 30).
+        '--timeout', str(_REQUEST_TIMEOUT),
     )
+    return args + extra_opts + ('_wsgi_test_app:app',)
 
 
 def _meinheld_args(host, port):
     """Gunicorn + Meinheld"""
     try:
-        import gunicorn  # noqa: F401
-    except ImportError:
-        pytest.skip('gunicorn not installed')
-
-    try:
         import meinheld  # noqa: F401
     except ImportError:
         pytest.skip('meinheld not installed')
 
-    return (
-        'gunicorn',
-        '--access-logfile', '-',
-        '--bind', '{}:{}'.format(host, port),
-        '--graceful-timeout', '10',
-        '--timeout', '10',
-        '--workers', '2',
-        '--worker-class', 'egg:meinheld#gunicorn_worker',
-        '_wsgi_test_app:app',
+    return _gunicorn_args(
+        host,
+        port,
+        (
+            '--workers', '2',
+            '--worker-class', 'egg:meinheld#gunicorn_worker',
+        ),
     )
 
 
