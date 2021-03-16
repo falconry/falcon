@@ -57,22 +57,22 @@ documentation. It basically can't be wrong."
 Features
 --------
 
-- ASGI and WSGI Support
-- WebSocket Support
-- Native asyncio support (no hacks or compatibility layers)
-- Strict adherence to RFCs
-- Highly-optimized, extensible code base
-- Intuitive routing via URI templates and REST-inspired
-  resource classes
+Falcon tries to do as little as possible while remaining highly effective.
+
+- ASGI, WSGI, and WebSocket support
+- Native ``asyncio`` support
 - No reliance on magic globals for routing and state management
+- Stable interfaces with an emphasis on backwards-compatibility
+- Simple API modeling through centralized RESTful routing
+- Highly-optimized, extensible code base
 - Easy access to headers and bodies through request and response
   classes
 - DRY request processing via middleware components and hooks
+- Strict adherence to RFCs
 - Idiomatic HTTP error responses
 - Straightforward exception handling
-- Snappy testing through WSGI/ASGI helpers and mocks
+- Snappy testing with WSGI/ASGI helpers and mocks
 - CPython 3.5+ and PyPy 3.5+ support
-- ~20% speed boost under CPython when Cython is available
 
 .. Patron list starts here. For Python package, we substitute this section with:
    Support Falcon Development
