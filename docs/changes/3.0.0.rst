@@ -250,24 +250,34 @@ Contributors to this Release
 
 Many thanks to all of our talented and stylish contributors for this release!
 
+- `adsahay <https://github.com/adsahay>`_
+- `AR4Z <https://github.com/AR4Z>`_
+- `ashutoshvarma <https://github.com/ashutoshvarma>`_
+- `bibekjoshi54 <https://github.com/bibekjoshi54>`_
 - `BigBlueHat <https://github.com/BigBlueHat>`_
+- `brunneis <https://github.com/brunneis>`_
 - `CaselIT <https://github.com/CaselIT>`_
 - `Ciemaar <https://github.com/Ciemaar>`_
 - `Coykto <https://github.com/Coykto>`_
 - `cozyDoomer <https://github.com/cozyDoomer>`_
 - `cravindra <https://github.com/cravindra>`_
 - `csojinb <https://github.com/csojinb>`_
+- `danilito19 <https://github.com/danilito19>`_
 - `edmondb <https://github.com/edmondb>`_
+- `grktsh <https://github.com/grktsh>`_
+- `hackedd <https://github.com/hackedd>`_
 - `jmvrbanac <https://github.com/jmvrbanac>`_
 - `karlhigley <https://github.com/karlhigley>`_
 - `kemingy <https://github.com/kemingy>`_
 - `kgriffs <https://github.com/kgriffs>`_
 - `mattdonders <https://github.com/mattdonders>`_
-- `mikeyusko <https://github.com/mikeyusko>`_
+- `MinesJA <https://github.com/MinesJA>`_
 - `minrock <https://github.com/minrock>`_
+- `mivade <https://github.com/mivade>`_
 - `mosi-kha <https://github.com/mosi-kha>`_
-- `nZac <https://github.com/nZac>`_
+- `myusko <https://github.com/myusko>`_
 - `nagaabhinaya <https://github.com/nagaabhinaya>`_
+- `nZac <https://github.com/nZac>`_
 - `pbjr23 <https://github.com/pbjr23>`_
 - `rmyers <https://github.com/rmyers>`_
 - `safaozturk93 <https://github.com/safaozturk93>`_
@@ -276,3 +286,4 @@ Many thanks to all of our talented and stylish contributors for this release!
 - `timgates42 <https://github.com/timgates42>`_
 - `vytas7 <https://github.com/vytas7>`_
 - `waghanza <https://github.com/waghanza>`_
+- `withshubh <https://github.com/withshubh>`_
