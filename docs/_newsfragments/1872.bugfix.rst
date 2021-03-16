@@ -1,0 +1,7 @@
+:attr:`falcon.Uri.encode` and :attr:`falcon.Uri.encode_value` now escape all
+percent characters by default even if it appears they have already been escaped. 
+The :attr:`falcon.Uri.encode_check_escaped` and :attr:`falcon.Uri.encode_value_check_escaped` 
+methods have been added to give the option of retaining the previous behavior where needed. 
+These new methods have been applied to the :attr:`falcon.Response.location`, 
+:attr:`falcon.Response.content_location`, :attr:`falcon.Response.append_link` 
+attrs and methods to retain previous behavior.

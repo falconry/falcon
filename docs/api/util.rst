@@ -9,7 +9,8 @@ URI
 ---
 
 .. automodule:: falcon.uri
-    :members: encode, encode_value, decode, parse_host,
+    :members: encode, encode_value, encode_check_escaped,
+        encode_value_check_escaped, decode, parse_host,
         parse_query_string, unquote_string
 
 Date and Time

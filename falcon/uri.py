@@ -15,7 +15,9 @@ in the `falcon` module, and so must be explicitly imported::
 
 from falcon.util.uri import decode
 from falcon.util.uri import encode
+from falcon.util.uri import encode_check_escaped
 from falcon.util.uri import encode_value
+from falcon.util.uri import encode_value_check_escaped
 from falcon.util.uri import parse_host
 from falcon.util.uri import parse_query_string
 from falcon.util.uri import unquote_string

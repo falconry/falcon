@@ -68,7 +68,7 @@ def _create_char_encoder(allowed_chars):
     return lookup.__getitem__
 
 
-def _create_str_encoder(is_value):
+def _create_str_encoder(is_value, check_is_escaped=False):
 
     allowed_chars = _UNRESERVED if is_value else _ALL_ALLOWED
     allowed_chars_plus_percent = allowed_chars + '%'
@@ -79,9 +79,14 @@ def _create_str_encoder(is_value):
         if not uri.rstrip(allowed_chars):
             return uri
 
-        if not uri.rstrip(allowed_chars_plus_percent):
+        if check_is_escaped and not uri.rstrip(allowed_chars_plus_percent):
             # NOTE(kgriffs): There's a good chance the string has already
             # been escaped. Do one more check to increase our certainty.
+            # NOTE(minesja): Per issue #1872, there's only certain situations
+            # in which we should check again (ex. location, content_location,
+            # append_link).In all other cases we should allow characters that
+            # could appear escaped to still be encoded (ex. '%' would be encoded
+            # as '%25).
             tokens = uri.split('%')
             for token in tokens[1:]:
                 hex_octet = token[:2]
@@ -139,7 +144,6 @@ Returns:
 
 """
 
-
 encode_value = _create_str_encoder(True)
 encode_value.name = 'encode_value'
 encode_value.__doc__ = """Encodes a value string according to RFC 3986.
@@ -156,6 +160,59 @@ All reserved characters are lumped together into a single set of
 Note:
     RFC 3986 defines a set of "unreserved" characters as well as a
     set of "reserved" characters used as delimiters.
+
+Args:
+    uri (str): URI fragment to encode. It is assumed not to cross delimiter
+        boundaries, and so any reserved URI delimiter characters
+        included in it will be percent-encoded.
+
+Returns:
+    str: An escaped version of `uri`, where all disallowed characters
+    have been percent-encoded.
+
+"""
+
+encode_check_escaped = _create_str_encoder(False, True)
+encode_check_escaped.name = 'encode_check_escaped'
+encode_check_escaped.__doc__ = """Encodes a full or relative URI according to RFC 3986.
+
+RFC 3986 defines a set of "unreserved" characters as well as a
+set of "reserved" characters used as delimiters. This function escapes
+all other "disallowed" characters by percent-encoding them unless they
+appear to have been previously encoded. For example, '%26' will not be
+encoded again as it follows the format of an encoded value.
+
+Note:
+    This utility is faster in the average case than the similar
+    `quote` function found in ``urlib``. It also strives to be easier
+    to use by assuming a sensible default of allowed characters.
+
+Args:
+    uri (str): URI or part of a URI to encode.
+
+Returns:
+    str: An escaped version of `uri`, where all disallowed characters
+    have been percent-encoded.
+
+"""
+
+encode_value_check_escaped = _create_str_encoder(True, True)
+encode_value_check_escaped.name = 'encode_value_check_escaped'
+encode_value_check_escaped.__doc__ = """Encodes a value string according to RFC 3986.
+
+RFC 3986 defines a set of "unreserved" characters as well as a
+set of "reserved" characters used as delimiters. Disallowed characters
+are percent-encoded in a way that models ``urllib.parse.quote(safe="~")``
+unless they appear to have been previously encoded. For example, '%26'
+will not be encoded again as it follows the format of an encoded value.
+
+All reserved characters are lumped together into a single set of
+"delimiters", and everything in that set is escaped.
+
+Note:
+    This utility is faster in the average case than the similar
+    `quote` function found in ``urlib``. It also strives to be easier
+    to use by assuming a sensible default of allowed characters.
 
 Args:
     uri (str): URI fragment to encode. It is assumed not to cross delimiter
@@ -492,6 +549,8 @@ __all__ = [
     'decode',
     'encode',
     'encode_value',
+    'encode_check_escaped',
+    'encode_value_check_escaped',
     'parse_host',
     'parse_query_string',
     'unquote_string',

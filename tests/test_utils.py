@@ -239,33 +239,37 @@ class TestFalconUtils:
                     '?limit=3&e%C3%A7ho=true')
         assert uri.encode(url) == expected
 
+        # NOTE(minesja): Addresses #1872
+        assert uri.encode('%26') == '%2526'
+        assert uri.decode(uri.encode('%26')) == '%26'
+
     def test_uri_encode_double(self):
         url = 'http://example.com/v1/fiz bit/messages'
         expected = 'http://example.com/v1/fiz%20bit/messages'
-        assert uri.encode(uri.encode(url)) == expected
+        assert uri.encode_check_escaped(uri.encode_check_escaped(url)) == expected
 
         url = 'http://example.com/v1/fizbit/messages?limit=3&e\u00e7ho=true'
         expected = ('http://example.com/v1/fizbit/messages'
                     '?limit=3&e%C3%A7ho=true')
-        assert uri.encode(uri.encode(url)) == expected
+        assert uri.encode_check_escaped(uri.encode_check_escaped(url)) == expected
 
         url = 'http://example.com/v1/fiz%bit/mess%ages/%'
         expected = 'http://example.com/v1/fiz%25bit/mess%25ages/%25'
-        assert uri.encode(uri.encode(url)) == expected
+        assert uri.encode_check_escaped(uri.encode_check_escaped(url)) == expected
 
         url = 'http://example.com/%%'
         expected = 'http://example.com/%25%25'
-        assert uri.encode(uri.encode(url)) == expected
+        assert uri.encode_check_escaped(uri.encode_check_escaped(url)) == expected
 
         # NOTE(kgriffs): Specific example cited in GH issue
         url = 'http://something?redirect_uri=http%3A%2F%2Fsite'
-        assert uri.encode(url) == url
+        assert uri.encode_check_escaped(url) == url
 
         hex_digits = 'abcdefABCDEF0123456789'
         for c1 in hex_digits:
             for c2 in hex_digits:
                 url = 'http://example.com/%' + c1 + c2
-                encoded = uri.encode(uri.encode(url))
+                encoded = uri.encode_check_escaped(uri.encode_check_escaped(url))
                 assert encoded == url
 
     def test_uri_encode_value(self):
@@ -276,6 +280,10 @@ class TestFalconUtils:
         assert uri.encode_value('\u00e7\u20ac') == '%C3%A7%E2%82%AC'
         assert uri.encode_value('ab/cd') == 'ab%2Fcd'
         assert uri.encode_value('ab+cd=42,9') == 'ab%2Bcd%3D42%2C9'
+
+        # NOTE(minesja): Addresses #1872
+        assert uri.encode_value('%26') == '%2526'
+        assert uri.decode(uri.encode_value('%26')) == '%26'
 
     def test_uri_decode(self, decode_approach):
         assert uri.decode('abcd') == 'abcd'
