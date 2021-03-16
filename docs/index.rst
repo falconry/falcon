@@ -71,18 +71,20 @@ Features
 
 Falcon tries to do as little as possible while remaining highly effective.
 
-- Routes based on URI templates RFC
-- REST-inspired mapping of URIs to resources
-- Global, resource, and method hooks
-- Idiomatic HTTP error responses
-- Full Unicode support
-- Intuitive request and response objects
-- Works great with async libraries like gevent
-- Minimal attack surface for writing secure APIs
-- 100% code coverage with a comprehensive test suite
-- No dependencies on other Python packages
-- Supports Python 3.5+
-- Compatible with PyPy
+- :ref:`ASGI, WSGI <app>`, and :ref:`WebSocket <ws>` support
+- Native ``asyncio`` support
+- No reliance on magic globals for routing and state management
+- Stable interfaces with an emphasis on backwards-compatibility
+- Simple API modeling through centralized RESTful :ref:`routing <routing>`
+- Highly-optimized, extensible code base
+- Easy access to headers and bodies through :ref:`request and response <rr>`
+  objects
+- DRY request processing via :ref:`middleware <middleware>` components and hooks
+- Strict adherence to RFCs
+- Idiomatic :ref:`HTTP error <errors>` responses
+- Straightforward exception handling
+- Snappy :ref:`testing <testing>` with WSGI/ASGI helpers and mocks
+- CPython 3.5+ and PyPy 3.5+ support
 
 Who's Using Falcon?
 -------------------

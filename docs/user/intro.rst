@@ -20,22 +20,22 @@ CPython 3.5+ and PyPy 3.5+.
 Features
 --------
 
-- :ref:`ASGI and WSGI <app>` Support
-- :ref:`WebSocket <ws>` Support
-- Native asyncio support (no hacks or compatibility layers)
-- Strict adherence to RFCs
-- Highly-optimized, extensible code base
-- Intuitive :ref:`routing <routing>` via URI templates and REST-inspired resource
-  classes
+Falcon tries to do as little as possible while remaining highly effective.
+
+- :ref:`ASGI, WSGI <app>`, and :ref:`WebSocket <ws>` support
+- Native ``asyncio`` support
 - No reliance on magic globals for routing and state management
+- Stable interfaces with an emphasis on backwards-compatibility
+- Simple API modeling through centralized RESTful :ref:`routing <routing>`
+- Highly-optimized, extensible code base
 - Easy access to headers and bodies through :ref:`request and response <rr>`
-  classes
+  objects
 - DRY request processing via :ref:`middleware <middleware>` components and hooks
+- Strict adherence to RFCs
 - Idiomatic :ref:`HTTP error <errors>` responses
 - Straightforward exception handling
-- Snappy :ref:`testing <testing>` through WSGI/ASGI helpers and mocks
+- Snappy :ref:`testing <testing>` with WSGI/ASGI helpers and mocks
 - CPython 3.5+ and PyPy 3.5+ support
-- ~20% speed boost under CPython when Cython is available
 
 How is Falcon different?
 ------------------------
