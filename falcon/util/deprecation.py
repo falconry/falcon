@@ -18,7 +18,6 @@ This module provides decorators to mark functions and classes as deprecated.
 """
 
 import functools
-import inspect
 import warnings
 
 
@@ -60,12 +59,7 @@ def deprecated(instructions, is_property=False):
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            frame = inspect.currentframe().f_back
-
-            warnings.warn_explicit(message,
-                                   category=DeprecatedWarning,
-                                   filename=inspect.getfile(frame.f_code),
-                                   lineno=frame.f_lineno)
+            warnings.warn(message, category=DeprecatedWarning, stacklevel=2)
 
             return func(*args, **kwargs)
 
