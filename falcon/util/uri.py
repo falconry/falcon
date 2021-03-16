@@ -179,7 +179,7 @@ encode_check_escaped.__doc__ = """Encodes a full or relative URI according to RF
 RFC 3986 defines a set of "unreserved" characters as well as a
 set of "reserved" characters used as delimiters. This function escapes
 all other "disallowed" characters by percent-encoding them unless they
-appear to have been previously encoded. For example, '%26' will not be
+appear to have been previously encoded. For example, ``'%26'`` will not be
 encoded again as it follows the format of an encoded value.
 
 Note:
@@ -203,7 +203,7 @@ encode_value_check_escaped.__doc__ = """Encodes a value string according to RFC 
 RFC 3986 defines a set of "unreserved" characters as well as a
 set of "reserved" characters used as delimiters. Disallowed characters
 are percent-encoded in a way that models ``urllib.parse.quote(safe="~")``
-unless they appear to have been previously encoded. For example, '%26'
+unless they appear to have been previously encoded. For example, ``'%26'``
 will not be encoded again as it follows the format of an encoded value.
 
 All reserved characters are lumped together into a single set of

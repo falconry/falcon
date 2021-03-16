@@ -1,4 +1,0 @@
-Falcon now uses the :class:`falcon.Response` media handlers when serializing
-to JSON :class:`falcon.HTTPError` and :class:`falcon.asgi.SSEvent`.
-:class:`falcon.Request` will use its defined media handler when loading a
-param as JSON with :meth:`falcon.Request.get_param_as_json`.

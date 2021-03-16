@@ -1,1 +1,0 @@
-ASGI+WebSocket support was added to the framework via :class:`falcon.asgi.App` and :class:`falcon.asgi.WebSocket`.

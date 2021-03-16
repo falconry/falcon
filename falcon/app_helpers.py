@@ -26,6 +26,9 @@ from falcon.util.sync import _wrap_non_coroutine_unsafe
 def prepare_middleware(middleware, independent_middleware=False, asgi=False):
     """Check middleware interfaces and prepare the methods for request handling.
 
+    Note:
+        This method is only applicable to WSGI apps.
+
     Arguments:
         middleware (iterable): An iterable of middleware objects.
 
