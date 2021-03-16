@@ -16,42 +16,46 @@ _SIZE_1_KB = 1024
 _SIZE_1_MB = _SIZE_1_KB ** 2
 
 _REQUEST_TIMEOUT = 10
+_STARTUP_TIMEOUT = 10
+_SHUTDOWN_TIMEOUT = 20
 
 
-def _gunicorn_args(host, port):
+def _gunicorn_args(host, port, extra_opts=()):
     """Gunicorn"""
     try:
         import gunicorn  # noqa: F401
     except ImportError:
         pytest.skip('gunicorn not installed')
 
-    return (
+    args = (
         'gunicorn',
         '--access-logfile', '-',
         '--bind', '{}:{}'.format(host, port),
-        '_wsgi_test_app:app',
+
+        # NOTE(vytas): Although rare, but Meinheld workers have been noticed to
+        #   occasionally hang on shutdown.
+        '--graceful-timeout', str(_SHUTDOWN_TIMEOUT // 2),
+        # NOTE(vytas): In case a worker hangs for an unexpectedly long time
+        #   while reading or processing request (the default value is 30).
+        '--timeout', str(_REQUEST_TIMEOUT),
     )
+    return args + extra_opts + ('_wsgi_test_app:app',)
 
 
 def _meinheld_args(host, port):
     """Gunicorn + Meinheld"""
     try:
-        import gunicorn  # noqa: F401
-    except ImportError:
-        pytest.skip('gunicorn not installed')
-
-    try:
         import meinheld  # noqa: F401
     except ImportError:
         pytest.skip('meinheld not installed')
 
-    return (
-        'gunicorn',
-        '--access-logfile', '-',
-        '--bind', '{}:{}'.format(host, port),
-        '--workers', '2',
-        '--worker-class', 'egg:meinheld#gunicorn_worker',
-        '_wsgi_test_app:app',
+    return _gunicorn_args(
+        host,
+        port,
+        (
+            '--workers', '2',
+            '--worker-class', 'egg:meinheld#gunicorn_worker',
+        ),
     )
 
 
@@ -120,13 +124,14 @@ def server_url(request):
             pytest.skip('{} executable is not installed'.format(args[0]))
 
         # NOTE(vytas): give the app server some time to start.
-        for attempt in range(3):
+        start_time = time.time()
+        while time.time() - start_time < _STARTUP_TIMEOUT:
             try:
-                requests.get(base_url + '/things', timeout=3.05)
+                requests.get(base_url + '/hello', timeout=0.2)
+            except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+                time.sleep(0.2)
+            else:
                 break
-            except requests.exceptions.RequestException:
-                pass
-            time.sleep(attempt + 0.2)
         else:
             if server.poll() is None:
                 pytest.fail('Server is not responding to requests')
@@ -147,7 +152,7 @@ def server_url(request):
     server.terminate()
 
     try:
-        server.communicate(timeout=10)
+        server.communicate(timeout=_SHUTDOWN_TIMEOUT)
     except subprocess.TimeoutExpired:
         print('\n[Killing stubborn server process...]')
 
