@@ -1,3 +1,0 @@
-The :attr:`Response.downloadable_as <falcon.Response.downloadable_as>` property
-is now correctly encoding non-ASCII filenames as per
-`RFC 6266 <https://tools.ietf.org/html/rfc6266#appendix-D>`_ recommendations.

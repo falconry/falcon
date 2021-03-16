@@ -1,6 +1,0 @@
-Previously, response serialization errors (such as in the case of a faulty
-custom media handler, or because an instance of
-:class:`~falcon.HTTPUnsupportedMediaType` was raised for an unsupported
-response content type) were unexpectedly bubbled up to the application server.
-This has been fixed, and these errors are now handled exactly the same way as
-other exceptions raised in a responder (see also: :ref:`errors`).

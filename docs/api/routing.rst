@@ -397,9 +397,9 @@ A custom router is any class that implements the following interface:
 Suffixed Responders
 -------------------
 
-While Falcon encourages the REST architectural style, it is flexible enough to accomodate other 
-paradigms. Consider the task of building an API for a calculator which can both add and subtract 
-two numbers. You could implement the 
+While Falcon encourages the REST architectural style, it is flexible enough to accomodate other
+paradigms. Consider the task of building an API for a calculator which can both add and subtract
+two numbers. You could implement the
 following:
 
 .. code:: python
@@ -420,13 +420,13 @@ following:
     app.add_route('/add', add)
     app.add_route('/subtract', subtract)
 
-However, this approach highlights a situation in which grouping by resource may not make sense for 
-your domain. In this context, adding and subtracting don't seem to conceptually map to two separate resource 
-collections. Instead of separating them based on the idea of "getting" different resources from 
+However, this approach highlights a situation in which grouping by resource may not make sense for
+your domain. In this context, adding and subtracting don't seem to conceptually map to two separate resource
+collections. Instead of separating them based on the idea of "getting" different resources from
 each, we might want to group them based on the attributes of their function (i.e., take two
 numbers, do something to them, return the result).
 
-With Suffixed Responders, we can do just that, rewriting the example above in a more procedural 
+With Suffixed Responders, we can do just that, rewriting the example above in a more procedural
 style:
 
 .. code:: python
@@ -445,10 +445,10 @@ style:
     app.add_route('/add', calc, suffix='add')
     app.add_route('/subtract', calc, suffix='subtract')
 
-In the second iteration, using Suffixed Responders, we're able to group responders based on their 
-actions rather than the data they represent. This gives us added flexibility to accomodate 
+In the second iteration, using Suffixed Responders, we're able to group responders based on their
+actions rather than the data they represent. This gives us added flexibility to accomodate
 situations in which a purely RESTful approach simply doesn't fit.
- 
+
 Default Router
 --------------
 
@@ -467,6 +467,10 @@ be used by custom routing engines.
 .. autofunction:: falcon.routing.set_default_responders
 
 .. autofunction:: falcon.routing.compile_uri_template
+
+.. autofunction:: falcon.app_helpers.prepare_middleware
+
+.. autofunction:: falcon.app_helpers.prepare_middleware_ws
 
 
 Custom HTTP Methods

@@ -12,7 +12,238 @@ Changes to Supported Platforms
 - The Falcon 2.x series was the last to support Python language version 2. As a
   result, support for CPython 2.7 and PyPy2.7 was removed in Falcon 3.0.
 
-.. towncrier release notes start
+
+Breaking Changes
+----------------
+
+- The class :class:`~.falcon.http_error.OptionalRepresentation` and the attribute
+  :attr:`~.falcon.HTTPError.has_representation` were deprecated. The default error
+  serializer now generates a representation for every error type that derives from
+  :class:`falcon.HTTPError`.
+  In addition, Falcon now ensures that any previously set response body is cleared
+  before handling any raised exception. (`#452 <https://github.com/falconry/falcon/issues/452>`__)
+- The class :class:`~.falcon.http_error.NoRepresentation` was deprecated. All
+  subclasses of :class:`falcon.HTTPError` now have a media type representation. (`#777 <https://github.com/falconry/falcon/issues/777>`__)
+- In order to reconcile differences between the framework's support for WSGI vs. ASGI, the following
+  breaking changes were made:
+
+      - :func:`falcon.testing.create_environ` previously set a default User-Agent header, when one
+        was not provided, to the value ``'curl/7.24.0 (x86_64-apple-darwin12.0)'``. As of Falcon
+        3.0, the default User-Agent string is now ``f'falcon-client/{falcon.__version__}'``. This
+        value can be overridden for the sake of backwards-compatibility by setting
+        ``falcon.testing.helpers.DEFAULT_UA``.
+      - The :func:`falcon.testing.create_environ` function's `protocol` keyword argument was renamed
+        to `http_version` and now only includes the version number (the value is no longer prefixed
+        with ``'HTTP/'``).
+      - The :func:`falcon.testing.create_environ` function's `app` keyword argument was renamed to
+        `root_path`.
+      - The `writeable` property of :class:`falcon.stream.BoundedStream` was renamed to `writable` per the
+        standard file-like I/O interface (the old name was a misspelling)
+      - If an error handler raises an exception type other than :class:`falcon.HTTPStatus` or
+        :class:`falcon.HTTPError`, remaining middleware `process_response` methods will no longer be
+        executed before bubbling up the unhandled exception to the web server.
+      - :func:`falcon.get_http_status` no longer accepts floats, and the method itself is deprecated.
+      - :func:`falcon.app_helpers.prepare_middleware` no longer accepts a single object; the value
+        that is passed must be an iterable.
+      - :attr:`falcon.Request.access_route` now includes the value of the
+        :attr:`~falcon.Request.remote_addr` property as the last element in the route, if not already
+        present in one of the headers that are checked.
+      - When the ``'REMOTE_ADDR'`` field is not present in the WSGI environ, Falcon will assume
+        ``'127.0.0.1'`` for the value, rather than simply returning ``None`` for
+        :attr:`falcon.Request.remote_addr`.
+
+  The changes above were implemented as part of the ASGI+HTTP work stream. (`#1358 <https://github.com/falconry/falcon/issues/1358>`__)
+- Header-related methods of the :class:`~falcon.Response` class no longer coerce the
+  passed header name to a string via ``str()``. (`#1497 <https://github.com/falconry/falcon/issues/1497>`__)
+- An unhandled exception will no longer be raised to the web server. Rather, the framework now installs a default error handler for the :class:`Exception` type. This also means that middleware `process_response` methods will still be called in this case, rather than being skipped as previously. The new default error handler simply generates an HTTP 500 response. This behavior can be overridden by specifying your own error handler for :class:`Exception` via :meth:`~falcon.API.add_error_handler`. (`#1507 <https://github.com/falconry/falcon/issues/1507>`__)
+- Exceptions are now handled by the registered handler for the most specific matching exception class, rather than in reverse order of registration. "Specificity" is determined by the method resolution order of the raised exception type. (See :meth:`~falcon.App.add_error_handler` for more details.) (`#1514 <https://github.com/falconry/falcon/issues/1514>`__)
+- The deprecated ``stream_len`` property was removed from the :class:`~falcon.Response` class.
+  Please use :meth:`~falcon.Response.set_stream()` or :attr:`~falcon.Response.content_length` instead. (`#1517 <https://github.com/falconry/falcon/issues/1517>`__)
+- If :attr:`RequestOptions.strip_url_path_trailing_slash
+  <falcon.RequestOptions.strip_url_path_trailing_slash>` is enabled, routes
+  should now be added without a trailing slash. Previously, the trailing slash
+  was always removed as a side effect of a bug regardless of the
+  :attr:`~falcon.RequestOptions.strip_url_path_trailing_slash` option value.
+  See also: :ref:`trailing_slash_in_path` (`#1544 <https://github.com/falconry/falcon/issues/1544>`__)
+- Rename :attr:`falcon.Response.body` and :attr:`falcon.HTTPStatus.body` to ``text``.
+  The old name is deprecated, but still available. (`#1578 <https://github.com/falconry/falcon/issues/1578>`__)
+- Referencing the class :class:`falcon.stream.BoundedStream` through the
+  ``falcon.request_helpers`` module is deprecated. It is now accessible from
+  the module ``falcon.stream``. (`#1583 <https://github.com/falconry/falcon/issues/1583>`__)
+- General refactoring of internal media handler:
+
+  *  Deserializing an empty body with a handler that does not support it will
+     raise :class:`falcon.MediaNotFoundError`, and will be rendered as a
+     ``400 Bad Request`` response. This error may be suppressed by passing
+     a default value to ``get_media`` to be used in case of empty body.
+     See also :meth:`falcon.Request.get_media` for details.
+     Previously ``None`` was returned in all cases without calling the handler.
+  *  Exceptions raised by the handlers are wrapped as
+     :class:`falcon.MediaMalformedError`, and will be rendered as a
+     ``400 Bad Request`` response.
+  *  Subsequent calls to :meth:`falcon.Request.get_media` or :attr:`falcon.Request.media` will
+     re-raise the same exception, if the first call ended in an error, unless the
+     exception was a :class:`falcon.MediaNotFoundError` and a default value is
+     passed to the ``default_when_empty`` attribute of the current invocation.
+     Previously ``None`` was returned.
+
+  External handlers should update their logic to align to the internal Falcon handlers. (`#1589 <https://github.com/falconry/falcon/issues/1589>`__)
+- The :attr:`falcon.Response.data` property now just simply returns the same data
+  object that it was set to, if any, rather than also checking and serializing
+  the value of the :attr:`falcon.Response.media` property. Instead, a new
+  :meth:`~falcon.Response.render_body` method has been implemented, which can be
+  used to obtain the HTTP response body for the request, taking into account
+  the :attr:`~falcon.Response.text`, :attr:`~falcon.Response.data`, and
+  :attr:`~falcon.Response.media` attributes. (`#1679 <https://github.com/falconry/falcon/issues/1679>`__)
+- The ``params_csv`` parameter now defaults to ``False`` in
+  :func:`falcon.testing.simulate_request`.
+  The change was made to match the default value of the request option
+  :attr:`~falcon.RequestOptions.auto_parse_qs_csv` (``False`` since Falcon 2.0). (`#1730 <https://github.com/falconry/falcon/issues/1730>`__)
+- The :meth:`falcon.HTTPError.to_json` now returns ``bytes`` instead of ``str``.
+  Importing ``json`` from ``falcon.util`` is deprecated. (`#1767 <https://github.com/falconry/falcon/issues/1767>`__)
+- The private attributes for :class:`~.falcon.media.JSONHandler` were renamed, and
+  the private attributes used by :class:`~.falcon.media.MessagePackHandler` were
+  replaced. Subclasses that refer to these variables will need to be updated. In
+  addition, the undocumented :meth:`falcon.media.Handlers.find_by_media_type`
+  method was deprecated and may be removed in a future release. (`#1822 <https://github.com/falconry/falcon/issues/1822>`__)
+
+
+New & Improved
+--------------
+
+- ASGI+WebSocket support was added to the framework via :class:`falcon.asgi.App` and :class:`falcon.asgi.WebSocket`. (`#321 <https://github.com/falconry/falcon/issues/321>`__)
+- The error classes in ``falcon.errors`` were updated to have the ``title`` and
+  ``description`` keyword arguments and to correctly handle headers passed as
+  list of tuples (`#777 <https://github.com/falconry/falcon/issues/777>`__)
+- :class:`~falcon.media.MultipartFormHandler` was added to enable support for multipart forms (of content
+  type ``multipart/form-data``) through :meth:`falcon.Request.get_media()`. (`#953 <https://github.com/falconry/falcon/issues/953>`__)
+- The :attr:`falcon.Response.status` attribute can now be also set to an
+  ``http.HTTPStatus`` instance, an integer status code, as well as anything
+  supported by the :func:`falcon.code_to_http_status` utility method. (`#1135 <https://github.com/falconry/falcon/issues/1135>`__)
+- A new kwarg, ``cors_enable``, was added to the :class:`falcon.App` initializer.
+  ``cors_enable`` can be used to enable a simple blanket CORS policy for all
+  responses. (See also: :ref:`cors`.) (`#1194 <https://github.com/falconry/falcon/issues/1194>`__)
+- ASGI+HTTP support was added to the framework via a new class, :class:`falcon.asgi.App`. The
+  :ref:`testing <testing>` module was also updated to fully support ASGI apps, including two new
+  helper functions: :func:`falcon.testing.create_scope` and :func:`falcon.testing.create_asgi_req`.
+  WSGI users also get a new :func:`falcon.testing.create_req` method. As part of the ASGI work,
+  several additional utility functions were added, including :func:`falcon.is_python_func`,
+  :func:`falcon.http_status_to_code` and :func:`falcon.code_to_http_status`; as well as sync/async
+  helpers :func:`falcon.get_running_loop`, :func:`falcon.create_task`, :func:`falcon.sync_to_async`,  :func:`falcon.wrap_sync_to_async`,
+  and  :func:`falcon.wrap_sync_to_async_unsafe`. (`#1358 <https://github.com/falconry/falcon/issues/1358>`__)
+- The :class:`falcon.App` class initializer now supports a new argument
+  ``sink_before_static_route`` (default ``True``, maintaining 2.0 behavior) to
+  specify if :meth:`sinks <falcon.App.add_sink>` should be handled before or
+  after :meth:`static routes <falcon.App.add_static_route>`. (`#1372 <https://github.com/falconry/falcon/issues/1372>`__)
+- The :meth:`falcon.Response.append_link` method now supports setting the `crossorigin`
+  link CORS settings attribute. (`#1410 <https://github.com/falconry/falcon/issues/1410>`__)
+- Falcon now supports all WebDAV methods (RFC 2518 and RFC 4918), such as COPY, LOCK, MKCOL, MOVE, PROPFIND, PROPPATCH and UNLOCK. (`#1426 <https://github.com/falconry/falcon/issues/1426>`__)
+- Added inspect module to collect information about an application regarding
+  the registered routes, middleware, static routes, sinks and error handlers
+  (See also: :ref:`inspect`.) (`#1435 <https://github.com/falconry/falcon/issues/1435>`__)
+- WSGI path decoding in :class:`falcon.Request` was optimized, and is now
+  significantly faster than in Falcon 2.0. (`#1492 <https://github.com/falconry/falcon/issues/1492>`__)
+- The :meth:`~falcon.Response.set_headers` method now accepts an instance of any dict-like
+  object that implements an ``items()`` method. (`#1546 <https://github.com/falconry/falcon/issues/1546>`__)
+- Change :class:`falcon.routing.CompiledRouter` to compile the routes
+  only when the first request is routed. This can be changed by
+  passing ``compile=True`` to :meth:`falcon.routing.CompiledRouter.add_route`. (`#1550 <https://github.com/falconry/falcon/issues/1550>`__)
+- The :meth:`~falcon.Response.set_cookie` method now supports setting the
+  `SameSite` cookie attribute. (`#1556 <https://github.com/falconry/falcon/issues/1556>`__)
+- The ``falcon.API`` class was renamed to :class:`falcon.App`. The old ``API`` class
+  remains available as an alias for backwards-compatibility, but it is now
+  considered deprecated and will be removed in a future release. (`#1579 <https://github.com/falconry/falcon/issues/1579>`__)
+- :class:`~falcon.media.URLEncodedFormHandler` was added to enable support for URL-encoded forms (of content
+  type ``application/x-www-form-urlencoded``) through :meth:`falcon.Request.get_media()`. The :attr:`~.RequestOptions.auto_parse_form_urlencoded` option is now
+  deprecated in favor of :class:`~falcon.media.URLEncodedFormHandler`.
+  (See also: :ref:`access_urlencoded_form`). (`#1580 <https://github.com/falconry/falcon/issues/1580>`__)
+- :meth:`~falcon.Request.get_param_as_bool` now supports the use of ``'t'`` and ``'y'``
+  values for ``True``, as well as ``'f'`` and ``'n'`` for ``False``. (`#1606 <https://github.com/falconry/falcon/issues/1606>`__)
+- :meth:`falcon.testing.simulate_request()` now accepts a
+  `content_type` keyword argument. This provides a more convenient way to set
+  this common header vs. the `headers` argument. (`#1646 <https://github.com/falconry/falcon/issues/1646>`__)
+- When no route matches a request, the framework will now raise a
+  specialized subclass of :class:`~.falcon.HTTPNotFound`
+  (:class:`~.falcon.HTTPRouteNotFound`) so that
+  a custom error handler can distinguish that specific case if desired. (`#1647 <https://github.com/falconry/falcon/issues/1647>`__)
+- :class:`Default media handlers <falcon.media.Handlers>` were simplified by
+  removing a separate handler for the now-obsolete
+  ``application/json; charset=UTF-8``.
+  As a result, providing a custom JSON media handler will now unambiguously cover
+  both ``application/json`` and the former ``Content-type``. (`#1717 <https://github.com/falconry/falcon/issues/1717>`__)
+
+
+Fixed
+-----
+
+- Previously, the default :class:`CompiledRouter <falcon.routing.CompiledRouter>`
+  was erroneously stripping trailing slashes from URI templates.
+  This has been fixed so that it is now possible to add two different routes for
+  a path with and without a trailing forward slash (see also:
+  :attr:`RequestOptions.strip_url_path_trailing_slash
+  <falcon.RequestOptions.strip_url_path_trailing_slash>`). (`#1544 <https://github.com/falconry/falcon/issues/1544>`__)
+- :meth:`falcon.uri.decode` and :meth:`falcon.uri.parse_query_string` no longer
+  explode quadratically for a large number of percent-encoded characters. The
+  time complexity of these utility functions is now always close to *O*\(*n*). (`#1594 <https://github.com/falconry/falcon/issues/1594>`__)
+- When :attr:`~falcon.RequestOptions.auto_parse_qs_csv` is enabled, the framework
+  now correctly parses all occurrences of the same parameter in the query string,
+  rather than only splitting the values in the first occurrence. For example,
+  whereas previously ``t=1,2&t=3,4`` would become ``['1', '2', '3,4']``, now the
+  resulting list will be ``['1', '2', '3', '4']`` (`#1597 <https://github.com/falconry/falcon/issues/1597>`__)
+- The :func:`~falcon.uri.parse_query_string()` utility function is now correctly parsing an
+  empty string as ``{}``. (`#1600 <https://github.com/falconry/falcon/issues/1600>`__)
+- Previously, response serialization errors (such as in the case of a faulty
+  custom media handler, or because an instance of
+  :class:`~falcon.HTTPUnsupportedMediaType` was raised for an unsupported
+  response content type) were unexpectedly bubbled up to the application server.
+  This has been fixed, and these errors are now handled exactly the same way as
+  other exceptions raised in a responder (see also: :ref:`errors`). (`#1607 <https://github.com/falconry/falcon/issues/1607>`__)
+- :attr:`falcon.Request.forwarded_host` now contains the port when proxy headers
+  are not set, to make it possible to correctly reconstruct the URL when the
+  application is not behind a proxy. (`#1678 <https://github.com/falconry/falcon/issues/1678>`__)
+- The :attr:`Response.downloadable_as <falcon.Response.downloadable_as>` property
+  is now correctly encoding non-ASCII filenames as per
+  `RFC 6266 <https://tools.ietf.org/html/rfc6266#appendix-D>`_ recommendations. (`#1749 <https://github.com/falconry/falcon/issues/1749>`__)
+- The :class:`falcon.routing.CompiledRouter` no longer mistakenly sets route parameters
+  while exploring non matching routes. (`#1779 <https://github.com/falconry/falcon/issues/1779>`__)
+- The :func:`~falcon.to_query_str` method now correctly encodes parameter keys
+  and values. As a result, the `params` parameter in
+  :func:`~falcon.testing.simulate_request` will now correctly pass values
+  containing special characters (such as ``'&'``) to the application. (`#1871 <https://github.com/falconry/falcon/issues/1871>`__)
+- :attr:`falcon.uri.encode` and :attr:`falcon.uri.encode_value` now escape all
+  percent characters by default even if it appears they have already been escaped.
+  The :attr:`falcon.uri.encode_check_escaped` and :attr:`falcon.uri.encode_value_check_escaped`
+  methods have been added to give the option of retaining the previous behavior where needed.
+  These new methods have been applied to the :attr:`falcon.Response.location`,
+  :attr:`falcon.Response.content_location`, :meth:`falcon.Response.append_link`
+  attrs and methods to retain previous behavior. (`#1872 <https://github.com/falconry/falcon/issues/1872>`__)
+- Previously, methods marked with the :func:`~falcon.deprecated` utility wrapper
+  could raise an unexpected ``AttributeError`` when running under certain
+  applications servers such as Meinheld. This has been fixed so that
+  :func:`~falcon.deprecated` no longer relies on the availability of
+  interpreter-specific stack frame instrospection capabilites. (`#1882 <https://github.com/falconry/falcon/issues/1882>`__)
+
+
+Misc
+----
+
+- Deprecate the use of positional arguments for the optional kw args of
+  the :class:`falcon.HTTPError` subclasses (`#777 <https://github.com/falconry/falcon/issues/777>`__)
+- Setup towncrier to make CHANGES reporting much easier. (`#1461 <https://github.com/falconry/falcon/issues/1461>`__)
+- Fix test errors on Windows (`#1656 <https://github.com/falconry/falcon/issues/1656>`__)
+- A new method, :meth:`~falcon.Request.get_media`, was added that can now be used
+  instead of the :attr:`falcon.Request.media` property to make it more clear to
+  app maintainers that getting the media object for a request involves a
+  side-effect of consuming and deserializing the body stream. The original
+  property remains available to ensure backwards-compatibility with existing apps. (`#1679 <https://github.com/falconry/falcon/issues/1679>`__)
+- Falcon now uses the :class:`falcon.Response` media handlers when serializing
+  to JSON :class:`falcon.HTTPError` and :class:`falcon.asgi.SSEvent`.
+  :class:`falcon.Request` will use its defined media handler when loading a
+  param as JSON with :meth:`falcon.Request.get_param_as_json`. (`#1767 <https://github.com/falconry/falcon/issues/1767>`__)
+- The `add_link()` method of the :class:`falcon.Request` class was renamed to
+  :meth:`falcon.Response.append_link`. The old name is still available as a
+  deprecated alias. (`#1801 <https://github.com/falconry/falcon/issues/1801>`__)
+
 
 Contributors to this Release
 ----------------------------

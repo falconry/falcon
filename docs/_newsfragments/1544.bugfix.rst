@@ -1,6 +1,0 @@
-Previously, the default :class:`CompiledRouter <falcon.routing.CompiledRouter>`
-was erroneously stripping trailing slashes from URI templates.
-This has been fixed so that it is now possible to add two different routes for
-a path with and without a trailing forward slash (see also:
-:attr:`RequestOptions.strip_url_path_trailing_slash
-<falcon.RequestOptions.strip_url_path_trailing_slash>`).
