@@ -15,7 +15,7 @@ On the other hand, we have always fought the temptation to expand Falcon's scope
 
 It can be painful to migrate a large code base to a major new version of a framework. Therefore, in 3.0 we went to great lengths to minimize breaking changes, although a number of methods and attributes were deprecated. That being said, everyone will likely run up against at least one or two items in the breaking changes list below. Please carefully review the list of changes and thoroughly test your apps with Falcon 3.0 before deploying to production.
 
-Leading up to this release, members of the core maintainers spent many hours (and not a few late nights and weekends) prototyping, tuning, and testing in order to uphold the high standards of correctness and reliability for which Falcon is known. That being said, no code is perfect, so please don't hesitate to reach out on `falconry/user
+Leading up to this release, members of the core maintainers team spent many hours (and not a few late nights and weekends) prototyping, tuning, and testing in order to uphold the high standards of correctness and reliability for which Falcon is known. That being said, no code is perfect, so please don't hesitate to reach out on `falconry/user
 <https://gitter.im/falconry/user>`_ or `GitHub <https://github.com/falconry/falcon/issues>`_ if you run into any issues.
 
 Again, thanks so much to everyone who supported this release! Over the years we like to think that our little framework has had a positive impact on the Python community, and has even helped nudge the state of the art forward. And it is all thanks to our amazing supporters and contributors.
