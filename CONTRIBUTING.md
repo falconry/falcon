@@ -16,6 +16,7 @@ The core Falcon project maintainers are:
 * John Vrbanac (**jmvrbanac** on GH, Gitter, and Twitter)
 * Vytautas Liuolia (**vytas7** on GH and Gitter, and **vliuolia** on Twitter)
 * Nick Zaccardi (**nZac** on GH and Gitter)
+* Federico Caselli (**CaselIT** on GH and Gitter)
 
 Please don't hesitate to reach out if you have any questions, or just need a
 little help getting started. You can find us in
