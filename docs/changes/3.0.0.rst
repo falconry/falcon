@@ -13,7 +13,7 @@ usual assortment of bug fixes.
 
 This is easily the biggest release—in terms of both hours volunteered and code
 contributed—that we have ever done. We sincerely thank our stupendous group of
-37 contributors who submitted pull requests for this release, as well as all
+38 contributors who submitted pull requests for this release, as well as all
 those who have generously provided financial support to the project.
 
 When we began working on this release, we knew we wanted to not only evolve the
@@ -312,6 +312,7 @@ Many thanks to all of our talented and stylish contributors for this release!
 - `csojinb <https://github.com/csojinb>`_
 - `danilito19 <https://github.com/danilito19>`_
 - `edmondb <https://github.com/edmondb>`_
+- `flokX <https://github.com/flokX>`_
 - `grktsh <https://github.com/grktsh>`_
 - `hackedd <https://github.com/hackedd>`_
 - `jmvrbanac <https://github.com/jmvrbanac>`_
