@@ -84,13 +84,13 @@ A Big Thank You to Our Patrons!
 .. raw:: html
 
     <p>
-    <a href="https://www.govcert.lu/" target="_blank"><img src="https://falconframework.org/img/sponsors/govcert.png" height="60" alt="CERT Gouvernemental Luxembourg" ></a>
+    <a href="https://www.govcert.lu/" target="_blank"><img src="https://falconframework.org/assets/govcert.png" height="60" alt="CERT Gouvernemental Luxembourg" ></a>
      </p>
 
     <p>
-        <a href="https://www.kontrolnaya-rabota.ru/s/" target="_blank"><img src="https://falconframework.org/img/sponsors/rabota.jpg" height="30" alt="Examination RU" style="margin-right: 10px"></a>
+        <a href="https://www.kontrolnaya-rabota.ru/s/" target="_blank"><img src="https://falconframework.org/assets/rabota.jpg" height="30" alt="Examination RU" style="margin-right: 10px"></a>
 
-        <a href="https://www.pnk.sh/python-falcon" target="_blank"><img src="https://falconframework.org/img/sponsors/paris.svg" height="30" alt="Paris Kejser" style="margin-right: 10px"></a>
+        <a href="https://www.pnk.sh/python-falcon" target="_blank"><img src="https://falconframework.org/assets/paris.svg" height="30" alt="Paris Kejser" style="margin-right: 10px"></a>
 
         <a href="https://www.algolia.com" target="_blank" style="margin-right: 10px"><img src="https://res.cloudinary.com/hilnmyskv/image/upload/q_auto/v1612864505/Algolia_com_Website_assets/images/shared/algolia_logo/algolia-blue-mark.svg" height="30" alt="Algolia"></a>
 
