@@ -818,17 +818,22 @@ When deserializing an incoming request body, you may also wish to implement
 
 Does Falcon set Content-Length or do I need to do that explicitly?
 ------------------------------------------------------------------
-Falcon will try to do this for you, based on the value of ``resp.text``,
-``resp.data``, or ``resp.stream_len`` (whichever is set in the response,
-checked in that order.)
+Falcon will try to do this for you, based on the value of ``resp.text`` or
+``resp.data`` (whichever is set in the response, checked in that order.)
 
-For dynamically-generated content, you can choose to not set ``stream_len``,
-in which case Falcon will then leave off the Content-Length header, and
-hopefully your WSGI server will do the Right Thing™ (assuming you've told
-it to enable keep-alive).
+For dynamically-generated content, you can choose to not set
+:attr:`~falcon.Response.content_length`, in which case Falcon will then leave
+off the Content-Length header, and hopefully your WSGI server will do the
+Right Thing™ (assuming you've told the server to enable keep-alive, it may
+choose to use chunked encoding).
 
 .. note:: PEP-3333 prohibits apps from setting hop-by-hop headers itself,
     such as Transfer-Encoding.
+
+Similar to WSGI, the `ASGI HTTP connection scope
+<https://asgi.readthedocs.io/en/latest/specs/www.html#http-connection-scope>`_
+specification states that responses without Content-Length "may be chunked as
+the server sees fit".
 
 Why is an empty response body returned when I raise an instance of HTTPError?
 -----------------------------------------------------------------------------
