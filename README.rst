@@ -92,14 +92,14 @@ A Big Thank You to Our Patrons!
 
         <a href="https://www.pnk.sh/python-falcon" target="_blank"><img src="https://falconframework.org/assets/paris.svg" height="30" alt="Paris Kejser" style="margin-right: 10px"></a>
 
-        <a href="https://www.algolia.com" target="_blank" style="margin-right: 10px"><img src="https://res.cloudinary.com/hilnmyskv/image/upload/q_auto/v1612864505/Algolia_com_Website_assets/images/shared/algolia_logo/algolia-blue-mark.svg" height="30" alt="Algolia"></a>
+        <a href="https://www.algolia.com" target="_blank" style="margin-right: 10px"><img src="https://falconframework.org/assets/algolia.svg" height="30" alt="Algolia"></a>
 
-        <a href="https://www.salesforce.com" target="_blank"><img src="https://www.salesforce.com/content/dam/sfdc-docs/www/logos/logo-salesforce.svg" height="30" alt="Salesforce"></a>
+        <a href="https://www.salesforce.com" target="_blank"><img src="https://falconframework.org/assets/salesforce.svg" height="30" alt="Salesforce"></a>
     </p>
 
     <p>
-        <a href="https://www.misaka.io" target="_blank" style="margin-right: 10px"><img src="https://app.misaka.io/static/media/logo.d39932ca.svg" height="30" alt="Misaka Network"></a>
-        <a href="https://github.com/LikaloLLC" target="_blank" style="margin-right: 10px"><img src="https://avatars.githubusercontent.com/u/40338604" height="30" alt="Likalo"></a>
+        <a href="https://www.misaka.io" target="_blank" style="margin-right: 10px"><img src="https://falconframework.org/assets/misaka.svg" height="30" alt="Misaka Network"></a>
+        <a href="https://github.com/LikaloLLC" target="_blank" style="margin-right: 10px"><img src="https://falconframework.org/assets/likalo.png" height="30" alt="Likalo"></a>
     </p>
 
 .. Patron list ends here (see the comment above this section).
