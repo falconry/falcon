@@ -19,7 +19,7 @@ set -e
 VENV_NAME=tmp-falcon-build
 BUILD_DIR=./build
 DIST_DIR=./dist
-PY3_VERSION=3.8.0
+PY3_VERSION=3.8.7
 
 #----------------------------------------------------------------------
 # Helpers

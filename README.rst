@@ -124,35 +124,35 @@ microservices and responsive app backends. Falcon complements more
 general Python web frameworks by providing bare-metal performance,
 reliability, and flexibility wherever you need it.
 
-**Fast.** Same hardware, more requests. Falcon turns around
-requests several times faster than most other Python frameworks. For
-an extra speed boost, Falcon compiles itself with Cython when
-available, and also works well with `PyPy <https://pypy.org>`__.
-Considering a move to another programming language? Benchmark with
-Falcon + PyPy first.
-
-**Reliable.** We go to great lengths to avoid introducing
-breaking changes, and when we do they are fully documented and only
-introduced (in the spirit of
-`SemVer <http://semver.org/>`__) with a major version
-increment. The code is rigorously tested with numerous inputs and we
-require 100% coverage at all times. Falcon does not depend on any
-external Python packages.
+**Reliable.** We go to great lengths to avoid introducing breaking changes, and
+when we do they are fully documented and only introduced (in the spirit of
+`SemVer <http://semver.org/>`_) with a major version increment. The code is
+rigorously tested with numerous inputs and we require 100% coverage at all
+times. Falcon has no dependencies outside the standard library, helping
+minimize your app's attack surface while avoiding transitive bugs and breaking
+changes.
 
 **Debuggable.** Falcon eschews magic. It's easy to tell which inputs lead to
-which outputs. To avoid incentivizing the use of hard-to-debug global state,
-Falcon does not use decorators to define routes. Unhandled exceptions are never
-encapsulated or masked. Potentially surprising behaviors, such as automatic
-request body parsing, are well-documented and disabled by default. Finally, we
-take care to keep logic paths within the framework simple, shallow and
-understandable. All of this makes it easier to reason about the code and to
-debug edge cases in large-scale deployments.
+which outputs. Unhandled exceptions are never encapsulated or masked.
+Potentially surprising behaviors, such as automatic request body parsing, are
+well-documented and disabled by default. Finally, when it comes to the
+framework itself, we take care to keep logic paths simple and understandable.
+All this makes it easier to reason about the code and to debug edge cases in
+large-scale deployments.
 
-**Flexible.** Falcon leaves a lot of decisions and implementation
-details to you, the API developer. This gives you a lot of freedom to
-customize and tune your implementation. Due to Falcon's minimalist
-design, Python community members are free to independently innovate on
-`Falcon add-ons and complementary packages <https://github.com/falconry/falcon/wiki>`__.
+**Fast.** Same hardware, more requests. Falcon turns around requests
+significantly faster than other popular Python frameworks like Django and
+Flask. For an extra speed boost, Falcon compiles itself with Cython when
+available, and also works well with `PyPy <https://pypy.org>`_. Considering a
+move to another programming language? Benchmark with Falcon+PyPy first!
+
+**Flexible.** Falcon leaves a lot of decisions and implementation details to
+you, the API developer. This gives you a lot of freedom to customize and tune
+your implementation. It also helps you understand your apps at a deeper level,
+making them easier to tune, debug, and refactor over the long run. Falcon's
+minimalist design provides space for Python community members to independently
+innovate on `Falcon add-ons and complementary packages
+<https://github.com/falconry/falcon/wiki>`_.
 
 Who's Using Falcon?
 -------------------
