@@ -1,8 +1,6 @@
 import pytest
-import sys
 
 from falcon import app_helpers, request_helpers, stream
-from falcon.util.deprecation import DeprecatedWarning
 
 
 def test_bounded_stream():
@@ -18,8 +16,12 @@ class TestApiHelpers:
         for name in app_helpers.__all__:
             assert getattr(api_helpers, name) is getattr(app_helpers, name)
 
-    def test_warning(self):
-        import importlib
-        with pytest.warns(DeprecatedWarning, match='The api_helpers'):
-            from falcon import api_helpers
-            importlib.reload(api_helpers)
+    # TODO enable test of deprecation
+    # def test_warning(self):
+    #     import importlib
+
+    #     from falcon.util.deprecation import DeprecatedWarning
+
+    #     with pytest.warns(DeprecatedWarning, match='The api_helpers'):
+    #         from falcon import api_helpers
+    #         importlib.reload(api_helpers)
