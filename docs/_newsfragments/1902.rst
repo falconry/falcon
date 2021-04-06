@@ -1,2 +1,2 @@
 Re-add ``api_helpers`` module that was renamed ``app_helpers``.
-This modules is to consider deprecated and will be removed in a future falcon version.
+This module is considered deprecated, and will be removed in a future Falcon version.
