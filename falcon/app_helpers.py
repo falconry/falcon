@@ -22,6 +22,13 @@ from falcon.constants import MEDIA_XML
 from falcon.errors import CompatibilityError
 from falcon.util.sync import _wrap_non_coroutine_unsafe
 
+__all__ = (
+    'prepare_middleware',
+    'prepare_middleware_ws',
+    'default_serialize_error',
+    'CloseableStreamIterator'
+)
+
 
 def prepare_middleware(middleware, independent_middleware=False, asgi=False):
     """Check middleware interfaces and prepare the methods for request handling.
