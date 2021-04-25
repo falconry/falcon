@@ -5,9 +5,10 @@
     directory = "docs/_newsfragments"
     issue_format = "`#{issue} <https://github.com/falconry/falcon/issues/{issue}>`__"
 
-    # TODO(kgriffs): Set this to false when the next major version of
-    #   towncrier is released (post 19.2). For now, we just have to
-    #   remember to remove the extra newlines in the rendered changelog.
+    # TODO(vytas): title_format = false seems to have no effect in towncrier==21.3.0.
+    #   For now, we just have to remember to check the rendered changelog, and,
+    #   if needed, remove the unwanted auto-generated title.
+    #   See also: https://github.com/twisted/towncrier/issues/345.
     title_format = false
 
     [[tool.towncrier.type]]
