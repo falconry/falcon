@@ -8,7 +8,7 @@
     # TODO(kgriffs): Set this to false when the next major version of
     #   towncrier is released (post 19.2). For now, we just have to
     #   remember to remove the extra newlines in the rendered changelog.
-    title_format = ""
+    title_format = false
 
     [[tool.towncrier.type]]
         directory = "breakingchange"
