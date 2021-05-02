@@ -1,0 +1,3 @@
+ASGI HTTP headers were treated as UTF-8 encoded, not taking the incompatibility
+with WSGI and porting of WSGI applications into consideration.
+This was fixed, and ASGI headers are now decoded and encoded as ISO-8859-1.
