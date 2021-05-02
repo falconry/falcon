@@ -560,7 +560,7 @@ class TestHeaders:
         assert result.headers['X-Auth-Token'] == 'toomanysecrets'
         assert result.headers['X-Symbol'] == '@'
 
-    @pytest.mark.parametrize('method', ['CONNECT', 'POST', 'PUT'])
+    @pytest.mark.parametrize('method', ['CONNECT', 'PATCH', 'POST', 'PUT'])
     def test_unicode_headers_contain_non_ascii(self, method, client):
         app = client.app
         app.add_route('/', UnicodeHeaderResource())
