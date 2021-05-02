@@ -337,6 +337,8 @@ class ASGIResponseEventCollector:
                 if self._BAD_HEADER_VALUE_RE.search(value):
                     raise ValueError('Bad header value: {!r}'.format(value))
 
+                # NOTE(vytas): After the name validation above, the name is
+                #   guaranteed to only contain a subset of ASCII.
                 name_decoded = name.decode()
                 if not name_decoded.islower():
                     raise ValueError('ASGI header names must be lowercase')

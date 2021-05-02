@@ -276,6 +276,14 @@ class CustomHeadersResource:
         resp.set_headers(CustomHeadersNotCallable())
 
 
+class HeadersDebugResource:
+    def on_get(self, req, resp):
+        resp.media = {key.lower(): value for key, value in req.headers.items()}
+
+    def on_get_header(self, req, resp, header):
+        resp.media = {header.lower(): req.get_header(header)}
+
+
 class TestHeaders:
 
     def test_content_length(self, client):
@@ -538,6 +546,29 @@ class TestHeaders:
 
         assert resp.status_code == 200
         assert resp.headers['Content-Disposition'] == expected
+
+    def test_request_latin1_headers(self, client):
+        client.app.add_route('/headers', HeadersDebugResource())
+        client.app.add_route('/headers/{header}', HeadersDebugResource(), suffix='header')
+
+        headers = {
+            'User-Agent': 'Mosaic/0.9',
+            'X-Latin1-Header': 'Förmånsrätt',
+            'X-Size': 'groß',
+        }
+        resp = client.simulate_get('/headers', headers=headers)
+        assert resp.status_code == 200
+        assert resp.json == {
+            'host': 'falconframework.org',
+            'user-agent': 'Mosaic/0.9',
+            'x-latin1-header': 'Förmånsrätt',
+            'x-size': 'groß',
+        }
+
+        resp = client.simulate_get('/headers/X-Latin1-Header', headers=headers)
+        assert resp.json == {'x-latin1-header': 'Förmånsrätt'}
+        resp = client.simulate_get('/headers/X-Size', headers=headers)
+        assert resp.json == {'x-size': 'groß'}
 
     def test_unicode_location_headers(self, client):
         client.app.add_route('/', LocationHeaderUnicodeResource())
