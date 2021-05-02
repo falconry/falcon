@@ -456,6 +456,10 @@ class Request(request.Request):
         # self._cached_uri = None
 
         if self.method == 'GET':
+            # NOTE(vytas): We do not really expect the Content-Type to be
+            #   non-ASCII, however we assume ISO-8859-1 here for maximum
+            #   compatibility with WSGI.
+
             # PERF(kgriffs): Normally we expect no Content-Type header, so
             #   use this pattern which is a little bit faster than dict.get()
             if b'content-type' in req_headers:
@@ -523,22 +527,27 @@ class Request(request.Request):
     @property
     def content_length(self):
         try:
-            value = self._asgi_headers[b'content-length'].decode('latin1')
+            value = self._asgi_headers[b'content-length']
         except KeyError:
             return None
 
-        # NOTE(kgriffs): Normalize an empty value to behave as if
-        # the header were not included; wsgiref, at least, inserts
-        # an empty CONTENT_LENGTH value if the request does not
-        # set the header. Gunicorn and uWSGI do not do this, but
-        # others might if they are trying to match wsgiref's
-        # behavior too closely.
-        if not value:
-            return None
-
         try:
+            # PERF(vytas): int() also works with a bytestring argument.
             value_as_int = int(value)
         except ValueError:
+            # PERF(vytas): Check for an empty value in the except clause,
+            #   because we do not expect ASGI servers to inject any headers
+            #   that the client did not provide.
+
+            # NOTE(kgriffs): Normalize an empty value to behave as if
+            # the header were not included; wsgiref, at least, inserts
+            # an empty CONTENT_LENGTH value if the request does not
+            # set the header. Gunicorn and uWSGI do not do this, but
+            # others might if they are trying to match wsgiref's
+            # behavior too closely.
+            if not value:
+                return None
+
             msg = 'The value of the header must be a number.'
             raise errors.HTTPInvalidHeader(msg, 'Content-Length')
 

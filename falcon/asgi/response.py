@@ -20,7 +20,7 @@ from inspect import iscoroutinefunction
 
 from falcon import response
 from falcon.constants import _UNSET
-from falcon.util.misc import is_python_func
+from falcon.util.misc import _encode_items_to_latin1, is_python_func
 
 __all__ = ['Response']
 
@@ -415,8 +415,13 @@ class Response(response.Response):
             headers['content-type'] = media_type
 
         try:
-            items = [(n.encode('ascii'), v.encode('ascii')) for n, v in headers.items()]
+            # NOTE(vytas): Supporting ISO-8859-1 for historical reasons as per
+            #   RFC 7230, Section 3.2.4; and to strive for maximum
+            #   compatibility with WSGI.
+            items = _encode_items_to_latin1(headers)
         except UnicodeEncodeError as ex:
+            # TODO(vytas): In 3.1.0, update this error message to highlight the
+            #   fact that we decided to allow ISO-8859-1?
             raise ValueError(
                 'The modern series of HTTP standards require that header names and values '
                 f'use only ASCII characters: {ex}'
