@@ -40,9 +40,15 @@ from falcon.uri import encode_value
 from .deprecation import deprecated
 
 try:
+    from falcon.cyutil.misc import encode_items_to_latin1 as _cy_encode_items_to_latin1
+except ImportError:
+    _cy_encode_items_to_latin1 = None
+
+try:
     from falcon.cyutil.misc import isascii as _cy_isascii
 except ImportError:
     _cy_isascii = None
+
 
 __all__ = (
     'is_python_func',
@@ -470,6 +476,24 @@ def code_to_http_status(status):
         return '{} {}'.format(code, _DEFAULT_HTTP_REASON)
 
 
+def _encode_items_to_latin1(data):
+    """Decode all key/values of a dict to Latin-1.
+
+    Args:
+        data (dict): A dict of string key/values to encode to a list of
+        bytestring items.
+
+    Returns:
+        A list of (bytes, bytes) tuples.
+    """
+    result = []
+
+    for key, value in data.items():
+        result.append((key.encode('latin1'), value.encode('latin1')))
+
+    return result
+
+
 def _isascii(string):
     """Return ``True`` if all characters in the string are ASCII.
 
@@ -495,4 +519,5 @@ def _isascii(string):
         return False
 
 
+_encode_items_to_latin1 = _cy_encode_items_to_latin1 or _encode_items_to_latin1
 isascii = getattr(str, 'isascii', _cy_isascii or _isascii)

@@ -1,4 +1,4 @@
-# Copyright 2020 by Vytautas Liuolia.
+# Copyright 2020-2021 by Vytautas Liuolia.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,3 +38,14 @@ def isascii(unicode string not None):
             return False
 
     return True
+
+
+def encode_items_to_latin1(dict data not None):
+    cdef list result = []
+    cdef unicode key
+    cdef unicode value
+
+    for key, value in data.items():
+        result.append((key.encode('latin1'), value.encode('latin1')))
+
+    return result

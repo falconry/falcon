@@ -125,11 +125,20 @@ class LocationHeaderUnicodeResource:
 
 class UnicodeHeaderResource:
 
+    def on_connect(self, req, resp):
+        # A way to CONNECT with people.
+        resp.set_header('X-Clinking-Beer-Mugs', '🍺')
+
     def on_get(self, req, resp):
         resp.set_headers([
             ('X-auTH-toKEN', 'toomanysecrets'),
             ('Content-TYpE', 'application/json'),
             ('X-symbOl', '@'),
+        ])
+
+    def on_patch(self, req, resp):
+        resp.set_headers([
+            ('X-Thing', '\x01\x02\xff'),
         ])
 
     def on_post(self, req, resp):
@@ -265,6 +274,14 @@ class CustomHeadersResource:
 
     def on_post(self, req, resp):
         resp.set_headers(CustomHeadersNotCallable())
+
+
+class HeadersDebugResource:
+    def on_get(self, req, resp):
+        resp.media = {key.lower(): value for key, value in req.headers.items()}
+
+    def on_get_header(self, req, resp, header):
+        resp.media = {header.lower(): req.get_header(header)}
 
 
 class TestHeaders:
@@ -530,6 +547,29 @@ class TestHeaders:
         assert resp.status_code == 200
         assert resp.headers['Content-Disposition'] == expected
 
+    def test_request_latin1_headers(self, client):
+        client.app.add_route('/headers', HeadersDebugResource())
+        client.app.add_route('/headers/{header}', HeadersDebugResource(), suffix='header')
+
+        headers = {
+            'User-Agent': 'Mosaic/0.9',
+            'X-Latin1-Header': 'Förmånsrätt',
+            'X-Size': 'groß',
+        }
+        resp = client.simulate_get('/headers', headers=headers)
+        assert resp.status_code == 200
+        assert resp.json == {
+            'host': 'falconframework.org',
+            'user-agent': 'Mosaic/0.9',
+            'x-latin1-header': 'Förmånsrätt',
+            'x-size': 'groß',
+        }
+
+        resp = client.simulate_get('/headers/X-Latin1-Header', headers=headers)
+        assert resp.json == {'x-latin1-header': 'Förmånsrätt'}
+        resp = client.simulate_get('/headers/X-Size', headers=headers)
+        assert resp.json == {'x-size': 'groß'}
+
     def test_unicode_location_headers(self, client):
         client.app.add_route('/', LocationHeaderUnicodeResource())
 
@@ -551,28 +591,42 @@ class TestHeaders:
         assert result.headers['X-Auth-Token'] == 'toomanysecrets'
         assert result.headers['X-Symbol'] == '@'
 
-    @pytest.mark.parametrize('method', ['POST', 'PUT'])
+    @pytest.mark.parametrize('method', ['CONNECT', 'PATCH', 'POST', 'PUT'])
     def test_unicode_headers_contain_non_ascii(self, method, client):
         app = client.app
         app.add_route('/', UnicodeHeaderResource())
 
-        if app._ASGI:
-            # NOTE(kgriffs): Unlike PEP-3333, the ASGI spec requires the
-            #   app to encode header names and values to a byte string. This
-            #   gives Falcon the opportunity to verify the character set
-            #   in the process and raise an error as appropriate.
-            error_type, pattern = ValueError, 'ASCII'
-        elif method == 'PUT':
-            pytest.skip('The wsgiref validator does not check header values.')
-        else:
-            # NOTE(kgriffs): The wsgiref validator that is integrated into
-            #   Falcon's testing framework will catch this. However, Falcon
-            #   itself does not do the check to avoid potential overhead
-            #   in a production deployment.
-            error_type, pattern = AssertionError, 'Bad header name'
+        if method == 'CONNECT':
+            # NOTE(vytas): Response headers cannot be encoded to Latin-1.
+            if not app._ASGI:
+                pytest.skip('wsgiref.validate sees no evil here')
 
-        with pytest.raises(error_type, match=pattern):
-            client.simulate_request(method, '/')
+            # NOTE(vytas): Shouldn't this result in an HTTP 500 instead of
+            #   bubbling up a ValueError to the app server?
+            with pytest.raises(ValueError):
+                client.simulate_request(method, '/')
+        elif method == 'PUT':
+            # NOTE(vytas): Latin-1 header values are allowed.
+            resp = client.simulate_request(method, '/')
+            assert resp.headers
+        else:
+            if app._ASGI:
+                # NOTE(kgriffs): Unlike PEP-3333, the ASGI spec requires the
+                #   app to encode header names and values to a byte string. This
+                #   gives Falcon the opportunity to verify the character set
+                #   in the process and raise an error as appropriate.
+                error_type = ValueError
+            else:
+                # NOTE(kgriffs): The wsgiref validator that is integrated into
+                #   Falcon's testing framework will catch this. However, Falcon
+                #   itself does not do the check to avoid potential overhead
+                #   in a production deployment.
+                error_type = AssertionError
+
+            pattern = 'Bad header name' if method == 'POST' else 'Bad header value'
+
+            with pytest.raises(error_type, match=pattern):
+                client.simulate_request(method, '/')
 
     def test_response_set_and_get_header(self, client):
         resource = HeaderHelpersResource()

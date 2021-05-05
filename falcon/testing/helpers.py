@@ -33,6 +33,7 @@ import io
 import itertools
 import json
 import random
+import re
 import socket
 import sys
 import time
@@ -278,7 +279,7 @@ class ASGIResponseEventCollector:
         events (iterable): An iterable of events that were emitted by
             the app, collected as-is from the app.
         headers (iterable): An iterable of (str, str) tuples representing
-            the UTF-8 decoded headers emitted by the app in the body of
+            the ISO-8859-1 decoded headers emitted by the app in the body of
             the ``'http.response.start'`` event.
         status (int): HTTP status code emitted by the app in the body of
             the ``'http.response.start'`` event.
@@ -299,6 +300,9 @@ class ASGIResponseEventCollector:
         'lifespan.shutdown.complete',
         'lifespan.shutdown.failed',
     ])
+
+    _HEADER_NAME_RE = re.compile(br'^[a-zA-Z][a-zA-Z0-9\-_]*$')
+    _BAD_HEADER_VALUE_RE = re.compile(br'[\000-\037]')
 
     def __init__(self):
         self.events = []
@@ -327,11 +331,19 @@ class ASGIResponseEventCollector:
                 if not isinstance(value, bytes):
                     raise TypeError('ASGI header names must be byte strings')
 
+                # NOTE(vytas): Ported basic validation from wsgiref.validate.
+                if not self._HEADER_NAME_RE.match(name):
+                    raise ValueError('Bad header name: {!r}'.format(name))
+                if self._BAD_HEADER_VALUE_RE.search(value):
+                    raise ValueError('Bad header value: {!r}'.format(value))
+
+                # NOTE(vytas): After the name validation above, the name is
+                #   guaranteed to only contain a subset of ASCII.
                 name_decoded = name.decode()
                 if not name_decoded.islower():
                     raise ValueError('ASGI header names must be lowercase')
 
-                self.headers.append((name_decoded, value.decode()))
+                self.headers.append((name_decoded, value.decode('latin1')))
 
             self.status = event['status']
 
@@ -1345,12 +1357,12 @@ def _add_headers_to_scope(scope, headers, content_length, host,
             items = headers
 
         for name, value in items:
-            n = name.lower().encode()
+            n = name.lower().encode('latin1')
             found_ua = found_ua or (n == b'user-agent')
 
             # NOTE(kgriffs): Value is stripped if not empty, otherwise defaults
             #   to b'' to be consistent with _add_headers_to_environ().
-            v = b'' if value is None else value.strip().encode()
+            v = b'' if value is None else value.strip().encode('latin1')
 
             # NOTE(kgriffs): Expose as an iterable to ensure the framework/app
             #   isn't hard-coded to only work with a list or tuple.
