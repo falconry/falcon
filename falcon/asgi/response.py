@@ -418,6 +418,11 @@ class Response(response.Response):
             # NOTE(vytas): Supporting ISO-8859-1 for historical reasons as per
             #   RFC 7230, Section 3.2.4; and to strive for maximum
             #   compatibility with WSGI.
+
+            # PERF(vytas): On CPython, _encode_items_to_latin1 is implemented
+            #   in Cython (with a pure Python fallback), where the resulting
+            #   C code speeds up the method substantially by directly invoking
+            #   CPython's C API functions such as PyUnicode_EncodeLatin1.
             items = _encode_items_to_latin1(headers)
         except UnicodeEncodeError as ex:
             # TODO(vytas): In 3.1.0, update this error message to highlight the
