@@ -1,5 +1,0 @@
-The ``api_helpers`` module was re-added, since it was renamed to
-``app_helpers`` (and effectively removed) without announcing a corresponding
-breaking change.
-This module is now considered deprecated, and will be removed in a future
-Falcon version.
