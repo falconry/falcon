@@ -9,8 +9,6 @@ pytest-asyncio
 httpx; python_version >= '3.6'
 uvicorn; python_version >= '3.6'
 aiofiles; python_version >= '3.6'
-httpx; python_version >= '3.6'
-uvicorn; python_version >= '3.6'
 websockets; python_version >= '3.6'
 
 # Handler Specific
