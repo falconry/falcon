@@ -171,7 +171,7 @@ setup(
     author_email='mail@kgriffs.com',
     url='https://falconframework.org',
     license='Apache 2.0',
-    packages=find_packages(exclude=['tests']),
+    packages=find_packages(exclude=['examples', 'tests']),
     include_package_data=True,
     zip_safe=False,
     python_requires='>=3.5',
