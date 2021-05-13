@@ -9,7 +9,6 @@ from falcon.asgi import App, SSEvent
 
 
 def test_no_events():
-
     class Emitter:
         def __aiter__(self):
             return self
@@ -98,8 +97,12 @@ def test_multiple_events():
                     SSEvent(data=b'ketchup'),
                     SSEvent(data=b'mustard', event='condiment'),
                     SSEvent(data=b'mayo', event='condiment', event_id='1234'),
-                    SSEvent(data=b'onions', event='topping', event_id='5678', retry=100),
-                    SSEvent(text='guacamole \u1F951', retry=100, comment='Serve with chips.'),
+                    SSEvent(
+                        data=b'onions', event='topping', event_id='5678', retry=100
+                    ),
+                    SSEvent(
+                        text='guacamole \u1F951', retry=100, comment='Serve with chips.'
+                    ),
                     SSEvent(json={'condiment': 'salsa'}, retry=100),
                 ]:
                     yield event
@@ -213,10 +216,7 @@ class TestSerializeJson:
 
         result = client.simulate_get()
         assert result.text == (
-            'data: {"FOO": "BAR"}\n'
-            '\n'
-            'data: {"BAR": "BAZ"}\n'
-            '\n'
+            'data: {"FOO": "BAR"}\n' '\n' 'data: {"BAR": "BAZ"}\n' '\n'
         )
 
     def test_no_json_media_handler(self, client):
@@ -226,10 +226,7 @@ class TestSerializeJson:
 
         result = client.simulate_get()
         assert result.text == (
-            'data: {"foo": "bar"}\n'
-            '\n'
-            'data: {"bar": "baz"}\n'
-            '\n'
+            'data: {"foo": "bar"}\n' '\n' 'data: {"bar": "baz"}\n' '\n'
         )
 
 

@@ -191,18 +191,12 @@ class Response:
         self.context = self.context_type()
 
     @property  # type: ignore
-    @deprecated(
-        'Please use text instead.',
-        is_property=True
-    )
+    @deprecated('Please use text instead.', is_property=True)
     def body(self):
         return self.text
 
     @body.setter  # type: ignore
-    @deprecated(
-        'Please use text instead.',
-        is_property=True
-    )
+    @deprecated('Please use text instead.', is_property=True)
     def body(self, value):
         self.text = value
 
@@ -269,13 +263,11 @@ class Response:
                         self.content_type = self.options.default_media_type
 
                     handler, _, _ = self.options.media_handlers._resolve(
-                        self.content_type,
-                        self.options.default_media_type
+                        self.content_type, self.options.default_media_type
                     )
 
                     self._media_rendered = handler.serialize(
-                        self._media,
-                        self.content_type
+                        self._media, self.content_type
                     )
 
                 data = self._media_rendered
@@ -322,8 +314,18 @@ class Response:
         #   the self.content_length property.
         self._headers['content-length'] = str(content_length)
 
-    def set_cookie(self, name, value, expires=None, max_age=None,
-                   domain=None, path=None, secure=None, http_only=True, same_site=None):
+    def set_cookie(
+        self,
+        name,
+        value,
+        expires=None,
+        max_age=None,
+        domain=None,
+        path=None,
+        secure=None,
+        http_only=True,
+        same_site=None,
+    ):
         """Set a response cookie.
 
         Note:
@@ -498,7 +500,9 @@ class Response:
             same_site = same_site.lower()
 
             if same_site not in _RESERVED_SAMESITE_VALUES:
-                raise ValueError("same_site must be set to either 'lax', 'strict', or 'none'")
+                raise ValueError(
+                    "same_site must be set to either 'lax', 'strict', or 'none'"
+                )
 
             self._cookies[name]['samesite'] = same_site.capitalize()
 
@@ -771,8 +775,17 @@ class Response:
 
             _headers[name] = value
 
-    def append_link(self, target, rel, title=None, title_star=None,
-                    anchor=None, hreflang=None, type_hint=None, crossorigin=None):
+    def append_link(
+        self,
+        target,
+        rel,
+        title=None,
+        title_star=None,
+        anchor=None,
+        hreflang=None,
+        type_hint=None,
+        crossorigin=None,
+    ):
         """Append a link header to the response.
 
         (See also: RFC 5988, Section 1)
@@ -850,9 +863,7 @@ class Response:
         #
         if '//' in rel:
             if ' ' in rel:
-                rel = ('"' +
-                       ' '.join([uri_encode(r) for r in rel.split()]) +
-                       '"')
+                rel = '"' + ' '.join([uri_encode(r) for r in rel.split()]) + '"'
             else:
                 rel = '"' + uri_encode(rel) + '"'
 
@@ -862,8 +873,12 @@ class Response:
             value += '; title="' + title + '"'
 
         if title_star is not None:
-            value += ("; title*=UTF-8'" + title_star[0] + "'" +
-                      uri_encode_value(title_star[1]))
+            value += (
+                "; title*=UTF-8'"
+                + title_star[0]
+                + "'"
+                + uri_encode_value(title_star[1])
+            )
 
         if type_hint is not None:
             value += '; type="' + type_hint + '"'
@@ -883,7 +898,8 @@ class Response:
             if crossorigin not in _RESERVED_CROSSORIGIN_VALUES:
                 raise ValueError(
                     'crossorigin must be set to either '
-                    "'anonymous' or 'use-credentials'")
+                    "'anonymous' or 'use-credentials'"
+                )
             if crossorigin == 'anonymous':
                 value += '; crossorigin'
             else:  # crossorigin == 'use-credentials'
@@ -909,7 +925,8 @@ class Response:
         the value for the header.
 
         """,
-        format_header_value_list)
+        format_header_value_list,
+    )
 
     content_location = header_property(
         'Content-Location',
@@ -919,7 +936,8 @@ class Response:
         being set is already URI encoded it should be decoded first or the
         header should be set manually using the set_header method.
         """,
-        uri_encode)
+        uri_encode,
+    )
 
     content_length = header_property(
         'Content-Length',
@@ -960,7 +978,8 @@ class Response:
 
         (See also: RFC 7233, Section 4.2)
         """,
-        format_range)
+        format_range,
+    )
 
     content_type = header_property(
         'Content-Type',
@@ -973,7 +992,8 @@ class Response:
         ``falcon.MEDIA_JS``, ``falcon.MEDIA_TEXT``,
         ``falcon.MEDIA_JPEG``, ``falcon.MEDIA_PNG``,
         and ``falcon.MEDIA_GIF``.
-        """)
+        """,
+    )
 
     downloadable_as = header_property(
         'Content-Disposition',
@@ -988,7 +1008,8 @@ class Response:
         ``filename*`` directive, whereas ``filename`` will contain the US
         ASCII fallback.
         """,
-        format_content_disposition)
+        format_content_disposition,
+    )
 
     etag = header_property(
         'ETag',
@@ -997,7 +1018,8 @@ class Response:
         The ETag header will be wrapped with double quotes ``"value"`` in case
         the user didn't pass it.
         """,
-        format_etag_header)
+        format_etag_header,
+    )
 
     expires = header_property(
         'Expires',
@@ -1006,7 +1028,8 @@ class Response:
         Note:
             Falcon will format the ``datetime`` as an HTTP date string.
         """,
-        dt_to_http)
+        dt_to_http,
+    )
 
     last_modified = header_property(
         'Last-Modified',
@@ -1015,7 +1038,8 @@ class Response:
         Note:
             Falcon will format the ``datetime`` as an HTTP date string.
         """,
-        dt_to_http)
+        dt_to_http,
+    )
 
     location = header_property(
         'Location',
@@ -1025,7 +1049,8 @@ class Response:
         being set is already URI encoded it should be decoded first or the
         header should be set manually using the set_header method.
         """,
-        uri_encode)
+        uri_encode,
+    )
 
     retry_after = header_property(
         'Retry-After',
@@ -1034,7 +1059,8 @@ class Response:
         The expected value is an integral number of seconds to use as the
         value for the header. The HTTP-date syntax is not supported.
         """,
-        str)
+        str,
+    )
 
     vary = header_property(
         'Vary',
@@ -1053,7 +1079,8 @@ class Response:
 
         (See also: RFC 7231, Section 7.1.4)
         """,
-        format_header_value_list)
+        format_header_value_list,
+    )
 
     accept_ranges = header_property(
         'Accept-Ranges',
@@ -1071,7 +1098,8 @@ class Response:
             "none" is the literal string, not Python's built-in ``None``
             type.
 
-        """)
+        """,
+    )
 
     def _set_media_type(self, media_type=None):
         """Set a content-type; wrapper around set_header.
@@ -1119,8 +1147,7 @@ class Response:
             #
             # Even without the .split("\\r\\n"), the below
             # is still ~17% faster, so don't use .output()
-            items += [('set-cookie', c.OutputString())
-                      for c in self._cookies.values()]
+            items += [('set-cookie', c.OutputString()) for c in self._cookies.values()]
         return items
 
 
@@ -1154,6 +1181,7 @@ class ResponseOptions:
             Internet media types (RFC 2046). Defaults to ``mimetypes.types_map``
             after calling ``mimetypes.init()``.
     """
+
     __slots__ = (
         'secure_cookies_by_default',
         'default_media_type',

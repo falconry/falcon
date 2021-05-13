@@ -101,8 +101,16 @@ class HTTPError(Exception):
     )
 
     @deprecated_args(allowed_positional=1)
-    def __init__(self, status, title=None, description=None, headers=None,
-                 href=None, href_text=None, code=None):
+    def __init__(
+        self,
+        status,
+        title=None,
+        description=None,
+        headers=None,
+        href=None,
+        href_text=None,
+        code=None,
+    ):
         self.status = status
 
         # TODO(kgriffs): HTTP/2 does away with the "reason phrase". Eventually
@@ -117,7 +125,7 @@ class HTTPError(Exception):
 
         if href:
             link = self.link = OrderedDict()
-            link['text'] = (href_text or 'Documentation related to this error')
+            link['text'] = href_text or 'Documentation related to this error'
             link['href'] = uri.encode(href)
             link['rel'] = 'help'
         else:
@@ -131,7 +139,7 @@ class HTTPError(Exception):
     @property  # type: ignore
     @deprecated(
         'has_representation is deprecated and is currently unused by falcon',
-        is_property=True
+        is_property=True,
     )
     def has_representation(self):
         return True
@@ -209,8 +217,9 @@ class HTTPError(Exception):
             for key in ('text', 'href', 'rel'):
                 et.SubElement(link_element, key).text = self.link[key]
 
-        return (b'<?xml version="1.0" encoding="UTF-8"?>' +
-                et.tostring(error_element, encoding='utf-8'))
+        return b'<?xml version="1.0" encoding="UTF-8"?>' + et.tostring(
+            error_element, encoding='utf-8'
+        )
 
 
 # NOTE: initialized in falcon.media.json, that is always imported since Request/Respose
@@ -245,7 +254,7 @@ class NoRepresentation:
     @deprecated(
         'has_representation is deprecated and is currently unused by falcon. '
         'The class NoRepresentation is deprecated and will be removed in a future release',
-        is_property=True
+        is_property=True,
     )
     def has_representation(self):
         return False
@@ -278,7 +287,7 @@ class OptionalRepresentation:
     @deprecated(
         'has_representation is deprecated and is currently unused by falcon. '
         'The class OptionalRepresentation is deprecated and will be removed in a future release',
-        is_property=True
+        is_property=True,
     )
     def has_representation(self):
         return self.description is not None

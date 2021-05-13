@@ -20,10 +20,11 @@ class MissingDependencyHandler:
     This handler is used by the framework for media types that require an
     external dependency that can not be found.
     """
+
     def __init__(self, handler: str, library: str):
-        self._msg = (
-            'The {} requires the {} library, which is not installed.'
-        ).format(handler, library)
+        self._msg = ('The {} requires the {} library, which is not installed.').format(
+            handler, library
+        )
 
     def _raise(self, *args, **kwargs):
         raise RuntimeError(self._msg)
@@ -34,6 +35,7 @@ class MissingDependencyHandler:
 
 class Handlers(UserDict):
     """A :class:`dict`-like object that manages Internet media type handlers."""
+
     def __init__(self, initial=None):
         self._resolve = self._create_resolver()
 
@@ -96,7 +98,9 @@ class Handlers(UserDict):
                 if not matched_type:
                     if raise_not_found:
                         raise errors.HTTPUnsupportedMediaType(
-                            description='{0} is an unsupported media type.'.format(media_type)
+                            description='{0} is an unsupported media type.'.format(
+                                media_type
+                            )
                         )
 
                     return None, None, None
@@ -145,10 +149,7 @@ def _best_match(media_type, all_media_types):
     try:
         # NOTE(jmvrbanac): Mimeparse will return an empty string if it can
         # parse the media type, but cannot find a suitable type.
-        result = mimeparse.best_match(
-            all_media_types,
-            media_type
-        )
+        result = mimeparse.best_match(all_media_types, media_type)
     except ValueError:
         pass
 
@@ -168,7 +169,9 @@ if PYPY:
 
 
 # NOTE(vytas): An ugly way to work around circular imports.
-MultipartParseOptions._DEFAULT_HANDLERS = Handlers({
-    MEDIA_JSON: JSONHandler(),
-    MEDIA_URLENCODED: URLEncodedFormHandler(),
-})  # type: ignore
+MultipartParseOptions._DEFAULT_HANDLERS = Handlers(
+    {
+        MEDIA_JSON: JSONHandler(),
+        MEDIA_URLENCODED: URLEncodedFormHandler(),
+    }
+)  # type: ignore

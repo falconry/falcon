@@ -5,7 +5,6 @@ from falcon.asgi import _asgi_helpers
 
 
 class IntricateApp:
-
     def unorthodox_call(self, scope, receive, send):
         return self._call_factory(scope, receive, send)
 

@@ -78,7 +78,7 @@ class SSEvent:
         event=None,
         event_id=None,
         retry=None,
-        comment=None
+        comment=None,
     ):
         # NOTE(kgriffs): Check up front since this makes it a lot easier
         #   to debug the source of the problem in the app vs. waiting for

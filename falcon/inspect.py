@@ -752,8 +752,8 @@ class StringVisitor(InspectVisitor):
 def _get_source_info(obj, default='[unknown file]'):
     """Try to get the definition file and line of obj.
 
-     Return default on error.
-     """
+    Return default on error.
+    """
     try:
         source_file = inspect.getsourcefile(obj)
         source_lines = inspect.findsource(obj)

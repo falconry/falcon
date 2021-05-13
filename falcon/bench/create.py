@@ -40,6 +40,7 @@ def falcon(body, headers):
 
 def falcon_ext(body, headers):
     from falcon.bench.queues import api
+
     return api.create(body, headers)
 
 
@@ -55,14 +56,14 @@ def flask(body, headers):
         user_agent = request.headers['User-Agent']  # NOQA
         limit = request.args.get('limit', '10')  # NOQA
 
-        return flask.Response(body, headers=headers,
-                              mimetype='text/plain')
+        return flask.Response(body, headers=headers, mimetype='text/plain')
 
     return flask_app
 
 
 def bottle(body, headers):
     import bottle
+
     path = '/hello/<account_id>/test'
 
     @bottle.route(path)
@@ -93,18 +94,19 @@ def werkzeug(body, headers):
         endpoint, values = adapter.match()  # NOQA
         aid = values['account_id']  # NOQA
 
-        return werkzeug.Response(body, headers=headers,
-                                 mimetype='text/plain')
+        return werkzeug.Response(body, headers=headers, mimetype='text/plain')
 
     return hello
 
 
 def pecan(body, headers):
     import pecan
+
     pecan.x_test_body = body
     pecan.x_test_headers = headers
 
     import falcon.bench.nuts.nuts.app as nuts
+
     sys.path.append(os.path.dirname(nuts.__file__))
     app = nuts.create()
     del sys.path[-1]
@@ -114,11 +116,14 @@ def pecan(body, headers):
 
 def django(body, headers):
     import django
+
     django.x_test_body = body
     django.x_test_headers = headers
 
     from falcon.bench import dj
+
     sys.path.append(os.path.dirname(dj.__file__))
 
     from falcon.bench.dj.dj import wsgi
+
     return wsgi.application

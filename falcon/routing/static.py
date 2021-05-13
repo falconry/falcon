@@ -80,17 +80,19 @@ class StaticRoute:
     def __call__(self, req, resp):
         """Resource responder for this route."""
 
-        without_prefix = req.path[len(self._prefix):]
+        without_prefix = req.path[len(self._prefix) :]
 
         # NOTE(kgriffs): Check surrounding whitespace and strip trailing
         # periods, which are illegal on windows
         # NOTE(CaselIT): An empty filename is allowed when fallback_filename is provided
-        if (not (without_prefix or self._fallback_filename is not None) or
-                without_prefix.strip().rstrip('.') != without_prefix or
-                self._DISALLOWED_CHARS_PATTERN.search(without_prefix) or
-                '\\' in without_prefix or
-                '//' in without_prefix or
-                len(without_prefix) > self._MAX_NON_PREFIXED_LEN):
+        if (
+            not (without_prefix or self._fallback_filename is not None)
+            or without_prefix.strip().rstrip('.') != without_prefix
+            or self._DISALLOWED_CHARS_PATTERN.search(without_prefix)
+            or '\\' in without_prefix
+            or '//' in without_prefix
+            or len(without_prefix) > self._MAX_NON_PREFIXED_LEN
+        ):
 
             raise falcon.HTTPNotFound()
 
@@ -120,8 +122,7 @@ class StaticRoute:
 
         suffix = os.path.splitext(file_path)[1]
         resp.content_type = resp.options.static_media_types.get(
-            suffix,
-            'application/octet-stream'
+            suffix, 'application/octet-stream'
         )
 
         if self._downloadable:

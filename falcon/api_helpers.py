@@ -1,4 +1,4 @@
-from .app_helpers import * # NOQA
+from .app_helpers import *  # NOQA
 
 # TODO deprecate
 # import warnings

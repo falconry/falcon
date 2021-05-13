@@ -29,7 +29,7 @@ async def chop_data(data, min_size=1024, max_size=64 * 1024):
     size = min_size
 
     while True:
-        chunk = data[index:index + size]
+        chunk = data[index : index + size]
         index += size
         if not chunk:
             break
@@ -58,24 +58,20 @@ SOURCE1 = (
 DATA1 = b''.join(SOURCE1)
 
 DATA2 = (
-    b'123456789ABCDEF\n' * 64 * 1024 * 64 +
-    b'--boundary1234567890--' +
-    b'123456789ABCDEF\n' * 64 * 1024 * 63 +
-    b'--boundary1234567890--' +
-    b'123456789ABCDEF\n' * 64 * 1024 * 62 +
-    b'--boundary1234567890--'
+    b'123456789ABCDEF\n' * 64 * 1024 * 64
+    + b'--boundary1234567890--'
+    + b'123456789ABCDEF\n' * 64 * 1024 * 63
+    + b'--boundary1234567890--'
+    + b'123456789ABCDEF\n' * 64 * 1024 * 62
+    + b'--boundary1234567890--'
 )
 SOURCE2 = tuple(async_take(chop_data(DATA2)))
 
-SOURCE3 = (
-    b'1' * 1024 * 1024 + b'333',
-    b'2' * 2 * 1024 * 1024 + b'444'
-)
+SOURCE3 = (b'1' * 1024 * 1024 + b'333', b'2' * 2 * 1024 * 1024 + b'444')
 DATA3 = b''.join(SOURCE3)
 
 
 class AsyncSink:
-
     def __init__(self):
         self._sink = io.BytesIO()
 
@@ -128,22 +124,25 @@ async def test_aiter_from_buffer(reader1):
     ]
 
 
-@pytest.mark.parametrize('delimiter,expected', [
-    (b'H', []),
-    (b'Hello', []),
-    (b'o', [b'Hell']),
-    (b'ting', [b'Hello, World!', b'\nJust tes']),
-    (
-        b'404',
-        [
-            b'Hello, World!',
-            b'\nJust tes',
-            b'ting some iterato',
-            b'r goodne',
-            b'ss.\n',
-        ],
-    ),
-])
+@pytest.mark.parametrize(
+    'delimiter,expected',
+    [
+        (b'H', []),
+        (b'Hello', []),
+        (b'o', [b'Hell']),
+        (b'ting', [b'Hello, World!', b'\nJust tes']),
+        (
+            b'404',
+            [
+                b'Hello, World!',
+                b'\nJust tes',
+                b'ting some iterato',
+                b'r goodne',
+                b'ss.\n',
+            ],
+        ),
+    ],
+)
 def test_delimit(reader1, delimiter, expected):
     delimited = reader1.delimit(delimiter)
     assert async_take(delimited) == expected
@@ -185,21 +184,24 @@ async def test_pipe_until_delimiter_not_found(reader1):
     assert sink.accumulated == DATA1
 
 
-@pytest.mark.parametrize('sizes,expected', [
-    ((0, 1, 2, 5), [b'', b'H', b'el', b'lo, W']),
-    (
-        (20, 21, 22, 23, 25),
-        [
-            b'Hello, World!\nJust t',
-            b'esting some iterator ',
-            b'goodness.\n',
-            b'',
-            b'',
-        ],
-    ),
-    ((1, 50), [b'H', b'ello, World!\nJust testing some iterator goodness.\n']),
-    ((50, 1), [b'Hello, World!\nJust testing some iterator goodness.', b'\n']),
-])
+@pytest.mark.parametrize(
+    'sizes,expected',
+    [
+        ((0, 1, 2, 5), [b'', b'H', b'el', b'lo, W']),
+        (
+            (20, 21, 22, 23, 25),
+            [
+                b'Hello, World!\nJust t',
+                b'esting some iterator ',
+                b'goodness.\n',
+                b'',
+                b'',
+            ],
+        ),
+        ((1, 50), [b'H', b'ello, World!\nJust testing some iterator goodness.\n']),
+        ((50, 1), [b'Hello, World!\nJust testing some iterator goodness.', b'\n']),
+    ],
+)
 @falcon.runs_sync
 async def test_read(reader1, sizes, expected):
     results = []
@@ -236,27 +238,30 @@ async def test_readall(reader1, peek):
 
 
 @pytest.mark.parametrize('fork', [False, True])
-@pytest.mark.parametrize('offset,delimiter,size,expected', [
-    (0, b', ', 4, b'Hell'),
-    (0, b', ', 5, b'Hello'),
-    (0, b', ', -1, b'Hello'),
-    (20, b' ', 4, b'esti'),
-    (20, b' ', 5, b'estin'),
-    (20, b' ', 6, b'esting'),
-    (20, b' ', 20, b'esting'),
-    (20, b' ', None, b'esting'),
-    (0, b'Hell', 13, b''),
-    (1, b'ell', 13, b''),
-    (2, b'll', 13, b''),
-    (3, b'l', 13, b''),
-    (2, b'l', 13, b''),
-    (0, b'good', 13, b'Hello, World!'),
-    (7, b'good', 19, b'World!\nJust testing'),
-    (7, b'good', 33, b'World!\nJust testing some iterator'),
-    (7, b'good', 34, b'World!\nJust testing some iterator '),
-    (7, b'good', 1337, b'World!\nJust testing some iterator '),
-    (7, b'good', -1, b'World!\nJust testing some iterator '),
-])
+@pytest.mark.parametrize(
+    'offset,delimiter,size,expected',
+    [
+        (0, b', ', 4, b'Hell'),
+        (0, b', ', 5, b'Hello'),
+        (0, b', ', -1, b'Hello'),
+        (20, b' ', 4, b'esti'),
+        (20, b' ', 5, b'estin'),
+        (20, b' ', 6, b'esting'),
+        (20, b' ', 20, b'esting'),
+        (20, b' ', None, b'esting'),
+        (0, b'Hell', 13, b''),
+        (1, b'ell', 13, b''),
+        (2, b'll', 13, b''),
+        (3, b'l', 13, b''),
+        (2, b'l', 13, b''),
+        (0, b'good', 13, b'Hello, World!'),
+        (7, b'good', 19, b'World!\nJust testing'),
+        (7, b'good', 33, b'World!\nJust testing some iterator'),
+        (7, b'good', 34, b'World!\nJust testing some iterator '),
+        (7, b'good', 1337, b'World!\nJust testing some iterator '),
+        (7, b'good', -1, b'World!\nJust testing some iterator '),
+    ],
+)
 @falcon.runs_sync
 async def test_read_until(reader1, offset, delimiter, size, expected, fork):
     if offset:
@@ -306,10 +311,13 @@ async def test_invalid_delimiter_length(reader1):
         await reader1.delimit(b'').read()
 
 
-@pytest.mark.parametrize('size1,size2', [
-    (11003077, 22000721),
-    (13372477, 51637898),
-])
+@pytest.mark.parametrize(
+    'size1,size2',
+    [
+        (11003077, 22000721),
+        (13372477, 51637898),
+    ],
+)
 @falcon.runs_sync
 async def test_irregular_large_read_until(reader2, size1, size2):
     delimiter = b'--boundary1234567890--'
@@ -337,10 +345,10 @@ async def test_read_until_shared_boundary(chunk_size):
     source = chop_data(
         b'-boundary-like-' * 4 + b'--some junk--\n' + b'\n' * 1024,
         min_size=chunk_size,
-        max_size=chunk_size)
+        max_size=chunk_size,
+    )
     stream = reader.BufferedReader(source, chunk_size)
-    assert await stream.read_until(b'-boundary-like---') == (
-        b'-boundary-like-' * 3)
+    assert await stream.read_until(b'-boundary-like---') == (b'-boundary-like-' * 3)
     assert await stream.peek(17) == b'-boundary-like---'
 
 

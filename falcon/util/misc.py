@@ -35,6 +35,7 @@ import unicodedata
 from falcon import status_codes
 from falcon.constants import PYPY
 from falcon.uri import encode_value
+
 # NOTE(vytas): Hoist `deprecated` here since it is documented as part of the
 # public Falcon interface.
 from .deprecation import deprecated
@@ -301,7 +302,8 @@ def get_argnames(func):
     args = [
         param.name
         for param in sig.parameters.values()
-        if param.kind not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
+        if param.kind
+        not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
     ]
 
     # NOTE(kgriffs): Depending on the version of Python, 'self' may or may not
@@ -340,8 +342,9 @@ def get_http_status(status_code, default_reason=_DEFAULT_HTTP_REASON):
         if code < 100:
             raise ValueError
     except ValueError:
-        raise ValueError('get_http_status failed: "%s" is not a '
-                         'valid status code', status_code)
+        raise ValueError(
+            'get_http_status failed: "%s" is not a ' 'valid status code', status_code
+        )
 
     # lookup the status code
     try:

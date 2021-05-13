@@ -3,7 +3,7 @@ import os
 import sys
 
 
-PYPY = (sys.implementation.name == 'pypy')
+PYPY = sys.implementation.name == 'pypy'
 """Evaluates to ``True`` when the current Python implementation is PyPy."""
 
 ASGI_SUPPORTED = sys.version_info >= (3, 6)
@@ -52,10 +52,7 @@ _META_METHODS = [
 ]
 
 COMBINED_METHODS = (
-    HTTP_METHODS +
-    WEBDAV_METHODS +
-    FALCON_CUSTOM_HTTP_METHODS +
-    _META_METHODS
+    HTTP_METHODS + WEBDAV_METHODS + FALCON_CUSTOM_HTTP_METHODS + _META_METHODS
 )
 
 # NOTE(kgriffs): According to RFC 7159, most JSON parsers assume
@@ -113,17 +110,19 @@ MEDIA_GIF = 'image/gif'
 DEFAULT_MEDIA_TYPE = MEDIA_JSON
 
 # NOTE(kgriffs): We do not expect more than one of these in the request
-SINGLETON_HEADERS = frozenset([
-    'content-length',
-    'content-type',
-    'cookie',
-    'expect',
-    'from',
-    'host',
-    'max-forwards',
-    'referer',
-    'user-agent',
-])
+SINGLETON_HEADERS = frozenset(
+    [
+        'content-length',
+        'content-type',
+        'cookie',
+        'expect',
+        'from',
+        'host',
+        'max-forwards',
+        'referer',
+        'user-agent',
+    ]
+)
 
 # NOTE(kgriffs): Special singleton to be used internally whenever using
 #   None would be ambiguous.
