@@ -9,8 +9,6 @@ from setuptools import Extension, setup
 
 MYDIR = path.abspath(os.path.dirname(__file__))
 
-REQUIRES = []
-
 try:
     sys.pypy_version_info
     PYPY = True
@@ -180,6 +178,12 @@ if not CYTHON:
     run_setup(False)
     if not PYPY:
         status_msgs('Cython compilation not supported in this environment')
+elif os.environ.get('DISABLE_FALCON_CEXT'):
+    run_setup(False)
+    status_msgs(
+        'DISABLE_FALCON_CEXT is set, skipping cython compilation.',
+        'Pure-Python build succeeded.',
+    )
 else:
     try:
         run_setup(True)
