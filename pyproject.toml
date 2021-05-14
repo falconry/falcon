@@ -1,7 +1,7 @@
 [build-system]
 build-backend = "setuptools.build_meta"
 requires = [
-  "setuptools>=44",
+  "setuptools>=47",
   "wheel", # Skip cython when using pypy
   "cython; python_implementation == 'CPython'",
 ]
