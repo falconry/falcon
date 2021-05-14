@@ -1,3 +1,11 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [
+  "setuptools>=44",
+  "wheel", # Skip cython when using pypy
+  "cython; python_implementation == 'CPython'",
+]
+
 [tool.towncrier]
     package = "falcon"
     package_dir = ""
