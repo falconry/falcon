@@ -178,10 +178,10 @@ if not CYTHON:
     run_setup(False)
     if not PYPY:
         status_msgs('Cython compilation not supported in this environment')
-elif os.environ.get('DISABLE_FALCON_CEXT'):
+elif os.environ.get('DISABLE_FALCON_CYTHON'):
     run_setup(False)
     status_msgs(
-        'DISABLE_FALCON_CEXT is set, skipping cython compilation.',
+        'DISABLE_FALCON_CYTHON is set, skipping cython compilation.',
         'Pure-Python build succeeded.',
     )
 else:
