@@ -246,14 +246,10 @@ pure-Python install in case of issues in the cythonization step:
 
 If you want to verify that Cython is being invoked, simply
 pass the verbose flag `-v` to pip in order to echo the compilation commands.
-You should see an log that informs you if the cython compile was successful
-of it the fallback normal install was used:
 
-.. code:: bash
-
-    $ pip install -v --no-binary :all: falcon
-
-If for some reason you want to skip Cython compilation step and install
+The cythonization step is only active when using the ``CPython`` Python
+implementation, so installing using ``PyPy`` will skip it.
+If you want to skip Cython compilation step and install
 the pure-Python version directly you can set the environment variable
 ``FALCON_DISABLE_CYTHON`` to any value before install:
 
