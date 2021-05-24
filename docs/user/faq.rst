@@ -379,6 +379,17 @@ order to handle all three routes:
     app.add_route('/game/{game_id}/state', game, suffix='state')
     app.add_route('/game/ping', game, suffix='ping')
 
+Why is my URL with percent-encoded forward slashes (``%2F``) routed incorrectly?
+--------------------------------------------------------------------------------
+This is an unfortunate artifact of the WSGI specification, which offers no
+standard means of accessing the "raw" request URL. According to PEP 3333,
+`the recommended way to reconstruct a request's URL path
+<https://www.python.org/dev/peps/pep-3333/#url-reconstruction>`_ is using the
+``PATH_INFO`` CGI variable, which is already presented percent-decoded,
+effectively making originally percent-encoded forward slashes (``%2F``)
+indistinguishable from others passed verbatim (and intended to separate URI
+fields).
+
 Extensibility
 ~~~~~~~~~~~~~
 
