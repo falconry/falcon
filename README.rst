@@ -257,6 +257,9 @@ the pure-Python version directly you can set the environment variable
 
     $ FALCON_DISABLE_CYTHON=Y pip install -v --no-binary :all: falcon
 
+Please note that ``pip>=10`` is required to be able install Falcon from
+source.
+
 **Installing on OS X**
 
 Xcode Command Line Tools are required to compile Cython. Install them
