@@ -252,7 +252,7 @@ The cythonization step is only active when using the ``CPython`` Python
 implementation, so installing using ``PyPy`` will skip it.
 If you want to skip Cython compilation step and install
 the pure-Python version directly you can set the environment variable
-``FALCON_DISABLE_CYTHON`` to any value before install:
+``FALCON_DISABLE_CYTHON`` to a non empty value before install:
 
 .. code:: bash
 
