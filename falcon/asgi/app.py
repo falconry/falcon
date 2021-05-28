@@ -931,8 +931,8 @@ class App(falcon.app.App):
                         {
                             'type': EventType.LIFESPAN_STARTUP_FAILED,
                             'message': (
-                                'The deprecated WSGI RequestOptions.auto_parse_form_urlencoded option '
-                                'is not supported for Falcon ASGI apps. '
+                                'The deprecated WSGI RequestOptions.auto_parse_form_urlencoded '
+                                'option is not supported for Falcon ASGI apps. '
                                 'Please use Request.get_media() instead. '
                             ),
                         }

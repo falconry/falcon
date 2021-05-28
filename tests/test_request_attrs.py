@@ -926,7 +926,8 @@ class TestRequestAttributes:
                 # NOTE(kgriffs): To simplify parsing and improve performance, we
                 #   do not attempt to handle unquoted entity-tags when there is
                 #   a list; it is non-standard anyway, and has been since 1999.
-                'W/"67ab43", "54ed21", junk"F9,22", junk "41, 7F", unquoted, w/"22, 41, 7F", "", W/""',
+                'W/"67ab43", "54ed21", junk"F9,22", junk "41, 7F", '
+                'unquoted, w/"22, 41, 7F", "", W/""',
                 [
                     _make_etag('67ab43', is_weak=True),
                     _make_etag('54ed21'),
