@@ -22,6 +22,10 @@ h1 a:hover, h2 a:hover, h3 a:hover {
     border: none;
 }
 
+div.document {
+    max-width: 1220px; /* subtract 220px for max body width */
+}
+
 div.footer {
     text-align: center;
 }
