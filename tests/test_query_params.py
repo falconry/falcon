@@ -360,7 +360,7 @@ class TestQueryParams:
             assert isinstance(ex, falcon.HTTPInvalidParam)
             assert ex.title == 'Invalid parameter'
             expected_desc = (
-                'The "marker" parameter is invalid. ' 'The value must be an integer.'
+                'The "marker" parameter is invalid. The value must be an integer.'
             )
             assert ex.description == expected_desc
 
@@ -436,7 +436,7 @@ class TestQueryParams:
             assert isinstance(ex, falcon.HTTPInvalidParam)
             assert ex.title == 'Invalid parameter'
             expected_desc = (
-                'The "marker" parameter is invalid. ' 'The value must be a float.'
+                'The "marker" parameter is invalid. The value must be a float.'
             )
             assert ex.description == expected_desc
 

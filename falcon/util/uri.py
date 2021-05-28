@@ -37,9 +37,7 @@ except ImportError:
 
 
 # NOTE(kgriffs): See also RFC 3986
-_UNRESERVED = (
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz' '0123456789' '-._~'
-)
+_UNRESERVED = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~'
 
 # NOTE(kgriffs): See also RFC 3986
 _DELIMITERS = ":/?#[]@!$&'()*+,;="

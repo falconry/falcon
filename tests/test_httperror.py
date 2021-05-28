@@ -442,7 +442,7 @@ class TestHTTPError:
 
         expected_body = {
             'title': 'Request denied',
-            'description': ('You do not have write permissions for this ' 'queue.'),
+            'description': 'You do not have write permissions for this queue.',
             'link': {
                 'text': 'Documentation related to this error',
                 'href': 'http://example.com/api/rbac',
@@ -829,7 +829,7 @@ class TestHTTPError:
         response = client.simulate_request(path='/400')
 
         expected_desc = (
-            'The "id" parameter is invalid. The ' 'value must be a hex-encoded UUID.'
+            'The "id" parameter is invalid. The value must be a hex-encoded UUID.'
         )
         expected_body = {
             'title': 'Invalid parameter',

@@ -13,7 +13,7 @@ from _util import create_app, create_resp, disable_asgi_non_coroutine_wrapping  
 def validate(req, resp, resource, params):
     assert resource
     raise falcon.HTTPBadRequest(
-        title='Invalid thing', description='Your thing was not ' 'formatted correctly.'
+        title='Invalid thing', description='Your thing was not formatted correctly.'
     )
 
 

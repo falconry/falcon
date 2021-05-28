@@ -52,7 +52,7 @@ class AuthMiddleware:
         challenges = ['Token type="Fernet"']
 
         if token is None:
-            description = 'Please provide an auth token ' 'as part of the request.'
+            description = 'Please provide an auth token as part of the request.'
 
             raise falcon.HTTPUnauthorized(
                 title='Auth token required',

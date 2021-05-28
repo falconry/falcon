@@ -84,7 +84,7 @@ def test_malformed_rfc_forwarded(asgi):
 @pytest.mark.parametrize('include_localhost', [True, False])
 def test_x_forwarded_for(asgi, include_localhost):
 
-    forwarded_for = '192.0.2.43, 2001:db8:cafe::17,' 'unknown, _hidden, 203.0.113.60'
+    forwarded_for = '192.0.2.43, 2001:db8:cafe::17,unknown, _hidden, 203.0.113.60'
 
     if include_localhost:
         forwarded_for += ', 127.0.0.1'

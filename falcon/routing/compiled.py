@@ -353,7 +353,7 @@ class CompiledRouter:
             is_identifier = _IDENTIFIER_PATTERN.match(name)
             if not is_identifier or name in keyword.kwlist:
                 msg_template = (
-                    'Field names must be valid identifiers ' '("{0}" is not valid)'
+                    'Field names must be valid identifiers ("{0}" is not valid)'
                 )
                 msg = msg_template.format(name)
                 raise ValueError(msg)

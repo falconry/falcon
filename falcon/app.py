@@ -1110,7 +1110,7 @@ class API(App):
     """
 
     @deprecation.deprecated(
-        'API class may be removed in a future release, ' 'use falcon.App instead.'
+        'API class may be removed in a future release, use falcon.App instead.'
     )
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

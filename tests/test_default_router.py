@@ -360,7 +360,7 @@ def test_non_conflict(router, uri_template):
         '/repos/{simple-thing}/etc',
         # Neither fields nor literal segments may not contain whitespace
         '/this and that',
-        '/this\tand\tthat' '/this\nand\nthat' '/{thing }/world',
+        '/this\tand\tthat/this\nand\nthat/{thing }/world',
         '/{thing\t}/world',
         '/{\nthing}/world',
         '/{th\ving}/world',

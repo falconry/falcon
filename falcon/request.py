@@ -35,7 +35,7 @@ from falcon.util.uri import parse_host
 from falcon.util.uri import parse_query_string
 from falcon.vendor import mimeparse
 
-DEFAULT_ERROR_LOG_FORMAT = '{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]' ' {1} {2}{3} => '
+DEFAULT_ERROR_LOG_FORMAT = '{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR] {1} {2}{3} => '
 
 TRUE_STRINGS = frozenset(['true', 'True', 't', 'yes', 'y', '1', 'on'])
 FALSE_STRINGS = frozenset(['false', 'False', 'f', 'no', 'n', '0', 'off'])
@@ -1184,7 +1184,7 @@ class Request:
             # When the header does not exist and isn't required
             return None
         except ValueError:
-            msg = 'It must be formatted according to RFC 7231, ' 'Section 7.1.1.1'
+            msg = 'It must be formatted according to RFC 7231, Section 7.1.1.1'
             raise errors.HTTPInvalidHeader(msg, header)
 
     def get_cookie_values(self, name):

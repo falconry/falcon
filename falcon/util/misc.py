@@ -343,7 +343,7 @@ def get_http_status(status_code, default_reason=_DEFAULT_HTTP_REASON):
             raise ValueError
     except ValueError:
         raise ValueError(
-            'get_http_status failed: "%s" is not a ' 'valid status code', status_code
+            'get_http_status failed: "%s" is not a valid status code', status_code
         )
 
     # lookup the status code

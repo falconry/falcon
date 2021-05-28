@@ -692,7 +692,7 @@ def test_content_transfer_encoding_header(client):
     assert resp.status_code == 400
     assert resp.json == {
         'description': (
-            'the deprecated Content-Transfer-Encoding header ' 'field is unsupported'
+            'the deprecated Content-Transfer-Encoding header field is unsupported'
         ),
         'title': 'Malformed multipart/form-data request media',
     }

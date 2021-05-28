@@ -215,9 +215,7 @@ class TestSerializeJson:
         h._dumps = lambda x: json.dumps(x).upper()
 
         result = client.simulate_get()
-        assert result.text == (
-            'data: {"FOO": "BAR"}\n' '\n' 'data: {"BAR": "BAZ"}\n' '\n'
-        )
+        assert result.text == 'data: {"FOO": "BAR"}\n\ndata: {"BAR": "BAZ"}\n\n'
 
     def test_no_json_media_handler(self, client):
         for h in list(client.app.resp_options.media_handlers):
@@ -225,9 +223,7 @@ class TestSerializeJson:
                 client.app.resp_options.media_handlers.pop(h)
 
         result = client.simulate_get()
-        assert result.text == (
-            'data: {"foo": "bar"}\n' '\n' 'data: {"bar": "baz"}\n' '\n'
-        )
+        assert result.text == ('data: {"foo": "bar"}\n\ndata: {"bar": "baz"}\n\n')
 
 
 def test_invalid_event_values():

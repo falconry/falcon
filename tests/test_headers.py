@@ -788,7 +788,7 @@ class TestHeaders:
         self._check_link_header(client, resource, expected_value)
 
     def test_append_link_with_title(self, client):
-        expected_value = '</related/thing>; rel=item; ' 'title="A related thing"'
+        expected_value = '</related/thing>; rel=item; title="A related thing"'
 
         resource = LinkHeaderResource()
         resource.append_link('/related/thing', 'item', title='A related thing')
@@ -815,9 +815,7 @@ class TestHeaders:
         self._check_link_header(client, resource, expected_value)
 
     def test_append_link_with_anchor(self, client):
-        expected_value = (
-            '</related/thing>; rel=item; ' 'anchor="/some%20thing/or-other"'
-        )
+        expected_value = '</related/thing>; rel=item; anchor="/some%20thing/or-other"'
 
         resource = LinkHeaderResource()
         resource.append_link('/related/thing', 'item', anchor='/some thing/or-other')
@@ -825,7 +823,7 @@ class TestHeaders:
         self._check_link_header(client, resource, expected_value)
 
     def test_append_link_with_hreflang(self, client):
-        expected_value = '</related/thing>; rel=about; ' 'hreflang=en'
+        expected_value = '</related/thing>; rel=about; hreflang=en'
 
         resource = LinkHeaderResource()
         resource.append_link('/related/thing', 'about', hreflang='en')
@@ -833,7 +831,7 @@ class TestHeaders:
         self._check_link_header(client, resource, expected_value)
 
     def test_append_link_with_hreflang_multi(self, client):
-        expected_value = '</related/thing>; rel=about; ' 'hreflang=en-GB; hreflang=de'
+        expected_value = '</related/thing>; rel=about; hreflang=en-GB; hreflang=de'
 
         resource = LinkHeaderResource()
         resource.append_link('/related/thing', 'about', hreflang=('en-GB', 'de'))
@@ -842,7 +840,7 @@ class TestHeaders:
 
     def test_append_link_with_type_hint(self, client):
         expected_value = (
-            '</related/thing>; rel=alternate; ' 'type="video/mp4; codecs=avc1.640028"'
+            '</related/thing>; rel=alternate; type="video/mp4; codecs=avc1.640028"'
         )
 
         resource = LinkHeaderResource()

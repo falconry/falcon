@@ -260,9 +260,7 @@ def hello_env():
 
 def queues_env():
     request_headers = {'Content-Type': 'application/json'}
-    path = (
-        '/v1/852809/queues/0fd4c8c6-bd72-11e2-8e47-db5ebd4c8125' '/claims/db5ebd4c8125'
-    )
+    path = '/v1/852809/queues/0fd4c8c6-bd72-11e2-8e47-db5ebd4c8125/claims/db5ebd4c8125'
 
     qs = 'limit=10&thing=a+b&x=%23%24'
     return helpers.create_environ(path, query_string=qs, headers=request_headers)

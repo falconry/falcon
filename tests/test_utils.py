@@ -229,7 +229,7 @@ class TestFalconUtils:
         assert uri.encode(url) == expected
 
         url = 'http://example.com/v1/fizbit/messages?limit=3&e\u00e7ho=true'
-        expected = 'http://example.com/v1/fizbit/messages' '?limit=3&e%C3%A7ho=true'
+        expected = 'http://example.com/v1/fizbit/messages?limit=3&e%C3%A7ho=true'
         assert uri.encode(url) == expected
 
         # NOTE(minesja): Addresses #1872
@@ -242,7 +242,7 @@ class TestFalconUtils:
         assert uri.encode_check_escaped(uri.encode_check_escaped(url)) == expected
 
         url = 'http://example.com/v1/fizbit/messages?limit=3&e\u00e7ho=true'
-        expected = 'http://example.com/v1/fizbit/messages' '?limit=3&e%C3%A7ho=true'
+        expected = 'http://example.com/v1/fizbit/messages?limit=3&e%C3%A7ho=true'
         assert uri.encode_check_escaped(uri.encode_check_escaped(url)) == expected
 
         url = 'http://example.com/v1/fiz%bit/mess%ages/%'
