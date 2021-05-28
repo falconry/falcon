@@ -3,7 +3,7 @@ from wsgiref.validate import InputWrapper
 
 import falcon
 from falcon import testing
-from mock import call, MagicMock, mock_open
+from unittest.mock import call, MagicMock, mock_open
 import msgpack
 import pytest
 

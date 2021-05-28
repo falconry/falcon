@@ -83,8 +83,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Falcon'
-copyright = u"{year} Falcon Contributors".format(year=datetime.utcnow().year)
+project = 'Falcon'
+copyright = "{year} Falcon Contributors".format(year=datetime.utcnow().year)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -284,11 +284,11 @@ htmlhelp_basename = 'Falcondoc'
 
 latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
-    #'papersize': 'letterpaper',
+    # 'papersize': 'letterpaper',
     # The font size ('10pt', '11pt' or '12pt').
-    #'pointsize': '10pt',
+    # 'pointsize': '10pt',
     # Additional stuff for the LaTeX preamble.
-    #'preamble': '',
+    # 'preamble': '',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
@@ -298,8 +298,8 @@ latex_documents = [
     (
         'index',
         'Falcon.tex',
-        u'Falcon Documentation',
-        u'Kurt Griffiths et al.',
+        'Falcon Documentation',
+        'Kurt Griffiths et al.',
         'manual',
     ),
 ]
@@ -330,7 +330,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'falcon', u'Falcon Documentation', [u'Kurt Griffiths et al.'], 1)
+    ('index', 'falcon', 'Falcon Documentation', ['Kurt Griffiths et al.'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -346,8 +346,8 @@ texinfo_documents = [
     (
         'index',
         'Falcon',
-        u'Falcon Documentation',
-        u'Kurt Griffiths et al.',
+        'Falcon Documentation',
+        'Kurt Griffiths et al.',
         'Falcon',
         'One line description of project.',
         'Miscellaneous',
