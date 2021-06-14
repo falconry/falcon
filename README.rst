@@ -236,29 +236,30 @@ Or, to install the latest beta or release candidate, if any:
 In order to provide an extra speed boost, Falcon can compile itself with
 Cython. Wheels containing pre-compiled binaries are available from PyPI for
 several common platforms. However, if a wheel for your platform of choice is not
-available, you can choose to stick with the source distribution, or use the
-instructions below to cythonize Falcon for your environment.
-
-The following commands tell pip to install Cython, and then to invoke
-Falcon's ``setup.py``, which will in turn detect the presence of Cython
-and then compile (AKA cythonize) the Falcon framework with the system's
-default C compiler.
+available, you can install the source distribution. The installation process
+will automatically try to cythonize Falcon for your environment, falling back to 
+a normal pure-Python install if any issues are encountered during the 
+cythonization step:
 
 .. code:: bash
 
-    $ pip install cython
-    $ pip install --no-build-isolation --no-binary :all: falcon
-
-Note that ``--no-build-isolation`` is necessary to override pip's default
-PEP 517 behavior that can cause Cython not to be found in the build
-environment.
+    $ pip install --no-binary :all: falcon
 
 If you want to verify that Cython is being invoked, simply
-pass `-v` to pip in order to echo the compilation commands:
+pass the verbose flag `-v` to pip in order to echo the compilation commands.
+
+The cythonization step is only active when using the ``CPython`` Python
+implementation, so installing using ``PyPy`` will skip it.
+If you want to skip Cython compilation step and install
+the pure-Python version directly you can set the environment variable
+``FALCON_DISABLE_CYTHON`` to a non empty value before install:
 
 .. code:: bash
 
-    $ pip install -v --no-build-isolation --no-binary :all: falcon
+    $ FALCON_DISABLE_CYTHON=Y pip install -v --no-binary :all: falcon
+
+Please note that ``pip>=10`` is required to be able to install Falcon from
+source.
 
 **Installing on OS X**
 
@@ -335,7 +336,7 @@ available to your app without having to reinstall the package:
 .. code:: bash
 
     $ cd falcon
-    $ pip install --no-use-pep517 -e .
+    $ pip install -e .
 
 You can manually test changes to the Falcon framework by switching to the
 directory of the cloned repo and then running pytest:
