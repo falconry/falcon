@@ -31,7 +31,8 @@ def parse_mime_type(mime_type):
 
     type_parts = full_type.split('/') if '/' in full_type else None
     if not type_parts or len(type_parts) > 2:
-        raise MimeTypeParseException("Can't parse type \"{}\"".format(full_type))
+        raise MimeTypeParseException(
+            "Can't parse type \"{}\"".format(full_type))
 
     (type, subtype) = type_parts
 
@@ -78,13 +79,20 @@ def quality_and_fitness_parsed(mime_type, parsed_ranges):
     """
     best_fitness = -1
     best_fit_q = 0
-    (target_type, target_subtype, target_params) = parse_media_range(mime_type)
+    (target_type, target_subtype, target_params) = \
+        parse_media_range(mime_type)
 
     for (type, subtype, params) in parsed_ranges:
 
         # check if the type and the subtype match
-        type_match = type in (target_type, '*') or target_type == '*'
-        subtype_match = subtype in (target_subtype, '*') or target_subtype == '*'
+        type_match = (
+            type in (target_type, '*') or
+            target_type == '*'
+        )
+        subtype_match = (
+            subtype in (target_subtype, '*') or
+            target_subtype == '*'
+        )
 
         # if they do, assess the "fitness" of this mime_type
         if type_match and subtype_match:
@@ -96,13 +104,10 @@ def quality_and_fitness_parsed(mime_type, parsed_ranges):
             fitness += subtype == target_subtype and 10 or 0
 
             # 1 bonus point for each matching param besides "q"
-            param_matches = sum(
-                [
-                    1
-                    for (key, value) in target_params.items()
-                    if key != 'q' and key in params and value == params[key]
-                ]
-            )
+            param_matches = sum([
+                1 for (key, value) in target_params.items()
+                if key != 'q' and key in params and value == params[key]
+            ])
             fitness += param_matches
 
             # finally, add the target's "q" param (between 0 and 1)
@@ -168,9 +173,11 @@ def best_match(supported, header):
     weighted_matches = []
     pos = 0
     for mime_type in supported:
-        weighted_matches.append(
-            (quality_and_fitness_parsed(mime_type, parsed_header), pos, mime_type)
-        )
+        weighted_matches.append((
+            quality_and_fitness_parsed(mime_type, parsed_header),
+            pos,
+            mime_type
+        ))
         pos += 1
     weighted_matches.sort()
 

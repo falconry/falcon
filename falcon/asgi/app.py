@@ -57,21 +57,9 @@ MultipartFormHandler._ASGI_MULTIPART_FORM = MultipartForm  # type: ignore
 
 _EVT_RESP_EOF = {'type': EventType.HTTP_RESPONSE_BODY}
 
-_BODILESS_STATUS_CODES = frozenset(
-    [
-        100,
-        101,
-        204,
-        304,
-    ]
-)
+_BODILESS_STATUS_CODES = frozenset([100, 101, 204, 304])
 
-_TYPELESS_STATUS_CODES = frozenset(
-    [
-        204,
-        304,
-    ]
-)
+_TYPELESS_STATUS_CODES = frozenset([204, 304])
 
 _FALLBACK_WS_ERROR_CODE = 3011
 
@@ -451,15 +439,12 @@ class App(falcon.app.App):
                         # NOTE(kgriffs): We use a special _UNSET singleton since
                         #   None is ambiguous (the media handler might return None).
                         if resp._media_rendered is _UNSET:
+                            opt = resp.options
                             if not resp.content_type:
-                                resp.content_type = resp.options.default_media_type
+                                resp.content_type = opt.default_media_type
 
-                            (
-                                handler,
-                                serialize_sync,
-                                _,
-                            ) = resp.options.media_handlers._resolve(
-                                resp.content_type, resp.options.default_media_type
+                            handler, serialize_sync, _ = opt.media_handlers._resolve(
+                                resp.content_type, opt.default_media_type
                             )
 
                             if serialize_sync:

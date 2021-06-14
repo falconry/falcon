@@ -18,7 +18,6 @@ from collections import UserDict
 from inspect import iscoroutinefunction
 import keyword
 import re
-import textwrap
 from threading import Lock
 
 from falcon.routing import converters
@@ -224,20 +223,14 @@ class CompiledRouter:
                     return
 
                 if node.conflicts_with(segment):
-                    msg = (
-                        textwrap.dedent(
-                            """
-                        The URI template for this route is inconsistent or conflicts with another
-                        route's template. This is usually caused by configuring a field converter
-                        differently for the same field in two different routes, or by using
-                        different field names at the same level in the path (e.g.,
-                        '/parents/{id}' and '/parents/{parent_id}/children')
-                    """
-                        )
-                        .strip()
-                        .replace('\n', ' ')
+                    raise ValueError(
+                        'The URI template for this route is inconsistent or conflicts '
+                        "with another route's template. This is usually caused by "
+                        'configuring a field converter differently for the same field '
+                        'in two different routes, or by using different field names '
+                        "at the same level in the path (e.g.,'/parents/{id}' and "
+                        "'/parents/{parent_id}/children')"
                     )
-                    raise ValueError(msg)
 
             # NOTE(richardolsson): If we got this far, the node doesn't already
             # exist and needs to be created. This builds a new branch of the
@@ -500,16 +493,12 @@ class CompiledRouter:
                     #   /foo/{id}/bar
                     #   /foo/{name}/bar
                     #
-                    assert (
-                        len(
-                            [
-                                _node
-                                for _node in nodes
-                                if _node.is_var and not _node.is_complex
-                            ]
-                        )
-                        == 1
-                    )
+                    _found_nodes = [
+                        _node
+                        for _node in nodes
+                        if _node.is_var and not _node.is_complex
+                    ]
+                    assert len(_found_nodes) == 1
                     found_simple = True
 
             else:
