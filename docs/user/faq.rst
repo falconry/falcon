@@ -390,6 +390,20 @@ effectively making originally percent-encoded forward slashes (``%2F``)
 indistinguishable from others passed verbatim (and intended to separate URI
 fields).
 
+Although not standardized, some WSGI servers provide the raw URL as a
+non-standard extension; for instance, Gunicorn exposes it as ``RAW_URI``,
+uWSGI calls it ``REQUEST_URI``, etc. You can implement a WSGI (or ASGI, see the
+discussion below) middleware component to overwrite the request path with the
+path component of the raw URL, see more in the following recipe:
+:ref:`raw_url_path_recipe`.
+
+In contrast to WSGI, the ASGI specification does define a standard connection
+HTTP scope variable name (``raw_path``, of type ``bytes``) for the unmodified
+HTTP path. However, it is not mandatory, and some applications servers may be
+unable to provide it. Nevertheless, we are exploring the possibility of adding
+an optional feature to use this raw path for routing in the ASGI flavor of the
+framework.
+
 Extensibility
 ~~~~~~~~~~~~~
 
