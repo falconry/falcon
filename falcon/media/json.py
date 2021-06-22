@@ -26,8 +26,35 @@ class JSONHandler(BaseHandler):
         library's JSON implementation, since it will be faster in most cases
         as compared to a third-party library.
 
-    Overriding the default JSON implementation is simply a matter of specifying
-    the desired ``dumps`` and ``loads`` functions::
+    If you are using the stdlib's json module, you can override the default
+    `json.dump` and `json.loads` functions using :any:`functools.partial` and
+    provide custom serialization or deserialization parameters supported by the
+    ``dumps`` and ``loads`` functions (see also: :ref:`prettifying-json-responses`)::
+
+        import falcon
+        from falcon import media
+
+        from functools import partial
+
+        json_handler = media.JSONHandler(
+            dumps=partial(
+                json.dumps,
+                default=str,
+                sort_keys=True
+            ),
+        )
+        extra_handlers = {
+            'application/json': json_handler,
+        }
+
+        app = falcon.App()
+        app.req_options.media_handlers.update(extra_handlers)
+        app.resp_options.media_handlers.update(extra_handlers)
+
+    You can also replace the default JSON handler by using a custom JSON library
+    (see also: :ref:`custom_media_handlers`). Overriding the default JSON
+    implementation is simply a matter of specifying the desired ``dumps`` and
+    ``loads`` functions::
 
         import falcon
         from falcon import media
