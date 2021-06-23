@@ -61,6 +61,7 @@ class CaseInsensitiveDict(MutableMapping):  # pragma: no cover
     behavior is undefined.
 
     """
+
     def __init__(self, data=None, **kwargs):
         self._store = dict()
         if data is None:
@@ -86,11 +87,7 @@ class CaseInsensitiveDict(MutableMapping):  # pragma: no cover
 
     def lower_items(self):
         """Like iteritems(), but with all lowercase keys."""
-        return (
-            (lowerkey, keyval[1])
-            for (lowerkey, keyval)
-            in self._store.items()
-        )
+        return ((lowerkey, keyval[1]) for (lowerkey, keyval) in self._store.items())
 
     def __eq__(self, other):
         if isinstance(other, Mapping):

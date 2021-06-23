@@ -66,11 +66,11 @@ class WebSocket:
         send: Callable[[dict], Awaitable],
         media_handlers: Mapping[
             WebSocketPayloadType,
-            Union[media.BinaryBaseHandlerWS, media.TextBaseHandlerWS]
+            Union[media.BinaryBaseHandlerWS, media.TextBaseHandlerWS],
         ],
         max_receive_queue: int,
     ):
-        self._supports_accept_headers = (ver != '2.0')
+        self._supports_accept_headers = ver != '2.0'
 
         # NOTE(kgriffs): Normalize the iterable to a stable tuple; note that
         #   ordering is significant, and so we preserve it here.
@@ -104,15 +104,15 @@ class WebSocket:
     @property
     def closed(self) -> bool:
         return (
-            self._state == _WebSocketState.CLOSED or
-            self._buffered_receiver.client_disconnected
+            self._state == _WebSocketState.CLOSED
+            or self._buffered_receiver.client_disconnected
         )
 
     @property
     def ready(self) -> bool:
         return (
-            self._state == _WebSocketState.ACCEPTED and
-            not self._buffered_receiver.client_disconnected
+            self._state == _WebSocketState.ACCEPTED
+            and not self._buffered_receiver.client_disconnected
         )
 
     @property
@@ -122,7 +122,7 @@ class WebSocket:
     async def accept(
         self,
         subprotocol: Optional[str] = None,
-        headers: Optional[Union[Iterable[Iterable[str]], Mapping[str, str]]] = None
+        headers: Optional[Union[Iterable[Iterable[str]], Mapping[str, str]]] = None,
     ):
         """Accept the incoming WebSocket connection.
 
@@ -248,7 +248,7 @@ class WebSocket:
             raise ValueError('code must be an int')
         elif code < 1000:
             raise ValueError('Invalid close code. The value must be >= 1000')
-        elif (1015 <= code <= 1999 or 1004 <= code <= 1006):
+        elif 1015 <= code <= 1999 or 1004 <= code <= 1006:
             raise ValueError('Invalid close code. Only unreserved codes may be used.')
 
         # NOTE(kgriffs): Only do this after we validate the code, to avoid
@@ -256,10 +256,12 @@ class WebSocket:
         if self.closed:
             return
 
-        await self._asgi_send({
-            'type': EventType.WS_CLOSE,
-            'code': code,
-        })
+        await self._asgi_send(
+            {
+                'type': EventType.WS_CLOSE,
+                'code': code,
+            }
+        )
 
         self._state = _WebSocketState.CLOSED
         self._close_code = code
@@ -267,7 +269,7 @@ class WebSocket:
     async def send_media(
         self,
         media: object,
-        payload_type: WebSocketPayloadType = WebSocketPayloadType.TEXT
+        payload_type: WebSocketPayloadType = WebSocketPayloadType.TEXT,
     ) -> None:
         """Send a serializable object to the client.
 
@@ -292,15 +294,19 @@ class WebSocket:
         self._require_accepted()
 
         if payload_type is WebSocketPayloadType.TEXT:
-            await self._send({
-                'type': EventType.WS_SEND,
-                'text': self._mh_text_serialize(media),
-            })
+            await self._send(
+                {
+                    'type': EventType.WS_SEND,
+                    'text': self._mh_text_serialize(media),
+                }
+            )
         else:
-            await self._send({
-                'type': EventType.WS_SEND,
-                'bytes': self._mh_bin_serialize(media),
-            })
+            await self._send(
+                {
+                    'type': EventType.WS_SEND,
+                    'bytes': self._mh_bin_serialize(media),
+                }
+            )
 
     async def send_text(self, payload: str) -> None:
         """Send a message to the client with a Unicode string payload.
@@ -317,10 +323,12 @@ class WebSocket:
         if not isinstance(payload, str):
             raise TypeError('payload must be a string')
 
-        await self._send({
-            'type': EventType.WS_SEND,
-            'text': payload,
-        })
+        await self._send(
+            {
+                'type': EventType.WS_SEND,
+                'text': payload,
+            }
+        )
 
     async def send_data(self, payload: Union[bytes, bytearray, memoryview]) -> None:
         """Send a message to the client with a binary data payload.
@@ -337,10 +345,12 @@ class WebSocket:
 
         self._require_accepted()
 
-        await self._send({
-            'type': EventType.WS_SEND,
-            'bytes': bytes(payload),
-        })
+        await self._send(
+            {
+                'type': EventType.WS_SEND,
+                'bytes': bytes(payload),
+            }
+        )
 
     async def receive_text(self) -> str:
         """Receive a message from the client with a Unicode string payload.
@@ -466,7 +476,9 @@ class WebSocket:
 
     def _require_accepted(self):
         if self._state == _WebSocketState.HANDSHAKE:
-            raise errors.OperationNotAllowed('WebSocket connection has not yet been accepted')
+            raise errors.OperationNotAllowed(
+                'WebSocket connection has not yet been accepted'
+            )
         elif self._state == _WebSocketState.CLOSED:
             raise errors.WebSocketDisconnected(self._close_code)
 
@@ -481,7 +493,9 @@ class WebSocket:
         # NOTE(kgriffs): Autobahn (used by Daphne) raises a generic exception
         #   with this message
         if 'protocol accepted must be from the list' in s:
-            return ValueError('WebSocket subprotocol must be from the list sent by the client')
+            return ValueError(
+                'WebSocket subprotocol must be from the list sent by the client'
+            )
 
         return None
 
@@ -525,12 +539,12 @@ class WebSocketOptions:
             bin_handler = media.MessagePackHandlerWS()
         else:
             bin_handler = media.MissingDependencyHandler(
-                'default WebSocket media handler for BINARY payloads',
-                'msgpack'
+                'default WebSocket media handler for BINARY payloads', 'msgpack'
             )
 
         self.media_handlers: Dict[
-            WebSocketPayloadType, Union[media.TextBaseHandlerWS, media.BinaryBaseHandlerWS]
+            WebSocketPayloadType,
+            Union[media.TextBaseHandlerWS, media.BinaryBaseHandlerWS],
         ] = {
             WebSocketPayloadType.TEXT: media.JSONHandlerWS(),
             WebSocketPayloadType.BINARY: bin_handler,
@@ -662,7 +676,9 @@ class _BufferedReceiver:
             received_event = await self._asgi_receive()
             if received_event['type'] == EventType.WS_DISCONNECT:
                 self.client_disconnected = True
-                self.client_disconnected_code = received_event.get('code', WSCloseCode.NORMAL)
+                self.client_disconnected_code = received_event.get(
+                    'code', WSCloseCode.NORMAL
+                )
 
             # -------------------------------------------------------------------------------------
             # NOTE(kgriffs): The pattern below was borrowed from the websockets.protocol

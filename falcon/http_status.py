@@ -42,11 +42,7 @@ class HTTPStatus(Exception):
 
     """
 
-    __slots__ = (
-        'status',
-        'headers',
-        'text'
-    )
+    __slots__ = ('status', 'headers', 'text')
 
     def __init__(self, status, headers=None, text=None, body=None):
         self.status = status
@@ -54,9 +50,6 @@ class HTTPStatus(Exception):
         self.text = text if text is not None else body
 
     @property  # type: ignore
-    @deprecated(
-        'Please use text instead.',
-        is_property=True
-    )
+    @deprecated('Please use text instead.', is_property=True)
     def body(self):
         return self.text

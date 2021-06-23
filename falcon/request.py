@@ -23,6 +23,7 @@ from falcon.constants import _UNSET
 from falcon.constants import DEFAULT_MEDIA_TYPE
 from falcon.constants import MEDIA_JSON
 from falcon.forwarded import _parse_forwarded_header
+
 # TODO: remove import in falcon 4
 from falcon.forwarded import Forwarded  # NOQA
 from falcon.media import Handlers
@@ -34,8 +35,7 @@ from falcon.util.uri import parse_host
 from falcon.util.uri import parse_query_string
 from falcon.vendor import mimeparse
 
-DEFAULT_ERROR_LOG_FORMAT = ('{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR]'
-                            ' {1} {2}{3} => ')
+DEFAULT_ERROR_LOG_FORMAT = '{0:%Y-%m-%d %H:%M:%S} [FALCON] [ERROR] {1} {2}{3} => '
 
 TRUE_STRINGS = frozenset(['true', 'True', 't', 'yes', 'y', '1', 'on'])
 FALSE_STRINGS = frozenset(['false', 'False', 'f', 'no', 'n', '0', 'off'])
@@ -478,8 +478,11 @@ class Request:
         if not isascii(path):
             path = path.encode('iso-8859-1').decode('utf-8', 'replace')
 
-        if (self.options.strip_url_path_trailing_slash and
-                len(path) != 1 and path.endswith('/')):
+        if (
+            self.options.strip_url_path_trailing_slash
+            and len(path) != 1
+            and path.endswith('/')
+        ):
             self.path = path[:-1]
         else:
             self.path = path
@@ -522,10 +525,10 @@ class Request:
         # cycles and parse the content type for real, but
         # this heuristic will work virtually all the time.
         if (
-            self.options.auto_parse_form_urlencoded and
-            self.content_type is not None and
-            'application/x-www-form-urlencoded' in self.content_type and
-
+            self.options.auto_parse_form_urlencoded
+            and self.content_type is not None
+            and 'application/x-www-form-urlencoded' in self.content_type
+            and
             # NOTE(kgriffs): Within HTTP, a payload for a GET or HEAD
             # request has no defined semantics, so we don't expect a
             # body in those cases. We would normally not expect a body
@@ -575,8 +578,9 @@ class Request:
 
     @property
     def client_accepts_msgpack(self):
-        return (self.client_accepts('application/x-msgpack') or
-                self.client_accepts('application/msgpack'))
+        return self.client_accepts('application/x-msgpack') or self.client_accepts(
+            'application/msgpack'
+        )
 
     @property
     def client_accepts_xml(self):
@@ -699,8 +703,7 @@ class Request:
             href = 'http://goo.gl/zZ6Ey'
             href_text = 'HTTP/1.1 Range Requests'
             msg = 'It must be a range formatted according to RFC 7233.'
-            raise errors.HTTPInvalidHeader(msg, 'Range', href=href,
-                                           href_text=href_text)
+            raise errors.HTTPInvalidHeader(msg, 'Range', href=href, href_text=href_text)
 
     @property
     def range_unit(self):
@@ -761,9 +764,7 @@ class Request:
             # PERF: For small numbers of items, '+' is faster
             # than ''.join(...). Concatenation is also generally
             # faster than formatting.
-            value = (self.scheme + '://' +
-                     self.netloc +
-                     self.relative_uri)
+            value = self.scheme + '://' + self.netloc + self.relative_uri
 
             self._cached_uri = value
 
@@ -777,9 +778,9 @@ class Request:
             # PERF: For small numbers of items, '+' is faster
             # than ''.join(...). Concatenation is also generally
             # faster than formatting.
-            value = (self.forwarded_scheme + '://' +
-                     self.forwarded_host +
-                     self.relative_uri)
+            value = (
+                self.forwarded_scheme + '://' + self.forwarded_host + self.relative_uri
+            )
 
             self._cached_forwarded_uri = value
 
@@ -789,8 +790,9 @@ class Request:
     def relative_uri(self):
         if self._cached_relative_uri is None:
             if self.query_string:
-                self._cached_relative_uri = (self.app + self.path + '?' +
-                                             self.query_string)
+                self._cached_relative_uri = (
+                    self.app + self.path + '?' + self.query_string
+                )
             else:
                 self._cached_relative_uri = self.app + self.path
 
@@ -799,11 +801,7 @@ class Request:
     @property
     def prefix(self):
         if self._cached_prefix is None:
-            self._cached_prefix = (
-                self.scheme + '://' +
-                self.netloc +
-                self.app
-            )
+            self._cached_prefix = self.scheme + '://' + self.netloc + self.app
 
         return self._cached_prefix
 
@@ -811,9 +809,7 @@ class Request:
     def forwarded_prefix(self):
         if self._cached_forwarded_prefix is None:
             self._cached_forwarded_prefix = (
-                self.forwarded_scheme + '://' +
-                self.forwarded_host +
-                self.app
+                self.forwarded_scheme + '://' + self.forwarded_host + self.app
             )
 
         return self._cached_forwarded_prefix
@@ -1033,15 +1029,12 @@ class Request:
             raise self._media_error
 
         handler, _, _ = self.options.media_handlers._resolve(
-            self.content_type,
-            self.options.default_media_type
+            self.content_type, self.options.default_media_type
         )
 
         try:
             self._media = handler.deserialize(
-                self.bounded_stream,
-                self.content_type,
-                self.content_length
+                self.bounded_stream, self.content_type, self.content_length
             )
         except errors.MediaNotFoundError as err:
             self._media_error = err
@@ -1109,7 +1102,7 @@ class Request:
             # Value for the accept header was not formatted correctly
             preferred_type = ''
 
-        return (preferred_type if preferred_type else None)
+        return preferred_type if preferred_type else None
 
     def get_header(self, name, required=False, default=None):
         """Retrieve the raw string value for the given header.
@@ -1191,8 +1184,7 @@ class Request:
             # When the header does not exist and isn't required
             return None
         except ValueError:
-            msg = ('It must be formatted according to RFC 7231, '
-                   'Section 7.1.1.1')
+            msg = 'It must be formatted according to RFC 7231, Section 7.1.1.1'
             raise errors.HTTPInvalidHeader(msg, header)
 
     def get_cookie_values(self, name):
@@ -1302,8 +1294,15 @@ class Request:
 
         raise errors.HTTPMissingParam(name)
 
-    def get_param_as_int(self, name, required=False, min_value=None,
-                         max_value=None, store=None, default=None):
+    def get_param_as_int(
+        self,
+        name,
+        required=False,
+        min_value=None,
+        max_value=None,
+        store=None,
+        default=None,
+    ):
         """Return the value of a query string parameter as an int.
 
         Args:
@@ -1373,8 +1372,15 @@ class Request:
 
         raise errors.HTTPMissingParam(name)
 
-    def get_param_as_float(self, name, required=False, min_value=None,
-                           max_value=None, store=None, default=None):
+    def get_param_as_float(
+        self,
+        name,
+        required=False,
+        min_value=None,
+        max_value=None,
+        store=None,
+        default=None,
+    ):
         """Return the value of a query string parameter as an float.
 
         Args:
@@ -1510,8 +1516,9 @@ class Request:
 
         raise errors.HTTPMissingParam(name)
 
-    def get_param_as_bool(self, name, required=False, store=None,
-                          blank_as_true=True, default=None):
+    def get_param_as_bool(
+        self, name, required=False, store=None, blank_as_true=True, default=None
+    ):
         """Return the value of a query string parameter as a boolean.
 
         This method treats valueless parameters as flags. By default, if no
@@ -1585,8 +1592,9 @@ class Request:
 
         raise errors.HTTPMissingParam(name)
 
-    def get_param_as_list(self, name, transform=None,
-                          required=False, store=None, default=None):
+    def get_param_as_list(
+        self, name, transform=None, required=False, store=None, default=None
+    ):
         """Return the value of a query string parameter as a list.
 
         List items must be comma-separated or must be provided
@@ -1674,8 +1682,14 @@ class Request:
 
         raise errors.HTTPMissingParam(name)
 
-    def get_param_as_datetime(self, name, format_string='%Y-%m-%dT%H:%M:%SZ',
-                              required=False, store=None, default=None):
+    def get_param_as_datetime(
+        self,
+        name,
+        format_string='%Y-%m-%dT%H:%M:%SZ',
+        required=False,
+        store=None,
+        default=None,
+    ):
         """Return the value of a query string parameter as a datetime.
 
         Args:
@@ -1720,8 +1734,9 @@ class Request:
 
         return date_time
 
-    def get_param_as_date(self, name, format_string='%Y-%m-%d',
-                          required=False, store=None, default=None):
+    def get_param_as_date(
+        self, name, format_string='%Y-%m-%d', required=False, store=None, default=None
+    ):
         """Return the value of a query string parameter as a date.
 
         Args:
@@ -1855,9 +1870,8 @@ class Request:
         else:
             query_string_formatted = ''
 
-        log_line = (
-            DEFAULT_ERROR_LOG_FORMAT.
-            format(now(), self.method, self.path, query_string_formatted)
+        log_line = DEFAULT_ERROR_LOG_FORMAT.format(
+            now(), self.method, self.path, query_string_formatted
         )
 
         self._wsgierrors.write(log_line + message + '\n')
@@ -1893,10 +1907,12 @@ class Request:
             body = body.decode('ascii')
         except UnicodeDecodeError:
             body = None
-            self.log_error('Non-ASCII characters found in form body '
-                           'with Content-Type of '
-                           'application/x-www-form-urlencoded. Body '
-                           'will be ignored.')
+            self.log_error(
+                'Non-ASCII characters found in form body '
+                'with Content-Type of '
+                'application/x-www-form-urlencoded. Body '
+                'will be ignored.'
+            )
 
         if body:
             extra_params = parse_query_string(
@@ -1999,6 +2015,7 @@ class RequestOptions:
             ``application/json``, ``application/x-www-form-urlencoded`` and
             ``multipart/form-data`` media types.
     """
+
     __slots__ = (
         'keep_blank_qs_values',
         'auto_parse_form_urlencoded',

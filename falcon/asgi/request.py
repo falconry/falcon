@@ -27,9 +27,7 @@ from .stream import BoundedStream
 
 __all__ = ['Request']
 
-_SINGLETON_HEADERS_BYTESTR = frozenset([
-    h.encode() for h in SINGLETON_HEADERS
-])
+_SINGLETON_HEADERS_BYTESTR = frozenset([h.encode() for h in SINGLETON_HEADERS])
 
 
 class Request(request.Request):
@@ -395,7 +393,10 @@ class Request(request.Request):
             # NOTE(kgriffs): There are no standard request headers that
             #   allow multiple instances to appear in the request while also
             #   disallowing list syntax.
-            if header_name not in req_headers or header_name in _SINGLETON_HEADERS_BYTESTR:
+            if (
+                header_name not in req_headers
+                or header_name in _SINGLETON_HEADERS_BYTESTR
+            ):
                 req_headers[header_name] = header_value
             else:
                 req_headers[header_name] += b',' + header_value
@@ -428,8 +429,11 @@ class Request(request.Request):
         #   as was allowed for WSGI.
         path = scope['path'] or '/'
 
-        if (self.options.strip_url_path_trailing_slash and
-                len(path) != 1 and path.endswith('/')):
+        if (
+            self.options.strip_url_path_trailing_slash
+            and len(path) != 1
+            and path.endswith('/')
+        ):
             self.path = path[:-1]
         else:
             self.path = path
@@ -568,7 +572,7 @@ class Request(request.Request):
             self._stream = BoundedStream(
                 self._receive,
                 first_event=self._first_event,
-                content_length=self.content_length
+                content_length=self.content_length,
             )
 
         return self._stream
@@ -621,7 +625,9 @@ class Request(request.Request):
             # first. Note also that the indexing operator is
             # slightly faster than using get().
             try:
-                scheme = self._asgi_headers[b'x-forwarded-proto'].decode('latin1').lower()
+                scheme = (
+                    self._asgi_headers[b'x-forwarded-proto'].decode('latin1').lower()
+                )
             except KeyError:
                 scheme = self.scheme
 
@@ -790,8 +796,7 @@ class Request(request.Request):
             raise self._media_error
 
         handler, _, deserialize_sync = self.options.media_handlers._resolve(
-            self.content_type,
-            self.options.default_media_type
+            self.content_type, self.options.default_media_type
         )
 
         try:
@@ -799,9 +804,7 @@ class Request(request.Request):
                 self._media = deserialize_sync(await self.stream.read())
             else:
                 self._media = await handler.deserialize_async(
-                    self.stream,
-                    self.content_type,
-                    self.content_length
+                    self.stream, self.content_type, self.content_length
                 )
 
         except errors.MediaNotFoundError as err:
@@ -834,7 +837,9 @@ class Request(request.Request):
         if self._cached_if_match is None:
             header_value = self._asgi_headers.get(b'if-match')
             if header_value:
-                self._cached_if_match = helpers._parse_etags(header_value.decode('latin1'))
+                self._cached_if_match = helpers._parse_etags(
+                    header_value.decode('latin1')
+                )
 
         return self._cached_if_match
 
@@ -843,7 +848,9 @@ class Request(request.Request):
         if self._cached_if_none_match is None:
             header_value = self._asgi_headers.get(b'if-none-match')
             if header_value:
-                self._cached_if_none_match = helpers._parse_etags(header_value.decode('latin1'))
+                self._cached_if_none_match = helpers._parse_etags(
+                    header_value.decode('latin1')
+                )
 
         return self._cached_if_none_match
 

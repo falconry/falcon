@@ -103,8 +103,7 @@ class TestRequestBody:
 
         # NOTE(kgriffs): Append newline char to each line
         # to match readlines behavior
-        expected_lines = [(line + '\n').encode('utf-8')
-                          for line in data.split('\n')]
+        expected_lines = [(line + '\n').encode('utf-8') for line in data.split('\n')]
 
         # NOTE(kgriffs): Remove trailing newline to simulate
         # what readlines does
@@ -127,7 +126,7 @@ class TestRequestBody:
         stream = io.BytesIO(expected_body)
         body = request_helpers.Body(stream, expected_len)
         for i in range(expected_len + 1):
-            expected_value = expected_body[i:i + 1] if i < expected_len else b''
+            expected_value = expected_body[i : i + 1] if i < expected_len else b''
             assert body.read(1) == expected_value
 
         stream = io.BytesIO(expected_body)

@@ -51,6 +51,7 @@ def create_method_not_allowed(allowed_methods, asgi=False):
     """
 
     if asgi:
+
         async def method_not_allowed_responder_async(req, resp, **kwargs):
             raise HTTPMethodNotAllowed(allowed_methods)
 
@@ -74,6 +75,7 @@ def create_default_options(allowed_methods, asgi=False):
     allowed = ', '.join(allowed_methods)
 
     if asgi:
+
         async def options_responder_async(req, resp, **kwargs):
             resp.status = HTTP_200
             resp.set_header('Allow', allowed)

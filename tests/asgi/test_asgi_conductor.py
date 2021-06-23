@@ -31,7 +31,9 @@ async def test_wsgi_not_supported():
             pass
 
 
-@pytest.mark.parametrize('method', ['get', 'head', 'post', 'put', 'options', 'patch', 'delete'])
+@pytest.mark.parametrize(
+    'method', ['get', 'head', 'post', 'put', 'options', 'patch', 'delete']
+)
 @pytest.mark.asyncio
 async def test_responders(method):
     class Resource:

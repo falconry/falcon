@@ -50,6 +50,7 @@ from falcon.response import Response
 from falcon.response import ResponseOptions
 from falcon.status_codes import *
 from falcon.stream import BoundedStream
+
 # NOTE(kgriffs): Ensure that "from falcon import uri" will import
 # the same front-door module as "import falcon.uri". This works by
 # priming the import cache with the one we want.

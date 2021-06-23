@@ -4,7 +4,6 @@ from falcon.request import RequestOptions
 
 
 class TestRequestOptions:
-
     def test_option_defaults(self):
         options = RequestOptions()
 
@@ -13,12 +12,15 @@ class TestRequestOptions:
         assert not options.auto_parse_qs_csv
         assert not options.strip_url_path_trailing_slash
 
-    @pytest.mark.parametrize('option_name', [
-        'keep_blank_qs_values',
-        'auto_parse_form_urlencoded',
-        'auto_parse_qs_csv',
-        'strip_url_path_trailing_slash',
-    ])
+    @pytest.mark.parametrize(
+        'option_name',
+        [
+            'keep_blank_qs_values',
+            'auto_parse_form_urlencoded',
+            'auto_parse_qs_csv',
+            'strip_url_path_trailing_slash',
+        ],
+    )
     def test_options_toggle(self, option_name):
         options = RequestOptions()
 

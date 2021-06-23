@@ -55,7 +55,8 @@ def deprecated(instructions, is_property=False):
         object_name = 'property' if is_property else 'function'
         post_name = '' if is_property else '(...)'
         message = 'Call to deprecated {} {}{}. {}'.format(
-            object_name, func.__name__, post_name, instructions)
+            object_name, func.__name__, post_name, instructions
+        )
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):

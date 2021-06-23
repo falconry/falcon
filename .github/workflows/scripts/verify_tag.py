@@ -8,7 +8,9 @@ ENV_VARIABLE = 'GITHUB_REF'
 
 def go():
     parser = argparse.ArgumentParser()
-    parser.add_argument('folder', help='Directory where to look for wheels and source dist')
+    parser.add_argument(
+        'folder', help='Directory where to look for wheels and source dist'
+    )
 
     args = parser.parse_args()
 
