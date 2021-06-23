@@ -64,15 +64,10 @@ def create(body, headers):
     api = falcon.App(middleware=middleware)
     api.add_route('/v1/{tenant_id}/queues', queue_collection)
     api.add_route('/v1/{tenant_id}/queues/{queue_name}', queue_item)
-    api.add_route('/v1/{tenant_id}/queues/{queue_name}'
-                  '/stats', stats_endpoint)
-    api.add_route('/v1/{tenant_id}/queues/{queue_name}'
-                  '/messages', msg_collection)
-    api.add_route('/v1/{tenant_id}/queues/{queue_name}'
-                  '/messages/{message_id}', msg_item)
-    api.add_route('/v1/{tenant_id}/queues/{queue_name}'
-                  '/claims', claim_collection)
-    api.add_route('/v1/{tenant_id}/queues/{queue_name}'
-                  '/claims/{claim_id}', claim_item)
+    api.add_route('/v1/{tenant_id}/queues/{queue_name}/stats', stats_endpoint)
+    api.add_route('/v1/{tenant_id}/queues/{queue_name}/messages', msg_collection)
+    api.add_route('/v1/{tenant_id}/queues/{queue_name}/messages/{message_id}', msg_item)
+    api.add_route('/v1/{tenant_id}/queues/{queue_name}/claims', claim_collection)
+    api.add_route('/v1/{tenant_id}/queues/{queue_name}/claims/{claim_id}', claim_item)
 
     return api

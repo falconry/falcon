@@ -18,12 +18,15 @@ class MiddlewareIncompatibleWithWSGI_C:
         pass
 
 
-@pytest.mark.parametrize('middleware', [
-    MiddlewareIncompatibleWithWSGI_A(),
-    MiddlewareIncompatibleWithWSGI_B(),
-    MiddlewareIncompatibleWithWSGI_C(),
-    (MiddlewareIncompatibleWithWSGI_C(), MiddlewareIncompatibleWithWSGI_A()),
-])
+@pytest.mark.parametrize(
+    'middleware',
+    [
+        MiddlewareIncompatibleWithWSGI_A(),
+        MiddlewareIncompatibleWithWSGI_B(),
+        MiddlewareIncompatibleWithWSGI_C(),
+        (MiddlewareIncompatibleWithWSGI_C(), MiddlewareIncompatibleWithWSGI_A()),
+    ],
+)
 def test_raise_on_incompatible(middleware):
     api = falcon.App()
 

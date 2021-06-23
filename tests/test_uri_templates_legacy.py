@@ -5,7 +5,6 @@ from falcon import routing
 
 
 class TestUriTemplates:
-
     @pytest.mark.parametrize('value', (42, falcon.App))
     def test_string_type_required(self, value):
         with pytest.raises(TypeError):
@@ -30,7 +29,9 @@ class TestUriTemplates:
         assert result
         assert not result.groupdict()
 
-    @pytest.mark.parametrize('path', ('/hello', '/hello/world', '/hi/there/how/are/you'))
+    @pytest.mark.parametrize(
+        'path', ('/hello', '/hello/world', '/hi/there/how/are/you')
+    )
     def test_no_fields(self, path):
         fields, pattern = routing.compile_uri_template(path)
         assert not fields

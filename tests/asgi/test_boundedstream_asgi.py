@@ -6,15 +6,19 @@ import falcon
 from falcon import asgi, testing
 
 
-@pytest.mark.parametrize('body', [
-    b'',
-    b'\x00',
-    b'\x00\xFF',
-    b'catsup',
-    b'\xDE\xAD\xBE\xEF' * 512,
-    testing.rand_string(1, 2048),
-    os.urandom(100 * 2**20),
-], ids=['empty', 'null', 'null-ff', 'normal', 'long', 'random', 'random-large'])
+@pytest.mark.parametrize(
+    'body',
+    [
+        b'',
+        b'\x00',
+        b'\x00\xFF',
+        b'catsup',
+        b'\xDE\xAD\xBE\xEF' * 512,
+        testing.rand_string(1, 2048),
+        os.urandom(100 * 2 ** 20),
+    ],
+    ids=['empty', 'null', 'null-ff', 'normal', 'long', 'random', 'random-large'],
+)
 @pytest.mark.parametrize('extra_body', [True, False])
 @pytest.mark.parametrize('set_content_length', [True, False])
 def test_read_all(body, extra_body, set_content_length):
@@ -113,7 +117,13 @@ def test_read_all(body, extra_body, set_content_length):
         s.close()
         assert s.closed
 
-    for t in (test_iteration, test_readall_a, test_readall_b, test_readall_c, test_readall_d):
+    for t in (
+        test_iteration,
+        test_readall_a,
+        test_readall_b,
+        test_readall_c,
+        test_readall_d,
+    ):
         falcon.async_to_sync(t)
 
 
@@ -154,14 +164,18 @@ def test_filelike():
     falcon.async_to_sync(test_iteration)
 
 
-@pytest.mark.parametrize('body', [
-    b'',
-    b'\x00',
-    b'\x00\xFF',
-    b'catsup',
-    b'\xDE\xAD\xBE\xEF' * 512,
-    testing.rand_string(1, 2048).encode(),
-], ids=['empty', 'null', 'null-ff', 'normal', 'long', 'random'])
+@pytest.mark.parametrize(
+    'body',
+    [
+        b'',
+        b'\x00',
+        b'\x00\xFF',
+        b'catsup',
+        b'\xDE\xAD\xBE\xEF' * 512,
+        testing.rand_string(1, 2048).encode(),
+    ],
+    ids=['empty', 'null', 'null-ff', 'normal', 'long', 'random'],
+)
 @pytest.mark.parametrize('chunk_size', [1, 2, 10, 64, 100, 1000, 10000])
 def test_read_chunks(body, chunk_size):
     def stream():
@@ -218,7 +232,6 @@ def test_exhaust_with_disconnect():
     async def t():
         emitter = testing.ASGIRequestEventEmitter(
             b'123456789' * 2,
-
             # NOTE(kgriffs): This must be small enough to create several events
             chunk_size=3,
         )

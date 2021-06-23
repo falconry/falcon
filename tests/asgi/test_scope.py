@@ -33,22 +33,25 @@ def test_unsupported_http_version(http_version):
         _call_with_scope(scope)
 
 
-@pytest.mark.parametrize('version, supported', [
-    ('3.0', True),
-    ('3.1', True),
-    ('3.10', True),
-    ('30.0', False),
-    ('31.0', False),
-    ('4.0', False),
-    ('4.1', False),
-    ('4.10', False),
-    ('40.0', False),
-    ('41.0', False),
-    ('2.0', False),
-    ('2.1', False),
-    ('2.10', False),
-    (None, False),
-])
+@pytest.mark.parametrize(
+    'version, supported',
+    [
+        ('3.0', True),
+        ('3.1', True),
+        ('3.10', True),
+        ('30.0', False),
+        ('31.0', False),
+        ('4.0', False),
+        ('4.1', False),
+        ('4.10', False),
+        ('40.0', False),
+        ('41.0', False),
+        ('2.0', False),
+        ('2.1', False),
+        ('2.10', False),
+        (None, False),
+    ],
+)
 def test_supported_asgi_version(version, supported):
     scope = {
         'type': 'lifespan',
@@ -98,19 +101,22 @@ def test_unsupported_scope_type(scope_type):
         _call_with_scope(scope)
 
 
-@pytest.mark.parametrize('spec_version, supported', [
-    ('0.0', False),
-    ('1.0', False),
-    ('11.0', False),
-    ('2.0', True),
-    ('2.1', True),
-    ('2.10', True),
-    ('20.0', False),
-    ('22.0', False),
-    ('3.0', False),
-    ('3.1', False),
-    ('30.0', False),
-])
+@pytest.mark.parametrize(
+    'spec_version, supported',
+    [
+        ('0.0', False),
+        ('1.0', False),
+        ('11.0', False),
+        ('2.0', True),
+        ('2.1', True),
+        ('2.10', True),
+        ('20.0', False),
+        ('22.0', False),
+        ('3.0', False),
+        ('3.1', False),
+        ('30.0', False),
+    ],
+)
 def test_supported_http_spec(spec_version, supported):
     scope = testing.create_scope()
     scope['asgi']['spec_version'] = spec_version
@@ -153,19 +159,22 @@ def test_lifespan_scope_default_version():
     assert not resource.called
 
 
-@pytest.mark.parametrize('spec_version, supported', [
-    ('0.0', False),
-    ('1.0', True),
-    ('1.1', True),
-    ('1.10', True),
-    ('2.0', True),
-    ('2.1', True),
-    ('2.10', True),
-    ('3.0', False),
-    ('4.0', False),
-    ('11.0', False),
-    ('22.0', False),
-])
+@pytest.mark.parametrize(
+    'spec_version, supported',
+    [
+        ('0.0', False),
+        ('1.0', True),
+        ('1.1', True),
+        ('1.10', True),
+        ('2.0', True),
+        ('2.1', True),
+        ('2.10', True),
+        ('3.0', False),
+        ('4.0', False),
+        ('11.0', False),
+        ('22.0', False),
+    ],
+)
 def test_lifespan_scope_version(spec_version, supported):
     app = App()
 
@@ -175,7 +184,7 @@ def test_lifespan_scope_version(spec_version, supported):
 
     scope = {
         'type': 'lifespan',
-        'asgi': {'spec_version': spec_version, 'version': '3.0'}
+        'asgi': {'spec_version': spec_version, 'version': '3.0'},
     }
 
     if not supported:
@@ -224,15 +233,18 @@ def test_query_string_values():
     assert resource.captured_req.query_string == qs
 
 
-@pytest.mark.parametrize('scheme, valid', [
-    ('http', True),
-    ('https', True),
-    ('htt', False),
-    ('http:', False),
-    ('https:', False),
-    ('ftp', False),
-    ('gopher', False),
-])
+@pytest.mark.parametrize(
+    'scheme, valid',
+    [
+        ('http', True),
+        ('https', True),
+        ('htt', False),
+        ('http:', False),
+        ('https:', False),
+        ('ftp', False),
+        ('gopher', False),
+    ],
+)
 def test_scheme(scheme, valid):
     if valid:
         testing.create_scope(scheme=scheme)
@@ -241,10 +253,7 @@ def test_scheme(scheme, valid):
             testing.create_scope(scheme=scheme)
 
 
-@pytest.mark.parametrize('cookies', [
-    {'foo': 'bar', 'baz': 'foo'},
-    CustomCookies()
-])
+@pytest.mark.parametrize('cookies', [{'foo': 'bar', 'baz': 'foo'}, CustomCookies()])
 def test_cookies(cookies):
     scope = testing.create_scope(cookies=cookies)
     assert any(header == b'cookie' for header, _ in scope['headers'])
@@ -265,9 +274,7 @@ def _call_with_scope(scope):
     req_event_emitter = testing.ASGIRequestEventEmitter()
     resp_event_collector = testing.ASGIResponseEventCollector()
 
-    falcon.async_to_sync(
-        app.__call__, scope, req_event_emitter, resp_event_collector
-    )
+    falcon.async_to_sync(app.__call__, scope, req_event_emitter, resp_event_collector)
 
     assert resource.called
     return resource

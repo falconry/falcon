@@ -12,7 +12,6 @@ from _util import create_app  # NOQA
 
 
 class Resource(testing.SimpleTestResource):
-
     @falcon.before(testing.capture_responder_args)
     @falcon.before(testing.set_resp_defaults)
     def on_put(self, req, resp, **kwargs):
@@ -155,7 +154,9 @@ class TestQueryParams:
         assert req.get_param_as_list('id', int) == [23, 42]
         assert req.get_param('q') == '\u8c46 \u74e3'
 
-    def test_option_auto_parse_qs_csv_simple_false(self, simulate_request, client, resource):
+    def test_option_auto_parse_qs_csv_simple_false(
+        self, simulate_request, client, resource
+    ):
         client.app.add_route('/', resource)
         client.app.req_options.auto_parse_qs_csv = False
 
@@ -168,7 +169,9 @@ class TestQueryParams:
         assert req.get_param('id') in ['23,42,,', '2']
         assert req.get_param_as_list('id') == ['23,42,,', '2']
 
-    def test_option_auto_parse_qs_csv_simple_true(self, simulate_request, client, resource):
+    def test_option_auto_parse_qs_csv_simple_true(
+        self, simulate_request, client, resource
+    ):
         client.app.add_route('/', resource)
         client.app.req_options.auto_parse_qs_csv = True
         client.app.req_options.keep_blank_qs_values = False
@@ -183,10 +186,7 @@ class TestQueryParams:
         assert req.get_param_as_list('id', int) == [23, 42, 2]
 
     def test_option_auto_parse_qs_csv_multiple_fields_false(
-        self,
-        simulate_request,
-        client,
-        resource
+        self, simulate_request, client, resource
     ):
         client.app.add_route('/', resource)
 
@@ -210,15 +210,18 @@ class TestQueryParams:
             ('t=1,2&t=3,4,,5', False, ['1', '2', '3', '4', '5']),
             ('t=1&t=,1,4,,5', False, ['1', '1', '4', '5']),
             ('t=1&t=,1,4,,5', True, ['1', '', '1', '4', '', '5']),
-            ('t=1&t=,1,4,,5&t=a,b,c', True, ['1', '', '1', '4', '', '5', 'a', 'b', 'c']),
-        ]
+            (
+                't=1&t=,1,4,,5&t=a,b,c',
+                True,
+                ['1', '', '1', '4', '', '5', 'a', 'b', 'c'],
+            ),
+        ],
     )
     def test_option_auto_parse_qs_csv_multiple_fields_true(
         self,
         simulate_request,
         client,
         resource,
-
         qs,
         keep_blank,
         expected,
@@ -236,7 +239,9 @@ class TestQueryParams:
         assert req.get_param('t') in expected
         assert req.get_param_as_list('t') == expected
 
-    def test_option_auto_parse_qs_csv_complex_false(self, simulate_request, client, resource):
+    def test_option_auto_parse_qs_csv_complex_false(
+        self, simulate_request, client, resource
+    ):
         client.app.add_route('/', resource)
         client.app.req_options.auto_parse_qs_csv = False
         client.app.req_options.keep_blank_qs_values = False
@@ -244,10 +249,12 @@ class TestQueryParams:
         encoded_json = '%7B%22msg%22:%22Testing%201,2,3...%22,%22code%22:857%7D'
         decoded_json = '{"msg":"Testing 1,2,3...","code":857}'
 
-        query_string = ('colors=red,green,blue&limit=1'
-                        '&list-ish1=f,,x&list-ish2=,0&list-ish3=a,,,b'
-                        '&empty1=&empty2=,&empty3=,,'
-                        '&thing=' + encoded_json)
+        query_string = (
+            'colors=red,green,blue&limit=1'
+            '&list-ish1=f,,x&list-ish2=,0&list-ish3=a,,,b'
+            '&empty1=&empty2=,&empty3=,,'
+            '&thing=' + encoded_json
+        )
 
         simulate_request(client=client, path='/', query_string=query_string)
 
@@ -293,9 +300,11 @@ class TestQueryParams:
     def test_allowed_names(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         client.app.req_options.keep_blank_qs_values = False
-        query_string = ('p=0&p1=23&2p=foo&some-thing=that&blank=&'
-                        'some_thing=x&-bogus=foo&more.things=blah&'
-                        '_thing=42&_charset_=utf-8')
+        query_string = (
+            'p=0&p1=23&2p=foo&some-thing=that&blank=&'
+            'some_thing=x&-bogus=foo&more.things=blah&'
+            '_thing=42&_charset_=utf-8'
+        )
         simulate_request(client=client, path='/', query_string=query_string)
 
         req = resource.captured_req
@@ -310,14 +319,17 @@ class TestQueryParams:
         assert req.get_param('_thing') == '42'
         assert req.get_param('_charset_') == 'utf-8'
 
-    @pytest.mark.parametrize('method_name', [
-        'get_param',
-        'get_param_as_int',
-        'get_param_as_float',
-        'get_param_as_uuid',
-        'get_param_as_bool',
-        'get_param_as_list',
-    ])
+    @pytest.mark.parametrize(
+        'method_name',
+        [
+            'get_param',
+            'get_param_as_int',
+            'get_param_as_float',
+            'get_param_as_uuid',
+            'get_param_as_bool',
+            'get_param_as_list',
+        ],
+    )
     def test_required(self, simulate_request, client, resource, method_name):
         client.app.add_route('/', resource)
         query_string = ''
@@ -347,8 +359,9 @@ class TestQueryParams:
             assert isinstance(ex, falcon.HTTPBadRequest)
             assert isinstance(ex, falcon.HTTPInvalidParam)
             assert ex.title == 'Invalid parameter'
-            expected_desc = ('The "marker" parameter is invalid. '
-                             'The value must be an integer.')
+            expected_desc = (
+                'The "marker" parameter is invalid. The value must be an integer.'
+            )
             assert ex.description == expected_desc
 
         assert req.get_param_as_int('limit') == 25
@@ -422,8 +435,9 @@ class TestQueryParams:
             assert isinstance(ex, falcon.HTTPBadRequest)
             assert isinstance(ex, falcon.HTTPInvalidParam)
             assert ex.title == 'Invalid parameter'
-            expected_desc = ('The "marker" parameter is invalid. '
-                             'The value must be a float.')
+            expected_desc = (
+                'The "marker" parameter is invalid. The value must be a float.'
+            )
             assert ex.description == expected_desc
 
         assert req.get_param_as_float('limit') == 25.1
@@ -486,10 +500,12 @@ class TestQueryParams:
 
     def test_uuid(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
-        query_string = ('marker1=8d76b7b3-d0dd-46ca-ad6e-3989dcd66959&'
-                        'marker2=64be949b-3433-4d36-a4a8-9f19d352fee8&'
-                        'marker2=8D76B7B3-d0dd-46ca-ad6e-3989DCD66959&'
-                        'short=4be949b-3433-4d36-a4a8-9f19d352fee8')
+        query_string = (
+            'marker1=8d76b7b3-d0dd-46ca-ad6e-3989dcd66959&'
+            'marker2=64be949b-3433-4d36-a4a8-9f19d352fee8&'
+            'marker2=8D76B7B3-d0dd-46ca-ad6e-3989DCD66959&'
+            'short=4be949b-3433-4d36-a4a8-9f19d352fee8'
+        )
         simulate_request(client=client, path='/', query_string=query_string)
 
         req = resource.captured_req
@@ -514,25 +530,27 @@ class TestQueryParams:
     def test_boolean(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
         client.app.req_options.keep_blank_qs_values = False
-        query_string = '&'.join([
-            'echo=true',
-            'doit=false',
-            'bogus=bar',
-            'bogus2=foo',
-            't1=True',
-            'f1=False',
-            't2=yes',
-            'f2=no',
-            't3=y',
-            'f3=n',
-            't4=t',
-            'f4=f',
-            'blank',
-            'one=1',
-            'zero=0',
-            'checkbox1=on',
-            'checkbox2=off',
-        ])
+        query_string = '&'.join(
+            [
+                'echo=true',
+                'doit=false',
+                'bogus=bar',
+                'bogus2=foo',
+                't1=True',
+                'f1=False',
+                't2=yes',
+                'f2=no',
+                't3=y',
+                'f3=n',
+                't4=t',
+                'f4=f',
+                'blank',
+                'one=1',
+                'zero=0',
+                'checkbox1=on',
+                'checkbox2=off',
+            ]
+        )
         simulate_request(client=client, path='/', query_string=query_string)
 
         req = resource.captured_req
@@ -544,9 +562,11 @@ class TestQueryParams:
         except Exception as ex:
             assert isinstance(ex, falcon.HTTPInvalidParam)
             assert ex.title == 'Invalid parameter'
-            expected_desc = ('The "bogus2" parameter is invalid. '
-                             'The value of the parameter must be "true" '
-                             'or "false".')
+            expected_desc = (
+                'The "bogus2" parameter is invalid. '
+                'The value of the parameter must be "true" '
+                'or "false".'
+            )
             assert ex.description == expected_desc
 
         assert req.get_param_as_bool('echo') is True
@@ -589,11 +609,13 @@ class TestQueryParams:
         client.app.add_route('/', resource)
         client.app.req_options.auto_parse_qs_csv = True
         client.app.req_options.keep_blank_qs_values = False
-        query_string = ('colors=red,green,blue&limit=1'
-                        '&list-ish1=f,,x&list-ish2=,0&list-ish3=a,,,b'
-                        '&empty1=&empty2=,&empty3=,,'
-                        '&thing_one=1,,3'
-                        '&thing_two=1&thing_two=&thing_two=3')
+        query_string = (
+            'colors=red,green,blue&limit=1'
+            '&list-ish1=f,,x&list-ish2=,0&list-ish3=a,,,b'
+            '&empty1=&empty2=,&empty3=,,'
+            '&thing_one=1,,3'
+            '&thing_two=1&thing_two=&thing_two=3'
+        )
         simulate_request(client=client, path='/', query_string=query_string)
 
         req = resource.captured_req
@@ -620,10 +642,7 @@ class TestQueryParams:
 
         # Ensure consistency between list conventions
         assert req.get_param_as_list('thing_one') == ['1', '3']
-        assert (
-            req.get_param_as_list('thing_one') ==
-            req.get_param_as_list('thing_two')
-        )
+        assert req.get_param_as_list('thing_one') == req.get_param_as_list('thing_two')
 
         store = {}
         assert req.get_param_as_list('limit', store=store) == ['1']
@@ -631,13 +650,15 @@ class TestQueryParams:
 
     def test_list_type_blank(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
-        query_string = ('colors=red,green,blue&limit=1'
-                        '&list-ish1=f,,x&list-ish2=,0&list-ish3=a,,,b'
-                        '&empty1=&empty2=,&empty3=,,'
-                        '&thing_one=1,,3'
-                        '&thing_two=1&thing_two=&thing_two=3'
-                        '&empty4=&empty4&empty4='
-                        '&empty5&empty5&empty5')
+        query_string = (
+            'colors=red,green,blue&limit=1'
+            '&list-ish1=f,,x&list-ish2=,0&list-ish3=a,,,b'
+            '&empty1=&empty2=,&empty3=,,'
+            '&thing_one=1,,3'
+            '&thing_two=1&thing_two=&thing_two=3'
+            '&empty4=&empty4&empty4='
+            '&empty5&empty5&empty5'
+        )
         client.app.req_options.keep_blank_qs_values = True
         client.app.req_options.auto_parse_qs_csv = True
         simulate_request(client=client, path='/', query_string=query_string)
@@ -707,8 +728,10 @@ class TestQueryParams:
         except Exception as ex:
             assert isinstance(ex, falcon.HTTPInvalidParam)
             assert ex.title == 'Invalid parameter'
-            expected_desc = ('The "coord" parameter is invalid. '
-                             'The value is not formatted correctly.')
+            expected_desc = (
+                'The "coord" parameter is invalid. '
+                'The value is not formatted correctly.'
+            )
             assert ex.description == expected_desc
 
     def test_param_property(self, simulate_request, client, resource):
@@ -717,10 +740,12 @@ class TestQueryParams:
         simulate_request(client=client, path='/', query_string=query_string)
 
         req = resource.captured_req
-        assert (
-            sorted(req.params.items()) ==
-            [('ant', '4'), ('bee', '3'), ('cat', '2'), ('dog', '1')]
-        )
+        assert sorted(req.params.items()) == [
+            ('ant', '4'),
+            ('bee', '3'),
+            ('cat', '2'),
+            ('dog', '1'),
+        ]
 
     def test_multiple_form_keys(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
@@ -792,7 +817,9 @@ class TestQueryParams:
         format_string = '%Y%m%d'
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
-        assert req.get_param_as_date('thedate', format_string=format_string) == date(2015, 4, 20)
+        assert req.get_param_as_date('thedate', format_string=format_string) == date(
+            2015, 4, 20
+        )
 
     def test_get_date_store(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
@@ -837,7 +864,8 @@ class TestQueryParams:
         simulate_request(client=client, path='/', query_string=query_string)
         req = resource.captured_req
         assert req.get_param_as_datetime(
-            'thedate', format_string=format_string) == datetime(2015, 4, 20, 10, 10, 10)
+            'thedate', format_string=format_string
+        ) == datetime(2015, 4, 20, 10, 10, 10)
 
     def test_get_datetime_store(self, simulate_request, client, resource):
         client.app.add_route('/', resource)
@@ -899,7 +927,9 @@ class TestQueryParams:
         client.app.add_route('/', resource)
         payload_dict = {'foo': 'bar'}
         query_string = 'payload={}'.format(json.dumps(payload_dict))
-        client.app.req_options.media_handlers[falcon.MEDIA_JSON]._loads = lambda x: {'x': 'y'}
+        client.app.req_options.media_handlers[falcon.MEDIA_JSON]._loads = lambda x: {
+            'x': 'y'
+        }
         client.simulate_get(path='/', query_string=query_string)
         req = resource.captured_req
         assert req.get_param_as_json('payload') == {'x': 'y'}
@@ -928,12 +958,15 @@ class TestQueryParams:
 
 
 class TestPostQueryParams:
-    @pytest.mark.parametrize('http_method', ('POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'))
+    @pytest.mark.parametrize(
+        'http_method', ('POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS')
+    )
     def test_http_methods_body_expected(self, client, resource, http_method):
         client.app.add_route('/', resource)
         query_string = 'marker=deadbeef&limit=25'
-        simulate_request_post_query_params(client=client, path='/', query_string=query_string,
-                                           method=http_method)
+        simulate_request_post_query_params(
+            client=client, path='/', query_string=query_string, method=http_method
+        )
 
         req = resource.captured_req
         assert req.get_param('marker') == 'deadbeef'
@@ -943,8 +976,9 @@ class TestPostQueryParams:
     def test_http_methods_body_not_expected(self, client, resource, http_method):
         client.app.add_route('/', resource)
         query_string = 'marker=deadbeef&limit=25'
-        simulate_request_post_query_params(client=client, path='/', query_string=query_string,
-                                           method=http_method)
+        simulate_request_post_query_params(
+            client=client, path='/', query_string=query_string, method=http_method
+        )
 
         req = resource.captured_req
         assert req.get_param('marker') is None
@@ -954,7 +988,9 @@ class TestPostQueryParams:
         client.app.add_route('/', resource)
         value = '\u8c46\u74e3'
         query_string = b'q=' + value.encode('utf-8')
-        simulate_request_post_query_params(client=client, path='/', query_string=query_string)
+        simulate_request_post_query_params(
+            client=client, path='/', query_string=query_string
+        )
 
         req = resource.captured_req
         assert req.get_param('q') is None

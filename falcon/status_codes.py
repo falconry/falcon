@@ -108,8 +108,7 @@ HTTP_741 = '741 Compiling'
 HTTP_742 = '742 A kitten dies'
 HTTP_743 = '743 I thought I knew regular expressions'
 HTTP_744 = '744 Y U NO write integration tests?'
-HTTP_745 = ("745 I don't always test my code, but when I do"
-            'I do it in production')
+HTTP_745 = "745 I don't always test my code, but when I do" 'I do it in production'
 HTTP_748 = '748 Confounded by Ponies'
 HTTP_749 = '749 Reserved for Chuck Norris'
 

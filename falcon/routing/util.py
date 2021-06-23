@@ -126,7 +126,9 @@ def map_http_methods(resource, suffix=None):
 
     # If suffix is specified and doesn't map to any methods, raise an error
     if suffix and not method_map:
-        raise SuffixedMethodNotFoundError('No responders found for the specified suffix')
+        raise SuffixedMethodNotFoundError(
+            'No responders found for the specified suffix'
+        )
 
     return method_map
 
@@ -143,8 +145,7 @@ def set_default_responders(method_map, asgi=False):
 
     # Attach a resource for unsupported HTTP methods
     allowed_methods = [
-        m for m in sorted(list(method_map.keys()))
-        if m not in constants._META_METHODS
+        m for m in sorted(list(method_map.keys())) if m not in constants._META_METHODS
     ]
 
     if 'OPTIONS' not in method_map:

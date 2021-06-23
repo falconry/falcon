@@ -79,7 +79,7 @@ class BoundedStream(io.IOBase):
         # NOTE(kgriffs): Default to reading all remaining bytes if the
         # size is not specified or is out of bounds. This behaves
         # similarly to the IO streams passed in by non-wsgiref servers.
-        if (size is None or size == -1 or size > self._bytes_remaining):
+        if size is None or size == -1 or size > self._bytes_remaining:
             size = self._bytes_remaining
 
         self._bytes_remaining -= size

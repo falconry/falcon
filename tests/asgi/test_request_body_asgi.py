@@ -53,14 +53,17 @@ class TestRequestBody:
         assert resource.captured_req_body == expected_body.encode('utf-8')
         assert stream.tell() == expected_len
 
-    @pytest.mark.parametrize('body_length, content_length', [
-        (1, 0),
-        (2, 1),
-        (3, 2),
-        (100, None),
-        (100, 50),
-        (8192, 50),
-    ])
+    @pytest.mark.parametrize(
+        'body_length, content_length',
+        [
+            (1, 0),
+            (2, 1),
+            (3, 2),
+            (100, None),
+            (100, 50),
+            (8192, 50),
+        ],
+    )
     @pytest.mark.asyncio
     async def test_content_length_smaller_than_body(self, body_length, content_length):
         body_in = os.urandom(body_length)

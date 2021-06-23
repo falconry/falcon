@@ -47,12 +47,7 @@ from falcon.util import to_query_str
 
 warnings.filterwarnings(
     'error',
-    (
-        'Unknown REQUEST_METHOD: ' +
-        "'({})'".format(
-            '|'.join(COMBINED_METHODS)
-        )
-    ),
+    ('Unknown REQUEST_METHOD: ' + "'({})'".format('|'.join(COMBINED_METHODS))),
     wsgiref.validate.WSGIWarning,
     '',
     0,
@@ -94,7 +89,7 @@ class Cookie:
             'max_age',
             'secure',
             'httponly',
-            'samesite'
+            'samesite',
         ):
             value = morsel[name.replace('_', '-')] or None
             setattr(self, '_' + name, value)
@@ -187,8 +182,7 @@ class _ResultBase:
                 cookies.load(value)
 
         self._cookies = dict(
-            (morsel.key, Cookie(morsel))
-            for morsel in cookies.values()
+            (morsel.key, Cookie(morsel)) for morsel in cookies.values()
         )
 
         self._encoding = helpers.get_encoding_from_headers(self._headers)
@@ -252,7 +246,7 @@ class ResultBodyStream:
         if self._chunk_pos >= len(self._chunks):
             return b''
 
-        data = b''.join(self._chunks[self._chunk_pos:])
+        data = b''.join(self._chunks[self._chunk_pos :])
         self._chunk_pos = len(self._chunks)
 
         return data
@@ -398,13 +392,30 @@ class StreamedResult(_ResultBase):
 #   relatively long (5 minutes) to help testers notice when something
 #   appears to be "hanging", which might indicates that the app is
 #   not handling the reception of events correctly.
-def simulate_request(app, method='GET', path='/', query_string=None,
-                     headers=None, content_type=None, body=None, json=None,
-                     file_wrapper=None, wsgierrors=None, params=None,
-                     params_csv=False, protocol='http', host=helpers.DEFAULT_HOST,
-                     remote_addr=None, extras=None, http_version='1.1',
-                     port=None, root_path=None, cookies=None, asgi_chunk_size=4096,
-                     asgi_disconnect_ttl=300) -> _ResultBase:
+def simulate_request(
+    app,
+    method='GET',
+    path='/',
+    query_string=None,
+    headers=None,
+    content_type=None,
+    body=None,
+    json=None,
+    file_wrapper=None,
+    wsgierrors=None,
+    params=None,
+    params_csv=False,
+    protocol='http',
+    host=helpers.DEFAULT_HOST,
+    remote_addr=None,
+    extras=None,
+    http_version='1.1',
+    port=None,
+    root_path=None,
+    cookies=None,
+    asgi_chunk_size=4096,
+    asgi_disconnect_ttl=300,
+) -> _ResultBase:
 
     """Simulate a request to a WSGI or ASGI application.
 
@@ -520,19 +531,39 @@ def simulate_request(app, method='GET', path='/', query_string=None,
     if _is_asgi_app(app):
         return async_to_sync(
             _simulate_request_asgi,
-
             app,
-
-            method=method, path=path, query_string=query_string,
-            headers=headers, content_type=content_type, body=body, json=json,
-            params=params, params_csv=params_csv, protocol=protocol, host=host,
-            remote_addr=remote_addr, extras=extras, http_version=http_version,
-            port=port, root_path=root_path, asgi_chunk_size=asgi_chunk_size,
-            asgi_disconnect_ttl=asgi_disconnect_ttl, cookies=cookies
+            method=method,
+            path=path,
+            query_string=query_string,
+            headers=headers,
+            content_type=content_type,
+            body=body,
+            json=json,
+            params=params,
+            params_csv=params_csv,
+            protocol=protocol,
+            host=host,
+            remote_addr=remote_addr,
+            extras=extras,
+            http_version=http_version,
+            port=port,
+            root_path=root_path,
+            asgi_chunk_size=asgi_chunk_size,
+            asgi_disconnect_ttl=asgi_disconnect_ttl,
+            cookies=cookies,
         )
 
     path, query_string, headers, body, extras = _prepare_sim_args(
-        path, query_string, params, params_csv, content_type, headers, body, json, extras)
+        path,
+        query_string,
+        params,
+        params_csv,
+        content_type,
+        headers,
+        body,
+        json,
+        extras,
+    )
 
     env = helpers.create_environ(
         method=method,
@@ -568,8 +599,7 @@ def simulate_request(app, method='GET', path='/', query_string=None,
 
     iterable = validator(env, srmock)
 
-    return Result(helpers.closed_wsgi_iterable(iterable),
-                  srmock.status, srmock.headers)
+    return Result(helpers.closed_wsgi_iterable(iterable), srmock.status, srmock.headers)
 
 
 # NOTE(kgriffs): The default of asgi_disconnect_ttl was chosen to be
@@ -577,20 +607,33 @@ def simulate_request(app, method='GET', path='/', query_string=None,
 #   appears to be "hanging", which might indicates that the app is
 #   not handling the reception of events correctly.
 async def _simulate_request_asgi(
-    app, method='GET', path='/', query_string=None,
-    headers=None, content_type=None, body=None, json=None, params=None,
-    params_csv=True, protocol='http', host=helpers.DEFAULT_HOST,
-    remote_addr=None, extras=None, http_version='1.1',
-    port=None, root_path=None, asgi_chunk_size=4096,
-    asgi_disconnect_ttl=300, cookies=None,
-
+    app,
+    method='GET',
+    path='/',
+    query_string=None,
+    headers=None,
+    content_type=None,
+    body=None,
+    json=None,
+    params=None,
+    params_csv=True,
+    protocol='http',
+    host=helpers.DEFAULT_HOST,
+    remote_addr=None,
+    extras=None,
+    http_version='1.1',
+    port=None,
+    root_path=None,
+    asgi_chunk_size=4096,
+    asgi_disconnect_ttl=300,
+    cookies=None,
     # NOTE(kgriffs): These are undocumented because they are only
     #   meant to be used internally by the framework (i.e., they are
     #   not part of the public interface.) In case we ever expose
     #   simulate_request_asgi() as part of the public interface, we
     #   don't want these kwargs to be documented.
-    _one_shot=True, _stream_result=False,
-
+    _one_shot=True,
+    _stream_result=False,
 ) -> _ResultBase:
 
     """Simulate a request to an ASGI application.
@@ -687,7 +730,16 @@ async def _simulate_request_asgi(
     """
 
     path, query_string, headers, body, extras = _prepare_sim_args(
-        path, query_string, params, params_csv, content_type, headers, body, json, extras)
+        path,
+        query_string,
+        params,
+        params_csv,
+        content_type,
+        headers,
+        body,
+        json,
+        extras,
+    )
 
     # ---------------------------------------------------------------------
     # NOTE(kgriffs): 'http' scope
@@ -747,17 +799,21 @@ async def _simulate_request_asgi(
             while not resp_event_collector.status:
                 await asyncio.sleep(0)
 
-            return StreamedResult(resp_event_collector.body_chunks,
-                                  code_to_http_status(resp_event_collector.status),
-                                  resp_event_collector.headers,
-                                  task_req,
-                                  req_event_emitter)
+            return StreamedResult(
+                resp_event_collector.body_chunks,
+                code_to_http_status(resp_event_collector.status),
+                resp_event_collector.headers,
+                task_req,
+                req_event_emitter,
+            )
 
         req_event_emitter.disconnect()
         await task_req
-        return Result(resp_event_collector.body_chunks,
-                      code_to_http_status(resp_event_collector.status),
-                      resp_event_collector.headers)
+        return Result(
+            resp_event_collector.body_chunks,
+            code_to_http_status(resp_event_collector.status),
+            resp_event_collector.headers,
+        )
 
     # ---------------------------------------------------------------------
     # NOTE(kgriffs): 'lifespan' scope
@@ -804,9 +860,11 @@ async def _simulate_request_asgi(
         #   the app could not return a status.
         raise ConnectionError('An immediate disconnect was simulated.')
 
-    return Result(resp_event_collector.body_chunks,
-                  code_to_http_status(resp_event_collector.status),
-                  resp_event_collector.headers)
+    return Result(
+        resp_event_collector.body_chunks,
+        code_to_http_status(resp_event_collector.status),
+        resp_event_collector.headers,
+    )
 
 
 class ASGIConductor:
@@ -887,6 +945,7 @@ class ASGIConductor:
         app: The app that this client instance was configured to use.
 
     """
+
     def __init__(self, app, headers=None):
         if not _is_asgi_app(app):
             raise CompatibilityError('ASGIConductor may only be used with an ASGI app')
@@ -913,7 +972,9 @@ class ASGIConductor:
         #   the lifespan protocol and thus we do not need to catch
         #   exceptions that would signify no lifespan protocol support.
         self._lifespan_task = get_running_loop().create_task(
-            self.app(lifespan_scope, lifespan_event_emitter, self._lifespan_event_collector)
+            self.app(
+                lifespan_scope, lifespan_event_emitter, self._lifespan_event_collector
+            )
         )
 
         await _wait_for_startup(self._lifespan_event_collector.events)
@@ -2002,15 +2063,7 @@ class _WSContextManager:
 
 
 def _prepare_sim_args(
-    path,
-    query_string,
-    params,
-    params_csv,
-    content_type,
-    headers,
-    body,
-    json,
-    extras
+    path, query_string, params, params_csv, content_type, headers, body, json, extras
 ):
     if not path.startswith('/'):
         raise ValueError("path must start with '/'")
@@ -2057,7 +2110,7 @@ def _is_asgi_app(app):
     if app_args[0] in {'cls', 'self'}:
         num_app_args -= 1
 
-    is_asgi = (num_app_args == 3)
+    is_asgi = num_app_args == 3
 
     return is_asgi
 
@@ -2068,7 +2121,9 @@ async def _wait_for_startup(events):
     while True:  # pragma: nocover
         for e in events:
             if e['type'] == 'lifespan.startup.failed':
-                raise RuntimeError('ASGI app returned lifespan.startup.failed. ' + e['message'])
+                raise RuntimeError(
+                    'ASGI app returned lifespan.startup.failed. ' + e['message']
+                )
 
         if any(e['type'] == 'lifespan.startup.complete' for e in events):
             break
@@ -2083,7 +2138,9 @@ async def _wait_for_shutdown(events):
     while True:  # pragma: nocover
         for e in events:
             if e['type'] == 'lifespan.shutdown.failed':
-                raise RuntimeError('ASGI app returned lifespan.shutdown.failed. ' + e['message'])
+                raise RuntimeError(
+                    'ASGI app returned lifespan.shutdown.failed. ' + e['message']
+                )
 
         if any(e['type'] == 'lifespan.shutdown.complete' for e in events):
             break

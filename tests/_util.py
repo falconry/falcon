@@ -53,6 +53,7 @@ def create_resp(asgi):
     if asgi:
         skipif_asgi_unsupported()
         from falcon.asgi import Response
+
         return Response()
 
     return falcon.Response()

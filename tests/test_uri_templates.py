@@ -167,11 +167,14 @@ def test_special_chars(client, resource):
     assert resource.called
 
 
-@pytest.mark.parametrize('field_name', [
-    'id',
-    'id123',
-    'widget_id',
-])
+@pytest.mark.parametrize(
+    'field_name',
+    [
+        'id',
+        'id123',
+        'widget_id',
+    ],
+)
 def test_single(client, resource, field_name):
     template = '/widgets/{{{}}}'.format(field_name)
 
@@ -190,12 +193,15 @@ def test_single_path_segment(client):
     assert id_resource.id == 'foo'
 
 
-@pytest.mark.parametrize('uri_template,', [
-    '/{id:int}',
-    '/{id:int(3)}',
-    '/{id:int(min=123)}',
-    '/{id:int(min=123, max=123)}',
-])
+@pytest.mark.parametrize(
+    'uri_template,',
+    [
+        '/{id:int}',
+        '/{id:int(3)}',
+        '/{id:int(min=123)}',
+        '/{id:int(min=123, max=123)}',
+    ],
+)
 def test_int_converter(client, uri_template):
     resource1 = IDResource()
     client.app.add_route(uri_template, resource1)
@@ -208,11 +214,14 @@ def test_int_converter(client, uri_template):
     assert resource1.req.path == '/123'
 
 
-@pytest.mark.parametrize('uri_template,', [
-    '/{id:int(2)}',
-    '/{id:int(min=124)}',
-    '/{id:int(num_digits=3, max=100)}',
-])
+@pytest.mark.parametrize(
+    'uri_template,',
+    [
+        '/{id:int(2)}',
+        '/{id:int(min=124)}',
+        '/{id:int(num_digits=3, max=100)}',
+    ],
+)
 def test_int_converter_rejections(client, uri_template):
     resource1 = IDResource()
     client.app.add_route(uri_template, resource1)
@@ -223,28 +232,27 @@ def test_int_converter_rejections(client, uri_template):
     assert not resource1.called
 
 
-@pytest.mark.parametrize('uri_template, path, dt_expected', [
-    (
-        '/{start_year:int}-to-{timestamp:dt}',
-        '/1961-to-1969-07-21T02:56:00Z',
-        datetime(1969, 7, 21, 2, 56, 0)
-    ),
-    (
-        '/{start_year:int}-to-{timestamp:dt("%Y-%m-%d")}',
-        '/1961-to-1969-07-21',
-        datetime(1969, 7, 21)
-    ),
-    (
-        '/{start_year:int}/{timestamp:dt("%Y-%m-%d %H:%M")}',
-        '/1961/1969-07-21 14:30',
-        datetime(1969, 7, 21, 14, 30)
-    ),
-    (
-        '/{start_year:int}-to-{timestamp:dt("%Y-%m")}',
-        '/1961-to-1969-07-21',
-        None
-    ),
-])
+@pytest.mark.parametrize(
+    'uri_template, path, dt_expected',
+    [
+        (
+            '/{start_year:int}-to-{timestamp:dt}',
+            '/1961-to-1969-07-21T02:56:00Z',
+            datetime(1969, 7, 21, 2, 56, 0),
+        ),
+        (
+            '/{start_year:int}-to-{timestamp:dt("%Y-%m-%d")}',
+            '/1961-to-1969-07-21',
+            datetime(1969, 7, 21),
+        ),
+        (
+            '/{start_year:int}/{timestamp:dt("%Y-%m-%d %H:%M")}',
+            '/1961/1969-07-21 14:30',
+            datetime(1969, 7, 21, 14, 30),
+        ),
+        ('/{start_year:int}-to-{timestamp:dt("%Y-%m")}', '/1961-to-1969-07-21', None),
+    ],
+)
 def test_datetime_converter(client, resource, uri_template, path, dt_expected):
     client.app.add_route(uri_template, resource)
 
@@ -260,38 +268,50 @@ def test_datetime_converter(client, resource, uri_template, path, dt_expected):
         assert resource.captured_kwargs['timestamp'] == dt_expected
 
 
-@pytest.mark.parametrize('uri_template, path, expected', [
-    (
-        '/widgets/{widget_id:uuid}',
-        '/widgets/' + _TEST_UUID_STR,
-        {'widget_id': _TEST_UUID}
-    ),
-    (
-        '/widgets/{widget_id:uuid}/orders',
-        '/widgets/' + _TEST_UUID_STR_SANS_HYPHENS + '/orders',
-        {'widget_id': _TEST_UUID}
-    ),
-    (
-        '/versions/diff/{left:uuid()}...{right:uuid()}',
-        '/versions/diff/{}...{}'.format(_TEST_UUID_STR, _TEST_UUID_STR_2),
-        {'left': _TEST_UUID, 'right': _TEST_UUID_2, }
-    ),
-    (
-        '/versions/diff/{left:uuid}...{right:uuid()}',
-        '/versions/diff/{}...{}'.format(_TEST_UUID_STR, _TEST_UUID_STR_2),
-        {'left': _TEST_UUID, 'right': _TEST_UUID_2, }
-    ),
-    (
-        '/versions/diff/{left:uuid()}...{right:uuid}',
-        '/versions/diff/{}...{}'.format(_TEST_UUID_STR, _TEST_UUID_STR_2),
-        {'left': _TEST_UUID, 'right': _TEST_UUID_2, }
-    ),
-    (
-        '/widgets/{widget_id:uuid}/orders',
-        '/widgets/' + _TEST_UUID_STR_SANS_HYPHENS[:-1] + '/orders',
-        None
-    ),
-])
+@pytest.mark.parametrize(
+    'uri_template, path, expected',
+    [
+        (
+            '/widgets/{widget_id:uuid}',
+            '/widgets/' + _TEST_UUID_STR,
+            {'widget_id': _TEST_UUID},
+        ),
+        (
+            '/widgets/{widget_id:uuid}/orders',
+            '/widgets/' + _TEST_UUID_STR_SANS_HYPHENS + '/orders',
+            {'widget_id': _TEST_UUID},
+        ),
+        (
+            '/versions/diff/{left:uuid()}...{right:uuid()}',
+            '/versions/diff/{}...{}'.format(_TEST_UUID_STR, _TEST_UUID_STR_2),
+            {
+                'left': _TEST_UUID,
+                'right': _TEST_UUID_2,
+            },
+        ),
+        (
+            '/versions/diff/{left:uuid}...{right:uuid()}',
+            '/versions/diff/{}...{}'.format(_TEST_UUID_STR, _TEST_UUID_STR_2),
+            {
+                'left': _TEST_UUID,
+                'right': _TEST_UUID_2,
+            },
+        ),
+        (
+            '/versions/diff/{left:uuid()}...{right:uuid}',
+            '/versions/diff/{}...{}'.format(_TEST_UUID_STR, _TEST_UUID_STR_2),
+            {
+                'left': _TEST_UUID,
+                'right': _TEST_UUID_2,
+            },
+        ),
+        (
+            '/widgets/{widget_id:uuid}/orders',
+            '/widgets/' + _TEST_UUID_STR_SANS_HYPHENS[:-1] + '/orders',
+            None,
+        ),
+    ],
+)
 def test_uuid_converter(client, resource, uri_template, path, expected):
     client.app.add_route(uri_template, resource)
 
@@ -312,10 +332,7 @@ def test_uuid_converter_complex_segment(client, resource):
     first_uuid = uuid.uuid4()
     last_uuid = uuid.uuid4()
 
-    result = client.simulate_get('/pages/{}...{}'.format(
-        first_uuid,
-        last_uuid
-    ))
+    result = client.simulate_get('/pages/{}...{}'.format(first_uuid, last_uuid))
 
     assert result.status_code == 200
     assert resource.called
@@ -323,23 +340,22 @@ def test_uuid_converter_complex_segment(client, resource):
     assert resource.captured_kwargs['last'] == last_uuid
 
 
-@pytest.mark.parametrize('uri_template, path, expected', [
-    (
-        '/{food:spam}',
-        '/something',
-        {'food': 'spam!'}
-    ),
-    (
-        '/{food:spam(")")}:{food_too:spam("()")}',
-        '/bacon:eggs',
-        {'food': 'spam!', 'food_too': 'spam!'}
-    ),
-    (
-        '/({food:spam()}){food_too:spam("()")}',
-        '/(bacon)eggs',
-        {'food': 'spam!', 'food_too': 'spam!'}
-    ),
-])
+@pytest.mark.parametrize(
+    'uri_template, path, expected',
+    [
+        ('/{food:spam}', '/something', {'food': 'spam!'}),
+        (
+            '/{food:spam(")")}:{food_too:spam("()")}',
+            '/bacon:eggs',
+            {'food': 'spam!', 'food_too': 'spam!'},
+        ),
+        (
+            '/({food:spam()}){food_too:spam("()")}',
+            '/(bacon)eggs',
+            {'food': 'spam!', 'food_too': 'spam!'},
+        ),
+    ],
+)
 def test_converter_custom(client, resource, uri_template, path, expected):
     class SpamConverter:
         def __init__(self, useless_text=None):
@@ -407,22 +423,28 @@ def test_multiple(client):
     assert resource.name == test_name
 
 
-@pytest.mark.parametrize('uri_template', [
-    '//',
-    '//begin',
-    '/end//',
-    '/in//side',
-])
+@pytest.mark.parametrize(
+    'uri_template',
+    [
+        '//',
+        '//begin',
+        '/end//',
+        '/in//side',
+    ],
+)
 def test_empty_path_component(client, resource, uri_template):
     with pytest.raises(ValueError):
         client.app.add_route(uri_template, resource)
 
 
-@pytest.mark.parametrize('uri_template', [
-    '',
-    'no',
-    'no/leading_slash',
-])
+@pytest.mark.parametrize(
+    'uri_template',
+    [
+        '',
+        'no',
+        'no/leading_slash',
+    ],
+)
 def test_relative_path(client, resource, uri_template):
     with pytest.raises(ValueError):
         client.app.add_route(uri_template, resource)
@@ -435,7 +457,7 @@ def test_same_level_complex_var(client, reverse):
 
     routes = [
         ('/files/{file_id}', file_resource),
-        ('/files/{file_id}.{ext}', details_resource)
+        ('/files/{file_id}.{ext}', details_resource),
     ]
     if reverse:
         routes.reverse()
@@ -462,9 +484,13 @@ def test_same_level_complex_var(client, reverse):
 def test_adding_suffix_routes(client):
     resource_with_suffix_routes = ResourceWithSuffixRoutes()
     client.app.add_route(
-        '/collections/{collection_id}/items/{item_id}', resource_with_suffix_routes)
+        '/collections/{collection_id}/items/{item_id}', resource_with_suffix_routes
+    )
     client.app.add_route(
-        '/collections/{collection_id}/items', resource_with_suffix_routes, suffix='collection')
+        '/collections/{collection_id}/items',
+        resource_with_suffix_routes,
+        suffix='collection',
+    )
     # GET
     client.simulate_get('/collections/123/items/456')
     assert resource_with_suffix_routes.collection_id == '123'
@@ -520,4 +546,7 @@ def test_custom_error_on_suffix_route_not_found(client):
     resource_with_suffix_routes = ResourceWithSuffixRoutes()
     with pytest.raises(SuffixedMethodNotFoundError):
         client.app.add_route(
-            '/collections/{collection_id}/items', resource_with_suffix_routes, suffix='bad-alt')
+            '/collections/{collection_id}/items',
+            resource_with_suffix_routes,
+            suffix='bad-alt',
+        )
