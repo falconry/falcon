@@ -26,10 +26,10 @@ class JSONHandler(BaseHandler):
         library's JSON implementation, since it will be faster in most cases
         as compared to a third-party library.
 
-    If you are using the stdlib's json module, you can override the default
-    `json.dump` and `json.loads` functions using :any:`functools.partial` and
-    provide custom serialization or deserialization parameters supported by the
-    ``dumps`` and ``loads`` functions (see also: :ref:`prettifying-json-responses`)::
+    You can override the default `json.dump` and `json.loads` functions using
+    :any:`functools.partial` and provide custom serialization or deserialization
+    parameters supported by the ``dumps`` and ``loads`` functions
+    (see also: :ref:`prettifying-json-responses`)::
 
         import falcon
         from falcon import media
