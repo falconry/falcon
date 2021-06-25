@@ -35,8 +35,7 @@ _TEST_SCHEMA = {
 
 
 skip_missing_dep = pytest.mark.skipif(
-    jsonschema is None,
-    reason='jsonschema dependency not found'
+    jsonschema is None, reason='jsonschema dependency not found'
 )
 
 

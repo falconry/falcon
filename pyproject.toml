@@ -1,3 +1,11 @@
+[build-system]
+    build-backend = "setuptools.build_meta"
+    requires = [
+        "setuptools>=47",
+        "wheel>=0.34",
+        "cython>=0.29.21; python_implementation == 'CPython'", # Skip cython when using pypy
+    ]
+
 [tool.towncrier]
     package = "falcon"
     package_dir = ""
@@ -30,3 +38,9 @@
         directory = "misc"
         name = "Misc"
         showcontent = true
+
+[tool.black]
+    target-version = ["py35"]
+    skip-string-normalization = true
+    line-length = 88
+    extend-exclude = "falcon/vendor"

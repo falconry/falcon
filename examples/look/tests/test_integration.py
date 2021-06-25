@@ -11,7 +11,7 @@ def test_posted_image_gets_saved():
     response = requests.post(
         'http://localhost:8000/images',
         data=fake_image_bytes,
-        headers={'content-type': 'image/png'}
+        headers={'content-type': 'image/png'},
     )
 
     assert response.status_code == 201

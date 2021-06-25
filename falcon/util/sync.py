@@ -113,7 +113,9 @@ def wrap_sync_to_async(func, threadsafe=None) -> Callable:
 
     @wraps(func)
     async def wrapper(*args, **kwargs):
-        return await get_running_loop().run_in_executor(executor, partial(func, *args, **kwargs))
+        return await get_running_loop().run_in_executor(
+            executor, partial(func, *args, **kwargs)
+        )
 
     return wrapper
 
@@ -156,7 +158,9 @@ async def sync_to_async(func, *args, **kwargs):
         synchronous callable.
     """
 
-    return await get_running_loop().run_in_executor(None, partial(func, *args, **kwargs))
+    return await get_running_loop().run_in_executor(
+        None, partial(func, *args, **kwargs)
+    )
 
 
 def _should_wrap_non_coroutines() -> bool:
@@ -218,9 +222,7 @@ def async_to_sync(coroutine, *args, **kwargs):
     """
 
     loop = asyncio.get_event_loop()
-    return loop.run_until_complete(
-        partial(coroutine, *args, **kwargs)()
-    )
+    return loop.run_until_complete(partial(coroutine, *args, **kwargs)())
 
 
 def runs_sync(coroutine):
@@ -243,6 +245,7 @@ def runs_sync(coroutine):
     Returns:
         callable: A synchronous function.
     """
+
     @wraps(coroutine)
     def invoke(*args, **kwargs):
         return async_to_sync(coroutine, *args, **kwargs)

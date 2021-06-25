@@ -242,8 +242,8 @@ class ASGIRequestEventEmitter:
 
                 return event
 
-        chunk = self._body[:self._chunk_size]
-        self._body = self._body[self._chunk_size:] or None
+        chunk = self._body[: self._chunk_size]
+        self._body = self._body[self._chunk_size :] or None
 
         if chunk:
             event['body'] = bytes(chunk)
@@ -294,12 +294,14 @@ class ASGIResponseEventCollector:
         ValueError: Invalid event name or field value.
     """
 
-    _LIFESPAN_EVENT_TYPES = frozenset([
-        'lifespan.startup.complete',
-        'lifespan.startup.failed',
-        'lifespan.shutdown.complete',
-        'lifespan.shutdown.failed',
-    ])
+    _LIFESPAN_EVENT_TYPES = frozenset(
+        [
+            'lifespan.startup.complete',
+            'lifespan.startup.failed',
+            'lifespan.shutdown.complete',
+            'lifespan.shutdown.failed',
+        ]
+    )
 
     _HEADER_NAME_RE = re.compile(br'^[a-zA-Z][a-zA-Z0-9\-_]*$')
     _BAD_HEADER_VALUE_RE = re.compile(br'[\000-\037]')
@@ -561,7 +563,9 @@ class ASGIWebSocketSimulator:
 
         # NOTE(kgriffs): Even if the key is present, it may be None
         if text is None:
-            raise falcon_errors.PayloadTypeError('Expected TEXT payload but got BINARY instead')
+            raise falcon_errors.PayloadTypeError(
+                'Expected TEXT payload but got BINARY instead'
+            )
 
         return text
 
@@ -583,7 +587,9 @@ class ASGIWebSocketSimulator:
 
         # NOTE(kgriffs): Even if the key is present, it may be None
         if data is None:
-            raise falcon_errors.PayloadTypeError('Expected BINARY payload but got TEXT instead')
+            raise falcon_errors.PayloadTypeError(
+                'Expected BINARY payload but got TEXT instead'
+            )
 
         return data
 
@@ -616,6 +622,7 @@ class ASGIWebSocketSimulator:
 
         if not self.__msgpack:
             import msgpack
+
             self.__msgpack = msgpack
 
         return self.__msgpack
@@ -720,7 +727,9 @@ class ASGIWebSocketSimulator:
                 self._state = _WebSocketState.DENIED
 
                 desired_code = event.get('code', WSCloseCode.NORMAL)
-                if desired_code == WSCloseCode.SERVER_ERROR or (3000 <= desired_code < 4000):
+                if desired_code == WSCloseCode.SERVER_ERROR or (
+                    3000 <= desired_code < 4000
+                ):
                     # NOTE(kgriffs): Pass this code through since it is a
                     #   special code we have set in the framework to trigger
                     #   different raised error types or to pass through a
@@ -834,14 +843,24 @@ def rand_string(min, max) -> str:
 
     int_gen = random.randint
     string_length = int_gen(min, max)
-    return ''.join([chr(int_gen(ord(' '), ord('~')))
-                    for __ in range(string_length)])
+    return ''.join([chr(int_gen(ord(' '), ord('~'))) for __ in range(string_length)])
 
 
-def create_scope(path='/', query_string='', method='GET', headers=None,
-                 host=DEFAULT_HOST, scheme=None, port=None, http_version='1.1',
-                 remote_addr=None, root_path=None, content_length=None,
-                 include_server=True, cookies=None) -> Dict[str, Any]:
+def create_scope(
+    path='/',
+    query_string='',
+    method='GET',
+    headers=None,
+    host=DEFAULT_HOST,
+    scheme=None,
+    port=None,
+    http_version='1.1',
+    remote_addr=None,
+    root_path=None,
+    content_length=None,
+    include_server=True,
+    cookies=None,
+) -> Dict[str, Any]:
 
     """Create a mock ASGI scope ``dict`` for simulating HTTP requests.
 
@@ -959,16 +978,27 @@ def create_scope(path='/', query_string='', method='GET', headers=None,
     if method == 'OPTIONS' and cookies is not None:
         cookies = None
 
-    _add_headers_to_scope(scope, headers, content_length, host,
-                          port, scheme, http_version, cookies)
+    _add_headers_to_scope(
+        scope, headers, content_length, host, port, scheme, http_version, cookies
+    )
 
     return scope
 
 
-def create_scope_ws(path='/', query_string='', headers=None,
-                    host=DEFAULT_HOST, scheme=None, port=None, http_version='1.1',
-                    remote_addr=None, root_path=None, include_server=True,
-                    subprotocols=None, spec_version='2.1') -> Dict[str, Any]:
+def create_scope_ws(
+    path='/',
+    query_string='',
+    headers=None,
+    host=DEFAULT_HOST,
+    scheme=None,
+    port=None,
+    http_version='1.1',
+    remote_addr=None,
+    root_path=None,
+    include_server=True,
+    subprotocols=None,
+    spec_version='2.1',
+) -> Dict[str, Any]:
 
     """Create a mock ASGI scope ``dict`` for simulating WebSocket requests.
 
@@ -1039,11 +1069,23 @@ def create_scope_ws(path='/', query_string='', headers=None,
     return scope
 
 
-def create_environ(path='/', query_string='', http_version='1.1',
-                   scheme='http', host=DEFAULT_HOST, port=None,
-                   headers=None, app=None, body='', method='GET',
-                   wsgierrors=None, file_wrapper=None, remote_addr=None,
-                   root_path=None, cookies=None) -> Dict[str, Any]:
+def create_environ(
+    path='/',
+    query_string='',
+    http_version='1.1',
+    scheme='http',
+    host=DEFAULT_HOST,
+    port=None,
+    headers=None,
+    app=None,
+    body='',
+    method='GET',
+    wsgierrors=None,
+    file_wrapper=None,
+    remote_addr=None,
+    root_path=None,
+    cookies=None,
+) -> Dict[str, Any]:
 
     """Create a mock PEP-3333 environ ``dict`` for simulating WSGI requests.
 
@@ -1155,14 +1197,13 @@ def create_environ(path='/', query_string='', http_version='1.1',
         'RAW_URI': '/',
         'SERVER_NAME': host,
         'SERVER_PORT': port,
-
         'wsgi.version': (1, 0),
         'wsgi.url_scheme': scheme,
         'wsgi.input': body,
         'wsgi.errors': wsgierrors or sys.stderr,
         'wsgi.multithread': False,
         'wsgi.multiprocess': True,
-        'wsgi.run_once': False
+        'wsgi.run_once': False,
     }
 
     # NOTE(kgriffs): It has been observed that WSGI servers do not always
@@ -1345,8 +1386,9 @@ def _add_headers_to_environ(env, headers):
     env.setdefault('HTTP_USER_AGENT', DEFAULT_UA)
 
 
-def _add_headers_to_scope(scope, headers, content_length, host,
-                          port, scheme, http_version, cookies):
+def _add_headers_to_scope(
+    scope, headers, content_length, host, port, scheme, http_version, cookies
+):
     found_ua = False
     prepared_headers = []
 
@@ -1410,7 +1452,9 @@ def _fixup_http_version(http_version) -> str:
 
 
 def _make_cookie_values(cookies: Dict) -> str:
-    return '; '.join([
-        '{}={}'.format(key, cookie.value if hasattr(cookie, 'value') else cookie)
-        for key, cookie in cookies.items()
-    ])
+    return '; '.join(
+        [
+            '{}={}'.format(key, cookie.value if hasattr(cookie, 'value') else cookie)
+            for key, cookie in cookies.items()
+        ]
+    )

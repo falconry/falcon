@@ -151,16 +151,19 @@ class WebSocketPathNotFound(WebSocketDisconnected):
     A simulated WebSocket connection was attempted but the path specified in
     the handshake request did not match any of the app's routes.
     """
+
     pass
 
 
 class WebSocketHandlerNotFound(WebSocketDisconnected):
     """The routed resource does not contain an ``on_websocket()`` handler."""
+
     pass
 
 
 class WebSocketServerError(WebSocketDisconnected):
     """The server encountered an unexpected error."""
+
     pass
 
 
@@ -216,7 +219,7 @@ class HTTPBadRequest(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -287,7 +290,9 @@ class HTTPUnauthorized(HTTPError):
     """
 
     @deprecated_args(allowed_positional=0)
-    def __init__(self, title=None, description=None, headers=None, challenges=None, **kwargs):
+    def __init__(
+        self, title=None, description=None, headers=None, challenges=None, **kwargs
+    ):
         if challenges:
             headers = _load_headers(headers)
             headers['WWW-Authenticate'] = ', '.join(challenges)
@@ -297,7 +302,7 @@ class HTTPUnauthorized(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -364,7 +369,7 @@ class HTTPForbidden(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -429,7 +434,7 @@ class HTTPNotFound(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -543,7 +548,9 @@ class HTTPMethodNotAllowed(HTTPError):
     """
 
     @deprecated_args(allowed_positional=1)
-    def __init__(self, allowed_methods, title=None, description=None, headers=None, **kwargs):
+    def __init__(
+        self, allowed_methods, title=None, description=None, headers=None, **kwargs
+    ):
         headers = _load_headers(headers)
         headers['Allow'] = ', '.join(allowed_methods)
         super().__init__(
@@ -551,7 +558,7 @@ class HTTPMethodNotAllowed(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -614,7 +621,7 @@ class HTTPNotAcceptable(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -681,7 +688,7 @@ class HTTPConflict(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -754,7 +761,7 @@ class HTTPGone(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -812,7 +819,7 @@ class HTTPLengthRequired(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -871,7 +878,7 @@ class HTTPPreconditionFailed(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -934,13 +941,15 @@ class HTTPPayloadTooLarge(HTTPError):
     """
 
     @deprecated_args(allowed_positional=0)
-    def __init__(self, title=None, description=None, retry_after=None, headers=None, **kwargs):
+    def __init__(
+        self, title=None, description=None, retry_after=None, headers=None, **kwargs
+    ):
         super().__init__(
             status.HTTP_413,
             title=title,
             description=description,
             headers=_parse_retry_after(headers, retry_after),
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1004,7 +1013,7 @@ class HTTPUriTooLong(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1063,7 +1072,7 @@ class HTTPUnsupportedMediaType(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1129,7 +1138,9 @@ class HTTPRangeNotSatisfiable(HTTPError):
     """
 
     @deprecated_args(allowed_positional=1)
-    def __init__(self, resource_length, title=None, description=None, headers=None, **kwargs):
+    def __init__(
+        self, resource_length, title=None, description=None, headers=None, **kwargs
+    ):
         headers = _load_headers(headers)
         headers['Content-Range'] = 'bytes */' + str(resource_length)
 
@@ -1138,7 +1149,7 @@ class HTTPRangeNotSatisfiable(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1199,7 +1210,7 @@ class HTTPUnprocessableEntity(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1255,7 +1266,7 @@ class HTTPLocked(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1310,7 +1321,7 @@ class HTTPFailedDependency(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1373,7 +1384,7 @@ class HTTPPreconditionRequired(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1435,13 +1446,15 @@ class HTTPTooManyRequests(HTTPError):
     """
 
     @deprecated_args(allowed_positional=0)
-    def __init__(self, title=None, description=None, headers=None, retry_after=None, **kwargs):
+    def __init__(
+        self, title=None, description=None, headers=None, retry_after=None, **kwargs
+    ):
         super().__init__(
             status.HTTP_429,
             title=title,
             description=description,
             headers=_parse_retry_after(headers, retry_after),
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1503,7 +1516,7 @@ class HTTPRequestHeaderFieldsTooLarge(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1572,7 +1585,7 @@ class HTTPUnavailableForLegalReasons(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1627,7 +1640,7 @@ class HTTPInternalServerError(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1689,7 +1702,7 @@ class HTTPNotImplemented(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1744,7 +1757,7 @@ class HTTPBadGateway(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1809,13 +1822,15 @@ class HTTPServiceUnavailable(HTTPError):
     """
 
     @deprecated_args(allowed_positional=0)
-    def __init__(self, title=None, description=None, headers=None, retry_after=None, **kwargs):
+    def __init__(
+        self, title=None, description=None, headers=None, retry_after=None, **kwargs
+    ):
         super().__init__(
             status.HTTP_503,
             title=title,
             description=description,
             headers=_parse_retry_after(headers, retry_after),
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1871,7 +1886,7 @@ class HTTPGatewayTimeout(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1932,7 +1947,7 @@ class HTTPVersionNotSupported(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1991,7 +2006,7 @@ class HTTPInsufficientStorage(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -2047,7 +2062,7 @@ class HTTPLoopDetected(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -2115,7 +2130,7 @@ class HTTPNetworkAuthenticationRequired(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -2170,7 +2185,7 @@ class HTTPInvalidHeader(HTTPBadRequest):
             title='Invalid header value',
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -2224,7 +2239,7 @@ class HTTPMissingHeader(HTTPBadRequest):
             title='Missing header value',
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -2281,7 +2296,7 @@ class HTTPInvalidParam(HTTPBadRequest):
             title='Invalid parameter',
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -2337,7 +2352,7 @@ class HTTPMissingParam(HTTPBadRequest):
             title='Missing parameter',
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -2384,7 +2399,7 @@ class MediaNotFoundError(HTTPBadRequest):
         super().__init__(
             title='Invalid {0}'.format(media_type),
             description='Could not parse an empty {0} body'.format(media_type),
-            **kwargs
+            **kwargs,
         )
 
 
@@ -2441,6 +2456,7 @@ class MediaMalformedError(HTTPBadRequest):
     @description.setter
     def description(self, value):
         pass
+
 
 # -----------------------------------------------------------------------------
 # Helpers

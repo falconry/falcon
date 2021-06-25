@@ -25,6 +25,7 @@ def client(asgi, tmp_path):
         app.add_static_route('/sink/static', str(tmp_path))
 
         return testing.TestClient(app)
+
     return make
 
 

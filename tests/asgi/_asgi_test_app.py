@@ -116,7 +116,7 @@ class Events:
             while s <= SSE_TEST_MAX_DELAY_SEC:
                 yield falcon.asgi.SSEvent(text='hello world')
                 await asyncio.sleep(s)
-                s += (SSE_TEST_MAX_DELAY_SEC / 4)
+                s += SSE_TEST_MAX_DELAY_SEC / 4
 
         resp.sse = emit()
 

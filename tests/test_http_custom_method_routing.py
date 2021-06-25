@@ -64,14 +64,17 @@ def test_map_http_methods(custom_http_client, resource_things):
 
 
 @pytest.mark.skipif(has_cython, reason='Reloading modules on Cython does not work')
-@pytest.mark.parametrize('env_str,expected', [
-    ('foo', ['FOO']),
-    ('FOO', ['FOO']),
-    ('FOO,', ['FOO']),
-    ('FOO,BAR', ['FOO', 'BAR']),
-    ('FOO, BAR', ['FOO', 'BAR']),
-    (' foo , BAR ', ['FOO', 'BAR']),
-])
+@pytest.mark.parametrize(
+    'env_str,expected',
+    [
+        ('foo', ['FOO']),
+        ('FOO', ['FOO']),
+        ('FOO,', ['FOO']),
+        ('FOO,BAR', ['FOO', 'BAR']),
+        ('FOO, BAR', ['FOO', 'BAR']),
+        (' foo , BAR ', ['FOO', 'BAR']),
+    ],
+)
 def test_environment_override(cleanup_constants, resource_things, env_str, expected):
     # Make sure we don't have anything in there
     for method in expected:

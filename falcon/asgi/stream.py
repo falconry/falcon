@@ -129,7 +129,7 @@ class BoundedStream:
             #   use sys.maxsize because 2**31 on 32-bit systems is not
             #   a large enough number (someone may have an API that accepts
             #   multi-GB payloads).
-            self._bytes_remaining = 2**63
+            self._bytes_remaining = 2 ** 63
         else:
             if len(first_chunk) > content_length:
                 self._buffer = first_chunk[:content_length]
@@ -296,7 +296,7 @@ class BoundedStream:
                     #   expecting. This *should* never happen if the
                     #   server enforces the content-length header, but
                     #   it is better to be safe than sorry.
-                    chunks.append(next_chunk[:self._bytes_remaining])
+                    chunks.append(next_chunk[: self._bytes_remaining])
                     self._bytes_remaining = 0
 
             # NOTE(kgriffs): This also handles the case of receiving
@@ -380,7 +380,7 @@ class BoundedStream:
                     # NOTE(kgriffs): Do not read more data than we are
                     #   expecting. This *should* never happen, but better
                     #   safe than sorry.
-                    chunks.append(next_chunk[:self._bytes_remaining])
+                    chunks.append(next_chunk[: self._bytes_remaining])
                     self._bytes_remaining = 0
                     num_bytes_available += self._bytes_remaining
 
@@ -445,7 +445,7 @@ class BoundedStream:
                 else:
                     # NOTE(kgriffs): We received more data than expected,
                     #   so truncate to the expected length.
-                    next_chunk = next_chunk[:self._bytes_remaining]
+                    next_chunk = next_chunk[: self._bytes_remaining]
                     self._pos += self._bytes_remaining
                     self._bytes_remaining = 0
 

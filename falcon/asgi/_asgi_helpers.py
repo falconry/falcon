@@ -55,9 +55,7 @@ def _validate_asgi_scope(scope_type, spec_version, http_version):
     # NOTE(kgriffs): According to the ASGI spec: "Applications should
     #   actively reject any protocol that they do not understand with
     #   an Exception (of any type)."
-    raise UnsupportedScopeError(
-        f'The ASGI "{scope_type}" scope type is not supported.'
-    )
+    raise UnsupportedScopeError(f'The ASGI "{scope_type}" scope type is not supported.')
 
 
 def _wrap_asgi_coroutine_func(asgi_impl):

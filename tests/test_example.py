@@ -9,7 +9,6 @@ import falcon
 
 
 class StorageEngine:
-
     def get_things(self, marker, limit):
         return [{'id': str(uuid.uuid4()), 'color': 'green'}]
 
@@ -19,7 +18,6 @@ class StorageEngine:
 
 
 class StorageError(Exception):
-
     @staticmethod
     def handle(req, resp, ex, params):
         # TODO: Log the error, clean up, etc. before raising
@@ -44,7 +42,6 @@ class SinkAdapter:
 
 
 class AuthMiddleware:
-
     def process_request(self, req, resp):
         token = req.get_header('Authorization')
         account_id = req.get_header('Account-ID')
@@ -52,46 +49,51 @@ class AuthMiddleware:
         challenges = ['Token type="Fernet"']
 
         if token is None:
-            description = ('Please provide an auth token '
-                           'as part of the request.')
+            description = 'Please provide an auth token as part of the request.'
 
-            raise falcon.HTTPUnauthorized(title='Auth token required',
-                                          description=description,
-                                          challenges=challenges,
-                                          href='http://docs.example.com/auth')
+            raise falcon.HTTPUnauthorized(
+                title='Auth token required',
+                description=description,
+                challenges=challenges,
+                href='http://docs.example.com/auth',
+            )
 
         if not self._token_is_valid(token, account_id):
-            description = ('The provided auth token is not valid. '
-                           'Please request a new token and try again.')
+            description = (
+                'The provided auth token is not valid. '
+                'Please request a new token and try again.'
+            )
 
-            raise falcon.HTTPUnauthorized(title='Authentication required',
-                                          description=description,
-                                          challenges=challenges,
-                                          href='http://docs.example.com/auth')
+            raise falcon.HTTPUnauthorized(
+                title='Authentication required',
+                description=description,
+                challenges=challenges,
+                href='http://docs.example.com/auth',
+            )
 
     def _token_is_valid(self, token, account_id):
         return True  # Suuuuuure it's valid...
 
 
 class RequireJSON:
-
     def process_request(self, req, resp):
         if not req.client_accepts_json:
             raise falcon.HTTPNotAcceptable(
                 title='406 Not Acceptable',
                 description='This API only supports responses encoded as JSON.',
-                href='http://docs.examples.com/api/json')
+                href='http://docs.examples.com/api/json',
+            )
 
         if req.method in ('POST', 'PUT'):
             if 'application/json' not in req.content_type:
                 raise falcon.HTTPUnsupportedMediaType(
                     title='415 Unsupported Media Type',
                     description='This API only supports requests encoded as JSON.',
-                    href='http://docs.examples.com/api/json')
+                    href='http://docs.examples.com/api/json',
+                )
 
 
 class JSONTranslator:
-
     def process_request(self, req, resp):
         # req.stream corresponds to the WSGI wsgi.input environ variable,
         # and allows you to read bytes from the request body.
@@ -103,19 +105,22 @@ class JSONTranslator:
 
         body = req.bounded_stream.read()
         if not body:
-            raise falcon.HTTPBadRequest(title='Empty request body',
-                                        description='A valid JSON document is required.')
+            raise falcon.HTTPBadRequest(
+                title='Empty request body',
+                description='A valid JSON document is required.',
+            )
 
         try:
             req.context.doc = json.loads(body.decode('utf-8'))
 
         except (ValueError, UnicodeDecodeError):
-            description = ('Could not decode the request body. The '
-                           'JSON was incorrect or not encoded as '
-                           'UTF-8.')
+            description = (
+                'Could not decode the request body. The '
+                'JSON was incorrect or not encoded as '
+                'UTF-8.'
+            )
 
-            raise falcon.HTTPBadRequest(title='Malformed JSON',
-                                        description=description)
+            raise falcon.HTTPBadRequest(title='Malformed JSON', description=description)
 
     def process_response(self, req, resp, resource, req_succeeded):
         if not hasattr(resp.context, 'result'):
@@ -125,21 +130,22 @@ class JSONTranslator:
 
 
 def max_body(limit):
-
     def hook(req, resp, resource, params):
         length = req.content_length
         if length is not None and length > limit:
-            msg = ('The size of the request is too large. The body must not '
-                   'exceed ' + str(limit) + ' bytes in length.')
+            msg = (
+                'The size of the request is too large. The body must not '
+                'exceed ' + str(limit) + ' bytes in length.'
+            )
 
             raise falcon.HTTPPayloadTooLarge(
-                title='Request body is too large', description=msg)
+                title='Request body is too large', description=msg
+            )
 
     return hook
 
 
 class ThingsResource:
-
     def __init__(self, db):
         self.db = db
         self.logger = logging.getLogger('thingsapp.' + __name__)
@@ -153,14 +159,15 @@ class ThingsResource:
         except Exception as ex:
             self.logger.error(ex)
 
-            description = ('Aliens have attacked our base! We will '
-                           'be back as soon as we fight them off. '
-                           'We appreciate your patience.')
+            description = (
+                'Aliens have attacked our base! We will '
+                'be back as soon as we fight them off. '
+                'We appreciate your patience.'
+            )
 
             raise falcon.HTTPServiceUnavailable(
-                title='Service Outage',
-                description=description,
-                retry_after=30)
+                title='Service Outage', description=description, retry_after=30
+            )
 
         # NOTE: Normally you would use resp.media for this sort of thing;
         # this example serves only to demonstrate how the context can be
@@ -178,7 +185,8 @@ class ThingsResource:
         except AttributeError:
             raise falcon.HTTPBadRequest(
                 title='Missing thing',
-                description='A thing must be submitted in the request body.')
+                description='A thing must be submitted in the request body.',
+            )
 
         proper_thing = self.db.add_thing(doc)
 
@@ -187,11 +195,13 @@ class ThingsResource:
 
 
 # Configure your WSGI server to load "things.app" (app is a WSGI callable)
-app = falcon.App(middleware=[
-    AuthMiddleware(),
-    RequireJSON(),
-    JSONTranslator(),
-])
+app = falcon.App(
+    middleware=[
+        AuthMiddleware(),
+        RequireJSON(),
+        JSONTranslator(),
+    ]
+)
 
 db = StorageEngine()
 things = ThingsResource(db)

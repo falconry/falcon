@@ -28,7 +28,6 @@ MultipartParseError = multipart.MultipartParseError
 
 
 class BodyPart(multipart.BodyPart):
-
     async def get_data(self):
         if self._data is None:
             max_size = self._parse_options.max_body_part_buffer_size + 1
@@ -41,11 +40,13 @@ class BodyPart(multipart.BodyPart):
     async def get_media(self):
         if self._media is None:
             handler, _, _ = self._parse_options.media_handlers._resolve(
-                self.content_type, 'text/plain')
+                self.content_type, 'text/plain'
+            )
 
             try:
                 self._media = await handler.deserialize_async(
-                    self.stream, self.content_type, None)
+                    self.stream, self.content_type, None
+                )
             finally:
                 if handler.exhaust_stream:
                     await self.stream.exhaust()
@@ -71,9 +72,10 @@ class BodyPart(multipart.BodyPart):
 
 
 class MultipartForm:
-
     def __init__(self, stream, boundary, content_length, parse_options):
-        self._stream = stream if isinstance(stream, BufferedReader) else BufferedReader(stream)
+        self._stream = (
+            stream if isinstance(stream, BufferedReader) else BufferedReader(stream)
+        )
         self._boundary = boundary
         # NOTE(vytas): Here self._dash_boundary is not prepended with CRLF
         #   (yet) for parsing the prologue. The CRLF will be prepended later to
@@ -106,8 +108,7 @@ class MultipartForm:
                     delimiter = _CRLF + delimiter
                     prologue = False
 
-                separator = await stream.read_until(
-                    _CRLF, 2, consume_delimiter=True)
+                separator = await stream.read_until(_CRLF, 2, consume_delimiter=True)
                 if separator == b'--':
                     # NOTE(vytas): boundary delimiter + '--\r\n' signals the
                     # end of a multipart form.
@@ -116,14 +117,19 @@ class MultipartForm:
                     raise MultipartParseError(description='unexpected form structure')
 
             except DelimiterError as err:
-                raise MultipartParseError(description='unexpected form structure') from err
+                raise MultipartParseError(
+                    description='unexpected form structure'
+                ) from err
 
             headers = {}
             try:
                 headers_block = await stream.read_until(
-                    _CRLF_CRLF, max_headers_size, consume_delimiter=True)
+                    _CRLF_CRLF, max_headers_size, consume_delimiter=True
+                )
             except DelimiterError as err:
-                raise MultipartParseError(description='incomplete body part headers') from err
+                raise MultipartParseError(
+                    description='incomplete body part headers'
+                ) from err
 
             for line in headers_block.split(_CRLF):
                 name, sep, value = line.partition(b': ')
@@ -140,8 +146,10 @@ class MultipartForm:
                     #   bodies have been discovered.
                     if name == b'content-transfer-encoding' and value != b'binary':
                         raise MultipartParseError(
-                            description=('the deprecated Content-Transfer-Encoding '
-                                         'header field is unsupported')
+                            description=(
+                                'the deprecated Content-Transfer-Encoding '
+                                'header field is unsupported'
+                            )
                         )
                     # NOTE(vytas): RFC 7578, section 4.8.
                     #   Other header fields MUST NOT be included and MUST be
@@ -155,5 +163,4 @@ class MultipartForm:
                     description='maximum number of form body parts exceeded'
                 )
 
-            yield BodyPart(stream.delimit(delimiter), headers,
-                           self._parse_options)
+            yield BodyPart(stream.delimit(delimiter), headers, self._parse_options)

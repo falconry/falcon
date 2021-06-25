@@ -26,7 +26,7 @@ __all__ = (
     'prepare_middleware',
     'prepare_middleware_ws',
     'default_serialize_error',
-    'CloseableStreamIterator'
+    'CloseableStreamIterator',
 )
 
 
@@ -62,25 +62,22 @@ def prepare_middleware(middleware, independent_middleware=False, asgi=False):
         #   to distinguish the two. Otherwise, the prefix is unnecessary.
 
         if asgi:
-            process_request = (
-                util.get_bound_method(component, 'process_request_async') or
-                _wrap_non_coroutine_unsafe(
-                    util.get_bound_method(component, 'process_request')
-                )
+            process_request = util.get_bound_method(
+                component, 'process_request_async'
+            ) or _wrap_non_coroutine_unsafe(
+                util.get_bound_method(component, 'process_request')
             )
 
-            process_resource = (
-                util.get_bound_method(component, 'process_resource_async') or
-                _wrap_non_coroutine_unsafe(
-                    util.get_bound_method(component, 'process_resource')
-                )
+            process_resource = util.get_bound_method(
+                component, 'process_resource_async'
+            ) or _wrap_non_coroutine_unsafe(
+                util.get_bound_method(component, 'process_resource')
             )
 
-            process_response = (
-                util.get_bound_method(component, 'process_response_async') or
-                _wrap_non_coroutine_unsafe(
-                    util.get_bound_method(component, 'process_response')
-                )
+            process_response = util.get_bound_method(
+                component, 'process_response_async'
+            ) or _wrap_non_coroutine_unsafe(
+                util.get_bound_method(component, 'process_response')
             )
 
             for m in (process_request, process_resource, process_response):
