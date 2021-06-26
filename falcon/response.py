@@ -81,7 +81,8 @@ class Response:
                 in the response. If the content is already a byte string,
                 use the :attr:`data` attribute instead (it's faster).
 
-        body (str): Deprecated alias for :attr:`text`. Will be removed in a future Falcon version.
+        body (str): Deprecated alias for :attr:`text`. Will be removed in a
+            future Falcon version.
 
         data (bytes): Byte string representing response content.
 
@@ -805,7 +806,8 @@ class Response:
             rel (str): Relation type of the link, such as "next" or
                 "bookmark".
 
-                (See also: http://www.iana.org/assignments/link-relations/link-relations.xhtml)
+                (See also:
+                http://www.iana.org/assignments/link-relations/link-relations.xhtml)
 
         Keyword Args:
             title (str): Human-readable label for the destination of
@@ -844,7 +846,8 @@ class Response:
                 Content-Type header returned when the link is followed.
             crossorigin(str):  Determines how cross origin requests are handled.
                 Can take values 'anonymous' or 'use-credentials' or None.
-                (See: https://www.w3.org/TR/html50/infrastructure.html#cors-settings-attribute)
+                (See:
+                https://www.w3.org/TR/html50/infrastructure.html#cors-settings-attribute)
 
         """
 

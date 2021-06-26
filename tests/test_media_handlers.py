@@ -219,7 +219,8 @@ def test_sync_methods_not_overridden(asgi):
 
     app.add_route('/', ResourceAsync() if asgi else Resource())
 
-    # NOTE(caselit): force serialization in xml, since error.to_json uses the faulty handler
+    # NOTE(caselit): force serialization in xml,
+    # since error.to_json uses the faulty handler
     result = testing.simulate_get(app, '/', headers={'Accept': 'text/xml'})
     assert result.status_code == 500
 

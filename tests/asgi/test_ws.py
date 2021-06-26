@@ -333,9 +333,10 @@ async def test_client_disconnect_early(  # noqa: C901
                         self.data = await ws.receive_data()
 
                         if explicit_close_server:
-                            # NOTE(kgriffs): We call ws.receive_data() again here in order
-                            #   to test coverage of the logic that handles the case
-                            #   of a closed connection while waiting on more data.
+                            # NOTE(kgriffs): We call ws.receive_data() again here in
+                            #   order to test coverage of the logic that handles
+                            #   the case of a closed connection while waiting on
+                            #   more data.
                             recv_task = falcon.create_task(ws.receive_data())
                             await asyncio.sleep(
                                 0

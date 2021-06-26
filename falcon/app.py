@@ -454,7 +454,8 @@ class App:
         if middleware:
             try:
                 self._unprepared_middleware += middleware
-            except TypeError:  # middleware is not iterable; assume it is just one bare component
+            except TypeError:
+                # middleware is not iterable; assume it is just one bare component
                 self._unprepared_middleware.append(middleware)
 
         # NOTE(kgriffs): Even if middleware is None or an empty list, we still
@@ -619,8 +620,8 @@ class App:
                 Content-Disposition header in the response. The "filename"
                 directive is simply set to the name of the requested file.
             fallback_filename (str): Fallback filename used when the requested file
-                is not found. Can be a relative path inside the prefix folder or any valid
-                absolute path.
+                is not found. Can be a relative path inside the prefix folder or
+                any valid absolute path.
 
         """
 
@@ -649,7 +650,8 @@ class App:
             sink (callable): A callable taking the form ``func(req, resp, **kwargs)``.
 
                 Note:
-                    When using an async version of the ``App``, this must be a coroutine.
+                    When using an async version of the ``App``, this must be a
+                    coroutine.
 
             prefix (str): A regex string, typically starting with '/', which
                 will trigger the sink if it matches the path portion of the

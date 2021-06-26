@@ -88,7 +88,8 @@ def load_app(parser, args):
 
 def route_main():
     print(
-        'The "falcon-print-routes" command is deprecated. Please use "falcon-inspect-app"'
+        'The "falcon-print-routes" command is deprecated. '
+        'Please use "falcon-inspect-app"'
     )
     main()
 
