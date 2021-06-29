@@ -43,7 +43,7 @@ _STREAM_LEN_REMOVED_MSG = (
 )
 
 _ADD_LINK_REMOVED_MSG = (
-    'The deprecated add_link() method was removed in Falcon 3.0. '
+    'The add_link() method has been deprecated and will removed in Falcon 4.0. '
     'Please use append_link() instead.'
 )
 
