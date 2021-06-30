@@ -5,7 +5,7 @@ import pytest
 
 import falcon
 from falcon import testing
-
+from falcon.util.deprecation import DeprecatedWarning
 from _util import create_app  # NOQA
 
 
@@ -190,7 +190,8 @@ class LinkHeaderResource:
             append_link = (
                 resp.append_link if append_link is resp.add_link else resp.add_link
             )
-            append_link(*args, **kwargs)
+            with pytest.warns(DeprecatedWarning):
+                append_link(*args, **kwargs)
 
 
 class AppendHeaderResource:
