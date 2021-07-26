@@ -48,7 +48,7 @@ class JSONHandler(BaseHandler):
         app.req_options.media_handlers.update(extra_handlers)
         app.resp_options.media_handlers.update(extra_handlers)
 
-    Even if you decide to stick with the stdlib's :any:`json.dump` and
+    Even if you decide to stick with the stdlib's :any:`json.dumps` and
     :any:`json.loads`, you can wrap them using :any:`functools.partial` to
     provide custom serialization or deserialization parameters supported by the
     ``dumps`` and ``loads`` functions, respectively
