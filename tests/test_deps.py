@@ -4,6 +4,7 @@ from falcon.vendor import mimeparse
 # TODO(vytas): Remove this test since it makes little sense now that
 #   we have vendored python-mimeparse?
 
+
 def test_deps_mimeparse_correct_package():
     """Ensure we are dealing with python-mimeparse, not mimeparse."""
 
