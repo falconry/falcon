@@ -1335,7 +1335,8 @@ class Request:
                 it was required to be there, or it was found but could not
                 be converted to an ``int``. Also raised if the param's value
                 falls outside the given interval, i.e., the value must be in
-                the interval: min_value <= value <= max_value to avoid triggering an error.
+                the interval: min_value <= value <= max_value to avoid
+                triggering an error.
 
         """
 
@@ -1413,7 +1414,8 @@ class Request:
                 it was required to be there, or it was found but could not
                 be converted to an ``float``. Also raised if the param's value
                 falls outside the given interval, i.e., the value must be in
-                the interval: min_value <= value <= max_value to avoid triggering an error.
+                the interval: min_value <= value <= max_value to avoid
+                triggering an error.
 
         """
 

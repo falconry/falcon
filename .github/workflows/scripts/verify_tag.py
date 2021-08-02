@@ -39,8 +39,9 @@ def go():
 
     if errors:
         raise RuntimeError(
-            'Expected to find only wheels or or source dist with tag %r (from env variable '
-            'value %r). Found instead %s' % (tag_value, raw_value, errors)
+            'Expected to find only wheels or or source dist with tag %r'
+            '(from env variable value %r). Found instead %s'
+            % (tag_value, raw_value, errors)
         )
     print('Found %s wheels or source dist with tag %r' % (len(candidates), tag_value))
 

@@ -165,7 +165,8 @@ class TestWebSocket:
 
             while True:
                 try:
-                    # TODO: Why is this failing to decode on the other side? (raises an error)
+                    # TODO: Why is this failing to decode on the other side?
+                    #   (raises an error)
                     # TODO: Why does this cause Daphne to hang?
                     await ws.send(f'{{"command": "echo", "echo": "{echo_expected}"}}')
 

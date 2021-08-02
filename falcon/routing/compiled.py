@@ -39,7 +39,7 @@ _FIELD_PATTERN = re.compile(
     #
     # We may want to create a contextual parser at some point to
     # work around this problem.
-    r'{((?P<fname>[^}:]*)((?P<cname_sep>:(?P<cname>[^}\(]*))(\((?P<argstr>[^}]*)\))?)?)}'
+    r'{((?P<fname>[^}:]*)((?P<cname_sep>:(?P<cname>[^}\(]*))(\((?P<argstr>[^}]*)\))?)?)}'  # noqa E501
 )
 _IDENTIFIER_PATTERN = re.compile('[A-Za-z_][A-Za-z0-9_]*$')
 
@@ -245,8 +245,8 @@ class CompiledRouter:
                 insert(new_node.children, path_index + 1)
 
         insert(self._roots)
-        # NOTE(caselit): when compile is True run the actual compile step, otherwise reset the
-        # _find, so that _compile will be called on the next find use
+        # NOTE(caselit): when compile is True run the actual compile step, otherwise
+        # reset the _find, so that _compile will be called on the next find use
         if kwargs.get('compile', False):
             self._find = self._compile()
         else:
@@ -634,7 +634,8 @@ class CompiledRouter:
         """
         with self._compile_lock:
             if self._find == self._compile_and_find:
-                # NOTE(caselit): replace the find with the result of the router compilation
+                # NOTE(caselit): replace the find with the result of the
+                # router compilation
                 self._find = self._compile()
         # NOTE(caselit): return_values, patterns, converters are reset by the _compile
         # method, so the updated ones must be used
