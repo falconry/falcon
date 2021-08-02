@@ -532,7 +532,8 @@ class App(falcon.app.App):
                 raise TypeError(
                     'Response.sse must be an async iterable. This can be obtained by '
                     'simply executing the async generator function and then setting '
-                    'the result to Response.sse, e.g.: resp.sse = some_asyncgen_function()'
+                    'the result to Response.sse, e.g.: '
+                    'resp.sse = some_asyncgen_function()'
                 )
 
             # NOTE(kgriffs): This must be done in a separate task because
@@ -906,7 +907,10 @@ class App(falcon.app.App):
                     await send(
                         {
                             'type': EventType.LIFESPAN_STARTUP_FAILED,
-                            'message': f'Falcon requires ASGI version 3.x. Detected: {version}.',
+                            'message': (
+                                'Falcon requires ASGI version 3.x. '
+                                f'Detected: {version}.'
+                            ),
                         }
                     )
                     return
@@ -916,7 +920,8 @@ class App(falcon.app.App):
                         {
                             'type': EventType.LIFESPAN_STARTUP_FAILED,
                             'message': (
-                                'The deprecated WSGI RequestOptions.auto_parse_form_urlencoded '
+                                'The deprecated WSGI RequestOptions.'
+                                'auto_parse_form_urlencoded '
                                 'option is not supported for Falcon ASGI apps. '
                                 'Please use Request.get_media() instead. '
                             ),

@@ -27,8 +27,8 @@ the framework's classes, functions, and variables::
 import logging as _logging
 
 # Hoist classes and functions into the falcon namespace
-# Explicitly list all export here, unless there are many export of the same type (example
-# status codes, constans and errors)
+# Explicitly list all export here, unless there are many export of the
+# same type (example status codes, constans and errors)
 from falcon.app import API
 from falcon.app import App
 from falcon.constants import *

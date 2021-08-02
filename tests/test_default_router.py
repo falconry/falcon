@@ -80,7 +80,8 @@ def router():
     )
 
     router.add_route(
-        '/cvt/repos/{org}/{repo}/compare/{usr0}:{branch0:int}...{usr1}:{branch1:int}/part',
+        '/cvt/repos/{org}/{repo}/compare/{usr0}:{branch0:int}'
+        '...{usr1}:{branch1:int}/part',
         ResourceWithId(33),
     )
     router.add_route(

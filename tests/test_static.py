@@ -132,7 +132,8 @@ def test_invalid_args_fallback_filename(client, default):
         client.app.add_static_route(prefix, directory, fallback_filename=default)
 
 
-# NOTE(caselit) depending on the system configuration mime types can have alternative names
+# NOTE(caselit) depending on the system configuration mime types
+# can have alternative names
 _MIME_ALTERNATIVE = {
     'application/zip': ('application/zip', 'application/x-zip-compressed')
 }
