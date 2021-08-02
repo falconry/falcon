@@ -41,7 +41,8 @@ Usage
             # Enable a simple CORS policy for all responses
             app = falcon.App(cors_enable=True)
 
-            # Enable CORS policy for example.com and allows credentials
+            # Alternatively, enable CORS policy for example.com and allow
+            # credentials
             app = falcon.App(middleware=falcon.CORSMiddleware(
                 allow_origins='example.com', allow_credentials='*'))
 
@@ -54,7 +55,8 @@ Usage
             # Enable a simple CORS policy for all responses
             app = falcon.asgi.App(cors_enable=True)
 
-            # Enable CORS policy for example.com and allows credentials
+            # Alternatively, Enable CORS policy for example.com and allow
+            # credentials
             app = falcon.asgi.App(middleware=falcon.CORSMiddleware(
                 allow_origins='example.com', allow_credentials='*'))
 
