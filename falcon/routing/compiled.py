@@ -19,6 +19,7 @@ from inspect import iscoroutinefunction
 import keyword
 import re
 from threading import Lock
+from typing import TYPE_CHECKING
 
 from falcon.routing import converters
 from falcon.routing.util import map_http_methods
@@ -27,8 +28,12 @@ from falcon.util.misc import is_python_func
 from falcon.util.sync import _should_wrap_non_coroutines
 from falcon.util.sync import wrap_sync_to_async
 
-if False:  # TODO: switch to TYPE_CHECKING once support for py3.5 is dropped
-    from typing import Any
+if TYPE_CHECKING:  # TODO: switch to TYPE_CHECKING once support for py3.5 is dropped
+    from typing import Any, Callable, Dict, List, Optional, Pattern, Set, Union
+
+    from falcon.request import Request
+
+    _CxElement = Union['_CxParent', '_CxChild']
 
 _TAB_STR = ' ' * 4
 _FIELD_PATTERN = re.compile(
@@ -85,20 +90,22 @@ class CompiledRouter:
         '_compile_lock',
     )
 
-    def __init__(self):
-        self._ast = None
-        self._converters = None
-        self._finder_src = None
+    def __init__(self) -> None:
+        self._ast: '_CxParent' = _CxParent()
+        self._converters: 'List[converters.BaseConverter]' = []
+        self._finder_src: str = ''
 
         self._options = CompiledRouterOptions()
 
         # PERF(kgriffs): This is usually an anti-pattern, but we do it
         # here to reduce lookup time.
-        self._converter_map = self._options.converters.data
+        self._converter_map: 'Dict[str, converters.BaseConverter]' = (
+            self._options.converters.data
+        )
 
-        self._patterns = None
-        self._return_values = None
-        self._roots = []
+        self._patterns: 'List[Pattern]' = []
+        self._return_values: 'List[CompiledRouterNode]' = []
+        self._roots: 'List[CompiledRouterNode]' = []
 
         # NOTE(caselit): set _find to the delayed compile method to ensure that
         # compile is called when the router is first used
@@ -106,18 +113,18 @@ class CompiledRouter:
         self._compile_lock = Lock()
 
     @property
-    def options(self):
+    def options(self) -> 'CompiledRouterOptions':
         return self._options
 
     @property
-    def finder_src(self):
+    def finder_src(self) -> str:
         # NOTE(caselit): ensure that the router is actually compiled before
         # returning the finder source, since the current value may be out of
         # date
         self.find('/')
         return self._finder_src
 
-    def map_http_methods(self, resource, **kwargs):
+    def map_http_methods(self, resource: object, **kwargs):
         """Map HTTP methods (e.g., GET, POST) to methods of a resource object.
 
         This method is called from :meth:`~.add_route` and may be overridden to
@@ -146,7 +153,7 @@ class CompiledRouter:
 
         return map_http_methods(resource, suffix=kwargs.get('suffix', None))
 
-    def add_route(self, uri_template, resource, **kwargs):
+    def add_route(self, uri_template: str, resource: object, **kwargs):
         """Add a route between a URI path template and a resource.
 
         This method may be overridden to customize how a route is added.
@@ -203,11 +210,11 @@ class CompiledRouter:
 
         path = uri_template.lstrip('/').split('/')
 
-        used_names = set()
+        used_names: 'Set[str]' = set()
         for segment in path:
             self._validate_template_segment(segment, used_names)
 
-        def insert(nodes, path_index=0):
+        def insert(nodes: 'List[CompiledRouterNode]', path_index: int = 0):
             for node in nodes:
                 segment = path[path_index]
                 if node.matches(segment):
@@ -252,7 +259,7 @@ class CompiledRouter:
         else:
             self._find = self._compile_and_find
 
-    def find(self, uri, req=None):
+    def find(self, uri: str, req: 'Optional[Request]' = None):
         """Search for a route that matches the given partial URI.
 
         Args:
@@ -271,8 +278,8 @@ class CompiledRouter:
         """
 
         path = uri.lstrip('/').split('/')
-        params = {}
-        node = self._find(
+        params: 'Dict[str, Any]' = {}
+        node: 'Optional[CompiledRouterNode]' = self._find(
             path, self._return_values, self._patterns, self._converters, params
         )
 
@@ -285,7 +292,7 @@ class CompiledRouter:
     # Private
     # -----------------------------------------------------------------
 
-    def _require_coroutine_responders(self, method_map):
+    def _require_coroutine_responders(self, method_map: dict):
         for method, responder in method_map.items():
             # NOTE(kgriffs): We don't simply wrap non-async functions
             #   since they likely peform relatively long blocking
@@ -309,7 +316,7 @@ class CompiledRouter:
                     msg = msg.format(responder)
                     raise TypeError(msg)
 
-    def _require_non_coroutine_responders(self, method_map):
+    def _require_non_coroutine_responders(self, method_map: dict):
         for method, responder in method_map.items():
             # NOTE(kgriffs): We don't simply wrap non-async functions
             #   since they likely peform relatively long blocking
@@ -325,7 +332,7 @@ class CompiledRouter:
                 msg = msg.format(responder)
                 raise TypeError(msg)
 
-    def _validate_template_segment(self, segment, used_names):
+    def _validate_template_segment(self, segment: str, used_names: 'Set[str]'):
         """Validate a single path segment of a URI template.
 
         1. Ensure field names are valid Python identifiers, since they
@@ -380,13 +387,13 @@ class CompiledRouter:
 
     def _generate_ast(
         self,
-        nodes: list,
-        parent,
-        return_values: list,
-        patterns: list,
-        params_stack: list,
-        level=0,
-        fast_return=True,
+        nodes: 'List[CompiledRouterNode]',
+        parent: '_CxParent',
+        return_values: 'List[CompiledRouterNode]',
+        patterns: 'List[Pattern]',
+        params_stack: 'List[_CxElement]',
+        level: int = 0,
+        fast_return: bool = True,
     ):
         """Generate a coarse AST for the router."""
         # NOTE(caselit): setting of the parameters in the params dict is delayed until
@@ -423,8 +430,6 @@ class CompiledRouter:
 
                 fast_return = not found_var_nodes
 
-        construct = None  # type: Any
-        setter = None  # type: Any
         original_params_stack = params_stack.copy()
         for node in nodes:
             params_stack = original_params_stack.copy()
@@ -434,14 +439,15 @@ class CompiledRouter:
                     # contain anything more than a single literal or variable,
                     # and they need to be checked using a pre-compiled regular
                     # expression.
+                    assert node.var_pattern
                     pattern_idx = len(patterns)
                     patterns.append(node.var_pattern)
 
-                    construct = _CxIfPathSegmentPattern(
+                    cx_segment = _CxIfPathSegmentPattern(
                         level, pattern_idx, node.var_pattern.pattern
                     )
-                    parent.append_child(construct)
-                    parent = construct
+                    parent.append_child(cx_segment)
+                    parent = cx_segment
 
                     if node.var_converter_map:
                         parent.append_child(_CxPrefetchGroupsFromPatternMatch())
@@ -450,10 +456,11 @@ class CompiledRouter:
                         )
 
                     else:
-                        construct = _CxVariableFromPatternMatch(len(params_stack) + 1)
-                        setter = _CxSetParamsFromDict(construct.dict_variable_name)
-                        params_stack.append(setter)
-                        parent.append_child(construct)
+                        cx_pattern = _CxVariableFromPatternMatch(len(params_stack) + 1)
+                        params_stack.append(
+                            _CxSetParamsFromDict(cx_pattern.dict_variable_name)
+                        )
+                        parent.append_child(cx_pattern)
 
                 else:
                     # NOTE(kgriffs): Simple nodes just capture the entire path
@@ -474,16 +481,17 @@ class CompiledRouter:
                         converter_idx = len(self._converters)
                         self._converters.append(converter_obj)
 
-                        construct = _CxIfConverterField(
+                        cx_converter = _CxIfConverterField(
                             len(params_stack) + 1, converter_idx
                         )
-                        setter = _CxSetParamFromValue(
-                            field_name, construct.field_variable_name
+                        params_stack.append(
+                            _CxSetParamFromValue(
+                                field_name, cx_converter.field_variable_name
+                            )
                         )
-                        params_stack.append(setter)
 
-                        parent.append_child(construct)
-                        parent = construct
+                        parent.append_child(cx_converter)
+                        parent = cx_converter
                     else:
                         params_stack.append(_CxSetParamFromPath(node.var_name, level))
 
@@ -503,9 +511,9 @@ class CompiledRouter:
 
             else:
                 # NOTE(kgriffs): Not a param, so must match exactly
-                construct = _CxIfPathSegmentLiteral(level, node.raw_segment)
-                parent.append_child(construct)
-                parent = construct
+                cx_literal = _CxIfPathSegmentLiteral(level, node.raw_segment)
+                parent.append_child(cx_literal)
+                parent = cx_literal
 
             if node.resource is not None:
                 # NOTE(kgriffs): This is a valid route, so we will want to
@@ -530,11 +538,11 @@ class CompiledRouter:
                 # NOTE(kgriffs): Make sure that we have consumed all of
                 # the segments for the requested route; otherwise we could
                 # mistakenly match "/foo/23/bar" against "/foo/{id}".
-                construct = _CxIfPathLength('==', level + 1)
+                cx_path_len = _CxIfPathLength('==', level + 1)
                 for params in params_stack:
-                    construct.append_child(params)
-                construct.append_child(_CxReturnValue(resource_idx))
-                parent.append_child(construct)
+                    cx_path_len.append_child(params)
+                cx_path_len.append_child(_CxReturnValue(resource_idx))
+                parent.append_child(cx_path_len)
 
                 if fast_return:
                     parent.append_child(_CxReturnNone())
@@ -545,10 +553,11 @@ class CompiledRouter:
             parent.append_child(_CxReturnNone())
 
     def _generate_conversion_ast(
-        self, parent, node: 'CompiledRouterNode', params_stack: list
+        self,
+        parent: '_CxParent',
+        node: 'CompiledRouterNode',
+        params_stack: 'List[_CxElement]',
     ):
-        construct = None  # type: Any
-        setter = None  # type: Any
         # NOTE(kgriffs): Unroll the converter loop into
         # a series of nested "if" constructs.
         for field_name, converter_name, converter_argstr in node.var_converter_map:
@@ -562,24 +571,28 @@ class CompiledRouter:
 
             parent.append_child(_CxSetFragmentFromField(field_name))
 
-            construct = _CxIfConverterField(len(params_stack) + 1, converter_idx)
-            setter = _CxSetParamFromValue(field_name, construct.field_variable_name)
-            params_stack.append(setter)
+            cx_converter = _CxIfConverterField(len(params_stack) + 1, converter_idx)
+            params_stack.append(
+                _CxSetParamFromValue(field_name, cx_converter.field_variable_name)
+            )
 
-            parent.append_child(construct)
-            parent = construct
+            parent.append_child(cx_converter)
+            parent = cx_converter
 
         # NOTE(kgriffs): Add remaining fields that were not
         # converted, if any.
         if node.num_fields > len(node.var_converter_map):
-            construct = _CxVariableFromPatternMatchPrefetched(len(params_stack) + 1)
-            setter = _CxSetParamsFromDict(construct.dict_variable_name)
-            params_stack.append(setter)
-            parent.append_child(construct)
+            cx_pattern_match = _CxVariableFromPatternMatchPrefetched(
+                len(params_stack) + 1
+            )
+            params_stack.append(
+                _CxSetParamsFromDict(cx_pattern_match.dict_variable_name)
+            )
+            parent.append_child(cx_pattern_match)
 
         return parent
 
-    def _compile(self):
+    def _compile(self) -> 'Callable':  # TODO type better
         """Generate Python code for the entire routing tree.
 
         The generated code is compiled and the resulting Python method
@@ -610,7 +623,7 @@ class CompiledRouter:
 
         self._finder_src = '\n'.join(src_lines)
 
-        scope = {}
+        scope: 'Dict[str, Callable]' = {}
         exec(compile(self._finder_src, '<string>', 'exec'), scope)
 
         return scope['find']
@@ -647,8 +660,14 @@ class CompiledRouter:
 class CompiledRouterNode:
     """Represents a single URI segment in a URI."""
 
-    def __init__(self, raw_segment, method_map=None, resource=None, uri_template=None):
-        self.children = []
+    def __init__(
+        self,
+        raw_segment: str,
+        method_map: 'Optional[dict]' = None,
+        resource: 'Optional[object]' = None,
+        uri_template: 'Optional[str]' = None,
+    ):
+        self.children: 'List[CompiledRouterNode]' = []
 
         self.raw_segment = raw_segment
         self.method_map = method_map
@@ -661,9 +680,9 @@ class CompiledRouterNode:
 
         # TODO(kgriffs): Rename these since the docs talk about "fields"
         # or "field expressions", not "vars" or "variables".
-        self.var_name = None
-        self.var_pattern = None
-        self.var_converter_map = []
+        self.var_name: 'Optional[str]' = None
+        self.var_pattern: 'Optional[Pattern]' = None
+        self.var_converter_map: 'List[tuple]' = []
 
         # NOTE(kgriffs): CompiledRouter.add_route validates field names,
         # so here we can just assume they are OK and use the simple
@@ -735,12 +754,12 @@ class CompiledRouterNode:
         if self.is_complex:
             assert self.is_var
 
-    def matches(self, segment):
+    def matches(self, segment: str):
         """Return True if this node matches the supplied template segment."""
 
         return segment == self.raw_segment
 
-    def conflicts_with(self, segment):
+    def conflicts_with(self, segment: str):
         """Return True if this node conflicts with a given template segment."""
 
         # NOTE(kgriffs): This method assumes that the caller has already
@@ -888,18 +907,24 @@ class CompiledRouterOptions:
 
 class _CxParent:
     def __init__(self):
-        self._children = []
+        self._children: 'List[_CxElement]' = []
 
-    def append_child(self, construct):
+    def append_child(self, construct: '_CxElement'):
         self._children.append(construct)
 
-    def src(self, indentation):
+    def src(self, indentation: int) -> str:
         return self._children_src(indentation + 1)
 
     def _children_src(self, indentation):
         src_lines = [child.src(indentation) for child in self._children]
 
         return '\n'.join(src_lines)
+
+
+class _CxChild:
+    # This a base element only to aid pep484
+    def src(self, indentation: int) -> str:
+        raise NotImplementedError
 
 
 class _CxIfPathLength(_CxParent):
@@ -979,7 +1004,7 @@ class _CxIfConverterField(_CxParent):
         return '\n'.join(lines)
 
 
-class _CxSetFragmentFromField:
+class _CxSetFragmentFromField(_CxChild):
     def __init__(self, field_name):
         self._field_name = field_name
 
@@ -990,7 +1015,7 @@ class _CxSetFragmentFromField:
         )
 
 
-class _CxSetFragmentFromPath:
+class _CxSetFragmentFromPath(_CxChild):
     def __init__(self, segment_idx):
         self._segment_idx = segment_idx
 
@@ -1001,7 +1026,7 @@ class _CxSetFragmentFromPath:
         )
 
 
-class _CxVariableFromPatternMatch:
+class _CxVariableFromPatternMatch(_CxChild):
     def __init__(self, unique_idx):
         self._unique_idx = unique_idx
         self.dict_variable_name = 'dict_match_{0}'.format(unique_idx)
@@ -1012,7 +1037,7 @@ class _CxVariableFromPatternMatch:
         )
 
 
-class _CxVariableFromPatternMatchPrefetched:
+class _CxVariableFromPatternMatchPrefetched(_CxChild):
     def __init__(self, unique_idx):
         self._unique_idx = unique_idx
         self.dict_variable_name = 'dict_groups_{0}'.format(unique_idx)
@@ -1021,17 +1046,17 @@ class _CxVariableFromPatternMatchPrefetched:
         return '{0}{1} = groups'.format(_TAB_STR * indentation, self.dict_variable_name)
 
 
-class _CxPrefetchGroupsFromPatternMatch:
+class _CxPrefetchGroupsFromPatternMatch(_CxChild):
     def src(self, indentation):
         return '{0}groups = match.groupdict()'.format(_TAB_STR * indentation)
 
 
-class _CxReturnNone:
+class _CxReturnNone(_CxChild):
     def src(self, indentation):
         return '{0}return None'.format(_TAB_STR * indentation)
 
 
-class _CxReturnValue:
+class _CxReturnValue(_CxChild):
     def __init__(self, value_idx):
         self._value_idx = value_idx
 
@@ -1041,7 +1066,7 @@ class _CxReturnValue:
         )
 
 
-class _CxSetParamFromPath:
+class _CxSetParamFromPath(_CxChild):
     def __init__(self, param_name, segment_idx):
         self._param_name = param_name
         self._segment_idx = segment_idx
@@ -1054,7 +1079,7 @@ class _CxSetParamFromPath:
         )
 
 
-class _CxSetParamFromValue:
+class _CxSetParamFromValue(_CxChild):
     def __init__(self, param_name, field_value_name):
         self._param_name = param_name
         self._field_value_name = field_value_name
@@ -1067,7 +1092,7 @@ class _CxSetParamFromValue:
         )
 
 
-class _CxSetParamsFromDict:
+class _CxSetParamsFromDict(_CxChild):
     def __init__(self, dict_value_name):
         self._dict_value_name = dict_value_name
 
