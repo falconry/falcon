@@ -207,6 +207,23 @@ class CompiledRouter:
         for segment in path:
             self._validate_template_segment(segment, used_names)
 
+        no_children_err = (
+            'Cannot add route with template "{0}". Field name "{1}" '
+            'uses the converter "{2}" that will consume all the path, '
+            'making it impossible to match this route.'
+        )
+
+        def consume_path_converter(node):
+            value = [
+                (field, converter)
+                for field, converter, _ in node.var_converter_map
+                if self._converter_map[converter].CONSUME_PATH
+            ]
+            if value:
+                return value[0]
+            else:
+                return None
+
         def insert(nodes, path_index=0):
             for node in nodes:
                 segment = path[path_index]
@@ -218,6 +235,9 @@ class CompiledRouter:
                         node.resource = resource
                         node.uri_template = uri_template
                     else:
+                        cpc = consume_path_converter(node)
+                        if cpc:
+                            raise ValueError(no_children_err.format(uri_template, *cpc))
                         insert(node.children, path_index)
 
                     return
@@ -236,12 +256,24 @@ class CompiledRouter:
             # exist and needs to be created. This builds a new branch of the
             # routing tree recursively until it reaches the new node leaf.
             new_node = CompiledRouterNode(path[path_index])
-            nodes.append(new_node)
+            if new_node.is_complex:
+                cpc = consume_path_converter(new_node)
+                if cpc:
+                    raise ValueError(
+                        'Cannot use converter "{1}" of variable "{0}" in a template '
+                        'that includes other characters or variables.'.format(*cpc)
+                    )
             if path_index == len(path) - 1:
+                nodes.append(new_node)
                 new_node.method_map = method_map
                 new_node.resource = resource
                 new_node.uri_template = uri_template
             else:
+                cpc = consume_path_converter(new_node)
+                if cpc:
+                    print('b')
+                    raise ValueError(no_children_err.format(uri_template, *cpc))
+                nodes.append(new_node)
                 insert(new_node.children, path_index + 1)
 
         insert(self._roots)
@@ -428,12 +460,14 @@ class CompiledRouter:
         original_params_stack = params_stack.copy()
         for node in nodes:
             params_stack = original_params_stack.copy()
+            consume_path = False
             if node.is_var:
                 if node.is_complex:
                     # NOTE(richardolsson): Complex nodes are nodes which
                     # contain anything more than a single literal or variable,
                     # and they need to be checked using a pre-compiled regular
                     # expression.
+                    assert node.var_pattern
                     pattern_idx = len(patterns)
                     patterns.append(node.var_pattern)
 
@@ -462,8 +496,6 @@ class CompiledRouter:
                     if node.var_converter_map:
                         assert len(node.var_converter_map) == 1
 
-                        parent.append_child(_CxSetFragmentFromPath(level))
-
                         field_name = node.var_name
                         __, converter_name, converter_argstr = node.var_converter_map[0]
                         converter_class = self._converter_map[converter_name]
@@ -473,6 +505,11 @@ class CompiledRouter:
                         )
                         converter_idx = len(self._converters)
                         self._converters.append(converter_obj)
+                        if converter_obj.CONSUME_PATH:
+                            consume_path = True
+                            parent.append_child(_CxSetFragmentFromRemainingPaths(level))
+                        else:
+                            parent.append_child(_CxSetFragmentFromPath(level))
 
                         construct = _CxIfConverterField(
                             len(params_stack) + 1, converter_idx
@@ -513,6 +550,8 @@ class CompiledRouter:
                 resource_idx = len(return_values)
                 return_values.append(node)
 
+            assert not (consume_path and node.children)
+
             self._generate_ast(
                 node.children,
                 parent,
@@ -527,14 +566,19 @@ class CompiledRouter:
                 if fast_return:
                     parent.append_child(_CxReturnNone())
             else:
-                # NOTE(kgriffs): Make sure that we have consumed all of
-                # the segments for the requested route; otherwise we could
-                # mistakenly match "/foo/23/bar" against "/foo/{id}".
-                construct = _CxIfPathLength('==', level + 1)
-                for params in params_stack:
-                    construct.append_child(params)
-                construct.append_child(_CxReturnValue(resource_idx))
-                parent.append_child(construct)
+                if consume_path:
+                    for params in params_stack:
+                        parent.append_child(params)
+                    parent.append_child(_CxReturnValue(resource_idx))
+                else:
+                    # NOTE(kgriffs): Make sure that we have consumed all of
+                    # the segments for the requested route; otherwise we could
+                    # mistakenly match "/foo/23/bar" against "/foo/{id}".
+                    construct = _CxIfPathLength('==', level + 1)
+                    for params in params_stack:
+                        construct.append_child(params)
+                    construct.append_child(_CxReturnValue(resource_idx))
+                    parent.append_child(construct)
 
                 if fast_return:
                     parent.append_child(_CxReturnNone())
@@ -553,6 +597,7 @@ class CompiledRouter:
         # a series of nested "if" constructs.
         for field_name, converter_name, converter_argstr in node.var_converter_map:
             converter_class = self._converter_map[converter_name]
+            assert not converter_class.CONSUME_PATH
 
             converter_obj = self._instantiate_converter(
                 converter_class, converter_argstr
@@ -802,6 +847,7 @@ class ConverterDict(UserDict):
 
     def __setitem__(self, name, converter):
         self._validate(name)
+        converters.BaseConverter.patch_converter_class(converter)
         UserDict.__setitem__(self, name, converter)
 
     def _validate(self, name):
@@ -984,6 +1030,17 @@ class _CxSetFragmentFromPath:
 
     def src(self, indentation):
         return '{0}fragment = path[{1}]'.format(
+            _TAB_STR * indentation,
+            self._segment_idx,
+        )
+
+
+class _CxSetFragmentFromRemainingPaths:
+    def __init__(self, segment_idx):
+        self._segment_idx = segment_idx
+
+    def src(self, indentation):
+        return '{0}fragment = path[{1}:]'.format(
             _TAB_STR * indentation,
             self._segment_idx,
         )

@@ -31,17 +31,35 @@ strptime = datetime.strptime
 class BaseConverter(metaclass=abc.ABCMeta):
     """Abstract base class for URI template field converters."""
 
+    CONSUME_PATH = False
+    """When set to ``True`` it indicates that this converted will consume
+    all the remaining url path.
+    """
+
     @abc.abstractmethod  # pragma: no cover
     def convert(self, value):
         """Convert a URI template field value to another format or type.
 
         Args:
-            value (str): Original string to convert.
+            value (str or List[str]): Original string to convert.
+                If ``CONSUME_PATH=True`` this value is a list of strings
+                containing the remaining part of the path.
 
         Returns:
             object: Converted field value, or ``None`` if the field
                 can not be converted.
         """
+
+    @classmethod
+    def patch_converter_class(cls, converter):
+        """Patches the input converter class, ensuring that its interface
+        has the required elements.
+
+        Args:
+            converter (type): The converter class to patch.
+        """
+        if not hasattr(converter, 'CONSUME_PATH'):
+            converter.CONSUME_PATH = cls.CONSUME_PATH
 
 
 class IntConverter(BaseConverter):
@@ -132,8 +150,20 @@ class UUIDConverter(BaseConverter):
             return None
 
 
+class Path(BaseConverter):
+    """A field converter that matches the all the remaining url path
+    and returns it as a string
+    """
+
+    CONSUME_PATH = True
+
+    def convert(self, value):
+        return '/'.join(value)
+
+
 BUILTIN = (
     ('int', IntConverter),
     ('dt', DateTimeConverter),
     ('uuid', UUIDConverter),
+    ('path', Path),
 )

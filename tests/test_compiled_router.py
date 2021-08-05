@@ -120,3 +120,20 @@ def test_cannot_replace_compiled():
     opt = CompiledRouterOptions()
     with pytest.raises(AttributeError, match='Cannot set'):
         opt.converters = {}
+
+
+def test_converters_adapter():
+    class X:
+        def convert(self, v):
+            return v
+
+    opt = CompiledRouterOptions()
+    opt.converters['x'] = X
+    assert X.CONSUME_PATH is False
+
+    class Y:
+        def convert(self, v):
+            return v
+
+    opt.converters.update({'y': Y})
+    assert Y.CONSUME_PATH is False
