@@ -341,7 +341,9 @@ async def test_client_disconnect_early(  # noqa: C901
                             await asyncio.sleep(
                                 0
                             )  # Ensure recv_task() has a chance to get ahead
-                            await asyncio.wait([recv_task, ws.close(4099)])
+                            await asyncio.wait(
+                                [recv_task, asyncio.create_task(ws.close(4099))]
+                            )
 
                         self.data_received.set()
 
