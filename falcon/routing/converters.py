@@ -52,8 +52,10 @@ class BaseConverter(metaclass=abc.ABCMeta):
 
     @classmethod
     def patch_converter_class(cls, converter):
-        """Patches the input converter class, ensuring that its interface
-        has the required elements.
+        """Patches the input converter class.
+
+        Ensures that ``converted`` is compatible with the ``BaseConverter``
+        interface by adding the missing elements if needed.
 
         Args:
             converter (type): The converter class to patch.
@@ -151,8 +153,10 @@ class UUIDConverter(BaseConverter):
 
 
 class PathConverter(BaseConverter):
-    """A field converter that matches the all the remaining url path
-    and returns it as a string
+    """Field converted used to match the rest of the path.
+
+    This field converter matches the all the remaining url path,
+    returning it as a string.
     """
 
     CONSUME_PATH = True

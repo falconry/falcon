@@ -120,6 +120,8 @@ def test_cannot_replace_compiled():
     opt = CompiledRouterOptions()
     with pytest.raises(AttributeError, match='Cannot set'):
         opt.converters = {}
+    with pytest.raises(AttributeError, match='object has no attribute'):
+        opt.other = 123
 
 
 def test_converters_adapter():

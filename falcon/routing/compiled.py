@@ -146,7 +146,7 @@ class CompiledRouter:
 
         return map_http_methods(resource, suffix=kwargs.get('suffix', None))
 
-    def add_route(self, uri_template, resource, **kwargs):
+    def add_route(self, uri_template, resource, **kwargs):  # noqa: C901
         """Add a route between a URI path template and a resource.
 
         This method may be overridden to customize how a route is added.
@@ -410,7 +410,7 @@ class CompiledRouter:
                     msg = 'Cannot instantiate converter "{}"'.format(name)
                     raise ValueError(msg) from e
 
-    def _generate_ast(
+    def _generate_ast(  # noqa: C901
         self,
         nodes: list,
         parent,
@@ -902,10 +902,10 @@ class CompiledRouterOptions:
             ConverterDict((name, converter) for name, converter in converters.BUILTIN),
         )
 
-    def __setattr__(self, name: str, value) -> None:
+    def __setattr__(self, name, value) -> None:
         if name == 'converters':
             raise AttributeError('Cannot set "converters", please update it in place.')
-
+        super().__setattr__(name, value)
 
 # --------------------------------------------------------------------
 # AST Constructs
