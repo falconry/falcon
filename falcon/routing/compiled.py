@@ -800,24 +800,6 @@ class CompiledRouterNode:
 class ConverterDict(UserDict):
     """A dict-like class for storing field converters."""
 
-    def update(self, other):
-        try:
-            # NOTE(kgriffs): If it is a mapping type, it should
-            # implement keys().
-            names = other.keys()
-        except AttributeError:
-            # NOTE(kgriffs): Not a mapping type, so assume it is an
-            # iterable of 2-item iterables. But we need to make it
-            # re-iterable if it is a generator, for when we pass
-            # it on to the parent's update().
-            other = list(other)
-            names = [n for n, __ in other]
-
-        for n in names:
-            self._validate(n)
-
-        UserDict.update(self, other)
-
     def __setitem__(self, name, converter):
         self._validate(name)
         UserDict.__setitem__(self, name, converter)
@@ -868,9 +850,15 @@ class CompiledRouterOptions:
     __slots__ = ('converters',)
 
     def __init__(self):
-        self.converters = ConverterDict(
-            (name, converter) for name, converter in converters.BUILTIN
+        object.__setattr__(
+            self,
+            'converters',
+            ConverterDict((name, converter) for name, converter in converters.BUILTIN),
         )
+
+    def __setattr__(self, name: str, value) -> None:
+        if name == 'converters':
+            raise AttributeError('Cannot set "converters", please update it in place.')
 
 
 # --------------------------------------------------------------------

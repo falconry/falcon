@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from falcon.routing import CompiledRouter
+from falcon.routing import CompiledRouter, CompiledRouterOptions
 
 
 def test_find_src(monkeypatch):
@@ -114,3 +114,9 @@ class MockResource:
 
     def on_get_other(self, req, res):
         pass
+
+
+def test_cannot_replace_compiled():
+    opt = CompiledRouterOptions()
+    with pytest.raises(AttributeError, match='Cannot set'):
+        opt.converters = {}
