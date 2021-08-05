@@ -150,7 +150,7 @@ class UUIDConverter(BaseConverter):
             return None
 
 
-class Path(BaseConverter):
+class PathConverter(BaseConverter):
     """A field converter that matches the all the remaining url path
     and returns it as a string
     """
@@ -165,5 +165,5 @@ BUILTIN = (
     ('int', IntConverter),
     ('dt', DateTimeConverter),
     ('uuid', UUIDConverter),
-    ('path', Path),
+    ('path', PathConverter),
 )
