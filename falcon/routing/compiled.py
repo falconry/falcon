@@ -907,6 +907,7 @@ class CompiledRouterOptions:
             raise AttributeError('Cannot set "converters", please update it in place.')
         super().__setattr__(name, value)
 
+
 # --------------------------------------------------------------------
 # AST Constructs
 #
