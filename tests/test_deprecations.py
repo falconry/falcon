@@ -2,7 +2,7 @@ import pytest
 
 from falcon import app_helpers, request_helpers, stream
 
-from _util import has_cython
+from _util import has_cython  # NOQA
 
 
 def test_bounded_stream():
