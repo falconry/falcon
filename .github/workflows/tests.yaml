@@ -27,7 +27,7 @@ jobs:
           - "pep8-examples"
           - "pep8-docstrings"
           - "mypy"
-          - "mypy-tests"
+          - "mypy_tests"
           - "py38"
           - "py38_sans_msgpack"
           - "py38_cython"
