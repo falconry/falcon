@@ -466,7 +466,7 @@ class App:
             independent_middleware=self._independent_middleware,
         )
 
-    def add_route(self, uri_template, resource, **kwargs):
+    def add_route(self, uri_template: str, resource: object, **kwargs):
         """Associate a templatized URI path with a resource.
 
         Falcon routes incoming requests to resources based on a set of
