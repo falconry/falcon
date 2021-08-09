@@ -698,9 +698,11 @@ class App(falcon.app.App):
                         '__aiter__ method. Error raised while iterating over '
                         'Response.stream: ' + str(ex)
                     )
-                finally:
-                    if hasattr(stream, 'close'):
-                        await stream.close()
+
+                # TODO: Surround the .close() below with a finally:
+
+            if hasattr(stream, 'close'):
+                await stream.close()
 
         await send(_EVT_RESP_EOF)
 
