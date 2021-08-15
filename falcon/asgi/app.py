@@ -702,6 +702,9 @@ class App(falcon.app.App):
                     if hasattr(stream, 'close'):
                         await stream.close()
 
+            if hasattr(stream, 'close'):
+                await stream.close()
+
         await send(_EVT_RESP_EOF)
 
         # PERF(vytas): Check resp._registered_callbacks directly to shave
