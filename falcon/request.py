@@ -1876,7 +1876,7 @@ class Request:
             now(), self.method, self.path, query_string_formatted
         )
 
-        self._wsgierrors.write(log_line + message + '\n')
+        self._wsgierrors.write((log_line + message + '\n').encode())
 
     # ------------------------------------------------------------------------
     # Helpers
