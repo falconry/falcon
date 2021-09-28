@@ -51,8 +51,8 @@ jobs:
           - python-version: pypy3
             os: ubuntu-20.04
             toxenv: pypy3
-          - python-version: 3.5.2
-            os: ubuntu-16.04
+          - python-version: 3.5
+            os: ubuntu-20.04
             toxenv: py35
           - python-version: 3.6
             os: ubuntu-20.04
@@ -97,16 +97,8 @@ jobs:
 
       - name: Set up Python 3.8
         uses: actions/setup-python@v2.1.4
-        if: ${{ matrix.toxenv == 'py35' }}
         with:
           python-version: 3.8
-
-      - name: Set up Python 3.5.2
-        if: ${{ matrix.toxenv == 'py35' }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential curl python3.5 python3.5-dev
-          python3.5 --version
 
       - name: Install smoke test dependencies
         if: ${{ matrix.toxenv == 'py38_smoke' || matrix.toxenv == 'py38_smoke_cython' }}
