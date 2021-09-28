@@ -91,14 +91,8 @@ jobs:
 
       - name: Set up Python
         uses: actions/setup-python@v2.1.4
-        if: ${{ matrix.toxenv != 'py35' }}
         with:
           python-version: ${{ matrix.python-version }}
-
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2.1.4
-        with:
-          python-version: 3.8
 
       - name: Install smoke test dependencies
         if: ${{ matrix.toxenv == 'py38_smoke' || matrix.toxenv == 'py38_smoke_cython' }}
