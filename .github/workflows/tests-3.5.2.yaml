@@ -24,14 +24,16 @@ jobs:
         env:
           DEBIAN_FRONTEND: noninteractive
         with:
+          # NOTE(vytas): We upgrade pip in the venv in two steps, because 8.1.1
+          #   does not properly resolve python_requires.
           args: |
             /bin/bash -c "
             apt-get update &&
             apt-get install -y python3.5 python3-venv &&
             python3.5 -m venv venv &&
             source venv/bin/activate &&
-            pip install -U pip &&
-            pip install -U setuptools tox wheel &&
+            pip install -U 'pip < 20' &&
+            pip install -U pip setuptools tox wheel &&
             python --version &&
             pip --version &&
             tox --version &&
