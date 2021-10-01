@@ -1,0 +1,38 @@
+name: Run tests (CPython 3.5.2)
+
+on:
+  push:
+    branches:
+      - "*"
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  run_tox:
+    name: tox -e py35 (3.5.2 on ubuntu-16.04)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+
+      - name: Run tox
+        uses: docker://ubuntu:16.04
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        with:
+          args: |
+            /bin/bash -c "
+            apt-get update &&
+            apt-get install -y python3.5 python3-venv &&
+            python3.5 -m venv venv &&
+            source venv/bin/activate &&
+            pip install -U pip &&
+            pip install -U setuptools tox wheel &&
+            python --version &&
+            pip --version &&
+            tox --version &&
+            tox -e py35"
