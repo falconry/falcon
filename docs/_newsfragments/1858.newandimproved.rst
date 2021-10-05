@@ -1,0 +1,2 @@
+Static routes now support ``Range`` requests. This is useful for streaming
+media or resumable downloads.

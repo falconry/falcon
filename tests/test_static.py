@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import errno
 import io
 import os
 
@@ -199,6 +200,125 @@ def test_good_path(asgi, uri_prefix, uri_path, expected_path, mtype, monkeypatch
 
     assert resp.content_type in _MIME_ALTERNATIVE.get(mtype, (mtype,))
     assert body.decode() == os.path.normpath('/var/www/statics' + expected_path)
+    assert resp.headers.get('Accept-Ranges') == 'bytes'
+
+
+@pytest.mark.parametrize(
+    'range_header, exp_content_range, exp_content',
+    [
+        ('bytes=1-3', 'bytes 1-3/16', '123'),
+        ('bytes=-3', 'bytes 13-15/16', 'def'),
+        ('bytes=8-', 'bytes 8-15/16', '89abcdef'),
+        ('words=1-3', None, '0123456789abcdef'),  # unknown unit; ignore
+        ('bytes=15-30', 'bytes 15-15/16', 'f'),
+        ('bytes=0-30', 'bytes 0-15/16', '0123456789abcdef'),
+        ('bytes=-30', 'bytes 0-15/16', '0123456789abcdef'),
+    ],
+)
+@pytest.mark.parametrize('use_fallback', [True, False])
+def test_range_requests(
+    client, range_header, exp_content_range, exp_content, monkeypatch, use_fallback
+):
+    fake_file = io.BytesIO(b'0123456789abcdef')
+    fake_file.fileno = lambda: 123
+
+    def fake_open(path, mode):
+        if use_fallback and not path.endswith('index.html'):
+            raise OSError(errno.ENOENT, 'File not found')
+        return fake_file
+
+    class FakeStat:
+        st_size = len(fake_file.getvalue())
+
+    monkeypatch.setattr(io, 'open', fake_open)
+    monkeypatch.setattr(os, 'fstat', lambda fileno: FakeStat())
+    monkeypatch.setattr('os.path.isfile', lambda file: file.endswith('index.html'))
+
+    client.app.add_static_route(
+        '/downloads', '/opt/somesite/downloads', fallback_filename='index.html'
+    )
+
+    response = client.simulate_request(
+        path='/downloads/thing.zip', headers={'Range': range_header}
+    )
+    if exp_content_range is None:
+        assert response.status == falcon.HTTP_200
+    else:
+        assert response.status == falcon.HTTP_206
+    assert response.text == exp_content
+    assert response.headers.get('Content-Range') == exp_content_range
+    assert response.headers.get('Accept-Ranges') == 'bytes'
+    if use_fallback:
+        assert response.headers.get('Content-Type') == 'text/html'
+    else:
+        assert response.headers.get('Content-Type') == 'application/zip'
+
+
+@pytest.mark.parametrize(
+    'range_header',
+    [
+        'bytes=1-3',
+        'bytes=-3',
+        'bytes=8-',
+        'words=1-3',
+        'bytes=15-30',
+        'bytes=0-30',
+        'bytes=-30',
+    ],
+)
+def test_range_request_zero_length(client, range_header, monkeypatch):
+    fake_file = io.BytesIO(b'')
+    fake_file.fileno = lambda: 123
+
+    class FakeStat:
+        st_size = 0
+
+    monkeypatch.setattr(io, 'open', lambda path, mode: fake_file)
+    monkeypatch.setattr(os, 'fstat', lambda fileno: FakeStat())
+
+    client.app.add_static_route('/downloads', '/opt/somesite/downloads')
+
+    response = client.simulate_request(
+        path='/downloads/thing.zip', headers={'Range': range_header}
+    )
+    assert response.status == falcon.HTTP_200
+    assert response.text == ''
+    assert 'Content-Range' not in response.headers
+    assert response.headers.get('Accept-Ranges') == 'bytes'
+
+
+@pytest.mark.parametrize(
+    'range_header, exp_status',
+    [
+        ('1-3', falcon.HTTP_400),
+        ('bytes=0-0,-1', falcon.HTTP_400),
+        ('bytes=8-4', falcon.HTTP_400),
+        ('bytes=1--3', falcon.HTTP_400),
+        ('bytes=--0', falcon.HTTP_400),
+        ('bytes=100-200', falcon.HTTP_416),
+        ('bytes=100-', falcon.HTTP_416),
+        ('bytes=16-20', falcon.HTTP_416),
+        ('bytes=16-', falcon.HTTP_416),
+    ],
+)
+def test_bad_range_requests(client, range_header, exp_status, monkeypatch):
+    fake_file = io.BytesIO(b'0123456789abcdef')
+    fake_file.fileno = lambda: 123
+
+    class FakeStat:
+        st_size = len(fake_file.getvalue())
+
+    monkeypatch.setattr(io, 'open', lambda path, mode: fake_file)
+    monkeypatch.setattr(os, 'fstat', lambda fileno: FakeStat())
+
+    client.app.add_static_route('/downloads', '/opt/somesite/downloads')
+
+    response = client.simulate_request(
+        path='/downloads/thing.zip', headers={'Range': range_header}
+    )
+    assert response.status == exp_status
+    if response.status == falcon.HTTP_416:
+        assert response.headers.get('Content-Range') == 'bytes */16'
 
 
 def test_lifo(client, monkeypatch):
@@ -323,8 +443,10 @@ def test_fallback_filename(
         body = resp.stream.read()
 
     assert sr.match(req.path)
-    assert body.decode() == os.path.normpath(os.path.join('/var/www/statics', expected))
+    expected_content = os.path.normpath(os.path.join('/var/www/statics', expected))
+    assert body.decode() == expected_content
     assert resp.content_type in _MIME_ALTERNATIVE.get(content_type, (content_type,))
+    assert resp.headers.get('Accept-Ranges') == 'bytes'
 
     if downloadable:
         assert os.path.basename(expected) in resp.downloadable_as

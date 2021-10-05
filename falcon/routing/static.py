@@ -4,7 +4,48 @@ import os
 import re
 
 import falcon
+import falcon.stream
 from falcon.util.sync import get_running_loop
+
+
+def open_range(file_path, range):
+    """Open a file for a ranged request.
+
+    Args:
+        file_path (str): Path to the file to open.
+        range (Optional[Tuple[int, int]]): Request.range value.
+    Returns:
+        tuple: Two-member tuple of (stream, content-range). If range is
+            ``None`` or ignored, content-range will be ``None``; otherwise,
+            the stream will be appropriately seeked and possibly bounded,
+            and the content-range will be a tuple of (start, end, size).
+    """
+    fh = io.open(file_path, 'rb')
+    if range is None:
+        return fh, None
+
+    start, end = range
+    size = os.fstat(fh.fileno()).st_size
+    if size == 0:
+        # Ignore Range headers for zero-byte files; just serve the empty body
+        # since Content-Range can't be used to express a zero-byte body
+        return fh, None
+
+    if start < 0 and end == -1:
+        # Special case: only want the last N bytes
+        start = max(start, -size)
+        fh.seek(start, os.SEEK_END)
+        return fh, (size + start, size - 1, size)
+
+    if start >= size:
+        raise falcon.HTTPRangeNotSatisfiable(size)
+
+    fh.seek(start)
+    if end == -1:
+        return fh, (start, size - 1, size)
+
+    end = min(end, size - 1)
+    return falcon.stream.BoundedStream(fh, end - start + 1), (start, end, size)
 
 
 class StaticRoute:
@@ -109,13 +150,16 @@ class StaticRoute:
         if '..' in file_path or not file_path.startswith(self._directory):
             raise falcon.HTTPNotFound()
 
+        range = req.range
+        if req.range_unit != 'bytes':
+            range = None
         try:
-            resp.stream = io.open(file_path, 'rb')
+            resp.stream, content_range = open_range(file_path, range)
         except IOError:
             if self._fallback_filename is None:
                 raise falcon.HTTPNotFound()
             try:
-                resp.stream = io.open(self._fallback_filename, 'rb')
+                resp.stream, content_range = open_range(self._fallback_filename, range)
                 file_path = self._fallback_filename
             except IOError:
                 raise falcon.HTTPNotFound()
@@ -124,9 +168,13 @@ class StaticRoute:
         resp.content_type = resp.options.static_media_types.get(
             suffix, 'application/octet-stream'
         )
+        resp.accept_ranges = 'bytes'
 
         if self._downloadable:
             resp.downloadable_as = os.path.basename(file_path)
+        if content_range:
+            resp.status = falcon.HTTP_206
+            resp.content_range = content_range
 
 
 class StaticRouteAsync(StaticRoute):
