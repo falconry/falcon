@@ -48,8 +48,10 @@ def compile_uri_template(template):
         /books/{isbn}/characters
         /books/{isbn}/characters/{name}
 
-    Also, note that if the template contains a trailing slash character,
-    it will be stripped in order to normalize the routing logic.
+    Since Falcon 2.0, :ref:`trailing slash characters are not stripped
+    by default <trailing_slash_in_path>`, so the uri ``/books/`` will not
+    match the template ``/books``, nor vice versa. You can change this
+    using :attr:`~falcon.RequestOptions.strip_url_path_trailing_slash`.
 
     Args:
         template(str): The template to compile. Note that field names are
