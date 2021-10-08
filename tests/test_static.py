@@ -251,7 +251,9 @@ def test_range_requests(
     if use_fallback:
         assert response.headers.get('Content-Type') == 'text/html'
     else:
-        assert response.headers.get('Content-Type') == 'application/zip'
+        assert (
+            response.headers.get('Content-Type') in _MIME_ALTERNATIVE['application/zip']
+        )
 
 
 @pytest.mark.parametrize(
