@@ -21,19 +21,22 @@ class CORSMiddleware(object):
         allow_origins (Union[str, Iterable[str]]): List of origins to allow (case
             sensitive). The string ``'*'`` acts as a wildcard, matching every origin.
             (default ``'*'``).
-        expose_headers (Optional[Union[str, Iterable[str]]]): List of additional response
-            headers to expose via the ``Access-Control-Expose-Headers`` header.
-            These headers are in addition to the CORS-safelisted ones:
-            ``Cache-Control``, ``Content-Language``, ``Content-Length``, ``Content-Type``,
-            ``Expires``, ``Last-Modified``, ``Pragma``. (default ``None``).
+        expose_headers (Optional[Union[str, Iterable[str]]]): List of additional
+            response headers to expose via the ``Access-Control-Expose-Headers``
+            header. These headers are in addition to the CORS-safelisted ones:
+            ``Cache-Control``, ``Content-Language``, ``Content-Length``,
+            ``Content-Type``, ``Expires``, ``Last-Modified``, ``Pragma``.
+            (default ``None``).
 
             See also:
             https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Expose-Headers
-        allow_credentials (Optional[Union[str, Iterable[str]]]): List of origins (case sensitive)
-            for which to allow credentials via the ``Access-Control-Allow-Credentials`` header.
-            The string ``'*'`` acts as a wildcard, matching every allowed origin, while
-            ``None`` disallows all origins. This parameter takes effect only
-            if the origin is allowed by the ``allow_origins`` argument. (Default ``None``).
+        allow_credentials (Optional[Union[str, Iterable[str]]]): List of origins
+            (case sensitive) for which to allow credentials via the
+            ``Access-Control-Allow-Credentials`` header.
+            The string ``'*'`` acts as a wildcard, matching every allowed origin,
+            while ``None`` disallows all origins. This parameter takes effect only
+            if the origin is allowed by the ``allow_origins`` argument.
+            (Default ``None``).
 
     """
 
@@ -67,8 +70,8 @@ class CORSMiddleware(object):
             allow_credentials = frozenset(allow_credentials)
             if '*' in allow_credentials:
                 raise ValueError(
-                    'The wildcard string "*" may only be passed to allow_credentials as a '
-                    'string literal, not inside an iterable.'
+                    'The wildcard string "*" may only be passed to allow_credentials '
+                    'as a string literal, not inside an iterable.'
                 )
         self.allow_credentials = allow_credentials
 

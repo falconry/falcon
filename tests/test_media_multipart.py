@@ -455,7 +455,8 @@ def test_upload_multipart(client):
     resp = client.simulate_post(
         '/submit',
         headers={
-            'Content-Type': 'multipart/form-data; boundary=5b11af82ab65407ba8cdccf37d2a9c4f',
+            'Content-Type': 'multipart/form-data; '
+            'boundary=5b11af82ab65407ba8cdccf37d2a9c4f',
         },
         body=EXAMPLE1,
     )
@@ -494,7 +495,8 @@ def test_truncated_form(client, truncated_by):
     resp = client.simulate_post(
         '/submit',
         headers={
-            'Content-Type': 'multipart/form-data; boundary=5b11af82ab65407ba8cdccf37d2a9c4f',
+            'Content-Type': 'multipart/form-data; '
+            'boundary=5b11af82ab65407ba8cdccf37d2a9c4f',
         },
         body=EXAMPLE1[:-truncated_by],
     )
@@ -510,7 +512,8 @@ def test_unexected_form_structure(client):
     resp1 = client.simulate_post(
         '/submit',
         headers={
-            'Content-Type': 'multipart/form-data; boundary=5b11af82ab65407ba8cdccf37d2a9c4f',
+            'Content-Type': 'multipart/form-data; '
+            'boundary=5b11af82ab65407ba8cdccf37d2a9c4f',
         },
         body=EXAMPLE1[:-2] + b'--\r\n',
     )
@@ -524,7 +527,8 @@ def test_unexected_form_structure(client):
     resp2 = client.simulate_post(
         '/submit',
         headers={
-            'Content-Type': 'multipart/form-data; boundary=5b11af82ab65407ba8cdccf37d2a9c4f',
+            'Content-Type': 'multipart/form-data; '
+            'boundary=5b11af82ab65407ba8cdccf37d2a9c4f',
         },
         body=EXAMPLE1[:-4] + b'**\r\n',
     )

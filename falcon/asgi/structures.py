@@ -116,9 +116,9 @@ class SSEvent:
         """Serialize this event to string.
 
         Args:
-            handler: Handler object that will be used to serialize the ``json`` attribute to
-                string. When not provided, a default handler using the builtin
-                JSON library will be used (default ``None``).
+            handler: Handler object that will be used to serialize the ``json``
+                attribute to string. When not provided, a default handler using
+                the builtin JSON library will be used (default ``None``).
 
         Returns:
             bytes: string representation of this event.

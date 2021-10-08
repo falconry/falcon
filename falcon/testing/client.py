@@ -105,7 +105,7 @@ class Cookie:
     @property
     def expires(self) -> Optional[dt.datetime]:
         if self._expires:  # type: ignore[attr-defined]
-            return http_date_to_dt(self._expires, obs_date=True)  # type: ignore[attr-defined]
+            return http_date_to_dt(self._expires, obs_date=True)  # type: ignore[attr-defined]  # noqa E501
 
         return None
 
@@ -119,7 +119,7 @@ class Cookie:
 
     @property
     def max_age(self) -> Optional[int]:
-        return int(self._max_age) if self._max_age else None  # type: ignore[attr-defined]
+        return int(self._max_age) if self._max_age else None  # type: ignore[attr-defined]  # noqa E501
 
     @property
     def secure(self) -> bool:

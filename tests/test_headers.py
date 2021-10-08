@@ -207,9 +207,15 @@ class AppendHeaderResource:
     def on_post(self, req, resp):
         resp.append_header('X-Things', 'thing-1')
 
-        c1 = 'ut_existing_user=1; expires=Mon, 14-Jan-2019 21:20:08 GMT; Max-Age=600; path=/'
+        c1 = (
+            'ut_existing_user=1; expires=Mon, 14-Jan-2019 21:20:08 GMT;'
+            ' Max-Age=600; path=/'
+        )
         resp.append_header('Set-Cookie', c1)
-        c2 = 'partner_source=deleted; expires=Thu, 01-Jan-1970 00:00:01 GMT; Max-Age=0'
+        c2 = (
+            'partner_source=deleted; expires=Thu, 01-Jan-1970 00:00:01 GMT;'
+            ' Max-Age=0'
+        )
         resp.append_header('seT-cookie', c2)
 
 
@@ -239,6 +245,16 @@ class DownloadableResource:
         resp.text = 'Hello, World!\n'
         resp.content_type = falcon.MEDIA_TEXT
         resp.downloadable_as = self.filename
+
+
+class ViewableResource:
+    def __init__(self, filename):
+        self.filename = filename
+
+    def on_get(self, req, resp):
+        resp.text = 'Hello, World!\n'
+        resp.content_type = falcon.MEDIA_TEXT
+        resp.viewable_as = self.filename
 
 
 class ContentLengthHeaderResource:
@@ -560,8 +576,28 @@ class TestHeaders:
             ),
         ],
     )
-    def test_content_disposition_header(self, client, filename, expected):
+    def test_content_disposition_attachment_header(self, client, filename, expected):
         resource = DownloadableResource(filename)
+        client.app.add_route('/', resource)
+        resp = client.simulate_get()
+
+        assert resp.status_code == 200
+        assert resp.headers['Content-Disposition'] == expected
+
+    @pytest.mark.parametrize(
+        'filename,expected',
+        [
+            ('report.csv', 'inline; filename="report.csv"'),
+            ('Hello World.txt', 'inline; filename="Hello World.txt"'),
+            (
+                'Bold Digit 𝟏.txt',
+                'inline; filename=Bold_Digit_1.txt; '
+                "filename*=UTF-8''Bold%20Digit%20%F0%9D%9F%8F.txt",
+            ),
+        ],
+    )
+    def test_content_disposition_inline_header(self, client, filename, expected):
+        resource = ViewableResource(filename)
         client.app.add_route('/', resource)
         resp = client.simulate_get()
 
@@ -706,7 +742,10 @@ class TestHeaders:
     def test_set_cookie_disallowed(self, client, header_name, error_type):
         resp = falcon.Response()
 
-        cookie = 'ut_existing_user=1; expires=Mon, 14-Jan-2019 21:20:08 GMT; Max-Age=600; path=/'
+        cookie = (
+            'ut_existing_user=1; expires=Mon, 14-Jan-2019 21:20:08 GMT; '
+            'Max-Age=600; path=/'
+        )
 
         with pytest.raises(error_type):
             resp.set_header(header_name, cookie)

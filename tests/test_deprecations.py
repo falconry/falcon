@@ -19,7 +19,10 @@ class TestApiHelpers:
             assert getattr(api_helpers, name) is getattr(app_helpers, name)
 
     # TODO enable test of deprecation
-    # @pytest.mark.skipif(has_cython, reason='Reloading modules on Cython does not work')
+    # @pytest.mark.skipif(
+    #     has_cython,
+    #     reason='Reloading modules on Cython does not work',
+    # )
     # def test_warning(self):
     #     import importlib
 
@@ -27,4 +30,5 @@ class TestApiHelpers:
 
     #     with pytest.warns(DeprecatedWarning, match='The api_helpers'):
     #         from falcon import api_helpers
+
     #         importlib.reload(api_helpers)

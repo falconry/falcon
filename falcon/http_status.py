@@ -30,15 +30,16 @@ class HTTPStatus(Exception):
         headers (dict): Extra headers to add to the response.
         text (str): String representing response content. Falcon will encode
             this value as UTF-8 in the response.
-        body (str): Deprecated alias to :attr:`text`. Will be removed in a future Falcon version.
-            :attr:`text` take precedence if provided.
+        body (str): Deprecated alias to :attr:`text`. Will be removed in a future
+            Falcon version. :attr:`text` take precedence if provided.
 
     Attributes:
         status (str): HTTP status line, e.g. '748 Confounded by Ponies'.
         headers (dict): Extra headers to add to the response.
         text (str): String representing response content. Falcon will encode
             this value as UTF-8 in the response.
-        body (str): Deprecated alias to :attr:`text`. Will be removed in a future Falcon version.
+        body (str): Deprecated alias to :attr:`text`. Will be removed in a future
+            Falcon version.
 
     """
 
