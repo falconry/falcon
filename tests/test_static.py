@@ -200,7 +200,7 @@ def test_good_path(asgi, uri_prefix, uri_path, expected_path, mtype, monkeypatch
 
     assert resp.content_type in _MIME_ALTERNATIVE.get(mtype, (mtype,))
     assert body.decode() == os.path.normpath('/var/www/statics' + expected_path)
-    assert resp.headers.get('Accept-Ranges') == 'bytes'
+    assert resp.headers.get('accept-ranges') == 'bytes'
 
 
 @pytest.mark.parametrize(
@@ -446,7 +446,7 @@ def test_fallback_filename(
     expected_content = os.path.normpath(os.path.join('/var/www/statics', expected))
     assert body.decode() == expected_content
     assert resp.content_type in _MIME_ALTERNATIVE.get(content_type, (content_type,))
-    assert resp.headers.get('Accept-Ranges') == 'bytes'
+    assert resp.headers.get('accept-ranges') == 'bytes'
 
     if downloadable:
         assert os.path.basename(expected) in resp.downloadable_as
