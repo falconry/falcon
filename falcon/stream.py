@@ -164,6 +164,10 @@ class BoundedStream(io.IOBase):
 
     is_exhausted = eof
 
+    @property
+    def close(self):
+        return self.stream.close
+
 
 # NOTE(kgriffs): Alias for backwards-compat
 Body = BoundedStream

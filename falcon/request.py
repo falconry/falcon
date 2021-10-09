@@ -708,7 +708,7 @@ class Request:
             return first, last
 
         except ValueError:
-            href = 'http://goo.gl/zZ6Ey'
+            href = 'https://tools.ietf.org/html/rfc7233'
             href_text = 'HTTP/1.1 Range Requests'
             msg = 'It must be a range formatted according to RFC 7233.'
             raise errors.HTTPInvalidHeader(msg, 'Range', href=href, href_text=href_text)

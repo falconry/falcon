@@ -8,23 +8,23 @@ import falcon.stream
 from falcon.util.sync import get_running_loop
 
 
-def open_range(file_path, range):
+def _open_range(file_path, req_range):
     """Open a file for a ranged request.
 
     Args:
         file_path (str): Path to the file to open.
-        range (Optional[Tuple[int, int]]): Request.range value.
+        req_range (Optional[Tuple[int, int]]): Request.range value.
     Returns:
-        tuple: Two-member tuple of (stream, content-range). If range is
+        tuple: Two-member tuple of (stream, content-range). If req_range is
             ``None`` or ignored, content-range will be ``None``; otherwise,
             the stream will be appropriately seeked and possibly bounded,
             and the content-range will be a tuple of (start, end, size).
     """
     fh = io.open(file_path, 'rb')
-    if range is None:
+    if req_range is None:
         return fh, None
 
-    start, end = range
+    start, end = req_range
     size = os.fstat(fh.fileno()).st_size
     if size == 0:
         # Ignore Range headers for zero-byte files; just serve the empty body
@@ -150,16 +150,16 @@ class StaticRoute:
         if '..' in file_path or not file_path.startswith(self._directory):
             raise falcon.HTTPNotFound()
 
-        range = req.range
+        req_range = req.range
         if req.range_unit != 'bytes':
-            range = None
+            req_range = None
         try:
-            resp.stream, content_range = open_range(file_path, range)
+            resp.stream, content_range = _open_range(file_path, req_range)
         except IOError:
             if self._fallback_filename is None:
                 raise falcon.HTTPNotFound()
             try:
-                resp.stream, content_range = open_range(self._fallback_filename, range)
+                resp.stream, content_range = _open_range(self._fallback_filename, req_range)
                 file_path = self._fallback_filename
             except IOError:
                 raise falcon.HTTPNotFound()
