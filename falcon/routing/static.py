@@ -159,7 +159,9 @@ class StaticRoute:
             if self._fallback_filename is None:
                 raise falcon.HTTPNotFound()
             try:
-                resp.stream, content_range = _open_range(self._fallback_filename, req_range)
+                resp.stream, content_range = _open_range(
+                    self._fallback_filename, req_range
+                )
                 file_path = self._fallback_filename
             except IOError:
                 raise falcon.HTTPNotFound()
