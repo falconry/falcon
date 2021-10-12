@@ -495,13 +495,15 @@ in for either path will be sent to the same resource.
 
 Why is my query parameter missing from the req object?
 ------------------------------------------------------
-If a query param does not have a value, Falcon will by default ignore that
-parameter. For example, passing ``'foo'`` or ``'foo='`` will result in the
-parameter being ignored.
+If a query param does not have a value and the `keep_blank_qs_values` request
+option is set to ``False`` (default value as of Falcon 2.0+ is ``True``),
+Falcon will ignore that parameter.
+For example, passing ``'foo'`` or ``'foo='`` will result in the parameter being
+ignored.
 
-If you would like to recognize such parameters, you must set the
-`keep_blank_qs_values` request option to ``True``. Request options are set
-globally for each instance of :class:`falcon.API` via the
+If you would like to recognize such parameters, the `keep_blank_qs_values`
+request option should be set to ``True`` (or unset in Falcon 2.0+). Request
+options are set globally for each instance of :class:`falcon.API` via the
 :attr:`~falcon.App.req_options` property. For example:
 
 .. code:: python
