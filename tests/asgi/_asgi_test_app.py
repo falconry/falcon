@@ -1,6 +1,7 @@
 import asyncio
 from collections import Counter
 import hashlib
+import platform
 import sys
 import time
 
@@ -11,6 +12,7 @@ import falcon.util
 
 SSE_TEST_MAX_DELAY_SEC = 1
 _WIN32 = sys.platform.startswith('win')
+_X86_64 = platform.machine() == 'x86_64'
 
 
 class Things:
@@ -74,7 +76,10 @@ class Things:
         loop = falcon.util.get_running_loop()
 
         # NOTE(caselit): on windows it takes more time so create less tasks
-        num_cms_tasks = 100 if _WIN32 else 1000
+        # NOTE(vytas): Tests on non-x86 platforms are run using software
+        #   emulation via single-thread QEMU Docker containers, making them
+        #   considerably slower as well.
+        num_cms_tasks = 100 if _WIN32 or not _X86_64 else 1000
 
         for i in range(num_cms_tasks):
             # NOTE(kgriffs): create_task() is used here, so that the coroutines
