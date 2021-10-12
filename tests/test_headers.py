@@ -247,6 +247,16 @@ class DownloadableResource:
         resp.downloadable_as = self.filename
 
 
+class ViewableResource:
+    def __init__(self, filename):
+        self.filename = filename
+
+    def on_get(self, req, resp):
+        resp.text = 'Hello, World!\n'
+        resp.content_type = falcon.MEDIA_TEXT
+        resp.viewable_as = self.filename
+
+
 class ContentLengthHeaderResource:
     def __init__(self, content_length, body=None, data=None):
         self._content_length = content_length
@@ -566,8 +576,28 @@ class TestHeaders:
             ),
         ],
     )
-    def test_content_disposition_header(self, client, filename, expected):
+    def test_content_disposition_attachment_header(self, client, filename, expected):
         resource = DownloadableResource(filename)
+        client.app.add_route('/', resource)
+        resp = client.simulate_get()
+
+        assert resp.status_code == 200
+        assert resp.headers['Content-Disposition'] == expected
+
+    @pytest.mark.parametrize(
+        'filename,expected',
+        [
+            ('report.csv', 'inline; filename="report.csv"'),
+            ('Hello World.txt', 'inline; filename="Hello World.txt"'),
+            (
+                'Bold Digit 𝟏.txt',
+                'inline; filename=Bold_Digit_1.txt; '
+                "filename*=UTF-8''Bold%20Digit%20%F0%9D%9F%8F.txt",
+            ),
+        ],
+    )
+    def test_content_disposition_inline_header(self, client, filename, expected):
+        resource = ViewableResource(filename)
         client.app.add_route('/', resource)
         resp = client.simulate_get()
 

@@ -119,8 +119,8 @@ def after(action, *args, is_async=False, **kwargs):
             request
 
         *args: Any additional arguments will be passed to *action* in the
-            order given, immediately following the *req*, *resp*, *resource*,
-            and *params* arguments.
+            order given, immediately following the *req*, *resp* and *resource*
+            arguments.
 
     Keyword Args:
         is_async (bool): Set to ``True`` for ASGI apps to provide a hint that
