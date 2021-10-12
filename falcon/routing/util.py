@@ -52,9 +52,9 @@ def compile_uri_template(template):
         If the template contains a trailing slash character, it will be
         stripped.
 
-        Note that this is **different** to :ref:`the default behavior
-        <trailing_slash_in_path>` of ``add_route()`` with the
-        default router.
+        Note that this is **different** from :ref:`the default behavior
+        <trailing_slash_in_path>` of :func:`~falcon.App.add_route` used
+        with the default :class:`~falcon.routing.CompiledRouter`.
 
         The :attr:`~falcon.RequestOptions.strip_url_path_trailing_slash`
         request option is not considered by ``compile_uri_template()``.
