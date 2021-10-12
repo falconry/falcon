@@ -40,7 +40,8 @@ def _validate_asgi_scope(scope_type, spec_version, http_version):
             )
         if http_version not in {'1.1', '2', '3'}:
             raise UnsupportedError(
-                f'The ASGI "websocket" scope does not support HTTP version {http_version}.'
+                'The ASGI "websocket" scope does not support '
+                f'HTTP version {http_version}.'
             )
         return spec_version
 

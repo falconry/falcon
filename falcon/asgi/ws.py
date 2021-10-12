@@ -234,7 +234,8 @@ class WebSocket:
 
         Keyword Arguments:
             code (int): The close code to use for the `CloseEvent` (default
-                1000). See also: https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
+                1000). See also:
+                https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
 
         """
 
@@ -636,7 +637,7 @@ class _BufferedReceiver:
             # NOTE(kgriffs): The pattern below was borrowed from the websockets.protocol
             #   module under the BSD 3-Clause "New" or "Revised" License.
             #
-            #   Ref: https://github.com/aaugustin/websockets/blob/master/src/websockets/protocol.py
+            #   Ref: https://github.com/aaugustin/websockets/blob/master/src/websockets/protocol.py  # noqa E501
             #
             # -------------------------------------------------------------------------------------
 
@@ -684,7 +685,7 @@ class _BufferedReceiver:
             # NOTE(kgriffs): The pattern below was borrowed from the websockets.protocol
             #   module under the BSD 3-Clause "New" or "Revised" License.
             #
-            #   Ref: https://github.com/aaugustin/websockets/blob/master/src/websockets/protocol.py
+            #   Ref: https://github.com/aaugustin/websockets/blob/master/src/websockets/protocol.py # noqa E501
             #
             # -------------------------------------------------------------------------------------
             while len(self._messages) >= self._max_queue:

@@ -179,9 +179,9 @@ class HTTPError(Exception):
         """Return a JSON representation of the error.
 
         Args:
-            handler: Handler object that will be used to serialize the representation of this
-                error to JSON. When not provided, a default handler using the builtin
-                JSON library will be used (default ``None``).
+            handler: Handler object that will be used to serialize the representation
+                of this error to JSON. When not provided, a default handler using
+                the builtin JSON library will be used (default ``None``).
 
         Returns:
             bytes: A JSON document for the error.
@@ -253,7 +253,8 @@ class NoRepresentation:
     @property  # type: ignore
     @deprecated(
         'has_representation is deprecated and is currently unused by falcon. '
-        'The class NoRepresentation is deprecated and will be removed in a future release',
+        'The class NoRepresentation is deprecated and will be removed in a '
+        'future release',
         is_property=True,
     )
     def has_representation(self):
@@ -286,7 +287,8 @@ class OptionalRepresentation:
     @property  # type: ignore
     @deprecated(
         'has_representation is deprecated and is currently unused by falcon. '
-        'The class OptionalRepresentation is deprecated and will be removed in a future release',
+        'The class OptionalRepresentation is deprecated and will be removed '
+        'in a future release',
         is_property=True,
     )
     def has_representation(self):

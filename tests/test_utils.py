@@ -211,8 +211,7 @@ class TestFalconUtils:
             {'apples and oranges': '🍏 & 🍊'},
             {'garbage': ['&', '&+&', 'a=1&b=2', 'c=4&'], 'one': '1'},
             {'&': '&amp;', '™': '&trade;', '&&&': ['&amp;', '&amp;', '&amp;']},
-            # NOTE(vytas): Would fail because of https://github.com/falconry/falcon/issues/1872
-            # {'&': '%26', '&&': '%26', '&&&': ['%26', '%2', '%']},
+            {'&': '%26', '&&': '%26', '&&&': ['%26', '%2', '%']},
         ],
     )
     def test_to_query_str_encoding(self, params, csv):

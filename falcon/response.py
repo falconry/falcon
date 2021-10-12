@@ -14,6 +14,7 @@
 
 """Response class."""
 
+import functools
 import mimetypes
 
 from falcon.constants import _UNSET
@@ -85,7 +86,8 @@ class Response:
                 in the response. If the content is already a byte string,
                 use the :attr:`data` attribute instead (it's faster).
 
-        body (str): Deprecated alias for :attr:`text`. Will be removed in a future Falcon version.
+        body (str): Deprecated alias for :attr:`text`. Will be removed in a
+            future Falcon version.
 
         data (bytes): Byte string representing response content.
 
@@ -809,7 +811,8 @@ class Response:
             rel (str): Relation type of the link, such as "next" or
                 "bookmark".
 
-                (See also: http://www.iana.org/assignments/link-relations/link-relations.xhtml)
+                (See also:
+                http://www.iana.org/assignments/link-relations/link-relations.xhtml)
 
         Keyword Args:
             title (str): Human-readable label for the destination of
@@ -848,7 +851,8 @@ class Response:
                 Content-Type header returned when the link is followed.
             crossorigin(str):  Determines how cross origin requests are handled.
                 Can take values 'anonymous' or 'use-credentials' or None.
-                (See: https://www.w3.org/TR/html50/infrastructure.html#cors-settings-attribute)
+                (See:
+                https://www.w3.org/TR/html50/infrastructure.html#cors-settings-attribute)
 
         """
 
@@ -1012,7 +1016,25 @@ class Response:
         ``filename*`` directive, whereas ``filename`` will contain the US
         ASCII fallback.
         """,
-        format_content_disposition,
+        functools.partial(format_content_disposition, disposition_type='attachment'),
+    )
+
+    viewable_as = header_property(
+        'Content-Disposition',
+        """Set an inline Content-Disposition header using the given filename.
+
+        The value will be used for the ``filename`` directive. For example,
+        given ``'report.pdf'``, the Content-Disposition header would be set
+        to: ``'inline; filename="report.pdf"'``.
+
+        As per `RFC 6266 <https://tools.ietf.org/html/rfc6266#appendix-D>`_
+        recommendations, non-ASCII filenames will be encoded using the
+        ``filename*`` directive, whereas ``filename`` will contain the US
+        ASCII fallback.
+
+        .. versionadded:: 3.1
+        """,
+        functools.partial(format_content_disposition, disposition_type='inline'),
     )
 
     etag = header_property(
