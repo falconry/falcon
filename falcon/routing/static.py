@@ -4,7 +4,6 @@ import os
 import re
 
 import falcon
-import falcon.stream
 from falcon.util.sync import get_running_loop
 
 
@@ -45,7 +44,34 @@ def _open_range(file_path, req_range):
         return fh, (start, size - 1, size)
 
     end = min(end, size - 1)
-    return falcon.stream.BoundedStream(fh, end - start + 1), (start, end, size)
+    return _BoundedFile(fh, end - start + 1), (start, end, size)
+
+
+class _BoundedFile:
+    """Wrap a file to only allow part of it to be read.
+
+    Args:
+        fh: The file object to wrap. Should be opened in binary mode,
+            and already seeked to an appropriate position.
+        length (int): Number of bytes that may be read.
+    """
+    def __init__(self, fh, length):
+        self.fh = fh
+        self.remaining = length
+
+    def read(self, amt=-1):
+        """Read the underlying file object, within the specified bounds."""
+        if amt < 0:
+            amt = self.remaining
+        else:
+            amt = min(amt, self.remaining)
+        data = self.fh.read(amt)
+        self.remaining -= len(data)
+        return data
+
+    def close(self):
+        """Close the underlying file object."""
+        self.fh.close()
 
 
 class StaticRoute:
