@@ -50,8 +50,10 @@ class StaticRoute:
         if not prefix.startswith('/'):
             raise ValueError("prefix must start with '/'")
 
-        if isinstance(directory, pathlib.Path):  # todo: remove when py3.5 is dropped
+        # TODO(vgerak): Remove the check when py3.5 is dropped.
+        if isinstance(directory, pathlib.Path):
             directory = str(directory)
+
         self._directory = os.path.normpath(directory)
         if not os.path.isabs(self._directory):
             raise ValueError('directory must be an absolute path')
