@@ -1,4 +1,5 @@
 import pytest
+from falcon.util.deprecation import DeprecatedWarning
 
 import falcon
 from falcon import routing
@@ -107,3 +108,7 @@ class TestUriTemplates:
         result = pattern.match('/one/{1b}/x/3')
         assert result
         assert result.groupdict() == {'a': 'one', 'c': '3'}
+
+    def test_deprecated_warning(self):
+        with pytest.warns(DeprecatedWarning, match='Call to deprecated function compile_uri_template().'):
+            routing.compile_uri_template('/')

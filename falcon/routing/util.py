@@ -18,6 +18,7 @@ import re
 
 from falcon import constants
 from falcon import responders
+from falcon.util.deprecation import deprecated
 
 
 class SuffixedMethodNotFoundError(Exception):
@@ -27,8 +28,9 @@ class SuffixedMethodNotFoundError(Exception):
 
 
 # NOTE(kgriffs): Published method; take care to avoid breaking changes.
+@deprecated("")
 def compile_uri_template(template):
-    """Compile the given URI template string into a pattern matcher.
+    """*Deprecated soon* Compile the given URI template string into a pattern matcher.
 
     This function can be used to construct custom routing engines that
     iterate through a list of possible routes, attempting to match
