@@ -1,2 +1,2 @@
-Added support for :attr:`pathlib.Path()` objects for directory in
-:attr:`App.add_static_route(...)` method for older Python versions.
+Added support for passing :any:`pathlib.Path` objects as `directory` in the
+:func:`~falcon.App.add_static_route` method on all targeted Python versions.
