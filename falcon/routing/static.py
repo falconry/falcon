@@ -55,6 +55,7 @@ class _BoundedFile:
             and already seeked to an appropriate position.
         length (int): Number of bytes that may be read.
     """
+
     def __init__(self, fh, length):
         self.fh = fh
         self.remaining = length

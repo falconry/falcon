@@ -8,6 +8,7 @@ import pytest
 
 import falcon
 from falcon.routing import StaticRoute, StaticRouteAsync
+from falcon.routing.static import _BoundedFile
 import falcon.testing as testing
 
 import _util  # NOQA
@@ -524,3 +525,15 @@ def test_filesystem_traversal_fuse(client, monkeypatch):
     monkeypatch.setattr('os.path.normpath', suspicious_normpath)
     response = client.simulate_request(path='/static/shadow')
     assert response.status == falcon.HTTP_404
+
+
+def test_bounded_file_wrapper():
+    buffer = io.BytesIO(b'0123456789')
+    fh = _BoundedFile(buffer, 4)
+    assert fh.read() == b'0123'
+    assert fh.read() == b''
+    fh = _BoundedFile(buffer, 4)
+    assert list(iter(lambda: fh.read(3), b'')) == [b'456', b'7']
+    assert not buffer.closed
+    fh.close()
+    assert buffer.closed
