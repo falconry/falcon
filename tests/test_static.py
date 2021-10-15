@@ -2,6 +2,7 @@
 
 import io
 import os
+import pathlib
 
 import pytest
 
@@ -199,6 +200,30 @@ def test_good_path(asgi, uri_prefix, uri_path, expected_path, mtype, monkeypatch
 
     assert resp.content_type in _MIME_ALTERNATIVE.get(mtype, (mtype,))
     assert body.decode() == os.path.normpath('/var/www/statics' + expected_path)
+
+
+def test_pathlib_path(asgi, monkeypatch):
+    monkeypatch.setattr(io, 'open', lambda path, mode: io.BytesIO(path.encode()))
+
+    sr = create_sr(asgi, '/static/', pathlib.Path('/var/www/statics'))
+    req_path = '/static/css/test.css'
+
+    req = _util.create_req(asgi, host='test.com', path=req_path, root_path='statics')
+
+    resp = _util.create_resp(asgi)
+
+    if asgi:
+
+        async def run():
+            await sr(req, resp)
+            return await resp.stream.read()
+
+        body = falcon.async_to_sync(run)
+    else:
+        sr(req, resp)
+        body = resp.stream.read()
+
+    assert body.decode() == os.path.normpath('/var/www/statics/css/test.css')
 
 
 def test_lifo(client, monkeypatch):
