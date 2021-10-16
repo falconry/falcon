@@ -53,27 +53,25 @@ class _BoundedFile:
 
     Args:
         fh: The file object to wrap. Should be opened in binary mode,
-            and already seeked to an appropriate position.
+            and already seeked to an appropriate position. The object must
+            expose a ``.close()`` method.
         length (int): Number of bytes that may be read.
     """
 
     def __init__(self, fh, length):
         self.fh = fh
+        self.close = fh.close
         self.remaining = length
 
-    def read(self, amt=-1):
+    def read(self, size=-1):
         """Read the underlying file object, within the specified bounds."""
-        if amt < 0:
-            amt = self.remaining
+        if size < 0:
+            size = self.remaining
         else:
-            amt = min(amt, self.remaining)
-        data = self.fh.read(amt)
+            size = min(size, self.remaining)
+        data = self.fh.read(size)
         self.remaining -= len(data)
         return data
-
-    def close(self):
-        """Close the underlying file object."""
-        self.fh.close()
 
 
 class StaticRoute:
