@@ -1,6 +1,7 @@
 from functools import partial
 import io
 import os
+import pathlib
 import re
 
 import falcon
@@ -89,8 +90,8 @@ class StaticRoute:
             Note that static routes are matched in LIFO order, and are only
             attempted after checking dynamic routes and sinks.
 
-        directory (str): The source directory from which to serve files. Must
-            be an absolute path.
+        directory (Union[str, pathlib.Path]): The source directory from which to
+            serve files. Must be an absolute path.
         downloadable (bool): Set to ``True`` to include a
             Content-Disposition header in the response. The "filename"
             directive is simply set to the name of the requested file.
@@ -116,6 +117,10 @@ class StaticRoute:
     def __init__(self, prefix, directory, downloadable=False, fallback_filename=None):
         if not prefix.startswith('/'):
             raise ValueError("prefix must start with '/'")
+
+        # TODO(vgerak): Remove the check when py3.5 is dropped.
+        if isinstance(directory, pathlib.Path):
+            directory = str(directory)
 
         self._directory = os.path.normpath(directory)
         if not os.path.isabs(self._directory):
