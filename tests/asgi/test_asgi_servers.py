@@ -73,7 +73,7 @@ class TestASGIServer:
         }
 
     def test_post_multiple(self, server_base_url):
-        body = testing.rand_string(_SIZE_1_KB / 2, _SIZE_1_KB)
+        body = testing.rand_string(_SIZE_1_KB // 2, _SIZE_1_KB)
         resp = requests.post(server_base_url, data=body, timeout=_REQUEST_TIMEOUT)
         assert resp.status_code == 200
         assert resp.text == body
@@ -104,7 +104,7 @@ class TestASGIServer:
             pass
 
     def test_post_read_bounded_stream(self, server_base_url):
-        body = testing.rand_string(_SIZE_1_KB / 2, _SIZE_1_KB)
+        body = testing.rand_string(_SIZE_1_KB // 2, _SIZE_1_KB)
         resp = requests.post(
             server_base_url + 'bucket', data=body, timeout=_REQUEST_TIMEOUT
         )
