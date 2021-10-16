@@ -5,13 +5,16 @@ Changelog for Falcon 3.1.0
 Summary
 -------
 
-TODO: write a story.
+Falcon 3.1 is currently in development. You can track the progress here:
+`Version 3.1 <https://github.com/falconry/falcon/milestone/32>`__.
+
+(See also the `Roadmap for Falcon 3.x <https://github.com/falconry/falcon/issues/1894>`__.)
 
 
 Changes to Supported Platforms
 ------------------------------
 
-- CPython 3.10 is now fully supported. (TODO pending `#1966 <https://github.com/falconry/falcon/issues/1966>`__)
+- CPython 3.10 is now fully supported. (pending `#1966 <https://github.com/falconry/falcon/issues/1966>`__)
 - Support for Python 3.6 is now deprecated and will be removed in Falcon 4.0.
 - As with the previous release, Python 3.5 support remains deprecated and will
   no longer be supported in Falcon 4.0.
@@ -25,4 +28,4 @@ Contributors to this Release
 
 Many thanks to contributors for this release:
 
-- *To be aggregated automatically...* (TODO pending `#1533 <https://github.com/falconry/falcon/issues/1533>`__)
+- *To be aggregated automatically...* (pending `#1533 <https://github.com/falconry/falcon/issues/1533>`__)
