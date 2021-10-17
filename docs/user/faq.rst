@@ -401,8 +401,8 @@ How can I pass data from a hook to a responder, and between hooks?
 ------------------------------------------------------------------
 You can inject extra responder kwargs from a hook by adding them
 to the *params* dict passed into the hook. You can also set custom attributes
-on the ``req.context`` object, as a way of passing contextual information
-around:
+on the :attr:`req.context <falcon.Request.context>` object, as a way of passing
+contextual information around:
 
 .. code:: python
 
@@ -449,7 +449,8 @@ How do I authenticate requests?
 -------------------------------
 Hooks and middleware components can be used together to authenticate and
 authorize requests. For example, a middleware component could be used to
-parse incoming credentials and place the results in ``req.context``.
+parse incoming credentials and place the results in
+:attr:`req.context <falcon.Request.context>`.
 Downstream components or hooks could then use this information to
 authorize the request, taking into account the user's role and the requested
 resource.
@@ -558,8 +559,7 @@ installed by default, thus making the POSTed form available as
 
 POSTed form parameters may also be read directly from
 :attr:`~falcon.Request.stream` and parsed via
-:meth:`falcon.uri.parse_query_string` or
-`urllib.parse.parse_qs() <https://docs.python.org/3.6/library/urllib.parse.html#urllib.parse.parse_qs>`_.
+:meth:`falcon.uri.parse_query_string` or :func:`urllib.parse.parse_qs`.
 
 .. _access_multipart_files:
 
@@ -811,6 +811,8 @@ until the stream is exhausted.
         def on_get(self, req, resp):
             resp.stream = open('myfile.json', mode='rb')
 
+See also the :ref:`outputting_csv_recipe` recipe for an example of using
+:attr:`resp.stream <falcon.Response.stream>` with a generator.
 
 How can I use resp.media with types like datetime?
 --------------------------------------------------
