@@ -439,7 +439,7 @@ plain HTTP 500 error. To provide your own 500 logic, you can add a custom error
 handler for Python's base :class:`Exception` type. This will not affect the
 default handlers for :class:`~.HTTPError` and :class:`~.HTTPStatus`.
 
-See :ref:`errors` and the :meth:`falcon.API.add_error_handler` docs for more
+See :ref:`errors` and the :meth:`falcon.App.add_error_handler` docs for more
 details.
 
 Request Handling
@@ -663,7 +663,7 @@ below:
             }
 
 
-    app = falcon.API()
+    app = falcon.App()
     app.add_route('/locations', LocationResource())
 
 In the example above, ``LocationResource`` expects a query string containing
@@ -774,9 +774,9 @@ When would I use media, data, and stream?
 These three parameters are mutually exclusive, you should only set one when
 defining your response.
 
-:ref:`resp.media <media>` is used when you want to use the Falcon serialization
-mechanism. Just assign data to the attribute and falcon will take care of the
-rest.
+:attr:`resp.media <falcon.Response.media>` is used when you want to use the
+Falcon serialization mechanism. Just assign data to the attribute and Falcon
+will take care of the rest.
 
 .. code:: python
 
@@ -784,8 +784,10 @@ rest.
         def on_get(self, req, resp):
             resp.media = { 'hello': 'World' }
 
-`resp.text` and `resp.data` are very similar, they both allow you to set the
-body of the response. The difference being, `text` takes a string and `data`
+:attr:`resp.text <falcon.Response.text>` and
+:attr:`resp.data <falcon.Response.data>` are very similar, they both allow you
+to set the body of the response. The difference being,
+:attr:`~falcon.Response.text` takes a string and :attr:`~falcon.Response.data`
 takes bytes.
 
 .. code:: python
@@ -798,8 +800,10 @@ takes bytes.
             resp.data = b'{ "hello": "World" }'
 
 
-`resp.stream` allows you to set a file-like object which returns bytes. We will
-call `read()` until the object is consumed.
+:attr:`resp.stream <falcon.Response.stream>` allows you to set a generator that
+yields bytes, or a file-like object with a ``read()`` method that returns
+bytes. In the case of a file-like object, the framework will call ``read()``
+until the stream is exhausted.
 
 .. code:: python
 
@@ -811,19 +815,23 @@ call `read()` until the object is consumed.
 How can I use resp.media with types like datetime?
 --------------------------------------------------
 
-The default JSON handler for ``resp.media`` only supports the objects and types
-listed in the table documented under
-`json.JSONEncoder <https://docs.python.org/3.6/library/json.html#json.JSONEncoder>`_.
+The default JSON handler for :attr:`resp.media <falcon.Response.media>` only
+supports the objects and types listed in the table documented under
+:any:`json.JSONEncoder`.
+
 To handle additional types, you can either serialize them beforehand, or create
-a custom JSON media handler that sets the `default` param for ``json.dumps()``.
-When deserializing an incoming request body, you may also wish to implement
-`object_hook` for ``json.loads()``. Note, however, that setting the `default` or
-`object_hook` params can negatively impact the performance of (de)serialization.
+a custom JSON media handler that sets the `default` param for
+:func:`json.dumps`. When deserializing an incoming request body, you may also
+wish to implement `object_hook` for :func:`json.loads`. Note, however, that
+setting the `default` or `object_hook` params can negatively impact the
+performance of (de)serialization.
 
 Does Falcon set Content-Length or do I need to do that explicitly?
 ------------------------------------------------------------------
-Falcon will try to do this for you, based on the value of ``resp.text`` or
-``resp.data`` (whichever is set in the response, checked in that order.)
+Falcon will try to do this for you, based on the value of
+:attr:`resp.text <falcon.Response.text>` or
+:attr:`resp.data <falcon.Response.data>` (whichever is set in the response,
+checked in that order).
 
 For dynamically-generated content, you can choose to not set
 :attr:`~falcon.Response.content_length`, in which case Falcon will then leave
