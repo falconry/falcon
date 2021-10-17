@@ -60,9 +60,9 @@ Usage
                 allow_origins='example.com', allow_credentials='*'))
 
 .. note::
-    Note that passing the ``cors_enable`` parameter set to ``True`` should be
-    seen as mutually exclusive with passing an instance of
-    class:`~falcon.CORSMiddleware` to the application's initializer.
+    Passing the ``cors_enable`` parameter set to ``True`` should be seen as
+    mutually exclusive with directly passing an instance of
+    :class:`~falcon.CORSMiddleware` to the application's initializer.
 
     We are considering to implement additional checks in a future version of
     the framework that would detect and either emit a warning, block or
