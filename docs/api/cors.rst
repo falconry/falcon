@@ -64,10 +64,6 @@ Usage
     mutually exclusive with directly passing an instance of
     :class:`~falcon.CORSMiddleware` to the application's initializer.
 
-    We are considering to implement additional checks in a future version of
-    the framework that would detect and either emit a warning, block or
-    automatically handle this combination.
-
 CORSMiddleware
 --------------
 
