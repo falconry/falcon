@@ -350,7 +350,7 @@ class Request:
             header is missing.
 
         range (tuple of int): A 2-member ``tuple`` parsed from the value of the
-            Range header.
+            Range header, or ``None`` if the header is missing.
 
             The two members correspond to the first and last byte
             positions of the requested resource, inclusive. Negative
@@ -691,16 +691,24 @@ class Request:
             if not sep:
                 raise ValueError()
 
-            if first:
-                return (int(first), int(last or -1))
+            if first and last:
+                first, last = (int(first), int(last))
+                if last < first:
+                    raise ValueError()
+            elif first:
+                first, last = (int(first), -1)
             elif last:
-                return (-int(last), -1)
+                first, last = (-int(last), -1)
+                if first >= 0:
+                    raise ValueError()
             else:
                 msg = 'The range offsets are missing.'
                 raise errors.HTTPInvalidHeader(msg, 'Range')
 
+            return first, last
+
         except ValueError:
-            href = 'http://goo.gl/zZ6Ey'
+            href = 'https://tools.ietf.org/html/rfc7233'
             href_text = 'HTTP/1.1 Range Requests'
             msg = 'It must be a range formatted according to RFC 7233.'
             raise errors.HTTPInvalidHeader(msg, 'Range', href=href, href_text=href_text)
