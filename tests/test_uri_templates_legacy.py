@@ -110,5 +110,8 @@ class TestUriTemplates:
         assert result.groupdict() == {'a': 'one', 'c': '3'}
 
     def test_deprecated_warning(self):
-        with pytest.warns(DeprecatedWarning, match='Call to deprecated function compile_uri_template().'):
+        with pytest.warns(
+            DeprecatedWarning,
+            match='Call to deprecated function compile_uri_template().',
+        ):
             routing.compile_uri_template('/')
