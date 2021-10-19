@@ -1,8 +1,8 @@
 import pytest
-from falcon.util.deprecation import DeprecatedWarning
 
 import falcon
 from falcon import routing
+from falcon.util.deprecation import DeprecatedWarning
 
 
 class TestUriTemplates:
