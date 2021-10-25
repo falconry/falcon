@@ -820,12 +820,22 @@ The default JSON handler for :attr:`resp.media <falcon.Response.media>` only
 supports the objects and types listed in the table documented under
 :any:`json.JSONEncoder`.
 
-To handle additional types, you can either serialize them beforehand, or create
-a custom JSON media handler that sets the `default` param for
+To handle additional types in JSON, you can either serialize them beforehand,
+or create a custom JSON media handler that sets the `default` param for
 :func:`json.dumps`. When deserializing an incoming request body, you may also
 wish to implement `object_hook` for :func:`json.loads`. Note, however, that
 setting the `default` or `object_hook` params can negatively impact the
 performance of (de)serialization.
+
+If you use an alternative JSON library, you might also look whether it provides
+support for additional data types. For instance, the popular ``orjson`` opts to
+automatically serialize :mod:`dataclasses`, :mod:`enums <enum>`,
+:class:`~datetime.datetime` objects, etc.
+
+Furthermore, different Internet media types such as YAML,
+:class:`msgpack <falcon.media.MessagePackHandler>`, etc might support more data
+types than JSON, either as part of the respective (de)serialization format, or
+via custom type extensions.
 
 Does Falcon set Content-Length or do I need to do that explicitly?
 ------------------------------------------------------------------
@@ -997,7 +1007,7 @@ When it comes to app configuration, Falcon is not opinionated. You are free to
 choose from any of the excellent general-purpose configuration libraries
 maintained by the Python community. It’s pretty much up to you if you want to
 use the standard library or something like ``aumbry`` as demonstrated by this
-`falcon example app <https://github.com/jmvrbanac/falcon-example/tree/master/example>`_
+`Falcon example app <https://github.com/jmvrbanac/falcon-example/tree/master/example>`_.
 
 (See also the **Configuration** section of our
 `Complementary Packages wiki page <https://github.com/falconry/falcon/wiki/Complementary-Packages>`_.
