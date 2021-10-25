@@ -768,10 +768,10 @@ types:
 Response Handling
 ~~~~~~~~~~~~~~~~~
 
-When would I use media, data, and stream?
------------------------------------------
+When would I use media, data, text, and stream?
+-----------------------------------------------
 
-These three parameters are mutually exclusive, you should only set one when
+These four attributes are mutually exclusive, you should only set one when
 defining your response.
 
 :attr:`resp.media <falcon.Response.media>` is used when you want to use the
@@ -782,23 +782,22 @@ will take care of the rest.
 
     class MyResource:
         def on_get(self, req, resp):
-            resp.media = { 'hello': 'World' }
+            resp.media = {'hello': 'World'}
 
 :attr:`resp.text <falcon.Response.text>` and
 :attr:`resp.data <falcon.Response.data>` are very similar, they both allow you
 to set the body of the response. The difference being,
-:attr:`~falcon.Response.text` takes a string and :attr:`~falcon.Response.data`
+:attr:`~falcon.Response.text` takes a string, and :attr:`~falcon.Response.data`
 takes bytes.
 
 .. code:: python
 
     class MyResource:
         def on_get(self, req, resp):
-            resp.text = json.dumps({ 'hello': 'World' })
+            resp.text = json.dumps({'hello': 'World'})
 
         def on_post(self, req, resp):
-            resp.data = b'{ "hello": "World" }'
-
+            resp.data = b'{"hello": "World"}'
 
 :attr:`resp.stream <falcon.Response.stream>` allows you to set a generator that
 yields bytes, or a file-like object with a ``read()`` method that returns
@@ -831,8 +830,9 @@ performance of (de)serialization.
 Does Falcon set Content-Length or do I need to do that explicitly?
 ------------------------------------------------------------------
 Falcon will try to do this for you, based on the value of
-:attr:`resp.text <falcon.Response.text>` or
-:attr:`resp.data <falcon.Response.data>` (whichever is set in the response,
+:attr:`resp.text <falcon.Response.text>`,
+:attr:`resp.data <falcon.Response.data>` or
+:attr:`resp.media <falcon.Response.media>` (whichever is set in the response,
 checked in that order).
 
 For dynamically-generated content, you can choose to not set
