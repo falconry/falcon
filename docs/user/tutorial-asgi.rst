@@ -255,6 +255,8 @@ processing.
   to be picklable (which also implies that the task must be reachable from the
   global namespace, i.e., an anonymous ``lambda`` simply won't work).
 
+.. _asgi_tutorial_image_resources:
+
 Images Resource(s)
 ------------------
 

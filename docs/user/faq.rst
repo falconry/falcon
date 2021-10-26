@@ -401,8 +401,8 @@ How can I pass data from a hook to a responder, and between hooks?
 ------------------------------------------------------------------
 You can inject extra responder kwargs from a hook by adding them
 to the *params* dict passed into the hook. You can also set custom attributes
-on the ``req.context`` object, as a way of passing contextual information
-around:
+on the :attr:`req.context <falcon.Request.context>` object, as a way of passing
+contextual information around:
 
 .. code:: python
 
@@ -439,7 +439,7 @@ plain HTTP 500 error. To provide your own 500 logic, you can add a custom error
 handler for Python's base :class:`Exception` type. This will not affect the
 default handlers for :class:`~.HTTPError` and :class:`~.HTTPStatus`.
 
-See :ref:`errors` and the :meth:`falcon.API.add_error_handler` docs for more
+See :ref:`errors` and the :meth:`falcon.App.add_error_handler` docs for more
 details.
 
 Request Handling
@@ -449,7 +449,8 @@ How do I authenticate requests?
 -------------------------------
 Hooks and middleware components can be used together to authenticate and
 authorize requests. For example, a middleware component could be used to
-parse incoming credentials and place the results in ``req.context``.
+parse incoming credentials and place the results in
+:attr:`req.context <falcon.Request.context>`.
 Downstream components or hooks could then use this information to
 authorize the request, taking into account the user's role and the requested
 resource.
@@ -558,8 +559,7 @@ installed by default, thus making the POSTed form available as
 
 POSTed form parameters may also be read directly from
 :attr:`~falcon.Request.stream` and parsed via
-:meth:`falcon.uri.parse_query_string` or
-`urllib.parse.parse_qs() <https://docs.python.org/3.6/library/urllib.parse.html#urllib.parse.parse_qs>`_.
+:meth:`falcon.uri.parse_query_string` or :func:`urllib.parse.parse_qs`.
 
 .. _access_multipart_files:
 
@@ -663,7 +663,7 @@ below:
             }
 
 
-    app = falcon.API()
+    app = falcon.App()
     app.add_route('/locations', LocationResource())
 
 In the example above, ``LocationResource`` expects a query string containing
@@ -768,38 +768,41 @@ types:
 Response Handling
 ~~~~~~~~~~~~~~~~~
 
-When would I use media, data, and stream?
------------------------------------------
+When would I use media, data, text, and stream?
+-----------------------------------------------
 
-These three parameters are mutually exclusive, you should only set one when
+These four attributes are mutually exclusive, you should only set one when
 defining your response.
 
-:ref:`resp.media <media>` is used when you want to use the Falcon serialization
-mechanism. Just assign data to the attribute and falcon will take care of the
-rest.
+:attr:`resp.media <falcon.Response.media>` is used when you want to use the
+Falcon serialization mechanism. Just assign data to the attribute and Falcon
+will take care of the rest.
 
 .. code:: python
 
     class MyResource:
         def on_get(self, req, resp):
-            resp.media = { 'hello': 'World' }
+            resp.media = {'hello': 'World'}
 
-`resp.text` and `resp.data` are very similar, they both allow you to set the
-body of the response. The difference being, `text` takes a string and `data`
+:attr:`resp.text <falcon.Response.text>` and
+:attr:`resp.data <falcon.Response.data>` are very similar, they both allow you
+to set the body of the response. The difference being,
+:attr:`~falcon.Response.text` takes a string, and :attr:`~falcon.Response.data`
 takes bytes.
 
 .. code:: python
 
     class MyResource:
         def on_get(self, req, resp):
-            resp.text = json.dumps({ 'hello': 'World' })
+            resp.text = json.dumps({'hello': 'World'})
 
         def on_post(self, req, resp):
-            resp.data = b'{ "hello": "World" }'
+            resp.data = b'{"hello": "World"}'
 
-
-`resp.stream` allows you to set a file-like object which returns bytes. We will
-call `read()` until the object is consumed.
+:attr:`resp.stream <falcon.Response.stream>` allows you to set a generator that
+yields bytes, or a file-like object with a ``read()`` method that returns
+bytes. In the case of a file-like object, the framework will call ``read()``
+until the stream is exhausted.
 
 .. code:: python
 
@@ -807,23 +810,40 @@ call `read()` until the object is consumed.
         def on_get(self, req, resp):
             resp.stream = open('myfile.json', mode='rb')
 
+See also the :ref:`outputting_csv_recipe` recipe for an example of using
+:attr:`resp.stream <falcon.Response.stream>` with a generator.
 
 How can I use resp.media with types like datetime?
 --------------------------------------------------
 
-The default JSON handler for ``resp.media`` only supports the objects and types
-listed in the table documented under
-`json.JSONEncoder <https://docs.python.org/3.6/library/json.html#json.JSONEncoder>`_.
-To handle additional types, you can either serialize them beforehand, or create
-a custom JSON media handler that sets the `default` param for ``json.dumps()``.
-When deserializing an incoming request body, you may also wish to implement
-`object_hook` for ``json.loads()``. Note, however, that setting the `default` or
-`object_hook` params can negatively impact the performance of (de)serialization.
+The default JSON handler for :attr:`resp.media <falcon.Response.media>` only
+supports the objects and types listed in the table documented under
+:any:`json.JSONEncoder`.
+
+To handle additional types in JSON, you can either serialize them beforehand,
+or create a custom JSON media handler that sets the `default` param for
+:func:`json.dumps`. When deserializing an incoming request body, you may also
+wish to implement `object_hook` for :func:`json.loads`. Note, however, that
+setting the `default` or `object_hook` params can negatively impact the
+performance of (de)serialization.
+
+If you use an alternative JSON library, you might also look whether it provides
+support for additional data types. For instance, the popular ``orjson`` opts to
+automatically serialize :mod:`dataclasses`, :mod:`enums <enum>`,
+:class:`~datetime.datetime` objects, etc.
+
+Furthermore, different Internet media types such as YAML,
+:class:`msgpack <falcon.media.MessagePackHandler>`, etc might support more data
+types than JSON, either as part of the respective (de)serialization format, or
+via custom type extensions.
 
 Does Falcon set Content-Length or do I need to do that explicitly?
 ------------------------------------------------------------------
-Falcon will try to do this for you, based on the value of ``resp.text`` or
-``resp.data`` (whichever is set in the response, checked in that order.)
+Falcon will try to do this for you, based on the value of
+:attr:`resp.text <falcon.Response.text>`,
+:attr:`resp.data <falcon.Response.data>` or
+:attr:`resp.media <falcon.Response.media>` (whichever is set in the response,
+checked in that order).
 
 For dynamically-generated content, you can choose to not set
 :attr:`~falcon.Response.content_length`, in which case Falcon will then leave
@@ -987,7 +1007,7 @@ When it comes to app configuration, Falcon is not opinionated. You are free to
 choose from any of the excellent general-purpose configuration libraries
 maintained by the Python community. It’s pretty much up to you if you want to
 use the standard library or something like ``aumbry`` as demonstrated by this
-`falcon example app <https://github.com/jmvrbanac/falcon-example/tree/master/example>`_
+`Falcon example app <https://github.com/jmvrbanac/falcon-example/tree/master/example>`_.
 
 (See also the **Configuration** section of our
 `Complementary Packages wiki page <https://github.com/falconry/falcon/wiki/Complementary-Packages>`_.
