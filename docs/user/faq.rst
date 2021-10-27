@@ -964,7 +964,8 @@ Then, within ``SomeResource``:
 .. code:: python
 
     # Read from the DB
-    result = self._engine.execute(some_table.select())
+    with self._engine.connect() as connection:
+        result = connection.execute(some_table.select())
     for row in result:
         # TODO: Do something with each row
 
@@ -997,6 +998,81 @@ If you need to transparently handle reconnecting after an error, or for other
 use cases that may not be supported by your client library, simply encapsulate
 the client library within a management class that handles all the tricky bits,
 and pass that around instead.
+
+The library `Falcon SQLAlchemy <https://github.com/vytas7/falcon-sqla>`_
+can also be used to manage SQLAlchemy connection using the a middleware.
+
+How do I manage my database connections with ASGI?
+--------------------------------------------------
+
+This example example is similar to the above one but uses the ASGI lifecycle hooks
+to setup a connection pool and to dispose of it at the end of the application.
+The example uses the `psycopg https://www.psycopg.org/psycopg3/docs/api/index.html`_
+library to connect to a PostgreSQL database, but a similar pattern may be adapted
+to other libraries.
+
+.. code:: python
+    import psycopg_pool
+
+    url = 'postgresql://scott:tiger@127.0.0.1:5432/test'
+
+    class AsyncPoolMiddleware:
+        def __init__(self):
+            self._pool = None
+
+        async def process_startup(self, scope, event):
+            self._pool = psycopg_pool.AsyncConnectionPool(url)
+            await self._pool.wait()  # created the pooled connections
+
+        async def process_shutdown(self, scope, event):
+            if self._pool:
+                await self._pool.close()
+
+        async def process_request(self, req, resp):
+            req.context.pool = self._pool
+
+            try:
+                req.context.conn = await self._pool.getconn()
+            except Exception:
+                req.context.conn = None
+                raise
+
+        async def process_response(self, req, resp, resource, req_succeeded):
+            if req.context.conn:
+                await self._pool.putconn(req.context.conn)
+
+Then, an example resource may use the connection or the pool:
+
+.. code:: python
+
+    class Numbers:
+        async def on_get(self, req, resp):
+            # This endpoint uses the connection created for the request by the Middleware
+            async with req.context.conn.cursor() as cur:
+                await cur.execute('SELECT value FROM numbers')
+                rows = await cur.fetchall()
+
+            resp.media = [row[0] for row in rows]
+
+        async def on_get_with_pool(self, req, resp):
+            # This endpoint uses the pool to acquire a connection
+            async with req.context.pool.connection() as conn:
+                cur = await conn.execute('SELECT value FROM numbers')
+                rows = await cur.fetchall()
+                await cur.close()
+
+            resp.media = [row[0] for row in rows]
+
+The application can then be used as
+
+.. code:: python
+
+    from falcon.asgi import App
+
+    app = App(middleware=[AsyncPoolMiddleware()])
+    num = Numbers() 
+    app.add_route('/conn', num)
+    app.add_route('/pool', num, suffix='with_pool')
 
 .. _configuration-approaches:
 
