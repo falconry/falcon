@@ -1000,14 +1000,14 @@ the client library within a management class that handles all the tricky bits,
 and pass that around instead.
 
 The library `Falcon SQLAlchemy <https://github.com/vytas7/falcon-sqla>`_
-can also be used to manage SQLAlchemy connection using the a middleware.
+can also be used to manage SQLAlchemy connection using a middleware.
 
 How do I manage my database connections with ASGI?
 --------------------------------------------------
 
-This example example is similar to the above one but uses the ASGI lifecycle hooks
-to setup a connection pool and to dispose of it at the end of the application.
-The example uses the `psycopg https://www.psycopg.org/psycopg3/docs/api/index.html`_
+This example is similar to the above one but uses the ASGI lifecycle hooks
+to setup a connection pool and to dispose it at the end of the application.
+The example uses the `psycopg <https://www.psycopg.org/psycopg3/docs/api/index.html>`_
 library to connect to a PostgreSQL database, but a similar pattern may be adapted
 to other libraries.
 
