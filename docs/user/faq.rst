@@ -1012,6 +1012,7 @@ library to connect to a PostgreSQL database, but a similar pattern may be adapte
 to other libraries.
 
 .. code:: python
+
     import psycopg_pool
 
     url = 'postgresql://scott:tiger@127.0.0.1:5432/test'
