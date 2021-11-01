@@ -31,7 +31,6 @@ from falcon.util import dt_to_http
 from falcon.util import http_cookies
 from falcon.util import structures
 from falcon.util import TimezoneGMT
-from falcon.util.deprecation import deprecated
 from falcon.util.uri import encode_check_escaped as uri_encode
 from falcon.util.uri import encode_value_check_escaped as uri_encode_value
 
@@ -191,16 +190,6 @@ class Response:
         self._media_rendered = _UNSET
 
         self.context = self.context_type()
-
-    @property  # type: ignore
-    @deprecated('Please use text instead.', is_property=True)
-    def body(self):
-        return self.text
-
-    @body.setter  # type: ignore
-    @deprecated('Please use text instead.', is_property=True)
-    def body(self, value):
-        self.text = value
 
     @property
     def data(self):

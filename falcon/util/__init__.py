@@ -24,7 +24,6 @@ from http import cookies as http_cookies
 import sys
 
 # Hoist misc. utils
-from falcon.util.deprecation import deprecated
 from falcon.util.misc import code_to_http_status
 from falcon.util.misc import dt_to_http
 from falcon.util.misc import get_argnames
@@ -81,7 +80,7 @@ if sys.version_info >= (3, 7):
         if name == 'json':
             import warnings
             import json  # NOQA
-            from .deprecation import DeprecatedWarning
+            from falcon.util.deprecation import DeprecatedWarning
 
             warnings.warn(
                 'Importing json from "falcon.util" is deprecated.', DeprecatedWarning
