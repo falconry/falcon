@@ -417,7 +417,8 @@ Running the application is not too dissimilar from the previous command line::
   $ uvicorn asgilook.asgi:app
 
 Provided ``uvicorn`` is started as per the above command line, let's try
-uploading some images in a separate terminal::
+uploading some images in a separate terminal (change the picture path below
+to point to an existing file)::
 
   $ http POST localhost:8000/images @/home/user/Pictures/test.png
 
@@ -547,6 +548,11 @@ area-wise) of the previous one, similar to how
 `mipmapping <https://en.wikipedia.org/wiki/Mipmap>`_ works in computer graphics.
 You may wish to experiment with this resolution distribution.
 
+After updating ``store.py``, the module should now look like this:
+
+.. literalinclude:: ../../examples/asgilook/asgilook/store.py
+    :language: python
+
 Furthermore, it is practical to impose a minimum resolution, as any potential
 benefit from switching between very small thumbnails (a few kilobytes each) is
 likely to be overshadowed by the request overhead. As you may have noticed in
@@ -575,11 +581,6 @@ as follows:
 
             self.uuid_generator = Config.DEFAULT_UUID_GENERATOR
             self.min_thumb_size = self.DEFAULT_MIN_THUMB_SIZE
-
-After updating ``store.py``, the module should now look like this:
-
-.. literalinclude:: ../../examples/asgilook/asgilook/store.py
-    :language: python
 
 Let's also add a ``Thumbnails`` resource to expose the new
 functionality. The final version of ``images.py`` reads:
@@ -708,30 +709,7 @@ installing Redis server on your machine, one could also:
     pifpaf run redis -- uvicorn asgilook.asgi:app
 
 We will perform caching with a Falcon :ref:`middleware` component. Again, note
-that all middleware callbacks must be asynchronous. Even initializing the Redis
-connection with ``aioredis.create_redis_pool()`` must be ``await``\ed. But how
-can we ``await`` coroutines from within our synchronous ``create_app()``
-function?
-
-`ASGI application lifespan events
-<https://asgi.readthedocs.io/en/latest/specs/lifespan.html>`_ come to the
-rescue. An ASGI application server emits these events upon application startup
-and shutdown.
-
-Let's implement the ``process_startup()`` handler in our middleware
-to execute code upon our application startup:
-
-.. code:: python
-
-    async def process_startup(self, scope, event):
-        self.redis = await self._config.create_redis_pool(
-            self._config.redis_host)
-
-.. warning::
-    The Lifespan Protocol is an optional extension; please check if your ASGI
-    server of choice implements it.
-
-    ``uvicorn`` (that we picked for this tutorial) supports Lifespan.
+that all middleware callbacks must be asynchronous.
 
 At minimum, our middleware will need to know the Redis host(s) to use.
 Let's also make our Redis connection factory
@@ -745,15 +723,15 @@ implementations for production and testing.
     need to create client connections in more than one place.
 
 Assuming we call our new :ref:`configuration <asgi_tutorial_config>` items
-``redis_host`` and ``create_redis_pool()``, respectively, the final version of
+``redis_host`` and ``redis_from_url()``, respectively, the final version of
 ``config.py`` now reads:
 
 .. literalinclude:: ../../examples/asgilook/asgilook/config.py
     :language: python
 
 Let's complete the Redis cache component by implementing
-two more middleware methods, in addition to ``process_startup()``. Create a
-``cache.py`` module containing the following code.
+two more middleware methods. Create a ``cache.py`` module containing the
+following code:
 
 .. literalinclude:: ../../examples/asgilook/asgilook/cache.py
     :language: python
