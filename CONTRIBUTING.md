@@ -34,7 +34,7 @@ You can check all this by running the following from within the Falcon project d
 $ tools/mintest.sh
 ```
 
-You may also use Python 3.6+ if you don't have 3.8 installed on your system. Substitute "py36", "py37", "py39", "py310", etc as appropriate. For example:
+You may also use another Python 3.6+ version if you don't have 3.8 installed on your system. Substitute "py36", "py37", "py39", "py310", etc as appropriate. For example:
 
 
 ```bash
