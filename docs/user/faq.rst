@@ -999,17 +999,19 @@ use cases that may not be supported by your client library, simply encapsulate
 the client library within a management class that handles all the tricky bits,
 and pass that around instead.
 
-The library `Falcon SQLAlchemy <https://github.com/vytas7/falcon-sqla>`_
-can also be used to manage SQLAlchemy connection using a middleware.
+If you are interested in the middleware approach, the
+`falcon-sqla <https://github.com/vytas7/falcon-sqla>`__ library can be used to
+automatically check out and close SQLAlchemy connections that way (although it
+also supports the explicit context manager pattern).
 
 How do I manage my database connections with ASGI?
 --------------------------------------------------
 
-This example is similar to the above one but uses the ASGI lifecycle hooks
-to setup a connection pool and to dispose it at the end of the application.
-The example uses the `psycopg <https://www.psycopg.org/psycopg3/docs/api/index.html>`_
-library to connect to a PostgreSQL database, but a similar pattern may be adapted
-to other libraries.
+This example is similar to the above one, but it uses ASGI lifecycle hooks
+to set up a connection pool, and to dispose it at the end of the application.
+The example uses `psycopg <https://www.psycopg.org/psycopg3/docs/api/index.html>`_
+to connect to a PostgreSQL database, but a similar pattern may be adapted to
+other asynchronous database libraries.
 
 .. code:: python
 
