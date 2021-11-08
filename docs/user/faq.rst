@@ -1073,7 +1073,7 @@ The application can then be used as
     from falcon.asgi import App
 
     app = App(middleware=[AsyncPoolMiddleware()])
-    num = Numbers() 
+    num = Numbers()
     app.add_route('/conn', num)
     app.add_route('/pool', num, suffix='with_pool')
 
