@@ -379,6 +379,8 @@ order to handle all three routes:
     app.add_route('/game/{game_id}/state', game, suffix='state')
     app.add_route('/game/ping', game, suffix='ping')
 
+.. _routing_encoded_slashes:
+
 Why is my URL with percent-encoded forward slashes (``%2F``) routed incorrectly?
 --------------------------------------------------------------------------------
 This is an unfortunate artifact of the WSGI specification, which offers no
@@ -739,9 +741,11 @@ We’ve discussed building on this feature to support consuming multiple path
 segments ala Flask. This work is currently planned to commence after the 3.0
 release.
 
-In the meantime, the workaround is to percent-encode the forward slash. If you
-don’t control the clients and can't enforce this, you can implement a Falcon
-middleware component to rewrite the path before it is routed.
+In the meantime, you can work around the issue by implementing a Falcon
+middleware component to rewrite the path before it is routed. If you control
+the clients, you can percent-encode forward slashes inside the field in
+question, however, note that pre-processing is unavoidable in order to access
+the raw encoded URI too. See also: :ref:`routing_encoded_slashes`
 
 .. _bare_class_context_type:
 
@@ -1098,7 +1102,7 @@ The application can then be used as
     from falcon.asgi import App
 
     app = App(middleware=[AsyncPoolMiddleware()])
-    num = Numbers() 
+    num = Numbers()
     app.add_route('/conn', num)
     app.add_route('/pool', num, suffix='with_pool')
 
