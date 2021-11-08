@@ -106,13 +106,11 @@ def _validate(func, req_schema=None, resp_schema=None):
         if req_schema is not None:
             try:
                 jsonschema.validate(
-                    req.media, req_schema,
-                    format_checker=jsonschema.FormatChecker()
+                    req.media, req_schema, format_checker=jsonschema.FormatChecker()
                 )
             except jsonschema.ValidationError as e:
                 raise falcon.HTTPBadRequest(
-                    title='Request data failed validation',
-                    description=e.message
+                    title='Request data failed validation', description=e.message
                 )
 
         result = func(self, req, resp, *args, **kwargs)
@@ -120,8 +118,7 @@ def _validate(func, req_schema=None, resp_schema=None):
         if resp_schema is not None:
             try:
                 jsonschema.validate(
-                    resp.media, resp_schema,
-                    format_checker=jsonschema.FormatChecker()
+                    resp.media, resp_schema, format_checker=jsonschema.FormatChecker()
                 )
             except jsonschema.ValidationError:
                 raise falcon.HTTPInternalServerError(
@@ -144,13 +141,11 @@ def _validate_async(func, req_schema=None, resp_schema=None):
 
             try:
                 jsonschema.validate(
-                    m, req_schema,
-                    format_checker=jsonschema.FormatChecker()
+                    m, req_schema, format_checker=jsonschema.FormatChecker()
                 )
             except jsonschema.ValidationError as e:
                 raise falcon.HTTPBadRequest(
-                    title='Request data failed validation',
-                    description=e.message
+                    title='Request data failed validation', description=e.message
                 )
 
         result = await func(self, req, resp, *args, **kwargs)
@@ -158,8 +153,7 @@ def _validate_async(func, req_schema=None, resp_schema=None):
         if resp_schema is not None:
             try:
                 jsonschema.validate(
-                    resp.media, resp_schema,
-                    format_checker=jsonschema.FormatChecker()
+                    resp.media, resp_schema, format_checker=jsonschema.FormatChecker()
                 )
             except jsonschema.ValidationError:
                 raise falcon.HTTPInternalServerError(

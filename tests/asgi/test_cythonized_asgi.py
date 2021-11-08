@@ -7,8 +7,10 @@ import falcon
 from falcon import testing
 import falcon.asgi
 from falcon.util import is_python_func
+
 try:
     import pyximport
+
     pyximport.install()
 except ImportError:
     pyximport = None
@@ -17,6 +19,7 @@ except ImportError:
 #   so that we don't mask errors importing _cythonized itself.
 if pyximport:
     from . import _cythonized  # type: ignore
+
     _CYTHON_FUNC_TEST_TYPES = [
         _cythonized.nop_method,
         _cythonized.nop_method_async,
@@ -58,14 +61,17 @@ def test_is_cython_func(func):
     assert not is_python_func(func)
 
 
-@pytest.mark.parametrize('func', [
-    nop_method,
-    nop_method_async,
-    NOPClass.nop_method,
-    NOPClass.nop_method_async,
-    NOPClass().nop_method,
-    NOPClass().nop_method_async,
-])
+@pytest.mark.parametrize(
+    'func',
+    [
+        nop_method,
+        nop_method_async,
+        NOPClass.nop_method,
+        NOPClass.nop_method_async,
+        NOPClass().nop_method,
+        NOPClass().nop_method_async,
+    ],
+)
 def test_not_cython_func(func):
     assert is_python_func(func)
 
@@ -76,7 +82,9 @@ def test_jsonchema_validator(client):
         client.app.add_route('/', _cythonized.TestResourceWithValidation())
 
         with pytest.raises(TypeError):
-            client.app.add_route('/wowsuchfail', _cythonized.TestResourceWithValidationNoHint())
+            client.app.add_route(
+                '/wowsuchfail', _cythonized.TestResourceWithValidationNoHint()
+            )
 
     client.simulate_get()
 
@@ -98,10 +106,12 @@ def test_scheduled_jobs(client):
     reason=(
         'CPython 3.6 does not complain when you try to call loop.create_task() '
         'with the wrong type.'
-    )
+    ),
 )
 def test_scheduled_jobs_type_error(client):
-    client.app.add_route('/wowsuchfail', _cythonized.TestResourceWithScheduledJobsAsyncRequired())
+    client.app.add_route(
+        '/wowsuchfail', _cythonized.TestResourceWithScheduledJobsAsyncRequired()
+    )
 
     # NOTE(kgriffs): Normally an unhandled exception is translated to a
     #   500 response, but since jobs aren't supposed to be scheduled until

@@ -27,9 +27,7 @@ def hook_test_client(request):
 
 
 def before_hook(req, resp, resource, params):
-    raise HTTPStatus(falcon.HTTP_200,
-                     headers={'X-Failed': 'False'},
-                     text='Pass')
+    raise HTTPStatus(falcon.HTTP_200, headers={'X-Failed': 'False'}, text='Pass')
 
 
 def after_hook(req, resp, resource):
@@ -43,7 +41,6 @@ def noop_after_hook(req, resp, resource):
 
 
 class TestStatusResource:
-
     @falcon.before(before_hook)
     def on_get(self, req, resp):
         resp.status = falcon.HTTP_500
@@ -55,9 +52,7 @@ class TestStatusResource:
         resp.set_header('X-Failed', 'True')
         resp.text = 'Fail'
 
-        raise HTTPStatus(falcon.HTTP_200,
-                         headers={'X-Failed': 'False'},
-                         text='Pass')
+        raise HTTPStatus(falcon.HTTP_200, headers={'X-Failed': 'False'}, text='Pass')
 
     @falcon.after(after_hook)
     def on_put(self, req, resp):
@@ -72,74 +67,67 @@ class TestStatusResource:
 
     @falcon.after(noop_after_hook)
     def on_delete(self, req, resp):
-        raise HTTPStatus(falcon.HTTP_200,
-                         headers={'X-Failed': 'False'},
-                         text='Pass')
+        raise HTTPStatus(falcon.HTTP_200, headers={'X-Failed': 'False'}, text='Pass')
 
 
 class TestHookResource:
-
     def on_get(self, req, resp):
         resp.status = falcon.HTTP_500
         resp.set_header('X-Failed', 'True')
         resp.text = 'Fail'
 
     def on_patch(self, req, resp):
-        raise HTTPStatus(falcon.HTTP_200,
-                         text=None)
+        raise HTTPStatus(falcon.HTTP_200, text=None)
 
     def on_delete(self, req, resp):
-        raise HTTPStatus(falcon.HTTP_200,
-                         headers={'X-Failed': 'False'},
-                         text='Pass')
+        raise HTTPStatus(falcon.HTTP_200, headers={'X-Failed': 'False'}, text='Pass')
 
 
 class TestHTTPStatus:
     def test_raise_status_in_before_hook(self, client):
-        """ Make sure we get the 200 raised by before hook """
+        """Make sure we get the 200 raised by before hook"""
         response = client.simulate_request(path='/status', method='GET')
         assert response.status == falcon.HTTP_200
         assert response.headers['x-failed'] == 'False'
         assert response.text == 'Pass'
 
     def test_raise_status_in_responder(self, client):
-        """ Make sure we get the 200 raised by responder """
+        """Make sure we get the 200 raised by responder"""
         response = client.simulate_request(path='/status', method='POST')
         assert response.status == falcon.HTTP_200
         assert response.headers['x-failed'] == 'False'
         assert response.text == 'Pass'
 
     def test_raise_status_runs_after_hooks(self, client):
-        """ Make sure after hooks still run """
+        """Make sure after hooks still run"""
         response = client.simulate_request(path='/status', method='PUT')
         assert response.status == falcon.HTTP_200
         assert response.headers['x-failed'] == 'False'
         assert response.text == 'Pass'
 
     def test_raise_status_survives_after_hooks(self, client):
-        """ Make sure after hook doesn't overwrite our status """
+        """Make sure after hook doesn't overwrite our status"""
         response = client.simulate_request(path='/status', method='DELETE')
         assert response.status == falcon.HTTP_200
         assert response.headers['x-failed'] == 'False'
         assert response.text == 'Pass'
 
     def test_raise_status_empty_body(self, client):
-        """ Make sure passing None to body results in empty body """
+        """Make sure passing None to body results in empty body"""
         response = client.simulate_request(path='/status', method='PATCH')
         assert response.text == ''
 
 
 class TestHTTPStatusWithMiddleware:
-
     def test_raise_status_in_process_request(self, hook_test_client):
-        """ Make sure we can raise status from middleware process request """
+        """Make sure we can raise status from middleware process request"""
         client = hook_test_client
 
         class TestMiddleware:
             def process_request(self, req, resp):
-                raise HTTPStatus(falcon.HTTP_200,
-                                 headers={'X-Failed': 'False'},
-                                 text='Pass')
+                raise HTTPStatus(
+                    falcon.HTTP_200, headers={'X-Failed': 'False'}, text='Pass'
+                )
 
             # NOTE(kgriffs): Test the side-by-side support for dual WSGI and
             #   ASGI compatibility.
@@ -154,14 +142,14 @@ class TestHTTPStatusWithMiddleware:
         assert response.text == 'Pass'
 
     def test_raise_status_in_process_resource(self, hook_test_client):
-        """ Make sure we can raise status from middleware process resource """
+        """Make sure we can raise status from middleware process resource"""
         client = hook_test_client
 
         class TestMiddleware:
             def process_resource(self, req, resp, resource, params):
-                raise HTTPStatus(falcon.HTTP_200,
-                                 headers={'X-Failed': 'False'},
-                                 text='Pass')
+                raise HTTPStatus(
+                    falcon.HTTP_200, headers={'X-Failed': 'False'}, text='Pass'
+                )
 
             async def process_resource_async(self, *args):
                 self.process_resource(*args)
@@ -175,7 +163,7 @@ class TestHTTPStatusWithMiddleware:
         assert response.text == 'Pass'
 
     def test_raise_status_runs_process_response(self, hook_test_client):
-        """ Make sure process_response still runs """
+        """Make sure process_response still runs"""
         client = hook_test_client
 
         class TestMiddleware:
@@ -251,22 +239,25 @@ def custom_status_client(asgi):
     return client
 
 
-@pytest.mark.parametrize('status,expected_code', [
-    (http.HTTPStatus(200), 200),
-    (http.HTTPStatus(202), 202),
-    (http.HTTPStatus(403), 403),
-    (http.HTTPStatus(500), 500),
-    (http.HTTPStatus.OK, 200),
-    (http.HTTPStatus.USE_PROXY, 305),
-    (http.HTTPStatus.NOT_FOUND, 404),
-    (http.HTTPStatus.NOT_IMPLEMENTED, 501),
-    (200, 200),
-    (307, 307),
-    (500, 500),
-    (702, 702),
-    (b'200 OK', 200),
-    (b'702 Emacs', 702),
-])
+@pytest.mark.parametrize(
+    'status,expected_code',
+    [
+        (http.HTTPStatus(200), 200),
+        (http.HTTPStatus(202), 202),
+        (http.HTTPStatus(403), 403),
+        (http.HTTPStatus(500), 500),
+        (http.HTTPStatus.OK, 200),
+        (http.HTTPStatus.USE_PROXY, 305),
+        (http.HTTPStatus.NOT_FOUND, 404),
+        (http.HTTPStatus.NOT_IMPLEMENTED, 501),
+        (200, 200),
+        (307, 307),
+        (500, 500),
+        (702, 702),
+        (b'200 OK', 200),
+        (b'702 Emacs', 702),
+    ],
+)
 def test_non_string_status(custom_status_client, status, expected_code):
     client = custom_status_client(status)
     resp = client.simulate_get('/status')

@@ -63,7 +63,7 @@ class TestRequestBody:
 
     def test_read_body(self, client, resource):
         client.app.add_route('/', resource)
-        expected_body = testing.rand_string(SIZE_1_KB / 2, SIZE_1_KB)
+        expected_body = testing.rand_string(SIZE_1_KB // 2, SIZE_1_KB)
         expected_len = len(expected_body)
         headers = {'Content-Length': str(expected_len)}
 
@@ -97,14 +97,13 @@ class TestRequestBody:
         assert len(data) == 0
 
     def test_body_stream_wrapper(self):
-        data = testing.rand_string(SIZE_1_KB / 2, SIZE_1_KB)
+        data = testing.rand_string(SIZE_1_KB // 2, SIZE_1_KB)
         expected_body = data.encode('utf-8')
         expected_len = len(expected_body)
 
         # NOTE(kgriffs): Append newline char to each line
         # to match readlines behavior
-        expected_lines = [(line + '\n').encode('utf-8')
-                          for line in data.split('\n')]
+        expected_lines = [(line + '\n').encode('utf-8') for line in data.split('\n')]
 
         # NOTE(kgriffs): Remove trailing newline to simulate
         # what readlines does
@@ -127,7 +126,7 @@ class TestRequestBody:
         stream = io.BytesIO(expected_body)
         body = request_helpers.Body(stream, expected_len)
         for i in range(expected_len + 1):
-            expected_value = expected_body[i:i + 1] if i < expected_len else b''
+            expected_value = expected_body[i : i + 1] if i < expected_len else b''
             assert body.read(1) == expected_value
 
         stream = io.BytesIO(expected_body)

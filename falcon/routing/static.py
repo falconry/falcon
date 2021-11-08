@@ -1,10 +1,77 @@
 from functools import partial
 import io
 import os
+import pathlib
 import re
 
 import falcon
 from falcon.util.sync import get_running_loop
+
+
+def _open_range(file_path, req_range):
+    """Open a file for a ranged request.
+
+    Args:
+        file_path (str): Path to the file to open.
+        req_range (Optional[Tuple[int, int]]): Request.range value.
+    Returns:
+        tuple: Two-member tuple of (stream, content-range). If req_range is
+            ``None`` or ignored, content-range will be ``None``; otherwise,
+            the stream will be appropriately seeked and possibly bounded,
+            and the content-range will be a tuple of (start, end, size).
+    """
+    fh = io.open(file_path, 'rb')
+    if req_range is None:
+        return fh, None
+
+    start, end = req_range
+    size = os.fstat(fh.fileno()).st_size
+    if size == 0:
+        # Ignore Range headers for zero-byte files; just serve the empty body
+        # since Content-Range can't be used to express a zero-byte body
+        return fh, None
+
+    if start < 0 and end == -1:
+        # Special case: only want the last N bytes
+        start = max(start, -size)
+        fh.seek(start, os.SEEK_END)
+        return fh, (size + start, size - 1, size)
+
+    if start >= size:
+        raise falcon.HTTPRangeNotSatisfiable(size)
+
+    fh.seek(start)
+    if end == -1:
+        return fh, (start, size - 1, size)
+
+    end = min(end, size - 1)
+    return _BoundedFile(fh, end - start + 1), (start, end, size)
+
+
+class _BoundedFile:
+    """Wrap a file to only allow part of it to be read.
+
+    Args:
+        fh: The file object to wrap. Should be opened in binary mode,
+            and already seeked to an appropriate position. The object must
+            expose a ``.close()`` method.
+        length (int): Number of bytes that may be read.
+    """
+
+    def __init__(self, fh, length):
+        self.fh = fh
+        self.close = fh.close
+        self.remaining = length
+
+    def read(self, size=-1):
+        """Read the underlying file object, within the specified bounds."""
+        if size < 0:
+            size = self.remaining
+        else:
+            size = min(size, self.remaining)
+        data = self.fh.read(size)
+        self.remaining -= len(data)
+        return data
 
 
 class StaticRoute:
@@ -21,8 +88,8 @@ class StaticRoute:
             Note that static routes are matched in LIFO order, and are only
             attempted after checking dynamic routes and sinks.
 
-        directory (str): The source directory from which to serve files. Must
-            be an absolute path.
+        directory (Union[str, pathlib.Path]): The source directory from which to
+            serve files. Must be an absolute path.
         downloadable (bool): Set to ``True`` to include a
             Content-Disposition header in the response. The "filename"
             directive is simply set to the name of the requested file.
@@ -48,6 +115,10 @@ class StaticRoute:
     def __init__(self, prefix, directory, downloadable=False, fallback_filename=None):
         if not prefix.startswith('/'):
             raise ValueError("prefix must start with '/'")
+
+        # TODO(vgerak): Remove the check when py3.5 is dropped.
+        if isinstance(directory, pathlib.Path):
+            directory = str(directory)
 
         self._directory = os.path.normpath(directory)
         if not os.path.isabs(self._directory):
@@ -80,17 +151,19 @@ class StaticRoute:
     def __call__(self, req, resp):
         """Resource responder for this route."""
 
-        without_prefix = req.path[len(self._prefix):]
+        without_prefix = req.path[len(self._prefix) :]
 
         # NOTE(kgriffs): Check surrounding whitespace and strip trailing
         # periods, which are illegal on windows
         # NOTE(CaselIT): An empty filename is allowed when fallback_filename is provided
-        if (not (without_prefix or self._fallback_filename is not None) or
-                without_prefix.strip().rstrip('.') != without_prefix or
-                self._DISALLOWED_CHARS_PATTERN.search(without_prefix) or
-                '\\' in without_prefix or
-                '//' in without_prefix or
-                len(without_prefix) > self._MAX_NON_PREFIXED_LEN):
+        if (
+            not (without_prefix or self._fallback_filename is not None)
+            or without_prefix.strip().rstrip('.') != without_prefix
+            or self._DISALLOWED_CHARS_PATTERN.search(without_prefix)
+            or '\\' in without_prefix
+            or '//' in without_prefix
+            or len(without_prefix) > self._MAX_NON_PREFIXED_LEN
+        ):
 
             raise falcon.HTTPNotFound()
 
@@ -107,25 +180,33 @@ class StaticRoute:
         if '..' in file_path or not file_path.startswith(self._directory):
             raise falcon.HTTPNotFound()
 
+        req_range = req.range
+        if req.range_unit != 'bytes':
+            req_range = None
         try:
-            resp.stream = io.open(file_path, 'rb')
+            resp.stream, content_range = _open_range(file_path, req_range)
         except IOError:
             if self._fallback_filename is None:
                 raise falcon.HTTPNotFound()
             try:
-                resp.stream = io.open(self._fallback_filename, 'rb')
+                resp.stream, content_range = _open_range(
+                    self._fallback_filename, req_range
+                )
                 file_path = self._fallback_filename
             except IOError:
                 raise falcon.HTTPNotFound()
 
         suffix = os.path.splitext(file_path)[1]
         resp.content_type = resp.options.static_media_types.get(
-            suffix,
-            'application/octet-stream'
+            suffix, 'application/octet-stream'
         )
+        resp.accept_ranges = 'bytes'
 
         if self._downloadable:
             resp.downloadable_as = os.path.basename(file_path)
+        if content_range:
+            resp.status = falcon.HTTP_206
+            resp.content_range = content_range
 
 
 class StaticRouteAsync(StaticRoute):

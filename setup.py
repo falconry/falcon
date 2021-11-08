@@ -20,6 +20,7 @@ if PYPY:
 else:
     try:
         from Cython.Distutils import build_ext
+
         CYTHON = True
     except ImportError:
         CYTHON = False
@@ -31,7 +32,12 @@ class BuildFailed(Exception):
 
 def get_cython_options():
     # from sqlalchemy setup.py
-    from distutils.errors import CCompilerError, DistutilsExecError, DistutilsPlatformError
+    from distutils.errors import (
+        CCompilerError,
+        DistutilsExecError,
+        DistutilsPlatformError,
+    )
+
     ext_errors = (CCompilerError, DistutilsExecError, DistutilsPlatformError)
     if sys.platform == 'win32':
         # Work around issue https://github.com/pypa/setuptools/issues/1902
@@ -97,19 +103,21 @@ def get_cython_options():
         'falcon.util.sync',
     ]
 
-    cython_package_names = frozenset([
-        'falcon.cyutil',
-    ])
+    cython_package_names = frozenset(
+        [
+            'falcon.cyutil',
+        ]
+    )
 
     ext_modules = [
         Extension(
-            package + '.' + module,
-            [path.join(*(package.split('.') + [module + ext]))]
+            package + '.' + module, [path.join(*(package.split('.') + [module + ext]))]
         )
         for package in package_names
         for module, ext in list_modules(
             path.join(MYDIR, *package.split('.')),
-            ('*.pyx' if package in cython_package_names else '*.py'))
+            ('*.pyx' if package in cython_package_names else '*.py'),
+        )
         if (package + '.' + module) not in modules_to_exclude
     ]
 
@@ -192,12 +200,12 @@ else:
             exc.__cause__,
             'Cython compilation could not be completed, speedups are not enabled.',
             'Failure information, if any, is above.',
-            'Retrying the build without the C extension now.'
+            'Retrying the build without the C extension now.',
         )
 
         run_setup(False)
 
         status_msgs(
             'Cython compilation could not be completed, speedups are not enabled.',
-            'Pure-Python build succeeded.'
+            'Pure-Python build succeeded.',
         )

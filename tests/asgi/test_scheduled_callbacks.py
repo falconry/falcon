@@ -128,12 +128,15 @@ def callback_app(simple_resource):
     return app
 
 
-@pytest.mark.parametrize('method,uri,expected', [
-    ('GET', '/', 'Hello, World!\n'),
-    ('HEAD', '/', ''),
-    ('GET', '/sse', ': ping\n\n'),
-    ('GET', '/stream', 'One\nTwo\nThree\n'),
-])
+@pytest.mark.parametrize(
+    'method,uri,expected',
+    [
+        ('GET', '/', 'Hello, World!\n'),
+        ('HEAD', '/', ''),
+        ('GET', '/sse', ': ping\n\n'),
+        ('GET', '/stream', 'One\nTwo\nThree\n'),
+    ],
+)
 @runs_sync
 async def test_callback(callback_app, simple_resource, method, uri, expected):
     async with testing.ASGIConductor(callback_app) as conductor:

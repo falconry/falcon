@@ -27,9 +27,12 @@ def test_custom_router_add_route_should_be_used(asgi):
 @pytest.mark.parametrize('asgi', [True, False])
 def test_custom_router_find_should_be_used(asgi):
     if asgi:
+
         async def resource(req, resp, **kwargs):
             resp.text = '{{"uri_template": "{0}"}}'.format(req.uri_template)
+
     else:
+
         def resource(req, resp, **kwargs):
             resp.text = '{{"uri_template": "{0}"}}'.format(req.uri_template)
 
@@ -104,9 +107,12 @@ def test_can_pass_additional_params_to_add_route(asgi):
 @pytest.mark.parametrize('asgi', [True, False])
 def test_custom_router_takes_req_positional_argument(asgi):
     if asgi:
+
         async def responder(req, resp):
             resp.text = 'OK'
+
     else:
+
         def responder(req, resp):
             resp.text = 'OK'
 
@@ -125,9 +131,12 @@ def test_custom_router_takes_req_positional_argument(asgi):
 @pytest.mark.parametrize('asgi', [True, False])
 def test_custom_router_takes_req_keyword_argument(asgi):
     if asgi:
+
         async def responder(req, resp):
             resp.text = 'OK'
+
     else:
+
         def responder(req, resp):
             resp.text = 'OK'
 

@@ -36,7 +36,7 @@ class DataReader(DataReaderWithoutClose):
 
 class HelloResource:
     sample_status = '200 OK'
-    sample_unicode = ('Hello World! \x80 - ' + testing.rand_string(0, 5))
+    sample_unicode = 'Hello World! \x80 - ' + testing.rand_string(0, 5)
     sample_utf8 = sample_unicode.encode('utf-8')
 
     def __init__(self, mode):
@@ -53,6 +53,7 @@ class HelloResource:
             if 'filelike' in self.mode:
                 stream = DataReader(self.sample_utf8)
             else:
+
                 async def data_emitter():
                     for b in self.sample_utf8:
                         yield bytes([b])
@@ -90,7 +91,7 @@ class HelloResource:
 
 class ClosingFilelikeHelloResource:
     sample_status = '200 OK'
-    sample_unicode = ('Hello World! \x80' + testing.rand_string(0, 0))
+    sample_unicode = 'Hello World! \x80' + testing.rand_string(0, 0)
 
     sample_utf8 = sample_unicode.encode('utf-8')
 
@@ -142,7 +143,6 @@ class PartialCoroutineResource:
 
 
 class TestHelloWorld:
-
     def test_env_headers_list_of_tuples(self):
         env = testing.create_environ(headers=[('User-Agent', 'Falcon-Test')])
         assert env['HTTP_USER_AGENT'] == 'Falcon-Test'
@@ -159,11 +159,14 @@ class TestHelloWorld:
         result = client.simulate_get('/seenoevil')
         assert result.status_code == 404
 
-    @pytest.mark.parametrize('path,resource,get_body', [
-        ('/body', HelloResource('body'), lambda r: r.text.encode('utf-8')),
-        ('/bytes', HelloResource('body, bytes'), lambda r: r.text),
-        ('/data', HelloResource('data'), lambda r: r.data),
-    ])
+    @pytest.mark.parametrize(
+        'path,resource,get_body',
+        [
+            ('/body', HelloResource('body'), lambda r: r.text.encode('utf-8')),
+            ('/bytes', HelloResource('body, bytes'), lambda r: r.text),
+            ('/data', HelloResource('data'), lambda r: r.data),
+        ],
+    )
     def test_body(self, client, path, resource, get_body):
         client.app.add_route(path, resource)
 
@@ -244,10 +247,13 @@ class TestHelloWorld:
         with pytest.raises(TypeError):
             client.simulate_get('/filelike')
 
-    @pytest.mark.parametrize('stream_factory,assert_closed', [
-        (DataReader, True),  # Implements close()
-        (DataReaderWithoutClose, False),
-    ])
+    @pytest.mark.parametrize(
+        'stream_factory,assert_closed',
+        [
+            (DataReader, True),  # Implements close()
+            (DataReaderWithoutClose, False),
+        ],
+    )
     def test_filelike_closing(self, client, stream_factory, assert_closed):
         resource = ClosingFilelikeHelloResource(stream_factory)
         client.app.add_route('/filelike-closing', resource)
@@ -304,7 +310,9 @@ class TestHelloWorld:
             with pytest.raises(TypeError) as exinfo:
                 client.app.add_route('/', PartialCoroutineResource())
 
-            assert 'responder must be a non-blocking async coroutine' in str(exinfo.value)
+            assert 'responder must be a non-blocking async coroutine' in str(
+                exinfo.value
+            )
 
     def test_noncoroutine_required(self):
         wsgi_app = falcon.App()

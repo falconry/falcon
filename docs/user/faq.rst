@@ -426,8 +426,8 @@ How can I pass data from a hook to a responder, and between hooks?
 ------------------------------------------------------------------
 You can inject extra responder kwargs from a hook by adding them
 to the *params* dict passed into the hook. You can also set custom attributes
-on the ``req.context`` object, as a way of passing contextual information
-around:
+on the :attr:`req.context <falcon.Request.context>` object, as a way of passing
+contextual information around:
 
 .. code:: python
 
@@ -464,7 +464,7 @@ plain HTTP 500 error. To provide your own 500 logic, you can add a custom error
 handler for Python's base :class:`Exception` type. This will not affect the
 default handlers for :class:`~.HTTPError` and :class:`~.HTTPStatus`.
 
-See :ref:`errors` and the :meth:`falcon.API.add_error_handler` docs for more
+See :ref:`errors` and the :meth:`falcon.App.add_error_handler` docs for more
 details.
 
 Request Handling
@@ -474,7 +474,8 @@ How do I authenticate requests?
 -------------------------------
 Hooks and middleware components can be used together to authenticate and
 authorize requests. For example, a middleware component could be used to
-parse incoming credentials and place the results in ``req.context``.
+parse incoming credentials and place the results in
+:attr:`req.context <falcon.Request.context>`.
 Downstream components or hooks could then use this information to
 authorize the request, taking into account the user's role and the requested
 resource.
@@ -520,13 +521,17 @@ in for either path will be sent to the same resource.
 
 Why is my query parameter missing from the req object?
 ------------------------------------------------------
-If a query param does not have a value, Falcon will by default ignore that
-parameter. For example, passing ``'foo'`` or ``'foo='`` will result in the
-parameter being ignored.
+If a query param does not have a value and the
+:attr:`~falcon.RequestOptions.keep_blank_qs_values` request option is set to
+``False`` (the default as of Falcon 2.0+ is ``True``), Falcon will ignore that
+parameter.
+For example, passing ``'foo'`` or ``'foo='`` will result in the parameter being
+ignored.
 
-If you would like to recognize such parameters, you must set the
-`keep_blank_qs_values` request option to ``True``. Request options are set
-globally for each instance of :class:`falcon.API` via the
+If you would like to recognize such parameters, the
+:attr:`~falcon.RequestOptions.keep_blank_qs_values` request option should be
+set to ``True`` (or simply kept at its default value in Falcon 2.0+). Request
+options are set globally for each instance of :class:`falcon.App` via the
 :attr:`~falcon.App.req_options` property. For example:
 
 .. code:: python
@@ -579,8 +584,7 @@ installed by default, thus making the POSTed form available as
 
 POSTed form parameters may also be read directly from
 :attr:`~falcon.Request.stream` and parsed via
-:meth:`falcon.uri.parse_query_string` or
-`urllib.parse.parse_qs() <https://docs.python.org/3.6/library/urllib.parse.html#urllib.parse.parse_qs>`_.
+:meth:`falcon.uri.parse_query_string` or :func:`urllib.parse.parse_qs`.
 
 .. _access_multipart_files:
 
@@ -684,7 +688,7 @@ below:
             }
 
 
-    app = falcon.API()
+    app = falcon.App()
     app.add_route('/locations', LocationResource())
 
 In the example above, ``LocationResource`` expects a query string containing
@@ -789,38 +793,41 @@ types:
 Response Handling
 ~~~~~~~~~~~~~~~~~
 
-When would I use media, data, and stream?
------------------------------------------
+When would I use media, data, text, and stream?
+-----------------------------------------------
 
-These three parameters are mutually exclusive, you should only set one when
+These four attributes are mutually exclusive, you should only set one when
 defining your response.
 
-:ref:`resp.media <media>` is used when you want to use the Falcon serialization
-mechanism. Just assign data to the attribute and falcon will take care of the
-rest.
+:attr:`resp.media <falcon.Response.media>` is used when you want to use the
+Falcon serialization mechanism. Just assign data to the attribute and Falcon
+will take care of the rest.
 
 .. code:: python
 
     class MyResource:
         def on_get(self, req, resp):
-            resp.media = { 'hello': 'World' }
+            resp.media = {'hello': 'World'}
 
-`resp.text` and `resp.data` are very similar, they both allow you to set the
-body of the response. The difference being, `text` takes a string and `data`
+:attr:`resp.text <falcon.Response.text>` and
+:attr:`resp.data <falcon.Response.data>` are very similar, they both allow you
+to set the body of the response. The difference being,
+:attr:`~falcon.Response.text` takes a string, and :attr:`~falcon.Response.data`
 takes bytes.
 
 .. code:: python
 
     class MyResource:
         def on_get(self, req, resp):
-            resp.text = json.dumps({ 'hello': 'World' })
+            resp.text = json.dumps({'hello': 'World'})
 
         def on_post(self, req, resp):
-            resp.data = b'{ "hello": "World" }'
+            resp.data = b'{"hello": "World"}'
 
-
-`resp.stream` allows you to set a file-like object which returns bytes. We will
-call `read()` until the object is consumed.
+:attr:`resp.stream <falcon.Response.stream>` allows you to set a generator that
+yields bytes, or a file-like object with a ``read()`` method that returns
+bytes. In the case of a file-like object, the framework will call ``read()``
+until the stream is exhausted.
 
 .. code:: python
 
@@ -828,23 +835,40 @@ call `read()` until the object is consumed.
         def on_get(self, req, resp):
             resp.stream = open('myfile.json', mode='rb')
 
+See also the :ref:`outputting_csv_recipe` recipe for an example of using
+:attr:`resp.stream <falcon.Response.stream>` with a generator.
 
 How can I use resp.media with types like datetime?
 --------------------------------------------------
 
-The default JSON handler for ``resp.media`` only supports the objects and types
-listed in the table documented under
-`json.JSONEncoder <https://docs.python.org/3.6/library/json.html#json.JSONEncoder>`_.
-To handle additional types, you can either serialize them beforehand, or create
-a custom JSON media handler that sets the `default` param for ``json.dumps()``.
-When deserializing an incoming request body, you may also wish to implement
-`object_hook` for ``json.loads()``. Note, however, that setting the `default` or
-`object_hook` params can negatively impact the performance of (de)serialization.
+The default JSON handler for :attr:`resp.media <falcon.Response.media>` only
+supports the objects and types listed in the table documented under
+:any:`json.JSONEncoder`.
+
+To handle additional types in JSON, you can either serialize them beforehand,
+or create a custom JSON media handler that sets the `default` param for
+:func:`json.dumps`. When deserializing an incoming request body, you may also
+wish to implement `object_hook` for :func:`json.loads`. Note, however, that
+setting the `default` or `object_hook` params can negatively impact the
+performance of (de)serialization.
+
+If you use an alternative JSON library, you might also look whether it provides
+support for additional data types. For instance, the popular ``orjson`` opts to
+automatically serialize :mod:`dataclasses`, :mod:`enums <enum>`,
+:class:`~datetime.datetime` objects, etc.
+
+Furthermore, different Internet media types such as YAML,
+:class:`msgpack <falcon.media.MessagePackHandler>`, etc might support more data
+types than JSON, either as part of the respective (de)serialization format, or
+via custom type extensions.
 
 Does Falcon set Content-Length or do I need to do that explicitly?
 ------------------------------------------------------------------
-Falcon will try to do this for you, based on the value of ``resp.text`` or
-``resp.data`` (whichever is set in the response, checked in that order.)
+Falcon will try to do this for you, based on the value of
+:attr:`resp.text <falcon.Response.text>`,
+:attr:`resp.data <falcon.Response.data>` or
+:attr:`resp.media <falcon.Response.media>` (whichever is set in the response,
+checked in that order).
 
 For dynamically-generated content, you can choose to not set
 :attr:`~falcon.Response.content_length`, in which case Falcon will then leave
@@ -965,7 +989,8 @@ Then, within ``SomeResource``:
 .. code:: python
 
     # Read from the DB
-    result = self._engine.execute(some_table.select())
+    with self._engine.connect() as connection:
+        result = connection.execute(some_table.select())
     for row in result:
         # TODO: Do something with each row
 
@@ -999,6 +1024,84 @@ use cases that may not be supported by your client library, simply encapsulate
 the client library within a management class that handles all the tricky bits,
 and pass that around instead.
 
+If you are interested in the middleware approach, the
+`falcon-sqla <https://github.com/vytas7/falcon-sqla>`__ library can be used to
+automatically check out and close SQLAlchemy connections that way (although it
+also supports the explicit context manager pattern).
+
+How do I manage my database connections with ASGI?
+--------------------------------------------------
+
+This example is similar to the above one, but it uses ASGI lifecycle hooks
+to set up a connection pool, and to dispose it at the end of the application.
+The example uses `psycopg <https://www.psycopg.org/psycopg3/docs/api/index.html>`_
+to connect to a PostgreSQL database, but a similar pattern may be adapted to
+other asynchronous database libraries.
+
+.. code:: python
+
+    import psycopg_pool
+
+    url = 'postgresql://scott:tiger@127.0.0.1:5432/test'
+
+    class AsyncPoolMiddleware:
+        def __init__(self):
+            self._pool = None
+
+        async def process_startup(self, scope, event):
+            self._pool = psycopg_pool.AsyncConnectionPool(url)
+            await self._pool.wait()  # created the pooled connections
+
+        async def process_shutdown(self, scope, event):
+            if self._pool:
+                await self._pool.close()
+
+        async def process_request(self, req, resp):
+            req.context.pool = self._pool
+
+            try:
+                req.context.conn = await self._pool.getconn()
+            except Exception:
+                req.context.conn = None
+                raise
+
+        async def process_response(self, req, resp, resource, req_succeeded):
+            if req.context.conn:
+                await self._pool.putconn(req.context.conn)
+
+Then, an example resource may use the connection or the pool:
+
+.. code:: python
+
+    class Numbers:
+        async def on_get(self, req, resp):
+            # This endpoint uses the connection created for the request by the Middleware
+            async with req.context.conn.cursor() as cur:
+                await cur.execute('SELECT value FROM numbers')
+                rows = await cur.fetchall()
+
+            resp.media = [row[0] for row in rows]
+
+        async def on_get_with_pool(self, req, resp):
+            # This endpoint uses the pool to acquire a connection
+            async with req.context.pool.connection() as conn:
+                cur = await conn.execute('SELECT value FROM numbers')
+                rows = await cur.fetchall()
+                await cur.close()
+
+            resp.media = [row[0] for row in rows]
+
+The application can then be used as
+
+.. code:: python
+
+    from falcon.asgi import App
+
+    app = App(middleware=[AsyncPoolMiddleware()])
+    num = Numbers() 
+    app.add_route('/conn', num)
+    app.add_route('/pool', num, suffix='with_pool')
+
 .. _configuration-approaches:
 
 What is the recommended approach for app configuration?
@@ -1008,7 +1111,7 @@ When it comes to app configuration, Falcon is not opinionated. You are free to
 choose from any of the excellent general-purpose configuration libraries
 maintained by the Python community. It’s pretty much up to you if you want to
 use the standard library or something like ``aumbry`` as demonstrated by this
-`falcon example app <https://github.com/jmvrbanac/falcon-example/tree/master/example>`_
+`Falcon example app <https://github.com/jmvrbanac/falcon-example/tree/master/example>`_.
 
 (See also the **Configuration** section of our
 `Complementary Packages wiki page <https://github.com/falconry/falcon/wiki/Complementary-Packages>`_.

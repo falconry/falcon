@@ -34,21 +34,24 @@ SERIALIZATION_PARAM_LIST = [
     (None, {'test': 'value'}, b'{"test":"value"}'),
     (partial(mujson.dumps, ensure_ascii=True), {'test': 'value'}, b'{"test":"value"}'),
     (ujson.dumps, {'test': 'value'}, b'{"test":"value"}'),
-    (partial(lambda media, **kwargs: json.dumps([media, kwargs]),
-     ensure_ascii=True),
-     {'test': 'value'},
-     b'[{"test":"value"},{"ensure_ascii":true}]'),
+    (
+        partial(lambda media, **kwargs: json.dumps([media, kwargs]), ensure_ascii=True),
+        {'test': 'value'},
+        b'[{"test":"value"},{"ensure_ascii":true}]',
+    ),
     # Default json.dumps, with non-ascii characters
     (None, {'yen': YEN.decode()}, b'{"yen":"' + YEN + b'"}'),
 ]
 
 DESERIALIZATION_PARAM_LIST = [
     (None, b'[1, 2]', [1, 2]),
-    (partial(json.loads,
-             object_hook=lambda data: {k: v.upper() for k, v in data.items()}),
-     b'{"key": "value"}',
-     {'key': 'VALUE'}),
-
+    (
+        partial(
+            json.loads, object_hook=lambda data: {k: v.upper() for k, v in data.items()}
+        ),
+        b'{"key": "value"}',
+        {'key': 'VALUE'},
+    ),
     (mujson.loads, b'{"test": "value"}', {'test': 'value'}),
     (ujson.loads, b'{"test": "value"}', {'test': 'value'}),
 ]
@@ -112,12 +115,14 @@ def test_deserialization(asgi, func, body, expected):
 
 
 @pytest.mark.parametrize('monkeypatch_resolver', [True, False])
-@pytest.mark.parametrize('handler_mt', [
-    'application/json',
-
-    # NOTE(kgriffs): Include a bogus parameter to validate fuzzy matching logic
-    'application/json; answer=42'
-])
+@pytest.mark.parametrize(
+    'handler_mt',
+    [
+        'application/json',
+        # NOTE(kgriffs): Include a bogus parameter to validate fuzzy matching logic
+        'application/json; answer=42',
+    ],
+)
 def test_deserialization_raises(asgi, handler_mt, monkeypatch_resolver):
     app = create_app(asgi)
 
@@ -139,12 +144,11 @@ def test_deserialization_raises(asgi, handler_mt, monkeypatch_resolver):
     # NOTE(kgriffs): Test the pre-3.0 method. Although undocumented, it was
     #   technically a public method, and so we make sure it still works here.
     if monkeypatch_resolver:
+
         def _resolve(media_type, default, raise_not_found=True):
             with pytest.warns(DeprecatedWarning, match='This undocumented method'):
                 h = handlers.find_by_media_type(
-                    media_type,
-                    default,
-                    raise_not_found=raise_not_found
+                    media_type, default, raise_not_found=raise_not_found
                 )
             return h, None, None
 
@@ -215,7 +219,8 @@ def test_sync_methods_not_overridden(asgi):
 
     app.add_route('/', ResourceAsync() if asgi else Resource())
 
-    # NOTE(caselit): force serialization in xml, since error.to_json uses the faulty handler
+    # NOTE(caselit): force serialization in xml,
+    # since error.to_json uses the faulty handler
     result = testing.simulate_get(app, '/', headers={'Accept': 'text/xml'})
     assert result.status_code == 500
 
@@ -284,12 +289,11 @@ def test_json_err_no_handler(asgi, monkeypatch_resolver):
     # NOTE(kgriffs): Test the pre-3.0 method. Although undocumented, it was
     #   technically a public method, and so we make sure it still works here.
     if monkeypatch_resolver:
+
         def _resolve(media_type, default, raise_not_found=True):
             with pytest.warns(DeprecatedWarning, match='This undocumented method'):
                 h = handlers.find_by_media_type(
-                    media_type,
-                    default,
-                    raise_not_found=raise_not_found
+                    media_type, default, raise_not_found=raise_not_found
                 )
             return h, None, None
 
@@ -325,12 +329,20 @@ class TestBaseHandler:
     def test_json(self):
         h = media.BaseHandler()
 
-        with pytest.raises(NotImplementedError, match='The JSON media handler requires'):
+        with pytest.raises(
+            NotImplementedError, match='The JSON media handler requires'
+        ):
             h.serialize({}, falcon.MEDIA_JSON)
-        with pytest.raises(NotImplementedError, match='The JSON media handler requires'):
+        with pytest.raises(
+            NotImplementedError, match='The JSON media handler requires'
+        ):
             h.deserialize('', falcon.MEDIA_JSON, 0)
 
-        with pytest.raises(NotImplementedError, match='The JSON media handler requires'):
+        with pytest.raises(
+            NotImplementedError, match='The JSON media handler requires'
+        ):
             h.serialize({}, falcon.MEDIA_JSON + '; charset=UTF-8')
-        with pytest.raises(NotImplementedError, match='The JSON media handler requires'):
+        with pytest.raises(
+            NotImplementedError, match='The JSON media handler requires'
+        ):
             h.deserialize('', falcon.MEDIA_JSON + '; charset=UTF-8', 0)

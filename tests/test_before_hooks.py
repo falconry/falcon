@@ -12,8 +12,9 @@ from _util import create_app, create_resp, disable_asgi_non_coroutine_wrapping  
 
 def validate(req, resp, resource, params):
     assert resource
-    raise falcon.HTTPBadRequest(title='Invalid thing', description='Your thing was not '
-                                'formatted correctly.')
+    raise falcon.HTTPBadRequest(
+        title='Invalid thing', description='Your thing was not formatted correctly.'
+    )
 
 
 def validate_param(req, resp, resource, params, param_name, maxval=100):
@@ -91,21 +92,12 @@ def things_in_the_head(header, value, req, resp, resource, params):
     resp.set_header(header, value)
 
 
-bunnies_in_the_head = functools.partial(
-    things_in_the_head,
-    'X-Bunnies',
-    'fluffy'
-)
+bunnies_in_the_head = functools.partial(things_in_the_head, 'X-Bunnies', 'fluffy')
 
-frogs_in_the_head = functools.partial(
-    things_in_the_head,
-    'X-Frogs',
-    'not fluffy'
-)
+frogs_in_the_head = functools.partial(things_in_the_head, 'X-Frogs', 'not fluffy')
 
 
 class WrappedRespondersResource:
-
     @falcon.before(validate_param, 'limit', 100)
     def on_get(self, req, resp):
         self.req = req
@@ -118,7 +110,6 @@ class WrappedRespondersResource:
 
 
 class WrappedRespondersResourceChild(WrappedRespondersResource):
-
     @falcon.before(validate_param, 'x', maxval=1000)
     def on_get(self, req, resp):
         pass
@@ -129,7 +120,6 @@ class WrappedRespondersResourceChild(WrappedRespondersResource):
 
 
 class WrappedRespondersBodyParserResource:
-
     @falcon.before(validate_param, 'limit', 100)
     @falcon.before(parse_body)
     def on_get(self, req, resp, doc=None):
@@ -199,21 +189,18 @@ class ClassResourceWithAwareHooks:
 
 
 class TestFieldResource:
-
     @falcon.before(validate_field, field_name='id')
     def on_get(self, req, resp, id):
         self.id = id
 
 
 class TestFieldResourceChild(TestFieldResource):
-
     def on_get(self, req, resp, id):
         # Test passing a single extra arg
         super(TestFieldResourceChild, self).on_get(req, resp, id)
 
 
 class TestFieldResourceChildToo(TestFieldResource):
-
     def on_get(self, req, resp, id):
         # Test passing a single kwarg, but no extra args
         super(TestFieldResourceChildToo, self).on_get(req, resp, id=id)
@@ -225,7 +212,6 @@ class TestFieldResourceChildToo(TestFieldResource):
 @falcon.before(bunnies_in_the_head)
 @falcon.before(frogs_in_the_head)
 class ZooResource:
-
     def on_get(self, req, resp, bunnies, frogs, fish):
         self.bunnies = bunnies
         self.frogs = frogs
@@ -233,16 +219,14 @@ class ZooResource:
 
 
 class ZooResourceChild(ZooResource):
-
     def on_get(self, req, resp):
         super(ZooResourceChild, self).on_get(
             req,
             resp,
-
             # Test passing a mixture of args and kwargs
             'fluffy',
             'not fluffy',
-            fish='slippery'
+            fish='slippery',
         )
 
 
@@ -313,7 +297,7 @@ def test_param_validator(client):
         TestFieldResource(),
         TestFieldResourceChild(),
         TestFieldResourceChildToo(),
-    ]
+    ],
 )
 def test_field_validator(client, resource):
     client.app.add_route('/queue/{id}/messages', resource)
@@ -332,7 +316,7 @@ def test_field_validator(client, resource):
         ('{}', {}),
         ('', None),
         (None, None),
-    ]
+    ],
 )
 def test_parser_sync(body, doc):
     app = falcon.App()
@@ -351,10 +335,11 @@ def test_parser_sync(body, doc):
         ('{}', {}),
         ('', None),
         (None, None),
-    ]
+    ],
 )
 def test_parser_async(body, doc):
     with disable_asgi_non_coroutine_wrapping():
+
         class WrappedRespondersBodyParserAsyncResource:
             @falcon.before(validate_param_async, 'limit', 100, is_async=True)
             @falcon.before(parse_body_async)
@@ -440,7 +425,6 @@ def header_hook(req, resp, resource, params):
 
 @falcon.before(header_hook)
 class PiggybackingCollection:
-
     def __init__(self):
         self._items = {}
         self._sequence = 0
@@ -466,8 +450,7 @@ class PiggybackingCollection:
         resp.media = self._items[itemid]
 
     def on_get_collection(self, req, resp):
-        resp.media = sorted(self._items.values(),
-                            key=lambda item: item['itemid'])
+        resp.media = sorted(self._items.values(), key=lambda item: item['itemid'])
 
     def on_head_(self):
         return 'I shall not be decorated.'
@@ -484,7 +467,6 @@ class PiggybackingCollection:
 
 
 class PiggybackingCollectionAsync(PiggybackingCollection):
-
     @falcon.before(header_hook)
     async def on_post_collection(self, req, resp):
         self._sequence += 1

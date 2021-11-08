@@ -27,16 +27,21 @@ def client(request):
 
     app.resp_options.default_media_type = falcon.MEDIA_TEXT
 
-    handlers = falcon.media.Handlers({
-        'text/plain': PlainTextHandler()
-    })
+    handlers = falcon.media.Handlers({'text/plain': PlainTextHandler()})
     app.req_options.media_handlers = handlers
     app.resp_options.media_handlers = handlers
 
     return testing.TestClient(app)
 
 
-@pytest.mark.parametrize('client', (falcon.App, falcon.API,), indirect=True)
+@pytest.mark.parametrize(
+    'client',
+    (
+        falcon.App,
+        falcon.API,
+    ),
+    indirect=True,
+)
 @pytest.mark.filterwarnings('ignore:Call to deprecated function')
 def test_api_media_type_overriding(client):
     response = client.simulate_get('/')

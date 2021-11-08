@@ -32,7 +32,6 @@ _REQUEST_TIMEOUT = 10
 
 
 class TestASGIServer:
-
     def test_get(self, server_base_url):
         resp = requests.get(server_base_url, timeout=_REQUEST_TIMEOUT)
         assert resp.status_code == 200
@@ -59,7 +58,8 @@ class TestASGIServer:
         }
 
         resp = requests.post(
-            server_base_url + 'forms', files=files, timeout=_REQUEST_TIMEOUT)
+            server_base_url + 'forms', files=files, timeout=_REQUEST_TIMEOUT
+        )
         assert resp.status_code == 200
         assert resp.json() == {
             'message': {
@@ -73,7 +73,7 @@ class TestASGIServer:
         }
 
     def test_post_multiple(self, server_base_url):
-        body = testing.rand_string(_SIZE_1_KB / 2, _SIZE_1_KB)
+        body = testing.rand_string(_SIZE_1_KB // 2, _SIZE_1_KB)
         resp = requests.post(server_base_url, data=body, timeout=_REQUEST_TIMEOUT)
         assert resp.status_code == 200
         assert resp.text == body
@@ -88,7 +88,9 @@ class TestASGIServer:
         headers = {'Content-Length': 'invalid'}
 
         try:
-            resp = requests.post(server_base_url, headers=headers, timeout=_REQUEST_TIMEOUT)
+            resp = requests.post(
+                server_base_url, headers=headers, timeout=_REQUEST_TIMEOUT
+            )
 
             # Daphne responds with a 400
             assert resp.status_code == 400
@@ -102,8 +104,10 @@ class TestASGIServer:
             pass
 
     def test_post_read_bounded_stream(self, server_base_url):
-        body = testing.rand_string(_SIZE_1_KB / 2, _SIZE_1_KB)
-        resp = requests.post(server_base_url + 'bucket', data=body, timeout=_REQUEST_TIMEOUT)
+        body = testing.rand_string(_SIZE_1_KB // 2, _SIZE_1_KB)
+        resp = requests.post(
+            server_base_url + 'bucket', data=body, timeout=_REQUEST_TIMEOUT
+        )
         assert resp.status_code == 200
         assert resp.text == body
 
@@ -134,12 +138,11 @@ class TestASGIServer:
         with pytest.raises(requests.exceptions.ConnectionError):
             requests.get(
                 server_base_url + 'events',
-                timeout=(_asgi_test_app.SSE_TEST_MAX_DELAY_SEC / 2)
+                timeout=(_asgi_test_app.SSE_TEST_MAX_DELAY_SEC / 2),
             )
 
 
 class TestWebSocket:
-
     @pytest.mark.asyncio
     @pytest.mark.parametrize('explicit_close', [True, False])
     @pytest.mark.parametrize('close_code', [None, 4321])
@@ -162,7 +165,8 @@ class TestWebSocket:
 
             while True:
                 try:
-                    # TODO: Why is this failing to decode on the other side? (raises an error)
+                    # TODO: Why is this failing to decode on the other side?
+                    #   (raises an error)
                     # TODO: Why does this cause Daphne to hang?
                     await ws.send(f'{{"command": "echo", "echo": "{echo_expected}"}}')
 
@@ -196,7 +200,9 @@ class TestWebSocket:
             extra_headers['X-Close-Code'] = str(close_code)
 
         with pytest.raises(websockets.exceptions.InvalidStatusCode) as exc_info:
-            async with websockets.connect(server_url_events_ws, extra_headers=extra_headers):
+            async with websockets.connect(
+                server_url_events_ws, extra_headers=extra_headers
+            ):
                 pass
 
         assert exc_info.value.status_code == 403
@@ -212,14 +218,17 @@ class TestWebSocket:
         assert exc_info.value.status_code == 403
 
     @pytest.mark.asyncio
-    @pytest.mark.parametrize('subprotocol, expected', [
-        ('*', 'amqp'),
-        ('wamp', 'wamp'),
-    ])
-    async def test_select_subprotocol_known(self, subprotocol, expected, server_url_events_ws):
-        extra_headers = {
-            'X-Subprotocol': subprotocol
-        }
+    @pytest.mark.parametrize(
+        'subprotocol, expected',
+        [
+            ('*', 'amqp'),
+            ('wamp', 'wamp'),
+        ],
+    )
+    async def test_select_subprotocol_known(
+        self, subprotocol, expected, server_url_events_ws
+    ):
+        extra_headers = {'X-Subprotocol': subprotocol}
         async with websockets.connect(
             server_url_events_ws,
             extra_headers=extra_headers,
@@ -229,9 +238,7 @@ class TestWebSocket:
 
     @pytest.mark.asyncio
     async def test_select_subprotocol_unknown(self, server_url_events_ws):
-        extra_headers = {
-            'X-Subprotocol': 'xmpp'
-        }
+        extra_headers = {'X-Subprotocol': 'xmpp'}
 
         try:
             async with websockets.connect(
@@ -263,7 +270,9 @@ class TestWebSocket:
     #   not work.
     @pytest.mark.asyncio
     async def test_disconnecting_client_early(self, server_url_events_ws):
-        ws = await websockets.connect(server_url_events_ws, extra_headers={'X-Close': 'True'})
+        ws = await websockets.connect(
+            server_url_events_ws, extra_headers={'X-Close': 'True'}
+        )
         await asyncio.sleep(0.2)
 
         message_text = await ws.recv()
@@ -283,7 +292,9 @@ class TestWebSocket:
     async def test_send_before_accept(self, server_url_events_ws):
         extra_headers = {'x-accept': 'skip'}
 
-        async with websockets.connect(server_url_events_ws, extra_headers=extra_headers) as ws:
+        async with websockets.connect(
+            server_url_events_ws, extra_headers=extra_headers
+        ) as ws:
             message = await ws.recv()
             assert message == 'OperationNotAllowed'
 
@@ -291,7 +302,9 @@ class TestWebSocket:
     async def test_recv_before_accept(self, server_url_events_ws):
         extra_headers = {'x-accept': 'skip', 'x-command': 'recv'}
 
-        async with websockets.connect(server_url_events_ws, extra_headers=extra_headers) as ws:
+        async with websockets.connect(
+            server_url_events_ws, extra_headers=extra_headers
+        ) as ws:
             message = await ws.recv()
             assert message == 'OperationNotAllowed'
 
@@ -299,7 +312,9 @@ class TestWebSocket:
     async def test_invalid_close_code(self, server_url_events_ws):
         extra_headers = {'x-close': 'True', 'x-close-code': 42}
 
-        async with websockets.connect(server_url_events_ws, extra_headers=extra_headers) as ws:
+        async with websockets.connect(
+            server_url_events_ws, extra_headers=extra_headers
+        ) as ws:
             start = time.time()
 
             while True:
@@ -314,7 +329,9 @@ class TestWebSocket:
     async def test_close_code_on_unhandled_error(self, server_url_events_ws):
         extra_headers = {'x-raise-error': 'generic'}
 
-        async with websockets.connect(server_url_events_ws, extra_headers=extra_headers) as ws:
+        async with websockets.connect(
+            server_url_events_ws, extra_headers=extra_headers
+        ) as ws:
             await ws.wait_closed()
 
         assert ws.close_code in {3011, 1011}
@@ -323,7 +340,9 @@ class TestWebSocket:
     async def test_close_code_on_unhandled_http_error(self, server_url_events_ws):
         extra_headers = {'x-raise-error': 'http'}
 
-        async with websockets.connect(server_url_events_ws, extra_headers=extra_headers) as ws:
+        async with websockets.connect(
+            server_url_events_ws, extra_headers=extra_headers
+        ) as ws:
             await ws.wait_closed()
 
         assert ws.close_code == 3400
@@ -337,7 +356,9 @@ class TestWebSocket:
             'X-Mismatch-Type': mismatch_type,
         }
 
-        async with websockets.connect(server_url_events_ws, extra_headers=extra_headers) as ws:
+        async with websockets.connect(
+            server_url_events_ws, extra_headers=extra_headers
+        ) as ws:
             if mismatch == 'recv':
                 if mismatch_type == 'text':
                     await ws.send(b'hello')
@@ -380,6 +401,7 @@ def _run_server_isolated(process_factory, host, port):
         #   the process exit code to be 3221225786.
         #
         import signal
+
         print('\n[Sending CTRL+C (SIGINT) to server process...]')
         server.send_signal(signal.CTRL_C_EVENT)
         try:
@@ -392,7 +414,9 @@ def _run_server_isolated(process_factory, host, port):
             server.kill()
             server.communicate()
 
-            pytest.fail('Server process did not exit in a timely manner and had to be killed.')
+            pytest.fail(
+                'Server process did not exit in a timely manner and had to be killed.'
+            )
     else:
         print('\n[Sending SIGTERM to server process...]')
         server.terminate()
@@ -405,7 +429,9 @@ def _run_server_isolated(process_factory, host, port):
             server.kill()
             server.communicate()
 
-            pytest.fail('Server process did not exit in a timely manner and had to be killed.')
+            pytest.fail(
+                'Server process did not exit in a timely manner and had to be killed.'
+            )
 
 
 def _uvicorn_factory(host, port):
@@ -426,12 +452,13 @@ uvicorn.run('_asgi_test_app:application', host='{host}', port={port})
     #   of writing.
     loop_options = ('--http', 'h11', '--loop', 'asyncio') if _PYPY else ()
     options = (
-        '--host', host,
-        '--port', str(port),
-
-        '--interface', 'asgi3',
-
-        '_asgi_test_app:application'
+        '--host',
+        host,
+        '--port',
+        str(port),
+        '--interface',
+        'asgi3',
+        '_asgi_test_app:application',
     )
 
     return subprocess.Popen(
@@ -444,14 +471,15 @@ def _daphne_factory(host, port):
     return subprocess.Popen(
         (
             'daphne',
-
-            '--bind', host,
-            '--port', str(port),
-
-            '--verbosity', '2',
-            '--access-log', '-',
-
-            '_asgi_test_app:application'
+            '--bind',
+            host,
+            '--port',
+            str(port),
+            '--verbosity',
+            '2',
+            '--access-log',
+            '-',
+            '_asgi_test_app:application',
         ),
         cwd=_MODULE_DIR,
     )
@@ -478,13 +506,12 @@ run(config)
     return subprocess.Popen(
         (
             'hypercorn',
-
-            '--bind', f'{host}:{port}',
-
-            '--access-logfile', '-',
+            '--bind',
+            f'{host}:{port}',
+            '--access-logfile',
+            '-',
             '--debug',
-
-            '_asgi_test_app:application'
+            '_asgi_test_app:application',
         ),
         cwd=_MODULE_DIR,
     )
@@ -520,7 +547,10 @@ def server_base_url(request):
             while (time.time() - start_ts) < 5:
                 try:
                     requests.get(base_url, timeout=0.2)
-                except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+                except (
+                    requests.exceptions.Timeout,
+                    requests.exceptions.ConnectionError,
+                ):
                     time.sleep(0.2)
                 else:
                     break

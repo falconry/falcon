@@ -281,6 +281,9 @@ specifications in the URI template:
         some_resource
     )
 
+(See also how :class:`~.UUIDConverter` is used in Falcon's ASGI tutorial:
+:ref:`asgi_tutorial_image_resources`.)
+
 .. _routing_builtin_converters:
 
 Built-in Converters

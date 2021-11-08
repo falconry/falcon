@@ -11,9 +11,11 @@ from falcon import inspect, routing
 def get_app(asgi, cors=True, **kw):
     if asgi:
         from falcon.asgi import App as AsyncApp
+
         return AsyncApp(cors_enable=cors, **kw)
     else:
         from falcon import App
+
         return App(cors_enable=cors, **kw)
 
 
@@ -32,7 +34,9 @@ def make_app():
     app.add_route('/bar', i_f.OtherResponder(), suffix='id')
 
     app.add_static_route('/fal', os.path.abspath('falcon'))
-    app.add_static_route('/tes', os.path.abspath('tests'), fallback_filename='conftest.py')
+    app.add_static_route(
+        '/tes', os.path.abspath('tests'), fallback_filename='conftest.py'
+    )
     return app
 
 
@@ -51,7 +55,9 @@ def make_app_async():
     app.add_route('/bar', i_f.OtherResponderAsync(), suffix='id')
 
     app.add_static_route('/fal', os.path.abspath('falcon'))
-    app.add_static_route('/tes', os.path.abspath('tests'), fallback_filename='conftest.py')
+    app.add_static_route(
+        '/tes', os.path.abspath('tests'), fallback_filename='conftest.py'
+    )
     return app
 
 
@@ -112,9 +118,16 @@ class TestInspectApp:
             asgi, routes[0], '/foo', 'MyResponder', ['GET', 'POST', 'DELETE'], 'on_{}'
         )
         self.check_route(
-            asgi, routes[1], '/foo/{id}', 'MyResponder', ['GET', 'PUT', 'DELETE'], 'on_{}_id'
+            asgi,
+            routes[1],
+            '/foo/{id}',
+            'MyResponder',
+            ['GET', 'PUT', 'DELETE'],
+            'on_{}_id',
         )
-        self.check_route(asgi, routes[2], '/bar', 'OtherResponder', ['POST'], 'on_{}_id')
+        self.check_route(
+            asgi, routes[2], '/bar', 'OtherResponder', ['POST'], 'on_{}_id'
+        )
 
     def test_routes_empty_paths(self, asgi):
         app = get_app(asgi)
@@ -126,7 +139,12 @@ class TestInspectApp:
         assert len(routes) == 1
 
         self.check_route(
-            asgi, routes[0], '/foo/bar/baz', 'MyResponder', ['GET', 'POST', 'DELETE'], 'on_{}'
+            asgi,
+            routes[0],
+            '/foo/bar/baz',
+            'MyResponder',
+            ['GET', 'POST', 'DELETE'],
+            'on_{}',
         )
 
     def test_static_routes(self, asgi):
@@ -155,16 +173,25 @@ class TestInspectApp:
 
     @pytest.mark.skipif(sys.version_info < (3, 6), reason='dict order is not stable')
     def test_error_handler(self, asgi):
-        errors = inspect.inspect_error_handlers(make_app_async() if asgi else make_app())
+        errors = inspect.inspect_error_handlers(
+            make_app_async() if asgi else make_app()
+        )
 
         assert all(isinstance(e, inspect.ErrorHandlerInfo) for e in errors)
         assert errors[-1].error == 'RuntimeError'
-        assert errors[-1].name == 'my_error_handler_async' if asgi else 'my_error_handler'
+        assert (
+            errors[-1].name == 'my_error_handler_async' if asgi else 'my_error_handler'
+        )
         assert '_inspect_fixture.py' in errors[-1].source_info
         assert errors[-1].internal is False
         for eh in errors[:-1]:
             assert eh.internal
-            assert eh.error in ('WebSocketDisconnected', 'Exception', 'HTTPStatus', 'HTTPError')
+            assert eh.error in (
+                'WebSocketDisconnected',
+                'Exception',
+                'HTTPStatus',
+                'HTTPError',
+            )
 
     def test_middleware(self, asgi):
         mi = inspect.inspect_middleware(make_app_async() if asgi else make_app())
@@ -310,6 +337,7 @@ class TestRouter:
             return []
 
         with pytest.raises(ValueError, match='Another function is already registered'):
+
             @inspect.register_router(i_f.MyRouter)
             def print_routes2(r):
                 return []
@@ -358,7 +386,6 @@ def test_string_visitor_class():
 
 @pytest.mark.parametrize('internal', (True, False))
 class TestStringVisitor:
-
     def test_route_method(self, internal):
         sv = inspect.StringVisitor(False, internal)
         rm = inspect.inspect_routes(make_app())[0].methods[0]
@@ -369,16 +396,24 @@ class TestStringVisitor:
         sv = inspect.StringVisitor(True, internal)
         rm = inspect.inspect_routes(make_app())[0].methods[0]
 
-        assert sv.process(rm) == '{0.method} - {0.function_name} ({0.source_info})'.format(rm)
+        assert sv.process(
+            rm
+        ) == '{0.method} - {0.function_name} ({0.source_info})'.format(rm)
 
     def test_route(self, internal):
         sv = inspect.StringVisitor(False, internal)
         r = inspect.inspect_routes(make_app())[0]
 
-        ml = ['   ├── {}'.format(sv.process(m))
-              for m in r.methods if not m.internal or internal][:-1]
-        ml += ['   └── {}'.format(sv.process(m))
-               for m in r.methods if not m.internal or internal][-1:]
+        ml = [
+            '   ├── {}'.format(sv.process(m))
+            for m in r.methods
+            if not m.internal or internal
+        ][:-1]
+        ml += [
+            '   └── {}'.format(sv.process(m))
+            for m in r.methods
+            if not m.internal or internal
+        ][-1:]
 
         exp = '⇒ {0.path} - {0.class_name}:\n{1}'.format(r, '\n'.join(ml))
         assert sv.process(r) == exp
@@ -387,12 +422,20 @@ class TestStringVisitor:
         sv = inspect.StringVisitor(True, internal)
         r = inspect.inspect_routes(make_app())[0]
 
-        ml = ['   ├── {}'.format(sv.process(m))
-              for m in r.methods if not m.internal or internal][:-1]
-        ml += ['   └── {}'.format(sv.process(m))
-               for m in r.methods if not m.internal or internal][-1:]
+        ml = [
+            '   ├── {}'.format(sv.process(m))
+            for m in r.methods
+            if not m.internal or internal
+        ][:-1]
+        ml += [
+            '   └── {}'.format(sv.process(m))
+            for m in r.methods
+            if not m.internal or internal
+        ][-1:]
 
-        exp = '⇒ {0.path} - {0.class_name} ({0.source_info}):\n{1}'.format(r, '\n'.join(ml))
+        exp = '⇒ {0.path} - {0.class_name} ({0.source_info}):\n{1}'.format(
+            r, '\n'.join(ml)
+        )
         assert sv.process(r) == exp
 
     def test_route_no_methods(self, internal):
@@ -479,7 +522,11 @@ class TestStringVisitor:
     def test_middleware_tree_item(self, verbose, internal):
         sv = inspect.StringVisitor(verbose, internal)
         mt = inspect.inspect_middleware(make_app()).middleware_tree
-        for r, s in ((mt.request[0], '→'), (mt.resource[0], '↣'), (mt.response[0], '↢')):
+        for r, s in (
+            (mt.request[0], '→'),
+            (mt.resource[0], '↣'),
+            (mt.response[0], '↢'),
+        ):
             assert sv.process(r) == '{0} {1.class_name}.{1.name}'.format(s, r)
 
     @pytest.mark.parametrize('verbose', (True, False))
@@ -576,17 +623,23 @@ class TestStringVisitor:
         text = 'Falcon App (WSGI)'
         sv.indent = 4
         if r:
-            text += '\n• Routes:\n{}'.format('\n'.join(sv.process(r) for r in app.routes))
+            text += '\n• Routes:\n{}'.format(
+                '\n'.join(sv.process(r) for r in app.routes)
+            )
         if m:
             mt = sv.process(app.middleware)
-            text += '\n• Middleware ({}):\n{}'.format(app.middleware.independent_text, mt)
+            text += '\n• Middleware ({}):\n{}'.format(
+                app.middleware.independent_text, mt
+            )
         if sr:
             sr = '\n'.join(sv.process(sr) for sr in app.static_routes)
             text += '\n• Static routes:\n{}'.format(sr)
         if s:
             text += '\n• Sinks:\n{}'.format('\n'.join(sv.process(s) for s in app.sinks))
         if e:
-            err = '\n'.join(sv.process(e) for e in app.error_handlers if not e.internal or i)
+            err = '\n'.join(
+                sv.process(e) for e in app.error_handlers if not e.internal or i
+            )
             text += '\n• Error handlers:\n{}'.format(err)
         return text
 
@@ -596,7 +649,8 @@ class TestStringVisitor:
         app = inspect.inspect_app(make_app())
 
         assert inspect.StringVisitor(verbose, internal).process(app) == self.make(
-            sv, app, verbose, internal)
+            sv, app, verbose, internal
+        )
 
     @pytest.mark.parametrize('verbose', (True, False))
     def test_app_no_routes(self, verbose, internal):
@@ -604,7 +658,8 @@ class TestStringVisitor:
         app = inspect.inspect_app(make_app())
         app.routes.clear()
         assert inspect.StringVisitor(verbose, internal).process(app) == self.make(
-            sv, app, verbose, internal, r=False)
+            sv, app, verbose, internal, r=False
+        )
 
     @pytest.mark.parametrize('verbose', (True, False))
     def test_app_no_middleware(self, verbose, internal):
@@ -615,7 +670,8 @@ class TestStringVisitor:
         app.middleware.middleware_tree.resource.clear()
         app.middleware.middleware_tree.response.clear()
         assert inspect.StringVisitor(verbose, internal).process(app) == self.make(
-            sv, app, verbose, internal, m=False)
+            sv, app, verbose, internal, m=False
+        )
 
     @pytest.mark.parametrize('verbose', (True, False))
     def test_app_static_routes(self, verbose, internal):
@@ -623,7 +679,8 @@ class TestStringVisitor:
         app = inspect.inspect_app(make_app())
         app.static_routes.clear()
         assert inspect.StringVisitor(verbose, internal).process(app) == self.make(
-            sv, app, verbose, internal, sr=False)
+            sv, app, verbose, internal, sr=False
+        )
 
     @pytest.mark.parametrize('verbose', (True, False))
     def test_app_no_sink(self, verbose, internal):
@@ -631,7 +688,8 @@ class TestStringVisitor:
         app = inspect.inspect_app(make_app())
         app.sinks.clear()
         assert inspect.StringVisitor(verbose, internal).process(app) == self.make(
-            sv, app, verbose, internal, s=False)
+            sv, app, verbose, internal, s=False
+        )
 
     @pytest.mark.parametrize('verbose', (True, False))
     def test_app_no_errors(self, verbose, internal):
@@ -639,7 +697,8 @@ class TestStringVisitor:
         app = inspect.inspect_app(make_app())
         app.error_handlers.clear()
         assert inspect.StringVisitor(verbose, internal).process(app) == self.make(
-            sv, app, verbose, internal, e=False)
+            sv, app, verbose, internal, e=False
+        )
 
     def test_app_name(self, internal):
         sv = inspect.StringVisitor(False, internal, name='foo')

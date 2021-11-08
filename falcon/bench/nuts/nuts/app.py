@@ -4,10 +4,7 @@ from pecan import make_app
 
 
 def create():
-    return make_app(
-        'controllers.root.RootController',
-        logging={},
-        debug=False)
+    return make_app('controllers.root.RootController', logging={}, debug=False)
 
 
 def setup_app(config):
@@ -18,5 +15,5 @@ def setup_app(config):
         template_path=config.app.template_path,
         logging=getattr(config, 'logging', {}),
         debug=getattr(config.app, 'debug', False),
-        force_canonical=getattr(config.app, 'force_canonical', True)
+        force_canonical=getattr(config.app, 'force_canonical', True),
     )
