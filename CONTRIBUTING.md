@@ -34,13 +34,13 @@ You can check all this by running the following from within the Falcon project d
 $ tools/mintest.sh
 ```
 
-You may also use Python 3.6 or 3.7 if you don't have 3.8 installed on your system. Substitute "py36" or "py37" as appropriate. Note also that due to a bug introduced in tox version 3.21, you will need to pin to 3.20 in order to run Falcon's test suite. For example:
+You may also use another Python 3.6+ version if you don't have 3.8 installed on your system. Substitute "py36", "py37", "py39", "py310", etc as appropriate. For example:
 
 
 ```bash
-$ pip install -U tox==3.20 coverage
+$ pip install -U tox coverage
 $ rm -f .coverage.*
-$ tox -e pep8 && tox -e py35,py37 && tools/testing/combine_coverage.sh
+$ tox -e pep8 && tox -e py35,py310 && tools/testing/combine_coverage.sh
 ```
 
 If you are using pyenv, you will need to make sure both 3.8 and 3.5 are available in the current shell, e.g.:
