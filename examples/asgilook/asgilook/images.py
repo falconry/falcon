@@ -3,7 +3,6 @@ import falcon
 
 
 class Images:
-
     def __init__(self, config, store):
         self._config = config
         self._store = store
@@ -31,7 +30,6 @@ class Images:
 
 
 class Thumbnails:
-
     def __init__(self, store):
         self._store = store
 

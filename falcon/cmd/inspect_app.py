@@ -40,7 +40,10 @@ def make_parser():
         help='Prints only the information regarding the routes',
     )
     parser.add_argument(
-        '-v', '--verbose', action='store_true', help='More verbose output',
+        '-v',
+        '--verbose',
+        action='store_true',
+        help='More verbose output',
     )
     parser.add_argument(
         '-i',
@@ -60,7 +63,9 @@ def load_app(parser, args):
     try:
         module, instance = args.app_module.split(':', 1)
     except ValueError:
-        parser.error('The app_module must include a colon between the module and instance')
+        parser.error(
+            'The app_module must include a colon between the module and instance'
+        )
     try:
         app = getattr(importlib.import_module(module), instance)
     except AttributeError:
@@ -70,7 +75,9 @@ def load_app(parser, args):
         if callable(app):
             app = app()
             if not isinstance(app, falcon.App):
-                parser.error('{} did not return a falcon.App instance'.format(args.app_module))
+                parser.error(
+                    '{} did not return a falcon.App instance'.format(args.app_module)
+                )
         else:
             parser.error(
                 'The instance must be of falcon.App or be '
@@ -80,7 +87,10 @@ def load_app(parser, args):
 
 
 def route_main():
-    print('The "falcon-print-routes" command is deprecated. Please use "falcon-inspect-app"')
+    print(
+        'The "falcon-print-routes" command is deprecated. '
+        'Please use "falcon-inspect-app"'
+    )
     main()
 
 

@@ -29,15 +29,18 @@ def _gunicorn_args(host, port, extra_opts=()):
 
     args = (
         'gunicorn',
-        '--access-logfile', '-',
-        '--bind', '{}:{}'.format(host, port),
-
+        '--access-logfile',
+        '-',
+        '--bind',
+        '{}:{}'.format(host, port),
         # NOTE(vytas): Although rare, but Meinheld workers have been noticed to
         #   occasionally hang on shutdown.
-        '--graceful-timeout', str(_SHUTDOWN_TIMEOUT // 2),
+        '--graceful-timeout',
+        str(_SHUTDOWN_TIMEOUT // 2),
         # NOTE(vytas): In case a worker hangs for an unexpectedly long time
         #   while reading or processing request (the default value is 30).
-        '--timeout', str(_REQUEST_TIMEOUT),
+        '--timeout',
+        str(_REQUEST_TIMEOUT),
     )
     return args + extra_opts + ('_wsgi_test_app:app',)
 
@@ -53,8 +56,10 @@ def _meinheld_args(host, port):
         host,
         port,
         (
-            '--workers', '2',
-            '--worker-class', 'egg:meinheld#gunicorn_worker',
+            '--workers',
+            '2',
+            '--worker-class',
+            'egg:meinheld#gunicorn_worker',
         ),
     )
 
@@ -68,9 +73,12 @@ def _uvicorn_args(host, port):
 
     return (
         'uvicorn',
-        '--host', host,
-        '--port', str(port),
-        '--interface', 'wsgi',
+        '--host',
+        host,
+        '--port',
+        str(port),
+        '--interface',
+        'wsgi',
         '_wsgi_test_app:app',
     )
 
@@ -79,8 +87,10 @@ def _uwsgi_args(host, port):
     """uWSGI"""
     return (
         'uwsgi',
-        '--http', '{}:{}'.format(host, port),
-        '--wsgi-file', '_wsgi_test_app.py',
+        '--http',
+        '{}:{}'.format(host, port),
+        '--wsgi-file',
+        '_wsgi_test_app.py',
     )
 
 
@@ -93,18 +103,21 @@ def _waitress_args(host, port):
 
     return (
         'waitress-serve',
-        '--listen', '{}:{}'.format(host, port),
+        '--listen',
+        '{}:{}'.format(host, port),
         '_wsgi_test_app:app',
     )
 
 
-@pytest.fixture(params=[
-    _gunicorn_args,
-    _meinheld_args,
-    _uvicorn_args,
-    _uwsgi_args,
-    _waitress_args,
-])
+@pytest.fixture(
+    params=[
+        _gunicorn_args,
+        _meinheld_args,
+        _uvicorn_args,
+        _uwsgi_args,
+        _waitress_args,
+    ]
+)
 def server_url(request):
     if sys.platform.startswith('win'):
         pytest.skip('WSGI server tests are currently unsupported on Windows')
@@ -159,11 +172,12 @@ def server_url(request):
         server.kill()
         server.communicate()
 
-        pytest.fail('Server process did not exit in a timely manner and had to be killed.')
+        pytest.fail(
+            'Server process did not exit in a timely manner and had to be killed.'
+        )
 
 
 class TestWSGIServer:
-
     def test_get(self, server_url):
         resp = requests.get(server_url + '/hello', timeout=_REQUEST_TIMEOUT)
         assert resp.status_code == 200
@@ -188,7 +202,8 @@ class TestWSGIServer:
         }
 
         resp = requests.post(
-            server_url + '/forms', files=files, timeout=_REQUEST_TIMEOUT)
+            server_url + '/forms', files=files, timeout=_REQUEST_TIMEOUT
+        )
         assert resp.status_code == 200
         assert resp.json() == {
             'message': {
@@ -202,7 +217,9 @@ class TestWSGIServer:
         }
 
     def test_static_file(self, server_url):
-        resp = requests.get(server_url + '/tests/test_wsgi_servers.py', timeout=_REQUEST_TIMEOUT)
+        resp = requests.get(
+            server_url + '/tests/test_wsgi_servers.py', timeout=_REQUEST_TIMEOUT
+        )
         assert resp.status_code == 200
         assert resp.text.startswith(
             'import hashlib\n'
@@ -213,4 +230,5 @@ class TestWSGIServer:
             'import time\n'
         )
         assert resp.headers.get('Content-Disposition') == (
-            'attachment; filename="test_wsgi_servers.py"')
+            'attachment; filename="test_wsgi_servers.py"'
+        )

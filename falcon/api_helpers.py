@@ -1,7 +1,6 @@
-from .app_helpers import * # NOQA
+import warnings
 
-# TODO deprecate
-# import warnings
-# from .util.deprecation import DeprecatedWarning
+from .app_helpers import *  # NOQA
+from .util.deprecation import DeprecatedWarning
 
-# warnings.warn('The api_helpers module was renamed to app_helpers.', DeprecatedWarning)
+warnings.warn('The api_helpers module was renamed to app_helpers.', DeprecatedWarning)

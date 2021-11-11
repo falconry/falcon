@@ -31,11 +31,13 @@ from falcon.util.deprecation import deprecated_args
 #   * Clean up, simplify, and optimize BufferedReader
 #   * Better documentation
 
-_ALLOWED_CONTENT_HEADERS = frozenset([
-    b'content-type',
-    b'content-disposition',
-    b'content-transfer-encoding',
-])
+_ALLOWED_CONTENT_HEADERS = frozenset(
+    [
+        b'content-type',
+        b'content-disposition',
+        b'content-transfer-encoding',
+    ]
+)
 
 _FILENAME_STAR_RFC5987 = re.compile(r"([\w-]+)'[\w]*'(.+)")
 
@@ -69,7 +71,7 @@ class MultipartParseError(errors.MediaMalformedError):
             self,
             title='Malformed multipart/form-data request media',
             description=description,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -372,11 +374,11 @@ class BodyPart:
         """
         if self._media is None:
             handler, _, _ = self._parse_options.media_handlers._resolve(
-                self.content_type, 'text/plain')
+                self.content_type, 'text/plain'
+            )
 
             try:
-                self._media = handler.deserialize(
-                    self.stream, self.content_type, None)
+                self._media = handler.deserialize(self.stream, self.content_type, None)
             finally:
                 if handler.exhaust_stream:
                     self.stream.exhaust()
@@ -389,7 +391,6 @@ class BodyPart:
 
 
 class MultipartForm:
-
     def __init__(self, stream, boundary, content_length, parse_options):
         # NOTE(vytas): More lenient check whether the provided stream is not
         #   already an instance of BufferedReader.
@@ -440,14 +441,19 @@ class MultipartForm:
                     raise MultipartParseError(description='unexpected form structure')
 
             except errors.DelimiterError as err:
-                raise MultipartParseError(description='unexpected form structure') from err
+                raise MultipartParseError(
+                    description='unexpected form structure'
+                ) from err
 
             headers = {}
             try:
                 headers_block = stream.read_until(
-                    _CRLF_CRLF, max_headers_size, consume_delimiter=True)
+                    _CRLF_CRLF, max_headers_size, consume_delimiter=True
+                )
             except errors.DelimiterError as err:
-                raise MultipartParseError(description='incomplete body part headers') from err
+                raise MultipartParseError(
+                    description='incomplete body part headers'
+                ) from err
 
             for line in headers_block.split(_CRLF):
                 name, sep, value = line.partition(b': ')
@@ -464,8 +470,10 @@ class MultipartForm:
                     #   bodies have been discovered.
                     if name == b'content-transfer-encoding' and value != b'binary':
                         raise MultipartParseError(
-                            description=('the deprecated Content-Transfer-Encoding '
-                                         'header field is unsupported')
+                            description=(
+                                'the deprecated Content-Transfer-Encoding '
+                                'header field is unsupported'
+                            )
                         )
                     # NOTE(vytas): RFC 7578, section 4.8.
                     #   Other header fields MUST NOT be included and MUST be
@@ -479,8 +487,7 @@ class MultipartForm:
                     description='maximum number of form body parts exceeded'
                 )
 
-            yield BodyPart(stream.delimit(delimiter), headers,
-                           self._parse_options)
+            yield BodyPart(stream.delimit(delimiter), headers, self._parse_options)
 
 
 class MultipartFormHandler(BaseHandler):
@@ -506,8 +513,9 @@ class MultipartFormHandler(BaseHandler):
     def __init__(self, parse_options=None):
         self.parse_options = parse_options or MultipartParseOptions()
 
-    def _deserialize_form(self, stream, content_type, content_length,
-                          form_cls=MultipartForm):
+    def _deserialize_form(
+        self, stream, content_type, content_length, form_cls=MultipartForm
+    ):
         if not form_cls:
             raise NotImplementedError
 
@@ -517,7 +525,8 @@ class MultipartFormHandler(BaseHandler):
         except KeyError:
             raise errors.HTTPInvalidHeader(
                 'No boundary specifier found in {!r}'.format(content_type),
-                'Content-Type')
+                'Content-Type',
+            )
 
         # NOTE(vytas): RFC 2046, section 5.1.
         #   If a boundary delimiter line appears to end with white space, the
@@ -532,17 +541,18 @@ class MultipartFormHandler(BaseHandler):
         if not 1 <= len(boundary) <= 70:
             raise errors.HTTPInvalidHeader(
                 'The boundary parameter must consist of 1 to 70 characters',
-                'Content-Type')
+                'Content-Type',
+            )
 
-        return form_cls(stream, boundary.encode(), content_length,
-                        self.parse_options)
+        return form_cls(stream, boundary.encode(), content_length, self.parse_options)
 
     def deserialize(self, stream, content_type, content_length):
         return self._deserialize_form(stream, content_type, content_length)
 
     async def deserialize_async(self, stream, content_type, content_length):
-        return self._deserialize_form(stream, content_type, content_length,
-                                      form_cls=self._ASGI_MULTIPART_FORM)
+        return self._deserialize_form(
+            stream, content_type, content_length, form_cls=self._ASGI_MULTIPART_FORM
+        )
 
     def serialize(self, media, content_type):
         raise NotImplementedError('multipart form serialization unsupported')

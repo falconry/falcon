@@ -8,7 +8,9 @@ ENV_VARIABLE = 'GITHUB_REF'
 
 def go():
     parser = argparse.ArgumentParser()
-    parser.add_argument('folder', help='Directory where to look for wheels and source dist')
+    parser.add_argument(
+        'folder', help='Directory where to look for wheels and source dist'
+    )
 
     args = parser.parse_args()
 
@@ -37,8 +39,9 @@ def go():
 
     if errors:
         raise RuntimeError(
-            'Expected to find only wheels or or source dist with tag %r (from env variable '
-            'value %r). Found instead %s' % (tag_value, raw_value, errors)
+            'Expected to find only wheels or or source dist with tag %r'
+            '(from env variable value %r). Found instead %s'
+            % (tag_value, raw_value, errors)
         )
     print('Found %s wheels or source dist with tag %r' % (len(candidates), tag_value))
 

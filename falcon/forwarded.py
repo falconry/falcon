@@ -31,17 +31,18 @@ _TOKEN = r'[{tchar}]+'.format(tchar=_TCHAR)
 # qdtext includes 0x5C to escape 0x5D ('\]')
 # qdtext excludes obs-text (because obsoleted, and encoding not specified)
 _QDTEXT = r'[{0}]'.format(
-    r''.join(chr(c) for c in (0x09, 0x20, 0x21) + tuple(range(0x23, 0x7F))))
+    r''.join(chr(c) for c in (0x09, 0x20, 0x21) + tuple(range(0x23, 0x7F)))
+)
 
 _QUOTED_PAIR = r'\\[\t !-~]'
 
 _QUOTED_STRING = r'"(?:{quoted_pair}|{qdtext})*"'.format(
-    qdtext=_QDTEXT, quoted_pair=_QUOTED_PAIR)
+    qdtext=_QDTEXT, quoted_pair=_QUOTED_PAIR
+)
 
-_FORWARDED_PAIR = (
-    r'({token})=({token}|{quoted_string})'.format(
-        token=_TOKEN,
-        quoted_string=_QUOTED_STRING))
+_FORWARDED_PAIR = r'({token})=({token}|{quoted_string})'.format(
+    token=_TOKEN, quoted_string=_QUOTED_STRING
+)
 
 # same pattern as _QUOTED_PAIR but contains a capture group
 _QUOTED_PAIR_REPLACE_RE = re.compile(r'\\([\t !-~])')
@@ -113,7 +114,7 @@ def _parse_forwarded_header(forwarded):
     while 0 <= pos < end:
         match = _FORWARDED_PAIR_RE.match(forwarded, pos)
 
-        if match is not None:           # got a valid forwarded-pair
+        if match is not None:  # got a valid forwarded-pair
             if need_separator:
                 # bad syntax here, skip to next comma
                 pos = forwarded.find(',', pos)
@@ -153,7 +154,7 @@ def _parse_forwarded_header(forwarded):
                     # either 'http' or 'https' (case-sensitive).
                     parsed_element.scheme = value.lower()
 
-        elif forwarded[pos] == ',':      # next forwarded-element
+        elif forwarded[pos] == ',':  # next forwarded-element
             need_separator = False
             pos += 1
 
@@ -163,7 +164,7 @@ def _parse_forwarded_header(forwarded):
                 elements.append(parsed_element)
                 parsed_element = None
 
-        elif forwarded[pos] == ';':      # next forwarded-pair
+        elif forwarded[pos] == ';':  # next forwarded-pair
             need_separator = False
             pos += 1
 

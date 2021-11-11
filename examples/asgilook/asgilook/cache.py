@@ -25,8 +25,7 @@ class RedisCache:
 
     async def process_startup(self, scope, event):
         if self._redis is None:
-            self._redis = await self._config.create_redis_pool(
-                self._config.redis_host)
+            self._redis = await self._config.create_redis_pool(self._config.redis_host)
 
     async def process_request(self, req, resp):
         resp.context.cached = False

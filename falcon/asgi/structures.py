@@ -78,7 +78,7 @@ class SSEvent:
         event=None,
         event_id=None,
         retry=None,
-        comment=None
+        comment=None,
     ):
         # NOTE(kgriffs): Check up front since this makes it a lot easier
         #   to debug the source of the problem in the app vs. waiting for
@@ -116,9 +116,9 @@ class SSEvent:
         """Serialize this event to string.
 
         Args:
-            handler: Handler object that will be used to serialize the ``json`` attribute to
-                string. When not provided, a default handler using the builtin
-                JSON library will be used (default ``None``).
+            handler: Handler object that will be used to serialize the ``json``
+                attribute to string. When not provided, a default handler using
+                the builtin JSON library will be used (default ``None``).
 
         Returns:
             bytes: string representation of this event.

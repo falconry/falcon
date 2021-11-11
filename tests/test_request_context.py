@@ -5,8 +5,9 @@ import falcon.testing as testing
 
 
 class TestRequestContext:
-
-    def test_default_request_context(self,):
+    def test_default_request_context(
+        self,
+    ):
         req = testing.create_req()
 
         req.context.hello = 'World'
@@ -21,7 +22,7 @@ class TestRequestContext:
     def test_custom_request_context(self):
 
         # Define a Request-alike with a custom context type
-        class MyCustomContextType():
+        class MyCustomContextType:
             pass
 
         class MyCustomRequest(Request):
@@ -42,7 +43,6 @@ class TestRequestContext:
             MyCustomRequest(env)
 
     def test_custom_request_context_request_access(self):
-
         def create_context(req):
             return {'uri': req.uri}
 

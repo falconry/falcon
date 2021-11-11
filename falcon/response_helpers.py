@@ -40,6 +40,7 @@ def header_property(name, doc, transform=None):
             return None
 
     if transform is None:
+
         def fset(self, value):
             if value is None:
                 try:
@@ -48,7 +49,9 @@ def header_property(name, doc, transform=None):
                     pass
             else:
                 self._headers[normalized_name] = str(value)
+
     else:
+
         def fset(self, value):
             if value is None:
                 try:
@@ -82,14 +85,14 @@ def format_range(value):
     return result
 
 
-def format_content_disposition(value):
+def format_content_disposition(value, disposition_type='attachment'):
     """Format a Content-Disposition header given a filename."""
 
     # NOTE(vytas): RFC 6266, Appendix D.
     #   Include a "filename" parameter when US-ASCII ([US-ASCII]) is
     #   sufficiently expressive.
     if isascii(value):
-        return 'attachment; filename="' + value + '"'
+        return '%s; filename="%s"' % (disposition_type, value)
 
     # NOTE(vytas): RFC 6266, Appendix D.
     #   * Include a "filename*" parameter where the desired filename cannot be
@@ -102,8 +105,11 @@ def format_content_disposition(value):
     #   * When a "filename" parameter is included as a fallback (as per above),
     #     "filename" should occur first, due to parsing problems in some
     #     existing implementations.
-    return "attachment; filename=%s; filename*=UTF-8''%s" % (
-        secure_filename(value), uri.encode_value(value))
+    return "%s; filename=%s; filename*=UTF-8''%s" % (
+        disposition_type,
+        secure_filename(value),
+        uri.encode_value(value),
+    )
 
 
 def format_etag_header(value):
