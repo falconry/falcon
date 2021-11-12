@@ -232,3 +232,21 @@ class TestWSGIServer:
         assert resp.headers.get('Content-Disposition') == (
             'attachment; filename="test_wsgi_servers.py"'
         )
+
+    @pytest.mark.parametrize('byte_range,expected_head', [
+        ('7-', b'hashlib'),
+        ('2-6', b'port'),
+        ('32-38', b'random'),
+        ('-47', b'The content of this comment is part of a test.\n'),
+    ])
+    def test_static_file_byte_range(self, byte_range, expected_head, server_url):
+        resp = requests.get(
+            server_url + '/tests/test_wsgi_servers.py',
+            timeout=_REQUEST_TIMEOUT,
+            headers={'Range': 'bytes=' + byte_range},
+        )
+
+        assert resp.status_code == 206
+        assert resp.content.startswith(expected_head)
+
+        # NOTE(vytas): The content of this comment is part of a test.
