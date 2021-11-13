@@ -258,7 +258,7 @@ class TestWSGIServer:
     ):
         if wsgi_server == 'meinheld':
             pytest.xfail(
-                'Meinheld\'s file_wrapper fails without a fileno(), see also: '
+                "Meinheld's file_wrapper fails without a fileno(), see also: "
                 'https://github.com/mopemope/meinheld/issues/130'
             )
 
