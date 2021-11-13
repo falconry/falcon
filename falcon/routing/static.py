@@ -15,7 +15,7 @@ def _open_range(file_path, req_range):
         file_path (str): Path to the file to open.
         req_range (Optional[Tuple[int, int]]): Request.range value.
     Returns:
-        tuple: Three-member tuple of (stream, size, content-range).
+        tuple: Three-member tuple of (stream, content-length, content-range).
             If req_range is ``None`` or ignored, content-range will be
             ``None``; otherwise, the stream will be appropriately seeked and
             possibly bounded, and the content-range will be a tuple of
@@ -40,7 +40,7 @@ def _open_range(file_path, req_range):
         # NOTE(vytas): Wrap in order to prevent sendfile from being used, as
         #   its implementation was found to be buggy in many popular WSGI
         #   servers for open files with a non-zero offset.
-        return _BoundedFile(fh, -start), size, (size + start, size - 1, size)
+        return _BoundedFile(fh, -start), -start, (size + start, size - 1, size)
 
     if start >= size:
         fh.close()
@@ -51,10 +51,12 @@ def _open_range(file_path, req_range):
         # NOTE(vytas): Wrap in order to prevent sendfile from being used, as
         #   its implementation was found to be buggy in many popular WSGI
         #   servers for open files with a non-zero offset.
-        return _BoundedFile(fh, size - start), size, (start, size - 1, size)
+        length = size - start
+        return _BoundedFile(fh, length), length, (start, size - 1, size)
 
     end = min(end, size - 1)
-    return _BoundedFile(fh, end - start + 1), size, (start, end, size)
+    length = end - start + 1
+    return _BoundedFile(fh, length), length, (start, end, size)
 
 
 class _BoundedFile:
@@ -193,16 +195,16 @@ class StaticRoute:
         if req.range_unit != 'bytes':
             req_range = None
         try:
-            stream, size, content_range = _open_range(file_path, req_range)
-            resp.set_stream(stream, size)
+            stream, length, content_range = _open_range(file_path, req_range)
+            resp.set_stream(stream, length)
         except IOError:
             if self._fallback_filename is None:
                 raise falcon.HTTPNotFound()
             try:
-                stream, size, content_range = _open_range(
+                stream, length, content_range = _open_range(
                     self._fallback_filename, req_range
                 )
-                resp.set_stream(stream, size)
+                resp.set_stream(stream, length)
                 file_path = self._fallback_filename
             except IOError:
                 raise falcon.HTTPNotFound()

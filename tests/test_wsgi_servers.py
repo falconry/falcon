@@ -240,6 +240,10 @@ class TestWSGIServer:
             'attachment; filename="test_wsgi_servers.py"'
         )
 
+        content_length = int(resp.headers['Content-Length'])
+        file_size = os.path.getsize(__file__)
+        assert len(resp.content) == content_length == file_size
+
     @pytest.mark.parametrize(
         'byte_range,expected_head',
         [
@@ -266,5 +270,12 @@ class TestWSGIServer:
 
         assert resp.status_code == 206
         assert resp.content.startswith(expected_head)
+
+        content_length = int(resp.headers['Content-Length'])
+        assert len(resp.content) == content_length
+
+        file_size = os.path.getsize(__file__)
+        content_range_size = int(resp.headers['Content-Range'].split('/')[-1])
+        assert file_size == content_range_size
 
         # NOTE(vytas): The content of this comment is part of a test.
