@@ -55,7 +55,7 @@ and ``REQUEST_URI`` (uWSGI, Waitress, Werkzeug's dev server), and replaces
 
 Running the above app with a supported server such as Gunicorn or uWSGI, the
 following response is rendered to
-``GET /cache/http%3A%2F%2Ffalconframework.org`` request:
+a ``GET /cache/http%3A%2F%2Ffalconframework.org`` request:
 
 .. code:: json
 
@@ -134,7 +134,7 @@ middleware component that replaces ``req.path`` with the value of ``raw_path``
 
 Running the above snippet with ``uvicorn`` (that supports ``raw_path``), the
 percent-encoded ``url`` field is now correctly handled for a
-``GET http://localhost:8000/cache/http%3A%2F%2Ffalconframework.org%2Fstatus``
+``GET /cache/http%3A%2F%2Ffalconframework.org%2Fstatus``
 request:
 
 .. code:: json

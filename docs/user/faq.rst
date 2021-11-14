@@ -400,11 +400,10 @@ path component of the raw URL, see more in the following recipe:
 :ref:`raw_url_path_recipe`.
 
 In contrast to WSGI, the ASGI specification does define a standard connection
-HTTP scope variable name (``raw_path``, of type ``bytes``) for the unmodified
-HTTP path. However, it is not mandatory, and some applications servers may be
-unable to provide it. Nevertheless, we are exploring the possibility of adding
-an optional feature to use this raw path for routing in the ASGI flavor of the
-framework.
+HTTP scope variable name (``raw_path``) for the unmodified HTTP path. However,
+it is not mandatory, and some applications servers may be unable to provide
+it. Nevertheless, we are exploring the possibility of adding an optional
+feature to use this raw path for routing in the ASGI flavor of the framework.
 
 Extensibility
 ~~~~~~~~~~~~~
