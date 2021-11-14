@@ -29,12 +29,12 @@ def _open_range(file_path, req_range):
     start, end = req_range
     if size == 0:
         # NOTE(tipabu): Ignore Range headers for zero-byte files; just serve
-        # the empty body since Content-Range can't be used to express a
-        # zero-byte body
+        #   the empty body since Content-Range can't be used to express a
+        #   zero-byte body.
         return fh, 0, None
 
     if start < 0 and end == -1:
-        # NOTE(tipabu): Special case: only want the last N bytes
+        # NOTE(tipabu): Special case: only want the last N bytes.
         start = max(start, -size)
         fh.seek(start, os.SEEK_END)
         # NOTE(vytas): Wrap in order to prevent sendfile from being used, as
