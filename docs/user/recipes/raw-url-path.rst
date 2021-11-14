@@ -23,46 +23,70 @@ and ``REQUEST_URI`` (uWSGI, Waitress, Werkzeug's dev server), and replaces
 .. code:: python
 
     import falcon
+    import falcon.uri
 
 
     class RawPathComponent:
         def process_request(self, req, resp):
-            raw_uri = req.env.get('RAW_URI', req.env.get('REQUEST_URI'))
+            raw_uri = req.env.get('RAW_URI') or req.env.get('REQUEST_URI')
 
             # NOTE: Reconstruct the percent-encoded path from the raw URI.
             if raw_uri:
                 req.path, _, _ = raw_uri.partition('?')
 
 
-    class PathResource:
-        def on_get(self, req, resp, path):
-            # NOTE: path here is potentially percent-encoded.
-            path = falcon.uri.decode(path)
+    class URLResource:
+        def on_get(self, req, resp, url):
+            # NOTE: url here is potentially percent-encoded.
+            url = falcon.uri.decode(url)
 
-            resp.media = {'path': path}
+            resp.media = {'url': url}
+
+        def on_get_status(self, req, resp, url):
+            # NOTE: url here is potentially percent-encoded.
+            url = falcon.uri.decode(url)
+
+            resp.media = {'cached': True}
 
 
     app = falcon.App(middleware=[RawPathComponent()])
-    app.add_route('/example/{path}', PathResource())
+    app.add_route('/cache/{url}', URLResource())
+    app.add_route('/cache/{url}/status', URLResource(), suffix='status')
 
 Running the above app with a supported server such as Gunicorn or uWSGI, the
-following response is rendered to a ``GET /example/item%2F001?p=value``:
+following response is rendered to
+``GET /cache/http%3A%2F%2Ffalconframework.org`` request:
 
 .. code:: json
 
     {
-        "path": "item/001"
+        "url": "http://falconframework.org"
     }
 
-If we removed ``RawPathComponent()`` from the app's initializer, the request
-would be routed as ``/example/item/001``, and no matching resource would be
-found:
+We can also check the status of this URI in our imaginary web caching system by
+accessing ``/cache/http%3A%2F%2Ffalconframework.org/status``:
+
+.. code:: json
+
+    {
+        "cached": true
+    }
+
+If we removed ``RawPathComponent()`` from the app's middleware list, the
+request would be routed as ``/cache/http://falconframework.org``, and no
+matching resource would be found:
 
 .. code:: json
 
     {
         "title": "404 Not Found"
     }
+
+What is more, even if we could implement a flexible router that was capable of
+matching these complex URI patterns, the app would still not be able to
+distinguish between ``/cache/http%3A%2F%2Ffalconframework.org%2Fstatus`` and
+``/cache/http%3A%2F%2Ffalconframework.org/status`` if both were presented only
+in the percent-decoded form.
 
 ASGI
 ----
@@ -77,34 +101,53 @@ middleware component that replaces ``req.path`` with the value of ``raw_path``
 .. code:: python
 
     import falcon.asgi
+    import falcon.uri
 
 
     class RawPathComponent:
         async def process_request(self, req, resp):
             raw_path = req.scope.get('raw_path')
 
-            # NOTE: Decode the tunneled raw path from the raw_path bytestring.
+            # NOTE: Decode the raw path from the raw_path bytestring, disallowing
+            #   non-ASCII characters, assuming they are correctly percent-coded.
             if raw_path:
-                req.path = raw_path.decode('latin1')
+                req.path = raw_path.decode('ascii')
 
 
-    class PathResource:
-        async def on_get(self, req, resp, path):
-            # NOTE: path here is potentially percent-encoded.
-            path = falcon.uri.decode(path)
+    class URLResource:
+        async def on_get(self, req, resp, url):
+            # NOTE: url here is potentially percent-encoded.
+            url = falcon.uri.decode(url)
 
-            resp.media = {'path': path}
+            resp.media = {'url': url}
+
+        async def on_get_status(self, req, resp, url):
+            # NOTE: url here is potentially percent-encoded.
+            url = falcon.uri.decode(url)
+
+            resp.media = {'cached': True}
 
 
     app = falcon.asgi.App(middleware=[RawPathComponent()])
-    app.add_route('/example/{path}', PathResource())
+    app.add_route('/cache/{url}', URLResource())
+    app.add_route('/cache/{url}/status', URLResource(), suffix='status')
 
 Running the above snippet with ``uvicorn`` (that supports ``raw_path``), the
-percent-encoded ``path`` field is now correctly handled for a
-``GET /example/item%2F001?p=value`` request:
+percent-encoded ``url`` field is now correctly handled for a
+``GET http://localhost:8000/cache/http%3A%2F%2Ffalconframework.org%2Fstatus``
+request:
 
 .. code:: json
 
     {
-        "path": "item/001"
+        "url": "http://falconframework.org/status"
+    }
+
+Again, as in the WSGI version, removing ``RawPathComponent()`` no longer lets
+the app route the above request as intended:
+
+.. code:: json
+
+    {
+        "title": "404 Not Found"
     }
