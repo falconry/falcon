@@ -274,6 +274,7 @@ def test_range_requests(
     else:
         assert response.status == falcon.HTTP_206
     assert response.text == exp_content
+    assert int(response.headers['Content-Length']) == len(exp_content)
     assert response.headers.get('Content-Range') == exp_content_range
     assert response.headers.get('Accept-Ranges') == 'bytes'
     if use_fallback:
@@ -528,6 +529,7 @@ def test_e2e_fallback_filename(
         else:
             assert response.status == falcon.HTTP_200
             assert response.text == os.path.normpath(directory + expected)
+            assert int(response.headers['Content-Length']) == len(response.text)
 
     test('/static', '/opt/somesite/static/', static_exp)
     test('/assets', '/opt/somesite/assets/', assert_axp)

@@ -228,6 +228,10 @@ class TestWSGIServer:
             server_url + '/tests/test_wsgi_servers.py', timeout=_REQUEST_TIMEOUT
         )
         assert resp.status_code == 200
+
+        # TODO(vytas): In retrospect, it would be easier to maintain these
+        #   static route tests by creating a separate file instead of relying
+        #   on the content of this same __file__.
         assert resp.text.startswith(
             'import hashlib\n'
             'import os\n'
@@ -277,5 +281,9 @@ class TestWSGIServer:
         file_size = os.path.getsize(__file__)
         content_range_size = int(resp.headers['Content-Range'].split('/')[-1])
         assert file_size == content_range_size
+
+        # TODO(vytas): In retrospect, it would be easier to maintain these
+        #   static route tests by creating a separate file instead of relying
+        #   on the content of this same __file__.
 
         # NOTE(vytas): The content of this comment is part of a test.
