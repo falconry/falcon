@@ -55,7 +55,7 @@ following response is rendered to a ``GET /example/item%2F001?p=value``:
     }
 
 If we removed ``RawPathComponent()`` from the app's initializer, the request
-would be routed as ``/example/item/001``, and no matching resource could be
+would be routed as ``/example/item/001``, and no matching resource would be
 found:
 
 .. code:: json
