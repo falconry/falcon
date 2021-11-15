@@ -175,7 +175,7 @@ authorization credentials by raising an instance of :class:`~.HTTPUnauthorized`
 (or rendering a 4XX response in another way), a common pitfall is that even an
 ``OPTIONS`` request (which is lacking authorization as per the above
 explanation) yields an error in this manner. As a result of the failed
-preflight, the browsers chooses not proceed with the main request.
+preflight, the browser chooses not proceed with the main request.
 
 If you have implemented the authorization middleware yourself, you can simply
 let ``OPTIONS`` pass through:
