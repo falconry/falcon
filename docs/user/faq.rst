@@ -192,8 +192,8 @@ let ``OPTIONS`` pass through:
 
             # My authorization logic...
 
-Alternatively, if you rather prefer not to fiddle with third party middleware,
-you can subclass it:
+Alternatively, if the middleware comes from a third-party library,
+it may be more practical to subclass it:
 
 .. code:: python
 
