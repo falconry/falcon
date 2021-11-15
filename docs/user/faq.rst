@@ -164,7 +164,7 @@ Why is my request with authorization blocked despite ``cors_enable``?
 ---------------------------------------------------------------------
 
 When you are making a cross-origin request from the browser (or another HTTP
-client verifying CORS policy), and the request is authenticated used the
+client verifying CORS policy), and the request is authenticated using the
 Authorization header, the browser adds ``authorization`` to
 Access-Control-Request-Headers in the preflight (``OPTIONS``) request,
 however, the actual authorization credentials are omitted at this stage.
