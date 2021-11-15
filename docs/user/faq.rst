@@ -160,6 +160,15 @@ try one of the generic
 If you use an API gateway, you might also look into what CORS functionality
 it provides at that level.
 
+Why is my request with authorization blocked despite setting ``cors_enable``?
+-----------------------------------------------------------------------------
+
+(WiP)
+
+If you tried the above, and you still believe the problem lies within Falcon's
+:ref:`CORS middleware`, it might be a bug! :ref:`Let us know <help>` so we can
+help.
+
 How do I implement redirects within Falcon?
 -------------------------------------------
 
