@@ -1,2 +1,1 @@
-Impemented :func:`~falcon.routing.static._AsyncFileReader.close()` method to
-close files in asgi static routes.
+Implemented method to close files in asgi static routes.

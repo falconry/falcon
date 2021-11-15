@@ -4,6 +4,7 @@ import errno
 import io
 import os
 import pathlib
+import unittest.mock
 
 import pytest
 
@@ -575,3 +576,14 @@ def test_bounded_file_wrapper():
     assert not buffer.closed
     fh.close()
     assert buffer.closed
+
+
+def test_file_closed(client, monkeypatch):
+    client.app.add_static_route('/static', '/var/www/statics')
+
+    m = unittest.mock.mock_open(read_data=b'test_data')
+    with unittest.mock.patch('io.open', m):
+        client.simulate_request(path='/static/foobar')
+    m.assert_called_once_with(unittest.mock.ANY, 'rb')
+    handler = m()
+    handler.close.assert_called_once_with()
