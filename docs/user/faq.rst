@@ -160,6 +160,56 @@ try one of the generic
 If you use an API gateway, you might also look into what CORS functionality
 it provides at that level.
 
+Why is my request with authorization blocked despite ``cors_enable``?
+---------------------------------------------------------------------
+
+When you are making a cross-origin request from the browser (or another HTTP
+client verifying CORS policy), and the request is authenticated using the
+Authorization header, the browser adds ``authorization`` to
+Access-Control-Request-Headers in the preflight (``OPTIONS``) request,
+however, the actual authorization credentials are omitted at this stage.
+
+If your request authentication/authorization is performed in a
+:ref:`middleware <middleware>` component which rejects requests lacking
+authorization credentials by raising an instance of :class:`~.HTTPUnauthorized`
+(or rendering a 4XX response in another way), a common pitfall is that even an
+``OPTIONS`` request (which is lacking authorization as per the above
+explanation) yields an error in this manner. As a result of the failed
+preflight, the browser chooses not proceed with the main request.
+
+If you have implemented the authorization middleware yourself, you can simply
+let ``OPTIONS`` pass through:
+
+.. code:: python
+
+    class MyAuthMiddleware:
+        def process_request(self, req, resp):
+            # NOTE: Do not authenticate OPTIONS requests.
+            if req.method == 'OPTIONS':
+                return
+
+            # -- snip --
+
+            # My authorization logic...
+
+Alternatively, if the middleware comes from a third-party library,
+it may be more practical to subclass it:
+
+.. code:: python
+
+    class CORSAwareMiddleware(SomeAuthMiddleware):
+        def process_request(self, req, resp):
+            # NOTE: Do not authenticate OPTIONS requests.
+            if req.method != 'OPTIONS':
+                super().process_request(req, resp)
+
+In the case middleware in question instead hooks into ``process_resource()``,
+you can use a similar treatment.
+
+If you tried the above, and you still suspect the problem lies within Falcon's
+:ref:`CORS middleware <cors>`, it might be a bug! :ref:`Let us know <help>` so
+we can help.
+
 How do I implement redirects within Falcon?
 -------------------------------------------
 
