@@ -1,1 +1,3 @@
-Implemented method to close files in asgi static routes.
+Previously, files could be left open when serving via an ASGI static route
+(depending on the underlying GC implementation). This has been fixed so that a
+file is closed explicitly after rendering the response.
