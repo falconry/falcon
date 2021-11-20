@@ -1,10 +1,7 @@
-# -*- coding: utf-8 -*-
-
 import errno
 import io
 import os
 import pathlib
-import unittest.mock
 
 import pytest
 
@@ -48,11 +45,14 @@ def patch_open(monkeypatch):
             fd = FakeFD(1337)
             fd._stat = FakeStat(len(data))
             fake_file.fileno = lambda: fd
+
+            patch.current_file = fake_file
             return fake_file
 
         monkeypatch.setattr(io, 'open', open)
         monkeypatch.setattr(os, 'fstat', lambda fileno: fileno._stat)
 
+    patch.current_file = None
     return patch
 
 
@@ -578,12 +578,14 @@ def test_bounded_file_wrapper():
     assert buffer.closed
 
 
-def test_file_closed(client, monkeypatch):
+def test_file_closed(client, patch_open):
+    patch_open(b'test_data')
+
     client.app.add_static_route('/static', '/var/www/statics')
 
-    m = unittest.mock.mock_open(read_data=b'test_data')
-    with unittest.mock.patch('io.open', m):
-        client.simulate_request(path='/static/foobar')
-    m.assert_called_once_with(unittest.mock.ANY, 'rb')
-    handler = m()
-    handler.close.assert_called_once_with()
+    resp = client.simulate_request(path='/static/foo/bar.txt')
+    assert resp.status_code == 200
+    assert resp.text == 'test_data'
+
+    assert patch_open.current_file is not None
+    assert patch_open.current_file.closed
