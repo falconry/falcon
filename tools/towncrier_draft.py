@@ -28,6 +28,13 @@ def render_draft(target):
     atexit.register(_write_changelog, target, template)
 
     draft = subprocess.check_output(('towncrier', '--draft'), cwd=ROOT)
+
+    # NOTE(vytas): towncrier does not seem to respect our preference for not
+    #   creating a title, so we remove it manually.
+    #   (See also: https://github.com/twisted/towncrier/issues/345)
+    draft = draft.split(b'=============', 1)[-1]
+    draft = draft.lstrip(b'=').lstrip()
+
     # NOTE(vytas): towncrier --draft does not seem to use the template,
     #   so we substitute manually.
     rendered = template.replace(b'.. towncrier release notes start', draft, 1)

@@ -69,9 +69,9 @@ def test_sync_helpers():
 
             await asyncio.gather(
                 *(
-                    safely_coroutine_objects +
-                    unsafely_coroutine_objects +
-                    shirley_coroutine_objects
+                    safely_coroutine_objects
+                    + unsafely_coroutine_objects
+                    + shirley_coroutine_objects
                 )
             )
 
@@ -81,7 +81,8 @@ def test_sync_helpers():
 
             assert (5, None) == await falcon.util.wrap_sync_to_async(callme_shirley)(5)
             assert (42, 6) == await falcon.util.wrap_sync_to_async(
-                callme_shirley, threadsafe=True)(b=6)
+                callme_shirley, threadsafe=True
+            )(b=6)
 
             with pytest.raises(TypeError):
                 await falcon.util.sync_to_async(callme_shirley, -1, bogus=-1)
@@ -101,10 +102,7 @@ def test_sync_helpers():
         assert val == (i, i + 1, i + 2)
 
     assert len(unsafely_values) == 1000
-    assert any(
-        val != (i, i + 1, i + 2)
-        for i, val in enumerate(unsafely_values)
-    )
+    assert any(val != (i, i + 1, i + 2) for i, val in enumerate(unsafely_values))
 
     for i, val in enumerate(shirley_values):
         assert val[0] in {24, 42, 1, 5, 3}

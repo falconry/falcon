@@ -26,7 +26,6 @@ _MAX_JOIN_CHUNKS = 128
 
 
 class BufferedReader:
-
     def __init__(self, read, max_stream_len, chunk_size=None):
         self._read_func = read
         self._chunk_size = chunk_size or DEFAULT_CHUNK_SIZE
@@ -86,8 +85,9 @@ class BufferedReader:
             if self._buffer_pos == 0:
                 self._buffer += self._perform_read(read_size)
             else:
-                self._buffer = (self._buffer[self._buffer_pos:] +
-                                self._perform_read(read_size))
+                self._buffer = self._buffer[self._buffer_pos :] + self._perform_read(
+                    read_size
+                )
                 self._buffer_pos = 0
 
             self._buffer_len = len(self._buffer)
@@ -99,15 +99,14 @@ class BufferedReader:
         if self._buffer_len - self._buffer_pos < size:
             self._fill_buffer()
 
-        return self._buffer[self._buffer_pos:self._buffer_pos + size]
+        return self._buffer[self._buffer_pos : self._buffer_pos + size]
 
     def _normalize_size(self, size):
         # PERF(vytas): In Cython, bind types:
         #   cdef Py_ssize_t result
         #   cdef Py_ssize_t max_size
 
-        max_size = (self._max_bytes_remaining + self._buffer_len -
-                    self._buffer_pos)
+        max_size = self._max_bytes_remaining + self._buffer_len - self._buffer_pos
 
         if size is None or size == -1 or size > max_size:
             return max_size
@@ -130,7 +129,7 @@ class BufferedReader:
                 return result
 
             self._buffer_pos += size
-            return self._buffer[self._buffer_pos - size:self._buffer_pos]
+            return self._buffer[self._buffer_pos - size : self._buffer_pos]
 
         # NOTE(vytas): Pass through large reads.
         if self._buffer_len == 0 and size >= self._chunk_size:
@@ -138,7 +137,7 @@ class BufferedReader:
 
         # NOTE(vytas): if size > self._buffer_len - self._buffer_pos
         read_size = size - (self._buffer_len - self._buffer_pos)
-        result = self._buffer[self._buffer_pos:]
+        result = self._buffer[self._buffer_pos :]
 
         if read_size >= self._chunk_size:
             self._buffer_len = 0
@@ -168,8 +167,16 @@ class BufferedReader:
         return result.getvalue()
 
     def _finalize_read_until(
-            self, size, backlog, have_bytes, consume_bytes, delimiter=None,
-            delimiter_pos=-1, next_chunk=None, next_chunk_len=0):
+        self,
+        size,
+        backlog,
+        have_bytes,
+        consume_bytes,
+        delimiter=None,
+        delimiter_pos=-1,
+        next_chunk=None,
+        next_chunk_len=0,
+    ):
 
         if delimiter_pos < 0 and delimiter is not None:
             delimiter_pos = self._buffer.find(delimiter, self._buffer_pos)
@@ -189,9 +196,8 @@ class BufferedReader:
                 self._buffer = next_chunk
                 self._buffer_len = next_chunk_len
             else:
-                self._buffer = self._buffer[self._buffer_pos:] + next_chunk
-                self._buffer_len = (self._buffer_len - self._buffer_pos +
-                                    next_chunk_len)
+                self._buffer = self._buffer[self._buffer_pos :] + next_chunk
+                self._buffer_len = self._buffer_len - self._buffer_pos + next_chunk_len
                 self._buffer_pos = 0
 
         if consume_bytes:
@@ -240,15 +246,21 @@ class BufferedReader:
                     # NOTE(vytas): Delimiter was found in the current buffer.
                     #   We can now return to the caller.
                     return self._finalize_read_until(
-                        size, result, have_bytes, consume_bytes,
-                        delimiter_pos=delimiter_pos)
+                        size,
+                        result,
+                        have_bytes,
+                        consume_bytes,
+                        delimiter_pos=delimiter_pos,
+                    )
 
-            if size < (have_bytes + self._buffer_len - self._buffer_pos -
-                       delimiter_len_1):
+            if size < (
+                have_bytes + self._buffer_len - self._buffer_pos - delimiter_len_1
+            ):
                 # NOTE(vytas): We now have enough data in the buffer to return
                 #   to the caller.
                 return self._finalize_read_until(
-                    size, result, have_bytes, consume_bytes, delimiter)
+                    size, result, have_bytes, consume_bytes, delimiter
+                )
 
             next_chunk = self._perform_read(self._chunk_size)
             next_chunk_len = len(next_chunk)
@@ -257,7 +269,8 @@ class BufferedReader:
                 self._buffer_len += next_chunk_len
                 self._buffer += next_chunk
                 return self._finalize_read_until(
-                    size, result, have_bytes, consume_bytes, delimiter)
+                    size, result, have_bytes, consume_bytes, delimiter
+                )
 
             # NOTE(vytas): The buffer was empty before, skip straight to the
             #   next chunk.
@@ -270,29 +283,38 @@ class BufferedReader:
             # NOTE(vytas): We must check there is no delimiter in the chunk
             #   boundary before we can safely splice them.
             if delimiter_len_1 > 0:
-                offset = max(self._buffer_len - delimiter_len_1,
-                             self._buffer_pos)
-                fragment = (self._buffer[offset:] +
-                            next_chunk[:delimiter_len_1])
+                offset = max(self._buffer_len - delimiter_len_1, self._buffer_pos)
+                fragment = self._buffer[offset:] + next_chunk[:delimiter_len_1]
                 delimiter_pos = fragment.find(delimiter)
                 if delimiter_pos >= 0:
                     self._buffer_len += next_chunk_len
                     self._buffer += next_chunk
                     return self._finalize_read_until(
-                        size, result, have_bytes, consume_bytes, delimiter,
-                        delimiter_pos + offset)
+                        size,
+                        result,
+                        have_bytes,
+                        consume_bytes,
+                        delimiter,
+                        delimiter_pos + offset,
+                    )
 
             if have_bytes + self._buffer_len - self._buffer_pos >= size:
                 # NOTE(vytas): we have now verified that all bytes currently in
                 #   the buffer are delimiter-free, including the border of the
                 #   upcoming chunk
                 return self._finalize_read_until(
-                    size, result, have_bytes, consume_bytes, delimiter,
-                    next_chunk=next_chunk, next_chunk_len=next_chunk_len)
+                    size,
+                    result,
+                    have_bytes,
+                    consume_bytes,
+                    delimiter,
+                    next_chunk=next_chunk,
+                    next_chunk_len=next_chunk_len,
+                )
 
             have_bytes += self._buffer_len - self._buffer_pos
             if self._buffer_pos > 0:
-                result.append(self._buffer[self._buffer_pos:])
+                result.append(self._buffer[self._buffer_pos :])
             else:
                 result.append(self._buffer)
             self._buffer_len = next_chunk_len
@@ -308,16 +330,16 @@ class BufferedReader:
             if destination is not None:
                 destination.write(chunk)
 
-    def pipe_until(self, delimiter, destination=None, consume_delimiter=False,
-                   _size=None):
+    def pipe_until(
+        self, delimiter, destination=None, consume_delimiter=False, _size=None
+    ):
         # PERF(vytas): In Cython, bind types:
         #   cdef Py_ssize_t remaining
 
         remaining = self._normalize_size(_size)
 
         while remaining > 0:
-            chunk = self._read_until(
-                delimiter, min(self._chunk_size, remaining), False)
+            chunk = self._read_until(delimiter, min(self._chunk_size, remaining), False)
             if not chunk:
                 break
 

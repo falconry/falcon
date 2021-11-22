@@ -18,7 +18,6 @@ from collections import UserDict
 from inspect import iscoroutinefunction
 import keyword
 import re
-import textwrap
 from threading import Lock
 
 from falcon.routing import converters
@@ -40,7 +39,7 @@ _FIELD_PATTERN = re.compile(
     #
     # We may want to create a contextual parser at some point to
     # work around this problem.
-    r'{((?P<fname>[^}:]*)((?P<cname_sep>:(?P<cname>[^}\(]*))(\((?P<argstr>[^}]*)\))?)?)}'
+    r'{((?P<fname>[^}:]*)((?P<cname_sep>:(?P<cname>[^}\(]*))(\((?P<argstr>[^}]*)\))?)?)}'  # noqa E501
 )
 _IDENTIFIER_PATTERN = re.compile('[A-Za-z_][A-Za-z0-9_]*$')
 
@@ -224,14 +223,14 @@ class CompiledRouter:
                     return
 
                 if node.conflicts_with(segment):
-                    msg = textwrap.dedent("""
-                        The URI template for this route is inconsistent or conflicts with another
-                        route's template. This is usually caused by configuring a field converter
-                        differently for the same field in two different routes, or by using
-                        different field names at the same level in the path (e.g.,
-                        '/parents/{id}' and '/parents/{parent_id}/children')
-                    """).strip().replace('\n', ' ')
-                    raise ValueError(msg)
+                    raise ValueError(
+                        'The URI template for this route is inconsistent or conflicts '
+                        "with another route's template. This is usually caused by "
+                        'configuring a field converter differently for the same field '
+                        'in two different routes, or by using different field names '
+                        "at the same level in the path (e.g.,'/parents/{id}' and "
+                        "'/parents/{parent_id}/children')"
+                    )
 
             # NOTE(richardolsson): If we got this far, the node doesn't already
             # exist and needs to be created. This builds a new branch of the
@@ -246,8 +245,8 @@ class CompiledRouter:
                 insert(new_node.children, path_index + 1)
 
         insert(self._roots)
-        # NOTE(caselit): when compile is True run the actual compile step, otherwise reset the
-        # _find, so that _compile will be called on the next find use
+        # NOTE(caselit): when compile is True run the actual compile step, otherwise
+        # reset the _find, so that _compile will be called on the next find use
         if kwargs.get('compile', False):
             self._find = self._compile()
         else:
@@ -273,8 +272,9 @@ class CompiledRouter:
 
         path = uri.lstrip('/').split('/')
         params = {}
-        node = self._find(path, self._return_values, self._patterns,
-                          self._converters, params)
+        node = self._find(
+            path, self._return_values, self._patterns, self._converters, params
+        )
 
         if node is not None:
             return node.resource, node.method_map, params, node.uri_template
@@ -294,6 +294,7 @@ class CompiledRouter:
             #   issue.
             if not iscoroutinefunction(responder) and is_python_func(responder):
                 if _should_wrap_non_coroutines():
+
                     def let(responder=responder):
                         method_map[method] = wrap_sync_to_async(responder)
 
@@ -344,14 +345,17 @@ class CompiledRouter:
 
             is_identifier = _IDENTIFIER_PATTERN.match(name)
             if not is_identifier or name in keyword.kwlist:
-                msg_template = ('Field names must be valid identifiers '
-                                '("{0}" is not valid)')
+                msg_template = (
+                    'Field names must be valid identifiers ("{0}" is not valid)'
+                )
                 msg = msg_template.format(name)
                 raise ValueError(msg)
 
             if name in used_names:
-                msg_template = ('Field names may not be duplicated '
-                                '("{0}" was used more than once)')
+                msg_template = (
+                    'Field names may not be duplicated '
+                    '("{0}" was used more than once)'
+                )
                 msg = msg_template.format(name)
                 raise ValueError(msg)
 
@@ -367,7 +371,9 @@ class CompiledRouter:
                     msg = 'Unknown converter: "{0}"'.format(name)
                     raise ValueError(msg)
                 try:
-                    self._instantiate_converter(self._converter_map[name], field.group('argstr'))
+                    self._instantiate_converter(
+                        self._converter_map[name], field.group('argstr')
+                    )
                 except Exception as e:
                     msg = 'Cannot instantiate converter "{}"'.format(name)
                     raise ValueError(msg) from e
@@ -380,7 +386,7 @@ class CompiledRouter:
         patterns: list,
         params_stack: list,
         level=0,
-        fast_return=True
+        fast_return=True,
     ):
         """Generate a coarse AST for the router."""
         # NOTE(caselit): setting of the parameters in the params dict is delayed until
@@ -402,8 +408,8 @@ class CompiledRouter:
         # static nodes(0), complex var nodes(1) and simple var nodes(2).
         # so that none of them get masked.
         nodes = sorted(
-            nodes, key=lambda node: node.is_var + (node.is_var and
-                                                   not node.is_complex))
+            nodes, key=lambda node: node.is_var + (node.is_var and not node.is_complex)
+        )
 
         # NOTE(kgriffs): Down to this branch in the tree, we can do a
         # fast 'return None'. See if the nodes at this branch are
@@ -431,14 +437,17 @@ class CompiledRouter:
                     pattern_idx = len(patterns)
                     patterns.append(node.var_pattern)
 
-                    construct = _CxIfPathSegmentPattern(level, pattern_idx,
-                                                        node.var_pattern.pattern)
+                    construct = _CxIfPathSegmentPattern(
+                        level, pattern_idx, node.var_pattern.pattern
+                    )
                     parent.append_child(construct)
                     parent = construct
 
                     if node.var_converter_map:
                         parent.append_child(_CxPrefetchGroupsFromPatternMatch())
-                        parent = self._generate_conversion_ast(parent, node, params_stack)
+                        parent = self._generate_conversion_ast(
+                            parent, node, params_stack
+                        )
 
                     else:
                         construct = _CxVariableFromPatternMatch(len(params_stack) + 1)
@@ -460,14 +469,17 @@ class CompiledRouter:
                         converter_class = self._converter_map[converter_name]
 
                         converter_obj = self._instantiate_converter(
-                            converter_class,
-                            converter_argstr
+                            converter_class, converter_argstr
                         )
                         converter_idx = len(self._converters)
                         self._converters.append(converter_obj)
 
-                        construct = _CxIfConverterField(len(params_stack) + 1, converter_idx)
-                        setter = _CxSetParamFromValue(field_name, construct.field_variable_name)
+                        construct = _CxIfConverterField(
+                            len(params_stack) + 1, converter_idx
+                        )
+                        setter = _CxSetParamFromValue(
+                            field_name, construct.field_variable_name
+                        )
                         params_stack.append(setter)
 
                         parent.append_child(construct)
@@ -481,8 +493,12 @@ class CompiledRouter:
                     #   /foo/{id}/bar
                     #   /foo/{name}/bar
                     #
-                    assert len([_node for _node in nodes
-                                if _node.is_var and not _node.is_complex]) == 1
+                    _found_nodes = [
+                        _node
+                        for _node in nodes
+                        if _node.is_var and not _node.is_complex
+                    ]
+                    assert len(_found_nodes) == 1
                     found_simple = True
 
             else:
@@ -504,7 +520,7 @@ class CompiledRouter:
                 patterns,
                 params_stack.copy(),
                 level + 1,
-                fast_return
+                fast_return,
             )
 
             if node.resource is None:
@@ -528,7 +544,9 @@ class CompiledRouter:
         if not found_simple and fast_return:
             parent.append_child(_CxReturnNone())
 
-    def _generate_conversion_ast(self, parent, node: 'CompiledRouterNode', params_stack: list):
+    def _generate_conversion_ast(
+        self, parent, node: 'CompiledRouterNode', params_stack: list
+    ):
         construct = None  # type: Any
         setter = None  # type: Any
         # NOTE(kgriffs): Unroll the converter loop into
@@ -537,8 +555,7 @@ class CompiledRouter:
             converter_class = self._converter_map[converter_name]
 
             converter_obj = self._instantiate_converter(
-                converter_class,
-                converter_argstr
+                converter_class, converter_argstr
             )
             converter_idx = len(self._converters)
             self._converters.append(converter_obj)
@@ -580,18 +597,15 @@ class CompiledRouter:
 
         self._ast = _CxParent()
         self._generate_ast(
-            self._roots,
-            self._ast,
-            self._return_values,
-            self._patterns,
-            params_stack=[]
+            self._roots, self._ast, self._return_values, self._patterns, params_stack=[]
         )
 
         src_lines.append(self._ast.src(0))
 
         src_lines.append(
             # PERF(kgriffs): Explicit return of None is faster than implicit
-            _TAB_STR + 'return None'
+            _TAB_STR
+            + 'return None'
         )
 
         self._finder_src = '\n'.join(src_lines)
@@ -620,7 +634,8 @@ class CompiledRouter:
         """
         with self._compile_lock:
             if self._find == self._compile_and_find:
-                # NOTE(caselit): replace the find with the result of the router compilation
+                # NOTE(caselit): replace the find with the result of the
+                # router compilation
                 self._find = self._compile()
         # NOTE(caselit): return_values, patterns, converters are reset by the _compile
         # method, so the updated ones must be used
@@ -632,8 +647,7 @@ class CompiledRouter:
 class CompiledRouterNode:
     """Represents a single URI segment in a URI."""
 
-    def __init__(self, raw_segment,
-                 method_map=None, resource=None, uri_template=None):
+    def __init__(self, raw_segment, method_map=None, resource=None, uri_template=None):
         self.children = []
 
         self.raw_segment = raw_segment
@@ -708,7 +722,9 @@ class CompiledRouterNode:
                 # parser would examine 'g<0>' and not realize it is a
                 # group-escape sequence. So we add an extra backslash to
                 # trick the parser into doing the right thing.
-                escaped_segment = re.sub(r'[\.\(\)\[\]\?\$\*\+\^\|]', r'\\\g<0>', raw_segment)
+                escaped_segment = re.sub(
+                    r'[\.\(\)\[\]\?\$\*\+\^\|]', r'\\\g<0>', raw_segment
+                )
 
                 pattern_text = _FIELD_PATTERN.sub(r'(?P<\2>.+)', escaped_segment)
                 pattern_text = '^' + pattern_text + '$'
@@ -768,8 +784,9 @@ class CompiledRouterNode:
             #
             if self.is_complex:
                 if other.is_complex:
-                    return (_FIELD_PATTERN.sub('v', self.raw_segment) ==
-                            _FIELD_PATTERN.sub('v', segment))
+                    return _FIELD_PATTERN.sub(
+                        'v', self.raw_segment
+                    ) == _FIELD_PATTERN.sub('v', segment)
 
                 return False
             else:
@@ -880,10 +897,7 @@ class _CxParent:
         return self._children_src(indentation + 1)
 
     def _children_src(self, indentation):
-        src_lines = [
-            child.src(indentation)
-            for child in self._children
-        ]
+        src_lines = [child.src(indentation) for child in self._children]
 
         return '\n'.join(src_lines)
 
@@ -900,7 +914,7 @@ class _CxIfPathLength(_CxParent):
             _TAB_STR * indentation,
             self._comparison,
             self._length,
-            self._children_src(indentation + 1)
+            self._children_src(indentation + 1),
         )
 
 
@@ -916,7 +930,7 @@ class _CxIfPathSegmentLiteral(_CxParent):
             _TAB_STR * indentation,
             self._segment_idx,
             self._literal,
-            self._children_src(indentation + 1)
+            self._children_src(indentation + 1),
         )
 
 
@@ -957,8 +971,7 @@ class _CxIfConverterField(_CxParent):
                 self._converter_idx,
             ),
             '{0}if {1} is not None:'.format(
-                _TAB_STR * indentation,
-                self.field_variable_name
+                _TAB_STR * indentation, self.field_variable_name
             ),
             self._children_src(indentation + 1),
         ]
@@ -995,8 +1008,7 @@ class _CxVariableFromPatternMatch:
 
     def src(self, indentation):
         return '{0}{1} = match.groupdict()'.format(
-            _TAB_STR * indentation,
-            self.dict_variable_name
+            _TAB_STR * indentation, self.dict_variable_name
         )
 
 
@@ -1006,17 +1018,12 @@ class _CxVariableFromPatternMatchPrefetched:
         self.dict_variable_name = 'dict_groups_{0}'.format(unique_idx)
 
     def src(self, indentation):
-        return '{0}{1} = groups'.format(
-            _TAB_STR * indentation,
-            self.dict_variable_name
-        )
+        return '{0}{1} = groups'.format(_TAB_STR * indentation, self.dict_variable_name)
 
 
 class _CxPrefetchGroupsFromPatternMatch:
     def src(self, indentation):
-        return '{0}groups = match.groupdict()'.format(
-            _TAB_STR * indentation
-        )
+        return '{0}groups = match.groupdict()'.format(_TAB_STR * indentation)
 
 
 class _CxReturnNone:
@@ -1030,8 +1037,7 @@ class _CxReturnValue:
 
     def src(self, indentation):
         return '{0}return return_values[{1}]'.format(
-            _TAB_STR * indentation,
-            self._value_idx
+            _TAB_STR * indentation, self._value_idx
         )
 
 

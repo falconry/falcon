@@ -40,7 +40,8 @@ def _validate_asgi_scope(scope_type, spec_version, http_version):
             )
         if http_version not in {'1.1', '2', '3'}:
             raise UnsupportedError(
-                f'The ASGI "websocket" scope does not support HTTP version {http_version}.'
+                'The ASGI "websocket" scope does not support '
+                f'HTTP version {http_version}.'
             )
         return spec_version
 
@@ -55,9 +56,7 @@ def _validate_asgi_scope(scope_type, spec_version, http_version):
     # NOTE(kgriffs): According to the ASGI spec: "Applications should
     #   actively reject any protocol that they do not understand with
     #   an Exception (of any type)."
-    raise UnsupportedScopeError(
-        f'The ASGI "{scope_type}" scope type is not supported.'
-    )
+    raise UnsupportedScopeError(f'The ASGI "{scope_type}" scope type is not supported.')
 
 
 def _wrap_asgi_coroutine_func(asgi_impl):

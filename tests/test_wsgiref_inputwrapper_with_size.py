@@ -6,6 +6,7 @@ from falcon import testing
 
 class TypeResource(testing.SimpleTestResource):
     """A simple resource to return the posted request body."""
+
     @falcon.before(testing.capture_responder_args)
     def on_post(self, req, resp, **kwargs):
         resp.status = falcon.HTTP_200
