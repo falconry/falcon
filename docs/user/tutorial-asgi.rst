@@ -722,6 +722,7 @@ Let's implement the ``process_startup()`` and ``process_shutdown()``` handlers
 in our middleware to execute code upon our application startup:
 
 .. code:: python
+
     async def process_startup(self, scope, event):
         await self._redis.ping()
 
