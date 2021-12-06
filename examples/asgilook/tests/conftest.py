@@ -39,8 +39,8 @@ def storage_path(tmpdir_factory):
 @pytest.fixture
 def client(predictable_uuid, storage_path):
     config = Config()
-    config.create_redis_pool = fakeredis.aioredis.create_redis_pool
-    config.redis_host = None
+    config.redis_from_url = fakeredis.aioredis.FakeRedis.from_url
+    config.redis_host = 'redis://localhost'
     config.storage_path = storage_path
     config.uuid_generator = predictable_uuid
 
