@@ -688,7 +688,7 @@ Let's mitigate this problem with response caching. We'll use Redis, taking
 advantage of `aioredis <https://github.com/aio-libs/aioredis>`_ for async
 support::
 
-  pip install "aioredis < 2.0"
+  pip install aioredis
 
 We will also need to serialize response data (the ``Content-Type`` header and
 the body in the first version); ``msgpack`` should do::
