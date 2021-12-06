@@ -709,7 +709,30 @@ installing Redis server on your machine, one could also:
     pifpaf run redis -- uvicorn asgilook.asgi:app
 
 We will perform caching with a Falcon :ref:`middleware` component. Again, note
-that all middleware callbacks must be asynchronous.
+that all middleware callbacks must be asynchronous. Even calling ``ping()`` and
+``close()`` on the Redis connection must be ``await``\ed. But how can we
+``await`` coroutines from within our synchronous ``create_app()`` function?
+
+`ASGI application lifespan events
+<https://asgi.readthedocs.io/en/latest/specs/lifespan.html>`_ come to the
+rescue. An ASGI application server emits these events upon application startup
+and shutdown.
+
+Let's implement the ``process_startup()`` and ``process_shutdown()``` handlers
+in our middleware to execute code upon our application startup:
+
+.. code:: python
+    async def process_startup(self, scope, event):
+        await self._redis.ping()
+
+    async def process_shutdown(self, scope, event):
+        await self._redis.close()
+
+.. warning::
+    The Lifespan Protocol is an optional extension; please check if your ASGI
+    server of choice implements it.
+
+    ``uvicorn`` (that we picked for this tutorial) supports Lifespan.
 
 At minimum, our middleware will need to know the Redis host(s) to use.
 Let's also make our Redis connection factory
@@ -730,8 +753,9 @@ Assuming we call our new :ref:`configuration <asgi_tutorial_config>` items
     :language: python
 
 Let's complete the Redis cache component by implementing
-two more middleware methods. Create a ``cache.py`` module containing the
-following code:
+two more middleware methods, in addition to ``process_startup()`` and
+``process_shutdown()``. Create a ``cache.py`` module containing the following
+code:
 
 .. literalinclude:: ../../examples/asgilook/asgilook/cache.py
     :language: python

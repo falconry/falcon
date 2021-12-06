@@ -20,6 +20,12 @@ class RedisCache:
         resp.complete = True
         resp.context.cached = True
 
+    async def process_startup(self, scope, event):
+        await self._redis.ping()
+
+    async def process_shutdown(self, scope, event):
+        await self._redis.close()
+
     async def process_request(self, req, resp):
         resp.context.cached = False
 
