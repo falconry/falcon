@@ -1024,11 +1024,8 @@ See also: `CONTRIBUTING.md <https://github.com/falconry/falcon/blob/master/CONTR
 Legal
 -----
 
-Copyright 2013-2020 by Individual and corporate contributors as
+Copyright 2013-2021 by Individual and corporate contributors as
 noted in the individual source files.
-
-Falcon image courtesy of `John
-O'Neill <https://commons.wikimedia.org/wiki/File:Brown-Falcon,-Vic,-3.1.2008.jpg>`__.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may
 not use any portion of the Falcon framework except in compliance with
