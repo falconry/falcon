@@ -30,8 +30,8 @@ Quick Links
 
 * `Read the docs (stable version) <https://falcon.readthedocs.io/en/stable>`_
 
-  `Getting help <https://falcon.readthedocs.io/en/stable/community/help.html>`_ --
-  `FAQ <https://falcon.readthedocs.io/en/stable/user/faq.html>`_ --
+  `Getting help <https://falcon.readthedocs.io/en/stable/community/help.html>`_ -
+  `FAQ <https://falcon.readthedocs.io/en/stable/user/faq.html>`_ -
   `Framework reference <https://falcon.readthedocs.io/en/stable/api/index.html>`_
 
 * `Falcon add-ons and complementary packages <https://github.com/falconry/falcon/wiki>`_
