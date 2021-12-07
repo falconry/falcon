@@ -28,7 +28,12 @@ champ under CPython 3.5+ and PyPy 3.5+ (3.6+ required for ASGI).
 Quick Links
 -----------
 
-* `Read the docs <https://falcon.readthedocs.io/en/stable>`_
+* `Read the docs (stable version) <https://falcon.readthedocs.io/en/stable>`_
+
+  `Getting help <https://falcon.readthedocs.io/en/stable/community/help.html>`_ ·
+  `FAQ <https://falcon.readthedocs.io/en/stable/user/faq.html>`_ ·
+  `Framework reference <https://falcon.readthedocs.io/en/stable/api/index.html>`_
+
 * `Falcon add-ons and complementary packages <https://github.com/falconry/falcon/wiki>`_
 * `Falcon articles, talks and podcasts <https://github.com/falconry/falcon/wiki/Articles,-Talks-and-Podcasts>`_
 * `falconry/user for Falcon users <https://gitter.im/falconry/user>`_ @ Gitter
@@ -241,8 +246,8 @@ In order to provide an extra speed boost, Falcon can compile itself with
 Cython. Wheels containing pre-compiled binaries are available from PyPI for
 several common platforms. However, if a wheel for your platform of choice is not
 available, you can install the source distribution. The installation process
-will automatically try to cythonize Falcon for your environment, falling back to 
-a normal pure-Python install if any issues are encountered during the 
+will automatically try to cythonize Falcon for your environment, falling back to
+a normal pure-Python install if any issues are encountered during the
 cythonization step:
 
 .. code:: bash
