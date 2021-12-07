@@ -30,9 +30,9 @@ Quick Links
 
 * `Read the docs <https://falcon.readthedocs.io/en/stable>`_
 
-  - `Getting help <https://falcon.readthedocs.io/en/stable/community/help.html>`_
-  - `FAQ <https://falcon.readthedocs.io/en/stable/user/faq.html>`_
-  - `Framework reference <https://falcon.readthedocs.io/en/stable/api/index.html>`_
+  `Getting help <https://falcon.readthedocs.io/en/stable/community/help.html>`_ -
+  `FAQ <https://falcon.readthedocs.io/en/stable/user/faq.html>`_ -
+  `Framework reference <https://falcon.readthedocs.io/en/stable/api/index.html>`_
 
 * `Falcon add-ons and complementary packages <https://github.com/falconry/falcon/wiki>`_
 * `Falcon articles, talks and podcasts <https://github.com/falconry/falcon/wiki/Articles,-Talks-and-Podcasts>`_
