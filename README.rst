@@ -28,7 +28,7 @@ champ under CPython 3.5+ and PyPy 3.5+ (3.6+ required for ASGI).
 Quick Links
 -----------
 
-* `📚 Read the docs 📚<https://falcon.readthedocs.io/en/stable>`_
+* `📚 Read the docs 📚 <https://falcon.readthedocs.io/en/stable>`_
 
   🦺 `Getting help <https://falcon.readthedocs.io/en/stable/community/help.html>`_
   🤔 `FAQ <https://falcon.readthedocs.io/en/stable/user/faq.html>`_
