@@ -15,37 +15,48 @@ def _open_range(file_path, req_range):
         file_path (str): Path to the file to open.
         req_range (Optional[Tuple[int, int]]): Request.range value.
     Returns:
-        tuple: Two-member tuple of (stream, content-range). If req_range is
-            ``None`` or ignored, content-range will be ``None``; otherwise,
-            the stream will be appropriately seeked and possibly bounded,
-            and the content-range will be a tuple of (start, end, size).
+        tuple: Three-member tuple of (stream, content-length, content-range).
+            If req_range is ``None`` or ignored, content-range will be
+            ``None``; otherwise, the stream will be appropriately seeked and
+            possibly bounded, and the content-range will be a tuple of
+            (start, end, size).
     """
     fh = io.open(file_path, 'rb')
+    size = os.fstat(fh.fileno()).st_size
     if req_range is None:
-        return fh, None
+        return fh, size, None
 
     start, end = req_range
-    size = os.fstat(fh.fileno()).st_size
     if size == 0:
-        # Ignore Range headers for zero-byte files; just serve the empty body
-        # since Content-Range can't be used to express a zero-byte body
-        return fh, None
+        # NOTE(tipabu): Ignore Range headers for zero-byte files; just serve
+        #   the empty body since Content-Range can't be used to express a
+        #   zero-byte body.
+        return fh, 0, None
 
     if start < 0 and end == -1:
-        # Special case: only want the last N bytes
+        # NOTE(tipabu): Special case: only want the last N bytes.
         start = max(start, -size)
         fh.seek(start, os.SEEK_END)
-        return fh, (size + start, size - 1, size)
+        # NOTE(vytas): Wrap in order to prevent sendfile from being used, as
+        #   its implementation was found to be buggy in many popular WSGI
+        #   servers for open files with a non-zero offset.
+        return _BoundedFile(fh, -start), -start, (size + start, size - 1, size)
 
     if start >= size:
+        fh.close()
         raise falcon.HTTPRangeNotSatisfiable(size)
 
     fh.seek(start)
     if end == -1:
-        return fh, (start, size - 1, size)
+        # NOTE(vytas): Wrap in order to prevent sendfile from being used, as
+        #   its implementation was found to be buggy in many popular WSGI
+        #   servers for open files with a non-zero offset.
+        length = size - start
+        return _BoundedFile(fh, length), length, (start, size - 1, size)
 
     end = min(end, size - 1)
-    return _BoundedFile(fh, end - start + 1), (start, end, size)
+    length = end - start + 1
+    return _BoundedFile(fh, length), length, (start, end, size)
 
 
 class _BoundedFile:
@@ -184,14 +195,16 @@ class StaticRoute:
         if req.range_unit != 'bytes':
             req_range = None
         try:
-            resp.stream, content_range = _open_range(file_path, req_range)
+            stream, length, content_range = _open_range(file_path, req_range)
+            resp.set_stream(stream, length)
         except IOError:
             if self._fallback_filename is None:
                 raise falcon.HTTPNotFound()
             try:
-                resp.stream, content_range = _open_range(
+                stream, length, content_range = _open_range(
                     self._fallback_filename, req_range
                 )
+                resp.set_stream(stream, length)
                 file_path = self._fallback_filename
             except IOError:
                 raise falcon.HTTPNotFound()
@@ -228,3 +241,6 @@ class _AsyncFileReader:
 
     async def read(self, size=-1):
         return await self._loop.run_in_executor(None, partial(self._file.read, size))
+
+    async def close(self):
+        await self._loop.run_in_executor(None, self._file.close)

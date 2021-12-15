@@ -109,20 +109,27 @@ def _waitress_args(host, port):
     )
 
 
-@pytest.fixture(
-    params=[
-        _gunicorn_args,
-        _meinheld_args,
-        _uvicorn_args,
-        _uwsgi_args,
-        _waitress_args,
-    ]
-)
-def server_url(request):
+@pytest.fixture(params=['gunicorn', 'meinheld', 'uvicorn', 'uwsgi', 'waitress'])
+def wsgi_server(request):
+    return request.param
+
+
+@pytest.fixture
+def server_args(wsgi_server):
+    servers = {
+        'gunicorn': _gunicorn_args,
+        'meinheld': _meinheld_args,
+        'uvicorn': _uvicorn_args,
+        'uwsgi': _uwsgi_args,
+        'waitress': _waitress_args,
+    }
+    return servers[wsgi_server]
+
+
+@pytest.fixture
+def server_url(server_args):
     if sys.platform.startswith('win'):
         pytest.skip('WSGI server tests are currently unsupported on Windows')
-
-    server_args = request.param
 
     for attempt in range(3):
         server_port = testing.get_unused_port()
@@ -221,6 +228,10 @@ class TestWSGIServer:
             server_url + '/tests/test_wsgi_servers.py', timeout=_REQUEST_TIMEOUT
         )
         assert resp.status_code == 200
+
+        # TODO(vytas): In retrospect, it would be easier to maintain these
+        #   static route tests by creating a separate file instead of relying
+        #   on the content of this same __file__.
         assert resp.text.startswith(
             'import hashlib\n'
             'import os\n'
@@ -232,3 +243,47 @@ class TestWSGIServer:
         assert resp.headers.get('Content-Disposition') == (
             'attachment; filename="test_wsgi_servers.py"'
         )
+
+        content_length = int(resp.headers['Content-Length'])
+        file_size = os.path.getsize(__file__)
+        assert len(resp.content) == content_length == file_size
+
+    @pytest.mark.parametrize(
+        'byte_range,expected_head',
+        [
+            ('7-', b'hashlib'),
+            ('2-6', b'port'),
+            ('32-38', b'random'),
+            ('-47', b'The content of this comment is part of a test.\n'),
+        ],
+    )
+    def test_static_file_byte_range(
+        self, byte_range, expected_head, wsgi_server, server_url
+    ):
+        if wsgi_server == 'meinheld':
+            pytest.xfail(
+                "Meinheld's file_wrapper fails without a fileno(), see also: "
+                'https://github.com/mopemope/meinheld/issues/130'
+            )
+
+        resp = requests.get(
+            server_url + '/tests/test_wsgi_servers.py',
+            timeout=_REQUEST_TIMEOUT,
+            headers={'Range': 'bytes=' + byte_range},
+        )
+
+        assert resp.status_code == 206
+        assert resp.content.startswith(expected_head)
+
+        content_length = int(resp.headers['Content-Length'])
+        assert len(resp.content) == content_length
+
+        file_size = os.path.getsize(__file__)
+        content_range_size = int(resp.headers['Content-Range'].split('/')[-1])
+        assert file_size == content_range_size
+
+        # TODO(vytas): In retrospect, it would be easier to maintain these
+        #   static route tests by creating a separate file instead of relying
+        #   on the content of this same __file__.
+
+        # NOTE(vytas): The content of this comment is part of a test.

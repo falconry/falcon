@@ -160,6 +160,56 @@ try one of the generic
 If you use an API gateway, you might also look into what CORS functionality
 it provides at that level.
 
+Why is my request with authorization blocked despite ``cors_enable``?
+---------------------------------------------------------------------
+
+When you are making a cross-origin request from the browser (or another HTTP
+client verifying CORS policy), and the request is authenticated using the
+Authorization header, the browser adds ``authorization`` to
+Access-Control-Request-Headers in the preflight (``OPTIONS``) request,
+however, the actual authorization credentials are omitted at this stage.
+
+If your request authentication/authorization is performed in a
+:ref:`middleware <middleware>` component which rejects requests lacking
+authorization credentials by raising an instance of :class:`~.HTTPUnauthorized`
+(or rendering a 4XX response in another way), a common pitfall is that even an
+``OPTIONS`` request (which is lacking authorization as per the above
+explanation) yields an error in this manner. As a result of the failed
+preflight, the browser chooses not proceed with the main request.
+
+If you have implemented the authorization middleware yourself, you can simply
+let ``OPTIONS`` pass through:
+
+.. code:: python
+
+    class MyAuthMiddleware:
+        def process_request(self, req, resp):
+            # NOTE: Do not authenticate OPTIONS requests.
+            if req.method == 'OPTIONS':
+                return
+
+            # -- snip --
+
+            # My authorization logic...
+
+Alternatively, if the middleware comes from a third-party library,
+it may be more practical to subclass it:
+
+.. code:: python
+
+    class CORSAwareMiddleware(SomeAuthMiddleware):
+        def process_request(self, req, resp):
+            # NOTE: Do not authenticate OPTIONS requests.
+            if req.method != 'OPTIONS':
+                super().process_request(req, resp)
+
+In the case middleware in question instead hooks into ``process_resource()``,
+you can use a similar treatment.
+
+If you tried the above, and you still suspect the problem lies within Falcon's
+:ref:`CORS middleware <cors>`, it might be a bug! :ref:`Let us know <help>` so
+we can help.
+
 How do I implement redirects within Falcon?
 -------------------------------------------
 
@@ -378,6 +428,32 @@ order to handle all three routes:
     app.add_route('/game/{game_id}', game)
     app.add_route('/game/{game_id}/state', game, suffix='state')
     app.add_route('/game/ping', game, suffix='ping')
+
+.. _routing_encoded_slashes:
+
+Why is my URL with percent-encoded forward slashes (``%2F``) routed incorrectly?
+--------------------------------------------------------------------------------
+This is an unfortunate artifact of the WSGI specification, which offers no
+standard means of accessing the "raw" request URL. According to PEP 3333,
+`the recommended way to reconstruct a request's URL path
+<https://www.python.org/dev/peps/pep-3333/#url-reconstruction>`_ is using the
+``PATH_INFO`` CGI variable, which is already presented percent-decoded,
+effectively making originally percent-encoded forward slashes (``%2F``)
+indistinguishable from others passed verbatim (and intended to separate URI
+fields).
+
+Although not standardized, some WSGI servers provide the raw URL as a
+non-standard extension; for instance, Gunicorn exposes it as ``RAW_URI``,
+uWSGI calls it ``REQUEST_URI``, etc. You can implement a WSGI (or ASGI, see the
+discussion below) middleware component to overwrite the request path with the
+path component of the raw URL, see more in the following recipe:
+:ref:`raw_url_path_recipe`.
+
+In contrast to WSGI, the ASGI specification does define a standard connection
+HTTP scope variable name (``raw_path``) for the unmodified HTTP path. However,
+it is not mandatory, and some applications servers may be unable to provide
+it. Nevertheless, we are exploring the possibility of adding an optional
+feature to use this raw path for routing in the ASGI flavor of the framework.
 
 Extensibility
 ~~~~~~~~~~~~~
@@ -714,9 +790,11 @@ We’ve discussed building on this feature to support consuming multiple path
 segments ala Flask. This work is currently planned to commence after the 3.0
 release.
 
-In the meantime, the workaround is to percent-encode the forward slash. If you
-don’t control the clients and can't enforce this, you can implement a Falcon
-middleware component to rewrite the path before it is routed.
+In the meantime, you can work around the issue by implementing a Falcon
+middleware component to rewrite the path before it is routed. If you control
+the clients, you can percent-encode forward slashes inside the field in
+question, however, note that pre-processing is unavoidable in order to access
+the raw encoded URI too. See also: :ref:`routing_encoded_slashes`
 
 .. _bare_class_context_type:
 

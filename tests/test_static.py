@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import errno
 import io
 import os
@@ -26,6 +24,36 @@ def client(asgi):
 def create_sr(asgi, *args, **kwargs):
     sr_type = StaticRouteAsync if asgi else StaticRoute
     return sr_type(*args, **kwargs)
+
+
+@pytest.fixture
+def patch_open(monkeypatch):
+    def patch(content=None, validate=None):
+        def open(path, mode):
+            class FakeFD(int):
+                pass
+
+            class FakeStat:
+                def __init__(self, size):
+                    self.st_size = size
+
+            if validate:
+                validate(path)
+
+            data = path.encode() if content is None else content
+            fake_file = io.BytesIO(data)
+            fd = FakeFD(1337)
+            fd._stat = FakeStat(len(data))
+            fake_file.fileno = lambda: fd
+
+            patch.current_file = fake_file
+            return fake_file
+
+        monkeypatch.setattr(io, 'open', open)
+        monkeypatch.setattr(os, 'fstat', lambda fileno: fileno._stat)
+
+    patch.current_file = None
+    return patch
 
 
 @pytest.mark.parametrize(
@@ -83,8 +111,8 @@ def create_sr(asgi, *args, **kwargs):
         '/static/\ufffdsomething',
     ],
 )
-def test_bad_path(asgi, uri, monkeypatch):
-    monkeypatch.setattr(io, 'open', lambda path, mode: io.BytesIO())
+def test_bad_path(asgi, uri, patch_open):
+    patch_open(b'')
 
     sr_type = StaticRouteAsync if asgi else StaticRoute
     sr = sr_type('/static', '/var/www/statics')
@@ -177,8 +205,8 @@ _MIME_ALTERNATIVE = {
         ),
     ],
 )
-def test_good_path(asgi, uri_prefix, uri_path, expected_path, mtype, monkeypatch):
-    monkeypatch.setattr(io, 'open', lambda path, mode: io.BytesIO(path.encode()))
+def test_good_path(asgi, uri_prefix, uri_path, expected_path, mtype, patch_open):
+    patch_open()
 
     sr = create_sr(asgi, uri_prefix, '/var/www/statics')
 
@@ -219,21 +247,20 @@ def test_good_path(asgi, uri_prefix, uri_path, expected_path, mtype, monkeypatch
 )
 @pytest.mark.parametrize('use_fallback', [True, False])
 def test_range_requests(
-    client, range_header, exp_content_range, exp_content, monkeypatch, use_fallback
+    client,
+    range_header,
+    exp_content_range,
+    exp_content,
+    patch_open,
+    monkeypatch,
+    use_fallback,
 ):
-    fake_file = io.BytesIO(b'0123456789abcdef')
-    fake_file.fileno = lambda: 123
-
-    def fake_open(path, mode):
+    def validate(path):
         if use_fallback and not path.endswith('index.html'):
             raise OSError(errno.ENOENT, 'File not found')
-        return fake_file
 
-    class FakeStat:
-        st_size = len(fake_file.getvalue())
+    patch_open(b'0123456789abcdef', validate=validate)
 
-    monkeypatch.setattr(io, 'open', fake_open)
-    monkeypatch.setattr(os, 'fstat', lambda fileno: FakeStat())
     monkeypatch.setattr('os.path.isfile', lambda file: file.endswith('index.html'))
 
     client.app.add_static_route(
@@ -248,6 +275,7 @@ def test_range_requests(
     else:
         assert response.status == falcon.HTTP_206
     assert response.text == exp_content
+    assert int(response.headers['Content-Length']) == len(exp_content)
     assert response.headers.get('Content-Range') == exp_content_range
     assert response.headers.get('Accept-Ranges') == 'bytes'
     if use_fallback:
@@ -270,15 +298,8 @@ def test_range_requests(
         'bytes=-30',
     ],
 )
-def test_range_request_zero_length(client, range_header, monkeypatch):
-    fake_file = io.BytesIO(b'')
-    fake_file.fileno = lambda: 123
-
-    class FakeStat:
-        st_size = 0
-
-    monkeypatch.setattr(io, 'open', lambda path, mode: fake_file)
-    monkeypatch.setattr(os, 'fstat', lambda fileno: FakeStat())
+def test_range_request_zero_length(client, range_header, patch_open):
+    patch_open(b'')
 
     client.app.add_static_route('/downloads', '/opt/somesite/downloads')
 
@@ -305,15 +326,8 @@ def test_range_request_zero_length(client, range_header, monkeypatch):
         ('bytes=16-', falcon.HTTP_416),
     ],
 )
-def test_bad_range_requests(client, range_header, exp_status, monkeypatch):
-    fake_file = io.BytesIO(b'0123456789abcdef')
-    fake_file.fileno = lambda: 123
-
-    class FakeStat:
-        st_size = len(fake_file.getvalue())
-
-    monkeypatch.setattr(io, 'open', lambda path, mode: fake_file)
-    monkeypatch.setattr(os, 'fstat', lambda fileno: FakeStat())
+def test_bad_range_requests(client, range_header, exp_status, patch_open):
+    patch_open(b'0123456789abcdef')
 
     client.app.add_static_route('/downloads', '/opt/somesite/downloads')
 
@@ -325,8 +339,8 @@ def test_bad_range_requests(client, range_header, exp_status, monkeypatch):
         assert response.headers.get('Content-Range') == 'bytes */16'
 
 
-def test_pathlib_path(asgi, monkeypatch):
-    monkeypatch.setattr(io, 'open', lambda path, mode: io.BytesIO(path.encode()))
+def test_pathlib_path(asgi, patch_open):
+    patch_open()
 
     sr = create_sr(asgi, '/static/', pathlib.Path('/var/www/statics'))
     req_path = '/static/css/test.css'
@@ -349,8 +363,8 @@ def test_pathlib_path(asgi, monkeypatch):
     assert body.decode() == os.path.normpath('/var/www/statics/css/test.css')
 
 
-def test_lifo(client, monkeypatch):
-    monkeypatch.setattr(io, 'open', lambda path, mode: io.BytesIO(path.encode()))
+def test_lifo(client, patch_open):
+    patch_open()
 
     client.app.add_static_route('/downloads', '/opt/somesite/downloads')
     client.app.add_static_route('/downloads/archive', '/opt/somesite/x')
@@ -364,8 +378,8 @@ def test_lifo(client, monkeypatch):
     assert response.text == os.path.normpath('/opt/somesite/x/thingtoo.zip')
 
 
-def test_lifo_negative(client, monkeypatch):
-    monkeypatch.setattr(io, 'open', lambda path, mode: io.BytesIO(path.encode()))
+def test_lifo_negative(client, patch_open):
+    patch_open()
 
     client.app.add_static_route('/downloads/archive', '/opt/somesite/x')
     client.app.add_static_route('/downloads', '/opt/somesite/downloads')
@@ -381,8 +395,8 @@ def test_lifo_negative(client, monkeypatch):
     )
 
 
-def test_downloadable(client, monkeypatch):
-    monkeypatch.setattr(io, 'open', lambda path, mode: io.BytesIO(path.encode()))
+def test_downloadable(client, patch_open):
+    patch_open()
 
     client.app.add_static_route(
         '/downloads', '/opt/somesite/downloads', downloadable=True
@@ -433,15 +447,14 @@ def test_downloadable_not_found(client):
 )
 @pytest.mark.parametrize('downloadable', [True, False])
 def test_fallback_filename(
-    asgi, uri, default, expected, content_type, downloadable, monkeypatch
+    asgi, uri, default, expected, content_type, downloadable, patch_open, monkeypatch
 ):
-    def mock_open(path, mode):
-        if os.path.normpath(default) in path:
-            return io.BytesIO(path.encode())
+    def validate(path):
+        if os.path.normpath(default) not in path:
+            raise IOError()
 
-        raise IOError()
+    patch_open(validate=validate)
 
-    monkeypatch.setattr(io, 'open', mock_open)
     monkeypatch.setattr(
         'os.path.isfile', lambda file: os.path.normpath(default) in file
     )
@@ -494,14 +507,14 @@ def test_fallback_filename(
     ],
 )
 def test_e2e_fallback_filename(
-    client, monkeypatch, strip_slash, path, fallback, static_exp, assert_axp
+    client, patch_open, monkeypatch, strip_slash, path, fallback, static_exp, assert_axp
 ):
-    def mockOpen(path, mode):
-        if 'index' in path and 'raise' not in path:
-            return io.BytesIO(path.encode())
-        raise IOError()
+    def validate(path):
+        if 'index' not in path or 'raise' in path:
+            raise IOError()
 
-    monkeypatch.setattr(io, 'open', mockOpen)
+    patch_open(validate=validate)
+
     monkeypatch.setattr('os.path.isfile', lambda file: 'index' in file)
 
     client.app.req_options.strip_url_path_trailing_slash = strip_slash
@@ -517,6 +530,7 @@ def test_e2e_fallback_filename(
         else:
             assert response.status == falcon.HTTP_200
             assert response.text == os.path.normpath(directory + expected)
+            assert int(response.headers['Content-Length']) == len(response.text)
 
     test('/static', '/opt/somesite/static/', static_exp)
     test('/assets', '/opt/somesite/assets/', assert_axp)
@@ -562,3 +576,16 @@ def test_bounded_file_wrapper():
     assert not buffer.closed
     fh.close()
     assert buffer.closed
+
+
+def test_file_closed(client, patch_open):
+    patch_open(b'test_data')
+
+    client.app.add_static_route('/static', '/var/www/statics')
+
+    resp = client.simulate_request(path='/static/foo/bar.txt')
+    assert resp.status_code == 200
+    assert resp.text == 'test_data'
+
+    assert patch_open.current_file is not None
+    assert patch_open.current_file.closed
