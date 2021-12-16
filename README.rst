@@ -29,6 +29,9 @@ Quick Links
 -----------
 
 * `Read the docs <https://falcon.readthedocs.io/en/stable>`_
+  (`FAQ <https://falcon.readthedocs.io/en/stable/user/faq.html>`_ -
+  `getting help <https://falcon.readthedocs.io/en/stable/community/help.html>`_ -
+  `reference <https://falcon.readthedocs.io/en/stable/api/index.html>`_)
 * `Falcon add-ons and complementary packages <https://github.com/falconry/falcon/wiki>`_
 * `Falcon articles, talks and podcasts <https://github.com/falconry/falcon/wiki/Articles,-Talks-and-Podcasts>`_
 * `falconry/user for Falcon users <https://gitter.im/falconry/user>`_ @ Gitter
@@ -241,8 +244,8 @@ In order to provide an extra speed boost, Falcon can compile itself with
 Cython. Wheels containing pre-compiled binaries are available from PyPI for
 several common platforms. However, if a wheel for your platform of choice is not
 available, you can install the source distribution. The installation process
-will automatically try to cythonize Falcon for your environment, falling back to 
-a normal pure-Python install if any issues are encountered during the 
+will automatically try to cythonize Falcon for your environment, falling back to
+a normal pure-Python install if any issues are encountered during the
 cythonization step:
 
 .. code:: bash
@@ -1024,11 +1027,8 @@ See also: `CONTRIBUTING.md <https://github.com/falconry/falcon/blob/master/CONTR
 Legal
 -----
 
-Copyright 2013-2020 by Individual and corporate contributors as
+Copyright 2013-2021 by Individual and corporate contributors as
 noted in the individual source files.
-
-Falcon image courtesy of `John
-O'Neill <https://commons.wikimedia.org/wiki/File:Brown-Falcon,-Vic,-3.1.2008.jpg>`__.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may
 not use any portion of the Falcon framework except in compliance with

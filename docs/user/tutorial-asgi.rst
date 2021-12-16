@@ -718,8 +718,9 @@ that all middleware callbacks must be asynchronous. Even calling ``ping()`` and
 rescue. An ASGI application server emits these events upon application startup
 and shutdown.
 
-Let's implement the ``process_startup()`` and ``process_shutdown()``` handlers
-in our middleware to execute code upon our application startup:
+Let's implement the ``process_startup()`` and ``process_shutdown()`` handlers
+in our middleware to execute code upon our application's startup and shutdown,
+respectively:
 
 .. code:: python
 
