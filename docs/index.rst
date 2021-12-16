@@ -8,11 +8,11 @@ The Falcon Web Framework
 
 Release v\ |version| (:ref:`Installation <install>`)
 
-Falcon is a minimalist ASGI/WSGI framework for building mission-critical REST
-APIs and microservices, with a focus on reliability, correctness, and
-performance at scale.
+`Falcon <https://falconframework.org>`__ is a minimalist ASGI/WSGI framework for
+building mission-critical REST APIs and microservices, with a focus on
+reliability, correctness, and performance at scale.
 
-We like to think of Falcon as the `Dieter Rams` of web frameworks. Falcon
+We like to think of Falcon as the *Dieter Rams* of web frameworks. Falcon
 encourages the REST architectural style, and tries to do as little as possible
 while remaining highly effective.
 
@@ -35,6 +35,18 @@ while remaining highly effective.
 
     app = falcon.App()
     app.add_route('/quote', QuoteResource())
+
+Quick Links
+-----------
+
+* `Read the docs <https://falcon.readthedocs.io/en/stable>`_
+  (`FAQ <https://falcon.readthedocs.io/en/stable/user/faq.html>`_ -
+  `getting help <https://falcon.readthedocs.io/en/stable/community/help.html>`_ -
+  `reference <https://falcon.readthedocs.io/en/stable/api/index.html>`_)
+* `Falcon add-ons and complementary packages <https://github.com/falconry/falcon/wiki>`_
+* `Falcon articles, talks and podcasts <https://github.com/falconry/falcon/wiki/Articles,-Talks-and-Podcasts>`_
+* `falconry/user for Falcon users <https://gitter.im/falconry/user>`_ @ Gitter
+* `falconry/dev for Falcon contributors <https://gitter.im/falconry/dev>`_ @ Gitter
 
 What People are Saying
 ----------------------
@@ -59,20 +71,6 @@ middle. Falcon seems like the requests of backend."
 documentation. It basically can't be wrong."
 
 "What other framework has integrated support for 786 TRY IT NOW ?"
-
-Quick Links
------------
-
-* `Read the docs (stable version) <https://falcon.readthedocs.io/en/stable>`_
-
-  `Getting help <https://falcon.readthedocs.io/en/stable/community/help.html>`_ -
-  `FAQ <https://falcon.readthedocs.io/en/stable/user/faq.html>`_ -
-  `Framework reference <https://falcon.readthedocs.io/en/stable/api/index.html>`_
-
-* `Falcon add-ons and complementary packages <https://github.com/falconry/falcon/wiki>`_
-* `Falcon articles, talks and podcasts <https://github.com/falconry/falcon/wiki/Articles,-Talks-and-Podcasts>`_
-* `falconry/user for Falcon users <https://gitter.im/falconry/user>`_ @ Gitter
-* `falconry/dev for Falcon contributors <https://gitter.im/falconry/dev>`_ @ Gitter
 
 Features
 --------
