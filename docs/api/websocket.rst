@@ -17,7 +17,7 @@ ASGI application and a web browser, mobile app, or other client application.
 .. note::
 
     See also :attr:`falcon.asgi.Response.sse` to learn more about Falcon's
-    Server-Sent Event (SSE) support,
+    Server-Sent Event (SSE) support.
 
 Usage
 -----

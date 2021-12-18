@@ -29,6 +29,7 @@ jobs:
           - "3.7"
           - "3.8"
           - "3.9"
+          - "3.10"
         architecture:
           - x64
 
@@ -63,9 +64,6 @@ jobs:
         # - install the created wheel without using the pypi index
         # - check the cython extension
         # - runs the tests
-        env:
-          FALCON_ASGI_WRAP_NON_COROUTINES: Y
-          FALCON_TESTING_SESSION: Y
         run: |
           pip install tox
           tox -e wheel_check -- ${{ matrix.pytest-extra }}
@@ -105,6 +103,7 @@ jobs:
           - cp37-cp37m
           - cp38-cp38
           - cp39-cp39
+          - cp310-cp310
         architecture:
           - x64
 
@@ -162,9 +161,6 @@ jobs:
         # - install the created wheel without using the pypi index
         # - check the cython extension
         # - runs the tests
-        env:
-          FALCON_ASGI_WRAP_NON_COROUTINES: Y
-          FALCON_TESTING_SESSION: Y
         run: |
           pip install tox
           tox -e wheel_check -- ${{ matrix.pytest-extra }}
@@ -196,7 +192,7 @@ jobs:
         os:
           - "ubuntu-latest"
         python-version:
-          - "3.9"
+          - "3.10"
         architecture:
           - x64
 
@@ -255,6 +251,7 @@ jobs:
           - cp37-cp37m
           - cp38-cp38
           - cp39-cp39
+          - cp310-cp310
         architecture:
           - aarch64
           - s390x
@@ -294,8 +291,6 @@ jobs:
         if: ${{ matrix.architecture == 'aarch64' }}
         uses: docker://quay.io/pypa/manylinux2014_aarch64
         env:
-          FALCON_ASGI_WRAP_NON_COROUTINES: Y
-          FALCON_TESTING_SESSION: Y
           PIP_CACHE_DIR: /github/workspace/.pip/
           PYTHON_VERSION: ${{ matrix.python-version }}
         with:
@@ -319,8 +314,6 @@ jobs:
         if: ${{ matrix.architecture == 's390x' }}
         uses: docker://quay.io/pypa/manylinux2014_s390x
         env:
-          FALCON_ASGI_WRAP_NON_COROUTINES: Y
-          FALCON_TESTING_SESSION: Y
           PIP_CACHE_DIR: /github/workspace/.pip/
         with:
           args: |
