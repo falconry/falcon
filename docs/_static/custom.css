@@ -23,7 +23,8 @@ h1 a:hover, h2 a:hover, h3 a:hover {
 }
 
 div.document {
-    max-width: calc(760px + 220px); /* max body width + 220px of sidebar  */
+    /* max body width + 60px padding + 220px sidebar */
+    max-width: calc(790px + 60px + 220px);
 }
 
 div.footer {
@@ -165,7 +166,7 @@ pre {
 }
 
 .highlight pre {
-    font-size: 13px;
+    font-size: 14px;
 }
 
 
