@@ -61,10 +61,10 @@ New & Improved
   :class:`~falcon.HTTPTooManyRequests`, and
   :class:`~falcon.HTTPUnavailableForLegalReasons` error classes were
   added.
-- The :any:`HTTPStatus` class is now available directly under
+- The ``HTTPStatus`` class is now available directly under
   the `falcon` module, and has been properly documented.
 - Support for HTTP redirections was added via a set of
-  :any:`HTTPStatus` subclasses. This should avoid the problem
+  ``HTTPStatus`` subclasses. This should avoid the problem
   of hooks and responder methods possibly overriding the redirect.
   Raising an instance of one of these new redirection classes will
   short-circuit request processing, similar to raising an instance of
