@@ -167,8 +167,8 @@ When creating your App object you can either add or completely replace all of
 the handlers. For example, let's say you want to write an API that sends and
 receives `MessagePack <https://msgpack.org/>`_. We can easily do this by telling
 our Falcon API that we want a default media type of ``application/msgpack``, and
-then creating a new :any:`Handlers` object to map that media type to an
-appropriate handler.
+then creating a new :class:`~falcon.media.Handlers` object to map that media
+type to an appropriate handler.
 
 The following example demonstrates how to replace the default handlers. Because
 Falcon provides a :class:`~.falcon.media.MessagePackHandler` that is not enabled
@@ -190,8 +190,8 @@ a :ref:`custom media handler <custom-media-handler-type>` as needed.
     app.req_options.media_handlers = handlers
     app.resp_options.media_handlers = handlers
 
-Alternatively, you can simply update the existing :any:`Handlers` object to
-retain the default handlers:
+Alternatively, you can simply update the existing
+:class:`~falcon.media.Handlers` object to retain the default handlers:
 
 .. code-block:: python
 

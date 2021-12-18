@@ -922,7 +922,7 @@ class Response:
             _headers['link'] = value
 
     # NOTE(kgriffs): Alias deprecated as of 3.0
-    add_link = deprecated(_ADD_LINK_DEPRECATED_MSG)(append_link)
+    add_link = deprecated(_ADD_LINK_DEPRECATED_MSG, method_name='add_link')(append_link)
 
     cache_control = header_property(
         'Cache-Control',
