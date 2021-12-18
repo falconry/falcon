@@ -241,3 +241,6 @@ class _AsyncFileReader:
 
     async def read(self, size=-1):
         return await self._loop.run_in_executor(None, partial(self._file.read, size))
+
+    async def close(self):
+        await self._loop.run_in_executor(None, self._file.close)
