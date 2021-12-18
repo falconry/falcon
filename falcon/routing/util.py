@@ -28,9 +28,9 @@ class SuffixedMethodNotFoundError(Exception):
 
 
 # NOTE(kgriffs): Published method; take care to avoid breaking changes.
-@deprecated("compile_uri_template() will soon deprecated")
+@deprecated("compile_uri_template() will be removed in Falcon 4.0.")
 def compile_uri_template(template):
-    """Compile the given URI template string into a pattern matcher. *DEPRECATED SOON*
+    """Compile the given URI template string into a pattern matcher.
 
     This function can be used to construct custom routing engines that
     iterate through a list of possible routes, attempting to match

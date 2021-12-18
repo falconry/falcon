@@ -38,11 +38,6 @@ from falcon.util.uri import encode_value_check_escaped as uri_encode_value
 
 GMT_TIMEZONE = TimezoneGMT()
 
-_ADD_LINK_DEPRECATED_MSG = (
-    'The add_link() method has been deprecated and will be removed in Falcon 4.0. '
-    'Please use append_link() instead.'
-)
-
 _STREAM_LEN_REMOVED_MSG = (
     'The deprecated stream_len property was removed in Falcon 3.0. '
     'Please use Response.set_stream() or Response.content_length instead.'
@@ -922,7 +917,9 @@ class Response:
             _headers['link'] = value
 
     # NOTE(kgriffs): Alias deprecated as of 3.0
-    add_link = deprecated(_ADD_LINK_DEPRECATED_MSG, method_name='add_link')(append_link)
+    add_link = deprecated('Please use append_link() instead.', method_name='add_link')(
+        append_link
+    )
 
     cache_control = header_property(
         'Cache-Control',

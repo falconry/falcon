@@ -5,6 +5,7 @@ from falcon import routing
 from falcon.util.deprecation import DeprecatedWarning
 
 
+@pytest.mark.filterwarnings('ignore:Call to deprecated function compile_uri_template')
 class TestUriTemplates:
     @pytest.mark.parametrize('value', (42, falcon.App))
     def test_string_type_required(self, value):
