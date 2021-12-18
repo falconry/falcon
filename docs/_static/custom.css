@@ -1,5 +1,6 @@
 body {
     font-family: Oxygen, 'goudy old style', 'minion pro', 'bell mt', Georgia, 'Hiragino Mincho Pro', serif;
+    font-size: 18px;
 }
 
 
@@ -349,4 +350,9 @@ div.highlight > pre {
 
 .sphinx-tab pre {
     border: none !important;
+}
+
+/* TODO: remove once alabaster is updated */
+span.descname, span.descclassname {
+    font-size: 0.95em;
 }
