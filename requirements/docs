@@ -1,5 +1,4 @@
-# TODO(vytas): Unpin when Sphinx is upgraded.
-docutils < 0.18.0
+docutils
 doc2dash
 jinja2
 markupsafe
