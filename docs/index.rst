@@ -8,12 +8,13 @@ The Falcon Web Framework
 
 Release v\ |version| (:ref:`Installation <install>`)
 
-Falcon is a minimalist WSGI library for building speedy web APIs and app
-backends. We like to think of Falcon as the `Dieter Rams` of web frameworks.
+`Falcon <https://falconframework.org>`__ is a minimalist ASGI/WSGI framework for
+building mission-critical REST APIs and microservices, with a focus on
+reliability, correctness, and performance at scale.
 
-When it comes to building HTTP APIs, other frameworks weigh you down with tons
-of dependencies and unnecessary abstractions. Falcon cuts to the chase with a
-clean design that embraces HTTP and the REST architectural style.
+We like to think of Falcon as the *Dieter Rams* of web frameworks. Falcon
+encourages the REST architectural style, and tries to do as little as possible
+while remaining highly effective.
 
 .. code:: python
 
@@ -35,19 +36,33 @@ clean design that embraces HTTP and the REST architectural style.
     app = falcon.App()
     app.add_route('/quote', QuoteResource())
 
+Quick Links
+-----------
+
+* `Read the docs <https://falcon.readthedocs.io/en/stable>`_
+  (`FAQ <https://falcon.readthedocs.io/en/stable/user/faq.html>`_ -
+  `getting help <https://falcon.readthedocs.io/en/stable/community/help.html>`_ -
+  `reference <https://falcon.readthedocs.io/en/stable/api/index.html>`_)
+* `Falcon add-ons and complementary packages <https://github.com/falconry/falcon/wiki>`_
+* `Falcon articles, talks and podcasts <https://github.com/falconry/falcon/wiki/Articles,-Talks-and-Podcasts>`_
+* `falconry/user for Falcon users <https://gitter.im/falconry/user>`_ @ Gitter
+* `falconry/dev for Falcon contributors <https://gitter.im/falconry/dev>`_ @ Gitter
+
 What People are Saying
 ----------------------
 
-"We have been using Falcon as a replacement for [framework] and we simply love the performance (three times faster) and code base size (easily half of our original [framework] code)."
+"Falcon is rock solid and it's fast."
+
+"We have been using Falcon as a replacement for [another framework] and
+we simply love the performance (three times faster) and code base size (easily
+half of our [original] code)."
+
+"I'm loving #falconframework! Super clean and simple, I finally
+have the speed and flexibility I need!"
 
 "Falcon looks great so far. I hacked together a quick test for a
 tiny server of mine and was ~40% faster with only 20 minutes of
 work."
-
-"Falcon is rock solid and it's fast."
-
-"I'm loving #falconframework! Super clean and simple, I finally
-have the speed and flexibility I need!"
 
 "I feel like I'm just talking HTTP at last, with nothing in the
 middle. Falcon seems like the requests of backend."
@@ -56,15 +71,6 @@ middle. Falcon seems like the requests of backend."
 documentation. It basically can't be wrong."
 
 "What other framework has integrated support for 786 TRY IT NOW ?"
-
-Quick Links
------------
-
-* `Read the docs <https://falcon.readthedocs.io/en/stable>`_
-* `Falcon add-ons and complementary packages <https://github.com/falconry/falcon/wiki>`_
-* `Falcon articles, talks and podcasts <https://github.com/falconry/falcon/wiki/Articles,-Talks-and-Podcasts>`_
-* `falconry/user for Falcon users <https://gitter.im/falconry/user>`_ @ Gitter
-* `falconry/dev for Falcon contributors <https://gitter.im/falconry/dev>`_ @ Gitter
 
 Features
 --------

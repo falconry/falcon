@@ -5,7 +5,7 @@ import pytest
 
 import falcon
 from falcon import testing
-
+from falcon.util.deprecation import DeprecatedWarning
 from _util import create_app  # NOQA
 
 
@@ -179,18 +179,25 @@ class LinkHeaderResource:
     def __init__(self):
         self._links = []
 
+    def add_link(self, *args, **kwargs):
+        self._links.append(('add_link', args, kwargs))
+
     def append_link(self, *args, **kwargs):
-        self._links.append((args, kwargs))
+        self._links.append(('append_link', args, kwargs))
 
     def on_get(self, req, resp):
         resp.text = '{}'
 
-        append_link = None
-        for args, kwargs in self._links:
-            append_link = (
-                resp.append_link if append_link is resp.add_link else resp.add_link
-            )
-            append_link(*args, **kwargs)
+        for method_name, args, kwargs in self._links:
+            append_method = getattr(resp, method_name)
+            if method_name == 'append_link':
+                append_method(*args, **kwargs)
+            else:
+                with pytest.warns(
+                    DeprecatedWarning,
+                    match='Call to deprecated function add_link(...)',
+                ):
+                    append_method(*args, **kwargs)
 
 
 class AppendHeaderResource:
@@ -245,6 +252,16 @@ class DownloadableResource:
         resp.text = 'Hello, World!\n'
         resp.content_type = falcon.MEDIA_TEXT
         resp.downloadable_as = self.filename
+
+
+class ViewableResource:
+    def __init__(self, filename):
+        self.filename = filename
+
+    def on_get(self, req, resp):
+        resp.text = 'Hello, World!\n'
+        resp.content_type = falcon.MEDIA_TEXT
+        resp.viewable_as = self.filename
 
 
 class ContentLengthHeaderResource:
@@ -566,8 +583,28 @@ class TestHeaders:
             ),
         ],
     )
-    def test_content_disposition_header(self, client, filename, expected):
+    def test_content_disposition_attachment_header(self, client, filename, expected):
         resource = DownloadableResource(filename)
+        client.app.add_route('/', resource)
+        resp = client.simulate_get()
+
+        assert resp.status_code == 200
+        assert resp.headers['Content-Disposition'] == expected
+
+    @pytest.mark.parametrize(
+        'filename,expected',
+        [
+            ('report.csv', 'inline; filename="report.csv"'),
+            ('Hello World.txt', 'inline; filename="Hello World.txt"'),
+            (
+                'Bold Digit 𝟏.txt',
+                'inline; filename=Bold_Digit_1.txt; '
+                "filename*=UTF-8''Bold%20Digit%20%F0%9D%9F%8F.txt",
+            ),
+        ],
+    )
+    def test_content_disposition_inline_header(self, client, filename, expected):
+        resource = ViewableResource(filename)
         client.app.add_route('/', resource)
         resp = client.simulate_get()
 
@@ -787,12 +824,12 @@ class TestHeaders:
         uri = 'ab\u00e7'
 
         resource = LinkHeaderResource()
-        resource.append_link('/things/2842', 'next')
+        resource.add_link('/things/2842', 'next')
         resource.append_link('http://\u00e7runchy/bacon', 'contents')
         resource.append_link(uri, 'http://example.com/ext-type')
-        resource.append_link(uri, 'http://example.com/\u00e7runchy')
+        resource.add_link(uri, 'http://example.com/\u00e7runchy')
         resource.append_link(uri, 'https://example.com/too-\u00e7runchy')
-        resource.append_link('/alt-thing', 'alternate http://example.com/\u00e7runchy')
+        resource.add_link('/alt-thing', 'alternate http://example.com/\u00e7runchy')
 
         self._check_link_header(client, resource, expected_value)
 

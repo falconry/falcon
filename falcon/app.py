@@ -589,6 +589,13 @@ class App:
             For security reasons, the directory and the fallback_filename (if provided)
             should be read only for the account running the application.
 
+        Warning:
+            If you need to serve large files and/or progressive downloads (such
+            as in the case of video streaming) through the Falcon app, check
+            that your application server's timeout settings can accomodate the
+            expected request duration (for instance, the popular Gunicorn kills
+            ``sync`` workers after 30 seconds unless configured otherwise).
+
         Note:
             For ASGI apps, file reads are made non-blocking by scheduling
             them on the default executor.
@@ -615,7 +622,8 @@ class App:
                 Note that static routes are matched in LIFO order, and are only
                 attempted after checking dynamic routes and sinks.
 
-            directory (str): The source directory from which to serve files.
+            directory (Union[str, pathlib.Path]): The source directory from
+                which to serve files.
             downloadable (bool): Set to ``True`` to include a
                 Content-Disposition header in the response. The "filename"
                 directive is simply set to the name of the requested file.

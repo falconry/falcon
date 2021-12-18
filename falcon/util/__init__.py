@@ -93,6 +93,5 @@ if sys.version_info >= (3, 7):
         mod = sys.modules[__name__]
         return ModuleType.__getattr__(mod, name)
 
-
 else:
     import json  # NOQA

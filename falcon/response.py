@@ -14,6 +14,7 @@
 
 """Response class."""
 
+import functools
 import mimetypes
 
 from falcon.constants import _UNSET
@@ -37,11 +38,15 @@ from falcon.util.uri import encode_value_check_escaped as uri_encode_value
 
 GMT_TIMEZONE = TimezoneGMT()
 
+_ADD_LINK_DEPRECATED_MSG = (
+    'The add_link() method has been deprecated and will be removed in Falcon 4.0. '
+    'Please use append_link() instead.'
+)
+
 _STREAM_LEN_REMOVED_MSG = (
     'The deprecated stream_len property was removed in Falcon 3.0. '
     'Please use Response.set_stream() or Response.content_length instead.'
 )
-
 
 _RESERVED_CROSSORIGIN_VALUES = frozenset({'anonymous', 'use-credentials'})
 
@@ -917,7 +922,7 @@ class Response:
             _headers['link'] = value
 
     # NOTE(kgriffs): Alias deprecated as of 3.0
-    add_link = append_link
+    add_link = deprecated(_ADD_LINK_DEPRECATED_MSG, method_name='add_link')(append_link)
 
     cache_control = header_property(
         'Cache-Control',
@@ -1011,7 +1016,25 @@ class Response:
         ``filename*`` directive, whereas ``filename`` will contain the US
         ASCII fallback.
         """,
-        format_content_disposition,
+        functools.partial(format_content_disposition, disposition_type='attachment'),
+    )
+
+    viewable_as = header_property(
+        'Content-Disposition',
+        """Set an inline Content-Disposition header using the given filename.
+
+        The value will be used for the ``filename`` directive. For example,
+        given ``'report.pdf'``, the Content-Disposition header would be set
+        to: ``'inline; filename="report.pdf"'``.
+
+        As per `RFC 6266 <https://tools.ietf.org/html/rfc6266#appendix-D>`_
+        recommendations, non-ASCII filenames will be encoded using the
+        ``filename*`` directive, whereas ``filename`` will contain the US
+        ASCII fallback.
+
+        .. versionadded:: 3.1
+        """,
+        functools.partial(format_content_disposition, disposition_type='inline'),
     )
 
     etag = header_property(
