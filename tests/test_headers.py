@@ -195,7 +195,7 @@ class LinkHeaderResource:
             else:
                 with pytest.warns(
                     DeprecatedWarning,
-                    match=r'Call to deprecated function add_link(...)',
+                    match='Call to deprecated function add_link(...)',
                 ):
                     append_method(*args, **kwargs)
 
