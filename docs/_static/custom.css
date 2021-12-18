@@ -1,6 +1,6 @@
 body {
     font-family: Oxygen, 'goudy old style', 'minion pro', 'bell mt', Georgia, 'Hiragino Mincho Pro', serif;
-    font-size: 18px;
+    font-size: 17.5px;
 }
 
 
@@ -25,7 +25,7 @@ h1 a:hover, h2 a:hover, h3 a:hover {
 
 div.document {
     /* max body width + 60px padding + 220px sidebar */
-    max-width: calc(790px + 60px + 220px);
+    max-width: calc(760px + 60px + 220px);
 }
 
 div.footer {
@@ -164,6 +164,14 @@ div.admonition .last.highlight-default {
 pre {
     /*background-color: #212529;*/
     padding: 1.25em 30px;
+}
+
+.sphinx-tabs div.node,
+.sphinx-tabs div.admonition,
+.sphinx-tabs div.highlight
+{
+    margin-left: -8px;
+    margin-right: -8px;
 }
 
 .highlight pre {
