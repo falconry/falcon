@@ -1,5 +1,6 @@
 body {
     font-family: Oxygen, 'goudy old style', 'minion pro', 'bell mt', Georgia, 'Hiragino Mincho Pro', serif;
+    font-size: 17.5px;
 }
 
 
@@ -20,6 +21,11 @@ a {
 h1 a:hover, h2 a:hover, h3 a:hover {
     text-decoration: none;
     border: none;
+}
+
+div.document {
+    /* max body width + 60px padding + 220px sidebar */
+    max-width: calc(760px + 60px + 220px);
 }
 
 div.footer {
@@ -160,8 +166,16 @@ pre {
     padding: 1.25em 30px;
 }
 
+.sphinx-tabs div.node,
+.sphinx-tabs div.admonition,
+.sphinx-tabs div.highlight
+{
+    margin-left: -8px;
+    margin-right: -8px;
+}
+
 .highlight pre {
-    font-size: smaller;
+    font-size: 14px;
 }
 
 
@@ -344,4 +358,9 @@ div.highlight > pre {
 
 .sphinx-tab pre {
     border: none !important;
+}
+
+/* TODO: remove once alabaster is updated */
+span.descname, span.descclassname {
+    font-size: 0.95em;
 }
