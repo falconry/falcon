@@ -1,12 +1,9 @@
-# TODO(vytas): Unpin when Sphinx is upgraded.
-docutils < 0.18.0
+docutils
 doc2dash
 jinja2
 markupsafe
 pygments
 pygments-style-github
-# TODO(vytas): Revisit later if Sphinx 3.5.0 issues have been resolved.
-#   See also: https://github.com/sphinx-doc/sphinx/issues/8880
-sphinx < 3.5.0
+sphinx
 sphinx_rtd_theme
 sphinx-tabs
