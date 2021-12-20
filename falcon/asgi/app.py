@@ -651,19 +651,24 @@ class App(falcon.app.App):
             #
 
             if hasattr(stream, 'read'):
-                while True:
-                    data = await stream.read(self._STREAM_BLOCK_SIZE)
-                    if data == b'':
-                        break
-                    else:
-                        await send(
-                            {
-                                'type': EventType.HTTP_RESPONSE_BODY,
-                                # NOTE(kgriffs): Handle the case in which data == None
-                                'body': data or b'',
-                                'more_body': True,
-                            }
-                        )
+                try:
+                    while True:
+                        data = await stream.read(self._STREAM_BLOCK_SIZE)
+                        if data == b'':
+                            break
+                        else:
+                            await send(
+                                {
+                                    'type': EventType.HTTP_RESPONSE_BODY,
+                                    # NOTE(kgriffs): Handle the case in which
+                                    #   data is None
+                                    'body': data or b'',
+                                    'more_body': True,
+                                }
+                            )
+                finally:
+                    if hasattr(stream, 'close'):
+                        await stream.close()
             else:
                 # NOTE(kgriffs): Works for both async generators and iterators
                 try:
@@ -699,11 +704,11 @@ class App(falcon.app.App):
                         'Response.stream: ' + str(ex)
                     )
                 finally:
+                    # NOTE(vytas): This could be DRYed with the above identical
+                    #   twoliner in a one large block, but OTOH we would be
+                    #   unable to reuse the current try.. except.
                     if hasattr(stream, 'close'):
                         await stream.close()
-
-            if hasattr(stream, 'close'):
-                await stream.close()
 
         await send(_EVT_RESP_EOF)
 
