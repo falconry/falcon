@@ -22,15 +22,33 @@ Or, using the more verbose name:
     resp.status = falcon.HTTP_CONFLICT
 
 Using these constants helps avoid typos and cuts down on the number of
-string objects that must be created when preparing responses. However,
-starting with Falcon version 3.0, an LRU is used to enable efficient use
-of :class:`http.HTTPStatus` and bare ``int`` codes as well (currently only
-implemented for the ASGI interface; see also:
-:attr:`~falcon.asgi.Response.status`).
+string objects that must be created when preparing responses. However, starting
+with Falcon version 3.0, an LRU is used to enable efficient use of
+:class:`http.HTTPStatus` and bare ``int`` codes as well. Essentially, the WSGI
+flavor of :attr:`resp.status <falcon.Response.status>` can now be set to
+anything that :func:`~falcon.code_to_http_status` accepts:
 
-Falcon also provides a generic :class:`~.HTTPStatus` class. Simply raise an
-instance of this class from any hook, middleware, or a responder to stop
-handling the request and skip to the response handling. It takes status,
+.. code:: python
+
+    resp.status = 201
+
+ASGI :attr:`resp.status <falcon.asgi.Response.status>` also supports the same
+broad selection of status types via :func:`~falcon.http_status_to_code`:
+
+.. code:: python
+
+    resp.status = HTTPStatus.CREATED
+
+.. note::
+    One notable difference between WSGI and ASGI is that the latter's HTTP
+    `send <https://asgi.readthedocs.io/en/latest/specs/www.html#response-start-send-event>`__
+    event defines ``status`` as an ``int`` code. Effectively, this precludes
+    rendering a custom status line string or a non-standard status code that
+    the ASGI app server is unaware of.
+
+Falcon also provides a generic :class:`~.HTTPStatus` exception class. Simply
+raise an instance of this class from any hook, middleware, or a responder to
+stop handling the request and skip to the response handling. It takes status,
 additional headers and body as input arguments.
 
 HTTPStatus

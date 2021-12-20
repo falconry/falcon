@@ -18,7 +18,7 @@ def validate(req_schema=None, resp_schema=None, is_async=False):
     by ``jsonschema.FormatChecker``.
 
     Note:
-        The `jsonschema`` package must be installed separately in order to use
+        The ``jsonschema`` package must be installed separately in order to use
         this decorator, as Falcon does not install it by default.
 
         See `json-schema.org <http://json-schema.org/>`_ for more
