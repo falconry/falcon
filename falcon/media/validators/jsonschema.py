@@ -17,6 +17,14 @@ def validate(req_schema=None, resp_schema=None, is_async=False):
     the *format* keyword is enabled for the default checkers implemented
     by ``jsonschema.FormatChecker``.
 
+    In the case of failed request media validation, an instance of
+    :class:`~falcon.MediaValidationError` is raised by the decorator. By
+    default, this error is rendered as a 400 (:class:`~falcon.HTTPBadRequest`)
+    response with the ``title`` and ``description`` attributes explaining the
+    validation failure, but this behavior can be modified by adding a
+    custom error :func:`handler <falcon.App.add_error_handler>` for
+    :class:`~falcon.MediaValidationError`.
+
     Note:
         The ``jsonschema`` package must be installed separately in order to use
         this decorator, as Falcon does not install it by default.
