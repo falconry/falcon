@@ -1130,6 +1130,16 @@ class ASGIConductor:
 
         return await _simulate_request_asgi(self.app, *args, **kwargs)
 
+    delete = simulate_delete
+    get = simulate_get
+    get_stream = simulate_get_stream
+    head = simulate_head
+    options = simulate_options
+    patch = simulate_patch
+    post = simulate_post
+    request = simulate_request
+    websocket = simulate_ws
+
 
 def simulate_get(app, path, **kwargs) -> _ResultBase:
     """Simulate a GET request to a WSGI or ASGI application.
@@ -1873,6 +1883,15 @@ class TestClient:
         The methods all call ``self.simulate_request()`` for convenient
         overriding of request preparation by child classes.
 
+    Tip:
+        For convenience, :class:`TestClient` also exposes shorthand aliases
+        for the ``simulate_*`` methods. Just as with a typical Python HTTP
+        client, it is possible to simply call::
+
+            client = TestClient(app)
+            client.get('/messages')
+            client.request('LOCK', '/files/first')
+
     Note:
         In the case of an ASGI request, this class will simulate the entire
         app lifecycle in a single shot, including lifespan and client
@@ -2007,6 +2026,13 @@ class TestClient:
 
         return simulate_request(self.app, *args, **kwargs)
 
+    delete = simulate_delete
+    get = simulate_get
+    head = simulate_head
+    options = simulate_options
+    patch = simulate_patch
+    post = simulate_post
+    request = simulate_request
 
 # -----------------------------------------------------------------------------
 # Private

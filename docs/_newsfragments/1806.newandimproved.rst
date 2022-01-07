@@ -1,0 +1,3 @@
+Due to popular demand, TestClient and ASGIConductor now expose convenience
+shorthand aliases for ``simulate_*`` methods, i.e., ``simulate_get`` is now
+also available as ``get()``, etc.
