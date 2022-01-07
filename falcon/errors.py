@@ -2472,9 +2472,7 @@ class MediaValidationError(HTTPBadRequest):
     attribute using the "raise ... from" form when raising.
 
     Note:
-        All the arguments should be passed as keyword only. Using them as positional
-        arguments will raise a deprecation warning and will result in an
-        error in a future version of falcon.
+        All the arguments must be passed as keyword only.
 
     Keyword Args:
         title (str): Error title (default '400 Bad Request').
@@ -2506,8 +2504,7 @@ class MediaValidationError(HTTPBadRequest):
             base articles related to this error (default ``None``).
     """
 
-    @deprecated_args(allowed_positional=0)
-    def __init__(self, title=None, description=None, headers=None, **kwargs):
+    def __init__(self, *, title=None, description=None, headers=None, **kwargs):
         super().__init__(
             title=title,
             description=description,
