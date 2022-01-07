@@ -108,10 +108,10 @@ def _validate(func, req_schema=None, resp_schema=None):
                 jsonschema.validate(
                     req.media, req_schema, format_checker=jsonschema.FormatChecker()
                 )
-            except jsonschema.ValidationError as e:
-                raise falcon.HTTPBadRequest(
-                    title='Request data failed validation', description=e.message
-                )
+            except jsonschema.ValidationError as ex:
+                raise falcon.MediaValidationError(
+                    title='Request data failed validation', description=ex.message
+                ) from ex
 
         result = func(self, req, resp, *args, **kwargs)
 
@@ -120,13 +120,13 @@ def _validate(func, req_schema=None, resp_schema=None):
                 jsonschema.validate(
                     resp.media, resp_schema, format_checker=jsonschema.FormatChecker()
                 )
-            except jsonschema.ValidationError:
+            except jsonschema.ValidationError as ex:
                 raise falcon.HTTPInternalServerError(
                     title='Response data failed validation'
                     # Do not return 'e.message' in the response to
                     # prevent info about possible internal response
                     # formatting bugs from leaking out to users.
-                )
+                ) from ex
 
         return result
 
@@ -143,10 +143,10 @@ def _validate_async(func, req_schema=None, resp_schema=None):
                 jsonschema.validate(
                     m, req_schema, format_checker=jsonschema.FormatChecker()
                 )
-            except jsonschema.ValidationError as e:
-                raise falcon.HTTPBadRequest(
-                    title='Request data failed validation', description=e.message
-                )
+            except jsonschema.ValidationError as ex:
+                raise falcon.MediaValidationError(
+                    title='Request data failed validation', description=ex.message
+                ) from ex
 
         result = await func(self, req, resp, *args, **kwargs)
 
@@ -155,13 +155,13 @@ def _validate_async(func, req_schema=None, resp_schema=None):
                 jsonschema.validate(
                     resp.media, resp_schema, format_checker=jsonschema.FormatChecker()
                 )
-            except jsonschema.ValidationError:
+            except jsonschema.ValidationError as ex:
                 raise falcon.HTTPInternalServerError(
                     title='Response data failed validation'
                     # Do not return 'e.message' in the response to
                     # prevent info about possible internal response
                     # formatting bugs from leaking out to users.
-                )
+                ) from ex
 
         return result
 
