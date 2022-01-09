@@ -1160,6 +1160,7 @@ class ASGIConductor:
     options = _simulate_method_alias(simulate_options)
     patch = _simulate_method_alias(simulate_patch)
     post = _simulate_method_alias(simulate_post)
+    put = _simulate_method_alias(simulate_put)
     request = _simulate_method_alias(simulate_request)
     websocket = _simulate_method_alias(simulate_ws, replace_name='websocket')
 
@@ -2055,6 +2056,7 @@ class TestClient:
     options = _simulate_method_alias(simulate_options)
     patch = _simulate_method_alias(simulate_patch)
     post = _simulate_method_alias(simulate_post)
+    put = _simulate_method_alias(simulate_put)
     request = _simulate_method_alias(simulate_request)
 
 
