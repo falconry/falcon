@@ -20,6 +20,23 @@ async def test_default_headers():
         assert result.headers['the-answer'] == '42'
 
 
+@pytest.mark.parametrize('simulate_method', ['request', 'simulate_request'])
+@pytest.mark.asyncio
+async def test_generic_request(simulate_method):
+    class Resource:
+        async def on_lock(self, req, resp):
+            raise falcon.HTTPUnprocessableEntity
+
+    app = App()
+    app.add_route('/file', Resource())
+    client = testing.TestClient(app)
+
+    async with client as conductor:
+        simulate_request = getattr(conductor, simulate_method)
+        result = await simulate_request('LOCK', '/file')
+        assert result.status_code == 422
+
+
 @pytest.mark.asyncio
 async def test_wsgi_not_supported():
     with pytest.raises(falcon.CompatibilityError):

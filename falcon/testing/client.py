@@ -955,6 +955,13 @@ class ASGIConductor:
         available for your testing framework of choice. For example, the
         ``pytest-asyncio`` plugin is available for ``pytest`` users.
 
+    Similar to the :class:`TestClient`, :class:`ASGIConductor` also exposes
+    convenience aliases without the ``simulate_`` prefix. Just as with a
+    typical asynchronous HTTP client, it is possible to simply invoke::
+
+        await conductor.get('/messages')
+        await conductor.request('LOCK', '/files/first')
+
     Args:
         app (callable): An ASGI application to target when simulating
             requests.
@@ -1903,18 +1910,17 @@ class TestClient:
         client.simulate_get('/messages')
         client.simulate_head('/messages')
 
+    For convenience, :class:`TestClient` also exposes shorthand aliases without
+    the ``simulate_`` prefix. Just as with a typical Python HTTP client, it is
+    possible to simply call::
+
+        client = TestClient(app)
+        client.get('/messages')
+        client.request('LOCK', '/files/first')
+
     Note:
         The methods all call ``self.simulate_request()`` for convenient
         overriding of request preparation by child classes.
-
-    Tip:
-        For convenience, :class:`TestClient` also exposes shorthand aliases
-        for the ``simulate_*`` methods. Just as with a typical Python HTTP
-        client, it is possible to simply call::
-
-            client = TestClient(app)
-            client.get('/messages')
-            client.request('LOCK', '/files/first')
 
     Note:
         In the case of an ASGI request, this class will simulate the entire
