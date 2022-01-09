@@ -626,11 +626,13 @@ class TestFalconUtils:
             ('\x00\x00\x7F\x00\x00\x80\x00', False),
         ],
     )
-    def test_misc_isascii(self, string, expected_ascii):
+    @pytest.mark.parametrize('method', ['isascii', '_isascii'])
+    def test_misc_isascii(self, string, expected_ascii, method):
+        isascii = getattr(misc, method)
         if expected_ascii:
-            assert misc.isascii(string)
+            assert isascii(string)
         else:
-            assert not misc.isascii(string)
+            assert not isascii(string)
 
 
 @pytest.mark.parametrize(

@@ -1,9 +1,15 @@
+import collections
 import os
+import sys
 
 import pytest
 
-import falcon
+if os.environ.get('FALCON_TESTING_MOCK_PY35'):
+    version_info = collections.namedtuple('version_info', ('major', 'minor', 'micro'))
+    # NOTE(vytas): Ignore type as it is not trivial to fake the built-in one.
+    sys.version_info = version_info(3, 5, 0)  # type: ignore
 
+import falcon
 
 _FALCON_TEST_ENV = (
     ('FALCON_ASGI_WRAP_NON_COROUTINES', 'Y'),
