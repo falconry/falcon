@@ -54,6 +54,29 @@ warnings.filterwarnings(
 )
 
 
+def _simulate_method_alias(method, version_added='3.1', replace_name=None):
+    return_type = inspect.signature(method).return_annotation
+
+    def alias(client, *args, **kwargs) -> return_type:
+        return method(client, *args, **kwargs)
+
+    async def async_alias(client, *args, **kwargs) -> return_type:
+        return await method(client, *args, **kwargs)
+
+    alias = async_alias if inspect.iscoroutinefunction(method) else alias
+
+    alias.__doc__ = method.__doc__ + '\n        .. versionadded:: {}\n'.format(
+        version_added
+    )
+    if replace_name:
+        alias.__doc__ = alias.__doc__.replace(method.__name__, replace_name)
+        alias.__name__ = replace_name
+    else:
+        alias.__name__ = method.__name__.partition('simulate_')[-1]
+
+    return alias
+
+
 class Cookie:
     """Represents a cookie returned by a simulated request.
 
@@ -1130,15 +1153,15 @@ class ASGIConductor:
 
         return await _simulate_request_asgi(self.app, *args, **kwargs)
 
-    delete = simulate_delete
-    get = simulate_get
-    get_stream = simulate_get_stream
-    head = simulate_head
-    options = simulate_options
-    patch = simulate_patch
-    post = simulate_post
-    request = simulate_request
-    websocket = simulate_ws
+    delete = _simulate_method_alias(simulate_delete)
+    get = _simulate_method_alias(simulate_get)
+    get_stream = _simulate_method_alias(simulate_get_stream, replace_name='get_stream')
+    head = _simulate_method_alias(simulate_head)
+    options = _simulate_method_alias(simulate_options)
+    patch = _simulate_method_alias(simulate_patch)
+    post = _simulate_method_alias(simulate_post)
+    request = _simulate_method_alias(simulate_request)
+    websocket = _simulate_method_alias(simulate_ws, replace_name='websocket')
 
 
 def simulate_get(app, path, **kwargs) -> _ResultBase:
@@ -2026,13 +2049,14 @@ class TestClient:
 
         return simulate_request(self.app, *args, **kwargs)
 
-    delete = simulate_delete
-    get = simulate_get
-    head = simulate_head
-    options = simulate_options
-    patch = simulate_patch
-    post = simulate_post
-    request = simulate_request
+    delete = _simulate_method_alias(simulate_delete)
+    get = _simulate_method_alias(simulate_get)
+    head = _simulate_method_alias(simulate_head)
+    options = _simulate_method_alias(simulate_options)
+    patch = _simulate_method_alias(simulate_patch)
+    post = _simulate_method_alias(simulate_post)
+    request = _simulate_method_alias(simulate_request)
+
 
 # -----------------------------------------------------------------------------
 # Private
