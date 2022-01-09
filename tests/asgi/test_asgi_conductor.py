@@ -34,8 +34,9 @@ async def test_wsgi_not_supported():
 @pytest.mark.parametrize(
     'method', ['get', 'head', 'post', 'put', 'options', 'patch', 'delete']
 )
+@pytest.mark.parametrize('use_alias', ['alias', 'simulate'])
 @pytest.mark.asyncio
-async def test_responders(method):
+async def test_responders(method, use_alias):
     class Resource:
         async def on_get(self, req, resp):
             resp.set_header('method', 'get')
@@ -64,6 +65,7 @@ async def test_responders(method):
     app.add_route('/', resource)
 
     async with testing.ASGIConductor(app) as conductor:
-        simulate = getattr(conductor, 'simulate_' + method)
+        name = method if use_alias == 'alias' else 'simulate_' + method
+        simulate = getattr(conductor, name)
         result = await simulate('/')
         assert result.headers['method'] == method
