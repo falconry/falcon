@@ -16,7 +16,8 @@ def clean(root):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Recursively clean intermediate compile results.')
+        description='Recursively clean intermediate compile results.'
+    )
     parser.add_argument('directory', help='root directory to operate on')
     args = parser.parse_args()
 
