@@ -69,7 +69,7 @@ eval "$(pyenv virtualenv-init -)"
 
 _echo_task "Cleaning up old artifacts"
 
-tools/clean.sh .
+tools/clean.py .
 
 rm -rf $BUILD_DIR
 rm -rf $DIST_DIR
