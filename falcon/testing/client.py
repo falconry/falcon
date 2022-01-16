@@ -54,6 +54,29 @@ warnings.filterwarnings(
 )
 
 
+def _simulate_method_alias(method, version_added='3.1', replace_name=None):
+    return_type = inspect.signature(method).return_annotation
+
+    def alias(client, *args, **kwargs) -> return_type:
+        return method(client, *args, **kwargs)
+
+    async def async_alias(client, *args, **kwargs) -> return_type:
+        return await method(client, *args, **kwargs)
+
+    alias = async_alias if inspect.iscoroutinefunction(method) else alias
+
+    alias.__doc__ = method.__doc__ + '\n        .. versionadded:: {}\n'.format(
+        version_added
+    )
+    if replace_name:
+        alias.__doc__ = alias.__doc__.replace(method.__name__, replace_name)
+        alias.__name__ = replace_name
+    else:
+        alias.__name__ = method.__name__.partition('simulate_')[-1]
+
+    return alias
+
+
 class Cookie:
     """Represents a cookie returned by a simulated request.
 
@@ -932,6 +955,13 @@ class ASGIConductor:
         available for your testing framework of choice. For example, the
         ``pytest-asyncio`` plugin is available for ``pytest`` users.
 
+    Similar to the :class:`TestClient`, :class:`ASGIConductor` also exposes
+    convenience aliases without the ``simulate_`` prefix. Just as with a
+    typical asynchronous HTTP client, it is possible to simply invoke::
+
+        await conductor.get('/messages')
+        await conductor.request('LOCK', '/files/first')
+
     Args:
         app (callable): An ASGI application to target when simulating
             requests.
@@ -1129,6 +1159,17 @@ class ASGIConductor:
         kwargs['_one_shot'] = False
 
         return await _simulate_request_asgi(self.app, *args, **kwargs)
+
+    delete = _simulate_method_alias(simulate_delete)
+    get = _simulate_method_alias(simulate_get)
+    get_stream = _simulate_method_alias(simulate_get_stream, replace_name='get_stream')
+    head = _simulate_method_alias(simulate_head)
+    options = _simulate_method_alias(simulate_options)
+    patch = _simulate_method_alias(simulate_patch)
+    post = _simulate_method_alias(simulate_post)
+    put = _simulate_method_alias(simulate_put)
+    request = _simulate_method_alias(simulate_request)
+    websocket = _simulate_method_alias(simulate_ws, replace_name='websocket')
 
 
 def simulate_get(app, path, **kwargs) -> _ResultBase:
@@ -1869,6 +1910,14 @@ class TestClient:
         client.simulate_get('/messages')
         client.simulate_head('/messages')
 
+    For convenience, :class:`TestClient` also exposes shorthand aliases without
+    the ``simulate_`` prefix. Just as with a typical Python HTTP client, it is
+    possible to simply call::
+
+        client = TestClient(app)
+        client.get('/messages')
+        client.request('LOCK', '/files/first')
+
     Note:
         The methods all call ``self.simulate_request()`` for convenient
         overriding of request preparation by child classes.
@@ -2006,6 +2055,15 @@ class TestClient:
             kwargs['headers'] = merged_headers
 
         return simulate_request(self.app, *args, **kwargs)
+
+    delete = _simulate_method_alias(simulate_delete)
+    get = _simulate_method_alias(simulate_get)
+    head = _simulate_method_alias(simulate_head)
+    options = _simulate_method_alias(simulate_options)
+    patch = _simulate_method_alias(simulate_patch)
+    post = _simulate_method_alias(simulate_post)
+    put = _simulate_method_alias(simulate_put)
+    request = _simulate_method_alias(simulate_request)
 
 
 # -----------------------------------------------------------------------------
