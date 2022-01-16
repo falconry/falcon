@@ -520,16 +520,22 @@ run(config)
 def _can_run(factory):
     if _WIN32 and factory == _daphne_factory:
         pytest.skip('daphne does not support windows')
+
     if factory == _daphne_factory:
         try:
             import daphne  # noqa
         except Exception:
             pytest.skip('daphne not installed')
-    if factory == _hypercorn_factory:
+    elif factory == _hypercorn_factory:
         try:
             import hypercorn  # noqa
         except Exception:
             pytest.skip('hypercorn not installed')
+    elif factory == _uvicorn_factory:
+        try:
+            import uvicorn  # noqa
+        except Exception:
+            pytest.skip('uvicorn not installed')
 
 
 @pytest.fixture(params=[_uvicorn_factory, _daphne_factory, _hypercorn_factory])

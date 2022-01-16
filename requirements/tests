@@ -8,10 +8,10 @@ testtools; python_version < '3.10'
 
 # ASGI Specific (daphne is installed on a its own tox env)
 pytest-asyncio
+aiofiles; python_version >= '3.6'
 httpx; python_version >= '3.6'
 uvicorn; python_version >= '3.7'
-aiofiles; python_version >= '3.6'
-websockets; python_version >= '3.6'
+websockets; python_version >= '3.7'
 
 # Handler Specific
 cbor2; python_version >= '3.6'
