@@ -1314,51 +1314,25 @@ class TestDeprecatedArgs:
     def test_method(self, recwarn):
         class C:
             @deprecation.deprecated_args(allowed_positional=0)
-            def a_method(self, a=None, b=None, c=None, d=None):
+            def a_method(self, a=1, b=2):
                 pass
 
         C().a_method(a=1, b=2)
         assert len(recwarn) == 0
-        C().a_method(1, '2', c='3', d=4)
+        C().a_method(1, b=2)
         assert len(recwarn) == 1
-        # need to split over 3 asserts because python 3.5 does not ensure ordering
-        # of kwargs
-        assert (
-            "test_utils.TestDeprecatedArgs.test_method.<locals>.C."  # noqa: Q000
-            "a_method(1, '2', " in str(recwarn[0].message)  # noqa: Q000
-        )
-        assert "c='3'" in str(recwarn[0].message)  # noqa: Q000
-        assert "d=4" in str(recwarn[0].message)  # noqa: Q000
-        # Testing that with a single argument it doesn't print 'a_method(1,)'
-        C().a_method(1)
-        assert (
-            "test_utils.TestDeprecatedArgs.test_method.<locals>.C."  # noqa: Q000
-            "a_method(1)" in str(recwarn[1].message)  # noqa: Q000
-        )
+        assert 'a_method(...)' in str(recwarn[0].message)
 
     def test_function(self, recwarn):
         @deprecation.deprecated_args(allowed_positional=0, is_method=False)
-        def a_function(a=None, b=None, c=None, d=None):
+        def a_function(a=1, b=2):
             pass
 
         a_function(a=1, b=2)
         assert len(recwarn) == 0
-        a_function(1, '2', c='3', d=4)
+        a_function(1, b=2)
         assert len(recwarn) == 1
-        # need to split over 3 asserts because python 3.5 does not ensure ordering
-        # of kwargs
-        assert (
-            "test_utils.TestDeprecatedArgs.test_function.<locals>."  # noqa: Q000
-            "a_function(1, '2', " in str(recwarn[0].message)  # noqa: Q000
-        )
-        assert "c='3'" in str(recwarn[0].message)  # noqa: Q000
-        assert "d=4" in str(recwarn[0].message)  # noqa: Q000
-        # Testing that with a single argument it doesn't print 'a_function(1,)'
-        a_function(1)
-        assert (
-            "test_utils.TestDeprecatedArgs.test_function.<locals>."  # noqa: Q000
-            "a_function(1)" in str(recwarn[1].message)  # noqa: Q000
-        )
+        assert 'a_function(...)' in str(recwarn[0].message)
 
 
 @pytest.mark.skipif(
