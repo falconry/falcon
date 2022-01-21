@@ -85,11 +85,11 @@ def deprecated_args(*, allowed_positional, is_method=True):
     """
 
     template = (
-        'Calls with{} positional args are deprecated.'
+        'Calls to {{fn}} with{arg_text} positional args are deprecated.'
         ' Please specify them as keyword arguments instead.'
     )
     text = ' more than {}'.format(allowed_positional) if allowed_positional else ''
-    warn_text = template.format(text)
+    warn_text = template.format(arg_text=text)
     if is_method:
         allowed_positional += 1
 
@@ -97,7 +97,7 @@ def deprecated_args(*, allowed_positional, is_method=True):
         @functools.wraps(fn)
         def wraps(*args, **kwargs):
             if len(args) > allowed_positional:
-                warnings.warn(warn_text, DeprecatedWarning, stacklevel=2)
+                warnings.warn(warn_text.format(fn=fn.__name__), DeprecatedWarning, stacklevel=2)
             return fn(*args, **kwargs)
 
         return wraps
