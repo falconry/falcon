@@ -97,7 +97,9 @@ def deprecated_args(*, allowed_positional, is_method=True):
         @functools.wraps(fn)
         def wraps(*args, **kwargs):
             if len(args) > allowed_positional:
-                warnings.warn(warn_text.format(fn=fn.__name__), DeprecatedWarning, stacklevel=2)
+                warnings.warn(
+                    warn_text.format(fn=fn.__name__), DeprecatedWarning, stacklevel=2
+                )
             return fn(*args, **kwargs)
 
         return wraps
