@@ -97,8 +97,22 @@ def deprecated_args(*, allowed_positional, is_method=True):
         @functools.wraps(fn)
         def wraps(*args, **kwargs):
             if len(args) > allowed_positional:
+                called_args = ', '.join(
+                    f'{arg if not isinstance(arg, str) else arg!r}'
+                    for arg in args[1 if is_method else 0 :]
+                )
+                called_kwargs = ', '.join(
+                    f'{k}={v if not isinstance(v, str) else v!r}'
+                    for k, v in kwargs.items()
+                )
                 warnings.warn(
-                    warn_text.format(fn=fn.__name__), DeprecatedWarning, stacklevel=2
+                    warn_text.format(
+                        fn=f'{fn.__module__}.{fn.__qualname__}({called_args}'
+                        + (f', {called_kwargs})' if called_kwargs else '')
+                        + ')'
+                    ),
+                    DeprecatedWarning,
+                    stacklevel=2,
                 )
             return fn(*args, **kwargs)
 
