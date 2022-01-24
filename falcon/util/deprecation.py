@@ -20,7 +20,6 @@ This module provides decorators to mark functions and classes as deprecated.
 import functools
 import warnings
 
-
 __all__ = (
     'DeprecatedWarning',
     'deprecated',
@@ -56,7 +55,6 @@ def deprecated(instructions, is_property=False, method_name=None):
     """
 
     def decorator(func):
-
         object_name = 'property' if is_property else 'function'
         post_name = '' if is_property else '(...)'
         message = 'Call to deprecated {} {}{}. {}'.format(
@@ -98,17 +96,23 @@ def deprecated_args(*, allowed_positional, is_method=True):
         def wraps(*args, **kwargs):
             if len(args) > allowed_positional:
                 called_args = ', '.join(
-                    f'{arg if not isinstance(arg, str) else arg!r}'
-                    for arg in args[1 if is_method else 0 :]
+                    '{!r}'.format(arg) for arg in args[1 if is_method else 0 :]
                 )
                 called_kwargs = ', '.join(
-                    f'{k}={v if not isinstance(v, str) else v!r}'
-                    for k, v in kwargs.items()
+                    '{k}={v!r}'.format(k=k, v=v) for k, v in kwargs.items()
                 )
                 warnings.warn(
                     warn_text.format(
-                        fn=f'{fn.__module__}.{fn.__qualname__}({called_args}'
-                        + (f', {called_kwargs})' if called_kwargs else '')
+                        fn='{module}.{qualname}({called_args}'.format(
+                            module=fn.__module__,
+                            qualname=fn.__qualname__,
+                            called_args=called_args,
+                        )
+                        + (
+                            ', {called_kwargs})'.format(called_kwargs=called_kwargs)
+                            if called_kwargs
+                            else ''
+                        )
                         + ')'
                     ),
                     DeprecatedWarning,
