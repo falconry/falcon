@@ -1321,10 +1321,14 @@ class TestDeprecatedArgs:
         assert len(recwarn) == 0
         C().a_method(1, '2', c='3', d=4)
         assert len(recwarn) == 1
+        # need to split over 3 asserts because python 3.5 does not ensure ordering
+        # of kwargs
         assert (
             "test_utils.TestDeprecatedArgs.test_method.<locals>.C."  # noqa: Q000
-            "a_method(1, '2', c='3', d=4)" in str(recwarn[0].message)  # noqa: Q000
+            "a_method(1, '2', " in str(recwarn[0].message)  # noqa: Q000
         )
+        assert "c='3'" in str(recwarn[0].message)  # noqa: Q000
+        assert "d=4" in str(recwarn[0].message)  # noqa: Q000
         # Testing that with a single argument it doesn't print 'a_method(1,)'
         C().a_method(1)
         assert (
@@ -1341,10 +1345,14 @@ class TestDeprecatedArgs:
         assert len(recwarn) == 0
         a_function(1, '2', c='3', d=4)
         assert len(recwarn) == 1
+        # need to split over 3 asserts because python 3.5 does not ensure ordering
+        # of kwargs
         assert (
             "test_utils.TestDeprecatedArgs.test_function.<locals>."  # noqa: Q000
-            "a_function(1, '2', c='3', d=4)" in str(recwarn[0].message)  # noqa: Q000
+            "a_function(1, '2', " in str(recwarn[0].message)  # noqa: Q000
         )
+        assert "c='3'" in str(recwarn[0].message)  # noqa: Q000
+        assert "d=4" in str(recwarn[0].message)  # noqa: Q000
         # Testing that with a single argument it doesn't print 'a_function(1,)'
         a_function(1)
         assert (
