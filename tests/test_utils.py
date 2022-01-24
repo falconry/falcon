@@ -1322,8 +1322,8 @@ class TestDeprecatedArgs:
         C().a_method(1, '2', c='3', d=4)
         assert len(recwarn) == 1
         assert (
-            "test_utils.TestDeprecatedArgs.test_method.<locals>.C.a_method("
-            "1, '2', c='3', d=4)" in str(recwarn[0].message)
+            "test_utils.TestDeprecatedArgs.test_method.<locals>.C."  # noqa: Q000
+            "a_method(1, '2', c='3', d=4)" in str(recwarn[0].message)  # noqa: Q000
         )
 
     def test_function(self, recwarn):
@@ -1336,8 +1336,8 @@ class TestDeprecatedArgs:
         a_function(1, '2', c='3', d=4)
         assert len(recwarn) == 1
         assert (
-            "test_utils.TestDeprecatedArgs.test_function.<locals>.a_function("
-            "1, '2', c='3', d=4)" in str(recwarn[0].message)
+            "test_utils.TestDeprecatedArgs.test_function.<locals>."  # noqa: Q000
+            "a_function(1, '2', c='3', d=4)" in str(recwarn[0].message)  # noqa: Q000
         )
 
 
