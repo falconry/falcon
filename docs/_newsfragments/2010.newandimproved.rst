@@ -1,0 +1,3 @@
+Functions/methods such as :func:`falcon.errors.HTTPError` called with
+positional arguments will now raise a warning indicating the full qualified
+name of the function/method to help the developer understand where to make changes.
