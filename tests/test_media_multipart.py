@@ -581,7 +581,7 @@ def test_too_many_body_parts(custom_client, max_body_part_count):
 
 @pytest.mark.skipif(not msgpack, reason='msgpack not installed')
 def test_random_form(client):
-    part_data = [os.urandom(random.randint(0, 2 ** 18)) for _ in range(64)]
+    part_data = [os.urandom(random.randint(0, 2**18)) for _ in range(64)]
     form_data = (
         b''.join(
             '--{}\r\n'.format(HASH_BOUNDARY).encode()
@@ -610,7 +610,7 @@ def test_random_form(client):
 
 
 def test_invalid_random_form(client):
-    length = random.randint(2 ** 20, 2 ** 21)
+    length = random.randint(2**20, 2**21)
     resp = client.simulate_post(
         '/submit',
         headers={

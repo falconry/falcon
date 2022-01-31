@@ -58,7 +58,7 @@ if 'samesite' not in _reserved_cookie_attrs:  # pragma: no cover
     _reserved_cookie_attrs['samesite'] = 'SameSite'  # type: ignore
 
 
-IS_64_BITS = sys.maxsize > 2 ** 32
+IS_64_BITS = sys.maxsize > 2**32
 
 from falcon.util.reader import BufferedReader as _PyBufferedReader  # NOQA
 

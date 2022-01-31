@@ -15,7 +15,7 @@ from falcon import asgi, testing
         b'catsup',
         b'\xDE\xAD\xBE\xEF' * 512,
         testing.rand_string(1, 2048),
-        os.urandom(100 * 2 ** 20),
+        os.urandom(100 * 2**20),
     ],
     ids=['empty', 'null', 'null-ff', 'normal', 'long', 'random', 'random-large'],
 )

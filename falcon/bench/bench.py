@@ -406,7 +406,7 @@ def main():
 
     for i, (name, sec_per_req) in enumerate(dataset):
         req_per_sec = round_to_int(Decimal(1) / sec_per_req)
-        us_per_req = sec_per_req * Decimal(10 ** 6)
+        us_per_req = sec_per_req * Decimal(10**6)
         factor = round_to_int(baseline / sec_per_req)
 
         print(
