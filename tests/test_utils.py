@@ -1303,7 +1303,7 @@ class TestContextType:
     )
     def test_keys_and_values(self, context_type):
         ctx = context_type()
-        ctx.update((number, number ** 2) for number in range(1, 5))
+        ctx.update((number, number**2) for number in range(1, 5))
 
         assert set(ctx.keys()) == {1, 2, 3, 4}
         assert set(ctx.values()) == {1, 4, 9, 16}

@@ -25,7 +25,7 @@ _WIN32 = sys.platform.startswith('win')
 
 _SERVER_HOST = '127.0.0.1'
 _SIZE_1_KB = 1024
-_SIZE_1_MB = _SIZE_1_KB ** 2
+_SIZE_1_MB = _SIZE_1_KB**2
 
 
 _REQUEST_TIMEOUT = 10
