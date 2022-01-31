@@ -319,7 +319,7 @@ representation of the "images" resource.
     threaded web server, resources and their dependencies must be
     thread-safe.
 
-We can use the the :ref:`inspect` to visualize the application configuration:
+We can use the :ref:`inspect` to visualize the application configuration:
 
 .. code:: bash
 
