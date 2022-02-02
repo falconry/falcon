@@ -1321,7 +1321,7 @@ class TestDeprecatedArgs:
         assert len(recwarn) == 0
         C().a_method(1, b=2)
         assert len(recwarn) == 1
-        assert 'a_method(...)' in str(recwarn[0].message)
+        assert 'C.a_method(...)' in str(recwarn[0].message)
 
     def test_function(self, recwarn):
         @deprecation.deprecated_args(allowed_positional=0, is_method=False)
