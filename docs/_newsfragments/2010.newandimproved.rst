@@ -1,3 +1,4 @@
-Functions/methods such as :func:`falcon.errors.HTTPError` called with
-positional arguments will now raise a warning indicating the full qualified
-name of the function/method to help the developer understand where to make changes.
+When called with deprecated positional arguments, methods and class
+initializers (such as :class:`falcon.errors.HTTPError`) will now emit a
+user-friendlier warning indicating the fully qualified name of the method in
+question.
