@@ -172,11 +172,11 @@ def test_read_until_with_size(buffered_reader, size):
 def test_read_until(buffered_reader):
     stream = buffered_reader()
 
-    assert len(stream.read_until(b'--boundary1234567890--')) == 64 * 1024 ** 2
+    assert len(stream.read_until(b'--boundary1234567890--')) == 64 * 1024**2
     stream.read_until(b'123456789ABCDEF\n')
-    assert len(stream.read_until(b'--boundary1234567890--')) == 63 * 1024 ** 2
+    assert len(stream.read_until(b'--boundary1234567890--')) == 63 * 1024**2
     stream.read_until(b'123456789ABCDEF\n')
-    assert len(stream.read_until(b'--boundary1234567890--')) == 62 * 1024 ** 2
+    assert len(stream.read_until(b'--boundary1234567890--')) == 62 * 1024**2
 
 
 @pytest.mark.parametrize(
@@ -267,15 +267,15 @@ def test_pipe(shorter_stream):
 
 
 def test_pipe_until(buffered_reader):
-    stream = buffered_reader(2 ** 16)
+    stream = buffered_reader(2**16)
 
     output = io.BytesIO()
     stream.pipe_until(b'--boundary1234567890--', output)
-    assert len(output.getvalue()) == 64 * 1024 ** 2
+    assert len(output.getvalue()) == 64 * 1024**2
 
 
 def test_pipe_until_without_destination(buffered_reader):
-    stream = buffered_reader(2 ** 16)
+    stream = buffered_reader(2**16)
     stream.pipe_until(b'--boundary1234567890--')
     assert stream.peek(22) == b'--boundary1234567890--'
 
@@ -329,7 +329,7 @@ def test_readlines(shorter_stream):
         16,
         256,
         1024,
-        2 ** 16,
+        2**16,
     ],
 )
 def test_readlines_hint(buffered_reader, chunk_size):
