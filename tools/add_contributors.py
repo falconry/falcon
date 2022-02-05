@@ -2,9 +2,7 @@
 
 import argparse
 import pathlib
-import subprocess
-
-import pprint
+import re
 
 import requests
 import toml
@@ -12,59 +10,70 @@ import toml
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent
 
-FALCON_COMMITS_API = 'https://api.github.com/repos/falconry/falcon/commits'
+FALCON_CREATOR = 'kgriffs'
+FALCON_REPOSITORY_API = 'https://api.github.com/repos/falconry/falcon'
+
+STABLE_RELEASE_TAG = r'^\d+\.\d+\.\d+(\.post\d+)?$'
 
 
-def get_count_since_last_tag():
-    output = subprocess.check_output(('git', 'describe', '--abbrev=40'))
-    output = output.decode()
-    if '-' not in output:
-        return 0
-    return int(output.split('-')[1])
+def get_latest_tag():
+    uri = f'{FALCON_REPOSITORY_API}/tags'
+    for tag in requests.get(uri).json():
+        if re.match(STABLE_RELEASE_TAG, tag['name']):
+            return tag['name'], tag['commit']['sha']
 
 
-def query_contributors(count=None):
-    if count is None:
-        count = get_count_since_last_tag()
-
-    remaining = count
-    result = {}
+def iter_commits(until=None):
     page = 1
-    uri = f'{FALCON_COMMITS_API}?page={page}'
+    uri = f'{FALCON_REPOSITORY_API}/commits'
 
-    while remaining > 0:
-        commits = requests.get(uri).json()
+    while commits := requests.get(uri).json():
         for commit in commits:
-            remaining -= 1
-            print(remaining)
-
-            login = commit['author'].get('login')
-            pprint.pprint(
-                [commit['sha'], login, commit['commit']['author'].get('date')]
-            )
-            if remaining <= 0:
-                break
-            if not login or login in result:
-                continue
-            result[login] = commit['commit']['author']['name']
+            if until and commit['sha'] == until:
+                return
+            yield commit
 
         page += 1
-        uri = f'{FALCON_COMMITS_API}?page={page}'
+        uri = f'{FALCON_REPOSITORY_API}/commits?page={page}'
+
+
+def aggregate_contributors(until=None):
+    authors = []
+    for commit in iter_commits(until):
+        login = commit['author'].get('login')
+        if not login:
+            continue
+        authors.append((login, commit['commit']['author']['name']))
+
+    seen = set()
+    result = {}
+    for login, name in reversed(authors):
+        if login not in seen:
+            seen.add(login)
+        result[login] = name
 
     return result
 
 
-def get_towncrier_filename():
+def _get_towncrier_filename():
     with open(ROOT / 'pyproject.toml') as pyproject_toml:
         project = toml.load(pyproject_toml)
     return project['tool']['towncrier']['filename']
 
 
+def _update_authors(contributors):
+    pass
+
+
+def _update_towncrier_template(template, contributors):
+    pass
+
+
 def main():
-    towncrier_file = get_towncrier_filename()
+    towncrier_template = _get_towncrier_filename()
 
     description = (
-        'Find new contributors to Falcon since the last stable release. '
+        'Find new contributors to Falcon since the last Git tag. '
         'Optionally append them to AUTHORS and the active Towncrier template.'
     )
     parser = argparse.ArgumentParser(description=description)
@@ -75,12 +84,26 @@ def main():
         '--no-authors', action='store_true', help='do not write AUTHORS'
     )
     parser.add_argument(
-        '--no-towncrier', action='store_true', help=f'do not write {towncrier_file}'
+        '--no-towncrier', action='store_true', help=f'do not write {towncrier_template}'
     )
     args = parser.parse_args()
 
-    contributors = query_contributors()
-    pprint.pprint(contributors)
+    tag, commit = get_latest_tag()
+    contributors = aggregate_contributors(until=commit)
+
+    if contributors:
+        print(f'Contributors since the latest stable tag ({tag}):')
+        for login, name in contributors.items():
+            print(f' * {name} ({login})')
+    else:
+        print('No contributors (with a GitHub account) found since the latest tag.')
+        return
+
+    if not args.dry_run:
+        if not args.no_authors:
+            _update_authors(contributors)
+        if not args.no_towncrier:
+            _update_towncrier_template(towncrier_template, contributors)
 
 
 if __name__ == '__main__':
