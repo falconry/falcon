@@ -37,6 +37,7 @@ Many thanks to contributors for this release (so far):
 - `kgriffs <https://github.com/kgriffs>`__
 - `laurent-chriqui <https://github.com/laurent-chriqui>`__
 - `mgorny <https://github.com/mgorny>`__
+- `mihaitodor <https://github.com/mihaitodor>`__
 - `nix010 <https://github.com/nix010>`__
 - `signalw <https://github.com/signalw>`__
 - `the-bets <https://github.com/the-bets>`__
