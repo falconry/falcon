@@ -18,6 +18,9 @@ STABLE_RELEASE_TAG = r'^\d+\.\d+\.\d+(\.post\d+)?$'
 AUTHORS_SEPARATOR = '\n(et al.)\n\n'
 AUTHORS_LINE = r'^\* (?:(?:.+ \(([\w-]+)\)$)|([\w-]+$))'
 
+RST_CONTRIBUTOR_LINE = r'- `[\w-]+ <https://github.com/([\w-]+)>`__?\n'
+RST_CONTRIBUTOR_TEMPLATE = '- `{login} <https://github.com/{login}>`__\n'
+
 
 def get_latest_tag():
     uri = f'{FALCON_REPOSITORY_API}/tags'
@@ -91,7 +94,23 @@ def _update_authors(contributors):
 
 
 def _update_towncrier_template(template, contributors):
-    pass
+    with open(template, 'r') as template_file:
+        content = template_file.read()
+
+    content, *matches = re.split(RST_CONTRIBUTOR_LINE, content)
+
+    contributors = set(contributors)
+    contributors.update(matches[::2])
+    for separator in matches[1::2]:
+        assert (
+            separator == ''
+        ), f'unexpected separator between contributor lines: {separator!r}'
+
+    with open(template, 'w') as template_file:
+        template_file.write(content)
+
+        for login in sorted(contributors, key=lambda s: s.lower()):
+            template_file.write(RST_CONTRIBUTOR_TEMPLATE.format(login=login))
 
 
 def main():
