@@ -26,7 +26,7 @@ Changes to Supported Platforms
 Contributors to this Release
 ----------------------------
 
-Many thanks to contributors for this release:
+Many thanks to contributors for this release (so far):
 
 - `abidahmadq <https://github.com/abidahmadq>`__
 - `CaselIT <https://github.com/CaselIT>`__
