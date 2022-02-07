@@ -26,6 +26,22 @@ Changes to Supported Platforms
 Contributors to this Release
 ----------------------------
 
-Many thanks to contributors for this release:
+Many thanks to contributors for this release (so far):
 
-- *To be aggregated automatically...* (pending `#1533 <https://github.com/falconry/falcon/issues/1533>`__)
+- `abidahmadq <https://github.com/abidahmadq>`__
+- `CaselIT <https://github.com/CaselIT>`__
+- `Contessina <https://github.com/Contessina>`__
+- `dflss <https://github.com/dflss>`__
+- `dimucciojonathan <https://github.com/dimucciojonathan>`__
+- `forana <https://github.com/forana>`__
+- `kgriffs <https://github.com/kgriffs>`__
+- `laurent-chriqui <https://github.com/laurent-chriqui>`__
+- `mgorny <https://github.com/mgorny>`__
+- `mihaitodor <https://github.com/mihaitodor>`__
+- `nix010 <https://github.com/nix010>`__
+- `signalw <https://github.com/signalw>`__
+- `the-bets <https://github.com/the-bets>`__
+- `tipabu <https://github.com/tipabu>`__
+- `treharne <https://github.com/treharne>`__
+- `vgerak <https://github.com/vgerak>`__
+- `vytas7 <https://github.com/vytas7>`__
