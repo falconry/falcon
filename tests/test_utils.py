@@ -1305,7 +1305,7 @@ class TestContextType:
     )
     def test_keys_and_values(self, context_type):
         ctx = context_type()
-        ctx.update((number, number ** 2) for number in range(1, 5))
+        ctx.update((number, number**2) for number in range(1, 5))
 
         assert set(ctx.keys()) == {1, 2, 3, 4}
         assert set(ctx.values()) == {1, 4, 9, 16}
@@ -1323,6 +1323,7 @@ class TestDeprecatedArgs:
         assert len(recwarn) == 0
         C().a_method(1, b=2)
         assert len(recwarn) == 1
+        assert 'C.a_method(...)' in str(recwarn[0].message)
 
     def test_function(self, recwarn):
         @deprecation.deprecated_args(allowed_positional=0, is_method=False)
@@ -1333,6 +1334,7 @@ class TestDeprecatedArgs:
         assert len(recwarn) == 0
         a_function(1, b=2)
         assert len(recwarn) == 1
+        assert 'a_function(...)' in str(recwarn[0].message)
 
 
 @pytest.mark.skipif(

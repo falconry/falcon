@@ -741,7 +741,7 @@ To test this example, open another terminal and run:
 
     $ http localhost:8000/1/things authorization:custom-token
 
-You can also view the the application configuration from the CLI via the
+You can also view the application configuration from the CLI via the
 ``falcon-inspect-app`` script that is bundled with the framework:
 
 .. code:: bash

@@ -129,7 +129,7 @@ class BoundedStream:
             #   use sys.maxsize because 2**31 on 32-bit systems is not
             #   a large enough number (someone may have an API that accepts
             #   multi-GB payloads).
-            self._bytes_remaining = 2 ** 63
+            self._bytes_remaining = 2**63
         else:
             if len(first_chunk) > content_length:
                 self._buffer = first_chunk[:content_length]

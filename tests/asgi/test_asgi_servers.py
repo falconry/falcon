@@ -25,7 +25,7 @@ _WIN32 = sys.platform.startswith('win')
 
 _SERVER_HOST = '127.0.0.1'
 _SIZE_1_KB = 1024
-_SIZE_1_MB = _SIZE_1_KB ** 2
+_SIZE_1_MB = _SIZE_1_KB**2
 
 
 _REQUEST_TIMEOUT = 10
@@ -520,16 +520,22 @@ run(config)
 def _can_run(factory):
     if _WIN32 and factory == _daphne_factory:
         pytest.skip('daphne does not support windows')
+
     if factory == _daphne_factory:
         try:
             import daphne  # noqa
         except Exception:
             pytest.skip('daphne not installed')
-    if factory == _hypercorn_factory:
+    elif factory == _hypercorn_factory:
         try:
             import hypercorn  # noqa
         except Exception:
             pytest.skip('hypercorn not installed')
+    elif factory == _uvicorn_factory:
+        try:
+            import uvicorn  # noqa
+        except Exception:
+            pytest.skip('uvicorn not installed')
 
 
 @pytest.fixture(params=[_uvicorn_factory, _daphne_factory, _hypercorn_factory])
