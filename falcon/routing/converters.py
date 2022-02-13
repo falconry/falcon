@@ -21,6 +21,7 @@ __all__ = (
     'IntConverter',
     'DateTimeConverter',
     'UUIDConverter',
+    'FloatConverter'
 )
 
 
@@ -59,12 +60,15 @@ class IntConverter(BaseConverter):
     __slots__ = ('_num_digits', '_min', '_max')
 
     def __init__(self, num_digits=None, min=None, max=None):
-        if num_digits is not None and num_digits < 1:
-            raise ValueError('num_digits must be at least 1')
 
+        self.validateNumberOfDigits(num_digits)
         self._num_digits = num_digits
         self._min = min
         self._max = max
+
+    def validateNumberOfDigits(self, num_digits):
+        if num_digits is not None and num_digits < 1:
+            raise ValueError('num_digits must be at least 1')
 
     def convert(self, value):
         if self._num_digits is not None and len(value) != self._num_digits:
@@ -83,13 +87,52 @@ class IntConverter(BaseConverter):
         except ValueError:
             return None
 
+        return self.validateMinMaxValue(value)
+
+    def validateMinMaxValue(self, value):
         if self._min is not None and value < self._min:
             return None
-
         if self._max is not None and value > self._max:
             return None
 
         return value
+
+
+class FloatConverter(IntConverter):
+    """Converts a field value to an float.
+
+    Identifier: `float`
+
+    Keyword Args:
+        num_digits (float): Require the value to have the given
+            number of digits.
+            In case of float number as input, it will remove decimal point
+            and count the actual number of digits
+        min (float): Reject the value if it is less than this number.
+        max (float): Reject the value if it is greater than this number.
+    """
+
+    __slots__ = ('_num_digits', '_min', '_max')
+
+    def __init__(self, num_digits=None, min=None, max=None):
+        super().__init__(num_digits, min, max)
+
+    def convert(self, value):
+        tempValue = value.replace(".", "")
+        actualNumberOfDigits = len(tempValue)
+
+        if self._num_digits is not None and actualNumberOfDigits != self._num_digits:
+            return None
+
+        if value.strip() != value:
+            return None
+
+        try:
+            value = float(value)
+        except ValueError:
+            return None
+
+        return self.validateMinMaxValue(value)
 
 
 class DateTimeConverter(BaseConverter):
@@ -136,4 +179,5 @@ BUILTIN = (
     ('int', IntConverter),
     ('dt', DateTimeConverter),
     ('uuid', UUIDConverter),
+    ('float', FloatConverter),
 )
