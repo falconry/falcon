@@ -384,7 +384,7 @@ class TestSeveralMiddlewares(TestMiddleware):
         ]
         assert expectedExecutedMethods == context['executed_methods']
 
-    def test_multiple_reponse_mw_throw_exception(self, asgi):
+    def test_multiple_response_mw_throw_exception(self, asgi):
         """Test that error in inner middleware leaves"""
         global context
 

@@ -886,7 +886,7 @@ def create_scope(
                     f'falcon-client/{falcon.__version__}'
 
         host(str): Hostname for the request (default ``'falconframework.org'``).
-            This also determines the the value of the Host header in the
+            This also determines the value of the Host header in the
             request.
         scheme (str): URL scheme, either ``'http'`` or ``'https'``
             (default ``'http'``)
@@ -1023,7 +1023,7 @@ def create_scope_ws(
                     f'falcon-client/{falcon.__version__}'
 
         host(str): Hostname for the request (default ``'falconframework.org'``).
-            This also determines the the value of the Host header in the
+            This also determines the value of the Host header in the
             request.
         scheme (str): URL scheme, either ``'ws'`` or ``'wss'``
             (default ``'ws'``)
