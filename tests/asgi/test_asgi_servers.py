@@ -154,7 +154,7 @@ class TestASGIServer:
             resp = await client.put(
                 server_base_url + 'bucket/drops',
                 content=emitter(),
-                timeout=(_asgi_test_app.SSE_TEST_MAX_DELAY_SEC / 2),
+                timeout=_REQUEST_TIMEOUT,
             )
             resp.raise_for_status()
             assert resp.json().get('drops') >= 1
