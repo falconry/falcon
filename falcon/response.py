@@ -797,7 +797,8 @@ class Response:
 
         Note:
             So-called "link-extension" elements, as defined by RFC 5988,
-            are not yet supported. See also Issue #288.
+            are not yet supported. See also
+            `Issue #288 <https://github.com/falconry/falcon/issues/288>`__.
 
         Args:
             target (str): Target IRI for the resource identified by the
