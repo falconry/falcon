@@ -8,6 +8,7 @@ import subprocess
 import sys
 import time
 
+import httpx
 import pytest
 import requests
 import requests.exceptions
@@ -140,6 +141,23 @@ class TestASGIServer:
                 server_base_url + 'events',
                 timeout=(_asgi_test_app.SSE_TEST_MAX_DELAY_SEC / 2),
             )
+
+    @pytest.mark.asyncio
+    async def test_stream_chunked_request(self, server_base_url):
+        """Regression test for https://github.com/falconry/falcon/issues/2024"""
+
+        async def emitter():
+            for _ in range(64):
+                yield b'123456789ABCDEF\n'
+
+        async with httpx.AsyncClient() as client:
+            resp = await client.put(
+                server_base_url + 'bucket/drops',
+                content=emitter(),
+                timeout=_REQUEST_TIMEOUT,
+            )
+            resp.raise_for_status()
+            assert resp.json().get('drops') >= 1
 
 
 class TestWebSocket:
