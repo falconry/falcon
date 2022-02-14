@@ -101,7 +101,6 @@ class FloatConverter(IntConverter):
     """Converts a field value to an float.
 
     Identifier: `float`
-    
     Keyword Args:
         min (float): Reject the value if it is less than this number.
         max (float): Reject the value if it is greater than this number.
@@ -112,7 +111,7 @@ class FloatConverter(IntConverter):
     def __init__(self, min=None, max=None):
         self._min = min
         self._max = max
-      
+
     def convert(self, value):
         if value.strip() != value:
             return None
@@ -122,6 +121,7 @@ class FloatConverter(IntConverter):
             return None
 
         return self.validate_min_max_value(value)
+
 
 class DateTimeConverter(BaseConverter):
     """Converts a field value to a datetime.

@@ -81,7 +81,7 @@ def test_int_converter_invalid_config(num_digits):
     ],
 )
 def test_float_converter(value, min, max, expected):
-    c = converters.FloatConverter( min, max)
+    c = converters.FloatConverter(min, max)
     assert c.convert(value) == expected
 
 
