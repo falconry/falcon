@@ -63,6 +63,7 @@ def test_int_converter_invalid_config(num_digits):
     with pytest.raises(ValueError):
         converters.IntConverter(num_digits)
 
+
 @pytest.mark.parametrize(
     'value, min, max, expected',
     [
@@ -95,9 +96,6 @@ def test_float_converter(value, min, max, expected):
 def test_float_converter_malformed(value):
     c = converters.FloatConverter()
     assert c.convert(value) is None
-
-
-
 
 
 @pytest.mark.parametrize(
