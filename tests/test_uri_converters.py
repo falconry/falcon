@@ -63,6 +63,42 @@ def test_int_converter_invalid_config(num_digits):
     with pytest.raises(ValueError):
         converters.IntConverter(num_digits)
 
+@pytest.mark.parametrize(
+    'value, min, max, expected',
+    [
+        ('123', None, None, 123.0),
+        ('01', None, None, 1.0),
+        ('001', None, None, 1.0),
+        ('0', None, None, 0.0),
+        ('00', None, None, 00.0),
+        ('1', None, None, 1.0),
+        ('12', 2, None, 12.0),
+        ('1', 1, 1, 1.0),
+        ('12', 1, 20, 12.0),
+        ('12', 2, 10, None),
+        ('1', 2, 13,  None),
+    ],
+)
+def test_float_converter(value, min, max, expected):
+    c = converters.FloatConverter( min, max)
+    assert c.convert(value) == expected
+
+
+@pytest.mark.parametrize(
+    'value',
+    (
+        ['0x0F', 'something', '', ' ']
+        + ['123' + w for w in string.whitespace]
+        + [w + '123' for w in string.whitespace]
+    ),
+)
+def test_float_converter_malformed(value):
+    c = converters.FloatConverter()
+    assert c.convert(value) is None
+
+
+
+
 
 @pytest.mark.parametrize(
     'value, format_string, expected',

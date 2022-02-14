@@ -60,13 +60,12 @@ class IntConverter(BaseConverter):
     __slots__ = ('_num_digits', '_min', '_max')
 
     def __init__(self, num_digits=None, min=None, max=None):
-
-        self.validateNumberOfDigits(num_digits)
+        self.validate_number_of_digits(num_digits)
         self._num_digits = num_digits
         self._min = min
         self._max = max
 
-    def validateNumberOfDigits(self, num_digits):
+    def validate_number_of_digits(self, num_digits):
         if num_digits is not None and num_digits < 1:
             raise ValueError('num_digits must be at least 1')
 
@@ -87,9 +86,9 @@ class IntConverter(BaseConverter):
         except ValueError:
             return None
 
-        return self.validateMinMaxValue(value)
+        return self.validate_min_max_value(value)
 
-    def validateMinMaxValue(self, value):
+    def validate_min_max_value(self, value):
         if self._min is not None and value < self._min:
             return None
         if self._max is not None and value > self._max:
@@ -104,25 +103,18 @@ class FloatConverter(IntConverter):
     Identifier: `float`
 
     Keyword Args:
-        num_digits (float): Require the value to have the given
-            number of digits.
-            In case of float number as input, it will remove decimal point
-            and count the actual number of digits
         min (float): Reject the value if it is less than this number.
         max (float): Reject the value if it is greater than this number.
     """
 
-    __slots__ = ('_num_digits', '_min', '_max')
+    __slots__ = ( '_min', '_max')
 
-    def __init__(self, num_digits=None, min=None, max=None):
-        super().__init__(num_digits, min, max)
+    def __init__(self, min=None, max=None):
+         self._min = min
+         self._max = max
+        
 
     def convert(self, value):
-        tempValue = value.replace(".", "")
-        actualNumberOfDigits = len(tempValue)
-
-        if self._num_digits is not None and actualNumberOfDigits != self._num_digits:
-            return None
 
         if value.strip() != value:
             return None
@@ -132,8 +124,7 @@ class FloatConverter(IntConverter):
         except ValueError:
             return None
 
-        return self.validateMinMaxValue(value)
-
+        return self.validate_min_max_value(value)
 
 class DateTimeConverter(BaseConverter):
     """Converts a field value to a datetime.
