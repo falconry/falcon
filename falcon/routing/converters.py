@@ -21,7 +21,7 @@ __all__ = (
     'IntConverter',
     'DateTimeConverter',
     'UUIDConverter',
-    'FloatConverter'
+    'FloatConverter',
 )
 
 
