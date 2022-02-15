@@ -1,0 +1,6 @@
+Modified existing IntConverter class and added FloatConverter class to convert string to float at runtime
+Identifier: `float`
+Keyword Args:
+    min (float): Reject the value if it is less than this number.
+    max (float): Reject the value if it is greater than this number.
+    

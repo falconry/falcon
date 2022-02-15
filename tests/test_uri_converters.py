@@ -78,6 +78,11 @@ def test_int_converter_invalid_config(num_digits):
         ('12', 1, 20, 12.0),
         ('12', 2, 10, None),
         ('1', 2, 13, None),
+        ('-1', 2, 13, None),
+        ('-1', -2, 10, -1.0),
+        ('1.4', 1, 10, 1.4),
+        ('inf', 1, 100, None),
+        ('-inf', 1, 1000, None),
     ],
 )
 def test_float_converter(value, min, max, expected):
