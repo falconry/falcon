@@ -164,6 +164,30 @@ def test_filelike():
     falcon.async_to_sync(test_iteration)
 
 
+@falcon.runs_sync
+async def test_iterate_streaming_request():
+    events = iter(
+        (
+            {'type': 'http.request', 'body': b'Hello, ', 'more_body': True},
+            {'type': 'http.request', 'body': b'World', 'more_body': True},
+            {'type': 'http.request', 'body': b'!\n', 'more_body': True},
+            {'type': 'http.request', 'body': b'', 'more_body': False},
+            {'type': 'http.disconnect'},
+        )
+    )
+
+    async def receive():
+        event = next(events)
+        assert (
+            event['type'] != 'http.disconnect'
+        ), 'would hang until the client times out'
+        return event
+
+    s = asgi.BoundedStream(receive)
+
+    assert b''.join([chunk async for chunk in s]) == b'Hello, World!\n'
+
+
 @pytest.mark.parametrize(
     'body',
     [

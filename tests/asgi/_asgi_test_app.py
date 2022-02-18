@@ -107,6 +107,13 @@ class Bucket:
     async def on_post(self, req, resp):
         resp.text = await req.stream.read()
 
+    async def on_put_drops(self, req, resp):
+        drops = 0
+        async for drop in req.stream:
+            drops += 1
+
+        resp.media = {'drops': drops}
+
 
 class Feed:
     async def on_websocket(self, req, ws, feed_id):
@@ -256,13 +263,17 @@ class TestJar:
 
 def create_app():
     app = falcon.asgi.App()
+    bucket = Bucket()
+    lifespan_handler = LifespanHandler()
+
     app.add_route('/', Things())
-    app.add_route('/bucket', Bucket())
+    app.add_route('/bucket', bucket)
+    app.add_route('/bucket/drops', bucket, suffix='drops')
     app.add_route('/events', Events())
     app.add_route('/forms', Multipart())
     app.add_route('/jars', TestJar())
     app.add_route('/feeds/{feed_id}', Feed())
-    lifespan_handler = LifespanHandler()
+
     app.add_middleware(lifespan_handler)
 
     async def _on_ws_error(req, resp, error, params, ws=None):

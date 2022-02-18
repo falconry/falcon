@@ -81,8 +81,8 @@ class BodyPart:
     """Represents a body part in a multipart form.
 
     Note:
-        `BodyPart` is meant to be instantiated directly only by the
-        `MultipartForm` parser.
+        :class:`BodyPart` is meant to be instantiated directly only by the
+        :class:`MultipartFormHandler` parser.
 
     Attributes:
         content_type (str): Value of the Content-Type header, or the multipart
@@ -506,6 +506,13 @@ class MultipartFormHandler(BaseHandler):
        over the media object.
 
     For examples on parsing the request form, see also: :ref:`multipart`.
+
+    Attributes:
+        parse_options (MultipartParseOptions):
+            Configuration options for the multipart form parser and instances
+            of :class:`~falcon.media.multipart.BodyPart` it yields.
+
+            See also: :ref:`multipart_parser_conf`.
     """
 
     _ASGI_MULTIPART_FORM = None
@@ -562,6 +569,14 @@ class MultipartFormHandler(BaseHandler):
 #   Inspired by RequestOptions.
 class MultipartParseOptions:
     """Defines a set of configurable multipart form parser options.
+
+    An instance of this class is exposed via the
+    :attr:`MultipartFormHandler.parse_options
+    <falcon.media.MultipartFormHandler.parse_options>` attribute.
+    The handler's options are also passed down to every :class:`BodyPart`
+    it instantiates.
+
+    See also: :ref:`multipart_parser_conf`.
 
     Attributes:
         default_charset (str): The default character encoding for

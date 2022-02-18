@@ -464,7 +464,7 @@ class App(falcon.app.App):
                         data = text
 
             else:
-                # NOTE(vytas): Custom reponse type.
+                # NOTE(vytas): Custom response type.
                 data = await resp.render_body()
 
         except Exception as ex:
