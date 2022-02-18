@@ -28,6 +28,7 @@ Please note that all contributors and maintainers of this project are subject to
 
 Before submitting a pull request, please ensure you have added or updated tests as appropriate, and that all existing tests still pass with your changes. Please also ensure that your coding style follows PEP 8.
 In order to reformat your code with black, simply issue:
+
 ```bash
 $ pip install -U black
 $ black .
@@ -36,6 +37,7 @@ $ black .
 You can check all this by running ``tox`` from within the Falcon project directory (requires your environment to be based on Python 3.8 or 3.10):
 
 ```bash
+$ pip install -U tox
 $ tox --recreate
 ```
 

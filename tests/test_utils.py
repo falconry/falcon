@@ -6,7 +6,6 @@ import http
 import itertools
 import json
 import random
-import sys
 from urllib.parse import quote, unquote_plus
 
 import pytest
@@ -1338,7 +1337,7 @@ class TestDeprecatedArgs:
 
 
 @pytest.mark.skipif(
-    sys.version_info < (3, 7), reason='module __getattr__ requires python 3.7'
+    falcon.PYTHON_VERSION < (3, 7), reason='module __getattr__ requires python 3.7'
 )
 def test_json_deprecation():
     with pytest.warns(deprecation.DeprecatedWarning, match='json'):

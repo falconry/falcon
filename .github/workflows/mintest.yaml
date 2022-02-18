@@ -1,4 +1,4 @@
-name: Run tox with the default environments
+name: Run tox with default envlist
 
 # TODO(vytas): WiP; probably this is OK to only run on master once the things
 # have settled down.

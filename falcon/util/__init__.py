@@ -24,6 +24,7 @@ from http import cookies as http_cookies
 import sys
 
 # Hoist misc. utils
+from falcon.constants import PYTHON_VERSION
 from falcon.util.deprecation import deprecated
 from falcon.util.misc import code_to_http_status
 from falcon.util.misc import dt_to_http
@@ -73,7 +74,7 @@ BufferedReader = (
     (_CyBufferedReader or _PyBufferedReader) if IS_64_BITS else _PyBufferedReader
 )
 
-if sys.version_info >= (3, 7):
+if PYTHON_VERSION >= (3, 7):
     # NOTE(caselit): __getattr__ support for modules was added only in py 3.7.
     # Deprecating an import on previous version is hard to do, so we are
     # displaying the warning only on 3.7+

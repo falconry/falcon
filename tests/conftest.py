@@ -1,15 +1,9 @@
-import collections
 import os
-import sys
 
 import pytest
 
-if os.environ.get('FALCON_TESTING_MOCK_PY35'):
-    version_info = collections.namedtuple('version_info', ('major', 'minor', 'micro'))
-    # NOTE(vytas): Ignore type as it is not trivial to fake the built-in one.
-    sys.version_info = version_info(3, 5, 0)  # type: ignore
-
 import falcon
+
 
 _FALCON_TEST_ENV = (
     ('FALCON_ASGI_WRAP_NON_COROUTINES', 'Y'),
@@ -23,7 +17,7 @@ _FALCON_TEST_ENV = (
 def asgi(request):
     is_asgi = request.param
 
-    if is_asgi and not falcon.ASGI_SUPPORTED:
+    if is_asgi and not falcon.constants.ASGI_SUPPORTED:
         pytest.skip('ASGI requires Python 3.6+')
 
     return is_asgi

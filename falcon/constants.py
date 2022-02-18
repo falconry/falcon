@@ -6,7 +6,14 @@ import sys
 PYPY = sys.implementation.name == 'pypy'
 """Evaluates to ``True`` when the current Python implementation is PyPy."""
 
-ASGI_SUPPORTED = sys.version_info >= (3, 6)
+PYTHON_VERSION = tuple(sys.version_info[:3])
+"""Python version information triplet: (major, minor, micro)."""
+# If FALCON_TESTING_MOCK_PY35 is defined in the env, pretend that we are
+# on 3.5.0. Only intended for testing of the framework itself.
+if os.environ.get('FALCON_TESTING_MOCK_PY35'):
+    PYTHON_VERSION = (3, 5, 0)
+
+ASGI_SUPPORTED = PYTHON_VERSION >= (3, 6)
 """Evaluates to ``True`` when ASGI is supported for the current Python version."""
 
 # RFC 7231, 5789 methods
