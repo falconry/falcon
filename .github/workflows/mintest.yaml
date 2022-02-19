@@ -41,7 +41,7 @@ jobs:
       - name: Adjust .coveragerc
         if: ${{ matrix.python-version == '3.8' }}
         run: |
-          tools/sed_coverage.rc.py
+          tools/sed_coverage_rc.py
 
       - name: Run tox
         run: tox
