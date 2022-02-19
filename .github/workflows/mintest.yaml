@@ -1,4 +1,4 @@
-name: Run tests (mintest)
+name: Run tests (contributor's checklist)
 
 # TODO(vytas): WiP; probably this is OK to only run on master once the things
 # have settled down.
