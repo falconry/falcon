@@ -1,4 +1,4 @@
-name: Run tests
+name: Run tests (mintest)
 
 # TODO(vytas): WiP; probably this is OK to only run on master once the things
 # have settled down.
@@ -19,7 +19,6 @@ jobs:
       matrix:
         python-version:
           - "3.8"
-          - "3.9"
           - "3.10"
 
     steps:
@@ -38,6 +37,11 @@ jobs:
           python --version
           pip --version
           tox --version
+
+      - name: Adjust .coveragerc
+        if: ${{ matrix.python-version == '3.8' }}
+        run: |
+          tools/sed_coverage.rc.py
 
       - name: Run tox
         run: tox
