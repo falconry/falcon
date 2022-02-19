@@ -1,4 +1,4 @@
-name: Run tox with default envlist
+name: Run tests
 
 # TODO(vytas): WiP; probably this is OK to only run on master once the things
 # have settled down.
@@ -12,13 +12,14 @@ on:
 
 jobs:
   run_tox:
-    name: tox (${{matrix.python-version}})
+    name: tox (default envlist on ${{matrix.python-version}})
     runs-on: "ubuntu-latest"
     strategy:
       fail-fast: false
       matrix:
         python-version:
           - "3.8"
+          - "3.9"
           - "3.10"
 
     steps:

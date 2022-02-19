@@ -26,8 +26,9 @@ Please note that all contributors and maintainers of this project are subject to
 
 ### Pull Requests
 
-Before submitting a pull request, please ensure you have added or updated tests as appropriate, and that all existing tests still pass with your changes. Please also ensure that your coding style follows PEP 8.
-In order to reformat your code with black, simply issue:
+Before submitting a pull request, please ensure you have added or updated tests as appropriate, and that all existing tests still pass with your changes. Please also ensure that your coding style follows PEP 8 and the ``black`` formatting style.
+
+In order to reformat your code with ``black``, simply issue:
 
 ```bash
 $ pip install -U black
