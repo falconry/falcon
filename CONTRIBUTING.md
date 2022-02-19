@@ -42,7 +42,7 @@ $ pip install -U tox
 $ tox --recreate
 ```
 
-You may also use a Python 3.9 environment, however beware that ``coverage`` will likely report a false negative on missing lines, and the total coverage might fall short of 100%. This is caused by bugs in the interpreter itself, and is unlikely to ever get fixed.
+You may also use a CPython 3.9 environment, however beware that ``coverage`` will likely report a false positive on missing branches, and the total coverage might fall short of 100%. This is caused by bugs in the interpreter itself, and is unlikely to ever get fixed.
 
 #### Reviews
 

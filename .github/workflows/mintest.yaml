@@ -1,12 +1,9 @@
 name: Run tests (contributor's checklist)
 
-# TODO(vytas): WiP; probably this is OK to only run on master once the things
-# have settled down.
 on:
+  # Trigger the workflow on master but also allow it to run manually.
+  workflow_dispatch:
   push:
-    branches:
-      - "*"
-  pull_request:
     branches:
       - master
 
