@@ -27,5 +27,6 @@ jobs:
         uses: docker://maxking/mailman-ci-runner
         env:
           DEBIAN_FRONTEND: noninteractive
-        run: |
-          tox -c .ecosystem/mailman/tox.ini -e py38_nocov
+        with:
+          args: |
+            /bin/bash -c "tox -c .ecosystem/mailman/tox.ini -e py38_nocov"
