@@ -1,10 +1,9 @@
 name: Run tests (GNU Mailman 3)
 
 on:
+  # Trigger the workflow on master but also allow it to run manually.
+  workflow_dispatch:
   push:
-    branches:
-      - "*"
-  pull_request:
     branches:
       - master
 
