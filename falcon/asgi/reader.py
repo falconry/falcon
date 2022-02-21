@@ -144,7 +144,7 @@ class BufferedReader:
                 self._buffer_len = len(chunk)
 
             pos = self._buffer.find(delimiter)
-            if pos >= 0:
+            if pos >= 0:  # pragma: no py39,py310 cover
                 if pos > 0:
                     self._buffer_pos = pos
                     yield self._buffer[:pos]
@@ -196,7 +196,7 @@ class BufferedReader:
 
                 result.append(chunk)
                 remaining -= chunk_len
-                if remaining == 0:
+                if remaining == 0:  # pragma: no py39,py310 cover
                     break
 
             # PERF(vytas) Don't join unless necessary.
@@ -213,7 +213,7 @@ class BufferedReader:
 
             result.write(chunk)
             remaining -= chunk_len
-            if remaining == 0:
+            if remaining == 0:  # pragma: no py39,py310 cover
                 break
 
         return result.getvalue()
@@ -250,7 +250,7 @@ class BufferedReader:
             async for chunk in self._source:
                 self._buffer += chunk
                 self._buffer_len = len(self._buffer)
-                if self._buffer_len >= size:
+                if self._buffer_len >= size:  # pragma: no py39,py310 cover
                     break
 
         return self._buffer[:size]

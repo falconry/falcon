@@ -29,11 +29,11 @@ import functools
 import http
 import inspect
 import re
-import sys
 import unicodedata
 
 from falcon import status_codes
 from falcon.constants import PYPY
+from falcon.constants import PYTHON_VERSION
 from falcon.uri import encode_value
 
 # NOTE(vytas): Hoist `deprecated` here since it is documented as part of the
@@ -90,8 +90,7 @@ def _lru_cache_nop(*args, **kwargs):  # pragma: nocover
 
 
 # NOTE(kgriffs): https://bugs.python.org/issue28969
-_PYVER_TRIPLET = sys.version_info[:3]
-if _PYVER_TRIPLET >= (3, 5, 4) and _PYVER_TRIPLET != (3, 6, 0):
+if PYTHON_VERSION >= (3, 5, 4) and PYTHON_VERSION != (3, 6, 0):
     _lru_cache_safe = functools.lru_cache  # type: ignore
 else:
     _lru_cache_safe = _lru_cache_nop  # pragma: nocover

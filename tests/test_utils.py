@@ -6,7 +6,6 @@ import http
 import itertools
 import json
 import random
-import sys
 from urllib.parse import quote, unquote_plus
 
 import pytest
@@ -626,11 +625,13 @@ class TestFalconUtils:
             ('\x00\x00\x7F\x00\x00\x80\x00', False),
         ],
     )
-    def test_misc_isascii(self, string, expected_ascii):
+    @pytest.mark.parametrize('method', ['isascii', '_isascii'])
+    def test_misc_isascii(self, string, expected_ascii, method):
+        isascii = getattr(misc, method)
         if expected_ascii:
-            assert misc.isascii(string)
+            assert isascii(string)
         else:
-            assert not misc.isascii(string)
+            assert not isascii(string)
 
 
 @pytest.mark.parametrize(
@@ -1336,7 +1337,7 @@ class TestDeprecatedArgs:
 
 
 @pytest.mark.skipif(
-    sys.version_info < (3, 7), reason='module __getattr__ requires python 3.7'
+    falcon.PYTHON_VERSION < (3, 7), reason='module __getattr__ requires python 3.7'
 )
 def test_json_deprecation():
     with pytest.warns(deprecation.DeprecatedWarning, match='json'):

@@ -581,7 +581,7 @@ class App(falcon.app.App):
                     }
                 )
 
-                if watcher.done():
+                if watcher.done():  # pragma: no py39,py310 cover
                     break
 
             watcher.cancel()
