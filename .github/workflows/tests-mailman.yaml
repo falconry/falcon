@@ -10,7 +10,7 @@ on:
 
 jobs:
   run_tox:
-    name: tox -e py38_nocov
+    name: tox -e falcon
     runs-on: ubuntu-20.04
 
     steps:
