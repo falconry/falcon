@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-MAILMAN_PATH=.ecosystem/mailman
+FALCON_ROOT=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )/../.." &> /dev/null && pwd )
+echo $FALCON_ROOT
+MAILMAN_PATH=$FALCON_ROOT/.ecosystem/mailman
 
 # TODO(vytas): Detect the latest version from git tags or PyPi JSON.
 # NOTE(vytas): One approach: `curl -Ls https://pypi.org/pypi/mailman/json | jq -r .info.version`
@@ -14,5 +16,15 @@ git clone https://gitlab.com/mailman/mailman.git/ $MAILMAN_PATH
 
 # TODO(vytas): Enable version checking when a stable release's tests pass as-is.
 #   At the time of writing, the latest version tag (3.3.5) has some failing tests.
-# cd $MAILMAN_PATH
+cd $MAILMAN_PATH
 # git checkout tags/$MAILMAN_VERSION
+
+# NOTE(vytas): Patch tox.ini to introduce a new Falcon environment.
+cat <<EOT >> tox.ini
+
+[testenv:falcon]
+commands =
+    pip uninstall -y falcon
+    pip install $FALCON_ROOT
+    python -m nose2 -v {posargs}
+EOT
