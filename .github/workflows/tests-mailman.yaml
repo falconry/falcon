@@ -30,7 +30,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y rustc
-          sudo apt-get install -y libpq-dev libsqlite3-dev libmysqlclient-dev libreadline-dev libbz2-dev
+          sudo apt-get install -y openssh-server libpq-dev libsqlite3-dev libmysqlclient-dev libreadline-dev libbz2-dev
 
       - name: Install Python dependencies
         run: |
@@ -45,5 +45,5 @@ jobs:
 
       - name: Run tox
         run: |
-          python -m pip install --upgrade pip tox
-          tox -c .ecosystem/mailman/tox.ini -e py38-nocov
+          cd .ecosystem/mailman
+          tox -e py38-nocov
