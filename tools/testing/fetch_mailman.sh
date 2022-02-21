@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 FALCON_ROOT=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )/../.." &> /dev/null && pwd )
-echo $FALCON_ROOT
 MAILMAN_PATH=$FALCON_ROOT/.ecosystem/mailman
 
 # TODO(vytas): Detect the latest version from git tags or PyPi JSON.
