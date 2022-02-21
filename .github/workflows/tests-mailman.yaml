@@ -10,8 +10,8 @@ on:
 
 jobs:
   run_tox:
-    name: tox -e (GNU Mailman 3)
-    runs-on: ubuntu-latest
+    name: tox -e py38_nocov
+    runs-on: ubuntu-20.04
 
     steps:
       - name: Checkout repo
@@ -19,14 +19,31 @@ jobs:
         with:
           fetch-depth: 2
 
+      - name: Set up Python
+        uses: actions/setup-python@v2.1.4
+        with:
+          python-version: 3.8
+
+      - name: Install dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rustc
+          sudo apt-get install -y libpq-dev libsqlite3-dev libmysqlclient-dev libreadline-dev libbz2-dev
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip tox
+          python --version
+          pip --version
+          tox --version
+
       - name: Fetch Mailman Core
         run: |
           tools/testing/fetch_mailman.sh
 
       - name: Run tox
-        uses: docker://maxking/mailman-ci-runner
-        env:
-          DEBIAN_FRONTEND: noninteractive
-        with:
-          args: |
-            /bin/bash -c "tox -c .ecosystem/mailman/tox.ini -e py38_nocov"
+        run: |
+          python -m pip install --upgrade pip tox
+          tox -c .ecosystem/mailman/tox.ini -e py38_nocov
