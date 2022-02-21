@@ -1,0 +1,31 @@
+name: Run tests (GNU Mailman 3)
+
+on:
+  push:
+    branches:
+      - "*"
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  run_tox:
+    name: tox -e (GNU Mailman 3)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+
+      - name: Fetch Mailman Core
+        run: |
+          tools/testing/fetch_mailman.sh
+
+      - name: Run tox
+        uses: docker://maxking/mailman-ci-runner
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          tox -c .ecosystem/mailman/tox.ini -e py38_nocov
