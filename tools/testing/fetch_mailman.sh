@@ -11,7 +11,7 @@ MAILMAN_PATH=$FALCON_ROOT/.ecosystem/mailman
 rm -rf $MAILMAN_PATH
 
 mkdir -p .ecosystem
-git clone https://gitlab.com/mailman/mailman.git/ $MAILMAN_PATH
+git clone --depth 100 https://gitlab.com/mailman/mailman.git/ $MAILMAN_PATH
 
 # TODO(vytas): Enable version checking when a stable release's tests pass as-is.
 #   At the time of writing, the latest version tag (3.3.5) has some failing tests.
@@ -21,9 +21,8 @@ cd $MAILMAN_PATH
 # NOTE(vytas): Patch tox.ini to introduce a new Falcon environment.
 cat <<EOT >> tox.ini
 
-[testenv:falcon]
-commands =
+[testenv:falcon-nocov]
+commands_pre =
     pip uninstall -y falcon
     pip install $FALCON_ROOT
-    python -m nose2 -v {posargs}
 EOT
