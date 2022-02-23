@@ -29,7 +29,7 @@ jobs:
           tools/testing/fetch_mailman.sh
 
       - name: Run tox
-        uses: docker://maxking/mailman-ci-runner-falcon
+        uses: docker://ghcr.io/maxking/mailman-ci-runner-falcon:master
         with:
           args: |
             /bin/bash -c "
