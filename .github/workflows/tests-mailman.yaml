@@ -15,7 +15,7 @@ on:
 
 jobs:
   run_tox:
-    name: tox -e falcon
+    name: tox -e falcon-nocov
     runs-on: ubuntu-20.04
 
     steps:
@@ -33,8 +33,6 @@ jobs:
         with:
           args: |
             /bin/bash -c "
-            python -m pip install -U pip tox &&
-            python --version &&
-            pip --version &&
+            python3 --version &&
             tox --version &&
             tox -c .ecosystem/mailman/tox.ini -e falcon-nocov"
