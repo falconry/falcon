@@ -24,10 +24,10 @@ jobs:
       - name: Run tox
         uses: docker://ghcr.io/maxking/mailman-ci-runner-falcon:master
         with:
+          # NOTE(vytas,maxking): The below hack to sed away ::1 is needed since
+          #   Mailman’s aiosmtpd isn’t able to bind to local IPv6 loopback
+          #   inside the container and raises exceptions upon teardown.
           args: |
-            # NOTE(vytas,maxking): The below hack to remove ::1 is needed since
-            #   Mailman’s aiosmtpd isn’t able to bind to local IPv6 loopback
-            #   inside the container and raises exceptions upon teardown.
             /bin/bash -c "
             tools/testing/fetch_mailman.sh &&
             sed '/::1/d' /etc/hosts > /tmp/hosts && cat /tmp/hosts > /etc/hosts &&
