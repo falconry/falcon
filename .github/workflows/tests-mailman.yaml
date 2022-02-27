@@ -6,10 +6,7 @@ on:
   push:
     branches:
       - master
-  # TODO(vytas): remove the pull request clause before merging.
-  pull_request:
-    branches:
-      - master
+
 jobs:
   run_tox:
     name: tox -e falcon-nocov
