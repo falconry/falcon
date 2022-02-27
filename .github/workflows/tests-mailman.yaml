@@ -30,6 +30,7 @@ jobs:
           args: |
             /bin/bash -c "
             tools/testing/fetch_mailman.sh
+            sed '/::1/d' /etc/hosts > /tmp/hosts && cat /tmp/hosts > /etc/hosts &&
             python3 --version &&
             tox --version &&
             tox -c .ecosystem/mailman/tox.ini -e falcon-nocov"
