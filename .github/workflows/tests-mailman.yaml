@@ -6,7 +6,10 @@ on:
   push:
     branches:
       - master
-
+  # TODO(vytas): remove the pull request clause before merging.
+  pull_request:
+    branches:
+      - master
 jobs:
   run_tox:
     name: tox -e falcon-nocov
@@ -22,8 +25,11 @@ jobs:
         uses: docker://ghcr.io/maxking/mailman-ci-runner-falcon:master
         with:
           args: |
+            # NOTE(vytas,maxking): The below hack to remove ::1 is needed since
+            #   Mailman’s aiosmtpd isn’t able to bind to local IPv6 loopback
+            #   inside the container and raises exceptions upon teardown.
             /bin/bash -c "
-            tools/testing/fetch_mailman.sh
+            tools/testing/fetch_mailman.sh &&
             sed '/::1/d' /etc/hosts > /tmp/hosts && cat /tmp/hosts > /etc/hosts &&
             python3 --version &&
             tox --version &&
