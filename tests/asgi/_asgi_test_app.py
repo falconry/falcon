@@ -108,11 +108,15 @@ class Bucket:
         resp.text = await req.stream.read()
 
     async def on_put_drops(self, req, resp):
+        # NOTE(kgriffs): Integrity check
+        sha1 = hashlib.sha1()
+
         drops = 0
         async for drop in req.stream:
             drops += 1
+            sha1.update(drop)
 
-        resp.media = {'drops': drops}
+        resp.media = {'drops': drops, 'sha1': sha1.hexdigest()}
 
 
 class Feed:

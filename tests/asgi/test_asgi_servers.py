@@ -115,8 +115,8 @@ class TestASGIServer:
     def test_post_read_bounded_stream_large(self, server_base_url):
         """Test that we can correctly read large bodies chunked server-side.
 
-        ASGI servers employ some type of flow control to stream large
-        request bodies to the app. This occurs regardless of whether
+        ASGI servers typically employ some type of flow control to stream
+        large request bodies to the app. This occurs regardless of whether
         "chunked" Transfer-Encoding is employed by the client.
         """
 
@@ -130,6 +130,7 @@ class TestASGIServer:
         )
         assert resp.status_code == 200
         assert resp.json().get('drops') > size_mb
+        assert resp.json().get('sha1') == hashlib.sha1(body).hexdigest()
 
     def test_post_read_bounded_stream_no_body(self, server_base_url):
         resp = requests.post(server_base_url + 'bucket', timeout=_REQUEST_TIMEOUT)
