@@ -35,14 +35,14 @@ $ pip install -U black
 $ black .
 ```
 
-You can check all this by running ``tox`` from within the Falcon project directory (requires your environment to be based on Python 3.8 or 3.10):
+You can check all this by running ``tox`` from within the Falcon project directory. Your environment must be based on CPython 3.8 or 3.10:
 
 ```bash
 $ pip install -U tox
 $ tox --recreate
 ```
 
-You may also use a CPython 3.9 environment, however beware that ``coverage`` will likely report a false positive on missing branches, and the total coverage might fall short of 100%. This is caused by bugs in the interpreter itself, and is unlikely to ever get fixed.
+You may also use a CPython 3.9 environment, although in that case ``coverage`` will likely report a false positive on missing branches, and the total coverage might fall short of 100%. These issues are caused by bugs in the interpreter itself, and are unlikely to ever get fixed.
 
 #### Reviews
 
