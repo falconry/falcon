@@ -94,6 +94,37 @@ class JSONHandler(BaseHandler):
             ),
         )
 
+    You can also override the JSONEncoder used by using a custom Encoder by
+    updating the media handlers for ``application/json`` type::
+
+        import json
+        from datetime import datetime
+        from functools import partial
+
+        import falcon
+        from falcon import meda
+
+        class DatetimeEncoder(json.JSONEncoder):
+            \"\"\"Json Encoder that supports datetime objects.\"\"\"
+
+            def default(self, obj):
+                if isinstance(obj, datetime):
+                    return obj.isoformat()
+                super().default(obj)
+
+        app = falcon.App()
+
+        json_handler = media.JSONHandler(
+            dumps=partial(json.dumps, cls=DatetimeEncoder),
+        )
+        extra_handlers = {
+            'application/json': json_handler,
+        }
+
+        app.req_options.media_handlers.update(extra_handlers)
+        app.resp_options.media_handlers.update(extra_handlers)
+
+
     Keyword Arguments:
         dumps (func): Function to use when serializing JSON responses.
         loads (func): Function to use when deserializing JSON requests.
