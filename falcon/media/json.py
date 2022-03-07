@@ -94,6 +94,10 @@ class JSONHandler(BaseHandler):
             ),
         )
 
+    .. _custom-media-json-encoder:
+
+    .. rubric:: Custom Json Encoder
+
     You can also override the default JSONEncoder by using a custom Encoder and
     updating the media handlers for ``application/json`` type to use that::
 

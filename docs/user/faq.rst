@@ -915,7 +915,7 @@ Furthermore, different Internet media types such as YAML,
 types than JSON, either as part of the respective (de)serialization format, or
 via custom type extensions.
 
-.. seealso:: See :class:`falcon.media.json.JSONHandler` for an exmaple on how to
+.. seealso:: See :ref:`custom-media-json-encoder` for an example on how to
           use a custom json encoder.
 
 
