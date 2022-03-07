@@ -94,8 +94,8 @@ class JSONHandler(BaseHandler):
             ),
         )
 
-    You can also override the JSONEncoder used by using a custom Encoder by
-    updating the media handlers for ``application/json`` type::
+    You can also override the default JSONEncoder by using a custom Encoder and
+    updating the media handlers for ``application/json`` type to use that::
 
         import json
         from datetime import datetime
