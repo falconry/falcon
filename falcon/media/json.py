@@ -110,7 +110,7 @@ class JSONHandler(BaseHandler):
             def default(self, obj):
                 if isinstance(obj, datetime):
                     return obj.isoformat()
-                super().default(obj)
+                return super().default(obj)
 
         app = falcon.App()
 
