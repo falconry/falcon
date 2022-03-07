@@ -102,7 +102,7 @@ class JSONHandler(BaseHandler):
         from functools import partial
 
         import falcon
-        from falcon import meda
+        from falcon import media
 
         class DatetimeEncoder(json.JSONEncoder):
             \"\"\"Json Encoder that supports datetime objects.\"\"\"
