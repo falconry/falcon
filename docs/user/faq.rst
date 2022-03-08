@@ -916,7 +916,7 @@ types than JSON, either as part of the respective (de)serialization format, or
 via custom type extensions.
 
 .. seealso:: See :ref:`custom-media-json-encoder` for an example on how to
-          use a custom json encoder.
+    use a custom json encoder.
 
 
 Does Falcon set Content-Length or do I need to do that explicitly?

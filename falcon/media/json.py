@@ -26,6 +26,8 @@ class JSONHandler(BaseHandler):
         library's JSON implementation, since it will be faster in most cases
         as compared to a third-party library.
 
+    .. rubric:: Custom JSON library
+
     You can replace the default JSON handler by using a custom JSON library
     (see also: :ref:`custom_media_handlers`). Overriding the default JSON
     implementation is simply a matter of specifying the desired ``dumps`` and
@@ -47,6 +49,8 @@ class JSONHandler(BaseHandler):
         app = falcon.App()
         app.req_options.media_handlers.update(extra_handlers)
         app.resp_options.media_handlers.update(extra_handlers)
+
+    .. rubric:: Custom serialization parameters
 
     Even if you decide to stick with the stdlib's :any:`json.dumps` and
     :any:`json.loads`, you can wrap them using :any:`functools.partial` to
@@ -96,10 +100,11 @@ class JSONHandler(BaseHandler):
 
     .. _custom-media-json-encoder:
 
-    .. rubric:: Custom Json Encoder
+    .. rubric:: Custom JSON encoder
 
-    You can also override the default JSONEncoder by using a custom Encoder and
-    updating the media handlers for ``application/json`` type to use that::
+    You can also override the default :class:`~json.JSONEncoder` by using a
+    custom Encoder and updating the media handlers for ``application/json``
+    type to use that::
 
         import json
         from datetime import datetime
