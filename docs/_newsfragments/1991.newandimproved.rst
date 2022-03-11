@@ -1,3 +1,0 @@
-:func:`Static routes <falcon.App.add_static_route>` now set the
-``Content-Length`` header indicating a served file's size
-(or length of the rendered content range).
