@@ -36,7 +36,7 @@ def render_draft(target, template):
     #   so we substitute manually.
     rendered = template.replace(b'.. towncrier release notes start', draft, 1)
 
-    print(f"Writing changelog to {target}")
+    print(f'Writing changelog to {target}')
     _write_changelog(target, rendered)
 
 
