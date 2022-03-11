@@ -61,31 +61,38 @@ key changes in this release.
 
 Next update the contributors and render towncrier fragments by running:
 
-    $ tox -e changelog_release
+```sh
+$ tox -e changelog_release
+```
 
 Examine the updated RST as well as the rendered HTML docs and make any
 adjustments as needed. On OS X it's as simple as:
 
-.. code:: bash
-
-    $ open docs/_build/html/changes/index.html
+```sh
+$ open docs/_build/html/changes/index.html
+```
 
 Or on Linux:
 
-.. code:: bash
+```sh
+$ xdg-open docs/_build/html/changes/index.html
+```
 
-    $ xdg-open docs/_build/html/changes/index.html
+If you need to go back and make any additional tweaks:
 
-If you need to go back and make any additional tweaks, just
-`git restore docs/changes` and re-run the tox command when ready for another
-proofreading. Or if you just made a manual edit to the changelog RST,
-you can simply re-render the docs:
+```sh
+$ git restore docs/changes
+```
 
-.. code:: bash
+Then re-run the `tox` command when you're ready for another
+proofreading. Or if you just made a manual edit to the updated RST,
+you can re-render the docs without overwriting the changelog RST:
 
-    $ tox -e docs
+```sh
+$ tox -e docs
+```
 
-If all looks good, remove the rendered towncrier fragments from
+Finally, if all looks good, remove the rendered towncrier fragments from
 `docs/_newsfragments` and then submit a PR containing the changes made so far.
 
 ### Release beta or rc
