@@ -101,6 +101,7 @@ class FloatConverter(IntConverter):
     Keyword Args:
         min (float): Reject the value if it is less than this number.
         max (float): Reject the value if it is greater than this number.
+        allow_nan (bool) : An optional argument which specifies to allow nan values or not.
     """
 
     __slots__ = '_allow_nan'
@@ -111,13 +112,13 @@ class FloatConverter(IntConverter):
         self._allow_nan = allow_nan
 
     def convert(self, value):
-        if not self._allow_nan:
-            if self._is_nan(value):
-                return None
         if value.strip() != value:
             return None
         try:
             value = float(value)
+            if not self._allow_nan:
+                if self._is_nan(value):
+                    return None
         except ValueError:
             return None
 
