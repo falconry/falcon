@@ -123,7 +123,7 @@ class FloatConverter(IntConverter):
 
         return self._validate_min_max_value(value)
 
-    def _is_nan(value):
+    def _is_nan(self, value):
         return value != value
 
 
