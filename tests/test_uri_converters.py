@@ -65,8 +65,7 @@ def test_int_converter_invalid_config(num_digits):
 
 
 @pytest.mark.parametrize(
-    'value, min, max, expected',
-    'allow_nan',
+    'value, min, max, expected','allow_nan',
     [
         ('123', None, None, 123.0),
         ('01', None, None, 1.0),
