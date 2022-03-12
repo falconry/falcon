@@ -101,7 +101,7 @@ class FloatConverter(IntConverter):
     Keyword Args:
         min (float): Reject the value if it is less than this number.
         max (float): Reject the value if it is greater than this number.
-        allow_nan (bool) : An optional argument which specifies to allow nan values or not.
+        allow_nan (bool) : An optional argument which specifies to allow nan values.
     """
 
     __slots__ = '_allow_nan'
