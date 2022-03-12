@@ -65,7 +65,7 @@ def test_int_converter_invalid_config(num_digits):
 
 
 @pytest.mark.parametrize(
-    'value, min, max, expected','allow_nan',
+    'value, min, max, expected',
     [
         ('123', None, None, 123.0),
         ('01', None, None, 1.0),
@@ -88,8 +88,6 @@ def test_int_converter_invalid_config(num_digits):
         ('-1.6e1', -50, 50, -16.0),
         ('1.5e2', 0, 500, 150),
         ('-1.6e10', -1.7e10, 1.0e10, -16000000000.0),
-        ('inf', 1, 1000, None, True),
-        ('-inf', -1000, 1, None, True),
     ],
 )
 def test_float_converter(value, min, max, expected, allow_nan=False):
