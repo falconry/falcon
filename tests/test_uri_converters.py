@@ -83,6 +83,11 @@ def test_int_converter_invalid_config(num_digits):
         ('1.4', 1, 10, 1.4),
         ('inf', 1, 100, None),
         ('-inf', 1, 1000, None),
+        ('1.5e100', 0, 1, None),
+        ('0.5e1', 0, 10, 5.0),
+        ('-1.6e1', -50, 50, -16.0),
+        ('1.5e2', 0, 500, 150),
+        ('-1.6e10', -1.7e10, 1.0e10, -16000000000.0),
     ],
 )
 def test_float_converter(value, min, max, expected):

@@ -60,14 +60,11 @@ class IntConverter(BaseConverter):
     __slots__ = ('_num_digits', '_min', '_max')
 
     def __init__(self, num_digits=None, min=None, max=None):
-        self.validate_number_of_digits(num_digits)
+        if num_digits is not None and num_digits < 1:
+            raise ValueError('num_digits must be at least 1')
         self._num_digits = num_digits
         self._min = min
         self._max = max
-
-    def validate_number_of_digits(self, num_digits):
-        if num_digits is not None and num_digits < 1:
-            raise ValueError('num_digits must be at least 1')
 
     def convert(self, value):
         if self._num_digits is not None and len(value) != self._num_digits:
@@ -86,9 +83,9 @@ class IntConverter(BaseConverter):
         except ValueError:
             return None
 
-        return self.validate_min_max_value(value)
+        return self._validate_min_max_value(value)
 
-    def validate_min_max_value(self, value):
+    def _validate_min_max_value(self, value):
         if self._min is not None and value < self._min:
             return None
         if self._max is not None and value > self._max:
@@ -106,11 +103,17 @@ class FloatConverter(IntConverter):
         max (float): Reject the value if it is greater than this number.
     """
 
-    def __init__(self, min=None, max=None):
+    __slots__ = '_allow_nan'
+
+    def __init__(self, min=None, max=None, allow_nan=False):
         self._min = min
         self._max = max
+        self._allow_nan = allow_nan
 
     def convert(self, value):
+        if not _allow_nan:
+            if is_nan(value):
+                return None
         if value.strip() != value:
             return None
         try:
@@ -118,7 +121,10 @@ class FloatConverter(IntConverter):
         except ValueError:
             return None
 
-        return self.validate_min_max_value(value)
+        return self._validate_min_max_value(value)
+
+    def is_nan(value):
+        return value != value
 
 
 class DateTimeConverter(BaseConverter):

@@ -295,7 +295,7 @@ Built-in Converters
  ``int``       :class:`~.IntConverter`            ``/teams/{tid:int(8)}``
  ``uuid``      :class:`~.UUIDConverter`           ``/diff/{left:uuid}...{right:uuid}``
  ``dt``        :class:`~.DateTimeConverter`       ``/logs/{day:dt("%Y-%m-%d")}``
- ``float``     :class:`~.FloatConverter`          ``/teams/{tid:float(8)}``
+ ``float``     :class:`~.FloatConverter`          ``/python/versions/{version:float(min=3.7)}``
 ============  =================================  ==================================================================
 
 |
