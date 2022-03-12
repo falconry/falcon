@@ -1,4 +1,0 @@
-Added a :attr:`Response.viewable_as <falcon.Response.viewable_as>` property;
-this is similar to :attr:`Response.downloadable_as <falcon.Response.downloadable_as>`
-but with an "inline" disposition type so the response will still be displayed
-in the browser.

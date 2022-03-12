@@ -1,5 +1,0 @@
-When a request was streamed using the chunked transfer encoding (with no
-``Content-Length`` known in advance), iterating over
-:attr:`req.stream <falcon.asgi.Request.stream>` could hang until the client had
-disconnected. This bug has been fixed, and iteration now stops upon receiving
-the last body chunk as expected.

@@ -1,6 +1,0 @@
-The :func:`~falcon.routing.compile_uri_template` utility method has been
-deprecated and will be removed in Falcon 4.0. This function was only employed
-in the early versions of the framework, and is expected to have been fully
-supplanted by the :class:`~falcon.routing.CompiledRouter`. In the unlikely case
-it is still in active use, its source code can be simply copied into an
-affected application.

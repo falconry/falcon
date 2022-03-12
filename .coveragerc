@@ -7,3 +7,7 @@ parallel = True
 
 [report]
 show_missing = True
+exclude_lines =
+    pragma: nocover
+    pragma: no cover
+    pragma: no py39,py310 cover

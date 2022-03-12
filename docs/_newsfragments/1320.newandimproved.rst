@@ -1,7 +1,0 @@
-The :func:`jsonschema.validate <falcon.media.validators.jsonschema.validate>`
-decorator now raises an instance of :class:`~falcon.MediaValidationError`
-instead of the generic :class:`~falcon.HTTPBadRequest` for request media
-validation failures. Although the default behavior is kept unaltered in a
-backwards-compatible fashion (as the specialized exception subclasses the
-generic one), but it can now be easily customized by adding an error handler
-for the new class.

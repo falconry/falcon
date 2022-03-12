@@ -1,0 +1,7 @@
+coverage>=4.1
+msgpack
+mujson
+pytest
+pyyaml
+requests
+ujson
