@@ -1,5 +1,0 @@
-Due to popular demand, :class:`~falcon.testing.TestClient` and
-:class:`~falcon.testing.ASGIConductor` now expose convenience shorthand aliases
-for the ``simulate_*`` methods, i.e.,
-:func:`~falcon.testing.TestClient.simulate_get` is now also available as
-:func:`~falcon.testing.TestClient.get`, etc.

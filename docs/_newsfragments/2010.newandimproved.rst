@@ -1,4 +1,0 @@
-When called with deprecated positional arguments, methods and class
-initializers (such as :class:`falcon.errors.HTTPError`) will now emit a
-user-friendlier warning indicating the fully qualified name of the method in
-question.

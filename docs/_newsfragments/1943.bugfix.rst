@@ -1,3 +1,0 @@
-If provided, the ``close()`` method of an ASGI
-:attr:`resp.stream <falcon.asgi.Response.stream>` is now guaranteed to be
-called even in the case of an exception raised while iterating over the data.
