@@ -124,7 +124,8 @@ jobs:
         env:
           py_tag: ${{ matrix.python-version }}
         run: |
-          version="${py_tag: 2:1}.${py_tag: 3:1}"
+          platform=${py_tag%%-*}
+          version=${platform:2:1}.${platform:3:3}
           echo $version
           echo "::set-output name=python-version::$version"
 
