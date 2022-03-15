@@ -6,4 +6,5 @@ pygments
 pygments-style-github
 sphinx
 sphinx_rtd_theme
-sphinx-tabs
+# NOTE(vytas): pin until we figure out how to deal with the dark mode.
+sphinx-tabs < 3.3.0
