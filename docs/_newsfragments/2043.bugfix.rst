@@ -1,0 +1,4 @@
+Fix a potential ``IndexError`` coming from
+:attr:`~falcon.Request.forwarded_scheme` and
+:attr:`~falcon.Request.forwarded_host` while processing an invalid or empty
+``Forwarded`` header.
