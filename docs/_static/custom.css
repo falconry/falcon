@@ -302,32 +302,36 @@ div.contents.local.topic > ul > li > ul {
     margin-top: 0;
 }
 
-.sphinx-tabs .sphinx-menu a.item {
-    color: #c77c11 !important;
+[role="tablist"] {
+    border-color: #eee;
 }
 
-.sphinx-tabs .sphinx-menu a.item:hover{
-    color: #f0ad4e !important;
+.sphinx-tabs-panel {
+    border-color: #eee;
+    padding: 4px 1rem;
 }
 
-.sphinx-tabs .sphinx-menu {
-    border-bottom-color: #eee !important;
+.sphinx-tabs-tab {
+    top: 2px;
+    border-color: #eee;
+    color: #c77c11;
 }
 
-.sphinx-tabs .sphinx-menu a.active.item {
-    border-color: #eee !important;
+.sphinx-tabs-tab[aria-selected="true"] {
+    border-color: #eee;
 }
 
-.sphinx-tab {
-    border-color: #eee !important;
+.sphinx-tabs-tab[aria-selected="false"]:hover {
+    color: #f0ad4e;
+    text-decoration: underline;
 }
 
-.sphinx-tab.tab.active {
-    background-color: rgb(245,245,245);
+.sphinx-tabs-tab:focus {
+    z-index: 0;
 }
 
-.sphinx-tabs .sphinx-menu a.active.item  {
-    background-color: rgb(245,245,245) !important;
+.sphinx-tabs-panel .highlight-python {
+    margin: 4px 0;
 }
 
 div.note, pre {
