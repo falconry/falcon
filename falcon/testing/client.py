@@ -347,6 +347,13 @@ class Result(_ResultBase):
 
         return json_module.loads(self.text)
 
+    def __repr__(self):
+        body_text = '{}'.format(self.text[:20])
+
+        return '<Status: {}, Content-Type: {}, Text: {}>'.format(
+            self.status_code, self.headers['Content-Type'], body_text
+        )
+
 
 class StreamedResult(_ResultBase):
     """Encapsulates the streamed result of an ASGI request.

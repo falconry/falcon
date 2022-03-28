@@ -764,6 +764,13 @@ class TestFalconTestingUtils:
         result = client.simulate_get()
         assert result.status == falcon.HTTP_702
 
+    def test_repr_result(self, app):
+        header = ('Content-Type', 'application/json')
+        small_result = testing.Result([b'Hmmm?'], falcon.HTTP_200, [header])
+        expected_repr = '<Status: 200, Content-Type: application/json, Text: Hmmm?>'
+
+        assert repr(small_result) == expected_repr
+
     def test_wsgi_iterable_not_closeable(self):
         result = testing.Result([], falcon.HTTP_200, [])
         assert not result.content
