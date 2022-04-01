@@ -786,7 +786,7 @@ class TestFalconTestingUtils:
         captured_resp = resource.captured_resp
         content = bytes(captured_resp.text[:20], 'utf-8')
 
-        expected_result = "Result<{} {} {}>".format(
+        expected_result = 'Result<{} {} {}>'.format(
             captured_resp.status, captured_resp.headers['content-type'], content
         )
 
@@ -796,17 +796,18 @@ class TestFalconTestingUtils:
         captured_resp = resource.captured_resp
         content = bytes(captured_resp.text[:20], 'utf-8')
 
-        expected_result = "Result<{} {} {}>".format(
+        expected_result = 'Result<{} {} {}>'.format(
             captured_resp.status, captured_resp.headers['content-type'], content
         )
 
         assert str(result) == expected_result
 
     def test_repr_without_content_type_header(self, asgi):
-        header = [("Not-content-type", "!!!")]
-        result = falcon.testing.Result([b"huh"], falcon.HTTP_200, header)
+        value = b'huh'
+        header = [('Not-content-type', '!!!')]
+        result = falcon.testing.Result([value], falcon.HTTP_200, header)
 
-        expected_result = "Result<200 OK  b'huh'>"
+        expected_result = 'Result<200 OK  {}>'.format(value)
         assert str(result) == expected_result
 
     def test_wsgi_iterable_not_closeable(self):
