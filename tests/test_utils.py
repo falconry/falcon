@@ -764,12 +764,50 @@ class TestFalconTestingUtils:
         result = client.simulate_get()
         assert result.status == falcon.HTTP_702
 
-    def test_repr_result(self, app):
-        header = ('Content-Type', 'application/json')
-        small_result = testing.Result([b'Hmmm?'], falcon.HTTP_200, [header])
-        expected_repr = '<Status: 200, Content-Type: application/json, Text: Hmmm?>'
+    @pytest.mark.parametrize(
+        'value',
+        (
+            'd\xff\xff\x00',
+            'Can we consider this a long text for the sake of testing',
+            '{"hello": "WORLD!"}',
+        ),
+    )
+    def test_repr_result(self, asgi, value):
+        if asgi:
+            resource = testing.SimpleTestResourceAsync(body=value)
+        else:
+            resource = testing.SimpleTestResource(body=value)
 
-        assert repr(small_result) == expected_repr
+        app = create_app(asgi)
+        app.add_route('/hello', resource)
+        client = falcon.testing.TestClient(app)
+
+        result = client.simulate_get('/hello')
+        captured_resp = resource.captured_resp
+        content = bytes(captured_resp.text[:20], 'utf-8')
+
+        expected_result = "Result<{} {} {}>".format(
+            captured_resp.status, captured_resp.headers['content-type'], content
+        )
+
+        assert str(result) == expected_result
+
+        result = client.simulate_post('/hello')
+        captured_resp = resource.captured_resp
+        content = bytes(captured_resp.text[:20], 'utf-8')
+
+        expected_result = "Result<{} {} {}>".format(
+            captured_resp.status, captured_resp.headers['content-type'], content
+        )
+
+        assert str(result) == expected_result
+
+    def test_repr_without_content_type_header(self, asgi):
+        header = [("Not-content-type", "!!!")]
+        result = falcon.testing.Result([b"huh"], falcon.HTTP_200, header)
+
+        expected_result = "Result<200 OK  b'huh'>"
+        assert str(result) == expected_result
 
     def test_wsgi_iterable_not_closeable(self):
         result = testing.Result([], falcon.HTTP_200, [])
