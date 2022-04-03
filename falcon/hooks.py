@@ -24,8 +24,9 @@ from falcon.util.misc import get_argnames
 from falcon.util.sync import _wrap_non_coroutine_unsafe
 
 
-_DECORABLE_METHOD_NAME = re.compile(r'^on_({})(_\w+)?$'.format(
-    '|'.join(method.lower() for method in COMBINED_METHODS)))
+_DECORABLE_METHOD_NAME = re.compile(
+    r'^on_({})(_\w+)?$'.format('|'.join(method.lower() for method in COMBINED_METHODS))
+)
 
 
 def before(action, *args, is_async=False, **kwargs):
@@ -90,11 +91,7 @@ def before(action, *args, is_async=False, **kwargs):
                     # between iterations of the for loop, above.
                     def let(responder=responder):
                         do_before_all = _wrap_with_before(
-                            responder,
-                            action,
-                            args,
-                            kwargs,
-                            is_async
+                            responder, action, args, kwargs, is_async
                         )
 
                         setattr(resource, responder_name, do_before_all)
@@ -122,8 +119,8 @@ def after(action, *args, is_async=False, **kwargs):
             request
 
         *args: Any additional arguments will be passed to *action* in the
-            order given, immediately following the *req*, *resp*, *resource*,
-            and *params* arguments.
+            order given, immediately following the *req*, *resp* and *resource*
+            arguments.
 
     Keyword Args:
         is_async (bool): Set to ``True`` for ASGI apps to provide a hint that
@@ -151,13 +148,10 @@ def after(action, *args, is_async=False, **kwargs):
 
             for responder_name, responder in getmembers(resource, callable):
                 if _DECORABLE_METHOD_NAME.match(responder_name):
+
                     def let(responder=responder):
                         do_after_all = _wrap_with_after(
-                            responder,
-                            action,
-                            args,
-                            kwargs,
-                            is_async
+                            responder, action, args, kwargs, is_async
                         )
 
                         setattr(resource, responder_name, do_after_all)
@@ -212,7 +206,9 @@ def _wrap_with_after(responder, action, action_args, action_kwargs, is_async):
 
             await responder(self, req, resp, **kwargs)
             await action(req, resp, self, *action_args, **action_kwargs)
+
     else:
+
         @wraps(responder)
         def do_after(self, req, resp, *args, **kwargs):
             if args:
@@ -256,7 +252,9 @@ def _wrap_with_before(responder, action, action_args, action_kwargs, is_async):
 
             await action(req, resp, self, kwargs, *action_args, **action_kwargs)
             await responder(self, req, resp, **kwargs)
+
     else:
+
         @wraps(responder)
         def do_before(self, req, resp, *args, **kwargs):
             if args:

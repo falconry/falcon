@@ -9,7 +9,6 @@ from _util import has_cython  # NOQA
 
 
 class TestCythonized:
-
     @pytest.mark.skipif(not has_cython, reason='Cython not installed')
     def test_imported_from_c_modules(self):
         assert 'falcon/app.py' not in str(falcon.app)

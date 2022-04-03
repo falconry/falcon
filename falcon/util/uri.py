@@ -25,10 +25,11 @@ in the `falcon` module, and so must be explicitly imported::
 """
 
 from falcon.constants import PYPY
+
 try:
     from falcon.cyutil.uri import (
         decode as _cy_decode,
-        parse_query_string as _cy_parse_query_string
+        parse_query_string as _cy_parse_query_string,
     )
 except ImportError:
     _cy_decode = None
@@ -36,10 +37,7 @@ except ImportError:
 
 
 # NOTE(kgriffs): See also RFC 3986
-_UNRESERVED = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-               'abcdefghijklmnopqrstuvwxyz'
-               '0123456789'
-               '-._~')
+_UNRESERVED = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~'
 
 # NOTE(kgriffs): See also RFC 3986
 _DELIMITERS = ":/?#[]@!$&'()*+,;="
@@ -48,9 +46,9 @@ _ALL_ALLOWED = _UNRESERVED + _DELIMITERS
 _HEX_DIGITS = '0123456789ABCDEFabcdef'
 
 # This map construction is based on urllib's implementation
-_HEX_TO_BYTE = {(a + b).encode(): bytes([int(a + b, 16)])
-                for a in _HEX_DIGITS
-                for b in _HEX_DIGITS}
+_HEX_TO_BYTE = {
+    (a + b).encode(): bytes([int(a + b, 16)]) for a in _HEX_DIGITS for b in _HEX_DIGITS
+}
 
 
 def _create_char_encoder(allowed_chars):
@@ -84,9 +82,9 @@ def _create_str_encoder(is_value, check_is_escaped=False):
             # been escaped. Do one more check to increase our certainty.
             # NOTE(minesja): Per issue #1872, there's only certain situations
             # in which we should check again (ex. location, content_location,
-            # append_link).In all other cases we should allow characters that
+            # append_link). In all other cases we should allow characters that
             # could appear escaped to still be encoded (ex. '%' would be encoded
-            # as '%25).
+            # as '%25').
             tokens = uri.split('%')
             for token in tokens[1:]:
                 hex_octet = token[:2]
@@ -94,8 +92,7 @@ def _create_str_encoder(is_value, check_is_escaped=False):
                 if not len(hex_octet) == 2:
                     break
 
-                if not (hex_octet[0] in _HEX_DIGITS and
-                        hex_octet[1] in _HEX_DIGITS):
+                if not (hex_octet[0] in _HEX_DIGITS and hex_octet[1] in _HEX_DIGITS):
                     break
             else:
                 # NOTE(kgriffs): All percent-encoded sequences were
@@ -490,7 +487,7 @@ def parse_host(host, default_port=None):
         # IPv6 address with a port
         pos = host.rfind(']:')
         if pos != -1:
-            return (host[1:pos], int(host[pos + 2:]))
+            return (host[1:pos], int(host[pos + 2 :]))
         else:
             return (host[1:-1], default_port)
 
@@ -535,8 +532,7 @@ def unquote_string(quoted):
     elif r'\\' not in tmp_quoted:
         return tmp_quoted.replace('\\', '')
     else:
-        return '\\'.join([q.replace('\\', '')
-                          for q in tmp_quoted.split(r'\\')])
+        return '\\'.join([q.replace('\\', '') for q in tmp_quoted.split(r'\\')])
 
 
 # TODO(vytas): Restructure this in favour of a cleaner way to hoist the pure

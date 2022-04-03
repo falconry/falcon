@@ -18,7 +18,8 @@ class Emitter:
             while True:
                 try:
                     event = await asyncio.wait_for(
-                        self._queue.get(), timeout=self.POLL_TIMEOUT)
+                        self._queue.get(), timeout=self.POLL_TIMEOUT
+                    )
                     yield event
                 except asyncio.TimeoutError:
                     # NOTE(vytas): Keep the connection alive.

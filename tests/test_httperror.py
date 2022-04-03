@@ -26,7 +26,6 @@ def client(asgi):
 
 
 class FaultyResource:
-
     def on_get(self, req, resp):
         status = req.get_header('X-Error-Status')
         title = req.get_header('X-Error-Title')
@@ -39,7 +38,8 @@ class FaultyResource:
         raise falcon.HTTPForbidden(
             title='Request denied',
             description='You do not have write permissions for this queue.',
-            href='http://example.com/api/rbac')
+            href='http://example.com/api/rbac',
+        )
 
     def on_put(self, req, resp):
         raise falcon.HTTPError(
@@ -48,14 +48,14 @@ class FaultyResource:
             description='Catastrophic weather event due to climate change.',
             href='http://example.com/api/climate',
             href_text='Drill baby drill!',
-            code=8733224)
+            code=8733224,
+        )
 
     def on_patch(self, req, resp):
         raise falcon.HTTPError(falcon.HTTP_400)
 
 
 class UnicodeFaultyResource:
-
     def __init__(self):
         self.called = False
 
@@ -66,189 +66,177 @@ class UnicodeFaultyResource:
             title='Internet \xe7rashed!',
             description='\xc7atastrophic weather event',
             href='http://example.com/api/\xe7limate',
-            href_text='Drill b\xe1by drill!')
+            href_text='Drill b\xe1by drill!',
+        )
 
 
 class MiscErrorsResource:
-
     def __init__(self, exception, needs_title):
         self.needs_title = needs_title
         self._exception = exception
 
     def on_get(self, req, resp):
         if self.needs_title:
-            raise self._exception(title='Excuse Us', description='Something went boink!')
+            raise self._exception(
+                title='Excuse Us', description='Something went boink!'
+            )
         else:
             raise self._exception(title='Something went boink!')
 
 
 class UnauthorizedResource:
-
     def on_get(self, req, resp):
-        raise falcon.HTTPUnauthorized(title='Authentication Required',
-                                      description='Missing or invalid authorization.',
-                                      challenges=['Basic realm="simple"'])
+        raise falcon.HTTPUnauthorized(
+            title='Authentication Required',
+            description='Missing or invalid authorization.',
+            challenges=['Basic realm="simple"'],
+        )
 
     def on_post(self, req, resp):
-        raise falcon.HTTPUnauthorized(title='Authentication Required',
-                                      description='Missing or invalid authorization.',
-                                      challenges=['Newauth realm="apps"', 'Basic realm="simple"'])
+        raise falcon.HTTPUnauthorized(
+            title='Authentication Required',
+            description='Missing or invalid authorization.',
+            challenges=['Newauth realm="apps"', 'Basic realm="simple"'],
+        )
 
     def on_put(self, req, resp):
-        raise falcon.HTTPUnauthorized(title='Authentication Required',
-                                      description='Missing or invalid authorization.',
-                                      challenges=[])
+        raise falcon.HTTPUnauthorized(
+            title='Authentication Required',
+            description='Missing or invalid authorization.',
+            challenges=[],
+        )
 
 
 class NotFoundResource:
-
     def on_get(self, req, resp):
         raise falcon.HTTPNotFound()
 
 
 class NotFoundResourceWithBody:
-
     def on_get(self, req, resp):
         raise falcon.HTTPNotFound(description='Not Found')
 
 
 class GoneResource:
-
     def on_get(self, req, resp):
         raise falcon.HTTPGone()
 
 
 class GoneResourceWithBody:
-
     def on_get(self, req, resp):
         raise falcon.HTTPGone(description='Gone with the wind')
 
 
 class MethodNotAllowedResource:
-
     def on_get(self, req, resp):
         raise falcon.HTTPMethodNotAllowed(['PUT'])
 
 
 class MethodNotAllowedResourceWithHeaders:
-
     def on_get(self, req, resp):
-        raise falcon.HTTPMethodNotAllowed(['PUT'],
-                                          headers={
-                                              'x-ping': 'pong'})
+        raise falcon.HTTPMethodNotAllowed(['PUT'], headers={'x-ping': 'pong'})
 
 
 class MethodNotAllowedResourceWithHeadersWithAccept:
-
     def on_get(self, req, resp):
-        raise falcon.HTTPMethodNotAllowed(['PUT'],
-                                          headers={
-                                              'x-ping': 'pong',
-                                              'accept': 'GET,PUT'})
+        raise falcon.HTTPMethodNotAllowed(
+            ['PUT'], headers={'x-ping': 'pong', 'accept': 'GET,PUT'}
+        )
 
 
 class MethodNotAllowedResourceWithBody:
-
     def on_get(self, req, resp):
-        raise falcon.HTTPMethodNotAllowed(['PUT'],
-                                          description='Not Allowed')
+        raise falcon.HTTPMethodNotAllowed(['PUT'], description='Not Allowed')
 
 
 class LengthRequiredResource:
-
     def on_get(self, req, resp):
         raise falcon.HTTPLengthRequired(title='title', description='description')
 
 
 class RequestEntityTooLongResource:
-
     def on_get(self, req, resp):
-        raise falcon.HTTPPayloadTooLarge(title='Request Rejected',
-                                         description='Request Body Too Large')
+        raise falcon.HTTPPayloadTooLarge(
+            title='Request Rejected', description='Request Body Too Large'
+        )
 
 
 class TemporaryRequestEntityTooLongResource:
-
     def __init__(self, retry_after):
         self.retry_after = retry_after
 
     def on_get(self, req, resp):
-        raise falcon.HTTPPayloadTooLarge(title='Request Rejected',
-                                         description='Request Body Too Large',
-                                         retry_after=self.retry_after)
+        raise falcon.HTTPPayloadTooLarge(
+            title='Request Rejected',
+            description='Request Body Too Large',
+            retry_after=self.retry_after,
+        )
 
 
 class UriTooLongResource:
-
     def __init__(self, title=None, description=None, code=None):
         self.title = title
         self.description = description
         self.code = code
 
     def on_get(self, req, resp):
-        raise falcon.HTTPUriTooLong(title=self.title,
-                                    description=self.description,
-                                    code=self.code)
+        raise falcon.HTTPUriTooLong(
+            title=self.title, description=self.description, code=self.code
+        )
 
 
 class RangeNotSatisfiableResource:
-
     def on_get(self, req, resp):
         raise falcon.HTTPRangeNotSatisfiable(123456)
 
 
 class TooManyRequestsResource:
-
     def __init__(self, retry_after=None):
         self.retry_after = retry_after
 
     def on_get(self, req, resp):
-        raise falcon.HTTPTooManyRequests(title='Too many requests',
-                                         description='1 per minute',
-                                         retry_after=self.retry_after)
+        raise falcon.HTTPTooManyRequests(
+            title='Too many requests',
+            description='1 per minute',
+            retry_after=self.retry_after,
+        )
 
 
 class ServiceUnavailableResource:
-
     def __init__(self, retry_after):
         self.retry_after = retry_after
 
     def on_get(self, req, resp):
-        raise falcon.HTTPServiceUnavailable(title='Oops',
-                                            description='Stand by...',
-                                            retry_after=self.retry_after)
+        raise falcon.HTTPServiceUnavailable(
+            title='Oops', description='Stand by...', retry_after=self.retry_after
+        )
 
 
 class InvalidHeaderResource:
-
     def on_get(self, req, resp):
         raise falcon.HTTPInvalidHeader(
-            'Please provide a valid token.', 'X-Auth-Token',
-            code='A1001')
+            'Please provide a valid token.', 'X-Auth-Token', code='A1001'
+        )
 
 
 class MissingHeaderResource:
-
     def on_get(self, req, resp):
         raise falcon.HTTPMissingHeader('X-Auth-Token')
 
 
 class InvalidParamResource:
-
     def on_get(self, req, resp):
         raise falcon.HTTPInvalidParam(
-            'The value must be a hex-encoded UUID.', 'id',
-            code='P1002')
+            'The value must be a hex-encoded UUID.', 'id', code='P1002'
+        )
 
 
 class MissingParamResource:
-
     def on_get(self, req, resp):
         raise falcon.HTTPMissingParam('id', code='P1003')
 
 
 class TestHTTPError:
-
     def _misc_test(self, client, exception, status, needs_title=True):
         client.app.add_route('/misc', MiscErrorsResource(exception, needs_title))
 
@@ -258,17 +246,21 @@ class TestHTTPError:
     def test_base_class(self, client):
         headers = {
             'X-Error-Title': 'Storage service down',
-            'X-Error-Description': ('The configured storage service is not '
-                                    'responding to requests. Please contact '
-                                    'your service provider.'),
-            'X-Error-Status': falcon.HTTP_503
+            'X-Error-Description': (
+                'The configured storage service is not '
+                'responding to requests. Please contact '
+                'your service provider.'
+            ),
+            'X-Error-Status': falcon.HTTP_503,
         }
 
         expected_body = {
             'title': 'Storage service down',
-            'description': ('The configured storage service is not '
-                            'responding to requests. Please contact '
-                            'your service provider.'),
+            'description': (
+                'The configured storage service is not '
+                'responding to requests. Please contact '
+                'your service provider.'
+            ),
             'code': 10042,
         }
 
@@ -299,8 +291,10 @@ class TestHTTPError:
         )
         assert response.status == falcon.HTTP_400
 
-        expected_xml = (b'<?xml version="1.0" encoding="UTF-8"?><error>'
-                        b'<title>400 Bad Request</title></error>')
+        expected_xml = (
+            b'<?xml version="1.0" encoding="UTF-8"?><error>'
+            b'<title>400 Bad Request</title></error>'
+        )
 
         assert response.content == expected_xml
         assert response.headers['Content-Type'] == 'application/xml'
@@ -309,10 +303,12 @@ class TestHTTPError:
         headers = {
             'Accept': 'application/x-yaml',
             'X-Error-Title': 'Storage service down',
-            'X-Error-Description': ('The configured storage service is not '
-                                    'responding to requests. Please contact '
-                                    'your service provider'),
-            'X-Error-Status': falcon.HTTP_503
+            'X-Error-Description': (
+                'The configured storage service is not '
+                'responding to requests. Please contact '
+                'your service provider'
+            ),
+            'X-Error-Status': falcon.HTTP_503,
         }
 
         response = client.simulate_request(path='/fail', headers=headers)
@@ -323,18 +319,22 @@ class TestHTTPError:
     def test_custom_error_serializer(self, client):
         headers = {
             'X-Error-Title': 'Storage service down',
-            'X-Error-Description': ('The configured storage service is not '
-                                    'responding to requests. Please contact '
-                                    'your service provider'),
-            'X-Error-Status': falcon.HTTP_503
+            'X-Error-Description': (
+                'The configured storage service is not '
+                'responding to requests. Please contact '
+                'your service provider'
+            ),
+            'X-Error-Status': falcon.HTTP_503,
         }
 
         expected_doc = {
             'code': 10042,
-            'description': ('The configured storage service is not '
-                            'responding to requests. Please contact '
-                            'your service provider'),
-            'title': 'Storage service down'
+            'description': (
+                'The configured storage service is not '
+                'responding to requests. Please contact '
+                'your service provider'
+            ),
+            'title': 'Storage service down',
         }
 
         def _my_serializer(req, resp, exception):
@@ -360,13 +360,18 @@ class TestHTTPError:
         _check(falcon.MEDIA_YAML, yaml.safe_load)
         _check(falcon.MEDIA_JSON, json.loads)
 
-    @pytest.mark.parametrize('method,path,status', [
-        ('GET', '/404', 404),
-        ('GET', '/notfound', 404),
-        ('REPORT', '/404', 405),
-        ('BREW', '/notfound', 400),
-    ])
-    def test_custom_error_serializer_optional_representation(self, client, method, path, status):
+    @pytest.mark.parametrize(
+        'method,path,status',
+        [
+            ('GET', '/404', 404),
+            ('GET', '/notfound', 404),
+            ('REPORT', '/404', 405),
+            ('BREW', '/notfound', 400),
+        ],
+    )
+    def test_custom_error_serializer_optional_representation(
+        self, client, method, path, status
+    ):
         def _simple_serializer(req, resp, exception):
             representation = exception.to_dict()
             representation.update(status=int(exception.status[:3]))
@@ -407,28 +412,32 @@ class TestHTTPError:
         headers = {
             'Accept': '45087gigo;;;;',
             'X-Error-Title': 'Storage service down',
-            'X-Error-Description': ('The configured storage service is not '
-                                    'responding to requests. Please contact '
-                                    'your service provider'),
-            'X-Error-Status': falcon.HTTP_503
+            'X-Error-Description': (
+                'The configured storage service is not '
+                'responding to requests. Please contact '
+                'your service provider'
+            ),
+            'X-Error-Status': falcon.HTTP_503,
         }
 
         response = client.simulate_request(path='/fail', headers=headers)
         assert response.status == headers['X-Error-Status']
         assert not response.content
 
-    @pytest.mark.parametrize('media_type', [
-        'application/json',
-        'application/vnd.company.system.project.resource+json;v=1.1',
-        'application/json-patch+json',
-    ])
+    @pytest.mark.parametrize(
+        'media_type',
+        [
+            'application/json',
+            'application/vnd.company.system.project.resource+json;v=1.1',
+            'application/json-patch+json',
+        ],
+    )
     def test_forbidden(self, client, media_type):
         headers = {'Accept': media_type}
 
         expected_body = {
             'title': 'Request denied',
-            'description': ('You do not have write permissions for this '
-                            'queue.'),
+            'description': 'You do not have write permissions for this queue.',
             'link': {
                 'text': 'Documentation related to this error',
                 'href': 'http://example.com/api/rbac',
@@ -460,28 +469,33 @@ class TestHTTPError:
         assert response.status == falcon.HTTP_792
         assert response.json == expected_body
 
-    @pytest.mark.parametrize('media_type', [
-        'text/xml',
-        'application/xml',
-        'application/vnd.company.system.project.resource+xml;v=1.1',
-        'application/atom+xml',
-    ])
+    @pytest.mark.parametrize(
+        'media_type',
+        [
+            'text/xml',
+            'application/xml',
+            'application/vnd.company.system.project.resource+xml;v=1.1',
+            'application/atom+xml',
+        ],
+    )
     def test_epic_fail_xml(self, client, media_type):
         headers = {'Accept': media_type}
 
-        expected_body = ('<?xml version="1.0" encoding="UTF-8"?>' +
-                         '<error>' +
-                         '<title>Internet crashed</title>' +
-                         '<description>' +
-                         'Catastrophic weather event due to climate change.' +
-                         '</description>' +
-                         '<code>8733224</code>' +
-                         '<link>' +
-                         '<text>Drill baby drill!</text>' +
-                         '<href>http://example.com/api/climate</href>' +
-                         '<rel>help</rel>' +
-                         '</link>' +
-                         '</error>')
+        expected_body = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            + '<error>'
+            + '<title>Internet crashed</title>'
+            + '<description>'
+            + 'Catastrophic weather event due to climate change.'
+            + '</description>'
+            + '<code>8733224</code>'
+            + '<link>'
+            + '<text>Drill baby drill!</text>'
+            + '<href>http://example.com/api/climate</href>'
+            + '<rel>help</rel>'
+            + '</link>'
+            + '</error>'
+        )
 
         response = client.simulate_put(path='/fail', headers=headers)
 
@@ -515,23 +529,24 @@ class TestHTTPError:
     def test_unicode_xml(self, client):
         unicode_resource = UnicodeFaultyResource()
 
-        expected_body = ('<?xml version="1.0" encoding="UTF-8"?>' +
-                         '<error>' +
-                         '<title>Internet çrashed!</title>' +
-                         '<description>' +
-                         'Çatastrophic weather event' +
-                         '</description>' +
-                         '<link>' +
-                         '<text>Drill báby drill!</text>' +
-                         '<href>http://example.com/api/%C3%A7limate</href>' +
-                         '<rel>help</rel>' +
-                         '</link>' +
-                         '</error>')
+        expected_body = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            + '<error>'
+            + '<title>Internet çrashed!</title>'
+            + '<description>'
+            + 'Çatastrophic weather event'
+            + '</description>'
+            + '<link>'
+            + '<text>Drill báby drill!</text>'
+            + '<href>http://example.com/api/%C3%A7limate</href>'
+            + '<rel>help</rel>'
+            + '</link>'
+            + '</error>'
+        )
 
         client.app.add_route('/unicode', unicode_resource)
         response = client.simulate_request(
-            path='/unicode',
-            headers={'accept': 'application/xml'}
+            path='/unicode', headers={'accept': 'application/xml'}
         )
 
         assert unicode_resource.called
@@ -548,7 +563,10 @@ class TestHTTPError:
         response = client.simulate_post('/401')
 
         assert response.status == falcon.HTTP_401
-        assert response.headers['www-authenticate'] == 'Newauth realm="apps", Basic realm="simple"'
+        assert (
+            response.headers['www-authenticate']
+            == 'Newauth realm="apps", Basic realm="simple"'
+        )
 
         response = client.simulate_put('/401')
 
@@ -569,10 +587,7 @@ class TestHTTPError:
         response = client.simulate_request(path='/404')
         assert response.status == falcon.HTTP_404
         assert response.content
-        expected_body = {
-            'title': '404 Not Found',
-            'description': 'Not Found'
-        }
+        expected_body = {'title': '404 Not Found', 'description': 'Not Found'}
         assert response.json == expected_body
 
     def test_405_without_body(self, client):
@@ -594,9 +609,7 @@ class TestHTTPError:
         assert response.headers['x-ping'] == 'pong'
 
     def test_405_without_body_with_extra_headers_double_check(self, client):
-        client.app.add_route(
-            '/405', MethodNotAllowedResourceWithHeadersWithAccept()
-        )
+        client.app.add_route('/405', MethodNotAllowedResourceWithHeadersWithAccept())
 
         response = client.simulate_request(path='/405')
         assert response.status == falcon.HTTP_405
@@ -614,7 +627,7 @@ class TestHTTPError:
         assert response.content
         expected_body = {
             'title': '405 Method Not Allowed',
-            'description': 'Not Allowed'
+            'description': 'Not Allowed',
         }
         assert response.json == expected_body
         assert response.headers['allow'] == 'PUT'
@@ -633,10 +646,7 @@ class TestHTTPError:
         response = client.simulate_request(path='/410')
         assert response.status == falcon.HTTP_410
         assert response.content
-        expected_body = {
-            'title': '410 Gone',
-            'description': 'Gone with the wind'
-        }
+        expected_body = {'title': '410 Gone', 'description': 'Gone with the wind'}
         assert response.json == expected_body
 
     def test_411(self, client):
@@ -670,10 +680,7 @@ class TestHTTPError:
 
     def test_temporary_413_datetime_retry_after(self, client):
         date = datetime.datetime.now() + datetime.timedelta(minutes=5)
-        client.app.add_route(
-            '/413',
-            TemporaryRequestEntityTooLongResource(date)
-        )
+        client.app.add_route('/413', TemporaryRequestEntityTooLongResource(date))
         response = client.simulate_request(path='/413')
 
         assert response.status == falcon.HTTP_413
@@ -786,8 +793,10 @@ class TestHTTPError:
         client.app.add_route('/400', InvalidHeaderResource())
         response = client.simulate_request(path='/400')
 
-        expected_desc = ('The value provided for the "X-Auth-Token" '
-                         'header is invalid. Please provide a valid token.')
+        expected_desc = (
+            'The value provided for the "X-Auth-Token" '
+            'header is invalid. Please provide a valid token.'
+        )
 
         expected_body = {
             'title': 'Invalid header value',
@@ -814,8 +823,9 @@ class TestHTTPError:
         client.app.add_route('/400', InvalidParamResource())
         response = client.simulate_request(path='/400')
 
-        expected_desc = ('The "id" parameter is invalid. The '
-                         'value must be a hex-encoded UUID.')
+        expected_desc = (
+            'The "id" parameter is invalid. The value must be a hex-encoded UUID.'
+        )
         expected_body = {
             'title': 'Invalid parameter',
             'description': expected_desc,
@@ -840,22 +850,26 @@ class TestHTTPError:
 
     def test_misc(self, client):
         self._misc_test(client, falcon.HTTPBadRequest, falcon.HTTP_400)
-        self._misc_test(client, falcon.HTTPNotAcceptable, falcon.HTTP_406,
-                        needs_title=False)
+        self._misc_test(
+            client, falcon.HTTPNotAcceptable, falcon.HTTP_406, needs_title=False
+        )
         self._misc_test(client, falcon.HTTPConflict, falcon.HTTP_409)
         self._misc_test(client, falcon.HTTPPreconditionFailed, falcon.HTTP_412)
-        self._misc_test(client, falcon.HTTPUnsupportedMediaType, falcon.HTTP_415,
-                        needs_title=False)
+        self._misc_test(
+            client, falcon.HTTPUnsupportedMediaType, falcon.HTTP_415, needs_title=False
+        )
         self._misc_test(client, falcon.HTTPUnprocessableEntity, falcon.HTTP_422)
-        self._misc_test(client, falcon.HTTPUnavailableForLegalReasons, falcon.HTTP_451,
-                        needs_title=False)
+        self._misc_test(
+            client,
+            falcon.HTTPUnavailableForLegalReasons,
+            falcon.HTTP_451,
+            needs_title=False,
+        )
         self._misc_test(client, falcon.HTTPInternalServerError, falcon.HTTP_500)
         self._misc_test(client, falcon.HTTPBadGateway, falcon.HTTP_502)
 
     def test_title_default_message_if_none(self, client):
-        headers = {
-            'X-Error-Status': falcon.HTTP_503
-        }
+        headers = {'X-Error-Status': falcon.HTTP_503}
 
         response = client.simulate_request(path='/fail', headers=headers)
 

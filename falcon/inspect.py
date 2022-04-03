@@ -294,7 +294,8 @@ class RouteMethodInfo(_Traversable):
         self.source_info = source_info
         self.function_name = function_name
         self.internal = internal
-        # NOTE(CaselIT): internal falcon names do not start with on and do not have suffix
+        # NOTE(CaselIT): internal falcon names do not start with 'on'
+        # and do not have suffix
         if function_name.startswith('on'):
             self.suffix = '_'.join(function_name.split('_')[2:])
         else:
@@ -402,7 +403,8 @@ class MiddlewareClassInfo(_Traversable):
     Args:
         name (str): The name of the middleware class.
         source_info (str): The source path where the middleware was defined.
-        methods (List[MiddlewareMethodInfo]): List of method defined by the middleware class.
+        methods (List[MiddlewareMethodInfo]): List of method defined by the
+            middleware class.
     """
 
     __visit_name__ = 'middleware_class'
@@ -463,7 +465,8 @@ class MiddlewareInfo(_Traversable):
 
     Args:
         middlewareTree (MiddlewareTreeInfo): The middleware tree of the app.
-        middlewareClasses (List[MiddlewareClassInfo]): The middleware classes of the app.
+        middlewareClasses (List[MiddlewareClassInfo]): The middleware classes of
+            the app.
         independent (bool): Whether or not the middleware components are executed
             independently.
 
@@ -548,7 +551,8 @@ class InspectVisitor:
     def process(self, instance: _Traversable):
         """Process the instance, by calling the appropriate visit method.
 
-        Uses the `__visit_name__` attribute of the `instance` to obtain the method to use.
+        Uses the `__visit_name__` attribute of the `instance` to obtain the method
+        to use.
 
         Args:
             instance (_Traversable): The instance to process.
@@ -752,8 +756,8 @@ class StringVisitor(InspectVisitor):
 def _get_source_info(obj, default='[unknown file]'):
     """Try to get the definition file and line of obj.
 
-     Return default on error.
-     """
+    Return default on error.
+    """
     try:
         source_file = inspect.getsourcefile(obj)
         source_lines = inspect.findsource(obj)

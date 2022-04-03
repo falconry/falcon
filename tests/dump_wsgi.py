@@ -1,8 +1,7 @@
 def application(environ, start_response):
     # wsgi_errors = environ['wsgi.errors']
 
-    start_response('200 OK', [
-        ('Content-Type', 'text/plain')])
+    start_response('200 OK', [('Content-Type', 'text/plain')])
 
     body = '\n{\n'
     for key, value in environ.items():
@@ -22,6 +21,7 @@ app = application
 
 if __name__ == '__main__':
     from wsgiref.simple_server import make_server
+
     server = make_server('localhost', 8000, application)
 
     print('Listening on localhost:8000...')

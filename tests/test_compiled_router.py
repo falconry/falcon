@@ -48,7 +48,7 @@ def test_no_compile_kw(patch_add_route, kwargs):
     router.add_route('/foo', res, **kwargs)
 
     assert mock.call_count == 1
-    mock.assert_has_calls(((('/foo', res), kwargs), ))
+    mock.assert_has_calls(((('/foo', res), kwargs),))
     assert router._find == router._compile_and_find
 
 

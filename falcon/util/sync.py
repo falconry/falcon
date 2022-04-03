@@ -113,7 +113,9 @@ def wrap_sync_to_async(func, threadsafe=None) -> Callable:
 
     @wraps(func)
     async def wrapper(*args, **kwargs):
-        return await get_running_loop().run_in_executor(executor, partial(func, *args, **kwargs))
+        return await get_running_loop().run_in_executor(
+            executor, partial(func, *args, **kwargs)
+        )
 
     return wrapper
 
@@ -156,7 +158,9 @@ async def sync_to_async(func, *args, **kwargs):
         synchronous callable.
     """
 
-    return await get_running_loop().run_in_executor(None, partial(func, *args, **kwargs))
+    return await get_running_loop().run_in_executor(
+        None, partial(func, *args, **kwargs)
+    )
 
 
 def _should_wrap_non_coroutines() -> bool:
@@ -206,9 +210,6 @@ def async_to_sync(coroutine, *args, **kwargs):
         This method is very inefficient and is intended primarily for testing
         and prototyping.
 
-    Additional arguments not mentioned below are bound to the given
-    coroutine function via :any:`functools.partial`.
-
     Args:
         coroutine: A coroutine function to invoke.
         *args: Additional args are passed through to the coroutine function.
@@ -217,10 +218,16 @@ def async_to_sync(coroutine, *args, **kwargs):
         **kwargs: Additional args are passed through to the coroutine function.
     """
 
-    loop = asyncio.get_event_loop()
-    return loop.run_until_complete(
-        partial(coroutine, *args, **kwargs)()
-    )
+    # TODO(vytas): The canonical way of doing this for simple use cases is
+    #   asyncio.run(), but that would be a breaking change wrt the above
+    #   documented behaviour; breaking enough to break some of our own tests.
+
+    # NOTE(vytas): Work around get_event_loop deprecation in 3.10 by going via
+    #   get_event_loop_policy(). This should be equivalent for async_to_sync's
+    #   use case as it is currently impossible to invoke run_until_complete()
+    #   from a running loop anyway.
+    loop = asyncio.get_event_loop_policy().get_event_loop()
+    return loop.run_until_complete(coroutine(*args, **kwargs))
 
 
 def runs_sync(coroutine):
@@ -243,6 +250,7 @@ def runs_sync(coroutine):
     Returns:
         callable: A synchronous function.
     """
+
     @wraps(coroutine)
     def invoke(*args, **kwargs):
         return async_to_sync(coroutine, *args, **kwargs)

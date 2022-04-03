@@ -5,7 +5,7 @@ import pytest
 
 import falcon
 from falcon import testing
-
+from falcon.util.deprecation import DeprecatedWarning
 from _util import create_app  # NOQA
 
 
@@ -27,7 +27,6 @@ class XmlResource:
 
 
 class HeaderHelpersResource:
-
     def __init__(self, last_modified=None):
         if last_modified is not None:
             self.last_modified = last_modified
@@ -42,8 +41,15 @@ class HeaderHelpersResource:
         resp.text = '{}'
         resp.content_type = 'x-falcon/peregrine'
         resp.cache_control = [
-            'public', 'private', 'no-cache', 'no-store', 'must-revalidate',
-            'proxy-revalidate', 'max-age=3600', 's-maxage=60', 'no-transform'
+            'public',
+            'private',
+            'no-cache',
+            'no-store',
+            'must-revalidate',
+            'proxy-revalidate',
+            'max-age=3600',
+            's-maxage=60',
+            'no-transform',
         ]
 
         resp.etag = None  # Header not set yet, so should be a noop
@@ -88,21 +94,22 @@ class HeaderHelpersResource:
         self.resp = resp
 
     def on_post(self, req, resp):
-        resp.set_headers([
-            ('CONTENT-TYPE', 'x-swallow/unladen'),
-            ('X-Auth-Token', 'setecastronomy'),
-            ('X-AUTH-TOKEN', 'toomanysecrets')
-        ])
+        resp.set_headers(
+            [
+                ('CONTENT-TYPE', 'x-swallow/unladen'),
+                ('X-Auth-Token', 'setecastronomy'),
+                ('X-AUTH-TOKEN', 'toomanysecrets'),
+            ]
+        )
 
         self._overwrite_headers(req, resp)
 
         self.resp = resp
 
     def on_put(self, req, resp):
-        resp.set_headers({
-            'CONTENT-TYPE': 'x-swallow/unladen',
-            'X-aUTH-tOKEN': 'toomanysecrets'
-        })
+        resp.set_headers(
+            {'CONTENT-TYPE': 'x-swallow/unladen', 'X-aUTH-tOKEN': 'toomanysecrets'}
+        )
 
         self._overwrite_headers(req, resp)
 
@@ -124,27 +131,42 @@ class LocationHeaderUnicodeResource:
 
 
 class UnicodeHeaderResource:
+    def on_connect(self, req, resp):
+        # A way to CONNECT with people.
+        resp.set_header('X-Clinking-Beer-Mugs', '🍺')
 
     def on_get(self, req, resp):
-        resp.set_headers([
-            ('X-auTH-toKEN', 'toomanysecrets'),
-            ('Content-TYpE', 'application/json'),
-            ('X-symbOl', '@'),
-        ])
+        resp.set_headers(
+            [
+                ('X-auTH-toKEN', 'toomanysecrets'),
+                ('Content-TYpE', 'application/json'),
+                ('X-symbOl', '@'),
+            ]
+        )
+
+    def on_patch(self, req, resp):
+        resp.set_headers(
+            [
+                ('X-Thing', '\x01\x02\xff'),
+            ]
+        )
 
     def on_post(self, req, resp):
-        resp.set_headers([
-            ('X-symb\u00F6l', 'thing'),
-        ])
+        resp.set_headers(
+            [
+                ('X-symb\u00F6l', 'thing'),
+            ]
+        )
 
     def on_put(self, req, resp):
-        resp.set_headers([
-            ('X-Thing', '\u00FF'),
-        ])
+        resp.set_headers(
+            [
+                ('X-Thing', '\u00FF'),
+            ]
+        )
 
 
 class VaryHeaderResource:
-
     def __init__(self, vary):
         self.vary = vary
 
@@ -154,24 +176,31 @@ class VaryHeaderResource:
 
 
 class LinkHeaderResource:
-
     def __init__(self):
         self._links = []
 
+    def add_link(self, *args, **kwargs):
+        self._links.append(('add_link', args, kwargs))
+
     def append_link(self, *args, **kwargs):
-        self._links.append((args, kwargs))
+        self._links.append(('append_link', args, kwargs))
 
     def on_get(self, req, resp):
         resp.text = '{}'
 
-        append_link = None
-        for args, kwargs in self._links:
-            append_link = resp.append_link if append_link is resp.add_link else resp.add_link
-            append_link(*args, **kwargs)
+        for method_name, args, kwargs in self._links:
+            append_method = getattr(resp, method_name)
+            if method_name == 'append_link':
+                append_method(*args, **kwargs)
+            else:
+                with pytest.warns(
+                    DeprecatedWarning,
+                    match='Call to deprecated function add_link(...)',
+                ):
+                    append_method(*args, **kwargs)
 
 
 class AppendHeaderResource:
-
     def on_get(self, req, resp):
         resp.append_header('X-Things', 'thing-1')
         resp.append_header('X-THINGS', 'thing-2')
@@ -185,9 +214,15 @@ class AppendHeaderResource:
     def on_post(self, req, resp):
         resp.append_header('X-Things', 'thing-1')
 
-        c1 = 'ut_existing_user=1; expires=Mon, 14-Jan-2019 21:20:08 GMT; Max-Age=600; path=/'
+        c1 = (
+            'ut_existing_user=1; expires=Mon, 14-Jan-2019 21:20:08 GMT;'
+            ' Max-Age=600; path=/'
+        )
         resp.append_header('Set-Cookie', c1)
-        c2 = 'partner_source=deleted; expires=Thu, 01-Jan-1970 00:00:01 GMT; Max-Age=0'
+        c2 = (
+            'partner_source=deleted; expires=Thu, 01-Jan-1970 00:00:01 GMT;'
+            ' Max-Age=0'
+        )
         resp.append_header('seT-cookie', c2)
 
 
@@ -219,8 +254,17 @@ class DownloadableResource:
         resp.downloadable_as = self.filename
 
 
-class ContentLengthHeaderResource:
+class ViewableResource:
+    def __init__(self, filename):
+        self.filename = filename
 
+    def on_get(self, req, resp):
+        resp.text = 'Hello, World!\n'
+        resp.content_type = falcon.MEDIA_TEXT
+        resp.viewable_as = self.filename
+
+
+class ContentLengthHeaderResource:
     def __init__(self, content_length, body=None, data=None):
         self._content_length = content_length
         self._body = body
@@ -240,7 +284,6 @@ class ContentLengthHeaderResource:
 
 
 class ExpiresHeaderResource:
-
     def __init__(self, expires):
         self._expires = expires
 
@@ -267,8 +310,15 @@ class CustomHeadersResource:
         resp.set_headers(CustomHeadersNotCallable())
 
 
-class TestHeaders:
+class HeadersDebugResource:
+    def on_get(self, req, resp):
+        resp.media = {key.lower(): value for key, value in req.headers.items()}
 
+    def on_get_header(self, req, resp, header):
+        resp.media = {header.lower(): req.get_header(header)}
+
+
+class TestHeaders:
     def test_content_length(self, client):
         resource = testing.SimpleTestResource(body=SAMPLE_BODY)
         client.app.add_route('/', resource)
@@ -368,7 +418,7 @@ class TestHeaders:
         client.app.add_route('/', resource)
         request_headers = {
             'X-Auth-Token': 'Setec Astronomy',
-            'Content-Type': 'text/plain; charset=utf-8'
+            'Content-Type': 'text/plain; charset=utf-8',
         }
         client.simulate_get(headers=request_headers)
 
@@ -389,7 +439,7 @@ class TestHeaders:
     def test_headers_as_list(self, client):
         headers = [
             ('Client-ID', '692ba466-74bb-11e3-bf3f-7567c531c7ca'),
-            ('Accept', 'audio/*; q=0.2, audio/basic')
+            ('Accept', 'audio/*; q=0.2, audio/basic'),
         ]
 
         # Unit test
@@ -411,12 +461,15 @@ class TestHeaders:
         self._check_header(client, resource, 'Content-Type', falcon.DEFAULT_MEDIA_TYPE)
 
     @pytest.mark.parametrize('asgi', [True, False])
-    @pytest.mark.parametrize('content_type,body', [
-        ('text/plain; charset=UTF-8', 'Hello Unicode! \U0001F638'),
-        # NOTE(kgriffs): This only works because the client defaults to
-        # ISO-8859-1 IFF the media type is 'text'.
-        ('text/plain', 'Hello ISO-8859-1!'),
-    ])
+    @pytest.mark.parametrize(
+        'content_type,body',
+        [
+            ('text/plain; charset=UTF-8', 'Hello Unicode! \U0001F638'),
+            # NOTE(kgriffs): This only works because the client defaults to
+            # ISO-8859-1 IFF the media type is 'text'.
+            ('text/plain', 'Hello ISO-8859-1!'),
+        ],
+    )
     def test_override_default_media_type(self, asgi, client, content_type, body):
         client.app = create_app(asgi=asgi, media_type=content_type)
         client.app.add_route('/', testing.SimpleTestResource(body=body))
@@ -449,11 +502,16 @@ class TestHeaders:
         content_type = 'x-falcon/peregrine'
         assert resp.content_type == content_type
         assert result.headers['Content-Type'] == content_type
-        assert result.headers['Content-Disposition'] == 'attachment; filename="Some File.zip"'
+        assert (
+            result.headers['Content-Disposition']
+            == 'attachment; filename="Some File.zip"'
+        )
 
-        cache_control = ('public, private, no-cache, no-store, '
-                         'must-revalidate, proxy-revalidate, max-age=3600, '
-                         's-maxage=60, no-transform')
+        cache_control = (
+            'public, private, no-cache, no-store, '
+            'must-revalidate, proxy-revalidate, max-age=3600, '
+            's-maxage=60, no-transform'
+        )
 
         assert resp.cache_control == cache_control
         assert result.headers['Cache-Control'] == cache_control
@@ -496,39 +554,87 @@ class TestHeaders:
             hist[name] += 1
             assert 1 == hist[name]
 
-    @pytest.mark.parametrize('filename,expected', [
-        ('report.csv', 'attachment; filename="report.csv"'),
-        ('Hello World.txt', 'attachment; filename="Hello World.txt"'),
-        (
-            'Bold Digit 𝟏.txt',
-            'attachment; filename=Bold_Digit_1.txt; '
-            "filename*=UTF-8''Bold%20Digit%20%F0%9D%9F%8F.txt",
-        ),
-        (
-            'Ångström unit.txt',
-            'attachment; filename=A_ngstro_m_unit.txt; '
-            "filename*=UTF-8''%C3%85ngstr%C3%B6m%20unit.txt",
-        ),
-        ('one,two.txt', 'attachment; filename="one,two.txt"'),
-        (
-            '½,²⁄₂.txt',
-            'attachment; filename=1_2_2_2.txt; '
-            "filename*=UTF-8''%C2%BD%2C%C2%B2%E2%81%84%E2%82%82.txt"
-        ),
-        ('[foo] @ bar.txt', 'attachment; filename="[foo] @ bar.txt"'),
-        (
-            '[fòó]@bàr,bäz.txt',
-            'attachment; filename=_fo_o___ba_r_ba_z.txt; '
-            "filename*=UTF-8''%5Bf%C3%B2%C3%B3%5D%40b%C3%A0r%2Cb%C3%A4z.txt"
-        ),
-    ])
-    def test_content_disposition_header(self, client, filename, expected):
+    @pytest.mark.parametrize(
+        'filename,expected',
+        [
+            ('report.csv', 'attachment; filename="report.csv"'),
+            ('Hello World.txt', 'attachment; filename="Hello World.txt"'),
+            (
+                'Bold Digit 𝟏.txt',
+                'attachment; filename=Bold_Digit_1.txt; '
+                "filename*=UTF-8''Bold%20Digit%20%F0%9D%9F%8F.txt",
+            ),
+            (
+                'Ångström unit.txt',
+                'attachment; filename=A_ngstro_m_unit.txt; '
+                "filename*=UTF-8''%C3%85ngstr%C3%B6m%20unit.txt",
+            ),
+            ('one,two.txt', 'attachment; filename="one,two.txt"'),
+            (
+                '½,²⁄₂.txt',
+                'attachment; filename=1_2_2_2.txt; '
+                "filename*=UTF-8''%C2%BD%2C%C2%B2%E2%81%84%E2%82%82.txt",
+            ),
+            ('[foo] @ bar.txt', 'attachment; filename="[foo] @ bar.txt"'),
+            (
+                '[fòó]@bàr,bäz.txt',
+                'attachment; filename=_fo_o___ba_r_ba_z.txt; '
+                "filename*=UTF-8''%5Bf%C3%B2%C3%B3%5D%40b%C3%A0r%2Cb%C3%A4z.txt",
+            ),
+        ],
+    )
+    def test_content_disposition_attachment_header(self, client, filename, expected):
         resource = DownloadableResource(filename)
         client.app.add_route('/', resource)
         resp = client.simulate_get()
 
         assert resp.status_code == 200
         assert resp.headers['Content-Disposition'] == expected
+
+    @pytest.mark.parametrize(
+        'filename,expected',
+        [
+            ('report.csv', 'inline; filename="report.csv"'),
+            ('Hello World.txt', 'inline; filename="Hello World.txt"'),
+            (
+                'Bold Digit 𝟏.txt',
+                'inline; filename=Bold_Digit_1.txt; '
+                "filename*=UTF-8''Bold%20Digit%20%F0%9D%9F%8F.txt",
+            ),
+        ],
+    )
+    def test_content_disposition_inline_header(self, client, filename, expected):
+        resource = ViewableResource(filename)
+        client.app.add_route('/', resource)
+        resp = client.simulate_get()
+
+        assert resp.status_code == 200
+        assert resp.headers['Content-Disposition'] == expected
+
+    def test_request_latin1_headers(self, client):
+        client.app.add_route('/headers', HeadersDebugResource())
+        client.app.add_route(
+            '/headers/{header}', HeadersDebugResource(), suffix='header'
+        )
+
+        headers = {
+            'User-Agent': 'Mosaic/0.9',
+            'X-Latin1-Header': 'Förmånsrätt',
+            'X-Size': 'groß',
+        }
+        resp = client.simulate_get('/headers', headers=headers)
+        assert resp.status_code == 200
+        assert resp.json == {
+            'host': 'falconframework.org',
+            'user-agent': 'Mosaic/0.9',
+            'x-latin1-header': 'Förmånsrätt',
+            'x-size': 'groß',
+        }
+
+        resp = client.simulate_get('/headers/X-Latin1-Header', headers=headers)
+        assert resp.json == {'x-latin1-header': 'Förmånsrätt'}
+        resp = client.simulate_get('/headers/X-Size', headers=headers)
+        assert resp.json == {'x-size': 'groß'}
 
     def test_unicode_location_headers(self, client):
         client.app.add_route('/', LocationHeaderUnicodeResource())
@@ -551,28 +657,42 @@ class TestHeaders:
         assert result.headers['X-Auth-Token'] == 'toomanysecrets'
         assert result.headers['X-Symbol'] == '@'
 
-    @pytest.mark.parametrize('method', ['POST', 'PUT'])
+    @pytest.mark.parametrize('method', ['CONNECT', 'PATCH', 'POST', 'PUT'])
     def test_unicode_headers_contain_non_ascii(self, method, client):
         app = client.app
         app.add_route('/', UnicodeHeaderResource())
 
-        if app._ASGI:
-            # NOTE(kgriffs): Unlike PEP-3333, the ASGI spec requires the
-            #   app to encode header names and values to a byte string. This
-            #   gives Falcon the opportunity to verify the character set
-            #   in the process and raise an error as appropriate.
-            error_type, pattern = ValueError, 'ASCII'
-        elif method == 'PUT':
-            pytest.skip('The wsgiref validator does not check header values.')
-        else:
-            # NOTE(kgriffs): The wsgiref validator that is integrated into
-            #   Falcon's testing framework will catch this. However, Falcon
-            #   itself does not do the check to avoid potential overhead
-            #   in a production deployment.
-            error_type, pattern = AssertionError, 'Bad header name'
+        if method == 'CONNECT':
+            # NOTE(vytas): Response headers cannot be encoded to Latin-1.
+            if not app._ASGI:
+                pytest.skip('wsgiref.validate sees no evil here')
 
-        with pytest.raises(error_type, match=pattern):
-            client.simulate_request(method, '/')
+            # NOTE(vytas): Shouldn't this result in an HTTP 500 instead of
+            #   bubbling up a ValueError to the app server?
+            with pytest.raises(ValueError):
+                client.simulate_request(method, '/')
+        elif method == 'PUT':
+            # NOTE(vytas): Latin-1 header values are allowed.
+            resp = client.simulate_request(method, '/')
+            assert resp.headers
+        else:
+            if app._ASGI:
+                # NOTE(kgriffs): Unlike PEP-3333, the ASGI spec requires the
+                #   app to encode header names and values to a byte string. This
+                #   gives Falcon the opportunity to verify the character set
+                #   in the process and raise an error as appropriate.
+                error_type = ValueError
+            else:
+                # NOTE(kgriffs): The wsgiref validator that is integrated into
+                #   Falcon's testing framework will catch this. However, Falcon
+                #   itself does not do the check to avoid potential overhead
+                #   in a production deployment.
+                error_type = AssertionError
+
+            pattern = 'Bad header name' if method == 'POST' else 'Bad header value'
+
+            with pytest.raises(error_type, match=pattern):
+                client.simulate_request(method, '/')
 
     def test_response_set_and_get_header(self, client):
         resource = HeaderHelpersResource()
@@ -597,7 +717,9 @@ class TestHeaders:
             assert resource.resp.get_header('X-Header-Not-Set', 'Yes') == 'Yes'
             assert resource.resp.get_header('X-Header-Not-Set', default='') == ''
 
-            value = resource.resp.get_header('X-Header-Not-Set', default=content_type_alt)
+            value = resource.resp.get_header(
+                'X-Header-Not-Set', default=content_type_alt
+            )
             assert value == content_type_alt
 
             # Check for duplicate headers
@@ -627,7 +749,10 @@ class TestHeaders:
     def test_set_cookie_disallowed(self, client, header_name, error_type):
         resp = falcon.Response()
 
-        cookie = 'ut_existing_user=1; expires=Mon, 14-Jan-2019 21:20:08 GMT; Max-Age=600; path=/'
+        cookie = (
+            'ut_existing_user=1; expires=Mon, 14-Jan-2019 21:20:08 GMT; '
+            'Max-Age=600; path=/'
+        )
 
         with pytest.raises(error_type):
             resp.set_header(header_name, cookie)
@@ -646,10 +771,13 @@ class TestHeaders:
         result = client.simulate_get()
         assert result.headers['vary'] == '*'
 
-    @pytest.mark.parametrize('vary,expected_value', [
-        (['accept-encoding'], 'accept-encoding'),
-        (('accept-encoding', 'x-auth-token'), 'accept-encoding, x-auth-token'),
-    ])
+    @pytest.mark.parametrize(
+        'vary,expected_value',
+        [
+            (['accept-encoding'], 'accept-encoding'),
+            (('accept-encoding', 'x-auth-token'), 'accept-encoding, x-auth-token'),
+        ],
+    )
     def test_vary_header(self, client, vary, expected_value):
         resource = VaryHeaderResource(vary)
         self._check_header(client, resource, 'Vary', expected_value)
@@ -685,64 +813,63 @@ class TestHeaders:
 
     def test_append_link_multiple(self, client):
         expected_value = (
-            '</things/2842>; rel=next, ' +
-            '<http://%C3%A7runchy/bacon>; rel=contents, ' +
-            '<ab%C3%A7>; rel="http://example.com/ext-type", ' +
-            '<ab%C3%A7>; rel="http://example.com/%C3%A7runchy", ' +
-            '<ab%C3%A7>; rel="https://example.com/too-%C3%A7runchy", ' +
-            '</alt-thing>; rel="alternate http://example.com/%C3%A7runchy"')
+            '</things/2842>; rel=next, '
+            + '<http://%C3%A7runchy/bacon>; rel=contents, '
+            + '<ab%C3%A7>; rel="http://example.com/ext-type", '
+            + '<ab%C3%A7>; rel="http://example.com/%C3%A7runchy", '
+            + '<ab%C3%A7>; rel="https://example.com/too-%C3%A7runchy", '
+            + '</alt-thing>; rel="alternate http://example.com/%C3%A7runchy"'
+        )
 
         uri = 'ab\u00e7'
 
         resource = LinkHeaderResource()
-        resource.append_link('/things/2842', 'next')
+        resource.add_link('/things/2842', 'next')
         resource.append_link('http://\u00e7runchy/bacon', 'contents')
         resource.append_link(uri, 'http://example.com/ext-type')
-        resource.append_link(uri, 'http://example.com/\u00e7runchy')
+        resource.add_link(uri, 'http://example.com/\u00e7runchy')
         resource.append_link(uri, 'https://example.com/too-\u00e7runchy')
-        resource.append_link('/alt-thing',
-                             'alternate http://example.com/\u00e7runchy')
+        resource.add_link('/alt-thing', 'alternate http://example.com/\u00e7runchy')
 
         self._check_link_header(client, resource, expected_value)
 
     def test_append_link_with_title(self, client):
-        expected_value = ('</related/thing>; rel=item; '
-                          'title="A related thing"')
+        expected_value = '</related/thing>; rel=item; title="A related thing"'
 
         resource = LinkHeaderResource()
-        resource.append_link('/related/thing', 'item',
-                             title='A related thing')
+        resource.append_link('/related/thing', 'item', title='A related thing')
 
         self._check_link_header(client, resource, expected_value)
 
     def test_append_link_with_title_star(self, client):
-        expected_value = ('</related/thing>; rel=item; '
-                          "title*=UTF-8''A%20related%20thing, "
-                          '</%C3%A7runchy/thing>; rel=item; '
-                          "title*=UTF-8'en'A%20%C3%A7runchy%20thing")
+        expected_value = (
+            '</related/thing>; rel=item; '
+            "title*=UTF-8''A%20related%20thing, "
+            '</%C3%A7runchy/thing>; rel=item; '
+            "title*=UTF-8'en'A%20%C3%A7runchy%20thing"
+        )
 
         resource = LinkHeaderResource()
-        resource.append_link('/related/thing', 'item',
-                             title_star=('', 'A related thing'))
+        resource.append_link(
+            '/related/thing', 'item', title_star=('', 'A related thing')
+        )
 
-        resource.append_link('/\u00e7runchy/thing', 'item',
-                             title_star=('en', 'A \u00e7runchy thing'))
+        resource.append_link(
+            '/\u00e7runchy/thing', 'item', title_star=('en', 'A \u00e7runchy thing')
+        )
 
         self._check_link_header(client, resource, expected_value)
 
     def test_append_link_with_anchor(self, client):
-        expected_value = ('</related/thing>; rel=item; '
-                          'anchor="/some%20thing/or-other"')
+        expected_value = '</related/thing>; rel=item; anchor="/some%20thing/or-other"'
 
         resource = LinkHeaderResource()
-        resource.append_link('/related/thing', 'item',
-                             anchor='/some thing/or-other')
+        resource.append_link('/related/thing', 'item', anchor='/some thing/or-other')
 
         self._check_link_header(client, resource, expected_value)
 
     def test_append_link_with_hreflang(self, client):
-        expected_value = ('</related/thing>; rel=about; '
-                          'hreflang=en')
+        expected_value = '</related/thing>; rel=about; hreflang=en'
 
         resource = LinkHeaderResource()
         resource.append_link('/related/thing', 'about', hreflang='en')
@@ -750,70 +877,80 @@ class TestHeaders:
         self._check_link_header(client, resource, expected_value)
 
     def test_append_link_with_hreflang_multi(self, client):
-        expected_value = ('</related/thing>; rel=about; '
-                          'hreflang=en-GB; hreflang=de')
+        expected_value = '</related/thing>; rel=about; hreflang=en-GB; hreflang=de'
 
         resource = LinkHeaderResource()
-        resource.append_link('/related/thing', 'about',
-                             hreflang=('en-GB', 'de'))
+        resource.append_link('/related/thing', 'about', hreflang=('en-GB', 'de'))
 
         self._check_link_header(client, resource, expected_value)
 
     def test_append_link_with_type_hint(self, client):
-        expected_value = ('</related/thing>; rel=alternate; '
-                          'type="video/mp4; codecs=avc1.640028"')
+        expected_value = (
+            '</related/thing>; rel=alternate; type="video/mp4; codecs=avc1.640028"'
+        )
 
         resource = LinkHeaderResource()
-        resource.append_link('/related/thing', 'alternate',
-                             type_hint='video/mp4; codecs=avc1.640028')
+        resource.append_link(
+            '/related/thing', 'alternate', type_hint='video/mp4; codecs=avc1.640028'
+        )
 
         self._check_link_header(client, resource, expected_value)
 
     def test_append_link_complex(self, client):
-        expected_value = ('</related/thing>; rel=alternate; '
-                          'title="A related thing"; '
-                          "title*=UTF-8'en'A%20%C3%A7runchy%20thing; "
-                          'type="application/json"; '
-                          'hreflang=en-GB; hreflang=de')
+        expected_value = (
+            '</related/thing>; rel=alternate; '
+            'title="A related thing"; '
+            "title*=UTF-8'en'A%20%C3%A7runchy%20thing; "
+            'type="application/json"; '
+            'hreflang=en-GB; hreflang=de'
+        )
 
         resource = LinkHeaderResource()
-        resource.append_link('/related/thing', 'alternate',
-                             title='A related thing',
-                             hreflang=('en-GB', 'de'),
-                             type_hint='application/json',
-                             title_star=('en', 'A \u00e7runchy thing'))
+        resource.append_link(
+            '/related/thing',
+            'alternate',
+            title='A related thing',
+            hreflang=('en-GB', 'de'),
+            type_hint='application/json',
+            title_star=('en', 'A \u00e7runchy thing'),
+        )
 
         self._check_link_header(client, resource, expected_value)
 
-    @pytest.mark.parametrize('crossorigin,expected_value', [
-        (None, '</related/thing>; rel=alternate'),
-        ('anonymous', '</related/thing>; rel=alternate; crossorigin'),
-        ('Anonymous', '</related/thing>; rel=alternate; crossorigin'),
-        ('AnOnYmOUs', '</related/thing>; rel=alternate; crossorigin'),
-        (
-            'Use-Credentials',
-            '</related/thing>; rel=alternate; crossorigin="use-credentials"',
-        ),
-        (
-            'use-credentials',
-            '</related/thing>; rel=alternate; crossorigin="use-credentials"',
-        ),
-    ])
+    @pytest.mark.parametrize(
+        'crossorigin,expected_value',
+        [
+            (None, '</related/thing>; rel=alternate'),
+            ('anonymous', '</related/thing>; rel=alternate; crossorigin'),
+            ('Anonymous', '</related/thing>; rel=alternate; crossorigin'),
+            ('AnOnYmOUs', '</related/thing>; rel=alternate; crossorigin'),
+            (
+                'Use-Credentials',
+                '</related/thing>; rel=alternate; crossorigin="use-credentials"',
+            ),
+            (
+                'use-credentials',
+                '</related/thing>; rel=alternate; crossorigin="use-credentials"',
+            ),
+        ],
+    )
     def test_append_link_crossorigin(self, client, crossorigin, expected_value):
         resource = LinkHeaderResource()
-        resource.append_link('/related/thing', 'alternate',
-                             crossorigin=crossorigin)
+        resource.append_link('/related/thing', 'alternate', crossorigin=crossorigin)
 
         self._check_link_header(client, resource, expected_value)
 
-    @pytest.mark.parametrize('crossorigin', [
-        '*',
-        'Allow-all',
-        'Lax',
-        'MUST-REVALIDATE',
-        'Strict',
-        'deny',
-    ])
+    @pytest.mark.parametrize(
+        'crossorigin',
+        [
+            '*',
+            'Allow-all',
+            'Lax',
+            'MUST-REVALIDATE',
+            'Strict',
+            'deny',
+        ],
+    )
     def test_append_link_invalid_crossorigin_value(self, crossorigin):
         resp = falcon.Response()
 
@@ -845,15 +982,16 @@ class TestHeaders:
         resource = HeaderHelpersResource()
         client.app.add_route('/', resource)
 
-        client.simulate_request(headers=[
-            # Singletone header; last one wins
-            ('Content-Type', 'text/plain'),
-            ('Content-Type', 'image/jpeg'),
-
-            # Should be concatenated
-            ('X-Thing', '1'),
-            ('X-Thing', '2'),
-        ])
+        client.simulate_request(
+            headers=[
+                # Singletone header; last one wins
+                ('Content-Type', 'text/plain'),
+                ('Content-Type', 'image/jpeg'),
+                # Should be concatenated
+                ('X-Thing', '1'),
+                ('X-Thing', '2'),
+            ]
+        )
 
         assert resource.req.content_type == 'image/jpeg'
         assert resource.req.get_header('X-Thing') == '1,2'

@@ -26,7 +26,7 @@ defined below.
 
         .. code:: python
 
-            class ExampleComponent:
+            class ExampleMiddleware:
                 def process_request(self, req, resp):
                     """Process the request before routing it.
 
@@ -76,6 +76,11 @@ defined below.
                             otherwise False.
                     """
 
+            # A middleware instance can then be added to the Falcon app init
+            from falcon import App
+
+            app = App(middleware=[ExampleMiddleware()])
+
     .. tab:: ASGI
 
         The ASGI middleware interface is similar to WSGI, but also supports the
@@ -85,7 +90,7 @@ defined below.
 
         .. code:: python
 
-            class ExampleComponent:
+            class ExampleMiddleware:
                 async def process_startup(self, scope, event):
                     """Process the ASGI lifespan startup event.
 
@@ -209,6 +214,11 @@ defined below.
                             method as keyword arguments.
                     """
 
+            # A middleware instance can then be added to the Falcon app init
+            from falcon.asgi import App
+
+            app = App(middleware=[ExampleMiddleware()])
+
 It is also possible to implement a middleware component that is compatible
 with both ASGI and WSGI apps. This is done by applying an `*_async` postfix
 to distinguish the two different versions of each middleware method, as in
@@ -216,7 +226,7 @@ the following example:
 
 .. code:: python
 
-    class ExampleComponent:
+    class ExampleMiddleware:
         def process_request(self, req, resp):
             """Process WSGI request using synchronous logic.
 

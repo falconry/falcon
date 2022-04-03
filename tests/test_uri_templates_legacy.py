@@ -2,10 +2,11 @@ import pytest
 
 import falcon
 from falcon import routing
+from falcon.util.deprecation import DeprecatedWarning
 
 
+@pytest.mark.filterwarnings('ignore:Call to deprecated function compile_uri_template')
 class TestUriTemplates:
-
     @pytest.mark.parametrize('value', (42, falcon.App))
     def test_string_type_required(self, value):
         with pytest.raises(TypeError):
@@ -30,7 +31,9 @@ class TestUriTemplates:
         assert result
         assert not result.groupdict()
 
-    @pytest.mark.parametrize('path', ('/hello', '/hello/world', '/hi/there/how/are/you'))
+    @pytest.mark.parametrize(
+        'path', ('/hello', '/hello/world', '/hi/there/how/are/you')
+    )
     def test_no_fields(self, path):
         fields, pattern = routing.compile_uri_template(path)
         assert not fields
@@ -106,3 +109,10 @@ class TestUriTemplates:
         result = pattern.match('/one/{1b}/x/3')
         assert result
         assert result.groupdict() == {'a': 'one', 'c': '3'}
+
+    def test_deprecated_warning(self):
+        with pytest.warns(
+            DeprecatedWarning,
+            match='Call to deprecated function compile_uri_template().',
+        ):
+            routing.compile_uri_template('/')

@@ -5,10 +5,7 @@ from _util import create_req  # NOQA
 
 def test_no_forwarded_headers(asgi):
     req = create_req(
-        asgi,
-        host='example.com',
-        path='/languages',
-        root_path='backoffice'
+        asgi, host='example.com', path='/languages', root_path='backoffice'
     )
 
     assert req.forwarded is None
@@ -19,11 +16,7 @@ def test_no_forwarded_headers(asgi):
 
 def test_no_forwarded_headers_with_port(asgi):
     req = create_req(
-        asgi,
-        host='example.com',
-        port=8000,
-        path='/languages',
-        root_path='backoffice'
+        asgi, host='example.com', port=8000, path='/languages', root_path='backoffice'
     )
 
     assert req.forwarded is None
@@ -37,7 +30,7 @@ def test_x_forwarded_host(asgi):
         asgi,
         host='suchproxy.suchtesting.com',
         path='/languages',
-        headers={'X-Forwarded-Host': 'something.org'}
+        headers={'X-Forwarded-Host': 'something.org'},
     )
 
     assert req.forwarded is None
@@ -53,7 +46,7 @@ def test_x_forwarded_host_with_port(asgi):
         asgi,
         host='suchproxy.suchtesting.com',
         path='/languages',
-        headers={'X-Forwarded-Host': 'something.org:8000'}
+        headers={'X-Forwarded-Host': 'something.org:8000'},
     )
 
     assert req.forwarded is None
@@ -69,7 +62,7 @@ def test_x_forwarded_proto(asgi):
         asgi,
         host='example.org',
         path='/languages',
-        headers={'X-Forwarded-Proto': 'HTTPS'}
+        headers={'X-Forwarded-Proto': 'HTTPS'},
     )
 
     assert req.forwarded is None
@@ -84,9 +77,7 @@ def test_forwarded_host(asgi):
         asgi,
         host='suchproxy02.suchtesting.com',
         path='/languages',
-        headers={
-            'Forwarded': 'host=something.org , host=suchproxy01.suchtesting.com'
-        }
+        headers={'Forwarded': 'host=something.org , host=suchproxy01.suchtesting.com'},
     )
 
     assert req.forwarded is not None
@@ -114,7 +105,7 @@ def test_forwarded_multiple_params(asgi):
                 'host=something.org;proto=hTTps;ignore=me;for=108.166.30.185, '
                 'by=203.0.113.43;host=suchproxy01.suchtesting.com;proto=httP'
             )
-        }
+        },
     )
 
     assert req.forwarded is not None
@@ -142,9 +133,7 @@ def test_forwarded_missing_first_hop_host(asgi):
         host='suchproxy02.suchtesting.com',
         path='/languages',
         root_path='doge',
-        headers={
-            'Forwarded': 'for=108.166.30.185,host=suchproxy01.suchtesting.com'
-        }
+        headers={'Forwarded': 'for=108.166.30.185,host=suchproxy01.suchtesting.com'},
     )
 
     assert req.forwarded[0].host is None
@@ -166,22 +155,23 @@ def test_forwarded_quote_escaping(asgi):
         host='suchproxy02.suchtesting.com',
         path='/languages',
         root_path='doge',
-        headers={
-            'Forwarded': 'for="1\\.2\\.3\\.4";some="extra,\\"info\\""'
-        }
+        headers={'Forwarded': 'for="1\\.2\\.3\\.4";some="extra,\\"info\\""'},
     )
 
     assert req.forwarded[0].host is None
     assert req.forwarded[0].src == '1.2.3.4'
 
 
-@pytest.mark.parametrize('forwarded, expected_dest', [
-    ('for=1.2.3.4;by="', None),
-    ('for=1.2.3.4;by=4\\.3.2.1thing=blah', '4'),
-    ('for=1.2.3.4;by="\\4.3.2.1"thing=blah', '4.3.2.1'),
-    ('for=1.2.3.4;by="4.3.2.\\1"thing="blah"', '4.3.2.1'),
-    ('for=1.2.3.4;by="4.3.\\2\\.1" thing="blah"', '4.3.2.1'),
-])
+@pytest.mark.parametrize(
+    'forwarded, expected_dest',
+    [
+        ('for=1.2.3.4;by="', None),
+        ('for=1.2.3.4;by=4\\.3.2.1thing=blah', '4'),
+        ('for=1.2.3.4;by="\\4.3.2.1"thing=blah', '4.3.2.1'),
+        ('for=1.2.3.4;by="4.3.2.\\1"thing="blah"', '4.3.2.1'),
+        ('for=1.2.3.4;by="4.3.\\2\\.1" thing="blah"', '4.3.2.1'),
+    ],
+)
 def test_escape_malformed_requests(forwarded, expected_dest, asgi):
 
     req = create_req(
@@ -189,9 +179,7 @@ def test_escape_malformed_requests(forwarded, expected_dest, asgi):
         host='suchproxy02.suchtesting.com',
         path='/languages',
         root_path='doge',
-        headers={
-            'Forwarded': forwarded
-        }
+        headers={'Forwarded': forwarded},
     )
 
     assert len(req.forwarded) == 1

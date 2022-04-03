@@ -26,7 +26,8 @@ def test_sse_broadcast(browser, clear_log):
     browser.type('#input1', '/all Zombie apocalypse averted (for now)')
     browser.slow_click('#button1')
     browser.assert_text(
-        '[WS1] Zombie apocalypse averted (for now)', 'div.sse', timeout=5)
+        '[WS1] Zombie apocalypse averted (for now)', 'div.sse', timeout=5
+    )
     clear_log()
 
     browser.type('#input1', '/quit')

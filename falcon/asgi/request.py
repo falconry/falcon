@@ -27,9 +27,7 @@ from .stream import BoundedStream
 
 __all__ = ['Request']
 
-_SINGLETON_HEADERS_BYTESTR = frozenset([
-    h.encode() for h in SINGLETON_HEADERS
-])
+_SINGLETON_HEADERS_BYTESTR = frozenset([h.encode() for h in SINGLETON_HEADERS])
 
 
 class Request(request.Request):
@@ -395,7 +393,10 @@ class Request(request.Request):
             # NOTE(kgriffs): There are no standard request headers that
             #   allow multiple instances to appear in the request while also
             #   disallowing list syntax.
-            if header_name not in req_headers or header_name in _SINGLETON_HEADERS_BYTESTR:
+            if (
+                header_name not in req_headers
+                or header_name in _SINGLETON_HEADERS_BYTESTR
+            ):
                 req_headers[header_name] = header_value
             else:
                 req_headers[header_name] += b',' + header_value
@@ -428,8 +429,11 @@ class Request(request.Request):
         #   as was allowed for WSGI.
         path = scope['path'] or '/'
 
-        if (self.options.strip_url_path_trailing_slash and
-                len(path) != 1 and path.endswith('/')):
+        if (
+            self.options.strip_url_path_trailing_slash
+            and len(path) != 1
+            and path.endswith('/')
+        ):
             self.path = path[:-1]
         else:
             self.path = path
@@ -456,17 +460,21 @@ class Request(request.Request):
         # self._cached_uri = None
 
         if self.method == 'GET':
+            # NOTE(vytas): We do not really expect the Content-Type to be
+            #   non-ASCII, however we assume ISO-8859-1 here for maximum
+            #   compatibility with WSGI.
+
             # PERF(kgriffs): Normally we expect no Content-Type header, so
             #   use this pattern which is a little bit faster than dict.get()
             if b'content-type' in req_headers:
-                self.content_type = req_headers[b'content-type'].decode()
+                self.content_type = req_headers[b'content-type'].decode('latin1')
             else:
                 self.content_type = None
         else:
             # PERF(kgriffs): This is the most performant pattern when we expect
             #   the key to be present most of the time.
             try:
-                self.content_type = req_headers[b'content-type'].decode()
+                self.content_type = req_headers[b'content-type'].decode('latin1')
             except KeyError:
                 self.content_type = None
 
@@ -516,29 +524,34 @@ class Request(request.Request):
         # NOTE(kgriffs): Per RFC, a missing accept header is
         # equivalent to '*/*'
         try:
-            return self._asgi_headers[b'accept'].decode() or '*/*'
+            return self._asgi_headers[b'accept'].decode('latin1') or '*/*'
         except KeyError:
             return '*/*'
 
     @property
     def content_length(self):
         try:
-            value = self._asgi_headers[b'content-length'].decode()
+            value = self._asgi_headers[b'content-length']
         except KeyError:
             return None
 
-        # NOTE(kgriffs): Normalize an empty value to behave as if
-        # the header were not included; wsgiref, at least, inserts
-        # an empty CONTENT_LENGTH value if the request does not
-        # set the header. Gunicorn and uWSGI do not do this, but
-        # others might if they are trying to match wsgiref's
-        # behavior too closely.
-        if not value:
-            return None
-
         try:
+            # PERF(vytas): int() also works with a bytestring argument.
             value_as_int = int(value)
         except ValueError:
+            # PERF(vytas): Check for an empty value in the except clause,
+            #   because we do not expect ASGI servers to inject any headers
+            #   that the client did not provide.
+
+            # NOTE(kgriffs): Normalize an empty value to behave as if
+            # the header were not included; wsgiref, at least, inserts
+            # an empty CONTENT_LENGTH value if the request does not
+            # set the header. Gunicorn and uWSGI do not do this, but
+            # others might if they are trying to match wsgiref's
+            # behavior too closely.
+            if not value:
+                return None
+
             msg = 'The value of the header must be a number.'
             raise errors.HTTPInvalidHeader(msg, 'Content-Length')
 
@@ -559,7 +572,7 @@ class Request(request.Request):
             self._stream = BoundedStream(
                 self._receive,
                 first_event=self._first_event,
-                content_length=self.content_length
+                content_length=self.content_length,
             )
 
         return self._stream
@@ -612,7 +625,9 @@ class Request(request.Request):
             # first. Note also that the indexing operator is
             # slightly faster than using get().
             try:
-                scheme = self._asgi_headers[b'x-forwarded-proto'].decode().lower()
+                scheme = (
+                    self._asgi_headers[b'x-forwarded-proto'].decode('latin1').lower()
+                )
             except KeyError:
                 scheme = self.scheme
 
@@ -624,7 +639,7 @@ class Request(request.Request):
             # NOTE(kgriffs): Prefer the host header; the web server
             # isn't supposed to mess with it, so it should be what
             # the client actually sent.
-            host_header = self._asgi_headers[b'host'].decode()
+            host_header = self._asgi_headers[b'host'].decode('latin1')
             host, __ = parse_host(host_header)
         except KeyError:
             host, __ = self._asgi_server
@@ -647,7 +662,7 @@ class Request(request.Request):
             # just go for it without wasting time checking it
             # first.
             try:
-                host = self._asgi_headers[b'x-forwarded-host'].decode()
+                host = self._asgi_headers[b'x-forwarded-host'].decode('latin1')
             except KeyError:
                 host = self.netloc
 
@@ -682,10 +697,10 @@ class Request(request.Request):
                         host, __ = parse_host(hop.src)
                         self._cached_access_route.append(host)
             elif b'x-forwarded-for' in headers:
-                addresses = headers[b'x-forwarded-for'].decode().split(',')
+                addresses = headers[b'x-forwarded-for'].decode('latin1').split(',')
                 self._cached_access_route = [ip.strip() for ip in addresses]
             elif b'x-real-ip' in headers:
-                self._cached_access_route = [headers[b'x-real-ip'].decode()]
+                self._cached_access_route = [headers[b'x-real-ip'].decode('latin1')]
 
             if self._cached_access_route:
                 if self._cached_access_route[-1] != client:
@@ -703,7 +718,7 @@ class Request(request.Request):
     @property
     def port(self):
         try:
-            host_header = self._asgi_headers[b'host'].decode()
+            host_header = self._asgi_headers[b'host'].decode('latin1')
             default_port = 443 if self._secure_scheme else 80
             __, port = parse_host(host_header, default_port=default_port)
         except KeyError:
@@ -716,7 +731,7 @@ class Request(request.Request):
         # PERF(kgriffs): try..except is faster than get() when we
         # expect the key to be present most of the time.
         try:
-            netloc_value = self._asgi_headers[b'host'].decode()
+            netloc_value = self._asgi_headers[b'host'].decode('latin1')
         except KeyError:
             netloc_value, port = self._asgi_server
 
@@ -781,8 +796,7 @@ class Request(request.Request):
             raise self._media_error
 
         handler, _, deserialize_sync = self.options.media_handlers._resolve(
-            self.content_type,
-            self.options.default_media_type
+            self.content_type, self.options.default_media_type
         )
 
         try:
@@ -790,9 +804,7 @@ class Request(request.Request):
                 self._media = deserialize_sync(await self.stream.read())
             else:
                 self._media = await handler.deserialize_async(
-                    self.stream,
-                    self.content_type,
-                    self.content_length
+                    self.stream, self.content_type, self.content_length
                 )
 
         except errors.MediaNotFoundError as err:
@@ -825,7 +837,9 @@ class Request(request.Request):
         if self._cached_if_match is None:
             header_value = self._asgi_headers.get(b'if-match')
             if header_value:
-                self._cached_if_match = helpers._parse_etags(header_value.decode())
+                self._cached_if_match = helpers._parse_etags(
+                    header_value.decode('latin1')
+                )
 
         return self._cached_if_match
 
@@ -834,7 +848,9 @@ class Request(request.Request):
         if self._cached_if_none_match is None:
             header_value = self._asgi_headers.get(b'if-none-match')
             if header_value:
-                self._cached_if_none_match = helpers._parse_etags(header_value.decode())
+                self._cached_if_none_match = helpers._parse_etags(
+                    header_value.decode('latin1')
+                )
 
         return self._cached_if_none_match
 
@@ -844,7 +860,7 @@ class Request(request.Request):
         # have to do is clone it in the future.
         if self._cached_headers is None:
             self._cached_headers = {
-                name.decode(): value.decode()
+                name.decode('latin1'): value.decode('latin1')
                 for name, value in self._asgi_headers.items()
             }
 
@@ -885,7 +901,7 @@ class Request(request.Request):
         try:
             asgi_name = _name_cache[name]
         except KeyError:
-            asgi_name = name.lower().encode()
+            asgi_name = name.lower().encode('latin1')
             if len(_name_cache) < 64:  # Somewhat arbitrary ceiling to mitigate abuse
                 _name_cache[name] = asgi_name
 
@@ -894,7 +910,7 @@ class Request(request.Request):
             # Don't take the time to cache beforehand, using HTTP naming.
             # This will be faster, assuming that most headers are looked
             # up only once, and not all headers will be requested.
-            return self._asgi_headers[asgi_name].decode()
+            return self._asgi_headers[asgi_name].decode('latin1')
 
         except KeyError:
             if not required:

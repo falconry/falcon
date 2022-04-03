@@ -25,7 +25,6 @@ class CustomBaseException(Exception):
 
 
 class CustomException(CustomBaseException):
-
     @staticmethod
     def handle(req, resp, ex, params):
         raise falcon.HTTPError(
@@ -33,11 +32,11 @@ class CustomException(CustomBaseException):
             title='Internet crashed!',
             description='Catastrophic weather event',
             href='http://example.com/api/inconvenient-truth',
-            href_text='Drill, baby drill!')
+            href_text='Drill, baby drill!',
+        )
 
 
 class ErroredClassResource:
-
     def on_get(self, req, resp):
         raise Exception('Plain Exception')
 
@@ -56,7 +55,6 @@ def client(asgi):
 
 
 class TestErrorHandler:
-
     def test_caught_error(self, client):
         client.app.add_error_handler(Exception, capture_error)
 
@@ -67,13 +65,17 @@ class TestErrorHandler:
         assert result.status_code == 723
         assert not result.content
 
-    @pytest.mark.parametrize('get_headers, resp_content_type, resp_start', [
-        (None, constants.MEDIA_JSON, '{"'),
-        ({'accept': constants.MEDIA_JSON}, constants.MEDIA_JSON, '{"'),
-        ({'accept': constants.MEDIA_XML}, constants.MEDIA_XML, '<?xml'),
-    ])
-    def test_uncaught_python_error(self, client,
-                                   get_headers, resp_content_type, resp_start):
+    @pytest.mark.parametrize(
+        'get_headers, resp_content_type, resp_start',
+        [
+            (None, constants.MEDIA_JSON, '{"'),
+            ({'accept': constants.MEDIA_JSON}, constants.MEDIA_JSON, '{"'),
+            ({'accept': constants.MEDIA_XML}, constants.MEDIA_XML, '<?xml'),
+        ],
+    )
+    def test_uncaught_python_error(
+        self, client, get_headers, resp_content_type, resp_start
+    ):
         result = client.simulate_get(headers=get_headers)
         assert result.status_code == 500
         assert result.headers['content-type'] == resp_content_type
@@ -87,6 +89,7 @@ class TestErrorHandler:
             pytest.skip('ASGI requires Python 3.6+')
 
         import falcon.asgi
+
         app = falcon.asgi.App()
         app.add_route('/', ErroredClassResource())
         app.add_error_handler(Exception, capture_error_async)
@@ -156,10 +159,13 @@ class TestErrorHandler:
         assert result.status_code == 200
         assert result.text == 'first error handler'
 
-    @pytest.mark.parametrize('exceptions', [
-        (Exception, CustomException),
-        [Exception, CustomException],
-    ])
+    @pytest.mark.parametrize(
+        'exceptions',
+        [
+            (Exception, CustomException),
+            [Exception, CustomException],
+        ],
+    )
     def test_handler_multiple_exception_iterable(self, client, exceptions):
         client.app.add_error_handler(exceptions, capture_error)
 
@@ -178,12 +184,15 @@ class TestErrorHandler:
         result = client.simulate_delete()
         assert result.status_code == 723
 
-    @pytest.mark.parametrize('exceptions', [
-        NotImplemented,
-        'Hello, world!',
-        frozenset([ZeroDivisionError, int, NotImplementedError]),
-        [float, float],
-    ])
+    @pytest.mark.parametrize(
+        'exceptions',
+        [
+            NotImplemented,
+            'Hello, world!',
+            frozenset([ZeroDivisionError, int, NotImplementedError]),
+            [float, float],
+        ],
+    )
     def test_invalid_add_exception_handler_input(self, client, exceptions):
         with pytest.raises(TypeError):
             client.app.add_error_handler(exceptions, capture_error)
@@ -312,10 +321,13 @@ class TestCustomError:
         app.add_route('/error', CustomErrorResource())
 
         if asgi:
+
             async def handle_zero_division(req, resp, ex, params):
                 assert await resp.render_body() is None
                 resp.status = falcon.HTTP_719
+
         else:
+
             def handle_zero_division(req, resp, ex, params):
                 assert resp.render_body() is None
                 resp.status = falcon.HTTP_719

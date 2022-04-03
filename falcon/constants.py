@@ -3,10 +3,23 @@ import os
 import sys
 
 
-PYPY = (sys.implementation.name == 'pypy')
+PYPY = sys.implementation.name == 'pypy'
 """Evaluates to ``True`` when the current Python implementation is PyPy."""
 
-ASGI_SUPPORTED = sys.version_info >= (3, 6)
+PYTHON_VERSION = tuple(sys.version_info[:3])
+"""Python version information triplet: (major, minor, micro)."""
+# If FALCON_TESTING_MOCK_PY35 is defined in the env, pretend that we are
+# on 3.5.0. Only intended for testing of the framework itself.
+_is_py35 = PYTHON_VERSION[:2] == (3, 5)
+_mock_py35 = os.environ.get('FALCON_TESTING_MOCK_PY35')
+
+# TODO(vytas): Remove these hacks in 4.0 once we have dropped 3.5/3.6 support.
+# NOTE(vytas): Do not alter the microversion if already on 3.5
+#   (read: a hack to hit coverage on 3.5 as well).
+if _mock_py35 or _is_py35:
+    PYTHON_VERSION = (3, 5, PYTHON_VERSION[-1] if _is_py35 else 0)
+
+ASGI_SUPPORTED = PYTHON_VERSION >= (3, 6)
 """Evaluates to ``True`` when ASGI is supported for the current Python version."""
 
 # RFC 7231, 5789 methods
@@ -52,10 +65,7 @@ _META_METHODS = [
 ]
 
 COMBINED_METHODS = (
-    HTTP_METHODS +
-    WEBDAV_METHODS +
-    FALCON_CUSTOM_HTTP_METHODS +
-    _META_METHODS
+    HTTP_METHODS + WEBDAV_METHODS + FALCON_CUSTOM_HTTP_METHODS + _META_METHODS
 )
 
 # NOTE(kgriffs): According to RFC 7159, most JSON parsers assume
@@ -113,17 +123,19 @@ MEDIA_GIF = 'image/gif'
 DEFAULT_MEDIA_TYPE = MEDIA_JSON
 
 # NOTE(kgriffs): We do not expect more than one of these in the request
-SINGLETON_HEADERS = frozenset([
-    'content-length',
-    'content-type',
-    'cookie',
-    'expect',
-    'from',
-    'host',
-    'max-forwards',
-    'referer',
-    'user-agent',
-])
+SINGLETON_HEADERS = frozenset(
+    [
+        'content-length',
+        'content-type',
+        'cookie',
+        'expect',
+        'from',
+        'host',
+        'max-forwards',
+        'referer',
+        'user-agent',
+    ]
+)
 
 # NOTE(kgriffs): Special singleton to be used internally whenever using
 #   None would be ambiguous.

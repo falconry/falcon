@@ -6,7 +6,6 @@ import falcon.testing as testing
 
 
 class TestWSGIInterface:
-
     def test_srmock(self):
         mock = testing.StartResponseMock()
         mock(falcon.HTTP_200, ())

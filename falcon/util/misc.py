@@ -29,20 +29,27 @@ import functools
 import http
 import inspect
 import re
-import sys
 import unicodedata
 
 from falcon import status_codes
 from falcon.constants import PYPY
+from falcon.constants import PYTHON_VERSION
 from falcon.uri import encode_value
+
 # NOTE(vytas): Hoist `deprecated` here since it is documented as part of the
 # public Falcon interface.
 from .deprecation import deprecated
 
 try:
+    from falcon.cyutil.misc import encode_items_to_latin1 as _cy_encode_items_to_latin1
+except ImportError:
+    _cy_encode_items_to_latin1 = None
+
+try:
     from falcon.cyutil.misc import isascii as _cy_isascii
 except ImportError:
     _cy_isascii = None
+
 
 __all__ = (
     'is_python_func',
@@ -83,8 +90,7 @@ def _lru_cache_nop(*args, **kwargs):  # pragma: nocover
 
 
 # NOTE(kgriffs): https://bugs.python.org/issue28969
-_PYVER_TRIPLET = sys.version_info[:3]
-if _PYVER_TRIPLET >= (3, 5, 4) and _PYVER_TRIPLET != (3, 6, 0):
+if PYTHON_VERSION >= (3, 5, 4) and PYTHON_VERSION != (3, 6, 0):
     _lru_cache_safe = functools.lru_cache  # type: ignore
 else:
     _lru_cache_safe = _lru_cache_nop  # pragma: nocover
@@ -295,7 +301,8 @@ def get_argnames(func):
     args = [
         param.name
         for param in sig.parameters.values()
-        if param.kind not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
+        if param.kind
+        not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
     ]
 
     # NOTE(kgriffs): Depending on the version of Python, 'self' may or may not
@@ -334,8 +341,9 @@ def get_http_status(status_code, default_reason=_DEFAULT_HTTP_REASON):
         if code < 100:
             raise ValueError
     except ValueError:
-        raise ValueError('get_http_status failed: "%s" is not a '
-                         'valid status code', status_code)
+        raise ValueError(
+            'get_http_status failed: "%s" is not a valid status code', status_code
+        )
 
     # lookup the status code
     try:
@@ -470,6 +478,24 @@ def code_to_http_status(status):
         return '{} {}'.format(code, _DEFAULT_HTTP_REASON)
 
 
+def _encode_items_to_latin1(data):
+    """Decode all key/values of a dict to Latin-1.
+
+    Args:
+        data (dict): A dict of string key/values to encode to a list of
+        bytestring items.
+
+    Returns:
+        A list of (bytes, bytes) tuples.
+    """
+    result = []
+
+    for key, value in data.items():
+        result.append((key.encode('latin1'), value.encode('latin1')))
+
+    return result
+
+
 def _isascii(string):
     """Return ``True`` if all characters in the string are ASCII.
 
@@ -495,4 +521,5 @@ def _isascii(string):
         return False
 
 
+_encode_items_to_latin1 = _cy_encode_items_to_latin1 or _encode_items_to_latin1
 isascii = getattr(str, 'isascii', _cy_isascii or _isascii)

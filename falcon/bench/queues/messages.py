@@ -15,7 +15,6 @@
 
 
 class CollectionResource:
-
     def on_post(self, req, resp, tenant_id, queue_name):
         pass
 
@@ -24,7 +23,6 @@ class CollectionResource:
 
 
 class ItemResource:
-
     def on_get(self, req, resp, tenant_id, queue_name, message_id):
         pass
 

@@ -19,7 +19,7 @@ set -e
 VENV_NAME=tmp-falcon-build
 BUILD_DIR=./build
 DIST_DIR=./dist
-PY3_VERSION=3.8.0
+PY3_VERSION=3.8.7
 
 #----------------------------------------------------------------------
 # Helpers
@@ -69,7 +69,7 @@ eval "$(pyenv virtualenv-init -)"
 
 _echo_task "Cleaning up old artifacts"
 
-tools/clean.sh .
+tools/clean.py .
 
 rm -rf $BUILD_DIR
 rm -rf $DIST_DIR

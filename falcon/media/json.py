@@ -26,8 +26,12 @@ class JSONHandler(BaseHandler):
         library's JSON implementation, since it will be faster in most cases
         as compared to a third-party library.
 
-    Overriding the default JSON implementation is simply a matter of specifying
-    the desired ``dumps`` and ``loads`` functions::
+    .. rubric:: Custom JSON library
+
+    You can replace the default JSON handler by using a custom JSON library
+    (see also: :ref:`custom_media_handlers`). Overriding the default JSON
+    implementation is simply a matter of specifying the desired ``dumps`` and
+    ``loads`` functions::
 
         import falcon
         from falcon import media
@@ -46,13 +50,41 @@ class JSONHandler(BaseHandler):
         app.req_options.media_handlers.update(extra_handlers)
         app.resp_options.media_handlers.update(extra_handlers)
 
+    .. rubric:: Custom serialization parameters
+
+    Even if you decide to stick with the stdlib's :any:`json.dumps` and
+    :any:`json.loads`, you can wrap them using :any:`functools.partial` to
+    provide custom serialization or deserialization parameters supported by the
+    ``dumps`` and ``loads`` functions, respectively
+    (see also: :ref:`prettifying-json-responses`)::
+
+        import falcon
+        from falcon import media
+
+        from functools import partial
+
+        json_handler = media.JSONHandler(
+            dumps=partial(
+                json.dumps,
+                default=str,
+                sort_keys=True,
+            ),
+        )
+        extra_handlers = {
+            'application/json': json_handler,
+        }
+
+        app = falcon.App()
+        app.req_options.media_handlers.update(extra_handlers)
+        app.resp_options.media_handlers.update(extra_handlers)
+
     By default, ``ensure_ascii`` is passed to the ``json.dumps`` function.
     If you override the ``dumps`` function, you will need to explicitly set
     ``ensure_ascii`` to ``False`` in order to enable the serialization of
     Unicode characters to UTF-8. This is easily done by using
-    :any:`functools.partial` to apply the desired keyword argument. In fact, you
-    can use this same technique to customize any option supported by the
-    ``dumps`` and ``loads`` functions::
+    :any:`functools.partial` to apply the desired keyword argument. As also
+    demonstrated in the previous paragraph, you can use this same technique to
+    customize any option supported by the ``dumps`` and ``loads`` functions::
 
         from functools import partial
 
@@ -65,6 +97,42 @@ class JSONHandler(BaseHandler):
                 ensure_ascii=False, sort_keys=True
             ),
         )
+
+    .. _custom-media-json-encoder:
+
+    .. rubric:: Custom JSON encoder
+
+    You can also override the default :class:`~json.JSONEncoder` by using a
+    custom Encoder and updating the media handlers for ``application/json``
+    type to use that::
+
+        import json
+        from datetime import datetime
+        from functools import partial
+
+        import falcon
+        from falcon import media
+
+        class DatetimeEncoder(json.JSONEncoder):
+            \"\"\"Json Encoder that supports datetime objects.\"\"\"
+
+            def default(self, obj):
+                if isinstance(obj, datetime):
+                    return obj.isoformat()
+                return super().default(obj)
+
+        app = falcon.App()
+
+        json_handler = media.JSONHandler(
+            dumps=partial(json.dumps, cls=DatetimeEncoder),
+        )
+        extra_handlers = {
+            'application/json': json_handler,
+        }
+
+        app.req_options.media_handlers.update(extra_handlers)
+        app.resp_options.media_handlers.update(extra_handlers)
+
 
     Keyword Arguments:
         dumps (func): Function to use when serializing JSON responses.

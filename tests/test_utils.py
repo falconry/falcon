@@ -6,7 +6,6 @@ import http
 import itertools
 import json
 import random
-import sys
 from urllib.parse import quote, unquote_plus
 
 import pytest
@@ -15,12 +14,7 @@ import falcon
 from falcon import media
 from falcon import testing
 from falcon import util
-from falcon.constants import (
-    MEDIA_JSON,
-    MEDIA_MSGPACK,
-    MEDIA_URLENCODED,
-    MEDIA_YAML
-)
+from falcon.constants import MEDIA_JSON, MEDIA_MSGPACK, MEDIA_URLENCODED, MEDIA_YAML
 from falcon.util import deprecation, misc, structures, uri
 
 from _util import create_app, to_coroutine  # NOQA
@@ -33,10 +27,8 @@ def app(asgi):
 
 def _arbitrary_uris(count, length):
     return (
-        ''.join(
-            [random.choice(uri._ALL_ALLOWED)
-             for _ in range(length)]
-        ) for __ in range(count)
+        ''.join([random.choice(uri._ALL_ALLOWED) for _ in range(length)])
+        for __ in range(count)
     )
 
 
@@ -98,7 +90,6 @@ class TrackingFormHandler(media.URLEncodedFormHandler):
 
 
 class TestFalconUtils:
-
     def setup_method(self, method):
         # NOTE(cabrera): for DRYness - used in uri.[de|en]code tests
         # below.
@@ -127,18 +118,23 @@ class TestFalconUtils:
         assert delta_sec <= 1
 
     def test_dt_to_http(self):
-        assert falcon.dt_to_http(datetime(2013, 4, 4)) == 'Thu, 04 Apr 2013 00:00:00 GMT'
+        assert (
+            falcon.dt_to_http(datetime(2013, 4, 4)) == 'Thu, 04 Apr 2013 00:00:00 GMT'
+        )
 
-        assert falcon.dt_to_http(
-            datetime(2013, 4, 4, 10, 28, 54)
-        ) == 'Thu, 04 Apr 2013 10:28:54 GMT'
+        assert (
+            falcon.dt_to_http(datetime(2013, 4, 4, 10, 28, 54))
+            == 'Thu, 04 Apr 2013 10:28:54 GMT'
+        )
 
     def test_http_date_to_dt(self):
-        assert falcon.http_date_to_dt('Thu, 04 Apr 2013 00:00:00 GMT') == datetime(2013, 4, 4)
+        assert falcon.http_date_to_dt('Thu, 04 Apr 2013 00:00:00 GMT') == datetime(
+            2013, 4, 4
+        )
 
-        assert falcon.http_date_to_dt(
-            'Thu, 04 Apr 2013 10:28:54 GMT'
-        ) == datetime(2013, 4, 4, 10, 28, 54)
+        assert falcon.http_date_to_dt('Thu, 04 Apr 2013 10:28:54 GMT') == datetime(
+            2013, 4, 4, 10, 28, 54
+        )
 
         with pytest.raises(ValueError):
             falcon.http_date_to_dt('Thu, 04-Apr-2013 10:28:54 GMT')
@@ -167,32 +163,26 @@ class TestFalconUtils:
     def test_pack_query_params_one(self):
         assert falcon.to_query_str({'limit': 10}) == '?limit=10'
 
-        assert falcon.to_query_str(
-            {'things': [1, 2, 3]}) == '?things=1,2,3'
+        assert falcon.to_query_str({'things': [1, 2, 3]}) == '?things=1,2,3'
 
         assert falcon.to_query_str({'things': ['a']}) == '?things=a'
 
-        assert falcon.to_query_str(
-            {'things': ['a', 'b']}) == '?things=a,b'
+        assert falcon.to_query_str({'things': ['a', 'b']}) == '?things=a,b'
 
-        expected = ('?things=a&things=b&things=&things=None'
-                    '&things=true&things=false&things=0')
+        expected = (
+            '?things=a&things=b&things=&things=None'
+            '&things=true&things=false&things=0'
+        )
 
         actual = falcon.to_query_str(
             {'things': ['a', 'b', '', None, True, False, 0]},
-            comma_delimited_lists=False
+            comma_delimited_lists=False,
         )
 
         assert actual == expected
 
     def test_pack_query_params_several(self):
-        garbage_in = {
-            'limit': 17,
-            'echo': True,
-            'doit': False,
-            'x': 'val',
-            'y': 0.2
-        }
+        garbage_in = {'limit': 17, 'echo': True, 'doit': False, 'x': 'val', 'y': 0.2}
 
         query_str = falcon.to_query_str(garbage_in)
         fields = query_str[1:].split('&')
@@ -207,20 +197,22 @@ class TestFalconUtils:
             'limit': '17',
             'x': 'val',
             'y': '0.2',
-            'doit': 'false'}
+            'doit': 'false',
+        }
 
         assert expected == garbage_out
 
     @pytest.mark.parametrize('csv', [True, False])
-    @pytest.mark.parametrize('params', [
-        {'a & b': 'a and b', 'b and c': 'b & c'},
-        {'apples and oranges': '🍏 & 🍊'},
-        {'garbage': ['&', '&+&', 'a=1&b=2', 'c=4&'], 'one': '1'},
-        {'&': '&amp;', '™': '&trade;', '&&&': ['&amp;', '&amp;', '&amp;']},
-
-        # NOTE(vytas): Would fail because of https://github.com/falconry/falcon/issues/1872
-        # {'&': '%26', '&&': '%26', '&&&': ['%26', '%2', '%']},
-    ])
+    @pytest.mark.parametrize(
+        'params',
+        [
+            {'a & b': 'a and b', 'b and c': 'b & c'},
+            {'apples and oranges': '🍏 & 🍊'},
+            {'garbage': ['&', '&+&', 'a=1&b=2', 'c=4&'], 'one': '1'},
+            {'&': '&amp;', '™': '&trade;', '&&&': ['&amp;', '&amp;', '&amp;']},
+            {'&': '%26', '&&': '%26', '&&&': ['%26', '%2', '%']},
+        ],
+    )
     def test_to_query_str_encoding(self, params, csv):
         query_str = falcon.to_query_str(params, comma_delimited_lists=csv, prefix=False)
 
@@ -235,8 +227,7 @@ class TestFalconUtils:
         assert uri.encode(url) == expected
 
         url = 'http://example.com/v1/fizbit/messages?limit=3&e\u00e7ho=true'
-        expected = ('http://example.com/v1/fizbit/messages'
-                    '?limit=3&e%C3%A7ho=true')
+        expected = 'http://example.com/v1/fizbit/messages?limit=3&e%C3%A7ho=true'
         assert uri.encode(url) == expected
 
         # NOTE(minesja): Addresses #1872
@@ -249,8 +240,7 @@ class TestFalconUtils:
         assert uri.encode_check_escaped(uri.encode_check_escaped(url)) == expected
 
         url = 'http://example.com/v1/fizbit/messages?limit=3&e\u00e7ho=true'
-        expected = ('http://example.com/v1/fizbit/messages'
-                    '?limit=3&e%C3%A7ho=true')
+        expected = 'http://example.com/v1/fizbit/messages?limit=3&e%C3%A7ho=true'
         assert uri.encode_check_escaped(uri.encode_check_escaped(url)) == expected
 
         url = 'http://example.com/v1/fiz%bit/mess%ages/%'
@@ -291,58 +281,68 @@ class TestFalconUtils:
 
         assert uri.decode('This thing is %C3%A7') == 'This thing is \u00e7'
 
-        assert uri.decode('This thing is %C3%A7%E2%82%AC') == 'This thing is \u00e7\u20ac'
+        assert (
+            uri.decode('This thing is %C3%A7%E2%82%AC') == 'This thing is \u00e7\u20ac'
+        )
 
         assert uri.decode('ab%2Fcd') == 'ab/cd'
 
-        assert uri.decode(
-            'http://example.com?x=ab%2Bcd%3D42%2C9'
-        ) == 'http://example.com?x=ab+cd=42,9'
+        assert (
+            uri.decode('http://example.com?x=ab%2Bcd%3D42%2C9')
+            == 'http://example.com?x=ab+cd=42,9'
+        )
 
-    @pytest.mark.parametrize('encoded,expected', [
-        ('ab%2Gcd', 'ab%2Gcd'),
-        ('ab%2Fcd: 100% coverage', 'ab/cd: 100% coverage'),
-        ('%s' * 100, '%s' * 100),
-    ])
+    @pytest.mark.parametrize(
+        'encoded,expected',
+        [
+            ('ab%2Gcd', 'ab%2Gcd'),
+            ('ab%2Fcd: 100% coverage', 'ab/cd: 100% coverage'),
+            ('%s' * 100, '%s' * 100),
+        ],
+    )
     def test_uri_decode_bad_coding(self, encoded, expected, decode_approach):
         assert uri.decode(encoded) == expected
 
-    @pytest.mark.parametrize('encoded,expected', [
-        ('+%80', ' �'),
-        ('+++%FF+++', '   �   '),  # impossible byte
-        ('%fc%83%bf%bf%bf%bf', '������'),  # overlong sequence
-        ('%ed%ae%80%ed%b0%80', '������'),  # paired UTF-16 surrogates
-    ])
+    @pytest.mark.parametrize(
+        'encoded,expected',
+        [
+            ('+%80', ' �'),
+            ('+++%FF+++', '   �   '),  # impossible byte
+            ('%fc%83%bf%bf%bf%bf', '������'),  # overlong sequence
+            ('%ed%ae%80%ed%b0%80', '������'),  # paired UTF-16 surrogates
+        ],
+    )
     def test_uri_decode_bad_unicode(self, encoded, expected, decode_approach):
         assert uri.decode(encoded) == expected
 
     def test_uri_decode_unquote_plus(self, decode_approach):
         assert uri.decode('/disk/lost+found/fd0') == '/disk/lost found/fd0'
         assert uri.decode('/disk/lost+found/fd0', unquote_plus=True) == (
-            '/disk/lost found/fd0')
+            '/disk/lost found/fd0'
+        )
         assert uri.decode('/disk/lost+found/fd0', unquote_plus=False) == (
-            '/disk/lost+found/fd0')
+            '/disk/lost+found/fd0'
+        )
 
         assert uri.decode('http://example.com?x=ab%2Bcd%3D42%2C9') == (
-            'http://example.com?x=ab+cd=42,9')
-        assert uri.decode('http://example.com?x=ab%2Bcd%3D42%2C9', unquote_plus=True) == (
-            'http://example.com?x=ab+cd=42,9')
-        assert uri.decode('http://example.com?x=ab%2Bcd%3D42%2C9', unquote_plus=False) == (
-            'http://example.com?x=ab+cd=42,9')
+            'http://example.com?x=ab+cd=42,9'
+        )
+        assert uri.decode(
+            'http://example.com?x=ab%2Bcd%3D42%2C9', unquote_plus=True
+        ) == ('http://example.com?x=ab+cd=42,9')
+        assert uri.decode(
+            'http://example.com?x=ab%2Bcd%3D42%2C9', unquote_plus=False
+        ) == ('http://example.com?x=ab+cd=42,9')
 
     def test_prop_uri_encode_models_stdlib_quote(self):
-        equiv_quote = functools.partial(
-            quote, safe=uri._ALL_ALLOWED
-        )
+        equiv_quote = functools.partial(quote, safe=uri._ALL_ALLOWED)
         for case in self.uris:
             expect = equiv_quote(case)
             actual = uri.encode(case)
             assert expect == actual
 
     def test_prop_uri_encode_value_models_stdlib_quote_safe_tilde(self):
-        equiv_quote = functools.partial(
-            quote, safe='~'
-        )
+        equiv_quote = functools.partial(quote, safe='~')
         for case in self.uris:
             expect = equiv_quote(case)
             actual = uri.encode_value(case)
@@ -396,49 +396,55 @@ class TestFalconUtils:
         assert result['f'] == ['a', 'a=b']
         assert result['é'] == 'a=b'
 
-    @pytest.mark.parametrize('query_string,keep_blank,expected', [
-        ('', True, {}),
-        ('', False, {}),
-        ('flag1&&&&&flag2&&&', True, {'flag1': '', 'flag2': ''}),
-        ('flag1&&&&&flag2&&&', False, {}),
-        ('malformed=%FG%1%Hi%%%a', False, {'malformed': '%FG%1%Hi%%%a'}),
-        ('=', False, {}),
-        ('==', False, {'': '='}),
-        (
-            '%==+==&&&&&&&&&%%==+=&&&&&&%0g%=%=',
-            False,
-            {'%': '= ==', '%%': '= =', '%0g%': '%='},
-        ),
-        ('%=&%%=&&%%%=', False, {}),
-        ('%=&%%=&&%%%=', True, {'%': '', '%%': '', '%%%': ''}),
-        ('+=&%+=&&%++=', True, {' ': '', '% ': '', '%  ': ''}),
-        ('=x=&=x=+1=x=&%=x', False, {'': ['x=', 'x= 1=x='], '%': 'x'}),
-        (
-            ''.join(itertools.chain.from_iterable(
-                itertools.permutations('%=+&', 4))),
-            False,
-            {
-                '': ['%', ' %', '%', ' ', ' =%', '%', '% ', ' %'],
-                ' ': ['=% ', ' %', '%'],
-                '%': [' ', ' ', ' '],
-            },
-        ),
-        # NOTE(vytas): Sanity check that we do not accidentally use C-strings
-        #   anywhere in the cythonized variant.
-        ('%%%\x00%\x00==\x00\x00==', True, {'%%%\x00%\x00': '=\x00\x00=='}),
-        ('spade=♠&spade=♠', False, {'spade': ['♠', '♠']}),  # Unicode query
-    ])
-    def test_parse_query_string_edge_cases(
-            self, query_string, keep_blank, expected):
-        assert uri.parse_query_string(query_string, keep_blank=keep_blank) == (
-            expected)
+    @pytest.mark.parametrize(
+        'query_string,keep_blank,expected',
+        [
+            ('', True, {}),
+            ('', False, {}),
+            ('flag1&&&&&flag2&&&', True, {'flag1': '', 'flag2': ''}),
+            ('flag1&&&&&flag2&&&', False, {}),
+            ('malformed=%FG%1%Hi%%%a', False, {'malformed': '%FG%1%Hi%%%a'}),
+            ('=', False, {}),
+            ('==', False, {'': '='}),
+            (
+                '%==+==&&&&&&&&&%%==+=&&&&&&%0g%=%=',
+                False,
+                {'%': '= ==', '%%': '= =', '%0g%': '%='},
+            ),
+            ('%=&%%=&&%%%=', False, {}),
+            ('%=&%%=&&%%%=', True, {'%': '', '%%': '', '%%%': ''}),
+            ('+=&%+=&&%++=', True, {' ': '', '% ': '', '%  ': ''}),
+            ('=x=&=x=+1=x=&%=x', False, {'': ['x=', 'x= 1=x='], '%': 'x'}),
+            (
+                ''.join(
+                    itertools.chain.from_iterable(itertools.permutations('%=+&', 4))
+                ),
+                False,
+                {
+                    '': ['%', ' %', '%', ' ', ' =%', '%', '% ', ' %'],
+                    ' ': ['=% ', ' %', '%'],
+                    '%': [' ', ' ', ' '],
+                },
+            ),
+            # NOTE(vytas): Sanity check that we do not accidentally use C-strings
+            #   anywhere in the cythonized variant.
+            ('%%%\x00%\x00==\x00\x00==', True, {'%%%\x00%\x00': '=\x00\x00=='}),
+            ('spade=♠&spade=♠', False, {'spade': ['♠', '♠']}),  # Unicode query
+        ],
+    )
+    def test_parse_query_string_edge_cases(self, query_string, keep_blank, expected):
+        assert uri.parse_query_string(query_string, keep_blank=keep_blank) == (expected)
 
     def test_parse_host(self):
         assert uri.parse_host('::1') == ('::1', None)
-        assert uri.parse_host('2001:ODB8:AC10:FE01::') == ('2001:ODB8:AC10:FE01::', None)
-        assert uri.parse_host(
-            '2001:ODB8:AC10:FE01::', default_port=80
-        ) == ('2001:ODB8:AC10:FE01::', 80)
+        assert uri.parse_host('2001:ODB8:AC10:FE01::') == (
+            '2001:ODB8:AC10:FE01::',
+            None,
+        )
+        assert uri.parse_host('2001:ODB8:AC10:FE01::', default_port=80) == (
+            '2001:ODB8:AC10:FE01::',
+            80,
+        )
 
         ipv6_addr = '2001:4801:1221:101:1c10::f5:116'
 
@@ -450,7 +456,10 @@ class TestFalconUtils:
         assert uri.parse_host('[' + ipv6_addr + ']:42') == (ipv6_addr, 42)
 
         assert uri.parse_host('173.203.44.122') == ('173.203.44.122', None)
-        assert uri.parse_host('173.203.44.122', default_port=80) == ('173.203.44.122', 80)
+        assert uri.parse_host('173.203.44.122', default_port=80) == (
+            '173.203.44.122',
+            80,
+        )
         assert uri.parse_host('173.203.44.122:27070') == ('173.203.44.122', 27070)
         assert uri.parse_host('173.203.44.122:123') == ('173.203.44.122', 123)
         assert uri.parse_host('173.203.44.122:42') == ('173.203.44.122', 42)
@@ -508,15 +517,12 @@ class TestFalconUtils:
             (http.HTTPStatus(410), falcon.HTTP_410),
             (http.HTTPStatus(429), falcon.HTTP_429),
             (http.HTTPStatus(500), falcon.HTTP_500),
-        ]
+        ],
     )
     def test_code_to_http_status(self, v_in, v_out):
         assert falcon.code_to_http_status(v_in) == v_out
 
-    @pytest.mark.parametrize(
-        'v',
-        [0, 13, 99, 1000, 1337.01, -99, -404.3, -404, -404.3]
-    )
+    @pytest.mark.parametrize('v', [0, 13, 99, 1000, 1337.01, -99, -404.3, -404, -404.3])
     def test_code_to_http_status_value_error(self, v):
         with pytest.raises(ValueError):
             falcon.code_to_http_status(v)
@@ -533,19 +539,15 @@ class TestFalconUtils:
             (b'712 NoSQL', 712),
             ('404 Not Found', 404),
             ('123 Wow Such Status', 123),
-
             # NOTE(kgriffs): Test LRU
             (http.HTTPStatus(505), 505),
             ('123 Wow Such Status', 123),
-        ]
+        ],
     )
     def test_http_status_to_code(self, v_in, v_out):
         assert falcon.http_status_to_code(v_in) == v_out
 
-    @pytest.mark.parametrize(
-        'v',
-        ['', ' ', '1', '12', '99', 'catsup', b'', 5.2]
-    )
+    @pytest.mark.parametrize('v', ['', ' ', '1', '12', '99', 'catsup', b'', 5.2])
     def test_http_status_to_code_neg(self, v):
         with pytest.raises(ValueError):
             falcon.http_status_to_code(v)
@@ -592,15 +594,18 @@ class TestFalconUtils:
         assert not weak_67ab43_one.strong_compare(weak_67aB43)
         assert not weak_67aB43.strong_compare(weak_67ab43_one)
 
-    @pytest.mark.parametrize('filename,expected', [
-        ('.', '_'),
-        ('..', '_.'),
-        ('hello.txt', 'hello.txt'),
-        ('Ąžuolai žaliuos.jpeg', 'A_z_uolai_z_aliuos.jpeg'),
-        ('/etc/shadow', '_etc_shadow'),
-        ('. ⬅ a dot', '____a_dot'),
-        ('C:\\Windows\\kernel32.dll', 'C__Windows_kernel32.dll'),
-    ])
+    @pytest.mark.parametrize(
+        'filename,expected',
+        [
+            ('.', '_'),
+            ('..', '_.'),
+            ('hello.txt', 'hello.txt'),
+            ('Ąžuolai žaliuos.jpeg', 'A_z_uolai_z_aliuos.jpeg'),
+            ('/etc/shadow', '_etc_shadow'),
+            ('. ⬅ a dot', '____a_dot'),
+            ('C:\\Windows\\kernel32.dll', 'C__Windows_kernel32.dll'),
+        ],
+    )
     def test_secure_filename(self, filename, expected):
         assert misc.secure_filename(filename) == expected
 
@@ -608,28 +613,33 @@ class TestFalconUtils:
         with pytest.raises(ValueError):
             misc.secure_filename('')
 
-    @pytest.mark.parametrize('string,expected_ascii', [
-        ('', True),
-        ('/', True),
-        ('/api', True),
-        ('/data/items/something?query=apples%20and%20oranges', True),
-        ('/food?item=ð\x9f\x8d\x94', False),
-        ('\x00\x00\x7F\x00\x00\x7F\x00', True),
-        ('\x00\x00\x7F\x00\x00\x80\x00', False),
-    ])
-    def test_misc_isascii(self, string, expected_ascii):
+    @pytest.mark.parametrize(
+        'string,expected_ascii',
+        [
+            ('', True),
+            ('/', True),
+            ('/api', True),
+            ('/data/items/something?query=apples%20and%20oranges', True),
+            ('/food?item=ð\x9f\x8d\x94', False),
+            ('\x00\x00\x7F\x00\x00\x7F\x00', True),
+            ('\x00\x00\x7F\x00\x00\x80\x00', False),
+        ],
+    )
+    @pytest.mark.parametrize('method', ['isascii', '_isascii'])
+    def test_misc_isascii(self, string, expected_ascii, method):
+        isascii = getattr(misc, method)
         if expected_ascii:
-            assert misc.isascii(string)
+            assert isascii(string)
         else:
-            assert not misc.isascii(string)
+            assert not isascii(string)
 
 
 @pytest.mark.parametrize(
     'protocol,method',
     zip(
         ['https'] * len(falcon.HTTP_METHODS) + ['http'] * len(falcon.HTTP_METHODS),
-        falcon.HTTP_METHODS * 2
-    )
+        falcon.HTTP_METHODS * 2,
+    ),
 )
 def test_simulate_request_protocol(asgi, protocol, method):
     sink_called = [False]
@@ -655,15 +665,18 @@ def test_simulate_request_protocol(asgi, protocol, method):
         pass
 
 
-@pytest.mark.parametrize('simulate', [
-    testing.simulate_get,
-    testing.simulate_head,
-    testing.simulate_post,
-    testing.simulate_put,
-    testing.simulate_options,
-    testing.simulate_patch,
-    testing.simulate_delete,
-])
+@pytest.mark.parametrize(
+    'simulate',
+    [
+        testing.simulate_get,
+        testing.simulate_head,
+        testing.simulate_post,
+        testing.simulate_put,
+        testing.simulate_options,
+        testing.simulate_patch,
+        testing.simulate_delete,
+    ],
+)
 def test_simulate_free_functions(asgi, simulate):
     sink_called = [False]
 
@@ -769,10 +782,13 @@ class TestFalconTestingUtils:
         result = client.simulate_get()
         assert result.text == result.text
 
-    @pytest.mark.parametrize('resource_type', [
-        testing.SimpleTestResource,
-        testing.SimpleTestResourceAsync,
-    ])
+    @pytest.mark.parametrize(
+        'resource_type',
+        [
+            testing.SimpleTestResource,
+            testing.SimpleTestResourceAsync,
+        ],
+    )
     def test_simple_resource_body_json_xor(self, resource_type):
         with pytest.raises(ValueError):
             resource_type(body='', json={})
@@ -815,8 +831,7 @@ class TestFalconTestingUtils:
         assert result.json['query_string'] == expected_qs
 
         expected_qs = 'things=1,2,3'
-        result = client.simulate_get(params={'things': [1, 2, 3]},
-                                     params_csv=True)
+        result = client.simulate_get(params={'things': [1, 2, 3]}, params_csv=True)
         assert result.json['query_string'] == expected_qs
 
     def test_query_string_no_question(self, app):
@@ -835,49 +850,57 @@ class TestFalconTestingUtils:
         with pytest.raises(ValueError):
             client.simulate_get(path='/thing?x=1', params={'oid': 1978})
         with pytest.raises(ValueError):
-            client.simulate_get(path='/thing?x=1', query_string='things=1,2,3',
-                                params={'oid': 1978})
+            client.simulate_get(
+                path='/thing?x=1', query_string='things=1,2,3', params={'oid': 1978}
+            )
 
         client.simulate_get(path='/thing?detailed=no&oid=1337')
         assert resource.captured_req.path == '/thing'
         assert resource.captured_req.query_string == 'detailed=no&oid=1337'
 
-    @pytest.mark.parametrize('document', [
-        # NOTE(vytas): using an exact binary fraction here to avoid special
-        # code branch for approximate equality as it is not the focus here
-        16.0625,
-        123456789,
-        True,
-        '',
-        'I am a \u1d0a\ua731\u1d0f\u0274 string.',
-        [1, 3, 3, 7],
-        {'message': '\xa1Hello Unicode! \U0001F638'},
-        {
-            'count': 4,
-            'items': [
-                {'number': 'one'},
-                {'number': 'two'},
-                {'number': 'three'},
-                {'number': 'four'},
-            ],
-            'next': None,
-        },
-    ])
+    @pytest.mark.parametrize(
+        'document',
+        [
+            # NOTE(vytas): using an exact binary fraction here to avoid special
+            # code branch for approximate equality as it is not the focus here
+            16.0625,
+            123456789,
+            True,
+            '',
+            'I am a \u1d0a\ua731\u1d0f\u0274 string.',
+            [1, 3, 3, 7],
+            {'message': '\xa1Hello Unicode! \U0001F638'},
+            {
+                'count': 4,
+                'items': [
+                    {'number': 'one'},
+                    {'number': 'two'},
+                    {'number': 'three'},
+                    {'number': 'four'},
+                ],
+                'next': None,
+            },
+        ],
+    )
     def test_simulate_json_body(self, asgi, document):
-        resource = testing.SimpleTestResourceAsync() if asgi else testing.SimpleTestResource()
+        resource = (
+            testing.SimpleTestResourceAsync() if asgi else testing.SimpleTestResource()
+        )
         app = create_app(asgi)
         app.add_route('/', resource)
 
         json_types = ('application/json', 'application/json; charset=UTF-8')
         client = testing.TestClient(app)
-        client.simulate_post('/', json=document, headers={'capture-req-body-bytes': '-1'})
+        client.simulate_post(
+            '/', json=document, headers={'capture-req-body-bytes': '-1'}
+        )
         assert json.loads(resource.captured_req_body.decode()) == document
         assert resource.captured_req.content_type in json_types
 
         headers = {
             'Content-Type': 'x-falcon/peregrine',
             'X-Falcon-Type': 'peregrine',
-            'capture-req-media': 'y'
+            'capture-req-media': 'y',
         }
         body = 'If provided, `json` parameter overrides `body`.'
         client.simulate_post('/', headers=headers, body=body, json=document)
@@ -885,13 +908,16 @@ class TestFalconTestingUtils:
         assert resource.captured_req.content_type in json_types
         assert resource.captured_req.get_header('X-Falcon-Type') == 'peregrine'
 
-    @pytest.mark.parametrize('remote_addr', [
-        None,
-        '127.0.0.1',
-        '8.8.8.8',
-        '104.24.101.85',
-        '2606:4700:30::6818:6455',
-    ])
+    @pytest.mark.parametrize(
+        'remote_addr',
+        [
+            None,
+            '127.0.0.1',
+            '8.8.8.8',
+            '104.24.101.85',
+            '2606:4700:30::6818:6455',
+        ],
+    )
     def test_simulate_remote_addr(self, app, remote_addr):
         class ShowMyIPResource:
             def on_get(self, req, resp):
@@ -914,20 +940,22 @@ class TestFalconTestingUtils:
         app.add_route('/', resource)
 
         client = testing.TestClient(app)
-        client.simulate_get('/', protocol='https',
-                            host='falcon.readthedocs.io')
+        client.simulate_get('/', protocol='https', host='falcon.readthedocs.io')
         assert resource.captured_req.uri == 'https://falcon.readthedocs.io/'
 
-    @pytest.mark.parametrize('extras,expected_headers', [
-        (
-            {},
-            (('user-agent', 'falcon-client/' + falcon.__version__),),
-        ),
-        (
-            {'HTTP_USER_AGENT': 'URL/Emacs', 'HTTP_X_FALCON': 'peregrine'},
-            (('user-agent', 'URL/Emacs'), ('x-falcon', 'peregrine')),
-        ),
-    ])
+    @pytest.mark.parametrize(
+        'extras,expected_headers',
+        [
+            (
+                {},
+                (('user-agent', 'falcon-client/' + falcon.__version__),),
+            ),
+            (
+                {'HTTP_USER_AGENT': 'URL/Emacs', 'HTTP_X_FALCON': 'peregrine'},
+                (('user-agent', 'URL/Emacs'), ('x-falcon', 'peregrine')),
+            ),
+        ],
+    )
     def test_simulate_with_environ_extras(self, extras, expected_headers):
         app = falcon.App()
         resource = testing.SimpleTestResource()
@@ -954,13 +982,16 @@ class TestFalconTestingUtils:
         assert result.status_code == 200
         assert result.text == 'test'
 
-    @pytest.mark.parametrize('content_type', [
-        'application/json',
-        'application/json; charset=UTF-8',
-        'application/yaml',
-    ])
+    @pytest.mark.parametrize(
+        'content_type',
+        [
+            'application/json',
+            'application/json; charset=UTF-8',
+            'application/yaml',
+        ],
+    )
     def test_simulate_content_type(self, content_type):
-        class MediaMirror():
+        class MediaMirror:
             def on_post(self, req, resp):
                 resp.media = req.media
 
@@ -980,13 +1011,16 @@ class TestFalconTestingUtils:
             # JSON handler should not have been called for YAML
             assert resp.status_code == 415
 
-    @pytest.mark.parametrize('content_type', [
-        MEDIA_JSON,
-        MEDIA_JSON + '; charset=UTF-8',
-        MEDIA_YAML,
-        MEDIA_MSGPACK,
-        MEDIA_URLENCODED,
-    ])
+    @pytest.mark.parametrize(
+        'content_type',
+        [
+            MEDIA_JSON,
+            MEDIA_JSON + '; charset=UTF-8',
+            MEDIA_YAML,
+            MEDIA_MSGPACK,
+            MEDIA_URLENCODED,
+        ],
+    )
     def test_simulate_content_type_extra_handler(self, asgi, content_type):
         class TestResourceAsync(testing.SimpleTestResourceAsync):
             def __init__(self):
@@ -1124,15 +1158,17 @@ def test_get_argnames():
 
 
 class TestContextType:
-
     class CustomContextType(structures.Context):
         def __init__(self):
             pass
 
-    @pytest.mark.parametrize('context_type', [
-        CustomContextType,
-        structures.Context,
-    ])
+    @pytest.mark.parametrize(
+        'context_type',
+        [
+            CustomContextType,
+            structures.Context,
+        ],
+    )
     def test_attributes(self, context_type):
         ctx = context_type()
 
@@ -1147,10 +1183,13 @@ class TestContextType:
         with pytest.raises(AttributeError):
             ctx.cache_strategy
 
-    @pytest.mark.parametrize('context_type', [
-        CustomContextType,
-        structures.Context,
-    ])
+    @pytest.mark.parametrize(
+        'context_type',
+        [
+            CustomContextType,
+            structures.Context,
+        ],
+    )
     def test_items_from_attributes(self, context_type):
         ctx = context_type()
 
@@ -1169,10 +1208,13 @@ class TestContextType:
         assert '_cache' in ctx
         assert 'cache_strategy' not in ctx
 
-    @pytest.mark.parametrize('context_type', [
-        CustomContextType,
-        structures.Context,
-    ])
+    @pytest.mark.parametrize(
+        'context_type',
+        [
+            CustomContextType,
+            structures.Context,
+        ],
+    )
     def test_attributes_from_items(self, context_type):
         ctx = context_type()
 
@@ -1191,10 +1233,13 @@ class TestContextType:
         with pytest.raises(KeyError):
             ctx['cache_strategy']
 
-    @pytest.mark.parametrize('context_type,type_name', [
-        (CustomContextType, 'CustomContextType'),
-        (structures.Context, 'Context'),
-    ])
+    @pytest.mark.parametrize(
+        'context_type,type_name',
+        [
+            (CustomContextType, 'CustomContextType'),
+            (structures.Context, 'Context'),
+        ],
+    )
     def test_dict_interface(self, context_type, type_name):
         ctx = context_type()
 
@@ -1250,13 +1295,16 @@ class TestContextType:
         ctx.setdefault('numbers', []).append(3)
         assert ctx['numbers'] == [1, 2, 3]
 
-    @pytest.mark.parametrize('context_type', [
-        CustomContextType,
-        structures.Context,
-    ])
+    @pytest.mark.parametrize(
+        'context_type',
+        [
+            CustomContextType,
+            structures.Context,
+        ],
+    )
     def test_keys_and_values(self, context_type):
         ctx = context_type()
-        ctx.update((number, number ** 2) for number in range(1, 5))
+        ctx.update((number, number**2) for number in range(1, 5))
 
         assert set(ctx.keys()) == {1, 2, 3, 4}
         assert set(ctx.values()) == {1, 4, 9, 16}
@@ -1274,6 +1322,7 @@ class TestDeprecatedArgs:
         assert len(recwarn) == 0
         C().a_method(1, b=2)
         assert len(recwarn) == 1
+        assert 'C.a_method(...)' in str(recwarn[0].message)
 
     def test_function(self, recwarn):
         @deprecation.deprecated_args(allowed_positional=0, is_method=False)
@@ -1284,9 +1333,12 @@ class TestDeprecatedArgs:
         assert len(recwarn) == 0
         a_function(1, b=2)
         assert len(recwarn) == 1
+        assert 'a_function(...)' in str(recwarn[0].message)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7), reason='module __getattr__ requires python 3.7')
+@pytest.mark.skipif(
+    falcon.PYTHON_VERSION < (3, 7), reason='module __getattr__ requires python 3.7'
+)
 def test_json_deprecation():
     with pytest.warns(deprecation.DeprecatedWarning, match='json'):
         util.json

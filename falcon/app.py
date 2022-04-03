@@ -41,17 +41,21 @@ from falcon.util.misc import code_to_http_status
 
 # PERF(vytas): On Python 3.5+ (including cythonized modules),
 # reference via module global is faster than going via self
-_BODILESS_STATUS_CODES = frozenset([
-    status.HTTP_100,
-    status.HTTP_101,
-    status.HTTP_204,
-    status.HTTP_304,
-])
+_BODILESS_STATUS_CODES = frozenset(
+    [
+        status.HTTP_100,
+        status.HTTP_101,
+        status.HTTP_204,
+        status.HTTP_304,
+    ]
+)
 
-_TYPELESS_STATUS_CODES = frozenset([
-    status.HTTP_204,
-    status.HTTP_304,
-])
+_TYPELESS_STATUS_CODES = frozenset(
+    [
+        status.HTTP_204,
+        status.HTTP_304,
+    ]
+)
 
 
 class App:
@@ -403,10 +407,10 @@ class App:
             if resp_status in _TYPELESS_STATUS_CODES:
                 default_media_type = None
             elif (
-                length is not None and
-                req.method == 'HEAD' and
-                resp_status not in _BODILESS_STATUS_CODES and
-                'content-length' not in resp._headers
+                length is not None
+                and req.method == 'HEAD'
+                and resp_status not in _BODILESS_STATUS_CODES
+                and 'content-length' not in resp._headers
             ):
                 # NOTE(kgriffs): We really should be returning a Content-Length
                 #   in this case according to my reading of the RFCs. By
@@ -450,7 +454,8 @@ class App:
         if middleware:
             try:
                 self._unprepared_middleware += middleware
-            except TypeError:  # middleware is not iterable; assume it is just one bare component
+            except TypeError:
+                # middleware is not iterable; assume it is just one bare component
                 self._unprepared_middleware.append(middleware)
 
         # NOTE(kgriffs): Even if middleware is None or an empty list, we still
@@ -458,7 +463,7 @@ class App:
         #   first call to add_middleware().
         self._middleware = self._prepare_middleware(
             self._unprepared_middleware,
-            independent_middleware=self._independent_middleware
+            independent_middleware=self._independent_middleware,
         )
 
     def add_route(self, uri_template, resource, **kwargs):
@@ -567,7 +572,9 @@ class App:
 
         self._router.add_route(uri_template, resource, **kwargs)
 
-    def add_static_route(self, prefix, directory, downloadable=False, fallback_filename=None):
+    def add_static_route(
+        self, prefix, directory, downloadable=False, fallback_filename=None
+    ):
         """Add a route to a directory of static files.
 
         Static routes provide a way to serve files directly. This
@@ -581,6 +588,13 @@ class App:
             and therefore should be preferred in production deployments.
             For security reasons, the directory and the fallback_filename (if provided)
             should be read only for the account running the application.
+
+        Warning:
+            If you need to serve large files and/or progressive downloads (such
+            as in the case of video streaming) through the Falcon app, check
+            that your application server's timeout settings can accomodate the
+            expected request duration (for instance, the popular Gunicorn kills
+            ``sync`` workers after 30 seconds unless configured otherwise).
 
         Note:
             For ASGI apps, file reads are made non-blocking by scheduling
@@ -608,18 +622,22 @@ class App:
                 Note that static routes are matched in LIFO order, and are only
                 attempted after checking dynamic routes and sinks.
 
-            directory (str): The source directory from which to serve files.
+            directory (Union[str, pathlib.Path]): The source directory from
+                which to serve files.
             downloadable (bool): Set to ``True`` to include a
                 Content-Disposition header in the response. The "filename"
                 directive is simply set to the name of the requested file.
             fallback_filename (str): Fallback filename used when the requested file
-                is not found. Can be a relative path inside the prefix folder or any valid
-                absolute path.
+                is not found. Can be a relative path inside the prefix folder or
+                any valid absolute path.
 
         """
 
         sr = self._STATIC_ROUTE_TYPE(
-            prefix, directory, downloadable=downloadable, fallback_filename=fallback_filename
+            prefix,
+            directory,
+            downloadable=downloadable,
+            fallback_filename=fallback_filename,
         )
         self._static_routes.insert(0, (sr, sr, False))
         self._update_sink_and_static_routes()
@@ -640,7 +658,8 @@ class App:
             sink (callable): A callable taking the form ``func(req, resp, **kwargs)``.
 
                 Note:
-                    When using an async version of the ``App``, this must be a coroutine.
+                    When using an async version of the ``App``, this must be a
+                    coroutine.
 
             prefix (str): A regex string, typically starting with '/', which
                 will trigger the sink if it matches the path portion of the
@@ -754,12 +773,14 @@ class App:
             class.
 
         """
+
         def wrap_old_handler(old_handler):
             # NOTE(kgriffs): This branch *is* actually tested by
             #   test_error_handlers.test_handler_signature_shim_asgi() (as
             #   verified manually via pdb), but for some reason coverage
             #   tracking isn't picking it up.
             if iscoroutinefunction(old_handler):  # pragma: no cover
+
                 @wraps(old_handler)
                 async def handler_async(req, resp, ex, params):
                     await old_handler(ex, req, resp, params)
@@ -776,21 +797,28 @@ class App:
             try:
                 handler = exception.handle
             except AttributeError:
-                raise AttributeError('handler must either be specified '
-                                     'explicitly or defined as a static'
-                                     'method named "handle" that is a '
-                                     'member of the given exception class.')
+                raise AttributeError(
+                    'handler must either be specified '
+                    'explicitly or defined as a static'
+                    'method named "handle" that is a '
+                    'member of the given exception class.'
+                )
 
         # TODO(vytas): Remove this shimming in a future Falcon version.
         arg_names = tuple(misc.get_argnames(handler))
-        if (arg_names[0:1] in (('e',), ('err',), ('error',), ('ex',), ('exception',)) or
-                arg_names[1:3] in (('req', 'resp'), ('request', 'response'))):
+        if arg_names[0:1] in (
+            ('e',),
+            ('err',),
+            ('error',),
+            ('ex',),
+            ('exception',),
+        ) or arg_names[1:3] in (('req', 'resp'), ('request', 'response')):
             handler = wrap_old_handler(handler)
 
         try:
             exception_tuple = tuple(exception)
         except TypeError:
-            exception_tuple = (exception, )
+            exception_tuple = (exception,)
 
         for exc in exception_tuple:
             if not issubclass(exc, BaseException):
@@ -852,8 +880,7 @@ class App:
 
     def _prepare_middleware(self, middleware=None, independent_middleware=False):
         return helpers.prepare_middleware(
-            middleware=middleware,
-            independent_middleware=independent_middleware
+            middleware=middleware, independent_middleware=independent_middleware
         )
 
     def _get_responder(self, req):
@@ -1055,10 +1082,11 @@ class App:
                     # global level, pending experimentation to see how
                     # useful that would be. See also the discussion on
                     # this GitHub PR: http://goo.gl/XGrtDz
-                    iterable = wsgi_file_wrapper(stream,
-                                                 self._STREAM_BLOCK_SIZE)
+                    iterable = wsgi_file_wrapper(stream, self._STREAM_BLOCK_SIZE)
                 else:
-                    iterable = helpers.CloseableStreamIterator(stream, self._STREAM_BLOCK_SIZE)
+                    iterable = helpers.CloseableStreamIterator(
+                        stream, self._STREAM_BLOCK_SIZE
+                    )
             else:
                 iterable = stream
 
@@ -1087,7 +1115,8 @@ class API(App):
     removed in a future release.
     """
 
-    @deprecation.deprecated('API class may be removed in a future release, '
-                            'use falcon.App instead.')
+    @deprecation.deprecated(
+        'API class may be removed in a future release, use falcon.App instead.'
+    )
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

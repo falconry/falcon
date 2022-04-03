@@ -1,6 +1,7 @@
 def test_missing_in_store(client):
     resp = client.simulate_get(
-        '/thumbnails/1a256a8a-2063-46ff-b53f-d04d5bcf5eee/80x80.jpeg')
+        '/thumbnails/1a256a8a-2063-46ff-b53f-d04d5bcf5eee/80x80.jpeg'
+    )
     assert resp.status_code == 404
 
 
@@ -25,7 +26,8 @@ def test_missing_size(client, png_image):
     client.simulate_post('/images', body=png_image)
 
     resp = client.simulate_get(
-        '/thumbnails/36562622-48e5-4a61-be67-e426b11821ed/480x270.jpeg')
+        '/thumbnails/36562622-48e5-4a61-be67-e426b11821ed/480x270.jpeg'
+    )
     assert resp.status_code == 404
 
 
@@ -35,7 +37,8 @@ def test_thumbnail_caching(client, png_image):
     reference = None
     for retry in range(4):
         resp = client.simulate_get(
-            '/thumbnails/36562622-48e5-4a61-be67-e426b11821ed/160x90.jpeg')
+            '/thumbnails/36562622-48e5-4a61-be67-e426b11821ed/160x90.jpeg'
+        )
         assert resp.status_code == 200
         if retry == 0:
             assert resp.headers.get('X-ASGILook-Cache') == 'Miss'

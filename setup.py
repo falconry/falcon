@@ -1,19 +1,13 @@
 import glob
-import importlib
 import io
 import os
 from os import path
 import re
 import sys
 
-from setuptools import Extension, find_packages, setup
+from setuptools import Extension, setup
 
 MYDIR = path.abspath(os.path.dirname(__file__))
-
-VERSION = importlib.import_module('falcon.version')
-VERSION = VERSION.__version__
-
-REQUIRES = []
 
 try:
     sys.pypy_version_info
@@ -26,11 +20,49 @@ if PYPY:
 else:
     try:
         from Cython.Distutils import build_ext
+
         CYTHON = True
     except ImportError:
         CYTHON = False
 
-if CYTHON:
+
+class BuildFailed(Exception):
+    pass
+
+
+def get_cython_options():
+    # from sqlalchemy setup.py
+    from distutils.errors import (
+        CCompilerError,
+        DistutilsExecError,
+        DistutilsPlatformError,
+    )
+
+    ext_errors = (CCompilerError, DistutilsExecError, DistutilsPlatformError)
+    if sys.platform == 'win32':
+        # Work around issue https://github.com/pypa/setuptools/issues/1902
+        ext_errors += (IOError, TypeError)
+
+    class ve_build_ext(build_ext):
+        # This class allows Cython building to fail.
+
+        def run(self):
+            try:
+                super().run()
+            except DistutilsPlatformError:
+                raise BuildFailed()
+
+        def build_extension(self, ext):
+            try:
+                super().build_extension(ext)
+            except ext_errors as e:
+                raise BuildFailed() from e
+            except ValueError as e:
+                # this can happen on Windows 64 bit, see Python issue 7511
+                if "'path'" in str(e):
+                    raise BuildFailed() from e
+                raise
+
     def list_modules(dirname, pattern):
         filenames = glob.glob(path.join(dirname, pattern))
 
@@ -71,19 +103,21 @@ if CYTHON:
         'falcon.util.sync',
     ]
 
-    cython_package_names = frozenset([
-        'falcon.cyutil',
-    ])
+    cython_package_names = frozenset(
+        [
+            'falcon.cyutil',
+        ]
+    )
 
     ext_modules = [
         Extension(
-            package + '.' + module,
-            [path.join(*(package.split('.') + [module + ext]))]
+            package + '.' + module, [path.join(*(package.split('.') + [module + ext]))]
         )
         for package in package_names
         for module, ext in list_modules(
             path.join(MYDIR, *package.split('.')),
-            ('*.pyx' if package in cython_package_names else '*.py'))
+            ('*.pyx' if package in cython_package_names else '*.py'),
+        )
         if (package + '.' + module) not in modules_to_exclude
     ]
 
@@ -92,11 +126,8 @@ if CYTHON:
     for ext_mod in ext_modules:
         ext_mod.cython_directives = {'language_level': '3'}
 
-    cmdclass = {'build_ext': build_ext}
-
-else:
-    cmdclass = {}
-    ext_modules = []
+    cmdclass = {'build_ext': ve_build_ext}
+    return cmdclass, ext_modules
 
 
 def load_description():
@@ -134,56 +165,47 @@ def load_description():
     return ''.join(description_lines)
 
 
-setup(
-    name='falcon',
-    version=VERSION,
-    description='An unladen web framework for building APIs and app backends.',
-    long_description=load_description(),
-    long_description_content_type='text/x-rst',
-    classifiers=[
-        'Development Status :: 5 - Production/Stable',
-        'Environment :: Web Environment',
-        'Natural Language :: English',
-        'Intended Audience :: Developers',
-        'Intended Audience :: System Administrators',
-        'License :: OSI Approved :: Apache Software License',
-        'Operating System :: MacOS :: MacOS X',
-        'Operating System :: Microsoft :: Windows',
-        'Operating System :: POSIX',
-        'Operating System :: POSIX :: Linux',
-        'Topic :: Internet :: WWW/HTTP',
-        'Topic :: Internet :: WWW/HTTP :: WSGI',
-        # 'Topic :: Internet :: WWW/HTTP :: ASGI',
-        'Topic :: Software Development :: Libraries :: Application Frameworks',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: Implementation :: CPython',
-        'Programming Language :: Python :: Implementation :: PyPy',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Cython',
-    ],
-    keywords='wsgi web api framework rest http cloud',
-    author='Kurt Griffiths',
-    author_email='mail@kgriffs.com',
-    url='https://falconframework.org',
-    license='Apache 2.0',
-    packages=find_packages(exclude=['tests']),
-    include_package_data=True,
-    zip_safe=False,
-    python_requires='>=3.5',
-    install_requires=REQUIRES,
-    cmdclass=cmdclass,
-    ext_modules=ext_modules,
-    tests_require=['testtools', 'requests', 'pyyaml', 'pytest', 'pytest-runner'],
-    entry_points={
-        'console_scripts': [
-            'falcon-bench = falcon.cmd.bench:main',
-            'falcon-inspect-app = falcon.cmd.inspect_app:main',
-            'falcon-print-routes = falcon.cmd.inspect_app:route_main',
-        ]
-    }
-)
+def run_setup(CYTHON):
+    if CYTHON:
+        cmdclass, ext_modules = get_cython_options()
+    else:
+        cmdclass, ext_modules = {}, []
+
+    setup(
+        long_description=load_description(),
+        cmdclass=cmdclass,
+        ext_modules=ext_modules,
+    )
+
+
+def status_msgs(*msgs):
+    print('*' * 75, *msgs, '*' * 75, sep='\n')
+
+
+if not CYTHON:
+    run_setup(False)
+    if not PYPY:
+        status_msgs('Cython compilation not supported in this environment')
+elif os.environ.get('FALCON_DISABLE_CYTHON'):
+    run_setup(False)
+    status_msgs(
+        'FALCON_DISABLE_CYTHON is set, skipping cython compilation.',
+        'Pure-Python build succeeded.',
+    )
+else:
+    try:
+        run_setup(True)
+    except BuildFailed as exc:
+        status_msgs(
+            exc.__cause__,
+            'Cython compilation could not be completed, speedups are not enabled.',
+            'Failure information, if any, is above.',
+            'Retrying the build without the C extension now.',
+        )
+
+        run_setup(False)
+
+        status_msgs(
+            'Cython compilation could not be completed, speedups are not enabled.',
+            'Pure-Python build succeeded.',
+        )

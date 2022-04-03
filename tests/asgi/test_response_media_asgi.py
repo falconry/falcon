@@ -21,7 +21,6 @@ def create_client(resource, handlers=None):
 
 
 class SimpleMediaResource:
-
     def __init__(self, document, media_type=falcon.MEDIA_JSON):
         self._document = document
         self._media_type = media_type
@@ -32,11 +31,14 @@ class SimpleMediaResource:
         resp.status = falcon.HTTP_OK
 
 
-@pytest.mark.parametrize('media_type', [
-    ('*/*'),
-    (falcon.MEDIA_JSON),
-    ('application/json; charset=utf-8'),
-])
+@pytest.mark.parametrize(
+    'media_type',
+    [
+        ('*/*'),
+        (falcon.MEDIA_JSON),
+        ('application/json; charset=utf-8'),
+    ],
+)
 def test_json(media_type):
     class TestResource:
         async def on_get(self, req, resp):
@@ -51,36 +53,41 @@ def test_json(media_type):
     client.simulate_get('/')
 
 
-@pytest.mark.parametrize('document', [
-    '',
-    'I am a \u1d0a\ua731\u1d0f\u0274 string.',
-    ['\u2665', '\u2660', '\u2666', '\u2663'],
-    {'message': '\xa1Hello Unicode! \U0001F638'},
-    {
-        'description': 'A collection of primitive Python type examples.',
-        'bool': False is not True and True is not False,
-        'dict': {'example': 'mapping'},
-        'float': 1.0,
-        'int': 1337,
-        'list': ['a', 'sequence', 'of', 'items'],
-        'none': None,
-        'str': 'ASCII string',
-        'unicode': 'Hello Unicode! \U0001F638',
-    },
-])
+@pytest.mark.parametrize(
+    'document',
+    [
+        '',
+        'I am a \u1d0a\ua731\u1d0f\u0274 string.',
+        ['\u2665', '\u2660', '\u2666', '\u2663'],
+        {'message': '\xa1Hello Unicode! \U0001F638'},
+        {
+            'description': 'A collection of primitive Python type examples.',
+            'bool': False is not True and True is not False,
+            'dict': {'example': 'mapping'},
+            'float': 1.0,
+            'int': 1337,
+            'list': ['a', 'sequence', 'of', 'items'],
+            'none': None,
+            'str': 'ASCII string',
+            'unicode': 'Hello Unicode! \U0001F638',
+        },
+    ],
+)
 def test_non_ascii_json_serialization(document):
     client = create_client(SimpleMediaResource(document))
     resp = client.simulate_get('/')
     assert resp.json == document
 
 
-@pytest.mark.parametrize('media_type', [
-    (falcon.MEDIA_MSGPACK),
-    ('application/msgpack; charset=utf-8'),
-    ('application/x-msgpack'),
-])
+@pytest.mark.parametrize(
+    'media_type',
+    [
+        (falcon.MEDIA_MSGPACK),
+        ('application/msgpack; charset=utf-8'),
+        ('application/x-msgpack'),
+    ],
+)
 def test_msgpack(media_type):
-
     class TestResource:
         async def on_get(self, req, resp):
             resp.content_type = media_type
@@ -97,15 +104,17 @@ def test_msgpack(media_type):
             # Ensure that the result is being cached
             assert (await resp.render_body()) is body
 
-    client = create_client(TestResource(), handlers={
-        'application/msgpack': media.MessagePackHandler(),
-        'application/x-msgpack': media.MessagePackHandler(),
-    })
+    client = create_client(
+        TestResource(),
+        handlers={
+            'application/msgpack': media.MessagePackHandler(),
+            'application/x-msgpack': media.MessagePackHandler(),
+        },
+    )
     client.simulate_get('/')
 
 
 def test_custom_media_handler():
-
     class PythonRepresentation(media.BaseHandler):
         async def serialize_async(media, content_type):
             return repr(media).encode()
@@ -119,9 +128,12 @@ def test_custom_media_handler():
 
             assert body == b"{'something': True}"
 
-    client = create_client(TestResource(), handlers={
-        'text/x-python-repr': PythonRepresentation(),
-    })
+    client = create_client(
+        TestResource(),
+        handlers={
+            'text/x-python-repr': PythonRepresentation(),
+        },
+    )
     client.simulate_get('/')
 
 
@@ -190,12 +202,11 @@ def test_mimeparse_edgecases(monkeypatch_resolver):
     # NOTE(kgriffs): Test the pre-3.0 method. Although undocumented, it was
     #   technically a public method, and so we make sure it still works here.
     if monkeypatch_resolver:
+
         def _resolve(media_type, default, raise_not_found=True):
             with pytest.warns(DeprecatedWarning, match='This undocumented method'):
                 h = handlers.find_by_media_type(
-                    media_type,
-                    default,
-                    raise_not_found=raise_not_found
+                    media_type, default, raise_not_found=raise_not_found
                 )
             return h, None, None
 
@@ -285,7 +296,6 @@ def test_media_rendered_cached():
 
 
 def test_custom_render_body():
-
     class CustomResponse(falcon.asgi.Response):
         async def render_body(self):
             body = await super().render_body()

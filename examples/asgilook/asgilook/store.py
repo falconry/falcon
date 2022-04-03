@@ -8,7 +8,6 @@ import PIL.Image
 
 
 class Image:
-
     def __init__(self, config, image_id, size):
         self._config = config
 
@@ -43,12 +42,11 @@ class Image:
 
         return [
             f'/thumbnails/{self.image_id}/{width}x{height}.jpeg'
-            for width, height in reductions(
-                self.size, self._config.min_thumb_size)]
+            for width, height in reductions(self.size, self._config.min_thumb_size)
+        ]
 
 
 class Store:
-
     def __init__(self, config):
         self._config = config
         self._images = {}

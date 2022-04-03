@@ -28,7 +28,7 @@ package namespace::
 
             raise falcon.HTTPBadRequest(
                 title='TTL Out of Range',
-                description='The message's TTL must be between 60 and 300 seconds, inclusive.'
+                description='The message's TTL must be between 60 and 300 seconds.'
             )
 
             # -- snip --
@@ -84,6 +84,7 @@ __all__ = (
     'HTTPVersionNotSupported',
     'MediaMalformedError',
     'MediaNotFoundError',
+    'MediaValidationError',
     'OperationNotAllowed',
     'PayloadTypeError',
     'UnsupportedError',
@@ -151,16 +152,19 @@ class WebSocketPathNotFound(WebSocketDisconnected):
     A simulated WebSocket connection was attempted but the path specified in
     the handshake request did not match any of the app's routes.
     """
+
     pass
 
 
 class WebSocketHandlerNotFound(WebSocketDisconnected):
     """The routed resource does not contain an ``on_websocket()`` handler."""
+
     pass
 
 
 class WebSocketServerError(WebSocketDisconnected):
     """The server encountered an unexpected error."""
+
     pass
 
 
@@ -216,7 +220,7 @@ class HTTPBadRequest(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -287,7 +291,9 @@ class HTTPUnauthorized(HTTPError):
     """
 
     @deprecated_args(allowed_positional=0)
-    def __init__(self, title=None, description=None, headers=None, challenges=None, **kwargs):
+    def __init__(
+        self, title=None, description=None, headers=None, challenges=None, **kwargs
+    ):
         if challenges:
             headers = _load_headers(headers)
             headers['WWW-Authenticate'] = ', '.join(challenges)
@@ -297,7 +303,7 @@ class HTTPUnauthorized(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -364,7 +370,7 @@ class HTTPForbidden(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -429,7 +435,7 @@ class HTTPNotFound(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -543,7 +549,9 @@ class HTTPMethodNotAllowed(HTTPError):
     """
 
     @deprecated_args(allowed_positional=1)
-    def __init__(self, allowed_methods, title=None, description=None, headers=None, **kwargs):
+    def __init__(
+        self, allowed_methods, title=None, description=None, headers=None, **kwargs
+    ):
         headers = _load_headers(headers)
         headers['Allow'] = ', '.join(allowed_methods)
         super().__init__(
@@ -551,7 +559,7 @@ class HTTPMethodNotAllowed(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -614,7 +622,7 @@ class HTTPNotAcceptable(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -681,7 +689,7 @@ class HTTPConflict(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -754,7 +762,7 @@ class HTTPGone(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -812,7 +820,7 @@ class HTTPLengthRequired(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -871,7 +879,7 @@ class HTTPPreconditionFailed(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -934,13 +942,15 @@ class HTTPPayloadTooLarge(HTTPError):
     """
 
     @deprecated_args(allowed_positional=0)
-    def __init__(self, title=None, description=None, retry_after=None, headers=None, **kwargs):
+    def __init__(
+        self, title=None, description=None, retry_after=None, headers=None, **kwargs
+    ):
         super().__init__(
             status.HTTP_413,
             title=title,
             description=description,
             headers=_parse_retry_after(headers, retry_after),
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1004,7 +1014,7 @@ class HTTPUriTooLong(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1063,7 +1073,7 @@ class HTTPUnsupportedMediaType(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1129,7 +1139,9 @@ class HTTPRangeNotSatisfiable(HTTPError):
     """
 
     @deprecated_args(allowed_positional=1)
-    def __init__(self, resource_length, title=None, description=None, headers=None, **kwargs):
+    def __init__(
+        self, resource_length, title=None, description=None, headers=None, **kwargs
+    ):
         headers = _load_headers(headers)
         headers['Content-Range'] = 'bytes */' + str(resource_length)
 
@@ -1138,7 +1150,7 @@ class HTTPRangeNotSatisfiable(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1199,7 +1211,7 @@ class HTTPUnprocessableEntity(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1255,7 +1267,7 @@ class HTTPLocked(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1310,7 +1322,7 @@ class HTTPFailedDependency(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1373,7 +1385,7 @@ class HTTPPreconditionRequired(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1435,13 +1447,15 @@ class HTTPTooManyRequests(HTTPError):
     """
 
     @deprecated_args(allowed_positional=0)
-    def __init__(self, title=None, description=None, headers=None, retry_after=None, **kwargs):
+    def __init__(
+        self, title=None, description=None, headers=None, retry_after=None, **kwargs
+    ):
         super().__init__(
             status.HTTP_429,
             title=title,
             description=description,
             headers=_parse_retry_after(headers, retry_after),
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1503,7 +1517,7 @@ class HTTPRequestHeaderFieldsTooLarge(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1572,7 +1586,7 @@ class HTTPUnavailableForLegalReasons(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1627,7 +1641,7 @@ class HTTPInternalServerError(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1689,7 +1703,7 @@ class HTTPNotImplemented(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1744,7 +1758,7 @@ class HTTPBadGateway(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1809,13 +1823,15 @@ class HTTPServiceUnavailable(HTTPError):
     """
 
     @deprecated_args(allowed_positional=0)
-    def __init__(self, title=None, description=None, headers=None, retry_after=None, **kwargs):
+    def __init__(
+        self, title=None, description=None, headers=None, retry_after=None, **kwargs
+    ):
         super().__init__(
             status.HTTP_503,
             title=title,
             description=description,
             headers=_parse_retry_after(headers, retry_after),
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1871,7 +1887,7 @@ class HTTPGatewayTimeout(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1932,7 +1948,7 @@ class HTTPVersionNotSupported(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -1991,7 +2007,7 @@ class HTTPInsufficientStorage(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -2047,7 +2063,7 @@ class HTTPLoopDetected(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -2115,7 +2131,7 @@ class HTTPNetworkAuthenticationRequired(HTTPError):
             title=title,
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -2170,7 +2186,7 @@ class HTTPInvalidHeader(HTTPBadRequest):
             title='Invalid header value',
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -2224,7 +2240,7 @@ class HTTPMissingHeader(HTTPBadRequest):
             title='Missing header value',
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -2281,7 +2297,7 @@ class HTTPInvalidParam(HTTPBadRequest):
             title='Invalid parameter',
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -2337,7 +2353,7 @@ class HTTPMissingParam(HTTPBadRequest):
             title='Missing parameter',
             description=description,
             headers=headers,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -2384,7 +2400,7 @@ class MediaNotFoundError(HTTPBadRequest):
         super().__init__(
             title='Invalid {0}'.format(media_type),
             description='Could not parse an empty {0} body'.format(media_type),
-            **kwargs
+            **kwargs,
         )
 
 
@@ -2441,6 +2457,61 @@ class MediaMalformedError(HTTPBadRequest):
     @description.setter
     def description(self, value):
         pass
+
+
+class MediaValidationError(HTTPBadRequest):
+    """400 Bad Request.
+
+    Request media is invalid. This exception is raised by a media validator
+    (such as
+    :func:`jsonschema.validate <falcon.media.validators.jsonschema.validate>`)
+    when ``req.media`` is successfully deserialized, but fails to validate
+    against the configured schema.
+
+    The cause of this exception, if any, is stored in the ``__cause__``
+    attribute using the "raise ... from" form when raising.
+
+    Note:
+        All the arguments must be passed as keyword only.
+
+    Keyword Args:
+        title (str): Error title (default '400 Bad Request').
+        description (str): Human-friendly description of the error, along with
+            a helpful suggestion or two.
+        headers (dict or list): A ``dict`` of header names and values
+            to set, or a ``list`` of (*name*, *value*) tuples. Both *name* and
+            *value* must be of type ``str`` or ``StringType``, and only
+            character values 0x00 through 0xFF may be used on platforms that
+            use wide characters.
+
+            Note:
+                The Content-Type header, if present, will be overridden. If
+                you wish to return custom error messages, you can create
+                your own HTTP error class, and install an error handler
+                to convert it into an appropriate HTTP response for the
+                client
+
+            Note:
+                Falcon can process a list of ``tuple`` slightly faster
+                than a ``dict``.
+        href (str): A URL someone can visit to find out more information
+            (default ``None``). Unicode characters are percent-encoded.
+        href_text (str): If href is given, use this as the friendly
+            title/description for the link (default 'API documentation
+            for this error').
+        code (int): An internal code that customers can reference in their
+            support request or to help them when searching for knowledge
+            base articles related to this error (default ``None``).
+    """
+
+    def __init__(self, *, title=None, description=None, headers=None, **kwargs):
+        super().__init__(
+            title=title,
+            description=description,
+            headers=headers,
+            **kwargs,
+        )
+
 
 # -----------------------------------------------------------------------------
 # Helpers

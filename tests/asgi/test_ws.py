@@ -197,11 +197,14 @@ async def test_echo():  # noqa: C901
     app.add_route('/{p1}/{p2}', resource)
 
     async with testing.ASGIConductor(app) as c:
-        async with c.simulate_ws('/v1/v2', headers={}) as ws:
+        # NOTE(vytas): Using the websocket() alias.
+        async with c.websocket('/v1/v2', headers={}) as ws:
             assert (await ws.receive_text()) == 'v1:v2:hello:42'
 
             for i in range(producer_loop):
-                message = str(i) if i else ''  # Test round-tripping the empty string as well
+                message = (
+                    str(i) if i else ''
+                )  # Test round-tripping the empty string as well
 
                 for i in range(100):
                     await ws.send_text('ignore')
@@ -331,12 +334,17 @@ async def test_client_disconnect_early(  # noqa: C901
                         self.data = await ws.receive_data()
 
                         if explicit_close_server:
-                            # NOTE(kgriffs): We call ws.receive_data() again here in order
-                            #   to test coverage of the logic that handles the case
-                            #   of a closed connection while waiting on more data.
+                            # NOTE(kgriffs): We call ws.receive_data() again here in
+                            #   order to test coverage of the logic that handles
+                            #   the case of a closed connection while waiting on
+                            #   more data.
                             recv_task = falcon.create_task(ws.receive_data())
-                            await asyncio.sleep(0)  # Ensure recv_task() has a chance to get ahead
-                            await asyncio.wait([recv_task, ws.close(4099)])
+                            await asyncio.sleep(
+                                0
+                            )  # Ensure recv_task() has a chance to get ahead
+                            await asyncio.wait(
+                                [recv_task, falcon.create_task(ws.close(4099))]
+                            )
 
                         self.data_received.set()
 
@@ -399,7 +407,7 @@ async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
     sample_doc = {
         'answer': 42,
         'runes': b'\xe1\x9a\xa0\xe1\x9b\x87\xe1\x9a\xbb'.decode(),
-        'ascii': 'hello world'
+        'ascii': 'hello world',
     }
 
     sample_doc_bin = sample_doc.copy()
@@ -452,9 +460,12 @@ async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
             def deserialize(self, payload: str) -> object:
                 return rapidjson.loads(payload)
 
-        app.ws_options.media_handlers[falcon.WebSocketPayloadType.TEXT] = RapidJSONHandler()
+        app.ws_options.media_handlers[
+            falcon.WebSocketPayloadType.TEXT
+        ] = RapidJSONHandler()
 
     if custom_data:
+
         class CBORHandler(media.BinaryBaseHandlerWS):
             def serialize(self, media: object) -> bytes:
                 return cbor2.dumps(media)
@@ -463,7 +474,9 @@ async def test_media(custom_text, custom_data, conductor):  # NOQA: C901
             def deserialize(self, payload: bytes) -> object:
                 return cbor2.loads(payload)
 
-        app.ws_options.media_handlers[falcon.WebSocketPayloadType.BINARY] = CBORHandler()
+        app.ws_options.media_handlers[
+            falcon.WebSocketPayloadType.BINARY
+        ] = CBORHandler()
 
     async with conductor as c:
         async with c.simulate_ws() as ws:
@@ -529,7 +542,9 @@ async def test_send_receive_data(sample_data, conductor):
 
             for __ in range(2):
                 ws._collected_client_events.append({'type': EventType.WS_RECEIVE})
-                ws._collected_client_events.append({'type': EventType.WS_RECEIVE, 'bytes': None})
+                ws._collected_client_events.append(
+                    {'type': EventType.WS_RECEIVE, 'bytes': None}
+                )
 
             for __ in range(3):
                 assert (await ws.receive_data()) == sample_data
@@ -538,12 +553,15 @@ async def test_send_receive_data(sample_data, conductor):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('subprotocols', [
-    ['SIS508'],
-    ('DEADBEEF', 'SIS508'),
-    [],
-    None,
-])
+@pytest.mark.parametrize(
+    'subprotocols',
+    [
+        ['SIS508'],
+        ('DEADBEEF', 'SIS508'),
+        [],
+        None,
+    ],
+)
 async def test_subprotocol(subprotocols, conductor):
     class Resource:
         def __init__(self):
@@ -573,15 +591,18 @@ async def test_subprotocol(subprotocols, conductor):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('headers', [
-    None,
-    [],
-    iter([]),
-    iter([iter(['X-Name', 'Value']), ('NAME', 'Value'), ('NAME', 'Value')]),
-    (['X-Name', 'Value'], ('NAME', 'Value'), ('NAME', 'Value')),
-    {'NAME': 'value'},
-    {'NAME': 'value', 'NameToo': 'ValueToo'},
-])
+@pytest.mark.parametrize(
+    'headers',
+    [
+        None,
+        [],
+        iter([]),
+        iter([iter(['X-Name', 'Value']), ('NAME', 'Value'), ('NAME', 'Value')]),
+        (['X-Name', 'Value'], ('NAME', 'Value'), ('NAME', 'Value')),
+        {'NAME': 'value'},
+        {'NAME': 'value', 'NameToo': 'ValueToo'},
+    ],
+)
 async def test_accept_with_headers(headers, conductor):
     class Resource:
         def __init__(self):
@@ -604,7 +625,9 @@ async def test_accept_with_headers(headers, conductor):
                     if isinstance(headers, dict):
                         headers_in = headers.items()
 
-                    for (name_in, value_in), (name_out, value_out) in zip(headers_in, ws.headers):
+                    for (name_in, value_in), (name_out, value_out) in zip(
+                        headers_in, ws.headers
+                    ):
                         name_out = name_out.decode()
                         value_out = value_out.decode()
 
@@ -617,11 +640,14 @@ async def test_accept_with_headers(headers, conductor):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('headers', [
-    [['sec-websocket-protocol', 'SIS508']],
-    [['non-ascii', b'\xe1\x9a\xa0\xe1\x9b\x87\xe1\x9a\xbb'.decode()]],
-    {b'\xe1\x9a\xa0\xe1\x9b\x87\xe1\x9a\xbb'.decode(): 'non-ascii'}
-])
+@pytest.mark.parametrize(
+    'headers',
+    [
+        [['sec-websocket-protocol', 'SIS508']],
+        [['non-ascii', b'\xe1\x9a\xa0\xe1\x9b\x87\xe1\x9a\xbb'.decode()]],
+        {b'\xe1\x9a\xa0\xe1\x9b\x87\xe1\x9a\xbb'.decode(): 'non-ascii'},
+    ],
+)
 async def test_accept_with_bad_headers(headers, conductor):
     class Resource:
         def __init__(self):
@@ -702,15 +728,17 @@ async def test_unexpected_param(conductor):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('subprotocol', [
-    b'DEADBEEF',
-    ['SIS508'],
-    [],
-    tuple(),
-    {},
-
-    'OK',  # control
-])
+@pytest.mark.parametrize(
+    'subprotocol',
+    [
+        b'DEADBEEF',
+        ['SIS508'],
+        [],
+        tuple(),
+        {},
+        'OK',  # control
+    ],
+)
 async def test_subprotocol_bad_type(subprotocol, conductor):
     class Resource:
         def __init__(self):
@@ -788,21 +816,10 @@ async def test_send_receive_wrong_type(conductor):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('options_code', [
-    999,
-    100,
-    0,
-    -1,
-    1004,
-    1005,
-    1006,
-    1015,
-    1016,
-    1017,
-    1050,
-    1099,
-    'NaN'
-])
+@pytest.mark.parametrize(
+    'options_code',
+    [999, 100, 0, -1, 1004, 1005, 1006, 1015, 1016, 1017, 1050, 1099, 'NaN'],
+)
 async def test_client_disconnect_uncaught_error(options_code, conductor):
     class Resource:
         def __init__(self):

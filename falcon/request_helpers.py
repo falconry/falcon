@@ -29,7 +29,9 @@ from falcon.util import ETag
 #   header strings outside the range 0x0000 - 0x00FF per PEP 3333
 #   (see also: https://www.python.org/dev/peps/pep-3333/#unicode-issues)
 #
-_COOKIE_NAME_RESERVED_CHARS = re.compile('[\x00-\x1F\x7F-\xFF()<>@,;:\\\\"/[\\]?={} \x09]')
+_COOKIE_NAME_RESERVED_CHARS = re.compile(
+    '[\x00-\x1F\x7F-\xFF()<>@,;:\\\\"/[\\]?={} \x09]'
+)
 
 # NOTE(kgriffs): strictly speaking, the weakness indicator is
 #   case-sensitive, but this wasn't explicit until RFC 7232

@@ -3,7 +3,7 @@ from wsgiref.validate import InputWrapper
 
 import falcon
 from falcon import testing
-from mock import call, MagicMock, mock_open
+from unittest.mock import call, MagicMock, mock_open
 import msgpack
 import pytest
 
@@ -26,9 +26,9 @@ def test_list_images(client):
     doc = {
         'images': [
             {
-                'href': '/images/1eaf6ef1-7f2d-4ecc-a8d5-6e8adba7cc0e.png'
-            }
-        ]
+                'href': '/images/1eaf6ef1-7f2d-4ecc-a8d5-6e8adba7cc0e.png',
+            },
+        ],
     }
 
     response = client.simulate_get('/images')
@@ -48,9 +48,7 @@ def test_post_image(client, mock_store):
     image_content_type = 'image/xyz'
 
     response = client.simulate_post(
-        '/images',
-        body=b'some-fake-bytes',
-        headers={'content-type': image_content_type}
+        '/images', body=b'some-fake-bytes', headers={'content-type': image_content_type}
     )
 
     assert response.status == falcon.HTTP_CREATED
@@ -78,9 +76,7 @@ def test_saving_image(monkeypatch):
     fake_request_stream = io.BytesIO(fake_image_bytes)
     storage_path = 'fake-storage-path'
     store = look.images.ImageStore(
-        storage_path,
-        uuidgen=mock_uuidgen,
-        fopen=mock_file_open
+        storage_path, uuidgen=mock_uuidgen, fopen=mock_file_open
     )
 
     assert store.save(fake_request_stream, 'image/png') == fake_uuid + '.png'

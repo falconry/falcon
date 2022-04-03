@@ -3,6 +3,8 @@ import pytest
 import falcon
 from falcon import App, status_codes, testing
 
+from _util import create_app  # NOQA: I100
+
 
 class CustomCookies:
     def items(self):
@@ -24,31 +26,37 @@ def test_testing_client_handles_wsgi_generator_app():
     assert response.text == 'It works!'
 
 
-@pytest.mark.parametrize('items', [
-    (),
-    (b'1',),
-    (b'1', b'2'),
-    (b'Hello, ', b'World', b'!\n'),
-])
+@pytest.mark.parametrize(
+    'items',
+    [
+        (),
+        (b'1',),
+        (b'1', b'2'),
+        (b'Hello, ', b'World', b'!\n'),
+    ],
+)
 def test_closed_wsgi_iterable(items):
     assert tuple(testing.closed_wsgi_iterable(items)) == items
 
 
-@pytest.mark.parametrize('version, valid', [
-    ('1', True),
-    ('1.0', True),
-    ('1.1', True),
-    ('2', True),
-    ('2.0', True),
-    ('', False),
-    ('0', False),
-    ('1.2', False),
-    ('2.1', False),
-    ('3', False),
-    ('3.1', False),
-    ('11', False),
-    ('22', False),
-])
+@pytest.mark.parametrize(
+    'version, valid',
+    [
+        ('1', True),
+        ('1.0', True),
+        ('1.1', True),
+        ('2', True),
+        ('2.0', True),
+        ('', False),
+        ('0', False),
+        ('1.2', False),
+        ('2.1', False),
+        ('3', False),
+        ('3.1', False),
+        ('11', False),
+        ('22', False),
+    ],
+)
 def test_simulate_request_http_version(version, valid):
     app = App()
 
@@ -75,7 +83,9 @@ def test_simulate_request_content_type():
     result = testing.simulate_post(app, '/', content_type=falcon.MEDIA_HTML)
     assert result.text == falcon.MEDIA_HTML
 
-    result = testing.simulate_post(app, '/', content_type=falcon.MEDIA_HTML, headers=headers)
+    result = testing.simulate_post(
+        app, '/', content_type=falcon.MEDIA_HTML, headers=headers
+    )
     assert result.text == falcon.MEDIA_HTML
 
     result = testing.simulate_post(app, '/', json={})
@@ -88,14 +98,12 @@ def test_simulate_request_content_type():
     assert result.text == falcon.MEDIA_JSON
 
     result = testing.simulate_post(
-        app, '/', json={}, headers=headers, content_type=falcon.MEDIA_HTML)
+        app, '/', json={}, headers=headers, content_type=falcon.MEDIA_HTML
+    )
     assert result.text == falcon.MEDIA_JSON
 
 
-@pytest.mark.parametrize('cookies', [
-    {'foo': 'bar', 'baz': 'foo'},
-    CustomCookies()
-])
+@pytest.mark.parametrize('cookies', [{'foo': 'bar', 'baz': 'foo'}, CustomCookies()])
 def test_create_environ_cookies(cookies):
     environ = testing.create_environ(cookies=cookies)
 
@@ -159,3 +167,26 @@ def test_create_environ_default_ua_override():
 def test_missing_header_is_none():
     req = testing.create_req()
     assert req.auth is None
+
+
+@pytest.mark.parametrize(
+    'method', ['DELETE', 'GET', 'HEAD', 'LOCK', 'OPTIONS', 'PATCH', 'POST', 'PUT']
+)
+def test_client_simulate_aliases(asgi, method):
+    def capture_method(req, resp):
+        resp.content_type = falcon.MEDIA_TEXT
+        resp.text = req.method
+
+    app = create_app(asgi)
+    app.add_sink(capture_method)
+
+    client = testing.TestClient(app)
+    if method == 'LOCK':
+        result = client.request(method, '/')
+    else:
+        simulate_alias = getattr(client, method.lower())
+        result = simulate_alias('/')
+
+    assert result.status_code == 200
+    expected = '' if method == 'HEAD' else method
+    assert result.text == expected

@@ -10,13 +10,13 @@ def resp_type(request):
     if request.param:
         skipif_asgi_unsupported()
         import falcon.asgi
+
         return falcon.asgi.Response
 
     return Response
 
 
 class TestResponseContext:
-
     def test_default_response_context(self, resp_type):
         resp = resp_type()
 
@@ -30,7 +30,6 @@ class TestResponseContext:
         assert resp.context.get('note') == resp.context['note']
 
     def test_custom_response_context(self, resp_type):
-
         class MyCustomContextType:
             pass
 
@@ -41,7 +40,6 @@ class TestResponseContext:
         assert isinstance(resp.context, MyCustomContextType)
 
     def test_custom_response_context_failure(self, resp_type):
-
         class MyCustomResponse(resp_type):
             context_type = False
 
@@ -49,7 +47,6 @@ class TestResponseContext:
             MyCustomResponse()
 
     def test_custom_response_context_factory(self, resp_type):
-
         def create_context(resp):
             return {'resp': resp}
 

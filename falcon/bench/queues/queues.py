@@ -15,7 +15,6 @@
 
 
 class ItemResource:
-
     def on_put(self, req, resp, tenant_id, queue_name):
         pass
 
@@ -27,6 +26,5 @@ class ItemResource:
 
 
 class CollectionResource:
-
     def on_get(self, req, resp, tenant_id):
         pass

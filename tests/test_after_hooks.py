@@ -93,12 +93,10 @@ def things_in_the_head(header, value, req, resp, resource):
     resp.set_header(header, value)
 
 
-bunnies_in_the_head = functools.partial(things_in_the_head,
-                                        'X-Bunnies', 'fluffy')
+bunnies_in_the_head = functools.partial(things_in_the_head, 'X-Bunnies', 'fluffy')
 
 
-cuteness_in_the_head = functools.partial(things_in_the_head,
-                                         'X-Cuteness', 'cute')
+cuteness_in_the_head = functools.partial(things_in_the_head, 'X-Cuteness', 'cute')
 
 
 def fluffiness_in_the_head(req, resp, resource, value='fluffy'):
@@ -111,7 +109,6 @@ def fluffiness_in_the_head(req, resp, resource, value='fluffy'):
 
 
 class WrappedRespondersResource:
-
     @falcon.after(serialize_body)
     @falcon.after(validate_output)
     def on_get(self, req, resp):
@@ -130,7 +127,6 @@ class WrappedRespondersResource:
 
 
 class WrappedRespondersResourceAsync:
-
     @falcon.after(serialize_body_async)
     @falcon.after(validate_output, is_async=False)
     async def on_get(self, req, resp):
@@ -177,28 +173,22 @@ class WrappedClassResourceChild(WrappedClassResource):
 
 
 class ClassResourceWithURIFields:
-
     @falcon.after(fluffiness_in_the_head, 'fluffy')
     def on_get(self, req, resp, field1, field2):
         self.fields = (field1, field2)
 
 
 class ClassResourceWithURIFieldsAsync:
-
     @falcon.after(fluffiness_in_the_head, 'fluffy')
     async def on_get(self, req, resp, field1, field2):
         self.fields = (field1, field2)
 
 
 class ClassResourceWithURIFieldsChild(ClassResourceWithURIFields):
-
     def on_get(self, req, resp, field1, field2):
         # Test passing mixed args and kwargs
         super(ClassResourceWithURIFieldsChild, self).on_get(
-            req,
-            resp,
-            field1,
-            field2=field2
+            req, resp, field1, field2=field2
         )
 
 
@@ -259,11 +249,7 @@ def test_hook_as_callable_class(client):
 
 
 @pytest.mark.parametrize(
-    'resource',
-    [
-        ClassResourceWithURIFields(),
-        ClassResourceWithURIFieldsChild()
-    ]
+    'resource', [ClassResourceWithURIFields(), ClassResourceWithURIFieldsChild()]
 )
 def test_resource_with_uri_fields(client, resource):
     client.app.add_route('/{field1}/{field2}', resource)
@@ -301,11 +287,7 @@ def test_resource_with_uri_fields_async():
 
 
 @pytest.mark.parametrize(
-    'resource',
-    [
-        WrappedClassResource(),
-        WrappedClassResourceChild()
-    ]
+    'resource', [WrappedClassResource(), WrappedClassResourceChild()]
 )
 def test_wrapped_resource(client, resource):
     client.app.add_route('/wrapped', resource)
@@ -385,7 +367,6 @@ _game_hook = ResourceAwareGameHook()
 @falcon.after(_game_hook)
 @falcon.after(_game_hook)
 class HandGame:
-
     def __init__(self):
         self.seed = None
 
@@ -423,12 +404,15 @@ def game_client():
     return testing.TestClient(app)
 
 
-@pytest.mark.parametrize('seed,uri,expected', [
-    ('paper', '/once', 'paper, rock, scissors'),
-    ('scissors', '/twice', 'scissors, paper, rock, scissors'),
-    ('rock', '/thrice', 'rock, scissors, paper, rock, scissors'),
-    ('paper', '/thrice', 'paper, rock, scissors, paper, rock'),
-])
+@pytest.mark.parametrize(
+    'seed,uri,expected',
+    [
+        ('paper', '/once', 'paper, rock, scissors'),
+        ('scissors', '/twice', 'scissors, paper, rock, scissors'),
+        ('rock', '/thrice', 'rock, scissors, paper, rock, scissors'),
+        ('paper', '/thrice', 'paper, rock, scissors, paper, rock'),
+    ],
+)
 def test_after_hooks_on_suffixed_resource(game_client, seed, uri, expected):
     game_client.simulate_put('/seed', json=seed)
 

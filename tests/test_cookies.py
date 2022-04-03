@@ -15,7 +15,6 @@ UNICODE_TEST_STRING = 'Unicode_\xc3\xa6\xc3\xb8'
 
 
 class TimezoneGMTPlus1(tzinfo):
-
     def utcoffset(self, dt):
         return timedelta(hours=1)
 
@@ -30,7 +29,6 @@ GMT_PLUS_ONE = TimezoneGMTPlus1()
 
 
 class CookieResource:
-
     def on_get(self, req, resp):
         resp.set_cookie('foo', 'bar', domain='example.com', path='/')
 
@@ -42,10 +40,7 @@ class CookieResource:
 
     def on_post(self, req, resp):
         e = datetime(year=2050, month=1, day=1)  # naive
-        resp.set_cookie('foo', 'bar',
-                        http_only=False,
-                        secure=False,
-                        expires=e)
+        resp.set_cookie('foo', 'bar', http_only=False, secure=False, expires=e)
         resp.unset_cookie('bad')
 
     def on_put(self, req, resp):
@@ -55,12 +50,9 @@ class CookieResource:
 
 
 class CookieResourceMaxAgeFloatString:
-
     def on_get(self, req, resp):
-        resp.set_cookie(
-            'foofloat', 'bar', max_age=15.3, secure=False, http_only=False)
-        resp.set_cookie(
-            'foostring', 'bar', max_age='15', secure=False, http_only=False)
+        resp.set_cookie('foofloat', 'bar', max_age=15.3, secure=False, http_only=False)
+        resp.set_cookie('foostring', 'bar', max_age='15', secure=False, http_only=False)
 
 
 class CookieResourceSameSite:
@@ -295,7 +287,7 @@ def test_request_cookie_parsing():
             tz3=Europe/Madrid ;_ga3= GA3.2.332347814.1422308165;
             _gat=1;
             _octo=GH1.1.201722077.1422308165
-            """
+            """,
         ),
     ]
 
@@ -332,10 +324,7 @@ def test_invalid_cookies_are_ignored():
 
     for c in vals:
         headers = [
-            (
-                'Cookie',
-                'good_cookie=foo;bad' + c + 'cookie=bar'
-            ),
+            ('Cookie', 'good_cookie=foo;bad' + c + 'cookie=bar'),
         ]
 
         environ = testing.create_environ(headers=headers)
@@ -347,10 +336,7 @@ def test_invalid_cookies_are_ignored():
 
 def test_duplicate_cookie():
     headers = [
-        (
-            'Cookie',
-            'x=1;bad{cookie=bar; x=2;x=3 ; x=4;'
-        ),
+        ('Cookie', 'x=1;bad{cookie=bar; x=2;x=3 ; x=4;'),
     ]
 
     environ = testing.create_environ(headers=headers)
@@ -385,12 +371,7 @@ def test_unicode_inside_ascii_range():
 
 
 @pytest.mark.parametrize(
-    'name',
-    (
-        UNICODE_TEST_STRING,
-        UNICODE_TEST_STRING.encode('utf-8'),
-        42
-    )
+    'name', (UNICODE_TEST_STRING, UNICODE_TEST_STRING.encode('utf-8'), 42)
 )
 def test_non_ascii_name(name):
     resp = falcon.Response()
@@ -399,12 +380,7 @@ def test_non_ascii_name(name):
 
 
 @pytest.mark.parametrize(
-    'value',
-    (
-        UNICODE_TEST_STRING,
-        UNICODE_TEST_STRING.encode('utf-8'),
-        42
-    )
+    'value', (UNICODE_TEST_STRING, UNICODE_TEST_STRING.encode('utf-8'), 42)
 )
 def test_non_ascii_value(value):
     resp = falcon.Response()
@@ -462,9 +438,7 @@ def test_same_site_value_case_insensitive(same_site):
     assert morsel['samesite'].lower() == same_site.lower()
 
 
-@pytest.mark.parametrize(
-    'same_site', ['bogus', 'laxx', 'stric']
-)
+@pytest.mark.parametrize('same_site', ['bogus', 'laxx', 'stric'])
 def test_invalid_same_site_value(same_site):
     resp = falcon.Response()
 

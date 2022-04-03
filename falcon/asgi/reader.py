@@ -82,11 +82,11 @@ class BufferedReader:
             if 0 < size_hint < self._buffer_len - self._buffer_pos:
                 buffer_pos = self._buffer_pos
                 self._buffer_pos += size_hint
-                yield self._buffer[buffer_pos:self._buffer_pos]
+                yield self._buffer[buffer_pos : self._buffer_pos]
 
             buffer_pos = self._buffer_pos
             self._buffer_pos = self._buffer_len
-            yield self._buffer[buffer_pos:self._buffer_len]
+            yield self._buffer[buffer_pos : self._buffer_len]
 
         async for chunk in self._source:
             yield chunk
@@ -104,17 +104,16 @@ class BufferedReader:
                 if 0 < size_hint < pos - self._buffer_pos:
                     buffer_pos = self._buffer_pos
                     self._buffer_pos += size_hint
-                    yield self._buffer[buffer_pos:self._buffer_pos]
+                    yield self._buffer[buffer_pos : self._buffer_pos]
                 buffer_pos = self._buffer_pos
                 self._buffer_pos = pos
                 yield self._buffer[buffer_pos:pos]
                 return
 
-            if 0 < size_hint < (
-                    self._buffer_len - self._buffer_pos - delimiter_len_1):
+            if 0 < size_hint < (self._buffer_len - self._buffer_pos - delimiter_len_1):
                 buffer_pos = self._buffer_pos
                 self._buffer_pos += size_hint
-                yield self._buffer[buffer_pos:self._buffer_pos]
+                yield self._buffer[buffer_pos : self._buffer_pos]
 
         if self._buffer_pos > 0:
             self._trim_buffer()
@@ -135,7 +134,7 @@ class BufferedReader:
                     self._buffer_pos = offset + pos
                     # PERF(vytas): local1 + local2 is faster than self._attr
                     #   (still true on CPython 3.8)
-                    yield self._buffer[:offset + pos]
+                    yield self._buffer[: offset + pos]
                     return
             elif self._buffer:
                 self._buffer += chunk
@@ -145,7 +144,7 @@ class BufferedReader:
                 self._buffer_len = len(chunk)
 
             pos = self._buffer.find(delimiter)
-            if pos >= 0:
+            if pos >= 0:  # pragma: no py39,py310 cover
                 if pos > 0:
                     self._buffer_pos = pos
                     yield self._buffer[:pos]
@@ -161,7 +160,7 @@ class BufferedReader:
 
     def _prepend_buffer(self, chunk):
         if self._buffer_len > self._buffer_pos:
-            self._buffer = chunk + self._buffer[self._buffer_pos:]
+            self._buffer = chunk + self._buffer[self._buffer_pos :]
             self._buffer_len = len(self._buffer)
         else:
             self._buffer = chunk
@@ -170,7 +169,7 @@ class BufferedReader:
         self._buffer_pos = 0
 
     def _trim_buffer(self):
-        self._buffer = self._buffer[self._buffer_pos:]
+        self._buffer = self._buffer[self._buffer_pos :]
         self._buffer_len -= self._buffer_pos
         self._buffer_pos = 0
 
@@ -197,7 +196,7 @@ class BufferedReader:
 
                 result.append(chunk)
                 remaining -= chunk_len
-                if remaining == 0:
+                if remaining == 0:  # pragma: no py39,py310 cover
                     break
 
             # PERF(vytas) Don't join unless necessary.
@@ -214,14 +213,13 @@ class BufferedReader:
 
             result.write(chunk)
             remaining -= chunk_len
-            if remaining == 0:
+            if remaining == 0:  # pragma: no py39,py310 cover
                 break
 
         return result.getvalue()
 
     def delimit(self, delimiter):
-        return type(self)(self._iter_delimited(delimiter),
-                          chunk_size=self._chunk_size)
+        return type(self)(self._iter_delimited(delimiter), chunk_size=self._chunk_size)
 
     # -------------------------------------------------------------------------
     # Asynchronous IO interface.
@@ -229,8 +227,7 @@ class BufferedReader:
 
     def __aiter__(self):
         if self._iteration_started:
-            raise OperationNotAllowed(
-                'This stream is already being iterated over.')
+            raise OperationNotAllowed('This stream is already being iterated over.')
 
         self._iteration_started = True
 
@@ -253,7 +250,7 @@ class BufferedReader:
             async for chunk in self._source:
                 self._buffer += chunk
                 self._buffer_len = len(self._buffer)
-                if self._buffer_len >= size:
+                if self._buffer_len >= size:  # pragma: no py39,py310 cover
                     break
 
         return self._buffer[:size]
@@ -263,8 +260,7 @@ class BufferedReader:
             if destination is not None:
                 await destination.write(chunk)
 
-    async def pipe_until(self, delimiter, destination=None,
-                         consume_delimiter=False):
+    async def pipe_until(self, delimiter, destination=None, consume_delimiter=False):
         async for chunk in self._iter_delimited(delimiter):
             if destination is not None:
                 await destination.write(chunk)
@@ -273,8 +269,7 @@ class BufferedReader:
             await self._consume_delimiter(delimiter)
 
     async def read(self, size=-1):
-        return await self._read_from(
-            self._iter_with_buffer(size_hint=size or 0), size)
+        return await self._read_from(self._iter_with_buffer(size_hint=size or 0), size)
 
     async def readall(self):
         """Read and return all remaining data in the request body.
@@ -293,7 +288,8 @@ class BufferedReader:
 
     async def read_until(self, delimiter, size=-1, consume_delimiter=False):
         result = await self._read_from(
-            self._iter_delimited(delimiter, size_hint=size or 0), size)
+            self._iter_delimited(delimiter, size_hint=size or 0), size
+        )
 
         if consume_delimiter:
             await self._consume_delimiter(delimiter)

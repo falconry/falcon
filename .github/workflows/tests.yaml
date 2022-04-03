@@ -23,6 +23,7 @@ jobs:
           - "ubuntu-20.04"
         toxenv:
           - "pep8"
+          - "black"
           - "pep8-examples"
           - "pep8-docstrings"
           - "mypy"
@@ -50,8 +51,8 @@ jobs:
           - python-version: pypy3
             os: ubuntu-20.04
             toxenv: pypy3
-          - python-version: 3.5.2
-            os: ubuntu-16.04
+          - python-version: 3.5
+            os: ubuntu-20.04
             toxenv: py35
           - python-version: 3.6
             os: ubuntu-20.04
@@ -68,6 +69,13 @@ jobs:
           - python-version: 3.9
             os: ubuntu-20.04
             toxenv: py39_cython
+          # NOTE(vytas): Quote "3.10" or else it is parsed as a YAML float 3.1.
+          - python-version: "3.10"
+            os: ubuntu-20.04
+            toxenv: py310
+          - python-version: "3.10"
+            os: ubuntu-20.04
+            toxenv: py310_cython
           - python-version: 3.8
             os: ubuntu-20.04
             toxenv: py38_sans_msgpack
@@ -90,22 +98,8 @@ jobs:
 
       - name: Set up Python
         uses: actions/setup-python@v2.1.4
-        if: ${{ matrix.toxenv != 'py35' }}
         with:
           python-version: ${{ matrix.python-version }}
-
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2.1.4
-        if: ${{ matrix.toxenv == 'py35' }}
-        with:
-          python-version: 3.8
-
-      - name: Set up Python 3.5.2
-        if: ${{ matrix.toxenv == 'py35' }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential curl python3.5 python3.5-dev
-          python3.5 --version
 
       - name: Install smoke test dependencies
         if: ${{ matrix.toxenv == 'py38_smoke' || matrix.toxenv == 'py38_smoke_cython' }}
@@ -113,14 +107,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libunwind-dev
 
-      # TODO(kgriffs): Revisit second half of 2021 to see if we still need to pin tox
-      #
-      #   See also: https://github.com/tox-dev/tox/issues/1777
-      #
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install coverage tox
+          pip install -U coverage setuptools tox wheel
           python --version
           pip --version
           tox --version

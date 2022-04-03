@@ -179,14 +179,12 @@ class GetWithFaultyPutResource:
 
 
 class FaultyDecoratedResource:
-
     @selfless_decorator
     def on_get(self, req, resp):
         pass
 
 
 class TestHttpMethodRouting:
-
     def test_get(self, client, resource_things):
         client.app.add_route('/things', resource_things)
         client.app.add_route('/things/{id}/stuff/{sid}', resource_things)
@@ -211,7 +209,9 @@ class TestHttpMethodRouting:
     def test_report(self, client, resource_things):
         client.app.add_route('/things', resource_things)
         client.app.add_route('/things/{id}/stuff/{sid}', resource_things)
-        response = client.simulate_request(path='/things/42/stuff/1337', method='REPORT')
+        response = client.simulate_request(
+            path='/things/42/stuff/1337', method='REPORT'
+        )
         assert response.status == falcon.HTTP_204
         assert resource_things.called
 
@@ -237,7 +237,9 @@ class TestHttpMethodRouting:
                 continue
 
             resource_things.called = False
-            response = client.simulate_request(path='/things/84/stuff/65', method=method)
+            response = client.simulate_request(
+                path='/things/84/stuff/65', method=method
+            )
 
             assert not resource_things.called
             assert response.status == falcon.HTTP_405
@@ -279,10 +281,14 @@ class TestHttpMethodRouting:
         headers = response.headers
         assert headers['allow'] == 'GET'
 
-    @pytest.mark.parametrize('method', falcon.constants._META_METHODS + ['SETECASTRONOMY'])
+    @pytest.mark.parametrize(
+        'method', falcon.constants._META_METHODS + ['SETECASTRONOMY']
+    )
     @pytest.mark.filterwarnings('ignore:Unknown REQUEST_METHOD')
     def test_meta_and_others_disallowed(self, client, resource_things, method):
         client.app.add_route('/things/{id}/stuff/{sid}', resource_things)
-        response = client.simulate_request(path='/things/42/stuff/1337', method='WEBSOCKET')
+        response = client.simulate_request(
+            path='/things/42/stuff/1337', method='WEBSOCKET'
+        )
         assert response.status == falcon.HTTP_400
         assert not resource_things.called

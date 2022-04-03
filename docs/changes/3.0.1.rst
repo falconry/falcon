@@ -1,0 +1,29 @@
+Changelog for Falcon 3.0.1
+==========================
+
+Summary
+-------
+
+This is a minor point release to take care of a couple of bugs that we did
+not catch for 3.0.0.
+
+Fixed
+-----
+
+- The ``api_helpers`` module was re-added, since it was renamed to
+  ``app_helpers`` (and effectively removed) without announcing a corresponding
+  breaking change.
+  This module is now considered deprecated, and will be removed in a future
+  Falcon version. (`#1902 <https://github.com/falconry/falcon/issues/1902>`__)
+- ASGI HTTP headers were treated as UTF-8 encoded, not taking the incompatibility
+  with WSGI and porting of WSGI applications into consideration.
+  This was fixed, and ASGI headers are now decoded and encoded as ISO-8859-1. (`#1911 <https://github.com/falconry/falcon/issues/1911>`__)
+
+
+Contributors to this Release
+----------------------------
+
+Many thanks to those who contributed to this bugfix release:
+
+- `CaselIT <https://github.com/CaselIT>`_
+- `vytas7 <https://github.com/vytas7>`_

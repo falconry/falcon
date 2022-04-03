@@ -13,10 +13,7 @@ class FunctionalTest(TestCase):
     """
 
     def setUp(self):
-        self.app = load_test_app(os.path.join(
-            os.path.dirname(__file__),
-            'config.py'
-        ))
+        self.app = load_test_app(os.path.join(os.path.dirname(__file__), 'config.py'))
 
     def tearDown(self):
         set_config({}, overwrite=True)

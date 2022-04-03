@@ -14,6 +14,7 @@
 
 """Response class."""
 
+import functools
 import mimetypes
 
 from falcon.constants import _UNSET
@@ -41,7 +42,6 @@ _STREAM_LEN_REMOVED_MSG = (
     'The deprecated stream_len property was removed in Falcon 3.0. '
     'Please use Response.set_stream() or Response.content_length instead.'
 )
-
 
 _RESERVED_CROSSORIGIN_VALUES = frozenset({'anonymous', 'use-credentials'})
 
@@ -81,7 +81,8 @@ class Response:
                 in the response. If the content is already a byte string,
                 use the :attr:`data` attribute instead (it's faster).
 
-        body (str): Deprecated alias for :attr:`text`. Will be removed in a future Falcon version.
+        body (str): Deprecated alias for :attr:`text`. Will be removed in a
+            future Falcon version.
 
         data (bytes): Byte string representing response content.
 
@@ -191,18 +192,12 @@ class Response:
         self.context = self.context_type()
 
     @property  # type: ignore
-    @deprecated(
-        'Please use text instead.',
-        is_property=True
-    )
+    @deprecated('Please use text instead.', is_property=True)
     def body(self):
         return self.text
 
     @body.setter  # type: ignore
-    @deprecated(
-        'Please use text instead.',
-        is_property=True
-    )
+    @deprecated('Please use text instead.', is_property=True)
     def body(self, value):
         self.text = value
 
@@ -269,13 +264,11 @@ class Response:
                         self.content_type = self.options.default_media_type
 
                     handler, _, _ = self.options.media_handlers._resolve(
-                        self.content_type,
-                        self.options.default_media_type
+                        self.content_type, self.options.default_media_type
                     )
 
                     self._media_rendered = handler.serialize(
-                        self._media,
-                        self.content_type
+                        self._media, self.content_type
                     )
 
                 data = self._media_rendered
@@ -322,8 +315,18 @@ class Response:
         #   the self.content_length property.
         self._headers['content-length'] = str(content_length)
 
-    def set_cookie(self, name, value, expires=None, max_age=None,
-                   domain=None, path=None, secure=None, http_only=True, same_site=None):
+    def set_cookie(
+        self,
+        name,
+        value,
+        expires=None,
+        max_age=None,
+        domain=None,
+        path=None,
+        secure=None,
+        http_only=True,
+        same_site=None,
+    ):
         """Set a response cookie.
 
         Note:
@@ -498,7 +501,9 @@ class Response:
             same_site = same_site.lower()
 
             if same_site not in _RESERVED_SAMESITE_VALUES:
-                raise ValueError("same_site must be set to either 'lax', 'strict', or 'none'")
+                raise ValueError(
+                    "same_site must be set to either 'lax', 'strict', or 'none'"
+                )
 
             self._cookies[name]['samesite'] = same_site.capitalize()
 
@@ -771,8 +776,17 @@ class Response:
 
             _headers[name] = value
 
-    def append_link(self, target, rel, title=None, title_star=None,
-                    anchor=None, hreflang=None, type_hint=None, crossorigin=None):
+    def append_link(
+        self,
+        target,
+        rel,
+        title=None,
+        title_star=None,
+        anchor=None,
+        hreflang=None,
+        type_hint=None,
+        crossorigin=None,
+    ):
         """Append a link header to the response.
 
         (See also: RFC 5988, Section 1)
@@ -783,7 +797,8 @@ class Response:
 
         Note:
             So-called "link-extension" elements, as defined by RFC 5988,
-            are not yet supported. See also Issue #288.
+            are not yet supported. See also
+            `Issue #288 <https://github.com/falconry/falcon/issues/288>`__.
 
         Args:
             target (str): Target IRI for the resource identified by the
@@ -792,7 +807,8 @@ class Response:
             rel (str): Relation type of the link, such as "next" or
                 "bookmark".
 
-                (See also: http://www.iana.org/assignments/link-relations/link-relations.xhtml)
+                (See also:
+                http://www.iana.org/assignments/link-relations/link-relations.xhtml)
 
         Keyword Args:
             title (str): Human-readable label for the destination of
@@ -831,7 +847,8 @@ class Response:
                 Content-Type header returned when the link is followed.
             crossorigin(str):  Determines how cross origin requests are handled.
                 Can take values 'anonymous' or 'use-credentials' or None.
-                (See: https://www.w3.org/TR/html50/infrastructure.html#cors-settings-attribute)
+                (See:
+                https://www.w3.org/TR/html50/infrastructure.html#cors-settings-attribute)
 
         """
 
@@ -850,9 +867,7 @@ class Response:
         #
         if '//' in rel:
             if ' ' in rel:
-                rel = ('"' +
-                       ' '.join([uri_encode(r) for r in rel.split()]) +
-                       '"')
+                rel = '"' + ' '.join([uri_encode(r) for r in rel.split()]) + '"'
             else:
                 rel = '"' + uri_encode(rel) + '"'
 
@@ -862,8 +877,12 @@ class Response:
             value += '; title="' + title + '"'
 
         if title_star is not None:
-            value += ("; title*=UTF-8'" + title_star[0] + "'" +
-                      uri_encode_value(title_star[1]))
+            value += (
+                "; title*=UTF-8'"
+                + title_star[0]
+                + "'"
+                + uri_encode_value(title_star[1])
+            )
 
         if type_hint is not None:
             value += '; type="' + type_hint + '"'
@@ -883,7 +902,8 @@ class Response:
             if crossorigin not in _RESERVED_CROSSORIGIN_VALUES:
                 raise ValueError(
                     'crossorigin must be set to either '
-                    "'anonymous' or 'use-credentials'")
+                    "'anonymous' or 'use-credentials'"
+                )
             if crossorigin == 'anonymous':
                 value += '; crossorigin'
             else:  # crossorigin == 'use-credentials'
@@ -898,7 +918,9 @@ class Response:
             _headers['link'] = value
 
     # NOTE(kgriffs): Alias deprecated as of 3.0
-    add_link = append_link
+    add_link = deprecated('Please use append_link() instead.', method_name='add_link')(
+        append_link
+    )
 
     cache_control = header_property(
         'Cache-Control',
@@ -909,7 +931,8 @@ class Response:
         the value for the header.
 
         """,
-        format_header_value_list)
+        format_header_value_list,
+    )
 
     content_location = header_property(
         'Content-Location',
@@ -919,7 +942,8 @@ class Response:
         being set is already URI encoded it should be decoded first or the
         header should be set manually using the set_header method.
         """,
-        uri_encode)
+        uri_encode,
+    )
 
     content_length = header_property(
         'Content-Length',
@@ -960,7 +984,8 @@ class Response:
 
         (See also: RFC 7233, Section 4.2)
         """,
-        format_range)
+        format_range,
+    )
 
     content_type = header_property(
         'Content-Type',
@@ -973,7 +998,8 @@ class Response:
         ``falcon.MEDIA_JS``, ``falcon.MEDIA_TEXT``,
         ``falcon.MEDIA_JPEG``, ``falcon.MEDIA_PNG``,
         and ``falcon.MEDIA_GIF``.
-        """)
+        """,
+    )
 
     downloadable_as = header_property(
         'Content-Disposition',
@@ -988,7 +1014,26 @@ class Response:
         ``filename*`` directive, whereas ``filename`` will contain the US
         ASCII fallback.
         """,
-        format_content_disposition)
+        functools.partial(format_content_disposition, disposition_type='attachment'),
+    )
+
+    viewable_as = header_property(
+        'Content-Disposition',
+        """Set an inline Content-Disposition header using the given filename.
+
+        The value will be used for the ``filename`` directive. For example,
+        given ``'report.pdf'``, the Content-Disposition header would be set
+        to: ``'inline; filename="report.pdf"'``.
+
+        As per `RFC 6266 <https://tools.ietf.org/html/rfc6266#appendix-D>`_
+        recommendations, non-ASCII filenames will be encoded using the
+        ``filename*`` directive, whereas ``filename`` will contain the US
+        ASCII fallback.
+
+        .. versionadded:: 3.1
+        """,
+        functools.partial(format_content_disposition, disposition_type='inline'),
+    )
 
     etag = header_property(
         'ETag',
@@ -997,7 +1042,8 @@ class Response:
         The ETag header will be wrapped with double quotes ``"value"`` in case
         the user didn't pass it.
         """,
-        format_etag_header)
+        format_etag_header,
+    )
 
     expires = header_property(
         'Expires',
@@ -1006,7 +1052,8 @@ class Response:
         Note:
             Falcon will format the ``datetime`` as an HTTP date string.
         """,
-        dt_to_http)
+        dt_to_http,
+    )
 
     last_modified = header_property(
         'Last-Modified',
@@ -1015,7 +1062,8 @@ class Response:
         Note:
             Falcon will format the ``datetime`` as an HTTP date string.
         """,
-        dt_to_http)
+        dt_to_http,
+    )
 
     location = header_property(
         'Location',
@@ -1025,7 +1073,8 @@ class Response:
         being set is already URI encoded it should be decoded first or the
         header should be set manually using the set_header method.
         """,
-        uri_encode)
+        uri_encode,
+    )
 
     retry_after = header_property(
         'Retry-After',
@@ -1034,7 +1083,8 @@ class Response:
         The expected value is an integral number of seconds to use as the
         value for the header. The HTTP-date syntax is not supported.
         """,
-        str)
+        str,
+    )
 
     vary = header_property(
         'Vary',
@@ -1053,7 +1103,8 @@ class Response:
 
         (See also: RFC 7231, Section 7.1.4)
         """,
-        format_header_value_list)
+        format_header_value_list,
+    )
 
     accept_ranges = header_property(
         'Accept-Ranges',
@@ -1071,7 +1122,8 @@ class Response:
             "none" is the literal string, not Python's built-in ``None``
             type.
 
-        """)
+        """,
+    )
 
     def _set_media_type(self, media_type=None):
         """Set a content-type; wrapper around set_header.
@@ -1119,8 +1171,7 @@ class Response:
             #
             # Even without the .split("\\r\\n"), the below
             # is still ~17% faster, so don't use .output()
-            items += [('set-cookie', c.OutputString())
-                      for c in self._cookies.values()]
+            items += [('set-cookie', c.OutputString()) for c in self._cookies.values()]
         return items
 
 
@@ -1154,6 +1205,7 @@ class ResponseOptions:
             Internet media types (RFC 2046). Defaults to ``mimetypes.types_map``
             after calling ``mimetypes.init()``.
     """
+
     __slots__ = (
         'secure_cookies_by_default',
         'default_media_type',

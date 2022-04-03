@@ -56,7 +56,6 @@ def client(asgi):
 
 
 class TestDefaultRouting:
-
     def test_single_default_pattern(self, client, sink, resource):
         client.app.add_sink(sink)
 
@@ -90,9 +89,12 @@ class TestDefaultRouting:
 
     def test_multiple_patterns(self, asgi, client, sink, resource):
         if asgi:
+
             async def sink_too(req, resp):
                 resp.status = falcon.HTTP_781
+
         else:
+
             def sink_too(req, resp):
                 resp.status = falcon.HTTP_781
 
@@ -148,7 +150,6 @@ class TestDefaultRouting:
 
 
 class TestSinkMethodCompatibility:
-
     def _verify_kitchen_sink(self, client):
         resp = client.simulate_request('BREW', '/features')
         assert resp.status_code == 200

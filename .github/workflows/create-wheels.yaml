@@ -15,6 +15,7 @@ jobs:
   # four jobs are defined make-wheel-win-osx, make-wheel-linux, make-source-dist and make-emulated-wheels
   # the wheels jobs do the the same steps, but linux wheels need to be build to target manylinux
   make-wheel-win-osx:
+    needs: make-source-dist
     name: ${{ matrix.python-version }}-${{ matrix.architecture }}-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -23,17 +24,13 @@ jobs:
           - "windows-latest"
           - "macos-latest"
         python-version:
-          - "3.5"
           - "3.6"
           - "3.7"
           - "3.8"
           - "3.9"
+          - "3.10"
         architecture:
           - x64
-
-        include:
-          - python-version: "3.5"
-            pytest-extra: --ignore=tests/asgi
 
       fail-fast: false
 
@@ -50,22 +47,18 @@ jobs:
           architecture: ${{ matrix.architecture }}
 
       - name: Create wheel
-        # create the wheel using --no-use-pep517 since locally we have pyproject
-        # this flag should be removed once falcon supports pep517
-        # `--no-deps` is used to only generate the wheel for the current library. Redundant in falcon since it has no dependencies
+        # `--no-deps` is used to only generate the wheel for the current library.
+        # Redundant in falcon since it has no dependencies
         run: |
           python -m pip install --upgrade pip
           pip --version
-          pip install 'setuptools>=44' 'wheel>=0.34' 'cython>=0.29.21'
-          pip wheel -w dist --no-use-pep517 -v --no-deps .
+          pip install 'setuptools>=47' 'wheel>=0.34'
+          pip wheel -w dist -v --no-deps .
 
       - name: Check created wheel
         # - install the created wheel without using the pypi index
         # - check the cython extension
         # - runs the tests
-        env:
-          FALCON_ASGI_WRAP_NON_COROUTINES: Y
-          FALCON_TESTING_SESSION: Y
         run: |
           pip install tox
           tox -e wheel_check -- ${{ matrix.pytest-extra }}
@@ -90,6 +83,7 @@ jobs:
           twine upload --skip-existing dist/*
 
   make-wheel-linux:
+    needs: make-source-dist
     # see also comments in the make-wheel-win-osx job for details on the steps
     name: ${{ matrix.python-version }}-${{ matrix.architecture }}-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -99,17 +93,13 @@ jobs:
           - "ubuntu-latest"
         python-version:
           # the versions are <python tag>-<abi tag> as specified in PEP 425.
-          - cp35-cp35m
           - cp36-cp36m
           - cp37-cp37m
           - cp38-cp38
           - cp39-cp39
+          - cp310-cp310
         architecture:
           - x64
-
-        include:
-          - python-version: cp35-cp35m
-            pytest-extra: --ignore=tests/asgi
 
       fail-fast: false
 
@@ -124,7 +114,8 @@ jobs:
         env:
           py_tag: ${{ matrix.python-version }}
         run: |
-          version="${py_tag: 2:1}.${py_tag: 3:1}"
+          platform=${py_tag%%-*}
+          version=${platform:2:1}.${platform:3:3}
           echo $version
           echo "::set-output name=python-version::$version"
 
@@ -142,11 +133,9 @@ jobs:
         # this action generates 3 wheels in dist/. linux manylinux1 and manylinux2010
         with:
           python-versions: ${{ matrix.python-version }}
-          build-requirements: "setuptools>=44 wheel>=0.34 cython>=0.29.21"
-          # Create the wheel using --no-use-pep517 since locally we have pyproject
-          # This flag should be removed once falcon supports pep517
+          build-requirements: "setuptools>=47 wheel>=0.34"
           # `--no-deps` is used to only generate the wheel for the current library. Redundant in falcon since it has no dependencies
-          pip-wheel-args: "-w ./dist --no-use-pep517 -v --no-deps"
+          pip-wheel-args: "-w ./dist -v --no-deps"
 
       - name: Create wheel for manylinux 2014
         # as previous step but for manylinux2014
@@ -156,16 +145,13 @@ jobs:
           # Remove previous original wheel just to be sure it is recreated. Should not be needed
           pre-build-command: "rm ./dist/*-linux*.whl"
           python-versions: ${{ matrix.python-version }}
-          build-requirements: "setuptools>=44 wheel>=0.34 cython>=0.29.21"
-          pip-wheel-args: "-w ./dist --no-use-pep517 -v --no-deps"
+          build-requirements: "setuptools>=47 wheel>=0.34"
+          pip-wheel-args: "-w ./dist -v --no-deps"
 
       - name: Check created wheel
         # - install the created wheel without using the pypi index
         # - check the cython extension
         # - runs the tests
-        env:
-          FALCON_ASGI_WRAP_NON_COROUTINES: Y
-          FALCON_TESTING_SESSION: Y
         run: |
           pip install tox
           tox -e wheel_check -- ${{ matrix.pytest-extra }}
@@ -197,7 +183,7 @@ jobs:
         os:
           - "ubuntu-latest"
         python-version:
-          - "3.9"
+          - "3.10"
         architecture:
           - x64
 
@@ -216,12 +202,10 @@ jobs:
           architecture: ${{ matrix.architecture }}
 
       - name: Create sdist
-        # TODO should we generate the c files? Only for pyx files or also for py files?
         run: |
           python -m pip install --upgrade pip
           pip --version
-          pip install setuptools>=44 wheel>=0.34 cython>=0.29.21
-          # cythonize -3 falcon/**/*.pyx
+          pip install setuptools>=47 wheel>=0.34
           python setup.py sdist --dist-dir dist
           python .github/workflows/scripts/verify_tag.py dist
 
@@ -243,6 +227,7 @@ jobs:
           twine upload --skip-existing dist/*
 
   make-emulated-wheels:
+    needs: make-source-dist
     # see also comments in the make-wheel-linux job for details on the steps
     name: ${{ matrix.python-version }}-${{ matrix.architecture }}
     runs-on: ubuntu-latest
@@ -252,18 +237,14 @@ jobs:
           - "ubuntu-latest"
         python-version:
           # the versions are <python tag>-<abi tag> as specified in PEP 425.
-          - cp35-cp35m
           - cp36-cp36m
           - cp37-cp37m
           - cp38-cp38
           - cp39-cp39
+          - cp310-cp310
         architecture:
           - aarch64
           - s390x
-
-        include:
-          - python-version: cp35-cp35m
-            pytest-extra: --ignore=tests/asgi
 
       fail-fast: false
 
@@ -289,15 +270,13 @@ jobs:
         # this action generates 2 wheels in dist/. linux manylinux1 and manylinux2010
         with:
           python-versions: ${{ matrix.python-version }}
-          build-requirements: "setuptools>=44 wheel>=0.34 cython>=0.29.21"
-          pip-wheel-args: "-w ./dist --no-use-pep517 -v --no-deps"
+          build-requirements: "setuptools>=47 wheel>=0.34"
+          pip-wheel-args: "-w ./dist -v --no-deps"
 
       - name: Check created wheel for arm
         if: ${{ matrix.architecture == 'aarch64' }}
         uses: docker://quay.io/pypa/manylinux2014_aarch64
         env:
-          FALCON_ASGI_WRAP_NON_COROUTINES: Y
-          FALCON_TESTING_SESSION: Y
           PIP_CACHE_DIR: /github/workspace/.pip/
           PYTHON_VERSION: ${{ matrix.python-version }}
         with:
@@ -314,15 +293,13 @@ jobs:
         # this action generates 2 wheels in dist/. linux manylinux1 and manylinux2010
         with:
           python-versions: ${{ matrix.python-version }}
-          build-requirements: "setuptools>=44 wheel>=0.34 cython>=0.29.21"
-          pip-wheel-args: "-w ./dist --no-use-pep517 -v --no-deps"
+          build-requirements: "setuptools>=47 wheel>=0.34"
+          pip-wheel-args: "-w ./dist -v --no-deps"
 
       - name: Check created wheel for s390x
         if: ${{ matrix.architecture == 's390x' }}
         uses: docker://quay.io/pypa/manylinux2014_s390x
         env:
-          FALCON_ASGI_WRAP_NON_COROUTINES: Y
-          FALCON_TESTING_SESSION: Y
           PIP_CACHE_DIR: /github/workspace/.pip/
         with:
           args: |

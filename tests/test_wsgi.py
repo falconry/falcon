@@ -17,7 +17,6 @@ _SIZE_1_KB = 1024
 
 @pytest.mark.usefixtures('_setup_wsgi_server')
 class TestWSGIServer:
-
     def test_get(self):
         resp = requests.get(_SERVER_BASE_URL)
         assert resp.status_code == 200
@@ -35,7 +34,7 @@ class TestWSGIServer:
         assert resp.status_code == 405
 
     def test_post(self):
-        body = testing.rand_string(_SIZE_1_KB / 2, _SIZE_1_KB)
+        body = testing.rand_string(_SIZE_1_KB // 2, _SIZE_1_KB)
         resp = requests.post(_SERVER_BASE_URL, data=body)
         assert resp.status_code == 200
         assert resp.text == body
@@ -46,7 +45,7 @@ class TestWSGIServer:
         assert resp.status_code == 400
 
     def test_post_read_bounded_stream(self):
-        body = testing.rand_string(_SIZE_1_KB / 2, _SIZE_1_KB)
+        body = testing.rand_string(_SIZE_1_KB // 2, _SIZE_1_KB)
         resp = requests.post(_SERVER_BASE_URL + 'bucket', data=body)
         assert resp.status_code == 200
         assert resp.text == body
@@ -69,8 +68,9 @@ def _run_server(stop_event, host, port):
         def on_put(self, req, resp):
             # NOTE(kgriffs): Test that reading past the end does
             # not hang.
-            req_body = (req.bounded_stream.read(1)
-                        for i in range(req.content_length + 1))
+            req_body = (
+                req.bounded_stream.read(1) for i in range(req.content_length + 1)
+            )
 
             resp.text = b''.join(req_body)
 
@@ -104,10 +104,9 @@ def _setup_wsgi_server():
     process = multiprocessing.Process(
         target=_run_server,
         daemon=True,
-
         # NOTE(kgriffs): Pass these explicitly since if multiprocessing is
         #   using the 'spawn' start method, we can't depend on closures.
-        args=(stop_event, _SERVER_HOST, _SERVER_PORT)
+        args=(stop_event, _SERVER_HOST, _SERVER_PORT),
     )
 
     process.start()

@@ -47,7 +47,7 @@ def _process_line(line):
 
     rendered_text = template.format(rfc=rfc, section=section)
 
-    return line[:m.start()] + rendered_text + line[m.end():]
+    return line[: m.start()] + rendered_text + line[m.end() :]
 
 
 def _on_process_docstring(app, what, name, obj, options, lines):

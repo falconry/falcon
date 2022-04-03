@@ -24,6 +24,7 @@ from http import cookies as http_cookies
 import sys
 
 # Hoist misc. utils
+from falcon.constants import PYTHON_VERSION
 from falcon.util.deprecation import deprecated
 from falcon.util.misc import code_to_http_status
 from falcon.util.misc import dt_to_http
@@ -69,22 +70,29 @@ except ImportError:
 
 # NOTE(vytas): Cythonized BufferedReader makes heavy use of Py_ssize_t which
 #   would overflow on 32-bit systems with form parts larger than 2 GiB.
-BufferedReader = (_CyBufferedReader or _PyBufferedReader) if IS_64_BITS else _PyBufferedReader
+BufferedReader = (
+    (_CyBufferedReader or _PyBufferedReader) if IS_64_BITS else _PyBufferedReader
+)
 
-if sys.version_info >= (3, 7):
-    # NOTE(caselit): __getattr__ support for modules was added only in py 3.7. Deprecating an
-    # import on previous version is hard to do, so we are displaying the warning only on 3.7+
+if PYTHON_VERSION >= (3, 7):
+    # NOTE(caselit): __getattr__ support for modules was added only in py 3.7.
+    # Deprecating an import on previous version is hard to do, so we are
+    # displaying the warning only on 3.7+
     def __getattr__(name):
         if name == 'json':
             import warnings
             import json  # NOQA
             from .deprecation import DeprecatedWarning
 
-            warnings.warn('Importing json from "falcon.util" is deprecated.', DeprecatedWarning)
+            warnings.warn(
+                'Importing json from "falcon.util" is deprecated.', DeprecatedWarning
+            )
             return json
         from types import ModuleType
+
         # fallback to the default implementation
         mod = sys.modules[__name__]
         return ModuleType.__getattr__(mod, name)
+
 else:
     import json  # NOQA

@@ -69,13 +69,16 @@ class RedirectingResourceWithHeaders:
 
 
 class TestRedirects:
-    @pytest.mark.parametrize('method,expected_status,expected_location', [
-        ('GET', falcon.HTTP_301, '/moved/perm'),
-        ('POST', falcon.HTTP_302, '/found'),
-        ('PUT', falcon.HTTP_303, '/see/other'),
-        ('DELETE', falcon.HTTP_307, '/tmp/redirect'),
-        ('HEAD', falcon.HTTP_308, '/perm/redirect'),
-    ])
+    @pytest.mark.parametrize(
+        'method,expected_status,expected_location',
+        [
+            ('GET', falcon.HTTP_301, '/moved/perm'),
+            ('POST', falcon.HTTP_302, '/found'),
+            ('PUT', falcon.HTTP_303, '/see/other'),
+            ('DELETE', falcon.HTTP_307, '/tmp/redirect'),
+            ('HEAD', falcon.HTTP_308, '/perm/redirect'),
+        ],
+    )
     def test_redirect(self, client, method, expected_status, expected_location):
         result = client.simulate_request(path='/', method=method)
 
@@ -83,15 +86,19 @@ class TestRedirects:
         assert result.status == expected_status
         assert result.headers['location'] == expected_location
 
-    @pytest.mark.parametrize('method,expected_status,expected_location', [
-        ('GET', falcon.HTTP_301, '/moved/perm'),
-        ('POST', falcon.HTTP_302, '/found'),
-        ('PUT', falcon.HTTP_303, '/see/other'),
-        ('DELETE', falcon.HTTP_307, '/tmp/redirect'),
-        ('HEAD', falcon.HTTP_308, '/perm/redirect'),
-    ])
-    def test_redirect_with_headers(self, client_exercising_headers, method,
-                                   expected_status, expected_location):
+    @pytest.mark.parametrize(
+        'method,expected_status,expected_location',
+        [
+            ('GET', falcon.HTTP_301, '/moved/perm'),
+            ('POST', falcon.HTTP_302, '/found'),
+            ('PUT', falcon.HTTP_303, '/see/other'),
+            ('DELETE', falcon.HTTP_307, '/tmp/redirect'),
+            ('HEAD', falcon.HTTP_308, '/perm/redirect'),
+        ],
+    )
+    def test_redirect_with_headers(
+        self, client_exercising_headers, method, expected_status, expected_location
+    ):
         result = client_exercising_headers.simulate_request(path='/', method=method)
 
         assert not result.content

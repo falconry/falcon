@@ -1,14 +1,23 @@
+[build-system]
+    build-backend = "setuptools.build_meta"
+    requires = [
+        "setuptools>=47",
+        "wheel>=0.34",
+        "cython>=0.29.21; python_implementation == 'CPython'", # Skip cython when using pypy
+    ]
+
 [tool.towncrier]
     package = "falcon"
     package_dir = ""
-    filename = "docs/changes/3.0.0.rst"
+    filename = "docs/changes/4.0.0.rst"
     directory = "docs/_newsfragments"
     issue_format = "`#{issue} <https://github.com/falconry/falcon/issues/{issue}>`__"
 
-    # TODO(kgriffs): Set this to false when the next major version of
-    #   towncrier is released (post 19.2). For now, we just have to
-    #   remember to remove the extra newlines in the rendered changelog.
-    title_format = ""
+    # TODO(vytas): title_format = false seems to have no effect in towncrier==21.3.0.
+    #   For now, we just have to remember to check the rendered changelog, and,
+    #   if needed, remove the unwanted auto-generated title.
+    #   See also: https://github.com/twisted/towncrier/issues/345.
+    title_format = false
 
     [[tool.towncrier.type]]
         directory = "breakingchange"
@@ -29,3 +38,9 @@
         directory = "misc"
         name = "Misc"
         showcontent = true
+
+[tool.black]
+    target-version = ["py35"]
+    skip-string-normalization = true
+    line-length = 88
+    extend-exclude = "falcon/vendor"

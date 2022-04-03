@@ -57,17 +57,9 @@ MultipartFormHandler._ASGI_MULTIPART_FORM = MultipartForm  # type: ignore
 
 _EVT_RESP_EOF = {'type': EventType.HTTP_RESPONSE_BODY}
 
-_BODILESS_STATUS_CODES = frozenset([
-    100,
-    101,
-    204,
-    304,
-])
+_BODILESS_STATUS_CODES = frozenset([100, 101, 204, 304])
 
-_TYPELESS_STATUS_CODES = frozenset([
-    204,
-    304,
-])
+_TYPELESS_STATUS_CODES = frozenset([204, 304])
 
 _FALLBACK_WS_ERROR_CODE = 3011
 
@@ -276,12 +268,16 @@ class App(falcon.app.App):
     )
 
     def __init__(self, *args, request_type=Request, response_type=Response, **kwargs):
-        super().__init__(*args, request_type=request_type, response_type=response_type, **kwargs)
+        super().__init__(
+            *args, request_type=request_type, response_type=response_type, **kwargs
+        )
 
         self.ws_options = WebSocketOptions()
-        self._standard_response_type = (response_type is Response)
+        self._standard_response_type = response_type is Response
 
-        self.add_error_handler(WebSocketDisconnected, self._ws_disconnected_error_handler)
+        self.add_error_handler(
+            WebSocketDisconnected, self._ws_disconnected_error_handler
+        )
 
     @_wrap_asgi_coroutine_func
     async def __call__(self, scope, receive, send):  # noqa: C901
@@ -338,7 +334,9 @@ class App(falcon.app.App):
         #   critical code path.
         assert first_event_type == 'http.request'
 
-        req = self._request_type(scope, receive, first_event=first_event, options=self.req_options)
+        req = self._request_type(
+            scope, receive, first_event=first_event, options=self.req_options
+        )
         resp = self._response_type(options=self.resp_options)
 
         resource = None
@@ -441,20 +439,19 @@ class App(falcon.app.App):
                         # NOTE(kgriffs): We use a special _UNSET singleton since
                         #   None is ambiguous (the media handler might return None).
                         if resp._media_rendered is _UNSET:
+                            opt = resp.options
                             if not resp.content_type:
-                                resp.content_type = resp.options.default_media_type
+                                resp.content_type = opt.default_media_type
 
-                            handler, serialize_sync, _ = resp.options.media_handlers._resolve(
-                                resp.content_type,
-                                resp.options.default_media_type
+                            handler, serialize_sync, _ = opt.media_handlers._resolve(
+                                resp.content_type, opt.default_media_type
                             )
 
                             if serialize_sync:
                                 resp._media_rendered = serialize_sync(resp._media)
                             else:
                                 resp._media_rendered = await handler.serialize_async(
-                                    resp._media,
-                                    resp.content_type
+                                    resp._media, resp.content_type
                                 )
 
                         data = resp._media_rendered
@@ -467,7 +464,7 @@ class App(falcon.app.App):
                         data = text
 
             else:
-                # NOTE(vytas): Custom reponse type.
+                # NOTE(vytas): Custom response type.
                 data = await resp.render_body()
 
         except Exception as ex:
@@ -498,11 +495,10 @@ class App(falcon.app.App):
                 # NOTE(kgriffs): If they are going to stream using an
                 #   async generator, we can't know in advance what the
                 #   content length will be.
-                (data is not None or not resp.stream) and
-
-                req.method == 'HEAD' and
-                resp_status not in _BODILESS_STATUS_CODES and
-                'content-length' not in resp._headers
+                (data is not None or not resp.stream)
+                and req.method == 'HEAD'
+                and resp_status not in _BODILESS_STATUS_CODES
+                and 'content-length' not in resp._headers
             ):
                 # NOTE(kgriffs): We really should be returning a Content-Length
                 #   in this case according to my reading of the RFCs. By
@@ -510,13 +506,15 @@ class App(falcon.app.App):
                 #   by turning around and calling it's own on_get().
                 resp._headers['content-length'] = str(len(data)) if data else '0'
 
-            await send({
-                # PERF(vytas): Inline the value of
-                #   EventType.HTTP_RESPONSE_START in this critical code path.
-                'type': 'http.response.start',
-                'status': resp_status,
-                'headers': resp._asgi_headers(default_media_type)
-            })
+            await send(
+                {
+                    # PERF(vytas): Inline the value of
+                    #   EventType.HTTP_RESPONSE_START in this critical code path.
+                    'type': 'http.response.start',
+                    'status': resp_status,
+                    'headers': resp._asgi_headers(default_media_type),
+                }
+            )
 
             await send(_EVT_RESP_EOF)
 
@@ -534,7 +532,8 @@ class App(falcon.app.App):
                 raise TypeError(
                     'Response.sse must be an async iterable. This can be obtained by '
                     'simply executing the async generator function and then setting '
-                    'the result to Response.sse, e.g.: resp.sse = some_asyncgen_function()'
+                    'the result to Response.sse, e.g.: '
+                    'resp.sse = some_asyncgen_function()'
                 )
 
             # NOTE(kgriffs): This must be done in a separate task because
@@ -548,11 +547,13 @@ class App(falcon.app.App):
 
             watcher = falcon.create_task(watch_disconnect())
 
-            await send({
-                'type': EventType.HTTP_RESPONSE_START,
-                'status': resp_status,
-                'headers': resp._asgi_headers('text/event-stream')
-            })
+            await send(
+                {
+                    'type': EventType.HTTP_RESPONSE_START,
+                    'status': resp_status,
+                    'headers': resp._asgi_headers('text/event-stream'),
+                }
+            )
 
             # PERF(vytas): Check resp._registered_callbacks directly to shave
             #   off a function call since this is a hot/critical code path.
@@ -572,13 +573,15 @@ class App(falcon.app.App):
                 # NOTE(kgriffs): According to the ASGI spec, once the client
                 #   disconnects, send() acts as a no-op. We have to check
                 #   the connection state using watch_disconnect() above.
-                await send({
-                    'type': EventType.HTTP_RESPONSE_BODY,
-                    'body': event.serialize(handler),
-                    'more_body': True
-                })
+                await send(
+                    {
+                        'type': EventType.HTTP_RESPONSE_BODY,
+                        'body': event.serialize(handler),
+                        'more_body': True,
+                    }
+                )
 
-                if watcher.done():
+                if watcher.done():  # pragma: no py39,py310 cover
                     break
 
             watcher.cancel()
@@ -600,20 +603,24 @@ class App(falcon.app.App):
             #   drop the HTTP connection prematurely, for example).
             resp._headers['content-length'] = str(len(data))
 
-            await send({
-                # PERF(vytas): Inline the value of
-                #   EventType.HTTP_RESPONSE_START in this critical code path.
-                'type': 'http.response.start',
-                'status': resp_status,
-                'headers': resp._asgi_headers(default_media_type)
-            })
+            await send(
+                {
+                    # PERF(vytas): Inline the value of
+                    #   EventType.HTTP_RESPONSE_START in this critical code path.
+                    'type': 'http.response.start',
+                    'status': resp_status,
+                    'headers': resp._asgi_headers(default_media_type),
+                }
+            )
 
-            await send({
-                # PERF(vytas): Inline the value of
-                #   EventType.HTTP_RESPONSE_BODY in this critical code path.
-                'type': 'http.response.body',
-                'body': data
-            })
+            await send(
+                {
+                    # PERF(vytas): Inline the value of
+                    #   EventType.HTTP_RESPONSE_BODY in this critical code path.
+                    'type': 'http.response.body',
+                    'body': data,
+                }
+            )
 
             # PERF(vytas): Check resp._registered_callbacks directly to shave
             #   off a function call since this is a hot/critical code path.
@@ -625,13 +632,15 @@ class App(falcon.app.App):
         if not stream:
             resp._headers['content-length'] = '0'
 
-        await send({
-            # PERF(vytas): Inline the value of
-            #   EventType.HTTP_RESPONSE_START in this critical code path.
-            'type': 'http.response.start',
-            'status': resp_status,
-            'headers': resp._asgi_headers(default_media_type)
-        })
+        await send(
+            {
+                # PERF(vytas): Inline the value of
+                #   EventType.HTTP_RESPONSE_START in this critical code path.
+                'type': 'http.response.start',
+                'status': resp_status,
+                'headers': resp._asgi_headers(default_media_type),
+            }
+        )
 
         if stream:
             # Detect whether this is one of the following:
@@ -642,19 +651,24 @@ class App(falcon.app.App):
             #
 
             if hasattr(stream, 'read'):
-                while True:
-                    data = await stream.read(self._STREAM_BLOCK_SIZE)
-                    if data == b'':
-                        break
-                    else:
-                        await send({
-                            'type': EventType.HTTP_RESPONSE_BODY,
-
-                            # NOTE(kgriffs): Handle the case in which data == None
-                            'body': data or b'',
-
-                            'more_body': True
-                        })
+                try:
+                    while True:
+                        data = await stream.read(self._STREAM_BLOCK_SIZE)
+                        if data == b'':
+                            break
+                        else:
+                            await send(
+                                {
+                                    'type': EventType.HTTP_RESPONSE_BODY,
+                                    # NOTE(kgriffs): Handle the case in which
+                                    #   data is None
+                                    'body': data or b'',
+                                    'more_body': True,
+                                }
+                            )
+                finally:
+                    if hasattr(stream, 'close'):
+                        await stream.close()
             else:
                 # NOTE(kgriffs): Works for both async generators and iterators
                 try:
@@ -667,11 +681,13 @@ class App(falcon.app.App):
                         if data is None:
                             break
 
-                        await send({
-                            'type': EventType.HTTP_RESPONSE_BODY,
-                            'body': data,
-                            'more_body': True
-                        })
+                        await send(
+                            {
+                                'type': EventType.HTTP_RESPONSE_BODY,
+                                'body': data,
+                                'more_body': True,
+                            }
+                        )
                 except TypeError as ex:
                     if isasyncgenfunction(stream):
                         raise TypeError(
@@ -687,9 +703,12 @@ class App(falcon.app.App):
                         '__aiter__ method. Error raised while iterating over '
                         'Response.stream: ' + str(ex)
                     )
-
-            if hasattr(stream, 'close'):
-                await stream.close()
+                finally:
+                    # NOTE(vytas): This could be DRYed with the above identical
+                    #   twoliner in a one large block, but OTOH we would be
+                    #   unable to reuse the current try.. except.
+                    if hasattr(stream, 'close'):
+                        await stream.close()
 
         await send(_EVT_RESP_EOF)
 
@@ -824,10 +843,12 @@ class App(falcon.app.App):
             try:
                 handler = exception.handle
             except AttributeError:
-                raise AttributeError('handler must either be specified '
-                                     'explicitly or defined as a static'
-                                     'method named "handle" that is a '
-                                     'member of the given exception class.')
+                raise AttributeError(
+                    'handler must either be specified '
+                    'explicitly or defined as a static'
+                    'method named "handle" that is a '
+                    'member of the given exception class.'
+                )
 
         # NOTE(vytas): Do not shoot ourselves in the foot in case error
         #   handlers are our own cythonized code.
@@ -853,7 +874,7 @@ class App(falcon.app.App):
         try:
             exception_tuple = tuple(exception)
         except TypeError:
-            exception_tuple = (exception, )
+            exception_tuple = (exception,)
 
         for exc in exception_tuple:
             if not issubclass(exc, BaseException):
@@ -891,21 +912,29 @@ class App(falcon.app.App):
                 asgi_info = scope['asgi']
                 version = asgi_info.get('version', '2.0 (implicit)')
                 if not version.startswith('3.'):
-                    await send({
-                        'type': EventType.LIFESPAN_STARTUP_FAILED,
-                        'message': f'Falcon requires ASGI version 3.x. Detected: {version}.',
-                    })
+                    await send(
+                        {
+                            'type': EventType.LIFESPAN_STARTUP_FAILED,
+                            'message': (
+                                'Falcon requires ASGI version 3.x. '
+                                f'Detected: {version}.'
+                            ),
+                        }
+                    )
                     return
 
                 if self.req_options.auto_parse_form_urlencoded:
-                    await send({
-                        'type': EventType.LIFESPAN_STARTUP_FAILED,
-                        'message': (
-                            'The deprecated WSGI RequestOptions.auto_parse_form_urlencoded option '
-                            'is not supported for Falcon ASGI apps. '
-                            'Please use Request.get_media() instead. '
-                        ),
-                    })
+                    await send(
+                        {
+                            'type': EventType.LIFESPAN_STARTUP_FAILED,
+                            'message': (
+                                'The deprecated WSGI RequestOptions.'
+                                'auto_parse_form_urlencoded '
+                                'option is not supported for Falcon ASGI apps. '
+                                'Please use Request.get_media() instead. '
+                            ),
+                        }
+                    )
                     return
 
                 for handler in self._unprepared_middleware:
@@ -913,10 +942,12 @@ class App(falcon.app.App):
                         try:
                             await handler.process_startup(scope, event)
                         except Exception:
-                            await send({
-                                'type': EventType.LIFESPAN_STARTUP_FAILED,
-                                'message': traceback.format_exc(),
-                            })
+                            await send(
+                                {
+                                    'type': EventType.LIFESPAN_STARTUP_FAILED,
+                                    'message': traceback.format_exc(),
+                                }
+                            )
                             return
 
                 await send({'type': EventType.LIFESPAN_STARTUP_COMPLETE})
@@ -927,10 +958,12 @@ class App(falcon.app.App):
                         try:
                             await handler.process_shutdown(scope, event)
                         except Exception:
-                            await send({
-                                'type': EventType.LIFESPAN_SHUTDOWN_FAILED,
-                                'message': traceback.format_exc(),
-                            })
+                            await send(
+                                {
+                                    'type': EventType.LIFESPAN_SHUTDOWN_FAILED,
+                                    'message': traceback.format_exc(),
+                                }
+                            )
                             return
 
                 await send({'type': EventType.LIFESPAN_SHUTDOWN_COMPLETE})
@@ -943,10 +976,7 @@ class App(falcon.app.App):
             #   we don't support, so bail out. This also fulfills the ASGI
             #   spec requirement to only process the request after
             #   receiving and verifying the first event.
-            await send({
-                'type': EventType.WS_CLOSE,
-                'code': WSCloseCode.SERVER_ERROR
-            })
+            await send({'type': EventType.WS_CLOSE, 'code': WSCloseCode.SERVER_ERROR})
             return
 
         req = self._request_type(scope, receive, options=self.req_options)
@@ -994,7 +1024,7 @@ class App(falcon.app.App):
         return prepare_middleware(
             middleware=middleware,
             independent_middleware=independent_middleware,
-            asgi=True
+            asgi=True,
         )
 
     async def _http_status_handler(self, req, resp, status, params):
@@ -1007,7 +1037,7 @@ class App(falcon.app.App):
         if ws:
             falcon._logger.error(
                 '[FALCON] WebSocket handshake rejected due to raised HTTP error: %s',
-                error
+                error,
             )
 
             code = 3000 + falcon.util.http_status_to_code(error.status)
@@ -1023,7 +1053,9 @@ class App(falcon.app.App):
             await self._ws_cleanup_on_error(ws)
 
     async def _ws_disconnected_error_handler(self, req, resp, error, params, ws):
-        falcon._logger.debug('[FALCON] WebSocket client disconnected with code %i', error.code)
+        falcon._logger.debug(
+            '[FALCON] WebSocket client disconnected with code %i', error.code
+        )
         await self._ws_cleanup_on_error(ws)
 
     async def _handle_exception(self, req, resp, ex, params, ws=None):
@@ -1092,6 +1124,6 @@ class App(falcon.app.App):
                         '[FALCON] Attempt to close web connection cleanly '
                         'failed due to raised error.'
                     ),
-                    exc_info=True
+                    exc_info=True,
                 )
                 raise

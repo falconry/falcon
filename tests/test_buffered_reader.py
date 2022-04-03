@@ -11,7 +11,6 @@ class WouldHang(RuntimeError):
 
 
 class GlitchyStream(io.BytesIO):
-
     def read(self, size=None):
         if size is None or size == -1:
             raise WouldHang('unbounded read()')
@@ -36,12 +35,12 @@ class FragmentedStream(GlitchyStream):
 
 
 TEST_DATA = (
-    b'123456789ABCDEF\n' * 64 * 1024 * 64 +
-    b'--boundary1234567890--' +
-    b'123456789ABCDEF\n' * 64 * 1024 * 63 +
-    b'--boundary1234567890--' +
-    b'123456789ABCDEF\n' * 64 * 1024 * 62 +
-    b'--boundary1234567890--'
+    b'123456789ABCDEF\n' * 64 * 1024 * 64
+    + b'--boundary1234567890--'
+    + b'123456789ABCDEF\n' * 64 * 1024 * 63
+    + b'--boundary1234567890--'
+    + b'123456789ABCDEF\n' * 64 * 1024 * 62
+    + b'--boundary1234567890--'
 )
 
 TEST_BYTES_IO = GlitchyStream(TEST_DATA)
@@ -110,28 +109,31 @@ def test_bounded_read():
     assert stream.read() == b'!'
 
 
-@pytest.mark.parametrize('size', [
-    0,
-    1,
-    2,
-    7,
-    62,
-    63,
-    64,
-    65,
-    126,
-    127,
-    128,
-    129,
-    1000,
-    10000,
-])
+@pytest.mark.parametrize(
+    'size',
+    [
+        0,
+        1,
+        2,
+        7,
+        62,
+        63,
+        64,
+        65,
+        126,
+        127,
+        128,
+        129,
+        1000,
+        10000,
+    ],
+)
 def test_read_from_buffer(buffered_reader, size):
     stream = buffered_reader(64)
     stream.peek(64)
 
     assert stream.read(size) == TEST_DATA[:size]
-    assert stream.read(1) == TEST_DATA[size:size + 1]
+    assert stream.read(1) == TEST_DATA[size : size + 1]
 
 
 def test_read_until_delimiter_size_check(buffered_reader):
@@ -143,26 +145,28 @@ def test_read_until_delimiter_size_check(buffered_reader):
         stream.read_until(b'B' * 65)
 
 
-@pytest.mark.parametrize('size', [
-    0,
-    1,
-    2,
-    7,
-    62,
-    63,
-    64,
-    65,
-    126,
-    127,
-    128,
-    129,
-    1000,
-    10000,
-])
+@pytest.mark.parametrize(
+    'size',
+    [
+        0,
+        1,
+        2,
+        7,
+        62,
+        63,
+        64,
+        65,
+        126,
+        127,
+        128,
+        129,
+        1000,
+        10000,
+    ],
+)
 def test_read_until_with_size(buffered_reader, size):
     stream = buffered_reader(64)
-    assert stream.read_until(b'--boundary1234567890--', size) == (
-        TEST_DATA[:size])
+    assert stream.read_until(b'--boundary1234567890--', size) == (TEST_DATA[:size])
 
 
 def test_read_until(buffered_reader):
@@ -175,10 +179,13 @@ def test_read_until(buffered_reader):
     assert len(stream.read_until(b'--boundary1234567890--')) == 62 * 1024**2
 
 
-@pytest.mark.parametrize('size1,size2', [
-    (11003077, 22000721),
-    (13372477, 51637898),
-])
+@pytest.mark.parametrize(
+    'size1,size2',
+    [
+        (11003077, 22000721),
+        (13372477, 51637898),
+    ],
+)
 def test_irregular_large_read_until(buffered_reader, size1, size2):
     stream = buffered_reader()
     delimiter = b'--boundary1234567890--'
@@ -200,26 +207,28 @@ def test_irregular_large_read_until(buffered_reader, size1, size2):
     assert chunk1 + chunk2 + remainder == expected[1337:]
 
 
-@pytest.mark.parametrize('size', [
-    0,
-    1,
-    2,
-    7,
-    62,
-    63,
-    64,
-    65,
-    126,
-    127,
-    128,
-    129,
-    1000,
-])
+@pytest.mark.parametrize(
+    'size',
+    [
+        0,
+        1,
+        2,
+        7,
+        62,
+        63,
+        64,
+        65,
+        126,
+        127,
+        128,
+        129,
+        1000,
+    ],
+)
 def test_read_until_from_buffer(shorter_stream, size):
     shorter_stream.peek(128)
 
-    assert shorter_stream.read_until(b'\n1', size) == (
-        b'123456789ABCDEF'[:size])
+    assert shorter_stream.read_until(b'\n1', size) == (b'123456789ABCDEF'[:size])
 
 
 def test_read_until_missing_delimiter(shorter_stream):
@@ -227,8 +236,7 @@ def test_read_until_missing_delimiter(shorter_stream):
         pass
 
     with pytest.raises(DelimiterError):
-        shorter_stream.read_until(b'--boundary1234567890--',
-                                  consume_delimiter=True)
+        shorter_stream.read_until(b'--boundary1234567890--', consume_delimiter=True)
 
 
 def test_consume_delimiter(shorter_stream):
@@ -259,7 +267,7 @@ def test_pipe(shorter_stream):
 
 
 def test_pipe_until(buffered_reader):
-    stream = buffered_reader(2 ** 16)
+    stream = buffered_reader(2**16)
 
     output = io.BytesIO()
     stream.pipe_until(b'--boundary1234567890--', output)
@@ -267,7 +275,7 @@ def test_pipe_until(buffered_reader):
 
 
 def test_pipe_until_without_destination(buffered_reader):
-    stream = buffered_reader(2 ** 16)
+    stream = buffered_reader(2**16)
     stream.pipe_until(b'--boundary1234567890--')
     assert stream.peek(22) == b'--boundary1234567890--'
 
@@ -282,9 +290,7 @@ def test_readline():
         b'Hello, world!\n'
         b'A line.\n'
         b'\n'
-        b'A longer line... \n' +
-        b'SPAM ' * 7 + b'\n' +
-        b'\n'
+        b'A longer line... \n' + b'SPAM ' * 7 + b'\n' + b'\n'
     )
 
     stream = BufferedReader(io.BytesIO(source).read, len(source))
@@ -301,7 +307,8 @@ def test_readline():
 def test_readline_with_size():
     source = (
         b'Hello, world! This is a short village name in Wales.\n'
-        b'Llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch')
+        b'Llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch'
+    )
 
     stream = BufferedReader(io.BytesIO(source).read, len(source))
     assert stream.readline(37) == b'Hello, world! This is a short village'
@@ -315,13 +322,16 @@ def test_readlines(shorter_stream):
     assert shorter_stream.readlines() == [b'123456789ABCDEF\n'] * 64
 
 
-@pytest.mark.parametrize('chunk_size', [
-    8,
-    16,
-    256,
-    1024,
-    2 ** 16,
-])
+@pytest.mark.parametrize(
+    'chunk_size',
+    [
+        8,
+        16,
+        256,
+        1024,
+        2**16,
+    ],
+)
 def test_readlines_hint(buffered_reader, chunk_size):
     stream = buffered_reader(chunk_size)
     assert stream.readlines(100) == [b'123456789ABCDEF\n'] * 7

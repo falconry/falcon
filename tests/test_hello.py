@@ -13,7 +13,6 @@ def client():
 
 # NOTE(kgriffs): Concept from Gunicorn's source (wsgi.py)
 class FileWrapper:
-
     def __init__(self, file_like, block_size=8192):
         self.file_like = file_like
         self.block_size = block_size
@@ -28,7 +27,7 @@ class FileWrapper:
 
 class HelloResource:
     sample_status = '200 OK'
-    sample_unicode = ('Hello World! \x80' + testing.rand_string(0, 0))
+    sample_unicode = 'Hello World! \x80' + testing.rand_string(0, 0)
     sample_utf8 = sample_unicode.encode('utf-8')
 
     def __init__(self, mode):
@@ -88,7 +87,7 @@ class NonClosingBytesIO(io.BytesIO):
 
 class ClosingFilelikeHelloResource:
     sample_status = '200 OK'
-    sample_unicode = ('Hello World! \x80' + testing.rand_string(0, 0))
+    sample_unicode = 'Hello World! \x80' + testing.rand_string(0, 0)
 
     sample_utf8 = sample_unicode.encode('utf-8')
 
@@ -110,7 +109,6 @@ class NoStatusResource:
 
 
 class TestHelloWorld:
-
     def test_env_headers_list_of_tuples(self):
         env = testing.create_environ(headers=[('User-Agent', 'Falcon-Test')])
         assert env['HTTP_USER_AGENT'] == 'Falcon-Test'
@@ -127,11 +125,14 @@ class TestHelloWorld:
         result = client.simulate_get('/seenoevil')
         assert result.status_code == 404
 
-    @pytest.mark.parametrize('path,resource,get_body', [
-        ('/body', HelloResource('body'), lambda r: r.text.encode('utf-8')),
-        ('/bytes', HelloResource('body, bytes'), lambda r: r.text),
-        ('/data', HelloResource('data'), lambda r: r.data),
-    ])
+    @pytest.mark.parametrize(
+        'path,resource,get_body',
+        [
+            ('/body', HelloResource('body'), lambda r: r.text.encode('utf-8')),
+            ('/bytes', HelloResource('body, bytes'), lambda r: r.text),
+            ('/data', HelloResource('data'), lambda r: r.data),
+        ],
+    )
     def test_body(self, client, path, resource, get_body):
         client.app.add_route(path, resource)
 
@@ -200,10 +201,13 @@ class TestHelloWorld:
             assert actual_len == expected_len
             assert len(result.content) == expected_len
 
-    @pytest.mark.parametrize('stream_factory,assert_closed', [
-        (ClosingBytesIO, True),  # Implements close()
-        (NonClosingBytesIO, False),  # Has a non-callable "close" attr
-    ])
+    @pytest.mark.parametrize(
+        'stream_factory,assert_closed',
+        [
+            (ClosingBytesIO, True),  # Implements close()
+            (NonClosingBytesIO, False),  # Has a non-callable "close" attr
+        ],
+    )
     def test_filelike_closing(self, client, stream_factory, assert_closed):
         resource = ClosingFilelikeHelloResource(stream_factory)
         client.app.add_route('/filelike-closing', resource)

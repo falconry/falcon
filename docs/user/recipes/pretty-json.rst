@@ -1,3 +1,5 @@
+.. _prettifying-json-responses:
+
 Prettifying JSON Responses
 ==========================
 

@@ -51,9 +51,7 @@ class URLEncodedFormHandler(BaseHandler):
             # body should be US-ASCII. Enforcing this also helps
             # catch malicious input.
             body = body.decode('ascii')
-            return parse_query_string(
-                body, keep_blank=self._keep_blank, csv=self._csv
-            )
+            return parse_query_string(body, keep_blank=self._keep_blank, csv=self._csv)
         except Exception as err:
             raise errors.MediaMalformedError('URL-encoded') from err
 

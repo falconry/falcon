@@ -11,8 +11,7 @@ def test_list_images(client):
 
 
 def test_missing_in_store(client):
-    resp = client.simulate_get(
-        '/images/1a256a8a-2063-46ff-b53f-d04d5bcf5eee.jpeg')
+    resp = client.simulate_get('/images/1a256a8a-2063-46ff-b53f-d04d5bcf5eee.jpeg')
     assert resp.status_code == 404
 
 

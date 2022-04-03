@@ -13,11 +13,13 @@
 The Falcon Web Framework
 ========================
 
-`Falcon <https://falconframework.org>`__ is a reliable,
-high-performance Python web framework for building
-large-scale app backends and microservices. It encourages the REST
-architectural style, and tries to do as little as possible while
-remaining highly effective.
+`Falcon <https://falconframework.org>`__ is a minimalist ASGI/WSGI framework for
+building mission-critical REST APIs and microservices, with a focus on
+reliability, correctness, and performance at scale.
+
+When it comes to building HTTP APIs, other frameworks weigh you down with tons
+of dependencies and unnecessary abstractions. Falcon cuts to the chase with a
+clean design that embraces HTTP and the REST architectural style.
 
 Falcon apps work with any `WSGI <https://www.python.org/dev/peps/pep-3333/>`_
 or `ASGI <https://asgi.readthedocs.io/en/latest/>`_ server, and run like a
@@ -27,6 +29,9 @@ Quick Links
 -----------
 
 * `Read the docs <https://falcon.readthedocs.io/en/stable>`_
+  (`FAQ <https://falcon.readthedocs.io/en/stable/user/faq.html>`_ -
+  `getting help <https://falcon.readthedocs.io/en/stable/community/help.html>`_ -
+  `reference <https://falcon.readthedocs.io/en/stable/api/index.html>`_)
 * `Falcon add-ons and complementary packages <https://github.com/falconry/falcon/wiki>`_
 * `Falcon articles, talks and podcasts <https://github.com/falconry/falcon/wiki/Articles,-Talks-and-Podcasts>`_
 * `falconry/user for Falcon users <https://gitter.im/falconry/user>`_ @ Gitter
@@ -35,16 +40,18 @@ Quick Links
 What People are Saying
 ----------------------
 
-"We have been using Falcon as a replacement for [framework] and we simply love the performance (three times faster) and code base size (easily half of our original [framework] code)."
+"Falcon is rock solid and it's fast."
+
+"We have been using Falcon as a replacement for [another framework] and
+we simply love the performance (three times faster) and code base size (easily
+half of our [original] code)."
+
+"I'm loving #falconframework! Super clean and simple, I finally
+have the speed and flexibility I need!"
 
 "Falcon looks great so far. I hacked together a quick test for a
 tiny server of mine and was ~40% faster with only 20 minutes of
 work."
-
-"Falcon is rock solid and it's fast."
-
-"I'm loving #falconframework! Super clean and simple, I finally
-have the speed and flexibility I need!"
 
 "I feel like I'm just talking HTTP at last, with nothing in the
 middle. Falcon seems like the requests of backend."
@@ -92,14 +99,14 @@ A Big Thank You to Our Patrons!
 
         <a href="https://www.pnk.sh/python-falcon" target="_blank"><img src="https://falconframework.org/assets/paris.svg" height="30" alt="Paris Kejser" style="margin-right: 10px"></a>
 
-        <a href="https://www.algolia.com" target="_blank" style="margin-right: 10px"><img src="https://res.cloudinary.com/hilnmyskv/image/upload/q_auto/v1612864505/Algolia_com_Website_assets/images/shared/algolia_logo/algolia-blue-mark.svg" height="30" alt="Algolia"></a>
+        <a href="https://www.algolia.com" target="_blank" style="margin-right: 10px"><img src="https://falconframework.org/assets/algolia.svg" height="30" alt="Algolia"></a>
 
-        <a href="https://www.salesforce.com" target="_blank"><img src="https://www.salesforce.com/content/dam/sfdc-docs/www/logos/logo-salesforce.svg" height="30" alt="Salesforce"></a>
+        <a href="https://www.salesforce.com" target="_blank"><img src="https://falconframework.org/assets/salesforce.svg" height="30" alt="Salesforce"></a>
     </p>
 
     <p>
-        <a href="https://www.misaka.io" target="_blank" style="margin-right: 10px"><img src="https://app.misaka.io/static/media/logo.d39932ca.svg" height="30" alt="Misaka Network"></a>
-        <a href="https://github.com/LikaloLLC" target="_blank" style="margin-right: 10px"><img src="https://avatars.githubusercontent.com/u/40338604" height="30" alt="Likalo"></a>
+        <a href="https://www.misaka.io" target="_blank" style="margin-right: 10px"><img src="https://falconframework.org/assets/misaka.svg" height="30" alt="Misaka Network"></a>
+        <a href="https://github.com/LikaloLLC" target="_blank" style="margin-right: 10px"><img src="https://falconframework.org/assets/likalo.png" height="30" alt="Likalo"></a>
     </p>
 
 .. Patron list ends here (see the comment above this section).
@@ -124,35 +131,35 @@ microservices and responsive app backends. Falcon complements more
 general Python web frameworks by providing bare-metal performance,
 reliability, and flexibility wherever you need it.
 
-**Fast.** Same hardware, more requests. Falcon turns around
-requests several times faster than most other Python frameworks. For
-an extra speed boost, Falcon compiles itself with Cython when
-available, and also works well with `PyPy <https://pypy.org>`__.
-Considering a move to another programming language? Benchmark with
-Falcon + PyPy first.
-
-**Reliable.** We go to great lengths to avoid introducing
-breaking changes, and when we do they are fully documented and only
-introduced (in the spirit of
-`SemVer <http://semver.org/>`__) with a major version
-increment. The code is rigorously tested with numerous inputs and we
-require 100% coverage at all times. Falcon does not depend on any
-external Python packages.
+**Reliable.** We go to great lengths to avoid introducing breaking changes, and
+when we do they are fully documented and only introduced (in the spirit of
+`SemVer <http://semver.org/>`_) with a major version increment. The code is
+rigorously tested with numerous inputs and we require 100% coverage at all
+times. Falcon has no dependencies outside the standard library, helping
+minimize your app's attack surface while avoiding transitive bugs and breaking
+changes.
 
 **Debuggable.** Falcon eschews magic. It's easy to tell which inputs lead to
-which outputs. To avoid incentivizing the use of hard-to-debug global state,
-Falcon does not use decorators to define routes. Unhandled exceptions are never
-encapsulated or masked. Potentially surprising behaviors, such as automatic
-request body parsing, are well-documented and disabled by default. Finally, we
-take care to keep logic paths within the framework simple, shallow and
-understandable. All of this makes it easier to reason about the code and to
-debug edge cases in large-scale deployments.
+which outputs. Unhandled exceptions are never encapsulated or masked.
+Potentially surprising behaviors, such as automatic request body parsing, are
+well-documented and disabled by default. Finally, when it comes to the
+framework itself, we take care to keep logic paths simple and understandable.
+All this makes it easier to reason about the code and to debug edge cases in
+large-scale deployments.
 
-**Flexible.** Falcon leaves a lot of decisions and implementation
-details to you, the API developer. This gives you a lot of freedom to
-customize and tune your implementation. Due to Falcon's minimalist
-design, Python community members are free to independently innovate on
-`Falcon add-ons and complementary packages <https://github.com/falconry/falcon/wiki>`__.
+**Fast.** Same hardware, more requests. Falcon turns around requests
+significantly faster than other popular Python frameworks like Django and
+Flask. For an extra speed boost, Falcon compiles itself with Cython when
+available, and also works well with `PyPy <https://pypy.org>`_. Considering a
+move to another programming language? Benchmark with Falcon+PyPy first!
+
+**Flexible.** Falcon leaves a lot of decisions and implementation details to
+you, the API developer. This gives you a lot of freedom to customize and tune
+your implementation. It also helps you understand your apps at a deeper level,
+making them easier to tune, debug, and refactor over the long run. Falcon's
+minimalist design provides space for Python community members to independently
+innovate on `Falcon add-ons and complementary packages
+<https://github.com/falconry/falcon/wiki>`_.
 
 Who's Using Falcon?
 -------------------
@@ -236,29 +243,30 @@ Or, to install the latest beta or release candidate, if any:
 In order to provide an extra speed boost, Falcon can compile itself with
 Cython. Wheels containing pre-compiled binaries are available from PyPI for
 several common platforms. However, if a wheel for your platform of choice is not
-available, you can choose to stick with the source distribution, or use the
-instructions below to cythonize Falcon for your environment.
-
-The following commands tell pip to install Cython, and then to invoke
-Falcon's ``setup.py``, which will in turn detect the presence of Cython
-and then compile (AKA cythonize) the Falcon framework with the system's
-default C compiler.
+available, you can install the source distribution. The installation process
+will automatically try to cythonize Falcon for your environment, falling back to
+a normal pure-Python install if any issues are encountered during the
+cythonization step:
 
 .. code:: bash
 
-    $ pip install cython
-    $ pip install --no-build-isolation --no-binary :all: falcon
-
-Note that ``--no-build-isolation`` is necessary to override pip's default
-PEP 517 behavior that can cause Cython not to be found in the build
-environment.
+    $ pip install --no-binary :all: falcon
 
 If you want to verify that Cython is being invoked, simply
-pass `-v` to pip in order to echo the compilation commands:
+pass the verbose flag `-v` to pip in order to echo the compilation commands.
+
+The cythonization step is only active when using the ``CPython`` Python
+implementation, so installing using ``PyPy`` will skip it.
+If you want to skip Cython compilation step and install
+the pure-Python version directly you can set the environment variable
+``FALCON_DISABLE_CYTHON`` to a non empty value before install:
 
 .. code:: bash
 
-    $ pip install -v --no-build-isolation --no-binary :all: falcon
+    $ FALCON_DISABLE_CYTHON=Y pip install -v --no-binary :all: falcon
+
+Please note that ``pip>=10`` is required to be able to install Falcon from
+source.
 
 **Installing on OS X**
 
@@ -335,7 +343,7 @@ available to your app without having to reinstall the package:
 .. code:: bash
 
     $ cd falcon
-    $ pip install --no-use-pep517 -e .
+    $ pip install -e .
 
 You can manually test changes to the Falcon framework by switching to the
 directory of the cloned repo and then running pytest:
@@ -733,7 +741,7 @@ To test this example, open another terminal and run:
 
     $ http localhost:8000/1/things authorization:custom-token
 
-You can also view the the application configuration from the CLI via the
+You can also view the application configuration from the CLI via the
 ``falcon-inspect-app`` script that is bundled with the framework:
 
 .. code:: bash
@@ -1019,11 +1027,8 @@ See also: `CONTRIBUTING.md <https://github.com/falconry/falcon/blob/master/CONTR
 Legal
 -----
 
-Copyright 2013-2020 by Individual and corporate contributors as
+Copyright 2013-2021 by Individual and corporate contributors as
 noted in the individual source files.
-
-Falcon image courtesy of `John
-O'Neill <https://commons.wikimedia.org/wiki/File:Brown-Falcon,-Vic,-3.1.2008.jpg>`__.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may
 not use any portion of the Falcon framework except in compliance with

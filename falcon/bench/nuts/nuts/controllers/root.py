@@ -28,7 +28,6 @@ class HelloController:
 
 
 class RootController:
-
     @expose(content_type='text/plain')
     def index(self):
         response.headers.update(_headers)

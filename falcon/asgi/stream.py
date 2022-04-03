@@ -296,7 +296,7 @@ class BoundedStream:
                     #   expecting. This *should* never happen if the
                     #   server enforces the content-length header, but
                     #   it is better to be safe than sorry.
-                    chunks.append(next_chunk[:self._bytes_remaining])
+                    chunks.append(next_chunk[: self._bytes_remaining])
                     self._bytes_remaining = 0
 
             # NOTE(kgriffs): This also handles the case of receiving
@@ -380,7 +380,7 @@ class BoundedStream:
                     # NOTE(kgriffs): Do not read more data than we are
                     #   expecting. This *should* never happen, but better
                     #   safe than sorry.
-                    chunks.append(next_chunk[:self._bytes_remaining])
+                    chunks.append(next_chunk[: self._bytes_remaining])
                     self._bytes_remaining = 0
                     num_bytes_available += self._bytes_remaining
 
@@ -434,22 +434,20 @@ class BoundedStream:
                 pass
             else:
                 # NOTE(kgriffs): No need to yield empty body chunks.
-                if not next_chunk:
-                    continue
+                if next_chunk:
+                    next_chunk_len = len(next_chunk)
 
-                next_chunk_len = len(next_chunk)
+                    if next_chunk_len <= self._bytes_remaining:
+                        self._bytes_remaining -= next_chunk_len
+                        self._pos += next_chunk_len
+                    else:
+                        # NOTE(kgriffs): We received more data than expected,
+                        #   so truncate to the expected length.
+                        next_chunk = next_chunk[: self._bytes_remaining]
+                        self._pos += self._bytes_remaining
+                        self._bytes_remaining = 0
 
-                if next_chunk_len <= self._bytes_remaining:
-                    self._bytes_remaining -= next_chunk_len
-                    self._pos += next_chunk_len
-                else:
-                    # NOTE(kgriffs): We received more data than expected,
-                    #   so truncate to the expected length.
-                    next_chunk = next_chunk[:self._bytes_remaining]
-                    self._pos += self._bytes_remaining
-                    self._bytes_remaining = 0
-
-                yield next_chunk
+                    yield next_chunk
 
             # NOTE(kgriffs): Per the ASGI spec, more_body is optional
             #   and should be considered False if not present.

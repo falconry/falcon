@@ -55,22 +55,18 @@ async def test_invalid_asgi_events():
         return {
             'type': 'http.response.start',
             'headers': headers or [],
-            'status': status
+            'status': status,
         }
 
     with pytest.raises(TypeError):
         await collect({'type': 123})
 
     with pytest.raises(TypeError):
-        headers = [
-            ('notbytes', b'bytes')
-        ]
+        headers = [('notbytes', b'bytes')]
         await collect(make_event(headers))
 
     with pytest.raises(TypeError):
-        headers = [
-            (b'bytes', 'notbytes')
-        ]
+        headers = [(b'bytes', 'notbytes')]
         await collect(make_event(headers))
 
     with pytest.raises(ValueError):

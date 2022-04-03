@@ -1,4 +1,4 @@
-name: Run tests emulated
+name: Run tests (emulated)
 
 on:
   # Trigger the workflow on master but also allow it to run manually.

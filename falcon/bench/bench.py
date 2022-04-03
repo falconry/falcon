@@ -65,7 +65,7 @@ ITER_DETECTION_DURATION_MAX = 6.0
 
 JIT_WARMING_MULTIPLIER = 30
 
-BODY = helpers.rand_string(10240, 10240).encode('utf-8') # NOQA
+BODY = helpers.rand_string(10240, 10240).encode('utf-8')  # NOQA
 HEADERS = {'X-Test': 'Funky Chicken'}  # NOQA
 
 
@@ -116,11 +116,7 @@ def determine_iterations(func):
     for __ in range(1, ITER_DETECTION_MAX_ATTEMPTS):
         gc.collect()
 
-        total_sec = timeit.timeit(
-            func,
-            setup=gc.enable,
-            number=int(iterations)
-        )
+        total_sec = timeit.timeit(func, setup=gc.enable, number=int(iterations))
 
         if total_sec >= ITER_DETECTION_DURATION_MIN:
             assert total_sec < ITER_DETECTION_DURATION_MAX
@@ -170,8 +166,7 @@ def profile(name, env, filename=None, verbose=False):
         pprofile.runctx(code, locals(), globals(), filename=filename)
 
     else:
-        cProfile.runctx(code, locals(), globals(),
-                        sort='tottime', filename=filename)
+        cProfile.runctx(code, locals(), globals(), sort='tottime', filename=filename)
 
 
 def profile_vmprof(name, env):
@@ -202,12 +197,14 @@ def profile_vmprof(name, env):
     vmprof.disable()
 
     service = Service('vmprof.com')
-    service.post({
-        Service.FILE_CPU_PROFILE: filename,
-        Service.FILE_JIT_PROFILE: filename + '.jit',
-        'argv': ' '.join(sys.argv[:]),
-        'VM': platform.python_implementation(),
-    })
+    service.post(
+        {
+            Service.FILE_CPU_PROFILE: filename,
+            Service.FILE_JIT_PROFILE: filename + '.jit',
+            'argv': ' '.join(sys.argv[:]),
+            'VM': platform.python_implementation(),
+        }
+    )
 
     prof_file.close()
 
@@ -256,19 +253,17 @@ def avg(array):
 
 def hello_env():
     request_headers = {'Content-Type': 'application/json'}
-    return helpers.create_environ('/hello/584/test',
-                                  query_string='limit=10&thing=ab',
-                                  headers=request_headers)
+    return helpers.create_environ(
+        '/hello/584/test', query_string='limit=10&thing=ab', headers=request_headers
+    )
 
 
 def queues_env():
     request_headers = {'Content-Type': 'application/json'}
-    path = ('/v1/852809/queues/0fd4c8c6-bd72-11e2-8e47-db5ebd4c8125'
-            '/claims/db5ebd4c8125')
+    path = '/v1/852809/queues/0fd4c8c6-bd72-11e2-8e47-db5ebd4c8125/claims/db5ebd4c8125'
 
     qs = 'limit=10&thing=a+b&x=%23%24'
-    return helpers.create_environ(path, query_string=qs,
-                                  headers=request_headers)
+    return helpers.create_environ(path, query_string=qs, headers=request_headers)
 
 
 def get_env(framework):
@@ -316,17 +311,12 @@ def run(frameworks, trials, iterations, stat_memory):
     for r in range(trials):
         random.shuffle(frameworks)
 
-        sys.stdout.write('Benchmarking, Trial %d of %d' %
-                         (r + 1, trials))
+        sys.stdout.write('Benchmarking, Trial %d of %d' % (r + 1, trials))
         sys.stdout.flush()
 
         dataset = []
         for name, bm_iterations, bm in benchmarks:
-            sec_per_req, heap_diff = bench(
-                bm,
-                bm_iterations,
-                stat_memory
-            )
+            sec_per_req, heap_diff = bench(bm, bm_iterations, stat_memory)
 
             dataset.append((name, sec_per_req, heap_diff))
 
@@ -351,12 +341,20 @@ def main():
     ]
 
     parser = argparse.ArgumentParser(description='Falcon benchmark runner')
-    parser.add_argument('-b', '--benchmark', type=str, action='append',
-                        choices=frameworks, dest='frameworks', nargs='+')
+    parser.add_argument(
+        '-b',
+        '--benchmark',
+        type=str,
+        action='append',
+        choices=frameworks,
+        dest='frameworks',
+        nargs='+',
+    )
     parser.add_argument('-i', '--iterations', type=int, default=0)
     parser.add_argument('-t', '--trials', type=int, default=10)
-    parser.add_argument('-p', '--profile', type=str,
-                        choices=['standard', 'verbose', 'vmprof'])
+    parser.add_argument(
+        '-p', '--profile', type=str, choices=['standard', 'verbose', 'vmprof']
+    )
     parser.add_argument('-o', '--profile-output', type=str, default=None)
     parser.add_argument('-m', '--stat-memory', action='store_true')
     args = parser.parse_args()
@@ -384,16 +382,18 @@ def main():
         if args.profile == 'vmprof':
             profile_vmprof(framework, get_env(framework))
         else:
-            profile(framework, get_env(framework),
-                    filename=args.profile_output,
-                    verbose=(args.profile == 'verbose'))
+            profile(
+                framework,
+                get_env(framework),
+                filename=args.profile_output,
+                verbose=(args.profile == 'verbose'),
+            )
 
         print()
         return
 
     # Otherwise, benchmark
-    datasets = run(frameworks, args.trials, args.iterations,
-                   args.stat_memory)
+    datasets = run(frameworks, args.trials, args.iterations, args.stat_memory)
 
     if not datasets:
         return
@@ -406,11 +406,14 @@ def main():
 
     for i, (name, sec_per_req) in enumerate(dataset):
         req_per_sec = round_to_int(Decimal(1) / sec_per_req)
-        us_per_req = (sec_per_req * Decimal(10 ** 6))
+        us_per_req = sec_per_req * Decimal(10**6)
         factor = round_to_int(baseline / sec_per_req)
 
-        print('{3}. {0:.<20s}{1:.>06d} req/sec or {2: >3.2f} μs/req ({4}x)'.
-              format(name, req_per_sec, us_per_req, i + 1, factor))
+        print(
+            '{3}. {0:.<20s}{1:.>06d} req/sec or {2: >3.2f} μs/req ({4}x)'.format(
+                name, req_per_sec, us_per_req, i + 1, factor
+            )
+        )
 
     if heapy and args.stat_memory:
         print()
