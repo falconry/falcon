@@ -24,17 +24,13 @@ jobs:
           - "windows-latest"
           - "macos-latest"
         python-version:
-          - "3.5"
           - "3.6"
           - "3.7"
           - "3.8"
           - "3.9"
+          - "3.10"
         architecture:
           - x64
-
-        include:
-          - python-version: "3.5"
-            pytest-extra: --ignore=tests/asgi
 
       fail-fast: false
 
@@ -63,9 +59,6 @@ jobs:
         # - install the created wheel without using the pypi index
         # - check the cython extension
         # - runs the tests
-        env:
-          FALCON_ASGI_WRAP_NON_COROUTINES: Y
-          FALCON_TESTING_SESSION: Y
         run: |
           pip install tox
           tox -e wheel_check -- ${{ matrix.pytest-extra }}
@@ -100,17 +93,13 @@ jobs:
           - "ubuntu-latest"
         python-version:
           # the versions are <python tag>-<abi tag> as specified in PEP 425.
-          - cp35-cp35m
           - cp36-cp36m
           - cp37-cp37m
           - cp38-cp38
           - cp39-cp39
+          - cp310-cp310
         architecture:
           - x64
-
-        include:
-          - python-version: cp35-cp35m
-            pytest-extra: --ignore=tests/asgi
 
       fail-fast: false
 
@@ -125,7 +114,8 @@ jobs:
         env:
           py_tag: ${{ matrix.python-version }}
         run: |
-          version="${py_tag: 2:1}.${py_tag: 3:1}"
+          platform=${py_tag%%-*}
+          version=${platform:2:1}.${platform:3:3}
           echo $version
           echo "::set-output name=python-version::$version"
 
@@ -162,9 +152,6 @@ jobs:
         # - install the created wheel without using the pypi index
         # - check the cython extension
         # - runs the tests
-        env:
-          FALCON_ASGI_WRAP_NON_COROUTINES: Y
-          FALCON_TESTING_SESSION: Y
         run: |
           pip install tox
           tox -e wheel_check -- ${{ matrix.pytest-extra }}
@@ -196,7 +183,7 @@ jobs:
         os:
           - "ubuntu-latest"
         python-version:
-          - "3.9"
+          - "3.10"
         architecture:
           - x64
 
@@ -250,18 +237,14 @@ jobs:
           - "ubuntu-latest"
         python-version:
           # the versions are <python tag>-<abi tag> as specified in PEP 425.
-          - cp35-cp35m
           - cp36-cp36m
           - cp37-cp37m
           - cp38-cp38
           - cp39-cp39
+          - cp310-cp310
         architecture:
           - aarch64
           - s390x
-
-        include:
-          - python-version: cp35-cp35m
-            pytest-extra: --ignore=tests/asgi
 
       fail-fast: false
 
@@ -294,8 +277,6 @@ jobs:
         if: ${{ matrix.architecture == 'aarch64' }}
         uses: docker://quay.io/pypa/manylinux2014_aarch64
         env:
-          FALCON_ASGI_WRAP_NON_COROUTINES: Y
-          FALCON_TESTING_SESSION: Y
           PIP_CACHE_DIR: /github/workspace/.pip/
           PYTHON_VERSION: ${{ matrix.python-version }}
         with:
@@ -319,8 +300,6 @@ jobs:
         if: ${{ matrix.architecture == 's390x' }}
         uses: docker://quay.io/pypa/manylinux2014_s390x
         env:
-          FALCON_ASGI_WRAP_NON_COROUTINES: Y
-          FALCON_TESTING_SESSION: Y
           PIP_CACHE_DIR: /github/workspace/.pip/
         with:
           args: |

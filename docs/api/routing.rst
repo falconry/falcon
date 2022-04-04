@@ -412,10 +412,12 @@ following:
             resp.text = str(req.get_param_as_int('x') + req.get_param_as_int('y'))
             resp.status = falcon.HTTP_200
 
+
     class Subtract():
         def on_get(self, req, resp):
             resp.text = str(req.get_param_as_int('x') - req.get_param_as_int('y'))
             resp.status = falcon.HTTP_200
+
 
     add = Add()
     subtract = Subtract()
@@ -442,6 +444,7 @@ style:
         def on_get_subtract(self, req, resp):
             resp.text = str(req.get_param_as_int('x') - req.get_param_as_int('y'))
             resp.status = falcon.HTTP_200
+
 
     calc = Calculator()
     app = falcon.App()

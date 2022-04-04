@@ -23,6 +23,10 @@ share your ideas. You can find us in `falconry/user
 `falconry/dev <https://gitter.im/falconry/dev>`_ room for discussing
 the design and development of the framework itself.
 
+In addition to Gitter, we are also evaluating the popular GitHub
+`Discussions <https://github.com/falconry/falcon/discussions>`_ for less
+"realtime" communication such as usage questions or open-ended design ideas.
+
 Per our
 `Code of Conduct <https://github.com/falconry/falcon/blob/master/CODEOFCONDUCT.md>`_,
 we expect everyone who participates in community discussions to act

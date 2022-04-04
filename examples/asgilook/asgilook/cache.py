@@ -9,10 +9,7 @@ class RedisCache:
 
     def __init__(self, config):
         self._config = config
-
-        # NOTE(vytas): To be initialized upon application startup (see the
-        #   method below).
-        self._redis = None
+        self._redis = self._config.redis_from_url(self._config.redis_host)
 
     async def _serialize_response(self, resp):
         data = await resp.render_body()
@@ -24,8 +21,10 @@ class RedisCache:
         resp.context.cached = True
 
     async def process_startup(self, scope, event):
-        if self._redis is None:
-            self._redis = await self._config.create_redis_pool(self._config.redis_host)
+        await self._redis.ping()
+
+    async def process_shutdown(self, scope, event):
+        await self._redis.close()
 
     async def process_request(self, req, resp):
         resp.context.cached = False
@@ -51,4 +50,4 @@ class RedisCache:
             await self._redis.delete(key)
         elif not resp.context.cached:
             data = await self._serialize_response(resp)
-            await self._redis.set(key, data, expire=self.TTL)
+            await self._redis.set(key, data, ex=self.TTL)

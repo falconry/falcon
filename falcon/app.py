@@ -589,6 +589,13 @@ class App:
             For security reasons, the directory and the fallback_filename (if provided)
             should be read only for the account running the application.
 
+        Warning:
+            If you need to serve large files and/or progressive downloads (such
+            as in the case of video streaming) through the Falcon app, check
+            that your application server's timeout settings can accomodate the
+            expected request duration (for instance, the popular Gunicorn kills
+            ``sync`` workers after 30 seconds unless configured otherwise).
+
         Note:
             For ASGI apps, file reads are made non-blocking by scheduling
             them on the default executor.
@@ -799,17 +806,13 @@ class App:
 
         # TODO(vytas): Remove this shimming in a future Falcon version.
         arg_names = tuple(misc.get_argnames(handler))
-        if (
-            arg_names[0:1]
-            in (
-                ('e',),
-                ('err',),
-                ('error',),
-                ('ex',),
-                ('exception',),
-            )
-            or arg_names[1:3] in (('req', 'resp'), ('request', 'response'))
-        ):
+        if arg_names[0:1] in (
+            ('e',),
+            ('err',),
+            ('error',),
+            ('ex',),
+            ('exception',),
+        ) or arg_names[1:3] in (('req', 'resp'), ('request', 'response')):
             handler = wrap_old_handler(handler)
 
         try:

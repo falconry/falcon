@@ -42,7 +42,6 @@ _STREAM_LEN_REMOVED_MSG = (
     'Please use Response.set_stream() or Response.content_length instead.'
 )
 
-
 _RESERVED_CROSSORIGIN_VALUES = frozenset({'anonymous', 'use-credentials'})
 
 _RESERVED_SAMESITE_VALUES = frozenset({'lax', 'strict', 'none'})
@@ -787,7 +786,8 @@ class Response:
 
         Note:
             So-called "link-extension" elements, as defined by RFC 5988,
-            are not yet supported. See also Issue #288.
+            are not yet supported. See also
+            `Issue #288 <https://github.com/falconry/falcon/issues/288>`__.
 
         Args:
             target (str): Target IRI for the resource identified by the
@@ -907,7 +907,9 @@ class Response:
             _headers['link'] = value
 
     # NOTE(kgriffs): Alias deprecated as of 3.0
-    add_link = append_link
+    add_link = deprecated('Please use append_link() instead.', method_name='add_link')(
+        append_link
+    )
 
     cache_control = header_property(
         'Cache-Control',

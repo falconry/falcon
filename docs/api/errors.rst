@@ -217,3 +217,6 @@ Predefined Errors
 
 .. autoclass:: falcon.MediaMalformedError
     :members:
+
+.. autoclass:: falcon.MediaValidationError
+    :members:

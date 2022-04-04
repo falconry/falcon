@@ -5,7 +5,7 @@ import pytest
 
 import falcon
 from falcon import testing
-
+from falcon.util.deprecation import DeprecatedWarning
 from _util import create_app  # NOQA
 
 
@@ -179,18 +179,25 @@ class LinkHeaderResource:
     def __init__(self):
         self._links = []
 
+    def add_link(self, *args, **kwargs):
+        self._links.append(('add_link', args, kwargs))
+
     def append_link(self, *args, **kwargs):
-        self._links.append((args, kwargs))
+        self._links.append(('append_link', args, kwargs))
 
     def on_get(self, req, resp):
         resp.text = '{}'
 
-        append_link = None
-        for args, kwargs in self._links:
-            append_link = (
-                resp.append_link if append_link is resp.add_link else resp.add_link
-            )
-            append_link(*args, **kwargs)
+        for method_name, args, kwargs in self._links:
+            append_method = getattr(resp, method_name)
+            if method_name == 'append_link':
+                append_method(*args, **kwargs)
+            else:
+                with pytest.warns(
+                    DeprecatedWarning,
+                    match='Call to deprecated function add_link(...)',
+                ):
+                    append_method(*args, **kwargs)
 
 
 class AppendHeaderResource:
@@ -817,12 +824,12 @@ class TestHeaders:
         uri = 'ab\u00e7'
 
         resource = LinkHeaderResource()
-        resource.append_link('/things/2842', 'next')
+        resource.add_link('/things/2842', 'next')
         resource.append_link('http://\u00e7runchy/bacon', 'contents')
         resource.append_link(uri, 'http://example.com/ext-type')
-        resource.append_link(uri, 'http://example.com/\u00e7runchy')
+        resource.add_link(uri, 'http://example.com/\u00e7runchy')
         resource.append_link(uri, 'https://example.com/too-\u00e7runchy')
-        resource.append_link('/alt-thing', 'alternate http://example.com/\u00e7runchy')
+        resource.add_link('/alt-thing', 'alternate http://example.com/\u00e7runchy')
 
         self._check_link_header(client, resource, expected_value)
 

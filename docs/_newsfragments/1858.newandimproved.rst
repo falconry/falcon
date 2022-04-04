@@ -1,9 +1,0 @@
-The :attr:`Request.range <falcon.Request.range>` property now has stricter
-validation:
-
-  * When parsing a byte-range-spec with a last-byte-pos, it must be greater
-    than or equal to first-byte-pos.
-  * When parsing a suffix-byte-range-spec, suffix-length must be positive.
-
-:func:`Static routes <falcon.App.add_static_route>` now support ``Range``
-requests. This is useful for streaming media and resumable downloads.

@@ -317,7 +317,7 @@ class Response(response.Response):
 
         Args:
             callback(object): An async coroutine function. The callback will be
-            invoked without arguments.
+                invoked without arguments.
         """
 
         # NOTE(kgriffs): We also have to do the CoroWrapper check because

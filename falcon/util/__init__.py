@@ -24,6 +24,7 @@ from http import cookies as http_cookies
 import sys
 
 # Hoist misc. utils
+from falcon.constants import PYTHON_VERSION
 from falcon.util.misc import code_to_http_status
 from falcon.util.misc import dt_to_http
 from falcon.util.misc import get_argnames
@@ -57,7 +58,7 @@ if 'samesite' not in _reserved_cookie_attrs:  # pragma: no cover
     _reserved_cookie_attrs['samesite'] = 'SameSite'  # type: ignore
 
 
-IS_64_BITS = sys.maxsize > 2 ** 32
+IS_64_BITS = sys.maxsize > 2**32
 
 from falcon.util.reader import BufferedReader as _PyBufferedReader  # NOQA
 
@@ -72,7 +73,7 @@ BufferedReader = (
     (_CyBufferedReader or _PyBufferedReader) if IS_64_BITS else _PyBufferedReader
 )
 
-if sys.version_info >= (3, 7):
+if PYTHON_VERSION >= (3, 7):
     # NOTE(caselit): __getattr__ support for modules was added only in py 3.7.
     # Deprecating an import on previous version is hard to do, so we are
     # displaying the warning only on 3.7+
@@ -91,7 +92,6 @@ if sys.version_info >= (3, 7):
         # fallback to the default implementation
         mod = sys.modules[__name__]
         return ModuleType.__getattr__(mod, name)
-
 
 else:
     import json  # NOQA

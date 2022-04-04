@@ -18,6 +18,7 @@ import re
 
 from falcon import constants
 from falcon import responders
+from falcon.util.deprecation import deprecated
 
 
 class SuffixedMethodNotFoundError(Exception):
@@ -27,6 +28,7 @@ class SuffixedMethodNotFoundError(Exception):
 
 
 # NOTE(kgriffs): Published method; take care to avoid breaking changes.
+@deprecated('This method will be removed in Falcon 4.0.')
 def compile_uri_template(template):
     """Compile the given URI template string into a pattern matcher.
 
@@ -66,6 +68,8 @@ def compile_uri_template(template):
 
     Returns:
         tuple: (template_field_names, template_regex)
+
+    .. deprecated:: 3.1
     """
 
     if not isinstance(template, str):

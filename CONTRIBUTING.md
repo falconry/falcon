@@ -26,28 +26,23 @@ Please note that all contributors and maintainers of this project are subject to
 
 ### Pull Requests
 
-Before submitting a pull request, please ensure you have added or updated tests as appropriate, and that all existing tests still pass with your changes. Please also ensure that your coding style follows PEP 8.
+Before submitting a pull request, please ensure you have added or updated tests as appropriate, and that all existing tests still pass with your changes. Please also ensure that your coding style follows PEP 8 and the ``black`` formatting style.
 
-You can check all this by running the following from within the Falcon project directory (requires Python 3.8 and 3.5 to be installed on your system):
-
-```bash
-$ tools/mintest.sh
-```
-
-You may also use Python 3.6 or 3.7 if you don't have 3.8 installed on your system. Substitute "py36" or "py37" as appropriate. Note also that due to a bug introduced in tox version 3.21, you will need to pin to 3.20 in order to run Falcon's test suite. For example:
-
+In order to reformat your code with ``black``, simply issue:
 
 ```bash
-$ pip install -U tox==3.20 coverage
-$ rm -f .coverage.*
-$ tox -e pep8 && tox -e py35,py37 && tools/testing/combine_coverage.sh
+$ pip install -U black
+$ black .
 ```
 
-If you are using pyenv, you will need to make sure both 3.8 and 3.5 are available in the current shell, e.g.:
+You can check all this by running ``tox`` from within the Falcon project directory. Your environment must be based on CPython 3.8 or 3.10:
 
 ```bash
-$ pyenv shell 3.8.0 3.5.8
+$ pip install -U tox
+$ tox --recreate
 ```
+
+You may also use a CPython 3.9 environment, although in that case ``coverage`` will likely report a false positive on missing branches, and the total coverage might fall short of 100%. These issues are caused by bugs in the interpreter itself, and are unlikely to ever get fixed.
 
 #### Reviews
 
@@ -72,12 +67,12 @@ type correct? Try running `towncrier --draft` to ensure it renders correctly.
 Pull requests must maintain 100% test coverage of all code branches. This helps ensure the quality of the Falcon framework. To check coverage before submitting a pull request:
 
 ```bash
-$ tools/mintest.sh
+$ tox
 ```
 
 It is necessary to combine test coverage from multiple environments in order to account for branches in the code that are only taken for a given Python version.
 
-The script generates an HTML coverage report that can be viewed by simply opening `.coverage_html/index.html` in a browser. This can be helpful in tracking down specific lines or branches that are missing coverage.
+Running the default sequence of ``tox`` environments generates an HTML coverage report that can be viewed by simply opening `.coverage_html/index.html` in a browser. This can be helpful in tracking down specific lines or branches that are missing coverage.
 
 ### Debugging
 

@@ -13,11 +13,13 @@
 The Falcon Web Framework
 ========================
 
-`Falcon <https://falconframework.org>`__ is a reliable,
-high-performance Python web framework for building
-large-scale app backends and microservices. It encourages the REST
-architectural style, and tries to do as little as possible while
-remaining highly effective.
+`Falcon <https://falconframework.org>`__ is a minimalist ASGI/WSGI framework for
+building mission-critical REST APIs and microservices, with a focus on
+reliability, correctness, and performance at scale.
+
+When it comes to building HTTP APIs, other frameworks weigh you down with tons
+of dependencies and unnecessary abstractions. Falcon cuts to the chase with a
+clean design that embraces HTTP and the REST architectural style.
 
 Falcon apps work with any `WSGI <https://www.python.org/dev/peps/pep-3333/>`_
 or `ASGI <https://asgi.readthedocs.io/en/latest/>`_ server, and run like a
@@ -27,6 +29,9 @@ Quick Links
 -----------
 
 * `Read the docs <https://falcon.readthedocs.io/en/stable>`_
+  (`FAQ <https://falcon.readthedocs.io/en/stable/user/faq.html>`_ -
+  `getting help <https://falcon.readthedocs.io/en/stable/community/help.html>`_ -
+  `reference <https://falcon.readthedocs.io/en/stable/api/index.html>`_)
 * `Falcon add-ons and complementary packages <https://github.com/falconry/falcon/wiki>`_
 * `Falcon articles, talks and podcasts <https://github.com/falconry/falcon/wiki/Articles,-Talks-and-Podcasts>`_
 * `falconry/user for Falcon users <https://gitter.im/falconry/user>`_ @ Gitter
@@ -35,16 +40,18 @@ Quick Links
 What People are Saying
 ----------------------
 
-"We have been using Falcon as a replacement for [framework] and we simply love the performance (three times faster) and code base size (easily half of our original [framework] code)."
+"Falcon is rock solid and it's fast."
+
+"We have been using Falcon as a replacement for [another framework] and
+we simply love the performance (three times faster) and code base size (easily
+half of our [original] code)."
+
+"I'm loving #falconframework! Super clean and simple, I finally
+have the speed and flexibility I need!"
 
 "Falcon looks great so far. I hacked together a quick test for a
 tiny server of mine and was ~40% faster with only 20 minutes of
 work."
-
-"Falcon is rock solid and it's fast."
-
-"I'm loving #falconframework! Super clean and simple, I finally
-have the speed and flexibility I need!"
 
 "I feel like I'm just talking HTTP at last, with nothing in the
 middle. Falcon seems like the requests of backend."
@@ -237,8 +244,8 @@ In order to provide an extra speed boost, Falcon can compile itself with
 Cython. Wheels containing pre-compiled binaries are available from PyPI for
 several common platforms. However, if a wheel for your platform of choice is not
 available, you can install the source distribution. The installation process
-will automatically try to cythonize Falcon for your environment, falling back to 
-a normal pure-Python install if any issues are encountered during the 
+will automatically try to cythonize Falcon for your environment, falling back to
+a normal pure-Python install if any issues are encountered during the
 cythonization step:
 
 .. code:: bash
@@ -734,7 +741,7 @@ To test this example, open another terminal and run:
 
     $ http localhost:8000/1/things authorization:custom-token
 
-You can also view the the application configuration from the CLI via the
+You can also view the application configuration from the CLI via the
 ``falcon-inspect-app`` script that is bundled with the framework:
 
 .. code:: bash
@@ -1020,11 +1027,8 @@ See also: `CONTRIBUTING.md <https://github.com/falconry/falcon/blob/master/CONTR
 Legal
 -----
 
-Copyright 2013-2020 by Individual and corporate contributors as
+Copyright 2013-2021 by Individual and corporate contributors as
 noted in the individual source files.
-
-Falcon image courtesy of `John
-O'Neill <https://commons.wikimedia.org/wiki/File:Brown-Falcon,-Vic,-3.1.2008.jpg>`__.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may
 not use any portion of the Falcon framework except in compliance with

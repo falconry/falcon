@@ -197,7 +197,8 @@ async def test_echo():  # noqa: C901
     app.add_route('/{p1}/{p2}', resource)
 
     async with testing.ASGIConductor(app) as c:
-        async with c.simulate_ws('/v1/v2', headers={}) as ws:
+        # NOTE(vytas): Using the websocket() alias.
+        async with c.websocket('/v1/v2', headers={}) as ws:
             assert (await ws.receive_text()) == 'v1:v2:hello:42'
 
             for i in range(producer_loop):
@@ -341,7 +342,9 @@ async def test_client_disconnect_early(  # noqa: C901
                             await asyncio.sleep(
                                 0
                             )  # Ensure recv_task() has a chance to get ahead
-                            await asyncio.wait([recv_task, ws.close(4099)])
+                            await asyncio.wait(
+                                [recv_task, falcon.create_task(ws.close(4099))]
+                            )
 
                         self.data_received.set()
 

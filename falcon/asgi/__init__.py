@@ -27,9 +27,9 @@ and (B) their purpose is particularly cohesive with that of the module in
 question.
 """
 
-import sys as _sys
+from falcon.constants import ASGI_SUPPORTED as _asgi_supported
 
-if _sys.version_info < (3, 6):
+if not _asgi_supported:
     raise ImportError('falcon.asgi requires Python 3.6+')
 
 from .app import App
