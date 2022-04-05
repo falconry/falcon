@@ -148,6 +148,27 @@ class TestCustomCorsMiddleware:
             assert 'Access-Control-Allow-Credentials'.lower() not in h
             assert 'Access-Control-Expose-Headers'.lower() not in h
 
+    def test_allow_origin_dynamic(self, make_cors_client):
+        def allow_func(origin):
+            if origin == 'good_origin':
+                return True
+            return False
+        client = make_cors_client(falcon.CORSMiddleware(allow_origins=allow_func))
+        client.app.add_route('/', CORSHeaderResource())
+
+        h = {'Origin': 'bad_origin'}
+        res = client.simulate_get(headers=h)
+        h = dict(res.headers.lower_items()).keys()
+        assert 'Access-Control-Allow-Origin'.lower() not in h
+        assert 'Access-Control-Allow-Credentials'.lower() not in h
+        assert 'Access-Control-Expose-Headers'.lower() not in h
+
+        res = client.simulate_get(headers={'Origin': 'good_origin'})
+        assert res.headers['Access-Control-Allow-Origin'] == 'good_origin'
+        h = dict(res.headers.lower_items()).keys()
+        assert 'Access-Control-Allow-Credentials'.lower() not in h
+        assert 'Access-Control-Expose-Headers'.lower() not in h
+
     def test_allow_credential_wildcard(self, make_cors_client):
         client = make_cors_client(falcon.CORSMiddleware(allow_credentials='*'))
         client.app.add_route('/', CORSHeaderResource())
@@ -180,6 +201,26 @@ class TestCustomCorsMiddleware:
             assert res.headers['Access-Control-Allow-Credentials'] == 'true'
             h = dict(res.headers.lower_items()).keys()
             assert 'Access-Control-Expose-Headers'.lower() not in h
+
+    def test_allow_credential_dynamic(self, make_cors_client):
+        def allow_func(origin):
+            if origin == 'good_origin':
+                return True
+            return False
+        client = make_cors_client(falcon.CORSMiddleware(allow_credentials=allow_func))
+        client.app.add_route('/', CORSHeaderResource())
+
+        res = client.simulate_get(headers={'Origin': 'bad_origin'})
+        assert res.headers['Access-Control-Allow-Origin'] == '*'
+        h = dict(res.headers.lower_items()).keys()
+        assert 'Access-Control-Allow-Credentials'.lower() not in h
+        assert 'Access-Control-Expose-Headers'.lower() not in h
+
+        res = client.simulate_get(headers={'Origin': 'good_origin'})
+        assert res.headers['Access-Control-Allow-Origin'] == 'good_origin'
+        assert res.headers['Access-Control-Allow-Credentials'] == 'true'
+        h = dict(res.headers.lower_items()).keys()
+        assert 'Access-Control-Expose-Headers'.lower() not in h
 
     def test_allow_credential_existing_origin(self, make_cors_client):
         client = make_cors_client(falcon.CORSMiddleware(allow_credentials='*'))
