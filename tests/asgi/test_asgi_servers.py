@@ -500,7 +500,13 @@ uvicorn.run('_asgi_test_app:application', host='{host}', port={port})
     )
 
     return subprocess.Popen(
-        ('uvicorn',) + loop_options + options,
+        (
+            sys.executable,
+            '-m',
+            'uvicorn',
+        )
+        + loop_options
+        + options,
         cwd=_MODULE_DIR,
     )
 
@@ -508,6 +514,8 @@ uvicorn.run('_asgi_test_app:application', host='{host}', port={port})
 def _daphne_factory(host, port):
     return subprocess.Popen(
         (
+            sys.executable,
+            '-m',
             'daphne',
             '--bind',
             host,
@@ -543,6 +551,8 @@ run(config)
         )
     return subprocess.Popen(
         (
+            sys.executable,
+            '-m',
             'hypercorn',
             '--bind',
             f'{host}:{port}',

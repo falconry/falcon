@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 import time
 
 import requests
@@ -14,7 +15,14 @@ def pytest_sessionstart(session):
     global gunicorn
 
     gunicorn = subprocess.Popen(
-        ('gunicorn', '--pythonpath', LOOK_PATH, 'look.app:get_app()'),
+        (
+            sys.executable,
+            '-m',
+            'gunicorn',
+            '--pythonpath',
+            LOOK_PATH,
+            'look.app:get_app()',
+        ),
         env=dict(os.environ, LOOK_STORAGE_PATH='/tmp'),
     )
 

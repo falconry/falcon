@@ -28,6 +28,8 @@ def _gunicorn_args(host, port, extra_opts=()):
         pytest.skip('gunicorn not installed')
 
     args = (
+        sys.executable,
+        '-m',
         'gunicorn',
         '--access-logfile',
         '-',
@@ -72,6 +74,8 @@ def _uvicorn_args(host, port):
         pytest.skip('uvicorn not installed')
 
     return (
+        sys.executable,
+        '-m',
         'uvicorn',
         '--host',
         host,
@@ -102,7 +106,9 @@ def _waitress_args(host, port):
         pytest.skip('waitress not installed')
 
     return (
-        'waitress-serve',
+        sys.executable,
+        '-m',
+        'waitress',
         '--listen',
         '{}:{}'.format(host, port),
         '_wsgi_test_app:app',
