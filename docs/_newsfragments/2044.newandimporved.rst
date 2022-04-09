@@ -1,0 +1,3 @@
+Added ``__repr__`` method to :class:`falcon.testing.client.Result`.
+Syntax of ``__repr__`` as follows ``Result<{status_code}, {Content-Type Header}, {Content}>``.
+Where content will display the first 20 bytes.

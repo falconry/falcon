@@ -348,11 +348,9 @@ class Result(_ResultBase):
         return json_module.loads(self.text)
 
     def __repr__(self):
-        content_type = ''
-        if 'Content-Type' in self.headers.keys():
-            content_type = self.headers['Content-Type']
+        content_type = self.headers.get('Content-Type', '')
 
-        return 'Result<{} {} {}>'.format(self.status, content_type, self.content[:20])
+        return 'Result<{}, {}, {}>'.format(self.status, content_type, self.content[:20])
 
 
 class StreamedResult(_ResultBase):
