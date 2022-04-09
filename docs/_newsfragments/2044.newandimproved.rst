@@ -1,0 +1,3 @@
+Added ``__repr__`` method to :class:`falcon.testing.client.Results`.
+Representation of :class:`falcon.testing.client.Results` will be as follows ``Result<{code_status}, {Content-type header}, {content}>``
+Where content will be the first 20 bytes.
