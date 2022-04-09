@@ -1,0 +1,3 @@
+Request attributes :attr:`~falcon.Request.forwarded_scheme` and
+:attr:`~falcon.Request.forwarded_host` now no longer raise an ``IndexError``
+while processing an invalid or empty ``Forwarded`` header.
