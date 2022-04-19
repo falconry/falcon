@@ -786,6 +786,7 @@ class Response:
         hreflang=None,
         type_hint=None,
         crossorigin=None,
+        link_extension=None,
     ):
         """Append a link header to the response.
 
@@ -794,11 +795,6 @@ class Response:
         Note:
             Calling this method repeatedly will cause each link to be
             appended to the Link header value, separated by commas.
-
-        Note:
-            So-called "link-extension" elements, as defined by RFC 5988,
-            are not yet supported. See also
-            `Issue #288 <https://github.com/falconry/falcon/issues/288>`__.
 
         Args:
             target (str): Target IRI for the resource identified by the
@@ -849,6 +845,9 @@ class Response:
                 Can take values 'anonymous' or 'use-credentials' or None.
                 (See:
                 https://www.w3.org/TR/html50/infrastructure.html#cors-settings-attribute)
+            link_extension(iterable): Provides additional custom attributes, as
+                described in RFC 8288, Section 3.4.2. Each member of the iterable
+                must be a two-membered tuple in the form of (*param*, *value*).
 
         """
 
@@ -910,6 +909,10 @@ class Response:
                 # PERF(vytas): the only remaining value is inlined.
                 # Un-inline in case more values are supported in the future.
                 value += '; crossorigin="use-credentials"'
+
+        if link_extension is not None:
+            value += '; '
+            value += '; '.join([ext[0] + '=' + ext[1] for ext in link_extension])
 
         _headers = self._headers
         if 'link' in _headers:
