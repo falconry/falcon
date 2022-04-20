@@ -913,7 +913,7 @@ class Response:
 
         if link_extension is not None:
             value += '; '
-            value += '; '.join([ext[0] + '=' + ext[1] for ext in link_extension])
+            value += '; '.join([p + '=' + v for p, v in link_extension])
 
         _headers = self._headers
         if 'link' in _headers:
