@@ -847,7 +847,8 @@ class Response:
                 https://www.w3.org/TR/html50/infrastructure.html#cors-settings-attribute)
             link_extension(iterable): Provides additional custom attributes, as
                 described in RFC 8288, Section 3.4.2. Each member of the iterable
-                must be a two-membered tuple in the form of (*param*, *value*).
+                must be a two-tuple in the form of (*param*, *value*).
+                (See: https://datatracker.ietf.org/doc/html/rfc8288#section-3.4.2)
 
         """
 
