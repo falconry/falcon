@@ -408,6 +408,7 @@ class ASGIWebSocketSimulator:
         self._state = _WebSocketState.CONNECT
         self._disconnect_emitted = False
         self._close_code = None
+        self._close_reason = None
         self._accepted_subprotocol = None
         self._accepted_headers = None
         self._collected_server_events = deque()
@@ -426,6 +427,10 @@ class ASGIWebSocketSimulator:
     @property
     def close_code(self) -> int:
         return self._close_code
+
+    @property
+    def close_reason(self) -> str:
+        return self._close_reason
 
     @property
     def subprotocol(self) -> str:
@@ -464,12 +469,14 @@ class ASGIWebSocketSimulator:
     # NOTE(kgriffs): This is a coroutine just in case we need it to be
     #   in a future code revision. It also makes it more consistent
     #   with the other methods.
-    async def close(self, code: Optional[int] = None):
+    async def close(self, code: Optional[int] = None, reason: Optional[str] = None):
         """Close the simulated connection.
 
         Keyword Args:
             code (int): The WebSocket close code to send to the application
                 per the WebSocket spec (default: ``1000``).
+            reason (str): The WebSocket close reason to send to the application
+                per the WebSocket spec (default: empty string).
         """
 
         # NOTE(kgriffs): Give our collector a chance in case the
@@ -488,8 +495,12 @@ class ASGIWebSocketSimulator:
         if code is None:
             code = WSCloseCode.NORMAL
 
+        if reason is None:
+            reason = ''
+
         self._state = _WebSocketState.CLOSED
         self._close_code = code
+        self._close_reason = reason
 
     async def send_text(self, payload: str):
         """Send a message to the app with a Unicode string payload.
@@ -727,6 +738,7 @@ class ASGIWebSocketSimulator:
                 self._state = _WebSocketState.DENIED
 
                 desired_code = event.get('code', WSCloseCode.NORMAL)
+                reason = event.get('reason', '')
                 if desired_code == WSCloseCode.SERVER_ERROR or (
                     3000 <= desired_code < 4000
                 ):
@@ -735,12 +747,16 @@ class ASGIWebSocketSimulator:
                     #   different raised error types or to pass through a
                     #   raised HTTPError status code.
                     self._close_code = desired_code
+                    self._close_reason = reason
                 else:
                     # NOTE(kgriffs): Force the close code to this since it is
                     #   similar to what happens with a real web server (the HTTP
                     #   connection is closed with a 403 and there is no websocket
                     #   close code).
                     self._close_code = WSCloseCode.FORBIDDEN
+                    self._close_reason = falcon.util.code_to_http_status(
+                        WSCloseCode.FORBIDDEN - 3000
+                    )
 
                 self._event_handshake_complete.set()
 
@@ -755,6 +771,7 @@ class ASGIWebSocketSimulator:
             if event_type == EventType.WS_CLOSE:
                 self._state = _WebSocketState.CLOSED
                 self._close_code = event.get('code', WSCloseCode.NORMAL)
+                self._close_reason = event.get('reason', '')
             else:
                 assert event_type == EventType.WS_SEND
                 self._collected_server_events.append(event)
@@ -780,7 +797,11 @@ class ASGIWebSocketSimulator:
             )
 
         self._disconnect_emitted = True
-        return {'type': EventType.WS_DISCONNECT, 'code': self._close_code}
+        return {
+            'type': EventType.WS_DISCONNECT,
+            'code': self._close_code,
+            'reason': self._close_reason,
+        }
 
 
 # get_encoding_from_headers() is Copyright 2016 Kenneth Reitz, and is
