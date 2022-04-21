@@ -976,7 +976,13 @@ class App(falcon.app.App):
             #   we don't support, so bail out. This also fulfills the ASGI
             #   spec requirement to only process the request after
             #   receiving and verifying the first event.
-            await send({'type': EventType.WS_CLOSE, 'code': WSCloseCode.SERVER_ERROR})
+            await send(
+                {
+                    'type': EventType.WS_CLOSE,
+                    'code': WSCloseCode.SERVER_ERROR,
+                    'reason': 'Internal Server Error',
+                }
+            )
             return
 
         req = self._request_type(scope, receive, options=self.req_options)
@@ -988,6 +994,7 @@ class App(falcon.app.App):
             send,
             self.ws_options.media_handlers,
             self.ws_options.max_receive_queue,
+            self.ws_options.default_close_reasons,
         )
 
         on_websocket = None

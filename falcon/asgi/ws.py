@@ -49,6 +49,7 @@ class WebSocket:
         '_asgi_send',
         '_buffered_receiver',
         '_close_code',
+        '_close_reasons',
         '_supports_accept_headers',
         '_mh_bin_deserialize',
         '_mh_bin_serialize',
@@ -69,6 +70,7 @@ class WebSocket:
             Union[media.BinaryBaseHandlerWS, media.TextBaseHandlerWS],
         ],
         max_receive_queue: int,
+        default_close_reasons: Dict[Optional[int], str],
     ):
         self._supports_accept_headers = ver != '2.0'
 
@@ -94,6 +96,7 @@ class WebSocket:
         self._mh_bin_serialize = mh_bin.serialize
         self._mh_bin_deserialize = mh_bin.deserialize
 
+        self._close_reasons = default_close_reasons
         self._state = _WebSocketState.HANDSHAKE
         self._close_code = None  # type: Optional[int]
 
@@ -257,10 +260,18 @@ class WebSocket:
         if self.closed:
             return
 
+        if code in self._close_reasons:
+            reason = self._close_reasons[code]
+        elif 3100 <= code <= 3999:
+            reason = falcon.util.code_to_http_status(code - 3000)
+        else:
+            reason = ''
+
         await self._asgi_send(
             {
                 'type': EventType.WS_CLOSE,
                 'code': code,
+                'reason': reason,
             }
         )
 
@@ -512,6 +523,9 @@ class WebSocketOptions:
             unhandled error is raised while handling a WebSocket connection
             (default ``1011``). For a list of valid close codes and ranges,
             see also: https://tools.ietf.org/html/rfc6455#section-7.4
+        default_close_reasons (dict): A default mapping between the Websocket
+            close code and the reason why the connection is close. HTTPerrors
+            are not included and will be rendered automatically with HTTP status.
         media_handlers (dict): A dict-like object for configuring media handlers
             according to the WebSocket payload type (TEXT vs. BINARY) of a
             given message. See also: :ref:`ws_media_handlers`.
@@ -528,7 +542,12 @@ class WebSocketOptions:
 
     """
 
-    __slots__ = ['error_close_code', 'max_receive_queue', 'media_handlers']
+    __slots__ = [
+        'error_close_code',
+        'default_close_reasons',
+        'max_receive_queue',
+        'media_handlers',
+    ]
 
     def __init__(self):
         try:
@@ -556,6 +575,12 @@ class WebSocketOptions:
         #   See also: https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
         #
         self.error_close_code: int = WSCloseCode.SERVER_ERROR
+
+        self.default_close_reasons: Dict[int, str] = {
+            1000: 'Normal Closure',
+            1011: 'Internal Server Error',
+            3011: 'Internal Server Error',
+        }
 
         # NOTE(kgriffs): The websockets library itself will buffer, so we keep
         #   this value fairly small by default to mitigate buffer bloat. But in
