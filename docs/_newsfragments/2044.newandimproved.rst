@@ -1,1 +1,1 @@
-The form of __repr__ is as follows: ``Result<{status_code} {Content-Type Header} {Content}>``  where the content part will reflect up to 20 bytes of the result's content.
+The form of __repr__ is as follows: ``Result<{status_code}, {content-type header}, {content}>``, where the content part will reflect up to 40 bytes of the result's content, taking the first 20 bytes and last 20 bytes when content is above 40 and ellipsize(with ``...``) the truncated text.
