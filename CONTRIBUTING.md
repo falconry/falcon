@@ -167,7 +167,7 @@ or in mathematical expressions implementing well-known formulas.
 
 ### Changelog
 
-We use [towncrier](https://towncrier.readthedocs.io/en/actual-freaking-docs/index.html) to manage the changelog. Each PR that modifies the functionality of Falcon should include a short description in a news fragment file in the `docs/_newsfragments` directory.
+We use [towncrier](https://towncrier.readthedocs.io/) to manage the changelog. Each PR that modifies the functionality of Falcon should include a short description in a news fragment file in the `docs/_newsfragments` directory.
 
 The newsfragment file name should have the format `{issue_number}.{fragment_type}.rst`, where the fragment type is one of `breakingchange`, `newandimproved`, `bugfix`, or `misc`. If your PR closes another issue, then the original issue number should be used for the newsfragment; otherwise, use the PR number itself.
 

@@ -350,7 +350,15 @@ class Result(_ResultBase):
     def __repr__(self):
         content_type = self.headers.get('Content-Type', '')
 
-        return 'Result<{}, {}, {}>'.format(self.status, content_type, self.content[:20])
+        if len(self.content) > 40:
+            content = self.content[:20] + b'...' + self.content[-20:]
+        else:
+            content = self.content
+
+        args = [self.status, content_type, str(content)]
+
+        repr_result = ' '.join(filter(None, args))
+        return 'Result<{}>'.format(repr_result)
 
 
 class StreamedResult(_ResultBase):
