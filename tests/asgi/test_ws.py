@@ -1115,7 +1115,7 @@ async def test_client_close_with_reason(reason, conductor):
     conductor.app.add_route('/', resource)
 
     async with conductor as c:
-        async with c.simulate_ws('/') as ws:
+        async with c.simulate_ws('/', spec_version='2.3') as ws:
             await ws.close(4099, reason)
 
     assert ws.close_code == 4099
@@ -1146,7 +1146,7 @@ async def test_no_reason_mapping(no_default, code, conductor):
 
     async with conductor as c:
         with pytest.raises(falcon.WebSocketDisconnected):
-            async with c.simulate_ws('/') as ws:
+            async with c.simulate_ws('/', spec_version='2.10.3') as ws:
                 await ws.receive_data()
 
     if code:
