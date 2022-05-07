@@ -575,8 +575,8 @@ class CompiledRouter:
                     construct.append_child(_CxReturnValue(resource_idx))
                     parent.append_child(construct)
 
-                if fast_return:
-                    parent.append_child(_CxReturnNone())
+                    if fast_return:
+                        parent.append_child(_CxReturnNone())
 
             parent = outer_parent
 
