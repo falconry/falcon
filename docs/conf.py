@@ -165,6 +165,8 @@ html_theme = 'alabaster'
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
+    'page_width': '80%',
+    'body_max_width': '100%',
     'github_user': 'falconry',
     'github_repo': 'falcon',
     'github_button': False,

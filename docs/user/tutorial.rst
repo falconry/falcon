@@ -319,7 +319,7 @@ representation of the "images" resource.
     threaded web server, resources and their dependencies must be
     thread-safe.
 
-We can use the the :ref:`inspect` to visualize the application configuration:
+We can use the :ref:`inspect` to visualize the application configuration:
 
 .. code:: bash
 
@@ -1234,20 +1234,21 @@ similar to the following:
 
     import falcon
 
-    import images
+    from .images import Collection, ImageStore, Item
 
 
     def create_app(image_store):
         app = falcon.App()
-        app.add_route('/images', images.Collection(image_store))
-        app.add_route('/images/{name}', images.Item(image_store))
+        app.add_route('/images', Collection(image_store))
+        app.add_route('/images/{name}', Item(image_store))
         return app
 
 
     def get_app():
         storage_path = os.environ.get('LOOK_STORAGE_PATH', '.')
-        image_store = images.ImageStore(storage_path)
+        image_store = ImageStore(storage_path)
         return create_app(image_store)
+
 
 As you can see, we specified a new route, ``/images/{name}``. This causes
 Falcon to expect all associated responders to accept a ``name``

@@ -36,7 +36,7 @@ class DeprecatedWarning(UserWarning):
     pass
 
 
-def deprecated(instructions, is_property=False):
+def deprecated(instructions, is_property=False, method_name=None):
     """Flag a method as deprecated.
 
     This function returns a decorator which can be used to mark deprecated
@@ -45,9 +45,14 @@ def deprecated(instructions, is_property=False):
 
     Args:
         instructions (str): Specific guidance for the developer, e.g.:
-            'Please migrate to add_proxy(...)'
+            'Please migrate to add_proxy(...)'.
         is_property (bool): If the deprecated object is a property. It
-            will omit the ``(...)`` from the generated documentation
+            will omit the ``(...)`` from the generated documentation.
+        method_name (str, optional): Set to override the name of the
+            deprecated function or property in the generated
+            documentation (default ``None``). This is useful when
+            decorating an alias that carries the target's ``__name__``.
+
     """
 
     def decorator(func):
@@ -55,7 +60,7 @@ def deprecated(instructions, is_property=False):
         object_name = 'property' if is_property else 'function'
         post_name = '' if is_property else '(...)'
         message = 'Call to deprecated {} {}{}. {}'.format(
-            object_name, func.__name__, post_name, instructions
+            object_name, method_name or func.__name__, post_name, instructions
         )
 
         @functools.wraps(func)
@@ -80,11 +85,11 @@ def deprecated_args(*, allowed_positional, is_method=True):
     """
 
     template = (
-        'Calls with{} positional args are deprecated.'
+        'Calls to {{fn}}(...) with{arg_text} positional args are deprecated.'
         ' Please specify them as keyword arguments instead.'
     )
     text = ' more than {}'.format(allowed_positional) if allowed_positional else ''
-    warn_text = template.format(text)
+    warn_text = template.format(arg_text=text)
     if is_method:
         allowed_positional += 1
 
@@ -92,7 +97,11 @@ def deprecated_args(*, allowed_positional, is_method=True):
         @functools.wraps(fn)
         def wraps(*args, **kwargs):
             if len(args) > allowed_positional:
-                warnings.warn(warn_text, DeprecatedWarning, stacklevel=2)
+                warnings.warn(
+                    warn_text.format(fn=fn.__qualname__),
+                    DeprecatedWarning,
+                    stacklevel=2,
+                )
             return fn(*args, **kwargs)
 
         return wraps

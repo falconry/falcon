@@ -350,7 +350,7 @@ class Request:
             header is missing.
 
         range (tuple of int): A 2-member ``tuple`` parsed from the value of the
-            Range header.
+            Range header, or ``None`` if the header is missing.
 
             The two members correspond to the first and last byte
             positions of the requested resource, inclusive. Negative
@@ -691,16 +691,24 @@ class Request:
             if not sep:
                 raise ValueError()
 
-            if first:
-                return (int(first), int(last or -1))
+            if first and last:
+                first, last = (int(first), int(last))
+                if last < first:
+                    raise ValueError()
+            elif first:
+                first, last = (int(first), -1)
             elif last:
-                return (-int(last), -1)
+                first, last = (-int(last), -1)
+                if first >= 0:
+                    raise ValueError()
             else:
                 msg = 'The range offsets are missing.'
                 raise errors.HTTPInvalidHeader(msg, 'Range')
 
+            return first, last
+
         except ValueError:
-            href = 'http://goo.gl/zZ6Ey'
+            href = 'https://tools.ietf.org/html/rfc7233'
             href_text = 'HTTP/1.1 Range Requests'
             msg = 'It must be a range formatted according to RFC 7233.'
             raise errors.HTTPInvalidHeader(msg, 'Range', href=href, href_text=href_text)
@@ -744,8 +752,12 @@ class Request:
         # try...catch that will usually result in a relatively expensive
         # raised exception.
         if 'HTTP_FORWARDED' in self.env:
-            first_hop = self.forwarded[0]
-            scheme = first_hop.scheme or self.scheme
+            forwarded = self.forwarded
+            if forwarded:
+                # Use first hop, fall back on own scheme
+                scheme = forwarded[0].scheme or self.scheme
+            else:
+                scheme = self.scheme
         else:
             # PERF(kgriffs): This call should normally succeed, so
             # just go for it without wasting time checking it
@@ -837,8 +849,12 @@ class Request:
         # try...catch that will usually result in a relatively expensive
         # raised exception.
         if 'HTTP_FORWARDED' in self.env:
-            first_hop = self.forwarded[0]
-            host = first_hop.host or self.netloc
+            forwarded = self.forwarded
+            if forwarded:
+                # Use first hop, fall back on self
+                host = forwarded[0].host or self.netloc
+            else:
+                host = self.netloc
         else:
             # PERF(kgriffs): This call should normally succeed, assuming
             # that the caller is expecting a forwarded header, so

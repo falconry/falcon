@@ -526,12 +526,27 @@ class TestRequestAttributes:
         with pytest.raises(falcon.HTTPBadRequest):
             req.range
 
+        headers = {'Range': 'bytes=--1'}
+        req = create_req(asgi, headers=headers)
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.range
+
+        headers = {'Range': 'bytes=--0'}
+        req = create_req(asgi, headers=headers)
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.range
+
         headers = {'Range': 'bytes=-3-'}
         req = create_req(asgi, headers=headers)
         with pytest.raises(falcon.HTTPBadRequest):
             req.range
 
         headers = {'Range': 'bytes=-3-4'}
+        req = create_req(asgi, headers=headers)
+        with pytest.raises(falcon.HTTPBadRequest):
+            req.range
+
+        headers = {'Range': 'bytes=4-3'}
         req = create_req(asgi, headers=headers)
         with pytest.raises(falcon.HTTPBadRequest):
             req.range

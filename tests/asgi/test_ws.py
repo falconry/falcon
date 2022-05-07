@@ -198,7 +198,8 @@ async def test_echo():  # noqa: C901
     app.add_route('/{p1}/{p2}', resource)
 
     async with testing.ASGIConductor(app) as c:
-        async with c.simulate_ws('/v1/v2', headers={}) as ws:
+        # NOTE(vytas): Using the websocket() alias.
+        async with c.websocket('/v1/v2', headers={}) as ws:
             assert (await ws.receive_text()) == 'v1:v2:hello:42'
 
             for i in range(producer_loop):

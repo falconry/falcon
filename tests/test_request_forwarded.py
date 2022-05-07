@@ -90,9 +90,26 @@ def test_forwarded_host(asgi):
     assert req.forwarded[1].host == 'suchproxy01.suchtesting.com'
 
     assert req.forwarded_host == 'something.org'
+    assert req.forwarded_scheme == 'http'
     assert req.forwarded_uri != req.uri
     assert req.forwarded_uri == 'http://something.org/languages'
     assert req.forwarded_prefix == 'http://something.org'
+
+
+def test_forwarded_invalid(asgi):
+    req = create_req(
+        asgi,
+        host='suchproxy02.suchtesting.com',
+        path='/languages',
+        headers={'Forwarded': 'invalid'},
+    )
+
+    assert req.forwarded == []
+
+    assert req.forwarded_host == 'suchproxy02.suchtesting.com'
+    assert req.forwarded_scheme == 'http'
+    assert req.forwarded_uri == req.uri
+    assert req.forwarded_prefix == 'http://suchproxy02.suchtesting.com'
 
 
 def test_forwarded_multiple_params(asgi):
