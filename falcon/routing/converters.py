@@ -31,9 +31,11 @@ strptime = datetime.strptime
 class BaseConverter(metaclass=abc.ABCMeta):
     """Abstract base class for URI template field converters."""
 
-    CONSUME_PATH = False
+    CONSUME_MULTIPLE_SEGMENTS = False
     """When set to ``True`` it indicates that this converted will consume
-    all the remaining url path.
+    multiple url path segments. Currently a converter with
+    ``CONSUME_MULTIPLE_SEGMENTS=True`` must be at the env of the url template
+    effectively meaning that it will consume all the remaining url path.
     """
 
     @abc.abstractmethod  # pragma: no cover
@@ -42,8 +44,9 @@ class BaseConverter(metaclass=abc.ABCMeta):
 
         Args:
             value (str or List[str]): Original string to convert.
-                If ``CONSUME_PATH=True`` this value is a list of strings
-                containing the remaining part of the path.
+                If ``CONSUME_MULTIPLE_SEGMENTS=True`` this value is a
+                list of strings containing the path segments matched by
+                the converter.
 
         Returns:
             object: Converted field value, or ``None`` if the field
@@ -54,14 +57,14 @@ class BaseConverter(metaclass=abc.ABCMeta):
     def patch_converter_class(cls, converter):
         """Patches the input converter class.
 
-        Ensures that ``converted`` is compatible with the ``BaseConverter``
+        Ensures that ``converter`` is compatible with the ``BaseConverter``
         interface by adding the missing elements if needed.
 
         Args:
             converter (type): The converter class to patch.
         """
-        if not hasattr(converter, 'CONSUME_PATH'):
-            converter.CONSUME_PATH = cls.CONSUME_PATH
+        if not hasattr(converter, 'CONSUME_MULTIPLE_SEGMENTS'):
+            converter.CONSUME_MULTIPLE_SEGMENTS = cls.CONSUME_MULTIPLE_SEGMENTS
 
 
 class IntConverter(BaseConverter):
@@ -169,7 +172,7 @@ class PathConverter(BaseConverter):
     while it will *not* match when that option is ``True``.
     """
 
-    CONSUME_PATH = True
+    CONSUME_MULTIPLE_SEGMENTS = True
 
     def convert(self, value):
         return '/'.join(value)

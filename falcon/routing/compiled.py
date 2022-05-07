@@ -211,7 +211,7 @@ class CompiledRouter:
             value = [
                 (field, converter)
                 for field, converter, _ in node.var_converter_map
-                if self._converter_map[converter].CONSUME_PATH
+                if self._converter_map[converter].CONSUME_MULTIPLE_SEGMENTS
             ]
             if value:
                 return value[0]
@@ -231,7 +231,9 @@ class CompiledRouter:
                     else:
                         cpc = find_cp_converter(node)
                         if cpc:
-                            raise ValueError(_NO_CHILDREN_ERR.format(uri_template, *cpc))
+                            raise ValueError(
+                                _NO_CHILDREN_ERR.format(uri_template, *cpc)
+                            )
                         insert(node.children, path_index)
 
                     return
@@ -453,7 +455,7 @@ class CompiledRouter:
         original_params_stack = params_stack.copy()
         for node in nodes:
             params_stack = original_params_stack.copy()
-            consume_path = False
+            consume_multiple_segments = False
             if node.is_var:
                 if node.is_complex:
                     # NOTE(richardolsson): Complex nodes are nodes which
@@ -498,8 +500,8 @@ class CompiledRouter:
                         )
                         converter_idx = len(self._converters)
                         self._converters.append(converter_obj)
-                        if converter_obj.CONSUME_PATH:
-                            consume_path = True
+                        if converter_obj.CONSUME_MULTIPLE_SEGMENTS:
+                            consume_multiple_segments = True
                             parent.append_child(_CxSetFragmentFromRemainingPaths(level))
                         else:
                             parent.append_child(_CxSetFragmentFromPath(level))
@@ -543,7 +545,7 @@ class CompiledRouter:
                 resource_idx = len(return_values)
                 return_values.append(node)
 
-            assert not (consume_path and node.children)
+            assert not (consume_multiple_segments and node.children)
 
             self._generate_ast(
                 node.children,
@@ -559,7 +561,7 @@ class CompiledRouter:
                 if fast_return:
                     parent.append_child(_CxReturnNone())
             else:
-                if consume_path:
+                if consume_multiple_segments:
                     for params in params_stack:
                         parent.append_child(params)
                     parent.append_child(_CxReturnValue(resource_idx))
@@ -590,7 +592,7 @@ class CompiledRouter:
         # a series of nested "if" constructs.
         for field_name, converter_name, converter_argstr in node.var_converter_map:
             converter_class = self._converter_map[converter_name]
-            assert not converter_class.CONSUME_PATH
+            assert not converter_class.CONSUME_MULTIPLE_SEGMENTS
 
             converter_obj = self._instantiate_converter(
                 converter_class, converter_argstr

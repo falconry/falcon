@@ -131,11 +131,11 @@ def test_converters_adapter():
 
     opt = CompiledRouterOptions()
     opt.converters['x'] = X
-    assert X.CONSUME_PATH is False
+    assert X.CONSUME_MULTIPLE_SEGMENTS is False
 
     class Y:
         def convert(self, v):
             return v
 
     opt.converters.update({'y': Y})
-    assert Y.CONSUME_PATH is False
+    assert Y.CONSUME_MULTIPLE_SEGMENTS is False
