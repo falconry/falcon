@@ -777,6 +777,7 @@ def capture_path_router():
     router.add_route('/foo/bar/{foo:path}', ResourceWithId(3))
     router.add_route('/{baz:path}', ResourceWithId(4))
     router.add_route('/x/{v1:int}/{v2}/{other:path}', ResourceWithId(5))
+    router.add_route('/y/{v1:int}/{v2:int}/{other:path}', ResourceWithId(6))
     return router
 
 
@@ -795,6 +796,13 @@ def capture_path_router():
         ('/x/1/2/3/4/5/6', {'v1': 1, 'v2': '2', 'other': '3/4/5/6'}, 5),
         ('/upload/youtube/auth/token', {'baz': 'upload/youtube/auth/token'}, 4),
         ('/x/y/o.o/w', {'baz': 'x/y/o.o/w'}, 4),
+        ('/foo', {'baz': 'foo'}, 4),
+        ('/foo/', {'bar': ''}, 2),
+        ('/foo/bar', {'bar': 'bar'}, 2),
+        ('/foo/bar/', {'foo': ''}, 3),
+        ('/foo/bar/baz/other', {'foo': 'baz/other'}, 3),
+        ('/y/1/2/3', {'v1': 1, 'v2': 2, 'other': '3'}, 6),
+        ('/y/1/a/3', {'baz': 'y/1/a/3'}, 4),
     ),
 )
 def test_capture_path(capture_path_router, route, expected, num):
@@ -802,3 +810,13 @@ def test_capture_path(capture_path_router, route, expected, num):
 
     assert resource.resource_id == num
     assert params == expected
+
+
+def test_capture_path_no_match():
+    router = DefaultRouter()
+
+    router.add_route('/foo/bar/baz', ResourceWithId(1))
+    router.add_route('/foo/{bar:path}', ResourceWithId(2))
+    router.add_route('/foo/bar/{foo:path}', ResourceWithId(3))
+
+    assert router.find('/foo') is None

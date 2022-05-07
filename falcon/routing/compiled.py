@@ -207,13 +207,7 @@ class CompiledRouter:
         for segment in path:
             self._validate_template_segment(segment, used_names)
 
-        no_children_err = (
-            'Cannot add route with template "{0}". Field name "{1}" '
-            'uses the converter "{2}" that will consume all the path, '
-            'making it impossible to match this route.'
-        )
-
-        def consume_path_converter(node):
+        def find_cp_converter(node):
             value = [
                 (field, converter)
                 for field, converter, _ in node.var_converter_map
@@ -235,9 +229,9 @@ class CompiledRouter:
                         node.resource = resource
                         node.uri_template = uri_template
                     else:
-                        cpc = consume_path_converter(node)
+                        cpc = find_cp_converter(node)
                         if cpc:
-                            raise ValueError(no_children_err.format(uri_template, *cpc))
+                            raise ValueError(_NO_CHILDREN_ERR.format(uri_template, *cpc))
                         insert(node.children, path_index)
 
                     return
@@ -257,7 +251,7 @@ class CompiledRouter:
             # routing tree recursively until it reaches the new node leaf.
             new_node = CompiledRouterNode(path[path_index])
             if new_node.is_complex:
-                cpc = consume_path_converter(new_node)
+                cpc = find_cp_converter(new_node)
                 if cpc:
                     raise ValueError(
                         'Cannot use converter "{1}" of variable "{0}" in a template '
@@ -269,10 +263,9 @@ class CompiledRouter:
                 new_node.resource = resource
                 new_node.uri_template = uri_template
             else:
-                cpc = consume_path_converter(new_node)
+                cpc = find_cp_converter(new_node)
                 if cpc:
-                    print('b')
-                    raise ValueError(no_children_err.format(uri_template, *cpc))
+                    raise ValueError(_NO_CHILDREN_ERR.format(uri_template, *cpc))
                 nodes.append(new_node)
                 insert(new_node.children, path_index + 1)
 
@@ -687,6 +680,13 @@ class CompiledRouter:
         return self._find(
             path, self._return_values, self._patterns, self._converters, params
         )
+
+
+_NO_CHILDREN_ERR = (
+    'Cannot add route with template "{0}". Field name "{1}" '
+    'uses the converter "{2}" that will consume all the path, '
+    'making it impossible to match this route.'
+)
 
 
 class CompiledRouterNode:

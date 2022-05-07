@@ -155,8 +155,18 @@ class UUIDConverter(BaseConverter):
 class PathConverter(BaseConverter):
     """Field converted used to match the rest of the path.
 
-    This field converter matches the all the remaining url path,
+    This field converter matches the remainder of the URL path,
     returning it as a string.
+
+    This converter is currently supported only when used at the
+    end of the url template.
+
+    The classic routing rules of falcon apply also to this converter:
+    considering the template ``'/foo/bar/{matched_path:path}'``, the path
+    ``'/foo/bar'`` will *not* match the route; ``'/foo/bar/'`` will
+    match, producing ``matched_path=''``, when
+    :attr:`~falcon.RequestOptions.strip_url_path_trailing_slash` is ``False``,
+    while it will *not* match when that option is ``True``.
     """
 
     CONSUME_PATH = True
