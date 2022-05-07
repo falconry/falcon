@@ -51,6 +51,7 @@ class WebSocket:
         '_close_code',
         '_close_reasons',
         '_supports_accept_headers',
+        '_supports_reason',
         '_mh_bin_deserialize',
         '_mh_bin_serialize',
         '_mh_text_deserialize',
@@ -73,6 +74,7 @@ class WebSocket:
         default_close_reasons: Dict[Optional[int], str],
     ):
         self._supports_accept_headers = ver != '2.0'
+        self._supports_reason = self._check_support_reason(ver)
 
         # NOTE(kgriffs): Normalize the iterable to a stable tuple; note that
         #   ordering is significant, and so we preserve it here.
@@ -260,20 +262,15 @@ class WebSocket:
         if self.closed:
             return
 
-        if code in self._close_reasons:
-            reason = self._close_reasons[code]
-        elif 3100 <= code <= 3999:
-            reason = falcon.util.code_to_http_status(code - 3000)
-        else:
-            reason = ''
+        response = {'type': EventType.WS_CLOSE, 'code': code}
 
-        await self._asgi_send(
-            {
-                'type': EventType.WS_CLOSE,
-                'code': code,
-                'reason': reason,
-            }
-        )
+        if self._supports_reason:
+            if code in self._close_reasons:
+                response['reason'] = self._close_reasons[code]
+            elif 3100 <= code <= 3999:
+                response['reason'] = falcon.util.code_to_http_status(code - 3000)
+
+        await self._asgi_send(response)
 
         self._state = _WebSocketState.CLOSED
         self._close_code = code
@@ -510,6 +507,16 @@ class WebSocket:
             )
 
         return None
+
+    def _check_support_reason(self, asgi_ver):
+        target_ver = [2, 3]
+        current_ver = asgi_ver.split('.')
+
+        for i in range(2):
+            if int(current_ver[i]) < target_ver[i]:
+                return False
+
+        return True
 
 
 class WebSocketOptions:
