@@ -259,18 +259,20 @@ class CompiledRouter:
                         'Cannot use converter "{1}" of variable "{0}" in a template '
                         'that includes other characters or variables.'.format(*cpc)
                     )
+            nodes.append(new_node)
             if path_index == len(path) - 1:
-                nodes.append(new_node)
                 new_node.method_map = method_map
                 new_node.resource = resource
                 new_node.uri_template = uri_template
             else:
                 cpc = find_cp_converter(new_node)
                 if cpc:
+                    # NOTE(caselit): assume success and remove the node if it's not
+                    # supported to avoid leaving the router in a broken state.
+                    nodes.remove(new_node)
                     raise UnacceptableRouteError(
                         _NO_CHILDREN_ERR.format(uri_template, *cpc)
                     )
-                nodes.append(new_node)
                 insert(new_node.children, path_index + 1)
 
         insert(self._roots)
