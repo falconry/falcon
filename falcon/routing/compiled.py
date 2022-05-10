@@ -696,7 +696,7 @@ _NO_CHILDREN_ERR = (
 
 
 class UnacceptableRouteError(ValueError):
-    'Error raised by ``add_error`` when a route is not acceptable'
+    "Error raised by ``add_error`` when a route is not acceptable."
 
 
 class CompiledRouterNode:
