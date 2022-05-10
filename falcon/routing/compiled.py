@@ -199,7 +199,7 @@ class CompiledRouter:
         # NOTE(kgriffs): Fields may have whitespace in them, so sub
         # those before checking the rest of the URI template.
         if re.search(r'\s', _FIELD_PATTERN.sub('{FIELD}', uri_template)):
-            raise ValueError('URI templates may not include whitespace.')
+            raise UnacceptableRouteError('URI templates may not include whitespace.')
 
         path = uri_template.lstrip('/').split('/')
 
@@ -231,7 +231,7 @@ class CompiledRouter:
                     else:
                         cpc = find_cp_converter(node)
                         if cpc:
-                            raise ValueError(
+                            raise UnacceptableRouteError(
                                 _NO_CHILDREN_ERR.format(uri_template, *cpc)
                             )
                         insert(node.children, path_index)
@@ -239,7 +239,7 @@ class CompiledRouter:
                     return
 
                 if node.conflicts_with(segment):
-                    raise ValueError(
+                    raise UnacceptableRouteError(
                         'The URI template for this route is inconsistent or conflicts '
                         "with another route's template. This is usually caused by "
                         'configuring a field converter differently for the same field '
@@ -255,7 +255,7 @@ class CompiledRouter:
             if new_node.is_complex:
                 cpc = find_cp_converter(new_node)
                 if cpc:
-                    raise ValueError(
+                    raise UnacceptableRouteError(
                         'Cannot use converter "{1}" of variable "{0}" in a template '
                         'that includes other characters or variables.'.format(*cpc)
                     )
@@ -267,7 +267,9 @@ class CompiledRouter:
             else:
                 cpc = find_cp_converter(new_node)
                 if cpc:
-                    raise ValueError(_NO_CHILDREN_ERR.format(uri_template, *cpc))
+                    raise UnacceptableRouteError(
+                        _NO_CHILDREN_ERR.format(uri_template, *cpc)
+                    )
                 nodes.append(new_node)
                 insert(new_node.children, path_index + 1)
 
@@ -376,7 +378,7 @@ class CompiledRouter:
                     'Field names must be valid identifiers ("{0}" is not valid)'
                 )
                 msg = msg_template.format(name)
-                raise ValueError(msg)
+                raise UnacceptableRouteError(msg)
 
             if name in used_names:
                 msg_template = (
@@ -384,26 +386,26 @@ class CompiledRouter:
                     '("{0}" was used more than once)'
                 )
                 msg = msg_template.format(name)
-                raise ValueError(msg)
+                raise UnacceptableRouteError(msg)
 
             used_names.add(name)
 
             if field.group('cname_sep') == ':':
                 msg = 'Missing converter for field "{0}"'.format(name)
-                raise ValueError(msg)
+                raise UnacceptableRouteError(msg)
 
             name = field.group('cname')
             if name:
                 if name not in self._converter_map:
                     msg = 'Unknown converter: "{0}"'.format(name)
-                    raise ValueError(msg)
+                    raise UnacceptableRouteError(msg)
                 try:
                     self._instantiate_converter(
                         self._converter_map[name], field.group('argstr')
                     )
                 except Exception as e:
                     msg = 'Cannot instantiate converter "{}"'.format(name)
-                    raise ValueError(msg) from e
+                    raise UnacceptableRouteError(msg) from e
 
     def _generate_ast(  # noqa: C901
         self,
@@ -689,6 +691,10 @@ _NO_CHILDREN_ERR = (
     'uses the converter "{2}" that will consume all the path, '
     'making it impossible to match this route.'
 )
+
+
+class UnacceptableRouteError(ValueError):
+    'Error raised by ``add_error`` when a route is not acceptable'
 
 
 class CompiledRouterNode:
