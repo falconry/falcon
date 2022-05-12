@@ -44,3 +44,8 @@
     skip-string-normalization = true
     line-length = 88
     extend-exclude = "falcon/vendor"
+
+[tool.blue]
+    target-version = ["py35"]
+    line-length = 88
+    extend-exclude = "falcon/vendor"
