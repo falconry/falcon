@@ -1,0 +1,1 @@
+A new property, :attr:`~falcon.Request.headers_lower`, was added to provide a unified way to get all headers lowercased for middleware components, etc. that need to be compatible with both WSGI and ASGI. This was done in lieu of introducing a breaking change to the WSGI :attr:`~falcon.Request.headers` property which returns uppercased headers.
