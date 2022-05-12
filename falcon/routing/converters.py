@@ -32,10 +32,11 @@ class BaseConverter(metaclass=abc.ABCMeta):
     """Abstract base class for URI template field converters."""
 
     CONSUME_MULTIPLE_SEGMENTS = False
-    """When set to ``True`` it indicates that this converted will consume
-    multiple url path segments. Currently a converter with
-    ``CONSUME_MULTIPLE_SEGMENTS=True`` must be at the env of the url template
-    effectively meaning that it will consume all the remaining url path.
+    """When set to ``True`` it indicates that this converter will consume
+    multiple URL path segments. Currently a converter with
+    ``CONSUME_MULTIPLE_SEGMENTS=True`` must be at the end of the URL template
+    effectively meaning that it will consume all of the remaining URL path
+    segments.
     """
 
     @abc.abstractmethod  # pragma: no cover
@@ -162,14 +163,14 @@ class PathConverter(BaseConverter):
     returning it as a string.
 
     This converter is currently supported only when used at the
-    end of the url template.
+    end of the URL template.
 
     The classic routing rules of falcon apply also to this converter:
     considering the template ``'/foo/bar/{matched_path:path}'``, the path
     ``'/foo/bar'`` will *not* match the route; ``'/foo/bar/'`` will
     match, producing ``matched_path=''``, when
-    :attr:`~falcon.RequestOptions.strip_url_path_trailing_slash` is ``False``,
-    while it will *not* match when that option is ``True``.
+    :attr:`~falcon.RequestOptions.strip_url_path_trailing_slash` is ``False``
+    (the default), while it will *not* match when that option is ``True``.
     """
 
     CONSUME_MULTIPLE_SEGMENTS = True
