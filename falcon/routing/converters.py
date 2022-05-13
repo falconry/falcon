@@ -54,18 +54,9 @@ class BaseConverter(metaclass=abc.ABCMeta):
                 can not be converted.
         """
 
-    @classmethod
-    def patch_converter_class(cls, converter):
-        """Patches the input converter class.
 
-        Ensures that ``converter`` is compatible with the ``BaseConverter``
-        interface by adding the missing elements if needed.
-
-        Args:
-            converter (type): The converter class to patch.
-        """
-        if not hasattr(converter, 'CONSUME_MULTIPLE_SEGMENTS'):
-            converter.CONSUME_MULTIPLE_SEGMENTS = cls.CONSUME_MULTIPLE_SEGMENTS
+def _consumes_multiple_segments(converter):
+    return getattr(converter, 'CONSUME_MULTIPLE_SEGMENTS', False)
 
 
 class IntConverter(BaseConverter):
@@ -171,6 +162,8 @@ class PathConverter(BaseConverter):
     match, producing ``matched_path=''``, when
     :attr:`~falcon.RequestOptions.strip_url_path_trailing_slash` is ``False``
     (the default), while it will *not* match when that option is ``True``.
+
+    (See also: :ref:`trailing_slash_in_path`)
     """
 
     CONSUME_MULTIPLE_SEGMENTS = True

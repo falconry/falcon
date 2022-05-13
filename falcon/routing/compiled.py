@@ -207,11 +207,13 @@ class CompiledRouter:
         for segment in path:
             self._validate_template_segment(segment, used_names)
 
-        def find_cp_converter(node):
+        def find_cmp_converter(node):
             value = [
                 (field, converter)
                 for field, converter, _ in node.var_converter_map
-                if self._converter_map[converter].CONSUME_MULTIPLE_SEGMENTS
+                if converters._consumes_multiple_segments(
+                    self._converter_map[converter]
+                )
             ]
             if value:
                 return value[0]
@@ -229,7 +231,7 @@ class CompiledRouter:
                         node.resource = resource
                         node.uri_template = uri_template
                     else:
-                        cpc = find_cp_converter(node)
+                        cpc = find_cmp_converter(node)
                         if cpc:
                             raise UnacceptableRouteError(
                                 _NO_CHILDREN_ERR.format(uri_template, *cpc)
@@ -253,7 +255,7 @@ class CompiledRouter:
             # routing tree recursively until it reaches the new node leaf.
             new_node = CompiledRouterNode(path[path_index])
             if new_node.is_complex:
-                cpc = find_cp_converter(new_node)
+                cpc = find_cmp_converter(new_node)
                 if cpc:
                     raise UnacceptableRouteError(
                         'Cannot use converter "{1}" of variable "{0}" in a template '
@@ -265,7 +267,7 @@ class CompiledRouter:
                 new_node.resource = resource
                 new_node.uri_template = uri_template
             else:
-                cpc = find_cp_converter(new_node)
+                cpc = find_cmp_converter(new_node)
                 if cpc:
                     # NOTE(caselit): assume success and remove the node if it's not
                     # supported to avoid leaving the router in a broken state.
@@ -504,7 +506,7 @@ class CompiledRouter:
                         )
                         converter_idx = len(self._converters)
                         self._converters.append(converter_obj)
-                        if converter_obj.CONSUME_MULTIPLE_SEGMENTS:
+                        if converters._consumes_multiple_segments(converter_obj):
                             consume_multiple_segments = True
                             parent.append_child(_CxSetFragmentFromRemainingPaths(level))
                         else:
@@ -596,7 +598,7 @@ class CompiledRouter:
         # a series of nested "if" constructs.
         for field_name, converter_name, converter_argstr in node.var_converter_map:
             converter_class = self._converter_map[converter_name]
-            assert not converter_class.CONSUME_MULTIPLE_SEGMENTS
+            assert not converters._consumes_multiple_segments(converter_class)
 
             converter_obj = self._instantiate_converter(
                 converter_class, converter_argstr
@@ -857,7 +859,6 @@ class ConverterDict(UserDict):
 
     def __setitem__(self, name, converter):
         self._validate(name)
-        converters.BaseConverter.patch_converter_class(converter)
         UserDict.__setitem__(self, name, converter)
 
     def _validate(self, name):

@@ -1,0 +1,2 @@
+A new ``path`` converter capable of matching segments that include ``/``
+is now supported.

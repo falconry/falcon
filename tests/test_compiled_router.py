@@ -124,18 +124,16 @@ def test_cannot_replace_compiled():
         opt.other = 123
 
 
-def test_converters_adapter():
+def test_converter_not_subclass():
     class X:
         def convert(self, v):
             return v
 
-    opt = CompiledRouterOptions()
-    opt.converters['x'] = X
-    assert X.CONSUME_MULTIPLE_SEGMENTS is False
+    router = CompiledRouter()
+    router.options.converters['x'] = X
 
-    class Y:
-        def convert(self, v):
-            return v
-
-    opt.converters.update({'y': Y})
-    assert Y.CONSUME_MULTIPLE_SEGMENTS is False
+    router.add_route('/foo/{bar:x}', MockResource())
+    res = router.find('/foo/bar')
+    assert res is not None
+    assert res[2] == {'bar': 'bar'}
+    assert router.find('/foo/bar/bar') is None
