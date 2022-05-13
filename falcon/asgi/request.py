@@ -327,7 +327,7 @@ class Request(request.Request):
             Note:
                 This property differs from the WSGI version of ``Request.headers``
                 in that the latter returns *uppercased* names for historical
-                reasons. Middleware, such as APM and logging components, that
+                reasons. Middleware, such as tracing and logging components, that
                 need to be compatible with both WSGI and ASGI apps should
                 use :attr:`headers_lower` instead.
 
