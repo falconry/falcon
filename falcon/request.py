@@ -395,7 +395,7 @@ class Request:
 
             Note:
                 This property differs from the ASGI version of ``Request.headers``
-                in that the latter returns *lowercased* names. Middleware, such
+                in that the latter returns *lowercase* names. Middleware, such
                 as tracing and logging components, that need to be compatible with
                 both WSGI and ASGI apps should use :attr:`headers_lower` instead.
 
