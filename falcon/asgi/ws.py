@@ -521,8 +521,9 @@ class WebSocketOptions:
             (default ``1011``). For a list of valid close codes and ranges,
             see also: https://tools.ietf.org/html/rfc6455#section-7.4
         default_close_reasons (dict): A default mapping between the Websocket
-            close code and the reason why the connection is close. HTTPerrors
-            are not included and will be rendered automatically with HTTP status.
+            close code and the reason why the connection is close. Close codes
+            corresponding to HTTPerrors are not included as they will be rendered
+            automatically using HTTP status.
         media_handlers (dict): A dict-like object for configuring media handlers
             according to the WebSocket payload type (TEXT vs. BINARY) of a
             given message. See also: :ref:`ws_media_handlers`.
