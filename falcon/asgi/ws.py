@@ -74,7 +74,7 @@ class WebSocket:
         default_close_reasons: Dict[Optional[int], str],
     ):
         self._supports_accept_headers = ver != '2.0'
-        self._supports_reason = self._check_support_reason(ver)
+        self._supports_reason = check_support_reason(ver)
 
         # NOTE(kgriffs): Normalize the iterable to a stable tuple; note that
         #   ordering is significant, and so we preserve it here.
@@ -508,16 +508,6 @@ class WebSocket:
 
         return None
 
-    def _check_support_reason(self, asgi_ver):
-        target_ver = [2, 3]
-        current_ver = asgi_ver.split('.')
-
-        for i in range(2):
-            if int(current_ver[i]) < target_ver[i]:
-                return False
-
-        return True
-
 
 class WebSocketOptions:
     """Defines a set of configurable WebSocket options.
@@ -733,3 +723,14 @@ class _BufferedReceiver:
             if self._pop_message_waiter is not None:
                 self._pop_message_waiter.set_result(None)
                 self._pop_message_waiter = None
+
+
+def check_support_reason(asgi_ver):
+    target_ver = [2, 3]
+    current_ver = asgi_ver.split('.')
+
+    for i in range(2):
+        if int(current_ver[i]) < target_ver[i]:
+            return False
+
+    return True
