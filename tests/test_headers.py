@@ -312,7 +312,10 @@ class CustomHeadersResource:
 
 class HeadersDebugResource:
     def on_get(self, req, resp):
-        resp.media = {key.lower(): value for key, value in req.headers.items()}
+        resp.media = {
+            'raw': req.headers,
+            'lower': req.headers_lower,
+        }
 
     def on_get_header(self, req, resp, header):
         resp.media = {header.lower(): req.get_header(header)}
@@ -448,6 +451,7 @@ class TestHeaders:
 
         for name, value in headers:
             assert (name.upper(), value) in req.headers.items()
+            assert (name.lower(), value) in req.headers_lower.items()
 
         # Functional test
         client.app.add_route('/', testing.SimpleTestResource(headers=headers))
@@ -624,12 +628,24 @@ class TestHeaders:
         }
         resp = client.simulate_get('/headers', headers=headers)
         assert resp.status_code == 200
-        assert resp.json == {
+
+        headers_lower = {
             'host': 'falconframework.org',
             'user-agent': 'Mosaic/0.9',
             'x-latin1-header': 'Förmånsrätt',
             'x-size': 'groß',
         }
+
+        headers_upper = {key.upper(): value for key, value in headers_lower.items()}
+
+        headers_received = resp.json
+
+        if client.app._ASGI:
+            assert resp.json['raw'] == headers_lower
+        else:
+            assert resp.json['raw'] == headers_upper
+
+        assert headers_received['lower'] == headers_lower
 
         resp = client.simulate_get('/headers/X-Latin1-Header', headers=headers)
         assert resp.json == {'x-latin1-header': 'Förmånsrätt'}
