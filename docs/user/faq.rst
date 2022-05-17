@@ -784,13 +784,12 @@ demonstrated above.
 How can I handle forward slashes within a route template field?
 ---------------------------------------------------------------
 
-In Falcon 1.3 we shipped initial support for
-`field converters <http://falcon.readthedocs.io/en/stable/api/routing.html#field-converters>`_.
-We’ve discussed building on this feature to support consuming multiple path
-segments ala Flask. This work is currently planned to commence after the 3.0
-release.
+Falcon 4 shipped initial support for
+`field converters <http://falcon.readthedocs.io/en/stable/api/routing.html#field-converters>`_
+that can match multiple segments. The ``path`` :class:`field converter <~falcon.routing.PathConverter>`
+is capable of consuming multiple path segments when placed at the end of the URL template.
 
-In the meantime, you can work around the issue by implementing a Falcon
+In previous versions, you can work around the issue by implementing a Falcon
 middleware component to rewrite the path before it is routed. If you control
 the clients, you can percent-encode forward slashes inside the field in
 question, however, note that pre-processing is unavoidable in order to access
