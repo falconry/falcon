@@ -390,14 +390,25 @@ class Request:
         if_range (str): Value of the If-Range header, or ``None`` if the
             header is missing.
 
-        headers (dict): Raw HTTP headers from the request with
-            canonical dash-separated names. Parsing all the headers
-            to create this dict is done the first time this attribute
-            is accessed, and the returned object should be treated as
-            read-only. Note that this parsing can be costly, so unless you
-            need all the headers in this format, you should instead use the
-            ``get_header()`` method or one of the convenience attributes
-            to get a value for a specific header.
+        headers (dict): Raw HTTP headers from the request with dash-separated
+            names normalized to uppercase.
+
+            Note:
+                This property differs from the ASGI version of ``Request.headers``
+                in that the latter returns *lowercase* names. Middleware, such
+                as tracing and logging components, that need to be compatible with
+                both WSGI and ASGI apps should use :attr:`headers_lower` instead.
+
+            Warning:
+                Parsing all the headers to create this dict is done the first
+                time this attribute is accessed, and the returned object should
+                be treated as read-only. Note that this parsing can be costly,
+                so unless you need all the headers in this format, you should
+                instead use the ``get_header()`` method or one of the
+                convenience attributes to get a value for a specific header.
+
+        headers_lower (dict): Same as :attr:`headers` except header names
+            are normalized to lowercase.
 
         params (dict): The mapping of request query parameter names to their
             values.  Where the parameter appears multiple times in the query
@@ -415,6 +426,7 @@ class Request:
         '_cached_forwarded_prefix',
         '_cached_forwarded_uri',
         '_cached_headers',
+        '_cached_headers_lower',
         '_cached_prefix',
         '_cached_relative_uri',
         '_cached_uri',
@@ -509,6 +521,7 @@ class Request:
         self._cached_forwarded_prefix = None
         self._cached_forwarded_uri = None
         self._cached_headers = None
+        self._cached_headers_lower = None
         self._cached_prefix = None
         self._cached_relative_uri = None
         self._cached_uri = None
@@ -752,8 +765,12 @@ class Request:
         # try...catch that will usually result in a relatively expensive
         # raised exception.
         if 'HTTP_FORWARDED' in self.env:
-            first_hop = self.forwarded[0]
-            scheme = first_hop.scheme or self.scheme
+            forwarded = self.forwarded
+            if forwarded:
+                # Use first hop, fall back on own scheme
+                scheme = forwarded[0].scheme or self.scheme
+            else:
+                scheme = self.scheme
         else:
             # PERF(kgriffs): This call should normally succeed, so
             # just go for it without wasting time checking it
@@ -845,8 +862,12 @@ class Request:
         # try...catch that will usually result in a relatively expensive
         # raised exception.
         if 'HTTP_FORWARDED' in self.env:
-            first_hop = self.forwarded[0]
-            host = first_hop.host or self.netloc
+            forwarded = self.forwarded
+            if forwarded:
+                # Use first hop, fall back on self
+                host = forwarded[0].host or self.netloc
+            else:
+                host = self.netloc
         else:
             # PERF(kgriffs): This call should normally succeed, assuming
             # that the caller is expecting a forwarded header, so
@@ -867,8 +888,6 @@ class Request:
 
     @property
     def headers(self):
-        # NOTE(kgriffs: First time here will cache the dict so all we
-        # have to do is clone it in the future.
         if self._cached_headers is None:
             headers = self._cached_headers = {}
 
@@ -884,6 +903,15 @@ class Request:
                     headers[name.replace('_', '-')] = value
 
         return self._cached_headers
+
+    @property
+    def headers_lower(self):
+        if self._cached_headers_lower is None:
+            self._cached_headers_lower = {
+                key.lower(): value for key, value in self.headers.items()
+            }
+
+        return self._cached_headers_lower
 
     @property
     def params(self):
