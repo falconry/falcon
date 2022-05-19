@@ -1,3 +1,3 @@
 The deprecated ``has_representation()`` method for :class:`~falcon.HTTPError` was
-removed, along with the ``NoRespresentation`` and ``OptionalRepresentation``
+removed, along with the ``NoRepresentation`` and ``OptionalRepresentation``
 classes.
