@@ -23,7 +23,7 @@ jobs:
           - "ubuntu-20.04"
         toxenv:
           - "pep8"
-          - "black"
+          - "blue"
           - "pep8-examples"
           - "pep8-docstrings"
           - "mypy"

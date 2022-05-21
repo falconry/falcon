@@ -24,7 +24,6 @@ for convenience::
     import falcon
 
     things = falcon.CaseInsensitiveDict()
-
 """
 
 from collections.abc import Mapping
