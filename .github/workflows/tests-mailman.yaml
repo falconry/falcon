@@ -7,6 +7,11 @@ on:
     branches:
       - master
 
+  # TODO(vytas): Remove this as soon as it is demonstrated to pass.
+  pull_request:
+    branches:
+      - master
+
 jobs:
   run_tox:
     name: tox -e falcon-nocov
