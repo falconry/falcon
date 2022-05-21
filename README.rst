@@ -8,7 +8,7 @@
     >
     </a>
 
-|Build Status| |Docs| |codecov.io|
+|Build Status| |Docs| |codecov.io| |Blue|
 
 The Falcon Web Framework
 ========================
@@ -1045,10 +1045,10 @@ limitations under the License.
 .. |Docs| image:: https://readthedocs.org/projects/falcon/badge/?version=stable
     :target: https://falcon.readthedocs.io/en/stable/?badge=stable
     :alt: Falcon web framework docs
-.. |Runner| image:: https://a248.e.akamai.net/assets.github.com/images/icons/emoji/runner.png
-    :width: 20
-    :height: 20
 .. |Build Status| image:: https://github.com/falconry/falcon/workflows/Run%20tests/badge.svg
    :target: https://github.com/falconry/falcon/actions?query=workflow%3A%22Run+tests%22
 .. |codecov.io| image:: https://codecov.io/gh/falconry/falcon/branch/master/graphs/badge.svg
    :target: http://codecov.io/gh/falconry/falcon
+.. |Blue| image:: https://img.shields.io/badge/code%20style-blue-blue.svg
+    :target: https://blue.readthedocs.io/
+    :alt: code style: blue
