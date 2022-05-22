@@ -7,7 +7,6 @@ for convenience::
     import falcon
 
     tz = falcon.TimezoneGMT()
-
 """
 
 import datetime

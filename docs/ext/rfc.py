@@ -18,7 +18,6 @@ This extensions adds hyperlinking for any RFC references that are
 formatted like this::
 
     RFC 7231; Section 6.5.3
-
 """
 
 import re

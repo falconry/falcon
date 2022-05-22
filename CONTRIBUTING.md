@@ -26,13 +26,15 @@ Please note that all contributors and maintainers of this project are subject to
 
 ### Pull Requests
 
-Before submitting a pull request, please ensure you have added or updated tests as appropriate, and that all existing tests still pass with your changes. Please also ensure that your coding style follows PEP 8 and the ``black`` formatting style.
+Before submitting a pull request, please ensure you have added or updated tests as appropriate,
+and that all existing tests still pass with your changes.
+Please also ensure that your coding style follows PEP 8 and the ``blue`` formatting style.
 
-In order to reformat your code with ``black``, simply issue:
+In order to reformat your code with ``blue``, simply issue:
 
 ```bash
-$ pip install -U black
-$ black .
+$ pip install -U blue
+$ blue .
 ```
 
 You can check all this by running ``tox`` from within the Falcon project directory. Your environment must be based on CPython 3.8 or 3.10:
@@ -167,7 +169,7 @@ or in mathematical expressions implementing well-known formulas.
 
 ### Changelog
 
-We use [towncrier](https://towncrier.readthedocs.io/en/actual-freaking-docs/index.html) to manage the changelog. Each PR that modifies the functionality of Falcon should include a short description in a news fragment file in the `docs/_newsfragments` directory.
+We use [towncrier](https://towncrier.readthedocs.io/) to manage the changelog. Each PR that modifies the functionality of Falcon should include a short description in a news fragment file in the `docs/_newsfragments` directory.
 
 The newsfragment file name should have the format `{issue_number}.{fragment_type}.rst`, where the fragment type is one of `breakingchange`, `newandimproved`, `bugfix`, or `misc`. If your PR closes another issue, then the original issue number should be used for the newsfragment; otherwise, use the PR number itself.
 

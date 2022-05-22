@@ -17,7 +17,6 @@ Conversely, the `uri` module must be imported explicitly::
 
     some_uri = '...'
     decoded_uri = uri.decode(some_uri)
-
 """
 
 from http import cookies as http_cookies
