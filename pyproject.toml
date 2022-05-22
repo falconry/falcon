@@ -9,7 +9,7 @@
 [tool.towncrier]
     package = "falcon"
     package_dir = ""
-    filename = "docs/changes/3.1.0.rst"
+    filename = "docs/changes/4.0.0.rst"
     directory = "docs/_newsfragments"
     issue_format = "`#{issue} <https://github.com/falconry/falcon/issues/{issue}>`__"
 
@@ -40,7 +40,14 @@
         showcontent = true
 
 [tool.black]
+    # this is kept to avoid reformatting all the code if one were to
+    # inadvertently run black on the probject
     target-version = ["py35"]
     skip-string-normalization = true
+    line-length = 88
+    extend-exclude = "falcon/vendor"
+
+[tool.blue]
+    target-version = ["py35"]
     line-length = 88
     extend-exclude = "falcon/vendor"
