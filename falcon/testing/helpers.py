@@ -20,7 +20,6 @@ directly from the `testing` package::
     from falcon import testing
 
     wsgi_environ = testing.create_environ()
-
 """
 
 import asyncio
@@ -303,8 +302,8 @@ class ASGIResponseEventCollector:
         ]
     )
 
-    _HEADER_NAME_RE = re.compile(br'^[a-zA-Z][a-zA-Z0-9\-_]*$')
-    _BAD_HEADER_VALUE_RE = re.compile(br'[\000-\037]')
+    _HEADER_NAME_RE = re.compile(rb'^[a-zA-Z][a-zA-Z0-9\-_]*$')
+    _BAD_HEADER_VALUE_RE = re.compile(rb'[\000-\037]')
 
     def __init__(self):
         self.events = []
@@ -802,7 +801,7 @@ def get_encoding_from_headers(headers):
     content_type, params = cgi.parse_header(content_type)
 
     if 'charset' in params:
-        return params['charset'].strip("'\"")
+        return params['charset'].strip('\'"')
 
     # NOTE(kgriffs): Added checks for text/event-stream and application/json
     if content_type in ('text/event-stream', 'application/json'):
