@@ -779,7 +779,7 @@ class TestFalconTestingUtils:
             '{"hello": "WORLD!"}',
             'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praese',
             '{"hello": "WORLD!", "greetings": "fellow traveller"}',
-            u'\xe9\xe8',
+            '\xe9\xe8',
         ),
     )
     def test_repr_result_when_body_varies(self, asgi, value, simulate):
