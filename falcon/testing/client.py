@@ -347,6 +347,19 @@ class Result(_ResultBase):
 
         return json_module.loads(self.text)
 
+    def __repr__(self):
+        content_type = self.headers.get('Content-Type', '')
+
+        if len(self.content) > 40:
+            content = self.content[:20] + b'...' + self.content[-20:]
+        else:
+            content = self.content
+
+        args = [self.status, content_type, str(content)]
+
+        repr_result = ' '.join(filter(None, args))
+        return 'Result<{}>'.format(repr_result)
+
 
 class StreamedResult(_ResultBase):
     """Encapsulates the streamed result of an ASGI request.

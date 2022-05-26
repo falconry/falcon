@@ -764,6 +764,65 @@ class TestFalconTestingUtils:
         result = client.simulate_get()
         assert result.status == falcon.HTTP_702
 
+    @pytest.mark.parametrize(
+        'simulate',
+        [
+            testing.simulate_get,
+            testing.simulate_post,
+        ],
+    )
+    @pytest.mark.parametrize(
+        'value',
+        (
+            'd\xff\xff\x00',
+            'quick fox jumps over the lazy dog',
+            '{"hello": "WORLD!"}',
+            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praese',
+            '{"hello": "WORLD!", "greetings": "fellow traveller"}',
+            '\xe9\xe8',
+        ),
+    )
+    def test_repr_result_when_body_varies(self, asgi, value, simulate):
+        if isinstance(value, str):
+            value = bytes(value, 'UTF-8')
+
+        if asgi:
+            resource = testing.SimpleTestResourceAsync(body=value)
+        else:
+            resource = testing.SimpleTestResource(body=value)
+
+        app = create_app(asgi)
+        app.add_route('/hello', resource)
+
+        result = simulate(app, '/hello')
+        captured_resp = resource.captured_resp
+        content = captured_resp.text
+
+        if len(value) > 40:
+            content = value[:20] + b'...' + value[-20:]
+        else:
+            content = value
+
+        args = [
+            captured_resp.status,
+            captured_resp.headers['content-type'],
+            str(content),
+        ]
+
+        expected_content = ' '.join(filter(None, args))
+
+        expected_result = 'Result<{}>'.format(expected_content)
+
+        assert str(result) == expected_result
+
+    def test_repr_without_content_type_header(self, asgi):
+        value = b'huh'
+        header = [('Not-content-type', 'no!')]
+        result = falcon.testing.Result([value], falcon.HTTP_200, header)
+
+        expected_result = 'Result<200 OK {}>'.format(value)
+        assert str(result) == expected_result
+
     def test_wsgi_iterable_not_closeable(self):
         result = testing.Result([], falcon.HTTP_200, [])
         assert not result.content
