@@ -1,1 +1,4 @@
-The form of __repr__ is as follows: ``Result<{status_code}, {content-type header}, {content}>``, where the content part will reflect up to 40 bytes of the result's content, taking the first 20 bytes and last 20 bytes when content is above 40 and ellipsize(with ``...``) the truncated text.
+An informative representation has been added to :class:`testing.Result <falcon.testing.Result>`
+for easier development and interpretation of failed tests. The form of ``__repr__`` is as follows:
+``Result<{status_code}, {content-type header}, {content}>``, where the content part will reflect
+up to 40 bytes of the result's content.
