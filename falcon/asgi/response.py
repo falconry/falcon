@@ -14,7 +14,6 @@
 
 """ASGI Response class."""
 
-from asyncio.coroutines import CoroWrapper  # type: ignore
 from inspect import iscoroutine
 from inspect import iscoroutinefunction
 
@@ -320,10 +319,8 @@ class Response(response.Response):
                 invoked without arguments.
         """
 
-        # NOTE(kgriffs): We also have to do the CoroWrapper check because
-        #   iscoroutine is less reliable under Python 3.6.
         if not iscoroutinefunction(callback):
-            if iscoroutine(callback) or isinstance(callback, CoroWrapper):
+            if iscoroutine(callback):
                 raise TypeError(
                     'The callback object appears to '
                     'be a coroutine, rather than a coroutine function. Please '

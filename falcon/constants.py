@@ -8,18 +8,8 @@ PYPY = sys.implementation.name == 'pypy'
 
 PYTHON_VERSION = tuple(sys.version_info[:3])
 """Python version information triplet: (major, minor, micro)."""
-# If FALCON_TESTING_MOCK_PY35 is defined in the env, pretend that we are
-# on 3.5.0. Only intended for testing of the framework itself.
-_is_py35 = PYTHON_VERSION[:2] == (3, 5)
-_mock_py35 = os.environ.get('FALCON_TESTING_MOCK_PY35')
 
-# TODO(vytas): Remove these hacks in 4.0 once we have dropped 3.5/3.6 support.
-# NOTE(vytas): Do not alter the microversion if already on 3.5
-#   (read: a hack to hit coverage on 3.5 as well).
-if _mock_py35 or _is_py35:
-    PYTHON_VERSION = (3, 5, PYTHON_VERSION[-1] if _is_py35 else 0)
-
-ASGI_SUPPORTED = PYTHON_VERSION >= (3, 6)
+ASGI_SUPPORTED = True
 """Evaluates to ``True`` when ASGI is supported for the current Python version."""
 
 # RFC 7231, 5789 methods

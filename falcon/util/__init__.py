@@ -73,25 +73,19 @@ BufferedReader = (
     (_CyBufferedReader or _PyBufferedReader) if IS_64_BITS else _PyBufferedReader
 )
 
-if PYTHON_VERSION >= (3, 7):
-    # NOTE(caselit): __getattr__ support for modules was added only in py 3.7.
-    # Deprecating an import on previous version is hard to do, so we are
-    # displaying the warning only on 3.7+
-    def __getattr__(name):
-        if name == 'json':
-            import warnings
-            import json  # NOQA
-            from .deprecation import DeprecatedWarning
 
-            warnings.warn(
-                'Importing json from "falcon.util" is deprecated.', DeprecatedWarning
-            )
-            return json
-        from types import ModuleType
+def __getattr__(name):
+    if name == 'json':
+        import warnings
+        import json  # NOQA
+        from .deprecation import DeprecatedWarning
 
-        # fallback to the default implementation
-        mod = sys.modules[__name__]
-        return ModuleType.__getattr__(mod, name)
+        warnings.warn(
+            'Importing json from "falcon.util" is deprecated.', DeprecatedWarning
+        )
+        return json
+    from types import ModuleType
 
-else:
-    import json  # NOQA
+    # fallback to the default implementation
+    mod = sys.modules[__name__]
+    return ModuleType.__getattr__(mod, name)

@@ -27,11 +27,6 @@ and (B) their purpose is particularly cohesive with that of the module in
 question.
 """
 
-from falcon.constants import ASGI_SUPPORTED as _asgi_supported
-
-if not _asgi_supported:
-    raise ImportError('falcon.asgi requires Python 3.6+')
-
 from .app import App
 from .request import Request
 from .response import Response

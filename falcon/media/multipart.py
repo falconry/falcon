@@ -523,9 +523,6 @@ class MultipartFormHandler(BaseHandler):
     def _deserialize_form(
         self, stream, content_type, content_length, form_cls=MultipartForm
     ):
-        if not form_cls:
-            raise NotImplementedError
-
         _, options = cgi.parse_header(content_type)
         try:
             boundary = options['boundary']

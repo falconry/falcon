@@ -51,15 +51,6 @@ jobs:
           - python-version: pypy3
             os: ubuntu-20.04
             toxenv: pypy3
-          - python-version: 3.5
-            os: ubuntu-20.04
-            toxenv: py35
-          - python-version: 3.6
-            os: ubuntu-20.04
-            toxenv: py36
-          - python-version: 3.6
-            os: ubuntu-20.04
-            toxenv: py36_cython
           - python-version: 3.7
             os: ubuntu-20.04
             toxenv: py37
@@ -120,14 +111,14 @@ jobs:
         run: tox -e ${{ matrix.toxenv }}
 
       - name: Combine coverage
-        if: ${{ matrix.toxenv == 'py35' || matrix.toxenv == 'py38' || matrix.toxenv == 'py38_sans_msgpack' }}
+        if: ${{ matrix.toxenv == 'py38' || matrix.toxenv == 'py38_sans_msgpack' }}
         run: |
           coverage --version
           coverage combine
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
-        if: ${{ matrix.toxenv == 'py35' || matrix.toxenv == 'py38' || matrix.toxenv == 'py38_sans_msgpack' }}
+        if: ${{ matrix.toxenv == 'py38' || matrix.toxenv == 'py38_sans_msgpack' }}
         with:
           env_vars: PYTHON
           fail_ci_if_error: true
