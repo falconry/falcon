@@ -166,7 +166,7 @@ if PYPY:
     #   However, if the shortcut does not succeed, invoking best_match()
     #   is relatively expensive, so it does make sense to use an LRU
     #   in that case.
-    _best_match = functools._lru_cache(maxsize=64)(_best_match)  # pragma: nocover
+    _best_match = functools.lru_cache(maxsize=64)(_best_match)  # pragma: nocover
 
 
 # NOTE(vytas): An ugly way to work around circular imports.
