@@ -32,7 +32,6 @@ import unicodedata
 
 from falcon import status_codes
 from falcon.constants import PYPY
-from falcon.constants import PYTHON_VERSION
 from falcon.uri import encode_value
 
 # NOTE(vytas): Hoist `deprecated` here since it is documented as part of the
