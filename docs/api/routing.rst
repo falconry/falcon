@@ -295,6 +295,7 @@ Built-in Converters
  ``int``       :class:`~.IntConverter`            ``/teams/{tid:int(8)}``
  ``uuid``      :class:`~.UUIDConverter`           ``/diff/{left:uuid}...{right:uuid}``
  ``dt``        :class:`~.DateTimeConverter`       ``/logs/{day:dt("%Y-%m-%d")}``
+ ``path``      :class:`~.PathConverter`           ``/prefix/{other:path}``
 ============  =================================  ==================================================================
 
 |
@@ -306,6 +307,9 @@ Built-in Converters
     :members:
 
 .. autoclass:: falcon.routing.DateTimeConverter
+    :members:
+
+.. autoclass:: falcon.routing.PathConverter
     :members:
 
 .. _routing_custom_converters:
