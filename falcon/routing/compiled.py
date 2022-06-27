@@ -147,7 +147,7 @@ class CompiledRouter:
 
         return map_http_methods(resource, suffix=kwargs.get('suffix', None))
 
-    def add_route(self, uri_template, resource, **kwargs):
+    def add_route(self, uri_template, resource, **kwargs):  # noqa: C901
         """Add a route between a URI path template and a resource.
 
         This method may be overridden to customize how a route is added.
@@ -200,13 +200,26 @@ class CompiledRouter:
         # NOTE(kgriffs): Fields may have whitespace in them, so sub
         # those before checking the rest of the URI template.
         if re.search(r'\s', _FIELD_PATTERN.sub('{FIELD}', uri_template)):
-            raise ValueError('URI templates may not include whitespace.')
+            raise UnacceptableRouteError('URI templates may not include whitespace.')
 
         path = uri_template.lstrip('/').split('/')
 
         used_names = set()
         for segment in path:
             self._validate_template_segment(segment, used_names)
+
+        def find_cmp_converter(node):
+            value = [
+                (field, converter)
+                for field, converter, _ in node.var_converter_map
+                if converters._consumes_multiple_segments(
+                    self._converter_map[converter]
+                )
+            ]
+            if value:
+                return value[0]
+            else:
+                return None
 
         def insert(nodes, path_index=0):
             for node in nodes:
@@ -219,12 +232,17 @@ class CompiledRouter:
                         node.resource = resource
                         node.uri_template = uri_template
                     else:
+                        cpc = find_cmp_converter(node)
+                        if cpc:
+                            raise UnacceptableRouteError(
+                                _NO_CHILDREN_ERR.format(uri_template, *cpc)
+                            )
                         insert(node.children, path_index)
 
                     return
 
                 if node.conflicts_with(segment):
-                    raise ValueError(
+                    raise UnacceptableRouteError(
                         'The URI template for this route is inconsistent or conflicts '
                         "with another route's template. This is usually caused by "
                         'configuring a field converter differently for the same field '
@@ -237,12 +255,27 @@ class CompiledRouter:
             # exist and needs to be created. This builds a new branch of the
             # routing tree recursively until it reaches the new node leaf.
             new_node = CompiledRouterNode(path[path_index])
+            if new_node.is_complex:
+                cpc = find_cmp_converter(new_node)
+                if cpc:
+                    raise UnacceptableRouteError(
+                        'Cannot use converter "{1}" of variable "{0}" in a template '
+                        'that includes other characters or variables.'.format(*cpc)
+                    )
             nodes.append(new_node)
             if path_index == len(path) - 1:
                 new_node.method_map = method_map
                 new_node.resource = resource
                 new_node.uri_template = uri_template
             else:
+                cpc = find_cmp_converter(new_node)
+                if cpc:
+                    # NOTE(caselit): assume success and remove the node if it's not
+                    # supported to avoid leaving the router in a broken state.
+                    nodes.remove(new_node)
+                    raise UnacceptableRouteError(
+                        _NO_CHILDREN_ERR.format(uri_template, *cpc)
+                    )
                 insert(new_node.children, path_index + 1)
 
         insert(self._roots)
@@ -350,7 +383,7 @@ class CompiledRouter:
                     'Field names must be valid identifiers ("{0}" is not valid)'
                 )
                 msg = msg_template.format(name)
-                raise ValueError(msg)
+                raise UnacceptableRouteError(msg)
 
             if name in used_names:
                 msg_template = (
@@ -358,28 +391,28 @@ class CompiledRouter:
                     '("{0}" was used more than once)'
                 )
                 msg = msg_template.format(name)
-                raise ValueError(msg)
+                raise UnacceptableRouteError(msg)
 
             used_names.add(name)
 
             if field.group('cname_sep') == ':':
                 msg = 'Missing converter for field "{0}"'.format(name)
-                raise ValueError(msg)
+                raise UnacceptableRouteError(msg)
 
             name = field.group('cname')
             if name:
                 if name not in self._converter_map:
                     msg = 'Unknown converter: "{0}"'.format(name)
-                    raise ValueError(msg)
+                    raise UnacceptableRouteError(msg)
                 try:
                     self._instantiate_converter(
                         self._converter_map[name], field.group('argstr')
                     )
                 except Exception as e:
                     msg = 'Cannot instantiate converter "{}"'.format(name)
-                    raise ValueError(msg) from e
+                    raise UnacceptableRouteError(msg) from e
 
-    def _generate_ast(
+    def _generate_ast(  # noqa: C901
         self,
         nodes: list,
         parent,
@@ -429,12 +462,14 @@ class CompiledRouter:
         original_params_stack = params_stack.copy()
         for node in nodes:
             params_stack = original_params_stack.copy()
+            consume_multiple_segments = False
             if node.is_var:
                 if node.is_complex:
                     # NOTE(richardolsson): Complex nodes are nodes which
                     # contain anything more than a single literal or variable,
                     # and they need to be checked using a pre-compiled regular
                     # expression.
+                    assert node.var_pattern
                     pattern_idx = len(patterns)
                     patterns.append(node.var_pattern)
 
@@ -463,8 +498,6 @@ class CompiledRouter:
                     if node.var_converter_map:
                         assert len(node.var_converter_map) == 1
 
-                        parent.append_child(_CxSetFragmentFromPath(level))
-
                         field_name = node.var_name
                         __, converter_name, converter_argstr = node.var_converter_map[0]
                         converter_class = self._converter_map[converter_name]
@@ -474,6 +507,11 @@ class CompiledRouter:
                         )
                         converter_idx = len(self._converters)
                         self._converters.append(converter_obj)
+                        if converters._consumes_multiple_segments(converter_obj):
+                            consume_multiple_segments = True
+                            parent.append_child(_CxSetFragmentFromRemainingPaths(level))
+                        else:
+                            parent.append_child(_CxSetFragmentFromPath(level))
 
                         construct = _CxIfConverterField(
                             len(params_stack) + 1, converter_idx
@@ -514,6 +552,8 @@ class CompiledRouter:
                 resource_idx = len(return_values)
                 return_values.append(node)
 
+            assert not (consume_multiple_segments and node.children)
+
             self._generate_ast(
                 node.children,
                 parent,
@@ -528,17 +568,22 @@ class CompiledRouter:
                 if fast_return:
                     parent.append_child(_CxReturnNone())
             else:
-                # NOTE(kgriffs): Make sure that we have consumed all of
-                # the segments for the requested route; otherwise we could
-                # mistakenly match "/foo/23/bar" against "/foo/{id}".
-                construct = _CxIfPathLength('==', level + 1)
-                for params in params_stack:
-                    construct.append_child(params)
-                construct.append_child(_CxReturnValue(resource_idx))
-                parent.append_child(construct)
+                if consume_multiple_segments:
+                    for params in params_stack:
+                        parent.append_child(params)
+                    parent.append_child(_CxReturnValue(resource_idx))
+                else:
+                    # NOTE(kgriffs): Make sure that we have consumed all of
+                    # the segments for the requested route; otherwise we could
+                    # mistakenly match "/foo/23/bar" against "/foo/{id}".
+                    construct = _CxIfPathLength('==', level + 1)
+                    for params in params_stack:
+                        construct.append_child(params)
+                    construct.append_child(_CxReturnValue(resource_idx))
+                    parent.append_child(construct)
 
-                if fast_return:
-                    parent.append_child(_CxReturnNone())
+                    if fast_return:
+                        parent.append_child(_CxReturnNone())
 
             parent = outer_parent
 
@@ -554,6 +599,7 @@ class CompiledRouter:
         # a series of nested "if" constructs.
         for field_name, converter_name, converter_argstr in node.var_converter_map:
             converter_class = self._converter_map[converter_name]
+            assert not converters._consumes_multiple_segments(converter_class)
 
             converter_obj = self._instantiate_converter(
                 converter_class, converter_argstr
@@ -643,6 +689,17 @@ class CompiledRouter:
         return self._find(
             path, self._return_values, self._patterns, self._converters, params
         )
+
+
+_NO_CHILDREN_ERR = (
+    'Cannot add route with template "{0}". Field name "{1}" '
+    'uses the converter "{2}" that will consume all the path, '
+    'making it impossible to match this route.'
+)
+
+
+class UnacceptableRouteError(ValueError):
+    """Error raised by ``add_error`` when a route is not acceptable."""
 
 
 class CompiledRouterNode:
@@ -801,24 +858,6 @@ class CompiledRouterNode:
 class ConverterDict(UserDict):
     """A dict-like class for storing field converters."""
 
-    def update(self, other):
-        try:
-            # NOTE(kgriffs): If it is a mapping type, it should
-            # implement keys().
-            names = other.keys()
-        except AttributeError:
-            # NOTE(kgriffs): Not a mapping type, so assume it is an
-            # iterable of 2-item iterables. But we need to make it
-            # re-iterable if it is a generator, for when we pass
-            # it on to the parent's update().
-            other = list(other)
-            names = [n for n, __ in other]
-
-        for n in names:
-            self._validate(n)
-
-        UserDict.update(self, other)
-
     def __setitem__(self, name, converter):
         self._validate(name)
         UserDict.__setitem__(self, name, converter)
@@ -869,9 +908,16 @@ class CompiledRouterOptions:
     __slots__ = ('converters',)
 
     def __init__(self):
-        self.converters = ConverterDict(
-            (name, converter) for name, converter in converters.BUILTIN
+        object.__setattr__(
+            self,
+            'converters',
+            ConverterDict((name, converter) for name, converter in converters.BUILTIN),
         )
+
+    def __setattr__(self, name, value) -> None:
+        if name == 'converters':
+            raise AttributeError('Cannot set "converters", please update it in place.')
+        super().__setattr__(name, value)
 
 
 # --------------------------------------------------------------------
@@ -997,6 +1043,17 @@ class _CxSetFragmentFromPath:
 
     def src(self, indentation):
         return '{0}fragment = path[{1}]'.format(
+            _TAB_STR * indentation,
+            self._segment_idx,
+        )
+
+
+class _CxSetFragmentFromRemainingPaths:
+    def __init__(self, segment_idx):
+        self._segment_idx = segment_idx
+
+    def src(self, indentation):
+        return '{0}fragment = path[{1}:]'.format(
             _TAB_STR * indentation,
             self._segment_idx,
         )
