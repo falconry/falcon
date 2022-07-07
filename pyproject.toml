@@ -41,7 +41,7 @@
 
 [tool.black]
     # this is kept to avoid reformatting all the code if one were to
-    # inadvertently run black on the probject
+    # inadvertently run black on the project
     target-version = ["py37"]
     skip-string-normalization = true
     line-length = 88
@@ -51,3 +51,16 @@
     target-version = ["py37"]
     line-length = 88
     extend-exclude = "falcon/vendor"
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore:Unknown REQUEST_METHOD. '(CONNECT|DELETE|GET|HEAD|OPTIONS|PATCH|POST|PUT|TRACE|CHECKIN|CHECKOUT|COPY|LOCK|MKCOL|MOVE|PROPFIND|PROPPATCH|REPORT|UNCHECKIN|UNLOCK|UPDATE|VERSION-CONTROL)':wsgiref.validate.WSGIWarning",
+    "ignore:Unknown REQUEST_METHOD. '(FOO|BAR|BREW|SETECASTRONOMY)':wsgiref.validate.WSGIWarning",
+    "ignore:\"@coroutine\" decorator is deprecated:DeprecationWarning",
+    "ignore:Using or importing the ABCs:DeprecationWarning",
+    "ignore:cannot collect test class 'TestClient':pytest.PytestCollectionWarning",
+    "ignore:inspect.getargspec\\(\\) is deprecated:DeprecationWarning",
+]
+testpaths = [
+    "tests"
+]
