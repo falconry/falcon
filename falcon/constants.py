@@ -9,8 +9,21 @@ PYPY = sys.implementation.name == 'pypy'
 PYTHON_VERSION = tuple(sys.version_info[:3])
 """Python version information triplet: (major, minor, micro)."""
 
-ASGI_SUPPORTED = True
-"""Evaluates to ``True`` when ASGI is supported for the current Python version."""
+FALCON_SUPPORTED = PYTHON_VERSION >= (3, 7, 0)
+"""Whether this version of Falcon supports the current Python version."""
+
+if not FALCON_SUPPORTED:  # pragma: nocover
+    raise ImportError(
+        'Falcon requires Python 3.7+. '
+        '(Recent Pip should automatically pick a suitable Falcon version.)'
+    )
+
+ASGI_SUPPORTED = FALCON_SUPPORTED
+"""Evaluates to ``True`` when ASGI is supported for the current Python version.
+
+This constant is no longer referenced by the framework itself, and left for
+compatibility with Falcon 3.x.
+"""
 
 # RFC 7231, 5789 methods
 HTTP_METHODS = [
