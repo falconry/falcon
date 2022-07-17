@@ -45,6 +45,7 @@ from .multipart import MultipartForm
 from .request import Request
 from .response import Response
 from .structures import SSEvent
+from .ws import check_support_reason
 from .ws import WebSocket
 from .ws import WebSocketOptions
 
@@ -976,13 +977,11 @@ class App(falcon.app.App):
             #   we don't support, so bail out. This also fulfills the ASGI
             #   spec requirement to only process the request after
             #   receiving and verifying the first event.
-            await send(
-                {
-                    'type': EventType.WS_CLOSE,
-                    'code': WSCloseCode.SERVER_ERROR,
-                    'reason': 'Internal Server Error',
-                }
-            )
+            response = {'type': EventType.WS_CLOSE, 'code': WSCloseCode.SERVER_ERROR}
+            if check_support_reason(ver):
+                response['reason'] = 'Internal Server Error'
+
+            await send(response)
             return
 
         req = self._request_type(scope, receive, options=self.req_options)
