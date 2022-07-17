@@ -21,7 +21,6 @@ framework itself. These functions are hoisted into the front-door
     import falcon
 
     now = falcon.http_now()
-
 """
 
 import datetime

@@ -32,7 +32,6 @@ package namespace::
             )
 
             # -- snip --
-
 """
 
 from datetime import datetime

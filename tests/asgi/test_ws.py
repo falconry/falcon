@@ -1,6 +1,7 @@
 import asyncio
 from collections import deque
 import os
+import sys
 
 import cbor2
 import pytest
@@ -339,12 +340,13 @@ async def test_client_disconnect_early(  # noqa: C901
                             #   the case of a closed connection while waiting on
                             #   more data.
                             recv_task = falcon.create_task(ws.receive_data())
-                            await asyncio.sleep(
-                                0
-                            )  # Ensure recv_task() has a chance to get ahead
-                            await asyncio.wait(
-                                [recv_task, falcon.create_task(ws.close(4099))]
-                            )
+                            # Ensure recv_task() has a chance to get ahead
+                            await asyncio.sleep(0)
+                            ws_close = ws.close(4099)
+                            if sys.version_info >= (3, 7):
+                                # using create_task on py3.6 causes this to hang
+                                ws_close = asyncio.create_task(ws_close)
+                            await asyncio.wait([recv_task, ws_close])
 
                         self.data_received.set()
 

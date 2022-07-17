@@ -97,7 +97,7 @@ def test_content_length_not_set_when_streaming_response(asgi, method):
 class CodeResource:
     def on_get(self, req, resp):
         resp.content_type = 'text/x-malbolge'
-        resp.media = '\'&%$#"!76543210/43,P0).\'&%I6'
+        resp.media = "'&%$#\"!76543210/43,P0).'&%I6"
         resp.status = falcon.HTTP_725
 
 

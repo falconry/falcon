@@ -22,6 +22,7 @@ cd $MAILMAN_PATH
 cat <<EOT >> tox.ini
 
 [testenv:falcon-nocov]
+basepython = python3.8
 commands_pre =
     pip uninstall -y falcon
     pip install $FALCON_ROOT
