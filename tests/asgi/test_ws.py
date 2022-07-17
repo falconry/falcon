@@ -889,11 +889,11 @@ async def test_bad_http_version(version, conductor):
 
 
 @pytest.mark.asyncio
-async def test_bad_first_event():
+@pytest.mark.parametrize('version', ['2.1', '2.3', '2.10.3'])
+async def test_bad_first_event(version):
     app = App()
 
-    scope = testing.create_scope_ws()
-    del scope['asgi']['spec_version']
+    scope = testing.create_scope_ws(spec_version=version)
 
     ws = testing.ASGIWebSocketSimulator()
     wrapped_emit = ws._emit
@@ -913,6 +913,10 @@ async def test_bad_first_event():
 
     assert ws.closed
     assert ws.close_code == CloseCode.SERVER_ERROR
+    if version != '2.1':
+        assert ws.close_reason == 'Internal Server Error'
+    else:
+        assert ws.close_reason == ''
 
 
 @pytest.mark.asyncio
