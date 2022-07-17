@@ -796,11 +796,12 @@ class ASGIWebSocketSimulator:
             )
 
         self._disconnect_emitted = True
-        return {
-            'type': EventType.WS_DISCONNECT,
-            'code': self._close_code,
-            'reason': self._close_reason,
-        }
+        response = {'type': EventType.WS_DISCONNECT, 'code': self._close_code}
+
+        if self._close_reason:
+            response['reason'] = self._close_reason
+
+        return response
 
 
 # get_encoding_from_headers() is Copyright 2016 Kenneth Reitz, and is
