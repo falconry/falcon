@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from falcon.routing import CompiledRouter
+from falcon.routing import CompiledRouter, CompiledRouterOptions
 
 
 def test_find_src(monkeypatch):
@@ -114,3 +114,26 @@ class MockResource:
 
     def on_get_other(self, req, res):
         pass
+
+
+def test_cannot_replace_compiled():
+    opt = CompiledRouterOptions()
+    with pytest.raises(AttributeError, match='Cannot set'):
+        opt.converters = {}
+    with pytest.raises(AttributeError, match='object has no attribute'):
+        opt.other = 123
+
+
+def test_converter_not_subclass():
+    class X:
+        def convert(self, v):
+            return v
+
+    router = CompiledRouter()
+    router.options.converters['x'] = X
+
+    router.add_route('/foo/{bar:x}', MockResource())
+    res = router.find('/foo/bar')
+    assert res is not None
+    assert res[2] == {'bar': 'bar'}
+    assert router.find('/foo/bar/bar') is None
