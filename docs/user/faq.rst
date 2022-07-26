@@ -668,17 +668,37 @@ The `stream` of a body part is a file-like object implementing the ``read()``
 method, making it compatible with ``boto3``\'s
 `upload_fileobj <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.upload_fileobj>`_:
 
-.. code:: python
+.. tabs::
 
-    import boto3
+    .. group-tab:: WSGI
 
-    # -- snip --
+        .. code:: python
 
-    s3 = boto3.client('s3')
+            import boto3
 
-    for part in req.media:
-        if part.name == 'myfile':
-            s3.upload_fileobj(part.stream, 'mybucket', 'mykey')
+            # -- snip --
+
+            s3 = boto3.client('s3')
+
+            for part in req.media:
+                if part.name == 'myfile':
+                    s3.upload_fileobj(part.stream, 'mybucket', 'mykey')
+
+    .. group-tab:: ASGI
+
+        .. code:: python
+
+            import aioboto3
+
+            # -- snip --
+
+            session = aioboto3.Session()
+
+            form = await req.get_media()
+            async for part in form:
+                if part.name == 'myfile':
+                    async with session.client('s3') as s3:
+                        await s3.upload_fileobj(part.stream, 'mybucket', 'mykey')
 
 .. note::
    Falcon is not endorsing any particular cloud service provider, and AWS S3
