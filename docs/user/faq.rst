@@ -700,6 +700,12 @@ method, making it compatible with ``boto3``\'s
                     async with session.client('s3') as s3:
                         await s3.upload_fileobj(part.stream, 'mybucket', 'mykey')
 
+        .. note::
+            The ASGI snippet requires the
+            `aioboto3 <https://pypi.org/project/aioboto3/>`__ async wrapper in
+            lieu of ``boto3`` (as the latter only offers a synchronous
+            interface at the time of writing).
+
 .. note::
    Falcon is not endorsing any particular cloud service provider, and AWS S3
    and ``boto3`` are referenced here just as a popular example. The same
