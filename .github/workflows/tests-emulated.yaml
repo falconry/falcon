@@ -6,6 +6,10 @@ on:
   push:
     branches:
       - master
+  # TODO(vytas): Remove once demonstrated to work
+  pull_request:
+    branches:
+      - master
 
 jobs:
   run_tox_emulate:
@@ -46,12 +50,14 @@ jobs:
           PIP_CACHE_DIR: /github/workspace/.pip/
         with:
           # NOTE: without 'pip install ujson' tox fails to install it with "Requested ujson from <url> has different version in metadata: '0.0.0'"
+          # NOTE(vytas): installing fixtures/pbr because otherwise pip install
+          # inside tox fails with an import error on some older CPythons
           args: |
             /bin/bash -c "
             lscpu &&
             mkdir -p $PIP_CACHE_DIR &&
             chown -R $(whoami) $PIP_CACHE_DIR &&
-            pip install -U pip tox &&
+            pip install -U fixtures pip tox &&
             python --version &&
             pip --version &&
             tox --version &&
@@ -69,7 +75,7 @@ jobs:
             lscpu &&
             mkdir -p $PIP_CACHE_DIR &&
             chown -R $(whoami) $PIP_CACHE_DIR &&
-            pip install -U pip tox &&
+            pip install -U fixtures pip tox &&
             python --version &&
             pip --version &&
             tox --version &&
