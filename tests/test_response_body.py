@@ -2,7 +2,7 @@ import pytest
 
 import falcon
 from falcon import testing
-from falcon.util.deprecation import DeprecatedWarning
+from falcon.util.deprecation import RemovedError
 
 from _util import create_app, create_resp  # NOQA
 
@@ -15,13 +15,20 @@ def resp(asgi):
 def test_append_body(resp):
     text = 'Hello beautiful world! '
     resp.text = ''
-    with pytest.warns(DeprecatedWarning, match='Please use text instead'):
-        for token in text.split():
-            resp.text += token
-            resp.body += ' '
 
-        assert resp.text == text
-        assert resp.body == text
+    with pytest.raises(RemovedError):
+        resp.body = 'x'
+
+    for token in text.split():
+        resp.text += token
+        resp.text += ' '
+
+    assert resp.text == text
+
+    # NOTE(kgriffs): Ensure RemovedError inherits from RuntimeError
+    for ErrorType in (RuntimeError, RemovedError):
+        with pytest.raises(ErrorType):
+            resp.body
 
 
 def test_response_repr(resp):

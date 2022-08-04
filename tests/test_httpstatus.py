@@ -7,7 +7,7 @@ import pytest
 import falcon
 from falcon.http_status import HTTPStatus
 import falcon.testing as testing
-from falcon.util.deprecation import DeprecatedWarning
+from falcon.util.deprecation import RemovedError
 
 from _util import create_app  # NOQA
 
@@ -266,15 +266,13 @@ def test_non_string_status(custom_status_client, status, expected_code):
 
 
 def test_deprecated_body():
-    with pytest.warns(DeprecatedWarning, match='Please use text instead'):
+    with pytest.raises(TypeError) as type_error:
         sts = HTTPStatus(falcon.HTTP_701, body='foo')
-        assert sts.text == 'foo'
+
+    assert 'unexpected keyword argument' in str(type_error.value)
+
+    sts = HTTPStatus(falcon.HTTP_701, text='foo')
+    assert sts.text == 'foo'
+
+    with pytest.raises(RemovedError):
         assert sts.body == 'foo'
-
-        sts = HTTPStatus(falcon.HTTP_701, text='bar', body='foo')
-        assert sts.text == 'bar'
-        assert sts.body == 'bar'
-
-        sts = HTTPStatus(falcon.HTTP_701, text='', body='foo')
-        assert sts.text == ''
-        assert sts.body == ''

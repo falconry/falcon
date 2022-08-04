@@ -31,6 +31,7 @@ from falcon.util import dt_to_http
 from falcon.util import http_cookies
 from falcon.util import structures
 from falcon.util import TimezoneGMT
+from falcon.util.deprecation import deprecated, RemovedError
 from falcon.util.uri import encode_check_escaped as uri_encode
 from falcon.util.uri import encode_value_check_escaped as uri_encode_value
 
@@ -79,9 +80,6 @@ class Response:
                 Falcon will encode the given text as UTF-8
                 in the response. If the content is already a byte string,
                 use the :attr:`data` attribute instead (it's faster).
-
-        body (str): Deprecated alias for :attr:`text`. Will be removed in a
-            future Falcon version.
 
         data (bytes): Byte string representing response content.
 
@@ -189,6 +187,20 @@ class Response:
         self._media_rendered = _UNSET
 
         self.context = self.context_type()
+
+    @property  # type: ignore
+    def body(self):
+        raise RemovedError(
+            'The body attribute is no longer supported. '
+            'Please use the text attribute instead.'
+        )
+
+    @body.setter  # type: ignore
+    def body(self, value):
+        raise RemovedError(
+            'The body attribute is no longer supported. '
+            'Please use the text attribute instead.'
+        )
 
     @property
     def data(self):

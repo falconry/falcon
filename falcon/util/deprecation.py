@@ -22,10 +22,15 @@ import warnings
 
 
 __all__ = (
+    'RemovedError',
     'DeprecatedWarning',
     'deprecated',
     'deprecated_args',
 )
+
+
+class RemovedError(RuntimeError):
+    """A deprecated attribute, class, or function has been subsequently removed."""
 
 
 # NOTE(kgriffs): We don't want our deprecations to be ignored by default,
