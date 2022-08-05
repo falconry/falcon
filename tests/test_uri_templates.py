@@ -229,7 +229,7 @@ def test_float_converter(client, uri_template, id_value):
     resource1 = IDResource()
     client.app.add_route(uri_template, resource1)
 
-    result = client.simulate_get(f'/{id_value}')
+    result = client.simulate_get('/{0}'.format(id_value))
 
     assert result.status_code == 200
     assert resource1.called
