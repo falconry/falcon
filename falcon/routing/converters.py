@@ -32,17 +32,32 @@ strptime = datetime.strptime
 class BaseConverter(metaclass=abc.ABCMeta):
     """Abstract base class for URI template field converters."""
 
+    CONSUME_MULTIPLE_SEGMENTS = False
+    """When set to ``True`` it indicates that this converter will consume
+    multiple URL path segments. Currently a converter with
+    ``CONSUME_MULTIPLE_SEGMENTS=True`` must be at the end of the URL template
+    effectively meaning that it will consume all of the remaining URL path
+    segments.
+    """
+
     @abc.abstractmethod  # pragma: no cover
     def convert(self, value):
         """Convert a URI template field value to another format or type.
 
         Args:
-            value (str): Original string to convert.
+            value (str or List[str]): Original string to convert.
+                If ``CONSUME_MULTIPLE_SEGMENTS=True`` this value is a
+                list of strings containing the path segments matched by
+                the converter.
 
         Returns:
             object: Converted field value, or ``None`` if the field
                 can not be converted.
         """
+
+
+def _consumes_multiple_segments(converter):
+    return getattr(converter, 'CONSUME_MULTIPLE_SEGMENTS', False)
 
 
 class IntConverter(BaseConverter):
@@ -168,9 +183,35 @@ class UUIDConverter(BaseConverter):
             return None
 
 
+class PathConverter(BaseConverter):
+    """Field converted used to match the rest of the path.
+
+    This field converter matches the remainder of the URL path,
+    returning it as a string.
+
+    This converter is currently supported only when used at the
+    end of the URL template.
+
+    The classic routing rules of falcon apply also to this converter:
+    considering the template ``'/foo/bar/{matched_path:path}'``, the path
+    ``'/foo/bar'`` will *not* match the route; ``'/foo/bar/'`` will
+    match, producing ``matched_path=''``, when
+    :attr:`~falcon.RequestOptions.strip_url_path_trailing_slash` is ``False``
+    (the default), while it will *not* match when that option is ``True``.
+
+    (See also: :ref:`trailing_slash_in_path`)
+    """
+
+    CONSUME_MULTIPLE_SEGMENTS = True
+
+    def convert(self, value):
+        return '/'.join(value)
+
+
 BUILTIN = (
     ('int', IntConverter),
     ('dt', DateTimeConverter),
     ('uuid', UUIDConverter),
     ('float', FloatConverter),
+    ('path', PathConverter),
 )
