@@ -592,7 +592,7 @@ class App:
         Warning:
             If you need to serve large files and/or progressive downloads (such
             as in the case of video streaming) through the Falcon app, check
-            that your application server's timeout settings can accomodate the
+            that your application server's timeout settings can accommodate the
             expected request duration (for instance, the popular Gunicorn kills
             ``sync`` workers after 30 seconds unless configured otherwise).
 
@@ -842,7 +842,7 @@ class App:
 
         Note:
             A custom serializer set with this method may not be called if the
-            default error handler for :class:`~.HTTPError` has been overriden.
+            default error handler for :class:`~.HTTPError` has been overridden.
             See :meth:`~.add_error_handler` for more details.
 
         The :class:`~.HTTPError` class contains helper methods,
