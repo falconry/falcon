@@ -1,4 +1,5 @@
 from datetime import datetime
+import math
 import string
 import uuid
 
@@ -90,9 +91,21 @@ def test_int_converter_invalid_config(num_digits):
         ('-1.6e10', -1.7e10, 1.0e10, -16000000000.0),
     ],
 )
-def test_float_converter(value, min, max, expected, allow_nan=False):
-    c = converters.FloatConverter(min, max, allow_nan)
+def test_float_converter(value, min, max, expected):
+    c = converters.FloatConverter(min, max)
     assert c.convert(value) == expected
+
+
+@pytest.mark.parametrize('nan', ['nan', 'NaN', 'NAN', 'nAn'])
+def test_float_converter_nan_allowed(nan):
+    c = converters.FloatConverter(allow_nan=True)
+    assert math.isnan(c.convert(nan))
+
+
+@pytest.mark.parametrize('allow_nan', [None, False])
+def test_float_converter_nan_disallowed(allow_nan):
+    c = converters.FloatConverter(allow_nan=allow_nan)
+    assert c.convert('nan') is None
 
 
 @pytest.mark.parametrize(

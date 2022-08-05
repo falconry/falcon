@@ -86,10 +86,10 @@ class IntConverter(BaseConverter):
             return None
 
         # NOTE(kgriffs): int() will accept numbers with preceding or
-        # trailing whitespace, so we need to do our own check. Using
-        # strip() is faster than either a regex or a series of or'd
-        # membership checks via "in", esp. as the length of contiguous
-        # numbers in the value grows.
+        #   trailing whitespace, so we need to do our own check. Using
+        #   strip() is faster than either a regex or a series of or'd
+        #   membership checks via "in", esp. as the length of contiguous
+        #   numbers in the value grows.
         if value.strip() != value:
             return None
 
@@ -116,7 +116,7 @@ class FloatConverter(IntConverter):
     Keyword Args:
         min (float): Reject the value if it is less than this number.
         max (float): Reject the value if it is greater than this number.
-        allow_nan (bool) : An optional argument which specifies to allow nan values.
+        allow_nan (bool) : Allow the NaN value (default: False).
     """
 
     __slots__ = '_allow_nan'
@@ -129,6 +129,7 @@ class FloatConverter(IntConverter):
     def convert(self, value):
         if value.strip() != value:
             return None
+
         try:
             value = float(value)
             if not self._allow_nan:

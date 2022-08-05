@@ -6,6 +6,7 @@ path via simulate_get(), vs. probing the router directly.
 """
 
 from datetime import datetime
+import math
 import uuid
 
 import pytest
@@ -212,6 +213,48 @@ def test_int_converter(client, uri_template):
     assert resource1.called
     assert resource1.id == 123
     assert resource1.req.path == '/123'
+
+
+@pytest.mark.parametrize('id_value', [2, 2.1, 1.9])
+@pytest.mark.parametrize(
+    'uri_template,',
+    [
+        '/{id:float}',
+        '/{id:float(1)}',
+        '/{id:float(min=1.9)}',
+        '/{id:float(min=1.8, max=3)}',
+    ],
+)
+def test_float_converter(client, uri_template, id_value):
+    resource1 = IDResource()
+    client.app.add_route(uri_template, resource1)
+
+    result = client.simulate_get(f'/{id_value}')
+
+    assert result.status_code == 200
+    assert resource1.called
+    assert resource1.id == id_value
+    assert resource1.req.path == f'/{id_value}'
+
+
+def test_float_converter_nan_allowed(client):
+    resource1 = IDResource()
+    client.app.add_route('/{id:float(allow_nan=True)}', resource1)
+
+    result = client.simulate_get('/NaN')
+
+    assert result.status_code == 200
+    assert resource1.called
+    assert math.isnan(resource1.id)
+
+
+def test_float_converter_nan_disallowed(client):
+    resource1 = IDResource()
+    client.app.add_route('/{id:float}', resource1)
+
+    result = client.simulate_get('/NaN')
+    assert result.status_code == 404
+    assert not resource1.called
 
 
 @pytest.mark.parametrize(
