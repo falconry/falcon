@@ -234,7 +234,7 @@ def test_float_converter(client, uri_template, id_value):
     assert result.status_code == 200
     assert resource1.called
     assert resource1.id == id_value
-    assert resource1.req.path == f'/{id_value}'
+    assert resource1.req.path == '/{0}'.format(id_value)
 
 
 def test_float_converter_nan_allowed(client):
