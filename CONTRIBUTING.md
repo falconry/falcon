@@ -137,7 +137,7 @@ $ xdg-open docs/_build/html/index.html
 
 * Docstrings are required for classes, attributes, methods, and functions. Follow the
  following guidelines for docstrings:
-   * Docstrings should utilize the [napolean style][docstrings] in order to make them read well, regardless of whether they are viewed through `help()` or on [Read the Docs][rtd].
+   * Docstrings should utilize the [napoleon style][docstrings] in order to make them read well, regardless of whether they are viewed through `help()` or on [Read the Docs][rtd].
    * Docstrings should begin with a short (~70 characters or less) summary line that ends in a period.
        * The summary line should begin immediately after the opening quotes (do not add
     a line break before the summary line)
