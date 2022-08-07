@@ -213,6 +213,6 @@ class HTTPError(Exception):
         )
 
 
-# NOTE: initialized in falcon.media.json, that is always imported since Request/Respose
+# NOTE: initialized in falcon.media.json, that is always imported since Request/Response
 # are imported by falcon init.
 _DEFAULT_JSON_HANDLER = None

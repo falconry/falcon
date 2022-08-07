@@ -90,7 +90,7 @@ See also: :ref:`ASGI Server Installation <install_asgi_server>`.
 
 While we're at it, let's install the handy
 `HTTPie <https://github.com/jakubroztocil/httpie>`_ HTTP client to help us
-excercise our app::
+exercise our app::
 
   $ pip install httpie
 
