@@ -362,7 +362,7 @@ class SinkInfo(_Traversable):
 
 
 class ErrorHandlerInfo(_Traversable):
-    """Desribes an error handler.
+    """Describes an error handler.
 
     Args:
         error (name): The name of the error type.

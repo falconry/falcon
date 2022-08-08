@@ -288,7 +288,7 @@ class Request:
             block indefinitely. It's a good idea to test your WSGI
             server to find out how it behaves.
 
-            This can be particulary problematic when a request body is
+            This can be particularly problematic when a request body is
             expected, but none is given. In this case, the following
             call blocks under certain WSGI servers::
 
