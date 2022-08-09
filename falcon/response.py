@@ -853,7 +853,7 @@ class Response:
 
         """
 
-        # PERF(kgriffs): Heuristic to detect possiblity of an extension
+        # PERF(kgriffs): Heuristic to detect possibility of an extension
         # relation type, in which case it will be a URL that may contain
         # reserved characters. Otherwise, don't waste time running the
         # string through uri.encode

@@ -71,7 +71,7 @@ def test_multiple():
     assert result.status_code == 500
 
     # NOTE(kgriffs): Remove default handlers so that we can check the raised
-    #   exception is what we expecte.
+    #   exception is what we expected.
     app._error_handlers.clear()
     with pytest.raises(TypeError) as exinfo:
         client.simulate_put()
