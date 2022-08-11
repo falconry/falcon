@@ -2,7 +2,7 @@ import pytest
 
 import falcon
 from falcon import testing
-from falcon.util.deprecation import RemovedError
+from falcon.util.deprecation import AttributeRemovedError
 
 from _util import create_app, create_resp  # NOQA
 
@@ -16,7 +16,7 @@ def test_append_body(resp):
     text = 'Hello beautiful world! '
     resp.text = ''
 
-    with pytest.raises(RemovedError):
+    with pytest.raises(AttributeRemovedError):
         resp.body = 'x'
 
     for token in text.split():
@@ -25,8 +25,8 @@ def test_append_body(resp):
 
     assert resp.text == text
 
-    # NOTE(kgriffs): Ensure RemovedError inherits from RuntimeError
-    for ErrorType in (RuntimeError, RemovedError):
+    # NOTE(kgriffs): Ensure AttributeRemovedError inherits from AttributeError
+    for ErrorType in (AttributeError, AttributeRemovedError):
         with pytest.raises(ErrorType):
             resp.body
 

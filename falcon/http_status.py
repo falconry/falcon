@@ -14,7 +14,7 @@
 
 """HTTPStatus exception class."""
 
-from falcon.util.deprecation import RemovedError
+from falcon.util.deprecation import AttributeRemovedError
 
 
 class HTTPStatus(Exception):
@@ -48,7 +48,7 @@ class HTTPStatus(Exception):
 
     @property  # type: ignore
     def body(self):
-        raise RemovedError(
+        raise AttributeRemovedError(
             'The body attribute is no longer supported. '
             'Please use the text attribute instead.'
         )

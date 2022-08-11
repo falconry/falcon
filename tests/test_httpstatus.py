@@ -7,7 +7,7 @@ import pytest
 import falcon
 from falcon.http_status import HTTPStatus
 import falcon.testing as testing
-from falcon.util.deprecation import RemovedError
+from falcon.util.deprecation import AttributeRemovedError
 
 from _util import create_app  # NOQA
 
@@ -274,5 +274,5 @@ def test_deprecated_body():
     sts = HTTPStatus(falcon.HTTP_701, text='foo')
     assert sts.text == 'foo'
 
-    with pytest.raises(RemovedError):
+    with pytest.raises(AttributeRemovedError):
         assert sts.body == 'foo'

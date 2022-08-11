@@ -22,14 +22,14 @@ import warnings
 
 
 __all__ = (
-    'RemovedError',
+    'AttributeRemovedError',
     'DeprecatedWarning',
     'deprecated',
     'deprecated_args',
 )
 
 
-class RemovedError(RuntimeError):
+class AttributeRemovedError(AttributeError):
     """A deprecated attribute, class, or function has been subsequently removed."""
 
 
