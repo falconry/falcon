@@ -24,7 +24,10 @@ import sys
 
 # Hoist misc. utils
 from falcon.constants import PYTHON_VERSION
+from falcon.util.deprecation import AttributeRemovedError
 from falcon.util.deprecation import deprecated
+from falcon.util.deprecation import deprecated_args
+from falcon.util.deprecation import DeprecatedWarning
 from falcon.util.misc import code_to_http_status
 from falcon.util.misc import dt_to_http
 from falcon.util.misc import get_argnames
@@ -81,7 +84,6 @@ if PYTHON_VERSION >= (3, 7):
         if name == 'json':
             import warnings
             import json  # NOQA
-            from .deprecation import DeprecatedWarning
 
             warnings.warn(
                 'Importing json from "falcon.util" is deprecated.', DeprecatedWarning

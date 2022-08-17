@@ -244,17 +244,6 @@ class TestRenderBodyPrecedence:
 
         run_test(test)
 
-    def test_body(self):
-        async def test(resp):
-            with pytest.warns(DeprecatedWarning, match='Please use text instead'):
-                resp.body = 'body'
-            resp.data = b'data'
-            resp.media = ['media']
-
-            assert await resp.render_body() == b'body'
-
-        run_test(test)
-
     def test_data(self):
         async def test(resp):
             resp.data = b'data'
