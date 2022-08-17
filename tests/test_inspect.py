@@ -6,8 +6,8 @@ import _inspect_fixture as i_f
 import pytest
 
 import falcon
-import falcon.asgi
 from falcon import inspect, routing
+import falcon.asgi
 
 
 def get_app(asgi, cors=True, **kw):
