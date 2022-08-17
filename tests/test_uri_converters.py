@@ -98,8 +98,7 @@ def test_float_converter(value, min, max, expected):
 
 
 @pytest.mark.parametrize(
-    'value',
-    ['nan', 'NaN', 'NAN', 'nAn', '-inf', 'inf', '-INF', 'INF']
+    'value', ['nan', 'NaN', 'NAN', 'nAn', '-inf', 'inf', '-INF', 'INF']
 )
 def test_float_converter_non_finite_allowed(value):
     c = converters.FloatConverter(finite=False)
