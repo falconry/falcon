@@ -84,6 +84,7 @@ def test_int_converter_invalid_config(num_digits):
         ('1.4', 1, 10, 1.4),
         ('inf', 1, 100, None),
         ('-inf', 1, 1000, None),
+        ('nan', 1, 1000, None),
         ('1.5e100', 0, 1, None),
         ('0.5e1', 0, 10, 5.0),
         ('-1.6e1', -50, 50, -16.0),
@@ -96,15 +97,18 @@ def test_float_converter(value, min, max, expected):
     assert c.convert(value) == expected
 
 
-@pytest.mark.parametrize('nan', ['nan', 'NaN', 'NAN', 'nAn'])
-def test_float_converter_nan_allowed(nan):
-    c = converters.FloatConverter(allow_nan=True)
-    assert math.isnan(c.convert(nan))
+@pytest.mark.parametrize(
+    'value',
+    ['nan', 'NaN', 'NAN', 'nAn', '-inf', 'inf', '-INF', 'INF']
+)
+def test_float_converter_non_finite_allowed(value):
+    c = converters.FloatConverter(finite=False)
+    assert not math.isfinite(c.convert(value))
 
 
-@pytest.mark.parametrize('allow_nan', [None, False])
-def test_float_converter_nan_disallowed(allow_nan):
-    c = converters.FloatConverter(allow_nan=allow_nan)
+@pytest.mark.parametrize('finite', [None, True])
+def test_float_converter_non_finite_disallowed(finite):
+    c = converters.FloatConverter(finite=finite)
     assert c.convert('nan') is None
 
 

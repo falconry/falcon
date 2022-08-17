@@ -237,18 +237,19 @@ def test_float_converter(client, uri_template, id_value):
     assert resource1.req.path == '/{0}'.format(id_value)
 
 
-def test_float_converter_nan_allowed(client):
+@pytest.mark.parametrize('value', ['nan', '-inf', 'inf'])
+def test_float_converter_non_finite_allowed(value, client):
     resource1 = IDResource()
-    client.app.add_route('/{id:float(allow_nan=True)}', resource1)
+    client.app.add_route('/{id:float(finite=False)}', resource1)
 
-    result = client.simulate_get('/NaN')
+    result = client.simulate_get('/' + value)
 
     assert result.status_code == 200
     assert resource1.called
-    assert math.isnan(resource1.id)
+    assert not math.isfinite(resource1.id)
 
 
-def test_float_converter_nan_disallowed(client):
+def test_float_converter_non_finite_disallowed(client):
     resource1 = IDResource()
     client.app.add_route('/{id:float}', resource1)
 

@@ -14,6 +14,7 @@
 
 import abc
 from datetime import datetime
+from math import isfinite
 import uuid
 
 __all__ = (
@@ -116,25 +117,28 @@ class FloatConverter(IntConverter):
     Keyword Args:
         min (float): Reject the value if it is less than this number.
         max (float): Reject the value if it is greater than this number.
-        allow_nan (bool) : Allow the NaN value (default: False).
+        finite (bool) : Determines whether or not to only match ordinary
+            finite numbers (default: ``True``). Set to ``False`` to match
+            nan, inf, and -inf in addition to finite numbers.
     """
 
-    __slots__ = '_allow_nan'
+    __slots__ = '_finite'
 
-    def __init__(self, min=None, max=None, allow_nan=False):
+    def __init__(self, min: float = None, max: float = None, finite: bool = True):
         self._min = min
         self._max = max
-        self._allow_nan = allow_nan
+        self._finite = finite if finite is not None else True
 
-    def convert(self, value):
+    def convert(self, value: str):
         if value.strip() != value:
             return None
 
         try:
             value = float(value)
-            if not self._allow_nan:
-                if self._is_nan(value):
-                    return None
+
+            if self._finite and not isfinite(value):
+                return None
+
         except ValueError:
             return None
 
