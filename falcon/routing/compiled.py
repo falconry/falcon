@@ -322,7 +322,7 @@ class CompiledRouter:
     def _require_coroutine_responders(self, method_map):
         for method, responder in method_map.items():
             # NOTE(kgriffs): We don't simply wrap non-async functions
-            #   since they likely peform relatively long blocking
+            #   since they likely perform relatively long blocking
             #   operations that need to be explicitly made non-blocking
             #   by the developer; raising an error helps highlight this
             #   issue.
@@ -346,7 +346,7 @@ class CompiledRouter:
     def _require_non_coroutine_responders(self, method_map):
         for method, responder in method_map.items():
             # NOTE(kgriffs): We don't simply wrap non-async functions
-            #   since they likely peform relatively long blocking
+            #   since they likely perform relatively long blocking
             #   operations that need to be explicitly made non-blocking
             #   by the developer; raising an error helps highlight this
             #   issue.

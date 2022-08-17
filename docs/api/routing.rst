@@ -295,6 +295,7 @@ Built-in Converters
  ``int``       :class:`~.IntConverter`            ``/teams/{tid:int(8)}``
  ``uuid``      :class:`~.UUIDConverter`           ``/diff/{left:uuid}...{right:uuid}``
  ``dt``        :class:`~.DateTimeConverter`       ``/logs/{day:dt("%Y-%m-%d")}``
+ ``float``     :class:`~.FloatConverter`          ``/python/versions/{version:float(min=3.7)}``
  ``path``      :class:`~.PathConverter`           ``/prefix/{other:path}``
 ============  =================================  ==================================================================
 
@@ -404,7 +405,7 @@ A custom router is any class that implements the following interface:
 Suffixed Responders
 -------------------
 
-While Falcon encourages the REST architectural style, it is flexible enough to accomodate other
+While Falcon encourages the REST architectural style, it is flexible enough to accommodate other
 paradigms. Consider the task of building an API for a calculator which can both add and subtract
 two numbers. You could implement the
 following:
@@ -456,7 +457,7 @@ style:
     app.add_route('/subtract', calc, suffix='subtract')
 
 In the second iteration, using Suffixed Responders, we're able to group responders based on their
-actions rather than the data they represent. This gives us added flexibility to accomodate
+actions rather than the data they represent. This gives us added flexibility to accommodate
 situations in which a purely RESTful approach simply doesn't fit.
 
 Default Router

@@ -375,7 +375,7 @@ class TestHeaders:
         value = req.get_header('X-Not-Found', default='some-value')
         assert value == 'some-value'
 
-        # Excercise any result caching and associated abuse mitigations
+        # Exercise any result caching and associated abuse mitigations
         for i in range(10000):
             assert req.get_header('X-Not-Found-{0}'.format(i)) is None
 
