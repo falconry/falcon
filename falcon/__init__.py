@@ -25,9 +25,9 @@ the framework's classes, functions, and variables::
 
 import logging as _logging
 
-# Hoist classes and functions into the falcon namespace
-# Explicitly list all export here, unless there are many export of the
-# same type (example status codes, constans and errors)
+# NOTE(kgriffs): Hoist classes and functions into the falcon namespace.
+#   Please explicitly list all exports, unless there are many of the
+#   same type (e.g., example status codes, constants, and errors).
 from falcon.app import API
 from falcon.app import App
 from falcon.constants import *
@@ -51,8 +51,8 @@ from falcon.status_codes import *
 from falcon.stream import BoundedStream
 
 # NOTE(kgriffs): Ensure that "from falcon import uri" will import
-# the same front-door module as "import falcon.uri". This works by
-# priming the import cache with the one we want.
+#   the same front-door module as "import falcon.uri". This works by
+#   priming the import cache with the one we want.
 import falcon.uri
 from falcon.util import async_to_sync
 from falcon.util import BufferedReader
@@ -60,8 +60,10 @@ from falcon.util import CaseInsensitiveDict
 from falcon.util import code_to_http_status
 from falcon.util import Context
 from falcon.util import create_task
+
+# NOTE(kgriffs): Hosting only because this was previously referenced
+#   in the docs as falcon.deprecated
 from falcon.util import deprecated
-from falcon.util import deprecation
 from falcon.util import dt_to_http
 from falcon.util import ETag
 from falcon.util import get_argnames
