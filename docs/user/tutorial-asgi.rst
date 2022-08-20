@@ -32,7 +32,7 @@ WSGI tutorial::
       └── app.py
 
 We'll create a *virtualenv* using the ``venv`` module from the standard library
-(Falcon requires Python 3.6+ for ASGI)::
+(Falcon requires Python 3.7+)::
 
   $ mkdir asgilook
   $ python3 -m venv asgilook/.venv
@@ -90,7 +90,7 @@ See also: :ref:`ASGI Server Installation <install_asgi_server>`.
 
 While we're at it, let's install the handy
 `HTTPie <https://github.com/jakubroztocil/httpie>`_ HTTP client to help us
-excercise our app::
+exercise our app::
 
   $ pip install httpie
 

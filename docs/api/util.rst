@@ -60,7 +60,8 @@ These functions help traverse the barrier between sync and async code.
 Other
 -----
 
-.. autofunction:: falcon.deprecated
+.. autofunction:: falcon.util.deprecated
+.. autofunction:: falcon.util.deprecated_args
 .. autofunction:: falcon.to_query_str
 .. autofunction:: falcon.get_bound_method
 .. autofunction:: falcon.secure_filename

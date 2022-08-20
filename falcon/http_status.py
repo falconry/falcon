@@ -14,7 +14,7 @@
 
 """HTTPStatus exception class."""
 
-from falcon.util import deprecated
+from falcon.util.deprecation import AttributeRemovedError
 
 
 class HTTPStatus(Exception):
@@ -30,27 +30,25 @@ class HTTPStatus(Exception):
         headers (dict): Extra headers to add to the response.
         text (str): String representing response content. Falcon will encode
             this value as UTF-8 in the response.
-        body (str): Deprecated alias to :attr:`text`. Will be removed in a future
-            Falcon version. :attr:`text` take precedence if provided.
 
     Attributes:
         status (str): HTTP status line, e.g. '748 Confounded by Ponies'.
         headers (dict): Extra headers to add to the response.
         text (str): String representing response content. Falcon will encode
             this value as UTF-8 in the response.
-        body (str): Deprecated alias to :attr:`text`. Will be removed in a future
-            Falcon version.
 
     """
 
     __slots__ = ('status', 'headers', 'text')
 
-    def __init__(self, status, headers=None, text=None, body=None):
+    def __init__(self, status, headers=None, text=None):
         self.status = status
         self.headers = headers
-        self.text = text if text is not None else body
+        self.text = text
 
     @property  # type: ignore
-    @deprecated('Please use text instead.', is_property=True)
     def body(self):
-        return self.text
+        raise AttributeRemovedError(
+            'The body attribute is no longer supported. '
+            'Please use the text attribute instead.'
+        )

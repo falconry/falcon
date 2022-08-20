@@ -1,7 +1,8 @@
 import pytest
 
 import falcon
-from falcon import ASGI_SUPPORTED, constants, testing
+from falcon import constants, testing
+import falcon.asgi
 
 from _util import create_app, disable_asgi_non_coroutine_wrapping  # NOQA
 
@@ -84,11 +85,6 @@ class TestErrorHandler:
     def test_caught_error_async(self, asgi):
         if not asgi:
             pytest.skip('Test only applies to ASGI')
-
-        if not ASGI_SUPPORTED:
-            pytest.skip('ASGI requires Python 3.6+')
-
-        import falcon.asgi
 
         app = falcon.asgi.App()
         app.add_route('/', ErroredClassResource())

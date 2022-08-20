@@ -193,8 +193,7 @@ class App:
     _STATIC_ROUTE_TYPE = routing.StaticRoute
 
     # NOTE(kgriffs): This makes it easier to tell what we are dealing with
-    #   without having to import falcon.asgi to get at the falcon.asgi.App
-    #   type (which we may not be able to do under Python 3.5).
+    #   without having to import falcon.asgi.
     _ASGI = False
 
     # NOTE(kgriffs): We do it like this rather than just implementing the
@@ -592,7 +591,7 @@ class App:
         Warning:
             If you need to serve large files and/or progressive downloads (such
             as in the case of video streaming) through the Falcon app, check
-            that your application server's timeout settings can accomodate the
+            that your application server's timeout settings can accommodate the
             expected request duration (for instance, the popular Gunicorn kills
             ``sync`` workers after 30 seconds unless configured otherwise).
 
@@ -842,7 +841,7 @@ class App:
 
         Note:
             A custom serializer set with this method may not be called if the
-            default error handler for :class:`~.HTTPError` has been overriden.
+            default error handler for :class:`~.HTTPError` has been overridden.
             See :meth:`~.add_error_handler` for more details.
 
         The :class:`~.HTTPError` class contains helper methods,
