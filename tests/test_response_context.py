@@ -1,19 +1,15 @@
 import pytest
 
-from falcon import Response
+import falcon
+import falcon.asgi
 
-from _util import skipif_asgi_unsupported  # NOQA
 
-
-@pytest.fixture(params=[True, False])
+@pytest.fixture(params=[True, False], ids=['asgi.Response', 'Response'])
 def resp_type(request):
     if request.param:
-        skipif_asgi_unsupported()
-        import falcon.asgi
-
         return falcon.asgi.Response
 
-    return Response
+    return falcon.Response
 
 
 class TestResponseContext:

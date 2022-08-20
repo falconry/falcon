@@ -1,5 +1,7 @@
 import pytest
 
+import falcon
+import falcon.asgi
 import falcon.testing as testing
 
 
@@ -14,12 +16,8 @@ class TestSlots:
 
     def test_slots_response(self, asgi):
         if asgi:
-            import falcon.asgi
-
             resp = falcon.asgi.Response()
         else:
-            import falcon
-
             resp = falcon.Response()
 
         try:

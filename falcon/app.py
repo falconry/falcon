@@ -193,8 +193,7 @@ class App:
     _STATIC_ROUTE_TYPE = routing.StaticRoute
 
     # NOTE(kgriffs): This makes it easier to tell what we are dealing with
-    #   without having to import falcon.asgi to get at the falcon.asgi.App
-    #   type (which we may not be able to do under Python 3.5).
+    #   without having to import falcon.asgi.
     _ASGI = False
 
     # NOTE(kgriffs): We do it like this rather than just implementing the

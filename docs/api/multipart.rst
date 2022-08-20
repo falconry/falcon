@@ -145,5 +145,5 @@ Parsing Options
 Parsing Errors
 --------------
 
-.. autoclass:: falcon.media.multipart.MultipartParseError
+.. autoclass:: falcon.MultipartParseError
     :members:
