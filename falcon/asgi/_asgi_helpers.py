@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import functools
 import inspect
 
 from falcon.errors import UnsupportedError, UnsupportedScopeError
-from falcon.util.misc import _lru_cache_safe
 
 
-@_lru_cache_safe(maxsize=16)
+@functools.lru_cache(maxsize=16)
 def _validate_asgi_scope(scope_type, spec_version, http_version):
     if scope_type == 'http':
         spec_version = spec_version or '2.0'

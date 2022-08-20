@@ -67,9 +67,8 @@ def test_content_length_not_set_when_streaming_response(asgi, method):
 
     class SynthesizedHeadAsync:
         async def on_get(self, req, resp):
-            # NOTE(kgriffs): Using an iterator in lieu of a generator
-            #   makes this code parsable by 3.5 and also tests our support
-            #   for iterators vs. generators.
+            # NOTE(kgriffs): Using an iterator in lieu of a generator tests our
+            #   support for iterators vs. generators.
             class Words:
                 def __init__(self):
                     self._stream = iter(('Hello', ',', ' ', 'World!'))

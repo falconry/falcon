@@ -1,9 +1,8 @@
 from contextlib import contextmanager
 import os
 
-import pytest
-
 import falcon
+import falcon.asgi
 import falcon.testing
 
 try:
@@ -27,20 +26,13 @@ __all__ = [
 
 
 def create_app(asgi, **app_kwargs):
-    if asgi:
-        skipif_asgi_unsupported()
-        from falcon.asgi import App
-    else:
-        from falcon import App
-
+    App = falcon.asgi.App if asgi else falcon.App
     app = App(**app_kwargs)
     return app
 
 
 def create_req(asgi, options=None, **environ_or_scope_kwargs):
     if asgi:
-        skipif_asgi_unsupported()
-
         req = falcon.testing.create_asgi_req(options=options, **environ_or_scope_kwargs)
 
     else:
@@ -51,10 +43,7 @@ def create_req(asgi, options=None, **environ_or_scope_kwargs):
 
 def create_resp(asgi):
     if asgi:
-        skipif_asgi_unsupported()
-        from falcon.asgi import Response
-
-        return Response()
+        return falcon.asgi.Response()
 
     return falcon.Response()
 
@@ -64,11 +53,6 @@ def to_coroutine(callable):
         return callable(*args, **kwargs)
 
     return wrapper
-
-
-def skipif_asgi_unsupported():
-    if not falcon.ASGI_SUPPORTED:
-        pytest.skip('ASGI requires Python 3.6+')
 
 
 @contextmanager
