@@ -191,7 +191,9 @@ def http_date_to_dt(http_date: str, obs_date: bool = False) -> datetime.datetime
     raise ValueError('time data %r does not match known formats' % http_date)
 
 
-def to_query_str(params, comma_delimited_lists=True, prefix=True):
+def to_query_str(
+    params: dict, comma_delimited_lists: bool = True, prefix: bool = True
+) -> str:
     """Convert a dictionary of parameters to a query string.
 
     Args:
@@ -344,7 +346,7 @@ def get_http_status(status_code, default_reason=_DEFAULT_HTTP_REASON):
         return str(code) + ' ' + default_reason
 
 
-def secure_filename(filename):
+def secure_filename(filename: str) -> str:
     """Sanitize the provided `filename` to contain only ASCII characters.
 
     Only ASCII alphanumerals, ``'.'``, ``'-'`` and ``'_'`` are allowed for

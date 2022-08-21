@@ -16,8 +16,10 @@
 
 from functools import wraps
 from inspect import iscoroutinefunction
+import pathlib
 import re
 import traceback
+from typing import Callable, Optional, Tuple, Union
 
 from falcon import app_helpers as helpers
 from falcon import constants
@@ -285,7 +287,7 @@ class App:
         self.add_error_handler(HTTPError, self._http_error_handler)
         self.add_error_handler(HTTPStatus, self._http_status_handler)
 
-    def __call__(self, env, start_response):  # noqa: C901
+    def __call__(self, env: dict, start_response):  # noqa: C901
         """WSGI `app` method.
 
         Makes instances of App callable from a WSGI server. May be used to
@@ -302,11 +304,11 @@ class App:
         """
         req = self._request_type(env, options=self.req_options)
         resp = self._response_type(options=self.resp_options)
-        resource = None
-        responder = None
-        params = {}
+        resource: Optional[object] = None
+        responder: Optional[Callable] = None
+        params: dict = {}
 
-        dependent_mw_resp_stack = []
+        dependent_mw_resp_stack: list = []
         mw_req_stack, mw_rsrc_stack, mw_resp_stack = self._middleware
 
         req_succeeded = False
@@ -361,7 +363,7 @@ class App:
                             break
 
                 if not resp.complete:
-                    responder(req, resp, **params)
+                    responder(req, resp, **params)  # type: ignore
 
                 req_succeeded = True
             except Exception as ex:
@@ -438,7 +440,7 @@ class App:
     def router_options(self):
         return self._router.options
 
-    def add_middleware(self, middleware):
+    def add_middleware(self, middleware: object) -> None:
         """Add one or more additional middleware components.
 
         Arguments:
@@ -572,7 +574,11 @@ class App:
         self._router.add_route(uri_template, resource, **kwargs)
 
     def add_static_route(
-        self, prefix, directory, downloadable=False, fallback_filename=None
+        self,
+        prefix: str,
+        directory: Union[str, pathlib.Path],
+        downloadable: bool = False,
+        fallback_filename: bool = None,
     ):
         """Add a route to a directory of static files.
 
@@ -882,7 +888,7 @@ class App:
             middleware=middleware, independent_middleware=independent_middleware
         )
 
-    def _get_responder(self, req):
+    def _get_responder(self, req) -> Tuple[Callable, dict, object, Optional[str]]:
         """Search routes for a matching responder.
 
         Args:

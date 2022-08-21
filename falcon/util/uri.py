@@ -23,6 +23,8 @@ in the `falcon` module, and so must be explicitly imported::
     name, port = uri.parse_host('example.org:8080')
 """
 
+from typing import Tuple, TYPE_CHECKING
+
 from falcon.constants import PYPY
 
 try:
@@ -372,7 +374,7 @@ def parse_query_string(query_string, keep_blank=False, csv=True):
 
     """
 
-    params = {}
+    params: dict = {}
 
     is_encoded = '+' in query_string or '%' in query_string
 
@@ -451,7 +453,7 @@ def parse_query_string(query_string, keep_blank=False, csv=True):
     return params
 
 
-def parse_host(host, default_port=None):
+def parse_host(host: str, default_port=None) -> Tuple[str, int]:
     """Parse a canonical 'host:port' string into parts.
 
     Parse a host string (which may or may not contain a port) into
@@ -536,8 +538,9 @@ def unquote_string(quoted):
 
 # TODO(vytas): Restructure this in favour of a cleaner way to hoist the pure
 # Cython functions into this module.
-decode = _cy_decode or decode  # NOQA
-parse_query_string = _cy_parse_query_string or parse_query_string  # NOQA
+if not TYPE_CHECKING:
+    decode = _cy_decode or decode  # NOQA
+    parse_query_string = _cy_parse_query_string or parse_query_string  # NOQA
 
 
 __all__ = [

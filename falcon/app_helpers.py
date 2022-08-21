@@ -15,11 +15,12 @@
 """Utilities for the App class."""
 
 from inspect import iscoroutinefunction
+from typing import IO, Iterable, List, Tuple
 
 from falcon import util
 from falcon.constants import MEDIA_JSON
 from falcon.constants import MEDIA_XML
-from falcon.errors import CompatibilityError
+from falcon.errors import CompatibilityError, HTTPError
 from falcon.util.sync import _wrap_non_coroutine_unsafe
 
 __all__ = (
@@ -30,7 +31,9 @@ __all__ = (
 )
 
 
-def prepare_middleware(middleware, independent_middleware=False, asgi=False):
+def prepare_middleware(
+    middleware: Iterable, independent_middleware=False, asgi=False
+) -> Tuple[tuple, tuple, tuple]:
     """Check middleware interfaces and prepare the methods for request handling.
 
     Note:
@@ -52,9 +55,9 @@ def prepare_middleware(middleware, independent_middleware=False, asgi=False):
 
     # PERF(kgriffs): do getattr calls once, in advance, so we don't
     # have to do them every time in the request path.
-    request_mw = []
-    resource_mw = []
-    response_mw = []
+    request_mw: List = []
+    resource_mw: List = []
+    response_mw: List = []
 
     for component in middleware:
         # NOTE(kgriffs): Middleware that supports both WSGI and ASGI can
@@ -148,7 +151,7 @@ def prepare_middleware(middleware, independent_middleware=False, asgi=False):
     return (tuple(request_mw), tuple(resource_mw), tuple(response_mw))
 
 
-def prepare_middleware_ws(middleware):
+def prepare_middleware_ws(middleware: Iterable) -> Tuple[list, list]:
     """Check middleware interfaces and prepare WebSocket methods for request handling.
 
     Note:
@@ -196,7 +199,7 @@ def prepare_middleware_ws(middleware):
     return request_mw, resource_mw
 
 
-def default_serialize_error(req, resp, exception):
+def default_serialize_error(req, resp, exception: HTTPError):
     """Serialize the given instance of HTTPError.
 
     This function determines which of the supported media types, if
@@ -275,7 +278,7 @@ class CloseableStreamIterator:
         block_size (int): Number of bytes to read per iteration.
     """
 
-    def __init__(self, stream, block_size):
+    def __init__(self, stream: IO, block_size: int):
         self._stream = stream
         self._block_size = block_size
 
