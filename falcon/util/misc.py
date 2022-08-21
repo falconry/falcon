@@ -119,7 +119,7 @@ def is_python_func(func):
     return inspect.isfunction(func)
 
 
-def http_now():
+def http_now() -> str:
     """Return the current UTC time as an IMF-fixdate.
 
     Returns:
@@ -130,7 +130,7 @@ def http_now():
     return dt_to_http(utcnow())
 
 
-def dt_to_http(dt):
+def dt_to_http(dt: datetime.datetime) -> str:
     """Convert a ``datetime`` instance to an HTTP date string.
 
     Args:
@@ -145,7 +145,7 @@ def dt_to_http(dt):
     return dt.strftime('%a, %d %b %Y %H:%M:%S GMT')
 
 
-def http_date_to_dt(http_date, obs_date=False):
+def http_date_to_dt(http_date: str, obs_date: bool = False) -> datetime.datetime:
     """Convert an HTTP date string to a datetime instance.
 
     Args:
@@ -487,7 +487,7 @@ def _encode_items_to_latin1(data):
     return result
 
 
-def _isascii(string):
+def _isascii(string: str):
     """Return ``True`` if all characters in the string are ASCII.
 
     ASCII characters have code points in the range U+0000-U+007F.
