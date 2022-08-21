@@ -134,15 +134,15 @@ class FloatConverter(IntConverter):
             return None
 
         try:
-            value = float(value)
+            converted = float(value)
 
-            if self._finite and not isfinite(value):
+            if self._finite and not isfinite(converted):
                 return None
 
         except ValueError:
             return None
 
-        return self._validate_min_max_value(value)
+        return self._validate_min_max_value(converted)
 
 
 class DateTimeConverter(BaseConverter):
