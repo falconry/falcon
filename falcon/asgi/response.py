@@ -14,7 +14,6 @@
 
 """ASGI Response class."""
 
-from asyncio.coroutines import CoroWrapper  # type: ignore
 from inspect import iscoroutine
 from inspect import iscoroutinefunction
 
@@ -57,9 +56,6 @@ class Response(response.Response):
                 Falcon will encode the given text as UTF-8
                 in the response. If the content is already a byte string,
                 use the :attr:`data` attribute instead (it's faster).
-
-        body (str): Deprecated alias for :attr:`text`. Will be removed in a
-            future Falcon version.
 
         data (bytes): Byte string representing response content.
 
@@ -317,13 +313,11 @@ class Response(response.Response):
 
         Args:
             callback(object): An async coroutine function. The callback will be
-            invoked without arguments.
+                invoked without arguments.
         """
 
-        # NOTE(kgriffs): We also have to do the CoroWrapper check because
-        #   iscoroutine is less reliable under Python 3.6.
         if not iscoroutinefunction(callback):
-            if iscoroutine(callback) or isinstance(callback, CoroWrapper):
+            if iscoroutine(callback):
                 raise TypeError(
                     'The callback object appears to '
                     'be a coroutine, rather than a coroutine function. Please '

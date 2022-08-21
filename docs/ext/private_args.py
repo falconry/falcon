@@ -14,7 +14,7 @@
 
 """Private args module extension for Sphinx.
 
-This extension exludes underscore-prefixed args and kwargs from the function
+This extension excludes underscore-prefixed args and kwargs from the function
 signature.
 """
 

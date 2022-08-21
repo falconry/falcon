@@ -171,7 +171,8 @@ def test_multiple_events_early_disconnect():
         assert 'data: whassup' in result.text
 
         async with testing.ASGIConductor(app) as conductor:
-            async with conductor.simulate_get_stream() as sr:
+            # NOTE(vytas): Using the get_stream() alias.
+            async with conductor.get_stream() as sr:
 
                 event_count = 0
 

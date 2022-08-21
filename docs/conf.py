@@ -84,7 +84,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Falcon'
-copyright = "{year} Falcon Contributors".format(year=datetime.utcnow().year)
+copyright = '{year} Falcon Contributors'.format(year=datetime.utcnow().year)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -165,6 +165,8 @@ html_theme = 'alabaster'
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
+    'page_width': '80%',
+    'body_max_width': '100%',
     'github_user': 'falconry',
     'github_repo': 'falcon',
     'github_button': False,

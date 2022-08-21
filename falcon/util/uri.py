@@ -21,7 +21,6 @@ in the `falcon` module, and so must be explicitly imported::
     from falcon import uri
 
     name, port = uri.parse_host('example.org:8080')
-
 """
 
 from falcon.constants import PYPY
@@ -82,9 +81,9 @@ def _create_str_encoder(is_value, check_is_escaped=False):
             # been escaped. Do one more check to increase our certainty.
             # NOTE(minesja): Per issue #1872, there's only certain situations
             # in which we should check again (ex. location, content_location,
-            # append_link).In all other cases we should allow characters that
+            # append_link). In all other cases we should allow characters that
             # could appear escaped to still be encoded (ex. '%' would be encoded
-            # as '%25).
+            # as '%25').
             tokens = uri.split('%')
             for token in tokens[1:]:
                 hex_octet = token[:2]

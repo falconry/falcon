@@ -107,6 +107,47 @@ class ClosingFilelikeHelloResource:
         resp.set_stream(self.stream, self.stream_len)
 
 
+class ClosingStreamResource:
+    class Emitter:
+        def __init__(self, value, divisor):
+            self._value = value
+            self._divisor = divisor
+            self._remainder = None
+
+            self.closed = False
+
+        async def close(self):
+            self.closed = True
+
+        def __aiter__(self):
+            if self._remainder is None:
+                quotient, self._remainder = divmod(self._value, self._divisor)
+                assert quotient >= 0
+
+            return self
+
+        async def __anext__(self):
+            if self._value == 0:
+                raise StopAsyncIteration
+
+            if self._value >= self._divisor:
+                self._value -= self._divisor
+                return f'{self._divisor}\n'.encode()
+
+            self._value = 0
+            return f'{self._remainder}\n'.encode()
+
+    def __init__(self):
+        self.stream = None
+
+    async def on_get(self, req, resp):
+        self.stream = None
+
+        value = req.get_param_as_int('value', default=10)
+        divisor = req.get_param_as_int('divisor', default=3)
+        self.stream = resp.stream = self.Emitter(value, divisor)
+
+
 class AIOFilesHelloResource:
     def __init__(self):
         self.sample_utf8 = testing.rand_string(8 * SIZE_1_KB, 16 * SIZE_1_KB).encode()
@@ -296,6 +337,33 @@ class TestHelloWorld:
         actual_len = int(result.headers['content-length'])
         assert actual_len == expected_len
         assert len(result.content) == expected_len
+
+    @pytest.mark.parametrize(
+        'value,divisor,text,error',
+        [
+            (10, 3, '3\n3\n3\n1\n', None),
+            (10, 7, '7\n3\n', None),
+            (10, 17, '10\n', None),
+            (20, 0, '', ZeroDivisionError),
+        ],
+    )
+    def test_closing_stream(self, client, value, divisor, text, error):
+        resource = ClosingStreamResource()
+        client.app.add_route('/stream', resource)
+
+        if error:
+            with pytest.raises(error):
+                client.simulate_get(
+                    '/stream', params={'value': value, 'divisor': divisor}
+                )
+        else:
+            result = client.simulate_get(
+                '/stream', params={'value': value, 'divisor': divisor}
+            )
+            assert result.status_code == 200
+            assert result.text == text
+
+        assert resource.stream.closed
 
     def test_status_not_set(self, client):
         client.app.add_route('/nostatus', NoStatusResource())

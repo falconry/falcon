@@ -1,5 +1,6 @@
 body {
     font-family: Oxygen, 'goudy old style', 'minion pro', 'bell mt', Georgia, 'Hiragino Mincho Pro', serif;
+    font-size: 17.5px;
 }
 
 
@@ -20,6 +21,11 @@ a {
 h1 a:hover, h2 a:hover, h3 a:hover {
     text-decoration: none;
     border: none;
+}
+
+div.document {
+    /* max body width + 60px padding + 220px sidebar */
+    max-width: calc(760px + 60px + 220px);
 }
 
 div.footer {
@@ -160,8 +166,16 @@ pre {
     padding: 1.25em 30px;
 }
 
+.sphinx-tabs div.node,
+.sphinx-tabs div.admonition,
+.sphinx-tabs div.highlight
+{
+    margin-left: -8px;
+    margin-right: -8px;
+}
+
 .highlight pre {
-    font-size: smaller;
+    font-size: 14px;
 }
 
 
@@ -288,32 +302,36 @@ div.contents.local.topic > ul > li > ul {
     margin-top: 0;
 }
 
-.sphinx-tabs .sphinx-menu a.item {
-    color: #c77c11 !important;
+[role="tablist"] {
+    border-color: #eee;
 }
 
-.sphinx-tabs .sphinx-menu a.item:hover{
-    color: #f0ad4e !important;
+.sphinx-tabs-panel {
+    border-color: #eee;
+    padding: 4px 1rem;
 }
 
-.sphinx-tabs .sphinx-menu {
-    border-bottom-color: #eee !important;
+.sphinx-tabs-tab {
+    top: 2px;
+    border-color: #eee;
+    color: #c77c11;
 }
 
-.sphinx-tabs .sphinx-menu a.active.item {
-    border-color: #eee !important;
+.sphinx-tabs-tab[aria-selected="true"] {
+    border-color: #eee;
 }
 
-.sphinx-tab {
-    border-color: #eee !important;
+.sphinx-tabs-tab[aria-selected="false"]:hover {
+    color: #f0ad4e;
+    text-decoration: underline;
 }
 
-.sphinx-tab.tab.active {
-    background-color: rgb(245,245,245);
+.sphinx-tabs-tab:focus {
+    z-index: 0;
 }
 
-.sphinx-tabs .sphinx-menu a.active.item  {
-    background-color: rgb(245,245,245) !important;
+.sphinx-tabs-panel .highlight-python {
+    margin: 4px 0;
 }
 
 div.note, pre {
@@ -344,4 +362,9 @@ div.highlight > pre {
 
 .sphinx-tab pre {
     border: none !important;
+}
+
+/* TODO: remove once alabaster is updated */
+span.descname, span.descclassname {
+    font-size: 0.95em;
 }

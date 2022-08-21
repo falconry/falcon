@@ -281,6 +281,9 @@ specifications in the URI template:
         some_resource
     )
 
+(See also how :class:`~.UUIDConverter` is used in Falcon's ASGI tutorial:
+:ref:`asgi_tutorial_image_resources`.)
+
 .. _routing_builtin_converters:
 
 Built-in Converters
@@ -292,6 +295,8 @@ Built-in Converters
  ``int``       :class:`~.IntConverter`            ``/teams/{tid:int(8)}``
  ``uuid``      :class:`~.UUIDConverter`           ``/diff/{left:uuid}...{right:uuid}``
  ``dt``        :class:`~.DateTimeConverter`       ``/logs/{day:dt("%Y-%m-%d")}``
+ ``float``     :class:`~.FloatConverter`          ``/python/versions/{version:float(min=3.7)}``
+ ``path``      :class:`~.PathConverter`           ``/prefix/{other:path}``
 ============  =================================  ==================================================================
 
 |
@@ -303,6 +308,9 @@ Built-in Converters
     :members:
 
 .. autoclass:: falcon.routing.DateTimeConverter
+    :members:
+
+.. autoclass:: falcon.routing.PathConverter
     :members:
 
 .. _routing_custom_converters:
@@ -397,7 +405,7 @@ A custom router is any class that implements the following interface:
 Suffixed Responders
 -------------------
 
-While Falcon encourages the REST architectural style, it is flexible enough to accomodate other
+While Falcon encourages the REST architectural style, it is flexible enough to accommodate other
 paradigms. Consider the task of building an API for a calculator which can both add and subtract
 two numbers. You could implement the
 following:
@@ -409,10 +417,12 @@ following:
             resp.text = str(req.get_param_as_int('x') + req.get_param_as_int('y'))
             resp.status = falcon.HTTP_200
 
+
     class Subtract():
         def on_get(self, req, resp):
             resp.text = str(req.get_param_as_int('x') - req.get_param_as_int('y'))
             resp.status = falcon.HTTP_200
+
 
     add = Add()
     subtract = Subtract()
@@ -440,13 +450,14 @@ style:
             resp.text = str(req.get_param_as_int('x') - req.get_param_as_int('y'))
             resp.status = falcon.HTTP_200
 
+
     calc = Calculator()
     app = falcon.App()
     app.add_route('/add', calc, suffix='add')
     app.add_route('/subtract', calc, suffix='subtract')
 
 In the second iteration, using Suffixed Responders, we're able to group responders based on their
-actions rather than the data they represent. This gives us added flexibility to accomodate
+actions rather than the data they represent. This gives us added flexibility to accommodate
 situations in which a purely RESTful approach simply doesn't fit.
 
 Default Router

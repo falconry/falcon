@@ -22,15 +22,9 @@ the framework's ASGI-related classes, functions, and variables::
     app = falcon.asgi.API()
 
 Some ASGI-related methods and classes are found in other modules
-(most notably falcon.testing) when (A) they are compatible with Python 3.5,
-and (B) their purpose is particularly cohesive with that of the module in
-question.
+(most notably falcon.testing) when their purpose is particularly cohesive with
+that of the module in question.
 """
-
-import sys as _sys
-
-if _sys.version_info < (3, 6):
-    raise ImportError('falcon.asgi requires Python 3.6+')
 
 from .app import App
 from .request import Request

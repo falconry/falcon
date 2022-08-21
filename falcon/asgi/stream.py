@@ -129,7 +129,7 @@ class BoundedStream:
             #   use sys.maxsize because 2**31 on 32-bit systems is not
             #   a large enough number (someone may have an API that accepts
             #   multi-GB payloads).
-            self._bytes_remaining = 2 ** 63
+            self._bytes_remaining = 2**63
         else:
             if len(first_chunk) > content_length:
                 self._buffer = first_chunk[:content_length]
@@ -434,22 +434,20 @@ class BoundedStream:
                 pass
             else:
                 # NOTE(kgriffs): No need to yield empty body chunks.
-                if not next_chunk:
-                    continue
+                if next_chunk:
+                    next_chunk_len = len(next_chunk)
 
-                next_chunk_len = len(next_chunk)
+                    if next_chunk_len <= self._bytes_remaining:
+                        self._bytes_remaining -= next_chunk_len
+                        self._pos += next_chunk_len
+                    else:
+                        # NOTE(kgriffs): We received more data than expected,
+                        #   so truncate to the expected length.
+                        next_chunk = next_chunk[: self._bytes_remaining]
+                        self._pos += self._bytes_remaining
+                        self._bytes_remaining = 0
 
-                if next_chunk_len <= self._bytes_remaining:
-                    self._bytes_remaining -= next_chunk_len
-                    self._pos += next_chunk_len
-                else:
-                    # NOTE(kgriffs): We received more data than expected,
-                    #   so truncate to the expected length.
-                    next_chunk = next_chunk[: self._bytes_remaining]
-                    self._pos += self._bytes_remaining
-                    self._bytes_remaining = 0
-
-                yield next_chunk
+                    yield next_chunk
 
             # NOTE(kgriffs): Per the ASGI spec, more_body is optional
             #   and should be considered False if not present.

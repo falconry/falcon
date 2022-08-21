@@ -2,7 +2,7 @@ import pytest
 
 import falcon
 from falcon import testing
-from falcon.util.deprecation import DeprecatedWarning
+from falcon.util.deprecation import AttributeRemovedError
 
 from _util import create_app, create_resp  # NOQA
 
@@ -15,13 +15,20 @@ def resp(asgi):
 def test_append_body(resp):
     text = 'Hello beautiful world! '
     resp.text = ''
-    with pytest.warns(DeprecatedWarning, match='Please use text instead'):
-        for token in text.split():
-            resp.text += token
-            resp.body += ' '
 
-        assert resp.text == text
-        assert resp.body == text
+    with pytest.raises(AttributeRemovedError):
+        resp.body = 'x'
+
+    for token in text.split():
+        resp.text += token
+        resp.text += ' '
+
+    assert resp.text == text
+
+    # NOTE(kgriffs): Ensure AttributeRemovedError inherits from AttributeError
+    for ErrorType in (AttributeError, AttributeRemovedError):
+        with pytest.raises(ErrorType):
+            resp.body
 
 
 def test_response_repr(resp):
@@ -60,9 +67,8 @@ def test_content_length_not_set_when_streaming_response(asgi, method):
 
     class SynthesizedHeadAsync:
         async def on_get(self, req, resp):
-            # NOTE(kgriffs): Using an iterator in lieu of a generator
-            #   makes this code parsable by 3.5 and also tests our support
-            #   for iterators vs. generators.
+            # NOTE(kgriffs): Using an iterator in lieu of a generator tests our
+            #   support for iterators vs. generators.
             class Words:
                 def __init__(self):
                     self._stream = iter(('Hello', ',', ' ', 'World!'))
@@ -97,7 +103,7 @@ def test_content_length_not_set_when_streaming_response(asgi, method):
 class CodeResource:
     def on_get(self, req, resp):
         resp.content_type = 'text/x-malbolge'
-        resp.media = '\'&%$#"!76543210/43,P0).\'&%I6'
+        resp.media = "'&%$#\"!76543210/43,P0).'&%I6"
         resp.status = falcon.HTTP_725
 
 

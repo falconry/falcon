@@ -52,7 +52,7 @@ from .ws import WebSocketOptions
 __all__ = ['App']
 
 
-# TODO(vytas): Clean up these foul workarounds when we drop Python 3.5 support.
+# TODO(vytas): Clean up these foul workarounds before the 4.0 release.
 MultipartFormHandler._ASGI_MULTIPART_FORM = MultipartForm  # type: ignore
 
 _EVT_RESP_EOF = {'type': EventType.HTTP_RESPONSE_BODY}
@@ -255,8 +255,7 @@ class App(falcon.app.App):
     _STATIC_ROUTE_TYPE = falcon.routing.StaticRouteAsync
 
     # NOTE(kgriffs): This makes it easier to tell what we are dealing with
-    #   without having to import falcon.asgi to get at the falcon.asgi.App
-    #   type (which we may not be able to do under Python 3.5).
+    #   without having to import falcon.asgi.
     _ASGI = True
 
     _default_responder_bad_request = falcon.responders.bad_request_async
@@ -464,7 +463,7 @@ class App(falcon.app.App):
                         data = text
 
             else:
-                # NOTE(vytas): Custom reponse type.
+                # NOTE(vytas): Custom response type.
                 data = await resp.render_body()
 
         except Exception as ex:
@@ -581,7 +580,7 @@ class App(falcon.app.App):
                     }
                 )
 
-                if watcher.done():
+                if watcher.done():  # pragma: no py39,py310 cover
                     break
 
             watcher.cancel()
@@ -651,19 +650,24 @@ class App(falcon.app.App):
             #
 
             if hasattr(stream, 'read'):
-                while True:
-                    data = await stream.read(self._STREAM_BLOCK_SIZE)
-                    if data == b'':
-                        break
-                    else:
-                        await send(
-                            {
-                                'type': EventType.HTTP_RESPONSE_BODY,
-                                # NOTE(kgriffs): Handle the case in which data == None
-                                'body': data or b'',
-                                'more_body': True,
-                            }
-                        )
+                try:
+                    while True:
+                        data = await stream.read(self._STREAM_BLOCK_SIZE)
+                        if data == b'':
+                            break
+                        else:
+                            await send(
+                                {
+                                    'type': EventType.HTTP_RESPONSE_BODY,
+                                    # NOTE(kgriffs): Handle the case in which
+                                    #   data is None
+                                    'body': data or b'',
+                                    'more_body': True,
+                                }
+                            )
+                finally:
+                    if hasattr(stream, 'close'):
+                        await stream.close()
             else:
                 # NOTE(kgriffs): Works for both async generators and iterators
                 try:
@@ -698,9 +702,12 @@ class App(falcon.app.App):
                         '__aiter__ method. Error raised while iterating over '
                         'Response.stream: ' + str(ex)
                     )
-
-            if hasattr(stream, 'close'):
-                await stream.close()
+                finally:
+                    # NOTE(vytas): This could be DRYed with the above identical
+                    #   twoliner in a one large block, but OTOH we would be
+                    #   unable to reuse the current try.. except.
+                    if hasattr(stream, 'close'):
+                        await stream.close()
 
         await send(_EVT_RESP_EOF)
 

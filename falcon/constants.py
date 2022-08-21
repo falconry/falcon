@@ -6,8 +6,24 @@ import sys
 PYPY = sys.implementation.name == 'pypy'
 """Evaluates to ``True`` when the current Python implementation is PyPy."""
 
-ASGI_SUPPORTED = sys.version_info >= (3, 6)
-"""Evaluates to ``True`` when ASGI is supported for the current Python version."""
+PYTHON_VERSION = tuple(sys.version_info[:3])
+"""Python version information triplet: (major, minor, micro)."""
+
+FALCON_SUPPORTED = PYTHON_VERSION >= (3, 7, 0)
+"""Whether this version of Falcon supports the current Python version."""
+
+if not FALCON_SUPPORTED:  # pragma: nocover
+    raise ImportError(
+        'Falcon requires Python 3.7+. '
+        '(Recent Pip should automatically pick a suitable Falcon version.)'
+    )
+
+ASGI_SUPPORTED = FALCON_SUPPORTED
+"""Evaluates to ``True`` when ASGI is supported for the current Python version.
+
+This constant is no longer referenced by the framework itself, and left for
+compatibility with Falcon 3.x.
+"""
 
 # RFC 7231, 5789 methods
 HTTP_METHODS = [
@@ -90,7 +106,7 @@ MEDIA_YAML = 'application/yaml'
 MEDIA_XML = 'application/xml'
 
 # NOTE(kgriffs): RFC 4329 recommends application/* over text/.
-# futhermore, parsers are required to respect the Unicode
+# furthermore, parsers are required to respect the Unicode
 # encoding signature, if present in the document, and to default
 # to UTF-8 when not present. Note, however, that implementations
 # are not required to support anything besides UTF-8, so it is

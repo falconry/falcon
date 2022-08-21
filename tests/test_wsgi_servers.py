@@ -13,7 +13,7 @@ from falcon import testing
 _HERE = os.path.abspath(os.path.dirname(__file__))
 _SERVER_HOST = '127.0.0.1'
 _SIZE_1_KB = 1024
-_SIZE_1_MB = _SIZE_1_KB ** 2
+_SIZE_1_MB = _SIZE_1_KB**2
 
 _REQUEST_TIMEOUT = 10
 _STARTUP_TIMEOUT = 10
@@ -28,6 +28,8 @@ def _gunicorn_args(host, port, extra_opts=()):
         pytest.skip('gunicorn not installed')
 
     args = (
+        sys.executable,
+        '-m',
         'gunicorn',
         '--access-logfile',
         '-',
@@ -72,6 +74,8 @@ def _uvicorn_args(host, port):
         pytest.skip('uvicorn not installed')
 
     return (
+        sys.executable,
+        '-m',
         'uvicorn',
         '--host',
         host,
@@ -102,27 +106,36 @@ def _waitress_args(host, port):
         pytest.skip('waitress not installed')
 
     return (
-        'waitress-serve',
+        sys.executable,
+        '-m',
+        'waitress',
         '--listen',
         '{}:{}'.format(host, port),
         '_wsgi_test_app:app',
     )
 
 
-@pytest.fixture(
-    params=[
-        _gunicorn_args,
-        _meinheld_args,
-        _uvicorn_args,
-        _uwsgi_args,
-        _waitress_args,
-    ]
-)
-def server_url(request):
+@pytest.fixture(params=['gunicorn', 'meinheld', 'uvicorn', 'uwsgi', 'waitress'])
+def wsgi_server(request):
+    return request.param
+
+
+@pytest.fixture
+def server_args(wsgi_server):
+    servers = {
+        'gunicorn': _gunicorn_args,
+        'meinheld': _meinheld_args,
+        'uvicorn': _uvicorn_args,
+        'uwsgi': _uwsgi_args,
+        'waitress': _waitress_args,
+    }
+    return servers[wsgi_server]
+
+
+@pytest.fixture
+def server_url(server_args):
     if sys.platform.startswith('win'):
         pytest.skip('WSGI server tests are currently unsupported on Windows')
-
-    server_args = request.param
 
     for attempt in range(3):
         server_port = testing.get_unused_port()
@@ -187,10 +200,9 @@ class TestWSGIServer:
 
     def test_get_deprecated(self, server_url):
         resp = requests.get(server_url + '/deprecated', timeout=_REQUEST_TIMEOUT)
-        assert resp.status_code == 200
-        assert resp.text == 'Hello, World!\n'
-        assert resp.headers.get('Content-Type') == 'text/plain; charset=utf-8'
-        assert resp.headers.get('X-Falcon') == 'deprecated'
+
+        # Since it tries to set .body we expect an unhandled error
+        assert resp.status_code == 500
 
     def test_post_multipart_form(self, server_url):
         size = random.randint(8 * _SIZE_1_MB, 15 * _SIZE_1_MB)
@@ -221,6 +233,10 @@ class TestWSGIServer:
             server_url + '/tests/test_wsgi_servers.py', timeout=_REQUEST_TIMEOUT
         )
         assert resp.status_code == 200
+
+        # TODO(vytas): In retrospect, it would be easier to maintain these
+        #   static route tests by creating a separate file instead of relying
+        #   on the content of this same __file__.
         assert resp.text.startswith(
             'import hashlib\n'
             'import os\n'
@@ -232,3 +248,47 @@ class TestWSGIServer:
         assert resp.headers.get('Content-Disposition') == (
             'attachment; filename="test_wsgi_servers.py"'
         )
+
+        content_length = int(resp.headers['Content-Length'])
+        file_size = os.path.getsize(__file__)
+        assert len(resp.content) == content_length == file_size
+
+    @pytest.mark.parametrize(
+        'byte_range,expected_head',
+        [
+            ('7-', b'hashlib'),
+            ('2-6', b'port'),
+            ('32-38', b'random'),
+            ('-47', b'The content of this comment is part of a test.\n'),
+        ],
+    )
+    def test_static_file_byte_range(
+        self, byte_range, expected_head, wsgi_server, server_url
+    ):
+        if wsgi_server == 'meinheld':
+            pytest.xfail(
+                "Meinheld's file_wrapper fails without a fileno(), see also: "
+                'https://github.com/mopemope/meinheld/issues/130'
+            )
+
+        resp = requests.get(
+            server_url + '/tests/test_wsgi_servers.py',
+            timeout=_REQUEST_TIMEOUT,
+            headers={'Range': 'bytes=' + byte_range},
+        )
+
+        assert resp.status_code == 206
+        assert resp.content.startswith(expected_head)
+
+        content_length = int(resp.headers['Content-Length'])
+        assert len(resp.content) == content_length
+
+        file_size = os.path.getsize(__file__)
+        content_range_size = int(resp.headers['Content-Range'].split('/')[-1])
+        assert file_size == content_range_size
+
+        # TODO(vytas): In retrospect, it would be easier to maintain these
+        #   static route tests by creating a separate file instead of relying
+        #   on the content of this same __file__.
+
+        # NOTE(vytas): The content of this comment is part of a test.
