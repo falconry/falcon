@@ -35,7 +35,7 @@ $ pip install -U black
 $ black .
 ```
 
-You can check all this by running ``tox`` from within the Falcon project directory. Your environment must be based on CPython 3.8 or 3.10:
+You can check all this by running ``tox`` from within the Falcon project directory. Your environment must be based on CPython 3.8, 3.10 or 3.11:
 
 ```bash
 $ pip install -U tox
