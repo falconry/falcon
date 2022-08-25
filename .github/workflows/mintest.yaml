@@ -6,6 +6,10 @@ on:
   push:
     branches:
       - master
+  # TODO(vytas): Remove from the PR level once we have verified 3.11 works.
+  pull_request:
+    branches:
+      - master
 
 jobs:
   run_tox:
@@ -17,6 +21,7 @@ jobs:
         python-version:
           - "3.8"
           - "3.10"
+          - "3.11.0-rc.1"
 
     steps:
       - name: Checkout repo
