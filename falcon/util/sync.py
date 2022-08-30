@@ -20,26 +20,8 @@ __all__ = [
 
 _one_thread_to_rule_them_all = ThreadPoolExecutor(max_workers=1)
 
-
-try:
-    get_running_loop = asyncio.get_running_loop
-except AttributeError:  # pragma: nocover
-    # NOTE(kgriffs): This branch is definitely covered under py35 and py36
-    #   but for some reason the codecov gate doesn't pick this up, hence
-    #   the pragma above.
-
-    get_running_loop = asyncio.get_event_loop
-
-
-try:
-    create_task = asyncio.create_task
-except AttributeError:  # pragma: nocover
-    # NOTE(kgriffs): This branch is definitely covered under py35 and py36
-    #   but for some reason the codecov gate doesn't pick this up, hence
-    #   the pragma above.
-
-    def create_task(coro, name=None):
-        return asyncio.ensure_future(coro)
+create_task = asyncio.create_task
+get_running_loop = asyncio.get_running_loop
 
 
 def wrap_sync_to_async_unsafe(func) -> Callable:
@@ -121,7 +103,7 @@ def wrap_sync_to_async(func, threadsafe=None) -> Callable:
 
 
 async def sync_to_async(func, *args, **kwargs):
-    """Schedule a synchronous callable on the loop's default executor and await the result.
+    """Schedule a synchronous callable on the default executor and await the result.
 
     This helper makes it easier to call functions that can not be
     ported to use async natively (e.g., functions exported by a database

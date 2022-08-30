@@ -321,14 +321,27 @@ class Request(request.Request):
         if_range (str): Value of the If-Range header, or ``None`` if the
             header is missing.
 
-        headers (dict): Raw HTTP headers from the request with
-            canonical dash-separated names. Parsing all the headers
-            to create this dict is done the first time this attribute
-            is accessed, and the returned object should be treated as
-            read-only. Note that this parsing can be costly, so unless you
-            need all the headers in this format, you should instead use the
-            ``get_header()`` method or one of the convenience attributes
-            to get a value for a specific header.
+        headers (dict): Raw HTTP headers from the request with dash-separated
+            names normalized to lowercase.
+
+            Note:
+                This property differs from the WSGI version of ``Request.headers``
+                in that the latter returns *uppercase* names for historical
+                reasons. Middleware, such as tracing and logging components, that
+                need to be compatible with both WSGI and ASGI apps should
+                use :attr:`headers_lower` instead.
+
+            Warning:
+                Parsing all the headers to create this dict is done the first
+                time this attribute is accessed, and the returned object should
+                be treated as read-only. Note that this parsing can be costly,
+                so unless you need all the headers in this format, you should
+                instead use the ``get_header()`` method or one of the
+                convenience attributes to get a value for a specific header.
+
+        headers_lower(dict): Alias for :attr:`headers` provided to expose
+            a uniform way to get lowercased headers for both WSGI and ASGI
+            apps.
 
         params (dict): The mapping of request query parameter names to their
             values.  Where the parameter appears multiple times in the query
@@ -873,6 +886,8 @@ class Request(request.Request):
             }
 
         return self._cached_headers
+
+    headers_lower = headers
 
     # ------------------------------------------------------------------------
     # Public Methods

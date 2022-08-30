@@ -7,7 +7,6 @@ for convenience::
     import falcon
 
     tz = falcon.TimezoneGMT()
-
 """
 
 import datetime
@@ -29,7 +28,7 @@ class TimezoneGMT(datetime.tzinfo):
 
         Returns:
             datetime.timedelta: GMT offset, which is equivalent to UTC and
-            so is aways 0.
+            so is always 0.
         """
 
         return self.GMT_ZERO

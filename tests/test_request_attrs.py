@@ -995,7 +995,7 @@ class TestRequestAttributes:
     def test_etag_parsing_helper(self, asgi, header_value):
         # NOTE(kgriffs): Test a couple of cases that are not directly covered
         #   elsewhere (but that we want the helper to still support
-        #   for the sake of avoiding suprises if they are ever called without
+        #   for the sake of avoiding surprises if they are ever called without
         #   preflighting the header value).
 
         assert _parse_etags(header_value) is None

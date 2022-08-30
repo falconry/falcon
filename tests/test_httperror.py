@@ -9,7 +9,6 @@ import pytest
 import yaml
 
 import falcon
-from falcon.http_error import NoRepresentation, OptionalRepresentation
 import falcon.testing as testing
 from falcon.util.deprecation import DeprecatedWarning
 
@@ -279,10 +278,6 @@ class TestHTTPError:
 
         assert response.status == headers['X-Error-Status']
         assert response.json == expected_body
-
-    def test_has_representation(self):
-        with pytest.warns(DeprecatedWarning, match='has_representation is deprecated'):
-            assert falcon.HTTPError(falcon.HTTP_701).has_representation is True
 
     def test_no_description_json(self, client):
         response = client.simulate_patch('/fail')
@@ -925,31 +920,3 @@ def test_kw_only():
     #     falcon.HTTPError(falcon.HTTP_BAD_REQUEST, 'foo', 'bar')
     with pytest.warns(DeprecatedWarning, match='positional args are deprecated'):
         falcon.HTTPError(falcon.HTTP_BAD_REQUEST, 'foo', 'bar')
-
-
-def test_NoRepresentation():
-    with pytest.warns(
-        DeprecatedWarning,
-        match='has_representation is deprecated.*The class NoRepresentation',
-    ):
-        assert NoRepresentation().has_representation is False
-
-
-class TestOptionalRepresentation:
-    def test_OptionalRepresentation_false(self):
-        with pytest.warns(
-            DeprecatedWarning,
-            match='has_representation is deprecated.*The class OptionalRepresentation',
-        ):
-            or_ = OptionalRepresentation()
-            or_.description = None
-            assert or_.has_representation is False
-
-    def test_OptionalRepresentation_true(self):
-        with pytest.warns(
-            DeprecatedWarning,
-            match='has_representation is deprecated.*The class OptionalRepresentation',
-        ):
-            or_ = OptionalRepresentation()
-            or_.description = 'foo'
-            assert or_.has_representation is True

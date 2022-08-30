@@ -8,7 +8,7 @@
     >
     </a>
 
-|Build Status| |Docs| |codecov.io|
+|Build Status| |Docs| |codecov.io| |Blue|
 
 The Falcon Web Framework
 ========================
@@ -23,7 +23,7 @@ clean design that embraces HTTP and the REST architectural style.
 
 Falcon apps work with any `WSGI <https://www.python.org/dev/peps/pep-3333/>`_
 or `ASGI <https://asgi.readthedocs.io/en/latest/>`_ server, and run like a
-champ under CPython 3.5+ and PyPy 3.5+ (3.6+ required for ASGI).
+champ under CPython 3.7+ and PyPy 3.7+.
 
 Quick Links
 -----------
@@ -79,7 +79,7 @@ Falcon tries to do as little as possible while remaining highly effective.
 - Idiomatic HTTP error responses
 - Straightforward exception handling
 - Snappy testing with WSGI/ASGI helpers and mocks
-- CPython 3.5+ and PyPy 3.5+ support
+- CPython 3.7+ and PyPy 3.7+ support
 
 .. Patron list starts here. For Python package, we substitute this section with:
    Support Falcon Development
@@ -210,7 +210,7 @@ PyPy
 ^^^^
 
 `PyPy <http://pypy.org/>`__ is the fastest way to run your Falcon app.
-PyPy3.5+ is supported as of PyPy v5.10.
+PyPy3.7+ is supported as of PyPy v7.3.4+.
 
 .. code:: bash
 
@@ -226,7 +226,7 @@ CPython
 ^^^^^^^
 
 Falcon also fully supports
-`CPython <https://www.python.org/downloads/>`__ 3.5+.
+`CPython <https://www.python.org/downloads/>`__ 3.7+.
 
 The latest stable version of Falcon can be installed directly from PyPI:
 
@@ -1045,10 +1045,10 @@ limitations under the License.
 .. |Docs| image:: https://readthedocs.org/projects/falcon/badge/?version=stable
     :target: https://falcon.readthedocs.io/en/stable/?badge=stable
     :alt: Falcon web framework docs
-.. |Runner| image:: https://a248.e.akamai.net/assets.github.com/images/icons/emoji/runner.png
-    :width: 20
-    :height: 20
 .. |Build Status| image:: https://github.com/falconry/falcon/workflows/Run%20tests/badge.svg
    :target: https://github.com/falconry/falcon/actions?query=workflow%3A%22Run+tests%22
 .. |codecov.io| image:: https://codecov.io/gh/falconry/falcon/branch/master/graphs/badge.svg
    :target: http://codecov.io/gh/falconry/falcon
+.. |Blue| image:: https://img.shields.io/badge/code%20style-blue-blue.svg
+    :target: https://blue.readthedocs.io/
+    :alt: code style: blue

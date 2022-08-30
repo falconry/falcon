@@ -115,8 +115,8 @@ def format_content_disposition(value, disposition_type='attachment'):
 def format_etag_header(value):
     """Format an ETag header, wrap it with " " in case of need."""
 
-    if value[-1] != '\"':
-        value = '\"' + value + '\"'
+    if value[-1] != '"':
+        value = '"' + value + '"'
 
     return value
 

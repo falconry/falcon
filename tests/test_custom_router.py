@@ -98,7 +98,7 @@ def test_can_pass_additional_params_to_add_route(asgi):
     assert 'my-url-name' in check
 
     # NOTE(kgriffs): Extra values must be passed as kwargs, since that makes
-    #   it a lot easier for overriden methods to simply ignore options they
+    #   it a lot easier for overridden methods to simply ignore options they
     #   don't care about.
     with pytest.raises(TypeError):
         app.add_route('/test', 'resource', 'xarg1', 'xarg2')

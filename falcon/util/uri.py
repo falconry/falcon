@@ -21,7 +21,6 @@ in the `falcon` module, and so must be explicitly imported::
     from falcon import uri
 
     name, port = uri.parse_host('example.org:8080')
-
 """
 
 from falcon.constants import PYPY

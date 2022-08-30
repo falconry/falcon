@@ -14,16 +14,14 @@
 
 from datetime import datetime
 from collections import OrderedDict
+import configparser
 import multiprocessing
 import sys
 import os
 
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
+sys.path.insert(0, os.path.abspath('..'))
 
-import falcon
+import falcon  # noqa: E402
 
 # NOTE(kgriffs): Work around the change in Python 3.8 that breaks sphinx
 #   on macOS. See also:
@@ -84,7 +82,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Falcon'
-copyright = "{year} Falcon Contributors".format(year=datetime.utcnow().year)
+copyright = '{year} Falcon Contributors'.format(year=datetime.utcnow().year)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

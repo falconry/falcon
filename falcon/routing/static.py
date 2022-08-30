@@ -1,7 +1,6 @@
 from functools import partial
 import io
 import os
-import pathlib
 import re
 
 import falcon
@@ -129,10 +128,6 @@ class StaticRoute:
     def __init__(self, prefix, directory, downloadable=False, fallback_filename=None):
         if not prefix.startswith('/'):
             raise ValueError("prefix must start with '/'")
-
-        # TODO(vgerak): Remove the check when py3.5 is dropped.
-        if isinstance(directory, pathlib.Path):
-            directory = str(directory)
 
         self._directory = os.path.normpath(directory)
         if not os.path.isabs(self._directory):

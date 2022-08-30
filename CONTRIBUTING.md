@@ -26,16 +26,18 @@ Please note that all contributors and maintainers of this project are subject to
 
 ### Pull Requests
 
-Before submitting a pull request, please ensure you have added or updated tests as appropriate, and that all existing tests still pass with your changes. Please also ensure that your coding style follows PEP 8 and the ``black`` formatting style.
+Before submitting a pull request, please ensure you have added or updated tests as appropriate,
+and that all existing tests still pass with your changes.
+Please also ensure that your coding style follows PEP 8 and the ``blue`` formatting style.
 
-In order to reformat your code with ``black``, simply issue:
+In order to reformat your code with ``blue``, simply issue:
 
 ```bash
-$ pip install -U black
-$ black .
+$ pip install -U blue
+$ blue .
 ```
 
-You can check all this by running ``tox`` from within the Falcon project directory. Your environment must be based on CPython 3.8 or 3.10:
+You can check all this by running ``tox`` from within the Falcon project directory. Your environment must be based on CPython 3.8, 3.10 or 3.11:
 
 ```bash
 $ pip install -U tox
@@ -135,7 +137,7 @@ $ xdg-open docs/_build/html/index.html
 
 * Docstrings are required for classes, attributes, methods, and functions. Follow the
  following guidelines for docstrings:
-   * Docstrings should utilize the [napolean style][docstrings] in order to make them read well, regardless of whether they are viewed through `help()` or on [Read the Docs][rtd].
+   * Docstrings should utilize the [napoleon style][docstrings] in order to make them read well, regardless of whether they are viewed through `help()` or on [Read the Docs][rtd].
    * Docstrings should begin with a short (~70 characters or less) summary line that ends in a period.
        * The summary line should begin immediately after the opening quotes (do not add
     a line break before the summary line)

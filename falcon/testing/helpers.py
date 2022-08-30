@@ -20,7 +20,6 @@ directly from the `testing` package::
     from falcon import testing
 
     wsgi_environ = testing.create_environ()
-
 """
 
 import asyncio
@@ -45,6 +44,7 @@ from typing import Union
 
 import falcon
 from falcon import errors as falcon_errors
+import falcon.asgi
 from falcon.asgi_spec import EventType
 from falcon.asgi_spec import ScopeType
 from falcon.asgi_spec import WSCloseCode
@@ -303,8 +303,8 @@ class ASGIResponseEventCollector:
         ]
     )
 
-    _HEADER_NAME_RE = re.compile(br'^[a-zA-Z][a-zA-Z0-9\-_]*$')
-    _BAD_HEADER_VALUE_RE = re.compile(br'[\000-\037]')
+    _HEADER_NAME_RE = re.compile(rb'^[a-zA-Z][a-zA-Z0-9\-_]*$')
+    _BAD_HEADER_VALUE_RE = re.compile(rb'[\000-\037]')
 
     def __init__(self):
         self.events = []
@@ -802,7 +802,7 @@ def get_encoding_from_headers(headers):
     content_type, params = cgi.parse_header(content_type)
 
     if 'charset' in params:
-        return params['charset'].strip("'\"")
+        return params['charset'].strip('\'"')
 
     # NOTE(kgriffs): Added checks for text/event-stream and application/json
     if content_type in ('text/event-stream', 'application/json'):
@@ -1289,11 +1289,6 @@ def create_asgi_req(body=None, req_type=None, options=None, **kwargs) -> falcon.
     disconnect_at = time.time() + 300
 
     req_event_emitter = ASGIRequestEventEmitter(body, disconnect_at=disconnect_at)
-
-    # NOTE(kgriffs): Import here in case the app is running under
-    #   Python 3.5 (in which case as long as it does not call the
-    #   present function, it won't trigger an import error).
-    import falcon.asgi
 
     req_type = req_type or falcon.asgi.Request
     return req_type(scope, req_event_emitter, options=options)

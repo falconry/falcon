@@ -21,7 +21,6 @@ framework itself. These functions are hoisted into the front-door
     import falcon
 
     now = falcon.http_now()
-
 """
 
 import datetime
@@ -33,7 +32,6 @@ import unicodedata
 
 from falcon import status_codes
 from falcon.constants import PYPY
-from falcon.constants import PYTHON_VERSION
 from falcon.uri import encode_value
 
 # NOTE(vytas): Hoist `deprecated` here since it is documented as part of the
@@ -75,9 +73,9 @@ strptime = datetime.datetime.strptime
 utcnow = datetime.datetime.utcnow
 
 
-# NOTE(kgriffs): This is tested in the gate but we do not want devs to
-#   have to install a specific version of 3.5 to check coverage on their
-#   workstations, so we use the nocover pragma here.
+# NOTE(kgriffs,vytas): This is tested in the PyPy gate but we do not want devs
+#   to have to install PyPy to check coverage on their workstations, so we use
+#   the nocover pragma here.
 def _lru_cache_nop(*args, **kwargs):  # pragma: nocover
     def decorator(func):
         # NOTE(kgriffs): Partially emulate the lru_cache protocol; only add
@@ -89,19 +87,12 @@ def _lru_cache_nop(*args, **kwargs):  # pragma: nocover
     return decorator
 
 
-# NOTE(kgriffs): https://bugs.python.org/issue28969
-if PYTHON_VERSION >= (3, 5, 4) and PYTHON_VERSION != (3, 6, 0):
-    _lru_cache_safe = functools.lru_cache  # type: ignore
-else:
-    _lru_cache_safe = _lru_cache_nop  # pragma: nocover
-
-
-# PERF(kgriffs): Using lru_cache is slower on pypy when the wrapped
+# PERF(kgriffs): Using lru_cache is slower on PyPy when the wrapped
 #   function is just doing a few non-IO operations.
 if PYPY:
     _lru_cache_for_simple_logic = _lru_cache_nop  # pragma: nocover
 else:
-    _lru_cache_for_simple_logic = _lru_cache_safe  # type: ignore
+    _lru_cache_for_simple_logic = functools.lru_cache  # type: ignore
 
 
 def is_python_func(func):

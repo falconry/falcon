@@ -668,17 +668,43 @@ The `stream` of a body part is a file-like object implementing the ``read()``
 method, making it compatible with ``boto3``\'s
 `upload_fileobj <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.upload_fileobj>`_:
 
-.. code:: python
+.. tabs::
 
-    import boto3
+    .. group-tab:: WSGI
 
-    # -- snip --
+        .. code:: python
 
-    s3 = boto3.client('s3')
+            import boto3
 
-    for part in req.media:
-        if part.name == 'myfile':
-            s3.upload_fileobj(part.stream, 'mybucket', 'mykey')
+            # -- snip --
+
+            s3 = boto3.client('s3')
+
+            for part in req.media:
+                if part.name == 'myfile':
+                    s3.upload_fileobj(part.stream, 'mybucket', 'mykey')
+
+    .. group-tab:: ASGI
+
+        .. code:: python
+
+            import aioboto3
+
+            # -- snip --
+
+            session = aioboto3.Session()
+
+            form = await req.get_media()
+            async for part in form:
+                if part.name == 'myfile':
+                    async with session.client('s3') as s3:
+                        await s3.upload_fileobj(part.stream, 'mybucket', 'mykey')
+
+        .. note::
+            The ASGI snippet requires the
+            `aioboto3 <https://pypi.org/project/aioboto3/>`__ async wrapper in
+            lieu of ``boto3`` (as the latter only offers a synchronous
+            interface at the time of writing).
 
 .. note::
    Falcon is not endorsing any particular cloud service provider, and AWS S3
@@ -784,13 +810,12 @@ demonstrated above.
 How can I handle forward slashes within a route template field?
 ---------------------------------------------------------------
 
-In Falcon 1.3 we shipped initial support for
-`field converters <http://falcon.readthedocs.io/en/stable/api/routing.html#field-converters>`_.
-We’ve discussed building on this feature to support consuming multiple path
-segments ala Flask. This work is currently planned to commence after the 3.0
-release.
+Falcon 4 shipped initial support for
+`field converters <http://falcon.readthedocs.io/en/stable/api/routing.html#field-converters>`_
+that can match multiple segments. The ``path`` :class:`field converter <~falcon.routing.PathConverter>`
+is capable of consuming multiple path segments when placed at the end of the URL template.
 
-In the meantime, you can work around the issue by implementing a Falcon
+In previous versions, you can work around the issue by implementing a Falcon
 middleware component to rewrite the path before it is routed. If you control
 the clients, you can percent-encode forward slashes inside the field in
 question, however, note that pre-processing is unavoidable in order to access

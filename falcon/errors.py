@@ -32,7 +32,6 @@ package namespace::
             )
 
             # -- snip --
-
 """
 
 from datetime import datetime
@@ -85,6 +84,7 @@ __all__ = (
     'MediaMalformedError',
     'MediaNotFoundError',
     'MediaValidationError',
+    'MultipartParseError',
     'OperationNotAllowed',
     'PayloadTypeError',
     'UnsupportedError',
@@ -2509,6 +2509,36 @@ class MediaValidationError(HTTPBadRequest):
             title=title,
             description=description,
             headers=headers,
+            **kwargs,
+        )
+
+
+class MultipartParseError(MediaMalformedError):
+    """Represents a multipart form parsing error.
+
+    This error may refer to a malformed or truncated form, usage of deprecated
+    or unsupported features, or form parameters exceeding limits configured in
+    :class:`~.media.multipart.MultipartParseOptions`.
+
+    :class:`MultipartParseError` instances raised in this module always include
+    a short human-readable description of the error.
+
+    The cause of this exception, if any, is stored in the ``__cause__`` attribute
+    using the "raise ... from" form when raising.
+
+    Args:
+        source_error (Exception): The source exception that was the cause of this one.
+    """
+
+    # NOTE(caselit): remove the description @property in MediaMalformedError
+    description = None
+
+    @deprecated_args(allowed_positional=0)
+    def __init__(self, description=None, **kwargs):
+        HTTPBadRequest.__init__(
+            self,
+            title='Malformed multipart/form-data request media',
+            description=description,
             **kwargs,
         )
 

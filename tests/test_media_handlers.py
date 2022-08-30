@@ -8,7 +8,8 @@ import pytest
 import ujson
 
 import falcon
-from falcon import ASGI_SUPPORTED, media, testing
+from falcon import media, testing
+from falcon.asgi.stream import BoundedStream
 from falcon.util.deprecation import DeprecatedWarning
 
 from _util import create_app  # NOQA
@@ -98,11 +99,6 @@ def test_deserialization(asgi, func, body, expected):
     args = ['application/javacript', len(body)]
 
     if asgi:
-        if not ASGI_SUPPORTED:
-            pytest.skip('ASGI requires Python 3.6+')
-
-        from falcon.asgi.stream import BoundedStream
-
         s = BoundedStream(testing.ASGIRequestEventEmitter(body))
         args.insert(0, s)
 
