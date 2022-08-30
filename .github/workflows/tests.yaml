@@ -30,8 +30,6 @@ jobs:
           - "py310"
           - "py310_sans_msgpack"
           - "py310_cython"
-          - "py310_smoke"
-          - "py310_smoke_cython"
           - "docs"
           - "towncrier"
           - "look"
@@ -43,7 +41,6 @@ jobs:
           - "e2e_chrome"
           - "e2e_firefox"
           - "no_optional_packages"
-          - "wsgi_servers"
           # TODO(kgriffs): Re-enable once hug has a chance to address
           # breaking changes in Falcon 3.0
           # - "hug"
@@ -78,6 +75,16 @@ jobs:
           - python-version: "3.10"
             os: windows-latest
             toxenv: py310_nocover
+          # These env require 3.8, see tox.ini
+          - python-version: "3.8"
+            os: ubuntu-latest
+            toxenv: py38_smoke
+          - python-version: "3.8"
+            os: ubuntu-latest
+            toxenv: py38_smoke_cython
+          - python-version: "3.8"
+            os: ubuntu-latest
+            toxenv: "wsgi_servers"
 
     # Steps to run in each job.
     # Some are GitHub actions, others run shell commands.
@@ -95,7 +102,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install smoke test dependencies
-        if: ${{ matrix.toxenv == 'py310_smoke' || matrix.toxenv == 'py310_smoke_cython' }}
+        if: ${{ matrix.toxenv == 'py38_smoke' || matrix.toxenv == 'py38_smoke_cython' }}
         run: |
           sudo apt-get update
           sudo apt-get install -y libunwind-dev
