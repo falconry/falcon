@@ -117,8 +117,20 @@ def test_deserialization(asgi, func, body, expected):
 
 
 @pytest.mark.parametrize('dumps, loads', ALL_JSON_IMPL)
-def test_full_app(asgi, dumps, loads):
-    handler = media.JSONHandler(dumps=dumps, loads=loads)
+@pytest.mark.parametrize('subclass', (True, False))
+def test_full_app(asgi, dumps, loads, subclass):
+    if subclass:
+
+        class JSONHandlerSubclass(media.JSONHandler):
+            pass
+
+        handler = JSONHandlerSubclass(dumps=dumps, loads=loads)
+        assert handler._serialize_sync is None
+        assert handler._deserialize_sync is None
+    else:
+        handler = media.JSONHandler(dumps=dumps, loads=loads)
+        assert handler._serialize_sync is not None
+        assert handler._deserialize_sync is not None
     app = create_app(asgi)
     app.req_options.media_handlers[falcon.MEDIA_JSON] = handler
     app.resp_options.media_handlers[falcon.MEDIA_JSON] = handler
