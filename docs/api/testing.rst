@@ -29,6 +29,8 @@ Main Interface
 .. autoclass:: Cookie
    :members:
 
+.. _testing_standalone_methods:
+
 Standalone Methods
 ~~~~~~~~~~~~~~~~~~
 

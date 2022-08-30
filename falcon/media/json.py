@@ -133,6 +133,15 @@ class JSONHandler(BaseHandler):
         app.req_options.media_handlers.update(extra_handlers)
         app.resp_options.media_handlers.update(extra_handlers)
 
+    .. note:: When testing an application employing a custom JSON encoder, bear
+        in mind that :class:`~.testing.TestClient` is decoupled from the app,
+        and it simulates requests as if they were performed by a third-party
+        client (just sans network). Therefore, passing the **json** parameter
+        to :ref:`simulate_* <testing_standalone_methods>` methods will
+        effectively use the stdlib's :func:`json.dumps`. If you want to
+        serialize custom objects for testing, you will need to dump them into a
+        string yourself, and pass it using the **body** parameter instead
+        (accompanied by the ``application/json`` content type header).
 
     Keyword Arguments:
         dumps (func): Function to use when serializing JSON responses.
