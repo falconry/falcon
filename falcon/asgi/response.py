@@ -16,7 +16,7 @@
 try:
     from asyncio.coroutines import CoroWrapper  # type: ignore
 except ImportError:
-    CoroWrapper  # type: ignore
+    CoroWrapper = None  # type: ignore
 from inspect import iscoroutine
 from inspect import iscoroutinefunction
 
