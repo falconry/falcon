@@ -121,8 +121,7 @@ def wrap_sync_to_async(func, threadsafe=None) -> Callable:
 
 
 async def sync_to_async(func, *args, **kwargs):
-    """Schedule a synchronous callable on the loop's default executor and await the
-    result.
+    """Schedule a synchronous callable on the loop's default executor and await the result.
 
     This helper makes it easier to call functions that can not be
     ported to use async natively (e.g., functions exported by a database
@@ -157,7 +156,7 @@ async def sync_to_async(func, *args, **kwargs):
     Returns:
         function: An awaitable coroutine function that wraps the
         synchronous callable.
-    """
+    """  # noqa
 
     return await get_running_loop().run_in_executor(
         None, partial(func, *args, **kwargs)
