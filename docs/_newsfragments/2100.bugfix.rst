@@ -1,1 +1,2 @@
-Fix an issue when using orjson as json serializer with asyncio.
+The orjson library now works correctly when used as json serializer in the
+media handlers in the ASGI version of Falcon.
