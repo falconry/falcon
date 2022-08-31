@@ -67,20 +67,17 @@ class TestStatusResource:
 
     @falcon.after(noop_after_hook)
     def on_delete(self, req, resp):
-        raise HTTPStatus(falcon.HTTP_200, headers={'X-Failed': 'False'}, text='Pass')
+        raise HTTPStatus(201, headers={'X-Failed': 'False'}, text='Pass')
 
 
 class TestHookResource:
     def on_get(self, req, resp):
-        resp.status = falcon.HTTP_500
+        resp.status_code = 500
         resp.set_header('X-Failed', 'True')
         resp.text = 'Fail'
 
     def on_patch(self, req, resp):
-        raise HTTPStatus(falcon.HTTP_200, text=None)
-
-    def on_delete(self, req, resp):
-        raise HTTPStatus(falcon.HTTP_200, headers={'X-Failed': 'False'}, text='Pass')
+        raise HTTPStatus(200, text=None)
 
 
 class TestHTTPStatus:
@@ -88,6 +85,7 @@ class TestHTTPStatus:
         """Make sure we get the 200 raised by before hook"""
         response = client.simulate_request(path='/status', method='GET')
         assert response.status == falcon.HTTP_200
+        assert response.status_code == 200
         assert response.headers['x-failed'] == 'False'
         assert response.text == 'Pass'
 
@@ -95,6 +93,7 @@ class TestHTTPStatus:
         """Make sure we get the 200 raised by responder"""
         response = client.simulate_request(path='/status', method='POST')
         assert response.status == falcon.HTTP_200
+        assert response.status_code == 200
         assert response.headers['x-failed'] == 'False'
         assert response.text == 'Pass'
 
@@ -102,13 +101,15 @@ class TestHTTPStatus:
         """Make sure after hooks still run"""
         response = client.simulate_request(path='/status', method='PUT')
         assert response.status == falcon.HTTP_200
+        assert response.status_code == 200
         assert response.headers['x-failed'] == 'False'
         assert response.text == 'Pass'
 
     def test_raise_status_survives_after_hooks(self, client):
         """Make sure after hook doesn't overwrite our status"""
         response = client.simulate_request(path='/status', method='DELETE')
-        assert response.status == falcon.HTTP_200
+        assert response.status == falcon.HTTP_201
+        assert response.status_code == 201
         assert response.headers['x-failed'] == 'False'
         assert response.text == 'Pass'
 
@@ -137,7 +138,7 @@ class TestHTTPStatusWithMiddleware:
         client.app.add_middleware(TestMiddleware())
 
         response = client.simulate_request(path='/status', method='GET')
-        assert response.status == falcon.HTTP_200
+        assert response.status_code == 200
         assert response.headers['x-failed'] == 'False'
         assert response.text == 'Pass'
 
@@ -188,11 +189,15 @@ class TestHTTPStatusWithMiddleware:
 class NoBodyResource:
     def on_get(self, req, res):
         res.data = b'foo'
-        raise HTTPStatus(falcon.HTTP_745)
+        http_status = HTTPStatus(745)
+        assert http_status.status_code == 745
+        raise http_status
 
     def on_post(self, req, res):
         res.media = {'a': 1}
-        raise HTTPStatus(falcon.HTTP_725)
+        http_status = HTTPStatus(falcon.HTTP_725)
+        assert http_status.status_code == 725
+        raise http_status
 
     def on_put(self, req, res):
         res.text = 'foo'
@@ -210,16 +215,19 @@ class TestNoBodyWithStatus:
     def test_data_is_set(self, body_client):
         res = body_client.simulate_get('/status')
         assert res.status == falcon.HTTP_745
+        assert res.status_code == 745
         assert res.content == b''
 
     def test_media_is_set(self, body_client):
         res = body_client.simulate_post('/status')
         assert res.status == falcon.HTTP_725
+        assert res.status_code == 725
         assert res.content == b''
 
     def test_body_is_set(self, body_client):
         res = body_client.simulate_put('/status')
         assert res.status == falcon.HTTP_719
+        assert res.status_code == 719
         assert res.content == b''
 
 

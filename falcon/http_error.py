@@ -18,7 +18,7 @@ from collections import OrderedDict
 import xml.etree.ElementTree as et
 
 from falcon.constants import MEDIA_JSON
-from falcon.util import uri
+from falcon.util import http_status_to_code, uri
 from falcon.util.deprecation import deprecated_args
 
 
@@ -46,7 +46,10 @@ class HTTPError(Exception):
         error in a future version of falcon.
 
     Args:
-        status (str): HTTP status code and text, such as "400 Bad Request"
+        status (Union[str,int]): HTTP status code or line (e.g.,
+            ``'400 Bad Request'``). This may be set to a member of
+            :class:`http.HTTPStatus`, an HTTP status line string or byte
+            string (e.g., ``'200 OK'``), or an ``int``.
 
     Keyword Args:
         title (str): Human-friendly error title. If not provided, defaults
@@ -88,6 +91,8 @@ class HTTPError(Exception):
             getting help.
         code (int): An internal application code that a user can reference when
             requesting support for the error.
+        status_code (int): HTTP status code normalized from the ``status``
+            argument passed to the initializer.
     """
 
     __slots__ = (
@@ -134,6 +139,10 @@ class HTTPError(Exception):
         return '<%s: %s>' % (self.__class__.__name__, self.status)
 
     __str__ = __repr__
+
+    @property
+    def status_code(self) -> int:
+        return http_status_to_code(self.status)
 
     def to_dict(self, obj_type=dict):
         """Return a basic dictionary representing the error.
