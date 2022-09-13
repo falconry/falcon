@@ -884,14 +884,17 @@ class TestHTTPError:
         self._misc_test(client, falcon.HTTPInternalServerError, falcon.HTTP_500)
         self._misc_test(client, falcon.HTTPBadGateway, falcon.HTTP_502)
 
-    @pytest.mark.parametrize('status, status_type', [
-        (falcon.HTTP_503, 'str'),
-        (falcon.HTTP_503, 'bytes'),
-        (503, 'int'),
-        (503, 'str'),
-        (503, 'bytes'),
-        (503, 'HTTPStatus'),
-    ])
+    @pytest.mark.parametrize(
+        'status, status_type',
+        [
+            (falcon.HTTP_503, 'str'),
+            (falcon.HTTP_503, 'bytes'),
+            (503, 'int'),
+            (503, 'str'),
+            (503, 'bytes'),
+            (503, 'HTTPStatus'),
+        ],
+    )
     def test_title_default_message_if_none(self, status, status_type, client):
         headers = {
             'X-Error-Status': str(status),
