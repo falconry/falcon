@@ -35,7 +35,7 @@ class HTTPStatus(Exception):
             this value as UTF-8 in the response.
 
     Attributes:
-        status (Union[str, int]): The HTTP status line or integer code for
+        status (Union[str,int]): The HTTP status line or integer code for
             the status that this exception represents.
         status_code (int): HTTP status code normalized from :attr:`status`.
         headers (dict): Extra headers to add to the response.
