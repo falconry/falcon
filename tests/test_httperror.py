@@ -1,6 +1,7 @@
 # -*- coding: utf-8
 
 import datetime
+import http
 import json
 import wsgiref.validate
 import xml.etree.ElementTree as et  # noqa: I202
@@ -32,6 +33,21 @@ class FaultyResource:
         description = req.get_header('X-Error-Description')
         code = 10042
 
+        status_type = req.get_header('X-Error-Status-Type')
+        if status_type:
+            assert status
+
+        if status_type == 'int':
+            status = int(status)
+        elif status_type == 'bytes':
+            status = status.encode()
+        elif status_type == 'HTTPStatus':
+            status = http.HTTPStatus(int(status))
+        elif status_type == 'str':
+            pass
+        elif status_type is not None:
+            pytest.fail(f'status_type {status_type} not recognized')
+
         raise falcon.HTTPError(status, title=title, description=description, code=code)
 
     def on_post(self, req, resp):
@@ -62,7 +78,7 @@ class UnicodeFaultyResource:
     def on_get(self, req, resp):
         self.called = True
         raise falcon.HTTPError(
-            falcon.HTTP_792,
+            792,  # NOTE(kgriffs): Test that an int is acceptable even for 7xx codes
             title='Internet \xe7rashed!',
             description='\xc7atastrophic weather event',
             href='http://example.com/api/\xe7limate',
@@ -868,16 +884,27 @@ class TestHTTPError:
         self._misc_test(client, falcon.HTTPInternalServerError, falcon.HTTP_500)
         self._misc_test(client, falcon.HTTPBadGateway, falcon.HTTP_502)
 
-    def test_title_default_message_if_none(self, client):
-        headers = {'X-Error-Status': falcon.HTTP_503}
+    @pytest.mark.parametrize('status, status_type', [
+        (falcon.HTTP_503, 'str'),
+        (falcon.HTTP_503, 'bytes'),
+        (503, 'int'),
+        (503, 'str'),
+        (503, 'bytes'),
+        (503, 'HTTPStatus'),
+    ])
+    def test_title_default_message_if_none(self, status, status_type, client):
+        headers = {
+            'X-Error-Status': str(status),
+            'X-Error-Status-Type': status_type,
+        }
 
         response = client.simulate_request(path='/fail', headers=headers)
 
-        assert response.status == headers['X-Error-Status']
-        assert response.json['title'] == headers['X-Error-Status']
+        assert response.json['title'] == falcon.HTTP_503
+        assert response.status_code == 503
 
     def test_to_json_dumps(self):
-        e = falcon.HTTPError(status=falcon.HTTP_418, title='foo', description='bar')
+        e = falcon.HTTPError(status=418, title='foo', description='bar')
         assert e.to_json() == b'{"title": "foo", "description": "bar"}'
 
         class Handler:
