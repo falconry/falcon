@@ -973,6 +973,16 @@ class TestHeaders:
         with pytest.raises(ValueError):
             resp.append_link('/related/resource', 'next', crossorigin=crossorigin)
 
+    def test_append_link_with_link_extension(self, client):
+        expected_value = '</related/thing>; rel=item; sizes=72x72'
+
+        resource = LinkHeaderResource()
+        resource.append_link(
+            '/related/thing', 'item', link_extension=[('sizes', '72x72')]
+        )
+
+        self._check_link_header(client, resource, expected_value)
+
     def test_content_length_options(self, client):
         result = client.simulate_options()
 
