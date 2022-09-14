@@ -283,6 +283,7 @@ class TestNoBodyWithStatus:
     def test_data_is_set(self, body_client):
         res = body_client.simulate_get('/error')
         assert res.status == falcon.HTTP_IM_A_TEAPOT
+        assert res.status_code == 418
         assert res.content == b''
 
     def test_media_is_set(self, body_client):
