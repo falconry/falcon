@@ -105,14 +105,10 @@ MEDIA_YAML = 'application/yaml'
 # contrary to the RFCs.
 MEDIA_XML = 'application/xml'
 
-# NOTE(kgriffs): RFC 4329 recommends application/* over text/.
-# furthermore, parsers are required to respect the Unicode
-# encoding signature, if present in the document, and to default
-# to UTF-8 when not present. Note, however, that implementations
-# are not required to support anything besides UTF-8, so it is
-# unclear how much utility an encoding signature (or the charset
-# parameter for that matter) has in practice.
-MEDIA_JS = 'application/javascript'
+# NOTE: According to RFC 9239, Changed the intended usage of the
+# media type "text/javascript" from OBSOLETE to COMMON. Changed
+# the intended usage for all other script media types to obsolete.
+MEDIA_JS = 'text/javascript'
 
 # NOTE(kgriffs): According to RFC 6838, most text media types should
 # include the charset parameter.
