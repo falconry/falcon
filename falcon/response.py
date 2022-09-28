@@ -29,6 +29,7 @@ from falcon.response_helpers import header_property
 from falcon.response_helpers import is_ascii_encodable
 from falcon.util import dt_to_http
 from falcon.util import http_cookies
+from falcon.util import http_status_to_code
 from falcon.util import structures
 from falcon.util import TimezoneGMT
 from falcon.util.deprecation import AttributeRemovedError, deprecated
@@ -58,14 +59,23 @@ class Response:
         options (dict): Set of global options passed from the App handler.
 
     Attributes:
-        status: HTTP status code or line (e.g., ``'200 OK'``). This may be set
-            to a member of :class:`http.HTTPStatus`, an HTTP status line string
-            or byte string (e.g., ``'200 OK'``), or an ``int``.
+        status (Union[str,int]): HTTP status code or line (e.g., ``'200 OK'``).
+            This may be set to a member of :class:`http.HTTPStatus`, an HTTP
+            status line string or byte string (e.g., ``'200 OK'``), or an
+            ``int``.
 
             Note:
                 The Falcon framework itself provides a number of constants for
                 common status codes. They all start with the ``HTTP_`` prefix,
                 as in: ``falcon.HTTP_204``. (See also: :ref:`status`.)
+
+        status_code (int): HTTP status code normalized from :attr:`status`.
+            When a code is assigned to this property, :attr:`status` is updated,
+            and vice-versa. The status code can be useful when needing to check
+            in middleware for codes that fall into a certain class, e.g.::
+
+                if resp.status_code >= 400:
+                    log.warning(f'returning error response: {resp.status_code}')
 
         media (object): A serializable object supported by the media handlers
             configured via :class:`falcon.RequestOptions`.
@@ -187,6 +197,14 @@ class Response:
         self._media_rendered = _UNSET
 
         self.context = self.context_type()
+
+    @property
+    def status_code(self) -> int:
+        return http_status_to_code(self.status)
+
+    @status_code.setter
+    def status_code(self, value):
+        self.status = value
 
     @property  # type: ignore
     def body(self):
