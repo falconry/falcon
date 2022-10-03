@@ -62,10 +62,10 @@ jobs:
             toxenv: py39
           - python-version: "3.9"
             os: ubuntu-20.04
-            toxenv: py39_cython            
+            toxenv: py39_cython
           - python-version: "3.10"
             os: ubuntu-20.04
-            toxenv: py310            
+            toxenv: py310
           - python-version: "3.10"
             os: ubuntu-20.04
             toxenv: py310_cython
