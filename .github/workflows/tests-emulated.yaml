@@ -9,7 +9,7 @@ on:
 
 jobs:
   run_tox_emulate:
-    name: tox -e py38_cython (${{ matrix.architecture }})
+    name: tox -e py310_cython (${{ matrix.architecture }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -41,7 +41,7 @@ jobs:
       #
       - name: Run tox s390x
         if: ${{ matrix.architecture == 's390x' }}
-        uses: docker://s390x/python:3.8-buster
+        uses: docker://s390x/python:3.10-buster
         env:
           PIP_CACHE_DIR: /github/workspace/.pip/
         with:
@@ -58,11 +58,11 @@ jobs:
             pip --version &&
             tox --version &&
             pip install ujson &&
-            tox -e py38_cython"
+            tox -e py310_cython"
 
       - name: Run tox arm64v8
         if: ${{ matrix.architecture == 'arm64v8' }}
-        uses: docker://arm64v8/python:3.8-buster
+        uses: docker://arm64v8/python:3.10-buster
         env:
           PIP_CACHE_DIR: /github/workspace/.pip/
         with:
@@ -75,7 +75,7 @@ jobs:
             python --version &&
             pip --version &&
             tox --version &&
-            tox -e py38_cython"
+            tox -e py310_cython"
 
       - name: Fix cache permission
         run: |

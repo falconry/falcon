@@ -34,14 +34,23 @@ class Response(response.Response):
         options (dict): Set of global options passed from the App handler.
 
     Attributes:
-        status: HTTP status code or line (e.g., ``'200 OK'``). This may be set
-            to a member of :class:`http.HTTPStatus`, an HTTP status line string
-            or byte string (e.g., ``'200 OK'``), or an ``int``.
+        status (Union[str,int]): HTTP status code or line (e.g., ``'200 OK'``).
+            This may be set to a member of :class:`http.HTTPStatus`, an HTTP
+            status line string or byte string (e.g., ``'200 OK'``), or an
+            ``int``.
 
             Note:
                 The Falcon framework itself provides a number of constants for
                 common status codes. They all start with the ``HTTP_`` prefix,
                 as in: ``falcon.HTTP_204``. (See also: :ref:`status`.)
+
+        status_code (int): HTTP status code normalized from :attr:`status`.
+            When a code is assigned to this property, :attr:`status` is updated,
+            and vice-versa. The status code can be useful when needing to check
+            in middleware for codes that fall into a certain class, e.g.::
+
+                if resp.status_code >= 400:
+                    log.warning(f'returning error response: {resp.status_code}')
 
         media (object): A serializable object supported by the media handlers
             configured via :class:`falcon.RequestOptions`.

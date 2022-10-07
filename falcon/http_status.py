@@ -14,6 +14,7 @@
 
 """HTTPStatus exception class."""
 
+from falcon.util import http_status_to_code
 from falcon.util.deprecation import AttributeRemovedError
 
 
@@ -25,14 +26,18 @@ class HTTPStatus(Exception):
     to ``falcon.HTTPError``, but for non-error status codes.
 
     Args:
-        status (str): HTTP status code and text, such as
-            '748 Confounded by Ponies'.
+        status (Union[str,int]): HTTP status code or line (e.g.,
+            ``'400 Bad Request'``). This may be set to a member of
+            :class:`http.HTTPStatus`, an HTTP status line string or byte
+            string (e.g., ``'200 OK'``), or an ``int``.
         headers (dict): Extra headers to add to the response.
         text (str): String representing response content. Falcon will encode
             this value as UTF-8 in the response.
 
     Attributes:
-        status (str): HTTP status line, e.g. '748 Confounded by Ponies'.
+        status (Union[str,int]): The HTTP status line or integer code for
+            the status that this exception represents.
+        status_code (int): HTTP status code normalized from :attr:`status`.
         headers (dict): Extra headers to add to the response.
         text (str): String representing response content. Falcon will encode
             this value as UTF-8 in the response.
@@ -45,6 +50,10 @@ class HTTPStatus(Exception):
         self.status = status
         self.headers = headers
         self.text = text
+
+    @property
+    def status_code(self) -> int:
+        return http_status_to_code(self.status)
 
     @property  # type: ignore
     def body(self):
