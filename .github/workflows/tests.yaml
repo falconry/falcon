@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version:
-          - "3.8"
+          - "3.10"
         os:
           - "ubuntu-20.04"
         toxenv:
@@ -27,11 +27,9 @@ jobs:
           - "pep8-examples"
           - "pep8-docstrings"
           - "mypy"
-          - "py38"
-          - "py38_sans_msgpack"
-          - "py38_cython"
-          - "py38_smoke"
-          - "py38_smoke_cython"
+          - "py310"
+          - "py310_sans_msgpack"
+          - "py310_cython"
           - "docs"
           - "towncrier"
           - "look"
@@ -43,7 +41,6 @@ jobs:
           - "e2e_chrome"
           - "e2e_firefox"
           - "no_optional_packages"
-          - "wsgi_servers"
           # TODO(kgriffs): Re-enable once hug has a chance to address
           # breaking changes in Falcon 3.0
           # - "hug"
@@ -51,40 +48,49 @@ jobs:
           - python-version: pypy3
             os: ubuntu-20.04
             toxenv: pypy3
-          - python-version: 3.5
-            os: ubuntu-20.04
-            toxenv: py35
-          - python-version: 3.6
-            os: ubuntu-20.04
-            toxenv: py36
-          - python-version: 3.6
-            os: ubuntu-20.04
-            toxenv: py36_cython
-          - python-version: 3.7
+          - python-version: "3.7"
             os: ubuntu-20.04
             toxenv: py37
-          - python-version: 3.9
+          - python-version: "3.8"
+            os: ubuntu-20.04
+            toxenv: py38
+          - python-version: "3.8"
+            os: ubuntu-20.04
+            toxenv: py38_cython
+          - python-version: "3.9"
             os: ubuntu-20.04
             toxenv: py39
-          - python-version: 3.9
+          - python-version: "3.9"
             os: ubuntu-20.04
             toxenv: py39_cython
-          # NOTE(vytas): Quote "3.10" or else it is parsed as a YAML float 3.1.
           - python-version: "3.10"
             os: ubuntu-20.04
             toxenv: py310
           - python-version: "3.10"
             os: ubuntu-20.04
             toxenv: py310_cython
-          - python-version: 3.8
-            os: ubuntu-20.04
-            toxenv: py38_sans_msgpack
-          - python-version: 3.8
+          - python-version: "3.11.0-rc - 3.11"
+            os: ubuntu-latest
+            toxenv: py311
+          - python-version: "3.11.0-rc - 3.11"
+            os: ubuntu-latest
+            toxenv: py311_cython
+          - python-version: "3.10"
             os: macos-latest
-            toxenv: py38_nocover
-          - python-version: 3.8
+            toxenv: py310_nocover
+          - python-version: "3.10"
             os: windows-latest
-            toxenv: py38_nocover
+            toxenv: py310_nocover
+          # These env require 3.8, see tox.ini
+          - python-version: "3.8"
+            os: ubuntu-latest
+            toxenv: py38_smoke
+          - python-version: "3.8"
+            os: ubuntu-latest
+            toxenv: py38_smoke_cython
+          - python-version: "3.8"
+            os: ubuntu-latest
+            toxenv: "wsgi_servers"
 
     # Steps to run in each job.
     # Some are GitHub actions, others run shell commands.
@@ -120,14 +126,14 @@ jobs:
         run: tox -e ${{ matrix.toxenv }}
 
       - name: Combine coverage
-        if: ${{ matrix.toxenv == 'py35' || matrix.toxenv == 'py38' || matrix.toxenv == 'py38_sans_msgpack' }}
+        if: ${{ matrix.toxenv == 'py310' || matrix.toxenv == 'py310_sans_msgpack' }}
         run: |
           coverage --version
           coverage combine
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
-        if: ${{ matrix.toxenv == 'py35' || matrix.toxenv == 'py38' || matrix.toxenv == 'py38_sans_msgpack' }}
+        if: ${{ matrix.toxenv == 'py310' || matrix.toxenv == 'py310_sans_msgpack' }}
         with:
           env_vars: PYTHON
           fail_ci_if_error: true

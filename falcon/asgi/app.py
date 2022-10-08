@@ -33,7 +33,6 @@ from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 from falcon.media.multipart import MultipartFormHandler
 import falcon.routing
-from falcon.util.misc import http_status_to_code
 from falcon.util.misc import is_python_func
 from falcon.util.sync import _should_wrap_non_coroutines
 from falcon.util.sync import _wrap_non_coroutine_unsafe
@@ -52,7 +51,7 @@ from .ws import WebSocketOptions
 __all__ = ['App']
 
 
-# TODO(vytas): Clean up these foul workarounds when we drop Python 3.5 support.
+# TODO(vytas): Clean up these foul workarounds before the 4.0 release.
 MultipartFormHandler._ASGI_MULTIPART_FORM = MultipartForm  # type: ignore
 
 _EVT_RESP_EOF = {'type': EventType.HTTP_RESPONSE_BODY}
@@ -255,8 +254,7 @@ class App(falcon.app.App):
     _STATIC_ROUTE_TYPE = falcon.routing.StaticRouteAsync
 
     # NOTE(kgriffs): This makes it easier to tell what we are dealing with
-    #   without having to import falcon.asgi to get at the falcon.asgi.App
-    #   type (which we may not be able to do under Python 3.5).
+    #   without having to import falcon.asgi.
     _ASGI = True
 
     _default_responder_bad_request = falcon.responders.bad_request_async
@@ -473,7 +471,7 @@ class App(falcon.app.App):
 
             req_succeeded = False
 
-        resp_status = http_status_to_code(resp.status)
+        resp_status = resp.status_code
         default_media_type = self.resp_options.default_media_type
 
         if req.method == 'HEAD' or resp_status in _BODILESS_STATUS_CODES:
@@ -1040,7 +1038,7 @@ class App(falcon.app.App):
                 error,
             )
 
-            code = 3000 + falcon.util.http_status_to_code(error.status)
+            code = 3000 + error.status_code
             await ws.close(code)
 
     async def _python_error_handler(self, req, resp, error, params, ws=None):

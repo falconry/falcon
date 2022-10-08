@@ -200,10 +200,9 @@ class TestWSGIServer:
 
     def test_get_deprecated(self, server_url):
         resp = requests.get(server_url + '/deprecated', timeout=_REQUEST_TIMEOUT)
-        assert resp.status_code == 200
-        assert resp.text == 'Hello, World!\n'
-        assert resp.headers.get('Content-Type') == 'text/plain; charset=utf-8'
-        assert resp.headers.get('X-Falcon') == 'deprecated'
+
+        # Since it tries to set .body we expect an unhandled error
+        assert resp.status_code == 500
 
     def test_post_multipart_form(self, server_url):
         size = random.randint(8 * _SIZE_1_MB, 15 * _SIZE_1_MB)

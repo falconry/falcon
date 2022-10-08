@@ -105,6 +105,7 @@ def test_foo(custom_http_client, resource_things):
 
     assert 'FOO' in falcon.constants.COMBINED_METHODS
     assert response.status == falcon.HTTP_204
+    assert response.status_code == 204
     assert resource_things.called
 
 
@@ -123,3 +124,4 @@ def test_bar(custom_http_client, resource_things):
 
     assert 'BAR' in falcon.constants.COMBINED_METHODS
     assert response.status == falcon.HTTP_405
+    assert response.status_code == 405

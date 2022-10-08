@@ -29,9 +29,10 @@ from falcon.response_helpers import header_property
 from falcon.response_helpers import is_ascii_encodable
 from falcon.util import dt_to_http
 from falcon.util import http_cookies
+from falcon.util import http_status_to_code
 from falcon.util import structures
 from falcon.util import TimezoneGMT
-from falcon.util.deprecation import deprecated
+from falcon.util.deprecation import AttributeRemovedError, deprecated
 from falcon.util.uri import encode_check_escaped as uri_encode
 from falcon.util.uri import encode_value_check_escaped as uri_encode_value
 
@@ -58,14 +59,23 @@ class Response:
         options (dict): Set of global options passed from the App handler.
 
     Attributes:
-        status: HTTP status code or line (e.g., ``'200 OK'``). This may be set
-            to a member of :class:`http.HTTPStatus`, an HTTP status line string
-            or byte string (e.g., ``'200 OK'``), or an ``int``.
+        status (Union[str,int]): HTTP status code or line (e.g., ``'200 OK'``).
+            This may be set to a member of :class:`http.HTTPStatus`, an HTTP
+            status line string or byte string (e.g., ``'200 OK'``), or an
+            ``int``.
 
             Note:
                 The Falcon framework itself provides a number of constants for
                 common status codes. They all start with the ``HTTP_`` prefix,
                 as in: ``falcon.HTTP_204``. (See also: :ref:`status`.)
+
+        status_code (int): HTTP status code normalized from :attr:`status`.
+            When a code is assigned to this property, :attr:`status` is updated,
+            and vice-versa. The status code can be useful when needing to check
+            in middleware for codes that fall into a certain class, e.g.::
+
+                if resp.status_code >= 400:
+                    log.warning(f'returning error response: {resp.status_code}')
 
         media (object): A serializable object supported by the media handlers
             configured via :class:`falcon.RequestOptions`.
@@ -80,9 +90,6 @@ class Response:
                 Falcon will encode the given text as UTF-8
                 in the response. If the content is already a byte string,
                 use the :attr:`data` attribute instead (it's faster).
-
-        body (str): Deprecated alias for :attr:`text`. Will be removed in a
-            future Falcon version.
 
         data (bytes): Byte string representing response content.
 
@@ -191,15 +198,27 @@ class Response:
 
         self.context = self.context_type()
 
+    @property
+    def status_code(self) -> int:
+        return http_status_to_code(self.status)
+
+    @status_code.setter
+    def status_code(self, value):
+        self.status = value
+
     @property  # type: ignore
-    @deprecated('Please use text instead.', is_property=True)
     def body(self):
-        return self.text
+        raise AttributeRemovedError(
+            'The body attribute is no longer supported. '
+            'Please use the text attribute instead.'
+        )
 
     @body.setter  # type: ignore
-    @deprecated('Please use text instead.', is_property=True)
     def body(self, value):
-        self.text = value
+        raise AttributeRemovedError(
+            'The body attribute is no longer supported. '
+            'Please use the text attribute instead.'
+        )
 
     @property
     def data(self):
@@ -786,6 +805,7 @@ class Response:
         hreflang=None,
         type_hint=None,
         crossorigin=None,
+        link_extension=None,
     ):
         """Append a link header to the response.
 
@@ -794,11 +814,6 @@ class Response:
         Note:
             Calling this method repeatedly will cause each link to be
             appended to the Link header value, separated by commas.
-
-        Note:
-            So-called "link-extension" elements, as defined by RFC 5988,
-            are not yet supported. See also
-            `Issue #288 <https://github.com/falconry/falcon/issues/288>`__.
 
         Args:
             target (str): Target IRI for the resource identified by the
@@ -849,6 +864,10 @@ class Response:
                 Can take values 'anonymous' or 'use-credentials' or None.
                 (See:
                 https://www.w3.org/TR/html50/infrastructure.html#cors-settings-attribute)
+            link_extension(iterable): Provides additional custom attributes, as
+                described in RFC 8288, Section 3.4.2. Each member of the iterable
+                must be a two-tuple in the form of (*param*, *value*).
+                (See: https://datatracker.ietf.org/doc/html/rfc8288#section-3.4.2)
 
         """
 
@@ -910,6 +929,10 @@ class Response:
                 # PERF(vytas): the only remaining value is inlined.
                 # Un-inline in case more values are supported in the future.
                 value += '; crossorigin="use-credentials"'
+
+        if link_extension is not None:
+            value += '; '
+            value += '; '.join([p + '=' + v for p, v in link_extension])
 
         _headers = self._headers
         if 'link' in _headers:

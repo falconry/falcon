@@ -317,18 +317,6 @@ def test_empty_filename():
             part.secure_filename
 
 
-@falcon.runs_sync
-async def test_async_unsupported():
-    if falcon.ASGI_SUPPORTED:
-        pytest.skip('Testing missing ASGI support')
-
-    handler = media.MultipartFormHandler()
-    with pytest.raises(NotImplementedError):
-        await handler.deserialize_async(
-            'Dummy', 'multipart/form-data; boundary=BOUNDARY', None
-        )
-
-
 class MultipartAnalyzer:
     def on_post(self, req, resp):
         values = []

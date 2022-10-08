@@ -15,12 +15,7 @@ _FALCON_TEST_ENV = (
 
 @pytest.fixture(params=[True, False], ids=['asgi', 'wsgi'])
 def asgi(request):
-    is_asgi = request.param
-
-    if is_asgi and not falcon.constants.ASGI_SUPPORTED:
-        pytest.skip('ASGI requires Python 3.6+')
-
-    return is_asgi
+    return request.param
 
 
 # NOTE(kgriffs): Some modules actually run a wsgiref server, so

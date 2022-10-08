@@ -943,6 +943,15 @@ via custom type extensions.
 .. seealso:: See :ref:`custom-media-json-encoder` for an example on how to
     use a custom json encoder.
 
+.. note:: When testing an application employing a custom JSON encoder, bear in
+    mind that :class:`~.testing.TestClient` is decoupled from the app, and it
+    simulates requests as if they were performed by a third-party client (just
+    sans network). Therefore, passing the **json** parameter to
+    :ref:`simulate_* <testing_standalone_methods>` methods will effectively
+    use the stdlib's :func:`json.dumps`. If you want to serialize custom
+    objects for testing, you will need to dump them into a string yourself, and
+    pass it using the **body** parameter instead (accompanied by the
+    ``application/json`` content type header).
 
 Does Falcon set Content-Length or do I need to do that explicitly?
 ------------------------------------------------------------------

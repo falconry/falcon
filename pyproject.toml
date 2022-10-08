@@ -42,13 +42,13 @@
 [tool.black]
     # this is kept to avoid reformatting all the code if one were to
     # inadvertently run black on the project
-    target-version = ["py35"]
+    target-version = ["py37"]
     skip-string-normalization = true
     line-length = 88
     extend-exclude = "falcon/vendor"
 
 [tool.blue]
-    target-version = ["py35"]
+    target-version = ["py37"]
     line-length = 88
     extend-exclude = "falcon/vendor"
 
@@ -60,6 +60,8 @@ filterwarnings = [
     "ignore:Using or importing the ABCs:DeprecationWarning",
     "ignore:cannot collect test class 'TestClient':pytest.PytestCollectionWarning",
     "ignore:inspect.getargspec\\(\\) is deprecated:DeprecationWarning",
+    "ignore:.cgi. is deprecated and slated for removal:DeprecationWarning",
+    "ignore:path is deprecated\\. Use files\\(\\) instead:DeprecationWarning",
 ]
 testpaths = [
     "tests"

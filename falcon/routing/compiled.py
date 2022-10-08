@@ -19,6 +19,7 @@ from inspect import iscoroutinefunction
 import keyword
 import re
 from threading import Lock
+from typing import TYPE_CHECKING
 
 from falcon.routing import converters
 from falcon.routing.util import map_http_methods
@@ -27,7 +28,7 @@ from falcon.util.misc import is_python_func
 from falcon.util.sync import _should_wrap_non_coroutines
 from falcon.util.sync import wrap_sync_to_async
 
-if False:  # TODO: switch to TYPE_CHECKING once support for py3.5 is dropped
+if TYPE_CHECKING:
     from typing import Any
 
 _TAB_STR = ' ' * 4

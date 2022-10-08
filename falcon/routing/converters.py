@@ -14,6 +14,7 @@
 
 import abc
 from datetime import datetime
+from math import isfinite
 import uuid
 
 __all__ = (
@@ -21,6 +22,7 @@ __all__ = (
     'IntConverter',
     'DateTimeConverter',
     'UUIDConverter',
+    'FloatConverter',
 )
 
 
@@ -76,7 +78,6 @@ class IntConverter(BaseConverter):
     def __init__(self, num_digits=None, min=None, max=None):
         if num_digits is not None and num_digits < 1:
             raise ValueError('num_digits must be at least 1')
-
         self._num_digits = num_digits
         self._min = min
         self._max = max
@@ -86,10 +87,10 @@ class IntConverter(BaseConverter):
             return None
 
         # NOTE(kgriffs): int() will accept numbers with preceding or
-        # trailing whitespace, so we need to do our own check. Using
-        # strip() is faster than either a regex or a series of or'd
-        # membership checks via "in", esp. as the length of contiguous
-        # numbers in the value grows.
+        #   trailing whitespace, so we need to do our own check. Using
+        #   strip() is faster than either a regex or a series of or'd
+        #   membership checks via "in", esp. as the length of contiguous
+        #   numbers in the value grows.
         if value.strip() != value:
             return None
 
@@ -98,13 +99,50 @@ class IntConverter(BaseConverter):
         except ValueError:
             return None
 
+        return self._validate_min_max_value(value)
+
+    def _validate_min_max_value(self, value):
         if self._min is not None and value < self._min:
             return None
-
         if self._max is not None and value > self._max:
             return None
 
         return value
+
+
+class FloatConverter(IntConverter):
+    """Converts a field value to an float.
+
+    Identifier: `float`
+    Keyword Args:
+        min (float): Reject the value if it is less than this number.
+        max (float): Reject the value if it is greater than this number.
+        finite (bool) : Determines whether or not to only match ordinary
+            finite numbers (default: ``True``). Set to ``False`` to match
+            nan, inf, and -inf in addition to finite numbers.
+    """
+
+    __slots__ = '_finite'
+
+    def __init__(self, min: float = None, max: float = None, finite: bool = True):
+        self._min = min
+        self._max = max
+        self._finite = finite if finite is not None else True
+
+    def convert(self, value: str):
+        if value.strip() != value:
+            return None
+
+        try:
+            value = float(value)
+
+            if self._finite and not isfinite(value):
+                return None
+
+        except ValueError:
+            return None
+
+        return self._validate_min_max_value(value)
 
 
 class DateTimeConverter(BaseConverter):
@@ -176,5 +214,6 @@ BUILTIN = (
     ('int', IntConverter),
     ('dt', DateTimeConverter),
     ('uuid', UUIDConverter),
+    ('float', FloatConverter),
     ('path', PathConverter),
 )

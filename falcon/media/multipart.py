@@ -1,4 +1,4 @@
-# Copyright 2019-2020 by Vytautas Liuolia.
+# Copyright 2019-2022 by Vytautas Liuolia.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,11 +19,11 @@ import re
 from urllib.parse import unquote_to_bytes
 
 from falcon import errors
+from falcon.errors import MultipartParseError
 from falcon.media.base import BaseHandler
 from falcon.stream import BoundedStream
 from falcon.util import BufferedReader
 from falcon.util import misc
-from falcon.util.deprecation import deprecated_args
 
 
 # TODO(vytas):
@@ -43,36 +43,6 @@ _FILENAME_STAR_RFC5987 = re.compile(r"([\w-]+)'[\w]*'(.+)")
 
 _CRLF = b'\r\n'
 _CRLF_CRLF = _CRLF + _CRLF
-
-
-class MultipartParseError(errors.MediaMalformedError):
-    """Represents a multipart form parsing error.
-
-    This error may refer to a malformed or truncated form, usage of deprecated
-    or unsupported features, or form parameters exceeding limits configured in
-    :class:`MultipartParseOptions`.
-
-    :class:`MultipartParseError` instances raised in this module always include
-    a short human-readable description of the error.
-
-    The cause of this exception, if any, is stored in the ``__cause__`` attribute
-    using the "raise ... from" form when raising.
-
-    Args:
-        source_error (Exception): The source exception that was the cause of this one.
-    """
-
-    # NOTE(caselit): remove the description @property in MediaMalformedError
-    description = None
-
-    @deprecated_args(allowed_positional=0)
-    def __init__(self, description=None, **kwargs):
-        errors.HTTPBadRequest.__init__(
-            self,
-            title='Malformed multipart/form-data request media',
-            description=description,
-            **kwargs,
-        )
 
 
 # TODO(vytas): Consider supporting -charset- stuff.
@@ -130,7 +100,7 @@ class BodyPart:
             wrt using this name as a filename on a regular file system.
 
             If `filename` is empty or unset when referencing this property, an
-            instance of :class:`MultipartParseError` will be raised.
+            instance of :class:`.MultipartParseError` will be raised.
 
             See also: :func:`~.secure_filename`
 
@@ -268,7 +238,7 @@ class BodyPart:
 
         If decoding fails due to invalid `data` bytes (for the specified
         encoding), or the specified encoding itself is unsupported, a
-        :class:`MultipartParseError` will be raised when referencing this
+        :class:`.MultipartParseError` will be raised when referencing this
         property.
 
         Note:
@@ -523,9 +493,6 @@ class MultipartFormHandler(BaseHandler):
     def _deserialize_form(
         self, stream, content_type, content_length, form_cls=MultipartForm
     ):
-        if not form_cls:
-            raise NotImplementedError
-
         _, options = cgi.parse_header(content_type)
         try:
             boundary = options['boundary']
@@ -584,18 +551,18 @@ class MultipartParseOptions:
 
         max_body_part_count (int): The maximum number of body parts in the form
             (default: 64). If the form contains more parts than this number,
-            an instance of :class:`MultipartParseError` will be raised. If this
+            an instance of :class:`.MultipartParseError` will be raised. If this
             option is set to 0, no limit will be imposed by the parser.
 
         max_body_part_buffer_size (int): The maximum number of bytes to buffer
             and return when the :meth:`BodyPart.get_data` method is called
             (default: 1 MiB). If the body part size exceeds this value, an
-            instance of :class:`MultipartParseError` will be raised.
+            instance of :class:`.MultipartParseError` will be raised.
 
         max_body_part_headers_size (int): The maximum size (in bytes) of the
             body part headers structure (default: 8192). If the body part
             headers size exceeds this value, an instance of
-            :class:`MultipartParseError` will be raised.
+            :class:`.MultipartParseError` will be raised.
 
         media_handlers (Handlers): A dict-like object for configuring the
             media-types to handle. By default, handlers are provided for the

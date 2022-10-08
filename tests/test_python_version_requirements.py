@@ -1,12 +1,8 @@
-import pytest
-
-from falcon import ASGI_SUPPORTED
+import falcon
 
 
 def test_asgi():
-    if ASGI_SUPPORTED:
-        # Should not raise
-        import falcon.asgi  # NOQA
-    else:
-        with pytest.raises(ImportError):
-            import falcon.asgi  # NOQA
+    # TODO(vytas): consider removing this file completely.
+    #   Its only purpose left is verifying that ASGI_SUPPORTED is still
+    #   available for compatiblity.
+    assert falcon.ASGI_SUPPORTED
