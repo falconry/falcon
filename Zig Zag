@@ -1,0 +1,118 @@
+from collections import defaultdict
+from collections import deque
+ 
+ 
+class Node:
+    def __init__(self, val):
+        self.data = val
+        self.left = None
+        self.right = None
+ 
+# Function to Build Tree
+def buildTree(s):
+    # Corner Case
+    if(len(s) == 0 or s[0] == "N"):
+        return None
+ 
+    # Creating list of strings from input
+    # string after spliting by space
+    ip = list(map(str, s.split()))
+ 
+    # Create the root of the tree
+    root = Node(int(ip[0]))
+    size = 0
+    q = deque()
+ 
+    # Push the root to the queue
+    q.append(root)
+    size = size+1
+ 
+    # Starting from the second element
+    i = 1
+    while(size > 0 and i < len(ip)):
+        # Get and remove the front of the queue
+        currNode = q[0]
+        q.popleft()
+        size = size-1
+ 
+        # Get the current node's value from the string
+        currVal = ip[i]
+ 
+        # If the left child is not null
+        if(currVal != "N"):
+ 
+            # Create the left child for the current node
+            currNode.left = Node(int(currVal))
+ 
+            # Push it to the queue
+            q.append(currNode.left)
+            size = size+1
+        # For the right child
+        i = i+1
+        if(i >= len(ip)):
+            break
+        currVal = ip[i]
+ 
+        # If the right child is not null
+        if(currVal != "N"):
+ 
+            # Create the right child for the current node
+            currNode.right = Node(int(currVal))
+ 
+            # Push it to the queue
+            q.append(currNode.right)
+            size = size+1
+        i = i+1
+    return root
+ 
+# Function to calculate height of tree
+def treeHeight(root):
+    if not root:
+        return 0
+    lHeight = treeHeight(root.left)
+    rHeight = treeHeight(root.right)
+    return max(lHeight, rHeight) + 1
+   
+ 
+# Helper Function to store the zig zag order traversal
+# of tree in a list recursively
+def zigZagTraversalRecursion(root, height, lor, ans):
+    # Height = 1 means the tree now has only one node
+    if height <= 1:
+        if root:
+            ans.append(root.data)
+    # When Height > 1
+    else:
+        if lor:
+            if root.left:
+                zigZagTraversalRecursion(root.left, height - 1, lor, ans)
+            if root.right:
+                zigZagTraversalRecursion(root.right, height - 1, lor, ans)
+        else:
+            if root.right:
+                zigZagTraversalRecursion(root.right, height - 1, lor, ans)
+            if root.left:
+                zigZagTraversalRecursion(root.left, height - 1, lor, ans)
+ 
+# Function to traverse tree in zig zag order
+def zigZagTraversal(root):
+    ans = []
+    leftOrRight = True
+    height = treeHeight(root)
+    for i in range(1, height + 1):
+        zigZagTraversalRecursion(root, i, leftOrRight, ans)
+        leftOrRight = not leftOrRight
+    return ans
+ 
+ 
+if __name__ == '__main__':
+
+ 
+    s = "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15"
+    root = buildTree(s)
+    res = zigZagTraversal(root)
+ 
+    print("ZigZag traversal of binary tree is:")
+    for i in range(len(res)):
+        print(res[i], end=" ")
+    print()
