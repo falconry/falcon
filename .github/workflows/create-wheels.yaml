@@ -37,12 +37,12 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 2
 
       - name: Set up Python
-        uses: actions/setup-python@v2.1.4
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.architecture }}
@@ -106,7 +106,7 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 2
 
@@ -121,7 +121,7 @@ jobs:
           echo "::set-output name=python-version::$version"
 
       - name: Set up Python
-        uses: actions/setup-python@v2.1.4
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ steps.linux-py-version.outputs.python-version }}
           architecture: ${{ matrix.architecture }}
@@ -130,7 +130,7 @@ jobs:
         # this step uses the image provided by pypa here https://github.com/pypa/manylinux to generate the wheels on linux
         # the action uses the image for manylinux2010 but can generate also a manylinux1 wheel
         # change the tag of this image to change the image used
-        uses: RalfG/python-wheels-manylinux-build@v0.3.2-manylinux2010_x86_64
+        uses: RalfG/python-wheels-manylinux-build@v0.5.0-manylinux2010_x86_64
         # this action generates 3 wheels in dist/. linux manylinux1 and manylinux2010
         with:
           python-versions: ${{ matrix.python-version }}
@@ -140,7 +140,7 @@ jobs:
 
       - name: Create wheel for manylinux 2014
         # as previous step but for manylinux2014
-        uses: RalfG/python-wheels-manylinux-build@v0.3.2-manylinux2014_x86_64
+        uses: RalfG/python-wheels-manylinux-build@v0.5.0-manylinux2014_x86_64
         # this action generates 2 wheels in dist/. linux, manylinux2014
         with:
           # Remove previous original wheel just to be sure it is recreated. Should not be needed
@@ -192,12 +192,12 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 2
 
       - name: Set up Python
-        uses: actions/setup-python@v2.1.4
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.architecture }}
@@ -251,12 +251,12 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 2
 
       - name: Cache wheels
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: .pip
           key: ${{ matrix.python-version }}-${{ matrix.architecture }}-pip-${{ hashFiles('requirements/tests') }}
@@ -267,7 +267,7 @@ jobs:
 
       - name: Create wheel for manylinux 2014 for arm
         if: ${{ matrix.architecture == 'aarch64' }}
-        uses: RalfG/python-wheels-manylinux-build@v0.3.2-manylinux2014_aarch64
+        uses: RalfG/python-wheels-manylinux-build@v0.5.0-manylinux2014_aarch64
         # this action generates 2 wheels in dist/. linux manylinux1 and manylinux2010
         with:
           python-versions: ${{ matrix.python-version }}
@@ -290,7 +290,7 @@ jobs:
 
       - name: Create wheel for manylinux 2014 for s390x
         if: ${{ matrix.architecture == 's390x' }}
-        uses: RalfG/python-wheels-manylinux-build@v0.3.2-manylinux2014_s390x
+        uses: RalfG/python-wheels-manylinux-build@v0.5.0-manylinux2014_s390x
         # this action generates 2 wheels in dist/. linux manylinux1 and manylinux2010
         with:
           python-versions: ${{ matrix.python-version }}
@@ -318,7 +318,7 @@ jobs:
           files: 'dist/*manylinux*'
 
       - name: Set up Python
-        uses: actions/setup-python@v2.1.4
+        uses: actions/setup-python@v4
         with:
           python-version: "3.10"
           architecture: "x64"
