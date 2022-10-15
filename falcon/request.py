@@ -1189,6 +1189,37 @@ class Request:
 
             raise errors.HTTPMissingHeader(name)
 
+    def get_header_as_int(self, header, required=False):
+        """Retrieve the int value for the given header.
+
+        Args:
+            name (str): Header name, case-insensitive (e.g., 'Content-Length')
+
+        Keyword Args:
+            required (bool): Set to ``True`` to raise
+                ``HTTPBadRequest`` instead of returning gracefully when the
+                header is not found (default ``False``).
+
+        Returns:
+            int: The value of the specified header if it exists,
+            or ``None`` if the header is not found and is not required.
+
+        Raises:
+            HTTPBadRequest: The header was not found in the request, but
+                it was required.
+            HttpInvalidHeader: The header contained a malformed/invalid value.
+        """
+
+        try:
+            http_int = self.get_header(header, required=required)
+            return int(http_int)
+        except TypeError:
+            # When the header does not exist and isn't required
+            return None
+        except ValueError:
+            msg = 'The value of the header must be an integer.'
+            raise errors.HTTPInvalidHeader(msg, header)
+
     def get_header_as_datetime(self, header, required=False, obs_date=False):
         """Return an HTTP header with HTTP-Date values as a datetime.
 
