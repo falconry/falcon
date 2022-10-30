@@ -124,7 +124,7 @@ def get_cython_options():
     # NOTE(vytas): Now that all our codebase is Python 3.5+, specify the
     #   Python 3 language level for Cython as well to avoid any surprises.
     for ext_mod in ext_modules:
-        ext_mod.cython_directives = {'language_level': '3'}
+        ext_mod.cython_directives = {'language_level': '3', 'annotation_typing': False}
 
     cmdclass = {'build_ext': ve_build_ext}
     return cmdclass, ext_modules
