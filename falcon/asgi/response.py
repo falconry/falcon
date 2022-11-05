@@ -15,7 +15,7 @@
 """ASGI Response class."""
 try:
     from asyncio.coroutines import CoroWrapper  # type: ignore
-except ImportError:
+except ImportError:  # pragma: nocover
     CoroWrapper = None  # type: ignore
 from inspect import iscoroutine
 from inspect import iscoroutinefunction
