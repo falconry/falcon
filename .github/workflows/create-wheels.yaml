@@ -29,6 +29,7 @@ jobs:
           - "3.8"
           - "3.9"
           - "3.10"
+          - "3.11.0-rc - 3.11"
         architecture:
           - x64
 
@@ -93,11 +94,11 @@ jobs:
           - "ubuntu-latest"
         python-version:
           # the versions are <python tag>-<abi tag> as specified in PEP 425.
-          - cp36-cp36m
           - cp37-cp37m
           - cp38-cp38
           - cp39-cp39
           - cp310-cp310
+          - cp311-cp311
         architecture:
           - x64
 
@@ -237,11 +238,11 @@ jobs:
           - "ubuntu-latest"
         python-version:
           # the versions are <python tag>-<abi tag> as specified in PEP 425.
-          - cp36-cp36m
           - cp37-cp37m
           - cp38-cp38
           - cp39-cp39
           - cp310-cp310
+          - cp311-cp311
         architecture:
           - aarch64
           - s390x

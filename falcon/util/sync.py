@@ -156,7 +156,7 @@ async def sync_to_async(func, *args, **kwargs):
     Returns:
         function: An awaitable coroutine function that wraps the
         synchronous callable.
-    """
+    """  # noqa
 
     return await get_running_loop().run_in_executor(
         None, partial(func, *args, **kwargs)

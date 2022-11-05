@@ -13,8 +13,10 @@
 # limitations under the License.
 
 """ASGI Response class."""
-
-from asyncio.coroutines import CoroWrapper  # type: ignore
+try:
+    from asyncio.coroutines import CoroWrapper  # type: ignore
+except ImportError:
+    CoroWrapper = None  # type: ignore
 from inspect import iscoroutine
 from inspect import iscoroutinefunction
 
@@ -323,7 +325,9 @@ class Response(response.Response):
         # NOTE(kgriffs): We also have to do the CoroWrapper check because
         #   iscoroutine is less reliable under Python 3.6.
         if not iscoroutinefunction(callback):
-            if iscoroutine(callback) or isinstance(callback, CoroWrapper):
+            if iscoroutine(callback) or (
+                CoroWrapper is not None and isinstance(callback, CoroWrapper)
+            ):
                 raise TypeError(
                     'The callback object appears to '
                     'be a coroutine, rather than a coroutine function. Please '
