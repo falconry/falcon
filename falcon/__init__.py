@@ -21,7 +21,6 @@ the framework's classes, functions, and variables::
     import falcon
 
     app = falcon.App()
-
 """
 
 import logging as _logging

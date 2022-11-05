@@ -181,7 +181,9 @@ class JSONHandler(BaseHandler):
     async def _serialize_async_s(self, media, content_type) -> bytes:
         return self._dumps(media).encode()
 
-    def _serialize_b(self, media, content_type) -> bytes:
+    # NOTE(kgriffs): Make content_type a kwarg to support the
+    #   Request.render_body() shortcut optimization.
+    def _serialize_b(self, media, content_type=None) -> bytes:
         return self._dumps(media)
 
     async def _serialize_async_b(self, media, content_type) -> bytes:

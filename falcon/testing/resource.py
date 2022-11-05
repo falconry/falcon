@@ -21,7 +21,6 @@ directly from the `testing` package::
     from falcon import testing
 
     resource = testing.SimpleTestResource()
-
 """
 
 from json import dumps as json_dumps

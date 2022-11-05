@@ -233,7 +233,7 @@ class RemoveHeaderResource:
     def on_get(self, req, resp):
         etag = 'fa0d1a60ef6616bb28038515c8ea4cb2'
         if self.with_double_quotes:
-            etag = '\"' + etag + '\"'
+            etag = '"' + etag + '"'
 
         resp.etag = etag
         assert resp.etag == '"fa0d1a60ef6616bb28038515c8ea4cb2"'

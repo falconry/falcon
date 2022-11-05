@@ -752,8 +752,12 @@ class Request:
         # try...catch that will usually result in a relatively expensive
         # raised exception.
         if 'HTTP_FORWARDED' in self.env:
-            first_hop = self.forwarded[0]
-            scheme = first_hop.scheme or self.scheme
+            forwarded = self.forwarded
+            if forwarded:
+                # Use first hop, fall back on own scheme
+                scheme = forwarded[0].scheme or self.scheme
+            else:
+                scheme = self.scheme
         else:
             # PERF(kgriffs): This call should normally succeed, so
             # just go for it without wasting time checking it
@@ -845,8 +849,12 @@ class Request:
         # try...catch that will usually result in a relatively expensive
         # raised exception.
         if 'HTTP_FORWARDED' in self.env:
-            first_hop = self.forwarded[0]
-            host = first_hop.host or self.netloc
+            forwarded = self.forwarded
+            if forwarded:
+                # Use first hop, fall back on self
+                host = forwarded[0].host or self.netloc
+            else:
+                host = self.netloc
         else:
             # PERF(kgriffs): This call should normally succeed, assuming
             # that the caller is expecting a forwarded header, so
