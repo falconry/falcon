@@ -10,7 +10,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 STATIC = HERE.parent / 'static'
 
 
-def create_app():
+def create_app() -> falcon.asgi.App:
     app = falcon.asgi.App()
 
     hub = Hub()
