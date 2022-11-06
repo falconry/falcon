@@ -450,10 +450,12 @@ def code_to_http_status(status):
     if isinstance(status, http.HTTPStatus):
         return '{} {}'.format(status.value, status.phrase)
 
-    if isinstance(status, str):
+    # NOTE(kgriffs): If it is a str but does not have a space, assume it is
+    #   just the number by itself.
+    if isinstance(status, str) and ' ' in status:
         return status
 
-    if isinstance(status, bytes):
+    if isinstance(status, bytes) and b' ' in status:
         return status.decode()
 
     try:

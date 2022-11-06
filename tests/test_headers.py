@@ -363,6 +363,34 @@ class TestHeaders:
 
         assert result.headers['Expires'] == 'Tue, 01 Jan 2013 10:30:30 GMT'
 
+    def test_get_header_as_int(self, client):
+        resource = testing.SimpleTestResource(body=SAMPLE_BODY)
+        client.app.add_route('/', resource)
+        request_headers = {
+            'X-Int-Val': '42',
+            'X-Str-Val': 'test-val',
+            'X-Float-Val': '3.14',
+        }
+        client.simulate_get(headers=request_headers)
+
+        req = resource.captured_req
+        value = req.get_header_as_int('X-Int-Val')
+        assert value == 42
+
+        value = req.get_header_as_int('X-Not-Found')
+        assert value is None
+
+        with pytest.raises(falcon.HTTPInvalidHeader) as exc_info:
+            req.get_header_as_int('X-Float-Val')
+        assert exc_info.value.args[0] == 'The value of the header must be an integer.'
+
+        with pytest.raises(falcon.HTTPInvalidHeader) as exc_info:
+            req.get_header_as_int('X-Str-Val')
+        assert exc_info.value.args[0] == 'The value of the header must be an integer.'
+
+        with pytest.raises(falcon.HTTPMissingHeader) as exc_info:
+            req.get_header_as_int('X-Not-Found', required=True)
+
     def test_default_value(self, client):
         resource = testing.SimpleTestResource(body=SAMPLE_BODY)
         client.app.add_route('/', resource)
@@ -972,6 +1000,16 @@ class TestHeaders:
 
         with pytest.raises(ValueError):
             resp.append_link('/related/resource', 'next', crossorigin=crossorigin)
+
+    def test_append_link_with_link_extension(self, client):
+        expected_value = '</related/thing>; rel=item; sizes=72x72'
+
+        resource = LinkHeaderResource()
+        resource.append_link(
+            '/related/thing', 'item', link_extension=[('sizes', '72x72')]
+        )
+
+        self._check_link_header(client, resource, expected_value)
 
     def test_content_length_options(self, client):
         result = client.simulate_options()

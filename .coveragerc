@@ -9,6 +9,7 @@ parallel = True
 show_missing = True
 exclude_lines =
     if TYPE_CHECKING:
+    if not TYPE_CHECKING:
     pragma: nocover
     pragma: no cover
     pragma: no py39,py310 cover

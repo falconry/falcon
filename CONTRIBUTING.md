@@ -94,21 +94,21 @@ If you wish, you can customize Falcon's `tox.ini` to install alternative debugge
 A few simple benchmarks are included with the source under ``falcon/bench``. These can be taken as a rough measure of the performance impact (if any) that your changes have on the framework. You can run these tests by invoking one of the tox environments included for this purpose (see also the ``tox.ini`` file). For example:
 
 ```bash
-$ tox -e py38_bench
+$ tox -e py310_bench
 ```
 
 Note that you may pass additional arguments via tox to the falcon-bench command:
 
 ```bash
-$ tox -e py38_bench -- -h
-$ tox -e py38_bench -- -b falcon -i 20000
+$ tox -e py310_bench -- -h
+$ tox -e py310_bench -- -b falcon -i 20000
 ```
 
 Alternatively, you may run falcon-bench directly by creating a new virtual environment and installing falcon directly in development mode. In this example we use pyenv with pyenv-virtualenv from within a falcon source directory:
 
 ```bash
-$ pyenv virtualenv 3.8.0 falcon-sandbox-38
-$ pyenv shell falcon-sandbox-38
+$ pyenv virtualenv 3.10.6 falcon-sandbox-310
+$ pyenv shell falcon-sandbox-310
 $ pip install -r requirements/bench
 $ pip install -e .
 $ falcon-bench
