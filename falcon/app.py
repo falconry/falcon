@@ -19,7 +19,7 @@ from inspect import iscoroutinefunction
 import pathlib
 import re
 import traceback
-from typing import Callable, Optional, Tuple, Union
+from typing import Callable, Iterable, Optional, Tuple, Type, Union
 
 from falcon import app_helpers as helpers
 from falcon import constants
@@ -36,6 +36,7 @@ from falcon.request import RequestOptions
 from falcon.response import Response
 from falcon.response import ResponseOptions
 import falcon.status_codes as status
+from falcon.typing import ErrorHandler, ErrorSerializer, SinkPrefix
 from falcon.util import deprecation
 from falcon.util import misc
 from falcon.util.misc import code_to_http_status
@@ -227,6 +228,9 @@ class App:
         'req_options',
         'resp_options',
     )
+
+    req_options: RequestOptions
+    resp_options: ResponseOptions
 
     def __init__(
         self,
@@ -647,7 +651,7 @@ class App:
         self._static_routes.insert(0, (sr, sr, False))
         self._update_sink_and_static_routes()
 
-    def add_sink(self, sink, prefix=r'/'):
+    def add_sink(self, sink: Callable, prefix: SinkPrefix = r'/'):
         """Register a sink method for the App.
 
         If no route matches a request, but the path in the requested URI
@@ -700,7 +704,11 @@ class App:
         self._sinks.insert(0, (prefix, sink, True))
         self._update_sink_and_static_routes()
 
-    def add_error_handler(self, exception, handler=None):
+    def add_error_handler(
+        self,
+        exception: Union[Type[BaseException], Iterable[Type[BaseException]]],
+        handler: Optional[ErrorHandler] = None,
+    ):
         """Register a handler for one or more exception types.
 
         Error handlers may be registered for any exception type, including
@@ -800,7 +808,7 @@ class App:
 
         if handler is None:
             try:
-                handler = exception.handle
+                handler = exception.handle  # type: ignore
             except AttributeError:
                 raise AttributeError(
                     'handler must either be specified '
@@ -820,8 +828,9 @@ class App:
         ) or arg_names[1:3] in (('req', 'resp'), ('request', 'response')):
             handler = wrap_old_handler(handler)
 
+        exception_tuple: tuple
         try:
-            exception_tuple = tuple(exception)
+            exception_tuple = tuple(exception)  # type: ignore
         except TypeError:
             exception_tuple = (exception,)
 
@@ -831,7 +840,7 @@ class App:
 
             self._error_handlers[exc] = handler
 
-    def set_error_serializer(self, serializer):
+    def set_error_serializer(self, serializer: ErrorSerializer):
         """Override the default serializer for instances of :class:`~.HTTPError`.
 
         When a responder raises an instance of :class:`~.HTTPError`,
