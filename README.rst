@@ -1027,7 +1027,7 @@ See also: `CONTRIBUTING.md <https://github.com/falconry/falcon/blob/master/CONTR
 Legal
 -----
 
-Copyright 2013-2021 by Individual and corporate contributors as
+Copyright 2013-2022 by Individual and corporate contributors as
 noted in the individual source files.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may

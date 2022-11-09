@@ -92,8 +92,13 @@ you can re-render the docs without overwriting the changelog RST:
 $ tox -e docs
 ```
 
-Finally, if all looks good, remove the rendered towncrier fragments from
+If all looks good, remove the rendered towncrier fragments from
 `docs/_newsfragments` and then submit a PR containing the changes made so far.
+
+Finally, merge the documentation PR and check that everything renders correctly
+on https://falcon.readthedocs.io/. Note that if the release is not based on
+`master` (or `main`), you may need to manually enable build on RtD for the
+branch or tag in question.
 
 ### Release beta or rc
 
