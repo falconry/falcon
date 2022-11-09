@@ -18,7 +18,15 @@ Changes to Supported Platforms
   will no longer be supported in Falcon 4.0.
 
 
-.. towncrier release notes start
+Fixed
+-----
+
+- Request attributes :attr:`~falcon.Request.forwarded_scheme` and
+  :attr:`~falcon.Request.forwarded_host` now no longer raise an ``IndexError``
+  while processing an invalid or empty ``Forwarded`` header. (`#2043 <https://github.com/falconry/falcon/issues/2043>`__)
+- The ``orjson`` library now works correctly when used as JSON serializer in
+  the media handlers in the ASGI version of Falcon. (`#2100 <https://github.com/falconry/falcon/issues/2100>`__)
+
 
 Contributors to this Release
 ----------------------------
