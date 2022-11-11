@@ -147,7 +147,7 @@ jobs:
         # this action generates 2 wheels in dist/. linux, manylinux2014
         with:
           # Remove previous original wheel just to be sure it is recreated. Should not be needed
-          pre-build-command: "rm ./dist/*-linux*.whl"
+          pre-build-command: "rm -f ./dist/*-linux*.whl"
           python-versions: ${{ matrix.python-version }}
           build-requirements: "setuptools>=47 wheel>=0.34"
           pip-wheel-args: "-w ./dist -v --no-deps"
