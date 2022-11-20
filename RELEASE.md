@@ -20,7 +20,7 @@ field to modify.
 Update changelog filename in `pyproject.toml` to suit.
 
 Update the build tag in `setup.cfg` under `[egg_info]` for pre-release builds,
-or remove it (leaving it blank as in `tag_build = `) for a final releases.
+or remove it (leaving it blank as in `tag_build =`) for a final release.
 
 ### Update changelog and render towncrier fragments
 
@@ -59,7 +59,7 @@ Many thanks to those who contributed to this bugfix release:
 Otherwise, ensure the summary has been brought up to date; be sure to highlight
 key changes in this release.
 
-Next update the contributors and render towncrier fragments by running:
+Next, update the contributors and render towncrier fragments by running:
 
 ```sh
 $ tox -e changelog_release
