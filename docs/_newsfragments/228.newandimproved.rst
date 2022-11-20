@@ -1,2 +1,2 @@
 Add link-extension to :meth:`falcon.Response.append_link` as specified in
-`RFC 8288 Sec. 3.4.2. <https://datatracker.ietf.org/doc/html/rfc8288#section-3.4.2>`
+`RFC 8288 Sec. 3.4.2 <https://datatracker.ietf.org/doc/html/rfc8288#section-3.4.2>`__.
