@@ -10,6 +10,7 @@ Release Process:
 6. Publish final version and add a release note.
 7. Run benchmark and update falconframework.org with latest numbers.
 8. Announce the new version in Gitter channels and on the socials.
+9. Improve this document.
 
 ### Bump version and update tag
 
@@ -118,4 +119,9 @@ Be sure to install and test from PyPI as a sanity check afterwards.
 
 ### Run benchmark and update falconframework.org with latest numbers
 
-### Announce the new version in Gitter channels and on the socials.
+### Announce the new version in Gitter channels and on the socials
+
+### Improve this document
+
+If you find any inconsistencies, outdated notes or anything missing here, make
+sure you improve this document for future releases!
