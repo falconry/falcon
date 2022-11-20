@@ -4,4 +4,5 @@ pecan
 bottle
 
 pprofile
+# NOTE(caselit): vmprof requires python 3.8 https://github.com/vmprof/vmprof-python/issues/240
 vmprof

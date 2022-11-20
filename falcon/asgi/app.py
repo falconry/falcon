@@ -33,7 +33,6 @@ from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 from falcon.media.multipart import MultipartFormHandler
 import falcon.routing
-from falcon.util.misc import http_status_to_code
 from falcon.util.misc import is_python_func
 from falcon.util.sync import _should_wrap_non_coroutines
 from falcon.util.sync import _wrap_non_coroutine_unsafe
@@ -473,7 +472,7 @@ class App(falcon.app.App):
 
             req_succeeded = False
 
-        resp_status = http_status_to_code(resp.status)
+        resp_status = resp.status_code
         default_media_type = self.resp_options.default_media_type
 
         if req.method == 'HEAD' or resp_status in _BODILESS_STATUS_CODES:
@@ -1045,7 +1044,7 @@ class App(falcon.app.App):
                 error,
             )
 
-            code = 3000 + falcon.util.http_status_to_code(error.status)
+            code = 3000 + error.status_code
             await ws.close(code)
 
     async def _python_error_handler(self, req, resp, error, params, ws=None):
