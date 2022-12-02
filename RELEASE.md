@@ -10,6 +10,7 @@ Release Process:
 6. Publish final version and add a release note.
 7. Run benchmark and update falconframework.org with latest numbers.
 8. Announce the new version in Gitter channels and on the socials.
+9. Improve this document.
 
 ### Bump version and update tag
 
@@ -20,7 +21,7 @@ field to modify.
 Update changelog filename in `pyproject.toml` to suit.
 
 Update the build tag in `setup.cfg` under `[egg_info]` for pre-release builds,
-or remove it (leaving it blank as in `tag_build = `) for a final releases.
+or remove it (leaving it blank as in `tag_build =`) for a final release.
 
 ### Update changelog and render towncrier fragments
 
@@ -59,7 +60,7 @@ Many thanks to those who contributed to this bugfix release:
 Otherwise, ensure the summary has been brought up to date; be sure to highlight
 key changes in this release.
 
-Next update the contributors and render towncrier fragments by running:
+Next, update the contributors and render towncrier fragments by running:
 
 ```sh
 $ tox -e changelog_release
@@ -92,8 +93,13 @@ you can re-render the docs without overwriting the changelog RST:
 $ tox -e docs
 ```
 
-Finally, if all looks good, remove the rendered towncrier fragments from
+If all looks good, remove the rendered towncrier fragments from
 `docs/_newsfragments` and then submit a PR containing the changes made so far.
+
+Finally, merge the documentation PR and check that everything renders correctly
+on https://falcon.readthedocs.io/. Note that if the release is not based on
+`master` (or `main`), you may need to manually enable build on RtD for the
+branch or tag in question.
 
 ### Release beta or rc
 
@@ -113,4 +119,9 @@ Be sure to install and test from PyPI as a sanity check afterwards.
 
 ### Run benchmark and update falconframework.org with latest numbers
 
-### Announce the new version in Gitter channels and on the socials.
+### Announce the new version in Gitter channels and on the socials
+
+### Improve this document
+
+If you find any inconsistencies, outdated notes or anything missing here, make
+sure you improve this document for future releases!

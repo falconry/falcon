@@ -132,6 +132,9 @@ jobs:
         # change the tag of this image to change the image used
         uses: RalfG/python-wheels-manylinux-build@v0.5.0-manylinux2010_x86_64
         # this action generates 3 wheels in dist/. linux manylinux1 and manylinux2010
+        # TODO(vytas): Drop manylinux 2010 support for all wheels:
+        #   https://github.com/pypa/manylinux/issues/1281#
+        if: ${{ matrix.python-version != 'cp311-cp311' }}
         with:
           python-versions: ${{ matrix.python-version }}
           build-requirements: "setuptools>=47 wheel>=0.34"
@@ -144,7 +147,7 @@ jobs:
         # this action generates 2 wheels in dist/. linux, manylinux2014
         with:
           # Remove previous original wheel just to be sure it is recreated. Should not be needed
-          pre-build-command: "rm ./dist/*-linux*.whl"
+          pre-build-command: "rm -f ./dist/*-linux*.whl"
           python-versions: ${{ matrix.python-version }}
           build-requirements: "setuptools>=47 wheel>=0.34"
           pip-wheel-args: "-w ./dist -v --no-deps"
