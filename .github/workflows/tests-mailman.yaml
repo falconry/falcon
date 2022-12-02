@@ -6,10 +6,6 @@ on:
   push:
     branches:
       - master
-  # TODO(vytas): Remove if/when the CI passes.
-  pull_request:
-    branches:
-      - master
 
 jobs:
   run_tox:
