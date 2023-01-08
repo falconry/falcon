@@ -133,6 +133,10 @@ $ gnome-open docs/_build/html/index.html
 $ xdg-open docs/_build/html/index.html
 ```
 
+### VS Code Dev Container development environment
+
+When opening the project using the [VS Code](https://code.visualstudio.com/) IDE, if you have [Docker](https://www.docker.com/) (or some drop-in replacement such as [Podman](https://podman.io/) or [Colima](https://github.com/abiosoft/colima) or [Rancher Desktop](https://rancherdesktop.io/)) installed, you can leverage the [Dev Containers](https://code.visualstudio.com/docs/devcontainers/containers) feature to start a container in the background with all the dependencies required to test and debug the Falcon code. VS Code integrates with the Dev Container seamlessly, which can be configured via [devcontainer.json](.devcontainer/devcontainer.json). Once you open the project in VS Code, you can execute the "Reopen in Container" command to start the Dev Container which will run the headless VS Code Server process that the local VS Code app will connect to via a [published port](https://docs.docker.com/config/containers/container-networking/#published-ports).
+
 ### Code style rules
 
 * Docstrings are required for classes, attributes, methods, and functions. Follow the

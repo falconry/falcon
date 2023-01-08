@@ -30,5 +30,4 @@ Many thanks to all of our talented and stylish contributors for this release!
 - `meetshah133 <https://github.com/meetshah133>`__
 - `mgorny <https://github.com/mgorny>`__
 - `RioAtHome <https://github.com/RioAtHome>`__
-- `TBoshoven <https://github.com/TBoshoven>`__
 - `vytas7 <https://github.com/vytas7>`__
