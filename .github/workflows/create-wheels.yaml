@@ -126,24 +126,8 @@ jobs:
           python-version: ${{ steps.linux-py-version.outputs.python-version }}
           architecture: ${{ matrix.architecture }}
 
-      - name: Create wheel for manylinux 2010 and 1
-        # this step uses the image provided by pypa here https://github.com/pypa/manylinux to generate the wheels on linux
-        # the action uses the image for manylinux2010 but can generate also a manylinux1 wheel
-        # change the tag of this image to change the image used
-        uses: RalfG/python-wheels-manylinux-build@v0.5.0-manylinux2010_x86_64
-        # this action generates 3 wheels in dist/. linux manylinux1 and manylinux2010
-        # TODO(vytas): Drop manylinux 2010 support for all wheels:
-        #   https://github.com/pypa/manylinux/issues/1281#
-        if: ${{ matrix.python-version != 'cp311-cp311' }}
-        with:
-          python-versions: ${{ matrix.python-version }}
-          build-requirements: "setuptools>=47 wheel>=0.34"
-          # `--no-deps` is used to only generate the wheel for the current library. Redundant in falcon since it has no dependencies
-          pip-wheel-args: "-w ./dist -v --no-deps"
-
       - name: Create wheel for manylinux 2014
-        # as previous step but for manylinux2014
-        uses: RalfG/python-wheels-manylinux-build@v0.5.0-manylinux2014_x86_64
+        uses: RalfG/python-wheels-manylinux-build@v0.6.0-manylinux2014_x86_64
         # this action generates 2 wheels in dist/. linux, manylinux2014
         with:
           # Remove previous original wheel just to be sure it is recreated. Should not be needed
@@ -270,8 +254,8 @@ jobs:
 
       - name: Create wheel for manylinux 2014 for arm
         if: ${{ matrix.architecture == 'aarch64' }}
-        uses: RalfG/python-wheels-manylinux-build@v0.5.0-manylinux2014_aarch64
-        # this action generates 2 wheels in dist/. linux manylinux1 and manylinux2010
+        uses: RalfG/python-wheels-manylinux-build@v0.6.0-manylinux2014_aarch64
+        # this action generates 2 wheels in dist/. linux, manylinux2014
         with:
           python-versions: ${{ matrix.python-version }}
           build-requirements: "setuptools>=47 wheel>=0.34"
@@ -293,8 +277,8 @@ jobs:
 
       - name: Create wheel for manylinux 2014 for s390x
         if: ${{ matrix.architecture == 's390x' }}
-        uses: RalfG/python-wheels-manylinux-build@v0.5.0-manylinux2014_s390x
-        # this action generates 2 wheels in dist/. linux manylinux1 and manylinux2010
+        uses: RalfG/python-wheels-manylinux-build@v0.6.0-manylinux2014_s390x
+        # this action generates 2 wheels in dist/. linux, manylinux2014
         with:
           python-versions: ${{ matrix.python-version }}
           build-requirements: "setuptools>=47 wheel>=0.34"

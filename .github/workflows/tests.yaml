@@ -69,10 +69,10 @@ jobs:
           - python-version: "3.10"
             os: ubuntu-latest
             toxenv: py310_cython
-          - python-version: "3.11.0-rc - 3.11"
+          - python-version: "3.11"
             os: ubuntu-latest
             toxenv: py311
-          - python-version: "3.11.0-rc - 3.11"
+          - python-version: "3.11"
             os: ubuntu-latest
             toxenv: py311_cython
           - python-version: "3.10"
@@ -81,12 +81,12 @@ jobs:
           - python-version: "3.10"
             os: windows-latest
             toxenv: py310_nocover
-          # These env require 3.8, see tox.ini
+          # These env require 3.8 and 20.04, see tox.ini
           - python-version: "3.8"
-            os: ubuntu-latest
+            os: ubuntu-20.04
             toxenv: py38_smoke
           - python-version: "3.8"
-            os: ubuntu-latest
+            os: ubuntu-20.04
             toxenv: py38_smoke_cython
           - python-version: "3.8"
             os: ubuntu-latest
