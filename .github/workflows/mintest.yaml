@@ -6,6 +6,9 @@ on:
   push:
     branches:
       - master
+  pull_request:
+    branches:
+      - master
 
 jobs:
   run_tox:
@@ -41,5 +44,6 @@ jobs:
         run: |
           tools/sed_coverage_rc.py
 
-      - name: Run tox
-        run: tox
+      - name: Run tox inside sdist
+        run: |
+          tools/tox_sdist.py
