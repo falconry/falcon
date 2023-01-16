@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta, tzinfo
 from http import cookies as http_cookies
 import re
@@ -75,6 +76,7 @@ class CookieUnset:
         resp.unset_cookie('bar', path='/bar')
         resp.unset_cookie('baz', domain='www.example.com')
         resp.unset_cookie('foobar', path='/foo', domain='www.example.com')
+        resp.unset_cookie('barfoo', samesite='none', path='/foo', domain='www.example.com')
 
 
 @pytest.fixture
@@ -169,20 +171,20 @@ def test_response_complex_case(client):
 
 def test_unset_cookies(client):
     result = client.simulate_get('/unset-cookie')
+    assert len(result.cookies) == 5
 
-    assert len(result.cookies) == 4
-
-    def test(cookie, path, domain):
+    def test(cookie, path, domain, samesite=None):
         assert cookie.value == ''  # An unset cookie has an empty value
         assert cookie.domain == domain
         assert cookie.path == path
-        assert cookie.same_site == 'Lax'
+        assert cookie.same_site == samesite or 'Lax'
         assert cookie.expires < datetime.utcnow()
 
     test(result.cookies['foo'], path=None, domain=None)
     test(result.cookies['bar'], path='/bar', domain=None)
     test(result.cookies['baz'], path=None, domain='www.example.com')
     test(result.cookies['foobar'], path='/foo', domain='www.example.com')
+    test(result.cookies['barfoo'], path='/foo', domain='www.example.com', samesite='none')
 
 
 def test_cookie_expires_naive(client):
