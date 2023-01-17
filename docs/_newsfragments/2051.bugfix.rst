@@ -1,0 +1,4 @@
+Some essential files were unintentionally omitted from the source distribution
+archive, rendering it unsuitable to run the test suite off.
+This has been fixed, and the ``sdist`` tarball should now be usable as a base
+for packaging Falcon in OS distributions.

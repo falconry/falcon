@@ -1,11 +1,16 @@
+recursive-include docs *.rst *.html *.ico *.png *.py *.svg
+recursive-include examples *.py
 recursive-include falcon *.pyx
-recursive-include tests *.py
-recursive-include docs *.rst
+recursive-include tests *.py *.pyx
 include .coveragerc
 include tox.ini
+include CONTRIBUTING.md
 include README.rst
+include AUTHORS
 include LICENSE
 include docs/conf.py docs/Makefile
 graft docs/_static
 graft docs/_templates
+graft requirements
 graft tools
+prune docs/_build
