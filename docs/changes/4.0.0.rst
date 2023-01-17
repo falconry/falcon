@@ -15,8 +15,53 @@ Changes to Supported Platforms
 - CPython 3.11 is now fully supported. (`#2072 <https://github.com/falconry/falcon/issues/2072>`__)
 - End-of-life Python 3.5 & 3.6 are no longer supported. (`#2074 <https://github.com/falconry/falcon/pull/2074>`__)
 
-
 .. towncrier release notes start
+
+
+Breaking Changes
+----------------
+
+- The deprecated ``has_representation()`` method for :class:`~falcon.HTTPError` was
+  removed, along with the ``NoRepresentation`` and ``OptionalRepresentation``
+  classes. (`#1853 <https://github.com/falconry/falcon/issues/1853>`__)
+- The deprecated ``api_helpers`` was removed in favor of the ``app_helpers``
+  module. In addition, the deprecated ``body``
+  attributes for the :class:`~falcon.HTTPResponse`,
+  :class:`~falcon.asgi.HTTPResponse`, and :class:`~falcon.HTTPStatus` classes. (`#2090 <https://github.com/falconry/falcon/issues/2090>`__)
+
+
+New & Improved
+--------------
+
+- Add link-extension to :meth:`falcon.Response.append_link` as specified in
+  `RFC 8288 Sec. 3.4.2 <https://datatracker.ietf.org/doc/html/rfc8288#section-3.4.2>`__. (`#228 <https://github.com/falconry/falcon/issues/228>`__)
+- A new ``path`` :class:`converter <~falcon.routing.PathConverter>`
+  capable of matching segments that include ``/`` was added. (`#648 <https://github.com/falconry/falcon/issues/648>`__)
+- :class:`FloatConverter`:Modified existing IntConverter class and added FloatConverter class to convert string to float at runtime. (`#2022 <https://github.com/falconry/falcon/issues/2022>`__)
+- An informative representation was added to :class:`testing.Result <falcon.testing.Result>`
+  for easier development and interpretation of failed tests. The form of ``__repr__`` is as follows:
+  ``Result<{status_code} {content-type header} {content}>``, where the content part will reflect
+  up to 40 bytes of the result's content. (`#2044 <https://github.com/falconry/falcon/issues/2044>`__)
+- A new method :meth:`falcon.Request.get_header_as_int` was implemented. (`#2060 <https://github.com/falconry/falcon/issues/2060>`__)
+- A new property, :attr:`~falcon.Request.headers_lower`, was added to provide a
+  unified, self-documenting way to get a copy of all request headers with
+  lowercase names to facilitate case-insensitive matching. This is especially
+  useful for middleware components that need to be compatible with both WSGI and
+  ASGI. :attr:`~falcon.Request.headers_lower` was added in lieu of introducing a
+  breaking change to the WSGI :attr:`~falcon.Request.headers` property that
+  returns uppercase header names from the WSGI ``environ`` dictionary. (`#2063 <https://github.com/falconry/falcon/issues/2063>`__)
+- A new ``status_code`` attribute was added to the :attr:`falcon.Response <falcon.Response.status_code>`,
+  :attr:`falcon.asgi.Response <falcon.Response.status_code>`,
+  :attr:`HTTPStatus <falcon.HTTPStatus.status_code>`,
+  and :attr:`HTTPError <falcon.HTTPError.status_code>` classes. (`#2108 <https://github.com/falconry/falcon/issues/2108>`__)
+
+
+Fixed
+-----
+
+- The web servers used for tests are now run through :any:`sys.executable` in
+  order to ensure that they respect the virtualenv in which tests are being run. (`#2047 <https://github.com/falconry/falcon/issues/2047>`__)
+
 
 Contributors to this Release
 ----------------------------

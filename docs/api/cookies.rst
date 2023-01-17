@@ -167,4 +167,4 @@ default, although this may change in a future release.
 
 When unsetting a cookie, :py:meth:`~falcon.Response.unset_cookie`,
 the default `SameSite` setting of the unset cookie is ``'Lax'``, but can be changed
-by setting the 'samsite' kwarg.
+by setting the 'samesite' kwarg.

@@ -548,9 +548,9 @@ class Response:
             name (str): Cookie name
 
         Keyword Args:
-            samesite (str): Allows to override the default 'Lax' same_site 
-                    setting for the unset cookie. 
-            
+            samesite (str): Allows to override the default 'Lax' same_site
+                    setting for the unset cookie.
+
             domain (str): Restricts the cookie to a specific domain and
                     any subdomains of that domain. By default, the user
                     agent will return the cookie only to the origin server.
