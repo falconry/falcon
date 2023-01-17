@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 import argparse
+import atexit
 import logging
-import os
 import pathlib
 import shutil
 import subprocess
@@ -38,8 +38,13 @@ def extract_sdist(archive, target):
 
 def exec_tox(tox_ini_dir):
     logging.info(f'Running tox in {tox_ini_dir}...')
-    os.chdir(tox_ini_dir)
-    os.execl(shutil.which('tox'), 'tox')
+    subprocess.check_call(('tox', '--version'))
+    subprocess.check_call(('tox',), cwd=tox_ini_dir)
+
+
+def _cleanup(target):
+    shutil.rmtree(target)
+    logging.info(f'Removed temporary directory {target}.')
 
 
 def main():
@@ -50,7 +55,12 @@ def main():
         '-p', '--path', help='path to extract sdist to (default: create temp)'
     )
     args = parser.parse_args()
-    target = pathlib.Path(args.path or tempfile.mkdtemp(prefix='falcon-'))
+
+    target = args.path
+    if not target:
+        target = tempfile.mkdtemp(prefix='falcon-')
+        atexit.register(_cleanup, target)
+    target = pathlib.Path(target)
     logging.info(f'Using target path: {target}.')
 
     archive = build_sdist()

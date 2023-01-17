@@ -13,3 +13,4 @@ graft docs/_static
 graft docs/_templates
 graft requirements
 graft tools
+prune docs/_build
