@@ -526,7 +526,7 @@ class Response:
 
             self._cookies[name]['samesite'] = same_site.capitalize()
 
-    def unset_cookie(self, name, domain=None, path=None):
+    def unset_cookie(self, name, samesite='Lax', domain=None, path=None):
         """Unset a cookie in the response.
 
         Clears the contents of the cookie, and instructs the user
@@ -548,6 +548,9 @@ class Response:
             name (str): Cookie name
 
         Keyword Args:
+            samesite (str): Allows to override the default 'Lax' same_site
+                    setting for the unset cookie.
+
             domain (str): Restricts the cookie to a specific domain and
                     any subdomains of that domain. By default, the user
                     agent will return the cookie only to the origin server.
@@ -591,7 +594,7 @@ class Response:
 
         # NOTE(CaselIT): Set SameSite to Lax to avoid setting invalid cookies.
         # See https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie/SameSite#Fixing_common_warnings  # noqa: E501
-        self._cookies[name]['samesite'] = 'Lax'
+        self._cookies[name]['samesite'] = samesite
 
         if domain:
             self._cookies[name]['domain'] = domain
