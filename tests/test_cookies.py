@@ -58,6 +58,7 @@ class CookieResourceMaxAgeFloatString:
 class CookieResourceSameSite:
     def on_get(self, req, resp):
         resp.set_cookie('foo', 'bar', same_site='Lax')
+        resp.set_cookie('barz', 'barz', same_site='')
 
     def on_post(self, req, resp):
         resp.set_cookie('bar', 'foo', same_site='STRICT')
@@ -75,6 +76,21 @@ class CookieUnset:
         resp.unset_cookie('bar', path='/bar')
         resp.unset_cookie('baz', domain='www.example.com')
         resp.unset_cookie('foobar', path='/foo', domain='www.example.com')
+        resp.unset_cookie(
+            'barfoo', samesite='none', path='/foo', domain='www.example.com'
+        )
+
+
+class CookieUnsetSameSite:
+    def on_get(self, req, resp):
+        # change lax to strict
+        resp.unset_cookie('foo', samesite='Strict')
+        # change strict to lax
+        resp.unset_cookie('bar')
+        # change none to ''
+        resp.unset_cookie('baz', samesite='')
+        # change '' to none
+        resp.unset_cookie('barz', samesite='None')
 
 
 @pytest.fixture
@@ -84,6 +100,7 @@ def client(asgi):
     app.add_route('/test-convert', CookieResourceMaxAgeFloatString())
     app.add_route('/same-site', CookieResourceSameSite())
     app.add_route('/unset-cookie', CookieUnset())
+    app.add_route('/unset-cookie-same-site', CookieUnsetSameSite())
 
     return testing.TestClient(app)
 
@@ -169,20 +186,66 @@ def test_response_complex_case(client):
 
 def test_unset_cookies(client):
     result = client.simulate_get('/unset-cookie')
+    assert len(result.cookies) == 5
 
-    assert len(result.cookies) == 4
-
-    def test(cookie, path, domain):
+    def test(cookie, path, domain, samesite='Lax'):
         assert cookie.value == ''  # An unset cookie has an empty value
         assert cookie.domain == domain
         assert cookie.path == path
-        assert cookie.same_site == 'Lax'
+        assert cookie.same_site == samesite
         assert cookie.expires < datetime.utcnow()
 
     test(result.cookies['foo'], path=None, domain=None)
     test(result.cookies['bar'], path='/bar', domain=None)
     test(result.cookies['baz'], path=None, domain='www.example.com')
     test(result.cookies['foobar'], path='/foo', domain='www.example.com')
+    test(
+        result.cookies['barfoo'], path='/foo', domain='www.example.com', samesite='none'
+    )
+
+
+def test_unset_cookies_samesite(client):
+    # Test possible different samesite values in set_cookies
+    # foo, bar, lax
+    result_set_lax_empty = client.simulate_get('/same-site')
+    # bar, foo, strict
+    result_set_strict = client.simulate_post('/same-site')
+    # baz, foo, none
+    result_set_none = client.simulate_put('/same-site')
+
+    def test_set(cookie, value, samesite=None):
+        assert cookie.value == value
+        assert cookie.same_site == samesite
+
+    test_set(result_set_lax_empty.cookies['foo'], 'bar', samesite='Lax')
+    test_set(result_set_strict.cookies['bar'], 'foo', samesite='Strict')
+    test_set(result_set_none.cookies['baz'], 'foo', samesite='None')
+    # barz gets set with '', that is None value
+    test_set(result_set_lax_empty.cookies['barz'], 'barz')
+    test_set(result_set_lax_empty.cookies['barz'], 'barz', samesite=None)
+
+    # Unset the cookies with different samesite values
+    result_unset = client.simulate_get('/unset-cookie-same-site')
+    assert len(result_unset.cookies) == 4
+
+    def test_unset(cookie, samesite='Lax'):
+        assert cookie.value == ''  # An unset cookie has an empty value
+        assert cookie.same_site == samesite
+        assert cookie.expires < datetime.utcnow()
+
+    test_unset(result_unset.cookies['foo'], samesite='Strict')
+    # default: bar is unset with no samesite param, so should go to Lax
+    test_unset(result_unset.cookies['bar'], samesite='Lax')
+    test_unset(result_unset.cookies['bar'])  # default in test_unset
+
+    test_unset(
+        result_unset.cookies['baz'], samesite=None
+    )  # baz gets unset to samesite = ''
+    test_unset(result_unset.cookies['barz'], samesite='None')
+    # test for false
+    assert result_unset.cookies['baz'].same_site != 'Strict'
+    assert result_unset.cookies['foo'].same_site != 'Lax'
+    assert not result_unset.cookies['baz'].same_site
 
 
 def test_cookie_expires_naive(client):

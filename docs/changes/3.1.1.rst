@@ -1,0 +1,39 @@
+Changelog for Falcon 3.1.1
+==========================
+
+Summary
+-------
+
+This is a minor point release addressing a couple of high impact bugs,
+and enabling the framework on the recently released CPython 3.11.
+
+
+Changes to Supported Platforms
+------------------------------
+
+- Falcon is now functional on CPython 3.11.
+  Full 3.11 support (including taking care of stdlib deprecations)
+  will be formalized in Falcon 4.0.
+- As with the previous release, Python 3.5 & 3.6 remain deprecated and
+  will no longer be supported in Falcon 4.0.
+
+
+Fixed
+-----
+
+- Request attributes :attr:`~falcon.Request.forwarded_scheme` and
+  :attr:`~falcon.Request.forwarded_host` now no longer raise an ``IndexError``
+  while processing an invalid or empty ``Forwarded`` header. (`#2043 <https://github.com/falconry/falcon/issues/2043>`__)
+- The ``orjson`` library now works correctly when used as JSON serializer in
+  the media handlers in the ASGI version of Falcon. (`#2100 <https://github.com/falconry/falcon/issues/2100>`__)
+
+
+Contributors to this Release
+----------------------------
+
+Many thanks to those who contributed to this bugfix release:
+
+- `CaselIT <https://github.com/CaselIT>`__
+- `kgriffs <https://github.com/kgriffs>`__
+- `TBoshoven <https://github.com/TBoshoven>`__
+- `vytas7 <https://github.com/vytas7>`__

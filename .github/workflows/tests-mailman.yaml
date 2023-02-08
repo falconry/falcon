@@ -26,6 +26,7 @@ jobs:
           #   inside the container and raises exceptions upon teardown.
           args: |
             /bin/bash -c "
+            export LC_ALL=C.UTF-8 &&
             tools/testing/fetch_mailman.sh &&
             sed '/::1/d' /etc/hosts > /tmp/hosts && cat /tmp/hosts > /etc/hosts &&
             python3 --version &&
