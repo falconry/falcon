@@ -18,16 +18,19 @@ This package includes utilities for simulating HTTP requests against a
 WSGI callable, without having to stand up a WSGI server.
 """
 
+import os
 import asyncio
 import datetime as dt
 import inspect
 import json as json_module
 import time
+import json
 from typing import Dict
 from typing import Optional
 from typing import Sequence
 from typing import Union
 import warnings
+from urllib3.filepost import encode_multipart_formdata, RequestField
 import wsgiref.validate
 
 from falcon.asgi_spec import ScopeType
@@ -437,6 +440,7 @@ def simulate_request(
     content_type=None,
     body=None,
     json=None,
+    files=None,
     file_wrapper=None,
     wsgierrors=None,
     params=None,
@@ -575,6 +579,7 @@ def simulate_request(
             content_type=content_type,
             body=body,
             json=json,
+            files=files,
             params=params,
             params_csv=params_csv,
             protocol=protocol,
@@ -598,6 +603,7 @@ def simulate_request(
         headers,
         body,
         json,
+        files,
         extras,
     )
 
@@ -651,6 +657,7 @@ async def _simulate_request_asgi(
     content_type=None,
     body=None,
     json=None,
+    files=None,
     params=None,
     params_csv=True,
     protocol='http',
@@ -774,6 +781,7 @@ async def _simulate_request_asgi(
         headers,
         body,
         json,
+        files,
         extras,
     )
 
@@ -2133,8 +2141,98 @@ class _WSContextManager:
         await self._task_req
 
 
+def _encode_files(files, data=None):
+    """Build the body for a multipart/form-data request.
+    Will successfully encode files when passed as a dict or a list of
+    tuples. Order is retained if data is a list of tuples but arbitrary
+    if parameters are supplied as a dict.
+    The tuples may be 2-tuples (filename, fileobj), 3-tuples (filename, fileobj, contentype)
+    or 4-tuples (filename, fileobj, contentype, custom_headers).
+    """
+    fields = []
+    if data and not isinstance(data, (list, dict)):
+        raise ValueError('Data must not be a list of tuples or dict.')
+    elif data and isinstance(data, dict):
+        fields = list(data.items())
+    elif data:
+        fields = list(data)
+
+    if not isinstance(files, (dict, list)):
+        raise ValueError('cannot encode objects that are not 2-tuples')
+    elif isinstance(files, dict):
+        files = list(files.items())
+
+    new_fields = []
+
+    # Append data to the other multipart parts
+    for field, val in fields:
+        if isinstance(val, str) or not hasattr(val, '__iter__'):
+            val = [val]
+        for v in val:
+            if v is not None:
+                # Don't call str() on bytestrings: in Py3 it all goes wrong.
+                if not isinstance(v, bytes):
+                    v = str(v)
+
+                new_fields.append(
+                    (
+                        field.decode('utf-8') if isinstance(field, bytes) else field,
+                        v.encode('utf-8') if isinstance(v, str) else v,
+                    )
+                )
+
+    for (k, v) in files:
+        # support for explicit filename
+        file_content_type = None
+        file_header = None
+        if isinstance(v, (tuple, list)):
+            if len(v) == 2:
+                file_name, file_data = v
+            elif len(v) == 3:
+                file_name, file_data, file_content_type = v
+            else:
+                file_name, file_data, file_content_type, file_header = v
+            if len(v) >= 3:
+                if file_content_type == 'multipart/mixed':
+                    file_data, file_content_type = _encode_files(
+                        json.loads(file_data.decode())
+                    )
+        else:
+            # if v is not a tuple or iterable it has to be a filelike obj
+            name = getattr(v, 'name', None)
+            if name and isinstance(name, str) and name[0] != '<' and name[-1] != '>':
+                file_name = os.path.basename(name)
+            else:
+                file_name = k
+            file_data = v
+
+        if file_data is None:
+            continue
+        elif hasattr(file_data, 'read'):
+            fdata = file_data.read()
+        else:
+            fdata = file_data
+
+        rf = RequestField(name=k, filename=file_name, data=fdata, headers=file_header)
+        rf.make_multipart(content_type=file_content_type)
+        new_fields.append(rf)
+
+    body, content_type = encode_multipart_formdata(new_fields)
+
+    return body, content_type
+
+
 def _prepare_sim_args(
-    path, query_string, params, params_csv, content_type, headers, body, json, extras
+    path,
+    query_string,
+    params,
+    params_csv,
+    content_type,
+    headers,
+    body,
+    json,
+    files,
+    extras,
 ):
     if not path.startswith('/'):
         raise ValueError("path must start with '/'")
@@ -2163,7 +2261,12 @@ def _prepare_sim_args(
         headers = headers or {}
         headers['Content-Type'] = content_type
 
-    if json is not None:
+    if files is not None:
+        body, content_type = _encode_files(files, json)
+        headers = headers or {}
+        headers['Content-Type'] = content_type
+
+    elif json is not None:
         body = json_module.dumps(json, ensure_ascii=False)
         headers = headers or {}
         headers['Content-Type'] = MEDIA_JSON
