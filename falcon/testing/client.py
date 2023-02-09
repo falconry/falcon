@@ -2185,6 +2185,7 @@ def _encode_files(files, data=None):
         # support for explicit filename
         file_content_type = None
         file_header = None
+        content_disposition = None
         if isinstance(v, (tuple, list)):
             if len(v) == 2:
                 file_name, file_data = v
@@ -2192,11 +2193,14 @@ def _encode_files(files, data=None):
                 file_name, file_data, file_content_type = v
             else:
                 file_name, file_data, file_content_type, file_header = v
-            if len(v) >= 3:
-                if file_content_type == 'multipart/mixed':
-                    file_data, file_content_type = _encode_files(
-                        json.loads(file_data.decode())
-                    )
+            if (
+                len(v) >= 3
+                and file_content_type
+                and file_content_type.startswith('multipart/mixed')
+            ):
+                file_data, assigned_type = _encode_files(json.loads(file_data.decode()))
+                file_data = file_data
+                file_content_type = 'multipart/mixed; ' + (assigned_type.split('; ')[1])
         else:
             # if v is not a tuple or iterable it has to be a filelike obj
             name = getattr(v, 'name', None)
@@ -2212,9 +2216,12 @@ def _encode_files(files, data=None):
             fdata = file_data.read()
         else:
             fdata = file_data
-
+        if file_header and 'Content-Disposition' in file_header.keys():
+            content_disposition = file_header['Content-Disposition']
         rf = RequestField(name=k, filename=file_name, data=fdata, headers=file_header)
-        rf.make_multipart(content_type=file_content_type)
+        rf.make_multipart(
+            content_type=file_content_type, content_disposition=content_disposition
+        )
         new_fields.append(rf)
 
     body, content_type = encode_multipart_formdata(new_fields)
