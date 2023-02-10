@@ -2258,7 +2258,7 @@ def _encode_files(files, data=None):
         content_disposition = None
         file_name, file_data, file_content_type, file_header = _prepare_files(k, v)
 
-        if file_data is None:
+        if not file_data:
             continue
         elif hasattr(file_data, 'read'):
             fdata = file_data.read()
