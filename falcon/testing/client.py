@@ -2183,7 +2183,7 @@ def _prepare_data_fields(data):
         if isinstance(val, str) or not hasattr(val, '__iter__'):
             val = [val]
         for v in val:
-            if v is not None:
+            if v:
                 # Don't call str() on bytestrings: in Py3 it all goes wrong.
                 if not isinstance(v, bytes):
                     v = str(v)
