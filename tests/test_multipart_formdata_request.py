@@ -130,27 +130,6 @@ class AsyncMultipartAnalyzer:
         resp.media = values
 
 
-class MultipartFileUpload:
-    def on_post(self, req, resp):
-        upload = cgi.FieldStorage(fp=req.stream, environ=req.env)
-        data = upload['file'].file.read().decode('utf-8')
-        resp.media = dict(data=data)
-
-
-class AsyncMultipartFileUpload:
-    async def on_post(self, req, resp):
-        deserialized = []
-        form = await req.media
-        async for part in form:
-            upload = cgi.FieldStorage(fp=part.stream, environ=req.scope)
-            print(f'upload is {upload.fp.read()}')
-            data = await upload['file'].file.read().decode('utf-8')
-
-            print(f'the dict is {dict(data=data)} and the dump is {dict(data=data)}')
-            deserialized.append(dict(data=data))
-        resp.media = deserialized
-
-
 @pytest.fixture
 def client(asgi):
     app = create_app(asgi)
@@ -172,10 +151,8 @@ def client(asgi):
 
     app.req_options.default_media_type = falcon.MEDIA_MULTIPART
     resource = AsyncMultipartAnalyzer() if asgi else MultipartAnalyzer()
-    resourcecgi = AsyncMultipartFileUpload() if asgi else MultipartFileUpload()
 
     app.add_route('/submit', resource)
-    app.add_route('/uploadcgi', resourcecgi)
     app.add_route('/media', resource, suffix='media')
     app.add_route('/image', resource, suffix='image')
 
@@ -478,8 +455,7 @@ FILES6 = {
 
 def test_nested_multipart_mixed(client):
     resp = client.simulate_post('/submit', files=FILES6)
-    print(f'response in mixed is {resp.json}')
-    # assert resp.status_code == 200
+    assert resp.status_code == 200
     assert resp.json == [
         {
             'content_type': 'text/plain',
@@ -582,10 +558,3 @@ def test_upload_image(client):
             'secure_filename': filename.replace('/', '_'),
         }
     ]
-
-
-# def test_upload_file_cgi(client):
-#     resp = client.simulate_post('/uploadcgi', files={'file': open('tests/loremipsum.txt', 'rb')})
-#
-#     # assert resp.status_code == 200
-#     assert resp.json == LOREM_FILE
