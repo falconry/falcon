@@ -5,3 +5,4 @@ pytest
 pyyaml
 requests
 ujson
+urllib3
