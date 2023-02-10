@@ -1,8 +1,7 @@
-import cgi
-import io
-import json
-import pytest
 import base64
+import json
+
+import pytest
 
 import falcon
 from falcon import media
@@ -54,8 +53,8 @@ class MultipartAnalyzer:
     def on_post_image(self, req, resp):
         values = []
         for part in req.media:
-            # Save a copy of the image, encode in base64 and re-decode to compare. This way we avoid invalid characters
-            # and get a more 'manageable' output.
+            # Save a copy of the image, encode in base64 and re-decode to compare.
+            # To avoid invalid characters and get a more 'manageable' output.
             new_filename = part.filename.split('.')[0] + '_posted.png'
             f = open(new_filename, 'w+b')
             f.write(part.data)
@@ -86,7 +85,11 @@ class AsyncMultipartAnalyzer:
             if part_type.startswith('multipart/mixed'):
                 part_form = await part.get_media()
                 async for nested in part_form:
-                    inner_form.append({'name': nested.name, 'text': await nested.text})
+                    inner_form.append(
+                        {
+                            'name': nested.name, 'text': await nested.text
+                        }
+                    )
                     part_type = 'multipart/mixed'
             # ----------------------------------------------------
             values.append(
@@ -334,8 +337,11 @@ def asserts_data_types(resp):
             'text': 'Hello, world!',
         },
     ]
-    # Result will be unordered, because both fileobj and data are present. When all files are tuples, response will be
-    # unordered if json contains dictionaries - then resp.json == expected_list can be used.
+
+    # Result will be unordered, because both fileobj and data are present. When all files
+    # are tuples, response will be unordered if json contains dictionaries - t
+    # hen resp.json == expected_list can be used.
+
     assert len(resp.json) == len(expected_list)
     assert all(map(lambda el: el in expected_list, resp.json))
 
@@ -396,7 +402,7 @@ def test_invalid_files(client):
         client.simulate_post('/submit', files='heya')
 
 
-def test_invalid_files(client):
+def test_invalid_files_null(client):
     """empty file in files"""
     with pytest.raises(ValueError):
         client.simulate_post('/submit', files={'file': ()})
@@ -442,7 +448,8 @@ FILES6 = {
                     'Hello, World!',
                     None,
                     {
-                        'Content-Disposition': 'attachment; Content-Transfer-Encoding: binary'
+                        'Content-Disposition': 'attachment; '
+                        'Content-Transfer-Encoding: binary'
                     },
                 ),
             }

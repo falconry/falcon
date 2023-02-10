@@ -18,20 +18,23 @@ This package includes utilities for simulating HTTP requests against a
 WSGI callable, without having to stand up a WSGI server.
 """
 
-import os
 import asyncio
+import os
 import datetime as dt
 import inspect
 import json as json_module
-import time
 import json
+import time
 from typing import Dict
 from typing import Optional
 from typing import Sequence
 from typing import Union
 import warnings
-from urllib3.filepost import encode_multipart_formdata, RequestField
 import wsgiref.validate
+
+from urllib3.filepost import encode_multipart_formdata
+from urllib3.filepost import RequestField
+
 
 from falcon.asgi_spec import ScopeType
 from falcon.constants import COMBINED_METHODS
@@ -2164,7 +2167,8 @@ def _encode_files(files, data=None):
     Will successfully encode files when passed as a dict or a list of
     tuples. Order is retained if data is a list of tuples but arbitrary
     if parameters are supplied as a dict.
-    The tuples may be 2-tuples (filename, fileobj), 3-tuples (filename, fileobj, contentype)
+    The tuples may be 2-tuples (filename, fileobj),
+    3-tuples (filename, fileobj, contentype)
     or 4-tuples (filename, fileobj, contentype, custom_headers).
     Allows for content_type = ``multipart/mixed`` for submission of nested files
     """

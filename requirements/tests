@@ -2,6 +2,7 @@ coverage >= 4.1
 pytest
 pyyaml
 requests
+urllib3
 # TODO(vytas): Check if testtools still brings anything to the table, and
 #   re-enable if/when unittest2 is adjusted to support CPython 3.10.
 testtools; python_version < '3.10'
