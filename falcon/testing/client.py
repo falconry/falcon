@@ -532,6 +532,15 @@ def simulate_request(
             overrides `body` and sets the Content-Type header to
             ``'application/json'``, overriding any value specified by either
             the `content_type` or `headers` arguments.
+        files(dict): same as the  files parameter in requests,
+             dictionary of ``'name': file-like-objects`` (or ``{'name': file-tuple}``)
+             for multipart encoding upload.
+            ``file-tuple``: can be a 2-tuple ``('filename', fileobj)``,
+                3-tuple ``('filename', fileobj, 'content_type')``
+                or a 4-tuple ``('filename', fileobj, 'content_type', custom_headers)``,
+                where ``'content-type'`` is a string defining the content
+                type of the given file and ``custom_headers`` a dict-like
+                object containing additional headers to add for the file.
         file_wrapper (callable): Callable that returns an iterable,
             to be used as the value for *wsgi.file_wrapper* in the
             WSGI environ (default: ``None``). This can be used to test
@@ -743,6 +752,15 @@ async def _simulate_request_asgi(
             overrides `body` and sets the Content-Type header to
             ``'application/json'``, overriding any value specified by either
             the `content_type` or `headers` arguments.
+        files(dict): same as the  files parameter in requests,
+             dictionary of ``'name': file-like-objects`` (or ``{'name': file-tuple}``)
+             for multipart encoding upload.
+            ``file-tuple``: can be a 2-tuple ``('filename', fileobj)``,
+                3-tuple ``('filename', fileobj, 'content_type')``
+                or a 4-tuple ``('filename', fileobj, 'content_type', custom_headers)``,
+                where ``'content-type'`` is a string defining the content
+                type of the given file and ``custom_headers`` a dict-like
+                object containing additional headers to add for the file.
         host(str): A string to use for the hostname part of the fully
             qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
@@ -2148,6 +2166,7 @@ def _encode_files(files, data=None):
     if parameters are supplied as a dict.
     The tuples may be 2-tuples (filename, fileobj), 3-tuples (filename, fileobj, contentype)
     or 4-tuples (filename, fileobj, contentype, custom_headers).
+    Allows for content_type = ``multipart/mixed`` for submission of nested files
     """
     fields = []
     if data and not isinstance(data, (list, dict)):
