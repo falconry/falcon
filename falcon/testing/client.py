@@ -21,9 +21,8 @@ WSGI callable, without having to stand up a WSGI server.
 import asyncio
 import datetime as dt
 import inspect
-import os
 import json as json_module
-import json
+import os
 import time
 from typing import Dict
 from typing import Optional
@@ -2163,7 +2162,7 @@ class _WSContextManager:
 
 
 def _prepare_data_fields(data):
-    """Prepares data  fields for request body.
+    """Prepare data  fields for request body.
 
     Args:
         data: dict or list of tuples with json data from the request
@@ -2199,7 +2198,7 @@ def _prepare_data_fields(data):
 
 
 def _prepare_files(k, v):
-    """Prepares file attributes for body of request form.
+    """Prepare file attributes for body of request form.
 
     Args:
         k: (str), file-name
@@ -2222,7 +2221,9 @@ def _prepare_files(k, v):
             and file_content_type
             and file_content_type.startswith('multipart/mixed')
         ):
-            file_data, assigned_type = _encode_files(json.loads(file_data.decode()))
+            file_data, assigned_type = _encode_files(
+                json_module.loads(file_data.decode())
+            )
             file_content_type = 'multipart/mixed; ' + (assigned_type.split('; ')[1])
     else:
         # if v is not a tuple or iterable it has to be a filelike obj
