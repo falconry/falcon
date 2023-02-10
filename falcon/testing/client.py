@@ -19,8 +19,8 @@ WSGI callable, without having to stand up a WSGI server.
 """
 
 import asyncio
-import os
 import datetime as dt
+import os
 import inspect
 import json as json_module
 import json
@@ -2162,31 +2162,23 @@ class _WSContextManager:
         await self._task_req
 
 
-def _encode_files(files, data=None):
-    """Build the body for a multipart/form-data request.
-    Will successfully encode files when passed as a dict or a list of
-    tuples. Order is retained if data is a list of tuples but arbitrary
-    if parameters are supplied as a dict.
-    The tuples may be 2-tuples (filename, fileobj),
-    3-tuples (filename, fileobj, contentype)
-    or 4-tuples (filename, fileobj, contentype, custom_headers).
-    Allows for content_type = ``multipart/mixed`` for submission of nested files
+def _prepare_data_fields(data):
+
+    """
+    Args:
+        data: dict or list of tuples with json data from the request
+
+    Returns: list of 2-tuples (field-name(str), value(bytes)
+
     """
     fields = []
+    new_fields = []
     if data and not isinstance(data, (list, dict)):
         raise ValueError('Data must not be a list of tuples or dict.')
     elif data and isinstance(data, dict):
         fields = list(data.items())
     elif data:
         fields = list(data)
-
-    if not isinstance(files, (dict, list)):
-        raise ValueError('cannot encode objects that are not 2-tuples')
-    elif isinstance(files, dict):
-        files = list(files.items())
-
-    new_fields = []
-
     # Append data to the other multipart parts
     for field, val in fields:
         if isinstance(val, str) or not hasattr(val, '__iter__'):
@@ -2203,35 +2195,67 @@ def _encode_files(files, data=None):
                         v.encode('utf-8') if isinstance(v, str) else v,
                     )
                 )
+    return new_fields
+
+
+def _prepare_files(k, v):
+
+    """
+    Args:
+        k: (str), file-name
+        v: fileobj or tuple (filename, data, content_type?, headers?)
+
+    Returns:
+
+    """
+    file_content_type = None
+    file_header = None
+    if isinstance(v, (tuple, list)):
+        if len(v) == 2:
+            file_name, file_data = v
+        elif len(v) == 3:
+            file_name, file_data, file_content_type = v
+        else:
+            file_name, file_data, file_content_type, file_header = v
+        if (
+            len(v) >= 3
+            and file_content_type
+            and file_content_type.startswith('multipart/mixed')
+        ):
+            file_data, assigned_type = _encode_files(json.loads(file_data.decode()))
+            file_content_type = 'multipart/mixed; ' + (assigned_type.split('; ')[1])
+    else:
+        # if v is not a tuple or iterable it has to be a filelike obj
+        name = getattr(v, 'name', None)
+        if name and isinstance(name, str) and name[0] != '<' and name[-1] != '>':
+            file_name = os.path.basename(name)
+        else:
+            file_name = k
+        file_data = v
+    return file_name, file_data, file_content_type, file_header
+
+
+def _encode_files(files, data=None):
+    """Build the body for a multipart/form-data request.
+
+    Will successfully encode files when passed as a dict or a list of
+    tuples. Order is retained if data is a list of tuples but arbitrary
+    if parameters are supplied as a dict.
+    The tuples may be 2-tuples (filename, fileobj),
+    3-tuples (filename, fileobj, contentype)
+    or 4-tuples (filename, fileobj, contentype, custom_headers).
+    Allows for content_type = ``multipart/mixed`` for submission of nested files"""
+
+    new_fields = _prepare_data_fields(data)
+
+    if not isinstance(files, (dict, list)):
+        raise ValueError('cannot encode objects that are not 2-tuples')
+    elif isinstance(files, dict):
+        files = list(files.items())
 
     for (k, v) in files:
-        # support for explicit filename
-        file_content_type = None
-        file_header = None
         content_disposition = None
-        if isinstance(v, (tuple, list)):
-            if len(v) == 2:
-                file_name, file_data = v
-            elif len(v) == 3:
-                file_name, file_data, file_content_type = v
-            else:
-                file_name, file_data, file_content_type, file_header = v
-            if (
-                len(v) >= 3
-                and file_content_type
-                and file_content_type.startswith('multipart/mixed')
-            ):
-                file_data, assigned_type = _encode_files(json.loads(file_data.decode()))
-                file_data = file_data
-                file_content_type = 'multipart/mixed; ' + (assigned_type.split('; ')[1])
-        else:
-            # if v is not a tuple or iterable it has to be a filelike obj
-            name = getattr(v, 'name', None)
-            if name and isinstance(name, str) and name[0] != '<' and name[-1] != '>':
-                file_name = os.path.basename(name)
-            else:
-                file_name = k
-            file_data = v
+        file_name, file_data, file_content_type, file_header = _prepare_files(k, v)
 
         if file_data is None:
             continue

@@ -85,11 +85,7 @@ class AsyncMultipartAnalyzer:
             if part_type.startswith('multipart/mixed'):
                 part_form = await part.get_media()
                 async for nested in part_form:
-                    inner_form.append(
-                        {
-                            'name': nested.name, 'text': await nested.text
-                        }
-                    )
+                    inner_form.append({'name': nested.name, 'text': await nested.text})
                     part_type = 'multipart/mixed'
             # ----------------------------------------------------
             values.append(
