@@ -20,8 +20,8 @@ WSGI callable, without having to stand up a WSGI server.
 
 import asyncio
 import datetime as dt
-import os
 import inspect
+import os
 import json as json_module
 import json
 import time
@@ -2163,8 +2163,8 @@ class _WSContextManager:
 
 
 def _prepare_data_fields(data):
+    """Prepares data  fields for request body.
 
-    """
     Args:
         data: dict or list of tuples with json data from the request
 
@@ -2199,13 +2199,13 @@ def _prepare_data_fields(data):
 
 
 def _prepare_files(k, v):
+    """Prepares file attributes for body of request form.
 
-    """
     Args:
         k: (str), file-name
         v: fileobj or tuple (filename, data, content_type?, headers?)
 
-    Returns:
+    Returns: file_name, file_data, file_content_type, file_header
 
     """
     file_content_type = None

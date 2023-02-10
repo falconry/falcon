@@ -334,9 +334,9 @@ def asserts_data_types(resp):
         },
     ]
 
-    # Result will be unordered, because both fileobj and data are present. When all files
-    # are tuples, response will be unordered if json contains dictionaries - t
-    # hen resp.json == expected_list can be used.
+    # Result will be unordered, because both fileobj and data are present.
+    # When all files are tuples, response will be unordered if json
+    # contains dictionaries - then resp.json == expected_list can be used.
 
     assert len(resp.json) == len(expected_list)
     assert all(map(lambda el: el in expected_list, resp.json))
@@ -497,45 +497,22 @@ def test_nested_multipart_mixed(client):
 #  region - TEST UPLOADING ACTUAL FILES: TEXT, IMAGE
 
 
-LOREM_FILE = (
-    'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do '
-    'eiusmod tempor\n'
-    'incididunt ut labore et dolore magna aliqua. Dolor sed viverra '
-    'ipsum nunc\n'
-    'aliquet bibendum enim. In massa tempor nec feugiat. Nunc aliquet '
-    'bibendum enim\n'
-    'facilisis gravida. Nisl nunc mi ipsum faucibus vitae aliquet nec '
-    'ullamcorper.\n'
-    'Amet luctus venenatis lectus magna fringilla. Volutpat maecenas '
-    'volutpat blandit\n'
-    'aliquam etiam erat velit scelerisque in. Egestas egestas fringilla '
-    'phasellus\n'
-    'faucibus scelerisque eleifend. Sagittis orci a scelerisque purus '
-    'semper eget\n'
-    'duis. Nulla pharetra diam sit amet nisl suscipit. Sed adipiscing '
-    'diam donec\n'
-    'adipiscing tristique risus nec feugiat in. Fusce ut placerat orci '
-    'nulla.\n'
-    'Pharetra vel turpis nunc eget lorem dolor. Tristique senectus et '
-    'netus et\n'
-    'malesuada.'
-)
-
-
 def test_upload_file(client):
     resp = client.simulate_post(
         '/submit', files={'file': open('tests/files/loremipsum.txt', 'rb')}
     )
 
+    lorem_file = open('tests/files/loremipsum.txt', 'rb').read().decode()
+
     assert resp.status_code == 200
     assert resp.json == [
         {
             'content_type': 'text/plain',
-            'data': LOREM_FILE,
+            'data': lorem_file,
             'filename': 'loremipsum.txt',
             'name': 'file',
             'secure_filename': 'loremipsum.txt',
-            'text': LOREM_FILE,
+            'text': lorem_file,
         },
     ]
 
