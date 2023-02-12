@@ -2205,16 +2205,17 @@ def _prepare_files(k, v):
 
     """
     file_content_type = None
-    file_header = None
+    file_data = None
+    file_name = None
+    if not v:
+        raise ValueError(f'No file provided for {k}')
     if isinstance(v, (tuple, list)):
         if len(v) == 2:
             file_name, file_data = v
         elif len(v) == 3:
             file_name, file_data, file_content_type = v
-        else:
-            file_name, file_data, file_content_type, file_header = v
         if (
-            len(v) >= 3
+            len(v) == 3
             and file_content_type
             and file_content_type.startswith('multipart/mixed')
         ):
@@ -2232,7 +2233,7 @@ def _prepare_files(k, v):
         file_data = v
     if hasattr(file_data, 'read'):
         file_data = file_data.read()
-    return file_name, file_data, file_content_type, file_header
+    return file_name, file_data, file_content_type
 
 
 def _make_boundary():
@@ -2249,9 +2250,8 @@ def _encode_files(files, data=None):
 
     Will successfully encode files when passed as a dict or a list of
     tuples. ``data`` fields are added first.
-    The tuples may be 2-tuples (filename, fileobj),
-    3-tuples (filename, fileobj, contentype)
-    or 4-tuples (filename, fileobj, contentype, custom_headers).
+    The tuples may be 2-tuples (filename, fileobj) or
+    3-tuples (filename, fileobj, contentype).
     Allows for content_type = ``multipart/mixed`` for submission of nested files
 
     Returns: (encoded body string, headers dict)
@@ -2279,17 +2279,11 @@ def _encode_files(files, data=None):
         files = list(files.items())
 
     for (k, v) in files:
-        file_name, file_data, file_content_type, file_header = _prepare_files(k, v)
+        file_name, file_data, file_content_type = _prepare_files(k, v)
         if not file_data:
             continue
-        if file_header and 'Content-Disposition' in file_header.keys():
-            content_disposition = file_header['Content-Disposition']
-        else:
-            content_disposition = 'form-data'
 
-        body_string += (
-            f'Content-Disposition: {content_disposition}; name={k}; '.encode()
-        )
+        body_string += f'Content-Disposition: form-data; name={k}; '.encode()
         body_string += (
             f'filename={file_name or "null"}\r\n'.encode()
             if file_name
