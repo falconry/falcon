@@ -2237,7 +2237,7 @@ def _prepare_files(k, v):
 
 def _make_boundary():
     """
-    Create random boundary to be used in multipar/form-data with files
+    Create random boundary to be used in multipar/form-data with files.
     """
     boundary = binascii.hexlify(os.urandom(16))
     boundary = boundary.decode('ascii')
@@ -2284,12 +2284,16 @@ def _encode_files(files, data=None):
             continue
         if file_header and 'Content-Disposition' in file_header.keys():
             content_disposition = file_header['Content-Disposition']
+        else:
+            content_disposition = 'form-data'
 
-        body_string += f'Content-Disposition: {content_disposition or "fom-data"}; name={k}; '.encode()
+        body_string += (
+            f'Content-Disposition: {content_disposition}; name={k}; '.encode()
+        )
         body_string += (
             f'filename={file_name or "null"}\r\n'.encode()
             if file_name
-            else f'\r\n'.encode()
+            else '\r\n'.encode()
         )
         body_string += (
             f'Content-Type: {file_content_type or "text/plain"}\r\n\r\n'.encode()
