@@ -19,6 +19,7 @@ WSGI callable, without having to stand up a WSGI server.
 """
 
 import asyncio
+import binascii
 import datetime as dt
 import inspect
 import json as json_module
@@ -30,10 +31,6 @@ from typing import Sequence
 from typing import Union
 import warnings
 import wsgiref.validate
-
-from urllib3.filepost import encode_multipart_formdata
-from urllib3.filepost import RequestField
-
 
 from falcon.asgi_spec import ScopeType
 from falcon.constants import COMBINED_METHODS
@@ -2221,10 +2218,10 @@ def _prepare_files(k, v):
             and file_content_type
             and file_content_type.startswith('multipart/mixed')
         ):
-            file_data, assigned_type = _encode_files(
-                json_module.loads(file_data.decode())
+            file_data, new_header = _encode_files(json_module.loads(file_data.decode()))
+            file_content_type = 'multipart/mixed; ' + (
+                new_header['Content-Type'].split('; ')[1]
             )
-            file_content_type = 'multipart/mixed; ' + (assigned_type.split('; ')[1])
     else:
         # if v is not a tuple or iterable it has to be a filelike obj
         name = getattr(v, 'name', None)
@@ -2233,48 +2230,76 @@ def _prepare_files(k, v):
         else:
             file_name = k
         file_data = v
+    if hasattr(file_data, 'read'):
+        file_data = file_data.read()
     return file_name, file_data, file_content_type, file_header
+
+
+def _make_boundary():
+    """
+    Create random boundary to be used in multipar/form-data with files
+    """
+    boundary = binascii.hexlify(os.urandom(16))
+    boundary = boundary.decode('ascii')
+    return boundary
 
 
 def _encode_files(files, data=None):
     """Build the body for a multipart/form-data request.
 
     Will successfully encode files when passed as a dict or a list of
-    tuples. Order is retained if data is a list of tuples but arbitrary
-    if parameters are supplied as a dict.
+    tuples. ``data`` fields are added first.
     The tuples may be 2-tuples (filename, fileobj),
     3-tuples (filename, fileobj, contentype)
     or 4-tuples (filename, fileobj, contentype, custom_headers).
-    Allows for content_type = ``multipart/mixed`` for submission of nested files"""
+    Allows for content_type = ``multipart/mixed`` for submission of nested files
 
-    new_fields = _prepare_data_fields(data)
+    Returns: (encoded body string, headers dict)
+    """
 
+    content_disposition = None
+    boundary = _make_boundary()
+    body_string = b'--' + boundary.encode() + b'\r\n'
+    header = {'Content-Type': 'multipart/form-data; boundary=' + boundary}
+    # Handle whatever json data gets passed along with files
+    if data:
+        data_fields = _prepare_data_fields(data)
+        for f, val in data_fields:
+            body_string += f'Content-Disposition: ' \
+                           f'{content_disposition or "fom-data"}; name={f}; \r\n\r\n'.encode()
+            body_string += val.encode('utf-8') if isinstance(val, str) else val
+            body_string += b'\r\n--' + boundary.encode() + b'\r\n'
+
+    # Deal with the files tuples
     if not isinstance(files, (dict, list)):
         raise ValueError('cannot encode objects that are not 2-tuples')
     elif isinstance(files, dict):
         files = list(files.items())
 
     for (k, v) in files:
-        content_disposition = None
         file_name, file_data, file_content_type, file_header = _prepare_files(k, v)
-
         if not file_data:
             continue
-        elif hasattr(file_data, 'read'):
-            fdata = file_data.read()
-        else:
-            fdata = file_data
         if file_header and 'Content-Disposition' in file_header.keys():
             content_disposition = file_header['Content-Disposition']
-        rf = RequestField(name=k, filename=file_name, data=fdata, headers=file_header)
-        rf.make_multipart(
-            content_type=file_content_type, content_disposition=content_disposition
+
+        body_string += f'Content-Disposition: {content_disposition or "fom-data"}; name={k}; '.encode()
+        body_string += (
+            f'filename={file_name or "null"}\r\n'.encode()
+            if file_name
+            else f'\r\n'.encode()
         )
-        new_fields.append(rf)
+        body_string += (
+            f'Content-Type: {file_content_type or "text/plain"}\r\n\r\n'.encode()
+        )
+        body_string += (
+            file_data.encode('utf-8') if isinstance(file_data, str) else file_data
+        )
+        body_string += b'\r\n--' + boundary.encode() + b'\r\n'
 
-    body, content_type = encode_multipart_formdata(new_fields)
+    body_string = body_string[:-2] + b'--\r\n'
 
-    return body, content_type
+    return body_string, header
 
 
 def _prepare_sim_args(
@@ -2317,9 +2342,7 @@ def _prepare_sim_args(
         headers['Content-Type'] = content_type
 
     if files is not None:
-        body, content_type = _encode_files(files, json)
-        headers = headers or {}
-        headers['Content-Type'] = content_type
+        body, headers = _encode_files(files, json)
 
     elif json is not None:
         body = json_module.dumps(json, ensure_ascii=False)

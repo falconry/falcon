@@ -60,6 +60,7 @@ class MultipartAnalyzer:
             f.write(part.data)
             f.close()
             new_file64 = base64.b64encode(open(new_filename, 'rb').read())
+
             values.append(
                 {
                     'content_type': part.content_type,
