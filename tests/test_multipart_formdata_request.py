@@ -1,4 +1,5 @@
 import base64
+import io
 import json
 
 import pytest
@@ -688,5 +689,23 @@ def test_upload_image(client):
             'filename': filename,
             'name': 'image',
             'secure_filename': filename.replace('/', '_'),
+        }
+    ]
+
+
+def test_upload_fileobj(client):
+    fileobj = io.BytesIO(IMAGE_FILE)
+    fileobj.name = '/tests/img_readable'
+
+    resp = client.simulate_post('/image', files={'image': fileobj})
+
+    assert resp.status_code == 200
+    assert resp.json == [
+        {
+            'content_type': 'text/plain',
+            'data': base64.b64encode(IMAGE_FILE).decode(),
+            'filename': 'img_readable',
+            'name': 'image',
+            'secure_filename': 'img_readable',
         }
     ]
