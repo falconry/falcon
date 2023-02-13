@@ -2267,7 +2267,8 @@ def _encode_files(files, data=None):
         for f, val in data_fields:
             body_string += (
                 f'Content-Disposition: '
-                f'{content_disposition or "fom-data"}; name={f}; \r\n\r\n'.encode()
+                f'{content_disposition or "form-data"}; name={f}; '
+                f'\r\n\r\n'.encode()
             )
             body_string += val.encode('utf-8') if isinstance(val, str) else val
             body_string += b'\r\n--' + boundary.encode() + b'\r\n'
