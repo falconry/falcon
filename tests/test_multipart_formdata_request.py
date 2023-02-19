@@ -307,6 +307,14 @@ def asserts_data_types(resp):
         },
         {
             'content_type': 'text/plain',
+            'data': '',
+            'filename': None,
+            'name': 'empty',
+            'secure_filename': None,
+            'text': '',
+        },
+        {
+            'content_type': 'text/plain',
             'data': 'world',
             'filename': None,
             'name': 'hello',
@@ -341,14 +349,18 @@ def asserts_data_types(resp):
 
 def test_upload_multipart_datalist(client):
     resp = client.simulate_post(
-        '/submit', files=FILES1, json=[('data1', 5), ('data2', ['hello', 'bonjour'])]
+        '/submit',
+        files=FILES1,
+        json=[('data1', 5), ('data2', ['hello', 'bonjour']), ('empty', None)],
     )
     asserts_data_types(resp)
 
 
 def test_upload_multipart_datalisttuple(client):
     resp = client.simulate_post(
-        '/submit', files=FILES1, json=[('data1', 5), ('data2', ('hello', 'bonjour'))]
+        '/submit',
+        files=FILES1,
+        json=[('data1', 5), ('data2', ('hello', 'bonjour')), ('empty', None)],
     )
     asserts_data_types(resp)
 
@@ -356,7 +368,9 @@ def test_upload_multipart_datalisttuple(client):
 def test_upload_multipart_datalistdict(client):
     """json data list with dict"""
     resp = client.simulate_post(
-        '/submit', files=FILES1, json=[('data1', 5), ('data2', {'hello', 'bonjour'})]
+        '/submit',
+        files=FILES1,
+        json=[('data1', 5), ('data2', {'hello', 'bonjour'}), ('empty', None)],
     )
     asserts_data_types(resp)
 
@@ -364,7 +378,9 @@ def test_upload_multipart_datalistdict(client):
 def test_upload_multipart_datadict(client):
     """json data dict with list"""
     resp = client.simulate_post(
-        '/submit', files=FILES1, json={'data1': 5, 'data2': ['hello', 'bonjour']}
+        '/submit',
+        files=FILES1,
+        json={'data1': 5, 'data2': ['hello', 'bonjour'], 'empty': None},
     )
     asserts_data_types(resp)
 
@@ -372,7 +388,9 @@ def test_upload_multipart_datadict(client):
 def test_upload_multipart_datadicttuple(client):
     """json data dict with tuple"""
     resp = client.simulate_post(
-        '/submit', files=FILES1, json={'data1': 5, 'data2': ('hello', 'bonjour')}
+        '/submit',
+        files=FILES1,
+        json={'data1': 5, 'data2': ('hello', 'bonjour'), 'empty': None},
     )
     asserts_data_types(resp)
 
@@ -380,7 +398,9 @@ def test_upload_multipart_datadicttuple(client):
 def test_upload_multipart_datadictdict(client):
     """json data dict with dict"""
     resp = client.simulate_post(
-        '/submit', files=FILES1, json={'data1': 5, 'data2': {'hello', 'bonjour'}}
+        '/submit',
+        files=FILES1,
+        json={'data1': 5, 'data2': {'hello', 'bonjour'}, 'empty': None},
     )
     asserts_data_types(resp)
 

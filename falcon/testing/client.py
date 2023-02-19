@@ -2169,12 +2169,13 @@ def _prepare_data_fields(data):
     """
     fields = []
     new_fields = []
-    if data and not isinstance(data, (list, dict)):
+    if not isinstance(data, (list, dict)):
         raise ValueError('Data must not be a list of tuples or dict.')
-    elif data and isinstance(data, dict):
+    elif isinstance(data, dict):
         fields = list(data.items())
-    elif data:
+    else:
         fields = list(data)
+
     # Append data to the other multipart parts
     for field, val in fields:
         if isinstance(val, str) or not hasattr(val, '__iter__'):
@@ -2189,6 +2190,11 @@ def _prepare_data_fields(data):
                         v.encode('utf-8') if isinstance(v, str) else v,
                     )
                 )
+            else:
+                new_fields.append(
+                    (field.decode('utf-8') if isinstance(field, bytes) else field, b'')
+                )
+
     return new_fields
 
 
