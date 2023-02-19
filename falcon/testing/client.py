@@ -2181,10 +2181,8 @@ def _prepare_data_fields(data):
             val = [val]
         for v in val:
             if v:
-                # Don't call str() on bytestrings: in Py3 it all goes wrong.
-                if not isinstance(v, bytes):
-                    v = str(v)
-
+                # v has to come from json serializable obj, so can't be bytes
+                v = str(v)
                 new_fields.append(
                     (
                         field.decode('utf-8') if isinstance(field, bytes) else field,
