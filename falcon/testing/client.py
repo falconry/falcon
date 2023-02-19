@@ -2216,7 +2216,7 @@ def _prepare_files(k, v):
     if isinstance(v, (tuple, list)):
         if len(v) == 2:
             file_name, file_data = v
-        elif len(v) == 3:
+        else:
             file_name, file_data, file_content_type = v
         if (
             len(v) == 3
