@@ -19,7 +19,6 @@ WSGI callable, without having to stand up a WSGI server.
 """
 
 import asyncio
-import binascii
 import datetime as dt
 import inspect
 import json as json_module
