@@ -2167,11 +2167,8 @@ def _prepare_data_fields(data):
     Returns: list of 2-tuples (field-name(str), value(bytes))
 
     """
-    fields = []
     new_fields = []
-    if not isinstance(data, (list, dict)):
-        raise ValueError('Data must be a list of tuples or dict.')
-    elif isinstance(data, dict):
+    if isinstance(data, dict):
         fields = list(data.items())
     else:
         fields = list(data)
@@ -2242,7 +2239,7 @@ def _prepare_files(k, v):
 
 def _make_boundary():
     """
-    Create random boundary to be used in multipar/form-data with files.
+    Create random boundary to be used in multipart/form-data with files.
     """
     boundary = binascii.hexlify(os.urandom(16))
     boundary = boundary.decode('ascii')
