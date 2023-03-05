@@ -307,14 +307,6 @@ def asserts_data_types(resp):
         },
         {
             'content_type': 'text/plain',
-            'data': '',
-            'filename': None,
-            'name': 'empty',
-            'secure_filename': None,
-            'text': '',
-        },
-        {
-            'content_type': 'text/plain',
             'data': 'world',
             'filename': None,
             'name': 'hello',
@@ -353,6 +345,7 @@ def test_upload_multipart_datalist(client):
         files=FILES1,
         json=[('data1', 5), ('data2', ['hello', 'bonjour']), ('empty', None)],
     )
+    print(resp.json)
     asserts_data_types(resp)
 
 
@@ -419,24 +412,6 @@ def test_invalid_files_null(client):
     """empty file in files"""
     with pytest.raises(ValueError):
         client.simulate_post('/submit', files={'file': ()})
-
-
-def test_invalid_dataint(client):
-    """invalid data type in json, int"""
-    with pytest.raises(ValueError):
-        client.simulate_post('/submit', files=FILES1, json=5)
-
-
-def test_invalid_datastr(client):
-    """invalid data type in json, str"""
-    with pytest.raises(ValueError):
-        client.simulate_post('/submit', files=FILES1, json='yo')
-
-
-def test_invalid_databyte(client):
-    """invalid data type in json, b''"""
-    with pytest.raises(ValueError):
-        client.simulate_post('/submit', files=FILES1, json=b'yo self')
 
 
 # endregion

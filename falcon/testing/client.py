@@ -534,12 +534,10 @@ def simulate_request(
         files(dict): same as the  files parameter in requests,
              dictionary of ``'name': file-like-objects`` (or ``{'name': file-tuple}``)
              for multipart encoding upload.
-            ``file-tuple``: can be a 2-tuple ``('filename', fileobj)``,
+            ``file-tuple``: can be a 2-tuple ``('filename', fileobj)`` or a
                 3-tuple ``('filename', fileobj, 'content_type')``
-                or a 4-tuple ``('filename', fileobj, 'content_type', custom_headers)``,
                 where ``'content-type'`` is a string defining the content
-                type of the given file and ``custom_headers`` a dict-like
-                object containing additional headers to add for the file.
+                type of the given file.
         file_wrapper (callable): Callable that returns an iterable,
             to be used as the value for *wsgi.file_wrapper* in the
             WSGI environ (default: ``None``). This can be used to test
@@ -754,12 +752,10 @@ async def _simulate_request_asgi(
         files(dict): same as the  files parameter in requests,
              dictionary of ``'name': file-like-objects`` (or ``{'name': file-tuple}``)
              for multipart encoding upload.
-            ``file-tuple``: can be a 2-tuple ``('filename', fileobj)``,
-                3-tuple ``('filename', fileobj, 'content_type')``
-                or a 4-tuple ``('filename', fileobj, 'content_type', custom_headers)``,
+            ``file-tuple``: can be a 2-tuple ``('filename', fileobj)`` or a
+                3-tuple ``('filename', fileobj, 'content_type')``,
                 where ``'content-type'`` is a string defining the content
-                type of the given file and ``custom_headers`` a dict-like
-                object containing additional headers to add for the file.
+                type of the given file.
         host(str): A string to use for the hostname part of the fully
             qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
@@ -2187,10 +2183,6 @@ def _prepare_data_fields(data):
                         v.encode('utf-8') if isinstance(v, str) else v,
                     )
                 )
-            else:
-                new_fields.append(
-                    (field.decode('utf-8') if isinstance(field, bytes) else field, b'')
-                )
 
     return new_fields
 
@@ -2200,14 +2192,12 @@ def _prepare_files(k, v):
 
     Args:
         k: (str), file-name
-        v: fileobj or tuple (filename, data, content_type?, headers?)
+        v: fileobj or tuple (filename, data, content_type?)
 
     Returns: file_name, file_data, file_content_type
 
     """
     file_content_type = None
-    file_data = None
-    file_name = None
     if not v:
         raise ValueError(f'No file provided for {k}')
     if isinstance(v, (tuple, list)):
@@ -2241,8 +2231,7 @@ def _make_boundary():
     """
     Create random boundary to be used in multipart/form-data with files.
     """
-    boundary = binascii.hexlify(os.urandom(16))
-    boundary = boundary.decode('ascii')
+    boundary = os.urandom(16).hex()
     return boundary
 
 
@@ -2257,8 +2246,6 @@ def _encode_files(files, data=None):
 
     Returns: (encoded body string, headers dict)
     """
-
-    content_disposition = None
     boundary = _make_boundary()
     body_string = b'--' + boundary.encode() + b'\r\n'
     header = {'Content-Type': 'multipart/form-data; boundary=' + boundary}
@@ -2267,9 +2254,7 @@ def _encode_files(files, data=None):
         data_fields = _prepare_data_fields(data)
         for f, val in data_fields:
             body_string += (
-                f'Content-Disposition: '
-                f'{content_disposition or "form-data"}; name={f}; '
-                f'\r\n\r\n'.encode()
+                f'Content-Disposition: form-data; name={f}; ' f'\r\n\r\n'.encode()
             )
             body_string += val.encode('utf-8') if isinstance(val, str) else val
             body_string += b'\r\n--' + boundary.encode() + b'\r\n'
