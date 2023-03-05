@@ -345,7 +345,6 @@ def test_upload_multipart_datalist(client):
         files=FILES1,
         json=[('data1', 5), ('data2', ['hello', 'bonjour']), ('empty', None)],
     )
-    print(resp.json)
     asserts_data_types(resp)
 
 
