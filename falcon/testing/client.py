@@ -2164,7 +2164,7 @@ def _prepare_data_fields(data):
     Args:
         data: dict or list of tuples with json data from the request
 
-    Returns: list of 2-tuples (field-name(str), value(bytes)
+    Returns: list of 2-tuples (field-name(str), value(bytes))
 
     """
     fields = []
