@@ -2205,7 +2205,7 @@ def _prepare_files(k, v):
         k: (str), file-name
         v: fileobj or tuple (filename, data, content_type?, headers?)
 
-    Returns: file_name, file_data, file_content_type, file_header
+    Returns: file_name, file_data, file_content_type
 
     """
     file_content_type = None
