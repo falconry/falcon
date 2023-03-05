@@ -2170,7 +2170,7 @@ def _prepare_data_fields(data):
     fields = []
     new_fields = []
     if not isinstance(data, (list, dict)):
-        raise ValueError('Data must not be a list of tuples or dict.')
+        raise ValueError('Data must be a list of tuples or dict.')
     elif isinstance(data, dict):
         fields = list(data.items())
     else:
