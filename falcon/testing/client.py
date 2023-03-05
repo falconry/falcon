@@ -2290,7 +2290,7 @@ def _encode_files(files, data=None):
 
         body_string += f'Content-Disposition: form-data; name={k}; '.encode()
         body_string += (
-            f'filename={file_name or "null"}\r\n'.encode()
+            f'filename={file_name}\r\n'.encode()
             if file_name
             else '\r\n'.encode()
         )
