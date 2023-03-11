@@ -313,7 +313,103 @@ def test_upload_only_data_str(client):
     assert resp.json == {'data1': '5', 'data2': ['hello', 'bonjour']}
 
 
+def asserts_data_types_bool(resp):
+    assert resp.status_code == 200
+    expected_list = [
+        {
+            'content_type': 'text/plain',
+            'data': 'just some stuff',
+            'filename': 'fileobj',
+            'name': 'fileobj',
+            'secure_filename': 'fileobj',
+            'text': 'just some stuff',
+        },
+        {
+            'content_type': 'text/plain',
+            'data': 'True',
+            'filename': None,
+            'name': 'data1',
+            'secure_filename': None,
+            'text': 'True',
+        },
+        {
+            'content_type': 'text/plain',
+            'data': '3.14',
+            'filename': None,
+            'name': 'data3',
+            'secure_filename': None,
+            'text': '3.14',
+        },
+        {
+            'content_type': 'text/plain',
+            'data': 'hello',
+            'filename': None,
+            'name': 'data2',
+            'secure_filename': None,
+            'text': 'hello',
+        },
+        {
+            'content_type': 'text/plain',
+            'data': 'bonjour',
+            'filename': None,
+            'name': 'data2',
+            'secure_filename': None,
+            'text': 'bonjour',
+        },
+        {
+            'content_type': 'text/plain',
+            'data': '',
+            'filename': None,
+            'name': 'empty',
+            'secure_filename': None,
+            'text': '',
+        },
+        {
+            'content_type': 'text/plain',
+            'data': 'world',
+            'filename': None,
+            'name': 'hello',
+            'secure_filename': None,
+            'text': 'world',
+        },
+        {
+            'content_type': 'application/json',
+            'data': '{"debug": true, "message": "Hello, world!", "score": 7}',
+            'filename': None,
+            'name': 'document',
+            'secure_filename': None,
+            'text': None,
+        },
+        {
+            'content_type': 'text/plain',
+            'data': 'Hello, world!',
+            'filename': 'test.txt',
+            'name': 'file1',
+            'secure_filename': 'test.txt',
+            'text': 'Hello, world!',
+        },
+    ]
+
+    # Result will be unordered, because both fileobj and data are present.
+    # When all files are tuples, response will be unordered if json
+    # contains dictionaries - then resp.json == expected_list can be used.
+
+    assert len(resp.json) == len(expected_list)
+    assert all(map(lambda el: el in expected_list, resp.json))
+
+
+def test_upload_data_bool(client):
+    resp = client.simulate_post(
+        '/submit',
+        files=FILES1,
+        data=[('data1', True), ('data3', 3.14), ('data2', ['hello', 'bonjour']), ('empty', None)],
+    )
+    print(resp.json)
+    asserts_data_types_bool(resp)
+
+
 # endregion{
+
 
 # region - TEST DIFFERENT DATA TYPES in json part
 def asserts_data_types(resp):

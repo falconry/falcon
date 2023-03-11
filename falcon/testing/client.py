@@ -2225,6 +2225,7 @@ def _prepare_data_fields(data, boundary=None, urlenc=False):
                     body_part += b'\r\n--' + boundary.encode() + b'\r\n'
                 else:
                     body_part += b'\r\n--' + boundary.encode() + b'\r\n'
+
     return body_part if not urlenc else urlencode(urlresult, doseq=True)
 
 
