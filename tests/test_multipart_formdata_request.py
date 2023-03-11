@@ -402,7 +402,12 @@ def test_upload_data_bool(client):
     resp = client.simulate_post(
         '/submit',
         files=FILES1,
-        data=[('data1', True), ('data3', 3.14), ('data2', ['hello', 'bonjour']), ('empty', None)],
+        data=[
+            ('data1', True),
+            ('data3', 3.14),
+            ('data2', ['hello', 'bonjour']),
+            ('empty', None),
+        ],
     )
     print(resp.json)
     asserts_data_types_bool(resp)
