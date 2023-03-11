@@ -2190,10 +2190,8 @@ def _prepare_data_fields(data, boundary=None, urlenc=False):
     """
     urlresult = []
     body_part = b''
-    if isinstance(data, (str, bytes)):
+    if isinstance(data, (str, bytes)) or hasattr(data, 'read'):
         fields = list(json_module.loads(data).items())
-    elif hasattr(data, 'read'):
-        fields = list(json_module.load(data).items())
     elif isinstance(data, dict):
         fields = list(data.items())
     else:
