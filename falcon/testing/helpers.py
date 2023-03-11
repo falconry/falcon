@@ -139,9 +139,9 @@ class ASGIRequestEventEmitter:
 
     def __init__(
         self,
-        body: Union[str, bytes] = None,
-        chunk_size: int = None,
-        disconnect_at: Union[int, float] = None,
+        body: Optional[Union[str, bytes]] = None,
+        chunk_size: Optional[int] = None,
+        disconnect_at: Optional[Union[int, float]] = None,
     ):
         if body is None:
             body = b''
@@ -170,7 +170,7 @@ class ASGIRequestEventEmitter:
     def disconnected(self):
         return self._disconnected or (self._disconnect_at <= time.time())
 
-    def disconnect(self, exhaust_body: bool = None):
+    def disconnect(self, exhaust_body: Optional[bool] = None):
         """Set the client connection state to disconnected.
 
         Call this method to simulate an immediate client disconnect and
@@ -654,7 +654,7 @@ class ASGIWebSocketSimulator:
     # NOTE(kgriffs): This is a coroutine just in case we need it to be
     #   in a future code revision. It also makes it more consistent
     #   with the other methods.
-    async def _send(self, data: bytes = None, text: str = None):
+    async def _send(self, data: Optional[bytes] = None, text: Optional[str] = None):
         self._require_accepted()
 
         # NOTE(kgriffs): From the client's perspective, it was a send,

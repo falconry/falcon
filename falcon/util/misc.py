@@ -461,7 +461,7 @@ def code_to_http_status(status):
     try:
         code = int(status)
         if not 100 <= code <= 999:
-            raise ValueError('{} is not a valid status code'.format(status))
+            raise ValueError('{!r} is not a valid status code'.format(status))
     except (ValueError, TypeError):
         raise ValueError('{!r} is not a valid status code'.format(status))
 

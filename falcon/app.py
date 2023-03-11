@@ -582,7 +582,7 @@ class App:
         prefix: str,
         directory: Union[str, pathlib.Path],
         downloadable: bool = False,
-        fallback_filename: bool = None,
+        fallback_filename: Optional[str] = None,
     ):
         """Add a route to a directory of static files.
 
