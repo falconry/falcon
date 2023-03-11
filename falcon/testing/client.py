@@ -28,8 +28,8 @@ from typing import Dict
 from typing import Optional
 from typing import Sequence
 from typing import Union
-import warnings
 from urllib.parse import urlencode
+import warnings
 import wsgiref.validate
 
 from falcon.asgi_spec import ScopeType
@@ -532,15 +532,18 @@ def simulate_request(
             overrides `body` and sets the Content-Type header to
             ``'application/json'``, overriding any value specified by either
             the `content_type` or `headers` arguments.
-            Can only be used if data and files are null, otherwise an exception
-            is thrown.
+
+            Note:
+                Can only be used if data and files are null, otherwise an exception
+                is thrown.
+
         files(dict): same as the  files parameter in requests,
-             dictionary of ``'name': file-like-objects`` (or ``{'name': file-tuple}``)
-             for multipart encoding upload.
+            dictionary of ``'name': file-like-objects`` (or ``{'name': file-tuple}``)
+            for multipart encoding upload.
             ``file-tuple``: can be a 2-tuple ``('filename', fileobj)`` or a
-                3-tuple ``('filename', fileobj, 'content_type')``
-                where ``'content-type'`` is a string defining the content
-                type of the given file.
+            3-tuple ``('filename', fileobj, 'content_type')``
+            where ``'content-type'`` is a string defining the content
+            type of the given file.
             If both files and json are present, an exception is thrown. To pass
             additional form-data with files, use data.
         data : list of tuples or dict with additional data to be passed with
@@ -760,15 +763,18 @@ async def _simulate_request_asgi(
             overrides `body` and sets the Content-Type header to
             ``'application/json'``, overriding any value specified by either
             the `content_type` or `headers` arguments.
-            Can only be use if files and data are null, otherwise an exception
-            is thrown.
+
+             Note:
+                Can only be used if data and files are null, otherwise an exception
+                is thrown.
+
         files(dict): same as the  files parameter in requests,
-             dictionary of ``'name': file-like-objects`` (or ``{'name': file-tuple}``)
-             for multipart encoding upload.
+            dictionary of ``'name': file-like-objects`` (or ``{'name': file-tuple}``)
+            for multipart encoding upload.
             ``file-tuple``: can be a 2-tuple ``('filename', fileobj)`` or a
-                3-tuple ``('filename', fileobj, 'content_type')``,
-                where ``'content-type'`` is a string defining the content
-                type of the given file.
+            3-tuple ``('filename', fileobj, 'content_type')``,
+            where ``'content-type'`` is a string defining the content
+            type of the given file.
             If both files and json are present, an exception is thrown. To pass
             additional form-data with files, use data.
         data : list of tuples or dict with additional data to be passed with
@@ -2185,9 +2191,9 @@ def _prepare_data_fields(data, boundary=None, urlenc=False):
     urlresult = []
     body_part = b''
     if isinstance(data, (str, bytes)):
-        fields = list(json.loads(data).items())
+        fields = list(json_module.loads(data).items())
     elif hasattr(data, 'read'):
-        fields = list(json.load(data).items())
+        fields = list(json_module.load(data).items())
     elif isinstance(data, dict):
         fields = list(data.items())
     else:
