@@ -29,12 +29,13 @@ from typing import Optional
 from typing import Sequence
 from typing import Union
 import warnings
+from urllib.parse import urlencode
 import wsgiref.validate
 
 from falcon.asgi_spec import ScopeType
 from falcon.constants import COMBINED_METHODS
-from falcon.constants import MEDIA_JSON
-from falcon.errors import CompatibilityError
+from falcon.constants import MEDIA_JSON, MEDIA_URLENCODED
+from falcon.errors import CompatibilityError, HTTPBadRequest
 from falcon.testing import helpers
 from falcon.testing.srmock import StartResponseMock
 from falcon.util import async_to_sync
@@ -96,7 +97,7 @@ class Cookie:
             or ``None`` if not specified.
         max_age (int): The lifetime of the cookie in seconds, or
             ``None`` if not specified.
-        secure (bool): Whether or not the cookie may only only be
+        secure (bool): Whether or not the cookie may only be
             transmitted from the client via HTTPS.
         http_only (bool): Whether or not the cookie may only be
             included in unscripted requests from the client.
@@ -439,6 +440,7 @@ def simulate_request(
     body=None,
     json=None,
     files=None,
+    data=None,
     file_wrapper=None,
     wsgierrors=None,
     params=None,
@@ -530,6 +532,8 @@ def simulate_request(
             overrides `body` and sets the Content-Type header to
             ``'application/json'``, overriding any value specified by either
             the `content_type` or `headers` arguments.
+            Can only be used if data and files are null, otherwise an exception
+            is thrown.
         files(dict): same as the  files parameter in requests,
              dictionary of ``'name': file-like-objects`` (or ``{'name': file-tuple}``)
              for multipart encoding upload.
@@ -537,6 +541,11 @@ def simulate_request(
                 3-tuple ``('filename', fileobj, 'content_type')``
                 where ``'content-type'`` is a string defining the content
                 type of the given file.
+            If both files and json are present, an exception is thrown. To pass
+            additional form-data with files, use data.
+        data : list of tuples or dict with additional data to be passed with
+            files (or alone if files is null), to be treated as urlencoded form data.
+            If both data and json are present, an exception is thrown.
         file_wrapper (callable): Callable that returns an iterable,
             to be used as the value for *wsgi.file_wrapper* in the
             WSGI environ (default: ``None``). This can be used to test
@@ -585,6 +594,7 @@ def simulate_request(
             body=body,
             json=json,
             files=files,
+            data=data,
             params=params,
             params_csv=params_csv,
             protocol=protocol,
@@ -609,6 +619,7 @@ def simulate_request(
         body,
         json,
         files,
+        data,
         extras,
     )
 
@@ -633,7 +644,7 @@ def simulate_request(
         # NOTE(vytas): Even given the duct tape nature of overriding
         # arbitrary environ variables, changing the method can potentially
         # be very confusing, particularly when using specialized
-        # simulate_get/post/patch etc methods.
+        # simulate_get/post/patch etc. methods.
         raise ValueError(
             'WSGI environ extras may not override the request method. '
             'Please use the method parameter.'
@@ -663,6 +674,7 @@ async def _simulate_request_asgi(
     body=None,
     json=None,
     files=None,
+    data=None,
     params=None,
     params_csv=True,
     protocol='http',
@@ -748,6 +760,8 @@ async def _simulate_request_asgi(
             overrides `body` and sets the Content-Type header to
             ``'application/json'``, overriding any value specified by either
             the `content_type` or `headers` arguments.
+            Can only be use if files and data are null, otherwise an exception
+            is thrown.
         files(dict): same as the  files parameter in requests,
              dictionary of ``'name': file-like-objects`` (or ``{'name': file-tuple}``)
              for multipart encoding upload.
@@ -755,6 +769,11 @@ async def _simulate_request_asgi(
                 3-tuple ``('filename', fileobj, 'content_type')``,
                 where ``'content-type'`` is a string defining the content
                 type of the given file.
+            If both files and json are present, an exception is thrown. To pass
+            additional form-data with files, use data.
+        data : list of tuples or dict with additional data to be passed with
+            files (or alone if files is null), to be treated as urlencoded form data.
+            If both data and json are present, an exception is thrown.
         host(str): A string to use for the hostname part of the fully
             qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
@@ -794,6 +813,7 @@ async def _simulate_request_asgi(
         body,
         json,
         files,
+        data,
         extras,
     )
 
@@ -2153,7 +2173,7 @@ class _WSContextManager:
         await self._task_req
 
 
-def _prepare_data_fields(data):
+def _prepare_data_fields(data, boundary=None, urlenc=False):
     """Prepare data  fields for request body.
 
     Args:
@@ -2162,8 +2182,13 @@ def _prepare_data_fields(data):
     Returns: list of 2-tuples (field-name(str), value(bytes))
 
     """
-    new_fields = []
-    if isinstance(data, dict):
+    urlresult = []
+    body_part = b''
+    if isinstance(data, (str, bytes)):
+        fields = list(json.loads(data).items())
+    elif hasattr(data, "read"):
+        fields = list(json.load(data).items())
+    elif isinstance(data, dict):
         fields = list(data.items())
     else:
         fields = list(data)
@@ -2172,18 +2197,28 @@ def _prepare_data_fields(data):
     for field, val in fields:
         if isinstance(val, str) or not hasattr(val, '__iter__'):
             val = [val]
-        for v in val:
-            if v:
-                # v has to come from json serializable obj, so can't be bytes
-                v = str(v)
-                new_fields.append(
-                    (
-                        field.decode('utf-8') if isinstance(field, bytes) else field,
-                        v.encode('utf-8') if isinstance(v, str) else v,
+        # if no files are passed, make urlencoded form
+        if urlenc:
+            for v in val:
+                if v:
+                    urlresult.append(
+                        (
+                            field.encode("utf-8") if isinstance(field, str) else field,
+                            v.encode("utf-8") if isinstance(v, str) else v,
+                        )
                     )
-                )
-
-    return new_fields
+        # if files and data are passed, concat data to files body like in requests
+        else:
+            for v in val:
+                body_part += f'Content-Disposition: form-data; name={field}; ' f'\r\n\r\n'.encode()
+                if v:
+                    if not isinstance(v, bytes):
+                        v = str(v)
+                    body_part += v.encode('utf-8') if isinstance(v, str) else v
+                    body_part += b'\r\n--' + boundary.encode() + b'\r\n'
+                else:
+                    body_part += b'\r\n--' + boundary.encode() + b'\r\n'
+    return body_part if not urlenc else urlencode(urlresult,  doseq=True)
 
 
 def _prepare_files(k, v):
@@ -2248,15 +2283,6 @@ def _encode_files(files, data=None):
     boundary = _make_boundary()
     body_string = b'--' + boundary.encode() + b'\r\n'
     header = {'Content-Type': 'multipart/form-data; boundary=' + boundary}
-    # Handle whatever json data gets passed along with files
-    if data:
-        data_fields = _prepare_data_fields(data)
-        for f, val in data_fields:
-            body_string += (
-                f'Content-Disposition: form-data; name={f}; ' f'\r\n\r\n'.encode()
-            )
-            body_string += val.encode('utf-8') if isinstance(val, str) else val
-            body_string += b'\r\n--' + boundary.encode() + b'\r\n'
 
     # Deal with the files tuples
     if not isinstance(files, (dict, list)):
@@ -2281,6 +2307,10 @@ def _encode_files(files, data=None):
         )
         body_string += b'\r\n--' + boundary.encode() + b'\r\n'
 
+        # Handle whatever json data gets passed along with files
+    if data:
+        body_string += _prepare_data_fields(data, boundary)
+
     body_string = body_string[:-2] + b'--\r\n'
 
     return body_string, header
@@ -2296,6 +2326,7 @@ def _prepare_sim_args(
     body,
     json,
     files,
+    data,
     extras,
 ):
     if not path.startswith('/'):
@@ -2325,8 +2356,15 @@ def _prepare_sim_args(
         headers = headers or {}
         headers['Content-Type'] = content_type
 
-    if files is not None:
-        body, headers = _encode_files(files, json)
+    if files or data:
+        if json:
+            raise HTTPBadRequest(description="Cannot process both json and (files or data) args")
+        elif files:
+            body, headers = _encode_files(files, data)
+        else:
+            body = _prepare_data_fields(data, None, True)
+            headers = headers or {}
+            headers["Content-Type"] = MEDIA_URLENCODED
 
     elif json is not None:
         body = json_module.dumps(json, ensure_ascii=False)

@@ -8,6 +8,8 @@ import falcon
 from falcon import media
 from falcon import testing
 
+from falcon.errors import HTTPBadRequest
+
 from _util import create_app  # NOQA: I100
 
 
@@ -42,6 +44,11 @@ class MultipartAnalyzer:
             )
 
         resp.media = values
+
+    @staticmethod
+    def on_post_data(req, resp):
+        deserialized = req.get_media()
+        resp.media = deserialized
 
     @staticmethod
     def on_post_media(req, resp):
@@ -98,6 +105,11 @@ class AsyncMultipartAnalyzer:
         resp.media = values
 
     @staticmethod
+    async def on_post_data(req, resp):
+        data = await req.get_media()
+        resp.media = data
+
+    @staticmethod
     async def on_post_media(req, resp):
         deserialized = []
         form = await req.media
@@ -141,7 +153,8 @@ def client(asgi):
     app.req_options.media_handlers = media.Handlers(
         {
             falcon.MEDIA_JSON: media.JSONHandler(),
-            falcon.MEDIA_MULTIPART: parser,  # media.MultipartFormHandler()
+            falcon.MEDIA_URLENCODED: media.URLEncodedFormHandler(),
+            falcon.MEDIA_MULTIPART: parser,
         }
     )
 
@@ -150,6 +163,7 @@ def client(asgi):
 
     app.add_route('/submit', resource)
     app.add_route('/media', resource, suffix='media')
+    app.add_route('/data', resource, suffix='data')
     app.add_route('/image', resource, suffix='image')
 
     return testing.TestClient(app)
@@ -260,11 +274,17 @@ def test_upload_multipart_media(client):
     assert resp.json == [
         {'count': 6, 'numbers': [1, 2, 6, 24, 120, 720]},
         {
-            'fruit': b'\xF0\x9F\x8D\x8F'.decode('utf8'),  # u"\U0001F34F",
+            'fruit': b'\xF0\x9F\x8D\x8F'.decode('utf8'),
             'name': 'Jane',
             'surname': 'Doe',
         },
     ]
+
+
+def test_upload_only_data(client):
+    resp = client.simulate_post('/data',  data=[('data1', 5), ('data2', ['hello', 'bonjour']), ('empty', None)])
+    assert resp.status_code == 200
+    assert resp.json == {"data1": "5", "data2": ["hello", "bonjour"]}
 
 
 # endregion
@@ -307,6 +327,14 @@ def asserts_data_types(resp):
         },
         {
             'content_type': 'text/plain',
+            'data': '',
+            'filename': None,
+            'name': 'empty',
+            'secure_filename': None,
+            'text': '',
+        },
+        {
+            'content_type': 'text/plain',
             'data': 'world',
             'filename': None,
             'name': 'hello',
@@ -343,7 +371,7 @@ def test_upload_multipart_datalist(client):
     resp = client.simulate_post(
         '/submit',
         files=FILES1,
-        json=[('data1', 5), ('data2', ['hello', 'bonjour']), ('empty', None)],
+        data=[('data1', 5), ('data2', ['hello', 'bonjour']), ('empty', None)],
     )
     asserts_data_types(resp)
 
@@ -352,7 +380,7 @@ def test_upload_multipart_datalisttuple(client):
     resp = client.simulate_post(
         '/submit',
         files=FILES1,
-        json=[('data1', 5), ('data2', ('hello', 'bonjour')), ('empty', None)],
+        data=[('data1', 5), ('data2', ('hello', 'bonjour')), ('empty', None)],
     )
     asserts_data_types(resp)
 
@@ -362,7 +390,7 @@ def test_upload_multipart_datalistdict(client):
     resp = client.simulate_post(
         '/submit',
         files=FILES1,
-        json=[('data1', 5), ('data2', {'hello', 'bonjour'}), ('empty', None)],
+        data=[('data1', 5), ('data2', {'hello', 'bonjour'}), ('empty', None)],
     )
     asserts_data_types(resp)
 
@@ -372,7 +400,7 @@ def test_upload_multipart_datadict(client):
     resp = client.simulate_post(
         '/submit',
         files=FILES1,
-        json={'data1': 5, 'data2': ['hello', 'bonjour'], 'empty': None},
+        data={'data1': 5, 'data2': ['hello', 'bonjour'], 'empty': None},
     )
     asserts_data_types(resp)
 
@@ -382,7 +410,7 @@ def test_upload_multipart_datadicttuple(client):
     resp = client.simulate_post(
         '/submit',
         files=FILES1,
-        json={'data1': 5, 'data2': ('hello', 'bonjour'), 'empty': None},
+        data={'data1': 5, 'data2': ('hello', 'bonjour'), 'empty': None},
     )
     asserts_data_types(resp)
 
@@ -392,7 +420,7 @@ def test_upload_multipart_datadictdict(client):
     resp = client.simulate_post(
         '/submit',
         files=FILES1,
-        json={'data1': 5, 'data2': {'hello', 'bonjour'}, 'empty': None},
+        data={'data1': 5, 'data2': {'hello', 'bonjour'}, 'empty': None},
     )
     asserts_data_types(resp)
 
@@ -411,6 +439,14 @@ def test_invalid_files_null(client):
     """empty file in files"""
     with pytest.raises(ValueError):
         client.simulate_post('/submit', files={'file': ()})
+
+
+def test_invalid_files_data_json(client):
+    """empty json and data and files"""
+    with pytest.raises(HTTPBadRequest):
+        client.simulate_post('/submit', files=FILES1,
+                             data={'data1': 5, 'data2': ('hello', 'bonjour'), 'empty': None},
+                             json={'badrequest': 'should fail'})
 
 
 # endregion
