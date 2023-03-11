@@ -2186,7 +2186,7 @@ def _prepare_data_fields(data, boundary=None, urlenc=False):
     body_part = b''
     if isinstance(data, (str, bytes)):
         fields = list(json.loads(data).items())
-    elif hasattr(data, "read"):
+    elif hasattr(data, 'read'):
         fields = list(json.load(data).items())
     elif isinstance(data, dict):
         fields = list(data.items())
@@ -2203,14 +2203,17 @@ def _prepare_data_fields(data, boundary=None, urlenc=False):
                 if v:
                     urlresult.append(
                         (
-                            field.encode("utf-8") if isinstance(field, str) else field,
-                            v.encode("utf-8") if isinstance(v, str) else v,
+                            field.encode('utf-8') if isinstance(field, str) else field,
+                            v.encode('utf-8') if isinstance(v, str) else v,
                         )
                     )
         # if files and data are passed, concat data to files body like in requests
         else:
             for v in val:
-                body_part += f'Content-Disposition: form-data; name={field}; ' f'\r\n\r\n'.encode()
+                body_part += (
+                    f'Content-Disposition: form-data; name={field}; '
+                    f'\r\n\r\n'.encode()
+                )
                 if v:
                     if not isinstance(v, bytes):
                         v = str(v)
@@ -2218,7 +2221,7 @@ def _prepare_data_fields(data, boundary=None, urlenc=False):
                     body_part += b'\r\n--' + boundary.encode() + b'\r\n'
                 else:
                     body_part += b'\r\n--' + boundary.encode() + b'\r\n'
-    return body_part if not urlenc else urlencode(urlresult,  doseq=True)
+    return body_part if not urlenc else urlencode(urlresult, doseq=True)
 
 
 def _prepare_files(k, v):
@@ -2358,13 +2361,15 @@ def _prepare_sim_args(
 
     if files or data:
         if json:
-            raise HTTPBadRequest(description="Cannot process both json and (files or data) args")
+            raise HTTPBadRequest(
+                description='Cannot process both json and (files or data) args'
+            )
         elif files:
             body, headers = _encode_files(files, data)
         else:
             body = _prepare_data_fields(data, None, True)
             headers = headers or {}
-            headers["Content-Type"] = MEDIA_URLENCODED
+            headers['Content-Type'] = MEDIA_URLENCODED
 
     elif json is not None:
         body = json_module.dumps(json, ensure_ascii=False)

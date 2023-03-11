@@ -282,9 +282,11 @@ def test_upload_multipart_media(client):
 
 
 def test_upload_only_data(client):
-    resp = client.simulate_post('/data',  data=[('data1', 5), ('data2', ['hello', 'bonjour']), ('empty', None)])
+    resp = client.simulate_post(
+        '/data', data=[('data1', 5), ('data2', ['hello', 'bonjour']), ('empty', None)]
+    )
     assert resp.status_code == 200
-    assert resp.json == {"data1": "5", "data2": ["hello", "bonjour"]}
+    assert resp.json == {'data1': '5', 'data2': ['hello', 'bonjour']}
 
 
 # endregion
@@ -444,9 +446,12 @@ def test_invalid_files_null(client):
 def test_invalid_files_data_json(client):
     """empty json and data and files"""
     with pytest.raises(HTTPBadRequest):
-        client.simulate_post('/submit', files=FILES1,
-                             data={'data1': 5, 'data2': ('hello', 'bonjour'), 'empty': None},
-                             json={'badrequest': 'should fail'})
+        client.simulate_post(
+            '/submit',
+            files=FILES1,
+            data={'data1': 5, 'data2': ('hello', 'bonjour'), 'empty': None},
+            json={'badrequest': 'should fail'},
+        )
 
 
 # endregion
