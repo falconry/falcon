@@ -1,0 +1,4 @@
+Basic typing annotations have been added to the most commonly used functions of
+Falcon's public interface to the package itself in order to better support
+`mypy <https://www.mypy-lang.org/>`_ users without having to install any
+third-party typeshed packages.
