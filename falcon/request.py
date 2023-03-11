@@ -2085,6 +2085,13 @@ class RequestOptions:
             ``multipart/form-data`` media types.
     """
 
+    keep_black_qs_values: bool
+    auto_parse_form_urlencoded: bool
+    auto_parse_qs_csv: bool
+    strip_url_path_trailing_slash: bool
+    default_media_type: str
+    media_handlers: Handlers
+
     __slots__ = (
         'keep_blank_qs_values',
         'auto_parse_form_urlencoded',

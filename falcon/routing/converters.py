@@ -15,8 +15,8 @@
 import abc
 from datetime import datetime
 from math import isfinite
-import uuid
 from typing import Optional
+import uuid
 
 __all__ = (
     'BaseConverter',
