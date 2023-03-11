@@ -297,9 +297,17 @@ def test_upload_only_datadict(client):
     assert resp.json == {'data1': '5', 'data2': ['hello', 'bonjour']}
 
 
-def test_upload_only_data_str(client):
+def test_upload_only_data_bstr(client):
     resp = client.simulate_post(
         '/data', data=b'{"data1": 5, "data2": ["hello", "bonjour"]}'
+    )
+    assert resp.status_code == 200
+    assert resp.json == {'data1': '5', 'data2': ['hello', 'bonjour']}
+
+
+def test_upload_only_data_str(client):
+    resp = client.simulate_post(
+        '/data', data='{"data1": 5, "data2": ["hello", "bonjour"]}'
     )
     assert resp.status_code == 200
     assert resp.json == {'data1': '5', 'data2': ['hello', 'bonjour']}
