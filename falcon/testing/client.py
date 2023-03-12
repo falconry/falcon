@@ -544,11 +544,18 @@ def simulate_request(
             3-tuple ``('filename', fileobj, 'content_type')``
             where ``'content-type'`` is a string defining the content
             type of the given file.
-            If both files and json are present, an exception is thrown. To pass
-            additional form-data with files, use data.
-        data : list of tuples or dict with additional data to be passed with
-            files (or alone if files is null), to be treated as urlencoded form data.
-            If both data and json are present, an exception is thrown.
+
+            Note:
+                If both data and json are present, an exception is thrown.
+                To pass additional form-data with files, use data.
+
+        data : list of tuples, dict or (b)string, with additional data
+            to be passed with files (or alone if files is null), to be treated
+            as urlencoded form data.
+
+            Note:
+                If both data and json are present, an exception is thrown.
+
         file_wrapper (callable): Callable that returns an iterable,
             to be used as the value for *wsgi.file_wrapper* in the
             WSGI environ (default: ``None``). This can be used to test
@@ -775,11 +782,17 @@ async def _simulate_request_asgi(
             3-tuple ``('filename', fileobj, 'content_type')``,
             where ``'content-type'`` is a string defining the content
             type of the given file.
-            If both files and json are present, an exception is thrown. To pass
-            additional form-data with files, use data.
-        data : list of tuples or dict with additional data to be passed with
+
+            Mote:
+                If both files and json are present, an exception is thrown. To pass
+                additional form-data with files, use data.
+
+        data : list of tuples, dict or (b)string with additional data to be passed with
             files (or alone if files is null), to be treated as urlencoded form data.
-            If both data and json are present, an exception is thrown.
+
+            Note:
+                If both data and json are present, an exception is thrown.
+
         host(str): A string to use for the hostname part of the fully
             qualified request URL (default: 'falconframework.org')
         remote_addr (str): A string to use as the remote IP address for the
