@@ -2204,7 +2204,11 @@ def _prepare_data_fields(data, boundary=None, urlenc=False):
     urlresult = []
     body_part = b''
     if isinstance(data, (str, bytes)) or hasattr(data, 'read'):
-        fields = list(json_module.loads(data).items())
+        try:
+            fields = list(json_module.loads(data).items())
+        except ValueError:
+            # if it's not a json, then treat as body
+            return data
     elif isinstance(data, dict):
         fields = list(data.items())
     else:
@@ -2387,7 +2391,8 @@ def _prepare_sim_args(
         else:
             body = _prepare_data_fields(data, None, True)
             headers = headers or {}
-            headers['Content-Type'] = MEDIA_URLENCODED
+            if not headers:
+                headers['Content-Type'] = MEDIA_URLENCODED
 
     elif json is not None:
         body = json_module.dumps(json, ensure_ascii=False)

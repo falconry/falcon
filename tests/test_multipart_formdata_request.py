@@ -42,7 +42,6 @@ class MultipartAnalyzer:
                     'text': part.text,
                 }
             )
-
         resp.media = values
 
     @staticmethod
@@ -159,6 +158,12 @@ def client(asgi):
     )
 
     app.req_options.default_media_type = falcon.MEDIA_MULTIPART
+    app.resp_options.media_handlers = media.Handlers(
+        {
+            falcon.MEDIA_JSON: media.JSONHandler(),
+        }
+    )
+
     resource = AsyncMultipartAnalyzer() if asgi else MultipartAnalyzer()
 
     app.add_route('/submit', resource)
@@ -313,6 +318,113 @@ def test_upload_only_data_str(client):
     assert resp.json == {'data1': '5', 'data2': ['hello', 'bonjour']}
 
 
+bstring_body = (
+    b'--5b11af82ab65407ba8cdccf37d2a9c4f\r\n'
+    b'Content-Disposition: form-data; name="hello"\r\n\r\n'
+    b'world\r\n'
+    b'--5b11af82ab65407ba8cdccf37d2a9c4f\r\n'
+    b'Content-Disposition: form-data; name="document"\r\n'
+    b'Content-Type: application/json\r\n\r\n'
+    b'{"debug": true, "message": "Hello, world!", "score": 7}\r\n'
+    b'--5b11af82ab65407ba8cdccf37d2a9c4f\r\n'
+    b'Content-Disposition: form-data; name="file1"; filename="test.txt"\r\n'
+    b'Content-Type: text/plain\r\n\r\n'
+    b'Hello, world!\n\r\n'
+    b'--5b11af82ab65407ba8cdccf37d2a9c4f--\r\n'
+)
+
+string_body = (
+    '--5b11af82ab65407ba8cdccf37d2a9c4f\r\n'
+    'Content-Disposition: form-data; name="hello"\r\n\r\n'
+    'world\r\n'
+    '--5b11af82ab65407ba8cdccf37d2a9c4f\r\n'
+    'Content-Disposition: form-data; name="document"\r\n'
+    'Content-Type: application/json\r\n\r\n'
+    '{"debug": true, "message": "Hello, world!", "score": 7}\r\n'
+    '--5b11af82ab65407ba8cdccf37d2a9c4f\r\n'
+    'Content-Disposition: form-data; name="file1"; filename="test.txt"\r\n'
+    'Content-Type: text/plain\r\n\r\n'
+    'Hello, world!\n\r\n'
+    '--5b11af82ab65407ba8cdccf37d2a9c4f--\r\n'
+)
+
+
+def test_upload_only_data_bstrnojson(client):
+    resp = client.simulate_post(
+        '/submit',
+        data=bstring_body,
+        headers={
+            'Content-Type': 'multipart/form-data; '
+            'boundary=5b11af82ab65407ba8cdccf37d2a9c4f',
+        },
+    )
+    assert resp.status_code == 200
+    assert resp.json == [
+        {
+            'content_type': 'text/plain',
+            'data': 'world',
+            'filename': None,
+            'name': 'hello',
+            'secure_filename': None,
+            'text': 'world',
+        },
+        {
+            'content_type': 'application/json',
+            'data': '{"debug": true, "message": "Hello, world!", "score": 7}',
+            'filename': None,
+            'name': 'document',
+            'secure_filename': None,
+            'text': None,
+        },
+        {
+            'content_type': 'text/plain',
+            'data': 'Hello, world!\n',
+            'filename': 'test.txt',
+            'name': 'file1',
+            'secure_filename': 'test.txt',
+            'text': 'Hello, world!\n',
+        },
+    ]
+
+
+def test_upload_only_data_strnojson(client):
+    resp = client.simulate_post(
+        '/submit',
+        data=string_body,
+        headers={
+            'Content-Type': 'multipart/form-data; '
+            'boundary=5b11af82ab65407ba8cdccf37d2a9c4f',
+        },
+    )
+    assert resp.status_code == 200
+    assert resp.json == [
+        {
+            'content_type': 'text/plain',
+            'data': 'world',
+            'filename': None,
+            'name': 'hello',
+            'secure_filename': None,
+            'text': 'world',
+        },
+        {
+            'content_type': 'application/json',
+            'data': '{"debug": true, "message": "Hello, world!", "score": 7}',
+            'filename': None,
+            'name': 'document',
+            'secure_filename': None,
+            'text': None,
+        },
+        {
+            'content_type': 'text/plain',
+            'data': 'Hello, world!\n',
+            'filename': 'test.txt',
+            'name': 'file1',
+            'secure_filename': 'test.txt',
+            'text': 'Hello, world!\n',
+        },
+    ]
+
+
 def asserts_data_types_bool(resp):
     assert resp.status_code == 200
     expected_list = [
@@ -409,7 +521,6 @@ def test_upload_data_bool(client):
             ('empty', None),
         ],
     )
-    print(resp.json)
     asserts_data_types_bool(resp)
 
 
