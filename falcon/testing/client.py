@@ -1969,6 +1969,9 @@ class TestClient:
         app: The app that this client instance was configured to use.
 
     """
+    
+    # prevent pytest from collecting tests on the class.
+    __test__ = False
 
     def __init__(self, app, headers=None):
         self.app = app
