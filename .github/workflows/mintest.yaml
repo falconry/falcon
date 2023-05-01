@@ -21,10 +21,10 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up Python
-        uses: actions/setup-python@v2.1.4
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -41,5 +41,6 @@ jobs:
         run: |
           tools/sed_coverage_rc.py
 
-      - name: Run tox
-        run: tox
+      - name: Run tox inside sdist
+        run: |
+          tools/tox_sdist.py

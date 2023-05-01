@@ -1,2 +1,0 @@
-The ``orjson`` library now works correctly when used as JSON serializer in
-the media handlers in the ASGI version of Falcon.

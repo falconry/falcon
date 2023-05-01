@@ -122,6 +122,7 @@ MEDIA_TEXT = 'text/plain; charset=utf-8'
 MEDIA_JPEG = 'image/jpeg'
 MEDIA_PNG = 'image/png'
 MEDIA_GIF = 'image/gif'
+MEDIA_BMP = 'image/bmp'
 
 DEFAULT_MEDIA_TYPE = MEDIA_JSON
 
