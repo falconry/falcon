@@ -1192,12 +1192,12 @@ async def test_ws_http_error_or_status_error_handler(
 
     if handler_has_ws:
 
-        async def handle_foobar(req, resp, ex, param, ws=None):
+        async def handle_foobar(req, resp, ex, param, ws=None):   # type: ignore
             raise thing(status)
 
     else:
 
-        async def handle_foobar(req, resp, ex, param):
+        async def handle_foobar(req, resp, ex, param):  # type: ignore
             raise thing(status)
 
     conductor.app.add_route('/', Resource())

@@ -704,5 +704,5 @@ class _BufferedReceiver:
 
 
 def http_status_to_ws_code(http_status: int) -> int:
-    """Converts the provided http status to a websocket close code by adding 3000."""
+    """Convert the provided http status to a websocket close code by adding 3000."""
     return http_status + 3000

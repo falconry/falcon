@@ -1033,7 +1033,8 @@ class App(falcon.app.App):
             assert ws
             code = http_status_to_ws_code(status.status)
             falcon._logger.error(
-                '[FALCON] HTTPStatus %s raised while handling WebSocket. Closing with code %s',
+                '[FALCON] HTTPStatus %s raised while handling WebSocket. '
+                'Closing with code %s',
                 status,
                 code,
             )
@@ -1046,7 +1047,8 @@ class App(falcon.app.App):
             assert ws
             code = http_status_to_ws_code(error.status_code)
             falcon._logger.error(
-                '[FALCON] HTTPError %s raised while handling WebSocket. Closing with code %s',
+                '[FALCON] HTTPError %s raised while handling WebSocket. '
+                'Closing with code %s',
                 error,
                 code,
             )
