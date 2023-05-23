@@ -71,7 +71,7 @@ class Forwarded:
             the proxy.
     """
 
-    # NOTE(kgriffs): Use "client" since "for" is a keyword, and
+    # NOTE(kgriffs): Use "src" since "for" is a keyword, and
     # "scheme" instead of "proto" to be consistent with the
     # falcon.Request interface.
     __slots__ = ('src', 'dest', 'host', 'scheme')
