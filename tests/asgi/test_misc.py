@@ -1,7 +1,9 @@
 # misc test for 100% coverage
 
 from unittest.mock import MagicMock
+
 import pytest
+
 from falcon.asgi import App
 from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
