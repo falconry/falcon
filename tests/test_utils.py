@@ -522,7 +522,23 @@ class TestFalconUtils:
     def test_code_to_http_status(self, v_in, v_out):
         assert falcon.code_to_http_status(v_in) == v_out
 
-    @pytest.mark.parametrize('v', [0, 13, 99, 1000, 1337.01, -99, -404.3, -404, -404.3])
+    @pytest.mark.parametrize(
+        'v',
+        [
+            0,
+            13,
+            99,
+            1000,
+            1337.01,
+            -99,
+            -404.3,
+            -404,
+            -404.3,
+            'Successful',
+            'Failed',
+            None,
+        ],
+    )
     def test_code_to_http_status_value_error(self, v):
         with pytest.raises(ValueError):
             falcon.code_to_http_status(v)

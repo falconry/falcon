@@ -1092,3 +1092,126 @@ def test_msgpack_missing():
 
     with pytest.raises(RuntimeError):
         handler.deserialize(b'{}')
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('status', [200, 500, 422, 400])
+@pytest.mark.parametrize('thing', [falcon.HTTPStatus, falcon.HTTPError])
+@pytest.mark.parametrize('accept', [True, False])
+async def test_ws_http_error_or_status_response(conductor, status, thing, accept):
+    class Resource:
+        async def on_websocket(self, req, ws):
+            if accept:
+                await ws.accept()
+            raise thing(status)
+
+    conductor.app.add_route('/', Resource())
+    exp_code = 3000 + status
+
+    async with conductor as c:
+        if accept:
+            async with c.simulate_ws() as ws:
+                assert ws.closed
+                assert ws.close_code == exp_code
+        else:
+            with pytest.raises(falcon.WebSocketDisconnected) as err:
+                async with c.simulate_ws():
+                    pass
+            assert err.value.code == exp_code
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('status', [200, 500, 422, 400])
+@pytest.mark.parametrize(
+    'thing',
+    [
+        falcon.HTTPStatus,
+        falcon.HTTPError,
+    ],
+)
+@pytest.mark.parametrize('place', ['request', 'resource'])
+async def test_ws_http_error_or_status_middleware(conductor, status, thing, place):
+    called = False
+
+    class Resource:
+        async def on_websocket(self, req, ws):
+            nonlocal called
+            called = True
+
+    class Middleware:
+        async def process_request_ws(self, req, ws):
+            if place == 'request':
+                raise thing(status)
+
+        async def process_resource_ws(self, req, ws, res, params):
+            if place == 'resource':
+                raise thing(status)
+
+    conductor.app.add_route('/', Resource())
+    conductor.app.add_middleware(Middleware())
+    exp_code = 3000 + status
+
+    async with conductor as c:
+        with pytest.raises(falcon.WebSocketDisconnected) as err:
+            async with c.simulate_ws():
+                pass
+        assert err.value.code == exp_code
+    assert not called
+
+
+class FooBarError(Exception):
+    pass
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('status', [200, 500, 422, 400])
+@pytest.mark.parametrize('thing', [falcon.HTTPStatus, falcon.HTTPError])
+@pytest.mark.parametrize(
+    'place', ['request', 'resource', 'ws_before_accept', 'ws_after_accept']
+)
+@pytest.mark.parametrize('handler_has_ws', [True, False])
+async def test_ws_http_error_or_status_error_handler(
+    conductor, status, thing, place, handler_has_ws
+):
+    class Resource:
+        async def on_websocket(self, req, ws):
+            if place == 'ws_before_accept':
+                raise FooBarError
+            await ws.accept()
+            if place == 'ws_after_accept':
+                raise FooBarError
+
+    class Middleware:
+        async def process_request_ws(self, req, ws):
+            if place == 'request':
+                raise FooBarError
+
+        async def process_resource_ws(self, req, ws, res, params):
+            if place == 'resource':
+                raise FooBarError
+
+    if handler_has_ws:
+
+        async def handle_foobar(req, resp, ex, param, ws=None):   # type: ignore
+            raise thing(status)
+
+    else:
+
+        async def handle_foobar(req, resp, ex, param):  # type: ignore
+            raise thing(status)
+
+    conductor.app.add_route('/', Resource())
+    conductor.app.add_middleware(Middleware())
+    conductor.app.add_error_handler(FooBarError, handle_foobar)
+    exp_code = 3000 + status
+
+    async with conductor as c:
+        if place == 'ws_after_accept':
+            async with c.simulate_ws() as ws:
+                assert ws.closed
+                assert ws.close_code == exp_code
+        else:
+            with pytest.raises(falcon.WebSocketDisconnected) as err:
+                async with c.simulate_ws():
+                    pass
+            assert err.value.code == exp_code
