@@ -1970,7 +1970,7 @@ class TestClient:
 
     """
 
-    # prevent pytest from collecting tests on the class.
+    # NOTE(aryaniyaps): Prevent pytest from collecting tests on the class.
     __test__ = False
 
     def __init__(self, app, headers=None):
