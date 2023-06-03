@@ -701,3 +701,8 @@ class _BufferedReceiver:
             if self._pop_message_waiter is not None:
                 self._pop_message_waiter.set_result(None)
                 self._pop_message_waiter = None
+
+
+def http_status_to_ws_code(http_status: int) -> int:
+    """Convert the provided http status to a websocket close code by adding 3000."""
+    return http_status + 3000

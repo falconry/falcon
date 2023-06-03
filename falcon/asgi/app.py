@@ -44,6 +44,7 @@ from .multipart import MultipartForm
 from .request import Request
 from .response import Response
 from .structures import SSEvent
+from .ws import http_status_to_ws_code
 from .ws import WebSocket
 from .ws import WebSocketOptions
 
@@ -1025,30 +1026,45 @@ class App(falcon.app.App):
             asgi=True,
         )
 
-    async def _http_status_handler(self, req, resp, status, params):
-        self._compose_status_response(req, resp, status)
+    async def _http_status_handler(self, req, resp, status, params, ws=None):
+        if resp:
+            self._compose_status_response(req, resp, status)
+        elif ws:
+            code = http_status_to_ws_code(status.status)
+            falcon._logger.error(
+                '[FALCON] HTTPStatus %s raised while handling WebSocket. '
+                'Closing with code %s',
+                status,
+                code,
+            )
+            await ws.close(code)
+        else:
+            raise NotImplementedError('resp or ws expected')
 
     async def _http_error_handler(self, req, resp, error, params, ws=None):
         if resp:
             self._compose_error_response(req, resp, error)
-
-        if ws:
+        elif ws:
+            code = http_status_to_ws_code(error.status_code)
             falcon._logger.error(
-                '[FALCON] WebSocket handshake rejected due to raised HTTP error: %s',
+                '[FALCON] HTTPError %s raised while handling WebSocket. '
+                'Closing with code %s',
                 error,
+                code,
             )
-
-            code = 3000 + error.status_code
             await ws.close(code)
+        else:
+            raise NotImplementedError('resp or ws expected')
 
     async def _python_error_handler(self, req, resp, error, params, ws=None):
         falcon._logger.error('[FALCON] Unhandled exception in ASGI app', exc_info=error)
 
         if resp:
             self._compose_error_response(req, resp, falcon.HTTPInternalServerError())
-
-        if ws:
+        elif ws:
             await self._ws_cleanup_on_error(ws)
+        else:
+            raise NotImplementedError('resp or ws expected')
 
     async def _ws_disconnected_error_handler(self, req, resp, error, params, ws):
         falcon._logger.debug(
@@ -1093,9 +1109,9 @@ class App(falcon.app.App):
                 await err_handler(req, resp, ex, params, **kwargs)
 
             except HTTPStatus as status:
-                self._compose_status_response(req, resp, status)
+                await self._http_status_handler(req, resp, status, params, ws=ws)
             except HTTPError as error:
-                self._compose_error_response(req, resp, error)
+                await self._http_error_handler(req, resp, error, params, ws=ws)
 
             return True
 

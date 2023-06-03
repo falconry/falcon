@@ -1,0 +1,6 @@
+
+:ref:`WebSocket <ws>` implementation has been fixed to properly handle
+:class:`~falcon.HTTPError` and :class:`~falcon.HTTPStatus` exceptions raised by
+custom :func:`error handlers <falcon.asgi.App.add_error_handler>`.
+The WebSocket connection is now correctly closed with an appropriate code
+instead of bubbling up an unhandled error to the application server.
