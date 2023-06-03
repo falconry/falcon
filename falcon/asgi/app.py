@@ -1029,8 +1029,7 @@ class App(falcon.app.App):
     async def _http_status_handler(self, req, resp, status, params, ws=None):
         if resp:
             self._compose_status_response(req, resp, status)
-        else:
-            assert ws
+        elif ws:
             code = http_status_to_ws_code(status.status)
             falcon._logger.error(
                 '[FALCON] HTTPStatus %s raised while handling WebSocket. '
@@ -1039,12 +1038,13 @@ class App(falcon.app.App):
                 code,
             )
             await ws.close(code)
+        else:
+            raise NotImplementedError('resp or ws expected')
 
     async def _http_error_handler(self, req, resp, error, params, ws=None):
         if resp:
             self._compose_error_response(req, resp, error)
-        else:
-            assert ws
+        elif ws:
             code = http_status_to_ws_code(error.status_code)
             falcon._logger.error(
                 '[FALCON] HTTPError %s raised while handling WebSocket. '
@@ -1053,15 +1053,18 @@ class App(falcon.app.App):
                 code,
             )
             await ws.close(code)
+        else:
+            raise NotImplementedError('resp or ws expected')
 
     async def _python_error_handler(self, req, resp, error, params, ws=None):
         falcon._logger.error('[FALCON] Unhandled exception in ASGI app', exc_info=error)
 
         if resp:
             self._compose_error_response(req, resp, falcon.HTTPInternalServerError())
-        else:
-            assert ws
+        elif ws:
             await self._ws_cleanup_on_error(ws)
+        else:
+            raise NotImplementedError('resp or ws expected')
 
     async def _ws_disconnected_error_handler(self, req, resp, error, params, ws):
         falcon._logger.debug(
