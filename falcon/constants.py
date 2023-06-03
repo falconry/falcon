@@ -105,9 +105,9 @@ MEDIA_YAML = 'application/yaml'
 # contrary to the RFCs.
 MEDIA_XML = 'application/xml'
 
-# NOTE: According to RFC 9239, Changed the intended usage of the
-# media type "text/javascript" from OBSOLETE to COMMON. Changed
-# the intended usage for all other script media types to obsolete.
+# NOTE(euj1n0ng): According to RFC 9239, Changed the intended usage of the
+#   media type "text/javascript" from OBSOLETE to COMMON. Changed
+#   the intended usage for all other script media types to obsolete.
 MEDIA_JS = 'text/javascript'
 
 # NOTE(kgriffs): According to RFC 6838, most text media types should
@@ -135,6 +135,28 @@ SINGLETON_HEADERS = frozenset(
         'referer',
         'user-agent',
     ]
+)
+
+# NOTE(vytas): We strip the preferred charsets from the default static file
+#   type mapping as it is hard to make any assumptions without knowing which
+#   files are going to be served. Moreover, the popular web servers (like
+#   Nginx) do not try to guess either.
+_DEFAULT_STATIC_MEDIA_TYPES = tuple(
+    (ext, media_type.split(';', 1)[0])
+    for ext, media_type in (
+        ('.bmp', MEDIA_BMP),
+        ('.gif', MEDIA_GIF),
+        ('.htm', MEDIA_HTML),
+        ('.html', MEDIA_HTML),
+        ('.jpeg', MEDIA_JPEG),
+        ('.jpg', MEDIA_JPEG),
+        ('.js', MEDIA_JS),
+        ('.png', MEDIA_PNG),
+        ('.txt', MEDIA_TEXT),
+        ('.xml', MEDIA_XML),
+        ('.yaml', MEDIA_YAML),
+        ('.yml', MEDIA_YAML),
+    )
 )
 
 # NOTE(kgriffs): Special singleton to be used internally whenever using
