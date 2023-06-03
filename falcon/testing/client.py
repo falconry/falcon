@@ -1970,6 +1970,9 @@ class TestClient:
 
     """
 
+    # NOTE(aryaniyaps): Prevent pytest from collecting tests on the class.
+    __test__ = False
+
     def __init__(self, app, headers=None):
         self.app = app
         self._default_headers = headers
