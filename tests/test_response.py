@@ -71,8 +71,14 @@ def test_response_option_mimetype_init(monkeypatch):
     ro = ResponseOptions()
 
     assert ro.static_media_types['.js'] == 'text/javascript'
+    assert ro.static_media_types['.json'] == 'application/json'
+    assert ro.static_media_types['.mjs'] == 'text/javascript'
 
     mock.reset_mock()
     mock.inited = True
     ro = ResponseOptions()
     mock.init.assert_not_called()
+
+    assert ro.static_media_types['.js'] == 'text/javascript'
+    assert ro.static_media_types['.json'] == 'application/json'
+    assert ro.static_media_types['.mjs'] == 'text/javascript'

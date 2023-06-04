@@ -151,6 +151,8 @@ _DEFAULT_STATIC_MEDIA_TYPES = tuple(
         ('.jpeg', MEDIA_JPEG),
         ('.jpg', MEDIA_JPEG),
         ('.js', MEDIA_JS),
+        ('.json', MEDIA_JSON),
+        ('.mjs', MEDIA_JS),
         ('.png', MEDIA_PNG),
         ('.txt', MEDIA_TEXT),
         ('.xml', MEDIA_XML),
