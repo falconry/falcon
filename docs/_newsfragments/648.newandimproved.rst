@@ -1,2 +1,2 @@
-A new ``path`` :class:`converter <~falcon.routing.PathConverter>`
+A new ``path`` :class:`converter <falcon.routing.PathConverter>`
 capable of matching segments that include ``/`` was added.

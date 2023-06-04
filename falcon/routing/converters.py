@@ -19,10 +19,10 @@ import uuid
 
 __all__ = (
     'BaseConverter',
-    'IntConverter',
     'DateTimeConverter',
-    'UUIDConverter',
     'FloatConverter',
+    'IntConverter',
+    'UUIDConverter',
 )
 
 
@@ -114,6 +114,7 @@ class FloatConverter(IntConverter):
     """Converts a field value to an float.
 
     Identifier: `float`
+
     Keyword Args:
         min (float): Reject the value if it is less than this number.
         max (float): Reject the value if it is greater than this number.

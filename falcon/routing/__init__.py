@@ -23,6 +23,7 @@ from falcon.routing.compiled import CompiledRouter
 from falcon.routing.compiled import CompiledRouterOptions
 from falcon.routing.converters import BaseConverter
 from falcon.routing.converters import DateTimeConverter
+from falcon.routing.converters import FloatConverter
 from falcon.routing.converters import IntConverter
 from falcon.routing.converters import PathConverter
 from falcon.routing.converters import UUIDConverter

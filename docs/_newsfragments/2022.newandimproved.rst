@@ -1,1 +1,3 @@
-:class:`FloatConverter`:Modified existing IntConverter class and added FloatConverter class to convert string to float at runtime.
+Similar to the existing :class:`~falcon.routing.IntConverter`, a new
+:class:`~falcon.routing.FloatConverter` has been added, allowing to convert
+path segments to ``float``.
