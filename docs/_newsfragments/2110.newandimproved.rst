@@ -1,0 +1,6 @@
+Following the recommendation from
+`RFC 9239 <https://www.rfc-editor.org/rfc/rfc9239>`__, the
+:ref:`MEDIA_JS <media_type_constants>` constant has been updated to
+``text/javascript``. Furthermore, this and other media type constants are now
+preferred to the stdlib's :mod:`mimetypes` for the initialization of
+:attr:`~falcon.ResponseOptions.static_media_types`.
