@@ -19,10 +19,10 @@ import uuid
 
 __all__ = (
     'BaseConverter',
-    'IntConverter',
     'DateTimeConverter',
-    'UUIDConverter',
     'FloatConverter',
+    'IntConverter',
+    'UUIDConverter',
 )
 
 
