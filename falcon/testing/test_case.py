@@ -75,6 +75,9 @@ class TestCase(unittest.TestCase, TestClient):
                         self.assertEqual(result.json, doc)
     """
 
+    # NOTE(vytas): Here we have to restore __test__ to allow collecting tests!
+    __test__ = True
+
     def setUp(self):
         super(TestCase, self).setUp()
 
