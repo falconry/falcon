@@ -304,6 +304,9 @@ Built-in Converters
 .. autoclass:: falcon.routing.IntConverter
     :members:
 
+.. autoclass:: falcon.routing.FloatConverter
+    :members:
+
 .. autoclass:: falcon.routing.UUIDConverter
     :members:
 

@@ -23,11 +23,20 @@ Contributors to this Release
 
 Many thanks to all of our talented and stylish contributors for this release!
 
+- `aryaniyaps <https://github.com/aryaniyaps>`__
 - `CaselIT <https://github.com/CaselIT>`__
 - `cclauss <https://github.com/cclauss>`__
+- `euj1n0ng <https://github.com/euj1n0ng>`__
+- `jkapica <https://github.com/jkapica>`__
 - `jkklapp <https://github.com/jkklapp>`__
+- `john-g-g <https://github.com/john-g-g>`__
+- `kaichan1201 <https://github.com/kaichan1201>`__
 - `kgriffs <https://github.com/kgriffs>`__
 - `meetshah133 <https://github.com/meetshah133>`__
 - `mgorny <https://github.com/mgorny>`__
+- `mihaitodor <https://github.com/mihaitodor>`__
+- `nfsec <https://github.com/nfsec>`__
 - `RioAtHome <https://github.com/RioAtHome>`__
+- `TigreModerata <https://github.com/TigreModerata>`__
+- `vgerak <https://github.com/vgerak>`__
 - `vytas7 <https://github.com/vytas7>`__
