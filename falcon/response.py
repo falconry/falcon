@@ -18,6 +18,7 @@ import functools
 import mimetypes
 from typing import Optional
 
+from falcon.constants import _DEFAULT_STATIC_MEDIA_TYPES
 from falcon.constants import _UNSET
 from falcon.constants import DEFAULT_MEDIA_TYPE
 from falcon.errors import HeaderNotSupported
@@ -1252,4 +1253,5 @@ class ResponseOptions:
 
         if not mimetypes.inited:
             mimetypes.init()
-        self.static_media_types = mimetypes.types_map
+        self.static_media_types = mimetypes.types_map.copy()
+        self.static_media_types.update(_DEFAULT_STATIC_MEDIA_TYPES)

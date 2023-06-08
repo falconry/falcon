@@ -22,31 +22,39 @@ RST_CONTRIBUTOR_LINE = r'- `[\w-]+ <https://github.com/([\w-]+)>`__?\n'
 RST_CONTRIBUTOR_TEMPLATE = '- `{login} <https://github.com/{login}>`__\n'
 
 
-def get_latest_tag():
+def get_latest_tag(headers=None):
     uri = f'{FALCON_REPOSITORY_API}/tags'
-    for tag in requests.get(uri).json():
+    resp = requests.get(uri, headers=headers)
+    resp.raise_for_status()
+
+    for tag in resp.json():
         if re.match(STABLE_RELEASE_TAG, tag['name']):
             return tag['name'], tag['commit']['sha']
 
 
-def iter_commits(until=None):
+def iter_commits(until=None, headers=None):
     page = 1
     uri = f'{FALCON_REPOSITORY_API}/commits'
+    resp = requests.get(uri, headers=headers)
+    resp.raise_for_status()
 
-    while commits := requests.get(uri).json():
+    while commits := resp.json():
         for commit in commits:
-            if until and commit['sha'] == until:
+            if until and commit['sha'].startswith(until):
                 return
             yield commit
 
         page += 1
         uri = f'{FALCON_REPOSITORY_API}/commits?page={page}'
+        resp = requests.get(uri, headers=headers)
+        resp.raise_for_status()
 
 
-def aggregate_contributors(until=None):
+def aggregate_contributors(until=None, headers=None):
     result = {}
-    for commit in iter_commits(until):
-        login = commit['author'].get('login')
+    for commit in iter_commits(until, headers=headers):
+        author = commit.get('author') or {}
+        login = author.get('login')
         if not login:
             continue
         if login in result:
@@ -122,6 +130,14 @@ def main():
     )
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument(
+        '-a', '--auth', help='supply authentication token for GitHub requests'
+    )
+    parser.add_argument(
+        '-t',
+        '--treeish',
+        help='aggregate since this commit (default: detect latest tag)',
+    )
+    parser.add_argument(
         '-n', '--dry-run', action='store_true', help='dry run: do not write any files'
     )
     parser.add_argument(
@@ -131,12 +147,19 @@ def main():
         '--no-towncrier', action='store_true', help=f'do not write {towncrier_template}'
     )
     args = parser.parse_args()
+    headers = {'Authorization': f'Bearer {args.auth}'} if args.auth else None
 
-    tag, commit = get_latest_tag()
-    contributors = aggregate_contributors(until=commit)
+    if args.treeish:
+        commit = args.treeish
+        info = f'Contributors since commit {commit}):'
+    else:
+        tag, commit = get_latest_tag(headers=headers)
+        info = f'Contributors since the latest stable tag ({tag}):'
+
+    contributors = aggregate_contributors(until=commit, headers=headers)
 
     if contributors:
-        print(f'Contributors since the latest stable tag ({tag}):')
+        print(info)
         for login, name in contributors.items():
             print(f' * {name} ({login})')
     else:

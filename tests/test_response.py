@@ -65,13 +65,20 @@ def test_response_removed_stream_len(resp):
 def test_response_option_mimetype_init(monkeypatch):
     mock = MagicMock()
     mock.inited = False
+    mock.types_map = {'.js': 'application/javascript'}
     monkeypatch.setattr('falcon.response.mimetypes', mock)
 
     ro = ResponseOptions()
 
-    assert ro.static_media_types is mock.types_map
+    assert ro.static_media_types['.js'] == 'text/javascript'
+    assert ro.static_media_types['.json'] == 'application/json'
+    assert ro.static_media_types['.mjs'] == 'text/javascript'
+
     mock.reset_mock()
     mock.inited = True
     ro = ResponseOptions()
-    assert ro.static_media_types is mock.types_map
     mock.init.assert_not_called()
+
+    assert ro.static_media_types['.js'] == 'text/javascript'
+    assert ro.static_media_types['.json'] == 'application/json'
+    assert ro.static_media_types['.mjs'] == 'text/javascript'

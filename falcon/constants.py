@@ -105,14 +105,10 @@ MEDIA_YAML = 'application/yaml'
 # contrary to the RFCs.
 MEDIA_XML = 'application/xml'
 
-# NOTE(kgriffs): RFC 4329 recommends application/* over text/.
-# furthermore, parsers are required to respect the Unicode
-# encoding signature, if present in the document, and to default
-# to UTF-8 when not present. Note, however, that implementations
-# are not required to support anything besides UTF-8, so it is
-# unclear how much utility an encoding signature (or the charset
-# parameter for that matter) has in practice.
-MEDIA_JS = 'application/javascript'
+# NOTE(euj1n0ng): According to RFC 9239, Changed the intended usage of the
+#   media type "text/javascript" from OBSOLETE to COMMON. Changed
+#   the intended usage for all other script media types to obsolete.
+MEDIA_JS = 'text/javascript'
 
 # NOTE(kgriffs): According to RFC 6838, most text media types should
 # include the charset parameter.
@@ -139,6 +135,30 @@ SINGLETON_HEADERS = frozenset(
         'referer',
         'user-agent',
     ]
+)
+
+# NOTE(vytas): We strip the preferred charsets from the default static file
+#   type mapping as it is hard to make any assumptions without knowing which
+#   files are going to be served. Moreover, the popular web servers (like
+#   Nginx) do not try to guess either.
+_DEFAULT_STATIC_MEDIA_TYPES = tuple(
+    (ext, media_type.split(';', 1)[0])
+    for ext, media_type in (
+        ('.bmp', MEDIA_BMP),
+        ('.gif', MEDIA_GIF),
+        ('.htm', MEDIA_HTML),
+        ('.html', MEDIA_HTML),
+        ('.jpeg', MEDIA_JPEG),
+        ('.jpg', MEDIA_JPEG),
+        ('.js', MEDIA_JS),
+        ('.json', MEDIA_JSON),
+        ('.mjs', MEDIA_JS),
+        ('.png', MEDIA_PNG),
+        ('.txt', MEDIA_TEXT),
+        ('.xml', MEDIA_XML),
+        ('.yaml', MEDIA_YAML),
+        ('.yml', MEDIA_YAML),
+    )
 )
 
 # NOTE(kgriffs): Special singleton to be used internally whenever using
