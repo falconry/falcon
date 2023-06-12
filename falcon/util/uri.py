@@ -330,7 +330,7 @@ def decode(encoded_uri, unquote_plus=True):
     return _join_tokens(tokens)
 
 
-def parse_query_string(query_string, keep_blank=False, csv=True):
+def parse_query_string(query_string: str, keep_blank: bool = False, csv: bool = True):
     """Parse a query string into a dict.
 
     Query string parameters are assumed to use standard form-encoding. Only
@@ -404,15 +404,17 @@ def parse_query_string(query_string, keep_blank=False, csv=True):
                 # assigned to a single param instance. If it turns out that
                 # very few people use this, it can be deprecated at some
                 # point.
-                v = v.split(',')
+                values = v.split(',')
 
                 if not keep_blank:
                     # NOTE(kgriffs): Normalize the result in the case that
                     # some elements are empty strings, such that the result
                     # will be the same for 'foo=1,,3' as 'foo=1&foo=&foo=3'.
-                    additional_values = [decode(element) for element in v if element]
+                    additional_values = [
+                        decode(element) for element in values if element
+                    ]
                 else:
-                    additional_values = [decode(element) for element in v]
+                    additional_values = [decode(element) for element in values]
 
                 if isinstance(old_value, list):
                     old_value.extend(additional_values)
@@ -436,15 +438,15 @@ def parse_query_string(query_string, keep_blank=False, csv=True):
                 # assigned to a single param instance. If it turns out that
                 # very few people use this, it can be deprecated at some
                 # point.
-                v = v.split(',')
+                values = v.split(',')
 
                 if not keep_blank:
                     # NOTE(kgriffs): Normalize the result in the case that
                     # some elements are empty strings, such that the result
                     # will be the same for 'foo=1,,3' as 'foo=1&foo=&foo=3'.
-                    params[k] = [decode(element) for element in v if element]
+                    params[k] = [decode(element) for element in values if element]
                 else:
-                    params[k] = [decode(element) for element in v]
+                    params[k] = [decode(element) for element in values]
             elif is_encoded:
                 params[k] = decode(v)
             else:
