@@ -21,6 +21,7 @@ from falcon import util
 from falcon.constants import MEDIA_JSON
 from falcon.constants import MEDIA_XML
 from falcon.errors import CompatibilityError, HTTPError
+from falcon.typing import RequestClass, ResponseClass
 from falcon.util.sync import _wrap_non_coroutine_unsafe
 
 __all__ = (
@@ -32,7 +33,7 @@ __all__ = (
 
 
 def prepare_middleware(
-    middleware: Iterable, independent_middleware=False, asgi=False
+    middleware: Iterable, independent_middleware: bool = False, asgi: bool = False
 ) -> Tuple[tuple, tuple, tuple]:
     """Check middleware interfaces and prepare the methods for request handling.
 
@@ -199,7 +200,9 @@ def prepare_middleware_ws(middleware: Iterable) -> Tuple[list, list]:
     return request_mw, resource_mw
 
 
-def default_serialize_error(req, resp, exception: HTTPError):
+def default_serialize_error(
+    req: RequestClass, resp: ResponseClass, exception: HTTPError
+):
     """Serialize the given instance of HTTPError.
 
     This function determines which of the supported media types, if
