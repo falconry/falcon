@@ -291,7 +291,7 @@ class App:
         self.add_error_handler(HTTPError, self._http_error_handler)
         self.add_error_handler(HTTPStatus, self._http_status_handler)
 
-    def __call__(    # noqa: C901
+    def __call__(  # noqa: C901
         self, env: dict, start_response: Callable
     ) -> Iterable[bytes]:
         """WSGI `app` method.
