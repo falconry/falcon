@@ -18,7 +18,7 @@ import asyncio
 from inspect import isasyncgenfunction
 from inspect import iscoroutinefunction
 import traceback
-from typing import Callable, Iterable, Optional, Type, Union
+from typing import Awaitable, Callable, Iterable, Optional, Type, Union
 
 import falcon.app
 from falcon.app_helpers import prepare_middleware
@@ -281,7 +281,12 @@ class App(falcon.app.App):
         )
 
     @_wrap_asgi_coroutine_func
-    async def __call__(self, scope, receive, send):  # noqa: C901
+    async def __call__(  # noqa: C901
+        self,
+        scope: dict,
+        receive: Callable[[], Awaitable[dict]],
+        send: Callable[[dict], Awaitable[None]],
+    ) -> None:
         # NOTE(kgriffs): The ASGI spec requires the 'type' key to be present.
         scope_type = scope['type']
 
@@ -341,10 +346,10 @@ class App(falcon.app.App):
         resp = self._response_type(options=self.resp_options)
 
         resource = None
-        responder = None
-        params = {}
+        responder: Optional[Callable] = None
+        params: dict = {}
 
-        dependent_mw_resp_stack = []
+        dependent_mw_resp_stack: list = []
         mw_req_stack, mw_rsrc_stack, mw_resp_stack = self._middleware
 
         req_succeeded = False
@@ -404,7 +409,7 @@ class App(falcon.app.App):
                             break
 
                 if not resp.complete:
-                    await responder(req, resp, **params)
+                    await responder(req, resp, **params)  # type: ignore
 
                 req_succeeded = True
 

@@ -14,30 +14,23 @@
 
 """Shorthand definitions for more complex types."""
 
-from typing import Any, Callable, Pattern, TypeVar, Union
+from typing import Any, Callable, Pattern, Union
 
 from falcon.request import Request
 from falcon.response import Response
 
-# Common definitions
-ExceptionClass = TypeVar('ExceptionClass', bound=BaseException)
-
-RequestClass = TypeVar('RequestClass', bound=Request)
-ResponseClass = TypeVar('ResponseClass', bound=Response)
-
 
 # Error handlers
-ErrorHandler = Callable[[RequestClass, ResponseClass, ExceptionClass, dict], Any]
-
+ErrorHandler = Callable[[Request, Response, BaseException, dict], Any]
 
 # Error serializers
-ErrorSerializer = Callable[[RequestClass, ResponseClass, ExceptionClass], Any]
-
+ErrorSerializer = Callable[[Request, Response, BaseException], Any]
 
 # Sinks
+SinkPrefix = Union[str, Pattern]
+
 # TODO(vytas): Is it possible to specify a Callable or a Protocol that defines
 #   type hints for the two first parameters, but accepts any number of keyword
 #   arguments afterwords?
 # class SinkCallable(Protocol):
 #     def __call__(sef, req: Request, resp: Response, <how to do?>): ...
-SinkPrefix = Union[str, Pattern]

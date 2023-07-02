@@ -21,7 +21,8 @@ from falcon import util
 from falcon.constants import MEDIA_JSON
 from falcon.constants import MEDIA_XML
 from falcon.errors import CompatibilityError, HTTPError
-from falcon.typing import RequestClass, ResponseClass
+from falcon.request import Request
+from falcon.response import Response
 from falcon.util.sync import _wrap_non_coroutine_unsafe
 
 __all__ = (
@@ -200,9 +201,7 @@ def prepare_middleware_ws(middleware: Iterable) -> Tuple[list, list]:
     return request_mw, resource_mw
 
 
-def default_serialize_error(
-    req: RequestClass, resp: ResponseClass, exception: HTTPError
-):
+def default_serialize_error(req: Request, resp: Response, exception: HTTPError):
     """Serialize the given instance of HTTPError.
 
     This function determines which of the supported media types, if

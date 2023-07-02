@@ -138,7 +138,8 @@ class BaseHandler(metaclass=abc.ABCMeta):
         Args:
             stream (object): Asynchronous file-like object to deserialize.
             content_type (str): Type of request content.
-            content_length (int): Length of request content.
+            content_length (int): Length of request content, or ``None`` if the
+                Content-Length header is missing.
 
         Returns:
             object: A deserialized object.

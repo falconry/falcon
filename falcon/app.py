@@ -291,7 +291,9 @@ class App:
         self.add_error_handler(HTTPError, self._http_error_handler)
         self.add_error_handler(HTTPStatus, self._http_status_handler)
 
-    def __call__(self, env: dict, start_response):  # noqa: C901
+    def __call__(    # noqa: C901
+        self, env: dict, start_response: Callable
+    ) -> Iterable[bytes]:
         """WSGI `app` method.
 
         Makes instances of App callable from a WSGI server. May be used to
@@ -897,7 +899,9 @@ class App:
             middleware=middleware, independent_middleware=independent_middleware
         )
 
-    def _get_responder(self, req) -> Tuple[Callable, dict, object, Optional[str]]:
+    def _get_responder(
+        self, req: Request
+    ) -> Tuple[Callable, dict, object, Optional[str]]:
         """Search routes for a matching responder.
 
         Args:
@@ -968,7 +972,9 @@ class App:
 
         return (responder, params, resource, uri_template)
 
-    def _compose_status_response(self, req, resp, http_status):
+    def _compose_status_response(
+        self, req: Request, resp: Response, http_status: HTTPStatus
+    ) -> None:
         """Compose a response for the given HTTPStatus instance."""
 
         # PERF(kgriffs): The code to set the status and headers is identical
@@ -983,7 +989,9 @@ class App:
         # it's acceptable to set resp.text to None (to indicate no body).
         resp.text = http_status.text
 
-    def _compose_error_response(self, req, resp, error):
+    def _compose_error_response(
+        self, req: Request, resp: Response, error: HTTPError
+    ) -> None:
         """Compose a response for the given HTTPError instance."""
 
         resp.status = error.status
