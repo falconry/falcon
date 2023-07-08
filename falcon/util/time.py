@@ -10,6 +10,7 @@ for convenience::
 """
 
 import datetime
+from typing import Optional
 
 
 __all__ = ['TimezoneGMT']
@@ -20,7 +21,7 @@ class TimezoneGMT(datetime.tzinfo):
 
     GMT_ZERO = datetime.timedelta(hours=0)
 
-    def utcoffset(self, dt):
+    def utcoffset(self, dt: Optional[datetime.datetime]) -> datetime.timedelta:
         """Get the offset from UTC.
 
         Args:
@@ -33,7 +34,7 @@ class TimezoneGMT(datetime.tzinfo):
 
         return self.GMT_ZERO
 
-    def tzname(self, dt):
+    def tzname(self, dt: Optional[datetime.datetime]) -> str:
         """Get the name of this timezone.
 
         Args:
@@ -45,7 +46,7 @@ class TimezoneGMT(datetime.tzinfo):
 
         return 'GMT'
 
-    def dst(self, dt):
+    def dst(self, dt: Optional[datetime.datetime]) -> datetime.timedelta:
         """Return the daylight saving time (DST) adjustment.
 
         Args:

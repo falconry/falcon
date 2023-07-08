@@ -6,6 +6,34 @@
         "cython>=0.29.21; python_implementation == 'CPython'", # Skip cython when using pypy
     ]
 
+[tool.mypy]
+    exclude = "falcon/bench/|falcon/cmd/"
+
+    [[tool.mypy.overrides]]
+        module = [
+            "cbor2",
+            "cython",
+            "daphne",
+            "gunicorn",
+            "hypercorn",
+            "meinheld",
+            "msgpack",
+            "mujson",
+            "pyximport",
+            "testtools",
+            "uvicorn"
+        ]
+        ignore_missing_imports = true
+
+    [[tool.mypy.overrides]]
+        # Pure Cython modules
+        module = [
+            "falcon.cyutil.misc",
+            "falcon.cyutil.reader",
+            "falcon.cyutil.uri"
+        ]
+        ignore_missing_imports = true
+
 [tool.towncrier]
     package = "falcon"
     package_dir = ""

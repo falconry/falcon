@@ -119,7 +119,7 @@ def is_python_func(func):
     return inspect.isfunction(func)
 
 
-def http_now():
+def http_now() -> str:
     """Return the current UTC time as an IMF-fixdate.
 
     Returns:
@@ -130,7 +130,7 @@ def http_now():
     return dt_to_http(utcnow())
 
 
-def dt_to_http(dt):
+def dt_to_http(dt: datetime.datetime) -> str:
     """Convert a ``datetime`` instance to an HTTP date string.
 
     Args:
@@ -145,7 +145,7 @@ def dt_to_http(dt):
     return dt.strftime('%a, %d %b %Y %H:%M:%S GMT')
 
 
-def http_date_to_dt(http_date, obs_date=False):
+def http_date_to_dt(http_date: str, obs_date: bool = False) -> datetime.datetime:
     """Convert an HTTP date string to a datetime instance.
 
     Args:
@@ -191,7 +191,9 @@ def http_date_to_dt(http_date, obs_date=False):
     raise ValueError('time data %r does not match known formats' % http_date)
 
 
-def to_query_str(params, comma_delimited_lists=True, prefix=True):
+def to_query_str(
+    params: dict, comma_delimited_lists: bool = True, prefix: bool = True
+) -> str:
     """Convert a dictionary of parameters to a query string.
 
     Args:
@@ -344,7 +346,7 @@ def get_http_status(status_code, default_reason=_DEFAULT_HTTP_REASON):
         return str(code) + ' ' + default_reason
 
 
-def secure_filename(filename):
+def secure_filename(filename: str) -> str:
     """Sanitize the provided `filename` to contain only ASCII characters.
 
     Only ASCII alphanumerals, ``'.'``, ``'-'`` and ``'_'`` are allowed for
@@ -461,7 +463,7 @@ def code_to_http_status(status):
     except (ValueError, TypeError):
         raise ValueError('{!r} is not a valid status code'.format(status))
     if not 100 <= code <= 999:
-        raise ValueError('{} is not a valid status code'.format(status))
+        raise ValueError('{!r} is not a valid status code'.format(status))
 
     try:
         # NOTE(kgriffs): We do this instead of using http.HTTPStatus since
@@ -489,7 +491,7 @@ def _encode_items_to_latin1(data):
     return result
 
 
-def _isascii(string):
+def _isascii(string: str):
     """Return ``True`` if all characters in the string are ASCII.
 
     ASCII characters have code points in the range U+0000-U+007F.

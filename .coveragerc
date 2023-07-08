@@ -1,7 +1,7 @@
 [run]
 branch = True
 source = falcon
-omit = falcon/tests*,falcon/cmd/bench.py,falcon/bench/*,falcon/vendor/*
+omit = falcon/tests*,falcon/typing.py,falcon/cmd/bench.py,falcon/bench/*,falcon/vendor/*
 
 parallel = True
 
@@ -9,6 +9,7 @@ parallel = True
 show_missing = True
 exclude_lines =
     if TYPE_CHECKING:
+    if not TYPE_CHECKING:
     pragma: nocover
     pragma: no cover
     pragma: no py39,py310 cover

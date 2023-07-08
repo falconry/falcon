@@ -35,6 +35,7 @@ package namespace::
 """
 
 from datetime import datetime
+from typing import Optional
 
 from falcon.http_error import HTTPError
 import falcon.status_codes as status
@@ -142,7 +143,7 @@ class WebSocketDisconnected(ConnectionError):
         code (int): The WebSocket close code, as per the WebSocket spec.
     """
 
-    def __init__(self, code: int = None):
+    def __init__(self, code: Optional[int] = None):
         self.code = code or 1000  # Default to "Normal Closure"
 
 
