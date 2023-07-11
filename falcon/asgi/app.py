@@ -18,6 +18,7 @@ import asyncio
 from inspect import isasyncgenfunction
 from inspect import iscoroutinefunction
 import traceback
+from typing import Awaitable, Callable, Iterable, Optional, Type, Union
 
 import falcon.app
 from falcon.app_helpers import prepare_middleware
@@ -33,6 +34,7 @@ from falcon.http_error import HTTPError
 from falcon.http_status import HTTPStatus
 from falcon.media.multipart import MultipartFormHandler
 import falcon.routing
+from falcon.typing import ErrorHandler, SinkPrefix
 from falcon.util.misc import is_python_func
 from falcon.util.sync import _should_wrap_non_coroutines
 from falcon.util.sync import _wrap_non_coroutine_unsafe
@@ -279,7 +281,12 @@ class App(falcon.app.App):
         )
 
     @_wrap_asgi_coroutine_func
-    async def __call__(self, scope, receive, send):  # noqa: C901
+    async def __call__(  # noqa: C901
+        self,
+        scope: dict,
+        receive: Callable[[], Awaitable[dict]],
+        send: Callable[[dict], Awaitable[None]],
+    ) -> None:
         # NOTE(kgriffs): The ASGI spec requires the 'type' key to be present.
         scope_type = scope['type']
 
@@ -339,10 +346,10 @@ class App(falcon.app.App):
         resp = self._response_type(options=self.resp_options)
 
         resource = None
-        responder = None
-        params = {}
+        responder: Optional[Callable] = None
+        params: dict = {}
 
-        dependent_mw_resp_stack = []
+        dependent_mw_resp_stack: list = []
         mw_req_stack, mw_rsrc_stack, mw_resp_stack = self._middleware
 
         req_succeeded = False
@@ -402,7 +409,7 @@ class App(falcon.app.App):
                             break
 
                 if not resp.complete:
-                    await responder(req, resp, **params)
+                    await responder(req, resp, **params)  # type: ignore
 
                 req_succeeded = True
 
@@ -716,7 +723,7 @@ class App(falcon.app.App):
         if resp._registered_callbacks:
             self._schedule_callbacks(resp)
 
-    def add_route(self, uri_template, resource, **kwargs):
+    def add_route(self, uri_template: str, resource: object, **kwargs):
         # NOTE(kgriffs): Inject an extra kwarg so that the compiled router
         #   will know to validate the responder methods to make sure they
         #   are async coroutines.
@@ -725,7 +732,7 @@ class App(falcon.app.App):
 
     add_route.__doc__ = falcon.app.App.add_route.__doc__
 
-    def add_sink(self, sink, prefix=r'/'):
+    def add_sink(self, sink: Callable, prefix: SinkPrefix = r'/'):
         if not iscoroutinefunction(sink) and is_python_func(sink):
             if _should_wrap_non_coroutines():
                 sink = wrap_sync_to_async(sink)
@@ -739,7 +746,11 @@ class App(falcon.app.App):
 
     add_sink.__doc__ = falcon.app.App.add_sink.__doc__
 
-    def add_error_handler(self, exception, handler=None):
+    def add_error_handler(
+        self,
+        exception: Union[Type[BaseException], Iterable[Type[BaseException]]],
+        handler: Optional[ErrorHandler] = None,
+    ):
         """Register a handler for one or more exception types.
 
         Error handlers may be registered for any exception type, including
@@ -840,7 +851,7 @@ class App(falcon.app.App):
 
         if handler is None:
             try:
-                handler = exception.handle
+                handler = exception.handle  # type: ignore
             except AttributeError:
                 raise AttributeError(
                     'handler must either be specified '
@@ -870,8 +881,9 @@ class App(falcon.app.App):
                 'to be used safely with an ASGI app.'
             )
 
+        exception_tuple: tuple
         try:
-            exception_tuple = tuple(exception)
+            exception_tuple = tuple(exception)  # type: ignore
         except TypeError:
             exception_tuple = (exception,)
 

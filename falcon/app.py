@@ -16,8 +16,10 @@
 
 from functools import wraps
 from inspect import iscoroutinefunction
+import pathlib
 import re
 import traceback
+from typing import Callable, Iterable, Optional, Tuple, Type, Union
 
 from falcon import app_helpers as helpers
 from falcon import constants
@@ -34,6 +36,7 @@ from falcon.request import RequestOptions
 from falcon.response import Response
 from falcon.response import ResponseOptions
 import falcon.status_codes as status
+from falcon.typing import ErrorHandler, ErrorSerializer, SinkPrefix
 from falcon.util import deprecation
 from falcon.util import misc
 from falcon.util.misc import code_to_http_status
@@ -226,6 +229,9 @@ class App:
         'resp_options',
     )
 
+    req_options: RequestOptions
+    resp_options: ResponseOptions
+
     def __init__(
         self,
         media_type=constants.DEFAULT_MEDIA_TYPE,
@@ -285,7 +291,9 @@ class App:
         self.add_error_handler(HTTPError, self._http_error_handler)
         self.add_error_handler(HTTPStatus, self._http_status_handler)
 
-    def __call__(self, env, start_response):  # noqa: C901
+    def __call__(  # noqa: C901
+        self, env: dict, start_response: Callable
+    ) -> Iterable[bytes]:
         """WSGI `app` method.
 
         Makes instances of App callable from a WSGI server. May be used to
@@ -302,11 +310,11 @@ class App:
         """
         req = self._request_type(env, options=self.req_options)
         resp = self._response_type(options=self.resp_options)
-        resource = None
-        responder = None
-        params = {}
+        resource: Optional[object] = None
+        responder: Optional[Callable] = None
+        params: dict = {}
 
-        dependent_mw_resp_stack = []
+        dependent_mw_resp_stack: list = []
         mw_req_stack, mw_rsrc_stack, mw_resp_stack = self._middleware
 
         req_succeeded = False
@@ -361,7 +369,7 @@ class App:
                             break
 
                 if not resp.complete:
-                    responder(req, resp, **params)
+                    responder(req, resp, **params)  # type: ignore
 
                 req_succeeded = True
             except Exception as ex:
@@ -438,7 +446,7 @@ class App:
     def router_options(self):
         return self._router.options
 
-    def add_middleware(self, middleware):
+    def add_middleware(self, middleware: object) -> None:
         """Add one or more additional middleware components.
 
         Arguments:
@@ -465,7 +473,7 @@ class App:
             independent_middleware=self._independent_middleware,
         )
 
-    def add_route(self, uri_template, resource, **kwargs):
+    def add_route(self, uri_template: str, resource: object, **kwargs):
         """Associate a templatized URI path with a resource.
 
         Falcon routes incoming requests to resources based on a set of
@@ -572,7 +580,11 @@ class App:
         self._router.add_route(uri_template, resource, **kwargs)
 
     def add_static_route(
-        self, prefix, directory, downloadable=False, fallback_filename=None
+        self,
+        prefix: str,
+        directory: Union[str, pathlib.Path],
+        downloadable: bool = False,
+        fallback_filename: Optional[str] = None,
     ):
         """Add a route to a directory of static files.
 
@@ -641,7 +653,7 @@ class App:
         self._static_routes.insert(0, (sr, sr, False))
         self._update_sink_and_static_routes()
 
-    def add_sink(self, sink, prefix=r'/'):
+    def add_sink(self, sink: Callable, prefix: SinkPrefix = r'/'):
         """Register a sink method for the App.
 
         If no route matches a request, but the path in the requested URI
@@ -694,7 +706,11 @@ class App:
         self._sinks.insert(0, (prefix, sink, True))
         self._update_sink_and_static_routes()
 
-    def add_error_handler(self, exception, handler=None):
+    def add_error_handler(
+        self,
+        exception: Union[Type[BaseException], Iterable[Type[BaseException]]],
+        handler: Optional[ErrorHandler] = None,
+    ):
         """Register a handler for one or more exception types.
 
         Error handlers may be registered for any exception type, including
@@ -794,7 +810,7 @@ class App:
 
         if handler is None:
             try:
-                handler = exception.handle
+                handler = exception.handle  # type: ignore
             except AttributeError:
                 raise AttributeError(
                     'handler must either be specified '
@@ -814,8 +830,9 @@ class App:
         ) or arg_names[1:3] in (('req', 'resp'), ('request', 'response')):
             handler = wrap_old_handler(handler)
 
+        exception_tuple: tuple
         try:
-            exception_tuple = tuple(exception)
+            exception_tuple = tuple(exception)  # type: ignore
         except TypeError:
             exception_tuple = (exception,)
 
@@ -825,7 +842,7 @@ class App:
 
             self._error_handlers[exc] = handler
 
-    def set_error_serializer(self, serializer):
+    def set_error_serializer(self, serializer: ErrorSerializer):
         """Override the default serializer for instances of :class:`~.HTTPError`.
 
         When a responder raises an instance of :class:`~.HTTPError`,
@@ -882,7 +899,9 @@ class App:
             middleware=middleware, independent_middleware=independent_middleware
         )
 
-    def _get_responder(self, req):
+    def _get_responder(
+        self, req: Request
+    ) -> Tuple[Callable, dict, object, Optional[str]]:
         """Search routes for a matching responder.
 
         Args:
@@ -953,7 +972,9 @@ class App:
 
         return (responder, params, resource, uri_template)
 
-    def _compose_status_response(self, req, resp, http_status):
+    def _compose_status_response(
+        self, req: Request, resp: Response, http_status: HTTPStatus
+    ) -> None:
         """Compose a response for the given HTTPStatus instance."""
 
         # PERF(kgriffs): The code to set the status and headers is identical
@@ -968,7 +989,9 @@ class App:
         # it's acceptable to set resp.text to None (to indicate no body).
         resp.text = http_status.text
 
-    def _compose_error_response(self, req, resp, error):
+    def _compose_error_response(
+        self, req: Request, resp: Response, error: HTTPError
+    ) -> None:
         """Compose a response for the given HTTPError instance."""
 
         resp.status = error.status

@@ -15,6 +15,7 @@
 import abc
 from datetime import datetime
 from math import isfinite
+from typing import Optional
 import uuid
 
 __all__ = (
@@ -125,7 +126,12 @@ class FloatConverter(IntConverter):
 
     __slots__ = '_finite'
 
-    def __init__(self, min: float = None, max: float = None, finite: bool = True):
+    def __init__(
+        self,
+        min: Optional[float] = None,
+        max: Optional[float] = None,
+        finite: bool = True,
+    ):
         self._min = min
         self._max = max
         self._finite = finite if finite is not None else True
@@ -135,15 +141,15 @@ class FloatConverter(IntConverter):
             return None
 
         try:
-            value = float(value)
+            converted = float(value)
 
-            if self._finite and not isfinite(value):
+            if self._finite and not isfinite(converted):
                 return None
 
         except ValueError:
             return None
 
-        return self._validate_min_max_value(value)
+        return self._validate_min_max_value(converted)
 
 
 class DateTimeConverter(BaseConverter):

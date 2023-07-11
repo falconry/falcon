@@ -16,6 +16,7 @@
 
 import functools
 import mimetypes
+from typing import Optional
 
 from falcon.constants import _DEFAULT_STATIC_MEDIA_TYPES
 from falcon.constants import _UNSET
@@ -1232,6 +1233,11 @@ class ResponseOptions:
             Internet media types (RFC 2046). Defaults to ``mimetypes.types_map``
             after calling ``mimetypes.init()``.
     """
+
+    secure_cookies_by_default: bool
+    default_media_type: Optional[str]
+    media_handlers: Handlers
+    static_media_types: dict
 
     __slots__ = (
         'secure_cookies_by_default',
