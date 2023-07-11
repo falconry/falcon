@@ -6,10 +6,6 @@ on:
   push:
     branches:
       - master
-  # TODO(vytas): Remove after verifying.
-  pull_request:
-    branches:
-      - master
 
 jobs:
   run_tox:
