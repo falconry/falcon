@@ -1,14 +1,18 @@
 import re
 
+from falcon.asgi import Request, WebSocket
+
+from .hub import Hub
+
 
 class Chat:
     ALL = re.compile(r'^/all\s+(.+)$')
     MSG = re.compile(r'^/msg\s+(\w+)\s+(.+)$')
 
-    def __init__(self, hub):
+    def __init__(self, hub: Hub):
         self._hub = hub
 
-    async def on_websocket(self, req, ws, name):
+    async def on_websocket(self, req: Request, ws: WebSocket, name: str) -> None:
         await ws.accept()
 
         try:

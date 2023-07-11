@@ -9,6 +9,7 @@ include README.rst
 include AUTHORS
 include LICENSE
 include docs/conf.py docs/Makefile
+include falcon/py.typed
 graft docs/_static
 graft docs/_templates
 graft requirements
