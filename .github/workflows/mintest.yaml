@@ -17,7 +17,7 @@ jobs:
         python-version:
           - "3.8"
           - "3.10"
-          - "3.11.0-rc - 3.11"
+          - "3.11"
 
     steps:
       - name: Checkout repo
@@ -37,7 +37,7 @@ jobs:
           tox --version
 
       - name: Adjust .coveragerc
-        if: ${{ matrix.python-version == '3.8' }}
+        if: ${{ matrix.python-version != '3.10' }}
         run: |
           tools/sed_coverage_rc.py
 
