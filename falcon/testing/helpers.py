@@ -1151,7 +1151,8 @@ def create_environ(
     body = io.BytesIO(body.encode() if isinstance(body, str) else body)
 
     # NOTE(kgriffs): wsgiref, gunicorn, and uWSGI all unescape
-    # the paths before setting PATH_INFO
+    # the paths before setting PATH_INFO but preserve raw original
+    raw_path = path
     path = uri.decode(path, unquote_plus=False)
 
     # NOTE(kgriffs): The decoded path may contain UTF-8 characters.
@@ -1194,7 +1195,7 @@ def create_environ(
         'PATH_INFO': path,
         'QUERY_STRING': query_string,
         'REMOTE_PORT': '65133',
-        'RAW_URI': '/',
+        'RAW_URI': raw_path,
         'SERVER_NAME': host,
         'SERVER_PORT': port,
         'wsgi.version': (1, 0),
