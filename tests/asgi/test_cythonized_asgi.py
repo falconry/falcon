@@ -34,6 +34,12 @@ else:
 from _util import disable_asgi_non_coroutine_wrapping  # NOQA
 
 
+# NOTE(vytas): Cython 3.0+ now correctly marks cythonized coroutines as such,
+#   however, the relevant protocol is only available in Python 3.10+.
+#   See also: https://github.com/cython/cython/pull/3427
+CYTHON_COROUTINE_HINT = sys.version_info >= (3, 10)
+
+
 @pytest.fixture
 def client():
     return testing.TestClient(falcon.asgi.App())
@@ -79,12 +85,15 @@ def test_not_cython_func(func):
 @pytest.mark.skipif(not pyximport, reason='Cython not installed')
 def test_jsonchema_validator(client):
     with disable_asgi_non_coroutine_wrapping():
-        client.app.add_route('/', _cythonized.TestResourceWithValidation())
+        if CYTHON_COROUTINE_HINT:
+            client.app.add_route('/', _cythonized.TestResourceWithValidationNoHint())
+        else:
+            with pytest.raises(TypeError):
+                client.app.add_route(
+                    '/wowsuchfail', _cythonized.TestResourceWithValidationNoHint()
+                )
 
-        with pytest.raises(TypeError):
-            client.app.add_route(
-                '/wowsuchfail', _cythonized.TestResourceWithValidationNoHint()
-            )
+            client.app.add_route('/', _cythonized.TestResourceWithValidation())
 
     client.simulate_get()
 
@@ -101,13 +110,6 @@ def test_scheduled_jobs(client):
 
 
 @pytest.mark.skipif(not pyximport, reason='Cython not installed')
-@pytest.mark.skipif(
-    sys.version_info < (3, 7),
-    reason=(
-        'CPython 3.6 does not complain when you try to call loop.create_task() '
-        'with the wrong type.'
-    ),
-)
 def test_scheduled_jobs_type_error(client):
     client.app.add_route(
         '/wowsuchfail', _cythonized.TestResourceWithScheduledJobsAsyncRequired()
@@ -126,11 +128,13 @@ def test_scheduled_jobs_type_error(client):
 @pytest.mark.skipif(not pyximport, reason='Cython not installed')
 def test_hooks(client):
     with disable_asgi_non_coroutine_wrapping():
-        with pytest.raises(TypeError):
-            client.app.add_route('/', _cythonized.TestResourceWithHooksNoHintBefore())
-            client.app.add_route('/', _cythonized.TestResourceWithHooksNoHintAfter())
+        if CYTHON_COROUTINE_HINT:
+            client.app.add_route('/', _cythonized.TestResourceWithHooksNoHint())
+        else:
+            with pytest.raises(TypeError):
+                client.app.add_route('/', _cythonized.TestResourceWithHooksNoHint())
 
-        client.app.add_route('/', _cythonized.TestResourceWithHooks())
+            client.app.add_route('/', _cythonized.TestResourceWithHooks())
 
     result = client.simulate_get()
     assert result.headers['x-answer'] == '42'
