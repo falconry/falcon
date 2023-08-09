@@ -8,7 +8,6 @@
 
 [tool.mypy]
     exclude = "falcon/bench/|falcon/cmd/"
-
     [[tool.mypy.overrides]]
         module = [
             "cbor2",
@@ -33,6 +32,12 @@
             "falcon.cyutil.uri"
         ]
         ignore_missing_imports = true
+
+    [[tool.mypy.overrides]]
+        module = [
+            "falcon.stream"
+        ]
+        disallow_untyped_defs = true
 
 [tool.towncrier]
     package = "falcon"
