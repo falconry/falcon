@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 import io
-from typing import TypeVar, Union, List, Optional, BinaryIO, Callable
+from typing import BinaryIO, Callable, List, Optional, TypeVar, Union
 
 __all__ = ['BoundedStream']
 
