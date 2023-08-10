@@ -14,6 +14,7 @@
 
 """WSGI BoundedStream class."""
 
+from __future__ import annotations
 import io
 from typing import TypeVar, Union, List, Optional, BinaryIO, Callable
 
@@ -57,7 +58,7 @@ class BoundedStream(io.IOBase):
 
         self._bytes_remaining = self.stream_len
 
-    def __iter__(self) -> 'BoundedStream':
+    def __iter__(self) -> BoundedStream:
         return self
 
     def __next__(self) -> bytes:
