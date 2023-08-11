@@ -24,8 +24,6 @@ __all__ = ['BoundedStream']
 
 Result = TypeVar('Result', bound=Union[bytes, List[bytes]])
 
-OptionalInt = Optional[int]
-
 
 class BoundedStream(io.IOBase):
     """Wrap *wsgi.input* streams to make them more robust.
@@ -67,7 +65,7 @@ class BoundedStream(io.IOBase):
 
     next = __next__
 
-    def _read(self, size: OptionalInt, target: Callable[[int], Result]) -> Result:
+    def _read(self, size: Optional[int], target: Callable[[int], Result]) -> Result:
         """Proxy reads to the underlying stream.
 
         Args:
@@ -105,7 +103,7 @@ class BoundedStream(io.IOBase):
         """Return ``False`` always."""
         return False
 
-    def read(self, size: OptionalInt = None) -> bytes:
+    def read(self, size: Optional[int] = None) -> bytes:
         """Read from the stream.
 
         Args:
@@ -119,7 +117,7 @@ class BoundedStream(io.IOBase):
 
         return self._read(size, self.stream.read)
 
-    def readline(self, limit: OptionalInt = None) -> bytes:
+    def readline(self, limit: Optional[int] = None) -> bytes:
         """Read a line from the stream.
 
         Args:
@@ -133,7 +131,7 @@ class BoundedStream(io.IOBase):
 
         return self._read(limit, self.stream.readline)
 
-    def readlines(self, hint: OptionalInt = None) -> List[bytes]:
+    def readlines(self, hint: Optional[int] = None) -> List[bytes]:
         """Read lines from the stream.
 
         Args:
