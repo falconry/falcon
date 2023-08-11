@@ -38,8 +38,15 @@ def storage_path(tmpdir_factory):
 
 @pytest.fixture
 def client(predictable_uuid, storage_path):
+    # NOTE(vytas): Unlike the sync FakeRedis, fakeredis.aioredis.FakeRedis
+    #   seems to share a global state in 2.17.0 (by design or oversight).
+    #   Make sure we initialize a new fake server for every test case.
+    def fake_redis_from_url(*args, **kwargs):
+        server = fakeredis.FakeServer()
+        return fakeredis.aioredis.FakeRedis(server=server)
+
     config = Config()
-    config.redis_from_url = fakeredis.aioredis.FakeRedis.from_url
+    config.redis_from_url = fake_redis_from_url
     config.redis_host = 'redis://localhost'
     config.storage_path = storage_path
     config.uuid_generator = predictable_uuid
