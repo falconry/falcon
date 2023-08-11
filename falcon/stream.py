@@ -15,6 +15,7 @@
 """WSGI BoundedStream class."""
 
 from __future__ import annotations
+
 import io
 from typing import BinaryIO, Callable, List, Optional, TypeVar, Union
 
