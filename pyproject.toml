@@ -41,6 +41,7 @@
             "falcon.asgi_spec",
             "falcon.constants",
             "falcon.errors",
+            "falcon.forwarded",
         ]
         disallow_untyped_defs = true
 
