@@ -19,6 +19,8 @@
 
 import re
 import string
+from typing import List
+from typing import Optional
 
 from falcon.util.uri import unquote_string
 
@@ -76,14 +78,14 @@ class Forwarded:
     # falcon.Request interface.
     __slots__ = ('src', 'dest', 'host', 'scheme')
 
-    def __init__(self):
-        self.src = None
-        self.dest = None
-        self.host = None
-        self.scheme = None
+    def __init__(self) -> None:
+        self.src: Optional[str] = None
+        self.dest: Optional[str] = None
+        self.host: Optional[str] = None
+        self.scheme: Optional[str] = None
 
 
-def _parse_forwarded_header(forwarded):
+def _parse_forwarded_header(forwarded: str) -> List[Forwarded]:
     """Parse the value of a Forwarded header.
 
     Makes an effort to parse Forwarded headers as specified by RFC 7239:
