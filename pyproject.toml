@@ -36,7 +36,8 @@
     [[tool.mypy.overrides]]
         module = [
             "falcon.stream",
-            "falcon.util.*"
+            "falcon.util.*",
+            "falcon.app_helpers",
         ]
         disallow_untyped_defs = true
 
