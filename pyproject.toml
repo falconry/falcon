@@ -38,6 +38,9 @@
             "falcon.stream",
             "falcon.util.*",
             "falcon.app_helpers",
+            "falcon.asgi_spec",
+            "falcon.constants",
+            "falcon.errors",
         ]
         disallow_untyped_defs = true
 
