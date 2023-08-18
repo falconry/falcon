@@ -46,6 +46,7 @@
             "falcon.http_status",
             "falcon.http_status",
             "falcon.inspect",
+            "falcon.middleware",
             "falcon.stream",
         ]
         disallow_untyped_defs = true
