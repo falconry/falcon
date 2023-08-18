@@ -37,7 +37,6 @@ from typing import Iterator
 from typing import KeysView
 from typing import Optional
 from typing import Tuple
-from typing import Union
 from typing import ValuesView
 
 
@@ -72,9 +71,7 @@ class CaseInsensitiveDict(MutableMapping):  # pragma: no cover
 
     """
 
-    def __init__(
-        self, data: Optional[Union[Iterable[Tuple[str, Any]]]] = None, **kwargs: Any
-    ):
+    def __init__(self, data: Optional[Iterable[Tuple[str, Any]]] = None, **kwargs: Any):
         self._store: Dict[str, Tuple[str, Any]] = dict()
         if data is None:
             data = {}
