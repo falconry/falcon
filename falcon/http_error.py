@@ -14,14 +14,11 @@
 
 """HTTPError exception class."""
 from collections import OrderedDict
-import http
 from typing import Dict
 from typing import Optional
 from typing import Type
 from typing import Union
 import xml.etree.ElementTree as et
-
-from falcon.typing import RawHeaders
 
 try:
     from typing import Protocol  # type: ignore
@@ -29,6 +26,8 @@ except ImportError:  # pragma: no cover
     from typing_extensions import Protocol  # type: ignore
 
 from falcon.constants import MEDIA_JSON
+from falcon.typing_http_data import RawHeaders
+from falcon.typing_http_data import Status
 from falcon.util import code_to_http_status, http_status_to_code, uri
 from falcon.util.deprecation import deprecated_args
 
@@ -130,7 +129,7 @@ class HTTPError(Exception):
     @deprecated_args(allowed_positional=1)
     def __init__(
         self,
-        status: Union[http.HTTPStatus, str, int],
+        status: Status,
         title: Optional[str] = None,
         description: Optional[str] = None,
         headers: RawHeaders = None,
