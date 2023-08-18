@@ -100,7 +100,7 @@ else:
     _lru_cache_for_simple_logic = functools.lru_cache  # type: ignore
 
 
-def is_python_func(func: Union[Callable, Any, None]) -> bool:
+def is_python_func(func: Union[Callable, Any]) -> bool:
     """Determine if a function or method uses a standard Python type.
 
     This helper can be used to check a function or method to determine if it
