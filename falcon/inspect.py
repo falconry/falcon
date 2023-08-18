@@ -13,20 +13,33 @@
 # limitations under the License.
 
 """Inspect utilities for falcon applications."""
+from __future__ import annotations
+
 from functools import partial
 import inspect
+from types import CodeType
+from types import FrameType
+from types import FunctionType
+from types import MethodType
+from types import ModuleType
+from types import TracebackType
+from typing import Any
 from typing import Callable  # NOQA: F401
 from typing import Dict  # NOQA: F401
+from typing import Iterable
 from typing import List
 from typing import Optional
+from typing import Tuple
 from typing import Type  # NOQA: F401
+from typing import Union
 
 from falcon import app_helpers
 from falcon.app import App
 from falcon.routing import CompiledRouter
+from falcon.routing.compiled import CompiledRouterNode
 
 
-def inspect_app(app: App) -> 'AppInfo':
+def inspect_app(app: App) -> AppInfo:
     """Inspects an application.
 
     Args:
@@ -46,7 +59,7 @@ def inspect_app(app: App) -> 'AppInfo':
     return AppInfo(routes, middleware, static, sinks, error_handlers, app._ASGI)
 
 
-def inspect_routes(app: App) -> 'List[RouteInfo]':
+def inspect_routes(app: App) -> List[RouteInfo]:
     """Inspects the routes of an application.
 
     Args:
@@ -68,7 +81,9 @@ def inspect_routes(app: App) -> 'List[RouteInfo]':
     return inspect_function(router)
 
 
-def register_router(router_class):
+def register_router(
+    router_class: Type,
+) -> Callable[..., Callable[..., List[RouteInfo]]]:
     """Register a function to inspect a particular router.
 
     This decorator registers a new function for a custom router
@@ -86,7 +101,7 @@ def register_router(router_class):
             already registered an error will be raised.
     """
 
-    def wraps(fn):
+    def wraps(fn: Callable[..., List[RouteInfo]]) -> Callable[..., List[RouteInfo]]:
         if router_class in _supported_routers:
             raise ValueError(
                 'Another function is already registered'
@@ -98,8 +113,7 @@ def register_router(router_class):
     return wraps
 
 
-# router inspection registry
-_supported_routers = {}  # type: Dict[Type, Callable]
+_supported_routers: Dict[Type, Callable[..., Any]] = {}
 
 
 def inspect_static_routes(app: App) -> 'List[StaticRouteInfo]':
@@ -133,6 +147,7 @@ def inspect_sinks(app: App) -> 'List[SinkInfo]':
     sinks = []
     for prefix, sink, _ in app._sinks:
         source_info, name = _get_source_info_and_name(sink)
+        assert source_info
         info = SinkInfo(prefix.pattern, name, source_info)
         sinks.append(info)
     return sinks
@@ -152,6 +167,7 @@ def inspect_error_handlers(app: App) -> 'List[ErrorHandlerInfo]':
     errors = []
     for exc, fn in app._error_handlers.items():
         source_info, name = _get_source_info_and_name(fn)
+        assert source_info
         info = ErrorHandlerInfo(exc.__name__, name, source_info, _is_internal(fn))
         errors.append(info)
     return errors
@@ -190,7 +206,9 @@ def inspect_middleware(app: App) -> 'MiddlewareInfo':
             if method:
                 real_func = method[0]
                 source_info = _get_source_info(real_func)
+                assert source_info
                 methods.append(MiddlewareMethodInfo(real_func.__name__, source_info))
+        assert class_source_info
         m_info = MiddlewareClassInfo(cls_name, class_source_info, methods)
         middlewareClasses.append(m_info)
 
@@ -212,7 +230,7 @@ def inspect_compiled_router(router: CompiledRouter) -> 'List[RouteInfo]':
         List[RouteInfo]: A list of :class:`~.RouteInfo`.
     """
 
-    def _traverse(roots, parent):
+    def _traverse(roots: List[CompiledRouterNode], parent: str) -> None:
         for root in roots:
             path = parent + '/' + root.raw_segment
             if root.resource is not None:
@@ -226,13 +244,13 @@ def inspect_compiled_router(router: CompiledRouter) -> 'List[RouteInfo]':
 
                         source_info = _get_source_info(real_func)
                         internal = _is_internal(real_func)
-
+                        assert source_info
                         method_info = RouteMethodInfo(
                             method, source_info, real_func.__name__, internal
                         )
                         methods.append(method_info)
                 source_info, class_name = _get_source_info_and_name(root.resource)
-
+                assert source_info
                 route_info = RouteInfo(path, class_name, source_info, methods)
                 routes.append(route_info)
 
@@ -252,7 +270,7 @@ def inspect_compiled_router(router: CompiledRouter) -> 'List[RouteInfo]':
 class _Traversable:
     __visit_name__ = 'N/A'
 
-    def to_string(self, verbose=False, internal=False) -> str:
+    def to_string(self, verbose: bool = False, internal: bool = False) -> str:
         """Return a string representation of this class.
 
         Args:
@@ -266,7 +284,7 @@ class _Traversable:
         """
         return StringVisitor(verbose, internal).process(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.to_string()
 
 
@@ -522,7 +540,9 @@ class AppInfo(_Traversable):
         self.error_handlers = error_handlers
         self.asgi = asgi
 
-    def to_string(self, verbose=False, internal=False, name='') -> str:
+    def to_string(
+        self, verbose: bool = False, internal: bool = False, name: str = ''
+    ) -> str:
         """Return a string representation of this class.
 
         Args:
@@ -548,7 +568,7 @@ class InspectVisitor:
     Subclasses must implement ``visit_<name>`` methods for each supported class.
     """
 
-    def process(self, instance: _Traversable):
+    def process(self, instance: _Traversable) -> str:
         """Process the instance, by calling the appropriate visit method.
 
         Uses the `__visit_name__` attribute of the `instance` to obtain the method
@@ -579,14 +599,16 @@ class StringVisitor(InspectVisitor):
             beginning of the text. Defaults to ``'Falcon App'``.
     """
 
-    def __init__(self, verbose=False, internal=False, name=''):
+    def __init__(
+        self, verbose: bool = False, internal: bool = False, name: str = ''
+    ) -> None:
         self.verbose = verbose
         self.internal = internal
         self.name = name
         self.indent = 0
 
     @property
-    def tab(self):
+    def tab(self) -> str:
         """Get the current tabulation."""
         return ' ' * self.indent
 
@@ -597,13 +619,15 @@ class StringVisitor(InspectVisitor):
             text += ' ({0.source_info})'.format(route_method)
         return text
 
-    def _methods_to_string(self, methods: List):
+    def _methods_to_string(
+        self, methods: Union[List[RouteMethodInfo], List[MiddlewareMethodInfo]]
+    ) -> str:
         """Return a string from the list of methods."""
         tab = self.tab + ' ' * 3
-        methods = _filter_internal(methods, self.internal)
-        if not methods:
+        filtered_methods = _filter_internal(methods, self.internal)
+        if not filtered_methods:
             return ''
-        text_list = [self.process(m) for m in methods]
+        text_list = [self.process(m) for m in filtered_methods]
         method_text = ['{}├── {}'.format(tab, m) for m in text_list[:-1]]
         method_text += ['{}└── {}'.format(tab, m) for m in text_list[-1:]]
         return '\n'.join(method_text)
@@ -753,7 +777,17 @@ class StringVisitor(InspectVisitor):
 # ------------------------------------------------------------------------
 
 
-def _get_source_info(obj, default='[unknown file]'):
+def _get_source_info(
+    obj: ModuleType
+    | Type[Any]
+    | MethodType
+    | FunctionType
+    | TracebackType
+    | FrameType
+    | CodeType
+    | Callable[..., Any],
+    default: Optional[str] = '[unknown file]',
+) -> Optional[str]:
     """Try to get the definition file and line of obj.
 
     Return default on error.
@@ -767,11 +801,20 @@ def _get_source_info(obj, default='[unknown file]'):
         # responders coming from cythonized modules will
         # appear as built-in functions, and raise a
         # TypeError when trying to locate the source file.
-        source_info = default
+        return default
     return source_info
 
 
-def _get_source_info_and_name(obj):
+def _get_source_info_and_name(
+    obj: ModuleType
+    | Type[Any]
+    | MethodType
+    | FunctionType
+    | TracebackType
+    | FrameType
+    | CodeType
+    | Callable[..., Any]
+) -> Tuple[Optional[str], str]:
     """Attempt to get the definition file and line of obj and its name."""
     source_info = _get_source_info(obj, None)
     if source_info is None:
@@ -780,10 +823,20 @@ def _get_source_info_and_name(obj):
     name = getattr(obj, '__name__', None)
     if name is None:
         name = getattr(type(obj), '__name__', '[unknown]')
+    assert name
     return source_info, name
 
 
-def _is_internal(obj):
+def _is_internal(
+    obj: ModuleType
+    | Type[Any]
+    | MethodType
+    | FunctionType
+    | TracebackType
+    | FrameType
+    | CodeType
+    | Callable[..., Any]
+) -> bool:
     """Check if the module of the object is a falcon module."""
     module = inspect.getmodule(obj)
     if module:
@@ -791,7 +844,14 @@ def _is_internal(obj):
     return False
 
 
-def _filter_internal(iterable, return_internal):
+def _filter_internal(
+    iterable: Union[
+        Iterable[RouteMethodInfo],
+        Iterable[ErrorHandlerInfo],
+        Iterable[MiddlewareMethodInfo],
+    ],
+    return_internal: bool,
+) -> Union[Iterable[_Traversable], List[_Traversable]]:
     """Filter the internal elements of an iterable."""
     if return_internal:
         return iterable

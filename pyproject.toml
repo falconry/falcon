@@ -44,6 +44,8 @@
             "falcon.hooks",
             "falcon.http_error",
             "falcon.http_status",
+            "falcon.http_status",
+            "falcon.inspect",
             "falcon.stream",
         ]
         disallow_untyped_defs = true
