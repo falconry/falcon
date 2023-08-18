@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Buffered stream reader."""
+from __future__ import annotations
 
 import functools
 import io
@@ -375,7 +376,7 @@ class BufferedReader:
     def exhaust(self) -> None:
         self.pipe()
 
-    def delimit(self, delimiter: bytes) -> 'BufferedReader':
+    def delimit(self, delimiter: bytes) -> BufferedReader:
         read = functools.partial(self.read_until, delimiter)
         return type(self)(read, self._normalize_size(None), self._chunk_size)
 
