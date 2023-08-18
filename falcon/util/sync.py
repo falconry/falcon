@@ -7,6 +7,9 @@ import os
 from typing import Any
 from typing import Awaitable
 from typing import Callable
+from typing import Optional
+from typing import TypeVar
+from typing import Union
 
 
 __all__ = [
@@ -18,10 +21,6 @@ __all__ = [
     'wrap_sync_to_async',
     'wrap_sync_to_async_unsafe',
 ]
-
-from typing import Optional
-from typing import TypeVar
-from typing import Union
 
 _one_thread_to_rule_them_all = ThreadPoolExecutor(max_workers=1)
 
