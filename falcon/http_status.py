@@ -13,7 +13,10 @@
 # limitations under the License.
 
 """HTTPStatus exception class."""
+from typing import Optional
 
+from falcon.typing_http_data import RawHeaders
+from falcon.typing_http_data import Status
 from falcon.util import http_status_to_code
 from falcon.util.deprecation import AttributeRemovedError
 
@@ -46,7 +49,9 @@ class HTTPStatus(Exception):
 
     __slots__ = ('status', 'headers', 'text')
 
-    def __init__(self, status, headers=None, text=None):
+    def __init__(
+        self, status: Status, headers: RawHeaders = None, text: Optional[str] = None
+    ) -> None:
         self.status = status
         self.headers = headers
         self.text = text
