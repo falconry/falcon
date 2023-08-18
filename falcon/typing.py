@@ -15,6 +15,10 @@
 """Shorthand definitions for more complex types."""
 
 from typing import Any, Callable, Pattern, Union
+from typing import Dict
+from typing import List
+from typing import Tuple
+from typing import Union
 
 from falcon.request import Request
 from falcon.response import Response
@@ -34,3 +38,5 @@ SinkPrefix = Union[str, Pattern]
 #   arguments afterwords?
 # class SinkCallable(Protocol):
 #     def __call__(sef, req: Request, resp: Response, <how to do?>): ...
+NormalizedHeaders = Dict[str, str]
+RawHeaders = Union[NormalizedHeaders, List[Tuple[str, str]], None]

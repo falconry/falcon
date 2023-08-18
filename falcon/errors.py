@@ -44,6 +44,8 @@ from typing import Union
 
 from falcon.http_error import HTTPError
 import falcon.status_codes as status
+from falcon.typing import NormalizedHeaders
+from falcon.typing import RawHeaders
 from falcon.util.deprecation import deprecated_args
 from falcon.util.misc import dt_to_http
 
@@ -176,8 +178,6 @@ class WebSocketServerError(WebSocketDisconnected):
 
 Kwargs = Union[str, int, None]
 RetryAfter = Union[int, datetime, None]
-NormalizedHeaders = Dict[str, str]
-RawHeaders = Union[NormalizedHeaders, List[Tuple[str, str]], None]
 
 
 class HTTPBadRequest(HTTPError):
