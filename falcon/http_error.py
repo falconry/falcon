@@ -16,12 +16,12 @@
 from collections import OrderedDict
 import http
 from typing import Dict
-from typing import List
 from typing import Optional
-from typing import Tuple
 from typing import Type
 from typing import Union
 import xml.etree.ElementTree as et
+
+from falcon.typing import RawHeaders
 
 try:
     from typing import Protocol  # type: ignore
@@ -32,8 +32,6 @@ from falcon.constants import MEDIA_JSON
 from falcon.util import code_to_http_status, http_status_to_code, uri
 from falcon.util.deprecation import deprecated_args
 
-NormalizedHeaders = Dict[str, str]
-RawHeaders = Union[NormalizedHeaders, List[Tuple[str, str]], None]
 Link = Dict[str, str]
 
 
