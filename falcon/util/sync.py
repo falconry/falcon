@@ -227,7 +227,7 @@ def async_to_sync(
     return loop.run_until_complete(coroutine(*args, **kwargs))
 
 
-def runs_sync(coroutine: Callable[..., Awaitable[Any]]) -> Callable[..., Any]:
+def runs_sync(coroutine: Callable[..., Awaitable[Result]]) -> Callable[..., Result]:
     """Transform a coroutine function into a synchronous method.
 
     This is achieved by always invoking the decorated coroutine function via
