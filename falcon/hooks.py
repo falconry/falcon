@@ -18,7 +18,18 @@ from functools import wraps
 from inspect import getmembers
 from inspect import iscoroutinefunction
 import re
+from typing import Any
+from typing import Awaitable
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Tuple
+from typing import Union
 
+from falcon import Request as SynchronousRequest
+from falcon import Response as SynchronousResponse
+from falcon.asgi import Request as AsynchronousRequest
+from falcon.asgi import Response as AsynchronousResponse
 from falcon.constants import COMBINED_METHODS
 from falcon.util.misc import get_argnames
 from falcon.util.sync import _wrap_non_coroutine_unsafe
@@ -28,8 +39,14 @@ _DECORABLE_METHOD_NAME = re.compile(
     r'^on_({})(_\w+)?$'.format('|'.join(method.lower() for method in COMBINED_METHODS))
 )
 
+SynchronousResource = Callable[..., Any]
+AsynchronousResource = Callable[..., Awaitable[Any]]
+Resource = Union[SynchronousResource, AsynchronousResource]
 
-def before(action, *args, is_async=False, **kwargs):
+
+def before(
+    action: Resource, *args: Any, is_async: bool = False, **kwargs: Any
+) -> Callable[[Resource], Resource]:
     """Execute the given action function *before* the responder.
 
     The `params` argument that is passed to the hook
@@ -79,7 +96,7 @@ def before(action, *args, is_async=False, **kwargs):
             *action*.
     """
 
-    def _before(responder_or_resource):
+    def _before(responder_or_resource: Resource) -> Resource:
         if isinstance(responder_or_resource, type):
             resource = responder_or_resource
 
@@ -89,7 +106,7 @@ def before(action, *args, is_async=False, **kwargs):
                     # responder in the do_before_all closure; otherwise, they
                     # will capture the same responder variable that is shared
                     # between iterations of the for loop, above.
-                    def let(responder=responder):
+                    def let(responder: Resource = responder) -> None:
                         do_before_all = _wrap_with_before(
                             responder, action, args, kwargs, is_async
                         )
@@ -109,7 +126,9 @@ def before(action, *args, is_async=False, **kwargs):
     return _before
 
 
-def after(action, *args, is_async=False, **kwargs):
+def after(
+    action: Resource, *args: Any, is_async: bool = False, **kwargs: Any
+) -> Callable[[Resource], Resource]:
     """Execute the given action function *after* the responder.
 
     Args:
@@ -142,14 +161,14 @@ def after(action, *args, is_async=False, **kwargs):
             *action*.
     """
 
-    def _after(responder_or_resource):
+    def _after(responder_or_resource: Resource) -> Resource:
         if isinstance(responder_or_resource, type):
             resource = responder_or_resource
 
             for responder_name, responder in getmembers(resource, callable):
                 if _DECORABLE_METHOD_NAME.match(responder_name):
 
-                    def let(responder=responder):
+                    def let(responder: Resource = responder) -> None:
                         do_after_all = _wrap_with_after(
                             responder, action, args, kwargs, is_async
                         )
@@ -174,7 +193,13 @@ def after(action, *args, is_async=False, **kwargs):
 # -----------------------------------------------------------------------------
 
 
-def _wrap_with_after(responder, action, action_args, action_kwargs, is_async):
+def _wrap_with_after(
+    responder: Resource,
+    action: Resource,
+    action_args: Any,
+    action_kwargs: Any,
+    is_async: bool,
+) -> Resource:
     """Execute the given action function after a responder method.
 
     Args:
@@ -197,20 +222,33 @@ def _wrap_with_after(responder, action, action_args, action_kwargs, is_async):
         #   is actually covered, but coverage isn't tracking it for
         #   some reason.
         if not is_async:  # pragma: nocover
-            action = _wrap_non_coroutine_unsafe(action)
+            wrapped_action = _wrap_non_coroutine_unsafe(action)
 
         @wraps(responder)
-        async def do_after(self, req, resp, *args, **kwargs):
+        async def do_after(
+            self: Resource,
+            req: AsynchronousRequest,
+            resp: AsynchronousResponse,
+            *args: Any,
+            **kwargs: Any,
+        ) -> None:
             if args:
                 _merge_responder_args(args, kwargs, extra_argnames)
 
             await responder(self, req, resp, **kwargs)
-            await action(req, resp, self, *action_args, **action_kwargs)
+            assert wrapped_action
+            await wrapped_action(req, resp, self, *action_args, **action_kwargs)
 
     else:
 
         @wraps(responder)
-        def do_after(self, req, resp, *args, **kwargs):
+        def do_after(
+            self: Resource,
+            req: SynchronousRequest,
+            resp: SynchronousResponse,
+            *args: Any,
+            **kwargs: Any,
+        ) -> None:
             if args:
                 _merge_responder_args(args, kwargs, extra_argnames)
 
@@ -220,7 +258,13 @@ def _wrap_with_after(responder, action, action_args, action_kwargs, is_async):
     return do_after
 
 
-def _wrap_with_before(responder, action, action_args, action_kwargs, is_async):
+def _wrap_with_before(
+    responder: Resource,
+    action: Resource,
+    action_args: Tuple[Any, ...],
+    action_kwargs: Dict[str, Any],
+    is_async: bool,
+) -> Union[Callable[..., Awaitable[None]], Callable[..., None]]:
     """Execute the given action function before a responder method.
 
     Args:
@@ -243,20 +287,33 @@ def _wrap_with_before(responder, action, action_args, action_kwargs, is_async):
         #   is actually covered, but coverage isn't tracking it for
         #   some reason.
         if not is_async:  # pragma: nocover
-            action = _wrap_non_coroutine_unsafe(action)
+            wrapped_action = _wrap_non_coroutine_unsafe(action)
 
         @wraps(responder)
-        async def do_before(self, req, resp, *args, **kwargs):
+        async def do_before(
+            self: Resource,
+            req: AsynchronousRequest,
+            resp: AsynchronousResponse,
+            *args: Any,
+            **kwargs: Any,
+        ) -> None:
             if args:
                 _merge_responder_args(args, kwargs, extra_argnames)
 
-            await action(req, resp, self, kwargs, *action_args, **action_kwargs)
+            assert wrapped_action
+            await wrapped_action(req, resp, self, kwargs, *action_args, **action_kwargs)
             await responder(self, req, resp, **kwargs)
 
     else:
 
         @wraps(responder)
-        def do_before(self, req, resp, *args, **kwargs):
+        def do_before(
+            self: Resource,
+            req: SynchronousRequest,
+            resp: SynchronousResponse,
+            *args: Any,
+            **kwargs: Any,
+        ) -> None:
             if args:
                 _merge_responder_args(args, kwargs, extra_argnames)
 
@@ -266,7 +323,9 @@ def _wrap_with_before(responder, action, action_args, action_kwargs, is_async):
     return do_before
 
 
-def _merge_responder_args(args, kwargs, argnames):
+def _merge_responder_args(
+    args: Tuple[Any, ...], kwargs: Dict[str, Any], argnames: List[Any]
+) -> None:
     """Merge responder args into kwargs.
 
     The framework always passes extra args as keyword arguments.
