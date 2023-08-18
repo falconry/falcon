@@ -1,9 +1,21 @@
+from typing import Any
+from typing import Awaitable
+from typing import Callable
 from typing import Iterable
 from typing import Optional
 from typing import Union
 
-from .request import Request
-from .response import Response
+from .asgi.request import Request as AsynchronousRequest
+from .asgi.response import Response as AsynchronousResponse
+from .request import Request as SynchronousRequest
+from .response import Response as SynchronousResponse
+
+Request = Union[AsynchronousRequest, SynchronousRequest]
+Response = Union[AsynchronousResponse, SynchronousResponse]
+
+SynchronousResource = Callable[..., Any]
+AsynchronousResource = Callable[..., Awaitable[Any]]
+Resource = Union[SynchronousResource, AsynchronousResource]
 
 
 class CORSMiddleware(object):
@@ -75,7 +87,9 @@ class CORSMiddleware(object):
                 )
         self.allow_credentials = allow_credentials
 
-    def process_response(self, req: Request, resp: Response, resource, req_succeeded):
+    def process_response(
+        self, req: Request, resp: Response, resource: Resource, req_succeeded: bool
+    ) -> None:
         """Implement the CORS policy for all routes.
 
         This middleware provides a simple out-of-the box CORS policy,
@@ -123,5 +137,7 @@ class CORSMiddleware(object):
             resp.set_header('Access-Control-Allow-Headers', allow_headers)
             resp.set_header('Access-Control-Max-Age', '86400')  # 24 hours
 
-    async def process_response_async(self, *args):
+    async def process_response_async(
+        self, request: Request, response: Response, request_succeeded: bool, *args: Any
+    ) -> None:
         self.process_response(*args)
