@@ -26,11 +26,11 @@ from typing import List
 from typing import Tuple
 from typing import Union
 
-from falcon import Request as SynchronousRequest
-from falcon import Response as SynchronousResponse
-from falcon.asgi import Request as AsynchronousRequest
-from falcon.asgi import Response as AsynchronousResponse
+from falcon.asgi.request import Request as AsynchronousRequest
+from falcon.asgi.response import Response as AsynchronousResponse
 from falcon.constants import COMBINED_METHODS
+from falcon.request import Request as SynchronousRequest
+from falcon.response import Response as SynchronousResponse
 from falcon.util.misc import get_argnames
 from falcon.util.sync import _wrap_non_coroutine_unsafe
 
@@ -222,7 +222,9 @@ def _wrap_with_after(
         #   is actually covered, but coverage isn't tracking it for
         #   some reason.
         if not is_async:  # pragma: nocover
-            wrapped_action = _wrap_non_coroutine_unsafe(action)
+            async_action = _wrap_non_coroutine_unsafe(action)
+        else:
+            async_action = action
 
         @wraps(responder)
         async def do_after(
@@ -236,8 +238,8 @@ def _wrap_with_after(
                 _merge_responder_args(args, kwargs, extra_argnames)
 
             await responder(self, req, resp, **kwargs)
-            assert wrapped_action
-            await wrapped_action(req, resp, self, *action_args, **action_kwargs)
+            assert async_action
+            await async_action(req, resp, self, *action_args, **action_kwargs)
 
     else:
 
@@ -287,7 +289,9 @@ def _wrap_with_before(
         #   is actually covered, but coverage isn't tracking it for
         #   some reason.
         if not is_async:  # pragma: nocover
-            wrapped_action = _wrap_non_coroutine_unsafe(action)
+            async_action = _wrap_non_coroutine_unsafe(action)
+        else:
+            async_action = action
 
         @wraps(responder)
         async def do_before(
@@ -300,8 +304,8 @@ def _wrap_with_before(
             if args:
                 _merge_responder_args(args, kwargs, extra_argnames)
 
-            assert wrapped_action
-            await wrapped_action(req, resp, self, kwargs, *action_args, **action_kwargs)
+            assert async_action
+            await async_action(req, resp, self, kwargs, *action_args, **action_kwargs)
             await responder(self, req, resp, **kwargs)
 
     else:
