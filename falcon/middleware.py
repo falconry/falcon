@@ -5,13 +5,8 @@ from typing import Iterable
 from typing import Optional
 from typing import Union
 
-from .asgi.request import Request as AsynchronousRequest
-from .asgi.response import Response as AsynchronousResponse
-from .request import Request as SynchronousRequest
-from .response import Response as SynchronousResponse
-
-Request = Union[AsynchronousRequest, SynchronousRequest]
-Response = Union[AsynchronousResponse, SynchronousResponse]
+from .request import Request
+from .response import Response
 
 SynchronousResource = Callable[..., Any]
 AsynchronousResource = Callable[..., Awaitable[Any]]
@@ -137,7 +132,5 @@ class CORSMiddleware(object):
             resp.set_header('Access-Control-Allow-Headers', allow_headers)
             resp.set_header('Access-Control-Max-Age', '86400')  # 24 hours
 
-    async def process_response_async(
-        self, request: Request, response: Response, request_succeeded: bool, *args: Any
-    ) -> None:
+    async def process_response_async(self, *args: Any) -> None:
         self.process_response(*args)

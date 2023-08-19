@@ -20,25 +20,13 @@ from typing import Type
 from typing import Union
 import xml.etree.ElementTree as et
 
-try:
-    from typing import Protocol  # type: ignore
-except ImportError:  # pragma: no cover
-    from typing_extensions import Protocol  # type: ignore
-
 from falcon.constants import MEDIA_JSON
+from falcon.link import Link
+from falcon.media_serializer import Serializer
 from falcon.typing_http_data import RawHeaders
 from falcon.typing_http_data import Status
 from falcon.util import code_to_http_status, http_status_to_code, uri
 from falcon.util.deprecation import deprecated_args
-
-Link = Dict[str, str]
-
-
-class Serializer(Protocol):  # pragma: no cover
-    def serialize(
-        self, media: Dict[str, Union[str, int, None, Link]], content_type: str
-    ) -> bytes:
-        ...
 
 
 class HTTPError(Exception):
