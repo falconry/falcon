@@ -13,9 +13,11 @@
 # limitations under the License.
 
 """HTTPStatus specializations for 3xx redirects."""
+from typing import Optional
 
 import falcon
 from falcon.http_status import HTTPStatus
+from falcon.typing_http_data import NormalizedHeaders
 
 
 class HTTPMovedPermanently(HTTPStatus):
@@ -37,7 +39,9 @@ class HTTPMovedPermanently(HTTPStatus):
             response.
     """
 
-    def __init__(self, location, headers=None):
+    def __init__(
+        self, location: str, headers: Optional[NormalizedHeaders] = None
+    ) -> None:
         if headers is None:
             headers = {}
         headers.setdefault('location', location)
@@ -66,7 +70,9 @@ class HTTPFound(HTTPStatus):
             response.
     """
 
-    def __init__(self, location, headers=None):
+    def __init__(
+        self, location: str, headers: Optional[NormalizedHeaders] = None
+    ) -> None:
         if headers is None:
             headers = {}
         headers.setdefault('location', location)
@@ -100,7 +106,9 @@ class HTTPSeeOther(HTTPStatus):
             response.
     """
 
-    def __init__(self, location, headers=None):
+    def __init__(
+        self, location: str, headers: Optional[NormalizedHeaders] = None
+    ) -> None:
         if headers is None:
             headers = {}
         headers.setdefault('location', location)
@@ -129,7 +137,9 @@ class HTTPTemporaryRedirect(HTTPStatus):
             response.
     """
 
-    def __init__(self, location, headers=None):
+    def __init__(
+        self, location: str, headers: Optional[NormalizedHeaders] = None
+    ) -> None:
         if headers is None:
             headers = {}
         headers.setdefault('location', location)
@@ -155,7 +165,9 @@ class HTTPPermanentRedirect(HTTPStatus):
             response.
     """
 
-    def __init__(self, location, headers=None):
+    def __init__(
+        self, location: str, headers: Optional[NormalizedHeaders] = None
+    ) -> None:
         if headers is None:
             headers = {}
         headers.setdefault('location', location)
