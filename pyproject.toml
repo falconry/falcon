@@ -49,6 +49,7 @@
             "falcon.middleware",
             "falcon.redirects",
             "falcon.stream",
+            "falcon.vendor.*",
         ]
         disallow_untyped_defs = true
 
