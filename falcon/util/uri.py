@@ -22,8 +22,12 @@ in the `falcon` module, and so must be explicitly imported::
 
     name, port = uri.parse_host('example.org:8080')
 """
-
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Optional
 from typing import Tuple, TYPE_CHECKING
+from typing import Union
 
 from falcon.constants import PYPY
 
@@ -52,7 +56,7 @@ _HEX_TO_BYTE = {
 }
 
 
-def _create_char_encoder(allowed_chars):
+def _create_char_encoder(allowed_chars: str) -> Callable[[int], str]:
 
     lookup = {}
 
@@ -67,13 +71,15 @@ def _create_char_encoder(allowed_chars):
     return lookup.__getitem__
 
 
-def _create_str_encoder(is_value, check_is_escaped=False):
+def _create_str_encoder(
+    is_value: bool, check_is_escaped: bool = False
+) -> Callable[[str], str]:
 
     allowed_chars = _UNRESERVED if is_value else _ALL_ALLOWED
     allowed_chars_plus_percent = allowed_chars + '%'
     encode_char = _create_char_encoder(allowed_chars)
 
-    def encoder(uri):
+    def encoder(uri: str) -> str:
         # PERF(kgriffs): Very fast way to check, learned from urlib.quote
         if not uri.rstrip(allowed_chars):
             return uri
@@ -107,7 +113,7 @@ def _create_str_encoder(is_value, check_is_escaped=False):
             # partially encoded, the caller will need to normalize it
             # before passing it in here.
 
-        uri = uri.encode()
+        encoded_uri = uri.encode()
 
         # Use our map to encode each char and join the result into a new uri
         #
@@ -115,7 +121,7 @@ def _create_str_encoder(is_value, check_is_escaped=False):
         # CPython 3 (tested on CPython 3.5 and 3.7). A list comprehension
         # can be faster on PyPy3, but the difference is on the order of
         # nanoseconds in that case, so we aren't going to worry about it.
-        return ''.join(map(encode_char, uri))
+        return ''.join(map(encode_char, encoded_uri))
 
     return encoder
 
@@ -143,7 +149,7 @@ Returns:
 """
 
 encode_value = _create_str_encoder(True)
-encode_value.name = 'encode_value'
+encode_value.__name__ = 'encode_value'
 encode_value.__doc__ = """Encodes a value string according to RFC 3986.
 
 Disallowed characters are percent-encoded in a way that models
@@ -171,7 +177,7 @@ Returns:
 """
 
 encode_check_escaped = _create_str_encoder(False, True)
-encode_check_escaped.name = 'encode_check_escaped'
+encode_check_escaped.__name__ = 'encode_check_escaped'
 encode_check_escaped.__doc__ = """Encodes a full or relative URI according to RFC 3986.
 
 RFC 3986 defines a set of "unreserved" characters as well as a
@@ -195,7 +201,7 @@ Returns:
 """
 
 encode_value_check_escaped = _create_str_encoder(True, True)
-encode_value_check_escaped.name = 'encode_value_check_escaped'
+encode_value_check_escaped.__name__ = 'encode_value_check_escaped'
 encode_value_check_escaped.__doc__ = """Encodes a value string according to RFC 3986.
 
 RFC 3986 defines a set of "unreserved" characters as well as a
@@ -224,7 +230,7 @@ Returns:
 """
 
 
-def _join_tokens_bytearray(tokens):
+def _join_tokens_bytearray(tokens: List[bytes]) -> str:
     decoded_uri = bytearray(tokens[0])
     for token in tokens[1:]:
         token_partial = token[:2]
@@ -238,7 +244,7 @@ def _join_tokens_bytearray(tokens):
     return decoded_uri.decode('utf-8', 'replace')
 
 
-def _join_tokens_list(tokens):
+def _join_tokens_list(tokens: List[bytes]) -> str:
     decoded = tokens[:1]
     # PERF(vytas): Do not copy list: a simple bool flag is fastest on PyPy JIT.
     skip = True
@@ -270,7 +276,7 @@ def _join_tokens_list(tokens):
 _join_tokens = _join_tokens_list if PYPY else _join_tokens_bytearray
 
 
-def decode(encoded_uri, unquote_plus=True):
+def decode(encoded_uri: str, unquote_plus: bool = True) -> str:
     """Decode percent-encoded characters in a URI or query string.
 
     This function models the behavior of `urllib.parse.unquote_plus`,
@@ -306,31 +312,33 @@ def decode(encoded_uri, unquote_plus=True):
     # NOTE(kgriffs): Clients should never submit a URI that has
     # unescaped non-ASCII chars in them, but just in case they
     # do, let's encode into a non-lossy format.
-    decoded_uri = decoded_uri.encode()
+    reencoded_uri = decoded_uri.encode()
 
     # PERF(kgriffs): This was found to be faster than using
     # a regex sub call or list comprehension with a join.
-    tokens = decoded_uri.split(b'%')
+    tokens = reencoded_uri.split(b'%')
     # PERF(vytas): Just use in-place add for a low number of items:
     if len(tokens) < 8:
-        decoded_uri = tokens[0]
+        reencoded_uri = tokens[0]
         for token in tokens[1:]:
             token_partial = token[:2]
             try:
-                decoded_uri += _HEX_TO_BYTE[token_partial] + token[2:]
+                reencoded_uri += _HEX_TO_BYTE[token_partial] + token[2:]
             except KeyError:
                 # malformed percentage like "x=%" or "y=%+"
-                decoded_uri += b'%' + token
+                reencoded_uri += b'%' + token
 
         # Convert back to str
-        return decoded_uri.decode('utf-8', 'replace')
+        return reencoded_uri.decode('utf-8', 'replace')
 
     # NOTE(vytas): Decode percent-encoded bytestring fragments and join them
     # back to a string using the platform-dependent method.
     return _join_tokens(tokens)
 
 
-def parse_query_string(query_string: str, keep_blank: bool = False, csv: bool = True):
+def parse_query_string(
+    query_string: str, keep_blank: bool = False, csv: bool = True
+) -> Dict[str, Union[str, List[str]]]:
     """Parse a query string into a dict.
 
     Query string parameters are assumed to use standard form-encoding. Only
@@ -455,7 +463,9 @@ def parse_query_string(query_string: str, keep_blank: bool = False, csv: bool = 
     return params
 
 
-def parse_host(host: str, default_port=None) -> Tuple[str, int]:
+def parse_host(
+    host: str, default_port: Optional[int] = None
+) -> Tuple[str, Optional[int]]:
     """Parse a canonical 'host:port' string into parts.
 
     Parse a host string (which may or may not contain a port) into
@@ -506,7 +516,7 @@ def parse_host(host: str, default_port=None) -> Tuple[str, int]:
     return (name, int(port))
 
 
-def unquote_string(quoted):
+def unquote_string(quoted: str) -> str:
     """Unquote an RFC 7320 "quoted-string".
 
     Args:

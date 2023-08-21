@@ -18,6 +18,9 @@ This module provides decorators to mark functions and classes as deprecated.
 """
 
 import functools
+from typing import Any
+from typing import Callable
+from typing import Optional
 import warnings
 
 
@@ -41,7 +44,9 @@ class DeprecatedWarning(UserWarning):
     pass
 
 
-def deprecated(instructions, is_property=False, method_name=None):
+def deprecated(
+    instructions: str, is_property: bool = False, method_name: Optional[str] = None
+) -> Callable[[Callable[..., Any]], Any]:
     """Flag a method as deprecated.
 
     This function returns a decorator which can be used to mark deprecated
@@ -60,7 +65,7 @@ def deprecated(instructions, is_property=False, method_name=None):
 
     """
 
-    def decorator(func):
+    def decorator(func: Callable[..., Any]) -> Callable[[Callable[..., Any]], Any]:
 
         object_name = 'property' if is_property else 'function'
         post_name = '' if is_property else '(...)'
@@ -69,7 +74,7 @@ def deprecated(instructions, is_property=False, method_name=None):
         )
 
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Callable[..., Any]:
             warnings.warn(message, category=DeprecatedWarning, stacklevel=2)
 
             return func(*args, **kwargs)
@@ -79,7 +84,9 @@ def deprecated(instructions, is_property=False, method_name=None):
     return decorator
 
 
-def deprecated_args(*, allowed_positional, is_method=True):
+def deprecated_args(
+    *, allowed_positional: int, is_method: bool = True
+) -> Callable[..., Callable[..., Any]]:
     """Flag a method call with positional args as deprecated.
 
     Keyword Args:
@@ -98,9 +105,9 @@ def deprecated_args(*, allowed_positional, is_method=True):
     if is_method:
         allowed_positional += 1
 
-    def deprecated_args(fn):
+    def deprecated_args(fn: Callable[..., Any]) -> Callable[..., Callable[..., Any]]:
         @functools.wraps(fn)
-        def wraps(*args, **kwargs):
+        def wraps(*args: Any, **kwargs: Any) -> Callable[..., Any]:
             if len(args) > allowed_positional:
                 warnings.warn(
                     warn_text.format(fn=fn.__qualname__),

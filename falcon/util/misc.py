@@ -22,12 +22,17 @@ framework itself. These functions are hoisted into the front-door
 
     now = falcon.http_now()
 """
-
 import datetime
 import functools
 import http
 import inspect
 import re
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Tuple
+from typing import Union
 import unicodedata
 
 from falcon import status_codes
@@ -69,18 +74,18 @@ _DEFAULT_HTTP_REASON = 'Unknown'
 _UNSAFE_CHARS = re.compile(r'[^a-zA-Z0-9.-]')
 
 # PERF(kgriffs): Avoid superfluous namespace lookups
-strptime = datetime.datetime.strptime
-utcnow = datetime.datetime.utcnow
+strptime: Callable[[str, str], datetime.datetime] = datetime.datetime.strptime
+utcnow: Callable[[], datetime.datetime] = datetime.datetime.utcnow
 
 
 # NOTE(kgriffs,vytas): This is tested in the PyPy gate but we do not want devs
 #   to have to install PyPy to check coverage on their workstations, so we use
 #   the nocover pragma here.
-def _lru_cache_nop(*args, **kwargs):  # pragma: nocover
-    def decorator(func):
+def _lru_cache_nop(maxsize: int) -> Callable[[Callable], Callable]:  # pragma: nocover
+    def decorator(func: Callable) -> Callable:
         # NOTE(kgriffs): Partially emulate the lru_cache protocol; only add
         #   cache_info() later if/when it becomes necessary.
-        func.cache_clear = lambda: None
+        func.cache_clear = lambda: None  # type: ignore
 
         return func
 
@@ -95,7 +100,7 @@ else:
     _lru_cache_for_simple_logic = functools.lru_cache  # type: ignore
 
 
-def is_python_func(func):
+def is_python_func(func: Union[Callable, Any]) -> bool:
     """Determine if a function or method uses a standard Python type.
 
     This helper can be used to check a function or method to determine if it
@@ -251,7 +256,7 @@ def to_query_str(
     return query_str[:-1]
 
 
-def get_bound_method(obj, method_name):
+def get_bound_method(obj: object, method_name: str) -> Union[None, Callable[..., Any]]:
     """Get a bound method of the given object by name.
 
     Args:
@@ -278,7 +283,7 @@ def get_bound_method(obj, method_name):
     return method
 
 
-def get_argnames(func):
+def get_argnames(func: Callable) -> List[str]:
     """Introspect the arguments of a callable.
 
     Args:
@@ -308,7 +313,9 @@ def get_argnames(func):
 
 
 @deprecated('Please use falcon.code_to_http_status() instead.')
-def get_http_status(status_code, default_reason=_DEFAULT_HTTP_REASON):
+def get_http_status(
+    status_code: Union[str, int], default_reason: str = _DEFAULT_HTTP_REASON
+) -> str:
     """Get both the http status code and description from just a code.
 
     Warning:
@@ -387,7 +394,7 @@ def secure_filename(filename: str) -> str:
 
 
 @_lru_cache_for_simple_logic(maxsize=64)
-def http_status_to_code(status):
+def http_status_to_code(status: Union[http.HTTPStatus, int, bytes, str]) -> int:
     """Normalize an HTTP status to an integer code.
 
     This function takes a member of :class:`http.HTTPStatus`, an HTTP status
@@ -425,7 +432,7 @@ def http_status_to_code(status):
 
 
 @_lru_cache_for_simple_logic(maxsize=64)
-def code_to_http_status(status):
+def code_to_http_status(status: Union[int, http.HTTPStatus, bytes, str]) -> str:
     """Normalize an HTTP status to an HTTP status line string.
 
     This function takes a member of :class:`http.HTTPStatus`, an ``int`` status
@@ -473,7 +480,7 @@ def code_to_http_status(status):
         return '{} {}'.format(code, _DEFAULT_HTTP_REASON)
 
 
-def _encode_items_to_latin1(data):
+def _encode_items_to_latin1(data: Dict[str, str]) -> List[Tuple[bytes, bytes]]:
     """Decode all key/values of a dict to Latin-1.
 
     Args:
@@ -491,7 +498,7 @@ def _encode_items_to_latin1(data):
     return result
 
 
-def _isascii(string: str):
+def _isascii(string: str) -> bool:
     """Return ``True`` if all characters in the string are ASCII.
 
     ASCII characters have code points in the range U+0000-U+007F.
