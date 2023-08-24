@@ -14,7 +14,6 @@
 
 """HTTPError exception class."""
 from collections import OrderedDict
-from typing import Dict
 from typing import MutableMapping
 from typing import Optional
 from typing import Type
