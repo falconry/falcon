@@ -25,6 +25,7 @@ from types import ModuleType
 from types import TracebackType
 from typing import Any
 from typing import Callable  # NOQA: F401
+from typing import cast
 from typing import Dict  # NOQA: F401
 from typing import Iterable
 from typing import List
@@ -32,7 +33,6 @@ from typing import Optional
 from typing import Tuple
 from typing import Type  # NOQA: F401
 from typing import Union
-from typing import cast
 
 from falcon import app_helpers
 from falcon.app import App
