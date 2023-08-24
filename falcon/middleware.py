@@ -8,10 +8,6 @@ from typing import Union
 from .request import Request
 from .response import Response
 
-SynchronousResource = Callable[..., Any]
-AsynchronousResource = Callable[..., Awaitable[Any]]
-Resource = Union[SynchronousResource, AsynchronousResource]
-
 
 class CORSMiddleware(object):
     """CORS Middleware.
@@ -83,7 +79,7 @@ class CORSMiddleware(object):
         self.allow_credentials = allow_credentials
 
     def process_response(
-        self, req: Request, resp: Response, resource: Resource, req_succeeded: bool
+        self, req: Request, resp: Response, resource: object, req_succeeded: bool
     ) -> None:
         """Implement the CORS policy for all routes.
 
