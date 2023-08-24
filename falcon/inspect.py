@@ -32,6 +32,7 @@ from typing import Optional
 from typing import Tuple
 from typing import Type  # NOQA: F401
 from typing import Union
+from typing import cast
 
 from falcon import app_helpers
 from falcon.app import App
@@ -825,7 +826,7 @@ def _get_source_info_and_name(
     name = getattr(obj, '__name__', None)
     if name is None:
         name = getattr(type(obj), '__name__', '[unknown]')
-    assert name
+    name = cast(str, name)
     return source_info, name
 
 
