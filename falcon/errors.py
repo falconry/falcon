@@ -36,7 +36,6 @@ package namespace::
 
 from datetime import datetime
 from typing import Iterable
-from typing import List
 from typing import Optional
 from typing import Union
 
@@ -584,7 +583,7 @@ class HTTPMethodNotAllowed(HTTPError):
     @deprecated_args(allowed_positional=1)
     def __init__(
         self,
-        allowed_methods: List[str],
+        allowed_methods: Iterable[str],
         title: Optional[str] = None,
         description: Optional[str] = None,
         headers: Optional[RawHeaders] = None,
