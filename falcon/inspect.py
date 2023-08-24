@@ -778,14 +778,16 @@ class StringVisitor(InspectVisitor):
 
 
 def _get_source_info(
-    obj: ModuleType
-    | Type[Any]
-    | MethodType
-    | FunctionType
-    | TracebackType
-    | FrameType
-    | CodeType
-    | Callable[..., Any],
+    obj: Union[
+    ModuleType,
+    Type[Any],
+    MethodType,
+    FunctionType,
+    TracebackType,
+    FrameType,
+    CodeType,
+    Callable[..., Any],
+    ],
     default: Optional[str] = '[unknown file]',
 ) -> Optional[str]:
     """Try to get the definition file and line of obj.
