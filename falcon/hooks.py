@@ -329,7 +329,7 @@ def _wrap_with_before(
 
 
 def _merge_responder_args(
-    args: Tuple[Any, ...], kwargs: Dict[str, Any], argnames: List[Any]
+    args: Tuple[Any, ...], kwargs: Dict[str, Any], argnames: List[str]
 ) -> None:
     """Merge responder args into kwargs.
 
