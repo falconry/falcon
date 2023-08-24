@@ -13,7 +13,9 @@
 # limitations under the License.
 
 """Shorthand definitions for more complex types."""
-from typing import Any, Callable, Pattern
+from typing import Any
+from typing import Callable
+from typing import Pattern
 from typing import Union
 
 from falcon.request import Request
