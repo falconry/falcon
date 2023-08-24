@@ -86,8 +86,8 @@ def quality_and_fitness_parsed(
 
     :rtype: (float,int)
     """
-    best_fitness = -1.0
-    best_fit_q = 0.0
+    best_fitness: float = -1
+    best_fit_q: float = 0
     (target_type, target_subtype, target_params) = \
         parse_media_range(mime_type)
 
