@@ -50,7 +50,7 @@ class HTTPStatus(Exception):
     __slots__ = ('status', 'headers', 'text')
 
     def __init__(
-        self, status: Status, headers: RawHeaders = None, text: Optional[str] = None
+        self, status: Status, headers: Optional[RawHeaders] = None, text: Optional[str] = None
     ) -> None:
         self.status = status
         self.headers = headers
