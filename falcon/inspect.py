@@ -780,14 +780,14 @@ class StringVisitor(InspectVisitor):
 
 def _get_source_info(
     obj: Union[
-    ModuleType,
-    Type[Any],
-    MethodType,
-    FunctionType,
-    TracebackType,
-    FrameType,
-    CodeType,
-    Callable[..., Any],
+        ModuleType,
+        Type[Any],
+        MethodType,
+        FunctionType,
+        TracebackType,
+        FrameType,
+        CodeType,
+        Callable[..., Any],
     ],
     default: Optional[str] = '[unknown file]',
 ) -> Optional[str]:
