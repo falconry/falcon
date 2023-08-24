@@ -228,7 +228,7 @@ class HTTPBadRequest(HTTPError):
         self,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ) -> None:
         super().__init__(
@@ -311,7 +311,7 @@ class HTTPUnauthorized(HTTPError):
         self,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         challenges: Optional[Iterable[str]] = None,
         **kwargs: Kwargs,
     ):
@@ -389,7 +389,7 @@ class HTTPForbidden(HTTPError):
         self,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ):
         super().__init__(
@@ -460,7 +460,7 @@ class HTTPNotFound(HTTPError):
         self,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ):
         super().__init__(
@@ -587,7 +587,7 @@ class HTTPMethodNotAllowed(HTTPError):
         allowed_methods: List[str],
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ):
         headers = _load_headers(headers)
@@ -658,7 +658,7 @@ class HTTPNotAcceptable(HTTPError):
         self,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ):
         super().__init__(
@@ -731,7 +731,7 @@ class HTTPConflict(HTTPError):
         self,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ):
         super().__init__(
@@ -810,7 +810,7 @@ class HTTPGone(HTTPError):
         self,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ):
         super().__init__(
@@ -874,7 +874,7 @@ class HTTPLengthRequired(HTTPError):
         self,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ):
         super().__init__(
@@ -939,7 +939,7 @@ class HTTPPreconditionFailed(HTTPError):
         self,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ):
         super().__init__(
@@ -1015,7 +1015,7 @@ class HTTPPayloadTooLarge(HTTPError):
         title: Optional[str] = None,
         description: Optional[str] = None,
         retry_after: RetryAfter = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ) -> None:
         super().__init__(
@@ -1085,7 +1085,7 @@ class HTTPUriTooLong(HTTPError):
         self,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ):
         super().__init__(
@@ -1150,7 +1150,7 @@ class HTTPUnsupportedMediaType(HTTPError):
         self,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ):
         super().__init__(
@@ -1229,7 +1229,7 @@ class HTTPRangeNotSatisfiable(HTTPError):
         resource_length: int,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ):
         headers = _load_headers(headers)
@@ -1299,7 +1299,7 @@ class HTTPUnprocessableEntity(HTTPError):
         self,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ):
         super().__init__(
@@ -1361,7 +1361,7 @@ class HTTPLocked(HTTPError):
         self,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ):
         super().__init__(
@@ -1422,7 +1422,7 @@ class HTTPFailedDependency(HTTPError):
         self,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ):
         super().__init__(
@@ -1491,7 +1491,7 @@ class HTTPPreconditionRequired(HTTPError):
         self,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ):
         super().__init__(
@@ -1565,7 +1565,7 @@ class HTTPTooManyRequests(HTTPError):
         self,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         retry_after: RetryAfter = None,
         **kwargs: Kwargs,
     ):
@@ -1634,7 +1634,7 @@ class HTTPRequestHeaderFieldsTooLarge(HTTPError):
         self,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ):
         super().__init__(
@@ -1709,7 +1709,7 @@ class HTTPUnavailableForLegalReasons(HTTPError):
         self,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ):
         super().__init__(
@@ -1770,7 +1770,7 @@ class HTTPInternalServerError(HTTPError):
         self,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ):
         super().__init__(
@@ -1838,7 +1838,7 @@ class HTTPNotImplemented(HTTPError):
         self,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ):
         super().__init__(
@@ -1899,7 +1899,7 @@ class HTTPBadGateway(HTTPError):
         self,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ):
         super().__init__(
@@ -1976,7 +1976,7 @@ class HTTPServiceUnavailable(HTTPError):
         self,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         retry_after: RetryAfter = None,
         **kwargs: Kwargs,
     ):
@@ -2039,7 +2039,7 @@ class HTTPGatewayTimeout(HTTPError):
         self,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ):
         super().__init__(
@@ -2106,7 +2106,7 @@ class HTTPVersionNotSupported(HTTPError):
         self,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ):
         super().__init__(
@@ -2171,7 +2171,7 @@ class HTTPInsufficientStorage(HTTPError):
         self,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ):
         super().__init__(
@@ -2233,7 +2233,7 @@ class HTTPLoopDetected(HTTPError):
         self,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ):
         super().__init__(
@@ -2307,7 +2307,7 @@ class HTTPNetworkAuthenticationRequired(HTTPError):
         self,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ):
         super().__init__(
@@ -2366,7 +2366,7 @@ class HTTPInvalidHeader(HTTPBadRequest):
         self,
         msg: str,
         header_name: str,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ):
         description = 'The value provided for the "{0}" header is invalid. {1}'
@@ -2425,7 +2425,7 @@ class HTTPMissingHeader(HTTPBadRequest):
     def __init__(
         self,
         header_name: str,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ):
         description = 'The "{0}" header is required.'
@@ -2488,7 +2488,7 @@ class HTTPInvalidParam(HTTPBadRequest):
         self,
         msg: str,
         param_name: str,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ) -> None:
         description = 'The "{0}" parameter is invalid. {1}'
@@ -2549,7 +2549,7 @@ class HTTPMissingParam(HTTPBadRequest):
     def __init__(
         self,
         param_name: str,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ) -> None:
         description = 'The "{0}" parameter is required.'
@@ -2715,7 +2715,7 @@ class MediaValidationError(HTTPBadRequest):
         *,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         **kwargs: Kwargs,
     ) -> None:
         super().__init__(
@@ -2763,7 +2763,7 @@ class MultipartParseError(MediaMalformedError):
 # -----------------------------------------------------------------------------
 
 
-def _load_headers(headers: RawHeaders) -> NormalizedHeaders:
+def _load_headers(headers: Optional[RawHeaders]) -> NormalizedHeaders:
     """Transform the headers to dict."""
     if headers is None:
         return {}
@@ -2773,9 +2773,9 @@ def _load_headers(headers: RawHeaders) -> NormalizedHeaders:
 
 
 def _parse_retry_after(
-    headers: RawHeaders,
+    headers: Optional[RawHeaders],
     retry_after: RetryAfter,
-) -> RawHeaders:
+) -> Optional[RawHeaders]:
     """Set the Retry-After to the headers when required."""
     if retry_after is None:
         return headers

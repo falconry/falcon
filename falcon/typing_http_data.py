@@ -5,5 +5,5 @@ from typing import Tuple
 from typing import Union
 
 NormalizedHeaders = Dict[str, str]
-RawHeaders = Union[NormalizedHeaders, List[Tuple[str, str]], None]
+RawHeaders = Union[NormalizedHeaders, List[Tuple[str, str]]]
 Status = Union[http.HTTPStatus, str, int]

@@ -120,7 +120,7 @@ class HTTPError(Exception):
         status: Status,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        headers: RawHeaders = None,
+        headers: Optional[RawHeaders] = None,
         href: Optional[str] = None,
         href_text: Optional[str] = None,
         code: Optional[int] = None,
