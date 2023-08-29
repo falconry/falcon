@@ -1,9 +1,4 @@
 import cgi
-from typing import Dict
-from typing import Iterable
-from typing import Iterator
-from typing import List
-from typing import Tuple
 
 __version__ = '1.6.0'
 __author__ = 'Joe Gregorio'
@@ -11,14 +6,12 @@ __email__ = 'joe@bitworking.org'
 __license__ = 'MIT License'
 __credits__ = ''
 
-Range = Tuple[str, str, Dict[str, str]]
-
 
 class MimeTypeParseException(ValueError):
     pass
 
 
-def parse_mime_type(mime_type: str) -> Range:
+def parse_mime_type(mime_type):
     """Parses a mime-type into its component parts.
 
     Carves up a mime-type and returns a tuple of the (type, subtype, params)
@@ -46,7 +39,7 @@ def parse_mime_type(mime_type: str) -> Range:
     return (type.strip(), subtype.strip(), params)
 
 
-def parse_media_range(range: str) -> Range:
+def parse_media_range(range):
     """Parse a media-range into its component parts.
 
     Carves up a media range and returns a tuple of the (type, subtype,
@@ -63,7 +56,7 @@ def parse_media_range(range: str) -> Range:
     :rtype: (str,str,dict)
     """
     (type, subtype, params) = parse_mime_type(range)
-    params.setdefault('q', params.pop('Q', ''))  # q is case insensitive
+    params.setdefault('q', params.pop('Q', None))  # q is case insensitive
     try:
         if not params['q'] or not 0 <= float(params['q']) <= 1:
             params['q'] = '1'
@@ -73,9 +66,7 @@ def parse_media_range(range: str) -> Range:
     return (type, subtype, params)
 
 
-def quality_and_fitness_parsed(
-        mime_type: str , parsed_ranges: List[Range]
-) -> Tuple[float, float]:
+def quality_and_fitness_parsed(mime_type, parsed_ranges):
     """Find the best match for a mime-type amongst parsed media-ranges.
 
     Find the best match for a given mime-type against a list of media_ranges
@@ -86,8 +77,8 @@ def quality_and_fitness_parsed(
 
     :rtype: (float,int)
     """
-    best_fitness = -1.0
-    best_fit_q = 0.0
+    best_fitness = -1
+    best_fit_q = 0
     (target_type, target_subtype, target_params) = \
         parse_media_range(mime_type)
 
@@ -107,7 +98,7 @@ def quality_and_fitness_parsed(
         if type_match and subtype_match:
 
             # 100 points if the type matches w/o a wildcard
-            fitness: float = type == target_type and 100 or 0
+            fitness = type == target_type and 100 or 0
 
             # 10 points if the subtype matches w/o a wildcard
             fitness += subtype == target_subtype and 10 or 0
@@ -124,12 +115,12 @@ def quality_and_fitness_parsed(
 
             if fitness > best_fitness:
                 best_fitness = fitness
-                best_fit_q = float(params['q'])
+                best_fit_q = params['q']
 
-    return best_fit_q, best_fitness
+    return float(best_fit_q), best_fitness
 
 
-def quality_parsed(mime_type: str, parsed_ranges: List[Range]) -> float:
+def quality_parsed(mime_type, parsed_ranges):
     """Find the best match for a mime-type amongst parsed media-ranges.
 
     Find the best match for a given mime-type against a list of media_ranges
@@ -144,7 +135,7 @@ def quality_parsed(mime_type: str, parsed_ranges: List[Range]) -> float:
     return quality_and_fitness_parsed(mime_type, parsed_ranges)[0]
 
 
-def quality(mime_type: str, ranges: str) -> float:
+def quality(mime_type, ranges):
     """Return the quality ('q') of a mime-type against a list of media-ranges.
 
     Returns the quality 'q' of a mime-type when compared against the
@@ -161,7 +152,7 @@ def quality(mime_type: str, ranges: str) -> float:
     return quality_parsed(mime_type, parsed_ranges)
 
 
-def best_match(supported: Iterable[str], header: str) -> str:
+def best_match(supported, header):
     """Return mime-type with the highest quality ('q') from list of candidates.
 
     Takes a list of supported mime-types and finds the best match for all the
@@ -193,7 +184,7 @@ def best_match(supported: Iterable[str], header: str) -> str:
     return weighted_matches[-1][0][0] and weighted_matches[-1][2] or ''
 
 
-def _filter_blank(i: Iterable[str]) -> Iterator[str]:
+def _filter_blank(i):
     """Return all non-empty items in the list."""
     for s in i:
         if s.strip():
