@@ -45,6 +45,7 @@ class BufferedReader:
         self._buffer_pos = 0
         self._max_bytes_remaining = max_stream_len
         from falcon.errors import DelimiterError
+
         self._delimiter_error = DelimiterError
 
     def _perform_read(self, size: int) -> bytes:

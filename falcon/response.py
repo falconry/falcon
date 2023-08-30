@@ -16,7 +16,6 @@
 
 import functools
 import mimetypes
-from collections import UserDict
 from typing import Optional
 
 from falcon.constants import _DEFAULT_STATIC_MEDIA_TYPES
@@ -200,8 +199,8 @@ class Response:
 
         self.context = self.context_type()
         from falcon.errors import HeaderNotSupported
-        self._header_not_supported = HeaderNotSupported
 
+        self._header_not_supported = HeaderNotSupported
 
     @property
     def status_code(self) -> int:
@@ -635,7 +634,9 @@ class Response:
         name = name.lower()
 
         if name == 'set-cookie':
-            raise self._header_not_supported('Getting Set-Cookie is not currently supported.')
+            raise self._header_not_supported(
+                'Getting Set-Cookie is not currently supported.'
+            )
 
         return self._headers.get(name, default)
 
@@ -671,7 +672,9 @@ class Response:
         name = name.lower()
 
         if name == 'set-cookie':
-            raise self._header_not_supported('This method cannot be used to set cookies')
+            raise self._header_not_supported(
+                'This method cannot be used to set cookies'
+            )
 
         self._headers[name] = value
 
@@ -705,7 +708,9 @@ class Response:
         name = name.lower()
 
         if name == 'set-cookie':
-            raise self._header_not_supported('This method cannot be used to remove cookies')
+            raise self._header_not_supported(
+                'This method cannot be used to remove cookies'
+            )
 
         self._headers.pop(name, None)
 
@@ -799,7 +804,9 @@ class Response:
 
             name = name.lower()
             if name == 'set-cookie':
-                raise self._header_not_supported('This method cannot be used to set cookies')
+                raise self._header_not_supported(
+                    'This method cannot be used to set cookies'
+                )
 
             _headers[name] = value
 
@@ -1253,6 +1260,7 @@ class ResponseOptions:
         self.secure_cookies_by_default = True
         self.default_media_type = DEFAULT_MEDIA_TYPE
         from falcon.media import Handlers
+
         self.media_handlers = Handlers()
 
         if not mimetypes.inited:

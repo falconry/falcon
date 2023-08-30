@@ -14,7 +14,6 @@
 from collections import UserDict
 from datetime import datetime
 from io import BytesIO
-from typing import Dict
 from uuid import UUID
 
 from falcon import errors
@@ -1888,7 +1887,10 @@ class Request:
             MEDIA_JSON, MEDIA_JSON, raise_not_found=False
         )
         if handler is None:
-            from falcon.media.json import _DEFAULT_JSON_HANDLER  # import here to avoid circular imports
+            from falcon.media.json import (
+                _DEFAULT_JSON_HANDLER,
+            )  # import here to avoid circular imports
+
             handler = _DEFAULT_JSON_HANDLER
 
         try:
@@ -2084,6 +2086,7 @@ class RequestOptions:
             ``application/json``, ``application/x-www-form-urlencoded`` and
             ``multipart/form-data`` media types.
     """
+
     keep_black_qs_values: bool
     auto_parse_form_urlencoded: bool
     auto_parse_qs_csv: bool
@@ -2102,6 +2105,7 @@ class RequestOptions:
 
     def __init__(self):
         from falcon.media.handlers import Handlers
+
         self.keep_blank_qs_values = True
         self.auto_parse_form_urlencoded = False
         self.auto_parse_qs_csv = False

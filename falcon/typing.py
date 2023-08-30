@@ -36,13 +36,14 @@ class Serializer:
 
 
 class MediaHandlers:
-
-    def _resolve(self, media_type: str, default: str, raise_not_found: bool = False) -> Tuple[Serializer, Optional[Callable], Optional[Callable]]:
+    def _resolve(
+        self, media_type: str, default: str, raise_not_found: bool = False
+    ) -> Tuple[Serializer, Optional[Callable], Optional[Callable]]:
         raise NotImplementedError()
 
 
-from falcon.request import Request
-from falcon.response import Response
+from falcon.request import Request  # noqa: E402
+from falcon.response import Response  # noqa: E402
 
 
 # Error handlers
@@ -62,4 +63,3 @@ SinkPrefix = Union[str, Pattern]
 NormalizedHeaders = Dict[str, str]
 RawHeaders = Union[NormalizedHeaders, List[Tuple[str, str]]]
 Status = Union[http.HTTPStatus, str, int]
-
