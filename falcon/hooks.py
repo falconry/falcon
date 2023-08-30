@@ -27,11 +27,10 @@ from typing import List
 from typing import Tuple
 from typing import Union
 
-from falcon.asgi.request import Request as AsynchronousRequest
-from falcon.asgi.response import Response as AsynchronousResponse
+from falcon import asgi
 from falcon.constants import COMBINED_METHODS
-from falcon.request import Request as SynchronousRequest
-from falcon.response import Response as SynchronousResponse
+from falcon.request import Request
+from falcon.response import Response
 from falcon.util.misc import get_argnames
 from falcon.util.sync import _wrap_non_coroutine_unsafe
 
@@ -230,8 +229,8 @@ def _wrap_with_after(
         @wraps(responder)
         async def do_after(
             self: Resource,
-            req: AsynchronousRequest,
-            resp: AsynchronousResponse,
+            req: asgi.Request,
+            resp: asgi.Response,
             *args: Any,
             **kwargs: Any,
         ) -> None:
@@ -247,8 +246,8 @@ def _wrap_with_after(
         @wraps(responder)
         def do_after(
             self: Resource,
-            req: SynchronousRequest,
-            resp: SynchronousResponse,
+            req: Request,
+            resp: Response,
             *args: Any,
             **kwargs: Any,
         ) -> None:
@@ -297,8 +296,8 @@ def _wrap_with_before(
         @wraps(responder)
         async def do_before(
             self: Resource,
-            req: AsynchronousRequest,
-            resp: AsynchronousResponse,
+            req: asgi.Request,
+            resp: asgi.Response,
             *args: Any,
             **kwargs: Any,
         ) -> None:
@@ -313,11 +312,7 @@ def _wrap_with_before(
 
         @wraps(responder)
         def do_before(
-            self: Resource,
-            req: SynchronousRequest,
-            resp: SynchronousResponse,
-            *args: Any,
-            **kwargs: Any,
+            self: Resource, req: Request, resp: Response, *args: Any, **kwargs: Any
         ) -> None:
             if args:
                 _merge_responder_args(args, kwargs, extra_argnames)
