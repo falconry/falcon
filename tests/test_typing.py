@@ -11,7 +11,6 @@ class TestSerializer:
 
 
 class TestMediaHandlers:
-
     def test_interface_raises_not_implemented(self) -> None:
         with pytest.raises(NotImplementedError):
             MediaHandlers()._resolve('any', 'any', False)
