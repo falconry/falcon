@@ -15,8 +15,8 @@
 """HTTPStatus exception class."""
 from typing import Optional
 
-from falcon.typing_http_data import RawHeaders
-from falcon.typing_http_data import Status
+from falcon.typing import RawHeaders
+from falcon.typing import Status
 from falcon.util import http_status_to_code
 from falcon.util.deprecation import AttributeRemovedError
 

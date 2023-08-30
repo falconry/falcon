@@ -10,6 +10,7 @@ from falcon.media.json import JSONHandler
 from falcon.media.multipart import MultipartFormHandler
 from falcon.media.multipart import MultipartParseOptions
 from falcon.media.urlencoded import URLEncodedFormHandler
+from falcon.typing import MediaHandlers
 from falcon.util import deprecation
 from falcon.util import misc
 from falcon.vendor import mimeparse
@@ -34,7 +35,7 @@ class MissingDependencyHandler:
     serialize = deserialize = _raise
 
 
-class Handlers(UserDict):
+class Handlers(MediaHandlers, UserDict):
     """A :class:`dict`-like object that manages Internet media type handlers."""
 
     def __init__(self, initial=None):

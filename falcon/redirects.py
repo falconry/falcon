@@ -17,7 +17,7 @@ from typing import Optional
 
 import falcon
 from falcon.http_status import HTTPStatus
-from falcon.typing_http_data import NormalizedHeaders
+from falcon.typing import NormalizedHeaders
 
 
 class HTTPMovedPermanently(HTTPStatus):

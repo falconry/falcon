@@ -39,12 +39,13 @@ from typing import Iterable
 from typing import Optional
 from typing import Union
 
-from falcon.http_error import HTTPError
 import falcon.status_codes as status
-from falcon.typing_http_data import NormalizedHeaders
-from falcon.typing_http_data import RawHeaders
+from falcon.typing import NormalizedHeaders
+from falcon.typing import RawHeaders
 from falcon.util.deprecation import deprecated_args
 from falcon.util.misc import dt_to_http
+
+from .http_error import HTTPError
 
 
 __all__ = (

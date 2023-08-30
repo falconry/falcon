@@ -22,7 +22,6 @@ from typing import IO
 from typing import List
 from typing import Optional
 
-from falcon.errors import DelimiterError
 
 DEFAULT_CHUNK_SIZE = 32768
 """Default chunk size for :class:`BufferedReader` (32 KiB)."""
@@ -45,6 +44,8 @@ class BufferedReader:
         self._buffer_len = 0
         self._buffer_pos = 0
         self._max_bytes_remaining = max_stream_len
+        from falcon.errors import DelimiterError
+        self._delimiter_error = DelimiterError
 
     def _perform_read(self, size: int) -> bytes:
         # PERF(vytas): In Cython, bind types:
@@ -216,12 +217,12 @@ class BufferedReader:
         if consume_bytes:
             if delimiter_pos < 0:
                 if self.peek(consume_bytes) != delimiter:
-                    raise DelimiterError('expected delimiter missing')
+                    raise self._delimiter_error('expected delimiter missing')
             elif self._buffer_pos != delimiter_pos:
                 # NOTE(vytas): If we are going to consume the delimiter the
                 #   quick way (i.e., skipping the above peek() check), we must
                 #   make sure it is directly succeeding the result.
-                raise DelimiterError('expected delimiter missing')
+                raise self._delimiter_error('expected delimiter missing')
 
             self._buffer_pos += consume_bytes
 
@@ -370,7 +371,7 @@ class BufferedReader:
         if consume_delimiter:
             delimiter_len = len(delimiter)
             if self.peek(delimiter_len) != delimiter:
-                raise DelimiterError('expected delimiter missing')
+                raise self._delimiter_error('expected delimiter missing')
             self._buffer_pos += delimiter_len
 
     def exhaust(self) -> None:
