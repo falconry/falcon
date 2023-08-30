@@ -13,10 +13,33 @@
 # limitations under the License.
 
 """Shorthand definitions for more complex types."""
+import http
 from typing import Any
 from typing import Callable
+from typing import Dict
+from typing import List
+from typing import MutableMapping
+from typing import Optional
 from typing import Pattern
+from typing import Tuple
 from typing import Union
+
+
+Link = Dict[str, str]
+
+
+class Serializer:
+    def serialize(
+        self, media: MutableMapping[str, Union[str, int, None, Link]], content_type: str
+    ) -> bytes:
+        raise NotImplementedError()
+
+
+class MediaHandlers:
+
+    def _resolve(self, media_type: str, default: str, raise_not_found: bool = False) -> Tuple[Serializer, Optional[Callable], Optional[Callable]]:
+        raise NotImplementedError()
+
 
 from falcon.request import Request
 from falcon.response import Response
@@ -36,3 +59,7 @@ SinkPrefix = Union[str, Pattern]
 #   arguments afterwords?
 # class SinkCallable(Protocol):
 #     def __call__(sef, req: Request, resp: Response, <how to do?>): ...
+NormalizedHeaders = Dict[str, str]
+RawHeaders = Union[NormalizedHeaders, List[Tuple[str, str]]]
+Status = Union[http.HTTPStatus, str, int]
+

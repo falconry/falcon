@@ -3,7 +3,7 @@ import io
 from typing import IO, Optional, Union
 
 from falcon.constants import MEDIA_JSON
-from falcon.media_serializer import Serializer
+from falcon.typing import Serializer
 
 
 class BaseHandler(Serializer, metaclass=abc.ABCMeta):
