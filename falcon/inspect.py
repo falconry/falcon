@@ -17,12 +17,6 @@ from __future__ import annotations
 
 from functools import partial
 import inspect
-from types import CodeType
-from types import FrameType
-from types import FunctionType
-from types import MethodType
-from types import ModuleType
-from types import TracebackType
 from typing import Any
 from typing import Callable  # NOQA: F401
 from typing import cast
@@ -779,17 +773,7 @@ class StringVisitor(InspectVisitor):
 
 
 def _get_source_info(
-    obj: Union[
-        ModuleType,
-        Type[Any],
-        MethodType,
-        FunctionType,
-        TracebackType,
-        FrameType,
-        CodeType,
-        Callable[..., Any],
-    ],
-    default: Optional[str] = '[unknown file]',
+    obj: Any, default: Optional[str] = '[unknown file]'
 ) -> Optional[str]:
     """Try to get the definition file and line of obj.
 
@@ -808,16 +792,7 @@ def _get_source_info(
     return source_info
 
 
-def _get_source_info_and_name(
-    obj: ModuleType
-    | Type[Any]
-    | MethodType
-    | FunctionType
-    | TracebackType
-    | FrameType
-    | CodeType
-    | Callable[..., Any]
-) -> Tuple[Optional[str], str]:
+def _get_source_info_and_name(obj: Any) -> Tuple[Optional[str], str]:
     """Attempt to get the definition file and line of obj and its name."""
     source_info = _get_source_info(obj, None)
     if source_info is None:
@@ -830,16 +805,7 @@ def _get_source_info_and_name(
     return source_info, name
 
 
-def _is_internal(
-    obj: ModuleType
-    | Type[Any]
-    | MethodType
-    | FunctionType
-    | TracebackType
-    | FrameType
-    | CodeType
-    | Callable[..., Any]
-) -> bool:
+def _is_internal(obj: Any) -> bool:
     """Check if the module of the object is a falcon module."""
     module = inspect.getmodule(obj)
     if module:
