@@ -38,7 +38,6 @@ package namespace::
 from datetime import datetime
 from typing import Iterable
 from typing import Optional
-from typing import Union
 
 import falcon.status_codes as status
 from falcon.typing import NormalizedHeaders
@@ -175,8 +174,8 @@ class WebSocketServerError(WebSocketDisconnected):
     pass
 
 
-Kwargs = Union[str, int, None]
-RetryAfter = Union[int, datetime, None]
+Kwargs = str | int | None
+RetryAfter = int | datetime | None
 
 
 class HTTPBadRequest(HTTPError):
@@ -2648,7 +2647,7 @@ class MediaMalformedError(HTTPBadRequest):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, media_type: str, **kwargs: Union[RawHeaders, Kwargs]):
+    def __init__(self, media_type: str, **kwargs: RawHeaders | Kwargs):
         super().__init__(
             title='Invalid {0}'.format(media_type), description=None, **kwargs
         )
@@ -2749,7 +2748,7 @@ class MultipartParseError(MediaMalformedError):
 
     @deprecated_args(allowed_positional=0)
     def __init__(
-        self, description: Optional[str] = None, **kwargs: Union[RawHeaders, Kwargs]
+        self, description: Optional[str] = None, **kwargs: RawHeaders | Kwargs
     ) -> None:
         HTTPBadRequest.__init__(
             self,

@@ -17,12 +17,12 @@
 from __future__ import annotations
 
 import io
-from typing import BinaryIO, Callable, List, Optional, TypeVar, Union
+from typing import BinaryIO, Callable, List, Optional, TypeVar
 
 __all__ = ['BoundedStream']
 
 
-Result = TypeVar('Result', bound=Union[bytes, List[bytes]])
+Result = TypeVar('Result', bound=bytes | List[bytes])
 
 
 class BoundedStream(io.IOBase):
