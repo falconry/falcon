@@ -25,6 +25,7 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Tuple
+from typing import Union
 
 from falcon import asgi
 from falcon.constants import COMBINED_METHODS
@@ -40,7 +41,7 @@ _DECORABLE_METHOD_NAME = re.compile(
 
 SynchronousResource = Callable[..., Any]
 AsynchronousResource = Callable[..., Awaitable[Any]]
-Resource = SynchronousResource | AsynchronousResource
+Resource = Union[SynchronousResource, AsynchronousResource]
 
 
 def before(
@@ -265,7 +266,7 @@ def _wrap_with_before(
     action_args: Tuple[Any, ...],
     action_kwargs: Dict[str, Any],
     is_async: bool,
-) -> Callable[..., Awaitable[None]] | Callable[..., None]:
+) -> Union[Callable[..., Awaitable[None]], Callable[..., None]]:
     """Execute the given action function before a responder method.
 
     Args:

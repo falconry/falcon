@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 from typing import Iterable
 from typing import Optional
+from typing import Union
 
 from .request import Request
 from .response import Response
@@ -44,9 +45,9 @@ class CORSMiddleware(object):
 
     def __init__(
         self,
-        allow_origins: str | Iterable[str] = '*',
-        expose_headers: Optional[str | Iterable[str]] = None,
-        allow_credentials: Optional[str | Iterable[str]] = None,
+        allow_origins: Union[str, Iterable[str]] = '*',
+        expose_headers: Optional[Union[str, Iterable[str]]] = None,
+        allow_credentials: Optional[Union[str, Iterable[str]]] = None,
     ):
         if allow_origins == '*':
             self.allow_origins = allow_origins
