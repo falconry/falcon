@@ -23,7 +23,6 @@ from typing import MutableMapping
 from typing import Optional
 from typing import Pattern
 from typing import Tuple
-from typing import Union
 
 
 Link = Dict[str, str]
@@ -31,7 +30,7 @@ Link = Dict[str, str]
 
 class Serializer:
     def serialize(
-        self, media: MutableMapping[str, Union[str, int, None, Link]], content_type: str
+        self, media: MutableMapping[str, str | int | None | Link], content_type: str
     ) -> bytes:
         raise NotImplementedError()
 
@@ -54,7 +53,7 @@ ErrorHandler = Callable[[Request, Response, BaseException, dict], Any]
 ErrorSerializer = Callable[[Request, Response, BaseException], Any]
 
 # Sinks
-SinkPrefix = Union[str, Pattern]
+SinkPrefix = str | Pattern
 
 # TODO(vytas): Is it possible to specify a Callable or a Protocol that defines
 #   type hints for the two first parameters, but accepts any number of keyword
@@ -62,5 +61,5 @@ SinkPrefix = Union[str, Pattern]
 # class SinkCallable(Protocol):
 #     def __call__(sef, req: Request, resp: Response, <how to do?>): ...
 NormalizedHeaders = Dict[str, str]
-RawHeaders = Union[NormalizedHeaders, List[Tuple[str, str]]]
-Status = Union[http.HTTPStatus, str, int]
+RawHeaders = NormalizedHeaders | List[Tuple[str, str]]
+Status = http.HTTPStatus | str | int

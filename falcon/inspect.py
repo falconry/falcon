@@ -26,7 +26,6 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Type  # NOQA: F401
-from typing import Union
 
 from falcon import app_helpers
 from falcon.app import App
@@ -615,7 +614,7 @@ class StringVisitor(InspectVisitor):
         return text
 
     def _methods_to_string(
-        self, methods: Union[List[RouteMethodInfo], List[MiddlewareMethodInfo]]
+        self, methods: List[RouteMethodInfo] | List[MiddlewareMethodInfo]
     ) -> str:
         """Return a string from the list of methods."""
         tab = self.tab + ' ' * 3
@@ -814,13 +813,11 @@ def _is_internal(obj: Any) -> bool:
 
 
 def _filter_internal(
-    iterable: Union[
-        Iterable[RouteMethodInfo],
-        Iterable[ErrorHandlerInfo],
-        Iterable[MiddlewareMethodInfo],
-    ],
+    iterable: Iterable[RouteMethodInfo]
+    | Iterable[ErrorHandlerInfo]
+    | Iterable[MiddlewareMethodInfo],
     return_internal: bool,
-) -> Union[Iterable[_Traversable], List[_Traversable]]:
+) -> Iterable[_Traversable] | List[_Traversable]:
     """Filter the internal elements of an iterable."""
     if return_internal:
         return iterable

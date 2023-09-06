@@ -18,7 +18,6 @@ from collections import OrderedDict
 from typing import MutableMapping
 from typing import Optional
 from typing import Type
-from typing import Union
 import xml.etree.ElementTree as et
 
 from falcon.constants import MEDIA_JSON
@@ -157,8 +156,8 @@ class HTTPError(Exception):
         return http_status_to_code(self.status)
 
     def to_dict(
-        self, obj_type: Type[MutableMapping[str, Union[str, int, None, Link]]] = dict
-    ) -> MutableMapping[str, Union[str, int, None, Link]]:
+        self, obj_type: Type[MutableMapping[str, str | int | None | Link]] = dict
+    ) -> MutableMapping[str, str | int | None | Link]:
         """Return a basic dictionary representing the error.
 
         This method can be useful when serializing the error to hash-like
