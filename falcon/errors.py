@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import annotations
 
 """HTTP error classes and other Falcon-specific errors.
 
@@ -34,19 +33,22 @@ package namespace::
 
             # -- snip --
 """
+from __future__ import annotations
 
 from datetime import datetime
 from typing import Iterable
 from typing import Optional
+from typing import TYPE_CHECKING
 from typing import Union
 
+from falcon.http_error import HTTPError
 import falcon.status_codes as status
-from falcon.typing import NormalizedHeaders
-from falcon.typing import RawHeaders
 from falcon.util.deprecation import deprecated_args
 from falcon.util.misc import dt_to_http
 
-from .http_error import HTTPError
+if TYPE_CHECKING:
+    from falcon.typing import NormalizedHeaders
+    from falcon.typing import RawHeaders
 
 
 __all__ = (

@@ -11,9 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Shorthand definitions for more complex types."""
 from __future__ import annotations
 
-"""Shorthand definitions for more complex types."""
 import http
 from typing import Any
 from typing import Callable
@@ -23,8 +23,12 @@ from typing import MutableMapping
 from typing import Optional
 from typing import Pattern
 from typing import Tuple
+from typing import TYPE_CHECKING
 from typing import Union
 
+if TYPE_CHECKING:
+    from falcon.request import Request
+    from falcon.response import Response
 
 Link = Dict[str, str]
 
@@ -43,15 +47,11 @@ class MediaHandlers:
         raise NotImplementedError()
 
 
-from falcon.request import Request  # noqa: E402
-from falcon.response import Response  # noqa: E402
-
-
 # Error handlers
-ErrorHandler = Callable[[Request, Response, BaseException, dict], Any]
+ErrorHandler = Callable[['Request', 'Response', BaseException, dict], Any]
 
 # Error serializers
-ErrorSerializer = Callable[[Request, Response, BaseException], Any]
+ErrorSerializer = Callable[['Request', 'Response', BaseException], Any]
 
 # Sinks
 SinkPrefix = Union[str, Pattern]

@@ -25,15 +25,16 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Tuple
+from typing import TYPE_CHECKING
 from typing import Union
 
-from falcon import asgi
 from falcon.constants import COMBINED_METHODS
-from falcon.request import Request
-from falcon.response import Response
 from falcon.util.misc import get_argnames
 from falcon.util.sync import _wrap_non_coroutine_unsafe
 
+if TYPE_CHECKING:
+    import falcon as wsgi
+    from falcon import asgi
 
 _DECORABLE_METHOD_NAME = re.compile(
     r'^on_({})(_\w+)?$'.format('|'.join(method.lower() for method in COMBINED_METHODS))
@@ -246,8 +247,8 @@ def _wrap_with_after(
         @wraps(responder)
         def do_after(
             self: Resource,
-            req: Request,
-            resp: Response,
+            req: wsgi.Request,
+            resp: wsgi.Response,
             *args: Any,
             **kwargs: Any,
         ) -> None:
@@ -312,7 +313,11 @@ def _wrap_with_before(
 
         @wraps(responder)
         def do_before(
-            self: Resource, req: Request, resp: Response, *args: Any, **kwargs: Any
+            self: Resource,
+            req: wsgi.Request,
+            resp: wsgi.Response,
+            *args: Any,
+            **kwargs: Any,
         ) -> None:
             if args:
                 _merge_responder_args(args, kwargs, extra_argnames)

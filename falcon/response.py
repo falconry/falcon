@@ -13,21 +13,24 @@
 # limitations under the License.
 
 """Response class."""
+from __future__ import annotations
 
 import functools
 import mimetypes
 from typing import Optional
+from typing import TYPE_CHECKING
 
 from falcon.constants import _DEFAULT_STATIC_MEDIA_TYPES
 from falcon.constants import _UNSET
 from falcon.constants import DEFAULT_MEDIA_TYPE
+from falcon.errors import HeaderNotSupported
+from falcon.media import Handlers
 from falcon.response_helpers import format_content_disposition
 from falcon.response_helpers import format_etag_header
 from falcon.response_helpers import format_header_value_list
 from falcon.response_helpers import format_range
 from falcon.response_helpers import header_property
 from falcon.response_helpers import is_ascii_encodable
-from falcon.typing import MediaHandlers
 from falcon.util import dt_to_http
 from falcon.util import http_cookies
 from falcon.util import http_status_to_code
@@ -37,6 +40,8 @@ from falcon.util.deprecation import AttributeRemovedError, deprecated
 from falcon.util.uri import encode_check_escaped as uri_encode
 from falcon.util.uri import encode_value_check_escaped as uri_encode_value
 
+if TYPE_CHECKING:
+    from falcon.typing import MediaHandlers
 
 GMT_TIMEZONE = TimezoneGMT()
 
@@ -198,9 +203,6 @@ class Response:
         self._media_rendered = _UNSET
 
         self.context = self.context_type()
-        from falcon.errors import HeaderNotSupported
-
-        self._header_not_supported = HeaderNotSupported
 
     @property
     def status_code(self) -> int:
@@ -634,9 +636,7 @@ class Response:
         name = name.lower()
 
         if name == 'set-cookie':
-            raise self._header_not_supported(
-                'Getting Set-Cookie is not currently supported.'
-            )
+            raise HeaderNotSupported('Getting Set-Cookie is not currently supported.')
 
         return self._headers.get(name, default)
 
@@ -672,9 +672,7 @@ class Response:
         name = name.lower()
 
         if name == 'set-cookie':
-            raise self._header_not_supported(
-                'This method cannot be used to set cookies'
-            )
+            raise HeaderNotSupported('This method cannot be used to set cookies')
 
         self._headers[name] = value
 
@@ -708,9 +706,7 @@ class Response:
         name = name.lower()
 
         if name == 'set-cookie':
-            raise self._header_not_supported(
-                'This method cannot be used to remove cookies'
-            )
+            raise HeaderNotSupported('This method cannot be used to remove ookies')
 
         self._headers.pop(name, None)
 
@@ -804,9 +800,7 @@ class Response:
 
             name = name.lower()
             if name == 'set-cookie':
-                raise self._header_not_supported(
-                    'This method cannot be used to set cookies'
-                )
+                raise HeaderNotSupported('This method cannot be used to set cookies')
 
             _headers[name] = value
 
@@ -1259,8 +1253,6 @@ class ResponseOptions:
     def __init__(self):
         self.secure_cookies_by_default = True
         self.default_media_type = DEFAULT_MEDIA_TYPE
-        from falcon.media import Handlers
-
         self.media_handlers = Handlers()
 
         if not mimetypes.inited:
