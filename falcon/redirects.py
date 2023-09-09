@@ -11,14 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""HTTPStatus specializations for 3xx redirects."""
 from __future__ import annotations
 
-"""HTTPStatus specializations for 3xx redirects."""
 from typing import Optional
+from typing import TYPE_CHECKING
 
 import falcon
 from falcon.http_status import HTTPStatus
-from falcon.typing import NormalizedHeaders
+
+if TYPE_CHECKING:
+    from falcon.typing import NormalizedHeaders
 
 
 class HTTPMovedPermanently(HTTPStatus):

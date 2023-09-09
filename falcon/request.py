@@ -11,6 +11,8 @@
 # limitations under the License.
 
 """Request class."""
+from __future__ import annotations
+
 from collections import UserDict
 from datetime import datetime
 from io import BytesIO
@@ -26,6 +28,8 @@ from falcon.forwarded import _parse_forwarded_header
 
 # TODO: remove import in falcon 4
 from falcon.forwarded import Forwarded  # NOQA
+from falcon.media import Handlers
+from falcon.media.json import _DEFAULT_JSON_HANDLER
 from falcon.stream import BoundedStream
 from falcon.util import structures
 from falcon.util.misc import isascii
@@ -1887,10 +1891,6 @@ class Request:
             MEDIA_JSON, MEDIA_JSON, raise_not_found=False
         )
         if handler is None:
-            from falcon.media.json import (
-                _DEFAULT_JSON_HANDLER,
-            )  # import here to avoid circular imports
-
             handler = _DEFAULT_JSON_HANDLER
 
         try:
@@ -2104,8 +2104,6 @@ class RequestOptions:
     )
 
     def __init__(self):
-        from falcon.media.handlers import Handlers
-
         self.keep_blank_qs_values = True
         self.auto_parse_form_urlencoded = False
         self.auto_parse_qs_csv = False

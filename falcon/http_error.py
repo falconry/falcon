@@ -11,23 +11,28 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""HTTPError exception class."""
 from __future__ import annotations
 
-"""HTTPError exception class."""
 from collections import OrderedDict
 from typing import MutableMapping
 from typing import Optional
 from typing import Type
+from typing import TYPE_CHECKING
 from typing import Union
 import xml.etree.ElementTree as et
 
 from falcon.constants import MEDIA_JSON
-from falcon.typing import Link
-from falcon.typing import RawHeaders
-from falcon.typing import Serializer
-from falcon.typing import Status
-from falcon.util import code_to_http_status, http_status_to_code, uri
+from falcon.util import code_to_http_status
+from falcon.util import http_status_to_code
+from falcon.util import uri
 from falcon.util.deprecation import deprecated_args
+
+if TYPE_CHECKING:
+    from falcon.typing import Link
+    from falcon.typing import RawHeaders
+    from falcon.typing import Serializer
+    from falcon.typing import Status
 
 
 class HTTPError(Exception):
@@ -205,7 +210,6 @@ class HTTPError(Exception):
         obj = self.to_dict(OrderedDict)
         if handler is None:
             handler = _DEFAULT_JSON_HANDLER
-        assert handler
         return handler.serialize(obj, MEDIA_JSON)
 
     def to_xml(self) -> bytes:
@@ -239,4 +243,7 @@ class HTTPError(Exception):
 
 # NOTE: initialized in falcon.media.json, that is always imported since Request/Response
 # are imported by falcon init.
-_DEFAULT_JSON_HANDLER = None
+if TYPE_CHECKING:
+    _DEFAULT_JSON_HANDLER: Serializer
+else:
+    _DEFAULT_JSON_HANDLER = None
