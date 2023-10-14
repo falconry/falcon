@@ -15,7 +15,7 @@ import falcon
 from falcon import testing
 from falcon.routing.util import SuffixedMethodNotFoundError
 
-from _util import create_app  # NOQA
+from _util import as_params, create_app  # NOQA
 
 
 _TEST_UUID = uuid.uuid4()
@@ -314,7 +314,7 @@ def test_datetime_converter(client, resource, uri_template, path, dt_expected):
 
 @pytest.mark.parametrize(
     'uri_template, path, expected',
-    [
+    as_params(
         (
             '/widgets/{widget_id:uuid}',
             '/widgets/' + _TEST_UUID_STR,
@@ -354,7 +354,8 @@ def test_datetime_converter(client, resource, uri_template, path, dt_expected):
             '/widgets/' + _TEST_UUID_STR_SANS_HYPHENS[:-1] + '/orders',
             None,
         ),
-    ],
+        prefix='uuid_converter',
+    ),
 )
 def test_uuid_converter(client, resource, uri_template, path, expected):
     client.app.add_route(uri_template, resource)
