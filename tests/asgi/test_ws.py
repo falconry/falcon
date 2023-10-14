@@ -370,6 +370,13 @@ async def test_client_disconnect_early(  # noqa: C901
                     await resource.data_received.wait()
                     assert resource.data == sample_data
 
+                # NOTE(vytas): When testing the case where the server
+                #   explicitly closes the connection, try to receive some data
+                #   before closing from the client side (and potentially
+                #   winning the async race of which side closes first).
+                if explicit_close_server:
+                    await ws.receive_data()
+
                 if explicit_close_client:
                     await ws.close(4042)
 
