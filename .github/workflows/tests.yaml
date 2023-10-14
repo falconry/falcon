@@ -76,6 +76,12 @@ jobs:
           - python-version: "3.11"
             os: ubuntu-latest
             toxenv: py311_cython
+          - python-version: "3.12"
+            os: ubuntu-latest
+            toxenv: py312
+          - python-version: "3.12"
+            os: ubuntu-latest
+            toxenv: py312_cython
           - python-version: "3.10"
             os: macos-latest
             toxenv: py310_nocover
