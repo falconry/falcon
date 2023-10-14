@@ -72,6 +72,7 @@ def disable_asgi_non_coroutine_wrapping():
 def as_params(*values, prefix=None):
     if not prefix:
         prefix = ''
+    # NOTE(caselit): each value must be a tuple/list even when using one single argument
     return [
         pytest.param(*value, id=f'{prefix}_{i}' if prefix else f'{i}')
         for i, value in enumerate(values, 1)
