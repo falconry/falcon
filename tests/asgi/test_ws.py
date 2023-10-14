@@ -1118,6 +1118,9 @@ async def test_ws_http_error_or_status_response(conductor, status, thing, accept
     async with conductor as c:
         if accept:
             async with c.simulate_ws() as ws:
+                # Make sure the responder has a chance to reach the raise point
+                for _ in range(3):
+                    await asyncio.sleep(0)
                 assert ws.closed
                 assert ws.close_code == exp_code
         else:
@@ -1215,6 +1218,9 @@ async def test_ws_http_error_or_status_error_handler(
     async with conductor as c:
         if place == 'ws_after_accept':
             async with c.simulate_ws() as ws:
+                # Make sure the responder has a chance to reach the raise point
+                for _ in range(3):
+                    await asyncio.sleep(0)
                 assert ws.closed
                 assert ws.close_code == exp_code
         else:
