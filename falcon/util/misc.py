@@ -75,7 +75,9 @@ _UNSAFE_CHARS = re.compile(r'[^a-zA-Z0-9.-]')
 
 # PERF(kgriffs): Avoid superfluous namespace lookups
 strptime: Callable[[str, str], datetime.datetime] = datetime.datetime.strptime
-utcnow: Callable[[], datetime.datetime] = datetime.datetime.utcnow
+utcnow: Callable[[], datetime.datetime] = functools.partial(
+    datetime.datetime.now, datetime.timezone.utc
+)
 
 
 # NOTE(kgriffs,vytas): This is tested in the PyPy gate but we do not want devs

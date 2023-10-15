@@ -10,6 +10,7 @@ import pytest
 import falcon
 import falcon.errors
 import falcon.testing as testing
+from falcon.util.misc import utcnow
 
 from _util import create_app  # NOQA
 
@@ -36,15 +37,15 @@ class CaptureRequestMiddleware:
 class RequestTimeMiddleware:
     def process_request(self, req, resp):
         global context
-        context['start_time'] = datetime.utcnow()
+        context['start_time'] = utcnow()
 
     def process_resource(self, req, resp, resource, params):
         global context
-        context['mid_time'] = datetime.utcnow()
+        context['mid_time'] = utcnow()
 
     def process_response(self, req, resp, resource, req_succeeded):
         global context
-        context['end_time'] = datetime.utcnow()
+        context['end_time'] = utcnow()
         context['req_succeeded'] = req_succeeded
 
     async def process_request_async(self, req, resp):

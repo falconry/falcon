@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from datetime import datetime
+from datetime import datetime, timezone
 import functools
 import http
 import itertools
@@ -109,13 +109,12 @@ class TestFalconUtils:
         assert msg in str(warn.message)
 
     def test_http_now(self):
-        expected = datetime.utcnow()
+        expected = datetime.now(timezone.utc)
         actual = falcon.http_date_to_dt(falcon.http_now())
 
-        delta = actual - expected
-        delta_sec = abs(delta.days * 86400 + delta.seconds)
+        delta = actual.replace(tzinfo=timezone.utc) - expected
 
-        assert delta_sec <= 1
+        assert delta.total_seconds() <= 1
 
     def test_dt_to_http(self):
         assert (
