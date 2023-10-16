@@ -706,7 +706,7 @@ class Response:
         name = name.lower()
 
         if name == 'set-cookie':
-            raise HeaderNotSupported('This method cannot be used to remove ookies')
+            raise HeaderNotSupported('This method cannot be used to remove cookies')
 
         self._headers.pop(name, None)
 
