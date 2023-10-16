@@ -19,20 +19,13 @@ from functools import wraps
 from inspect import getmembers
 from inspect import iscoroutinefunction
 import re
-from typing import Any
-from typing import Awaitable
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Tuple
-from typing import TYPE_CHECKING
-from typing import Union
+import typing as t
 
 from falcon.constants import COMBINED_METHODS
 from falcon.util.misc import get_argnames
 from falcon.util.sync import _wrap_non_coroutine_unsafe
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     import falcon as wsgi
     from falcon import asgi
 
@@ -40,14 +33,14 @@ _DECORABLE_METHOD_NAME = re.compile(
     r'^on_({})(_\w+)?$'.format('|'.join(method.lower() for method in COMBINED_METHODS))
 )
 
-SynchronousResource = Callable[..., Any]
-AsynchronousResource = Callable[..., Awaitable[Any]]
-Resource = Union[SynchronousResource, AsynchronousResource]
+SynchronousResource = t.Callable[..., t.Any]
+AsynchronousResource = t.Callable[..., t.Awaitable[t.Any]]
+Resource = t.Union[SynchronousResource, AsynchronousResource]
 
 
 def before(
-    action: Resource, *args: Any, is_async: bool = False, **kwargs: Any
-) -> Callable[[Resource], Resource]:
+    action: Resource, *args: t.Any, is_async: bool = False, **kwargs: t.Any
+) -> t.Callable[[Resource], Resource]:
     """Execute the given action function *before* the responder.
 
     The `params` argument that is passed to the hook
@@ -128,8 +121,8 @@ def before(
 
 
 def after(
-    action: Resource, *args: Any, is_async: bool = False, **kwargs: Any
-) -> Callable[[Resource], Resource]:
+    action: Resource, *args: t.Any, is_async: bool = False, **kwargs: t.Any
+) -> t.Callable[[Resource], Resource]:
     """Execute the given action function *after* the responder.
 
     Args:
@@ -197,8 +190,8 @@ def after(
 def _wrap_with_after(
     responder: Resource,
     action: Resource,
-    action_args: Any,
-    action_kwargs: Any,
+    action_args: t.Any,
+    action_kwargs: t.Any,
     is_async: bool,
 ) -> Resource:
     """Execute the given action function after a responder method.
@@ -232,8 +225,8 @@ def _wrap_with_after(
             self: Resource,
             req: asgi.Request,
             resp: asgi.Response,
-            *args: Any,
-            **kwargs: Any,
+            *args: t.Any,
+            **kwargs: t.Any,
         ) -> None:
             if args:
                 _merge_responder_args(args, kwargs, extra_argnames)
@@ -249,8 +242,8 @@ def _wrap_with_after(
             self: Resource,
             req: wsgi.Request,
             resp: wsgi.Response,
-            *args: Any,
-            **kwargs: Any,
+            *args: t.Any,
+            **kwargs: t.Any,
         ) -> None:
             if args:
                 _merge_responder_args(args, kwargs, extra_argnames)
@@ -264,10 +257,10 @@ def _wrap_with_after(
 def _wrap_with_before(
     responder: Resource,
     action: Resource,
-    action_args: Tuple[Any, ...],
-    action_kwargs: Dict[str, Any],
+    action_args: t.Tuple[t.Any, ...],
+    action_kwargs: t.Dict[str, t.Any],
     is_async: bool,
-) -> Union[Callable[..., Awaitable[None]], Callable[..., None]]:
+) -> t.Union[t.Callable[..., t.Awaitable[None]], t.Callable[..., None]]:
     """Execute the given action function before a responder method.
 
     Args:
@@ -299,8 +292,8 @@ def _wrap_with_before(
             self: Resource,
             req: asgi.Request,
             resp: asgi.Response,
-            *args: Any,
-            **kwargs: Any,
+            *args: t.Any,
+            **kwargs: t.Any,
         ) -> None:
             if args:
                 _merge_responder_args(args, kwargs, extra_argnames)
@@ -316,8 +309,8 @@ def _wrap_with_before(
             self: Resource,
             req: wsgi.Request,
             resp: wsgi.Response,
-            *args: Any,
-            **kwargs: Any,
+            *args: t.Any,
+            **kwargs: t.Any,
         ) -> None:
             if args:
                 _merge_responder_args(args, kwargs, extra_argnames)
@@ -329,7 +322,7 @@ def _wrap_with_before(
 
 
 def _merge_responder_args(
-    args: Tuple[Any, ...], kwargs: Dict[str, Any], argnames: List[str]
+    args: t.Tuple[t.Any, ...], kwargs: t.Dict[str, t.Any], argnames: t.List[str]
 ) -> None:
     """Merge responder args into kwargs.
 
