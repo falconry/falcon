@@ -2650,7 +2650,9 @@ class MediaMalformedError(HTTPBadRequest):
             base articles related to this error (default ``None``).
     """
 
-    def __init__(self, media_type: str, **kwargs: Union[RawHeaders, HTTPErrorKeywordArguments]):
+    def __init__(
+        self, media_type: str, **kwargs: Union[RawHeaders, HTTPErrorKeywordArguments]
+    ):
         super().__init__(
             title='Invalid {0}'.format(media_type), description=None, **kwargs
         )
@@ -2751,7 +2753,9 @@ class MultipartParseError(MediaMalformedError):
 
     @deprecated_args(allowed_positional=0)
     def __init__(
-        self, description: Optional[str] = None, **kwargs: Union[RawHeaders, HTTPErrorKeywordArguments]
+        self,
+        description: Optional[str] = None,
+        **kwargs: Union[RawHeaders, HTTPErrorKeywordArguments],
     ) -> None:
         HTTPBadRequest.__init__(
             self,
