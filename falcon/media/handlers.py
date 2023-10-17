@@ -1,3 +1,4 @@
+import typing
 from collections import UserDict
 import functools
 
@@ -10,10 +11,13 @@ from falcon.media.json import JSONHandler
 from falcon.media.multipart import MultipartFormHandler
 from falcon.media.multipart import MultipartParseOptions
 from falcon.media.urlencoded import URLEncodedFormHandler
-from falcon.typing import MediaHandlers
 from falcon.util import deprecation
 from falcon.util import misc
 from falcon.vendor import mimeparse
+
+if typing.TYPE_CHECKING:
+    from typing import Mapping
+    from falcon.typing import Serializer
 
 
 class MissingDependencyHandler:
@@ -35,13 +39,13 @@ class MissingDependencyHandler:
     serialize = deserialize = _raise
 
 
-class Handlers(MediaHandlers, UserDict):
+class Handlers(UserDict):
     """A :class:`dict`-like object that manages Internet media type handlers."""
 
     def __init__(self, initial=None):
         self._resolve = self._create_resolver()
 
-        handlers = initial or {
+        handlers: Mapping[str, Serializer] = initial or {
             MEDIA_JSON: JSONHandler(),
             MEDIA_MULTIPART: MultipartFormHandler(),
             MEDIA_URLENCODED: URLEncodedFormHandler(),

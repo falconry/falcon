@@ -30,21 +30,24 @@ if TYPE_CHECKING:
     from falcon.request import Request
     from falcon.response import Response
 
+    from typing import Protocol
+
+    class Serializer(Protocol):
+        def serialize(
+            self,
+            media: MutableMapping[str, Union[str, int, None, Link]],
+            content_type: str,
+        ) -> bytes:
+            ...
+
+    class MediaHandlers(Protocol):
+        def _resolve(
+            self, media_type: str, default: str, raise_not_found: bool = False
+        ) -> Tuple[Serializer, Optional[Callable], Optional[Callable]]:
+            ...
+
+
 Link = Dict[str, str]
-
-
-class Serializer:
-    def serialize(
-        self, media: MutableMapping[str, Union[str, int, None, Link]], content_type: str
-    ) -> bytes:
-        raise NotImplementedError()
-
-
-class MediaHandlers:
-    def _resolve(
-        self, media_type: str, default: str, raise_not_found: bool = False
-    ) -> Tuple[Serializer, Optional[Callable], Optional[Callable]]:
-        raise NotImplementedError()
 
 
 # Error handlers
