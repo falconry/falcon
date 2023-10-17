@@ -3,10 +3,9 @@ import io
 from typing import IO, Optional, Union
 
 from falcon.constants import MEDIA_JSON
-from falcon.typing import Serializer
 
 
-class BaseHandler(Serializer, metaclass=abc.ABCMeta):
+class BaseHandler(metaclass=abc.ABCMeta):
     """Abstract Base Class for an internet media type handler."""
 
     # NOTE(kgriffs): The following special methods are used to enable an
