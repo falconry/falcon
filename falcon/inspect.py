@@ -239,7 +239,10 @@ def inspect_compiled_router(router: CompiledRouter) -> 'List[RouteInfo]':
 
                         source_info = _get_source_info(real_func)
                         internal = _is_internal(real_func)
-                        assert source_info
+                        assert source_info, (
+                            'This is for type checking only, as here source '
+                            'info will always be a string'
+                        )
                         method_info = RouteMethodInfo(
                             method, source_info, real_func.__name__, internal
                         )
