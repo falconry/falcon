@@ -1,6 +1,6 @@
-import typing
 from collections import UserDict
 import functools
+import typing
 
 from falcon import errors
 from falcon.constants import MEDIA_JSON
