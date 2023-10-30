@@ -27,10 +27,10 @@ from typing import TYPE_CHECKING
 from typing import Union
 
 if TYPE_CHECKING:
+    from typing import Protocol
+
     from falcon.request import Request
     from falcon.response import Response
-
-    from typing import Protocol
 
     class Serializer(Protocol):
         def serialize(
