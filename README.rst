@@ -40,7 +40,7 @@ Quick Links
 What People are Saying
 ----------------------
 
-"Falcon is rock solid and it's fast."
+"Falcon is robust and it's fast."
 
 "We have been using Falcon as a replacement for [another framework] and
 we simply love the performance (three times faster) and code base size (easily
