@@ -15,7 +15,7 @@ from falcon.util import deprecation
 from falcon.util import misc
 from falcon.vendor import mimeparse
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:   # pragma: no cover
     from typing import Mapping
     from falcon.typing import Serializer
 
